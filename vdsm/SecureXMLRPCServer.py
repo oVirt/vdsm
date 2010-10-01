@@ -1,5 +1,4 @@
 # Copyright 2008 Red Hat, Inc. and/or its affiliates.
-# Copyright 2001 Brian Quinlan.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -7,7 +6,7 @@
 #
 # * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
-#    
+#
 # * Redistributions in binary form must reproduce the above copyright
 #   notice, this list of conditions and the following disclaimer in
 #   the documentation and/or other materials provided with the
@@ -28,106 +27,111 @@
 
 
 """SecureXMLRPCServer.py - simple XML RPC server supporting SSL.
-
-Based on this article: http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81549
-
-For windows users: http://webcleaner.sourceforge.net/pyOpenSSL-0.6.win32-py2.4.exe
 """
 
-import SocketServer
-import BaseHTTPServer
 import SimpleXMLRPCServer
-
+import xmlrpclib
+import ssl
+import httplib
 import socket
-from M2Crypto import SSL
+import SocketServer
 
-class PoliteSSLConnection(SSL.Connection):
+SecureXMLRPCRequestHandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
 
-    def gettimeout(self):
-         return self.socket.gettimeout()
+class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
+    def __init__(self, addr,
+                 requestHandler=SimpleXMLRPCServer.SimpleXMLRPCRequestHandler,
+                 logRequests=True, allow_none=False, encoding=None,
+                 bind_and_activate=True,
+                 keyfile=None, certfile=None, ca_certs=None):
+        """Initialize a SimpleXMLRPCServer instance but wrap its .socket member with ssl."""
 
-    def accept(self):
-        """Do a simple tcp accept only"""
-        sock, addr = self.socket.accept()
-        return PoliteSSLConnection(self.ctx, sock), addr
-
-    def _finish_accept_ssl(self, sock, addr):
-        """Finish ssl accept (possibly on a new thread)
-        Code based on accept() of M2Crypto/SSL/Connection.py 0.18-2"""
-        sock.addr = addr
-        sock.setup_ssl()
-        sock.set_accept_state()
-        # Here is the change from M2Crpyto's code.
-        # make sure sock.accept_ssl() does not block if self in nonblocking.
-        sock.settimeout(self.socket.gettimeout())
-        # On exception, I'm being nice to my peer (possible attacker?) and
-        # close his socket.
-        try:
-            sock.accept_ssl()
-            check = getattr(self, 'postConnectionCheck', self.serverPostConnectionCheck)
-            if check is not None:
-                if not check(self.get_peer_cert(), sock.addr[0]):
-                    raise SSL.Checker.SSLVerificationError, 'post connection check failed'
-        except Exception, e:
-            e.addr = addr
-            sock.close()
-            raise
-        return sock, addr
-
-class SecureXMLRpcRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
-    """Secure XML-RPC request handler class.
-
-    It it very similar to SimpleXMLRPCRequestHandler but it uses HTTPS for transporting XML data.
-    """
-    wbufsize = -1
-
-    def do_POST(self):
-        """Handles the HTTPS POST request."""
-        SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.do_POST(self)
-        # I dont understand why the inherited
-        # self.connection.shutdown(SSL_SENT_SHUTDOWN) without .close()
-        # makes me hang
-        self.connection.shutdown(0)
-        self.connection.close()
-
-class SecureXMLRPCServer(BaseHTTPServer.HTTPServer, SimpleXMLRPCServer.SimpleXMLRPCDispatcher):
-    def __init__(self, server_address, keyFile, certFile, caCert,
-                 logRequests=False, timeout=None, requestHandler=SecureXMLRpcRequestHandler):
-        """Secure XML-RPC server.
-
-        It it very similar to SimpleXMLRPCServer but it uses HTTPS for transporting XML data.
-        """
-        self.logRequests = logRequests
-
-        try:
-            SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(self, False, None)
-        except TypeError:
-            # older versions of SimpleXMLRPCServer had a different API
-            SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(self)
-
-        SocketServer.BaseServer.__init__(self, server_address, requestHandler)
-        ctx = SSL.Context()
-
-        ctx.load_cert_chain(certFile, keyFile)
-
-        ctx.set_client_CA_list_from_file(caCert)
-        ctx.load_verify_info(caCert)
-
-        ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, 10)
-        ctx.set_session_id_ctx ('vdsm-ssl')
-        self.socket = PoliteSSLConnection(ctx, socket.socket(
-                                self.address_family, self.socket_type))
-        self.socket.settimeout(timeout)
-        self.server_bind()
-        self.server_activate()
+        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, addr,
+                 requestHandler,
+                 logRequests, allow_none, encoding,
+                 bind_and_activate=False)
+        self.socket = ssl.wrap_socket(self.socket,
+                 keyfile=keyfile, certfile=certfile,
+                 ca_certs=ca_certs, server_side=True,
+                 cert_reqs=ssl.CERT_REQUIRED,
+                 do_handshake_on_connect=False)
+        if bind_and_activate:
+            self.server_bind()
+            self.server_activate()
 
     def finish_request(self, request, client_address):
-        """Finish one request by doing ssl handshake and instantiating RequestHandlerClass."""
-        request, client_address = self.socket._finish_accept_ssl(request, client_address)
-        self.RequestHandlerClass(request, client_address, self)
+        request.do_handshake()
 
-class SecureThreadedXMLRPCServer(SocketServer.ThreadingMixIn, SecureXMLRPCServer):
-    pass
+        return SimpleXMLRPCServer.SimpleXMLRPCServer.finish_request(self, request,
+                                                             client_address)
+
+    def handle_error(self, request, client_address):
+        import logging
+        logging.error('client %s', client_address, exc_info=True)
+
+
+class SecureThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
+                                 SecureXMLRPCServer): pass
+
+class VerifyingHTTPSConnection(httplib.HTTPSConnection):
+    def __init__(self, host, port=None, key_file=None, cert_file=None,
+                 strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+        httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
+                      strict, timeout)
+        self.ca_certs = ca_certs
+        self.cert_reqs = cert_reqs
+
+    def connect(self):
+        "Connect to a host on a given (SSL) port."
+
+        sock = socket.create_connection((self.host, self.port), self.timeout)
+        if self._tunnel_host:
+            self.sock = sock
+            self._tunnel()
+        # DK added: pass ca_cert to sslsocket
+        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
+                                    ca_certs=self.ca_certs, server_side=False,
+                                    cert_reqs=self.cert_reqs)
+
+class VerifyingSafeTransport(xmlrpclib.SafeTransport):
+    def __init__(self, use_datetime=0, key_file=None, cert_file=None,
+                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+        xmlrpclib.SafeTransport.__init__(self, use_datetime)
+        self.key_file = key_file
+        self.cert_file = cert_file
+        self.ca_certs = ca_certs
+        self.cert_reqs = cert_reqs
+
+    def make_connection(self, host):
+        """Return VerifyingHTTPS object that is aware of ca_certs, and will create VerifyingHTTPSConnection"""
+        chost, self._extra_headers, x509 = self.get_host_info(host)
+        return VerifyingHTTPS(
+                        chost, None, key_file=self.key_file,
+                        cert_file=self.cert_file, ca_certs=self.ca_certs,
+                        cert_reqs=self.cert_reqs)
+
+
+class VerifyingHTTPS(httplib.HTTPS):
+    _connection_class = VerifyingHTTPSConnection
+
+    def __init__(self, host='', port=None, key_file=None, cert_file=None,
+                 strict=None, ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+        """A ca_cert-aware HTTPS object, that creates a VerifyingHTTPSConnection"""
+        # provide a default host, pass the X509 cert info
+
+        # urf. compensate for bad input.
+        if port == 0:
+            port = None
+        self._setup(self._connection_class(host, port, key_file,
+                                           cert_file, strict, ca_certs=ca_certs,
+                                           cert_reqs=cert_reqs))
+
+        # we never actually use these for anything, but we keep them
+        # here for compatibility with post-1.5.2 CVS.
+        self.key_file = key_file
+        self.cert_file = cert_file
+
 
 class __Test(object):
     """Self-signed key, generated with
@@ -141,40 +145,25 @@ class __Test(object):
     def server(self):
         """Test xml rpc over https server"""
         class xmlrpc_registers:
-            def __init__(self):
-                import string
-                self.python_string = string
-
             def add(self, x, y):
                 return x + y
-
-            def mult(self,x,y):
-                return x*y
-
-            def div(self,x,y):
-                return x//y
 
             def wait(self):
                 import time
                 time.sleep(10)
                 return 1
 
-        server = SecureThreadedXMLRPCServer((self.host, self.port), self.KEYFILE, self.CERTFILE, self.CACERT)
+        server = SecureXMLRPCServer((self.host, self.port),
+                     keyfile=self.KEYFILE, certfile=self.CERTFILE, ca_certs=self.CACERT)
         server.register_instance(xmlrpc_registers())
         print "Serving HTTPS on", self.host, "port", self.port
         server.serve_forever()
 
     def client(self):
-        from M2Crypto.m2xmlrpclib import Server, SSL_Transport
-        from M2Crypto import SSL
-
-        ctx = SSL.Context()
-
-        ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, 16)
-        ctx.load_verify_locations(self.CACERT)
-        ctx.load_cert(self.CERTFILE, self.KEYFILE)
-
-        s = Server('https://%s:%s' % (self.host, self.port), SSL_Transport(ctx))
+        vtransport=VerifyingSafeTransport(key_file=self.KEYFILE,
+                        cert_file=self.CERTFILE, ca_certs=self.CACERT)
+        s = xmlrpclib.ServerProxy('https://%s:%s' % (self.host, self.port),
+                                  transport=vtransport)
         print s.add(2, 3)
 
 if __name__ == '__main__':

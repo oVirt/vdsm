@@ -18,7 +18,7 @@ Requires: python which
 Requires: sudo >= 1.7.3
 Requires: qemu-kvm
 Requires: qemu-img >= 2:0.12.1.2-2.172
-Requires: m2crypto ethtool logrotate
+Requires: ethtool logrotate
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: nfs-utils dmidecode
 Requires: lvm2 >= 2.02.72-8.el6_0.4
@@ -182,7 +182,6 @@ Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM
 %package cli
 Summary: VDSM command line interface
 Group: Applications/System
-Requires: m2crypto
 
 %description cli
 Call VDSM commands from the command line. Used for testing and debugging.
@@ -373,7 +372,8 @@ machines without running real guests.
 %{_sysconfdir}/bash_completion.d/vdsClient
 %{_datadir}/%{vdsm_name}/vdscli.py*
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
-%{_bindir}/vdsClient
+%{_datadir}/%{vdsm_name}/SecureXMLRPCServer.py*
+%attr (755,root,root) %{_bindir}/vdsClient
 %{_mandir}/man1/vdsClient.1*
 
 %files bootstrap

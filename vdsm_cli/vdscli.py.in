@@ -22,6 +22,7 @@
 import xmlrpclib
 import subprocess
 import os
+import SecureXMLRPCServer
 
 d_useSSL = False
 d_tsPath = '@TRUSTSTORE@'
@@ -86,9 +87,6 @@ def connect(addrport=None, useSSL=None, tsPath=None):
     if useSSL is None: useSSL = d_useSSL
     if tsPath is None: tsPath = d_tsPath
     if useSSL:
-        from M2Crypto.m2xmlrpclib import SSL_Transport
-        from M2Crypto import SSL
-
         if os.name == 'nt':
             KEYFILE = tsPath + '\\keys\\rhevm.pem'
             CERTFILE = tsPath + '\\certs\\rhevm.cer'
@@ -98,14 +96,10 @@ def connect(addrport=None, useSSL=None, tsPath=None):
             CERTFILE = tsPath + '/certs/vdsmcert.pem'
             CACERT = tsPath + '/certs/cacert.pem'
 
-        ctx = SSL.Context ('sslv3')
-
-        ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, 16)
-        ctx.load_verify_locations(CACERT)
-        ctx.load_cert(CERTFILE, KEYFILE, lambda v: "mypass")
-
-        server = xmlrpclib.Server('https://%s' % addrport,
-                                SSL_Transport(ctx))
+        transport=SecureXMLRPCServer.VerifyingSafeTransport(key_file=KEYFILE,
+                        cert_file=CERTFILE, ca_certs=CACERT)
+        server = xmlrpclib.ServerProxy('https://%s' % addrport,
+                                       transport=transport)
     else:
         server = xmlrpclib.Server('http://%s' % addrport)
     return server

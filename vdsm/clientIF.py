@@ -32,8 +32,6 @@ import SimpleXMLRPCServer
 from xml.dom import minidom
 import uuid
 
-import M2Crypto.threading
-
 from storage.dispatcher import StorageDispatcher
 import storage.misc
 import storage.hba
@@ -219,17 +217,15 @@ class clientIF:
 
         server_address = (self.serverIP, int(self.serverPort))
         if config.getboolean('vars', 'ssl'):
-            class LoggingHandler(LoggingMixIn, SecureXMLRPCServer.SecureXMLRpcRequestHandler):
+            class LoggingHandler(LoggingMixIn, SecureXMLRPCServer.SecureXMLRPCRequestHandler):
                 def setup(self):
                     cif.threadLocal.client = self.client_address[0]
-                    return SecureXMLRPCServer.SecureXMLRpcRequestHandler.setup(self)
-            M2Crypto.threading.init()
+                    return SecureXMLRPCServer.SecureXMLRPCRequestHandler.setup(self)
             KEYFILE, CERTFILE, CACERT = self.getKeyCertFilenames()
             s = SecureXMLRPCServer.SecureThreadedXMLRPCServer(server_address,
                         KEYFILE, CERTFILE, CACERT,
-                        timeout=config.getint('vars', 'vds_responsiveness_timeout'),
+#                        timeout=config.getint('vars', 'vds_responsiveness_timeout'),
                         requestHandler=LoggingHandler)
-            utils.closeOnExec(s.socket.socket.fileno())
         else:
             class LoggingHandler(LoggingMixIn, SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
                 def setup(self):
@@ -237,7 +233,7 @@ class clientIF:
                     return SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.setup(self)
             s = utils.SimpleThreadedXMLRPCServer(server_address,
                         requestHandler=LoggingHandler, logRequests=True)
-            utils.closeOnExec(s.socket.fileno())
+        utils.closeOnExec(s.socket.fileno())
 
         return s
 

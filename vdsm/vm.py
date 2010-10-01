@@ -117,17 +117,9 @@ class MigrationSourceThread(threading.Thread):
         except:
             pass
         if config.getboolean('vars', 'ssl'):
-            from M2Crypto import SSL
-
-            KEYFILE, CERTFILE, CACERT = self._vm.cif.getKeyCertFilenames()
-
-            ctx = SSL.Context()
-            ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, 16)
-            ctx.load_verify_locations(CACERT)
-            ctx.load_cert(CERTFILE, KEYFILE)
-
+            import vdscli
             serverAddress = 'https://' + self.remoteHost + ':' + self.remotePort
-            self.destServer = kaxmlrpclib.SslServer(serverAddress, ctx)
+            self.destServer = vdscli.connect(serverAddress, useSSL=True)
         else:
             serverAddress = 'http://' + self.remoteHost + ':' + self.remotePort
             self.destServer = kaxmlrpclib.Server(serverAddress)
