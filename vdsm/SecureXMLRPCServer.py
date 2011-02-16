@@ -43,7 +43,8 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
                  requestHandler=SimpleXMLRPCServer.SimpleXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None,
                  bind_and_activate=True,
-                 keyfile=None, certfile=None, ca_certs=None):
+                 keyfile=None, certfile=None, ca_certs=None,
+                 timeout=None):
         """Initialize a SimpleXMLRPCServer instance but wrap its .socket member with ssl."""
 
         SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, addr,
@@ -55,6 +56,8 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
                  ca_certs=ca_certs, server_side=True,
                  cert_reqs=ssl.CERT_REQUIRED,
                  do_handshake_on_connect=False)
+        if timeout is not None:
+            self.socket.settimeout = timeout
         if bind_and_activate:
             self.server_bind()
             self.server_activate()

@@ -223,8 +223,9 @@ class clientIF:
                     return SecureXMLRPCServer.SecureXMLRPCRequestHandler.setup(self)
             KEYFILE, CERTFILE, CACERT = self.getKeyCertFilenames()
             s = SecureXMLRPCServer.SecureThreadedXMLRPCServer(server_address,
-                        KEYFILE, CERTFILE, CACERT,
-#                        timeout=config.getint('vars', 'vds_responsiveness_timeout'),
+                        keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
+                        timeout=config.getint('vars',
+                                              'vds_responsiveness_timeout'),
                         requestHandler=LoggingHandler)
         else:
             class LoggingHandler(LoggingMixIn, SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
