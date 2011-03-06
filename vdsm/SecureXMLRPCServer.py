@@ -107,9 +107,17 @@ class VerifyingSafeTransport(xmlrpclib.SafeTransport):
         self.cert_reqs = cert_reqs
 
     def make_connection(self, host):
-        """Return VerifyingHTTPS object that is aware of ca_certs, and will create VerifyingHTTPSConnection"""
+        """Return VerifyingHTTPS object that is aware of ca_certs, and will
+        create VerifyingHTTPSConnection.
+        In Python 2.7, return VerifyingHTTPSConnection object"""
         chost, self._extra_headers, x509 = self.get_host_info(host)
-        return VerifyingHTTPS(
+        if hasattr(xmlrpclib.SafeTransport, "single_request"): # Python 2.7
+            return VerifyingHTTPSConnection(
+                        chost, None, key_file=self.key_file, strict=None,
+                        cert_file=self.cert_file, ca_certs=self.ca_certs,
+                        cert_reqs=self.cert_reqs)
+        else:
+            return VerifyingHTTPS(
                         chost, None, key_file=self.key_file,
                         cert_file=self.cert_file, ca_certs=self.ca_certs,
                         cert_reqs=self.cert_reqs)
