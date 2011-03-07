@@ -100,76 +100,44 @@ class TcpkeepHTTP(httplib.HTTP):
 
 ###################
 # the same, for ssl
-from M2Crypto import m2xmlrpclib, httpslib as m2httpslib, SSL as m2SSL, m2urllib
+import SecureXMLRPCServer
+import ssl
 
 def SslServer(url, ctx, *args, **kwargs):
     kwargs['transport'] = TcpkeepSafeTransport(ctx)
-    server = m2xmlrpclib.Server(url, *args, **kwargs)
+    server = xmlrpclib.Server(url, *args, **kwargs)
     return server
 
 SslServerProxy = SslServer
 
-class TcpkeepSafeTransport(m2xmlrpclib.SSL_Transport):
+class TcpkeepSafeTransport(SecureXMLRPCServer.VerifyingSafeTransport):
 
-    def make_connection(self, host, port, ssl_context):
-        conn = TcpkeepHTTPS(host, port, ssl_context=ssl_context)
-        return conn
+    def make_connection(self, host):
+        chost, self._extra_headers, x509 = self.get_host_info(host)
+        if hasattr(xmlrpclib.SafeTransport, "single_request"): # Python 2.7
+            return TcpkeepHTTPSConnection(
+                        chost, None, key_file=self.key_file, strict=None,
+                        timeout=CONNECTTIMEOUT,
+                        cert_file=self.cert_file, ca_certs=self.ca_certs,
+                        cert_reqs=self.cert_reqs)
+        else:
+            return TcpkeepHTTPS(
+                        chost, None, key_file=self.key_file,
+                        cert_file=self.cert_file, ca_certs=self.ca_certs,
+                        cert_reqs=self.cert_reqs)
 
-    # sadly, m2crypto's SSL_Transport does not even have make_connection()
-    # so I have to copy the whole request() from M2Crypto/m2xmlrpclib.py
-    def request(self, host, handler, request_body, verbose=0):
-        # Handle username and password.
-        user_passwd, host_port = m2urllib.splituser(host)
-        _host, _port = m2urllib.splitport(host_port)
-#        h = httpslib.HTTPS(_host, int(_port), ssl_context=self.ssl_ctx) danken
-        h = self.make_connection(_host, int(_port), ssl_context=self.ssl_ctx)
-        if verbose:
-            h.set_debuglevel(1)
 
-        # What follows is as in xmlrpclib.Transport. (Except the authz bit.)
-        h.putrequest("POST", handler)
-
-        # required by HTTP/1.1
-        h.putheader("Host", _host)
-
-        # required by XML-RPC
-        h.putheader("User-Agent", self.user_agent)
-        h.putheader("Content-Type", "text/xml")
-        h.putheader("Content-Length", str(len(request_body)))
-
-        # Authorisation.
-        if user_passwd is not None:
-            import string, base64
-            auth=string.strip(base64.encodestring(user_passwd))
-            h.putheader('Authorization', 'Basic %s' % auth)
-
-        h.endheaders()
-
-        if request_body:
-            h.send(request_body)
-
-        errcode, errmsg, headers = h.getreply()
-
-        if errcode != 200:
-            raise xmlrpclib.ProtocolError(
-                host + handler,
-                errcode, errmsg,
-                headers
-                )
-
-        self.verbose = verbose
-        return self.parse_response(h.getfile())
-
-class TcpkeepHTTPSConnection(m2httpslib.HTTPSConnection):
+class TcpkeepHTTPSConnection(SecureXMLRPCServer.VerifyingHTTPSConnection):
+    def __init__(self, host, port=None, key_file=None, cert_file=None,
+                 strict=None, timeout=CONNECTTIMEOUT,
+                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+        SecureXMLRPCServer.VerifyingHTTPSConnection.__init__(
+                 self, host, port=port, key_file=key_file, cert_file=cert_file,
+                 strict=strict, timeout=timeout,
+                 ca_certs=ca_certs, cert_reqs=cert_reqs)
 
     def connect(self):
-        # taken from m2httpslib.HTTPSConnection.connect(self)
-        # of m2crypto-0.18. Modified a bit to support also m2crypto-0.16.
-        self.sock = m2SSL.Connection(self.ssl_ctx)
-        if 'session' in dir(self) and self.session:
-            self.sock.set_session(self.session)
-
-        self.sock.settimeout(CONNECTTIMEOUT)
+        SecureXMLRPCServer.VerifyingHTTPSConnection.connect(self)
 
         # after TCP_KEEPIDLE seconds of silence, TCP_KEEPCNT probes would be
         # sent, TCP_KEEPINTVL seconds apart of each other. If all of them fail,
@@ -179,8 +147,7 @@ class TcpkeepHTTPSConnection(m2httpslib.HTTPSConnection):
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, KEEPINTVL)
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, KEEPCNT)
 
-        self.sock.connect((self.host, self.port))
 
-class TcpkeepHTTPS(m2httpslib.HTTPS):
+class TcpkeepHTTPS(SecureXMLRPCServer.VerifyingHTTPS):
     _connection_class = TcpkeepHTTPSConnection
 

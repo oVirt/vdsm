@@ -31,6 +31,7 @@ from logUtils import SimpleLogAdapter
 from copy import deepcopy
 import tempfile
 import libvirt
+import vdscli
 
 """
 A module containing classes needed for VM communication.
@@ -116,13 +117,12 @@ class MigrationSourceThread(threading.Thread):
             self.remotePort = self._dst.split(':')[1]
         except:
             pass
+        serverAddress = self.remoteHost + ':' + self.remotePort
         if config.getboolean('vars', 'ssl'):
-            import vdscli
-            serverAddress = 'https://' + self.remoteHost + ':' + self.remotePort
-            self.destServer = vdscli.connect(serverAddress, useSSL=True)
+            self.destServer = vdscli.connect(serverAddress, useSSL=True,
+                    TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
         else:
-            serverAddress = 'http://' + self.remoteHost + ':' + self.remotePort
-            self.destServer = kaxmlrpclib.Server(serverAddress)
+            self.destServer = kaxmlrpclib.Server('http://' + serverAddress)
         self.log.debug('Destination server is: ' + serverAddress)
         try:
             self.log.debug('Initiating connection with destination')

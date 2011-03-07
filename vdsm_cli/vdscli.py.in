@@ -82,7 +82,8 @@ def cannonizeAddrPort(addrport=None):
     else:
         return addrport + ':' + d_port
 
-def connect(addrport=None, useSSL=None, tsPath=None):
+def connect(addrport=None, useSSL=None, tsPath=None,
+            TransportClass=SecureXMLRPCServer.VerifyingSafeTransport):
     addrport = cannonizeAddrPort(addrport)
     if useSSL is None: useSSL = d_useSSL
     if tsPath is None: tsPath = d_tsPath
@@ -96,7 +97,7 @@ def connect(addrport=None, useSSL=None, tsPath=None):
             CERTFILE = tsPath + '/certs/vdsmcert.pem'
             CACERT = tsPath + '/certs/cacert.pem'
 
-        transport=SecureXMLRPCServer.VerifyingSafeTransport(key_file=KEYFILE,
+        transport=TransportClass(key_file=KEYFILE,
                         cert_file=CERTFILE, ca_certs=CACERT)
         server = xmlrpclib.ServerProxy('https://%s' % addrport,
                                        transport=transport)
