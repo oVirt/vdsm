@@ -253,12 +253,10 @@ class SPM:
             self.lock.release()
 
 
-    def isActive(self, spUUID, contend = False):
+    def isActive(self, contend=False):
         """
         Checks if a SPM is active.
 
-        :param spUUID: The UUID of the storage pool you want to test.
-        :type spUUID: UUID
         :param contend: ?
         :type contend: bool
 

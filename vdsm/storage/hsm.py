@@ -137,7 +137,7 @@ class HSM:
             pass
 
     def validateNotSPM(self, spUUID):
-        if self.spm.isActive(spUUID, contend=True):
+        if self.spm.isActive(contend=True):
             raise se.IsSpm(spUUID)
 
     @classmethod
@@ -1886,7 +1886,7 @@ class HSM:
 
                     # Master validation makes sense for SPM only
                     # So we should analyze the 'getRepoStats' return value
-                    if self.spm.isActive(p.spUUID, contend=False):
+                    if self.spm.isActive(contend=False):
                         # The SPM case
                         valid = (master_stats['masterValidate']['mount'] and
                             master_stats['masterValidate']['valid'])
