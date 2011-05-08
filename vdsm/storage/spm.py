@@ -164,7 +164,7 @@ class SPM:
 
         self.taskMng = taskMng
         self.spmStarted = False
-        self.pools = {}
+        self.pools = hsm.HSM.pools
         self.lver = 0
         self.spmRole = SPM_FREE
         self.tasksDir = None
@@ -318,7 +318,6 @@ class SPM:
         if  self.pools.has_key(pool.spUUID):
             if self.pools[pool.spUUID].spmMailer:
                 self.pools[pool.spUUID].spmMailer.stop()
-            del self.pools[pool.spUUID]
 
 
     def public_fenceSpmStorage(self, spUUID, lastOwner, lastLver, options = None):
@@ -389,20 +388,22 @@ class SPM:
         if not isValid:
             return
 
-        # Who are we fooling there will never be more then one pool on an spm
+        domain = SDF.produce(sdUUID)
+        if sdUUID not in self._domainsToUpgrade:
+            return
+
+        self.log.debug("Preparing to upgrade domain %s", sdUUID)
+
         try:
-            pool = hsm.HSM.getPool(self.pools.keys()[0])
+            #Assumed that the domain can be attached only to one pool
+            poolUUID = domain.getPools()[0]
+            pool = hsm.HSM.getPool(poolUUID)
             masterDom = pool.getMasterDomain()
             targetDomVersion = masterDom.getVersion()
         except:
             self.log.error("Error while preparing domain `%s` upgrade", sdUUID, exc_info=True)
             return
 
-        domain = SDF.produce(sdUUID)
-        if sdUUID not in self._domainsToUpgrade:
-            return
-
-        self.log.debug("Preparing to upgrade domain %s", sdUUID)
         with rmanager.acquireResource(STORAGE, "upgrade_" + sdUUID, LockType.exclusive):
             with rmanager.acquireResource(STORAGE, sdUUID, LockType.exclusive):
                 if sdUUID not in self._domainsToUpgrade:

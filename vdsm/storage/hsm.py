@@ -421,7 +421,7 @@ class HSM:
             self.validateSdUUID(msdUUID)
             pool.refresh(msdUUID, masterVersion)
         except:
-            self._disconnectPool(spUUID, pool.id, pool.scsiKey, False)
+            self._disconnectPool(pool, pool.id, pool.scsiKey, False)
             raise
 
         if pool.hsmMailer:
@@ -594,12 +594,13 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, spUUID)
         self.validateNotSPM(spUUID)
 
-        return self._disconnectPool(spUUID, hostID, scsiKey, remove)
+        pool = self.getPool(spUUID)
+        return self._disconnectPool(pool, hostID, scsiKey, remove)
 
 
-    def _disconnectPool(self, spUUID, hostID, scsiKey, remove):
-        res = self.getPool(spUUID).disconnect(hostID, scsiKey, remove=remove)
-        self.setPool(spUUID, None)
+    def _disconnectPool(self, pool, hostID, scsiKey, remove):
+        res = pool.disconnect(hostID, scsiKey, remove=remove)
+        self.setPool(pool.spUUID, None) #Removes pool from pool dict
         return res
 
 
@@ -631,7 +632,7 @@ class HSM:
             vars.task.getExclusiveLock(STORAGE, sdUUID)
 
         self.spm.detachAllDomains(pool)
-        return self._disconnectPool(spUUID, hostID, scsiKey, remove=True)
+        return self._disconnectPool(pool, hostID, scsiKey, remove=True)
 
 
     def public_reconstructMaster(self, spUUID, poolName, masterDom, domDict,
