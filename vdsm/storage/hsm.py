@@ -146,24 +146,6 @@ class HSM:
             raise se.StoragePoolUnknown(spUUID)
         return cls.pools[spUUID]
 
-    @classmethod
-    def setPool(cls, spUUID, pool):
-        '''
-        Set the pool object of the class.
-
-        .. note::
-                Setting the pool to none will delete if from the class.
-
-        :param spUUID: the UUID of the storage pool you want act on.
-        :type spUUID: UUID
-        :param pool: The pool object you want to set
-        :type pool: Pool Object?
-        '''
-        if pool:
-            cls.pools[spUUID] = pool
-        elif spUUID in cls.pools:
-            del cls.pools[spUUID]
-
     def __init__(self):
         """
         The HSM Constructor
@@ -432,7 +414,7 @@ class HSM:
         self.log.info("RESTOREPOOL: %s", spUUID)
         pool = sp.StoragePool(spUUID)
         pool.reconnect()
-        self.setPool(spUUID, pool)
+        self.pools[spUUID] = pool
 
 
     def public_createStoragePool(self, poolType, spUUID, poolName, masterDom, domList, masterVersion, lockPolicy=None, lockRenewalIntervalSec=None, leaseTimeSec=None, ioOpTimeoutSec=None, leaseRetries=None, options = None):
@@ -563,8 +545,9 @@ class HSM:
             return
 
         pool = sp.StoragePool(spUUID)
-        self.setPool(spUUID, pool)
-        return pool.connect(hostID, scsiKey, msdUUID, masterVersion)
+        res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
+        self.pools[spUUID] = pool
+        return res
 
     def public_disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False, options = None):
         """
@@ -600,7 +583,7 @@ class HSM:
 
     def _disconnectPool(self, pool, hostID, scsiKey, remove):
         res = pool.disconnect(hostID, scsiKey, remove=remove)
-        self.setPool(pool.spUUID, None) #Removes pool from pool dict
+        del self.pools[pool.spUUID]
         return res
 
 
