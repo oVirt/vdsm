@@ -1171,10 +1171,6 @@ class LibvirtVm(vm.Vm):
 
         return {'status': doneCode}
 
-    def _getQemuError(self, e):
-        """ Obtain a string describing why this VM has died """
-        return str(e)
-
     def _getUnderlyingDriveInfo(self):
         """Obtain block devices info from libvirt."""
 

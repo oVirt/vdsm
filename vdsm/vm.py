@@ -6,7 +6,7 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-import os, traceback, signal
+import os, traceback
 import time
 import threading, logging
 import constants
@@ -268,13 +268,11 @@ class Vm(object):
         self.destroyed = False
         self._recoveryFile = constants.P_VDSM_RUN + str(
                                     self.conf['vmId']) + '.recovery'
-        self.dumpFile = constants.P_VDSM_RUN + self.conf['vmId'] + ".stdio.dump"
         self.user_destroy = False
         self._monitorResponse = 0
         self.conf['clientIp'] = ''
         self.memCommitted = 0
         self._creationThread = threading.Thread(target=self._startUnderlyingVm)
-        self.pidfile = constants.P_VDSM_RUN + self.conf['vmId'] + '.pid'
         if 'migrationDest' in self.conf:
             self._lastStatus = 'Migration Destination'
         elif 'restoreState' in self.conf:
@@ -286,8 +284,6 @@ class Vm(object):
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._guestSocektFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
                                 '.guest.socket'
-        self._monitorSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
-                                        '.monitor.socket'
         self._drives = []
         self._incomingMigrationFinished = threading.Event()
         self.id = self.conf['vmId']
@@ -386,15 +382,6 @@ class Vm(object):
     def _incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
 
-    def _getQemuError(self, e):
-        try:
-            for line in file(self.dumpFile).readlines():
-                if line.startswith('qemu: could not open disk image '):
-                    return line
-        except:
-            self.log.error(traceback.format_exc())
-        return 'Unexpected Create Error'
-
     def _prepareVolumePath(self, drive):
         volPath = ''
         if not self.destroyed:
@@ -472,14 +459,6 @@ class Vm(object):
         if load is None:
             load = len(self.cif.vmContainer)
         return base * (20 + load) / 20
-
-    def _getPid(self):
-        pid = '0'
-        try:
-            pid = file(self.pidfile).read().strip()
-        except:
-            pass
-        return pid
 
     def saveState (self):
         if self.destroyed:
@@ -632,16 +611,6 @@ class Vm(object):
             timeout = timeout * mem / 2048
         return timeout
 
-    def waitForPid(self):
-        """Wait until qemu pid is known, or Vm is Down"""
-        while True:
-            if self._lastStatus == ('Down', 'Powering down'):
-                self.log.debug('Destination VM creation failed before acquiring pid.')
-                return False
-            if self._getPid() != '0':
-                return True
-            time.sleep(1)
-
     def _acquireCpuLockWithTimeout(self):
         timeout = self._loadCorrectedTimeout(
                                 config.getint('vars', 'vm_command_timeout'))
@@ -683,15 +652,6 @@ class Vm(object):
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
-
-    def _killIfMatch(self, pid, sig=signal.SIGTERM):
-        try:
-            cmd = file('/proc/' + pid + '/cmdline').read()
-            if self._monitorSocketFile in cmd:
-                self.log.info("Killing non-responsive desktop")
-                os.kill(int(pid), sig)
-        except:
-            pass
 
     def shutdown(self, timeout, message):
         try:
@@ -760,11 +720,8 @@ class Vm(object):
             self.guestAgent.stop()
         except:
             pass
-        utils.rmFile(self.pidfile)
         utils.rmFile(self._guestSocektFile)
-        utils.rmFile(self._monitorSocketFile)
         utils.rmFile(self._recoveryFile)
-        utils.rmFile(self.dumpFile)
 
     def setDownStatus (self, code, reason):
         try:
