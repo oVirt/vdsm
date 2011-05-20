@@ -46,7 +46,7 @@ def __eventCallback(conn, dom, *args):
     except:
         cif.log.error(traceback.format_exc())
 
-__connection = None
+__connections = {}
 def get(cif=None):
     """Return current connection to libvirt or open a new one.
 
@@ -85,20 +85,21 @@ def get(cif=None):
 
     auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE], req, None]
 
-    global __connection
-    if not __connection:
+    conn = __connections.get(id(cif))
+    if not conn:
         libvirtev.virEventLoopPureStart()
-        __connection = libvirt.openAuth('qemu:///system', auth, 0)
+        conn = libvirt.openAuth('qemu:///system', auth, 0)
+        __connections[id(cif)] = conn
         if cif != None:
             for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
                        libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
                        libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
                        libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
                        libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS):
-                __connection.domainEventRegisterAny(None, ev, __eventCallback, (cif, ev))
+                conn.domainEventRegisterAny(None, ev, __eventCallback, (cif, ev))
             for name in dir(libvirt.virConnect):
-                method = getattr(__connection, name)
+                method = getattr(conn, name)
                 if callable(method) and name[0] != '_':
-                    setattr(__connection, name, wrapMethod(method))
+                    setattr(conn, name, wrapMethod(method))
 
-    return __connection
+    return conn
