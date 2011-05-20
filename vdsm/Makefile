@@ -5,7 +5,8 @@
 # (at your option) any later version.  See the files README and
 # LICENSE_GPL_v2 which accompany this distribution.
 #
-FILES=define.py utils.py constants.py vm.py libvirtvm.py libvirtev.py vdsm clientIF.py \
+FILES=define.py utils.py constants.py vm.py libvirtvm.py libvirtev.py vdsm \
+      caps.py clientIF.py \
       hooks.py hooks/hooking.py \
       guestIF.py dsaversion.py logCollector.sh \
       configNetwork.py addNetwork delNetwork \

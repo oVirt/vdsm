@@ -21,6 +21,7 @@ import libvirtev
 import libvirtconnection
 from config import config
 import hooks
+import caps
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 _VHOST_MAP = {'true': 'vhost', 'false': 'qemu'}
@@ -821,11 +822,11 @@ class LibvirtVm(vm.Vm):
         domxml = _DomXML(self.conf, self.log)
         domxml.appendOs()
 
-        osd = self.cif.machineCapabilities.get('operatingSystem', {})
+        osd = caps.osversion()
         domxml.appendSysinfo(
             osname=osd.get('name', ''),
             osversion=osd.get('version', '') + '-' + osd.get('release', ''),
-            hostUUID=self.cif.machineCapabilities.get('uuid', ''))
+            hostUUID=utils.getHostUUID() )
 
         domxml.appendClock()
         domxml.appendFeatures()

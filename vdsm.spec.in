@@ -254,6 +254,7 @@ machines without running real guests.
 %dir %{_datadir}/%{vdsm_name}/storage
 %{_datadir}/%{vdsm_name}/define.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
+%{_datadir}/%{vdsm_name}/caps.py*
 %{_datadir}/%{vdsm_name}/utils.py*
 %{_datadir}/%{vdsm_name}/constants.py*
 %{_datadir}/%{vdsm_name}/vm.py*

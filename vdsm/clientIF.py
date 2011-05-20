@@ -19,17 +19,16 @@ import storage.hba
 from config import config
 import ksm
 import netinfo
-import hooks
 import SecureXMLRPCServer
-import dsaversion
 from define import doneCode, errCode, Kbytes, Mbytes
 import libvirt
+import libvirtconnection
 import vm
 import libvirtvm
-import libvirtconnection
 import constants
 import utils
 import configNetwork
+import caps
 
 import supervdsm
 
@@ -72,11 +71,6 @@ def wrapApiMethod(f):
     wrapper.__doc__ = f.__doc__
     return wrapper
 
-class OSName:
-    unknown = 'unknown'
-    ovirt = 'RHEV Hypervisor'
-    rhel = 'RHEL'
-
 class clientIF:
     """
     The client interface of vdsm.
@@ -106,9 +100,8 @@ class clientIF:
             self._hostStats = utils.HostStatsThread(cif=self, log=log, ifids=ifids,
                                                 ifrates=ifrates)
             self._hostStats.start()
-            self.machineCapabilities = self._getCapabilities()
-            cpuCores = int(self.machineCapabilities['cpuCores'])
-            mog = min(config.getint('vars', 'max_outgoing_migrations'), cpuCores)
+            mog = min(config.getint('vars', 'max_outgoing_migrations'),
+                      caps.CpuInfo().cores())
             vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
 
             self.lastRemoteAccess = 0
@@ -706,191 +699,19 @@ class clientIF:
                 statsList.append(response)
         return {'status': doneCode, 'statsList': statsList}
 
-    def _getCapabilities(self):
-        """
-        Collect host capabilities.
-        """
-        def _getIfaceByIP(addr):
-            import struct, socket
-            remote = struct.unpack('I', socket.inet_aton(addr))[0]
-            for line in file('/proc/net/route').readlines()[1:]:
-                iface, dest, gateway, flags, refcnt, use, metric, \
-                        mask, mtu, window, irtt = line.split()
-                dest = int(dest, 16)
-                mask = int(mask, 16)
-                if remote & mask == dest & mask:
-                    return iface
-            return '' # should never get here w/ default gw
-        def osversion(osname):
-            version = release = None
-            try:
-                if osname == OSName.ovirt:
-                    if os.path.exists('/etc/rhev-hypervisor-release'):
-                        for line in file('/etc/default/version').readlines():
-                            if line.startswith('VERSION='):
-                                version = line[len('VERSION='):].strip()
-                            elif line.startswith('RELEASE='):
-                                release = line[len('RELEASE='):].strip()
-                else:
-                    p = subprocess.Popen([constants.EXT_RPM, '-q', '--qf',
-                        '%{VERSION} %{RELEASE}\n', 'redhat-release'],
-                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE, close_fds=True)
-                    out, err = p.communicate()
-                    if p.returncode == 0:
-                        version, release = out.split()
-                    else:
-                        p = subprocess.Popen([constants.EXT_RPM, '-q', '--qf',
-                            '%{VERSION} %{RELEASE}\n', 'redhat-release-server'],
-                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, close_fds=True)
-                        out, err = p.communicate()
-                        if p.returncode == 0:
-                            version, release = out.split()
-            except:
-                self.log.debug(traceback.format_exc())
-            return version, release
-        def getos():
-            try:
-                for osname in (OSName.ovirt, OSName.rhel):
-                    v, r = osversion(osname)
-                    if v is not None and r is not None:
-                        return {'name': osname, 'version': v, 'release': r}
-            except:
-                self.log.error(traceback.format_exc())
-            return {'name': OSName.unknown, 'version': '', 'release': ''}
-        def getKeyPackages():
-            def kernelDict():
-                try:
-                    ver, rel = file('/proc/sys/kernel/osrelease').read(). \
-                                        strip().split('-', 1)
-                except:
-                    ver, rel = '0', '0'
-                try:
-                    t = file('/proc/sys/kernel/version').read().strip().split(None, 2)[2]
-                    t = time.mktime(time.strptime(t, '%a %b %d %H:%M:%S %Z %Y'))
-                except:
-                    t = '0'
-                return dict(version=ver, release=rel, buildtime=t)
-
-            KEY_PACKAGES = ['qemu-kvm', 'qemu-img',
-                            'vdsm', 'spice-server', 'libvirt']
-            pkgs = {'kernel': kernelDict()}
-            try:
-                for pkg in KEY_PACKAGES:
-                    rc, out, err = utils.execCmd([constants.EXT_RPM, '-q', '--qf',
-                          '%{NAME}\t%{VERSION}\t%{RELEASE}\t%{BUILDTIME}\n', pkg], sudo=False)
-                    if rc: continue
-                    line = out[-1]
-                    n, v, r, t = line.split()
-                    pkgs[pkg] = dict(version=v, release=r, buildtime=t)
-            except:
-                self.log.error(traceback.format_exc())
-            return pkgs
-        def getEmulatedMachines():
-            from xml.dom import minidom
-
-            c = libvirtconnection.get(self)
-            caps = minidom.parseString(c.getCapabilities())
-            return [ m.firstChild.toxml() for m
-                     in caps.getElementsByTagName('guest')[0]
-                            .getElementsByTagName('machine') ]
-        def getIscsiIniName():
-            try:
-                for line in file('/etc/iscsi/initiatorname.iscsi').readlines():
-                    k, v = line.split('=', 1)
-                    if k.strip() == 'InitiatorName':
-                        return v.strip()
-            except:
-                pass
-            return ''
-        def getCompatibleCpuModels():
-            import libvirt
-            from xml.dom import minidom
-
-            c = libvirtconnection.get(self)
-            cpu_map = minidom.parseString(
-                            file('/usr/share/libvirt/cpu_map.xml').read())
-            allModels = [ m.getAttribute('name') for m
-                  in cpu_map.getElementsByTagName('arch')[0].childNodes
-                  if m.nodeName == 'model' ]
-            def compatible(model):
-                xml = '<cpu match="minimum"><model>%s</model></cpu>' % model
-                return c.compareCPU(xml, 0) in (
-                                        libvirt.VIR_CPU_COMPARE_SUPERSET,
-                                        libvirt.VIR_CPU_COMPARE_IDENTICAL)
-            return [ 'model_' + model for model
-                     in allModels if compatible(model) ]
-
-        caps = {'kvmEnabled': 'false',
-                'management_ip': self.serverIP}
-        caps.update(dsaversion.version_info)
-        caps['kvmEnabled'] = \
-                str(config.getboolean('vars', 'fake_kvm_support') or
-                    os.path.exists('/dev/kvm')).lower()
-
-        infoDict = {}
-        caps['cpuCores'] = 0
-        cpuSockets = set()
-
-        try:
-            cpuInfo = file('/proc/cpuinfo').readlines()
-            memInfo = file('/proc/meminfo').readlines()
-        except:
-            self.log.error('Error retrieving machine info')
-        for entry in cpuInfo + memInfo:
-            if ':' in entry:
-                param, val = entry.split(':')
-                param = param.strip()
-                val = val.strip()
-                infoDict[param] = val
-                if param == 'processor':
-                    caps['cpuCores'] += 1
-                if param == 'physical id':
-                    cpuSockets.add(val)
-        caps['cpuSpeed'] = infoDict['cpu MHz']
-        if config.getboolean('vars', 'fake_kvm_support'):
-            caps['cpuModel'] = 'Intel(Fake) CPU'
-            flags = set(infoDict['flags'].split()).union(['vmx', 'sse2', 'nx'])
-            caps['cpuFlags'] = ','.join(flags) + 'model_486,model_pentium,' + \
-                'model_pentium2,model_pentium3,model_pentiumpro,model_qemu32,' \
-                'model_coreduo,model_core2duo,model_n270,model_Conroe,' \
-                'model_Penryn,model_Nehalem,model_Opteron_G1'
-        else:
-            caps['cpuModel'] = infoDict['model name']
-            caps['cpuFlags'] = infoDict['flags'].strip().replace(' ',',') + \
-                ',' + ','.join(getCompatibleCpuModels())
-        caps['vmTypes'] = ['kvm', 'qemu']
-        caps['cpuSockets'] = str(len(cpuSockets))
-        if 'MemTotal' in infoDict:
-            mem = str(int(infoDict['MemTotal'].replace('kB','')) / 1024)
-            caps['memSize'] = mem
-        else:
-            self.log.error('Could not retrieve memory information')
-        caps['reservedMem'] = str(
-            config.getint('vars', 'host_mem_reserve') +
-            config.getint('vars', 'extra_mem_reserve') )
-        caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
-        if 'server' in dir(self) and 'lastClient' in dir(self.server):
-            caps['lastClient'] = self.server.lastClient
-            caps['lastClientIface'] = _getIfaceByIP(self.server.lastClient)
-        caps['operatingSystem'] = getos()
-        caps['uuid'] = utils.getHostUUID()
-        caps['packages2'] = getKeyPackages()
-        caps['emulatedMachines'] = getEmulatedMachines()
-        caps['ISCSIInitiatorName'] = getIscsiIniName()
-        caps['HBAInventory'] = storage.hba.HBAInventory()
-        caps.update(netinfo.get())
-
-        caps['hooks'] = hooks.installed()
-        return caps
-
     def getVdsCapabilities(self):
         """
         Report host capabilities.
         """
-        self.machineCapabilities = self._getCapabilities()
-        return {'status': doneCode, 'info': self.machineCapabilities}
+        c = caps.get()
+
+        c['management_ip'] = self.serverIP
+
+        if hasattr(self, 'server') and hasattr(self.server, 'lastClient'):
+            c['lastClient'] = self.server.lastClient
+            c['lastClientIface'] = caps._getIfaceByIP(self.server.lastClient)
+
+        return {'status': doneCode, 'info': c}
 
     def getVdsStats(self):
         """
@@ -1122,7 +943,7 @@ class clientIF:
                 for entry in entries:
                     if entry.getAttribute("name") == "product":
                         prod = entry.firstChild.data
-                        if prod == OSName.rhel or prod == OSName.ovirt:
+                        if prod == caps.OSName.RHEL or prod == caps.OSName.OVIRT:
                             return True
         return False
 
