@@ -1224,6 +1224,34 @@ class OperationMutex(object):
                 self._lock.release()
                 self._cond.notifyAll()
 
+def killall(signum, name, group=False):
+    exception = None
+    knownPgs = set()
+    pidList = pgrep(name)
+    if len(pidList):
+        raise OSError(errno.ESRCH, "Could not find processes named `%s`" % name)
+
+    for pid in pidList:
+        try:
+            if group:
+                pgid = os.getpgid(pid)
+                if pgid in knownPgs:
+                    # Signal already sent, ignore
+                    continue
+                knownPgs.add(pgid)
+
+                os.killpg(pgid)
+            else:
+                os.kill(pid, signum)
+        except OSError, e:
+            if e.errno == errno.ESRCH:
+                # process died in the interim, ignore
+                continue
+            exception = e
+
+    if exception is not None:
+        raise exception
+
 
 def itmap(func, iterable):
     """

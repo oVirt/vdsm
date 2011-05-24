@@ -30,6 +30,8 @@ import threading
 import types
 from config import config
 from functools import partial
+import errno
+import signal
 
 import time
 import inspect
@@ -282,29 +284,28 @@ class SPM:
         """
         Releases all locks held by the machine.
         """
+        # We are initializing the vdsm and should not be holding ANY lock
+        # so we make sure no locks are held by the machine (e.g. because of previous vdsm runs)
+        # killall -INT will trigger lock release (proper shutdown)
         try:
-            # We are initializing the vdsm and should not be holding ANY lock
-            # so we make sure no locks are held by the machine (e.g. because of previous vdsm runs)
-            # killall -INT will trigger lock release (proper shutdown)
-            returnCode, out, err = misc.execCmd([constants.EXT_KILLALL, "-g", "-USR1", cls.lockCmd], sudo=False)
-            # killall returns 1 if there is no process to kill
-            if returnCode == 1:
+            misc.killall(cls.lockCmd, signal.SIGUSR1, group=True)
+        except OSError, e:
+            if e.errno == errno.ESRCH:
                 return
+            raise
 
-            cls.log.warning("SPM: found lease locks, releasing")
-            stopped = False
-            for i in range(10):
-                time.sleep(1)
-                (returnCode, out, err) = misc.execCmd([constants.EXT_KILLALL, "-0", cls.lockCmd], sudo=False)
-                if returnCode == 1:
-                    stopped = True
+        cls.log.warning("Found lease locks, releasing")
+        for i in range(10):
+            time.sleep(1)
+
+            try:
+                misc.killall(cls.lockCmd, 0)
+            except OSError, e:
+                if e.errno == errno.ESRCH:
                     return
-            if not stopped:
-                cls.log.warning("Could not release locks, killing lock processes")
-                misc.execCmd([constants.EXT_KILLALL, "-g", "-9", cls.lockCmd], sudo=False)
 
-        except Exception:
-            cls.log.error("Unexpected error", exc_info=True)
+        cls.log.warning("Could not release locks, killing lock processes")
+        misc.killall(cls.lockCmd, signal.SIGKILL, group=True)
 
 
     def __cleanupSPM(self, pool):
