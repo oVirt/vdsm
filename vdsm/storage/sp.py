@@ -536,10 +536,10 @@ class StoragePool:
         for dir in [newmsd.getVMsDir(), newmsd.getTasksDir()]:
             fileUtils.cleanupdir(dir)
 
-        cmd = ["%s cf - --exclude=lost+found -C %s . | %s xf - -C %s" % (constants.EXT_TAR, src, constants.EXT_TAR, dst)]
-        rc = misc.execCmd(cmd, sudo=False, shell=True)[0]
-
-        if rc:
+        try:
+            fileUtils.tarCopy(src, dst, exclude=("./lost+found",))
+        except fileUtils.TarCopyFailed:
+            self.log.error("tarCopy failed", exc_info = True)
             # Failed to copy the master data
             try:
                 newmsd.unmountMaster()

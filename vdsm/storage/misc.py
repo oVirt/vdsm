@@ -155,7 +155,7 @@ execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'), ignoreSo
 
 @logskip("Storage.Misc.excCmd")
 def execCmd(command, sudo=True, cwd=None, infile=None, outfile=None,
-            shell=False, data=None, raw=False, logErr=True, printable=None,
+            data=None, raw=False, logErr=True, printable=None,
             env=None, sync=True):
     """
     Executes an external command, optionally via sudo.
@@ -178,7 +178,7 @@ def execCmd(command, sudo=True, cwd=None, infile=None, outfile=None,
         outfile = subprocess.PIPE
 
     with disabledGcBlock:
-        p = subprocess.Popen(command, shell=shell, close_fds=True, cwd=cwd,
+        p = subprocess.Popen(command, close_fds=True, cwd=cwd,
                        stdin=infile, stdout=outfile, stderr=subprocess.PIPE,
                        env=env)
     p = AsyncProc(p)
@@ -225,11 +225,11 @@ def getProcCtime(pid):
     return str(ctime)
 
 def watchCmd(command, stop, idle, sudo=True, cwd=None, infile=None, outfile=None,
-            shell=False, data=None, recoveryCallback=None):
+            data=None, recoveryCallback=None):
     """
     Executes an external command, optionally via sudo with stop abilities.
     """
-    proc = execCmd(command, sudo=sudo, cwd=cwd, infile=infile, outfile=outfile, shell=shell, data=data, sync=False)
+    proc = execCmd(command, sudo=sudo, cwd=cwd, infile=infile, outfile=outfile, data=data, sync=False)
     if recoveryCallback:
         recoveryCallback(proc)
 

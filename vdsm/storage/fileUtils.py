@@ -30,6 +30,7 @@ from StringIO import StringIO
 from contextlib import closing
 import ctypes
 from contextlib import contextmanager
+import subprocess
 
 import shutil
 import constants
@@ -52,6 +53,8 @@ log = logging.getLogger('fileUtils')
 
 PAGESIZE = libc.getpagesize()
 CharPointer = ctypes.POINTER(ctypes.c_char)
+
+class TarCopyFailed(RuntimeError): pass
 
 def getMounts():
     """
@@ -92,6 +95,19 @@ def mount(resource, mountPoint, mountType):
 
     rc = misc.execCmd(cmd)[0]
     return rc
+
+def tarCopy(src, dst, exclude=[]):
+    excludeArgs = ["--exclude=%s" % path for path in exclude]
+
+    tsrc = subprocess.Popen([constants.EXT_TAR, "cf", "-"] + excludeArgs + ["-C", src, "."], stdout=subprocess.PIPE)
+    tdst = subprocess.Popen([constants.EXT_TAR, "xf", "-", "-C", dst], stdin=tsrc.stdout, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    tsrc.stdout.close()
+    out, err = tdst.communicate()
+    tsrc.wait()
+
+    if tdst.returncode != 0 or tsrc.returncode != 0:
+        raise TarCopyFailed(tsrc.returncode, tdst.returncode, out, err)
+
 
 def umount(resource=None, mountPoint=None, mountType=None, force=True, lazy=False):
     """
