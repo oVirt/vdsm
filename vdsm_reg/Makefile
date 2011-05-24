@@ -18,6 +18,7 @@ install: fixpaths
 	mkdir -p $(PREFIX)$(ETC)/ovirt-config-setup.d/
 	mkdir -p $(PREFIX)$(ETC)/ovirt-config-boot.d/
 	mkdir -p $(PREFIX)$(LOGDIR)
+	mkdir -p $(PREFIX)$(OVIRT_CONFIG_SETUP)
 	
 	cp -p vdsm-reg $(PREFIX)$(ETC)/init.d
 	cp -p {logger.conf,vdsm-reg.conf} $(PREFIX)$(CONFDIR)
@@ -32,3 +33,4 @@ install: fixpaths
 	cp -p vdsm-reg-logrotate $(PREFIX)$(ETC)/cron.hourly
 	mkdir -p $(PREFIX)$(MANDIR)/man8
 	cp -p vdsm-reg.8 $(PREFIX)$(MANDIR)/man8/
+	cp -p rhevm.py $(PREFIX)$(OVIRT_CONFIG_SETUP)

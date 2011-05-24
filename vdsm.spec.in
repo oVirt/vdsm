@@ -94,6 +94,7 @@ make -C vdsm_reg \
     VDSMREGDIR=%{_datadir}/%{vdsm_reg} \
     TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
     VDSMRUNDIR=%{_localstatedir}/run/%{vdsm_name} \
+    OVIRT_CONFIG_SETUP=%{py_sitedir}/ovirt_config_setup \
     install
 
 #vdsm-bootstrap
@@ -422,6 +423,7 @@ machines without running real guests.
 %{_datadir}/%{vdsm_reg}/config.py*
 %{_datadir}/%{vdsm_reg}/deployUtil.py*
 %{_datadir}/%{vdsm_reg}/createDaemon.py*
+%{py_sitedir}/ovirt_config_setup/rhevm.py*
 %attr (755,root,root) %{_datadir}/%{vdsm_reg}/config-rhev-manager
 %attr (755,root,root) %{_datadir}/%{vdsm_reg}/save-config
 %{_sysconfdir}/ovirt-config-setup.d
