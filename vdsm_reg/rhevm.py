@@ -18,11 +18,9 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 import os
-import sys
-from ovirtnode.ovirtfunctions import *
-from subprocess import Popen, PIPE, STDOUT
-from snack import *
-import _snack
+from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
+                                     is_valid_port, PluginBase, log
+from snack import ButtonChoiceWindow, Entry, Grid, Label
 
 VDSM_CONFIG = "/etc/vdsm/vdsm.conf"
 VDSM_REG_CONFIG = "/etc/vdsm-reg/vdsm-reg.conf"
@@ -54,7 +52,7 @@ def write_vdsm_config(rhevm_host, netconsole_host):
         log("RHEV agent configuration files already exist.")
     try:
         rhevm_host, rhevm_port = rhevm_host.split(":")
-    except ValueError, e:
+    except ValueError:
         rhevm_port = 443
 
     ret = os.system("ping -c 1 " + rhevm_host + " &> /dev/null")
@@ -74,7 +72,7 @@ def write_vdsm_config(rhevm_host, netconsole_host):
 
     try:
         netconsole_host, netconsole_port = netconsole_host.split(":")
-    except ValueError, e:
+    except ValueError:
         netconsole_port = 25825
 
     if netconsole_host != "":
