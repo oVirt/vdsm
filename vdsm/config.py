@@ -146,7 +146,7 @@ config.set('irs', 'gc_blocker_force_collect_interval', '60')
 
 config.set('irs', 'maximum_domains_in_pool', '100')
 # Process Pool Configuration
-config.set('irs', 'process_pool_size', '10')
+config.set('irs', 'process_pool_size', '20')
 config.set('irs', 'process_pool_timeout', '60')
 config.set('irs', 'process_pool_grace_period', '2')
 

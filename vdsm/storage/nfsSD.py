@@ -12,15 +12,15 @@ import fnmatch
 import re
 
 import sd
+from sd import processPoolDict
 import fileSD
 import fileUtils
 import storage_exception as se
-import outOfProcess as oop
 
 class NfsStorageDomain(fileSD.FileStorageDomain):
 
     @classmethod
-    def _preCreateValidation(cls, domPath, typeSpecificArg, version):
+    def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg, version):
         # Some trivial resource validation
         if ":" not in typeSpecificArg:
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
@@ -31,11 +31,11 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         if not fileUtils.isMounted(mountPoint=domPath, mountType=fileUtils.FSTYPE_NFS):
             raise se.StorageDomainFSNotMounted(typeSpecificArg)
 
-        oop.fileUtils.validateAccess(domPath)
+        processPoolDict[sdUUID].fileUtils.validateAccess(domPath)
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)
-        if len(oop.glob.glob(mdpat)) > 0:
+        if len(processPoolDict[sdUUID].glob.glob(mdpat)) > 0:
             raise se.StorageDomainNotEmpty(typeSpecificArg)
 
     @classmethod
@@ -56,7 +56,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         mntPoint = os.path.join(cls.storage_repository,
             sd.DOMAIN_MNT_POINT, mntPath)
 
-        cls._preCreateValidation(mntPoint, remotePath, version)
+        cls._preCreateValidation(sdUUID, mntPoint, remotePath, version)
 
         domainDir = os.path.join(mntPoint, sdUUID)
         cls._prepareMetadata(domainDir, sdUUID, domainName, domClass,
@@ -64,12 +64,12 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
         # create domain images folder
         imagesDir = os.path.join(domainDir, sd.DOMAIN_IMAGES)
-        oop.fileUtils.createdir(imagesDir)
+        processPoolDict[sdUUID].fileUtils.createdir(imagesDir)
 
         # create special imageUUID for ISO/Floppy volumes
         if domClass is sd.ISO_DOMAIN:
             isoDir = os.path.join(imagesDir, sd.ISO_IMAGE_UUID)
-            oop.fileUtils.createdir(isoDir)
+            processPoolDict[sdUUID].fileUtils.createdir(isoDir)
 
         fsd = NfsStorageDomain(os.path.join(mntPoint, sdUUID))
         fsd.initSPMlease()
@@ -81,7 +81,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         Returns a list of all files in the domain filtered according to extension.
         """
         basedir = self.getIsoDomainImagesDir()
-        filesList = oop.simpleWalk(basedir)
+        filesList = self.oop.simpleWalk(basedir)
 
         if pattern != '*':
             if caseSensitive:
@@ -94,11 +94,11 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         filesDict = {}
         filePrefixLen = len(basedir)+1
         for entry in filesList:
-            st = oop.os.stat(entry)
+            st = self.oop.os.stat(entry)
             stats = {'size':str(st.st_size), 'ctime':str(st.st_ctime)}
 
             try:
-                oop.fileUtils.validateQemuReadable(entry)
+                self.oop.fileUtils.validateQemuReadable(entry)
                 stats['status'] = 0  # Status OK
             except se.StorageServerAccessPermissionError:
                 stats['status'] = se.StorageServerAccessPermissionError.code

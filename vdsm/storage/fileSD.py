@@ -13,6 +13,7 @@ import logging
 import glob
 
 import sd
+from sd import processPoolDict
 import fileUtils
 import storage_exception as se
 import fileVolume
@@ -29,6 +30,11 @@ FILE_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
 # TBD: Do we really need this key?
 FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
 
+def getDomUuidFromMetafilePath(metafile):
+    # Metafile path has pattern:
+    #  /rhev/data-center/mnt/export-path/sdUUID/dom_md/metadata
+    return metafile.split('/')[5]
+
 class FileMetadataRW(object):
     """
     FileSDMetadata implements metadata extractor/committer over a simple file
@@ -37,24 +43,25 @@ class FileMetadataRW(object):
     def __init__(self, metafile):
         # FileSDMetadata is kept in the file
         self._metafile = metafile
+        self._sdUUID = getDomUuidFromMetafilePath(metafile)
 
     def readlines(self):
-        if not oop.fileUtils.pathExists(self._metafile):
+        if not processPoolDict[self._sdUUID].fileUtils.pathExists(self._metafile):
                 return []
-        return misc.stripNewLines(oop.directReadLines(self._metafile))
+        return misc.stripNewLines(processPoolDict[self._sdUUID].directReadLines(self._metafile))
 
     def writelines(self, metadata):
         metadata = [i + '\n' for i in metadata]
         tmpFilePath = self._metafile + ".new"
         try:
-            oop.writeLines(tmpFilePath, metadata)
+            processPoolDict[self._sdUUID].writeLines(tmpFilePath, metadata)
         except IOError, e:
             if e.errno != errno.ESTALE:
                 raise
-            oop.writeLines(tmpFilePath, metadata)
-        oop.os.rename(tmpFilePath, self._metafile)
+            processPoolDict[self._sdUUID].writeLines(tmpFilePath, metadata)
+        processPoolDict[self._sdUUID].os.rename(tmpFilePath, self._metafile)
 
-FileSDMetadata = lambda metafile : DictValidator(PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
+FileSDMetadata = lambda metafile: DictValidator(PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
 
 def createmetafile(path, size_str):
     try:
@@ -78,7 +85,7 @@ class FileStorageDomain(sd.StorageDomain):
         domaindir = os.path.join(self.mountpoint, sdUUID)
         sd.StorageDomain.__init__(self, sdUUID, domaindir, metadata)
 
-        if not oop.fileUtils.pathExists(self.metafile):
+        if not self.oop.fileUtils.pathExists(self.metafile):
             raise se.StorageDomainMetadataNotFound(sdUUID, self.metafile)
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
@@ -90,7 +97,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         # create domain metadata folder
         metadataDir = os.path.join(domPath, sd.DOMAIN_META_DATA)
-        oop.fileUtils.createdir(metadataDir, 0775)
+        processPoolDict[sdUUID].fileUtils.createdir(metadataDir, 0775)
 
         createmetafile(os.path.join(metadataDir, sd.LEASES), sd.LEASES_SIZE)
         createmetafile(os.path.join(metadataDir, sd.IDS), sd.IDS_SIZE)
@@ -167,7 +174,7 @@ class FileStorageDomain(sd.StorageDomain):
         return True
 
     def validateMasterMount(self):
-         return oop.fileUtils.pathExists(self.getMasterDir())
+         return self.oop.fileUtils.pathExists(self.getMasterDir())
 
     def getAllImages(self):
         """
@@ -180,10 +187,10 @@ class FileStorageDomain(sd.StorageDomain):
                                self.getPools()[0],
                                self.sdUUID, sd.DOMAIN_IMAGES)
         pattern = os.path.join(pattern, constants.UUID_GLOB_PATTERN)
-        files = oop.glob.glob(pattern)
+        files = self.oop.glob.glob(pattern)
         imgList = []
         for i in files:
-            if oop.os.path.isdir(i):
+            if self.oop.os.path.isdir(i):
                 imgList.append(os.path.basename(i))
         return imgList
 
@@ -194,7 +201,7 @@ class FileStorageDomain(sd.StorageDomain):
         This removes all data from the storage domain.
         """
         cls.log.info("Formating domain %s", sdUUID)
-        oop.fileUtils.cleanupdir(domaindir, ignoreErrors = False)
+        processPoolDict[sdUUID].fileUtils.cleanupdir(domaindir, ignoreErrors = False)
         return True
 
     def getRemotePath(self):
@@ -224,7 +231,7 @@ class FileStorageDomain(sd.StorageDomain):
         ##self.log.info("sdUUID=%s", self.sdUUID)
         stats = {'disktotal':'', 'diskfree':''}
         try:
-            st = oop.os.statvfs(self.domaindir)
+            st = self.oop.os.statvfs(self.domaindir)
             stats['disktotal'] = str(st.f_frsize * st.f_blocks)
             stats['diskfree'] = str(st.f_frsize * st.f_bavail)
         except OSError, e:
@@ -239,8 +246,8 @@ class FileStorageDomain(sd.StorageDomain):
         Mount the master metadata file system. Should be called only by SPM.
         """
         masterdir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
-        if not oop.fileUtils.pathExists(masterdir):
-            oop.os.mkdir(masterdir, 0755)
+        if not self.oop.fileUtils.pathExists(masterdir):
+            self.oop.os.mkdir(masterdir, 0755)
 
     def unmountMaster(self):
         """
@@ -254,7 +261,7 @@ class FileStorageDomain(sd.StorageDomain):
         Run internal self test
         """
         try:
-            oop.os.statvfs(self.domaindir)
+            self.oop.os.statvfs(self.domaindir)
         except OSError, e:
             if e.errno == errno.ESTALE:
                 # In case it is "Stale NFS handle" we are taking preventive
@@ -262,7 +269,7 @@ class FileStorageDomain(sd.StorageDomain):
                 # that is the most intelligent thing we can do in this
                 # situation anyway.
                 self.log.debug("Unmounting stale file system %s", self.mountpoint)
-                oop.fileUtils.umount(mountPoint=self.mountpoint)
+                self.oop.fileUtils.umount(mountPoint=self.mountpoint)
                 raise se.FileStorageDomainStaleNFSHandle
             raise
 
@@ -276,10 +283,10 @@ class FileStorageDomain(sd.StorageDomain):
         """
         removedPattern = os.path.join(self.domaindir, sd.DOMAIN_IMAGES,
             image.REMOVED_IMAGE_PREFIX+'*')
-        removedImages = oop.glob.glob(removedPattern)
+        removedImages = self.oop.glob.glob(removedPattern)
         self.log.debug("Removing remnants of deleted images %s" % removedImages)
         for imageDir in removedImages:
-            oop.fileUtils.cleanupdir(imageDir)
+            self.oop.fileUtils.cleanupdir(imageDir)
 
 def scanDomains(pattern="*"):
     log = logging.getLogger("scanDomains")

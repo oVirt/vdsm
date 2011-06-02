@@ -50,11 +50,15 @@ def _writeLines(path, lines):
 writeLines = _globalPool.wrapFunction(_writeLines)
 
 class _ModuleWrapper(types.ModuleType):
-    def __init__(self, wrappedModule):
+    def __init__(self, wrappedModule, procPool=None):
         self._wrappedModule = wrappedModule
+        self._procPool = procPool
 
     def __getattr__(self, name):
-        return _globalPool.wrapFunction(getattr(self._wrappedModule, name))
+        if self._procPool:
+            return self._procPool.wrapFunction(getattr(self._wrappedModule, name))
+        else:
+            return _globalPool.wrapFunction(getattr(self._wrappedModule, name))
 
 glob = _ModuleWrapper(mod_glob)
 
@@ -62,3 +66,23 @@ os = _ModuleWrapper(mod_os)
 setattr(os, 'path', _ModuleWrapper(mod_os.path))
 
 fileUtils = _ModuleWrapper(mod_fileUtils)
+
+class OopWrapper(object):
+    def __init__(self, procPool):
+        self._processPool = procPool
+        self._registerFunctions()
+        self._registerModules()
+
+    def _registerFunctions(self):
+        self.simpleWalk = self._processPool.wrapFunction(_simpleWalk)
+        self.directReadLines = self._processPool.wrapFunction(_directReadLines)
+        self.directWriteLines = self._processPool.wrapFunction(_directWriteLines)
+        self.createSparseFile = self._processPool.wrapFunction(_createSparseFile)
+        self.readLines = self._processPool.wrapFunction(_readLines)
+        self.writeLines = self._processPool.wrapFunction(_writeLines)
+
+    def _registerModules(self):
+        self.glob = _ModuleWrapper(mod_glob, self._processPool)
+        self.fileUtils = _ModuleWrapper(mod_fileUtils, self._processPool)
+        self.os = _ModuleWrapper(mod_os, self._processPool)
+        setattr(self.os, 'path', _ModuleWrapper(mod_os.path, self._processPool))

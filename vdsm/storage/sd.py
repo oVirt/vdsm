@@ -22,6 +22,7 @@ import resourceManager as rm
 import constants
 import safelease
 import outOfProcess as oop
+from processPool import ProcessPool
 
 from config import config
 
@@ -217,6 +218,28 @@ SD_MD_FIELDS = {
         DMDK_LEASE_RETRIES : (lambda val : intOrDefault(DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES], val), intEncode),
         }
 
+
+class ProcessPoolDict(dict):
+    def __init__(self):
+        dict.__init__(self)
+        self._lock = threading.Lock()
+
+    def __getitem__(self, key):
+        try:
+            return dict.__getitem__(self, key)
+        except KeyError:
+            with self._lock:
+                if key not in self:
+                    self[key] = self._createProcessPool(key)
+                return dict.__getitem__(self, key)
+
+    def _createProcessPool(self, key):
+        _domainPool = ProcessPool(oop.MAX_HELPERS, oop.GRACE_PERIOD, oop.DEFAULT_TIMEOUT)
+        return oop.OopWrapper(_domainPool)
+
+# Dictionary for process pools per sdUUID
+processPoolDict = ProcessPoolDict()
+
 class StorageDomain:
     log = logging.getLogger("Storage.StorageDomain")
     storage_repository = config.get('irs', 'repository')
@@ -239,6 +262,10 @@ class StorageDomain:
     def __del__(self):
         if self.stat:
             threading.Thread(target=self.stat.stop).start()
+
+    @property
+    def oop(self):
+        return processPoolDict[self.sdUUID]
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version):
@@ -437,11 +464,11 @@ class StorageDomain:
             return stat
 
         pdir = self.getVMsDir()
-        if not oop.fileUtils.pathExists(pdir):
+        if not self.oop.fileUtils.pathExists(pdir):
             stat['valid'] = False
             return stat
         pdir = self.getTasksDir()
-        if not oop.fileUtils.pathExists(pdir):
+        if not self.oop.fileUtils.pathExists(pdir):
             stat['valid'] = False
             return stat
 

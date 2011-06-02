@@ -20,7 +20,7 @@ import storage_exception as se
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
 
     @classmethod
-    def _preCreateValidation(cls, domPath, typeSpecificArg, version):
+    def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg, version):
         # Some trivial resource validation
         if os.path.abspath(typeSpecificArg) != typeSpecificArg:
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
@@ -52,7 +52,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         mntPoint = os.path.join(cls.storage_repository,
             sd.DOMAIN_MNT_POINT, mntPath)
 
-        cls._preCreateValidation(mntPoint, remotePath, version)
+        cls._preCreateValidation(sdUUID, mntPoint, remotePath, version)
 
         domainDir = os.path.join(mntPoint, sdUUID)
         cls._prepareMetadata(domainDir, sdUUID, domainName, domClass,
