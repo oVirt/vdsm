@@ -834,16 +834,17 @@ class HSM:
         #getSharedLock(connectionsResource...)
         knowndevs = list(multipath.getMPDevNamesIter())
         devices = []
+        devSizes = []
 
         for dev in devlist:
             if dev in knowndevs:
                 devices.append(dev)
+                devSizes.append(multipath.getDeviceSize(devicemapper.getDmId(dev)))
             else:
                 raise se.InvalidPhysDev(dev)
 
         #Minimal size check
-        devCaps = multipath.getDeviceCapacities()
-        size = sum(devCaps[devicemapper.getDmId(dev)] for dev in devices)
+        size = sum(devSizes)
         if size < MINIMALVGSIZE:
            raise se.VolumeGroupSizeError("VG size must be more than %s MiB" % str(MINIMALVGSIZE / constants.MEGAB))
 

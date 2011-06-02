@@ -135,6 +135,20 @@ def deduceType(a, b):
     else:
         return DEV_MIXED
 
+def getDeviceBlockSizes(dev):
+    devName = os.path.basename(dev)
+    logical = int(file(os.path.join("/sys/block/", devName, "queue", "logical_block_size")).read())
+    physical = int(file(os.path.join("/sys/block/", devName, "queue", "physical_block_size")).read())
+    if logical != physical:
+        log.error("Different block sizes for %s! logical = %d, physical = %d", dev, logical, physical)
+    return (logical, physical)
+
+def getDeviceSize(dev):
+    devName = os.path.basename(dev)
+    bs, phyBs = getDeviceBlockSizes(devName)
+    size = bs * int(file(os.path.join("/sys/block/", devName, "size")).read())
+    return size
+
 def getDeviceCapacities():
     sizes = {}
     partFile = open("/proc/partitions", "r")
