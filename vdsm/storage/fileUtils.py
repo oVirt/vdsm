@@ -277,9 +277,11 @@ class DirectFile(object):
                 flags |= os.O_RDONLY
                 self._writable = False
         elif "w" in mode:
-            flags |= os.O_RDWR | os.O_TRUNC
-            if not "+" in mode:
-                flags |= os.O_CREAT
+            flags |= os.O_CREAT | os.O_TRUNC
+            if "+" in mode:
+                flags |= os.O_RDWR
+            else:
+                flags |= os.O_WRONLY
 
         elif "a" in mode:
             flags |= os.O_APPEND
