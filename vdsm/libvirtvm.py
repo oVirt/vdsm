@@ -58,10 +58,10 @@ class VmStatsThread(utils.AdvancedStatsThread):
             if vmDrive.blockDev and vmDrive.format == 'cow':
                 capacity, alloc, physical = \
                                         self._vm._dom.blockInfo(vmDrive.path, 0)
-                if vmDrive.apparentsize - alloc < self._vm._MIN_DISK_REMAIN:
-                    self._log.info('%s/%s apparent: %s, alloc: %s',
+                if physical - alloc < self._vm._MIN_DISK_REMAIN:
+                    self._log.info('%s/%s apparent: %s capacity: %s, alloc: %s phys: %s',
                                   vmDrive.domainID, vmDrive.volumeID,
-                                  vmDrive.apparentsize, alloc)
+                                  vmDrive.apparentsize, capacity, alloc, physical)
                     self._vm._onHighWrite(vmDrive.name, alloc)
 
     def _updateVolumes(self):
