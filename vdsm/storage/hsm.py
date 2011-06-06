@@ -80,7 +80,7 @@ class HSM:
             1. If check is *True* the metod will return false.
             2. If check is *False* the method will raise a :exc:`storage_exception.StoragePoolUnknown` exception.
         """
-        if spUUID not in cls.pools or not cls.pools[spUUID].isConnected():
+        if spUUID not in cls.pools:
             if not check:
                 raise se.StoragePoolUnknown(spUUID)
             return False
@@ -302,8 +302,7 @@ class HSM:
         """
         vars.task.setDefaultException(se.StoragePoolActionError())
 
-        poollist = [ pool for pool in self.pools if self.getPool(pool).isConnected() ]
-        return dict(poollist=poollist)
+        return dict(poollist = self.pools.keys())
 
 
     def public_spmStart(self, spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
@@ -530,9 +529,8 @@ class HSM:
 
         # TBD: To support multiple pool connection on single host,
         # we'll need to remove this validation
-        connectedPools = [ pool for pool in self.pools if self.getPool(pool).isConnected() ]
-        if len(connectedPools) and spUUID not in connectedPools:
-            raise se.CannotConnectMultiplePools(connectedPools[0])
+        if len(self.pools) and spUUID not in self.pools:
+            raise se.CannotConnectMultiplePools(str(self.pools.keys()))
 
         if self.validateConnectedPool(spUUID, check=True):
             vars.task.getSharedLock(STORAGE, spUUID)
@@ -658,8 +656,7 @@ class HSM:
         except se.StoragePoolUnknown:
             pool = sp.StoragePool(spUUID)
         else:
-            if pool.isConnected(connecting=True):
-                raise se.StoragePoolConnected(spUUID)
+            raise se.StoragePoolConnected(spUUID)
 
         self.validateSdUUID(masterDom)
         vars.task.getExclusiveLock(STORAGE, spUUID)
@@ -1245,10 +1242,9 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         for p in self.pools.values():
             # Avoid format if domain part of connected pool
-            if p.isConnected():
-                domDict = p.getDomains()
-                if sdUUID in domDict.keys():
-                    raise se.CannotFormatStorageDomainInConnectedPool(sdUUID)
+            domDict = p.getDomains()
+            if sdUUID in domDict.keys():
+                raise se.CannotFormatStorageDomainInConnectedPool(sdUUID)
 
         # For domains that attached to disconnected pool, format domain if 'autoDetach' flag set
         if not misc.parseBool(autoDetach):
@@ -1862,49 +1858,47 @@ class HSM:
         """
         result = {}
         for p in self.pools.values():
-            # Only connected pools are relevant
-            if p.isConnected():
-                # Find the master domains
-                try:
-                    master = p.getMasterDomain()
-                except se.StorageException:
-                    self.log.error("Unexpected error", exc_info=True)
-                    master = None
-                # Get the stats results
-                repo_stats = p.getRepoStats()
+            # Find the master domains
+            try:
+                master = p.getMasterDomain()
+            except se.StorageException:
+                self.log.error("Unexpected error", exc_info=True)
+                master = None
+            # Get the stats results
+            repo_stats = p.getRepoStats()
 
-                # Master requires extra post processing, since
-                # this is the only place where it makes sense that we are
-                # connected to the pool yet the master domain is not available,
-                # seeing as the purpose of this method is to monitor
-                # domains' health.
-                # There are situations in the life cycle of Storage Pool when
-                # its master domain is inactive (i.e. attached, but not active),
-                # while the pool itself is connected. In that case there would
-                # be no stats collected for it, so just skip extra validation.
-                # NB This is not a shallow copy !
-                master_stats = repo_stats.get(master.sdUUID)
-                if master and master_stats:
+            # Master requires extra post processing, since
+            # this is the only place where it makes sense that we are
+            # connected to the pool yet the master domain is not available,
+            # seeing as the purpose of this method is to monitor
+            # domains' health.
+            # There are situations in the life cycle of Storage Pool when
+            # its master domain is inactive (i.e. attached, but not active),
+            # while the pool itself is connected. In that case there would
+            # be no stats collected for it, so just skip extra validation.
+            # NB This is not a shallow copy !
+            master_stats = repo_stats.get(master.sdUUID)
+            if master and master_stats:
 
-                    # Master validation makes sense for SPM only
-                    # So we should analyze the 'getRepoStats' return value
-                    if self.spm.isActive(contend=False):
-                        # The SPM case
-                        valid = (master_stats['masterValidate']['mount'] and
-                            master_stats['masterValidate']['valid'])
-                    else:
-                        # The HSM case
-                        valid = not (master_stats['masterValidate']['mount'] and
-                            isinstance(master, blockSD.BlockStorageDomain))
+                # Master validation makes sense for SPM only
+                # So we should analyze the 'getRepoStats' return value
+                if self.spm.isActive(contend=False):
+                    # The SPM case
+                    valid = (master_stats['masterValidate']['mount'] and
+                        master_stats['masterValidate']['valid'])
+                else:
+                    # The HSM case
+                    valid = not (master_stats['masterValidate']['mount'] and
+                        isinstance(master, blockSD.BlockStorageDomain))
 
-                    if not valid:
-                        self.log.warning("repoStats detected invalid master:%s %s",
-                            master.sdUUID, master_stats)
-                        if int(master_stats['result']['code']) == 0:
-                            master_stats['result']['code'] = se.StorageDomainMasterError.code
+                if not valid:
+                    self.log.warning("repoStats detected invalid master:%s %s",
+                        master.sdUUID, master_stats)
+                    if int(master_stats['result']['code']) == 0:
+                        master_stats['result']['code'] = se.StorageDomainMasterError.code
 
-                # Copy the 'result' out
-                for d in repo_stats:
-                    result[d] = repo_stats[d]['result']
+            # Copy the 'result' out
+            for d in repo_stats:
+                result[d] = repo_stats[d]['result']
 
         return result

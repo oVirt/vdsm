@@ -204,12 +204,6 @@ class StoragePool:
     def releaseClusterLock(self):
         self.getMasterDomain().releaseClusterLock()
 
-    def isConnected(self, connecting = False):
-        if connecting and self.state == spConnecting:
-            return True
-        return self.state == spConnected
-
-
     def validateAttachedDomain(self, sdUUID):
         domList = self.getDomains()
         if sdUUID not in domList:
