@@ -221,23 +221,6 @@ class StoragePool:
             raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
 
 
-    def validatePoolMVerEqual(self, masterVersion):
-        """
-        Make sure the masterVersion matches that of the pool.
-
-        :param masterVersion: the master version you want to validate
-        :type masterVersion: int
-
-        :raises: :exc:`storage_exception.StoragePoolWrongMasterVersion`
-            exception if masterVersion doesn't follow the rules
-
-        """
-        if not int(masterVersion) == self.getMasterVersion():
-            # TODO : raise proper exception
-            d = self.getMasterDomain()
-            raise se.StoragePoolWrongMaster(self.spUUID, d.sdUUID)
-
-
     def validatePoolMVerHigher(self, masterVersion):
         """
         Make sure the masterVersion higher than that of the pool.
