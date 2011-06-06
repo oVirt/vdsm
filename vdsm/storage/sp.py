@@ -460,8 +460,9 @@ class StoragePool:
             file.close()
             if not (hostId and scsiKey and msdUUID and masterVersion):
                 os.unlink(self._poolFile)
-                return
-            return self.connect(hostId, scsiKey, msdUUID, masterVersion)
+                return False
+            if self.connect(hostId, scsiKey, msdUUID, masterVersion):
+                return True
         except:
             self.log.error("RECONNECT: Failed: %s", self.spUUID, exc_info=True)
             os.unlink(self._poolFile)

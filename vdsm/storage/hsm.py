@@ -413,8 +413,10 @@ class HSM:
     def _restorePool(self, spUUID):
         self.log.info("RESTOREPOOL: %s", spUUID)
         pool = sp.StoragePool(spUUID)
-        pool.reconnect()
-        self.pools[spUUID] = pool
+        if pool.reconnect():
+            self.pools[spUUID] = pool
+            return True
+        self.log.info("RESTOREPOOL: %s reconnect failed", spUUID)
 
 
     def public_createStoragePool(self, poolType, spUUID, poolName, masterDom, domList, masterVersion, lockPolicy=None, lockRenewalIntervalSec=None, leaseTimeSec=None, ioOpTimeoutSec=None, leaseRetries=None, options = None):
