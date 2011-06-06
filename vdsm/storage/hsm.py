@@ -546,7 +546,8 @@ class HSM:
 
         pool = sp.StoragePool(spUUID)
         res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
-        self.pools[spUUID] = pool
+        if res:
+            self.pools[spUUID] = pool
         return res
 
     def public_disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False, options = None):
