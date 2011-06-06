@@ -32,15 +32,6 @@ BLANK_POOL_UUID = '00000000-0000-0000-0000-000000000000'
 
 POOL_MASTER_DOMAIN = 'mastersd'
 
-spUninit = "uninitialized"
-spIniting = "initializing"
-spInit = "initialized"
-spConnected = "connected"
-spDisconnected = "disconnected"
-spConnecting = "Connecting"
-spDisconnecting = "Disconnecting"
-spError = "error"
-
 MAX_POOL_DESCRIPTION_SIZE = 50
 
 PMDK_DOMAINS = "POOL_DOMAINS"
@@ -161,7 +152,6 @@ class StoragePool:
         self._poolFile = os.path.join(self._poolsTmpDir, self.spUUID)
         self.hsmMailer = None
         self.spmMailer = None
-        self.state = spUninit
         self.masterDomain = None
         self.repostats = {}
 
@@ -258,14 +248,6 @@ class StoragePool:
         if msdUUID not in domList:
             raise se.InvalidParameterException("masterDomain", msdUUID)
 
-        if self.state == spIniting:
-            raise se.OperationInProgress("pool connect %s" % self.spUUID)
-
-        if self.state != spUninit:
-            raise se.StoragePoolAlreadyExists(poolName)
-
-        self.state = spIniting
-
         # Check the domains before pool creation
         for dom in domList:
             try:
@@ -328,13 +310,11 @@ class StoragePool:
                 except:
                     self.log.error("Cleanup failed due to an unexpected error", exc_info=True)
 
-                self.state = spUninit
                 raise
         finally:
             msd.releaseClusterLock()
             self.id = None
 
-        self.state = spInit
         self.disconnectDomains()
         return True
 
@@ -350,49 +330,41 @@ class StoragePool:
     def connect(self, hostID, scsiKey, msdUUID, masterVersion):
         """
         Connect a Host to a specific storage pool.
+
+        Caller must acquire resource Storage.spUUID so that this method would never be called twice concurrently.
         """
         self.log.info("Connect host #%s to the storage pool %s with master domain: %s (ver = %s)" %
             (hostID, self.spUUID, msdUUID, masterVersion))
-        if self.state == spConnected:
-            return True
-        if self.state == spConnecting:
-            raise se.OperationInProgress("pool connect %s" % self.spUUID)
-        self.state = spConnecting
-        try:
-            # Make sure SDCache doesn't have stale data (it can be in case of FC)
-            SDF.refresh()
+        # Make sure SDCache doesn't have stale data (it can be in case of FC)
+        SDF.refresh()
 
-            if msdUUID and msdUUID != sd.BLANK_UUID:
-                # We should find the master domain with the proper
-                # version. If we don't we should raise
-                # the special exception StoragePoolMasterNotFound
-                # and VDC will reconstruct master on another domain
-                # if available
-                self.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+        if msdUUID and msdUUID != sd.BLANK_UUID:
+            # We should find the master domain with the proper
+            # version. If we don't we should raise
+            # the special exception StoragePoolMasterNotFound
+            # and VDC will reconstruct master on another domain
+            # if available
+            self.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
 
-            if not os.path.exists(self._poolsTmpDir):
-                msg = ("StoragePoolConnectionError for hostId: %s, on poolId: %s," +
-                       " Pools temp data dir: %s does not exist" %
-                        (hostID, self.spUUID, self._poolsTmpDir))
-                self.log.error(msg)
-                msg = "Pools temp data dir: %s does not exist" % (self._poolsTmpDir)
-                raise se.StoragePoolConnectionError(msg)
+        if not os.path.exists(self._poolsTmpDir):
+            msg = ("StoragePoolConnectionError for hostId: %s, on poolId: %s," +
+                   " Pools temp data dir: %s does not exist" %
+                    (hostID, self.spUUID, self._poolsTmpDir))
+            self.log.error(msg)
+            msg = "Pools temp data dir: %s does not exist" % (self._poolsTmpDir)
+            raise se.StoragePoolConnectionError(msg)
 
-            if os.path.exists(self._poolFile):
-                os.unlink(self._poolFile)
+        if os.path.exists(self._poolFile):
+            os.unlink(self._poolFile)
 
-            self._saveReconnectInformation(hostID, scsiKey, msdUUID, masterVersion)
-            self.id = hostID
-            self.scsiKey = scsiKey
+        self._saveReconnectInformation(hostID, scsiKey, msdUUID, masterVersion)
+        self.id = hostID
+        self.scsiKey = scsiKey
 
-            # Rebuild whole Pool
-            self.__rebuild()
-            self.__createMailboxMonitor()
-        except:
-            self.state = spDisconnected
-            raise
+        # Rebuild whole Pool
+        self.__rebuild()
+        self.__createMailboxMonitor()
 
-        self.state = spConnected
         return True
 
 
@@ -405,34 +377,26 @@ class StoragePool:
     def disconnect(self, id, scsiKey, remove=False):
         """
         Disconnect a Host from specific storage pool.
+
+        Caller must acquire resource Storage.spUUID so that this method would never be called twice concurrently.
         """
         self.log.info("Disconnect from the storage pool %s", self.spUUID)
 
-        if self.state == spDisconnected:
-            return True
-        if self.state == spDisconnecting:
-            raise se.OperationInProgress("pool disconnect %s" % self.spUUID)
-        self.state = spDisconnecting
-        try:
-            self.id = None
-            self.scsiKey = None
-            if os.path.exists(self._poolFile):
-                os.unlink(self._poolFile)
+        self.id = None
+        self.scsiKey = None
+        if os.path.exists(self._poolFile):
+            os.unlink(self._poolFile)
 
-            if self.hsmMailer:
-                self.hsmMailer.stop()
-                self.hsmMailer = None
+        if self.hsmMailer:
+            self.hsmMailer.stop()
+            self.hsmMailer = None
 
-            # Remove all links
-            if os.path.exists(self.poolPath):
-                fileUtils.cleanupdir(self.poolPath)
+        # Remove all links
+        if os.path.exists(self.poolPath):
+            fileUtils.cleanupdir(self.poolPath)
 
-            self.disconnectDomains()
-        except:
-            self.state = spError
-            raise
+        self.disconnectDomains()
 
-        self.state == spDisconnected
         return True
 
 
@@ -1037,7 +1001,7 @@ class StoragePool:
             raise se.StoragePoolInternalError
 
         info = {'type': '', 'name': '', 'domains': '', 'master_uuid': '', 'master_ver': 0,
-                'lver': -1, 'spm_id': -1, 'isoprefix': '', 'pool_status': spUninit, 'version': -1}
+                'lver': -1, 'spm_id': -1, 'isoprefix': '', 'pool_status': 'uninitialized', 'version': -1}
         list_and_stats = {}
 
         msdUUID = None
@@ -1099,7 +1063,7 @@ class StoragePool:
             stats['status'] = domDict[item]
             list_and_stats[item] = stats
 
-        info["pool_status"] = self.state
+        info["pool_status"] = "connected"
         return dict(info=info, dominfo=list_and_stats)
 
 
