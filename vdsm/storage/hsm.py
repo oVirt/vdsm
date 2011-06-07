@@ -113,7 +113,7 @@ class HSM:
 
     @classmethod
     def validatePoolSD(cls, spUUID, sdUUID):
-        if not cls.pools[spUUID].isMember(sdUUID):
+        if not cls.getPool(spUUID).isMember(sdUUID):
             raise se.StorageDomainNotMemberOfPool(spUUID, sdUUID)
 
     @classmethod
