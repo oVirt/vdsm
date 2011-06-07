@@ -66,28 +66,6 @@ class HSM:
     log = logging.getLogger('Storage.HSM')
 
     @classmethod
-    def validateConnectedPool(cls, spUUID, check = False):
-        """
-        Checks if the storage pool exists and connected.
-
-        :param spUUID: the UUID of the storage pool you want to validate.
-        :type spUUID: UUID
-        :param check: states weather the calls is just to check.
-        :type check: bool
-        :rtype: bool
-
-        if the validation fails there are two possible outcomes:
-            1. If check is *True* the metod will return false.
-            2. If check is *False* the method will raise a :exc:`storage_exception.StoragePoolUnknown` exception.
-        """
-        if spUUID not in cls.pools:
-            if not check:
-                raise se.StoragePoolUnknown(spUUID)
-            return False
-        return True
-
-
-    @classmethod
     def validateSdUUID(cls, sdUUID):
         """
         Validate a storage domain.
@@ -336,11 +314,13 @@ class HSM:
             domVersion = int(domVersion)
             sd.validateDomainVersion(domVersion)
 
-        self.validateConnectedPool(spUUID)
+        #This code is repeated twice for perfomance reasons
+        #Avoid waiting for the lock for validate.
+        self.getPool(spUUID)
         self.validateNotSPM(spUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
-        self.validateConnectedPool(spUUID)
+        self.getPool(spUUID)
         # We should actually just return true if we are SPM after lock,
         # but seeing as it would break the API with RHEVM, it's easiest to fail.
         self.validateNotSPM(spUUID)
@@ -366,12 +346,14 @@ class HSM:
             If the pool doesn't exist the function will fail sliently and the callback will never be called.
 
         """
-        if not self.validateConnectedPool(spUUID, check=True):
-            return
         newSize = misc.validateN(newSize, "newSize") / 2**20
-        pool = self.getPool(spUUID)
-        if pool.hsmMailer:
-            pool.hsmMailer.sendExtendMsg(volDict, newSize, callbackFunc)
+        try:
+            pool = self.getPool(spUUID)
+        except se.StoragePoolUnknown:
+            pass
+        else:
+            if pool.hsmMailer:
+                pool.hsmMailer.sendExtendMsg(volDict, newSize, callbackFunc)
 
 
     def public_refreshStoragePool(self, spUUID, msdUUID, masterVersion, options = None):
@@ -396,7 +378,6 @@ class HSM:
             se.StoragePoolActionError("spUUID=%s, msdUUID=%s, masterVersion=%s" % (
                                 str(spUUID), str(msdUUID), str(masterVersion))))
         vars.task.getSharedLock(STORAGE, spUUID)
-        self.validateConnectedPool(spUUID)
         pool = self.getPool(spUUID)
         try:
             self.validateSdUUID(msdUUID)
@@ -532,15 +513,22 @@ class HSM:
         if len(self.pools) and spUUID not in self.pools:
             raise se.CannotConnectMultiplePools(str(self.pools.keys()))
 
-        if self.validateConnectedPool(spUUID, check=True):
+        try:
+            self.getPool(spUUID)
+        except se.StoragePoolUnknown:
+            pass #pool not connected yet
+        else:
             vars.task.getSharedLock(STORAGE, spUUID)
             pool = self.getPool(spUUID)
             pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
             return
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
-        if self.validateConnectedPool(spUUID, check=True):
+        try:
             pool = self.getPool(spUUID)
+        except se.StoragePoolUnknown:
+            pass #pool not connected yet
+        else:
             pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
             return
 
@@ -571,8 +559,12 @@ class HSM:
         """
         vars.task.setDefaultException(se.StoragePoolDisconnectionError("spUUID=%s, hostID=%s, scsiKey=%s" % (str(spUUID), str(hostID), str(scsiKey))))
         misc.validateN(hostID, 'hostID')
-        if not self.validateConnectedPool(spUUID, check=True):
-            return  # already disconnected/or pool is just unknown - return OK
+        # already disconnected/or pool is just unknown - return OK
+        try:
+            pool = self.getPool(spUUID)
+        except se.StoragePoolUnknown:
+            return
+
         self.validateNotSPM(spUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
@@ -602,7 +594,6 @@ class HSM:
         :param options: ?
         """
         vars.task.setDefaultException(se.StoragePoolDestroyingError("spUUID=%s, hostID=%s, scsiKey=%s" % (str(spUUID), str(hostID), str(scsiKey))))
-        self.validateConnectedPool(spUUID)
         self.log.info("spUUID=%s", spUUID)
 
         pool = self.getPool(spUUID)
@@ -874,7 +865,7 @@ class HSM:
         :rtype: dict
         """
         if spUUID:
-            self.validateConnectedPool(spUUID)
+            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         taskStatus = self.taskMng.getTaskStatus(taskID=taskID)
         return dict(taskStatus=taskStatus)
@@ -889,7 +880,7 @@ class HSM:
         :options: ?
         """
         if spUUID:
-            self.validateConnectedPool(spUUID)
+            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         allTasksStatus = self.taskMng.getAllTasksStatuses("spm")
         return dict(allTasksStatus=allTasksStatus)
@@ -911,7 +902,7 @@ class HSM:
         :raises: :exc:`storage_exception.UnknownTask` if a task with the specified taskID doesn't exist.
         """
         if spUUID:
-            self.validateConnectedPool(spUUID)
+            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         inf = self.taskMng.getTaskInfo(taskID=taskID)
         return dict(TaskInfo=inf)
@@ -929,7 +920,7 @@ class HSM:
         :rtype: dict
         """
         if spUUID:
-            self.validateConnectedPool(spUUID)
+            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         # TODO: if spUUID passed, make sure tasks are relevant only to pool
         allTasksInfo = self.taskMng.getAllTasksInfo("spm")
@@ -951,7 +942,7 @@ class HSM:
         """
         force = False
         if spUUID:
-            self.validateConnectedPool(spUUID)
+            self.getPool(spUUID) #WHY?
         if options:
             try:
                 force = options.get("force", False)
@@ -975,7 +966,7 @@ class HSM:
         :rtype: bool
         """
         if spUUID:
-            self.validateConnectedPool(spUUID)
+            self.getPool(spUUID) # WHY?
         #getExclusiveLock(tasksResource...)
         return self.taskMng.clearTask(taskID=taskID)
 
@@ -994,7 +985,7 @@ class HSM:
         :rtype:
         """
         if spUUID:
-            self.validateConnectedPool(spUUID)
+            self.getPool(spUUID) #WHY?
         #getExclusiveLock(tasksResource...)
         return self.taskMng.revertTask(taskID=taskID)
 
@@ -1034,7 +1025,6 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.GetIsoListError(spUUID))
-        self.validateConnectedPool(spUUID)
         vars.task.getSharedLock(STORAGE, spUUID)
         isoDom = self.getPool(spUUID).getIsoDomain()
         if not isoDom:
@@ -1162,11 +1152,9 @@ class HSM:
         :type spUUID: UUID
         :param options: ?
 
-        :returns: getPool(spUUID).getInfo?
+        :returns: getPool(spUUID).getInfo
         """
         vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s" % str(spUUID)))
-        self.validateConnectedPool(spUUID)
-        #getSharedLock(spUUID...)
         vars.task.getSharedLock(STORAGE, spUUID)
         return self.getPool(spUUID).getInfo()
 
@@ -1362,7 +1350,6 @@ class HSM:
         """
         vars.task.setDefaultException(se.StorageDomainActionError("spUUID: %s" % str(spUUID)))
         if spUUID and spUUID != volume.BLANK_UUID:
-            self.validateConnectedPool(spUUID)
             domList = self.getPool(spUUID).getDomains()
             domains = domList.keys()
         else:
@@ -1593,7 +1580,6 @@ class HSM:
 
         :returns: Nothing ? Stuff not implemented
         """
-        self.validateConnectedPool(spUUID)
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1617,7 +1603,6 @@ class HSM:
         :returns: a dict with the size of the volume.
         :rtype: dict
         """
-        self.validateConnectedPool(spUUID)
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1645,7 +1630,6 @@ class HSM:
         :rtype: dict
         """
         #vars.task.setDefaultException(se.ChangeMeError("%s" % str(args)))
-        self.validateConnectedPool(spUUID)
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1670,7 +1654,6 @@ class HSM:
         :returns: a dict with the path to the volume.
         :rtype: dict
         """
-        self.validateConnectedPool(spUUID)
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1695,7 +1678,6 @@ class HSM:
         :type rw: bool
         :param options: ?
         """
-        self.validateConnectedPool(spUUID)
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1727,7 +1709,6 @@ class HSM:
         :type rw: bool
         :param options: ?
         """
-        self.validateConnectedPool(spUUID)
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1748,7 +1729,6 @@ class HSM:
         :param imgUUID: The UUID of the an image you want to filter the results.
                         if imgUUID equals :attr:`~volume.BLANK_UUID` no filtering will be done.
         """
-        self.validateConnectedPool(spUUID)
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1798,8 +1778,6 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.GetStorageDomainListError("spUUID=%s imgUUID=%s" % (str(spUUID), str(imgUUID))))
-        self.validateConnectedPool(spUUID)
-
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # Find out domain list from the pool metadata

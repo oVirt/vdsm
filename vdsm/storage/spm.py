@@ -334,7 +334,6 @@ class SPM:
         """
         vars.task.setDefaultException(se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" % (str(spUUID), str(lastOwner), str(lastLver))))
         self.log.debug("spUUID=%s", spUUID)
-        hsm.HSM.validateConnectedPool(spUUID)
         pool = hsm.HSM.getPool(spUUID)
         pool.invalidateMetadata()
         vars.task.getExclusiveLock(STORAGE, spUUID)
@@ -585,6 +584,7 @@ class SPM:
         :raises: :exc:`storage_exception.TaskInProgress` if there are tasks runnning for this pool.
 
         """
+        #spUUID is redundant and should be removed.
         vars.task.setDefaultException(se.SpmStopError(spUUID))
         self.log.debug("spUUID=%s", spUUID)
 
@@ -597,7 +597,10 @@ class SPM:
             if not self.spmStarted:
                 return True
 
-            hsm.HSM.validateConnectedPool(spUUID)
+            #Validates that we are connected to the spUUID pool.
+            #Ideally should be checked 1st, but we're preserving semantics.
+            #This is different from _stop() semantics.
+            hsm.HSM.getPool(spUUID)
 
             dictTasks = self.taskMng.getAllTasks(tag="spm")
             for taskKey in dictTasks:
@@ -646,10 +649,11 @@ class SPM:
 
         stopFailed = False
         self.lver = 0
-        pool = self.pools.get(spUUID, None)
-        if not pool:
-            self.log.warning("Pool %s not found in cache", spUUID)
+        try:
             pool = hsm.HSM.getPool(spUUID)
+        except se.StoragePoolUnknown:
+            self.log.warning("Pool %s not found in cache", spUUID)
+
 
         Secure.setUnsafe()
 
@@ -703,7 +707,6 @@ class SPM:
 
         :raises: :exc:`storage_exception.MetaDataParamError` if the metata data on the pool is invalid.
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         pool = hsm.HSM.getPool(spUUID)
         try:
             lver = pool.getMetaParam(sp.PMDK_LVER)
@@ -921,7 +924,6 @@ class SPM:
         """
         vars.task.setDefaultException(se.VolumeExtendingError("spUUID=%s, sdUUID=%s, volumeUUID=%s, size=%s" % (
                                                         str(spUUID), str(sdUUID), str(volumeUUID), str(size))))
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
         size = misc.validateN(size, "size")
         # ExtendVolume expects size in MB
@@ -948,7 +950,6 @@ class SPM:
         """
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, devlist=%s" % (str(sdUUID), str(devlist))))
 
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         # We need to let the domain to extend itself
@@ -1039,8 +1040,6 @@ class SPM:
            This action can only be performed on regular (i.e. non master) domains
         """
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (str(sdUUID), str(spUUID))))
-        hsm.HSM.validateConnectedPool(spUUID)
-
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = hsm.HSM.getPool(spUUID)
         if sdUUID == pool.getMasterDomain().sdUUID:
@@ -1065,7 +1064,6 @@ class SPM:
         :param options: ?
         """
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s, msdUUID=%s, masterVersion=%s" % (str(sdUUID), str(spUUID), str(msdUUID), str(masterVersion))))
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
@@ -1147,7 +1145,6 @@ class SPM:
                 (str(sdUUID), str(spUUID), str(msdUUID), str(masterVersion))
             )
         )
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
@@ -1203,7 +1200,6 @@ class SPM:
         :param options: ?
         """
         vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s, descr=%s" % (str(spUUID), str(description))))
-        hsm.HSM.validateConnectedPool(spUUID)
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = hsm.HSM.getPool(spUUID)
         pool.setDescription(description)
@@ -1224,7 +1220,6 @@ class SPM:
         :param description: The new human readable description of the volume.
         :type description: str
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1250,7 +1245,6 @@ class SPM:
         :param description: The legality status ot the volume.?
         :type description: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1277,7 +1271,6 @@ class SPM:
         :type sdUUID: UUID
         :param options: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             hsm.HSM.validatePoolSD(spUUID, sdUUID)
             hsm.HSM.validateSdUUID(sdUUID)
@@ -1300,7 +1293,6 @@ class SPM:
         :type sdUUID: UUID
         :param options: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             hsm.HSM.validatePoolSD(spUUID, sdUUID)
             hsm.HSM.validateSdUUID(sdUUID)
@@ -1322,7 +1314,6 @@ class SPM:
         :type imgUUID: UUID
         :param options: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
         hsm.HSM.validateSdUUID(sdUUID)
         repoPath = os.path.join(self.storage_repository, spUUID)
@@ -1338,7 +1329,6 @@ class SPM:
         :type spUUID: UUID
         :param options: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
         hsm.HSM.validateSdUUID(sdUUID)
         return SDF.produce(sdUUID).checkDomain(spUUID=spUUID)
@@ -1352,7 +1342,6 @@ class SPM:
         :type spUUID: UUID
         :param options: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         pool = hsm.HSM.getPool(spUUID)
         return pool.check()
 
@@ -1367,7 +1356,6 @@ class SPM:
         :type sdUUID: UUID
         :param options: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             hsm.HSM.validatePoolSD(spUUID, sdUUID)
             hsm.HSM.validateSdUUID(sdUUID)
@@ -1395,7 +1383,6 @@ class SPM:
         :param vmList: A UUID list of the VMs you want info on or :keyword:`None` for all VMs in pool or backup domain.
         :param options: ?
         """
-        hsm.HSM.validateConnectedPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             hsm.HSM.validatePoolSD(spUUID, sdUUID)
             # Only backup domains are allowed in this path
@@ -1468,7 +1455,7 @@ class SPM:
                  str(diskType), str(volUUID), str(desc),
                  str(srcImgUUID), str(srcVolUUID))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
-        hsm.HSM.validateConnectedPool(spUUID)
+        hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
@@ -1500,7 +1487,7 @@ class SPM:
                 "postZero=%s, force=%s" % (str(sdUUID), str(spUUID),
                 str(imgUUID), str(volumes), str(postZero), str(force))
         vars.task.setDefaultException(se.CannotDeleteVolume(argsStr))
-        hsm.HSM.validateConnectedPool(spUUID)
+        hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
 
@@ -1520,7 +1507,7 @@ class SPM:
         Delete Image folder with all volumes
         """
         #vars.task.setDefaultException(se.ChangeMeError("%s" % str(args)))
-        hsm.HSM.validateConnectedPool(spUUID)
+        hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1559,7 +1546,7 @@ class SPM:
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException("srcDom must be different from dstDom: %s" % argsStr)
 
-        hsm.HSM.validateConnectedPool(spUUID)
+        hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(srcDomUUID)
         hsm.HSM.validateSdUUID(dstDomUUID)
         # Do not validate images in Backup domain
@@ -1589,7 +1576,7 @@ class SPM:
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException("dstDomUUID", dstDomUUID)
 
-        hsm.HSM.validateConnectedPool(spUUID)
+        hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(srcDomUUID)
         hsm.HSM.validateSdUUID(dstDomUUID)
         images = {}
@@ -1629,7 +1616,7 @@ class SPM:
         if dstSdUUID in [sdUUID, sd.BLANK_UUID]:
             if srcImgUUID == dstImgUUID:
                 raise se.InvalidParameterException("dstImgUUID", dstImgUUID)
-        hsm.HSM.validateConnectedPool(spUUID)
+        hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(sdUUID)
 
         # Avoid VM copy if one of its volume (including template if exists) ILLEGAL/FAKE
@@ -1667,7 +1654,7 @@ class SPM:
                   "postZero=%s" % (str(sdUUID), str(spUUID), str(vmUUID), str(imgUUID),
                                     str(ancestor), str(successor), str(postZero))
         vars.task.setDefaultException(se.MergeSnapshotsError("%s" % argsStr))
-        hsm.HSM.validateConnectedPool(spUUID)
+        hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._schedule("mergeSnapshots", self.mergeSnapshots, sdUUID, spUUID,
