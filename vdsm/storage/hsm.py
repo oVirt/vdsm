@@ -858,14 +858,12 @@ class HSM:
         :param taskID: The ID of the task you want the check.
         :type taskID: ID?
         :param spUUID: the UUID of the storage pool that the task is operating on. ??
-        :type spUUID: UUID
+        :type spUUID: UUID (deprecated)
         :param options: ?
 
         :returns: a dict containing the status information of the task.
         :rtype: dict
         """
-        if spUUID:
-            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         taskStatus = self.taskMng.getTaskStatus(taskID=taskID)
         return dict(taskStatus=taskStatus)
@@ -876,11 +874,9 @@ class HSM:
         Gets the status of all public tasks.
 
         :param spUUID: The UUID of the storage pool that you want to check it's tasks.
-        :type spUUID: UUID
+        :type spUUID: UUID (deprecated)
         :options: ?
         """
-        if spUUID:
-            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         allTasksStatus = self.taskMng.getAllTasksStatuses("spm")
         return dict(allTasksStatus=allTasksStatus)
@@ -893,7 +889,7 @@ class HSM:
         :param taskID: The ID of the task you want to get info on.
         :type taskID: ID ?
         :param spUUID: The UUID of the storage pool that owns this task. ?
-        :type spUUID: UUID
+        :type spUUID: UUID (deprecated)
         :para options: ?
 
         :returns: a dict with information about the task.
@@ -901,8 +897,6 @@ class HSM:
 
         :raises: :exc:`storage_exception.UnknownTask` if a task with the specified taskID doesn't exist.
         """
-        if spUUID:
-            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         inf = self.taskMng.getTaskInfo(taskID=taskID)
         return dict(TaskInfo=inf)
@@ -913,14 +907,12 @@ class HSM:
         Get the information of all the tasks in a storage pool.
 
         :param spUUID: The UUID of the storage pool you that want to check it's tasks info.
-        :type spUUID: UUID
+        :type spUUID: UUID (deprecated)
         :param options: ?
 
         :returns: a dict of all the tasks information.
         :rtype: dict
         """
-        if spUUID:
-            self.getPool(spUUID) #WHY?
         #getSharedLock(tasksResource...)
         # TODO: if spUUID passed, make sure tasks are relevant only to pool
         allTasksInfo = self.taskMng.getAllTasksInfo("spm")
@@ -934,15 +926,13 @@ class HSM:
         :param taskID: The ID of the task you want to stop.
         :type taskID: ID?
         :param spUUID: The UUID of the storage pool that owns the task.
-        :type spUUID: UUID
+        :type spUUID: UUID (deprecated)
         :options: ?
 
         :returns: :keyword:`True` if task was stopped successfuly.
         :rtype: bool
         """
         force = False
-        if spUUID:
-            self.getPool(spUUID) #WHY?
         if options:
             try:
                 force = options.get("force", False)
@@ -959,14 +949,12 @@ class HSM:
         :param taskID: The ID of the task you want to clear.
         :type taskID: ID?
         :param spUUID: The UUID of the storage pool that owns this task.
-        :type spUUID: UUID
+        :type spUUID: UUID (deprecated)
         :options: ?
 
         :returns: :keyword:`True` if task was cleared successfuly.
         :rtype: bool
         """
-        if spUUID:
-            self.getPool(spUUID) # WHY?
         #getExclusiveLock(tasksResource...)
         return self.taskMng.clearTask(taskID=taskID)
 
@@ -978,14 +966,12 @@ class HSM:
         :param taskID: The ID of the task you want to clear.
         :type taskID: ID?
         :param spUUID: The UUID of the storage pool that owns this task.
-        :type spUUID: UUID
+        :type spUUID: UUID (deprecated)
         :options: ?
 
         :returns:
         :rtype:
         """
-        if spUUID:
-            self.getPool(spUUID) #WHY?
         #getExclusiveLock(tasksResource...)
         return self.taskMng.revertTask(taskID=taskID)
 
