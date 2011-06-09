@@ -374,7 +374,7 @@ class StoragePool:
         return True
 
 
-    def disconnect(self, id, scsiKey, remove=False):
+    def disconnect(self):
         """
         Disconnect a Host from specific storage pool.
 

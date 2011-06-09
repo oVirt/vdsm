@@ -575,7 +575,7 @@ class HSM:
 
 
     def _disconnectPool(self, pool, hostID, scsiKey, remove):
-        res = pool.disconnect(hostID, scsiKey, remove=remove)
+        res = pool.disconnect()
         del self.pools[pool.spUUID]
         return res
 
