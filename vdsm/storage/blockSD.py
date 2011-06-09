@@ -892,18 +892,12 @@ class BlockStorageDomain(sd.StorageDomain):
         domMD = os.path.join(self.domaindir, sd.DOMAIN_META_DATA)
         fileUtils.createdir(domMD)
 
-        inactiveLVs = []
-        for lvName in [sd.METADATA, sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX, MASTERLV]:
-            src = os.path.join("/dev", self.sdUUID, lvName)
-            if not os.path.exists(src):
-                inactiveLVs.append(lvName)
-
+        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
+        for lvName in SPECIAL_LVS:
             dst = os.path.join(domMD, lvName)
             if not os.path.lexists(dst):
+                src = lvm.lvPath(self.sdUUID, lvName)
                 os.symlink(src, dst)
-
-        if len(inactiveLVs) > 0:
-            lvm.activateLVs(self.sdUUID, inactiveLVs)
 
         # create special imageUUID for ISO/Floppy volumes
         isoPath = os.path.join(imagesPath, sd.ISO_IMAGE_UUID)
