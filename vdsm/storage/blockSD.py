@@ -147,8 +147,7 @@ class LvMetadataRW(object):
 
     def readlines(self):
         # Fetch the metadata from metadata volume
-        if not os.path.exists(self.metavol):
-            lvm.activateLVs(self._vgName, self._lvName)
+        lvm.activateLVs(self._vgName, self._lvName)
 
         m = misc.readblockSUDO(self.metavol, self._offset, self._size)
         # Read from metadata volume will bring a load of zeroes trailing
@@ -158,8 +157,7 @@ class LvMetadataRW(object):
         return metadata
 
     def writelines(self, lines):
-        if not os.path.exists(self.metavol):
-            lvm.activateLVs(self._vgName, self._lvName)
+        lvm.activateLVs(self._vgName, self._lvName)
 
         # Write `metadata' to metadata volume
         metaStr = StringIO()
@@ -559,10 +557,8 @@ class BlockStorageDomain(sd.StorageDomain):
         return meta
 
     def _getLeasesFilePath(self):
-        path = lvm.lvPath(self.sdUUID, sd.LEASES)
-        if not os.path.exists(path):
-            lvm.activateLVs(self.sdUUID, [sd.LEASES])
-        return path
+        lvm.activateLVs(self.sdUUID, [sd.LEASES])
+        return lvm.lvPath(self.sdUUID, sd.LEASES)
 
     def upgrade(self, targetVersion):
         sd.validateDomainVersion(targetVersion)
