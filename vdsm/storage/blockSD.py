@@ -905,8 +905,7 @@ class BlockStorageDomain(sd.StorageDomain):
             fileUtils.createdir(isoPath)
 
     def refreshSpecialVolumes(self):
-        lvs = SPECIAL_LVS
-        lvm.activateLVs(self.sdUUID, lvs)
+        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         self._extendlock.acquire()
