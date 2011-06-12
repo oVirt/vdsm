@@ -10,7 +10,18 @@
 
 import sys
 import getopt
+import logging
+from time import strftime
+
 import deployUtil
+
+log_filename = '/tmp/vds_bootstrap_complete.' + strftime("%Y%m%d_%H%M%S") + \
+               '.log'
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)-8s %(module)s '
+                           '%(lineno)d %(message)s',
+                    filename=log_filename,
+                    filemode='w')
 
 VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
 
@@ -57,8 +68,11 @@ def main():
         if res:
             res = deployUtil.setVdsConf(vds_config_str, VDSM_CONF_FILE)
 
+        deployUtil.setService("vdsmd", "reconfigure")
+
         Reboot(arg)
     except:
+        logging.error('bootstrap complete failed', exc_info=True)
         res = False
 
     if res:
