@@ -165,6 +165,9 @@ class StoragePool:
         self.masterDomain = None
         self.repostats = {}
 
+    def __del__(self):
+        if len(self.repostats) > 0:
+            threading.Thread(target=self.disconnectDomains).start()
 
     def __createMailboxMonitor(self):
         # Currently mailbox is not needed for non block device sd's
@@ -174,7 +177,6 @@ class StoragePool:
         sanPool = self.getMasterDomain().getStorageType() in [ sd.ISCSI_DOMAIN, sd.FCP_DOMAIN ]
         if sanPool and self.lvExtendPolicy == "ON":
             self.hsmMailer = storage_mailbox.HSM_Mailbox(self.id, self.spUUID)
-
 
     def __cleanupDomains(self, domlist, msdUUID, masterVersion):
         """
