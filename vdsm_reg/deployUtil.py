@@ -20,6 +20,7 @@ import struct
 import httplib
 import glob
 import imp
+from optparse import OptionParser
 
 try:
     from ovirtnode import ovirtfunctions
@@ -491,67 +492,9 @@ def getAuthKeysFile(IP, port):
     """
         This functions returns the public ssh key of rhev-m.
     """
-    logging.debug('getAuthKeysFile begin. IP=' + str(IP) + " port=" + str(port))
-    strKey = None
-    res = None
-    conn = None
-    old_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(HTTP_TIMEOUT)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    fOK = True
-
-    try:
-        nPort = 443
-        if port is not None:
-            nPort = int(port)
-
-        sock.connect((IP, nPort))
-        conn = httplib.HTTPSConnection(IP, nPort)
-        conn.sock = getSSLSocket(sock)
-        conn.request("GET", REMOTE_SSH_KEY_FILE)
-        res = conn.getresponse()
-    except:
-        #logging.debug(traceback.format_exc())
-        logging.debug("getAuthKeysFile failed in HTTPS. Retrying using HTTP.")
-        strPort = ":"
-        if port is None:
-            strPort += "80"
-        else:
-            strPort += port
-
-        try:
-            conn = httplib.HTTPConnection(IP + strPort)
-            conn.request("GET", REMOTE_SSH_KEY_FILE)
-            res = conn.getresponse()
-        except:
-            logging.error("Failed to fetch keys using http.")
-            logging.debug(traceback.format_exc())
-            fOK = False
-    else:
-        logging.debug("getAuthKeysFile status: " + str(res.status) + " reason: " + res.reason)
-
-    if res == None or res.status != 200:
-        status = ""
-        if res != None:
-            status = str(res.status)
-        if conn != None: conn.close()
-        fOK = False
-        logging.error("Failed to fetch keys: " + status)
-
-    if fOK:
-        try:
-            try:
-                strKey = str(res.read())
-            except:
-                logging.error("Failed to read ssh key.")
-                logging.error(traceback.format_exc())
-        finally:
-            if conn != None: conn.close()
-
-    socket.setdefaulttimeout(old_timeout)
-
-    logging.debug('getAuthKeysFile end.')
-    return strKey
+    CACERT, dontcare = certPaths('')
+    return getRemoteFile(IP, port, REMOTE_SSH_KEY_FILE, timeout=HTTP_TIMEOUT,
+            certPath=CACERT)
 
 def addSSHKey(path, strKey):
     resKeys = []
@@ -1119,7 +1062,8 @@ def instCert(random_num, confFile):
         shutil.copy(cert_pemfile, VDSMCERT)
         os.chown (VDSMCERT, nUID, nGID)
         os.chmod (VDSMCERT, 0444)
-        shutil.copy(ca_pemfile, CACERT)
+        if not os.path.exists(CACERT):
+            shutil.copy(ca_pemfile, CACERT)
         os.chown (CACERT, nUID, nGID)
         os.chmod (CACERT, 0444)
 
@@ -1153,13 +1097,17 @@ def instCert(random_num, confFile):
 
     return fReturn
 
-def getSSLSocket(sock):
+def getSSLSocket(sock, certPath=None):
     """
         Returns ssl socket according to python version
     """
     try:
         import ssl
-        return ssl.wrap_socket(sock)
+        if not certPath:
+            return ssl.wrap_socket(sock)
+        else:
+            return ssl.wrap_socket(sock, ca_certs=certPath,
+                                   cert_reqs=ssl.CERT_REQUIRED)
     except ImportError:
         # in python 2.4 importing ssl will fail
         ssl = socket.ssl(sock)
@@ -1297,3 +1245,146 @@ def virtEnabledInCpuAndBios():
     except:
         logging.error(traceback.format_exc())
         return False
+
+def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
+    logging.debug("getRemoteFile start. IP = %s port = %s fileName = \"%s\""
+            % (IP, port, fileName))
+    data = None
+    response = None
+    conn = None
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    fOK = True
+
+    try:
+        nPort = 443
+        if port is not None:
+            nPort = int(port)
+
+        sock.connect((IP, nPort))
+        conn = httplib.HTTPSConnection(IP, nPort)
+        conn.sock = getSSLSocket(sock, certPath)
+        conn.request("GET", fileName)
+        response = conn.getresponse()
+    except:
+        logging.debug("%s failed in HTTPS. Retrying using HTTP." % fileName,
+                exc_info=True)
+        strPort = ":"
+        if port is None:
+            strPort += "80"
+        else:
+            strPort += port
+
+        try:
+            conn = httplib.HTTPConnection(IP + strPort)
+            conn.request("GET", fileName)
+            response = conn.getresponse()
+        except:
+            logging.error("Failed to fetch %s using http." % fileName,
+                    exc_info=True)
+            fOK = False
+    else:
+        logging.debug("%s status: %s reason: %s" % \
+                (fileName, str(response.status), response.reason))
+
+    if response == None or response.status != 200:
+        status = ""
+        if response != None:
+            status = str(response.status)
+        if conn != None: conn.close()
+        fOK = False
+        logging.error("Failed to fetch %s status %s" % (fileName, status))
+
+    if fOK:
+        try:
+            try:
+                data = str(response.read())
+            except:
+                logging.error("Failed to read %s" % fileName, exc_info=True)
+        finally:
+            if conn != None: conn.close()
+
+    logging.debug('getRemoteFile end.')
+    return data
+
+def getRhevmCert(IP, port):
+
+    CACERT, VDSMCERT = certPaths('')
+    RHEVM_CERT_FILE = "/ca.crt"
+    rhevmCert = getRemoteFile(str(IP), str(port), RHEVM_CERT_FILE)
+    if rhevmCert:
+        dirName = os.path.dirname(CACERT)
+        if not os.path.exists(dirName):
+            os.makedirs(dirName)
+        with file(CACERT, "w+") as crt:
+            crt.write(rhevmCert)
+        return True
+    else:
+        return False
+
+def generateFingerPrint(path):
+    fp = ''
+    cmd = [EX_OPENSSL, 'x509', '-fingerprint', '-in', path]
+    out, err, rc = _logExec(cmd)
+    if rc is 0:
+        try:
+            fp = filter(lambda l: 'Fingerprint' in l, out.split())[0].split('=')[1]
+        except Exception:
+            logging.error("Failed generating finger print for %s" % path,
+                    exc_info=True)
+    else:
+        logging.error("Command %s failed with return value %d" % \
+                (' '.join(cmd), rc))
+
+    return fp
+
+def parseOptions():
+    parser = OptionParser()
+
+    parser.add_option("-s", "--server-address",
+        action="store", dest="serverIp", type="string", default=None,
+        help="IP address of RHEVM")
+    parser.add_option("-p", "--server-port",
+        action="store", dest="serverPort", default=None, type="string",
+        help="Port of RHEVM")
+
+    parser.add_option("-d", "--download-rhevm-cert", action="store_true",
+                      default=False, dest="downloadRhevmCert",
+                      help="Download certificate from RHEVM")
+    parser.add_option("-f", "--fingerprint", action="store",
+            dest="fingerPrint", default=None, type="string",
+            help="""
+            The fingerprint to compare to the fingerprint of the downloaded
+            certificate""")
+
+    options, args = parser.parse_args()
+
+    return (options, args)
+
+def main():
+    options, args = parseOptions()
+
+    if options.downloadRhevmCert:
+        if not options.serverIp or not options.serverPort or \
+                not options.fingerPrint:
+            print "Must supply RHEVM's IP, port and a fingerprint to " + \
+                  "verify against"
+            return -1
+        if not getRhevmCert(options.serverIp, options.serverPort):
+            print 'Failed downloading the RHEVM certificate file'
+            return -1
+        CACERT, dontcare = certPaths('')
+        fp = generateFingerPrint(CACERT)
+        if options.fingerPrint != fp:
+            print 'Expected fingerprint %s is different from recieved fingerprint %s' % (options.fingerPrint, fp)
+            return -1
+
+        if isOvirt():
+            ovirtfunctions.ovirt_store_config(CACERT)
+        print 'RHEVM certificate downloaded and verified successfully.'
+        return 0
+    print 'Missing arguments'
+    return -1
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -7,6 +7,7 @@
 . /usr/libexec/ovirt-functions
 VDSM_CONFIG=/etc/vdsm/vdsm.conf
 GETCONFITEM=/usr/share/vdsm/get-conf-item
+DEPLOY_UTIL=/usr/share/vdsm-reg/deployUtil.pyc
 LOG=/var/log/vdsm-config
 fWriteConfig=0
 strRHEVMAddress=""
@@ -58,6 +59,9 @@ set_addresses() {
 				management_server=*)
 				managment_server=${i#management_server=}
 				;;
+				management_server_fingerprint=*)
+				management_server_fingerprint=${i#management_server_fingerprint=}
+				;;
 				*)
 				;;
 			esac
@@ -76,6 +80,18 @@ set_addresses() {
 			if [ "$vdc_managment_server" != "$vdc_managment_port" ]; then
 				sed --copy -i "s/\(^vdc_host_port=\)\(..*$\)/\1${vdc_managment_port}/" \
 					/etc/vdsm-reg/vdsm-reg.conf
+			fi
+
+			if [ ! -z "$managment_server_fingerprint" ]; then
+				res=`python "$DEPLOY_UTIL" --download-rhevm-cert --server-address="$vdc_managment_server" --server-port="$vdc_managment_port" --fingerprint="$managment_server_fingerprint"`
+				ret_val=$?
+				echo "$res" >> $LOG 2>&1
+				if [ ! $ret_val -eq 0 ];then
+					echo "Rebooting ... " >> $LOG 2>&1
+					/sbin/reboot
+				fi
+			else
+				echo "No management_server_fingerprint found." | tee -a $LOG
 			fi
 
 			## Set new configuration

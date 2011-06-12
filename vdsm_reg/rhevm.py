@@ -18,9 +18,13 @@
 # also available at http://www.gnu.org/copyleft/gpl.html.
 
 import os
+import sys
 from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
                                      is_valid_port, PluginBase, log
-from snack import ButtonChoiceWindow, Entry, Grid, Label
+from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox
+
+sys.path.append('/usr/share/vdsm-reg')
+import deployUtil
 
 VDSM_CONFIG = "/etc/vdsm/vdsm.conf"
 VDSM_REG_CONFIG = "/etc/vdsm-reg/vdsm-reg.conf"
@@ -103,7 +107,9 @@ class Plugin(PluginBase):
         self.rhevm_server_port.setCallback(self.valid_rhevm_server_port_callback)
         rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
         rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 1))
-        elements.setField(rhevm_grid, 0, 3, anchorLeft = 1, padding = (0,1,0,0))
+        elements.setField(rhevm_grid, 0, 2, anchorLeft = 1, padding = (0,1,0,0))
+        self.verify_rhevm_cert = Checkbox("Verify RHEVM Certificate")
+        elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,1,0,0))
         try:
             rhevm_server = get_rhevm_config()
             rhevm_server,rhevm_port = rhevm_server.split(":")
@@ -121,6 +127,23 @@ class Plugin(PluginBase):
         self.ncs.screen.setColor("BUTTON", "black", "red")
         self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
         if len(self.rhevm_server.value()) > 0:
+            if self.verify_rhevm_cert.selected():
+                if deployUtil.getRhevmCert(self.rhevm_server.value(),  self.rhevm_server_port.value()):
+                    path, dontCare = deployUtil.certPaths('')
+                    fp = deployUtil.generateFingerPrint(path)
+                    approval = ButtonChoiceWindow(self.ncs.screen, \
+                            "Certificate Fingerprint:", fp, buttons = ['Approve', 'Reject'])
+                    if 'reject' == approval:
+                        out, err, rc = deployUtil._logExec(['/sbin/reboot'])
+                        if rc is not 0:
+                            log("Failed rebooting after fingerprint" + \
+                                "mismatch: %s", err)
+                    else:
+                        ovirt_store_config(path)
+                        self.ncs.reset_screen_colors()
+                else:
+                    ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "Failed downloading RHEV-M certificate", buttons = ['Ok'])
+                    self.ncs.reset_screen_colors()
             if write_vdsm_config(self.rhevm_server.value(), self.rhevm_server_port.value()):
                 ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "RHEV-M Configuration Successfully Updated", buttons = ['Ok'])
                 self.ncs.reset_screen_colors()
