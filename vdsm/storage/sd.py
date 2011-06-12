@@ -600,7 +600,7 @@ class StorageDomain:
         info['name'] = self.getMetaParam(DMDK_DESCRIPTION)
         info['role'] = self.getMetaParam(DMDK_ROLE)
         info['pool'] = self.getPools()
-        info['version'] = self.getMetaParam(DMDK_VERSION)
+        info['version'] = str(self.getMetaParam(DMDK_VERSION))
         return info
 
     def getStats(self):

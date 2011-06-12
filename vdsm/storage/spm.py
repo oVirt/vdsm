@@ -351,6 +351,7 @@ class SPM:
 
 
     def public_upgradeStoragePool(self, spUUID, targetDomVersion):
+        targetDomVersion = int(targetDomVersion)
         self._upgradePool(spUUID, targetDomVersion)
         return {"upgradeStatus" : "started"}
 

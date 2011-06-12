@@ -1079,7 +1079,7 @@ class StoragePool:
             info['spm_id'] = self.getMetaParam(PMDK_SPM_ID)
             info['master_uuid'] = msdInfo['uuid']
             info['master_ver'] = self.getMasterVersion()
-            info['version'] = self.getVersion()
+            info['version'] = str(self.getVersion())
         except Exception:
             self.log.error("Pool metadata error", exc_info=True)
             raise se.StoragePoolActionError(self.spUUID)

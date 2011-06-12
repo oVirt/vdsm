@@ -352,6 +352,7 @@ class HSM:
         vars.task.setDefaultException(se.SpmStartError("%s" % (argsStr)))
 
         if domVersion is not None:
+            domVersion = int(domVersion)
             sd.validateDomainVersion(domVersion)
 
         self.validateConnectedPool(spUUID)
@@ -1208,6 +1209,7 @@ class HSM:
         msg = ("storageType=%s, sdUUID=%s, domainName=%s, domClass=%s, "
             "typeSpecificArg=%s domVersion=%s" % (storageType, sdUUID, domainName, domClass,
             typeSpecificArg, domVersion))
+        domVersion = int(domVersion)
         vars.task.setDefaultException(se.StorageDomainCreationError(msg))
         misc.validateUUID(sdUUID, 'sdUUID')
         self.validateNonDomain(sdUUID)
