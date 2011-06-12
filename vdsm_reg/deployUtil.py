@@ -21,6 +21,11 @@ import httplib
 import glob
 import imp
 
+try:
+    from ovirtnode import ovirtfunctions
+except ImportError:
+    pass
+
 # Path constants
 P_BIN = '/bin/'
 P_ETC_INITD = '/etc/init.d/'
@@ -44,7 +49,6 @@ EX_HWCLOCK = P_SBIN + 'hwclock'
 EX_IFCONFIG = P_SBIN + 'ifconfig'
 EX_LSB_RELEASE = P_USR_BIN + 'lsb_release'
 EX_OPENSSL = P_USR_BIN + 'openssl'
-EX_OVIRT_FUNTIONS = P_LIBEXEC + 'ovirt-functions'
 EX_REBOOT = P_SBIN + 'reboot'
 EX_RPM = P_BIN + 'rpm'
 EX_SED = P_BIN + 'sed'
@@ -64,8 +68,6 @@ SCRIPT_NAME_DEL = "delNetwork"
 IFACE_CONFIG = "/etc/sysconfig/network-scripts/ifcfg-"
 MGT_BRIDGE_NAME = "rhevm"
 REMOTE_SSH_KEY_FILE = "/rhevm.ssh.key.txt"
-OVIRT_SAFE_DEL_FUNCTION = "ovirt_safe_delete_config"
-OVIRT_STORE_FUNCTION = "ovirt_store_config"
 CORE_DUMP_PATH = '/var/lib/vdsm/core'
 CORE_PATTERN = '/proc/sys/kernel/core_pattern'
 XML_QUOTES = {
@@ -197,7 +199,7 @@ def setVdsConf(configStr, confFile):
         if isOvirt():
             # save the updated file
             logging.debug("setVdsConf: saving new config file")
-            _logExec([EX_BASH, EX_OVIRT_FUNTIONS, OVIRT_STORE_FUNCTION, confFile])
+            ovirtfunctions.ovirt_store_config(confFile)
 
         print "<BSTRAP component='VDS Configuration' status='OK'/>"
     except Exception, e:
@@ -581,7 +583,7 @@ def handleSSHKey(strKey):
         logging.debug("handleSSHKey: creating .ssh dir.")
         try:
             os.mkdir(P_ROOT_SSH, 0700)
-        except OSError, err:
+        except OSError:
             fReturn = False
             logging.debug("handleSSHKey: failed to create ssh dir!")
 
@@ -603,8 +605,7 @@ def handleSSHKey(strKey):
     if fReturn and isOvirt():
         # persist authorized_keys
         logging.debug("handleSSHKey: persist authorized_keys")
-        out, err, ret = _logExec([EX_BASH, EX_OVIRT_FUNTIONS,
-                                  OVIRT_STORE_FUNCTION, P_ROOT_AUTH_KEYS])
+        ovirtfunctions.ovirt_store_config(P_ROOT_AUTH_KEYS)
 
     logging.debug('handleSSHKey end')
     return fReturn
@@ -1068,13 +1069,13 @@ def pkiCleanup(key, cert):
     """
     if os.path.exists(key):
         if isOvirt():
-            _logExec([EX_BASH, EX_OVIRT_FUNTIONS, OVIRT_SAFE_DEL_FUNCTION, key])
+            ovirtfunctions.ovirt_safe_delete_config(key)
         else:
             os.unlink(key)
 
     if os.path.exists(cert):
         if isOvirt():
-            _logExec([EX_BASH, EX_OVIRT_FUNTIONS, OVIRT_SAFE_DEL_FUNCTION, cert])
+            ovirtfunctions.ovirt_safe_delete_config(cert)
         else:
             os.unlink(cert)
 
@@ -1085,7 +1086,7 @@ def _linkOrPersist(src, dst):
         shutil.copy2(src, dst)
         st = os.stat(src)
         os.chown(dst, st.st_uid, st.st_gid)
-        _logExec([EX_BASH, EX_OVIRT_FUNTIONS, OVIRT_STORE_FUNCTION, dst])
+        ovirtfunctions.ovirt_store_config(dst)
     else:
         try:
             os.unlink(dst)
@@ -1125,7 +1126,10 @@ def instCert(random_num, confFile):
         if isOvirt():
             # save the certificates
             logging.debug("instCert: persist new certificates")
-            out, err, ret = _logExec([EX_BASH, EX_OVIRT_FUNTIONS, OVIRT_STORE_FUNCTION, VDSMCERT, CACERT])
+            ovirtfunctions.ovirt_store_config(VDSMCERT)
+            ovirtfunctions.ovirt_store_config(CACERT)
+
+
 
         ts = _tsDir(confFile)
         VDSMKEY = ts + '/keys/vdsmkey.pem'
@@ -1209,7 +1213,8 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey, dhKey):
 
     if isOvirt():
         # save the certificates
-        out, err, ret = _logExec([EX_BASH, EX_OVIRT_FUNTIONS, OVIRT_STORE_FUNCTION, vdsmKey, dhKey])
+        ovirtfunctions.ovirt_store_config(vdsmKey)
+        ovirtfunctions.ovirt_store_config(dhKey)
 
 def _cpuid(func):
     f = file('/dev/cpu/0/cpuid')
