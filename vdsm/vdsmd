@@ -138,6 +138,7 @@ shutdown_conflicting_srv() {
 
 start_needed_srv() {
     local srv
+    local ret_val
 
     for srv in $NEEDED_SERVICES
     do
@@ -145,8 +146,15 @@ start_needed_srv() {
         then
             echo "Starting $srv..."
             /sbin/service $srv start
+            $ret_val=$?
+            if [ $ret_val -ne 0 ]
+            then
+                log_failure_msg "$prog: Dependent $srv failed to start"
+                return $ret_val
+            fi
         fi
     done
+
     /sbin/service iscsid force-start
 }
 
@@ -206,10 +214,10 @@ test_already_running()
 {
     if pidofproc -p $RESPAWNPIDFILE >/dev/null || \
        pidofproc -p $PIDFILE $VDSM_BIN >/dev/null; then
-        log_failure_msg "$prog: already running"
-        return 1
+        log_success_msg "$prog: already running"
+        return 0
     fi
-    return 0
+    return 1
 }
 
 # configure libvirt to vdsm's needs
@@ -217,6 +225,7 @@ configure_libvirt()
 {
     local force_reconfigure="$1"
     local BY_VDSM="# by vdsm"
+    local ts=/etc/pki/vdsm
 
     remove_vdsm_conf() {
         sed -i --copy "/$BY_VDSM/d" "$1"
@@ -252,15 +261,24 @@ configure_libvirt()
         remove_vdsm_conf $ldconf
     fi
 
-    # do not reconfigure
-    grep -q "$BY_VDSM" $lconf && return
-
     # do not configure ovirt nodes before registration
-    [ -f /etc/rhev-hypervisor-release -a \
-      ! -f /etc/pki/vdsm/certs/vdsmcert.pem ] && return
+    if [ -f /etc/rhev-hypervisor-release -a \
+      ! -f $ts/certs/vdsmcert.pem ]
+    then
+        log_failure_msg "$prog: Missing certificates, $prog not registered "
+        return 6
+    fi
+
+    # do not reconfigure, return 0, so that vdsm start can continue.
+    if grep -q "$BY_VDSM" $lconf && grep -q "$BY_VDSM" $qconf
+    then
+        log_success_msg $"$prog: libvirt already configured for vdsm "
+        return 0
+    fi
 
     echo $"Configuring libvirt for vdsm..."
 
+    # Set the default values for libvirt and qemu
     set_if_default $lconf listen_addr \"0\"
     set_if_default $lconf unix_sock_group \"kvm\"
     set_if_default $lconf unix_sock_rw_perms \"0770\"
@@ -278,7 +296,8 @@ configure_libvirt()
     set_if_default $lconf log_outputs \"1:file:/var/log/libvirtd.log\"
     set_if_default $lconf log_filters "\"1:libvirt 3:event 3:json 1:util 1:qemu\""
 
-    local ts=/etc/pki/vdsm
+    # If the ssl flag is set, update the libvirt and qemu configuration files
+    # with the location for certificates and permissions.
     if [ -f $ts/certs/cacert.pem -a \
          -f $ts/certs/vdsmcert.pem -a \
          -f $ts/keys/vdsmkey.pem -a \
@@ -287,7 +306,6 @@ configure_libvirt()
         set_if_default $lconf ca_file \"$ts/certs/cacert.pem\"
         set_if_default $lconf cert_file \"$ts/certs/vdsmcert.pem\"
         set_if_default $lconf key_file \"$ts/keys/vdsmkey.pem\"
-
         set_if_default $qconf spice_tls_x509_cert_dir \"$ts/libvirt-spice\"
     else
         set_if_default $lconf auth_tcp \"none\"
@@ -326,9 +344,25 @@ reconfigure() {
 }
 
 start() {
+    local ret_val
     python @P_VDSM@/hooks.pyc before_vdsm_start
+
     reconfigure noforce
+    ret_val=$?
+    if [ $ret_val -ne 0 ]
+    then
+        log_failure_msg "$prog: failed to reconfigure libvirt"
+        return $ret_val
+    fi
+
     start_needed_srv
+    ret_val=$?
+    if [ $ret_val -ne 0 ]
+    then
+       log_failure_msg "$prog: one of the dependent services did not start, error code $ret_val"
+       return $ret_val
+    fi
+
     shutdown_conflicting_srv
     @P_VDSM@/vdsm-restore-net-config
     load_needed_modules
@@ -343,11 +377,12 @@ start() {
     fi
     [ `ulimit -n` -lt 4096 ] && ulimit -n 4096
 
-    if ! (test_space && test_lo && test_already_running && \
+    test_already_running && return 0
+
+    if ! (test_space && test_lo && \
           check_port_taken && \
           test_conflicting_conf); then
-        RETVAL=1
-        return
+        return 1
     fi
 
     echo $"Starting up vdsm daemon: "
@@ -368,7 +403,7 @@ stop() {
     fi
     if ! pidofproc -p $PIDFILE >/dev/null; then
         log_failure_msg "$prog: not running"
-        RETVAL=1
+        RETVAL=0
     else
         killproc -p $PIDFILE -d 2
         RETVAL=$?
@@ -376,14 +411,17 @@ stop() {
         [ "$RETVAL" -eq 0 ] && rm -f /var/lock/subsys/vdsmd
     fi
     python @P_VDSM@/hooks.pyc after_vdsm_stop
+    return $RETVAL
 }
 
 case "$1" in
      start)
         start
+	RETVAL=$?
 	;;
      stop)
         stop
+	RETVAL=$?
 	;;
      status)
 	pidofproc -p $PIDFILE $VDSM_BIN >/dev/null
@@ -409,22 +447,22 @@ case "$1" in
         ;;
      try-restart)
 	$0 stop && $0 start
+	RETVAL=$?
 	;;
      restart|force-reload)
 	$0 stop
 	$0 start
-	;;
-     reload)
+	RETVAL=$?
 	;;
     reconfigure)
         # Jump over 'reconfigure'
         shift 1
         reconfigure "$@"
+	RETVAL=$?
     ;;
      *)
-	echo "Usage: $0 {start|stop|status|restart|reload|force-reload|try-restart}"
-	RETVAL=3
+	echo "Usage: $0 {start|stop|status|restart|force-reload|try-restart}"
+	RETVAL=2
 esac
 
 exit $RETVAL
-
