@@ -31,7 +31,7 @@ exceptions:
 	python vdsm/storage/storage_exception.py | grep Collision && exit 1 || true 
 
 pyflakes:
-	@which pyflakes > /dev/null && git ls-files *.py | xargs pyflakes || (echo "Pyflakes errors or pyflakes not found"; exit 1)
+	@which pyflakes > /dev/null && git ls-files '*.py' | xargs pyflakes || (echo "Pyflakes errors or pyflakes not found"; exit 1)
 
 permissive_pyflakes:
 	@which pyflakes > /dev/null 2>&1 || (echo "pyflakes not found" && false)
