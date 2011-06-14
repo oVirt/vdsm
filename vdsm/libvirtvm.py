@@ -983,12 +983,19 @@ class LibvirtVm(vm.Vm):
             timeout = config.getint('vars', 'migration_timeout')
             self.log.debug("Waiting %s seconds for end of migration" % timeout)
             self._incomingMigrationFinished.wait(timeout)
-            if not self._incomingMigrationFinished.isSet():
-                self.setDownStatus(ERROR,  "Migration failed")
-                return
-            self._dom = NotifyingVirDomain(
-                            self._connection.lookupByUUIDString(self.id),
-                            self._timeoutExperienced)
+            try:
+                # Would fail if migration isn't successful,
+                # or restart vdsm if connection to libvirt was lost
+                self._dom = NotifyingVirDomain(
+                                self._connection.lookupByUUIDString(self.id),
+                                self._timeoutExperienced)
+            except Exception, e:
+                # Improve description of exception
+                if not self._incomingMigrationFinished.isSet():
+                    newMsg = '%s - Timed out (did not recieve success event)' % (e.args[0] if len(e.args) else 'Migration Error')
+                    e.args = (newMsg,) + e.args[1:]
+                raise
+
             self._domDependentInit()
             del self.conf['migrationDest']
             del self.conf['afterMigrationStatus']
