@@ -705,7 +705,7 @@ def removeVgMapping(vgName):
     mappings = devicemapper.getAllMappedDevices()
 
     for mapping in mappings:
-        if not mappings.startswith(mappingPrefix):
+        if not mapping.startswith(mappingPrefix):
             continue
         try:
             devicemapper.removeMapping(mapping)
