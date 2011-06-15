@@ -328,10 +328,8 @@ class SPM:
 
         :param spUUID: The UUID of the storage pool you want to modify.
         :type spUUID: UUID
-        :param lastOwner: The last owner of the pool. ?
-        :type lastOwner: ?
-        :param lastLver: The last lock version
-        :type lastLver: int?
+        :param lastOwner: obsolete
+        :param lastLver: obsolete
         :param options: ?
 
         :returns: a dict containing the spms state?
@@ -342,16 +340,9 @@ class SPM:
         hsm.HSM.validateConnectedPool(spUUID)
         pool = hsm.HSM.getPool(spUUID)
         pool.invalidateMetadata()
-        lver = pool.getMetaParam(sp.PMDK_LVER)
-        owner = pool.getMetaParam(sp.PMDK_SPM_ID)
-
-        if int(lver) != int(lastLver) or int(owner) != int(lastOwner):
-            raise se.SpmParamsMismatch(lver, owner, lastLver, lastOwner)
-
         vars.task.getExclusiveLock(STORAGE, spUUID)
         # TODO: SCSI Fence the 'lastOwner'
-        pool.setMetaParams({sp.PMDK_SPM_ID: -1,
-            sp.PMDK_LVER: -1})
+        pool.setMetaParams({sp.PMDK_SPM_ID: -1, sp.PMDK_LVER: -1})
         self.spmRole = SPM_FREE
         st = {'spmStatus':self.spmRole, 'spmLver': -1, 'spmId':-1}
         self.log.debug("spUUID=%s: spmStatus=%s spmLver=%s spmId=%s",
