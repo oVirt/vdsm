@@ -1,0 +1,18 @@
+#!/usr/bin/python
+
+# Access python's config files from bash.
+# Usage: get-conf-item filename.conf section item default
+
+import sys
+try:
+   from config import config
+except:
+   import ConfigParser
+   config = ConfigParser.ConfigParser()
+
+(dummy, file, section, item, default) = sys.argv
+config.read(file)
+try:
+   print config.get(section, item)
+except:
+   print default

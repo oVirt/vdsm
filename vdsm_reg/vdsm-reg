@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# vdsm-reg-srv  Start services
+#
+# chkconfig: 2345 11 99
+# description: vdsm registration service
+#
+PIDFILE=/var/run/vdsm-reg.pid
+LOCKFILE=/var/lock/subsys/vdsm-reg
+prog=vdsm-reg
+VDSM_REG_BIN=/usr/share/vdsm-reg/vdsm-reg-setup
+
+# Source functions library
+if [ -r /lib/lsb/init-functions ]; then
+	. /lib/lsb/init-functions
+else
+	. /etc/init.d/functions
+	log_failure_msg() { echo -n "$@"; failure "$@"; echo; }
+	log_success_msg() { echo -n "$@"; success "$@"; echo; }
+fi
+
+start() {
+	echo "vdsm-reg: starting"
+
+	pid=`pidofproc -p $PIDFILE $VDSM_BIN`
+	RETVAL=$?
+	if [ "$RETVAL" -eq 0 ]; then
+		log_failure_msg "$prog: already running"
+		RETVAL=1
+	else
+		echo $"Starting up vdsm-reg daemon: "
+		$VDSM_REG_BIN
+		RETVAL=$?
+		[ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
+		[ "$RETVAL" -eq 0 ] && touch $LOCKFILE
+	fi
+
+	echo "vdsm-reg: ended."
+}
+
+stop() {
+	pid=`pidofproc -p $PIDFILE`
+	RETVAL=$?
+	pid="$pid `pidofproc $VDSM_REG_BIN`"
+	RETVAL2=$?
+	if [ ! "$RETVAL" -eq 0 -a ! "$RETVAL2" -eq 0 ]; then
+		rm -f $LOCKFILE
+		RETVAL=1
+	else
+		echo $"Shutting down vdsm-reg: "
+		killproc -p $PIDFILE
+		RETVAL=$?
+		[ "$RETVAL" -eq 0 ] && log_success_msg $"$prog stop" || log_failure_msg $"$prog stop"
+		[ "$RETVAL" -eq 0 ] && rm -f $LOCKFILE
+		sleep 2
+	fi
+}
+
+status() {
+	pid=`pidofproc -p $PIDFILE $VDSM_REG_BIN`
+	RETVAL=$?
+	if [ "$RETVAL" -eq 0 ]; then
+		echo "The vdsm-reg daemon is running"
+	else
+		echo "The vdsm-reg daemon is not running"
+	fi
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	status)
+		status
+		;;
+	restart)
+		$0 stop
+		$0 start
+		;;
+	*)
+		echo "Usage: vdsm-reg {start|stop|status|restart}"
+		exit 2
+esac

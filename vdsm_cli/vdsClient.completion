@@ -1,0 +1,40 @@
+# (partial) bash completion for vdsClient
+function _vds_client ()
+{
+    local cur prev preprev opts hosts arg0
+    COMPREPLY=()
+    arg0="${COMP_WORDS[0]}"
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    [[ "$COMP_CWORD" -gt 1 ]] && preprev="${COMP_WORDS[COMP_CWORD-2]}"
+    #
+    #  The basic options we'll complete.
+    #
+    hosts="0"
+    opts="-s -m -h --truststore"
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
+        return 0
+    fi
+
+    if [[ "$prev" == --truststore ]]; then
+        COMPREPLY=( $( compgen -f -- "$cur" ) )
+        return 0
+    fi
+
+    if [[ "$COMP_CWORD" == 1 || "$prev" == -* ]]; then
+        COMPREPLY=( $( compgen -W "$opts $hosts" -- "$cur" ) )
+        return 0
+    fi
+
+    if [[ "$COMP_CWORD" == 2 || "$preprev" == -* ]]; then
+        local cmds
+        cmds=`"$arg0" -m 2> /dev/null | awk '/^[a-z]/ {print $1}'`
+        COMPREPLY=( $( compgen -W "$cmds" -- "$cur" ) )
+        return 0
+    fi
+
+    return 0
+}
+complete -F _vds_client vdsClient

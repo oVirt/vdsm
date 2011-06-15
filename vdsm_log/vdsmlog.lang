@@ -1,0 +1,27 @@
+# VDSM log highlighter
+state flow = '^' begin
+	mainprocess = "MainProcess"
+	mainthread = "MainThread(?=::)"
+	thread = '(Thread-\d+|[\w-]+)(?=::)'
+	state loglevel start '::' begin
+		error = 'ERROR|CRITICAL'
+		warning = 'WARN(?:ING)?'
+		info = 'INFO|DEBUG'
+		state date start '(?<=::)(\d+-\d+-\d+ \d+:\d+:\d+,\d+)(?=::)' begin
+		state filename start '\w+(?=::)' begin
+		state lineno start '\d+(?=::)' begin
+		state logger start '[\w.]+(?=::)' begin
+		state function start '\([^)]+\)(?= )' begin
+			cmdsuccess = 'SUCCESS: <err> = \'[^\']*\'; <rc> = \d+'
+			cmderror = 'FAILED: <err> = \'[^\']*\'; <rc> = \d+'
+			apierror = '\{\'message\': \'[^\']*\', \'code\': [1-9]\d*\}'
+			apisuccess = '\{\'message\': \'[^\']*\', \'code\': 0\}'
+			statechange = 'moving from state \w+ -> state \w+'
+			statechange = 'finished(?=:)'
+			notice = 'sampling method|[sS]uper [vV]dsm|Task|VDSM|Returning last result|[Rr]esources?'
+			(runandprotect,runandprotectmethod,runandprotect) = `(Run and protect: )(\w+)(, args:|, Return response:)`
+		end end end end end
+	end
+	eol = '$' exit
+end
+

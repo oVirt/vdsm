@@ -1,0 +1,30 @@
+#!/bin/bash
+usage() {
+    cat <<EOF
+Usage:
+
+$0 {bridge|''} {vlan-id|''} {bonding|''} {nic[,nic]|''}
+
+Delete a network defined by a bridge, tagged by vlan-id,
+connected through bonding device to nics.
+
+bridge - network name
+vlan-id - integer 0-4095 or empty string if no vlan
+bonding - bonding device name or empty string if a single nic
+nic[,nic] - possibly-multiple nics
+EOF
+
+    exit 21
+}
+
+[[ $# -lt 4 ]] && usage
+
+bridge="$1"
+vlan="vlan=$2"
+bonding="bonding=$3"
+[[ -n "$4" ]] && nics="nics=$4"
+shift 4
+
+PYTHONPATH=`dirname $(readlink -f "$0")` \
+/usr/bin/python -m configNetwork del "$bridge" "$vlan" "$bonding" $nics "$@"
+

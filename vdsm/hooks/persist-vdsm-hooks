@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Copyright 2009-2010 Red Hat, Inc. All rights reserved.
+# Use is subject to license terms.
+#
+# Description:	  Persist all VDSM hooks
+#
+
+HOOKS_DIR=/usr/libexec/vdsm/hooks
+
+if [[ -f /etc/rhev-hypervisor-release ]]
+then
+    . /usr/libexec/ovirt-functions
+    for hook in "$HOOKS_DIR"/*/*
+    do
+        if [[ -f "$hook" ]]
+        then
+            ovirt_store_config "$hook"
+        fi
+    done
+else
+    echo "Host is not RHEV-Hypervisor"
+    exit 1
+fi

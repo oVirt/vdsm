@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# vdsm-restore-net-config: restore network configuration files to their
+# declared-safe state.
+#
+# this should NOT be used in ovirt, where configuration persistence is handled
+# otherwise.
+
+[ -f /etc/rhev-hypervisor-release ] && exit 0
+
+NET_CONF_DIR='/etc/sysconfig/network-scripts/'
+NET_CONF_BACK_DIR=@P_VDSM_LIB@/netconfback
+DELETE_HEADER='# original file did not exist'
+
+for f in "$NET_CONF_BACK_DIR"/*;
+do
+    [ ! -f "$f" ] && continue
+    f=`basename "$f"`
+    declare -a todel tomove
+    if grep -q "$DELETE_HEADER" "$NET_CONF_BACK_DIR/$f"
+    then
+        todel[${#todel[@]}]="$f"
+    else
+        tomove[${#tomove[@]}]="$f"
+    fi
+    should_restart=yes
+done
+
+if [ "$should_restart" == yes ];
+then
+    service network stop
+    # ifdown'ed bridge are not deleteted
+    for f in "${todel[@]}";
+    do
+        grep -q '^TYPE=Bridge' "$NET_CONF_DIR/$f" && brctl delbr "${f/ifcfg-/}"
+    done
+fi
+
+for f in "${todel[@]}";
+do
+    rm -f "$NET_CONF_DIR/$f"
+    rm "$NET_CONF_BACK_DIR/$f"
+done
+for f in "${tomove[@]}";
+do
+    mv "$NET_CONF_BACK_DIR/$f" "$NET_CONF_DIR"
+done
+[ -d "$NET_CONF_BACK_DIR" ] && rmdir "$NET_CONF_BACK_DIR"
+[ "$should_restart" == yes ] && service network start

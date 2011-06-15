@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# vdsm-store-net-config: store network configuration files persistently
+#
+
+NET_CONF_DIR='/etc/sysconfig/network-scripts/'
+NET_CONF_BACK_DIR=@P_VDSM_LIB@/netconfback
+DELETE_HEADER='# original file did not exist'
+
+if [ -f /etc/rhev-hypervisor-release ];
+then
+    # for ovirt, persist the changed configuration files
+
+    . /usr/libexec/ovirt-functions
+
+    for f in "$NET_CONF_BACK_DIR"/*;
+    do
+        [ ! -f "$f" ] && continue
+        bf=`basename "$f"`
+        if [ -f "$NET_CONF_DIR/$bf" ];
+        then
+            ovirt_store_config "$NET_CONF_DIR/$bf"
+        else
+            ovirt_safe_delete_config "$NET_CONF_DIR/$bf"
+        fi
+        rm "$NET_CONF_BACK_DIR/$bf"
+    done
+else
+    # for rhel, remove the backed up configuration files, and thus mark the
+    # ones under /etc/sysconfig as "safe".
+
+    rm -rf "$NET_CONF_BACK_DIR"/*
+fi

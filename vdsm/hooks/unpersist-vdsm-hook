@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Copyright 2009-2010 Red Hat, Inc. All rights reserved.
+# Use is subject to license terms.
+#
+# Description:	  Unpersist VDSM Hook
+# Input: VDSM Hook file full path
+#
+
+HOOKS_DIR=/usr/libexec/vdsm/hooks
+HOOK_TO_UNPERSIST="$1"
+
+if [[ -z "$HOOK_TO_UNPERSIST" ]]; then
+    echo "usage: $0 hook_file"
+    exit 1
+fi
+
+if [[ -f /etc/rhev-hypervisor-release ]]
+then
+    . /usr/libexec/ovirt-functions
+    if [[ "$HOOK_TO_UNPERSIST" =~ ^"$HOOKS_DIR" ]]
+    then
+        # try to unpersist files only
+        if [[ -f "$HOOK_TO_UNPERSIST" ]]
+        then
+                ovirt_safe_delete_config "$HOOK_TO_UNPERSIST"
+        fi
+    fi
+else
+    echo "Host is not RHEV-Hypervisor"
+    exit 1
+fi

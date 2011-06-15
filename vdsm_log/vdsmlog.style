@@ -1,0 +1,16 @@
+thread, mainprocess, mainthread purple b;
+apierror, cmderror, error red b ;
+warning orange b ;
+cmdsuccess, info cyan ;
+date brightorange ;
+filename pink ;
+lineno darkblue ;
+apisuccess, logger green ;
+function darkred ;
+statechange yellow ;
+
+runandprotect purple ;
+runandprotectmethod green ;
+
+notice i, b ;
+

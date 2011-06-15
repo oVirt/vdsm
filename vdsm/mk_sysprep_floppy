@@ -1,0 +1,24 @@
+#!/bin/sh -e
+#
+# make a virtual floppy disk with sysprep.inf at its root.
+#
+
+if [ $# -ne 1 ]; then
+   echo usage: $0 /path/to.vfd
+   echo
+   echo create a floppy image and copy stdin into sysprep.inf.
+   exit 1
+fi
+
+FLOPPY_NAME="$1"
+/sbin/mkfs.msdos -C "$FLOPPY_NAME" 1440
+/bin/chown @DISKIMAGE_USER@:@DISKIMAGE_GROUP@ "$FLOPPY_NAME"
+/bin/chmod 0440 "$FLOPPY_NAME"
+mntpoint=`mktemp -d`
+mount -o loop,uid=`id -u`,gid=`id -g` "$FLOPPY_DIR/$FLOPPY_NAME" $mntpoint
+
+/bin/cat > $mntpoint/sysprep.inf
+
+umount $mntpoint
+rmdir $mntpoint
+

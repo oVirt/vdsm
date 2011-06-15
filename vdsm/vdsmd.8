@@ -1,0 +1,155 @@
+.\"Copyright 2010 Red Hat, Inc. and/or its affiliates.
+.\"
+.\"Licensed to you under the GNU General Public License as published by
+.\"the Free Software Foundation; either version 2 of the License, or
+.\"(at your option) any later version.  See the files README and
+.\"LICENSE_GPL_v2 which accompany this distribution.
+.\"
+.\"
+.\" File Name macro definition plagiarized from bash.
+.\"
+.de FN
+\fI\|\\$1\|\fP
+..
+.TH VDSMD 8 "September 19, 2010" "" ""
+.SH NAME
+vdsmd \- Red Hat Enterprise Virtualization Manager's host agent
+.SH SYNOPSIS
+.BR "service vdsmd start"
+.SH DESCRIPTION
+The
+.B VDSM
+service is required by a
+.B RHEV Manager
+to manage RHEV Hypervisors
+and Red Hat Enterprise Linux hosts. VDSM manages and monitors the host's
+storage, memory and networks as well as virtual machine creation, other host
+administration tasks, statistics gathering, and log collection.
+
+VDSM should be run as a daemon on each node managed by RHEV-M.
+It answers XML-RPC calls from clients (mostly RHEV-M). 
+
+.SH HOOKS
+VDSM is extendible: it has hooks in strategic locations, where it executes
+external scripts.
+.B
+Hooks API is new and is subject to future changes.
+Currently-supported hooks have self-explanatory names:
+    before_vm_start, after_vm_start,
+    before_vm_cont, after_vm_cont,
+    before_vm_pause, after_vm_pause,
+    before_vm_hibernate, after_vm_hibernate,
+    before_vm_dehibernate, after_vm_dehibernate,
+    before_vm_migrate_source, after_vm_migrate_source,
+    before_vm_migrate_destination, after_vm_migrate_destination,
+    after_vm_destroy,
+    before_vdsm_start, after_vdsm_stop.
+
+Each hook executes the scripts under
+.FN /usr/libexec/vdsm/hooks/<hook-name>/
+in lexicographic order.
+
+.SS Hook environment
+Each hook script (except before_vdsm_start and after_vdsm_stop) inherit the
+environment of the VDSM process, with an additional variable
+.B _hook_domxml
+which holds the path of libvirt's
+.B domain xml
+representation of the relevant virtual machine.
+The uuid of the virtual machine may be deduced from that xml, but it is also
+available as the environment variable
+.B vmId.
+
+On top of these, RHEV-M allows to set a collection of "custom parameters" for
+each virtual machine.  Each of these parameters is provided to hooks as an
+environment variable.
+
+before_migration_destination (and before_dehibernation) hooks currently receive
+the xml of the domain from the source host. The xml of the domain at the
+destination will differ in various details.
+
+.SS Hook execution
+before_vdsm_start and after_vdsm_stop scripts are executed as user
+.I root.
+All the other hooks are executed as user
+.I vdsm.
+
+.B before_vm_start
+scripts may edit the domain xml file (pointed by
+.B _hook_domxml
+) in order to change VDSM's definition of a
+virtual machine before it reaches libvirt. As with all hooks, the China Store
+Rule applies - if you break something, you own it. Any script can mess up
+VDSM's operation badly. In particular, you may never change the uuid of the
+domain, and should better know what you are doing if you remove a device from
+the domain.
+
+Standard error of hook scripts is collected into VDSM's log, which may be used
+by scripts for debugging.
+
+As a somewhat silly example, let us think of a script that warns when a
+domain with too much memory is started on a host:
+
+.nf
+    #!/bin/bash
+
+    mem=\`/usr/bin/xpath $_hook_domxml '/domain/memory/text()' 2> /dev/null\`
+
+    if [ "$mem" -gt 1073741824 ]; then
+        echo "Domain with more than Gb!" >&2
+    fi
+
+    exit 0
+.fi
+
+.SS Hook return code
+Hook script must return one of the following return codes:
+.PD 0
+.TP
+.B
+0
+the hook script ended successfully.
+.TP
+.B
+1
+the hook script failed, other hooks should be processed.
+.TP
+.B
+2
+the hook script failed, no further hooks should be processed.
+.TP
+.B
+>2
+reserved.
+
+.SH FILES
+.PD 0
+.TP
+.FN /etc/vdsm/vdsm.conf
+VDSM main configuration file. Use with great caution; some information about available variables and their meaning appear in
+.FN /usr/share/doc/vdsm-<version>/vdsm.conf.sample
+.TP
+.FN /var/log/vdsm/vdsm.log
+Default log location for vdsm.
+.TP
+.FN /etc/pki/vdsm
+VDSM's trust store: server key, certificate, and RHEV-M CA's certificate.
+.TP
+.FN /rhev/data-center/
+VDSM's image repository, or more exactly, links to NFS exports and iSCSI or
+FiberChannel devices which VDSM uses.
+
+
+.SH SEE ALSO
+.BR vdsClient(1)
+
+.SH AUTHOR
+VDSM was written by Ayal Baron, Barak Azulay, Cyril Plisko, Dan Kenigsberg,
+Doron Fediuck, Igor Lvovsky, Saggi Mizrahi, Shahar Frank, Simon Grinberg, and
+probably others.
+
+.SH BUGS
+Report bugs to <http://bugzilla.redhat.com>
+
+.SH COPYRIGHT
+Copyright 2010 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.

@@ -1,0 +1,20 @@
+#!/usr/bin/python
+
+# Set python's config files from the shell.
+# Usage: set-conf-item filename.conf section item value
+
+# WARNING: comments and item order within config file will be destoryed
+
+import sys
+try:
+   from config import config
+except:
+   import ConfigParser
+   config = ConfigParser.ConfigParser()
+
+(dummy, fname, section, item, value) = sys.argv
+config.read(fname)
+if not config.has_section(section):
+    config.add_section(section)
+config.set(section, item, value)
+config.write(file(fname, 'w'))

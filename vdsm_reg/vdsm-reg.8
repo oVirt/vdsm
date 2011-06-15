@@ -1,0 +1,41 @@
+.\"Copyright 2010 Red Hat, Inc. and/or its affiliates.
+.\"
+.\"Licensed to you under the GNU General Public License as published by
+.\"the Free Software Foundation; either version 2 of the License, or
+.\"(at your option) any later version.  See the files README and
+.\"LICENSE_GPL_v2 which accompany this distribution.
+.\"
+.\"
+.\" File Name macro definition plagiarized from bash.
+.\"
+.de FN
+\fI\|\\$1\|\fP
+..
+.TH VDSM-REG 8 "December 26, 2010" "" ""
+.SH NAME
+vdsm-reg \- Registration Daemon for Red Hat Enterprise Virtualization Manager's host agent
+.SH SYNOPSIS
+.BR "service vdsm-reg start"
+.SH DESCRIPTION
+The
+.B VDSM-REG
+service is required
+to register RHEV Hypervisors
+with
+.B RHEV Manager.
+VDSM-REG runs automatically when RHEV Hypervisor boots, and tries to perform
+the registeration and exit. If unsuccessful,
+the daemon will continue retrying. This will repeat on every reboot of RHEV
+Hypervisor.
+
+.SH SEE ALSO
+.BR vdsm(8)
+
+.SH AUTHOR
+VDSM-REG was written by Doron Fediuck.
+
+.SH BUGS
+Report bugs to <http://bugzilla.redhat.com>
+
+.SH COPYRIGHT
+Copyright 2010 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.

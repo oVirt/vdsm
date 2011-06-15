@@ -1,0 +1,45 @@
+Cmnd_Alias VDSM_LIFECYCLE = @ADDNETWORK@, @DELNETWORK@, @EDITNETWORK@, @VDSM_STORE_NET_CONFIG@, @DMIDECODE@, @MK_SYSPREP_FLOPPY@, \
+    @SERVICE@ ksmtuned *, \
+    @SERVICE@ ksm *, \
+    @PREPARE_VMCHANNEL@, \
+    @GET_VM_PID@
+Cmnd_Alias VDSM_STORAGE = @MOUNT@, @UMOUNT@, \
+    @FSCK@ -p *, \
+    @TUNE2FS@ -j *, \
+    @MKFS@ -q -j *, \
+    @FUSER@ -m *, \
+    @KILL@, \
+    @CHOWN@ @DISKIMAGE_USER@\:@DISKIMAGE_GROUP@ *, \
+    @CHOWN@ @METADATA_USER@\:@METADATA_GROUP@ *, \
+    @MV@ /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.*, \
+    @MV@ /etc/multipath.conf *, \
+    @CP@ * /etc/iscsi/iscsid.conf, \
+    @CP@ * /etc/multipath.conf, \
+    @SERVICE@ iscsid *, \
+    @SERVICE@ multipathd restart, \
+    @SERVICE@ multipathd reload, \
+    @SCSI_ID@, \
+    @ISCSIADM@ *, \
+    @LVM@, \
+    @CAT@ /sys/block/*/device/../../*, \
+    @CAT@ /sys/devices/platform/host*, \
+    @CAT@ /etc/iscsi/iscsid.conf, \
+    @CAT@ /etc/multipath.conf, \
+    @DD@ of=/sys/class/scsi_host/host*/scan, \
+    @DD@, \
+    @PERSIST@ multipath.conf, \
+    @PERSIST@ /var/log/vdsm/backup/*, \
+    @UNPERSIST@ multipath.conf, \
+    @UNPERSIST@ /var/log/vdsm/backup/*, \
+    @CP@ * multipath.conf *, \
+    @CP@ * /var/log/vdsm/backup/* *, \
+    @MULTIPATH@, \
+    @BLOCKDEV@ --getsize64 *, \
+    @SETSID@ @IONICE@ -c? -n? @SU@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
+    @SERVICE@ vdsmd *, \
+    @REBOOT@ -f, \
+    @PYTHON@ @P_VDSM@supervdsmServer.pyc [a-z0-9\\-]* [0-9]*
+
+vdsm  ALL=(ALL) NOPASSWD: VDSM_LIFECYCLE, VDSM_STORAGE
+Defaults:vdsm !requiretty
+Defaults:vdsm !syslog

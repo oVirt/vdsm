@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# vdsm-config configure vdsm parameters.
+#
+# description: vdsm configuration
+#
+. /usr/libexec/ovirt-functions
+VDSM_CONFIG=/etc/vdsm/vdsm.conf
+GETCONFITEM=/usr/share/vdsm/get-conf-item
+LOG=/var/log/vdsm-config
+fWriteConfig=0
+strRHEVMAddress=""
+
+	echo "vdsm-config: starting" | tee $LOG
+
+set_vars() {
+	echo "[vars]" >> $VDSM_CONFIG #Adding ts for the coming scripts.
+	echo "trust_store_path = " `$GETCONFITEM $VDSM_CONFIG vars trust_store_path /etc/pki/vdsm` >> $VDSM_CONFIG
+	echo "ssl = " `$GETCONFITEM $VDSM_CONFIG vars ssl true` >> $VDSM_CONFIG
+	echo "" >> $VDSM_CONFIG
+}
+
+set_addresses() {
+	echo "[addresses]" >> $VDSM_CONFIG #Adding ts for the coming scirpts.
+	echo "management_port = " `$GETCONFITEM $VDSM_CONFIG addresses management_port 54321` >> $VDSM_CONFIG
+	echo "" >> $VDSM_CONFIG
+}
+
+	echo "Generating RHEV agent configuration files"
+	if [ ! -s $VDSM_CONFIG ];
+	then
+		echo "Calling set_vars" >> $LOG 2>&1
+		set_vars
+		echo "Calling set_addresses" >> $LOG 2>&1
+		set_addresses
+		echo "Calling ovirt_store_config" >> $LOG 2>&1
+		ovirt_store_config $VDSM_CONFIG
+		echo "RHEV agent configuration files created." | tee -a $LOG
+	else
+		echo "RHEV agent configuration files already exist." | tee -a $LOG
+	fi
+
+	echo ""
+	echo "Configuring the RHEV Manager connection."
+	nDisable=`cat /proc/cmdline | grep -ic ovirt_vdsm_disable`
+	echo "nDisable: $nDisable" >> $LOG 2>&1
+
+	if [ ! $nDisable -gt 0 ]; then
+		echo "checkpoint 1" >> $LOG 2>&1
+		for i in $(cat /proc/cmdline); do
+			case $i in
+				ovirt_managment_server=*)
+				managment_server=${i#ovirt_managment_server=}
+				;;
+				managment_server=*)
+				managment_server=${i#managment_server=}
+				;;
+				management_server=*)
+				managment_server=${i#management_server=}
+				;;
+				*)
+				;;
+			esac
+		done
+		echo "checkpoint 2 ::management_server: $managment_server" >> $LOG 2>&1
+
+		if [ ! -z "$managment_server" ]; then
+			vdc_managment_server=${managment_server%:*}
+			vdc_managment_port=${managment_server#*:}
+			strRHEVMAddress=$vdc_managment_server
+			echo "checkpoint 3::management_server: $vdc_managment_server, management_port: $vdc_managment_port" >> $LOG 2>&1
+
+			sed --copy -i "s/\(^vdc_host_name=\)\(..*$\)/\1${vdc_managment_server}/" \
+				/etc/vdsm-reg/vdsm-reg.conf
+
+			if [ "$vdc_managment_server" != "$vdc_managment_port" ]; then
+				sed --copy -i "s/\(^vdc_host_port=\)\(..*$\)/\1${vdc_managment_port}/" \
+					/etc/vdsm-reg/vdsm-reg.conf
+			fi
+
+			## Set new configuration
+			fWriteConfig=1
+		else
+			echo "No management_server found." | tee -a $LOG
+		fi
+
+		if [ $fWriteConfig -gt 0 ]; then ## Save new configuration
+			ovirt_store_config /etc/vdsm-reg/vdsm-reg.conf
+		fi
+	else
+		echo "Configure was not needed." | tee -a $LOG
+	fi
+
+	echo "vdsm-config: ended." | tee -a $LOG
+
+exit 0

@@ -1,0 +1,96 @@
+#!/usr/bin/python
+#
+# Copyright 2009 Red Hat, Inc. and/or its affiliates.
+#
+# Licensed to you under the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.  See the files README and
+# LICENSE_GPL_v2 which accompany this distribution.
+#
+
+import os, sys, getopt, signal
+import threading
+import logging
+import traceback
+from logging import config as lconfig
+
+import constants
+import dsaversion
+import betterThreading # before threading is ever used
+
+loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
+
+def usage():
+    print "Usage:  vdsm [OPTIONS]"
+    print "     -h  - Display this help message"
+
+def serve_clients(log):
+    cif = None
+    def sigtermHandler(signum, frame):
+        if cif:
+            cif.prepareForShutdown()
+    def sigusr1Handler(signum, frame):
+        if cif and cif.irs:
+            cif.irs.spmStop(cif.irs.hsm.pools.keys()[0])
+
+    signal.signal(signal.SIGTERM, sigtermHandler)
+    signal.signal(signal.SIGUSR1, sigusr1Handler)
+
+    import clientIF # must import after config is read
+    cif = clientIF.clientIF(log)
+    cif.serve()
+
+def run():
+    lconfig.fileConfig(loggerConfFile)
+    logging.addLevelName(5, 'TRACE')
+    logging.TRACE = 5 # impolite but helpful
+
+    # Used to debug vdsm. on production machines
+    # vdsmDebugPlugin.py should not exists
+    try:
+        import vdsmDebugPlugin
+    except ImportError:
+        # This is OK, it just means the file isn't
+        # there and we are not running in debug mode.
+        # Any other error is an error in the debug
+        # plugin and we would like to print that out.
+        pass
+
+
+    log = logging.getLogger('vds')
+    try:
+        logging.root.handlers.append(logging.StreamHandler())
+        log.handlers.append(logging.StreamHandler())
+
+        pidfile = constants.P_VDSM_RUN + 'vdsmd.pid'
+        file(pidfile, 'w').write(str(os.getpid()) + "\n")
+        os.chmod(pidfile, 0664)
+
+        log.info('I am the actual vdsm %s-%s',
+             dsaversion.software_version,
+             dsaversion.software_revision)
+        serve_clients(log)
+    except:
+        log.error(traceback.format_exc())
+
+    log.info("VDSM main thread ended. Waiting for %d other threads..." % (threading.activeCount() - 1))
+    for t in threading.enumerate():
+        if hasattr(t, 'stop'): t.stop()
+        log.info(str(t))
+
+def parse_args():
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    for o,v in opts:
+        o = o.lower()
+        if o == "-h" or o == "--help":
+            usage()
+            sys.exit(0)
+
+    if len(args) >= 1:
+        usage()
+        sys.exit(1)
+
+if __name__ == '__main__':
+    os.setpgrp()
+    parse_args()
+    run()

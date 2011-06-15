@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+    echo "usage: $0 vm_name"
+    exit 1
+fi
+cat "/var/run/libvirt/qemu/$1.pid"

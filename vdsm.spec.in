@@ -1,0 +1,461 @@
+%define vdsm_reg vdsm-reg
+%define vdsm_name vdsm
+%define vdsm_bootstrap vdsm-bootstrap
+%include %{_rpmconfigdir}/macros.python
+
+Summary: Virtual Desktop Server Manager
+Name: vdsm
+Source: %{vdsm_name}-%{version}-%{release}.tar.gz
+# Url: no upstream project exists
+# tarball built from internal git repo with
+#       make tarball rpmversion=<version> rpmrelease=<release>
+Version: 0.0
+Release: 1%{?dist}
+License: GPLv2+
+Group: Applications/System
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
+ExclusiveArch: x86_64
+BuildRequires: python redhat-lsb redhat-rpm-config
+Requires: python which
+Requires: sudo >= 1.7.3
+Requires: qemu-kvm
+Requires: qemu-img m2crypto ethtool logrotate
+Requires: iscsi-initiator-utils >= 6.2.0.872-15
+Requires: nfs-utils dmidecode
+Requires: lvm2 >= 2.02.72-8.el6_0.4
+Requires: device-mapper-multipath >= 0.4.9-31.el6
+Requires: psmisc >= 22.6-15.el6_0.1
+Requires: fence-agents
+Requires: bridge-utils
+Requires: sos
+Requires: libvirt >= 0.8.7-5
+Requires: libvirt-python
+Requires: dosfstools
+Requires: policycoreutils-python
+Requires(post): cyrus-sasl-lib
+Conflicts: selinux-policy-targeted < 3.7.19-80.el6
+
+%description
+The VDSM service is required by a RHEV Manager to manage RHEV Hypervisors
+and Red Hat Enterprise Linux hosts. VDSM manages and monitors the host's
+storage, memory and networks as well as virtual machine creation, other host
+administration tasks, statistics gathering, and log collection.
+
+%prep
+%setup -c -q
+
+%build
+make -C vdsm CFLAGS="$RPM_OPT_FLAGS"
+baserelease=`echo "%{release}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
+sed -i 's/^software_version =.*/software_version = "%{version}"/;s/software_revision =.*/software_revision = "'"$baserelease"'"/' re/dsaversion.py
+
+
+%install
+rm -rf "%{buildroot}"
+mkdir -p "%{buildroot}"
+make -C vdsm PREFIX="%{buildroot}" \
+    VDSMDIR=%{_datadir}/%{vdsm_name} \
+    VDSMLOGDIR=%{_localstatedir}/log/%{vdsm_name} \
+    TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
+    BINDIR=%{_bindir} \
+    LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
+    CONFDIR=%{_sysconfdir}/%{vdsm_name} \
+    VDSMRUNDIR=%{_localstatedir}/run/%{vdsm_name} \
+    VDSMLIBDIR=%{_localstatedir}/lib/%{vdsm_name} \
+    SOSPLUGINDIR=%{py_sitedir}/sos/plugins \
+    install
+mkdir -p "%{buildroot}"%{_localstatedir}/log/core
+
+# hook vhostmd
+make -C vdsm/hooks/vhostmd PREFIX="%{buildroot}" \
+    LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
+    install
+
+# hook faqemu
+make -C vdsm/hooks/faqemu PREFIX="%{buildroot}" \
+    LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
+    install
+
+#vdsm-cli
+make -C vdsm_cli PREFIX="%{buildroot}" \
+    CONFDIR=%{_sysconfdir}/%{vdsm_name} \
+    BINDIR=%{_bindir} \
+    COMPDIR=%{_sysconfdir}/bash_completion.d \
+    VDSMDIR=%{_datadir}/%{vdsm_name} \
+    TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
+    TARGET=%{_datadir}/%{vdsm_name} install
+
+#vdsm-reg
+make -C vdsm_reg \
+    PREFIX="%{buildroot}" \
+    ETC=%{_sysconfdir} \
+    CONFDIR=%{_sysconfdir}/%{vdsm_reg} \
+    LOGDIR=%{_localstatedir}/log/%{vdsm_reg} \
+    VDSMREGDIR=%{_datadir}/%{vdsm_reg} \
+    TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
+    VDSMRUNDIR=%{_localstatedir}/run/%{vdsm_name} \
+    install
+
+#vdsm-bootstrap
+make -C vds_bootstrap \
+     PREFIX="%{buildroot}" \
+     TARGET=%{_datadir}/%{vdsm_bootstrap} install
+
+
+
+%clean
+%{__rm} -rf %{buildroot}
+
+%pre
+getent passwd vdsm > /dev/null || /usr/sbin/useradd -u 36 -g kvm -o -r vdsm -c "RHEV node manager" -d / -s /sbin/nologin
+/usr/sbin/usermod -a -G qemu vdsm
+
+%post
+tmp_sudoers=$(mktemp)
+cp -a /etc/sudoers $tmp_sudoers
+/bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers
+
+if ! grep -q "^#includedir /etc/sudoers.d" "$tmp_sudoers";
+then
+    cat >> $tmp_sudoers <<EOF
+# vdsm customizations
+#include /etc/sudoers.d/50_vdsm
+# end vdsm customizations
+EOF
+fi
+
+if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
+    /bin/cp -a $tmp_sudoers /etc/sudoers
+else
+    echo "Failed to add vdsm section to /etc/sudoers" 1>&2
+    echo "$outerr" 1>&2
+fi
+rm -f $tmp_sudoers
+
+# vdsm is intentionally on by default.
+/sbin/chkconfig --add vdsmd
+
+# create vdsm "secret" password for libvirt, if none exists
+pfile=/etc/pki/%{vdsm_name}/keys/libvirt_password
+if [[ ! -f "$pfile" ]];
+then
+    umask 077
+    echo -n shibboleth > "$pfile"
+    /bin/chown vdsm:kvm "$pfile"
+    new_pwd=1
+fi
+if ! /usr/sbin/sasldblistusers2 -f /etc/libvirt/passwd.db 2>- | \
+    /bin/grep -q '^vdsm@rhevh\b' || [[ -n "$new_pwd" ]] ;
+then
+    /usr/sbin/saslpasswd2 -p -a libvirt vdsm@rhevh < "$pfile"
+fi
+
+%preun
+if [ "$1" -eq 0 ]
+then
+        /sbin/service vdsmd stop > /dev/null 2>&1 || :
+        /sbin/chkconfig --del vdsmd
+
+        tmp_sudoers=$(mktemp)
+        cp -a /etc/sudoers $tmp_sudoers
+        /bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers
+        if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
+            /bin/cp -a $tmp_sudoers /etc/sudoers
+        else
+            echo "Failed to add vdsm section to /etc/sudoers" 1>&2
+            echo "$outerr" 1>&2
+        fi
+        rm -f $tmp_sudoers
+
+        lconf=/etc/libvirt/libvirtd.conf
+        qconf=/etc/libvirt/qemu.conf
+        ldconf=/etc/sysconfig/libvirtd
+        sed -i '/# by vdsm$/d' $lconf $qconf $ldconf
+
+        /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
+virt_use_nfs=0
+_EOF
+
+        if selinuxenabled; then
+            setsebool virt_use_nfs off
+        fi
+fi
+
+%postun
+if [ "$1" -ge 1 ]; then
+        /sbin/service vdsmd condrestart > /dev/null 2>&1
+fi
+exit 0
+
+%package hook-vhostmd
+Summary: VDSM hook set for interaction with vhostmd
+Group: Applications/System
+Requires: vhostmd
+
+%description hook-vhostmd
+start vhostmd and use it per VM according to requests from RHEV-M
+
+%package debug-plugin
+Summary:       VDSM Debug Plugin
+Requires:      vdsm
+
+%description debug-plugin
+Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM
+
+%package cli
+Summary: VDSM command line interface
+Group: Applications/System
+Requires: m2crypto
+
+%description cli
+Call VDSM commands from the command line. Used for testing and debugging.
+
+%package bootstrap
+Summary: VDSM bootstrapping package
+Group: Applications/System
+
+%description bootstrap
+VDSM bootstrapping package. Used for delivering the bootstap code onto RHEV
+Manager.
+
+%package reg
+Summary: VDSM registration package
+Group: Applications/System
+Requires: %{name} = %{version}-%{release}
+Requires: traceroute
+
+%description reg
+VDSM registration package. Used to register a RHEV hypervisor to a RHEV
+Manager.
+
+%post reg
+/sbin/chkconfig --add vdsm-reg
+
+%preun reg
+if [ "$1" -eq 0 ]
+then
+        /sbin/service vdsm-reg stop > /dev/null 2>&1
+        /sbin/chkconfig --del vdsm-reg
+fi
+
+%package hook-faqemu
+Summary: Fake qemu process for VDSM quality assurance
+Group: Applications/System
+
+%description hook-faqemu
+The faqemu process is used for testing VDSM with multiple, fake, virtual
+machines without running real guests.
+
+%files
+%defattr(-,root,root,-)
+%dir %{_libexecdir}/%{vdsm_name}
+%dir %{_datadir}/%{vdsm_name}
+%dir %{_datadir}/%{vdsm_name}/storage
+%{_datadir}/%{vdsm_name}/define.py*
+%{_datadir}/%{vdsm_name}/clientIF.py*
+%{_datadir}/%{vdsm_name}/utils.py*
+%{_datadir}/%{vdsm_name}/constants.py*
+%{_datadir}/%{vdsm_name}/vm.py*
+%{_datadir}/%{vdsm_name}/supervdsm.py*
+%{_datadir}/%{vdsm_name}/supervdsmServer.py*
+%{_datadir}/%{vdsm_name}/libvirtvm.py*
+%{_datadir}/%{vdsm_name}/libvirtconnection.py*
+%{_datadir}/%{vdsm_name}/hooks.py*
+%{_datadir}/%{vdsm_name}/hooking.py*
+%{_datadir}/%{vdsm_name}/libvirtev.py*
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/vdsm
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/vdsm-store-net-config
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/write-net-config
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/get-vm-pid
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/prepare-vmchannel
+%doc vdsm/vdsm.conf.sample
+%config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
+%config(noreplace) %{_sysconfdir}/logrotate.d/vdsm
+%config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
+%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm
+%{_sysconfdir}/cron.hourly/vdsm-logrotate
+%{_datadir}/%{vdsm_name}/guestIF.py*
+%{_datadir}/%{vdsm_name}/logUtils.py*
+%{_datadir}/%{vdsm_name}/dsaversion.py*
+%{_datadir}/%{vdsm_name}/pthread.py*
+%{_datadir}/%{vdsm_name}/betterThreading.py*
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/logCollector.sh
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/persist-vdsm-hooks
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/unpersist-vdsm-hook
+%{_datadir}/%{vdsm_name}/storage/__init__.py*
+%{_datadir}/%{vdsm_name}/storage/dispatcher.py*
+%{_datadir}/%{vdsm_name}/storage/storage_exception.py*
+%{_datadir}/%{vdsm_name}/storage/sp.py*
+%{_datadir}/%{vdsm_name}/storage/sd.py*
+%{_datadir}/%{vdsm_name}/storage/spm.py*
+%{_datadir}/%{vdsm_name}/storage/hsm.py*
+%{_datadir}/%{vdsm_name}/storage/hba.py*
+%{_datadir}/%{vdsm_name}/storage/safelease.py*
+%{_datadir}/%{vdsm_name}/storage/image.py*
+%{_datadir}/%{vdsm_name}/storage/fileSD.py*
+%{_datadir}/%{vdsm_name}/storage/nfsSD.py*
+%{_datadir}/%{vdsm_name}/storage/localFsSD.py*
+%{_datadir}/%{vdsm_name}/storage/blockSD.py*
+%{_datadir}/%{vdsm_name}/storage/volume.py*
+%{_datadir}/%{vdsm_name}/storage/fileVolume.py*
+%{_datadir}/%{vdsm_name}/storage/blockVolume.py*
+%{_datadir}/%{vdsm_name}/storage/taskManager.py*
+%{_datadir}/%{vdsm_name}/storage/threadPool.py*
+%{_datadir}/%{vdsm_name}/storage/task.py*
+%{_datadir}/%{vdsm_name}/storage/threadLocal.py*
+%{_datadir}/%{vdsm_name}/storage/resourceManager.py*
+%{_datadir}/%{vdsm_name}/storage/storage_connection.py*
+%{_datadir}/%{vdsm_name}/storage/storage_mailbox.py*
+%{_datadir}/%{vdsm_name}/storage/storageConstants.py*
+%{_datadir}/%{vdsm_name}/storage/fileUtils.py*
+%{_datadir}/%{vdsm_name}/storage/misc.py*
+%{_datadir}/%{vdsm_name}/storage/lvm.py*
+%{_datadir}/%{vdsm_name}/storage/resourceFactories.py*
+%{_datadir}/%{vdsm_name}/storage/outOfProcess.py*
+%{_datadir}/%{vdsm_name}/storage/processPool.py*
+%{_datadir}/%{vdsm_name}/storage/iscsi.py*
+%{_datadir}/%{vdsm_name}/storage/devicemapper.py*
+%{_datadir}/%{vdsm_name}/storage/multipath.py*
+%{_datadir}/%{vdsm_name}/storage/sdc.py*
+%{_datadir}/%{vdsm_name}/storage/sdf.py*
+%{_datadir}/%{vdsm_name}/storage/persistentDict.py*
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/safelease
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/spmprotect.sh
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/spmstop.sh
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_cont
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_cont
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_pause
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_pause
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_hibernate
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_hibernate
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_dehibernate
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_migrate_source
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_migrate_destination
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vdsm_start
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/configNetwork.py*
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/addNetwork
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/delNetwork
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/respawn
+%{_datadir}/%{vdsm_name}/SecureXMLRPCServer.py*
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/get-conf-item
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/set-conf-item
+%{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
+%{_datadir}/%{vdsm_name}/config.py*
+%{_datadir}/%{vdsm_name}/ksm.py*
+%{_datadir}/%{vdsm_name}/netinfo.py*
+%{_datadir}/%{vdsm_name}/neterrors.py*
+%attr (755,root,root) %{_datadir}/%{vdsm_name}/img_verifier
+%{_sysconfdir}/udev/rules.d/12-vdsm-lvm.rules
+# this is not commonplace, but we want /var/log/core to be a world-writable
+# dropbox for core dumps.
+%dir %attr (1777,root,root) %{_localstatedir}/log/core
+%dir %attr (755,vdsm,kvm) %{_localstatedir}/lib/%{vdsm_name}
+%dir %attr (755,vdsm,kvm) %{_localstatedir}/lib/%{vdsm_name}/netconfback
+%dir %attr (755,vdsm,kvm) %{_localstatedir}/run/%{vdsm_name}
+%dir %attr (755,vdsm,kvm) %{_localstatedir}/run/%{vdsm_name}/pools
+%dir %attr (755,vdsm,kvm) %{_localstatedir}/log/%{vdsm_name}
+%dir %attr (755,vdsm,kvm) %{_localstatedir}/log/%{vdsm_name}/backup
+%dir %attr (755,vdsm,kvm) %{_sysconfdir}/pki/%{vdsm_name}
+%dir %attr (755,vdsm,kvm) %{_sysconfdir}/pki/%{vdsm_name}/keys
+%dir %attr (755,vdsm,kvm) %{_sysconfdir}/pki/%{vdsm_name}/certs
+/etc/init.d/vdsmd
+%doc LICENSE_GPL_v2 README
+%{py_sitedir}/sos/plugins/vdsm.py*
+%dir %attr (775,vdsm,qemu) %{_localstatedir}/lib/libvirt/qemu/channels/
+%{_mandir}/man8/vdsmd.8*
+
+%files hook-vhostmd
+%defattr(-,root,root,-)
+%doc LICENSE_GPL_v2
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
+%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
+%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
+
+%files debug-plugin
+%defattr(-,root,root,-)
+%{_datadir}/%{vdsm_name}/vdsmDebugPlugin.py*
+
+%files cli
+%defattr(-,root,root,-)
+%doc LICENSE_GPL_v2
+%{_datadir}/%{vdsm_name}/vdsClient.py*
+%{_sysconfdir}/bash_completion.d/vdsClient
+%{_datadir}/%{vdsm_name}/vdscli.py*
+%{_datadir}/%{vdsm_name}/dumpStorageTable.py*
+%attr (755,root,root) %{_bindir}/vdsClient
+%{_mandir}/man1/vdsClient.1*
+
+%files bootstrap
+%defattr(-,root,root,-)
+%doc LICENSE_GPL_v2
+%dir  %{_datadir}/%{vdsm_bootstrap}
+%{_datadir}/%{vdsm_bootstrap}/vds_bootstrap.py*
+%{_datadir}/%{vdsm_bootstrap}/deployUtil.py*
+%{_datadir}/%{vdsm_bootstrap}/vds_bootstrap_complete.py*
+
+
+%files reg
+%defattr(-,root,root,-)
+%doc LICENSE_GPL_v2
+%dir  %{_sysconfdir}/%{vdsm_reg}
+%dir  %{_datadir}/%{vdsm_reg}
+%dir %attr (755,vdsm,kvm) %{_var}/log/%{vdsm_reg}
+%config(noreplace) %{_sysconfdir}/%{vdsm_reg}/vdsm-reg.conf
+%config(noreplace) %{_sysconfdir}/%{vdsm_reg}/logger.conf
+%{_sysconfdir}/init.d/vdsm-reg
+%{_datadir}/%{vdsm_reg}/vdsm-reg-setup
+%{_datadir}/%{vdsm_reg}/define.py*
+%{_datadir}/%{vdsm_reg}/vdsm-complete
+%{_datadir}/%{vdsm_reg}/vdsm-gen-cert
+%{_datadir}/%{vdsm_reg}/vdsm-upgrade
+%{_datadir}/%{vdsm_reg}/config.py*
+%{_datadir}/%{vdsm_reg}/deployUtil.py*
+%{_datadir}/%{vdsm_reg}/createDaemon.py*
+%attr (755,root,root) %{_datadir}/%{vdsm_reg}/config-rhev-manager
+%attr (755,root,root) %{_datadir}/%{vdsm_reg}/save-config
+%{_sysconfdir}/ovirt-config-setup.d
+%{_sysconfdir}/ovirt-config-boot.d/vdsm-config
+%config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
+%{_sysconfdir}/cron.hourly/vdsm-reg-logrotate
+%{_mandir}/man8/vdsm-reg.8*
+
+%files hook-faqemu
+%defattr(-,root,root,-)
+%doc LICENSE_GPL_v2
+%{_bindir}/qemu
+%{_bindir}/qemu-system-x86_64
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
+
+%changelog
+* Thu May 10 2009 Doron Fediuck <doron@redhat.com> - 4.4-3
+- Fixed execution bit for registration bash scripts: config-rhev-manager, save-config.
+* Thu Feb 26 2009 Cyril Plisko <cplisko@redhat.com> - 4.4-3
+- Add dependency on iscsi-initiator-utils
+* Sun Feb 08 2009 Doron Fediuck <doron@redhat.com> - 4.4-2
+- Added vdsm registration with log rotate.
+* Sun Jan 18 2009 Cyril Plisko <cyril.plisko@grigale.com> - 4.4-1
+- Add NFS backend
+* Wed Dec 17 2008 Dan Kenigsberg <danken@redhat.com> - 4.4-0
+- Unified spec for vdsm, multi_vdsm, and vdsClient.
+* Mon May 19 2008 Igor Lvovsky <igorl@qumranet.com> - 4.2-0
+- Remove handling of smb.conf.CD
+* Sun Jan 06 2008 Cyril Plisko <cyril.plisko@qumranet.com> - 4.0-0
+- Make kvm run as non-root user
+* Sun Oct 21 2007 Barak Azulay <bazulay@qumranet.com> - 0.0-3
+- added Required field
+- added the handling of smb.conf.CD
+* Mon Jan 01 2007 Cyril Plisko <cyril.plisko@qumranet.com> - 0.0-2
+- Make the post and preun scriptlets work during upgrade too
+* Thu Nov 02 2006 Simon Grinberg <simong@qumranet.com> -  0.0-1
+- Initial build

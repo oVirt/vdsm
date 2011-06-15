@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "usage: $0 vmchannel_socket"
+    exit 1
+fi
+if [[ ! "$1" =~ /var/lib/libvirt/qemu/channels/.* ]]; then
+    echo "illegal vmchannel_socket"
+    exit 2
+fi
+
+/bin/chmod g+rw "$1"

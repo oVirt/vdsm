@@ -1,0 +1,6 @@
+*.pyc
+*~
+*.tmp
+*.swp
+rpmtop/
+vdsm/doc/build/

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+PYTHONPATH="@VDSMDIR@:$PYTHONPATH" python -m vdsClient "$@"

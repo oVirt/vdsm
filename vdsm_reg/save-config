@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# save-config
+#
+# description:  make configuration change(s) persistent in oVirt node.
+# Note: the argument expected is a file (or a name containing wildcards).
+#       If wildcards are in use, the argument MUST be single-quoted.
+#       IE- '/etc/logrotate.d/*'
+
+nReturn=0
+. /usr/libexec/ovirt-functions
+
+	rm -f /tmp/save.out
+	if [ $# -lt 1 ]; then
+		echo "save-config failed: no arguments found"
+		exit 1
+	fi
+
+	ovirt_store_config $1 > /tmp/save.out 2>&1
+
+	# chekc $?
+	if [ $? -ne 0 ]; then
+		echo "save-config failed: $?"
+		cat /tmp/save.out
+		nReturn=1
+	fi
+
+exit $nReturn

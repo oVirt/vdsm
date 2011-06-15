@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# config-rhev-manager 
+#
+# description:  RHEV manager IP/host setting
+#
+. /usr/libexec/ovirt-functions
+VDSM_CONFIG=/etc/vdsm/vdsm.conf
+GETCONFITEM=/usr/share/vdsm/get-conf-item
+strRHEVMAddress=""
+fWriteConfig=0
+
+warn() { printf '%s\n' "$*" >&2; }
+
+if ! is_local_storage_configured; then
+    warn "Configure local storage before configuring RHEV-M."
+    exit 99
+fi
+if ! network_up; then
+    warn "Configure network before configuring RHEV-M."
+    exit 99
+fi
+
+set_vars() {
+	echo "[vars]" >> $VDSM_CONFIG #Adding ts for the coming scripts.
+	echo "trust_store_path = " `$GETCONFITEM $VDSM_CONFIG vars trust_store_path /etc/pki/vdsm` >> $VDSM_CONFIG
+	echo "ssl = " `$GETCONFITEM $VDSM_CONFIG vars ssl true` >> $VDSM_CONFIG
+	echo "" >> $VDSM_CONFIG
+}
+
+set_addresses() {
+	echo "[addresses]" >> $VDSM_CONFIG #Adding ts for the coming scirpts.
+	echo "management_port = " `$GETCONFITEM $VDSM_CONFIG addresses management_port 54321` >> $VDSM_CONFIG
+	echo "" >> $VDSM_CONFIG
+}
+
+	echo "Generating RHEV agent configuration files"
+	if [ ! -s $VDSM_CONFIG ];
+	then
+		set_vars
+		set_addresses
+		ovirt_store_config $VDSM_CONFIG
+		echo "RHEV agent configuration files created."
+	else
+		echo "RHEV agent configuration files already exist."
+	fi
+        echo "RHEV Manager configuration"
+	echo ""
+	echo "Enter the RHEV Manager's hostname or IP address."
+	echo "Optionally: append a port after the hostname or IP address"
+	echo "For example, 192.168.0.1:443 or rhev.redhat.com:443"
+
+
+	read strResponse
+	IP=${strResponse%:*}
+	PORT=${strResponse#*:}
+
+	response=1
+	ping -c 1 $IP >/dev/null 2>&1 || response=0
+
+	if [ $response -gt 0 ]
+	then
+		## IP OK
+		sed -i --copy "s/\(^vdc_host_name=\)\(..*$\)/\1${IP}/" /etc/vdsm-reg/vdsm-reg.conf
+		printf "The RHEV Manager's address is set.\n" >&2
+
+		if [ "$IP" != "$PORT" ]; then
+			sed -i --copy "s/\(^vdc_host_port=\)\(..*$\)/\1${PORT}/" \
+				/etc/vdsm-reg/vdsm-reg.conf
+			printf "The RHEV Manager's port set.\n" >&2
+		fi
+
+		## Set new configuration
+		fWriteConfig=1
+
+		sleep 3
+	else
+		## Not OK
+		printf "Either %s is an invalid address or the RHEV Manager unresponsive.\n" "$IP" >&2
+		sleep 3
+		exit 1
+	fi
+
+	if [ $fWriteConfig -gt 0 ]; then ## Save new configuration
+		ovirt_store_config /etc/vdsm-reg/vdsm-reg.conf
+	fi
+exit 0

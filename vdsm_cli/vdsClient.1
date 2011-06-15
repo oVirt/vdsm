@@ -1,0 +1,71 @@
+.\"Copyright 2010 Red Hat, Inc. and/or its affiliates.
+.\"
+.\"Licensed to you under the GNU General Public License as published by
+.\"the Free Software Foundation; either version 2 of the License, or
+.\"(at your option) any later version.  See the files README and
+.\"LICENSE_GPL_v2 which accompany this distribution.
+.\"
+.\" File Name macro definition plagiarized from bash.
+.\"
+.de FN
+\fI\|\\$1\|\fP
+..
+.TH VDSCLIENT 1 "September 19, 2010" "" ""
+.SH NAME
+vdsClient \- VDSM's command line interface
+.SH SYNOPSIS
+.BR "vdsClient [-s] <host> <command> [args]"
+.SH DESCRIPTION
+The
+.B vdsClient
+is a command-line client to vdsmd(8) xml-rpc API.
+It is intended to assist testing and debugging of the
+Red Hat Enterprise Virtualization Manager (RHEV-M)
+suite.
+
+For example,
+.BR "vdsClient -s 0 list table"
+will print a succinct list of all running virtual machines on the local host
+(assuming it is using secure connection).
+
+.SH WARNING
+.BR vdsClient
+is a debug tool, which is capable of harming the operation of a
+single RHEV node and even a complete RHEV cluster. Its use is not supported or
+endorsed by Red Hat.
+
+.SH OPTIONS
+.PD 0
+.TP
+.B -h
+Display vdsClient's help
+.TP
+.B -m
+List supported methods and their params (Short help)
+.TP
+.B -s
+Connect to server with SSL.
+.TP
+.B --truststore <path>
+Specify the location of VDSM's trust store. The default location is /etc/pki/vdsm.
+
+.SH FILES
+.PD 0
+.TP
+.FN /etc/pki/vdsm
+VDSM's trust store. Used to obtain SSL key for secure communication with
+VDSM.
+
+.SH SEE ALSO
+.BR vdsmd(8)
+
+.SH AUTHOR
+vdsClient was written by Ayal Baron, Barak Azulay, Cyril Plisko, Dan
+Kenigsberg, Doron Fediuck, Igor Lvovsky, Shahar Frank, Simon Grinberg, and
+probably others.
+
+.SH BUGS
+Report bugs to <http://bugzilla.redhat.com>
+
+.SH COPYRIGHT
+Copyright 2010 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.

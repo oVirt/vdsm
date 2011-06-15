@@ -1,0 +1,101 @@
+#!/bin/bash -e
+
+# Copyright 2010 Red Hat, Inc. and/or its affiliates.
+# Released under GPL v2
+#
+# Author:      Dan Kenigsberg <danken@redhat.com>
+#
+# Please contact me if something similar, but more standard, is available.
+
+MINLIFETIME=2
+MAX_THRASH_INTERVAL=30
+POST_FAIL_INTERVAL=900
+
+usage() {
+    echo usage:
+    echo "$0 [options] <slave> [args]"
+    echo "  --masterpid pidfile"
+    echo "  --slavepid pidfile"
+    echo "  --daemon"
+    echo "  --minlifetime seconds"
+    echo "  --thrash seconds"
+    echo
+    echo "make <slave> run, and respawn it on exit"
+    exit 1
+}
+
+while [ "$1" != "${1##-}" ];
+do
+  case "$1" in
+    --minlifetime)
+        MINLIFETIME="$2"
+        shift 2
+        ;;
+    --thrash)
+        MAX_THRASH_INTERVAL="$2"
+        shift 2
+        ;;
+    --masterpid)
+        masterpidfile="$2"
+        shift 2
+        ;;
+    --slavepid)
+        slavepidfile="$2"
+        shift 2
+        ;;
+    --daemon)
+        daemonize=1
+        shift
+	;;
+    --)
+        shift
+        break
+        ;;
+    *)  usage
+        ;;
+  esac
+done
+
+if [ -z "$*" ];
+then
+    usage
+fi
+
+loop() {
+    local d0 d1
+    local thrash_start
+
+    # must use BASHPID since $$ is not updated by &
+    [ ! -z "$masterpidfile" ] && echo $BASHPID > "$masterpidfile"
+    d0=`date +%s`
+    while true
+    do
+        "$@" &
+        [ ! -z "$slavepidfile" ] && echo $! > "$slavepidfile"
+        wait $! || :
+        d1=`date +%s`
+        if [ $[d1-d0] -lt "$MINLIFETIME" ];
+        then
+            if [[ -n "$thrash_start" ]] && \
+               [[ $[d1-thrash_start] -gt "$MAX_THRASH_INTERVAL" ]]; then
+                logger -t respawn "slave '$@' died too quickly for more than $MAX_THRASH_INTERVAL seconds, master sleeping for $POST_FAIL_INTERVAL seconds"
+                thrash_start=
+                sleep "$POST_FAIL_INTERVAL"
+            else
+                logger -t respawn "slave '$@' died too quickly, respawning slave"
+                [[ -z "$thrash_start" ]] && thrash_start=$d1
+            fi
+        else
+            logger -t respawn "slave '$@' died, respawning slave"
+            thrash_start=
+        fi
+        d0=$d1
+    done
+}
+
+if [ -z "$daemonize" ];
+then
+    loop "$@"
+else
+    loop "$@" >/dev/null 2>/dev/null &
+fi

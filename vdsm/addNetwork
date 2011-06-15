@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# addNetwork: add a vdsm-controlled network to this host.
+#
+# network topology is one of:
+#
+# br --------------------- nic
+#
+# br  --- v  ------------- nic
+#                        /
+# br2 --- v2 ------------
+#
+# br ----------- bond --- nic1
+#                     \
+#                      -- nic2
+#
+# br  --- v  --- bond --- nic1
+#              /      \
+# br2 --- v2 --        -- nic2
+
+usage() {
+    cat <<EOF
+Usage:
+
+$0 bridge {vlan-id|''} {bonding|''} nic[,nic] [option=value]
+
+Add a network defined by a bridge, tagged by vlan-id,
+connected through bonding device to nics.
+
+bridge - network name
+vlan-id - integer 0-4095 or empty string if no vlan
+bonding - bonding device name or empty string if a single nic
+nic[,nic] - possibly-multiple nics
+EOF
+
+    exit 21
+}
+
+[[ $# -lt 4 ]] && usage
+
+bridge="$1"
+vlan="vlan=$2"
+bonding="bonding=$3"
+[[ -n "$4" ]] && nics="nics=$4"
+shift 4
+
+PYTHONPATH=`dirname $(readlink -f "$0")` \
+/usr/bin/python -m configNetwork add "$bridge" "$vlan" "$bonding" $nics "$@"
+

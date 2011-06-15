@@ -1,0 +1,430 @@
+#! /bin/sh
+#
+# Copyright 2006-2010 Red Hat, Inc. and/or its affiliates.
+#
+# Licensed to you under the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.  See the files README and
+# LICENSE_GPL_v2 which accompany this distribution.
+#
+
+# chkconfig: 2345 99 00
+#
+### BEGIN INIT INFO
+# Provides: vdsmd
+# Required-Start: $syslog $network
+# Should-Start: $time
+# Required-Stop: $syslog
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Description: init script for the VDS management server
+# Short-Description: init script for the VDS management server
+### END INIT INFO
+
+VDSM_BIN=@P_VDSM@/vdsm
+CONF_FILE=@P_VDSM_CONF@vdsm.conf
+GETCONFITEM=@P_VDSM@/get-conf-item
+prog=vdsm
+PIDFILE=@P_VDSM_RUN@/vdsmd.pid
+RESPAWNPIDFILE=@P_VDSM_RUN@/respawn.pid
+CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
+DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
+CORE_PATTERN=/proc/sys/kernel/core_pattern
+NEEDED_SERVICES="iscsid multipathd libvirtd"
+CONFLICTING_SERVICES="libvirt-guests"
+# TODO: Remove cpu cgroup disabling when BZ#623712 is resolved (kernel on
+# massively multicore platforms failing to scale with cgroups turned on)
+CONFLICTING_SERVICES="cgconfig $CONFLICTING_SERVICES"
+
+LCONF=/etc/libvirt/libvirtd.conf
+QCONF=/etc/libvirt/qemu.conf
+LDCONF=/etc/sysconfig/libvirtd
+
+is_coredump=`$GETCONFITEM $CONF_FILE vars core_dump_enable false | tr A-Z a-z`
+[ $is_coredump != true ] && is_coredump=false
+
+. /etc/init.d/functions
+
+log_failure_msg() { echo -n "$@"; failure "$@"; echo; }
+log_success_msg() { echo -n "$@"; success "$@"; echo; }
+
+check_port_taken() {
+    local MANAGEMENT_PORT MANAGEMENT_IP
+    MANAGEMENT_PORT=`$GETCONFITEM $CONF_FILE addresses management_port ""`
+    if [ -z "$MANAGEMENT_PORT" ]; then
+        log_failure_msg "$prog: management_port not found in $CONF_FILE"
+        return 1
+    fi
+    MANAGEMENT_IP=`$GETCONFITEM $CONF_FILE addresses management_ip 0.0.0.0`
+    netstat -ntl | grep -q "$MANAGEMENT_IP:$MANAGEMENT_PORT"
+    RETVAL=$?
+    if [ "$RETVAL" -eq 0 ]; then
+        log_failure_msg "$prog: port $MANAGEMENT_PORT already bound"
+        return 1
+    fi
+    return 0
+}
+
+mk_data_center() {
+    local dc
+    dc=`$GETCONFITEM $CONF_FILE irs repository /rhev/`
+    /bin/mkdir -p "$dc"
+    /bin/chown vdsm.kvm "$dc"
+}
+
+mk_dom_backup() {
+    /bin/mkdir -p ${DOM_METADATA_BACKUP_DIR} > /dev/null 2>&1
+    /bin/chown vdsm.kvm ${DOM_METADATA_BACKUP_DIR} > /dev/null 2>&1
+}
+
+mk_upgrade_path() {
+    if ! [ -d "/data/updates" ]; then
+        /bin/mkdir -p /data/updates > /dev/null 2>&1
+        /bin/chmod 755 /data/updates > /dev/null 2>&1
+    fi
+}
+
+mk_core_path() {
+    core_path=/var/log/core
+    if ! [ -d $core_path ]; then
+        /bin/mkdir -p $core_path > /dev/null 2>&1
+    fi
+    /bin/chmod a+tw $core_path > /dev/null 2>&1
+}
+
+get_libvirt_conf_item() {
+    local cfile key
+
+    cfile=$1
+    key=$2
+    /bin/grep "^\s*$key\s*=" "$cfile" | \
+            /usr/bin/tail -1 | /bin/sed "s/\s*$key\s*=\s*//;s/\s*\(#.*\)\?$//"
+}
+
+test_conflicting_conf() {
+    local listen_tcp auth_tcp ssl
+
+    ssl=`$GETCONFITEM $CONF_FILE vars ssl true | tr A-Z a-z`
+    [ "$ssl" == true ] && return 0
+
+    listen_tcp="`get_libvirt_conf_item $LCONF listen_tcp`"
+    auth_tcp="`get_libvirt_conf_item $LCONF auth_tcp`"
+    spice_tls="`get_libvirt_conf_item $QCONF spice_tls`"
+
+    if [ "$listen_tcp" == 1 -a "$auth_tcp" == '"none"' -a "$spice_tls" == 0 ];
+    then
+        return 0
+    else
+        echo "conflicting vdsm and libvirt tls configuration."
+        echo "vdsm.conf with ssl=False requires libvirt with:"
+        echo "listen_tcp=1, auth_tcp=\"none\" and spice_tls=0."
+        return 1
+    fi
+}
+
+shutdown_conflicting_srv() {
+    local srv
+
+    for srv in $CONFLICTING_SERVICES
+    do
+        /sbin/chkconfig $srv off
+        if /sbin/service $srv status > /dev/null 2>&1;
+        then
+             /sbin/service $srv stop
+        fi
+    done
+    return 0
+}
+
+start_needed_srv() {
+    local srv
+
+    for srv in $NEEDED_SERVICES
+    do
+        if ! /sbin/service $srv status > /dev/null 2>&1;
+        then
+            echo "Starting $srv..."
+            /sbin/service $srv start
+        fi
+    done
+    /sbin/service iscsid force-start
+}
+
+test_lo() {
+    if ! LC_ALL=C /sbin/ifconfig lo | /bin/grep -q UP;
+    then
+        log_failure_msg "VDSMD: lo interface is down, can't run !"
+        echo "VDSMD: lo interface is down, can't run !" > /dev/kmsg
+        return 1
+    fi
+    return 0
+}
+
+free_space() {
+    local path=$1
+    df -P "$path" | awk '{print $4}'| tail -1
+}
+
+test_space() {
+    local MIN_SPACE_KB=10000
+
+    if [ "`free_space /var/log/vdsm`" -lt "$MIN_SPACE_KB" ]; then
+        log_failure_msg "$prog: low log space"
+        return 1
+    fi
+    return 0
+}
+
+bond_dev_available() {
+    local BOND_DEVS=$(/bin/cat /sys/class/net/bonding_masters)
+    local x
+
+    [[ -z "$BOND_DEVS" ]] && return 1
+
+    for x in $BOND_DEVS; do
+        [[ "$x" == "$1" ]] && return 0
+    done
+
+    return 1
+}
+
+load_needed_modules() {
+    local b
+
+    /sbin/modprobe tun
+    /sbin/modprobe bonding
+    # RHEV-M currently assumes that all bonding devices pre-exist
+    for b in bond{0,1,2,3,4}; do
+        if ! bond_dev_available $b; then
+            echo +$b > /sys/class/net/bonding_masters 2>/dev/null
+        fi
+    done
+    /sbin/modprobe 8021q
+}
+
+test_already_running()
+{
+    if pidofproc -p $RESPAWNPIDFILE >/dev/null || \
+       pidofproc -p $PIDFILE $VDSM_BIN >/dev/null; then
+        log_failure_msg "$prog: already running"
+        return 1
+    fi
+    return 0
+}
+
+# configure libvirt to vdsm's needs
+configure_libvirt()
+{
+    local force_reconfigure="$1"
+    local BY_VDSM="# by vdsm"
+
+    remove_vdsm_conf() {
+        sed -i --copy "/$BY_VDSM/d" "$1"
+    }
+
+    set_if_default() {
+        local cfile key val
+        cfile="$1"
+        key="$2"
+        val="$3"
+
+        /bin/grep -q "^\s*$key\s*=" "$cfile" || \
+          echo "$key=$val $BY_VDSM" >> "$cfile"
+    }
+
+    if [ -f /etc/rhev-hypervisor-release ];
+    then
+        . /usr/libexec/ovirt-functions
+    else
+        ovirt_store_config() { :; }
+    fi
+
+    local lconf qconf ldconf
+    local ssl=`$GETCONFITEM $CONF_FILE vars ssl true | tr A-Z a-z`
+
+    lconf="$2"
+    qconf="$3"
+    ldconf="$4"
+
+    if [ "$force_reconfigure" == force ];then
+        remove_vdsm_conf $lconf
+        remove_vdsm_conf $qconf
+        remove_vdsm_conf $ldconf
+    fi
+
+    # do not reconfigure
+    grep -q "$BY_VDSM" $lconf && return
+
+    # do not configure ovirt nodes before registration
+    [ -f /etc/rhev-hypervisor-release -a \
+      ! -f /etc/pki/vdsm/certs/vdsmcert.pem ] && return
+
+    echo $"Configuring libvirt for vdsm..."
+
+    set_if_default $lconf listen_addr \"0\"
+    set_if_default $lconf unix_sock_group \"kvm\"
+    set_if_default $lconf unix_sock_rw_perms \"0770\"
+    set_if_default $lconf auth_unix_rw \"sasl\"
+    set_if_default $qconf dynamic_ownership 0
+    if [[ "$ssl" == true ]]; then
+        set_if_default $qconf spice_tls 1
+    else
+        set_if_default $qconf spice_tls 0
+    fi
+    set_if_default $ldconf LIBVIRTD_ARGS --listen
+    set_if_default $ldconf DAEMON_COREFILE_LIMIT unlimited
+    set_if_default $lconf save_image_format \"lzop\"
+    # FIXME until we are confident with libvirt integration, let us have a verbose log
+    set_if_default $lconf log_outputs \"1:file:/var/log/libvirtd.log\"
+    set_if_default $lconf log_filters "\"1:libvirt 3:event 3:json 1:util 1:qemu\""
+
+    local ts=/etc/pki/vdsm
+    if [ -f $ts/certs/cacert.pem -a \
+         -f $ts/certs/vdsmcert.pem -a \
+         -f $ts/keys/vdsmkey.pem -a \
+         "$ssl" == true ];
+    then
+        set_if_default $lconf ca_file \"$ts/certs/cacert.pem\"
+        set_if_default $lconf cert_file \"$ts/certs/vdsmcert.pem\"
+        set_if_default $lconf key_file \"$ts/keys/vdsmkey.pem\"
+
+        set_if_default $qconf spice_tls_x509_cert_dir \"$ts/libvirt-spice\"
+    else
+        set_if_default $lconf auth_tcp \"none\"
+        set_if_default $lconf listen_tcp 1
+        set_if_default $lconf listen_tls 0
+    fi
+
+    local lnetwork=/etc/libvirt/qemu/networks/autostart/default.xml
+    rm -f $lnetwork
+
+    ovirt_store_config $lconf $qconf $ldconf
+
+    # vdsm makes extensive use of nfs-exported images
+    /usr/sbin/semanage  boolean -m -S targeted -F /dev/stdin  << _EOF
+virt_use_nfs=1
+_EOF
+    /usr/sbin/setsebool virt_use_nfs on
+
+    service libvirtd condrestart
+}
+
+RETVAL=0
+
+reconfigure() {
+    local args="$@"
+    case $# in
+        0)
+            args="force $LCONF $QCONF $LDCONF"
+            ;;
+        1)
+            # Use default paths
+            args="$args $LCONF $QCONF $LDCONF"
+            ;;
+    esac
+    configure_libvirt $args
+}
+
+start() {
+    python @P_VDSM@/hooks.pyc before_vdsm_start
+    reconfigure noforce
+    start_needed_srv
+    shutdown_conflicting_srv
+    @P_VDSM@/vdsm-restore-net-config
+    load_needed_modules
+    mk_data_center
+    mk_upgrade_path
+    mk_core_path
+    mk_dom_backup
+    /bin/chmod 1777 /dev/shm
+    if [ $is_coredump == true ]; then
+        export DAEMON_COREFILE_LIMIT=unlimited
+        echo $CORE_DUMP_PATH > $CORE_PATTERN
+    fi
+    [ `ulimit -n` -lt 4096 ] && ulimit -n 4096
+
+    if ! (test_space && test_lo && test_already_running && \
+          check_port_taken && \
+          test_conflicting_conf); then
+        RETVAL=1
+        return
+    fi
+
+    echo $"Starting up vdsm daemon: "
+    local vdsm_nice=`$GETCONFITEM $CONF_FILE vars vdsm_nice -5`
+
+    LIBVIRT_LOG_FILTERS=`$GETCONFITEM $CONF_FILE vars libvirt_log_filters "1:libvirt 1:remote"` \
+    LIBVIRT_LOG_OUTPUTS=`$GETCONFITEM $CONF_FILE vars libvirt_log_outputs "1:file:/var/log/vdsm/libvirt.log"` \
+    LC_ALL=C NICELEVEL=$vdsm_nice daemon --user=vdsm @P_VDSM@/respawn --minlifetime 10 --daemon --masterpid $RESPAWNPIDFILE $VDSM_BIN
+    RETVAL=$?
+    [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
+    [ "$RETVAL" -eq 0 ] && touch /var/lock/subsys/vdsmd
+}
+
+stop() {
+    echo $"Shutting down vdsm daemon: "
+    if killproc -p $RESPAWNPIDFILE; then
+        log_success_msg $"$prog watchdog stop"
+    fi
+    if ! pidofproc -p $PIDFILE >/dev/null; then
+        log_failure_msg "$prog: not running"
+        RETVAL=1
+    else
+        killproc -p $PIDFILE -d 2
+        RETVAL=$?
+        [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog stop" || log_failure_msg $"$prog stop"
+        [ "$RETVAL" -eq 0 ] && rm -f /var/lock/subsys/vdsmd
+    fi
+    python @P_VDSM@/hooks.pyc after_vdsm_stop
+}
+
+case "$1" in
+     start)
+        start
+	;;
+     stop)
+        stop
+	;;
+     status)
+	pidofproc -p $PIDFILE $VDSM_BIN >/dev/null
+	RETVAL=$?
+	if [ "$RETVAL" -eq 0 ]; then
+	    echo "VDS daemon server is running"
+	else
+	    echo -n "VDS daemon is not running"
+            if pidofproc -p $RESPAWNPIDFILE >/dev/null; then
+                echo ", but its watchdog is"
+            else
+                echo
+            fi
+	fi
+	;;
+     condrestart)
+	pidofproc -p $PIDFILE $VDSM_BIN >/dev/null
+	RETVAL=$?
+	if [ "$RETVAL" -eq 0 ]; then
+	    $0 stop && $0 start;
+	    RETVAL=$?;
+	fi;
+        ;;
+     try-restart)
+	$0 stop && $0 start
+	;;
+     restart|force-reload)
+	$0 stop
+	$0 start
+	;;
+     reload)
+	;;
+    reconfigure)
+        # Jump over 'reconfigure'
+        shift 1
+        reconfigure "$@"
+    ;;
+     *)
+	echo "Usage: $0 {start|stop|status|restart|reload|force-reload|try-restart}"
+	RETVAL=3
+esac
+
+exit $RETVAL
+

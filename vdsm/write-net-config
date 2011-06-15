@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# little wrapper to let vdsm write to root-owned /etc/sysconfig/network-scripts
+# (and to there only)
+
+case "$1" in
+    /etc/sysconfig/network-scripts/ifcfg-*) cat > "$1";;
+    *) echo skipping $1 1>&2 ;;
+esac
