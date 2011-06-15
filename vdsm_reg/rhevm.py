@@ -38,7 +38,7 @@ management_port = 54321
     vdsm_config_file.write(vdsm_config)
     vdsm_config_file.close()
 
-def write_vdsm_config(rhevm_host):
+def write_vdsm_config(rhevm_host, rhevm_port):
     if not os.path.exists(VDSM_CONFIG):
         os.system("touch " + VDSM_CONFIG)
     if os.path.getsize(VDSM_CONFIG) == 0:
@@ -47,10 +47,6 @@ def write_vdsm_config(rhevm_host):
         log("RHEV agent configuration files created.")
     else:
         log("RHEV agent configuration files already exist.")
-    try:
-        rhevm_host, rhevm_port = rhevm_host.split(":")
-    except ValueError:
-        rhevm_port = 443
 
     ret = os.system("ping -c 1 " + rhevm_host + " &> /dev/null")
     if ret == 0:
@@ -125,7 +121,7 @@ class Plugin(PluginBase):
         self.ncs.screen.setColor("BUTTON", "black", "red")
         self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
         if len(self.rhevm_server.value()) > 0:
-            if write_vdsm_config(self.rhevm_server.value()):
+            if write_vdsm_config(self.rhevm_server.value(), self.rhevm_server_port.value()):
                 ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "RHEV-M Configuration Successfully Updated", buttons = ['Ok'])
                 self.ncs.reset_screen_colors()
                 return True
