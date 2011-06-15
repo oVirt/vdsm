@@ -881,7 +881,8 @@ def qemuCommit(src, fmt, idle, stop):
     log.debug('(qemuCommit): MERGE %s START' % (src))
 
     cwd = os.path.dirname(src)
-    cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "commit", "-f", fmt2str(fmt), src]
+    cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "commit",
+                                   "-t", "none", "-f", fmt2str(fmt), src]
     (rc, out, err) = misc.watchCmd(cmd, stop=stop, idle=idle, sudo=False, cwd=cwd,
                                    recoveryCallback=baseAsyncTasksRollback)
 
@@ -897,7 +898,9 @@ def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, idle, stop, r
     cwd = os.path.dirname(src)
     log.debug('(qemuRebase): REBASE %s (fmt=%s) on top of %s (%s) START' % (src, srcFormat, backingFile, backingFormat))
 
-    cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "rebase", "-f", srcFormat, "-b", backingFile, "-F", backingFormat]
+    cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "rebase",
+                                   "-t", "none", "-f", srcFormat,
+                                   "-b", backingFile, "-F", backingFormat]
     if unsafe:
         cmd += ["-u"]
     cmd += [src]
@@ -924,7 +927,9 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, idle, stop, size, dstvolType):
         (rc, out, err) = misc.ddWatchCopy(src=src, dst=dst, stop=stop, idle=idle, size=size,
                                           recoveryCallback=baseAsyncTasksRollback)
     else:
-        cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert", "-f", src_fmt, src, "-O", dst_fmt, dst]
+        cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert",
+                                       "-t", "none", "-f", src_fmt, src,
+                                       "-O",dst_fmt, dst]
         (rc, out, err) = misc.watchCmd(cmd, stop=stop, idle=idle, sudo=False,
                                        recoveryCallback=baseAsyncTasksRollback)
 
