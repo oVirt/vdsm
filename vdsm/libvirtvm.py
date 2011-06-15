@@ -283,35 +283,6 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                 if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
                     monitorThread.stop()
 
-class TimeoutError(libvirt.libvirtError): pass
-
-class NotifyingVirDomain:
-    # virDomain wrapper that notifies vm when a method raises an exception with
-    # get_error_code() = VIR_ERR_OPERATION_TIMEOUT
-
-    def __init__(self, dom, tocb):
-        self._dom = dom
-        self._cb = tocb
-
-    def __getattr__(self, name):
-        attr = getattr(self._dom, name)
-        if not callable(attr):
-            return attr
-        def f(*args, **kwargs):
-            try:
-                ret = attr(*args, **kwargs)
-                self._cb(False)
-                return ret
-            except libvirt.libvirtError, e:
-                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_TIMEOUT:
-                    self._cb(True)
-                    toe = TimeoutError(e.get_error_message())
-                    toe.err = e.err
-                    raise toe
-                raise
-        return f
-
-
 class _DomXML:
     def __init__(self, conf, log):
         """
@@ -917,9 +888,7 @@ class LibvirtVm(vm.Vm):
             domxml = hooks.before_vm_start(self._buildCmdLine(), self.conf)
             self.log.debug(domxml)
         if 'recover' in self.conf:
-            self._dom = NotifyingVirDomain(
-                            self._connection.lookupByUUIDString(self.id),
-                            self._timeoutExperienced)
+            self._dom = self._connection.lookupByUUIDString(self.id)
         elif 'restoreState' in self.conf:
             hooks.before_vm_dehibernate(self.conf.pop('_srcDomXML'), self.conf)
 
@@ -929,18 +898,14 @@ class LibvirtVm(vm.Vm):
             finally:
                 self.cif._teardownVolumePath(self.conf['restoreState'])
 
-            self._dom = NotifyingVirDomain(
-                            self._connection.lookupByUUIDString(self.id),
-                            self._timeoutExperienced)
+            self._dom = self._connection.lookupByUUIDString(self.id)
         else:
             flags = libvirt.VIR_DOMAIN_NONE
             if 'launchPaused' in self.conf:
                 flags |= libvirt.VIR_DOMAIN_START_PAUSED
                 self.conf['pauseCode'] = 'NOERR'
                 del self.conf['launchPaused']
-            self._dom = NotifyingVirDomain(
-                            self._connection.createXML(domxml, flags),
-                            self._timeoutExperienced)
+            self._dom = self._connection.createXML(domxml, flags)
             if self._dom.UUIDString() != self.id:
                 raise Exception('libvirt bug 603494')
             hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
@@ -968,11 +933,25 @@ class LibvirtVm(vm.Vm):
     def _monitorDependentInit(self, timeout=None):
         self.log.warning('unsupported by libvirt vm')
 
-    def _timeoutExperienced(self, timeout):
-        if timeout:
-            self._monitorResponse = -1
-        else:
-            self._monitorResponse = 0
+    def _getMonitorResponse(self):
+        if not self._dom:
+            return 0
+
+        state, details, stateTime = self._dom.controlInfo(0)
+        stateTime /= 1000.0
+
+        if (state == libvirt.VIR_DOMAIN_CONTROL_OCCUPIED and
+            stateTime > config.getint('vars', 'vm_command_timeout')):
+            return -1
+
+        return 0
+
+    def _setMonitorResponse(self, value):
+        if value != 0:
+            self.log.debug("failed to set monitorResponse to %s",
+                           value, exc_info=True)
+
+    _monitorResponse = property(_getMonitorResponse, _setMonitorResponse)
 
     def _waitForIncomingMigrationFinish(self):
         if 'restoreState' in self.conf:
@@ -986,9 +965,7 @@ class LibvirtVm(vm.Vm):
             try:
                 # Would fail if migration isn't successful,
                 # or restart vdsm if connection to libvirt was lost
-                self._dom = NotifyingVirDomain(
-                                self._connection.lookupByUUIDString(self.id),
-                                self._timeoutExperienced)
+                self._dom = self._connection.lookupByUUIDString(self.id)
             except Exception, e:
                 # Improve description of exception
                 if not self._incomingMigrationFinished.isSet():

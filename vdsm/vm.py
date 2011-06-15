@@ -796,10 +796,6 @@ class Vm(object):
         try:
             if self._vmStats:
                 decStats = self._vmStats.get()
-                if (not self._migrationSourceThread.isAlive()
-                    and decStats['statsAge'] > config.getint('vars',
-                                                       'vm_command_timeout')):
-                    stats['monitorResponse'] = '-1'
         except:
             self.log.error("Error fetching vm stats", exc_info=True)
         for var in decStats:
