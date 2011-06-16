@@ -195,7 +195,7 @@ class SPM:
         and unmount them if found.
         """
         masters = os.path.join(cls.storage_repository, sd.DOMAIN_MNT_POINT,
-            blockSD.BLOCKSD_DIR, "*", sd.MASTER_FS_DIR)
+                               sd.BLOCKSD_DIR, "*", sd.MASTER_FS_DIR)
         for master in glob.glob(masters):
             if fileUtils.isMounted(mountPoint=master):
                 cls.log.debug("unmounting %s", master)

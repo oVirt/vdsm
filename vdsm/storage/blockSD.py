@@ -34,7 +34,6 @@ import storage_exception as se
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
 
-BLOCKSD_DIR = "blockSD"
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
 
@@ -191,7 +190,7 @@ def selectMetadata(sdUUID):
 
 class BlockStorageDomain(sd.StorageDomain):
     mountpoint = os.path.join(sd.StorageDomain.storage_repository,
-            sd.DOMAIN_MNT_POINT, BLOCKSD_DIR)
+            sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
 
     def __init__(self, sdUUID):
         domaindir = os.path.join(self.mountpoint, sdUUID)

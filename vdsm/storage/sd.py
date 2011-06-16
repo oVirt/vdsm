@@ -36,6 +36,7 @@ METASIZE = 512
 # Domain metadata slot size (it always takes the first slot)
 MAX_DOMAIN_DESCRIPTION_SIZE = 50
 
+BLOCKSD_DIR = "blockSD"
 LEASES = "leases"
 IDS = "ids"
 INBOX = "inbox"

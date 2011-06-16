@@ -288,12 +288,19 @@ class FileStorageDomain(sd.StorageDomain):
         for imageDir in removedImages:
             self.oop.fileUtils.cleanupdir(imageDir)
 
-def scanDomains(pattern="*"):
-    log = logging.getLogger("scanDomains")
-
+def getMountsList(pattern="*"):
     finalPat = os.path.join(sd.StorageDomain.storage_repository,
                             sd.DOMAIN_MNT_POINT, pattern)
     mntList = glob.glob(finalPat)
+    # For pattern='*' in mixed pool (block and file domains)
+    # glob will return sd.BLOCKSD_DIR among of real mount points.
+    # Remove sd.BLOCKSD_DIR from glob results.
+    return [ mnt for mnt in mntList if not mnt.endswith('/'+sd.BLOCKSD_DIR) ]
+
+def scanDomains(pattern="*"):
+    log = logging.getLogger("scanDomains")
+
+    mntList = getMountsList(pattern)
 
     def collectMetaFiles(possibleDomain):
         try:
