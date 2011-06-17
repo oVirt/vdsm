@@ -55,6 +55,7 @@ class CpuInfo(object):
     def model(self):
         return self._info.itervalues().next()['model name']
 
+@utils.memoized
 def _getEmulatedMachines():
     c = libvirtconnection.get()
     caps = minidom.parseString(c.getCapabilities())
@@ -62,6 +63,7 @@ def _getEmulatedMachines():
              in caps.getElementsByTagName('guest')[0]
                     .getElementsByTagName('machine') ]
 
+@utils.memoized
 def _getCompatibleCpuModels():
     c = libvirtconnection.get()
     cpu_map = minidom.parseString(

@@ -22,6 +22,7 @@ import subprocess
 import socket
 import pwd
 import fcntl
+import functools
 
 import ethtool
 
@@ -757,3 +758,26 @@ def listJoin(elem, *lists):
 def closeOnExec(fd):
     old = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
     fcntl.fcntl(fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
+
+class memoized(object):
+    """Decorator that caches a function's return value each time it is called.
+    If called later with the same arguments, the cached value is returned, and
+    not re-evaluated. There is no support for uncachable arguments.
+
+    Adaptation from http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
+
+    """
+    def __init__(self, func):
+        self.func = func
+        self.cache = {}
+        functools.update_wrapper(self, func)
+    def __call__(self, *args):
+        try:
+            return self.cache[args]
+        except KeyError:
+            value = self.func(*args)
+            self.cache[args] = value
+            return value
+    def __get__(self, obj, objtype):
+        """Support instance methods."""
+        return functools.partial(self.__call__, obj)
