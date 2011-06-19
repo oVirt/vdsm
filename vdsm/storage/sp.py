@@ -704,6 +704,8 @@ class StoragePool:
         dom = SDF.produce(sdUUID)
         dom.acquireClusterLock(self.id)
         try:
+            if dom.getVersion() != self.masterDomain.getVersion():
+                raise se.MixedSDVersionError(dom.sdUUID, dom.getVersion(), self.masterDomain.sdUUID, self.masterDomain.getVersion())
             dom.attach(self.spUUID)
             domains[sdUUID] = sd.DOM_ATTACHED_STATUS
             self.setMetaParam(PMDK_DOMAINS, domains)

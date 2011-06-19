@@ -492,14 +492,21 @@ class HSM:
 
         msd = SDF.produce(sdUUID=masterDom)
         msdType = msd.getStorageType()
-        if msdType in sd.BLOCK_DOMAIN_TYPES and msd.getVersion() in blockSD.VERS_METADATA_LV and len(domList) > sp.MAX_DOMAINS:
+        msdVersion = msd.getVersion()
+        if msdType in sd.BLOCK_DOMAIN_TYPES and msdVersion in blockSD.VERS_METADATA_LV and len(domList) > sp.MAX_DOMAINS:
             raise se.TooManyDomainsInStoragePoolError()
 
-        try:
-            for sdUUID in domList:
-                self.validateSdUUID(sdUUID)
-        except:
-            raise se.StorageDomainAccessError(sdUUID)
+        for sdUUID in domList:
+            try:
+                dom = SDF.produce(sdUUID=sdUUID)
+                # TODO: consider removing validate() from here, as the domains
+                # are going to be accessed much later, and may loose validity
+                # until then.
+                dom.validate()
+            except:
+                raise se.StorageDomainAccessError(sdUUID)
+            if dom.getVersion() != msdVersion:
+                raise se.MixedSDVersionError(dom.sdUUID, dom.getVersion(), msd.sdUUID, msdVersion)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         for dom in sorted(domList):

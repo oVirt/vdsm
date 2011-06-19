@@ -693,6 +693,12 @@ class NoSpaceLeftOnDomain(StorageException):
         self.message = "No space left on domain %s" % (sdUUID,)
     code = 397
 
+class MixedSDVersionError(StorageException):
+    def __init__(self, sdUUID, domVersion, msdUUID, msdVersion):
+        self.value = ""
+        self.message = "Domain `%s` version (%d) is different from msd %s version (%d)" % (sdUUID, domVersion, msdUUID, msdVersion)
+    code = 398
+
 #################################################
 # Task Exceptions
 #################################################
