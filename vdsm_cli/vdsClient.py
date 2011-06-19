@@ -1329,7 +1329,7 @@ class service:
     def do_addNetwork(self, args):
         params = self._eqSplit(args)
         try:
-            nics = params['nics'].split(',')
+            nics = filter(None, params['nics'].split(','))
         except:
             raise ValueError
         bridge = params.get('bridge', '')
