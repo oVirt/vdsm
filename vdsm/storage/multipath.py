@@ -149,22 +149,6 @@ def getDeviceSize(dev):
     size = bs * int(file(os.path.join("/sys/block/", devName, "size")).read())
     return size
 
-def getDeviceCapacities():
-    sizes = {}
-    partFile = open("/proc/partitions", "r")
-    for l in partFile:
-        try:
-            major, minor, size, name = l.split()
-
-            if not name.startswith("dm"):
-                continue
-
-            sizes[name] = int(size) * 1024
-        except ValueError:
-            continue
-
-    return sizes
-
 def getScsiSerial(physdev):
     blkdev = os.path.join("/dev", physdev)
     cmd = [constants.EXT_SCSI_ID, "--page=0x80",
@@ -208,9 +192,6 @@ def pathListIter(filterGuids=None):
 
     knownSessions = {}
 
-    # Capacities and serials are calculated in bulk
-    # They have small data structures compared to multipath's
-    capacities = getDeviceCapacities()
     svdsm = supervdsm.getProxy()
     pathStatuses = devicemapper.getPathsStatus()
 
@@ -228,7 +209,7 @@ def pathListIter(filterGuids=None):
         devInfo = {
                 "guid" : guid,
                 "dm" : dmId,
-                "capacity" : str(capacities.get(dmId, 0)),
+                "capacity" : str(getDeviceSize(dmId)),
                 "serial" : svdsm.getScsiSerial(dmId),
                 "paths" : [],
                 "connections" : [],
