@@ -815,11 +815,10 @@ class StoragePool:
             pass
 
     def _refreshDomainLinks(self, domain):
-        isMaster = (self.getMasterDomain().sdUUID == domain.sdUUID)
         domain.refresh()
         linkName = os.path.join(self.poolPath, domain.sdUUID)
         self._linkStorageDomain(domain.domaindir, linkName)
-        if isMaster:
+        if self.masterDomain.sdUUID == domain.sdUUID:
             masterName = os.path.join(self.poolPath, POOL_MASTER_DOMAIN)
             self._linkStorageDomain(domain.domaindir, masterName)
         else:
