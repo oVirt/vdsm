@@ -20,8 +20,9 @@
 import os
 import sys
 from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
-                                     is_valid_port, PluginBase, log
-from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox
+                                     is_valid_port, PluginBase, log, network_up
+from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox, \
+                  FLAG_DISABLED, FLAGS_SET
 
 sys.path.append('/usr/share/vdsm-reg')
 import deployUtil
@@ -96,7 +97,13 @@ class Plugin(PluginBase):
 
     def form(self):
         elements = Grid(2, 10)
-        elements.setField(Label("RHEV-M Configuration"), 0, 0, anchorLeft = 1)
+        is_network_up = network_up()
+        if is_network_up:
+            header_message = "RHEV-M Configuration"
+        else:
+            header_message = "Network Down, RHEV-M Configuration Disabled"
+
+        elements.setField(Label(header_message), 0, 0, anchorLeft = 1)
         elements.setField(Label(""), 0, 1, anchorLeft = 1)
         rhevm_grid = Grid(2,2)
         rhevm_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
@@ -110,6 +117,11 @@ class Plugin(PluginBase):
         elements.setField(rhevm_grid, 0, 2, anchorLeft = 1, padding = (0,1,0,0))
         self.verify_rhevm_cert = Checkbox("Verify RHEVM Certificate")
         elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,1,0,0))
+
+        if not is_network_up:
+            for field in self.rhevm_server, self.rhevm_server_port, self.verify_rhevm_cert:
+                field.setFlags(FLAG_DISABLED, FLAGS_SET)
+
         try:
             rhevm_server = get_rhevm_config()
             rhevm_server,rhevm_port = rhevm_server.split(":")
