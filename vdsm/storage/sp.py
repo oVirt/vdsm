@@ -833,7 +833,7 @@ class StoragePool:
         Rebuild storage pool.
         """
         # master domain must be refreshed first
-        msdUUID = self.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion).sdUUID
+        msd = self.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
         self.updateMonitoringThreads()
 
         fileUtils.createdir(self.poolPath)
@@ -844,30 +844,39 @@ class StoragePool:
 
         # We should not rebuild non-active domains, because
         # they are probably disconnected from the host
-        domList = self.getDomains(activeOnly=True).keys()
+        domUUIDs = self.getDomains(activeOnly=True).keys()
 
-        # Always try to build master links
-        if msdUUID not in domList:
-            domList.append(msdUUID)
+        #msdUUID should be present and active in getDomains result.
+        #TODO: Consider remove if clause.
+        if msdUUID in domUUIDs:
+            domUUIDs.remove(msdUUID)
 
-        for dom in domList:
+        for domUUID in domUUIDs:
             try:
-                d = SDF.produce(dom)
-            except se.StorageDomainDoesNotExist, e:
+                d = SDF.produce(domUUID)
+            except se.StorageDomainDoesNotExist:
                 # We should not rebuild a non-master active domain
                 # if it is disconnected. Log the error and continue
-                self.log.error("Unexpected error", exc_info=True)
+                self.log.error("pool %s metadata contains an unknown domain %s", self.spUUID, domUUID, exc_info=True)
                 continue
 
             try:
                 self._refreshDomainLinks(d)
-                # Remove domain from potential cleanup
-                linkName = os.path.join(self.poolPath, dom)
-                if linkName in cleanupdomains:
-                    cleanupdomains.remove(linkName)
-            except Exception, e:
-                self.log.error("Unexpected error", exc_info=True)
+            except (se.StorageException, OSError):
+                self.log.error("Can't refresh domain links", exc_info=True)
                 continue
+            # Remove domain from potential cleanup
+            linkName = os.path.join(self.poolPath, domUUID)
+            if linkName in cleanupdomains:
+                cleanupdomains.remove(linkName)
+        # Always try to build master links
+        try:
+            self._refreshDomainLinks(msd)
+        except (se.StorageException, OSError):
+            self.log.error("_refreshDomainLinks failed for master domain %s", msd.sdUUID, exc_info=True)
+        linkName = os.path.join(self.poolPath, msd.sdUUID)
+        if linkName in cleanupdomains:
+            cleanupdomains.remove(linkName)
 
         # Clenup old trash from the pool
         for i in cleanupdomains:
