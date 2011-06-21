@@ -407,10 +407,15 @@ class BlockStorageDomain(sd.StorageDomain):
         mapping = {}
         devNum = len(oldMapping)
         for dev in pvlist:
+            knownDev = False
             for pvID, oldInfo in oldMapping.iteritems():
                 if os.path.basename(dev) == oldInfo["guid"]:
                     mapping[pvID] = oldInfo
-                    continue
+                    knownDev = True
+                    break
+
+            if knownDev:
+                continue
 
             pv = lvm.getPV(dev)
             pvInfo = {}
@@ -426,9 +431,9 @@ class BlockStorageDomain(sd.StorageDomain):
             else:
                 prevDevNum = devNum - 1
                 try:
-                    prevInfo = mapping["PV%d" % (prevDevNum)]
+                    prevInfo = mapping["PV%d" % (prevDevNum,)]
                 except KeyError:
-                    prevInfo = oldMapping["PV%d" % (prevDevNum)]
+                    prevInfo = oldMapping["PV%d" % (prevDevNum,)]
 
                 mapOffset = int(prevInfo["mapoffset"]) + int(prevInfo["pecount"])
 
