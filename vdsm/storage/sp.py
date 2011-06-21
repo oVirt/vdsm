@@ -336,16 +336,6 @@ class StoragePool:
         """
         self.log.info("Connect host #%s to the storage pool %s with master domain: %s (ver = %s)" %
             (hostID, self.spUUID, msdUUID, masterVersion))
-        # Make sure SDCache doesn't have stale data (it can be in case of FC)
-        SDF.refresh()
-
-        if msdUUID and msdUUID != sd.BLANK_UUID:
-            # We should find the master domain with the proper
-            # version. If we don't we should raise
-            # the special exception StoragePoolMasterNotFound
-            # and VDC will reconstruct master on another domain
-            # if available
-            self.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
 
         if not os.path.exists(self._poolsTmpDir):
             msg = ("StoragePoolConnectionError for hostId: %s, on poolId: %s," +
@@ -361,9 +351,10 @@ class StoragePool:
         self._saveReconnectInformation(hostID, scsiKey, msdUUID, masterVersion)
         self.id = hostID
         self.scsiKey = scsiKey
-
+        # Make sure SDCache doesn't have stale data (it can be in case of FC)
+        SDF.refresh()
         # Rebuild whole Pool
-        self.__rebuild()
+        self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
         self.__createMailboxMonitor()
 
         return True
@@ -838,7 +829,7 @@ class StoragePool:
                 domPoolMD[PMDK_MASTER_VER] = 0
 
 
-    def __rebuild(self, msdUUID=None, masterVersion=None):
+    def __rebuild(self, msdUUID, masterVersion):
         """
         Rebuild storage pool.
         """
