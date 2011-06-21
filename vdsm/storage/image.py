@@ -12,6 +12,7 @@ import os
 import logging
 import threading
 import uuid
+from contextlib import contextmanager
 
 import volume
 from sdf import StorageDomainFactory as SDF
@@ -22,6 +23,10 @@ from config import config
 import storage_exception as se
 import task
 from threadLocal import vars
+import resourceFactories
+import resourceManager as rm
+
+rmanager = rm.ResourceManager.getInstance()
 
 # Disk type
 UNKNOWN_DISK_TYPE = 0
@@ -137,7 +142,14 @@ class Image:
         vars.task.pushRecovery(task.Recovery(name, "image", "Image", "deleteRecover",
             [self.repoPath, sdUUID, imgUUID, str(postZero), str(force)]))
 
-        self._delete(sdUUID, imgUUID, postZero, force)
+        try:
+            self._delete(sdUUID, imgUUID, postZero, force)
+        except se.StorageException:
+            self.log.error("Unexpected error", exc_info=True)
+            raise
+        except Exception, e:
+            self.log.error("Unexpected error", exc_info=True)
+            raise se.ImageDeleteError("%s: %s" % (imgUUID), str(e))
 
     @classmethod
     def deleteRecover(cls, taskObj, repoPath, sdUUID, imgUUID, postZero, force):
@@ -315,7 +327,8 @@ class Image:
             srcVol = None
 
         if not srcVol:
-            raise se.ImageIsNotLegalChain("Image %s is not a leaf" % imgUUID)
+            self.log.error("There is no leaf in the image %s", imgUUID)
+            raise se.ImageIsNotLegalChain(imgUUID)
 
         # Build up the sorted (parent->child) chain
         while not srcVol.isShared():
@@ -451,11 +464,133 @@ class Image:
         """
         try:
             if srcVol:
-                srcVol.teardown(sdUUID=srcVol.sdUUID, volUUID=srcVol.volUUID, justme=True)
+                srcVol.teardown(sdUUID=srcVol.sdUUID, volUUID=srcVol.volUUID)
             if dstVol:
-                dstVol.teardown(sdUUID=dstVol.sdUUID, volUUID=dstVol.volUUID, justme=True)
+                dstVol.teardown(sdUUID=dstVol.sdUUID, volUUID=dstVol.volUUID)
         except Exception:
             self.log.error("Unexpected error", exc_info=True)
+
+    def _createTargetImage(self, destDom, srcSdUUID, imgUUID):
+        # Before actual data copying we need perform several operation
+        # such as: create all volumes, create fake template if needed, ...
+        try:
+            # Find all volumes of source image
+            srcChain = self.getChain(srcSdUUID, imgUUID)
+        except se.StorageException:
+            self.log.error("Unexpected error", exc_info=True)
+            raise
+        except Exception, e:
+            self.log.error("Unexpected error", exc_info=True)
+            raise se.SourceImageActionError(imgUUID, srcSdUUID, str(e))
+
+        fakeTemplate = False
+        pimg = volume.BLANK_UUID    # standalone chain
+        # check if the chain is build above a template, or it is a standalone
+        pvol = srcChain[0].getParentVolume()
+        if pvol:
+            # find out parent volume parameters
+            volParams = pvol.getVolumeParams()
+            pimg = volParams['imgUUID']      # pimg == template image
+            if destDom.isBackup():
+                # FIXME: This workaround help as copy VM to the backup domain without its template
+                # We will create fake template for future VM creation and mark it as FAKE volume
+                # This situation is relevant for backup domain only
+                fakeTemplate = True
+
+        @contextmanager
+        def justLogIt(img):
+            self.log.debug("You don't really need lock parent of image %s", img)
+            yield
+
+        dstImageResourcesNamespace = sd.getNamespace(destDom.sdUUID, resourceFactories.IMAGE_NAMESPACE)
+        # In destination domain we need to lock image's template if exists
+        with rmanager.acquireResource(dstImageResourcesNamespace, pimg, rm.LockType.shared) \
+                        if pimg != volume.BLANK_UUID else justLogIt(imgUUID):
+            if fakeTemplate:
+                self.createFakeTemplate(destDom.sdUUID, volParams)
+
+            dstChain = []
+            for srcVol in srcChain:
+                # Create the dst volume
+                try:
+                    # find out src volume parameters
+                    volParams = srcVol.getVolumeParams(bs=1)
+
+                    # To avoid 'prezeroing' preallocated volume on NFS domain,
+                    # we create the target volume with minimal size and after that w'll change
+                    # its metadata back to the original size.
+                    tmpSize = 20480 # in sectors (10M)
+                    destDom.createVolume(imgUUID=imgUUID, size=tmpSize,
+                                         volFormat=volParams['volFormat'], preallocate=volParams['prealloc'],
+                                         diskType=volParams['disktype'], volUUID=srcVol.volUUID, desc=volParams['descr'],
+                                         srcImgUUID=pimg, srcVolUUID=volParams['parent'])
+                    dstVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=srcVol.volUUID)
+                    # Extend volume (for LV only) size to the actual size
+                    dstVol.extend((volParams['apparentsize'] + 511) / 512)
+                    # Change destination volume metadata back to the original size.
+                    dstVol.setSize(volParams['size'])
+                    dstChain.append(dstVol)
+                except se.StorageException:
+                    self.log.error("Unexpected error", exc_info=True)
+                    raise
+                except Exception, e:
+                    self.log.error("Unexpected error", exc_info=True)
+                    raise se.DestImageActionError(imgUUID, destDom.sdUUID, str(e))
+
+                # only base may have a different parent image
+                pimg = imgUUID
+
+        return {'srcChain':srcChain, 'dstChain':dstChain}
+
+    def _interImagesCopy(self, destDom, srcSdUUID, imgUUID, chains):
+        srcLeafVol = chains['srcChain'][-1]
+        dstLeafVol = chains['dstChain'][-1]
+        try:
+            # Prepare the whole chains before the copy
+            srcLeafVol.prepare(rw=False)
+            dstLeafVol.prepare(rw=True, chainrw=True, setrw=True)
+        except Exception:
+            self.log.error("Unexpected error", exc_info=True)
+            # teardown volumes
+            self.__cleanupMove(srcLeafVol, dstLeafVol)
+            raise
+
+        try:
+            for srcVol in chains['srcChain']:
+                # Do the actual copy
+                try:
+                    dstVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=srcVol.volUUID)
+                    srcSize = srcVol.getVolumeSize(bs=1)
+                    misc.ddWatchCopy(srcVol.getVolumePath(), dstVol.getVolumePath(), vars.task.aborting, self.idle, size=srcSize)
+                except se.ActionStopped:
+                    raise
+                except se.StorageException:
+                    self.log.error("Unexpected error", exc_info=True)
+                    raise
+                except Exception:
+                    self.log.error("Copy image error: image=%s, src domain=%s, dst domain=%s", imgUUID, srcSdUUID,
+                                    destDom.sdUUID, exc_info=True)
+                    raise se.CopyImageError()
+        finally:
+            # teardown volumes
+            self.__cleanupMove(srcLeafVol, dstLeafVol)
+
+    def _finalizeDestinationImage(self, destDom, imgUUID, chains, force):
+        for srcVol in chains['srcChain']:
+            try:
+                dstVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=srcVol.volUUID)
+                # In case of copying template, we should set the destination volume
+                #  as SHARED (after copy because otherwise prepare as RW would fail)
+                if srcVol.isShared():
+                    dstVol.setShared()
+                elif srcVol.isInternal():
+                    dstVol.setInternal()
+            except se.StorageException:
+                self.log.error("Unexpected error", exc_info=True)
+                raise
+            except Exception, e:
+                self.log.error("Unexpected error", exc_info=True)
+                raise se.DestImageActionError(imgUUID, destDom.sdUUID, str(e))
 
     def move(self, srcSdUUID, dstSdUUID, imgUUID, vmUUID, op, postZero, force):
         """
@@ -465,117 +600,30 @@ class Image:
             "imgUUID=%s vmUUID=%s op=%s force=%s postZero=%s",
             srcSdUUID, dstSdUUID, imgUUID, vmUUID, OP_TYPES[op], str(force), str(postZero))
 
-        srcVol = leafVol = dstVol = None
-        try:
-            # Find all volumes of source image
-            chain = self.getChain(srcSdUUID, imgUUID)
-            leafVol = chain[-1]
-        except se.StorageException, e:
-            self.log.error("Unexpected error", exc_info=True)
-            raise
-        except Exception, e:
-            self.log.error("Unexpected error", exc_info=True)
-            raise se.SourceImageActionError(imgUUID, srcSdUUID, str(e))
-
         destDom = SDF.produce(dstSdUUID)
-        pimg = volume.BLANK_UUID    # standalone chain
         # If image already exists check whether it illegal/fake, overwrite it
-        if not self.isLegal(dstSdUUID, imgUUID):
+        if not self.isLegal(destDom.sdUUID, imgUUID):
             force = True
         # We must first remove the previous instance of image (if exists)
         # in destination domain, if we got the overwrite command
         if force:
-            try:
-                self.log.info("delete image %s on domain %s before overwriting", imgUUID, dstSdUUID)
-                self.delete(dstSdUUID, imgUUID, postZero, force=True)
-            except Exception, e:
-                self.log.error("Unexpected error", exc_info=True)
-                raise e
-        # check if the chain is build above a template, or it is a standalone
-        pvol = chain[0].getParentVolume()
-        if pvol:
-            # find out parent volume parameters
-            volParams = pvol.getVolumeParams()
-            pimg = volParams['imgUUID']      # pimg == template image
-            if destDom.isBackup():
-                # FIXME: This workaround help as copy VM to the backup domain without its template
-                # We will create fake template for future VM creation and mark it as FAKE volume
-                # This situation is relevant for backup domain only
-                self.createFakeTemplate(dstSdUUID, volParams)
+            self.log.info("delete image %s on domain %s before overwriting", imgUUID, destDom.sdUUID)
+            self.delete(destDom.sdUUID, imgUUID, postZero, force=True)
 
-        for srcVol in chain:
-            # Create the dst volume
-            try:
-                # find out src volume parameters
-                volParams = srcVol.getVolumeParams(bs=1)
-
-                # To avoid 'prezeroing' preallocated volume on NFS domain,
-                # we create the target volume with minimal size and after that w'll change
-                # its metadata back to the original size.
-                tmpSize = 20480 # in sectors (10M)
-                destDom.createVolume(imgUUID=imgUUID, size=tmpSize,
-                                     volFormat=volParams['volFormat'], preallocate=volParams['prealloc'],
-                                     diskType=volParams['disktype'], volUUID=srcVol.volUUID, desc=volParams['descr'],
-                                     srcImgUUID=pimg, srcVolUUID=volParams['parent'])
-                # Extend volume (for LV only) size to the actual size
-                dstVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=srcVol.volUUID)
-                dstVol.extend((volParams['apparentsize'] + 511) / 512)
-                # Change destination volume metadata back to the original size.
-                dstVol.setSize(volParams['size'])
-            except se.StorageException, e:
-                self.log.error("Unexpected error", exc_info=True)
-                raise
-            except Exception, e:
-                self.log.error("Unexpected error", exc_info=True)
-                raise se.DestImageActionError(imgUUID, dstSdUUID, str(e))
-
-            # Do the actual copy
-            try:
-                try:
-                    srcSize = srcVol.getVolumeSize(bs=1)
-                    # Prepare relevant volumes before copy and teardown after that
-                    srcVol.prepare(rw=False, justme=True)
-                    dstVol.prepare(rw=True, justme=True, setrw=True)
-                    misc.ddWatchCopy(srcVol.getVolumePath(), dstVol.getVolumePath(), vars.task.aborting, self.idle, size=srcSize)
-                    # In case of copying template, we should set the destination volume
-                    #  as SHARED (after copy because otherwise prepare as RW would fail)
-                    if srcVol.isShared():
-                        dstVol.setShared()
-                    elif srcVol.isInternal():
-                        dstVol.setInternal()
-                except se.ActionStopped, e:
-                    raise e
-                except se.StorageException, e:
-                    self.log.error("Unexpected error", exc_info=True)
-                    raise
-                except Exception, e:
-                    self.log.error("Unexpected error", exc_info=True)
-                    raise se.CopyImageError("image=%s, src domain=%s, dst domain=%s: msg %s" % (imgUUID, srcSdUUID, dstSdUUID, str(e)))
-            finally:
-                # teardown volumes
-                self.__cleanupMove(srcVol, dstVol)
-                srcVol = dstVol = None
-
-            # only base may have a different parent image
-            pimg = imgUUID
-
+        chains = self._createTargetImage(destDom, srcSdUUID, imgUUID)
+        self._interImagesCopy(destDom, srcSdUUID, imgUUID, chains)
+        self._finalizeDestinationImage(destDom, imgUUID, chains, force)
         if force:
+            leafVol = chains['dstChain'][-1]
             # Now we should re-link all deleted hardlinks, if exists
-            self.__templateRelink(dstSdUUID, imgUUID, leafVol.volUUID)
+            self.__templateRelink(destDom, imgUUID, leafVol.volUUID)
 
         # At this point we successfully finished the 'copy' part of the operation
         # and we can clear all recoveries.
         vars.task.clearRecoveries()
         # If it's 'move' operation, we should delete src image after copying
         if op == MOVE_OP:
-            try:
-                self.delete(srcSdUUID, imgUUID, postZero, force=True)
-            except se.StorageException, e:
-                self.log.error("Unexpected error", exc_info=True)
-                raise
-            except Exception, e:
-                self.log.error("Unexpected error", exc_info=True)
-                raise se.ImageDeleteError("%s: %s" % (imgUUID), str(e))
+            self.delete(srcSdUUID, imgUUID, postZero, force=True)
 
         self.log.info("%s task on image %s was successfully finished", OP_TYPES[op], imgUUID)
         return True
@@ -588,7 +636,7 @@ class Image:
             try:
                 self.delete(sdUUID, imgUUID, postZero, force=True)
             except Exception:
-                self.log.error("Unexpected error", exc_info=True)
+                pass
 
     def multiMove(self, srcSdUUID, dstSdUUID, imgDict, vmUUID, force):
         """
@@ -617,8 +665,8 @@ class Image:
         for (imgUUID, postZero) in imgDict.iteritems():
             try:
                 self.delete(srcSdUUID, imgUUID, postZero, force=True)
-            except Exception, e:
-                self.log.error("Unexpected error", exc_info=True)
+            except Exception:
+                pass
 
     def __cleanupCopy(self, srcVol, dstVol):
         """
@@ -709,12 +757,8 @@ class Image:
                 # We must first remove the previous instance of image (if exists)
                 # in destination domain, if we got the overwrite command
                 if force:
-                    try:
-                        self.log.info("delete image %s on domain %s before overwriting", dstImgUUID, dstSdUUID)
-                        self.delete(dstSdUUID, dstImgUUID, postZero, force=True)
-                    except Exception, e:
-                        self.log.error(e, exc_info=True)
-                        raise se.OverwriteImageError(dstImgUUID, dstSdUUID)
+                    self.log.info("delete image %s on domain %s before overwriting", dstImgUUID, dstSdUUID)
+                    self.delete(dstSdUUID, dstImgUUID, postZero, force=True)
 
                 # To avoid 'prezeroing' preallocated volume on NFS domain,
                 # we create the target volume with minimal size and after that w'll change

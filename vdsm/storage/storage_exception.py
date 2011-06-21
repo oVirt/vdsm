@@ -274,7 +274,7 @@ class ImageValidationError(StorageException):
 
 class ImageDeleteError(StorageException):
     code = 256
-    message = "Could not remove all files"
+    message = "Could not remove all image's volumes"
 
 #REMOVED in 2.3.
 #This class was not in use in 2.2 nor in 2.3.
