@@ -40,9 +40,9 @@ from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 from contextlib import nested
 import fileUtils
-from resourceManager import ResourceManager, LockType
 from processPool import Timeout
-rmanager = ResourceManager.getInstance()
+
+rmanager = rm.ResourceManager.getInstance()
 
 # Global operation definitions
 NOOP = 1
@@ -121,8 +121,6 @@ class Secure:
             self.log.error("SPM: spm method call rejected: Not SPM!!!  method: %s, called by: %s" % (self.name, caller))
             raise se.SpmStatusError(self.name)
 
-
-rmanager = rm.ResourceManager.getInstance()
 
 class SPM:
     """
@@ -352,7 +350,7 @@ class SPM:
         return {"upgradeStatus" : "started"}
 
     def _upgradePool(self, spUUID, targetDomVersion):
-        with rmanager.acquireResource(STORAGE, "upgrade_" + spUUID, LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, "upgrade_" + spUUID, rm.LockType.exclusive):
             if len(self._domainsToUpgrade) > 0:
                 raise se.PoolUpgradeInProgress(spUUID)
 
@@ -361,7 +359,7 @@ class SPM:
             masterDom = pool.getMasterDomain()
             sdUUID = masterDom.sdUUID
             self.log.info("Trying to upgrade master domain `%s`", sdUUID)
-            with rmanager.acquireResource(STORAGE, masterDom.sdUUID, LockType.exclusive):
+            with rmanager.acquireResource(STORAGE, masterDom.sdUUID, rm.LockType.exclusive):
                 masterDom.upgrade(targetDomVersion)
 
             self.log.debug("Marking all domains for upgrade")
@@ -401,8 +399,8 @@ class SPM:
             self.log.error("Error while preparing domain `%s` upgrade", sdUUID, exc_info=True)
             return
 
-        with rmanager.acquireResource(STORAGE, "upgrade_" + sdUUID, LockType.exclusive):
-            with rmanager.acquireResource(STORAGE, sdUUID, LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, "upgrade_" + sdUUID, rm.LockType.exclusive):
+            with rmanager.acquireResource(STORAGE, sdUUID, rm.LockType.exclusive):
                 if sdUUID not in self._domainsToUpgrade:
                     return
 
@@ -623,7 +621,7 @@ class SPM:
         """
         Stop SPM
         """
-        with rmanager.acquireResource(STORAGE, "upgrade_" + spUUID, LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, "upgrade_" + spUUID, rm.LockType.exclusive):
             domains = self._domainsToUpgrade
             try:
                 sp.StatsThread.onDomainConnectivityStateChange.unregister(self._upgradePoolDomain)
@@ -640,7 +638,7 @@ class SPM:
                 res.release()
 
             for sdUUID in domains:
-                req = rmanager.registerResource(STORAGE, "upgrade_" + sdUUID, LockType.exclusive, partial(cancelUpgrade, sdUUID))
+                req = rmanager.registerResource(STORAGE, "upgrade_" + sdUUID, rm.LockType.exclusive, partial(cancelUpgrade, sdUUID))
                 requests.append(req)
 
             for req in requests:
