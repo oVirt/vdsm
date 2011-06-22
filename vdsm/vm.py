@@ -442,10 +442,12 @@ class Vm(object):
         # state
         response = self.releaseVm()
         if not response['status']['code']:
-            if self.user_destroy:
-                self.setDownStatus(NORMAL, "User shut down")
+            if self.destroyed:
+                self.setDownStatus(NORMAL, 'Admin shut down')
+            elif self.user_destroy:
+                self.setDownStatus(NORMAL, 'User shut down')
             else:
-                self.setDownStatus(ERROR, "Lost connection with kvm process")
+                self.setDownStatus(ERROR, "Lost connection with qemu process")
 
     def _loadCorrectedTimeout(self, base, doubler=20, load=None):
         """

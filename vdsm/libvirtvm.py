@@ -13,7 +13,7 @@ import time
 import threading
 
 import vm
-from define import NORMAL, ERROR, doneCode, errCode
+from define import ERROR, doneCode, errCode
 import utils
 import constants
 import guestIF
@@ -1167,17 +1167,6 @@ class LibvirtVm(vm.Vm):
             return response
         # Clean VM from the system
         self.deleteVm()
-
-        # TODO: At this point VM does not exist anymore.
-        # So, probably we do not need to set its status to 'Down'.
-        # Check if we use VM's status somewhere in code, before removing this.
-        if self.user_destroy:
-            reason = 'User shut down'
-        else:
-            reason = 'Admin shut down'
-        # Set status to Down only if clenup succeeded
-        if self.lastStatus != 'Down':
-            self.setDownStatus(NORMAL, reason)
 
         return {'status': doneCode}
 
