@@ -676,6 +676,9 @@ class StorageDomain:
         """
         self.setMetaParams({key:value})
 
+    def refreshDirTree(self):
+        pass
+
     def refresh(self):
         pass
 
