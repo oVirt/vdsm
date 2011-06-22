@@ -165,8 +165,7 @@ class StoragePool:
         if self.hsmMailer:
             return
 
-        sanPool = self.getMasterDomain().getStorageType() in [ sd.ISCSI_DOMAIN, sd.FCP_DOMAIN ]
-        if sanPool and self.lvExtendPolicy == "ON":
+        if isinstance(self.masterDomain, blockSD.BlockStorageDomain) and self.lvExtendPolicy == "ON":
             self.hsmMailer = storage_mailbox.HSM_Mailbox(self.id, self.spUUID)
 
     def __cleanupDomains(self, domlist, msdUUID, masterVersion):
