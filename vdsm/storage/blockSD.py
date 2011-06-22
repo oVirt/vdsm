@@ -920,7 +920,6 @@ class BlockStorageDomain(sd.StorageDomain):
             self._extendlock.release()
 
     def refresh(self):
-        self.refreshSpecialVolumes()
         self.refreshDirTree()
         lvm.refreshVG(self.sdUUID)
         self._metadata = selectMetadata(self.sdUUID)
