@@ -18,6 +18,7 @@ import tempfile
 import logging
 import socket
 import re
+import sys
 
 import constants
 import misc
@@ -471,6 +472,7 @@ def addiSCSINode(ip, port, iqn, tpgt, initiator, username=None, password=None):
         if rc != 0:
             raise se.iSCSILoginError(portal)
     except se.StorageException:
+        exc_class, exc, tb = sys.exc_info()
         try:
             if checkSession(ip, port, iqn, tpgt, username, password):
                 return 0
@@ -482,7 +484,7 @@ def addiSCSINode(ip, port, iqn, tpgt, initiator, username=None, password=None):
         except Exception:
             log.error("Could not remove iscsi node", exc_info=True)
 
-        raise
+        raise exc_class, exc, tb
 
 
 def remiSCSINode(ip, port, iqn, tpgt, username=None, password=None, logout=True):
