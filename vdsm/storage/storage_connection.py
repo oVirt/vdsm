@@ -16,7 +16,8 @@ import iscsi
 import fileUtils
 import sd
 import storage_exception as se
-
+import outOfProcess as oop
+from processPool import Timeout
 
 class StorageServerConnection:
     log = logging.getLogger('Storage.ServerConnection')
@@ -142,24 +143,24 @@ class StorageServerConnection:
                     # BUT if someone deletes the export on the servers side. We will keep
                     # getting stale handles and this is unresolvable unless you umount and
                     # remount.
-                    if fileUtils.isStaleHandle(mntPath):
+                    if oop.fileUtils.isStaleHandle(mntPath):
                         # A VM might be holding a stale handle, we have to umount
                         # but we can't umount as long as someone is holding a handle
                         # even if it's stale. We use lazy so we can at least recover.
                         # Processes having an open file handle will not recover until
                         # they reopen the files.
-                        fileUtils.umount(con['rp'], mntPath, lazy=True)
+                        oop.fileUtils.umount(con['rp'], mntPath, lazy=True)
 
                 fileUtils.createdir(mntPath)
 
-                rc = fileUtils.mount(con['rp'], mntPath, fsType)
+                rc = oop.fileUtils.mount(con['rp'], mntPath, fsType)
                 if rc == 0:
                     try:
-                        fileUtils.validateAccess(mntPath)
+                        oop.fileUtils.validateAccess(mntPath)
                     except se.StorageServerAccessPermissionError, ex:
                         self.log.debug("Unmounting file system %s "
                             "(not enough access permissions)" % con['rp'])
-                        fileUtils.umount(con['rp'], mntPath, fsType)
+                        oop.fileUtils.umount(con['rp'], mntPath, fsType)
                         raise
                 else:
                     self.log.error("Error during storage connection: rc=%s", rc, exc_info=True)
@@ -244,10 +245,10 @@ class StorageServerConnection:
             try:
                 mountpoint = tempfile.mkdtemp()
                 try:
-                    rc = fileUtils.mount(con['rp'], mountpoint, fsType)
+                    rc = oop.fileUtils.mount(con['rp'], mountpoint, fsType)
                     if rc == 0:
                         try:
-                            fileUtils.validateAccess(mountpoint)
+                            oop.fileUtils.validateAccess(mountpoint)
                         except se.StorageServerAccessPermissionError, ex:
                             rc = ex.code
                     else:
@@ -255,9 +256,9 @@ class StorageServerConnection:
                         rc = se.StorageServerValidationError.code
                 finally:
                     try:
-                        fileUtils.umount(con['rp'], mountpoint, fsType)
+                        oop.fileUtils.umount(con['rp'], mountpoint, fsType)
                     finally:
-                        os.rmdir(mountpoint)
+                        oop.os.rmdir(mountpoint)
 
             except se.StorageException, ex:
                 rc = ex.code
@@ -319,15 +320,16 @@ class StorageServerConnection:
                 mntPoint = fileUtils.transformPath(con['rp'])
                 mntPath = os.path.join(localPath, mntPoint)
 
-                rc = fileUtils.umount(con['rp'], mntPath, fsType)
+                rc = oop.fileUtils.umount(con['rp'], mntPath, fsType)
                 if rc == 0:
                     try:
-                        os.rmdir(mntPath)
-                    except OSError:
+                        oop.os.rmdir(mntPath)
+                    except (OSError, Timeout):
                         # Report the error to the log, but keep going,
                         # afterall we succeeded to disconnect the FS server
                         msg = ("Cannot remove mountpoint after umount()")
                         self.log.warning(msg, exc_info=True)
+
                 else:
                     self.log.error("Error during storage disconnection: rc=%s", rc, exc_info=True)
                     rc = se.StorageServerDisconnectionError.code

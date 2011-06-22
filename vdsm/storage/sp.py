@@ -27,6 +27,7 @@ from config import config
 from sdf import StorageDomainFactory as SDF
 import storage_exception as se
 from persistentDict import DictValidator
+from processPool import Timeout
 
 BLANK_POOL_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -1295,7 +1296,10 @@ class StoragePool:
     def _repostats(self, domain):
         # self.selftest() should return True if things are looking good
         # and False otherwise
-        stats = {}
+        stats = { 'disktotal' : '0',
+                  'diskfree' : '0',
+                  'masterValidate' : { 'mount' : False, 'valid' : False }
+                }
         code = 0
         try:
             if not domain.selftest():
@@ -1309,6 +1313,8 @@ class StoragePool:
             stats['masterValidate'] = domain.validateMaster()
         except se.StorageException, e:
             code = e.code
+        except (OSError, Timeout):
+            code = se.StorageDomainAccessError.code
 
         return stats, code
 
