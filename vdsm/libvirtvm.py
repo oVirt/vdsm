@@ -810,6 +810,8 @@ class LibvirtVm(vm.Vm):
             * config.getint('irs', 'volume_utilization_chunk_mb') * 2**20 \
             / 100
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
+        self._released = False
+        self._releaseLock = threading.Lock()
 
         # TODO remove when libvirt BZ#703851 is solved
         # until then, displayNetwork cannot be honoured
@@ -1113,29 +1115,36 @@ class LibvirtVm(vm.Vm):
         """
         Stop VM and release all resources
         """
-        self.log.info('Release VM resources')
-        self.lastStatus = 'Powering down'
-        try:
-            if self._vmStats:
-                self._vmStats.stop()
-            if self.guestAgent:
-                self.guestAgent.stop()
-            if self._dom:
-                self._dom.destroy()
-        except libvirt.libvirtError, e:
-            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                self.log.warning(traceback.format_exc())
-            else:
-                self.log.warn("VM %s is not running", self.conf['vmId'])
+        with self._releaseLock:
+            if self._released:
+                return {'status': doneCode}
 
-        self.cif.ksmMonitor.adjust()
-        self._cleanup()
-        # Check successful teardown of all drives and fail destroy if not
-        if len(self._preparedDrives):
-            self.log.error("Destroy failed, not all drives were teardown")
-            return errCode['destroyErr']
+            self.log.info('Release VM resources')
+            self.lastStatus = 'Powering down'
+            try:
+                if self._vmStats:
+                    self._vmStats.stop()
+                if self.guestAgent:
+                    self.guestAgent.stop()
+                if self._dom:
+                    self._dom.destroy()
+            except libvirt.libvirtError, e:
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    self.log.warning(traceback.format_exc())
+                else:
+                    self.log.warn("VM %s is not running", self.conf['vmId'])
 
-        hooks.after_vm_destroy(self._lastXMLDesc, self.conf)
+            self.cif.ksmMonitor.adjust()
+            self._cleanup()
+            # Check successful teardown of all drives and fail destroy if not
+            if len(self._preparedDrives):
+                self.log.error("Destroy failed, not all drives were teardown")
+                return errCode['destroyErr']
+
+            hooks.after_vm_destroy(self._lastXMLDesc, self.conf)
+
+            self._released = True
+
         return {'status': doneCode}
 
     def deleteVm(self):
