@@ -825,6 +825,9 @@ class LibvirtVm(vm.Vm):
         domxml.appendOs()
 
         osd = caps.osversion()
+
+        assert osd['name'] != caps.OSName.UNKNOWN
+
         domxml.appendSysinfo(
             osname=osd.get('name', ''),
             osversion=osd.get('version', '') + '-' + osd.get('release', ''),
