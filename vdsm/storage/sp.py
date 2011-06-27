@@ -465,9 +465,12 @@ class StoragePool:
                 self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
 
                 # TBD: Run full attachSD?
+                domains = self.getDomains()
                 for sdUUID in domDict:
-                    # Add domain to domain list in pool metadata
-                    self.setDomains(sdUUID, domDict[sdUUID], remove=False, refresh=False)
+                    domains[sdUUID] = domDict[sdUUID].capitalize()
+                # Add domain to domain list in pool metadata
+                self.setMetaParam(PMDK_DOMAINS, domains)
+                self.log.info("Set storage pool domains: %s", domains)
             finally:
                 futureMaster.releaseClusterLock()
         finally:
@@ -1146,18 +1149,6 @@ class StoragePool:
         self.log.debug("Master domain '%s' verified", msdUUID)
         return domain
 
-
-    def setDomains(self, sdUUID, status, remove=False, refresh=True):
-        domDict = {}
-        domDict = self.getDomains()
-        domDict[sdUUID] = status.capitalize()
-        if remove and sdUUID in domDict.keys():
-            del domDict[sdUUID]
-        self.setMetaParam(PMDK_DOMAINS, domDict)
-        self.log.info("Set storage pool domains: %s", domDict)
-        self.updateMonitoringThreads()
-        if refresh:
-            self.refresh()
 
     def invalidateMetadata(self):
         self._metadata.invalidate()
