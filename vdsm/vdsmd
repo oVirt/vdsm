@@ -146,7 +146,7 @@ start_needed_srv() {
         then
             echo "Starting $srv..."
             /sbin/service $srv start
-            $ret_val=$?
+            ret_val=$?
             if [ $ret_val -ne 0 ]
             then
                 log_failure_msg "$prog: Dependent $srv failed to start"
