@@ -506,7 +506,7 @@ class BlockStorageDomain(sd.StorageDomain):
                     break
 
             if offset is None:
-                self.log.warn("Could not find mapping for lv %s", lv.name)
+                self.log.warn("Could not find mapping for lv %s/%s", self.sdUUID, lv.name)
                 continue
 
             if size is None:
@@ -533,6 +533,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
             freeSlot = offset + size
 
+        self.log.debug("Found freeSlot %s in VG %s", freeSlot, self.sdUUID)
         return freeSlot
 
     def getVolumeMetadataOffsetFromPvMapping(self, vol_name):

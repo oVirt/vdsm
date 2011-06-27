@@ -10,6 +10,7 @@
 
 import os.path
 import uuid
+import threading
 
 from config import config
 import storage_exception as se
@@ -42,6 +43,8 @@ rmanager = rm.ResourceManager.getInstance()
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
+    _tagCreateLock = threading.Lock()
+
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.metaoff = None
         volume.Volume.__init__(self, repoPath, sdUUID, imgUUID, volUUID)
@@ -201,12 +204,14 @@ class BlockVolume(volume.Volume):
             raise
 
         try:
-            offs = mysd.mapMetaOffset(volUUID)
+            with cls._tagCreateLock:
+                offs = mysd.mapMetaOffset(volUUID)
+                lvm.addLVTags(sdUUID, volUUID, ("%s%s" % (TAG_PREFIX_MD, offs),
+                                                "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
+                                                "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)))
+            lvm.deactivateLVs(sdUUID, volUUID)
             vars.task.pushRecovery(task.Recovery("create block volume metadata rollback", "blockVolume", "BlockVolume", "createVolumeMetadataRollback",
                                                  [sdUUID, str(offs)]))
-            lvm.addLVTags(sdUUID, volUUID, ("%s%s" % (TAG_PREFIX_MD, offs),
-                            "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,), "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)))
-            lvm.deactivateLVs(sdUUID, volUUID)
             # Set metadata and mark volume as legal.
             # FIXME: In next version we should remove imgUUID and srcVolUUID, as they are saved on lvm tags
             cls.newMetadata([sdUUID, offs], sdUUID, imgUUID, srcVolUUID,
