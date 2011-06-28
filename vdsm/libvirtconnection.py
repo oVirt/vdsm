@@ -11,6 +11,10 @@ import libvirtev
 import constants
 import traceback
 
+# Make sure to never reload this module, or you would lose events
+# TODO: make this internal to libvirtev, and make the thread stoppable
+libvirtev.virEventLoopPureStart()
+
 def __eventCallback(conn, dom, *args):
     try:
         cif, eventid = args[-1]
@@ -87,7 +91,6 @@ def get(cif=None):
 
     conn = __connections.get(id(cif))
     if not conn:
-        libvirtev.virEventLoopPureStart()
         conn = libvirt.openAuth('qemu:///system', auth, 0)
         __connections[id(cif)] = conn
         if cif != None:
