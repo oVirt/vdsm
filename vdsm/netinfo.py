@@ -131,6 +131,33 @@ def getVlanBondingNic(bridge):
             nics = [iface]
     return vlan, bonding, nics
 
+def intToAddress(ip_num):
+    "Convert an integer to the corresponding ip address in the dot-notation"
+    ip_address = []
+
+    for i in xrange(4):
+        ip_num, ip_val = divmod(ip_num, 256)
+        ip_address.append(str(ip_val))
+
+    return '.'.join(ip_address)
+
+def getRoutes():
+    """Return the interface gateway or None if not found."""
+
+    gateways = dict()
+
+    with open("/proc/net/route") as route_file:
+        head = route_file.readline()
+
+        for route_line in route_file.xreadlines():
+            route_parm = route_line.rstrip().split('\t')
+
+            if route_parm[2] != '00000000':
+                ip_num = int(route_parm[2], 16)
+                gateways[route_parm[0]] = intToAddress(ip_num)
+
+    return gateways
+
 def getIfaceCfg(iface):
     d = {}
     try:
@@ -161,11 +188,13 @@ def permAddr():
 def get():
     d = {}
     ifaces = ifconfig()
+    routes = getRoutes()
     # FIXME handle bridge/nic missing from ifconfig
     d['networks'] = dict([ (bridge, {'ports': ports(bridge),
                                      'stp': bridge_stp_state(bridge),
                                      'addr': ifaces[bridge]['addr'],
                                      'netmask': ifaces[bridge]['netmask'],
+                                     'gateway': routes.get(bridge, '0.0.0.0'),
                                      'cfg': getIfaceCfg(bridge)})
                            for bridge in bridges() ])
     d['nics'] = dict([ (nic, {'speed': speed(nic),
