@@ -470,7 +470,8 @@ class HSM:
                 dom.validate()
             except:
                 raise se.StorageDomainAccessError(sdUUID)
-            if dom.getVersion() != msdVersion:
+            #If you remove this condition, remove it from StoragePool.attachSD() too.
+            if dom.isData() and (dom.getVersion() != msdVersion):
                 raise se.MixedSDVersionError(dom.sdUUID, dom.getVersion(), msd.sdUUID, msdVersion)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
