@@ -158,7 +158,7 @@ class BlockVolume(volume.Volume):
 
                 # override size param by parent's size
                 size = pvol.getSize()
-        except se.StorageException, e:
+        except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
         except Exception, e:
@@ -178,7 +178,7 @@ class BlockVolume(volume.Volume):
             if os.path.exists(vol_path):
                 os.unlink(vol_path)
             os.symlink(lvm.lvPath(sdUUID, volUUID), vol_path)
-        except se.StorageException, e:
+        except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
         except Exception, e:
@@ -199,7 +199,7 @@ class BlockVolume(volume.Volume):
                 ## Create hardlink to template and its meta file
                 cls.log.info("Request to create snapshot %s/%s of volume %s/%s", imgUUID, volUUID, srcImgUUID, srcVolUUID)
                 pvol.clone(imageDir, volUUID, volFormat, preallocate)
-        except Exception, e:
+        except Exception:
             cls.log.error("Unexpected error", exc_info=True)
             raise
 
@@ -209,7 +209,8 @@ class BlockVolume(volume.Volume):
                 lvm.addLVTags(sdUUID, volUUID, ("%s%s" % (TAG_PREFIX_MD, offs),
                                                 "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
                                                 "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)))
-            lvm.deactivateLVs(sdUUID, volUUID)
+
+
             vars.task.pushRecovery(task.Recovery("create block volume metadata rollback", "blockVolume", "BlockVolume", "createVolumeMetadataRollback",
                                                  [sdUUID, str(offs)]))
             # Set metadata and mark volume as legal.
@@ -218,17 +219,21 @@ class BlockVolume(volume.Volume):
                             size, volume.type2name(volFormat),
                             volume.type2name(preallocate), voltype,
                             diskType, desc, volume.LEGAL_VOL)
-        except se.StorageException, e:
+        except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumeMetadataWriteError("tag target volume %s failed: %s" % (volUUID, str(e)))
 
+        try:
+            lvm.deactivateLVs(sdUUID, volUUID)
+        except Exception:
+            cls.log.warn("Cannot deactivate new created volume %s/%s", sdUUID, volUUID, exc_info=True)
+
         # Remove all previous rollbacks for 'halfbaked' volume and add rollback for 'real' volume creation
         vars.task.replaceRecoveries(task.Recovery("create block volume rollback", "blockVolume", "BlockVolume", "createVolumeRollback",
                                              [repoPath, sdUUID, imgUUID, volUUID, imageDir]))
-
         return volUUID
 
 
