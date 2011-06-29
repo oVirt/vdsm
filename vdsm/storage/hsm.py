@@ -756,15 +756,6 @@ class HSM:
         """
         vars.task.setDefaultException(se.BlockDeviceActionError("GUID: %s" % str(guid)))
         #getSharedLock(connectionsResource...)
-        rescan = True
-        try:
-            if options:
-                rescan = options.get("rescan", True)
-        except:
-            self.log.warning("ignore options %s" % (str(options)))
-        if rescan:
-            SDF.refreshStorage()
-
         try:
             devInfo = self._getDeviceList(guids=[guid])[0]
             for p in devInfo["pathstatus"]:
