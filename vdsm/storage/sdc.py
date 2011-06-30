@@ -45,13 +45,6 @@ class StorageDomainCache:
         multipath.rescan()
         lvm.updateLvmConf()
         self.storageStale = False
-        self.invalidate()
-
-    def invalidate(self):
-        """
-        """
-        # TODO : Remove all calls to this
-        pass
 
     def _getDomainFromCache(self, sdUUID):
         try:
