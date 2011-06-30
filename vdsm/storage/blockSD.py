@@ -724,12 +724,17 @@ class BlockStorageDomain(sd.StorageDomain):
         fileUtils.cleanupdir(os.path.join("/dev", self.sdUUID))
 
     @classmethod
-    def format(cls, sdUUID, domaindir):
+    def format(cls, sdUUID):
         """Format detached storage domain.
            This removes all data from the storage domain.
         """
         # Remove the directory tree
-        fileUtils.cleanupdir(domaindir, ignoreErrors = True)
+        try:
+            domaindir = cls.findDomainPath(sdUUID)
+        except (se.StorageDomainDoesNotExist):
+            pass
+        else:
+            fileUtils.cleanupdir(domaindir, ignoreErrors=True)
         # Remove special metadata and service volumes
         # Remove all volumes LV if exists
         _removeVMSfs(lvm.lvPath(sdUUID, MASTERLV))

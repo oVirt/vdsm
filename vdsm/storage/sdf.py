@@ -91,14 +91,7 @@ class StorageDomainFactory:
             cls.log.warn("Storage domain %s doesn't exist. Trying recycle leftovers ...", sdUUID)
 
         for domClass in (blockSD.BlockStorageDomain, nfsSD.NfsStorageDomain, localFsSD.LocalFsStorageDomain):
-            try:
-                domaindir = domClass.findDomainPath(sdUUID)
-            except (se.StorageDomainDoesNotExist):
-                pass
-            except Exception:
-                cls.log.error("Can't find out domain %s", sdUUID, exc_info=True)
-            else:
-                return domClass.format(sdUUID, domaindir)
+            return domClass.format(sdUUID)
 
         raise se.StorageDomainTypeError(sdUUID)
 

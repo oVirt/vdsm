@@ -534,13 +534,6 @@ class StorageDomain:
             self.mountMaster()
             self.createMasterTree()
 
-    def format(self):
-        """
-        Format detached storage domain.
-        This removes all data from the storage domain.
-        """
-        pass
-
     def getAllImages(self):
         """
         Fetch the list of the Image UUIDs

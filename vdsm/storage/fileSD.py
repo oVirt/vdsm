@@ -210,13 +210,18 @@ class FileStorageDomain(sd.StorageDomain):
         return imgList
 
     @classmethod
-    def format(cls, sdUUID, domaindir):
+    def format(cls, sdUUID):
         """
         Format detached storage domain.
         This removes all data from the storage domain.
         """
         cls.log.info("Formating domain %s", sdUUID)
-        oop.getProcessPool(sdUUID).fileUtils.cleanupdir(domaindir, ignoreErrors = False)
+        try:
+            domaindir = cls.findDomainPath(sdUUID)
+        except (se.StorageDomainDoesNotExist):
+            pass
+        else:
+            oop.getProcessPool(sdUUID).fileUtils.cleanupdir(domaindir, ignoreErrors = False)
         return True
 
     def getRemotePath(self):
