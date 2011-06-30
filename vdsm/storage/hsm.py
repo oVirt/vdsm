@@ -1229,6 +1229,15 @@ class HSM:
         return SDF.produce(sdUUID=sdUUID).validate()
 
 
+    #TODO: Remove this  function when formatStorageDomain() is removed.
+    def _recycle(self, dom):
+        try:
+            SDF.manuallyRemoveDomain(dom.sdUUID)
+        except KeyError:
+            self.log.warn("Storage domain %s doesn't exist in cache. Trying recycle leftovers ...", dom.sdUUID)
+
+        dom.format(dom.sdUUID)
+
     def public_formatStorageDomain(self, sdUUID, autoDetach = False, options = None):
         """
         Formats a detached storage domain.
@@ -1237,6 +1246,7 @@ class HSM:
             This removes all data from the storage domain.
 
         :param sdUUID: The UUID for the storage domain you want to format.
+        :param autoDetach: DEPRECATED
         :type sdUUID: UUID
         :param options: ?
 
@@ -1253,24 +1263,18 @@ class HSM:
                 raise se.CannotFormatStorageDomainInConnectedPool(sdUUID)
 
         # For domains that attached to disconnected pool, format domain if 'autoDetach' flag set
-        if not misc.parseBool(autoDetach):
+        sd = SDF.produce(sdUUID=sdUUID)
+        try:
+            sd.invalidateMetadata()
+            #TODO: autoDetach is True
+            if not misc.parseBool(autoDetach) and sd.getPools():
+                raise se.CannotFormatAttachedStorageDomain(sdUUID)
             # Allow format also for broken domain
-            try:
-                dom = SDF.produce(sdUUID=sdUUID)
-                dom.invalidateMetadata()
-                if len(dom.getPools()) > 0:
-                    raise se.CannotFormatAttachedStorageDomain(sdUUID)
+        except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError, se.MiscFileReadException,
+                se.MiscBlockReadException, se.MiscBlockReadIncomplete), e:
+            self.log.warn("Domain %s has problem with metadata. Continue formating... (%s)", sdUUID, str(e))
 
-            except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError, se.MiscFileReadException,
-                    se.MiscBlockReadException, se.MiscBlockReadIncomplete), e:
-                self.log.warn("Domain %s has problem with metadata. Continue formating... (%s)", sdUUID, str(e))
-            except se.CannotFormatAttachedStorageDomain:
-                raise
-            except Exception:
-                self.log.warn("Domain %s can't be formated", sdUUID, exc_info=True)
-                raise se.StorageDomainFormatError(sdUUID)
-
-        SDF.recycle(sdUUID=sdUUID)
+        self._recycle(sd)
 
 
     def public_setStorageDomainDescription(self, sdUUID, description, options = None):

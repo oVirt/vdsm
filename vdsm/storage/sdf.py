@@ -31,6 +31,9 @@ class StorageDomainFactory:
     storage_repository = config.get('irs', 'repository')
     __sdc = sdc.StorageDomainCache(storage_repository)
 
+    @classmethod
+    def manuallyRemoveDomain(cls, sdUUID):
+        cls.__sdc.manuallyRemoveDomain(sdUUID)
 
     @classmethod
     def produce(cls, sdUUID):
@@ -74,26 +77,6 @@ class StorageDomainFactory:
 
         cls.__sdc.manuallyAddDomain(newSD)
         return newSD
-
-
-    @classmethod
-    def recycle(cls, sdUUID):
-        """
-        Cleanly destroys the domain
-        """
-        import nfsSD
-        import localFsSD
-        import blockSD
-
-        try:
-            cls.__sdc.manuallyRemoveDomain(sdUUID)
-        except Exception:
-            cls.log.warn("Storage domain %s doesn't exist. Trying recycle leftovers ...", sdUUID)
-
-        for domClass in (blockSD.BlockStorageDomain, nfsSD.NfsStorageDomain, localFsSD.LocalFsStorageDomain):
-            return domClass.format(sdUUID)
-
-        raise se.StorageDomainTypeError(sdUUID)
 
 
     @classmethod
