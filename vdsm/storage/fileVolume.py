@@ -22,7 +22,7 @@ import os
 import uuid
 
 import storage_exception as se
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 import outOfProcess as oop
 import volume
 import image

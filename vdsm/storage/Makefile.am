@@ -34,7 +34,6 @@ dist_vdsmstorage_DATA = \
 	resourceManager.py \
 	safelease.py \
 	sdc.py \
-	sdf.py \
 	sd.py \
 	spm.py \
 	sp.py \

@@ -33,7 +33,7 @@ import task
 import lvm
 import resourceManager as rm
 from threadLocal import vars
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 from resourceFactories import LVM_ACTIVATION_NAMESPACE
 import fileUtils
 

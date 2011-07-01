@@ -25,7 +25,7 @@ import uuid
 from contextlib import contextmanager
 
 import volume
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 import sd
 import misc
 import fileUtils

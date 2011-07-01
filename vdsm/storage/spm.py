@@ -42,7 +42,7 @@ import sd
 import hsm
 import blockSD
 import image
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 import volume
 import misc
 import logging

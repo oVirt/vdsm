@@ -36,7 +36,7 @@ import misc
 from misc import Event
 import fileUtils
 from config import config
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 import storage_exception as se
 from persistentDict import DictValidator
 from processPool import Timeout

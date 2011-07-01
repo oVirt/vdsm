@@ -25,6 +25,7 @@ for keeping storage related data that is expensive to harvest, but needed often
 import logging
 import threading
 import weakref
+from config import config
 
 import multipath
 import lvm
@@ -71,7 +72,7 @@ class StorageDomainCache:
                 del self.__weakCache[sdUUID]
 
 
-    def lookup(self, sdUUID):
+    def produce(self, sdUUID):
         dom = self._getDomainFromCache(sdUUID)
         if dom:
             return dom
@@ -134,3 +135,8 @@ class StorageDomainCache:
     def manuallyRemoveDomain(self, sdUUID):
         with self._syncroot:
             del self.__cache[sdUUID]
+
+
+storage_repository = config.get('irs', 'repository')
+StorageDomainFactory = StorageDomainCache(storage_repository)
+

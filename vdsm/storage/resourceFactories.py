@@ -24,7 +24,7 @@ import logging
 import lvm
 import resourceManager as rm
 import storage_exception as se
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 import sd
 import image
 

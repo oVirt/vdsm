@@ -40,7 +40,7 @@ import spm
 import lvm
 import fileUtils
 import multipath
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 import volume
 import iscsi
 import misc
@@ -1389,7 +1389,7 @@ class HSM:
             domains = domList.keys()
         else:
             #getSharedLock(connectionsResource...)
-            domains = SDF.getAllUUIDs()
+            domains = SDF.getUUIDs()
 
         for sdUUID in domains[:]:
             try:

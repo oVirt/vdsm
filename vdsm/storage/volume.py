@@ -26,7 +26,7 @@ import signal
 import constants
 import storage_exception as se
 import sd
-from sdf import StorageDomainFactory as SDF
+from sdc import StorageDomainFactory as SDF
 import misc
 import fileUtils
 import task
