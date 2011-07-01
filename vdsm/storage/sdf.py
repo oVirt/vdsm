@@ -22,7 +22,6 @@ from config import config
 import logging
 
 import sdc
-import storage_exception as se
 
 
 class StorageDomainFactory:
@@ -45,10 +44,7 @@ class StorageDomainFactory:
         Produce a new Storage domain
         """
 
-        newSD = cls.__sdc.lookup(sdUUID)
-        if not newSD:
-            raise se.StorageDomainDoesNotExist(sdUUID)
-        return newSD
+        return cls.__sdc.lookup(sdUUID)
 
 
     @classmethod

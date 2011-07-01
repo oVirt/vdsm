@@ -86,6 +86,7 @@ class StorageDomainCache:
 
             self._cleanStaleWeakrefs()
 
+            #_findDomain will raise StorageDomainDoesNotExist if sdUUID is not found in storage.
             dom = self._findDomain(sdUUID)
             self.__cache[sdUUID] = dom
             self.__weakCache[sdUUID] = weakref.ref(dom)
