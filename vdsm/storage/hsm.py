@@ -34,6 +34,8 @@ from collections import defaultdict
 import sp
 import sd
 import blockSD
+import nfsSD
+import localFsSD
 import spm
 import lvm
 import fileUtils
@@ -1210,8 +1212,18 @@ class HSM:
 
         #getSharedLock(connectionsResource...)
         #getExclusiveLock(sdUUID...)
-        SDF.create(sdUUID=sdUUID, storageType=storageType, domainName=domainName,
-                domClass=domClass, typeSpecificArg=typeSpecificArg, version=domVersion)
+        if storageType in sd.BLOCK_DOMAIN_TYPES:
+            newSD = blockSD.BlockStorageDomain.create(sdUUID, domainName,
+                    domClass, typeSpecificArg, storageType, domVersion)
+        elif storageType == sd.NFS_DOMAIN:
+            newSD = nfsSD.NfsStorageDomain.create(sdUUID, domainName, domClass,
+                    typeSpecificArg, storageType, domVersion)
+        elif storageType == sd.LOCALFS_DOMAIN:
+            newSD = localFsSD.LocalFsStorageDomain.create(sdUUID, domainName,
+                    domClass, typeSpecificArg, storageType, domVersion)
+        else:
+            raise se.StorageDomainTypeError(storageType)
+        SDF.manuallyAddDomain(newSD)
 
 
     def public_validateStorageDomain(self, sdUUID, options = None):

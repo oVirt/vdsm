@@ -22,7 +22,6 @@ from config import config
 import logging
 
 import sdc
-import sd
 import storage_exception as se
 
 
@@ -30,6 +29,11 @@ class StorageDomainFactory:
     log = logging.getLogger("Storage.StorageDomainFactory")
     storage_repository = config.get('irs', 'repository')
     __sdc = sdc.StorageDomainCache(storage_repository)
+
+    #WARNING! The parameters of the following two methods are not symmetric.
+    @classmethod
+    def manuallyAddDomain(cls, sd):
+        cls.__sdc.manuallyAddDomain(sd)
 
     @classmethod
     def manuallyRemoveDomain(cls, sdUUID):
@@ -44,38 +48,6 @@ class StorageDomainFactory:
         newSD = cls.__sdc.lookup(sdUUID)
         if not newSD:
             raise se.StorageDomainDoesNotExist(sdUUID)
-        return newSD
-
-
-    @classmethod
-    def create(cls, sdUUID, storageType, domainName, domClass, typeSpecificArg, version):
-        """
-        Create a new Storage domain
-        """
-        import nfsSD
-        import localFsSD
-        import blockSD
-
-        newSD = None
-        if storageType in [sd.NFS_DOMAIN]:
-            newSD = nfsSD.NfsStorageDomain.create(sdUUID=sdUUID,
-                domainName=domainName, domClass=domClass,
-                remotePath=typeSpecificArg, storageType=storageType,
-                version=version)
-        elif storageType in [sd.LOCALFS_DOMAIN]:
-            newSD = localFsSD.LocalFsStorageDomain.create(sdUUID=sdUUID,
-                domainName=domainName, domClass=domClass,
-                remotePath=typeSpecificArg, storageType=storageType,
-                version=version)
-        elif storageType in [sd.ISCSI_DOMAIN, sd.FCP_DOMAIN]:
-            newSD = blockSD.BlockStorageDomain.create(sdUUID=sdUUID,
-                domainName=domainName, domClass=domClass,
-                vgUUID=typeSpecificArg, storageType=storageType,
-                version=version)
-        else:
-            raise se.StorageDomainTypeError(storageType)
-
-        cls.__sdc.manuallyAddDomain(newSD)
         return newSD
 
 
