@@ -147,7 +147,7 @@ def getRoutes():
     gateways = dict()
 
     with open("/proc/net/route") as route_file:
-        head = route_file.readline()
+        route_file.readline() # skip header line
 
         for route_line in route_file.xreadlines():
             route_parm = route_line.rstrip().split('\t')
