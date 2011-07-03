@@ -1316,8 +1316,11 @@ def getRhevmCert(IP, port):
         dirName = os.path.dirname(CACERT)
         if not os.path.exists(dirName):
             os.makedirs(dirName)
-        with file(CACERT, "w+") as crt:
+        crt = file(CACERT, "w+")
+        try:
             crt.write(rhevmCert)
+        finally:
+            crt.close()
         return True
     else:
         return False
