@@ -44,6 +44,7 @@ class StorageDomainCache:
     def refreshStorage(self):
         multipath.rescan()
         lvm.updateLvmConf()
+        lvm.getAllVGs()
         self.storageStale = False
 
     def _getDomainFromCache(self, sdUUID):

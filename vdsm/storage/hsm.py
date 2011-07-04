@@ -1327,6 +1327,7 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.StorageDomainActionError("spUUID: %s" % str(spUUID)))
+        SDF.refreshStorage()
         if spUUID and spUUID != volume.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
             domains = domList.keys()
