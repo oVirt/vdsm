@@ -685,8 +685,7 @@ class BlockStorageDomain(sd.StorageDomain):
             except se.CannotRemoveLogicalVolume, e:
                 cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID, lv.name, str(e))
 
-        # Remove SD tag
-        lvm.replaceVGTag(sdUUID, STORAGE_DOMAIN_TAG, STORAGE_UNREADY_DOMAIN_TAG)
+        lvm.removeVG(sdUUID)
         return True
 
     def getInfo(self):

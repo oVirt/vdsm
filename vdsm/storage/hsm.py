@@ -847,17 +847,20 @@ class HSM:
 
     def public_removeVG(self, vgUUID, options = None):
         """
+        DEPRECATED: formatSD effectively removes the VG.
+
         Removes a volume group.
 
         :param vgUUID: The UUID of the VG you want removed.
         :type vgUUID: UUID
         :param options: ?
-
-        :raises: :exc:`storage_exception.VolumeGroupDoesNotExist` if no VG with this UUID exists.
         """
         vars.task.setDefaultException(se.VolumeGroupActionError("%s" % str(vgUUID)))
         #getSharedLock(connectionsResource...)
-        lvm.removeVGbyUUID(vgUUID)
+        try:
+            lvm.removeVGbyUUID(vgUUID)
+        except se.VolumeGroupDoesNotExist:
+            pass
 
 
     def public_getTaskStatus(self, taskID, spUUID=None, options = None):
