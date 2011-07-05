@@ -200,8 +200,9 @@ def _getKeyPackages():
             logging.error('kernel release not found', exc_info=True)
             ver, rel = '0', '0'
         try:
-            t = file('/proc/sys/kernel/version').read().strip().split(None, 2)[2]
-            t = time.mktime(time.strptime(t, '%a %b %d %H:%M:%S %Z %Y'))
+            t = file('/proc/sys/kernel/version').read().split()[2:]
+            del t[4] # Delete timezone
+            t = time.mktime(time.strptime(' '.join(t)))
         except:
             logging.error('kernel build time not found', exc_info=True)
             t = '0'
