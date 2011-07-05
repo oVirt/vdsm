@@ -566,7 +566,7 @@ gpgcheck=0
                 except:
                     logging.error(traceback.format_exc())
             else:
-                self.message = "addNetwork errored trying to add rhevm bridge"
+                self.message = "addNetwork error trying to add rhevm bridge"
                 logging.error(self.message)
                 fReturn = False
         except:
@@ -604,8 +604,8 @@ gpgcheck=0
             return False
 
         if deployUtil.preventDuplicate():
-            logging.debug("Bridge rhevm already exists. Skippping bridge creation.")
-            self.message = "Bridge rhevm already exists. Skippping bridge creation."
+            self.message = "Bridge rhevm already exists. Skipping bridge creation."
+            logging.debug(self.message)
         else:
             url, port = deployUtil.getAddress(iurl)
             if url is None:
