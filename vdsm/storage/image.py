@@ -50,7 +50,7 @@ class Image:
         Consist from chain of volumes.
     """
     log = logging.getLogger('Storage.Image')
-    _lock = threading.Lock()
+    _fakeTemplateLock = threading.Lock()
 
     @classmethod
     def createImageRollback(cls, taskObj, imageDir):
@@ -371,15 +371,14 @@ class Image:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.CouldNotValideTemplateOnTargetDomain("Template %s Destination domain %s: %s" % (pimg, dstSdUUID, str(e)))
 
-    def __templateRelink(self, sdUUID, imgUUID, volUUID):
+    def __templateRelink(self, destDom, imgUUID, volUUID):
         """
         Relink all hardlinks of the template 'volUUID' in all VMs based on it
         """
-        destDom = SDF.produce(sdUUID)
         # Avoid relink templates for SAN domains
         if destDom.getStorageType() in [ sd.NFS_DOMAIN ]:
             vol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-            chList = vol.getAllChildrenList(self.repoPath, sdUUID, imgUUID, volUUID)
+            chList = vol.getAllChildrenList(self.repoPath, destDom.sdUUID, imgUUID, volUUID)
             for ch in chList:
                 # Remove hardlink of this template
                 v = destDom.produceVolume(imgUUID=ch['imgUUID'], volUUID=volUUID)
@@ -387,7 +386,7 @@ class Image:
 
                 # Now we should re-link deleted hardlink, if exists
                 newVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-                imageDir = self.getImageDir(sdUUID, ch['imgUUID'])
+                imageDir = self.getImageDir(destDom.sdUUID, ch['imgUUID'])
                 newVol.share(imageDir)
         else:
             self.log.debug("Doesn't relink templates non-NFS domain %s", destDom.sdUUID)
@@ -396,8 +395,7 @@ class Image:
         """
         Create fake template (relevant for Backup domain only)
         """
-        try:
-            self._lock.acquire()
+        with self._fakeTemplateLock:
             try:
                 destDom = SDF.produce(sdUUID)
                 volclass = destDom.getVolumeClass()
@@ -417,14 +415,12 @@ class Image:
                     # Mark fake volume as shared
                     vol.setShared()
                     # Now we should re-link all hardlinks of this template in all VMs based on it
-                    self.__templateRelink(sdUUID, volParams['imgUUID'], volParams['volUUID'])
+                    self.__templateRelink(destDom, volParams['imgUUID'], volParams['volUUID'])
 
                     self.log.debug("Succeeded to create fake image %s in domain %s", volParams['imgUUID'], destDom.sdUUID)
                 except Exception:
                     self.log.error("Failure to create fake image %s in domain %s", volParams['imgUUID'],
                         destDom.sdUUID, exc_info=True)
-        finally:
-            self._lock.release()
 
     def isLegal(self, sdUUID, imgUUID):
         """
@@ -763,7 +759,7 @@ class Image:
 
                 if force:
                     # Now we should re-link all deleted hardlinks, if exists
-                    self.__templateRelink(dstSdUUID, dstImgUUID, dstVolUUID)
+                    self.__templateRelink(destDom, dstImgUUID, dstVolUUID)
             except se.StorageException, e:
                 self.log.error("Unexpected error", exc_info=True)
                 raise
