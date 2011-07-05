@@ -375,21 +375,26 @@ class Image:
         """
         Relink all hardlinks of the template 'volUUID' in all VMs based on it
         """
-        # Avoid relink templates for SAN domains
-        if destDom.getStorageType() in [ sd.NFS_DOMAIN ]:
-            vol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-            chList = vol.getAllChildrenList(self.repoPath, destDom.sdUUID, imgUUID, volUUID)
-            for ch in chList:
-                # Remove hardlink of this template
-                v = destDom.produceVolume(imgUUID=ch['imgUUID'], volUUID=volUUID)
-                v.delete(postZero=False, force=True)
-
-                # Now we should re-link deleted hardlink, if exists
-                newVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-                imageDir = self.getImageDir(destDom.sdUUID, ch['imgUUID'])
-                newVol.share(imageDir)
-        else:
+        # Avoid relink templates for non-NFS domains
+        if destDom.getStorageType() not in [ sd.NFS_DOMAIN ]:
             self.log.debug("Doesn't relink templates non-NFS domain %s", destDom.sdUUID)
+            return
+
+        vol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+        # Relink templates only
+        if not vol.isShared():
+            self.log.debug("Doesn't relink regular volume %s of image %s", volUUID, imgUUID)
+            return
+        chList = vol.getAllChildrenList(self.repoPath, destDom.sdUUID, imgUUID, volUUID)
+        for ch in chList:
+            # Remove hardlink of this template
+            v = destDom.produceVolume(imgUUID=ch['imgUUID'], volUUID=volUUID)
+            v.delete(postZero=False, force=True)
+
+            # Now we should re-link deleted hardlink, if exists
+            newVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+            imageDir = self.getImageDir(destDom.sdUUID, ch['imgUUID'])
+            newVol.share(imageDir)
 
     def createFakeTemplate(self, sdUUID, volParams):
         """
