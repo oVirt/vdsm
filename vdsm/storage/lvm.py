@@ -881,14 +881,9 @@ def deactivateVG(vgName):
     _setVgAvailability(vgName, available="n")
 
 
-def refreshVG(vgName):
-    #If any logical volume in the volume group is active, reload its  metadata.
-    cmd = ['vgchange', '--refresh', vgName]
-    rc, out, err = _lvminfo.cmd(cmd)
+def invalidateVG(vgName):
     _lvminfo._invalidatevgs(vgName)
     _lvminfo._invalidatelvs(vgName)
-    if rc != 0:
-        raise se.LogicalVolumeRefreshError("vgchange --refresh %s failed" % (vgName,))
 
 
 #

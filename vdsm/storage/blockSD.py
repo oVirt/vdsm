@@ -105,7 +105,7 @@ class VGTagMetadataRW(object):
         self._vgName = vgName
 
     def readlines(self):
-        lvm.refreshVG(self._vgName)
+        lvm.invalidateVG(self._vgName)
         vg = lvm.getVG(self._vgName)
         metadata = []
         for tag in vg.tags:
@@ -921,7 +921,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def refresh(self):
         self.refreshDirTree()
-        lvm.refreshVG(self.sdUUID)
+        lvm.invalidateVG(self.sdUUID)
         self._metadata = selectMetadata(self.sdUUID)
 
     @staticmethod
