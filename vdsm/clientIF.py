@@ -433,7 +433,7 @@ class clientIF:
         Destroy the specified VM.
         """
         self.vmContainerLock.acquire()
-        self.log.info("vmContainerLock aquired by vm %s", vmId)
+        self.log.info("vmContainerLock acquired by vm %s", vmId)
         try:
             v = self.vmContainer.get(vmId)
             if not v:
@@ -639,7 +639,7 @@ class clientIF:
             vmParams['displayIp'] = self._getNetworkIp(vmParams.get(
                                                         'displayNetwork'))
             self.vmContainerLock.acquire()
-            self.log.info("vmContainerLock aquired by vm %s", vmParams['vmId'])
+            self.log.info("vmContainerLock acquired by vm %s", vmParams['vmId'])
             try:
                 if 'recover' not in vmParams:
                     if vmParams['vmId'] in self.vmContainer:
