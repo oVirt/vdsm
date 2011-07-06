@@ -1238,12 +1238,6 @@ class service:
             return image['status']['code'], image['status']['message']
         return 0, ''
 
-    def stopAllCopies(self, args):
-        stats = self.s.stopAllCopies()
-        if stats['status']['code']:
-            return stats['status']['code'], stats['status']['message']
-        return 0, ''
-
     def prepareForShutdown(self, args):
         stats = self.s.prepareForShutdown()
         if stats['status']['code']:
@@ -1865,9 +1859,6 @@ if __name__ == '__main__':
             'revertTask': ( serv.revertTask,
                              ('<TaskID>',
                              'revert async task'
-                             )),
-            'stopAllCopies': ( serv.stopAllCopies,
-                             ('',''
                              )),
             'prepareForShutdown': ( serv.prepareForShutdown,
                              ('',''
