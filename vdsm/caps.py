@@ -44,7 +44,8 @@ class CpuInfo(object):
         return len(self._info)
 
     def sockets(self):
-        return len(set([ p['physical id'] for p in self._info.values() ]))
+        phys_ids = [ p.get('physical id', '0') for p in self._info.values() ]
+        return len(set(phys_ids))
 
     def flags(self):
         return self._info.itervalues().next()['flags'].split()
