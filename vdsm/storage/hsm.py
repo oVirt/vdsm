@@ -1663,12 +1663,17 @@ class HSM:
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
         imgResource = rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive)
         imgResource.autoRelease = False
-        vol = SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-        # NB We want to be sure that at this point HSM does not use stale LVM
-        # cache info, so we call refresh explicitely. We may want to remove
-        # this refresh later, when we come up with something better.
-        vol.refreshVolume()
-        vol.prepare(rw=rw)
+        try:
+            vol = SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+            # NB We want to be sure that at this point HSM does not use stale LVM
+            # cache info, so we call refresh explicitely. We may want to remove
+            # this refresh later, when we come up with something better.
+            vol.refreshVolume()
+            vol.prepare(rw=rw)
+        except:
+            imgResource.autoRelease = True
+            self.log.error("Prepare volume %s in domain %s failed", volUUID, sdUUID, exc_info=True)
+            raise
 
 
     def public_teardownVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=False, options = None):
