@@ -173,47 +173,40 @@ class service:
         return self.ExecAndExit(self.s.changeFloppy(vmId, file))
 
     def do_list(self, args):
-        table=False
-        if len(args):
-            if args[0] == 'table':
-                table=True
-        response = self.s.list(True)
-        if response['status']['code'] != 0:
-            print response['status']['message']
-        else:
-            if table:
+        vmListViews = ('table', 'long', 'ids')
+        view = 'long' #Default view
+
+        if args:
+            view = args[0]
+            if view not in vmListViews:
+                raise ValueError('Invalid argument "%s".' % args[0])
+            if view == 'table':
                 allStats = {}
                 for s in self.s.getAllVmStats()['statsList']:
-                    allStats[s['vmId']] = s
-            for conf in response['vmList']:
-                if table:
-                    id = conf['vmId']
-                    if id not in allStats:
-                        continue
-                    status = conf['status']
-                    if allStats[id].get('monitorResponse') == '-1':
-                        status += '*'
-                    print "%-36s %6s  %-20s %-20s %-20s" % (id,
-                        conf.get('pid', 'none'),
-                        conf.get('vmName', '<< NO NAME >>'),
-                        status, allStats[id].get('guestIPs', '') )
-                else:
-                    if 'sysprepInf' in conf:
-                        conf['sysprepInf'] = '<<exists>>'
-                    printConf(conf)
-        sys.exit(response['status']['code'])
+                    allStats[ s['vmId'] ] = s
 
-    def do_listNames(self, args):
-        response = self.s.list()
-        if response['status']['code'] != 0:
-            print response['status']['message']
-        else:
-            names = []
-            for conf in response['vmList']:
-                names.append(conf['vmId'])
-            names.sort()
-            if names:
-                print '\n'.join(names)
+        response = self.s.list(True)
+        for conf in response['vmList']:
+            if view == 'long':
+                if 'sysprepInf' in conf:
+                    conf['sysprepInf'] = '<<exists>>'
+                printConf(conf)
+
+            elif view == 'table':
+                vmId = conf['vmId']
+                if vmId not in allStats: #Avoid race.
+                    continue
+                status = conf['status']
+                if allStats[vmId].get('monitorResponse') == '-1':
+                    status += '*'
+                print "%-36s %6s  %-20s %-20s %-20s" % ( vmId,
+                    conf.get('pid', 'none'),
+                    conf.get('vmName', '<< NO NAME >>'),
+                    status, allStats[vmId].get('guestIPs', '') )
+
+            elif view == 'ids':
+                print conf['vmId']
+
         sys.exit(response['status']['code'])
 
     def do_destroy(self, args):
@@ -1525,12 +1518,12 @@ if __name__ == '__main__':
                             'Stops the emulation and graceful shutdown the virtual machine.'
                            )),
             'list'    :  ( serv.do_list,
-                           ('[table]',
-                            'Lists all available machines on the specified server and all available configuration info',
-                            'If table modifier added then show table with the fields: vmId vmName Status IP'
-                           )),
-            'listNames'  :  ( serv.do_listNames,
-                           ('Lists all available machines on the specified server',''
+                           ('[view]',
+                            'Lists all available machines on the specified server.',
+                            'Optional views:',
+                            '    "long"   all available configuration info (Default).',
+                            '    "table"  table output with the fields: vmId, vmName, Status and IP.',
+                            '    "ids"    all vmIds.'
                            )),
             'pause'   :  ( serv.do_pause,
                            ('<vmId>',
