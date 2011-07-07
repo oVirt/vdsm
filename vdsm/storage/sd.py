@@ -192,7 +192,7 @@ def sizeStr2Int(size_str):
 
 def intOrDefault(default, val):
     try:
-        int(val)
+        return int(val)
     except ValueError:
         return default
 
@@ -388,6 +388,12 @@ class StorageDomain:
 
     def acquireClusterLock(self, hostID):
         self.refresh()
+        self._clusterLock.setParams(
+            self.getMetaParam(DMDK_LOCK_RENEWAL_INTERVAL_SEC),
+            self.getMetaParam(DMDK_LEASE_TIME_SEC),
+            self.getMetaParam(DMDK_LEASE_RETRIES),
+            self.getMetaParam(DMDK_IO_OP_TIMEOUT_SEC)
+        )
         self._clusterLock.acquire(hostID)
 
     def releaseClusterLock(self):
