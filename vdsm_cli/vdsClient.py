@@ -188,6 +188,8 @@ class service:
             for conf in response['vmList']:
                 if table:
                     id = conf['vmId']
+                    if id not in allStats:
+                        continue
                     status = conf['status']
                     if allStats[id].get('monitorResponse') == '-1':
                         status += '*'
@@ -200,7 +202,6 @@ class service:
                         conf['sysprepInf'] = '<<exists>>'
                     printConf(conf)
         sys.exit(response['status']['code'])
-
 
     def do_listNames(self, args):
         response = self.s.list()
