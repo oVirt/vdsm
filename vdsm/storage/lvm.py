@@ -436,7 +436,7 @@ class LVMInfo(object):
                 for staleName in staleVGs:
                     removeVgMapping(staleName)
                     log.warning("Removing stale VG: %s", staleName)
-                    self._lvs.pop((staleName), None)
+                    self._vgs.pop((staleName), None)
 
         return updatedVGs
 
