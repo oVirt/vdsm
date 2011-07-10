@@ -28,7 +28,7 @@ Requires: psmisc >= 22.6-15.el6_0.1
 Requires: fence-agents
 Requires: bridge-utils
 Requires: sos
-Requires: libvirt >= 0.9.3
+Requires: libvirt >= 0.8.7-5
 Requires: libvirt-python
 Requires: dosfstools
 Requires: policycoreutils-python
