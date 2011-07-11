@@ -222,7 +222,8 @@ class MigrationMonitorThread(threading.Thread):
     def run(self):
         self._vm.log.debug('starting migration monitor thread')
 
-        while not self._stop.wait(self._MIGRATION_MONITOR_INTERVAL):
+        while not self._stop.isSet():
+            self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
             jobType, timeElapsed, _,     \
             dataTotal, dataProcessed, _, \
             memTotal, memProcessed, _,   \
