@@ -261,7 +261,8 @@ class BlockVolume(volume.Volume):
                 # wipe out the whole volume
                 idle = config.getfloat('irs', 'idle')
                 try:
-                    misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, idle, int(size))
+                    misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, idle, int(size),
+                                     recoveryCallback=volume.baseAsyncTasksRollback)
                 except se.ActionStopped, e:
                     raise e
                 except Exception, e:
