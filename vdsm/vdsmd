@@ -130,7 +130,11 @@ shutdown_conflicting_srv() {
         /sbin/chkconfig $srv off
         if /sbin/service $srv status > /dev/null 2>&1;
         then
-             /sbin/service $srv stop
+            if [ "$srv" == "libvirt-guests" ]; then
+                /bin/rm -f /var/lock/subsys/libvirt-guests
+            else
+                /sbin/service $srv stop
+            fi
         fi
     done
     return 0
