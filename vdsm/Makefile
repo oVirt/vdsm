@@ -10,8 +10,7 @@ INSTALL=install
 
 FILES=define.py utils.py constants.py \
       vm.py libvirtvm.py libvirtev.py \
-      caps.py clientIF.py \
-      hooks.py hooks/hooking.py \
+      caps.py clientIF.py hooks.py hooking.py \
       guestIF.py dsaversion.py \
       configNetwork.py SecureXMLRPCServer.py ksm.py \
       netinfo.py neterrors.py \
@@ -83,15 +82,6 @@ fixpaths:
 	python substitute_constants.py mk_sysprep_floppy logger.conf vdsmd \
 			    vdsm-store-net-config vdsm-restore-net-config
 
-HOOKS=before_vm_start after_vm_start before_vm_cont after_vm_cont \
-      before_vm_pause after_vm_pause \
-      before_vm_hibernate after_vm_hibernate \
-      before_vm_dehibernate after_vm_dehibernate \
-      before_vm_migrate_source after_vm_migrate_source \
-      before_vm_migrate_destination after_vm_migrate_destination \
-      after_vm_destroy \
-      before_vdsm_start after_vdsm_stop
-
 install: all sudoers.vdsm vdsm.conf.sample
 	$(INSTALL) -Dd $(DESTDIR)$(VDSMDIR)/storage/protect
 	$(INSTALL) -Dd $(DESTDIR)$(TRUSTSTORE)/{certs,keys}
@@ -101,12 +91,10 @@ install: all sudoers.vdsm vdsm.conf.sample
 	$(INSTALL) -Dd $(DESTDIR)$(POOLSDATADIR)
 	$(INSTALL) -Dd $(DESTDIR)$(BACKUPDIR)
 	$(INSTALL) -Dd $(DESTDIR)$(POOLDATADIR)
+	$(INSTALL) -Dd $(DESTDIR)$(LIBEXECDIR)
 	$(INSTALL) -Dd $(DESTDIR)/etc/init.d
 	$(INSTALL) -Dd $(DESTDIR)/etc/udev/rules.d
 	$(INSTALL) -Dd -m 775 $(DESTDIR)/var/lib/libvirt/qemu/channels
-	(for hook in $(HOOKS); do \
-	    $(INSTALL) -Dd $(DESTDIR)$(LIBEXECDIR)/hooks/$$hook; \
-	done)
 	$(INSTALL) -Dm 644 $(FILES) $(DESTDIR)$(VDSMDIR)
 	$(INSTALL) -Dm 755 $(SCRIPTFILES) $(DESTDIR)$(VDSMDIR)
 	(cd storage; \
@@ -123,8 +111,6 @@ install: all sudoers.vdsm vdsm.conf.sample
 	$(INSTALL) -Dm 644 vdsm-sosplugin.py $(DESTDIR)$(SOSPLUGINDIR)/vdsm.py
 	$(INSTALL) -Dm 644 vdsmd.8 $(DESTDIR)$(MANDIR)/man8/vdsmd.8
 	$(INSTALL) -Dm 644 vdsm.rwtab $(DESTDIR)/etc/rwtab.d/vdsm
-	$(INSTALL) -Dm 755 hooks/persist-vdsm-hooks $(DESTDIR)$(LIBEXECDIR)/persist-vdsm-hooks
-	$(INSTALL) -Dm 755 hooks/unpersist-vdsm-hook $(DESTDIR)$(LIBEXECDIR)/unpersist-vdsm-hook
 
 clean:
 	$(RM) *~ *.pyc storage/protect/safelease vdsm.conf.sample

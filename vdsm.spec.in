@@ -71,12 +71,7 @@ make -C vdsm DESTDIR="%{buildroot}" \
 install -dDm 1777 "%{buildroot}"%{_localstatedir}/log/core
 
 # hook vhostmd
-make -C vdsm/hooks/vhostmd DESTDIR="%{buildroot}" \
-    LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
-    install
-
-# hook faqemu
-make -C vdsm/hooks/faqemu DESTDIR="%{buildroot}" \
+make -C vdsm_hooks DESTDIR="%{buildroot}" \
     LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
     install
 
