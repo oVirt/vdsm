@@ -55,6 +55,10 @@ class VmStatsThread(utils.AdvancedStatsThread):
         if self._vm._incomingMigrationPending():
             return
 
+        if not self._vm._volumesPrepared:
+            # Avoid queries from storage during recovery process
+            return
+
         for vmDrive in self._vm._drives:
             if vmDrive.blockDev and vmDrive.format == 'cow':
                 capacity, alloc, physical = \
@@ -66,7 +70,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
                     self._vm._onHighWrite(vmDrive.name, alloc)
 
     def _updateVolumes(self):
-        if not self._vm.cif.irs.getConnectedStoragePoolsList()['poollist']:
+        if not self._vm._volumesPrepared:
             # Avoid queries from storage during recovery process
             return
 
@@ -82,6 +86,10 @@ class VmStatsThread(utils.AdvancedStatsThread):
         return cpuTime / 1000**3
 
     def _sampleDisk(self):
+        if not self._vm._volumesPrepared:
+            # Avoid queries from storage during recovery process
+            return
+
         diskSamples = {}
         for vmDrive in self._vm._drives:
             diskSamples[vmDrive.name] = self._vm._dom.blockStats(vmDrive.name)

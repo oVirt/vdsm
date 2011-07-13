@@ -300,6 +300,7 @@ class Vm(object):
                                 self.conf.pop('elapsedTimeOffset', 0))
         self._cdromPreparedPath = ''
         self._floppyPreparedPath = ''
+        self._volumesPrepared = False
         self._pathsPreparedEvent = threading.Event()
         self.saveState()
 
@@ -418,6 +419,8 @@ class Vm(object):
     def preparePaths(self):
         for drive in self.conf.get('drives', []):
             drive['path'] = self._prepareVolumePath(drive)
+        # Now we got all needed resources
+        self._volumesPrepared = True
 
         try:
             self._cdromPreparedPath = self._prepareVolumePath(
