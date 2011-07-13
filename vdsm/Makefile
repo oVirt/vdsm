@@ -5,20 +5,26 @@
 # (at your option) any later version.  See the files README and
 # LICENSE_GPL_v2 which accompany this distribution.
 #
-FILES=define.py utils.py constants.py vm.py libvirtvm.py libvirtev.py vdsm \
+FILES=define.py utils.py constants.py \
+      vm.py libvirtvm.py libvirtev.py \
       caps.py clientIF.py \
       hooks.py hooks/hooking.py \
-      guestIF.py dsaversion.py logCollector.sh \
-      configNetwork.py addNetwork delNetwork \
-      SecureXMLRPCServer.py ksm.py netinfo.py neterrors.py \
-      get-conf-item set-conf-item \
-      kaxmlrpclib.py config.py \
-      write-net-config vdsm-restore-net-config vdsm-store-net-config \
-      mk_sysprep_floppy get-vm-pid respawn logUtils.py \
-      supervdsm.py supervdsmServer.py prepare-vmchannel \
-      libvirtconnection.py vdsmDebugPlugin.py
-FILES += pthread.py
-FILES += betterThreading.py
+      guestIF.py dsaversion.py \
+      configNetwork.py SecureXMLRPCServer.py ksm.py \
+      netinfo.py neterrors.py \
+      kaxmlrpclib.py config.py logUtils.py \
+      supervdsm.py supervdsmServer.py \
+      libvirtconnection.py vdsmDebugPlugin.py \
+      pthread.py betterThreading.py \
+
+SCRIPTFILES=vdsm logCollector.sh \
+            addNetwork delNetwork \
+            get-conf-item set-conf-item \
+            mk_sysprep_floppy \
+            write-net-config vdsm-restore-net-config \
+            vdsm-store-net-config \
+            get-vm-pid respawn \
+            prepare-vmchannel
 
 STORAGEFILES=storageConstants.py dispatcher.py storage_exception.py \
              __init__.py \
@@ -103,6 +109,7 @@ install: all sudoers.vdsm vdsm.conf.sample
 	mkdir -p $(DESTDIR)/etc/udev/rules.d/
 	mkdir -p $(DESTDIR)/var/lib/libvirt/qemu/channels/
 	cp $(FILES) $(DESTDIR)$(VDSMDIR)
+	cp $(SCRIPTFILES) $(DESTDIR)$(VDSMDIR)
 	(cd storage; cp $(STORAGEFILES) $(DESTDIR)$(VDSMDIR)/storage)
 	(cd storage; cp 12-vdsm-lvm.rules $(DESTDIR)$(UDEVDIR))
 	cp logger.conf $(DESTDIR)$(CONFDIR)
