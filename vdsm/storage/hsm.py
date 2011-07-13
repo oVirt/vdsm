@@ -166,11 +166,11 @@ class HSM:
             for spUUID in dirList:
                 poolPath = os.path.join(self.storage_repository, spUUID)
                 try:
-                    vars.task.getSharedLock(STORAGE, spUUID)
                     if os.path.exists(poolPath):
-                        self._restorePool(spUUID)
-                        #TODO Once we support simultaneous connection to multiple pools, remove following line (break)
-                        break
+                        with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
+                            self._restorePool(spUUID)
+                            #TODO Once we support simultaneous connection to multiple pools, remove following line (break)
+                            break
                 except Exception:
                     self.log.error("Unexpected error", exc_info=True)
 
