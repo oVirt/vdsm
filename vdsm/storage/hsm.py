@@ -166,6 +166,7 @@ class HSM:
             for spUUID in dirList:
                 poolPath = os.path.join(self.storage_repository, spUUID)
                 try:
+                    vars.task.getSharedLock(STORAGE, spUUID)
                     if os.path.exists(poolPath):
                         self._restorePool(spUUID)
                         #TODO Once we support simultaneous connection to multiple pools, remove following line (break)
