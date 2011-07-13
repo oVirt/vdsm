@@ -65,7 +65,10 @@ make -C vdsm DESTDIR="%{buildroot}" \
     VDSMLIBDIR=%{_localstatedir}/lib/%{vdsm_name} \
     SOSPLUGINDIR=%{py_sitedir}/sos/plugins \
     install
-mkdir -p "%{buildroot}"%{_localstatedir}/log/core
+
+# this is not commonplace, but we want /var/log/core to be a world-writable
+# dropbox for core dumps.
+install -dDm 1777 "%{buildroot}"%{_localstatedir}/log/core
 
 # hook vhostmd
 make -C vdsm/hooks/vhostmd DESTDIR="%{buildroot}" \
@@ -276,18 +279,18 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/hooks.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/libvirtev.py*
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/vdsm
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/vdsm-store-net-config
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/write-net-config
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/get-vm-pid
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/prepare-vmchannel
+%{_datadir}/%{vdsm_name}/vdsm
+%{_datadir}/%{vdsm_name}/vdsm-restore-net-config
+%{_datadir}/%{vdsm_name}/vdsm-store-net-config
+%{_datadir}/%{vdsm_name}/write-net-config
+%{_datadir}/%{vdsm_name}/mk_sysprep_floppy
+%{_datadir}/%{vdsm_name}/get-vm-pid
+%{_datadir}/%{vdsm_name}/prepare-vmchannel
 %doc vdsm/vdsm.conf.sample
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
-%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm
+%{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/cron.d/vdsm-libvirt-logrotate
 %{_datadir}/%{vdsm_name}/guestIF.py*
@@ -295,9 +298,9 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/dsaversion.py*
 %{_datadir}/%{vdsm_name}/pthread.py*
 %{_datadir}/%{vdsm_name}/betterThreading.py*
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/logCollector.sh
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/persist-vdsm-hooks
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/unpersist-vdsm-hook
+%{_datadir}/%{vdsm_name}/logCollector.sh
+%{_libexecdir}/%{vdsm_name}/persist-vdsm-hooks
+%{_libexecdir}/%{vdsm_name}/unpersist-vdsm-hook
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/dispatcher.py*
 %{_datadir}/%{vdsm_name}/storage/storage_exception.py*
@@ -335,9 +338,9 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/storage/sdc.py*
 %{_datadir}/%{vdsm_name}/storage/sdf.py*
 %{_datadir}/%{vdsm_name}/storage/persistentDict.py*
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/safelease
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/spmprotect.sh
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/spmstop.sh
+%{_libexecdir}/%{vdsm_name}/safelease
+%{_libexecdir}/%{vdsm_name}/spmprotect.sh
+%{_libexecdir}/%{vdsm_name}/spmstop.sh
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_cont
@@ -355,45 +358,48 @@ machines without running real guests.
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vdsm_start
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/configNetwork.py*
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/addNetwork
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/delNetwork
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/respawn
+%{_datadir}/%{vdsm_name}/configNetwork.py*
+%{_datadir}/%{vdsm_name}/addNetwork
+%{_datadir}/%{vdsm_name}/delNetwork
+%{_datadir}/%{vdsm_name}/respawn
 %{_datadir}/%{vdsm_name}/SecureXMLRPCServer.py*
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/get-conf-item
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/set-conf-item
+%{_datadir}/%{vdsm_name}/get-conf-item
+%{_datadir}/%{vdsm_name}/set-conf-item
 %{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
 %{_datadir}/%{vdsm_name}/config.py*
 %{_datadir}/%{vdsm_name}/ksm.py*
 %{_datadir}/%{vdsm_name}/netinfo.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
 %{_sysconfdir}/udev/rules.d/12-vdsm-lvm.rules
-# this is not commonplace, but we want /var/log/core to be a world-writable
-# dropbox for core dumps.
-%dir %attr (1777,root,root) %{_localstatedir}/log/core
-%dir %attr (755,vdsm,kvm) %{_localstatedir}/lib/%{vdsm_name}
-%dir %attr (755,vdsm,kvm) %{_localstatedir}/lib/%{vdsm_name}/netconfback
-%dir %attr (755,vdsm,kvm) %{_localstatedir}/run/%{vdsm_name}
-%dir %attr (755,vdsm,kvm) %{_localstatedir}/run/%{vdsm_name}/pools
-%dir %attr (755,vdsm,kvm) %{_localstatedir}/log/%{vdsm_name}
-%dir %attr (755,vdsm,kvm) %{_localstatedir}/log/%{vdsm_name}/backup
-%dir %attr (755,vdsm,kvm) %{_sysconfdir}/pki/%{vdsm_name}
-%dir %attr (755,vdsm,kvm) %{_sysconfdir}/pki/%{vdsm_name}/keys
-%dir %attr (755,vdsm,kvm) %{_sysconfdir}/pki/%{vdsm_name}/certs
+%dir %{_localstatedir}/log/core
+
 /etc/init.d/vdsmd
 %doc LICENSE_GPL_v2 README
 %{py_sitedir}/sos/plugins/vdsm.py*
-%dir %attr (775,vdsm,qemu) %{_localstatedir}/lib/libvirt/qemu/channels/
 %{_mandir}/man8/vdsmd.8*
+
+%defattr(-, vdsm, qemu, -)
+%dir %{_localstatedir}/lib/libvirt/qemu/channels
+
+%defattr(-, vdsm, kvm, -)
+%dir %{_sysconfdir}/pki/%{vdsm_name}
+%dir %{_sysconfdir}/pki/%{vdsm_name}/keys
+%dir %{_sysconfdir}/pki/%{vdsm_name}/certs
+%dir %{_localstatedir}/lib/%{vdsm_name}
+%dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
+%dir %{_localstatedir}/run/%{vdsm_name}
+%dir %{_localstatedir}/run/%{vdsm_name}/pools
+%dir %{_localstatedir}/log/%{vdsm_name}
+%dir %{_localstatedir}/log/%{vdsm_name}/backup
 
 %files hook-vhostmd
 %defattr(-,root,root,-)
 %doc LICENSE_GPL_v2
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
-%attr (755,root,root) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
-%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
 
 %files debug-plugin
 %defattr(-,root,root,-)
@@ -406,13 +412,12 @@ machines without running real guests.
 %{_sysconfdir}/bash_completion.d/vdsClient
 %{_datadir}/%{vdsm_name}/vdscli.py*
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
-%attr (755,root,root) %{_bindir}/vdsClient
+%{_bindir}/vdsClient
 %{_mandir}/man1/vdsClient.1*
 
 %files bootstrap
 %defattr(-,root,root,-)
 %doc LICENSE_GPL_v2
-%dir  %{_datadir}/%{vdsm_bootstrap}
 %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap.py*
 %{_datadir}/%{vdsm_bootstrap}/deployUtil.py*
 %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap_complete.py*
@@ -421,9 +426,8 @@ machines without running real guests.
 %files reg
 %defattr(-,root,root,-)
 %doc LICENSE_GPL_v2
-%dir  %{_sysconfdir}/%{vdsm_reg}
-%dir  %{_datadir}/%{vdsm_reg}
-%dir %attr (755,vdsm,kvm) %{_var}/log/%{vdsm_reg}
+%dir %{_sysconfdir}/%{vdsm_reg}
+%dir %{_datadir}/%{vdsm_reg}
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/vdsm-reg.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/logger.conf
 %{_sysconfdir}/init.d/vdsm-reg
@@ -436,11 +440,13 @@ machines without running real guests.
 %{_datadir}/%{vdsm_reg}/deployUtil.py*
 %{_datadir}/%{vdsm_reg}/createDaemon.py*
 %{py_sitedir}/ovirt_config_setup/rhevm.py*
-%attr (755,root,root) %{_datadir}/%{vdsm_reg}/save-config
+%{_datadir}/%{vdsm_reg}/save-config
 %{_sysconfdir}/ovirt-config-boot.d/vdsm-config
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
 %{_sysconfdir}/cron.hourly/vdsm-reg-logrotate
 %{_mandir}/man8/vdsm-reg.8*
+%defattr(-, vdsm, kvm,-)
+%dir %{_var}/log/%{vdsm_reg}
 
 %files hook-faqemu
 %defattr(-,root,root,-)

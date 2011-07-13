@@ -5,6 +5,9 @@
 # (at your option) any later version.  See the files README and
 # LICENSE_GPL_v2 which accompany this distribution.
 #
+
+INSTALL      = install
+
 TARGET       = /usr/share/vdsm
 PYSRCS       = vdsClient.py vdscli.py dumpStorageTable.py
 CONFDIR      = /etc/vdsm
@@ -21,14 +24,11 @@ fixpaths:
 	sed -i "s:@TRUSTSTORE@:$(TRUSTSTORE):" vdscli.py
 
 install: fixpaths
-	mkdir -p $(DESTDIR)/$(TARGET)
-	cp $(PYSRCS) $(DESTDIR)/$(TARGET)
-	mkdir -p $(DESTDIR)/$(BINDIR)
-	cp vdsClient $(DESTDIR)/$(BINDIR)
-	mkdir -p $(DESTDIR)/$(COMPDIR)
-	cp vdsClient.completion $(DESTDIR)$(COMPDIR)/vdsClient
-	mkdir -p $(DESTDIR)$(MANDIR)/man1
-	cp vdsClient.1 $(DESTDIR)$(MANDIR)/man1/
+	$(INSTALL) -Dd $(DESTDIR)/$(TARGET)
+	$(INSTALL) -Dm 644 $(PYSRCS) $(DESTDIR)/$(TARGET)
+	$(INSTALL) -Dm 755 vdsClient $(DESTDIR)/$(BINDIR)/vdsClient
+	$(INSTALL) -Dm 644 vdsClient.completion $(DESTDIR)$(COMPDIR)/vdsClient
+	$(INSTALL) -Dm 644 vdsClient.1 $(DESTDIR)$(MANDIR)/man1/vdsClient.1
 
 clean:
 	$(RM) *~ *.pyc

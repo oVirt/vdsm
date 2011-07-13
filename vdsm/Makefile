@@ -5,6 +5,9 @@
 # (at your option) any later version.  See the files README and
 # LICENSE_GPL_v2 which accompany this distribution.
 #
+
+INSTALL=install
+
 FILES=define.py utils.py constants.py \
       vm.py libvirtvm.py libvirtev.py \
       caps.py clientIF.py \
@@ -90,47 +93,38 @@ HOOKS=before_vm_start after_vm_start before_vm_cont after_vm_cont \
       before_vdsm_start after_vdsm_stop
 
 install: all sudoers.vdsm vdsm.conf.sample
-	mkdir -p $(DESTDIR)$(VDSMDIR)
-	mkdir -p $(DESTDIR)$(VDSMDIR)/storage
-	mkdir -p $(DESTDIR)$(TRUSTSTORE)/{certs,keys}
-	mkdir -p $(DESTDIR)$(VDSMLOGDIR)
-	mkdir -p $(DESTDIR)$(VDSMRUNDIR)
-	mkdir -p $(DESTDIR)$(VDSMLIBDIR)
-	mkdir -p $(DESTDIR)$(VDSMLIBDIR)/netconfback
-	mkdir -p $(DESTDIR)$(POOLSDATADIR)
-	mkdir -p $(DESTDIR)$(BACKUPDIR)
-	mkdir -p $(DESTDIR)$(BINDIR)
-	mkdir -p $(DESTDIR)$(LIBEXECDIR)
-	(for hook in $(HOOKS); do mkdir -p $(DESTDIR)$(LIBEXECDIR)/hooks/$$hook; done)
-	mkdir -p $(DESTDIR)$(CONFDIR)
-	mkdir -p $(DESTDIR)$(POOLDATADIR)
-	mkdir -p $(DESTDIR)$(BACKUPDATADIR)
-	mkdir -p $(DESTDIR)/etc/init.d/
-	mkdir -p $(DESTDIR)/etc/udev/rules.d/
-	mkdir -p $(DESTDIR)/var/lib/libvirt/qemu/channels/
-	cp $(FILES) $(DESTDIR)$(VDSMDIR)
-	cp $(SCRIPTFILES) $(DESTDIR)$(VDSMDIR)
-	(cd storage; cp $(STORAGEFILES) $(DESTDIR)$(VDSMDIR)/storage)
-	(cd storage; cp 12-vdsm-lvm.rules $(DESTDIR)$(UDEVDIR))
-	cp logger.conf $(DESTDIR)$(CONFDIR)
-	cp vdsmd $(DESTDIR)/etc/init.d/vdsmd
-	(cd storage/protect; cp $(PROTECTFILES) $(DESTDIR)$(LIBEXECDIR))
-	mkdir -p $(DESTDIR)/etc/sudoers.d/
-	cp sudoers.vdsm $(DESTDIR)/etc/sudoers.d/50_vdsm
-	mkdir -p $(DESTDIR)/etc/logrotate.d
-	mkdir -p $(DESTDIR)/etc/cron.hourly
-	mkdir -p $(DESTDIR)/etc/cron.d
-	mkdir -p $(DESTDIR)$(SOSPLUGINDIR)
-	cp -p vdsm-logrotate.conf $(DESTDIR)/etc/logrotate.d/vdsm
-	cp -p vdsm-logrotate $(DESTDIR)/etc/cron.hourly
-	cp -p vdsm-libvirt-logrotate $(DESTDIR)/etc/cron.d
-	cp -p vdsm-sosplugin.py $(DESTDIR)$(SOSPLUGINDIR)/vdsm.py
-	mkdir -p $(DESTDIR)$(MANDIR)/man8
-	cp -p vdsmd.8 $(DESTDIR)$(MANDIR)/man8/
-	mkdir -p $(DESTDIR)/etc/rwtab.d/
-	cp -p vdsm.rwtab $(DESTDIR)/etc/rwtab.d/vdsm
-	cp -p hooks/persist-vdsm-hooks $(DESTDIR)$(LIBEXECDIR)
-	cp -p hooks/unpersist-vdsm-hook $(DESTDIR)$(LIBEXECDIR)
+	$(INSTALL) -Dd $(DESTDIR)$(VDSMDIR)/storage/protect
+	$(INSTALL) -Dd $(DESTDIR)$(TRUSTSTORE)/{certs,keys}
+	$(INSTALL) -Dd $(DESTDIR)$(VDSMLOGDIR)
+	$(INSTALL) -Dd $(DESTDIR)$(VDSMRUNDIR)
+	$(INSTALL) -Dd $(DESTDIR)$(VDSMLIBDIR)/netconfback
+	$(INSTALL) -Dd $(DESTDIR)$(POOLSDATADIR)
+	$(INSTALL) -Dd $(DESTDIR)$(BACKUPDIR)
+	$(INSTALL) -Dd $(DESTDIR)$(POOLDATADIR)
+	$(INSTALL) -Dd $(DESTDIR)/etc/init.d
+	$(INSTALL) -Dd $(DESTDIR)/etc/udev/rules.d
+	$(INSTALL) -Dd -m 775 $(DESTDIR)/var/lib/libvirt/qemu/channels
+	(for hook in $(HOOKS); do \
+	    $(INSTALL) -Dd $(DESTDIR)$(LIBEXECDIR)/hooks/$$hook; \
+	done)
+	$(INSTALL) -Dm 644 $(FILES) $(DESTDIR)$(VDSMDIR)
+	$(INSTALL) -Dm 755 $(SCRIPTFILES) $(DESTDIR)$(VDSMDIR)
+	(cd storage; \
+	    $(INSTALL) -Dm 644 $(STORAGEFILES) $(DESTDIR)$(VDSMDIR)/storage)
+	(cd storage/protect; \
+	    $(INSTALL) -Dm 755 $(PROTECTFILES) $(DESTDIR)$(LIBEXECDIR))
+	$(INSTALL) -Dm 644 storage/12-vdsm-lvm.rules $(DESTDIR)$(UDEVDIR)
+	$(INSTALL) -Dm 644 logger.conf $(DESTDIR)$(CONFDIR)/logger.conf
+	$(INSTALL) -Dm 755 vdsmd $(DESTDIR)/etc/init.d/vdsmd
+	$(INSTALL) -Dm 440 sudoers.vdsm $(DESTDIR)/etc/sudoers.d/50_vdsm
+	$(INSTALL) -Dm 644 vdsm-logrotate.conf $(DESTDIR)/etc/logrotate.d/vdsm
+	$(INSTALL) -Dm 755 vdsm-logrotate $(DESTDIR)/etc/cron.hourly/vdsm-logrotate
+	$(INSTALL) -Dm 755 vdsm-libvirt-logrotate $(DESTDIR)/etc/cron.d/vdsm-libvirt-logrotate
+	$(INSTALL) -Dm 644 vdsm-sosplugin.py $(DESTDIR)$(SOSPLUGINDIR)/vdsm.py
+	$(INSTALL) -Dm 644 vdsmd.8 $(DESTDIR)$(MANDIR)/man8/vdsmd.8
+	$(INSTALL) -Dm 644 vdsm.rwtab $(DESTDIR)/etc/rwtab.d/vdsm
+	$(INSTALL) -Dm 755 hooks/persist-vdsm-hooks $(DESTDIR)$(LIBEXECDIR)/persist-vdsm-hooks
+	$(INSTALL) -Dm 755 hooks/unpersist-vdsm-hook $(DESTDIR)$(LIBEXECDIR)/unpersist-vdsm-hook
 
 clean:
 	$(RM) *~ *.pyc storage/protect/safelease vdsm.conf.sample

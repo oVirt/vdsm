@@ -6,14 +6,16 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
+INSTALL      = install
 TARGET       = /usr/share/vdsm-bootstrap
-PYSRCS       = vds_bootstrap.py deployUtil.py vds_bootstrap_complete.py
+PYSRCS       = vds_bootstrap.py vds_bootstrap_complete.py
 
 all: $(PYSRCS)
 
 install:
-	mkdir -p $(DESTDIR)/$(TARGET)
-	cp $(PYSRCS) $(DESTDIR)/$(TARGET)
+	$(INSTALL) -Dd 755 $(DESTDIR)$(TARGET)
+	$(INSTALL) -Dm 755 $(PYSRCS) $(DESTDIR)$(TARGET)
+	$(INSTALL) -Dm 644 deployUtil.py $(DESTDIR)$(TARGET)
 
 clean:
 	$(RM) *.pyc *.pyo  *~
