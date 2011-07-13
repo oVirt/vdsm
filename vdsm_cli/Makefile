@@ -8,7 +8,7 @@
 
 INSTALL      = install
 
-TARGET       = /usr/share/vdsm
+VDSMDIR      = /usr/share/vdsm
 PYSRCS       = vdsClient.py vdscli.py dumpStorageTable.py
 CONFDIR      = /etc/vdsm
 BINDIR       = bin
@@ -24,8 +24,8 @@ fixpaths:
 	sed -i "s:@TRUSTSTORE@:$(TRUSTSTORE):" vdscli.py
 
 install: fixpaths
-	$(INSTALL) -Dd $(DESTDIR)/$(TARGET)
-	$(INSTALL) -Dm 644 $(PYSRCS) $(DESTDIR)/$(TARGET)
+	$(INSTALL) -Dd $(DESTDIR)/$(VDSMDIR)
+	$(INSTALL) -Dm 644 $(PYSRCS) $(DESTDIR)/$(VDSMDIR)
 	$(INSTALL) -Dm 755 vdsClient $(DESTDIR)/$(BINDIR)/vdsClient
 	$(INSTALL) -Dm 644 vdsClient.completion $(DESTDIR)$(COMPDIR)/vdsClient
 	$(INSTALL) -Dm 644 vdsClient.1 $(DESTDIR)$(MANDIR)/man1/vdsClient.1

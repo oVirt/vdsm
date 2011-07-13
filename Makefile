@@ -5,7 +5,7 @@
 # (at your option) any later version.  See the files README and
 # LICENSE_GPL_v2 which accompany this distribution.
 #
-DIRS=vdsm_cli re vds_bootstrap vdsm vdsm_reg
+SUBDIRS=vdsm_cli re vds_bootstrap vdsm vdsm_reg vdsm_hooks
 DOCS=LICENSE_GPL_v2 README 
 
 all: rpm
@@ -34,9 +34,12 @@ pyflakes:
 	@git ls-files '*.py' | xargs pyflakes \
 	    || (echo "Pyflakes errors or pyflakes not found"; exit 1)
 
+install:
+	for subdir in $(SUBDIRS); do make -C $$subdir $@; done
+
 .PHONY: tarball
 tarball: $(TARBALL)
-$(TARBALL): Makefile $(DIRS) $(DOCS) $(TESTS)
+$(TARBALL): Makefile $(SUBDIRS) $(DOCS) $(TESTS)
 	tar zcf $(TARBALL) `git ls-files | grep -v /ut/`	\
 			   `git ls-files vdsm/ut/faqemu`
 

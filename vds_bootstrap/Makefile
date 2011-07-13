@@ -7,15 +7,15 @@
 #
 
 INSTALL      = install
-TARGET       = /usr/share/vdsm-bootstrap
+VDSMBOOTDIR  = /usr/share/vdsm-bootstrap
 PYSRCS       = vds_bootstrap.py vds_bootstrap_complete.py
 
 all: $(PYSRCS)
 
 install:
-	$(INSTALL) -Dd 755 $(DESTDIR)$(TARGET)
-	$(INSTALL) -Dm 755 $(PYSRCS) $(DESTDIR)$(TARGET)
-	$(INSTALL) -Dm 644 deployUtil.py $(DESTDIR)$(TARGET)
+	$(INSTALL) -Dd 755 $(DESTDIR)$(VDSMBOOTDIR)
+	$(INSTALL) -Dm 755 $(PYSRCS) $(DESTDIR)$(VDSMBOOTDIR)
+	$(INSTALL) -Dm 644 deployUtil.py $(DESTDIR)$(VDSMBOOTDIR)
 
 clean:
 	$(RM) *.pyc *.pyo  *~

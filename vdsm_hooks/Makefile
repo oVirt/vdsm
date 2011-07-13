@@ -26,5 +26,5 @@ install:
 	$(INSTALL) -Dm 755 persist-vdsm-hooks $(DESTDIR)$(LIBEXECDIR)/persist-vdsm-hooks
 	$(INSTALL) -Dm 755 unpersist-vdsm-hook $(DESTDIR)$(LIBEXECDIR)/unpersist-vdsm-hook
 	(for hook in $(SUBDIRS); do \
-	    make -C $$hook $@ \
+	    make -C $$hook $@; \
 	done)

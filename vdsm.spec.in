@@ -54,54 +54,24 @@ sed -i 's/^software_version =.*/software_version = "%{version}"/;s/software_revi
 %install
 rm -rf "%{buildroot}"
 mkdir -p "%{buildroot}"
-make -C vdsm DESTDIR="%{buildroot}" \
-    VDSMDIR=%{_datadir}/%{vdsm_name} \
-    VDSMLOGDIR=%{_localstatedir}/log/%{vdsm_name} \
-    TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
-    BINDIR=%{_bindir} \
-    LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
-    CONFDIR=%{_sysconfdir}/%{vdsm_name} \
-    VDSMRUNDIR=%{_localstatedir}/run/%{vdsm_name} \
-    VDSMLIBDIR=%{_localstatedir}/lib/%{vdsm_name} \
-    SOSPLUGINDIR=%{py_sitedir}/sos/plugins \
-    install
+make DESTDIR="%{buildroot}" \
+     ETC=%{_sysconfdir} \
+     VDSMDIR=%{_datadir}/%{vdsm_name} \
+     VDSMLOGDIR=%{_localstatedir}/log/%{vdsm_name} \
+     TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
+     BINDIR=%{_bindir} \
+     LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
+     CONFDIR=%{_sysconfdir}/%{vdsm_name} \
+     REGCONFDIR=%{_sysconfdir}/%{vdsm_name}-reg \
+     VDSMRUNDIR=%{_localstatedir}/run/%{vdsm_name} \
+     VDSMLIBDIR=%{_localstatedir}/lib/%{vdsm_name} \
+     SOSPLUGINDIR=%{py_sitedir}/sos/plugins \
+     OVIRT_CONFIG_SETUP=%{py_sitedir}/ovirt_config_setup \
+     install
 
 # this is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps.
 install -dDm 1777 "%{buildroot}"%{_localstatedir}/log/core
-
-# hook vhostmd
-make -C vdsm_hooks DESTDIR="%{buildroot}" \
-    LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
-    install
-
-#vdsm-cli
-make -C vdsm_cli DESTDIR="%{buildroot}" \
-    CONFDIR=%{_sysconfdir}/%{vdsm_name} \
-    BINDIR=%{_bindir} \
-    COMPDIR=%{_sysconfdir}/bash_completion.d \
-    VDSMDIR=%{_datadir}/%{vdsm_name} \
-    TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
-    TARGET=%{_datadir}/%{vdsm_name} install
-
-#vdsm-reg
-make -C vdsm_reg \
-    DESTDIR="%{buildroot}" \
-    ETC=%{_sysconfdir} \
-    CONFDIR=%{_sysconfdir}/%{vdsm_reg} \
-    LOGDIR=%{_localstatedir}/log/%{vdsm_reg} \
-    VDSMREGDIR=%{_datadir}/%{vdsm_reg} \
-    TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
-    VDSMRUNDIR=%{_localstatedir}/run/%{vdsm_name} \
-    OVIRT_CONFIG_SETUP=%{py_sitedir}/ovirt_config_setup \
-    install
-
-#vdsm-bootstrap
-make -C vds_bootstrap \
-     DESTDIR="%{buildroot}" \
-     TARGET=%{_datadir}/%{vdsm_bootstrap} install
-
-
 
 %clean
 %{__rm} -rf %{buildroot}
