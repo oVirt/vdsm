@@ -64,9 +64,6 @@ class VmStatsThread(utils.AdvancedStatsThread):
                             self.sampleCpu, self.sampleDisk, self.sampleNet)
 
     def _highWrite(self):
-        if self._vm._incomingMigrationPending():
-            return
-
         if not self._vm._volumesPrepared:
             # Avoid queries from storage during recovery process
             return
