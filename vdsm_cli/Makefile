@@ -21,14 +21,14 @@ fixpaths:
 	sed -i "s:@TRUSTSTORE@:$(TRUSTSTORE):" vdscli.py
 
 install: fixpaths
-	mkdir -p ${PREFIX}/$(TARGET)
-	cp ${PYSRCS} ${PREFIX}/$(TARGET)
-	mkdir -p $(PREFIX)/$(BINDIR)
-	cp vdsClient $(PREFIX)/$(BINDIR)
-	mkdir -p $(PREFIX)/$(COMPDIR)
-	cp vdsClient.completion $(PREFIX)$(COMPDIR)/vdsClient
-	mkdir -p $(PREFIX)$(MANDIR)/man1
-	cp vdsClient.1 $(PREFIX)$(MANDIR)/man1/
+	mkdir -p $(DESTDIR)/$(TARGET)
+	cp $(PYSRCS) $(DESTDIR)/$(TARGET)
+	mkdir -p $(DESTDIR)/$(BINDIR)
+	cp vdsClient $(DESTDIR)/$(BINDIR)
+	mkdir -p $(DESTDIR)/$(COMPDIR)
+	cp vdsClient.completion $(DESTDIR)$(COMPDIR)/vdsClient
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	cp vdsClient.1 $(DESTDIR)$(MANDIR)/man1/
 
 clean:
 	$(RM) *~ *.pyc

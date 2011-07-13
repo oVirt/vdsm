@@ -12,8 +12,8 @@ PYSRCS       = vds_bootstrap.py deployUtil.py vds_bootstrap_complete.py
 all: $(PYSRCS)
 
 install:
-	mkdir -p ${PREFIX}/$(TARGET)
-	cp ${PYSRCS} ${PREFIX}/$(TARGET)
+	mkdir -p $(DESTDIR)/$(TARGET)
+	cp $(PYSRCS) $(DESTDIR)/$(TARGET)
 
 clean:
 	$(RM) *.pyc *.pyo  *~

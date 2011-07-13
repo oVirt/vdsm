@@ -54,7 +54,7 @@ sed -i 's/^software_version =.*/software_version = "%{version}"/;s/software_revi
 %install
 rm -rf "%{buildroot}"
 mkdir -p "%{buildroot}"
-make -C vdsm PREFIX="%{buildroot}" \
+make -C vdsm DESTDIR="%{buildroot}" \
     VDSMDIR=%{_datadir}/%{vdsm_name} \
     VDSMLOGDIR=%{_localstatedir}/log/%{vdsm_name} \
     TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
@@ -68,17 +68,17 @@ make -C vdsm PREFIX="%{buildroot}" \
 mkdir -p "%{buildroot}"%{_localstatedir}/log/core
 
 # hook vhostmd
-make -C vdsm/hooks/vhostmd PREFIX="%{buildroot}" \
+make -C vdsm/hooks/vhostmd DESTDIR="%{buildroot}" \
     LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
     install
 
 # hook faqemu
-make -C vdsm/hooks/faqemu PREFIX="%{buildroot}" \
+make -C vdsm/hooks/faqemu DESTDIR="%{buildroot}" \
     LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
     install
 
 #vdsm-cli
-make -C vdsm_cli PREFIX="%{buildroot}" \
+make -C vdsm_cli DESTDIR="%{buildroot}" \
     CONFDIR=%{_sysconfdir}/%{vdsm_name} \
     BINDIR=%{_bindir} \
     COMPDIR=%{_sysconfdir}/bash_completion.d \
@@ -88,7 +88,7 @@ make -C vdsm_cli PREFIX="%{buildroot}" \
 
 #vdsm-reg
 make -C vdsm_reg \
-    PREFIX="%{buildroot}" \
+    DESTDIR="%{buildroot}" \
     ETC=%{_sysconfdir} \
     CONFDIR=%{_sysconfdir}/%{vdsm_reg} \
     LOGDIR=%{_localstatedir}/log/%{vdsm_reg} \
@@ -100,7 +100,7 @@ make -C vdsm_reg \
 
 #vdsm-bootstrap
 make -C vds_bootstrap \
-     PREFIX="%{buildroot}" \
+     DESTDIR="%{buildroot}" \
      TARGET=%{_datadir}/%{vdsm_bootstrap} install
 
 
