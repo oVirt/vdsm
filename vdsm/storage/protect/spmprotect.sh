@@ -135,7 +135,7 @@ function check_renew() {
             res=0
         fi
     fi
-    if pushd "$RENEWDIR" > /dev/null; then
+    if pushd "$RENEWDIR" > /dev/null 2>&1 ; then
         rm -f $list
         popd > /dev/null
     fi
