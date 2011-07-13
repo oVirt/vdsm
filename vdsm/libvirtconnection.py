@@ -68,8 +68,8 @@ def get(cif=None):
                             setattr(ret, name, wrapMethod(method))
                 return ret
             except libvirt.libvirtError, e:
-                if (e.get_error_domain() == libvirt.VIR_FROM_REMOTE and
-                    e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR):
+                if (e.get_error_domain() in (libvirt.VIR_FROM_REMOTE, libvirt.VIR_FROM_RPC)
+                    and e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR):
                     cif.log.error('connection to libvirt broken. '
                                   'taking vdsm down.')
                     cif.prepareForShutdown()
