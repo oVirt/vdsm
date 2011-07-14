@@ -1,5 +1,5 @@
 #
-# Copyright 2009 Red Hat, Inc. and/or its affiliates.
+# Copyright 2009-2011 Red Hat, Inc. and/or its affiliates.
 #
 # Licensed to you under the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -45,6 +45,7 @@ from threadLocal import vars
 from weakref import proxy
 from config import config
 import outOfProcess as oop
+from logUtils import SimpleLogAdapter
 
 KEY_SEPERATOR = "="
 TASK_EXT = ".task"
@@ -487,9 +488,7 @@ class Task:
         self.nrecoveries = 0    # just utility count - used by save/load
         self.njobs = 0          # just utility count - used by save/load
 
-
-    def _debug(self, msg, *args):
-        self.log.debug("Task %s: " % str(self) + msg, *args)
+        self.log = SimpleLogAdapter(self.log, {"Task": self.id})
 
 
     def __del__(self):
@@ -544,7 +543,7 @@ class Task:
     def __state_aborting(self, fromState):
         if self.ref > 1:
             return
-        self._debug("_aborting: recover policy %s", self.recoveryPolicy)
+        self.log.debug("_aborting: recover policy %s", self.recoveryPolicy)
         if self.recoveryPolicy == TaskRecoveryType.auto:
             self._updateState(State.racquiring)
         elif self.recoveryPolicy == TaskRecoveryType.none:
@@ -595,9 +594,9 @@ class Task:
                 state = State.raborting
         self._aborting = False
         if requestedState == state:
-            self._debug("moving from state %s -> state %s", fromState, state)
+            self.log.debug("moving from state %s -> state %s", fromState, state)
         else:
-            self._debug("moving from state %s -> state %s instead of %s", fromState, state, requestedState)
+            self.log.debug("moving from state %s -> state %s instead of %s", fromState, state, requestedState)
 
         self.state.moveto(state, force)
         if self.persistPolicy == TaskPersistType.auto:
@@ -749,7 +748,7 @@ class Task:
         if not oop.os.path.exists(origTaskDir):
             raise se.TaskDirError("_save: no such task dir '%s'" % origTaskDir)
         taskDir = os.path.join(storPath, self.id + TEMP_EXT)
-        self._debug("_save: orig %s temp %s", origTaskDir, taskDir)
+        self.log.debug("_save: orig %s temp %s", origTaskDir, taskDir)
         if oop.os.path.exists(taskDir):
             oop.fileUtils.cleanupdir(taskDir)
         oop.os.mkdir(taskDir)
@@ -785,7 +784,7 @@ class Task:
 
     def _recoverDone(self):
         # protect agains races with stop/abort
-        self._debug("Recover Done: state %s", self.state)
+        self.log.debug("Recover Done: state %s", self.state)
         while True:
             try:
                 if self.state == State.recovering:
@@ -798,13 +797,13 @@ class Task:
 
 
     def _recover(self):
-        self._debug("_recover")
+        self.log.debug("_recover")
         if not self.state == State.recovering:
             raise se.TaskStateError("%s: _recover in state %s" % (str(self), self.state))
         try:
             while self.state == State.recovering:
                 rec = self.popRecovery()
-                self._debug("running recovery %s", str(rec))
+                self.log.debug("running recovery %s", str(rec))
                 if not rec:
                     break
                 self._run(rec.run)
@@ -826,7 +825,7 @@ class Task:
         try:
             self.callbackLock.acquire()
             try:
-                self._debug("_resourcesAcquired: %s.%s (%s)", namespace, resource, locktype)
+                self.log.debug("_resourcesAcquired: %s.%s (%s)", namespace, resource, locktype)
                 if self.state == State.preparing:
                     return
                 if self.state == State.acquiring:
@@ -836,7 +835,7 @@ class Task:
                 elif self.state == State.blocked:
                     self._updateState(State.preparing)
                 elif self.state == State.aborting or self.state == State.raborting:
-                    self._debug("resource %s.%s acquired while in state %s", namespace, resource, self.state)
+                    self.log.debug("resource %s.%s acquired while in state %s", namespace, resource, self.state)
                 else:
                     raise se.TaskStateError("acquire is not allowed in state %s" % self.state)
             finally:
@@ -851,7 +850,7 @@ class Task:
             self.callbackLock.acquire()
             try:
                 # Callback from resourceManager.Owner. May be called by another thread.
-                self._debug("_resourcesAcquired: %s.%s (%s)", namespace, resource, locktype)
+                self.log.debug("_resourcesAcquired: %s.%s (%s)", namespace, resource, locktype)
                 # Protect against races with stop/abort
                 if self.state == State.preparing:
                     self._updateState(State.blocked)
@@ -881,7 +880,7 @@ class Task:
         except:
             self._setError()
 
-        self._debug("Task._run: %s %s %s failed - stopping task", str(self), str(args), str(kargs))
+        self.log.debug("Task._run: %s %s %s failed - stopping task", str(self), str(args), str(kargs))
         self.stop()
         raise se.TaskAborted(message, code)
 
@@ -922,7 +921,7 @@ class Task:
 
 
     def _doAbort(self, force=False):
-        self._debug("Task._doAbort: force %s" % force)
+        self.log.debug("Task._doAbort: force %s" % force)
         self.lock.acquire()
         # Am I really the last?
         if self.ref != 0:
@@ -987,7 +986,7 @@ class Task:
         ref = self.ref
         self.lock.release()
 
-        self._debug("ref %d aborting %s", ref, self.aborting())
+        self.log.debug("ref %d aborting %s", ref, self.aborting())
         if ref == 0 and self.aborting():
             self._doAbort(force)
         return ref
@@ -1179,17 +1178,17 @@ class Task:
                 message = e.value
 
             if self.aborting():
-                self._debug("Prepare: aborted: %s", str(message))
+                self.log.debug("Prepare: aborted: %s", str(message))
                 self._updateResult(code, "Task prepare failed: %s" % (message), "")
                 raise self.error
 
             if self.jobs:
-                self._debug("Prepare: %s jobs exist, move to acquiring", self.njobs)
+                self.log.debug("Prepare: %s jobs exist, move to acquiring", self.njobs)
                 self._updateState(State.acquiring)
                 self.log.debug("returning")
                 return dict(uuid=str(self.id))
 
-            self._debug("finished: %s", result)
+            self.log.debug("finished: %s", result)
             self._updateResult(0, "OK", result)
             self._updateState(State.finished)
             return result
@@ -1216,11 +1215,11 @@ class Task:
 
 
     def stop(self, force=False):
-        self._debug("stopping in state %s (force %s)", self.state, force)
+        self.log.debug("stopping in state %s (force %s)", self.state, force)
         self._incref(force)
         try:
             if self.state.isDone():
-                self._debug("Task allready stopped (%s), ignoring", self.state)
+                self.log.debug("Task allready stopped (%s), ignoring", self.state)
                 return
             self._aborting = True
             self._forceAbort = force
@@ -1232,7 +1231,7 @@ class Task:
         ''' Do not call this function while the task is actually running. this
             method should only be used to recover tasks state after (vdsmd) restart.
         '''
-        self._debug('(recover): recovering: state %s', self.state)
+        self.log.debug('(recover): recovering: state %s', self.state)
         vars.task = self
         try:
             self._incref(force=True)
@@ -1241,7 +1240,7 @@ class Task:
             return
         try:
             if self.isDone():
-                self._debug('(recover): task is done: state %s', self.state)
+                self.log.debug('(recover): task is done: state %s', self.state)
                 return
             # if we are not during recover, just abort
             if self.state.canAbort():
@@ -1257,7 +1256,7 @@ class Task:
                 self.stop(force=True)
         finally:
             self._decref(force=True)
-        self._debug('(recover): recovered: state %s', self.state)
+        self.log.debug('(recover): recovered: state %s', self.state)
 
 
     def getState(self):
