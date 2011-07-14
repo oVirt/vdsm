@@ -119,7 +119,6 @@ EXT_UNPERSIST = P_USR_SBIN + 'unpersist'
 
 EXT_VCONFIG = P_SBIN + 'vconfig'
 EXT_VDSM_STORE_NET_CONFIG = P_VDSM + 'vdsm-store-net-config'
-EXT_VDSCLIENT = P_USR_BIN + 'vdsClient'
 
 EXT_WGET = P_USR_BIN + 'wget'
 EXT_WRITE_NET_CONFIG = P_VDSM + 'write-net-config'

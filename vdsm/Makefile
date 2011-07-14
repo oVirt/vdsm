@@ -12,14 +12,13 @@ FILES=define.py utils.py constants.py vm.py libvirtvm.py libvirtev.py vdsm \
       configNetwork.py addNetwork delNetwork \
       SecureXMLRPCServer.py ksm.py netinfo.py neterrors.py \
       get-conf-item set-conf-item \
-      kaxmlrpclib.py config.py img_verifier \
+      kaxmlrpclib.py config.py \
       write-net-config vdsm-restore-net-config vdsm-store-net-config \
       mk_sysprep_floppy get-vm-pid respawn logUtils.py \
       supervdsm.py supervdsmServer.py prepare-vmchannel \
       libvirtconnection.py vdsmDebugPlugin.py
 FILES += pthread.py
 FILES += betterThreading.py
-
 
 STORAGEFILES=storageConstants.py dispatcher.py storage_exception.py \
              __init__.py \
@@ -72,8 +71,7 @@ fixpaths:
 	        s:@BACKUPDIR@:$(BACKUPDIR):; \
 	        s:@LIBEXECDIR@:$(LIBEXECDIR):; \
 	        s:@TRUSTSTORE@:$(TRUSTSTORE):" constants.py vdsm-sosplugin.py
-	python substitute_constants.py mk_sysprep_floppy logger.conf \
-			    img_verifier vdsmd \
+	python substitute_constants.py mk_sysprep_floppy logger.conf vdsmd \
 			    vdsm-store-net-config vdsm-restore-net-config
 
 HOOKS=before_vm_start after_vm_start before_vm_cont after_vm_cont \

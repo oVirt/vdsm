@@ -364,7 +364,6 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/ksm.py*
 %{_datadir}/%{vdsm_name}/netinfo.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
-%attr (755,root,root) %{_datadir}/%{vdsm_name}/img_verifier
 %{_sysconfdir}/udev/rules.d/12-vdsm-lvm.rules
 # this is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps.
