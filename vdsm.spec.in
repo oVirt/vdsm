@@ -1,16 +1,17 @@
 %define vdsm_reg vdsm-reg
 %define vdsm_name vdsm
 %define vdsm_bootstrap vdsm-bootstrap
+%define vdsm_release @PACKAGE_RELEASE@
 %include %{_rpmconfigdir}/macros.python
 
 Summary: Virtual Desktop Server Manager
 Name: vdsm
-Source: %{vdsm_name}-%{version}-%{release}.tar.gz
+Source: %{vdsm_name}-%{version}-%{vdsm_release}.tar.gz
 # Url: no upstream project exists
 # tarball built from internal git repo with
 #       make tarball rpmversion=<version> rpmrelease=<release>
-Version: 0.0
-Release: 1%{?dist}
+Version: @PACKAGE_VERSION@
+Release: %{vdsm_release}%{?dist}
 License: GPLv2+
 Group: Applications/System
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
@@ -46,6 +47,7 @@ administration tasks, statistics gathering, and log collection.
 %setup -c -q
 
 %build
+%configure
 make -C vdsm CFLAGS="$RPM_OPT_FLAGS"
 baserelease=`echo "%{release}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
 sed -i 's/^software_version =.*/software_version = "%{version}"/;s/software_revision =.*/software_revision = "'"$baserelease"'"/' re/dsaversion.py
@@ -339,7 +341,7 @@ machines without running real guests.
 %dir %{_localstatedir}/log/core
 
 /etc/init.d/vdsmd
-%doc LICENSE_GPL_v2 README
+%doc COPYING README
 %{py_sitedir}/sos/plugins/vdsm.py*
 %{_mandir}/man8/vdsmd.8*
 
@@ -359,7 +361,7 @@ machines without running real guests.
 
 %files hook-vhostmd
 %defattr(-,root,root,-)
-%doc LICENSE_GPL_v2
+%doc COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
@@ -372,7 +374,7 @@ machines without running real guests.
 
 %files cli
 %defattr(-,root,root,-)
-%doc LICENSE_GPL_v2
+%doc COPYING
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
 %{_datadir}/%{vdsm_name}/vdscli.py*
@@ -382,7 +384,7 @@ machines without running real guests.
 
 %files bootstrap
 %defattr(-,root,root,-)
-%doc LICENSE_GPL_v2
+%doc COPYING
 %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap.py*
 %{_datadir}/%{vdsm_bootstrap}/deployUtil.py*
 %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap_complete.py*
@@ -390,7 +392,7 @@ machines without running real guests.
 
 %files reg
 %defattr(-,root,root,-)
-%doc LICENSE_GPL_v2
+%doc COPYING
 %dir %{_sysconfdir}/%{vdsm_reg}
 %dir %{_datadir}/%{vdsm_reg}
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/vdsm-reg.conf
@@ -415,7 +417,7 @@ machines without running real guests.
 
 %files hook-faqemu
 %defattr(-,root,root,-)
-%doc LICENSE_GPL_v2
+%doc COPYING
 %{_bindir}/qemu
 %{_bindir}/qemu-system-x86_64
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu

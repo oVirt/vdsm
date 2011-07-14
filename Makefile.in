@@ -6,17 +6,13 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 SUBDIRS=vdsm_cli re vds_bootstrap vdsm vdsm_reg vdsm_hooks
-DOCS=LICENSE_GPL_v2 README 
+DOCS=COPYING README
 
 all: rpm
 
-_lastrelease:=$(shell git describe | cut -d- -f3 | tr -d '[a-zA-Z_]')
-_hash:=.g$(shell git rev-parse HEAD | cut -c 1-6)
-_branch:=$(shell git branch | grep '^*' | sed 's/^..\(.*\)/.\1/' |\
-		 sed 's/[^a-zA-Z0-9_.]//g')
-rpmrelease:=$(_lastrelease).1$(_hash)$(_branch)
-rpmversion=4.9
-RPMTOP=$(shell bash -c "pwd -P")/rpmtop
+rpmversion=@PACKAGE_VERSION@
+rpmrelease=@PACKAGE_RELEASE@
+RPMTOP=$(PWD)/rpmtop
 SPEC=vdsm.spec
 
 TARBALL=vdsm-$(rpmversion)-$(rpmrelease).tar.gz
@@ -40,20 +36,18 @@ install:
 .PHONY: tarball
 tarball: $(TARBALL)
 $(TARBALL): Makefile $(SUBDIRS) $(DOCS) $(TESTS)
-	tar zcf $(TARBALL) `git ls-files | grep -v /ut/`	\
-			   `git ls-files vdsm/ut/faqemu`
+	tar zcf $(TARBALL) `git ls-files | grep -v /ut/` vdsm.spec configure
 
 .PHONY: srpm rpm
 srpm: $(SRPM)
 $(SRPM): $(TARBALL) vdsm.spec.in
-	sed 's/^Version:.*/Version: $(rpmversion)/;s/^Release:.*/Release: $(rpmrelease)/' vdsm.spec.in > $(SPEC)
 	mkdir -p $(RPMTOP)/{RPMS,SRPMS,SOURCES,BUILD}
-	rpmbuild -bs \
+	rpmbuild -ts \
 	    --define="_topdir $(RPMTOP)" \
-	    --define="_sourcedir ." $(SPEC)
+	    --define="_sourcedir $(PWD)" $(TARBALL)
 
 rpm: $(SRPM)
-	rpmbuild --define="_topdir $(RPMTOP)" --rebuild $<
+	rpmbuild --define="_topdir $(RPMTOP)" -ta $(TARBALL)
 
 clean:
 	$(RM) *~ *.pyc vdsm*.tar.gz $(SPEC)
