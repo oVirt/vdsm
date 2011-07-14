@@ -1671,8 +1671,8 @@ class HSM:
             vol.refreshVolume()
             vol.prepare(rw=rw)
         except:
-            imgResource.autoRelease = True
             self.log.error("Prepare volume %s in domain %s failed", volUUID, sdUUID, exc_info=True)
+            rmanager.releaseResource(imageResourcesNamespace, imgUUID)
             raise
 
 
