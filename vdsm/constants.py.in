@@ -52,75 +52,75 @@ P_VDSM_LOG = '@VDSMLOGDIR@'
 #
 EXT_ADDNETWORK = P_VDSM + 'addNetwork'
 
-EXT_BLOCKDEV = P_SBIN + 'blockdev'
-EXT_BRCTL = P_USR_SBIN + 'brctl'
+EXT_BLOCKDEV = '@BLOCKDEV_PATH@'
+EXT_BRCTL = '@BRCTL_PATH@'
 
-EXT_CAT = P_BIN + 'cat'
-EXT_CHOWN = P_BIN + 'chown'
-EXT_CP = P_BIN + 'cp'
+EXT_CAT = '@CAT_PATH@'
+EXT_CHOWN = '@CHOWN_PATH@'
+EXT_CP = '@CP_PATH@'
 
-EXT_DD = P_BIN + 'dd'
+EXT_DD = '@DD_PATH@'
 EXT_DELNETWORK = P_VDSM + 'delNetwork'
-EXT_DMIDECODE = P_USR_SBIN + 'dmidecode'
-EXT_DMSETUP = P_SBIN + 'dmsetup'
+EXT_DMIDECODE = '@DMIDECODE_PATH@'
+EXT_DMSETUP = '@DMSETUP_PATH@'
 
 EXT_EDITNETWORK = P_VDSM + 'editNetwork'
 
 EXT_FENCE_PREFIX = P_USR_SBIN + 'fence_'
-EXT_FSCK = P_SBIN + 'e2fsck'
-EXT_FUSER = P_SBIN + 'fuser'
+EXT_FSCK = '@FSCK_PATH@'
+EXT_FUSER = '@FUSER_PATH@'
 
 EXT_GET_VM_PID = P_VDSM + 'get-vm-pid'
 
-EXT_IFCONFIG = P_SBIN + 'ifconfig'
-EXT_IFDOWN = P_SBIN + 'ifdown'
-EXT_IFUP = P_SBIN + 'ifup'
-EXT_IONICE = P_USR_BIN + 'ionice'
-EXT_IPCALC = P_BIN + 'ipcalc'
-EXT_ISCSIADM = P_SBIN + 'iscsiadm'
+EXT_IFCONFIG = '@IFCONFIG_PATH@'
+EXT_IFDOWN = '@IFDOWN_PATH@'
+EXT_IFUP = '@IFUP_PATH@'
+EXT_IONICE = '@IONICE_PATH@'
+EXT_IPCALC = '@IPCALC_PATH@'
+EXT_ISCSIADM = '@ISCSIADM_PATH@'
 
-EXT_KILLALL = P_USR_BIN + 'killall'
-EXT_KILL = P_BIN + 'kill'
+EXT_KILLALL = '@KILLALL_PATH@'
+EXT_KILL = '@KILL_PATH@'
 
-EXT_LVM = P_SBIN + 'lvm'
+EXT_LVM = '@LVM_PATH@'
 
-EXT_MKFS = P_SBIN + 'mke2fs'
+EXT_MKFS = '@MKFS_PATH@'
 EXT_MK_SYSPREP_FLOPPY = P_VDSM + 'mk_sysprep_floppy'
-EXT_MOUNT = P_BIN + 'mount'
-EXT_MULTIPATH = P_SBIN + 'multipath'
-EXT_MV = P_BIN + 'mv'
+EXT_MOUNT = '@MOUNT_PATH@'
+EXT_MULTIPATH = '@MULTIPATH_PATH@'
+EXT_MV = '@MV_PATH@'
 
-EXT_NICE = P_BIN + 'nice'
+EXT_NICE = '@NICE_PATH@'
 
-EXT_PERSIST = P_USR_SBIN + 'persist'
-EXT_PGREP = P_USR_BIN + 'pgrep'
+EXT_PERSIST = '@PERSIST_PATH@'
+EXT_PGREP = '@PGREP_PATH@'
 EXT_PREPARE_VMCHANNEL = P_VDSM + 'prepare-vmchannel'
-EXT_PYTHON = P_USR_BIN + 'python'
+EXT_PYTHON = '@PYTHON_PATH@'
 
-EXT_QEMUIMG = P_USR_BIN + 'qemu-img'
+EXT_QEMUIMG = '@QEMUIMG_PATH@'
 
-EXT_REBOOT = P_SBIN + 'reboot'
-EXT_RPM = P_BIN + 'rpm'
-EXT_RSYNC = P_USR_BIN + 'rsync'
+EXT_REBOOT = '@REBOOT_PATH@'
+EXT_RPM = '@RPM_PATH@'
+EXT_RSYNC = '@RSYNC_PATH@'
 
-EXT_SCSI_ID = P_SBIN + 'scsi_id' #TBD !
-EXT_SERVICE = P_SBIN + 'service'
-EXT_SETSID = P_USR_BIN + 'setsid'
-EXT_SH = P_BIN + 'sh'
-EXT_SHOWMOUNT = P_USR_SBIN + 'showmount'
-EXT_SU = P_BIN + 'su'
-EXT_SUDO = P_USR_BIN + 'sudo'
+EXT_SCSI_ID = '@SCSI_ID_PATH@' #TBD !
+EXT_SERVICE = '@SERVICE_PATH@'
+EXT_SETSID = '@SETSID_PATH@'
+EXT_SH = '/bin/sh' # The shell path is invariable
+EXT_SHOWMOUNT = '@SHOWMOUNT_PATH@'
+EXT_SU = '@SU_PATH@'
+EXT_SUDO = '@SUDO_PATH@'
 
-EXT_TAR = P_BIN + 'tar'
-EXT_TUNE2FS = P_SBIN + 'tune2fs'
+EXT_TAR = '@TAR_PATH@'
+EXT_TUNE2FS = '@TUNE2FS_PATH@'
 
-EXT_UMOUNT = P_BIN + 'umount'
-EXT_UNPERSIST = P_USR_SBIN + 'unpersist'
+EXT_UMOUNT = '@UMOUNT_PATH@'
+EXT_UNPERSIST = '@UNPERSIST_PATH@'
 
-EXT_VCONFIG = P_SBIN + 'vconfig'
+EXT_VCONFIG = '@VCONFIG_PATH@'
 EXT_VDSM_STORE_NET_CONFIG = P_VDSM + 'vdsm-store-net-config'
 
-EXT_WGET = P_USR_BIN + 'wget'
+EXT_WGET = '@WGET_PATH@'
 EXT_WRITE_NET_CONFIG = P_VDSM + 'write-net-config'
 
 CMD_LOWPRIO = [EXT_NICE, '-n', '19', EXT_IONICE, '-c', '2', '-n', '7']
