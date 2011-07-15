@@ -1,0 +1,51 @@
+Cmnd_Alias VDSM_LIFECYCLE = \
+    @VDSMDIR@/addNetwork, \
+    @VDSMDIR@/delNetwork, \
+    @VDSMDIR@/editNetwork, \
+    @VDSMDIR@/vdsm-store-net-config, \
+    @DMIDECODE_PATH@, \
+    @VDSMDIR@/mk_sysprep_floppy, \
+    @SERVICE_PATH@ ksmtuned *, \
+    @SERVICE_PATH@ ksm *, \
+    @VDSMDIR@/prepare-vmchannel, \
+    @VDSMDIR@/get-vm-pid
+Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
+    @FSCK_PATH@ -p *, \
+    @TUNE2FS_PATH@ -j *, \
+    @MKFS_PATH@ -q -j *, \
+    @FUSER_PATH@ -m *, \
+    @KILL_PATH@, \
+    @CHOWN_PATH@ @VDSMUSER@\:@VDSMGROUP@ *, \
+    @CHOWN_PATH@ @VDSMUSER@\:@METADATAGROUP@ *, \
+    @MV_PATH@ /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.*, \
+    @MV_PATH@ /etc/multipath.conf *, \
+    @CP_PATH@ * /etc/iscsi/iscsid.conf, \
+    @CP_PATH@ * /etc/multipath.conf, \
+    @SERVICE_PATH@ iscsid *, \
+    @SERVICE_PATH@ multipathd restart, \
+    @SERVICE_PATH@ multipathd reload, \
+    @SCSI_ID_PATH@, \
+    @ISCSIADM_PATH@ *, \
+    @LVM_PATH@, \
+    @CAT_PATH@ /sys/block/*/device/../../*, \
+    @CAT_PATH@ /sys/devices/platform/host*, \
+    @CAT_PATH@ /etc/iscsi/iscsid.conf, \
+    @CAT_PATH@ /etc/multipath.conf, \
+    @DD_PATH@ of=/sys/class/scsi_host/host*/scan, \
+    @DD_PATH@, \
+    @PERSIST_PATH@ multipath.conf, \
+    @PERSIST_PATH@ /var/log/vdsm/backup/*, \
+    @UNPERSIST_PATH@ multipath.conf, \
+    @UNPERSIST_PATH@ /var/log/vdsm/backup/*, \
+    @CP_PATH@ * multipath.conf *, \
+    @CP_PATH@ * /var/log/vdsm/backup/* *, \
+    @MULTIPATH_PATH@, \
+    @BLOCKDEV_PATH@ --getsize64 *, \
+    @SETSID_PATH@ @IONICE_PATH@ -c? -n? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
+    @SERVICE_PATH@ vdsmd *, \
+    @REBOOT_PATH@ -f, \
+    @PYTHON_PATH@ @VDSMDIR@/supervdsmServer.pyc [a-z0-9\\-]* [0-9]*
+
+vdsm  ALL=(ALL) NOPASSWD: VDSM_LIFECYCLE, VDSM_STORAGE
+Defaults:vdsm !requiretty
+Defaults:vdsm !syslog

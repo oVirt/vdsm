@@ -1,6 +1,12 @@
 AC_INIT([vdsm], [4.9], [vdsm-devel@lists.fedorahosted.org])
 AC_SUBST([PACKAGE_RELEASE], m4_esyscmd([./build-aux/release.sh]))
 
+# Users and groups
+AC_SUBST([VDSMUSER], [vdsm])
+AC_SUBST([VDSMGROUP], [qemu])
+AC_SUBST([METADATAGROUP], [kvm])
+AC_SUBST([QEMUUSER], [qemu])
+
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLOCKDEV_PATH], [blockdev], [/sbin/blockdev])
 AC_PATH_PROG([BRCTL_PATH], [brctl], [/usr/sbin/brctl])
@@ -58,6 +64,9 @@ AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 AC_OUTPUT([
 	vdsm.spec
 	Makefile
-	vdsm/constants.py
+	vdsm/Makefile
+	vdsm/constants.py.in
+	vdsm/sudoers.vdsm.in
+	vdsm/mk_sysprep_floppy
 	vdsm_reg/deployUtil.py
 ])

@@ -6,11 +6,11 @@
 #
 # file ownership definitions
 #
-DISKIMAGE_USER = 'vdsm'
-DISKIMAGE_GROUP = 'qemu'
-METADATA_USER = 'vdsm'
-METADATA_GROUP = 'kvm'
-QEMU_PROCESS_USER = 'qemu'
+DISKIMAGE_USER = '@VDSMUSER@'
+DISKIMAGE_GROUP = '@VDSMGROUP@'
+METADATA_USER = '@VDSMUSER@'
+METADATA_GROUP = '@METADATAGROUP@'
+QEMU_PROCESS_USER = '@QEMUUSER@'
 
 # This is the domain version translation list
 # DO NOT CHANGE OLD VALUES ONLY APPEND
@@ -28,13 +28,9 @@ MEGAB = 2 ** 20 # = 1024 ** 2 = 1 MiB
 #
 # Path definitions
 #
-P_BIN = '/bin/'
-P_SBIN = '/sbin/'
 P_LIBVIRT_VMCHANNELS = '/var/lib/libvirt/qemu/channels/'
 P_STORAGEPOOLS = '@POOLSDIR@'
 P_TRUSTSTORE = '@TRUSTSTORE@'
-P_USR_BIN = '/usr/bin/'
-P_USR_SBIN = '/usr/sbin/'
 P_VDSM = '@VDSMDIR@/'
 P_VDSM_BACKUP = '@BACKUPDIR@'
 P_VDSM_HOOKS = '@HOOKSDIR@/'
@@ -50,7 +46,7 @@ P_VDSM_LOG = '@VDSMLOGDIR@'
 #
 # External programs (sorted, please keep in order).
 #
-EXT_ADDNETWORK = P_VDSM + 'addNetwork'
+EXT_ADDNETWORK = '@VDSMDIR@/addNetwork'
 
 EXT_BLOCKDEV = '@BLOCKDEV_PATH@'
 EXT_BRCTL = '@BRCTL_PATH@'
@@ -60,17 +56,17 @@ EXT_CHOWN = '@CHOWN_PATH@'
 EXT_CP = '@CP_PATH@'
 
 EXT_DD = '@DD_PATH@'
-EXT_DELNETWORK = P_VDSM + 'delNetwork'
+EXT_DELNETWORK = '@VDSMDIR@/delNetwork'
 EXT_DMIDECODE = '@DMIDECODE_PATH@'
 EXT_DMSETUP = '@DMSETUP_PATH@'
 
-EXT_EDITNETWORK = P_VDSM + 'editNetwork'
+EXT_EDITNETWORK = '@VDSMDIR@/editNetwork'
 
-EXT_FENCE_PREFIX = P_USR_SBIN + 'fence_'
+EXT_FENCE_PREFIX = '/usr/bin/fence_'
 EXT_FSCK = '@FSCK_PATH@'
 EXT_FUSER = '@FUSER_PATH@'
 
-EXT_GET_VM_PID = P_VDSM + 'get-vm-pid'
+EXT_GET_VM_PID = '@VDSMDIR@/get-vm-pid'
 
 EXT_IFCONFIG = '@IFCONFIG_PATH@'
 EXT_IFDOWN = '@IFDOWN_PATH@'
@@ -85,7 +81,7 @@ EXT_KILL = '@KILL_PATH@'
 EXT_LVM = '@LVM_PATH@'
 
 EXT_MKFS = '@MKFS_PATH@'
-EXT_MK_SYSPREP_FLOPPY = P_VDSM + 'mk_sysprep_floppy'
+EXT_MK_SYSPREP_FLOPPY = '@VDSMDIR@/mk_sysprep_floppy'
 EXT_MOUNT = '@MOUNT_PATH@'
 EXT_MULTIPATH = '@MULTIPATH_PATH@'
 EXT_MV = '@MV_PATH@'
@@ -94,7 +90,7 @@ EXT_NICE = '@NICE_PATH@'
 
 EXT_PERSIST = '@PERSIST_PATH@'
 EXT_PGREP = '@PGREP_PATH@'
-EXT_PREPARE_VMCHANNEL = P_VDSM + 'prepare-vmchannel'
+EXT_PREPARE_VMCHANNEL = '@VDSMDIR@/prepare-vmchannel'
 EXT_PYTHON = '@PYTHON_PATH@'
 
 EXT_QEMUIMG = '@QEMUIMG_PATH@'
@@ -118,10 +114,10 @@ EXT_UMOUNT = '@UMOUNT_PATH@'
 EXT_UNPERSIST = '@UNPERSIST_PATH@'
 
 EXT_VCONFIG = '@VCONFIG_PATH@'
-EXT_VDSM_STORE_NET_CONFIG = P_VDSM + 'vdsm-store-net-config'
+EXT_VDSM_STORE_NET_CONFIG = '@VDSMDIR@/vdsm-store-net-config'
 
 EXT_WGET = '@WGET_PATH@'
-EXT_WRITE_NET_CONFIG = P_VDSM + 'write-net-config'
+EXT_WRITE_NET_CONFIG = '@VDSMDIR@/write-net-config'
 
 CMD_LOWPRIO = [EXT_NICE, '-n', '19', EXT_IONICE, '-c', '2', '-n', '7']
 

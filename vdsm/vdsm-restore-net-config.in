@@ -9,7 +9,7 @@
 [ -f /etc/rhev-hypervisor-release ] && exit 0
 
 NET_CONF_DIR='/etc/sysconfig/network-scripts/'
-NET_CONF_BACK_DIR=@P_VDSM_LIB@/netconfback
+NET_CONF_BACK_DIR=@VDSMLIBDIR@/netconfback
 DELETE_HEADER='# original file did not exist'
 
 for f in "$NET_CONF_BACK_DIR"/*;

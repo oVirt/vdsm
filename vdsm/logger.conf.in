@@ -43,14 +43,14 @@ args=(('localhost', handlers.SYSLOG_UDP_PORT), handlers.SysLogHandler.LOG_USER)
 
 [handler_logfile]
 class=FileHandler
-args=('@P_VDSM_LOG@/vdsm.log',)
+args=('@VDSMLOGDIR@/vdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG
 formatter=long
 
 [handler_metadata]
 class=FileHandler
-args=('@P_VDSM_LOG@/metadata.log',)
+args=('@VDSMLOGDIR@/metadata.log',)
 level=WARNING
 formatter=long
 

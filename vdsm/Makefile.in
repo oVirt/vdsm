@@ -38,51 +38,58 @@ STORAGEFILES=storageConstants.py dispatcher.py storage_exception.py \
              threadLocal.py nfsSD.py localFsSD.py resourceFactories.py \
 	     outOfProcess.py processPool.py devicemapper.py
 
+FILES_SUBSTITUTIONS = \
+	constants.py \
+	vdsm-sosplugin.py \
+	sudoers.vdsm \
+	logger.conf \
+	vdsmd \
+	vdsm-store-net-config \
+	vdsm-restore-net-config
+
 PROTECTFILES=spmprotect.sh spmstop.sh safelease
 
-VDSMDIR=/usr/share/vdsm
-VDSMLOGDIR=/var/log/vdsm
-VDSMRUNDIR=/var/run/vdsm
-VDSMLIBDIR=/var/lib/vdsm
-LOGROTATEDIR=/etc/logrotate.d
-SOSPLUGINDIR=/usr/lib/python/site-packages/sos/plugins
-POOLSDATADIR=$(VDSMRUNDIR)/pools
-BACKUPDIR=$(VDSMLOGDIR)/backup
-BINDIR=$(VDSMDIR)
-LIBEXECDIR=/usr/libexec/vdsm
-HOOKSDIR=$(LIBEXECDIR)/hooks
-CONFDIR=$(VDSMDIR)
-TRUSTSTORE=$(VDSMRUNDIR)/ts
-MANDIR=/usr/share/man
-UDEVDIR=/etc/udev/rules.d
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+VDSMDIR = @datarootdir@/vdsm
+VDSMLOGDIR = @localstatedir@/log/vdsm
+VDSMRUNDIR = @localstatedir@/run/vdsm
+VDSMLIBDIR = @localstatedir@/lib/vdsm
+LOGROTATEDIR = @sysconfdir@/logrotate.d
+SOSPLUGINDIR = @libdir@/python/site-packages/sos/plugins
+POOLSDATADIR = $(VDSMRUNDIR)/pools
+BACKUPDIR = $(VDSMLOGDIR)/backup
+LIBEXECDIR = @libexecdir@/vdsm
+HOOKSDIR = $(LIBEXECDIR)/hooks
+CONFDIR = $(VDSMDIR)
+TRUSTSTORE = $(VDSMRUNDIR)/ts
+MANDIR = @mandir@
+UDEVDIR = @sysconfdir@/udev/rules.d
 
 CFLAGS=-Wall -O
 
 all: storage/protect/safelease
 
-# TODO fix this nonsense with autoconf
-.PHONY: fixpaths
-sudoers.vdsm: fixpaths sudoers.vdsm.in
-	python substitute_constants.py - < sudoers.vdsm.in > $@
-
-vdsm.conf.sample: fixpaths config.py
+vdsm.conf.sample: config.py
 	python mk_vdsm.conf.sample.py > vdsm.conf.sample
 
-fixpaths:
-	sed -i "s:@CONFDIR@:$(CONFDIR):; \
-	        s:@VDSMLOGDIR@:$(VDSMLOGDIR):; \
-	        s:@VDSMDIR@:$(VDSMDIR):; \
-	        s:@HOOKSDIR@:$(HOOKSDIR):; \
-	        s:@VDSMRUNDIR@:$(VDSMRUNDIR):; \
-	        s:@VDSMLIBDIR@:$(VDSMLIBDIR):; \
-	        s:@POOLSDIR@:$(POOLSDATADIR):; \
-	        s:@BACKUPDIR@:$(BACKUPDIR):; \
-	        s:@LIBEXECDIR@:$(LIBEXECDIR):; \
-	        s:@TRUSTSTORE@:$(TRUSTSTORE):" constants.py vdsm-sosplugin.py
-	python substitute_constants.py mk_sysprep_floppy logger.conf vdsmd \
-			    vdsm-store-net-config vdsm-restore-net-config
+# Reference:
+# http://www.gnu.org/software/automake/manual/html_node/Scripts.html#Scripts
+do_subst = sed -e "s,[@]CONFDIR[@],$(CONFDIR),g" \
+	    -e "s,[@]VDSMLOGDIR[@],$(VDSMLOGDIR),g" \
+	    -e "s,[@]VDSMDIR[@],$(VDSMDIR),g" \
+	    -e "s,[@]HOOKSDIR[@],$(HOOKSDIR),g" \
+	    -e "s,[@]VDSMRUNDIR[@],$(VDSMRUNDIR),g" \
+	    -e "s,[@]VDSMLIBDIR[@],$(VDSMLIBDIR),g" \
+	    -e "s,[@]POOLSDIR[@],$(POOLSDATADIR),g" \
+	    -e "s,[@]BACKUPDIR[@],$(BACKUPDIR),g" \
+	    -e "s,[@]LIBEXECDIR[@],$(LIBEXECDIR),g" \
+	    -e "s,[@]TRUSTSTORE[@],$(TRUSTSTORE),g"
 
-install: all sudoers.vdsm vdsm.conf.sample
+$(FILES_SUBSTITUTIONS):
+	$(do_subst) < $@.in > $@
+
+install: $(FILES_SUBSTITUTIONS) vdsm.conf.sample
 	$(INSTALL) -Dd $(DESTDIR)$(VDSMDIR)/storage/protect
 	$(INSTALL) -Dd $(DESTDIR)$(TRUSTSTORE)/{certs,keys}
 	$(INSTALL) -Dd $(DESTDIR)$(VDSMLOGDIR)

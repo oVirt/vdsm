@@ -21,12 +21,12 @@
 # Short-Description: init script for the VDS management server
 ### END INIT INFO
 
-VDSM_BIN=@P_VDSM@/vdsm
-CONF_FILE=@P_VDSM_CONF@vdsm.conf
-GETCONFITEM=@P_VDSM@/get-conf-item
+VDSM_BIN=@VDSMDIR@/vdsm
+CONF_FILE=@CONFDIR@/vdsm.conf
+GETCONFITEM=@VDSMDIR@/get-conf-item
 prog=vdsm
-PIDFILE=@P_VDSM_RUN@/vdsmd.pid
-RESPAWNPIDFILE=@P_VDSM_RUN@/respawn.pid
+PIDFILE=@VDSMRUNDIR@/vdsmd.pid
+RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
 CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
@@ -395,7 +395,7 @@ start_libvirtd() {
 
 start() {
     local ret_val
-    python @P_VDSM@/hooks.pyc before_vdsm_start
+    python @VDSMDIR@/hooks.pyc before_vdsm_start
 
     shutdown_conflicting_srv
 
@@ -415,7 +415,7 @@ start() {
        return $ret_val
     fi
 
-    @P_VDSM@/vdsm-restore-net-config
+    @VDSMDIR@/vdsm-restore-net-config
     load_needed_modules
     mk_data_center
     mk_upgrade_path
@@ -441,7 +441,7 @@ start() {
 
     LIBVIRT_LOG_FILTERS=`$GETCONFITEM $CONF_FILE vars libvirt_log_filters "1:libvirt 1:remote"` \
     LIBVIRT_LOG_OUTPUTS=`$GETCONFITEM $CONF_FILE vars libvirt_log_outputs "1:file:/var/log/vdsm/libvirt.log"` \
-    LC_ALL=C NICELEVEL=$vdsm_nice daemon --user=vdsm @P_VDSM@/respawn --minlifetime 10 --daemon --masterpid $RESPAWNPIDFILE $VDSM_BIN
+    LC_ALL=C NICELEVEL=$vdsm_nice daemon --user=vdsm @VDSMDIR@/respawn --minlifetime 10 --daemon --masterpid $RESPAWNPIDFILE $VDSM_BIN
     RETVAL=$?
     [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
     [ "$RETVAL" -eq 0 ] && touch /var/lock/subsys/vdsmd
@@ -461,7 +461,7 @@ stop() {
         [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog stop" || log_failure_msg $"$prog stop"
         [ "$RETVAL" -eq 0 ] && rm -f /var/lock/subsys/vdsmd
     fi
-    python @P_VDSM@/hooks.pyc after_vdsm_stop
+    python @VDSMDIR@/hooks.pyc after_vdsm_stop
     return $RETVAL
 }
 
