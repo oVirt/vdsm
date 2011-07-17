@@ -143,8 +143,9 @@ class Plugin(PluginBase):
                 if deployUtil.getRhevmCert(self.rhevm_server.value(),  self.rhevm_server_port.value()):
                     path, dontCare = deployUtil.certPaths('')
                     fp = deployUtil.generateFingerPrint(path)
-                    approval = ButtonChoiceWindow(self.ncs.screen, \
-                            "Certificate Fingerprint:", fp, buttons = ['Approve', 'Reject'])
+                    approval = ButtonChoiceWindow(self.ncs.screen,
+                                "Certificate Fingerprint (Rejecting the finrgerprint will reboot the host):",
+                                fp, buttons = ['Approve', 'Reject'])
                     if 'reject' == approval:
                         out, err, rc = deployUtil._logExec(['/sbin/reboot'])
                         if rc is not 0:
