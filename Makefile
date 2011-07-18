@@ -28,22 +28,11 @@ test: pyflakes exceptions
 	echo $(rpmrelease) $(rpmversion)
 
 exceptions:
-	python vdsm/storage/storage_exception.py | grep Collision && exit 1 || true 
+	python vdsm/storage/storage_exception.py | grep Collision && exit 1 || true
 
 pyflakes:
-	@which pyflakes > /dev/null && git ls-files '*.py' | xargs pyflakes || (echo "Pyflakes errors or pyflakes not found"; exit 1)
-
-permissive_pyflakes:
-	@which pyflakes > /dev/null 2>&1 || (echo "pyflakes not found" && false)
-	if git ls-files '*.py' | xargs pyflakes | grep -v used ; then \
-	    echo "pyflakes errors" && false ; \
-	fi
-
-pylint_all:
-	cd vdsm; find storage -name "*.py" | xargs pylint -e 2> /dev/null
-
-pylint:
-	cd vdsm; ls storage/*.py | xargs pylint -e 2> /dev/null
+	@git ls-files '*.py' | xargs pyflakes \
+	    || (echo "Pyflakes errors or pyflakes not found"; exit 1)
 
 .PHONY: tarball
 tarball: $(TARBALL)

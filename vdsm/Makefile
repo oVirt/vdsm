@@ -51,8 +51,6 @@ UDEVDIR=/etc/udev/rules.d
 
 CFLAGS=-Wall -O
 
-OS_MAJOR_RELEASE=$(shell lsb_release -rs | sed 's/\..*//')
-
 all: storage/protect/safelease
 
 # TODO fix this nonsense with autoconf
