@@ -56,7 +56,6 @@ EXT_BLOCKDEV = P_SBIN + 'blockdev'
 EXT_BRCTL = P_USR_SBIN + 'brctl'
 
 EXT_CAT = P_BIN + 'cat'
-EXT_CHMOD = P_BIN + 'chmod'
 EXT_CHOWN = P_BIN + 'chown'
 EXT_CP = P_BIN + 'cp'
 
@@ -73,13 +72,10 @@ EXT_FUSER = P_SBIN + 'fuser'
 
 EXT_GET_VM_PID = P_VDSM + 'get-vm-pid'
 
-EXT_HEAD = P_USR_BIN + 'head'
-
 EXT_IFCONFIG = P_SBIN + 'ifconfig'
 EXT_IFDOWN = P_SBIN + 'ifdown'
 EXT_IFUP = P_SBIN + 'ifup'
 EXT_IONICE = P_USR_BIN + 'ionice'
-EXT_IP = P_SBIN + 'ip'
 EXT_IPCALC = P_BIN + 'ipcalc'
 EXT_ISCSIADM = P_SBIN + 'iscsiadm'
 
@@ -94,12 +90,10 @@ EXT_MOUNT = P_BIN + 'mount'
 EXT_MULTIPATH = P_SBIN + 'multipath'
 EXT_MV = P_BIN + 'mv'
 
-EXT_NETSTAT = P_BIN + 'netstat'
 EXT_NICE = P_BIN + 'nice'
 
 EXT_PERSIST = P_USR_SBIN + 'persist'
 EXT_PGREP = P_USR_BIN + 'pgrep'
-EXT_PING = P_BIN + 'ping'
 EXT_PREPARE_VMCHANNEL = P_VDSM + 'prepare-vmchannel'
 EXT_PYTHON = P_USR_BIN + 'python'
 
@@ -114,15 +108,12 @@ EXT_SERVICE = P_SBIN + 'service'
 EXT_SETSID = P_USR_BIN + 'setsid'
 EXT_SH = P_BIN + 'sh'
 EXT_SHOWMOUNT = P_USR_SBIN + 'showmount'
-EXT_SORT = P_BIN + 'sort'
 EXT_SU = P_BIN + 'su'
 EXT_SUDO = P_USR_BIN + 'sudo'
 
 EXT_TAR = P_BIN + 'tar'
-EXT_TRUE = P_BIN + 'true' #TBD
 EXT_TUNE2FS = P_SBIN + 'tune2fs'
 
-EXT_UDEVSETTLE = P_SBIN + 'udevsettle'
 EXT_UMOUNT = P_BIN + 'umount'
 EXT_UNPERSIST = P_USR_SBIN + 'unpersist'
 
