@@ -153,6 +153,7 @@ defaults {
     flush_on_last_del       yes
     fast_io_fail_tmo        5
     dev_loss_tmo            30
+    max_fds                 4096
 }
 """
 
