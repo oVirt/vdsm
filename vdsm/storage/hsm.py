@@ -18,6 +18,7 @@ from fnmatch import fnmatch
 from copy import deepcopy
 from config import config
 from itertools import imap
+from collections import defaultdict
 
 import sp
 import sd
@@ -138,6 +139,8 @@ class HSM:
         self._domstats = {}
         self._cachedStats = {}
         self._statslock = threading.Lock()
+
+        self._preparedVolumes = defaultdict(list)
 
         if not iscsi.isConfigured():
             iscsi.setupiSCSI()
@@ -1662,8 +1665,9 @@ class HSM:
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
-        imgResource = rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive)
-        imgResource.autoRelease = False
+        lockType = rm.LockType.exclusive if rw else rm.LockType.shared
+
+        imgResource = rmanager.acquireResource(imageResourcesNamespace, imgUUID, lockType)
         try:
             vol = SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
             # NB We want to be sure that at this point HSM does not use stale LVM
@@ -1671,9 +1675,11 @@ class HSM:
             # this refresh later, when we come up with something better.
             vol.refreshVolume()
             vol.prepare(rw=rw)
+
+            self._preparedVolumes[sdUUID + volUUID].append(imgResource)
         except:
             self.log.error("Prepare volume %s in domain %s failed", volUUID, sdUUID, exc_info=True)
-            rmanager.releaseResource(imageResourcesNamespace, imgUUID)
+            imgResource.release()
             raise
 
 
@@ -1690,18 +1696,22 @@ class HSM:
         :type imgUUID: UUID
         :param volUUID: The UUID of the volume you want to teardown.
         :type volUUID: UUID
-        :param rw: Should the voulme be set as RW. ?
-        :type rw: bool
+        :param rw: deprecated
         :param options: ?
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
-        volclass = SDF.produce(sdUUID).getVolumeClass()
-        volclass.teardown(sdUUID=sdUUID, volUUID=volUUID)
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
-        rmanager.releaseResource(imageResourcesNamespace, imgUUID)
+        try:
+            imgResource = self._preparedVolumes[sdUUID + volUUID].pop()
+        except IndexError:
+            raise se.VolumeWasNotPreparedBeforeTeardown()
 
+        imgResource.release()
+
+        try:
+            volclass = SDF.produce(sdUUID).getVolumeClass()
+            volclass.teardown(sdUUID=sdUUID, volUUID=volUUID)
+        except Exception:
+            self.log.warn("Problem tearing down volume", exc_info=True)
 
     def public_getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID, options = None):
         """

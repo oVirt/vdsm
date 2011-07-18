@@ -245,6 +245,10 @@ class createVolumeSizeError(StorageException):
     code = 229
     message = "Requested size is too small. Must be larger or equal to 1"
 
+class VolumeWasNotPreparedBeforeTeardown(StorageException):
+    code = 230
+    message = "Volume was not prepared before being torn down"
+
 #################################################
 #  Images Exceptions
 #################################################

@@ -36,7 +36,9 @@ class LvmActivation(object):
     def __init__(self, vg, lv, lockType):
         self._vg = vg
         self._lv = lv
+
         lvm.activateLVs(self._vg, self._lv)
+        self.switchLockType(lockType)
 
     def close(self):
         try:
