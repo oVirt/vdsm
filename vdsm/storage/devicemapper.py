@@ -10,9 +10,23 @@ from constants import EXT_DMSETUP
 DMPATH_FORMAT = "/dev/mapper/%s"
 
 def getDmId(deviceMultipathName):
-    devPath = DMPATH_FORMAT % (deviceMultipathName,)
-    mpPath = os.path.realpath(devPath)
-    return os.path.basename(mpPath)
+    devlinkPath = DMPATH_FORMAT % deviceMultipathName
+    if os.path.islink(devlinkPath):
+        dmId = os.path.realpath(devlinkPath).split("/")[-1]
+        if os.path.exists("/sys/block/%s" % dmId):
+            return dmId
+
+    # Link doesn't exists for some reason, might be a weird
+    # udev configuration. Falling back to slow but sure method
+    for nameFile in glob("/sys/block/dm-*/dm/name"):
+        try:
+            with open(nameFile, "r") as f:
+                if f.read() == deviceMultipathName:
+                    return nameFile.split("/")[3]
+        except (IOError, OSError):
+            pass
+
+    raise OSError(errno.ENOENT, "Could not find dm device named `%s`" % deviceMultipathName)
 
 def findDev(major, minor):
     return os.path.basename(os.path.realpath('/sys/dev/block/%d:%d' % (major, minor)))
@@ -37,7 +51,7 @@ def _parseDevFile(devFilePath):
     return (int(mj), int(mn))
 
 def getSlaves(deviceName):
-    mpName = getDmId(deviceName)
+    mpName = resolveDevName(deviceName)
     sysfsPath = getSysfsPath(mpName)
     return os.listdir(os.path.join(sysfsPath, "slaves"))
 

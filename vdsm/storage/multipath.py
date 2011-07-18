@@ -195,7 +195,7 @@ def pathListIter(filterGuids=None):
     svdsm = supervdsm.getProxy()
     pathStatuses = devicemapper.getPathsStatus()
 
-    for guid in getMPDevNamesIter():
+    for dmId, guid in getMPDevsIter():
         if devsFound == filterLen:
             break
 
@@ -203,8 +203,6 @@ def pathListIter(filterGuids=None):
             continue
 
         devsFound += 1
-
-        dmId = devicemapper.getDmId(guid)
 
         devInfo = {
                 "guid" : guid,
@@ -290,6 +288,10 @@ def pathinfo(guid):
 
 TOXIC_REGEX = re.compile(r"[%s]" % re.sub(r"[\-\\\]]", lambda m : "\\" + m.group(), TOXIC_CHARS))
 def getMPDevNamesIter():
+    for _, name in getMPDevsIter():
+        yield name
+
+def getMPDevsIter():
     """
     Collect the list of all the multipath block devices.
     Return the list of device identifiers w/o "/dev/mapper" prefix
@@ -316,7 +318,7 @@ def getMPDevNamesIter():
             log.info("Device with unsupported GUID %s discarded", guid)
             continue
 
-        yield guid
+        yield dmInfoDir.split("/")[3], guid
 
 def devIsiSCSI(type):
     return type in [DEV_ISCSI, DEV_MIXED]
