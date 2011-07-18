@@ -38,8 +38,6 @@ P_USR_SBIN = '/usr/sbin/'
 P_LIBEXEC = '/usr/libexec/'
 
 # Executables
-EX_AWK = P_BIN + 'awk'
-EX_BASH = P_BIN + 'bash'
 EX_CAT = P_BIN + 'cat'
 EX_CHKCONFIG = P_SBIN + 'chkconfig'
 EX_DMIDECODE = P_USR_SBIN + 'dmidecode'
@@ -218,7 +216,7 @@ def getMachineUUID():
     """
     strReturn = "None"
 
-    out, err, ret = _logExec([EX_BASH, "-c", EX_DMIDECODE + "|" + EX_AWK + " ' /^\tUUID: /{ print $2; } '"])
+    out, err, ret = _logExec([EX_DMIDECODE, "-s", "system-uuid"])
     if ret == 0 and "Not" not in out: #Avoid error string- 'Not Settable' or 'Not Present'
         strReturn = out.replace ("\n", "")
     else:

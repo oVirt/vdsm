@@ -651,11 +651,10 @@ def getHostUUID():
     __hostUUID = 'None'
 
     try:
-        p = subprocess.Popen(constants.EXT_SUDO + " " + constants.EXT_DMIDECODE + " |" +
-                             constants.EXT_AWK + " '/^\tUUID: /{ print $2 }'",
-                    close_fds=True, shell=True,
-                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE)
+        p = subprocess.Popen([constants.EXT_SUDO,
+                              constants.EXT_DMIDECODE, "-s", "system-uuid"],
+                             close_fds=True, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         if p.returncode == 0 and 'Not' not in out:
             #Avoid error string - 'Not Settable' or 'Not Present'

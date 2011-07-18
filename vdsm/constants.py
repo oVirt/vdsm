@@ -51,7 +51,6 @@ P_VDSM_LOG = '@VDSMLOGDIR@'
 # External programs (sorted, please keep in order).
 #
 EXT_ADDNETWORK = P_VDSM + 'addNetwork'
-EXT_AWK = P_BIN + 'awk'
 
 EXT_BLOCKDEV = P_SBIN + 'blockdev'
 EXT_BRCTL = P_USR_SBIN + 'brctl'
