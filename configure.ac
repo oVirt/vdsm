@@ -1,11 +1,38 @@
+# Autoconf initialization
 AC_INIT([vdsm], [4.9], [vdsm-devel@lists.fedorahosted.org])
 AC_SUBST([PACKAGE_RELEASE], m4_esyscmd([./build-aux/release.sh]))
+AC_CONFIG_AUX_DIR([build-aux])
+
+# Automake initialization
+AM_INIT_AUTOMAKE([-Wno-portability])
+
+# Checking for build tools
+AC_PROG_CC
+AC_PROG_LN_S
+AM_PATH_PYTHON([2.6])
 
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
 AC_SUBST([VDSMGROUP], [qemu])
 AC_SUBST([METADATAGROUP], [kvm])
 AC_SUBST([QEMUUSER], [qemu])
+
+# VDSM default paths
+AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])
+AC_SUBST([vdsmconfdir], ['${sysconfdir}/vdsm'])
+AC_SUBST([vdsmlogdir], ['${localstatedir}/log/vdsm'])
+AC_SUBST([vdsmrundir], ['${localstatedir}/run/vdsm'])
+AC_SUBST([vdsmlibdir], ['${localstatedir}/lib/vdsm'])
+AC_SUBST([vdsmpoolsdir], ['${vdsmrundir}/pools'])
+AC_SUBST([vdsmbackupdir], ['${vdsmlogdir}/backup'])
+AC_SUBST([vdsmexecdir], ['${libexecdir}/vdsm'])
+AC_SUBST([vdsmhooksdir], ['${vdsmexecdir}/hooks'])
+AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
+
+# VDSM registration default paths
+AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
+AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
+AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLOCKDEV_PATH], [blockdev], [/sbin/blockdev])
@@ -62,9 +89,17 @@ AC_PATH_PROG([WGET_PATH], [wget], [/usr/bin/wget])
 AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 
 AC_OUTPUT([
-	vdsm.spec
 	Makefile
+	vds_bootstrap/Makefile
+	vdsm_cli/Makefile
+	vdsm_hooks/faqemu/Makefile
+	vdsm_hooks/Makefile
+	vdsm_hooks/vhostmd/Makefile
 	vdsm/Makefile
+	vdsm_reg/Makefile
+	vdsm/storage/Makefile
+	vdsm/storage/protect/Makefile
+	vdsm.spec
 	vdsm/constants.py.in
 	vdsm/sudoers.vdsm.in
 	vdsm/mk_sysprep_floppy

@@ -6,7 +6,7 @@
 
 Summary: Virtual Desktop Server Manager
 Name: vdsm
-Source: %{vdsm_name}-%{version}-%{vdsm_release}.tar.gz
+Source: %{vdsm_name}-%{version}.tar.gz
 # Url: no upstream project exists
 # tarball built from internal git repo with
 #       make tarball rpmversion=<version> rpmrelease=<release>
@@ -44,32 +44,15 @@ storage, memory and networks as well as virtual machine creation, other host
 administration tasks, statistics gathering, and log collection.
 
 %prep
-%setup -c -q
+%setup -q
 
 %build
 %configure
-make -C vdsm CFLAGS="$RPM_OPT_FLAGS"
-baserelease=`echo "%{release}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
-sed -i 's/^software_version =.*/software_version = "%{version}"/;s/software_revision =.*/software_revision = "'"$baserelease"'"/' re/dsaversion.py
-
+make
 
 %install
-rm -rf "%{buildroot}"
-mkdir -p "%{buildroot}"
-make DESTDIR="%{buildroot}" \
-     ETC=%{_sysconfdir} \
-     VDSMDIR=%{_datadir}/%{vdsm_name} \
-     VDSMLOGDIR=%{_localstatedir}/log/%{vdsm_name} \
-     TRUSTSTORE=%{_sysconfdir}/pki/%{vdsm_name} \
-     BINDIR=%{_bindir} \
-     LIBEXECDIR=%{_libexecdir}/%{vdsm_name} \
-     CONFDIR=%{_sysconfdir}/%{vdsm_name} \
-     REGCONFDIR=%{_sysconfdir}/%{vdsm_name}-reg \
-     VDSMRUNDIR=%{_localstatedir}/run/%{vdsm_name} \
-     VDSMLIBDIR=%{_localstatedir}/lib/%{vdsm_name} \
-     SOSPLUGINDIR=%{py_sitedir}/sos/plugins \
-     OVIRT_CONFIG_SETUP=%{py_sitedir}/ovirt_config_setup \
-     install
+rm -rf %{buildroot}
+make DESTDIR=%{buildroot} install
 
 # this is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps.
@@ -230,6 +213,7 @@ machines without running real guests.
 
 %files
 %defattr(-,root,root,-)
+%doc vdsm/vdsm.conf.sample
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
@@ -253,7 +237,6 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/get-vm-pid
 %{_datadir}/%{vdsm_name}/prepare-vmchannel
-%doc vdsm/vdsm.conf.sample
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
