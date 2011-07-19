@@ -91,10 +91,11 @@ class StatsThread(threading.Thread):
     def run(self):
         while self._statsletrun:
             try:
-                start = time.time()
+                delay = 0
                 if self._domain is None:
                     self._domain = SDF.produce(self._sdUUID)
                 stats, code = self._statsfunc(self._domain)
+                delay = self._domain.getReadDelay()
             except se.StorageException, e:
                 self.log.error("Unexpected error", exc_info=True)
                 code = e.code
@@ -109,7 +110,7 @@ class StatsThread(threading.Thread):
 
             stats['finish'] = finish
             stats['result'] = dict(code=code, lastCheck=finish,
-                delay=str(finish - start), valid=(code == 0))
+                delay=str(delay), valid=(code == 0))
 
             try:
                 if self._statscache["result"]["valid"] != stats["result"]["valid"]:

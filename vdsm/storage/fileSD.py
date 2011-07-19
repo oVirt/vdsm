@@ -23,6 +23,7 @@ import outOfProcess as oop
 from processPool import Timeout
 from persistentDict import PersistentDict, DictValidator
 import constants
+import time
 
 REMOTE_PATH = "REMOTE_PATH"
 
@@ -126,6 +127,11 @@ class FileStorageDomain(sd.StorageDomain):
                 sd.DMDK_LEASE_RETRIES : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
                 REMOTE_PATH : remotePath
                 })
+
+    def getReadDelay(self):
+        t = time.time()
+        processPoolDict[self.sdUUID].directReadLines(self.metafile)
+        return time.time() - t
 
     def produceVolume(self, imgUUID, volUUID):
         """

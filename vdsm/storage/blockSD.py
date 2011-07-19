@@ -354,6 +354,12 @@ class BlockStorageDomain(sd.StorageDomain):
 
         return bsd
 
+    def getReadDelay(self):
+        with fileUtils.open_ex(lvm.lvPath(self.sdUUID, sd.METADATA), "dr") as f:
+            t = time.time()
+            f.read(4096)
+            return time.time() - t
+
 
     def produceVolume(self, imgUUID, volUUID):
         """
