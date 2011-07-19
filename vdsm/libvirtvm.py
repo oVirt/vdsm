@@ -222,12 +222,27 @@ class MigrationMonitorThread(threading.Thread):
     def run(self):
         self._vm.log.debug('starting migration monitor thread')
 
+        lastProgressTime = time.time()
+        smallest_dataRemaining = None
+
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
             jobType, timeElapsed, _,     \
-            dataTotal, dataProcessed, _, \
+            dataTotal, dataProcessed, dataRemaining, \
             memTotal, memProcessed, _,   \
             fileTotal, fileProcessed, _ = self._vm._dom.jobInfo()
+
+            if smallest_dataRemaining is None or smallest_dataRemaining > dataRemaining:
+                smallest_dataRemaining = dataRemaining
+                lastProgressTime = time.time()
+            elif time.time() - lastProgressTime > config.getint('vars', 'migration_timeout'):
+                # Migration is stuck, abort
+                self._vm.log.warn(
+                        'Migration is stuck: Hasn\'t progressed in %s seconds. Aborting.' % (time.time() - lastProgressTime)
+                    )
+                self._vm._dom.abortJob()
+                self.stop()
+                break
 
             if jobType == 0:
                 continue
@@ -239,6 +254,7 @@ class MigrationMonitorThread(threading.Thread):
                     'Migration Progress: %s seconds elapsed, %s%% of data processed, %s%% of mem processed'
                     % (timeElapsed/1000,dataProgress,memProgress)
                 )
+
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
