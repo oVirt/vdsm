@@ -1,7 +1,18 @@
 # Autoconf initialization
-AC_INIT([vdsm], [4.9], [vdsm-devel@lists.fedorahosted.org])
-AC_SUBST([PACKAGE_RELEASE], m4_esyscmd([./build-aux/release.sh]))
+AC_INIT([vdsm],
+        [m4_esyscmd([build-aux/version.sh])],
+        [vdsm-devel@lists.fedorahosted.org])
 AC_CONFIG_AUX_DIR([build-aux])
+
+# Package release
+AC_SUBST([PACKAGE_RELEASE],
+         [m4_esyscmd([build-aux/release.sh])])
+
+# Testing for version and release
+AS_IF([test "x$PACKAGE_VERSION" = x],
+      AC_MSG_ERROR([package version not defined]))
+AS_IF([test "x$PACKAGE_RELEASE" = x],
+      AC_MSG_ERROR([package release not defined]))
 
 # Automake initialization
 AM_INIT_AUTOMAKE([-Wno-portability])

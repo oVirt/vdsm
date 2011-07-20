@@ -1,7 +1,6 @@
 %define vdsm_reg vdsm-reg
 %define vdsm_name vdsm
 %define vdsm_bootstrap vdsm-bootstrap
-%define vdsm_release @PACKAGE_RELEASE@
 %include %{_rpmconfigdir}/macros.python
 
 Summary: Virtual Desktop Server Manager
@@ -11,7 +10,7 @@ Source: %{vdsm_name}-%{version}.tar.gz
 # tarball built from internal git repo with
 #       make tarball rpmversion=<version> rpmrelease=<release>
 Version: @PACKAGE_VERSION@
-Release: %{vdsm_release}%{?dist}
+Release: @PACKAGE_RELEASE@%{?dist}
 License: GPLv2+
 Group: Applications/System
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
