@@ -1237,7 +1237,9 @@ class HSM:
         if not misc.parseBool(autoDetach):
             # Allow format also for broken domain
             try:
-                if len(SDF.produce(sdUUID=sdUUID).getPools()) > 0:
+                dom = SDF.produce(sdUUID=sdUUID)
+                dom.invalidateMetadata()
+                if len(dom.getPools()) > 0:
                     raise se.CannotFormatAttachedStorageDomain(sdUUID)
 
             except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError, se.MiscFileReadException,
