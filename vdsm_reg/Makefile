@@ -22,12 +22,11 @@ install: fixpaths
 	
 	cp -p vdsm-reg $(PREFIX)$(ETC)/init.d
 	cp -p {logger.conf,vdsm-reg.conf} $(PREFIX)$(CONFDIR)
-	cp -p define.py config.py config-rhev-manager save-config deployUtil.py createDaemon.py $(PREFIX)$(VDSMREGDIR)
+	cp -p define.py config.py save-config deployUtil.py createDaemon.py $(PREFIX)$(VDSMREGDIR)
 	cp -p vdsm-reg-setup.py $(PREFIX)$(VDSMREGDIR)/vdsm-reg-setup
 	cp -p vdsm-gen-cert.py $(PREFIX)$(VDSMREGDIR)/vdsm-gen-cert
 	cp -p vdsm-complete.py $(PREFIX)$(VDSMREGDIR)/vdsm-complete
 	cp -p vdsm-upgrade.py $(PREFIX)$(VDSMREGDIR)/vdsm-upgrade
-	ln -s $(VDSMREGDIR)/config-rhev-manager $(PREFIX)$(ETC)/ovirt-config-setup.d/"40_Configure the host for RHEV"
 	cp -p vdsm-config $(PREFIX)$(ETC)/ovirt-config-boot.d
 	cp -p vdsm-reg-logrotate.conf $(PREFIX)$(ETC)/logrotate.d/vdsm-reg
 	cp -p vdsm-reg-logrotate $(PREFIX)$(ETC)/cron.hourly
