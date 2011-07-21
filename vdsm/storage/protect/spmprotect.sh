@@ -126,7 +126,7 @@ function renew() {
 function check_renew() {
     local latest list
     local res=1
-    if ! list=`ls "$RENEWDIR" | sort -n` ; then
+    if ! list=`ls "$RENEWDIR" 2>/dev/null | sort -n` ; then
         return "$res"
     fi
     if latest=`echo $list | awk '{ print $NF }'` ; then
