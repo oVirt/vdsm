@@ -182,24 +182,20 @@ def validatePermissions(targetPath):
     if st.st_uid != uid or st.st_gid != gid:
         raise se.StorageServerAccessPermissionError(targetPath)
 
-def pathExists(filename, writeable=False):
+def pathExists(filename, writable=False):
     # This function is workarround for a NFS issue where
     # sometimes os.exists/os.access fails due to NFS stale handle.
-    # In such cases we should try again and stat the file
+    try:
+        os.stat(filename)
+    except OSError:
+        return False
+
     check = os.R_OK
-    if writeable:
+
+    if writable:
         check |= os.W_OK
 
-    if os.access(filename, check):
-        return True
-
-    try:
-        s = os.stat(filename)
-        if check & s[0] == check:
-            return True
-    except OSError:
-        pass
-    return False
+    return os.access(filename, check)
 
 def cleanupfiles(filelist):
     """
