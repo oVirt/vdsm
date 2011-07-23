@@ -1401,6 +1401,7 @@ class HSM:
         info["fwrev"] = "0000"
         info["devtype"] = devtype
         info["capacity"] = str(pv.size)
+        info["devcapacity"] = str(pv.dev_size)
         info["vgUUID"] = str(pv.vg_uuid)
         info["pvUUID"] = str(pv.uuid)
         info["GUID"] = str(pv.guid)
