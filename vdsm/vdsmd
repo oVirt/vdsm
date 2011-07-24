@@ -30,8 +30,8 @@ RESPAWNPIDFILE=@P_VDSM_RUN@/respawn.pid
 CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
-NEEDED_SERVICES="iscsid multipathd libvirtd"
-CONFLICTING_SERVICES="libvirt-guests"
+NEEDED_SERVICES="iscsid multipathd"
+CONFLICTING_SERVICES="libvirt-guests libvirtd"
 # TODO: Remove cpu cgroup disabling when BZ#623712 is resolved (kernel on
 # massively multicore platforms failing to scale with cgroups turned on)
 CONFLICTING_SERVICES="cgconfig $CONFLICTING_SERVICES"
@@ -328,7 +328,7 @@ virt_use_nfs=1
 _EOF
     /usr/sbin/setsebool virt_use_nfs on
 
-    service libvirtd condrestart
+    /sbin/initctl restart libvirtd 2>/dev/null || :
 }
 
 RETVAL=0
@@ -347,9 +347,36 @@ reconfigure() {
     configure_libvirt $args
 }
 
+start_libvirtd() {
+    local packaged installed target
+    local startout
+
+    packaged=`/bin/rpm -ql libvirt | /bin/grep libvirtd.upstart | \
+                 /usr/bin/tail -1`
+    target=/etc/init/libvirtd.conf
+    installed=`/bin/readlink -f "$target"`
+
+    if [[ "$packaged" != "$installed" ]];
+    then
+        /bin/ln -sf "$packaged" "$target" || return 1
+        /sbin/initctl reload-configuration
+    fi
+
+    startout=`/sbin/initctl start libvirtd 2>&1`
+    if [[ "$?" -eq 0 || "$startout" =~ .*already\ running.* ]];
+    then
+        return 0
+    else
+        echo "$startout" >&2
+        return 1
+    fi
+}
+
 start() {
     local ret_val
     python @P_VDSM@/hooks.pyc before_vdsm_start
+
+    shutdown_conflicting_srv
 
     reconfigure noforce
     ret_val=$?
@@ -359,7 +386,7 @@ start() {
         return $ret_val
     fi
 
-    start_needed_srv
+    start_needed_srv && start_libvirtd
     ret_val=$?
     if [ $ret_val -ne 0 ]
     then
@@ -367,7 +394,6 @@ start() {
        return $ret_val
     fi
 
-    shutdown_conflicting_srv
     @P_VDSM@/vdsm-restore-net-config
     load_needed_modules
     mk_data_center

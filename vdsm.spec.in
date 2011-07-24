@@ -180,6 +180,15 @@ _EOF
         if selinuxenabled; then
             setsebool virt_use_nfs off
         fi
+
+
+        if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
+            /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
+            rm -f /etc/init/libvirtd.conf
+
+            /sbin/chkconfig libvirtd on
+            /sbin/service libvirtd start >/dev/null
+        fi
 fi
 
 %postun
