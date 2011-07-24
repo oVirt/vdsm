@@ -208,7 +208,7 @@ except config.ConfigParser.Error:
 def buildFilter(autodevList):
     devList = USER_DEV_LIST + autodevList
     devList.sort()
-    filt = '|'.join([dev.strip() for dev in devList if dev.strip()])
+    filt = '|'.join(dev.strip() for dev in devList if dev.strip())
     if len(filt) > 0:
         filt = '"a%' + filt + '%", '
     filt = 'filter = [ ' + filt + '"r%.*%" ]'
