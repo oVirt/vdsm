@@ -242,16 +242,16 @@ def updateLvmConf():
 
 
 
-def setupLVM():
-    updateFilter()
-    try:
-        lvmenvfname = os.path.join(VAR_RUN_VDSM, "lvm.env")
-        lvmenv = file(lvmenvfname, "w")
+def _setupLVMEnv():
+    lvmenvfname = os.path.join(VAR_RUN_VDSM, "lvm.env")
+    with file(lvmenvfname, "w") as lvmenv:
         lvmenv.write("export LVM_SYSTEM_DIR=%s\n" % VDSM_LVM_SYSTEM_DIR)
-        lvmenv.close()
-    except IOError, e:
-        log.warning("Cannot create %s file %s", lvmenvfname, str(e))
 
+def _setupLVM():
+    try:
+        _setupLVMEnv()
+    except IOError, e:
+        log.warning("Cannot create env file %s", e)
 
 #
 # Make sure that "args" is suitable for consumption in interfaces
@@ -344,7 +344,6 @@ class LVMCache(object):
         return newcmd
 
     def __init__(self):
-        setupLVM()
         self._oplock = misc.OperationMutex()
         self._stalepv = True
         self._stalevg = True
