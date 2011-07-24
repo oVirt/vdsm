@@ -367,8 +367,20 @@ class LVMCache(object):
         self._bootstrap()
 
     def cmd(self, cmd):
-        cmd = self._addExtraCfg(cmd)
-        return misc.execCmd(cmd)
+        finalCmd = self._addExtraCfg(cmd)
+        rc, out, err = misc.execCmd(finalCmd)
+        if rc != 0:
+            #Filter might be stale
+            self.invalidateFilter()
+            newCmd = self._addExtraCfg(cmd)
+            # Before blindly trying again make sure
+            # that the commands are not identical, because
+            # the devlist is sorted there is no fear
+            # of two identical filters looking differently
+            if newCmd != finalCmd:
+                return misc.execCmd(newCmd)
+
+        return rc, out, err
 
 
     def __str__(self):
