@@ -233,9 +233,10 @@ def updateLvmConf():
     try:
         if not os.path.isdir(VDSM_LVM_SYSTEM_DIR):
             os.mkdir(VDSM_LVM_SYSTEM_DIR)
-        lvmconf = file(VDSM_LVM_CONF, "w")
-        lvmconf.write(EXTRA_LVMCONF)
-        lvmconf.close()
+
+        with open(VDSM_LVM_CONF, "w") as lvmconf:
+            lvmconf.write(VDSM_LVM_CONF)
+
     except IOError, e:
         # We are not interested in exceptions here, note it and
         log.warning("Cannot create %s file %s", VDSM_LVM_CONF, str(e))
