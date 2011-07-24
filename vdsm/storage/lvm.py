@@ -20,6 +20,8 @@ import grp
 import logging
 from collections import namedtuple
 import pprint as pp
+import threading
+from itertools import chain
 
 import constants
 import misc
@@ -193,9 +195,6 @@ backup {
 }
 """
 
-_conf = LVMCONF_TEMPLATE % 'filter = [ "r|.*|" ]'
-EXTRA_LVMCONF = _conf.replace("\n", " ")
-
 VAR_RUN_VDSM = constants.P_VDSM_RUN
 VDSM_LVM_SYSTEM_DIR = os.path.join(VAR_RUN_VDSM, "lvm")
 VDSM_LVM_CONF = os.path.join(VDSM_LVM_SYSTEM_DIR, "lvm.conf")
@@ -205,30 +204,22 @@ try:
 except config.ConfigParser.Error:
     USER_DEV_LIST = []
 
-def buildFilter(autodevList):
-    devList = USER_DEV_LIST + autodevList
+def _buildFilter(devList):
+    devList = list(devList)
     devList.sort()
     filt = '|'.join(dev.strip() for dev in devList if dev.strip())
     if len(filt) > 0:
         filt = '"a%' + filt + '%", '
+
     filt = 'filter = [ ' + filt + '"r%.*%" ]'
     return filt
 
+def _buildConfig(devList):
+    flt = _buildFilter(chain(devList, USER_DEV_LIST))
+    conf = LVMCONF_TEMPLATE % flt
+    return conf.replace("\n", " ")
 
-def updateFilter():
-    global EXTRA_LVMCONF
-
-    #TODO: use itertools
-    mpdevs = [os.path.join(PV_PREFIX, i) for i in multipath.getMPDevNamesIter()]
-
-    conf = LVMCONF_TEMPLATE % buildFilter(mpdevs)
-    EXTRA_LVMCONF = conf.replace("\n", " ")
-
-
-def updateLvmConf():
-    updateFilter()
-    _lvminfo.flush()
-
+def _updateLvmConf(conf):
     # Make a convenience copy for the debugging purposes
     try:
         if not os.path.isdir(VDSM_LVM_SYSTEM_DIR):
@@ -327,24 +318,45 @@ class LVMCache(object):
     """
     Keep all the LVM information.
     """
-    @classmethod
-    def _addExtraCfg(cls, cmd, devList=None):
+
+    def _getCachedExtraCfg(self):
+        if not self._filterStale:
+            return self._extraCfg
+
+        with self._filterLock:
+            if not self._filterStale:
+                return self._extraCfg
+
+            self._extraCfg = _buildConfig(multipath.getMPDevNamesIter())
+            self._filterStale = False
+
+            return self._extraCfg
+
+
+    def _addExtraCfg(self, cmd, devList=None):
         newcmd = [constants.EXT_LVM, cmd[0]]
         if devList is not None:
             devList = list(set(devList))
             devList.sort()
-            conf = LVMCONF_TEMPLATE % buildFilter(devList)
-            conf = conf.replace("\n", " ")
-            newcmd += ["--config", conf]
+            conf = _buildConfig(devList)
         else:
-            newcmd += ["--config", EXTRA_LVMCONF]
+            conf = self._getCachedExtraCfg()
+
+        newcmd += ["--config", conf]
 
         if len(cmd) > 1:
             newcmd += cmd[1:]
 
         return newcmd
 
+    def invalidateFilter(self):
+        self._filterStale = True
+
     def __init__(self):
+        self._filterStale = True
+        self._extraCfg = None
+        _setupLVM()
+        self._filterLock = threading.Lock()
         self._oplock = misc.OperationMutex()
         self._stalepv = True
         self._stalevg = True
@@ -648,6 +660,9 @@ class LVMCache(object):
 
 
 _lvminfo = LVMCache()
+
+def invalidateFilter():
+    _lvminfo.invalidateFilter()
 
 def _vgmknodes(vg):
     cmd = ["vgmknodes", vg]
