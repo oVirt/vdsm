@@ -322,7 +322,7 @@ def makeLV(*args):
     return LV(*args)
 
 
-class LVMInfo(object):
+class LVMCache(object):
     """
     Keep all the LVM information.
     """
@@ -647,7 +647,7 @@ class LVMInfo(object):
         return lvs.values()
 
 
-_lvminfo = LVMInfo()
+_lvminfo = LVMCache()
 
 def _vgmknodes(vg):
     cmd = ["vgmknodes", vg]
