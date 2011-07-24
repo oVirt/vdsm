@@ -200,13 +200,13 @@ VAR_RUN_VDSM = constants.P_VDSM_RUN
 VDSM_LVM_SYSTEM_DIR = os.path.join(VAR_RUN_VDSM, "lvm")
 VDSM_LVM_CONF = os.path.join(VDSM_LVM_SYSTEM_DIR, "lvm.conf")
 
+try:
+    USER_DEV_LIST = config.config.get("irs", "lvm_dev_whitelist").split(",")
+except config.ConfigParser.Error:
+    USER_DEV_LIST = []
 
 def buildFilter(autodevList):
-    try:
-        userDevList = config.config.get("irs", "lvm_dev_whitelist").split(",")
-    except config.ConfigParser.Error:
-        userDevList = []
-    devList = userDevList + autodevList
+    devList = USER_DEV_LIST + autodevList
     devList.sort()
     filt = '|'.join([dev.strip() for dev in devList if dev.strip()])
     if len(filt) > 0:
