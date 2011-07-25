@@ -234,7 +234,8 @@ SD_MD_FIELDS = {
 class ProcessPoolDict(dict):
     def __init__(self):
         dict.__init__(self)
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
+        self._pool = None
 
     def __getitem__(self, key):
         try:
@@ -245,9 +246,19 @@ class ProcessPoolDict(dict):
                     self[key] = self._createProcessPool(key)
                 return dict.__getitem__(self, key)
 
+    def init(self):
+        with self._lock:
+            if self._pool is None:
+                self._pool = ProcessPool(oop.MAX_HELPERS, oop.GRACE_PERIOD, oop.DEFAULT_TIMEOUT)
+
     def _createProcessPool(self, key):
-        _domainPool = ProcessPool(oop.MAX_HELPERS, oop.GRACE_PERIOD, oop.DEFAULT_TIMEOUT)
-        return oop.OopWrapper(_domainPool)
+        # I initialize the pool dict on first call
+        # because it's created on import and generating
+        # hundreds of subprocess on import is not recommended
+        if self._pool is None:
+            self.init()
+
+        return oop.OopWrapper(oop.ProcessPoolLimiter(self._pool, oop.HELPERS_PER_DOMAIN))
 
 # Dictionary for process pools per sdUUID
 processPoolDict = ProcessPoolDict()

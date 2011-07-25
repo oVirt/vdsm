@@ -43,7 +43,14 @@ class ProcessPool(object):
         self._maxSubProcess = maxSubProcess
         self._gracePeriod = gracePeriod
         self.timeout = timeout
-        self._helperPool = [None] * self._maxSubProcess
+        # We start all the helpers at once because of fork() semantics.
+        # Every time you fork() the memory of the application is shared
+        # with the child process until one of the processes writes to it.
+        # In our case VDSM will probably rewrite the mem pretty quickly
+        # and all the mem will just get wasted untouched on the child's side.
+        # What we count on is having all the child processes share the mem.
+        # This is best utilized by starting all child processes at once.
+        self._helperPool = [Helper() for i in range(self._maxSubProcess)]
         self._lockPool = [Lock() for i in range(self._maxSubProcess)]
         self._closed = False
 

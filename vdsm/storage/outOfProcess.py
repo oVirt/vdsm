@@ -22,15 +22,18 @@ import os as mod_os
 import glob as mod_glob
 import types
 from config import config
+import threading
+from functools import wraps
 
 from fileUtils import open_ex
 import fileUtils as mod_fileUtils
 
-from processPool import ProcessPool
+from processPool import ProcessPool, NoFreeHelpersError
 
 MAX_HELPERS = config.getint("irs", "process_pool_size")
 GRACE_PERIOD = config.getint("irs", "process_pool_grace_period")
 DEFAULT_TIMEOUT = config.getint("irs", "process_pool_timeout")
+HELPERS_PER_DOMAIN = config.getint("irs", "process_pool_max_slots_per_domain")
 
 _globalPool = ProcessPool(MAX_HELPERS, GRACE_PERIOD, DEFAULT_TIMEOUT)
 
@@ -86,6 +89,33 @@ os = _ModuleWrapper(mod_os)
 setattr(os, 'path', _ModuleWrapper(mod_os.path))
 
 fileUtils = _ModuleWrapper(mod_fileUtils)
+
+class ProcessPoolLimiter(object):
+    def __init__(self, procPool, limit):
+        self._procPool = procPool
+        self._limit = limit
+        self._lock = threading.Lock()
+        self._counter = 0
+
+    def wrapFunction(self, func):
+        @wraps(func)
+        def wrapper(*args, **kwds):
+            return self.runExternally(func, *args, **kwds)
+        return wrapper
+
+    def runExternally(self, *args, **kwargs):
+        with self._lock:
+            if self._counter >= self._limit:
+                raise NoFreeHelpersError("You reached the process limit")
+
+            self._counter += 1
+
+        try:
+            return self._procPool.runExternally(*args, **kwargs)
+        finally:
+            with self._lock:
+                self._counter -= 1
+
 
 class OopWrapper(object):
     def __init__(self, procPool):
