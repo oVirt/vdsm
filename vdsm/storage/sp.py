@@ -1188,14 +1188,9 @@ class StoragePool:
                     self.log.error("Unexpected error while trying to monitor domain `%s`", sdUUID, exc_info=True)
 
     def getDomains(self, activeOnly=False):
-        doms = self.getMetaParam(PMDK_DOMAINS)
-        if activeOnly:
-            for sdUUID in doms.keys():
-                status = doms[sdUUID]
-                if status != sd.DOM_ACTIVE_STATUS:
-                    del doms[sdUUID]
-
-        return doms
+        return dict((sdUUID, status) \
+               for sdUUID, status in self.getMetaParam(PMDK_DOMAINS).iteritems() \
+               if not activeOnly or status == sd.DOM_ACTIVE_STATUS)
 
     def checkBackupDomain(self):
         domDict = self.getDomains(activeOnly=True)
