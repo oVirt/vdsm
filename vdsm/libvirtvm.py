@@ -890,6 +890,9 @@ class LibvirtVm(vm.Vm):
         self._vmStats.start()
         self._guestEventTime = self._startTime
 
+    def updateGuestCpuRunning(self):
+        self._guestCpuRunning = self._dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
+
     def _domDependentInit(self):
         if self.destroyed:
             # reaching here means that Vm.destroy() was called before we could

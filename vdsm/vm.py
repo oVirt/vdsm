@@ -634,7 +634,8 @@ class Vm(object):
                  self.log.error('cannot cont while %s', self.lastStatus)
                  return errCode['unexpected']
             self._underlyingCont()
-            self._guestCpuRunning = True
+            if hasattr(self, 'updateGuestCpuRunning'):
+                self.updateGuestCpuRunning()
             self._lastStatus = afterState
             try:
                 del self.conf['pauseCode']
@@ -651,7 +652,8 @@ class Vm(object):
         try:
             self.conf['pauseCode'] = 'NOERR'
             self._underlyingPause()
-            self._guestCpuRunning = False
+            if hasattr(self, 'updateGuestCpuRunning'):
+                self.updateGuestCpuRunning()
             self._lastStatus = afterState
             return {'status': doneCode, 'output': ['']}
         finally:
