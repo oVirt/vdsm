@@ -14,6 +14,7 @@ import time
 import threading
 import errno
 import uuid
+import codecs
 
 import constants
 import storage_mailbox
@@ -935,7 +936,8 @@ class StoragePool:
 
             try:
                 os.mkdir(vmPath)
-                open(os.path.join(vmPath, vmUUID + '.ovf'), 'w').write(ovf)
+                codecs.open(os.path.join(vmPath, vmUUID + '.ovf'), 'w',
+                            encoding='utf8').write(ovf)
             except OSError, ex:
                 if ex.errno == errno.ENOSPC:
                     raise se.NoSpaceLeftOnDomain(sdUUID)

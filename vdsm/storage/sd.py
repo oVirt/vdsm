@@ -13,6 +13,7 @@ import logging
 import types
 import threading
 from glob import glob
+import codecs
 
 import storage_exception as se
 import misc
@@ -522,7 +523,7 @@ class StorageDomain:
             if not os.path.lexists(ovfPath):
                 raise se.MissingOvfFileFromVM(vm)
 
-            ovf = open(ovfPath).read()
+            ovf = codecs.open(ovfPath, encoding='utf8').read()
             vmsInfo[vm] = ovf
 
         return vmsInfo
