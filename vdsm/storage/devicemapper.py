@@ -21,7 +21,7 @@ def getDmId(deviceMultipathName):
     for nameFile in glob("/sys/block/dm-*/dm/name"):
         try:
             with open(nameFile, "r") as f:
-                if f.read() == deviceMultipathName:
+                if f.read().rstrip("\n") == deviceMultipathName:
                     return nameFile.split("/")[3]
         except (IOError, OSError):
             pass
@@ -58,7 +58,7 @@ def getSlaves(deviceName):
 def getDevName(dmId):
     nameFilePath = os.path.join(getSysfsPath(dmId), "dm", "name")
     with open(nameFilePath, "r") as f:
-        return f.readline().strip()
+        return f.readline().rstrip("\n")
 
 def resolveDevName(devName):
     try:

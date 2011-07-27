@@ -310,7 +310,7 @@ def getMPDevsIter():
         nameFile = os.path.join(dmInfoDir, "name")
         try:
             with open(nameFile, "r") as nf:
-                guid = nf.read().strip()
+                guid = nf.read().rstrip("\n")
         except (OSError, IOError):
             continue
 
