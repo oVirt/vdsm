@@ -63,7 +63,7 @@ if rhel6based:
     VDSM_NAME = "vdsm"
     VDSM_MIN_VER = VDSM_NAME + "-4.9"
     KERNEL_VER = "2.6.32-.*.el6"
-    KERNEL_MIN_VER = 150
+    KERNEL_MIN_VER = 115
     MINIMAL_SUPPORTED_PLATFORM = "6.0"
 else:
     VDSM_NAME = "vdsm22"
@@ -110,6 +110,8 @@ CONFLICT_SERVICES = ['cpuspeed']
 if rhel6based:
     NEEDED_SERVICES.append('libvirtd')
     CONFLICT_SERVICES.append('libvirt-guests')
+    # Until BZ#623712 is solved - no cgroup for you !
+    CONFLICT_SERVICES.append('cgconfig')
 else:
     CONFLICT_SERVICES.append('libvirtd')
 

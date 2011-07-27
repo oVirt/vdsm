@@ -32,6 +32,9 @@ DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
 NEEDED_SERVICES="iscsid multipathd"
 CONFLICTING_SERVICES="libvirt-guests libvirtd"
+# TODO: Remove cpu cgroup disabling when BZ#623712 is resolved (kernel on
+# massively multicore platforms failing to scale with cgroups turned on)
+CONFLICTING_SERVICES="cgconfig $CONFLICTING_SERVICES"
 
 LCONF=/etc/libvirt/libvirtd.conf
 QCONF=/etc/libvirt/qemu.conf
