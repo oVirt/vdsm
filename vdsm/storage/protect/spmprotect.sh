@@ -9,8 +9,6 @@ LEASE_UTIL="./safelease"
 KILL="/bin/kill"
 PKILL="/usr/bin/pkill"
 spUUID=$2
-RESTARTVDSCMD=${RESTARTVDSCMD:-"sudo /sbin/service vdsmd restart"}
-STARTVDSCMD=${STARTVDSCMD:-"sudo /sbin/service vdsmd start"}
 CHECKVDSM=${CHECKVDSM:-"/usr/bin/pgrep vdsm"}
 REBOOTCMD=${REBOOTCMD:-"sudo /sbin/reboot -f"}
 RENEWDIR="/var/run/vdsm/spmprotect/$$"
@@ -58,7 +56,9 @@ function fence() {
     disown
     (sleep 7
         log "Trying to stop vdsm for spUUID=$spUUID id=$ID lease_path=$LEASE_FILE"
-        echodo $RESTARTVDSCMD
+        echodo $KILL "$VDSM_PID"
+        sleep 2
+        echodo $KILL -9 "$VDSM_PID"
     )&
     disown
 
