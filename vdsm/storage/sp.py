@@ -92,16 +92,23 @@ class StatsThread(threading.Thread):
     def run(self):
         while self._statsletrun:
             try:
-                delay = 0
                 if self._domain is None:
                     self._domain = SDF.produce(self._sdUUID)
                 stats, code = self._statsfunc(self._domain)
-                delay = self._domain.getReadDelay()
             except se.StorageException, e:
                 self.log.error("Unexpected error", exc_info=True)
                 code = e.code
             except Exception, e:
                 self.log.error("Unexpected error", exc_info=True)
+                code = 200
+
+            delay = 0
+            try:
+                # This is handled seperatly because in case of this kind
+                # of failure we don't want to print stack trace
+                delay = self._domain.getReadDelay()
+            except Exception, e:
+                self.log.error("Could not figure out delay for domain `%s` (%s)", self._sdUUID, e)
                 code = 200
 
             if code != 0:
