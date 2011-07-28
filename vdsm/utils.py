@@ -120,13 +120,11 @@ class InterfaceSample:
 
         :returns: ``'up'`` if interface is up. ``'down'`` or ``0`` id it's down.
         """
-        f = '/sys/class/net/%s/operstate' % (ifid,)
         try:
-            s = file(f).readline().strip()
-        except:
-            logging.debug(traceback.format_exc())
+            flags = ethtool.get_flags(ifid)
+        except IOError:
             return '0'
-        return s
+        return 'up' if flags & ethtool.IFF_UP else 'down'
 
     def __init__(self, ifid):
         self.rx = self.readIfaceStat(ifid, 'rx_bytes')
