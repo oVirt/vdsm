@@ -70,7 +70,7 @@ def resolveDevName(devName):
     try:
         return getDmId(devName)
     except Exception:
-        raise OSError(errno.ENOENT, "No such block device `%s`" % devName)
+        raise OSError(errno.ENODEV, "No such block device `%s`" % devName)
 
 def isVirtualDevice(devName):
     devName = resolveDevName(devName)

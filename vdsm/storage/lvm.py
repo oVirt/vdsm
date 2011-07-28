@@ -13,6 +13,7 @@ Generic LVM interface wrapper
 
 Incapsulates the actual LVM mechanics.
 """
+import errno
 
 import os
 import pwd
@@ -705,7 +706,13 @@ def _initpv(device, withmetadata=False):
         if isPvPartOfVg(device):
             raise se.PhysDevInitializationError(device)
 
-        devicemapper.removeMappingsHoldingDevice(os.path.basename(device))
+        try:
+            devicemapper.removeMappingsHoldingDevice(os.path.basename(device))
+        except OSError, e:
+            if e.errno == errno.ENODEV:
+                raise se.PhysDevInitializationError("%s: %s" % (device, str(e)))
+            else:
+                raise
         rc, out, err = _lvminfo.cmd(cmd)
         if rc != 0:
             raise se.PhysDevInitializationError(device)
