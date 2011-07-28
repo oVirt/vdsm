@@ -1166,8 +1166,8 @@ def setrwLV(vg, lv, rw=True):
         raise se.CannotSetRWLogicalVolume(vg, lv, permission)
 
 
-def lvsByTag(vg, tag):
-    return [lv.name for lv in getLV(vg) if tag in lv.tags]
+def lvsByTag(vgName, tag):
+    return [lv for lv in getLV(vgName) if tag in lv.tags]
 
 
 #Fix me: unify with addTag

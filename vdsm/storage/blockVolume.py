@@ -427,23 +427,23 @@ class BlockVolume(volume.Volume):
         Find the image(s) UUID by one of its volume UUID.
         Templated and shared disks volumes may result more then one image.
         """
-        vollist = lvm.lvsByTag(self.sdUUID, "%s%s" % (TAG_PREFIX_PARENT, self.volUUID))
-        vollist.append(self.volUUID)
-        imglist = []
-        for vol in vollist:
-            for tag in lvm.getLV(self.sdUUID, vol).tags:
+        volumes = lvm.lvsByTag(self.sdUUID, "%s%s" % (TAG_PREFIX_PARENT, self.volUUID))
+        volumes.append(lvm.getLV(self.volUUID))
+        images = []
+        for vol in volumes:
+            for tag in vol.tags:
                 if tag.startswith(TAG_PREFIX_IMAGE):
                     img = tag[3:]
                     if image.REMOVED_IMAGE_PREFIX not in img:
-                        imglist.append(img)
+                        images.append(img)
 
         # Check image legallity, if needed
         if legal:
-            for img in imglist[:]:
+            for img in images[:]:
                 if not image.Image(self.repoPath).isLegal(self.sdUUID, img):
-                    imglist.remove(img)
+                    images.remove(img)
 
-        return imglist
+        return images
 
     def getVolumeTag(self, tagPrefix):
         return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
@@ -499,7 +499,8 @@ class BlockVolume(volume.Volume):
         """
         Fetch the list of the Volumes UUIDs, not including the shared base (template)
         """
-        return lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_IMAGE, imgUUID))
+        lvs = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_IMAGE, imgUUID))
+        return [lv.name for lv in lvs]
 
     @classmethod
     def getAllChildrenList(cls, repoPath, sdUUID, imgUUID, pvolUUID):
@@ -508,11 +509,11 @@ class BlockVolume(volume.Volume):
         """
         chList = []
 
-        vollist = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_PARENT, pvolUUID))
-        for v in vollist:
-            for t in lvm.getLV(sdUUID, v).tags:
-                if t.startswith(TAG_PREFIX_IMAGE):
-                    chList.append({'imgUUID':t[3:], 'volUUID':v})
+        volumes = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_PARENT, pvolUUID))
+        for vol in volumes:
+            for tag in vol.tags:
+                if tag.startswith(TAG_PREFIX_IMAGE):
+                    chList.append({'imgUUID':tag[3:], 'volUUID':vol.name})
 
         return chList
 
