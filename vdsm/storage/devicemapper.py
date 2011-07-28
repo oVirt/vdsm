@@ -83,6 +83,9 @@ def isBlockDevice(devName):
     except OSError:
         return False
 
+def isPartitioned(devName):
+    devName = resolveDevName(devName)
+    return (len(getHolders(devName)) > 0)
 
 def getAllSlaves():
     deps = {}

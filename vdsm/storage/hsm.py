@@ -719,6 +719,15 @@ class HSM:
                 if not typeFilter(dev):
                     continue
 
+                partitioned = devicemapper.isPartitioned(dev['guid'])
+                # One day we'll stop hiding partitioned devices and let
+                # the gui grey them out so users would not just wonder
+                # where is the device. Until that glorious day leave this
+                # here.
+                if partitioned:
+                    self.log.warning("Ignoring partitioned device %s", dev)
+                    continue
+
                 pvuuid = ""
                 vguuid = ""
 
@@ -727,11 +736,16 @@ class HSM:
                     pvuuid = pv.uuid
                     vguuid = pv.vg_uuid
 
-                devInfo = {'GUID': dev.get("guid", ""), 'pvUUID': pvuuid, 'vgUUID': vguuid,
-                        'vendorID': dev.get("vendor", ""), 'productID': dev.get("product", ""),
-                        'fwrev': dev.get("fwrev", ""), "serial" : dev.get("serial", ""),
-                        'capacity': dev.get("capacity", "0"), 'devtype': dev.get("devtype", ""),
-                        'pathstatus': dev.get("paths", []), 'pathlist': dev.get("connections", [])}
+                devInfo = {'GUID': dev.get("guid", ""), 'pvUUID': pvuuid,
+                        'vgUUID': vguuid, 'vendorID': dev.get("vendor", ""),
+                        'productID': dev.get("product", ""),
+                        'fwrev': dev.get("fwrev", ""),
+                        "serial" : dev.get("serial", ""),
+                        'capacity': dev.get("capacity", "0"),
+                        'devtype': dev.get("devtype", ""),
+                        'pathstatus': dev.get("paths", []),
+                        'pathlist': dev.get("connections", []),
+                        'partitioned': partitioned}
                 for path in devInfo["pathstatus"]:
                     path["lun"] = path["hbtl"].lun
                     del path["hbtl"]
@@ -739,8 +753,6 @@ class HSM:
                 devices.append(devInfo)
             except se.InvalidPhysDev:
                 pass
-            except se.PartitionedPhysDev:
-                self.log.warning("Ignore partitioned device %s", dev)
 
 
         return devices
