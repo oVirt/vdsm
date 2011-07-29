@@ -120,6 +120,9 @@ VDSM_DIR = "/usr/share/vdsm/"
 
 DTV_REPO='/tmp/dtv.'+rnum+'.repo'
 
+# Adding VDSM_DIR to the current python path
+sys.path.append(VDSM_DIR)
+
 class Deploy:
     """
         This class holds the relevant functionality for vdsm deployment on RHEL.
@@ -537,7 +540,6 @@ gpgcheck=0
         self.status = 'OK'
 
         try:
-            sys.path.insert(0, VDSM_DIR)
             self._makeConfig()
             sys.path.remove(VDSM_DIR)
         except Exception, e:
@@ -591,17 +593,6 @@ gpgcheck=0
         self.status = "OK"
         self.rc = True
         self.message = "Created rhevm bridge."
-
-        #Trying to use vdsm module. Since it's a bit risky
-        #we use cation here:
-        try:
-            sys.path.append(VDSM_DIR)
-        except:
-            self.status = "FAIL"
-            self.message = "Faild to find netinfo!"
-            logging.error(self.message)
-            self._xmlOutput('SetNetworking', self.status, None, None, self.message)
-            return False
 
         if deployUtil.preventDuplicate():
             self.message = "Bridge rhevm already exists. Skipping bridge creation."
