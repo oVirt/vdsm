@@ -70,6 +70,11 @@ def getDevName(dmId):
     with open(nameFilePath, "r") as f:
         return f.readline().rstrip("\n")
 
+def getDevUuid(dmId):
+    nameFilePath = os.path.join(getSysfsPath(dmId), "dm", "uuid")
+    with open(nameFilePath, "r") as f:
+        return f.readline().rstrip("\n")
+
 def resolveDevName(devName):
     try:
         if os.path.exists(getSysfsPath(devName)):
