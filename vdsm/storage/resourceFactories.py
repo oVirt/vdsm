@@ -100,7 +100,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
 
     def __getResourceCandidatesList(self, resourceName, lockType):
         """
-        Return list of lock candidates (tempalte and volumes)
+        Return list of lock candidates (template and volumes)
         """
         volResourcesList = []
         template = None
@@ -125,6 +125,14 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
 
         volUUIDChain = [vol.volUUID for vol in chain]
         volUUIDChain.sort()
+
+        # Activate all volumes in chain at once.
+        # We will attempt to activate all volumes again down to the flow with
+        # no consequence, since they are already active.
+        # TODO Fix resource framework to hold images, instead of specific vols.
+        # This assumes that chains can not spread into more than one SD.
+        if dom.__class__.__name__ == "BlockStorageDomain":
+            lvm.activateLVs(self.sdUUID, volUUIDChain)
 
         e = None
         # Acquire template locks:
