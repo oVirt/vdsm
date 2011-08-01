@@ -244,6 +244,9 @@ discovery.sendtargets.iscsi.MaxRecvDataSegmentLength = 32768
 # a preference of disabling the checking.
 """
 
+# iscsiadm exit statuses
+ISCSI_ERR_SESS_EXISTS = 15
+
 log = logging.getLogger('Storage.iScsi')
 
 def isConfigured():
@@ -469,15 +472,11 @@ def addiSCSINode(ip, port, iqn, tpgt, initiator, username=None, password=None):
         # Finally instruct the iscsi initiator to login to the target
         cmd = cmdt + ["-l", "-p", portal]
         rc = misc.execCmd(cmd)[0]
-        if rc != 0:
+        if rc not in (0, ISCSI_ERR_SESS_EXISTS):
             raise se.iSCSILoginError(portal)
+
     except se.StorageException:
         exc_class, exc, tb = sys.exc_info()
-        try:
-            if checkSession(ip, port, iqn, tpgt, username, password):
-                return 0
-        except Exception:
-            log.error("Could not get iscsi session list", exc_info=True)
         # Do not try to disconnect - we may remove live node!
         try:
             remiSCSINode(ip, port, iqn, tpgt, username, password, logout=False)
@@ -527,95 +526,6 @@ def forceIScsiScan():
         except Exception:
             # Ignore exception, there is nothing intelligent we can do about it
             log.warning("Failed to rescan host %s", host, exc_info=True)
-
-@misc.samplingmethod
-def _getiSCSISessionList():
-    """
-    Collect the list of active iSCSI sessions
-    """
-    cmd = [constants.EXT_ISCSIADM, "-m", "session"]
-    (rc, out, err) = misc.execCmd(cmd)
-    if rc != 0:
-        raise se.GetiSCSISessionListError
-
-    # Parse the strings in form
-    # tcp: [23] [multipass]:3260,1 iqn.1986-03.com.sun:02:9c576850-ea49-ebdc-d0af-c4db33981227
-    # tcp: [24] 10.35.1.99:3260,1 iqn.2006-01.com.openfiler:clear
-    # tcp: [26] 10.35.1.99:3260,1 iqn.2006-01.com.openfiler:cheesy
-
-    sessions = []
-    keys = ['connection', 'port', 'iqn', 'portal', 'user', 'password']
-    user = password = ""
-    for i in out:
-        p, iqn = i.split()[2:]
-        host, p2 = p.split(":")
-        host = host.strip("[]")
-        port, tpgt = p2.split(",")
-        v = [host, port, iqn, tpgt, user, password]
-        sessions.append(dict(zip(keys, v)))
-    return sessions
-
-def _safeGethostbyname(host):
-    try:
-        return socket.gethostbyname(host)
-    except socket.gaierror:
-        return host
-
-def sameSession(enta, entb):
-    for k, va in enta.iteritems():
-        if k in ['portal', 'user', 'password']:
-            continue
-
-        if not va:
-            continue
-
-        try:
-            vb = entb[k]
-        except KeyError:
-            return False
-
-        # Portal is not used, user/password not relevant to existing session
-        if k == "connection":
-            va = _safeGethostbyname(va)
-            vb = _safeGethostbyname(vb)
-
-        elif k == 'port':
-            va = int(va)
-            vb = int(vb)
-
-        if va != vb:
-            log.debug("enta key %s v %s != entb v %s" % (k, va, vb))
-            return False
-    return True
-
-def checkSessionList(sessionList):
-    l = _getiSCSISessionList()
-    result = []
-    keys = ['connection', 'port', 'iqn', 'portal', 'user', 'password']
-    for sessionArgs in sessionList:
-        # this might contain the cid at the start. Handle bothe cases
-        try:
-            host, port, iqn, tpgt, user, password = sessionArgs[-6:]
-        except ValueError:
-            result.append(False)
-            continue
-        found = False
-        dest = dict(zip(keys, [host, port, iqn, tpgt, user, password]))
-        log.debug("checkSession: dest %s" % ([e + ": " + str(dest[e]) for e in dest if e != 'password']))
-        for ent in l:
-            if sameSession(ent, dest):
-                result.append(True)
-                found = True
-                break
-        if not found:
-            result.append(False)
-    return result
-
-def checkSession(host, port, iqn, tpgt, user=None, password=None):
-    """
-    Check if a session is active
-    """
-    return checkSessionList([[host, port, iqn, tpgt, user, password]])[0]
 
 def devIsiSCSI(dev):
     hostdir = os.path.realpath(os.path.join("/sys/block", dev, "device/../../.."))
