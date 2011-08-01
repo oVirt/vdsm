@@ -160,7 +160,7 @@ then
 
         tmp_sudoers=$(mktemp)
         cp -a /etc/sudoers $tmp_sudoers
-        /bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers
+        /bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers /etc/logrotate.d/libvirtd
         if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
             /bin/cp -a $tmp_sudoers /etc/sudoers
         else
@@ -172,6 +172,7 @@ then
         lconf=/etc/libvirt/libvirtd.conf
         qconf=/etc/libvirt/qemu.conf
         ldconf=/etc/sysconfig/libvirtd
+
         sed -i '/# by vdsm$/d' $lconf $qconf $ldconf
 
         /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
@@ -288,6 +289,7 @@ machines without running real guests.
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
 %attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
+%{_sysconfdir}/cron.d/vdsm-libvirt-logrotate
 %{_datadir}/%{vdsm_name}/guestIF.py*
 %{_datadir}/%{vdsm_name}/logUtils.py*
 %{_datadir}/%{vdsm_name}/dsaversion.py*

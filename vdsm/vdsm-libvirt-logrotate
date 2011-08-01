@@ -1,0 +1,2 @@
+10,25,40,55 * * * * root /usr/sbin/logrotate /etc/logrotate.d/libvirtd
+

@@ -320,7 +320,28 @@ configure_libvirt()
     local lnetwork=/etc/libvirt/qemu/networks/autostart/default.xml
     rm -f $lnetwork
 
-    ovirt_store_config $lconf $qconf $ldconf
+    local llogr=/etc/logrotate.d/libvirtd
+    local stanza=`mktemp`
+    /bin/cat > "$stanza" <<EOF
+# vdsm
+/var/log/libvirtd.log {
+    rotate 100
+    missingok
+    copytruncate
+    size 15M
+    compress
+    compresscmd /usr/bin/xz
+    uncompresscmd /usr/bin/unxz
+    compressext .xz
+}
+# end vdsm
+EOF
+    /bin/cat "$llogr" >> "$stanza"
+    local oldmod=`/usr/bin/stat --format=%a "$llogr"`
+    /bin/mv "$stanza" "$llogr"
+    /bin/chmod "$oldmod" "$llogr"
+
+    ovirt_store_config "$lconf" "$qconf" "$ldconf" "$llogr"
 
     # vdsm makes extensive use of nfs-exported images
     /usr/sbin/semanage  boolean -m -S targeted -F /dev/stdin  << _EOF

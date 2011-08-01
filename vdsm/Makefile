@@ -112,9 +112,11 @@ install: all sudoers.vdsm vdsm.conf.sample
 	cp sudoers.vdsm $(PREFIX)/etc/sudoers.d/50_vdsm
 	mkdir -p $(PREFIX)/etc/logrotate.d
 	mkdir -p $(PREFIX)/etc/cron.hourly
+	mkdir -p $(PREFIX)/etc/cron.d
 	mkdir -p $(PREFIX)$(SOSPLUGINDIR)
 	cp -p vdsm-logrotate.conf $(PREFIX)/etc/logrotate.d/vdsm
 	cp -p vdsm-logrotate $(PREFIX)/etc/cron.hourly
+	cp -p vdsm-libvirt-logrotate $(PREFIX)/etc/cron.d
 	cp -p vdsm-sosplugin.py $(PREFIX)$(SOSPLUGINDIR)/vdsm.py
 	mkdir -p $(PREFIX)$(MANDIR)/man8
 	cp -p vdsmd.8 $(PREFIX)$(MANDIR)/man8/
