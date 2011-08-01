@@ -256,6 +256,7 @@ discovery.sendtargets.iscsi.MaxRecvDataSegmentLength = 32768
 
 # iscsiadm exit statuses
 ISCSI_ERR_SESS_EXISTS = 15
+ISCSI_ERR_LOGIN_AUTH_FAILED = 24
 
 log = logging.getLogger('Storage.iScsi')
 
@@ -482,7 +483,9 @@ def addiSCSINode(ip, port, iqn, tpgt, initiator, username=None, password=None):
         # Finally instruct the iscsi initiator to login to the target
         cmd = cmdt + ["-l", "-p", portal]
         rc = misc.execCmd(cmd)[0]
-        if rc not in (0, ISCSI_ERR_SESS_EXISTS):
+        if rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
+            raise se.iSCSILoginAuthError(portal)
+        elif rc not in (0, ISCSI_ERR_SESS_EXISTS):
             raise se.iSCSILoginError(portal)
 
     except se.StorageException:

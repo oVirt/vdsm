@@ -923,6 +923,9 @@ class iSCSIDiscoveryError(StorageServeriSCSIError):
     def __init__(self, portal, err):
         self.value = "portal=%s, err=%s" % (portal, err)
 
+class iSCSILoginAuthError(StorageServeriSCSIError):
+    code = 476
+    message = "Failed to login to iSCSI node due to authorization failure"
 #################################################
 #  LVM related Exceptions
 #################################################
