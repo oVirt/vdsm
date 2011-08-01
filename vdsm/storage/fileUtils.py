@@ -153,11 +153,11 @@ def transformPath(remotePath):
     """
     return remotePath.replace('_','__').replace('/','_')
 
-def validateAccess(targetPath):
+def validateAccess(targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
     """
     Validate the RWX access to a given path
     """
-    if not os.access(targetPath, os.R_OK | os.W_OK | os.X_OK):
+    if not os.access(targetPath, perms):
         raise se.StorageServerAccessPermissionError(targetPath)
 
 def validateQemuReadable(targetPath):
@@ -227,20 +227,27 @@ def createdir(dirPath, mode=None):
         else:
             os.makedirs(dirPath)
 
+def resolveUid(user):
+    if isinstance(user, types.StringTypes):
+        uid = pwd.getpwnam(user).pw_uid
+    else:
+        uid = int(user)
+    return uid
+
+def resolveGid(group):
+    if isinstance(group, types.StringTypes):
+        gid = grp.getgrnam(group).gr_gid
+    else:
+        gid = int(group)
+    return gid
+
 def chown(path, user=-1, group=-1):
     """
     Change the owner and\or group of a file.
     The user and group parameters can either be a name or an id.
     """
-    if isinstance(user, types.StringTypes):
-        uid = pwd.getpwnam(user).pw_uid
-    else:
-        uid = int(user)
-
-    if isinstance(group, types.StringTypes):
-        gid = grp.getgrnam(group).gr_gid
-    else:
-        gid = int(group)
+    uid = resolveUid(user)
+    gid = resolveGid(group)
 
     stat = os.stat(path)
     currentUid = stat.st_uid

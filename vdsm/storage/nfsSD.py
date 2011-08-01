@@ -16,6 +16,7 @@ from sd import processPoolDict
 import fileSD
 import fileUtils
 import storage_exception as se
+from storage_connection import validateDirAccess
 
 class NfsStorageDomain(fileSD.FileStorageDomain):
 
@@ -31,7 +32,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         if not fileUtils.isMounted(mountPoint=domPath, mountType=fileUtils.FSTYPE_NFS):
             raise se.StorageDomainFSNotMounted(typeSpecificArg)
 
-        processPoolDict[sdUUID].fileUtils.validateAccess(domPath)
+        validateDirAccess(domPath)
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)

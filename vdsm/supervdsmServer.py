@@ -7,15 +7,20 @@ import errno
 import threading
 from time import sleep
 import signal
+from multiprocessing import Pipe, Process
 
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
-from storage.fileUtils import chown, open_ex
+from storage.fileUtils import chown, open_ex, resolveGid, resolveUid
+from storage.fileUtils import validateAccess as _validateAccess
 from constants import METADATA_GROUP, METADATA_USER
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import configNetwork
+from config import config
 
+RUN_AS_TIMEOUT= config.getint("irs", "process_pool_timeout")
+class Timeout(RuntimeError): pass
 
 def logDecorator(func):
     callbackLogger = logging.getLogger("SuperVdsm.ServerCallback")
@@ -70,6 +75,51 @@ class _SuperVdsm(object):
     @logDecorator
     def setupNetworks(self, networks={}, bondings={}, options={}):
         return configNetwork.setupNetworks(networks, bondings, **options)
+
+    def _runAs(self, user, groups, func, args=(), kwargs={}):
+        def child(pipe):
+            res = ex = None
+            try:
+                uid = resolveUid(user)
+                if groups:
+                     gids = map(resolveGid, groups)
+
+                     os.setgid(gids[0])
+                     os.setgroups(gids)
+                os.setuid(uid)
+
+                res = func(*args, **kwargs)
+            except BaseException, e:
+                ex = e
+
+            pipe.send((res, ex))
+            pipe.recv()
+
+        pipe, hisPipe = Pipe()
+        proc = Process(target=child, args=(hisPipe,))
+        proc.start()
+
+        if not pipe.poll(RUN_AS_TIMEOUT):
+            try:
+                os.kill(proc.pid, errno.SIGKILL)
+            except OSError, e:
+                # If it didn't fail because process is already dead
+                if e.errno != errno.ESRCH:
+                    raise
+
+            raise Timeout()
+
+        res, err = pipe.recv()
+        pipe.send("Bye")
+        proc.terminate()
+        if err is not None:
+            raise err
+
+        return res
+
+    @logDecorator
+    def validateAccess(self, user, groups, *args, **kwargs):
+        return self._runAs(user, groups, _validateAccess, args=args, kwargs=kwargs)
 
     @logDecorator
     def setSafeNetworkConfig(self):

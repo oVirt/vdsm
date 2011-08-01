@@ -18,6 +18,16 @@ import sd
 import storage_exception as se
 import outOfProcess as oop
 from processPool import Timeout
+import supervdsm
+import constants
+
+def validateDirAccess(dirPath):
+    oop.fileUtils.validateAccess(dirPath)
+    supervdsm.getProxy().validateAccess(constants.QEMU_PROCESS_USER,
+            (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
+            (os.R_OK | os.X_OK))
+    oop.fileUtils.validatePermissions(dirPath)
+
 
 class StorageServerConnection:
     log = logging.getLogger('Storage.ServerConnection')
@@ -156,7 +166,7 @@ class StorageServerConnection:
                 rc = oop.fileUtils.mount(con['rp'], mntPath, fsType)
                 if rc == 0:
                     try:
-                        oop.fileUtils.validateAccess(mntPath)
+                        validateDirAccess(mntPath)
                     except se.StorageServerAccessPermissionError, ex:
                         self.log.debug("Unmounting file system %s "
                             "(not enough access permissions)" % con['rp'])
@@ -248,7 +258,7 @@ class StorageServerConnection:
                     rc = oop.fileUtils.mount(con['rp'], mountpoint, fsType)
                     if rc == 0:
                         try:
-                            oop.fileUtils.validateAccess(mountpoint)
+                            validateDirAccess(mountpoint)
                         except se.StorageServerAccessPermissionError, ex:
                             rc = ex.code
                     else:
@@ -280,8 +290,7 @@ class StorageServerConnection:
             rc = 0
             try:
                 if os.path.exists(con['rp']):
-                    fileUtils.validateAccess(con['rp'])
-                    fileUtils.validatePermissions(con['rp'])
+                    validateDirAccess(con['rp'])
                 else:
                     self.log.error("Path %s does not exists.", con['rp'])
                     rc = se.StorageServerValidationError.code

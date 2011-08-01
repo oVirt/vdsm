@@ -15,6 +15,7 @@ import sd
 import fileSD
 import fileUtils
 import storage_exception as se
+from storage_connection import validateDirAccess
 
 
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
@@ -25,7 +26,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         if os.path.abspath(typeSpecificArg) != typeSpecificArg:
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
 
-        fileUtils.validateAccess(domPath)
+        validateDirAccess(domPath)
 
         sd.validateDomainVersion(version)
 
