@@ -39,12 +39,12 @@ class StorageDomainCache:
 
     def invalidateStorage(self):
         self.storageStale = True
-        lvm.invalidateFilter()
+        lvm.invalidateCache()
 
     @misc.samplingmethod
     def refreshStorage(self):
         multipath.rescan()
-        lvm.getAllVGs()
+        lvm.invalidateCache()
         self.storageStale = False
 
     def _getDomainFromCache(self, sdUUID):

@@ -227,13 +227,11 @@ def _updateLvmConf(conf):
             os.mkdir(VDSM_LVM_SYSTEM_DIR)
 
         with open(VDSM_LVM_CONF, "w") as lvmconf:
-            lvmconf.write(VDSM_LVM_CONF)
+            lvmconf.write(conf)
 
     except IOError, e:
         # We are not interested in exceptions here, note it and
         log.warning("Cannot create %s file %s", VDSM_LVM_CONF, str(e))
-
-
 
 def _setupLVMEnv():
     lvmenvfname = os.path.join(VAR_RUN_VDSM, "lvm.env")
@@ -329,10 +327,10 @@ class LVMCache(object):
                 return self._extraCfg
 
             self._extraCfg = _buildConfig(multipath.getMPDevNamesIter())
+            _updateLvmConf(self._extraCfg)
             self._filterStale = False
 
             return self._extraCfg
-
 
     def _addExtraCfg(self, cmd, devList=None):
         newcmd = [constants.EXT_LVM, cmd[0]]
@@ -352,6 +350,10 @@ class LVMCache(object):
 
     def invalidateFilter(self):
         self._filterStale = True
+
+    def invalidateCache(self):
+        self.invalidateFilter()
+        self.flush()
 
     def __init__(self):
         self._filterStale = True
@@ -674,8 +676,8 @@ class LVMCache(object):
 
 _lvminfo = LVMCache()
 
-def invalidateFilter():
-    _lvminfo.invalidateFilter()
+def invalidateCache():
+    _lvminfo.invalidateCache()
 
 def _vgmknodes(vg):
     cmd = ["vgmknodes", vg]
