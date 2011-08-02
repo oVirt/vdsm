@@ -377,7 +377,7 @@ class Vm(object):
             if 'recover' in self.conf:
                 self.log.info("Skipping errors on recovery", exc_info=True)
             else:
-                self.log.info("The vm start process failed", exc_info=True)
+                self.log.error("The vm start process failed", exc_info=True)
                 self.setDownStatus(ERROR, str(e))
 
     def _incomingMigrationPending(self):
