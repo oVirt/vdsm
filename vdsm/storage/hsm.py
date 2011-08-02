@@ -149,6 +149,7 @@ class HSM:
             multipath.setupMultipath()
 
         self.__validateLvmLockingType()
+        lvm._lvminfo.bootstrap()
 
         def storageRefresh():
             SDF.refreshStorage()

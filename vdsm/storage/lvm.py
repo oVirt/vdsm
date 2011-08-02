@@ -367,7 +367,6 @@ class LVMCache(object):
         self._pvs = {}
         self._vgs = {}
         self._lvs = {}
-        self._bootstrap()
 
     def cmd(self, cmd):
         finalCmd = self._addExtraCfg(cmd)
@@ -393,7 +392,7 @@ class LVMCache(object):
             pp.pformat(self._lvs)))
 
 
-    def _bootstrap(self):
+    def bootstrap(self):
         self._reloadpvs()
         self._reloadvgs()
         self._reloadAllLvs()
