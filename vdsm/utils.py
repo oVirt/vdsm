@@ -269,7 +269,7 @@ class AdvancedStatsFunction(object):
 
         return bgn_sample, end_sample, (end_time - bgn_time)
 
-class AdvancedStatsThread(object):
+class AdvancedStatsThread(threading.Thread):
     """
     A thread that runs the registered AdvancedStatsFunction objects
     for statistic and monitoring purpose.
@@ -280,8 +280,8 @@ class AdvancedStatsThread(object):
         """
         Initialize an AdvancedStatsThread object
         """
-        self._thread = threading.Thread(target=self.run)
-        self._thread.daemon = daemon
+        threading.Thread.__init__(self)
+        self.daemon = daemon
 
         self._log = log
         self._stopEvent = threading.Event()
@@ -294,7 +294,7 @@ class AdvancedStatsThread(object):
         """
         Register the functions listed as arguments
         """
-        if self._thread.isAlive():
+        if self.isAlive():
             raise RuntimeError("AdvancedStatsThread is started")
 
         for statsFunction in args:
@@ -305,7 +305,7 @@ class AdvancedStatsThread(object):
         Start the execution of the thread and exit
         """
         self._log.debug("Start statistics collection")
-        self._thread.start()
+        threading.Thread.start(self)
 
     def stop(self):
         """
