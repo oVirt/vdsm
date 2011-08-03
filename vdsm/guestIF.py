@@ -254,47 +254,47 @@ class GuestAgent (threading.Thread):
             self.log.error(traceback.format_exc())
 
     READSIZE = 2**16
-    def _readMessage(self, accum=''):
-        done = False
-        msglen = -headerLengthBytes
-        while not done and not self._stopped:
-            while not self._stopped:
-                try:
-                    s = self._sock.recv(self.READSIZE)
+    def _readBuffer(self):
+        while not self._stopped:
+            try:
+                s = self._sock.recv(self.READSIZE)
+                if s:
+                    self._buffer += s
+                    self._agentTimestamp = time.time()
                     break
-                except socket.timeout:
-                    # TODO move these specific bits out of here
-                    self.guestInfo['memUsage'] = 0
-                    if self.guestStatus not in ("Powered down",
-                                                "RebootInProgress"):
-                        self.log.log(logging.TRACE, "Guest connection timed out")
-                        self.guestStatus = None
-            accum += s
-            if s == '':
-                done = True
-            if len(accum) >= headerLengthBytes:
-                msglen = self._parseHeader(accum[:headerLengthBytes])
-                if len(accum) >= msglen + headerLengthBytes:
-                    done = True
-        if len(accum) >= msglen + headerLengthBytes:
-            return accum[headerLengthBytes:headerLengthBytes + msglen], \
-                   accum[headerLengthBytes + msglen:]
-        return accum, ''
+                time.sleep(1)
+            except socket.timeout:
+                # TODO move these specific bits out of here
+                self.guestInfo['memUsage'] = 0
+                if self.guestStatus not in ("Powered down", "RebootInProgress"):
+                    self.log.log(logging.TRACE, "Guest connection timed out")
+                    self.guestStatus = None
 
-    def run (self):
+    def _readMessage(self):
+        msg = None
+        if len(self._buffer) >= headerLengthBytes:
+            msglen = self._parseHeader(self._buffer[:headerLengthBytes])
+            if len(self._buffer) >= headerLengthBytes + msglen:
+                msg = self._buffer[headerLengthBytes:headerLengthBytes + msglen]
+                self._buffer = self._buffer[headerLengthBytes + msglen:]
+        return msg
+
+    def _parseMessages(self):
+        s = self._readMessage()
+        while not self._stopped and s:
+            self._parseBody(s)
+            s = self._readMessage()
+
+    def run(self):
         self._stopped = False
         try:
             if not self._connect():
                 return
             self.sendHcCmdToDesktop('refresh')
-            leftover = ''
+            self._buffer = ''
             while not self._stopped:
-                s, leftover = self._readMessage(leftover)
-                if s:
-                    self._agentTimestamp = time.time()
-                    self._parseBody(s)
-                else:
-                    time.sleep(1)
+                self._readBuffer()
+                self._parseMessages()
         except:
             if not self._stopped:
                 self.log.error("Unexpected exception: " + traceback.format_exc())
