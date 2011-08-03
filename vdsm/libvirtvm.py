@@ -1279,10 +1279,6 @@ class LibvirtVm(vm.Vm):
                 if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN:
                     self.user_destroy = True
                 self._onQemuDeath()
-        elif event == libvirt.VIR_DOMAIN_EVENT_STARTED:
-            if detail == libvirt.VIR_DOMAIN_EVENT_STARTED_MIGRATED and\
-               self.lastStatus == 'Migration Destination':
-                self._incomingMigrationFinished.set()
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             self._guestCpuRunning = False
             if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED:
@@ -1291,6 +1287,9 @@ class LibvirtVm(vm.Vm):
             self._guestCpuRunning = True
             if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
                 hooks.after_vm_cont(self._dom.XMLDesc(0), self.conf)
+            elif detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED and\
+                self.lastStatus == 'Migration Destination':
+                self._incomingMigrationFinished.set()
 
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""
