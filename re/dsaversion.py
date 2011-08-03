@@ -17,7 +17,7 @@ version_info = {
     'version_name': version_name,
     'software_version': software_version,
     'software_revision': software_revision,
-    'supportedRHEVMs': ['2.3', '3.0'],
+    'supportedRHEVMs': ['3.0'],
     'supportedProtocols': ['2.2', '2.3'],
-    'clusterLevels': ['2.3', '3.0'],
+    'clusterLevels': ['3.0'],
 }
