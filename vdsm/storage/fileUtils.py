@@ -183,17 +183,16 @@ def validatePermissions(targetPath):
         raise se.StorageServerAccessPermissionError(targetPath)
 
 def pathExists(filename, writable=False):
-    # This function is workarround for a NFS issue where
-    # sometimes os.exists/os.access fails due to NFS stale handle.
-    try:
-        os.stat(filename)
-    except OSError:
-        return False
-
     check = os.R_OK
 
     if writable:
         check |= os.W_OK
+
+    # This function is workaround for a NFS issue where sometimes
+    # os.exists/os.access fails due to NFS stale handle, in such
+    # case we need to test os.access a second time.
+    if os.access(filename, check):
+        return True
 
     return os.access(filename, check)
 
