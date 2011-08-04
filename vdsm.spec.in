@@ -151,6 +151,16 @@ if [ "$1" -ge 1 ]; then
 fi
 exit 0
 
+%triggerun -- libvirt
+if [ "$2" -eq "0" ]; then
+    /sbin/initctl stop libvirtd > /dev/null 2>&1 || :
+fi
+
+%triggerpostun -- libvirt
+if [ "$2" -ge "1" ]; then
+    /sbin/initctl restart libvirtd > /dev/null 2>&1 || :
+fi
+
 %package hook-vhostmd
 Summary: VDSM hook set for interaction with vhostmd
 Group: Applications/System
