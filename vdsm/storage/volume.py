@@ -296,7 +296,8 @@ class Volume:
         try:
             if pvolUUID != BLANK_UUID and pimgUUID != BLANK_UUID:
                 pvol = SDF.produce(sdUUID).produceVolume(pimgUUID, pvolUUID)
-                pvol.recheckIfLeaf()
+                if not pvol.recheckIfLeaf():
+                    pvol.setLeaf()
                 pvol.teardown(sdUUID, pvolUUID)
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
