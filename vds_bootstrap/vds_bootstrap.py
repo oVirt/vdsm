@@ -541,7 +541,6 @@ gpgcheck=0
 
         try:
             self._makeConfig()
-            sys.path.remove(VDSM_DIR)
         except Exception, e:
             logging.error('', exc_info=True)
             self.message = 'Basic configuration failed'
