@@ -182,10 +182,9 @@ class HSM:
                 poolPath = os.path.join(self.storage_repository, spUUID)
                 try:
                     if os.path.exists(poolPath):
-                        with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
-                            self._restorePool(spUUID)
-                            #TODO Once we support simultaneous connection to multiple pools, remove following line (break)
-                            break
+                        self._connectStoragePool(spUUID, None, None, None, None)
+                        #TODO Once we support simultaneous connection to multiple pools, remove following line (break)
+                        break
                 except Exception:
                     self.log.error("Unexpected error", exc_info=True)
 
@@ -406,15 +405,6 @@ class HSM:
             pool.hsmMailer.flushMessages()
 
 
-    def _restorePool(self, spUUID):
-        self.log.info("RESTOREPOOL: %s", spUUID)
-        pool = sp.StoragePool(spUUID)
-        if pool.reconnect():
-            self.pools[spUUID] = pool
-            return True
-        self.log.info("RESTOREPOOL: %s reconnect failed", spUUID)
-
-
     def public_createStoragePool(self, poolType, spUUID, poolName, masterDom, domList, masterVersion, lockPolicy=None, lockRenewalIntervalSec=None, leaseTimeSec=None, ioOpTimeoutSec=None, leaseRetries=None, options = None):
         """
         Create new storage pool with single/multiple image data domain.
@@ -519,10 +509,10 @@ class HSM:
         vars.task.setDefaultException(
             se.StoragePoolConnectionError("spUUID=%s, msdUUID=%s, masterVersion=%s, " \
                                           "hostID=%s, scsiKey=%s" % (str(spUUID), str(msdUUID),
-                                          str(masterVersion), str(hostID), str(scsiKey))
-            )
-        )
-        misc.validateN(hostID, 'hostID')
+                                          str(masterVersion), str(hostID), str(scsiKey))))
+        return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID, masterVersion, options)
+
+    def _connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID, masterVersion, options=None):
         misc.validateUUID(spUUID, 'spUUID')
 
         # TBD: To support multiple pool connection on single host,
@@ -535,25 +525,33 @@ class HSM:
         except se.StoragePoolUnknown:
             pass #pool not connected yet
         else:
-            vars.task.getSharedLock(STORAGE, spUUID)
-            pool = self.getPool(spUUID)
-            pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
-            return
+            with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.shared):
+                pool = self.getPool(spUUID)
+                if not msdUUID or not masterVersion:
+                    hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
+                misc.validateN(hostID, 'hostID')
+                pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+                return
 
-        vars.task.getExclusiveLock(STORAGE, spUUID)
-        try:
-            pool = self.getPool(spUUID)
-        except se.StoragePoolUnknown:
-            pass #pool not connected yet
-        else:
-            pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
-            return
+        with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
+            try:
+                pool = self.getPool(spUUID)
+            except se.StoragePoolUnknown:
+                pass #pool not connected yet
+            else:
+                if not msdUUID or not masterVersion:
+                    hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
+                misc.validateN(hostID, 'hostID')
+                pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+                return
 
-        pool = sp.StoragePool(spUUID)
-        res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
-        if res:
-            self.pools[spUUID] = pool
-        return res
+            pool = sp.StoragePool(spUUID)
+            if not hostID or not scsiKey or not msdUUID or not masterVersion:
+                hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
+            res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
+            if res:
+                self.pools[spUUID] = pool
+            return res
 
     def public_disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False, options = None):
         """

@@ -410,31 +410,22 @@ class StoragePool:
         return True
 
 
-    def reconnect(self):
-        self.log.info("Trying to reconnect to pool: %s" % self.spUUID)
-        try:
-            file = open(self._poolFile, "r")
-            for line in file:
-                pair = line.strip().split("=")
-                if len(pair) == 2:
-                    if pair[0] == "id":
-                        hostId = int(pair[1])
-                    elif pair[0] == "scsiKey":
-                        scsiKey = pair[1]
-                    elif pair[0] == "sdUUID":
-                        msdUUID = pair[1]
-                    elif pair[0] == "version":
-                        masterVersion = pair[1]
-            file.close()
-            if not (hostId and scsiKey and msdUUID and masterVersion):
-                os.unlink(self._poolFile)
-                return False
-            if self.connect(hostId, scsiKey, msdUUID, masterVersion):
-                return True
-        except:
-            self.log.error("RECONNECT: Failed: %s", self.spUUID, exc_info=True)
-            os.unlink(self._poolFile)
-            raise
+    def getPoolParams(self):
+        file = open(self._poolFile, "r")
+        for line in file:
+            pair = line.strip().split("=")
+            if len(pair) == 2:
+                if pair[0] == "id":
+                    hostId = int(pair[1])
+                elif pair[0] == "scsiKey":
+                    scsiKey = pair[1]
+                elif pair[0] == "sdUUID":
+                    msdUUID = pair[1]
+                elif pair[0] == "version":
+                    masterVersion = pair[1]
+        file.close()
+
+        return hostId, scsiKey, msdUUID, masterVersion
 
 
     def createMaster(self, poolName, domain, masterVersion, leaseParams):
