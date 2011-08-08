@@ -235,7 +235,7 @@ class FileStorageDomain(sd.StorageDomain):
         Get storage domain statistics
         """
         ##self.log.info("sdUUID=%s", self.sdUUID)
-        stats = {'disktotal':'', 'diskfree':''}
+        stats = {'disktotal':'', 'diskfree':'', 'mdavalid':True}
         try:
             st = self.oop.os.statvfs(self.domaindir)
             stats['disktotal'] = str(st.f_frsize * st.f_blocks)

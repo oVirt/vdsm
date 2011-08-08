@@ -705,7 +705,7 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         """
         vg = lvm.getVG(self.sdUUID)
-        return dict(disktotal=vg.size, diskfree=vg.free)
+        return dict(disktotal=vg.size, diskfree=vg.free, mdavalid=lvm.isMetadataSizeValid(self.sdUUID))
 
     def getAllImages(self):
         """

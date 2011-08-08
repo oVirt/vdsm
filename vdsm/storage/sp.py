@@ -1028,6 +1028,7 @@ class StoragePool:
         for item in domDict:
             # Return statistics for active domains only
             stats = {}
+            alerts = []
             if domDict[item] == sd.DOM_ACTIVE_STATUS:
                 try:
                     dom = SDF.produce(item)
@@ -1041,6 +1042,10 @@ class StoragePool:
                     try:
                         stats['disktotal'] = repoStats[item]['disktotal']
                         stats['diskfree'] = repoStats[item]['diskfree']
+                        if not repoStats[item]['mdavalid']:
+                            alerts.append({'code':se.VgMetadataCriticallyFull.code,
+                                           'message':se.VgMetadataCriticallyFull.message})
+                            self.log.warning("VG %s's metadata size exceeded critical size", dom.sdUUID)
                     except KeyError:
                         # We might have been asked to run before the first repoStats cycle was run
                         if item not in self.repostats:
@@ -1054,6 +1059,7 @@ class StoragePool:
                             # Return defaults
                             stats['disktotal'] = ""
                             stats['diskfree'] = ""
+                    stats['alerts'] = alerts
 
             stats['status'] = domDict[item]
             list_and_stats[item] = stats

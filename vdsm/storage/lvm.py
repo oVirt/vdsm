@@ -133,9 +133,11 @@ log = logging.getLogger("Storage.LVM")
 """
 
 LVM_DEFAULT_TTL = 100
+# VG's min metadata threshold is 20%
+MDA_MIN_THRESHOLD = 0.2
 
 PV_FIELDS = "uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,pe_alloc_count,mda_count,dev_size"
-VG_FIELDS = "uuid,name,attr,size,free,extent_size,extent_count,free_count,tags"
+VG_FIELDS = "uuid,name,attr,size,free,extent_size,extent_count,free_count,tags,vg_mda_size,vg_mda_free"
 LV_FIELDS = "uuid,name,vg_name,attr,size,seg_start_pe,devices,tags"
 
 VG_ATTR_BITS = ("permission", "resizeable", "exported",
@@ -1189,4 +1191,14 @@ def replaceLVTag(vg, lv, deltag, addtag):
     if rc != 0:
         raise se.LogicalVolumeReplaceTagError("%s/%s" % (vg, lv), "%s,%s" % (deltag, addtag))
 
+def isMetadataSizeValid(vgName):
+    """
+    Return False if the VG's metadata exceeded its threshold else return True
+    """
+    vg = getVG(vgName)
+    mda_size = int(vg.vg_mda_size)
+    mda_free = int(vg.vg_mda_free)
 
+    if mda_size * MDA_MIN_THRESHOLD > mda_free:
+        return False
+    return True

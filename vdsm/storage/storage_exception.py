@@ -1144,6 +1144,12 @@ class LogicalVolumeWrongTagError(StorageException):
     code = 612
     message = "Wrong logical volume tag"
 
+class VgMetadataCriticallyFull(StorageException):
+    code = 613
+    message = """Error - The system has reached the 80% watermark on the VG metadata area size.
+                 This is due high number of Vdisks or large Vdisks size allocated on this
+                 specific VG. Please call Redhat Global Support to address the issue"""
+
 #################################################
 #  SPM/HSM Exceptions
 #################################################
