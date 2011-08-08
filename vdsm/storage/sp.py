@@ -757,45 +757,28 @@ class StoragePool:
         :param masterVersion: new master storage domain version
         """
         self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID,  self.spUUID, msdUUID)
-        #Maybe there should be information in the exception that the UUID is
-        #not invalid because of its format but because it is equal to the SD. Will be less confusing.
-        if sdUUID == msdUUID:
-            raise se.InvalidParameterException("msdUUID", msdUUID)
-
-        # Check if deactivating master domain
-        deactivatingMaster = (sdUUID == self.getMasterDomain().sdUUID)
-
-        if msdUUID != BLANK_POOL_UUID:
-            # If we got a new master domain it implies we are deactivating the master domain
-            if not deactivatingMaster:
-                raise se.InvalidParameterException("msdUUID not blank", msdUUID)
-            # when deactivating master domain the masterVersion must be higher
-            self.validatePoolMVerHigher(masterVersion)
-
-
         domList = self.getDomains()
         if sdUUID not in domList:
             raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
-
-        sd.validateSDStateTransition(sdUUID, domList[sdUUID], sd.DOM_ATTACHED_STATUS)
-
         try:
             dom = SDF.produce(sdUUID)
-            pools = dom.getPools()
-            faultyDomain = self.spUUID not in pools
-        except Exception:
+            #Check that dom is really reachable and not a cached value.
+            dom.validate(False)
+        except se.StorageException:
             self.log.warn("deactivaing MIA domain `%s`", sdUUID, exc_info=True)
-            faultyDomain = True
-
-        if faultyDomain and deactivatingMaster:
-            raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
-
-        if deactivatingMaster:
-            self.masterMigrate(sdUUID, msdUUID, masterVersion)
-
-        if not faultyDomain:
-            dom.deactivate()
-            self._refreshDomainLinks(dom)
+            if msdUUID != BLANK_POOL_UUID:
+                #Trying to migrate master failed to reach actual msd.
+                raise se.StorageDomainAccessError(sdUUID)
+        else:
+            if dom.isMaster():
+                #Maybe there should be information in the exception that the UUID is
+                #not invalid because of its format but because it is equal to the SD. Will be less confusing.
+                #TODO: verify in masterMigrate().
+                if sdUUID == msdUUID:
+                    raise se.InvalidParameterException("msdUUID", msdUUID)
+                self.masterMigrate(sdUUID, msdUUID, masterVersion)
+            elif dom.isBackup():
+                dom.unmountMaster()
 
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
         self.setMetaParam(PMDK_DOMAINS, domList)
