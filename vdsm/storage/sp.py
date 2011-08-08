@@ -113,13 +113,14 @@ class StatsThread(threading.Thread):
                 code = 200
 
             delay = 0
-            try:
-                # This is handled seperatly because in case of this kind
-                # of failure we don't want to print stack trace
-                delay = self._domain.getReadDelay()
-            except Exception, e:
-                self.log.error("Could not figure out delay for domain `%s` (%s)", self._sdUUID, e)
-                code = 200
+            if self._domain is not None:
+                try:
+                    # This is handled seperatly because in case of this kind
+                    # of failure we don't want to print stack trace
+                    delay = self._domain.getReadDelay()
+                except Exception, e:
+                    self.log.error("Could not figure out delay for domain `%s` (%s)", self._sdUUID, e)
+                    code = 200
 
             if code != 0:
                 self._domain = None
