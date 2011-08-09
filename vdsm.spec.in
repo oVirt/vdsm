@@ -19,7 +19,7 @@ BuildRequires: python redhat-lsb redhat-rpm-config
 Requires: python which
 Requires: sudo >= 1.7.3
 Requires: qemu-kvm
-Requires: qemu-img >= 0.12.1.2-2.172
+Requires: qemu-img >= 2:0.12.1.2-2.172
 Requires: m2crypto ethtool logrotate
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: nfs-utils dmidecode
