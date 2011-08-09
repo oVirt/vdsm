@@ -54,18 +54,18 @@ dist_vdsm_SCRIPTS = \
 dist_man8_MANS = \
 	vdsmd.8
 
-noinst_DATA = \
+vdsm_SUBST = \
+	constants.py \
 	logger.conf \
 	sudoers.vdsm \
 	vdsm.conf.sample \
 	vdsmd \
-	vdsm-sosplugin.py
-
-vdsm_SUBST = \
-	$(noinst_DATA) \
-	constants.py \
 	vdsm-restore-net-config \
+	vdsm-sosplugin.py \
 	vdsm-store-net-config
+
+noinst_DATA = \
+	$(vdsm_SUBST)
 
 CLEANFILES = \
 	$(vdsm_SUBST)
@@ -73,7 +73,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	constants.py.in \
 	logger.conf.in \
-	mk_vdsm.conf.sample.py \
+	mk-vdsm-conf-sample.py \
 	sudoers.vdsm.in \
 	vdsmd.in \
 	vdsm-logrotate \
@@ -98,10 +98,12 @@ do_subst = sed -e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
 	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
 
 $(vdsm_SUBST): Makefile
-	$(do_subst) < $@.in > $@
-
-vdsm.conf.sample: config.py
-	python mk_vdsm.conf.sample.py > vdsm.conf.sample
+	if test "$@" = "vdsm.conf.sample"; then \
+		python $(srcdir)/mk-vdsm-conf-sample.py \
+			$(srcdir)/config.py > vdsm.conf.sample; \
+	else \
+		$(do_subst) < $(srcdir)/$@.in > $@; \
+	fi
 
 install-data-hook:
 	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
@@ -119,35 +121,60 @@ install-data-local: install-data-init install-data-logger \
 	$(MKDIR_P) $(DESTDIR)$(vdsmbackupdir)
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
-install-data-init: $(vdsm_SUBST)
+uninstall-local: uninstall-data-init uninstall-data-logger \
+		uninstall-data-rwtab uninstall-data-logrotate \
+		uninstall-data-sudoers uninstall-data-sosplugin
+
+install-data-init:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/init.d
 	$(INSTALL_SCRIPT) vdsmd $(DESTDIR)$(sysconfdir)/init.d/vdsmd
 
-install-data-logger: $(vdsm_SUBST)
+uninstall-data-init:
+	$(RM) $(DESTDIR)$(sysconfdir)/init.d/vdsmd
+
+install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
 	$(INSTALL_DATA) logger.conf $(DESTDIR)$(vdsmconfdir)/logger.conf
 
-install-data-rwtab: $(vdsm_SUBST)
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d
-	$(INSTALL_DATA) vdsm.rwtab $(DESTDIR)$(sysconfdir)/rwtab.d/vdsm
+uninstall-data-logger:
+	$(RM) $(DESTDIR)$(vdsmconfdir)/logger.conf
 
-install-data-logrotate: $(vdsm_SUBST)
+install-data-rwtab:
+	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d
+	$(INSTALL_DATA) $(srcdir)/vdsm.rwtab \
+		$(DESTDIR)$(sysconfdir)/rwtab.d/vdsm
+
+uninstall-data-rwtab:
+	$(RM) $(DESTDIR)$(sysconfdir)/rwtab.d/vdsm
+
+install-data-logrotate:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/logrotate.d
-	$(INSTALL_DATA) vdsm-logrotate.conf \
+	$(INSTALL_DATA) $(srcdir)/vdsm-logrotate.conf \
 		$(DESTDIR)$(sysconfdir)/logrotate.d/vdsm
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly
-	$(INSTALL_SCRIPT) vdsm-logrotate \
+	$(INSTALL_SCRIPT) $(srcdir)/vdsm-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.d
-	$(INSTALL_SCRIPT) vdsm-libvirt-logrotate \
+	$(INSTALL_SCRIPT) $(srcdir)/vdsm-libvirt-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
 
-install-data-sudoers: $(vdsm_SUBST)
+uninstall-data-logrotate:
+	$(RM) $(DESTDIR)$(sysconfdir)/logrotate.d/vdsm
+	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
+	$(RM) $(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
+
+install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
 	$(INSTALL_DATA) sudoers.vdsm \
 		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
 
-install-data-sosplugin: $(vdsm_SUBST)
+uninstall-data-sudoers:
+	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
+
+install-data-sosplugin:
 	$(MKDIR_P) $(DESTDIR)$(pythondir)/sos/plugins
 	$(INSTALL_DATA) vdsm-sosplugin.py \
 		$(DESTDIR)$(pythondir)/sos/plugins/vdsm.py
+
+uninstall-data-sosplugin:
+	$(RM) $(DESTDIR)$(pythondir)/sos/plugins/vdsm.py

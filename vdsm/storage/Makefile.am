@@ -53,5 +53,5 @@ EXTRA_DIST = \
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/udev/rules.d
-	$(INSTALL_DATA) 12-vdsm-lvm.rules \
+	$(INSTALL_DATA) $(srcdir)/12-vdsm-lvm.rules \
 			$(DESTDIR)$(sysconfdir)/udev/rules.d/12-vdsm-lvm.rules

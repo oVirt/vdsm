@@ -37,7 +37,10 @@ do_subst = sed -e "s,[@]VDSMDIR[@],$(vdsmdir),g" \
 $(vdsmcli_SUBST):
 	$(do_subst) < $@.in > $@
 
-install-data-local: $(vdsmcli_SUBST)
+install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/bash_completion.d
-	$(INSTALL_DATA) vdsClient.completion \
+	$(INSTALL_DATA) $(srcdir)/vdsClient.completion \
 		$(DESTDIR)$(sysconfdir)/bash_completion.d/vdsClient
+
+uninstall-local:
+	$(RM) $(DESTDIR)$(sysconfdir)/bash_completion.d/vdsClient

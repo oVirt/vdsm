@@ -22,11 +22,11 @@ dist_vdsmreg_SCRIPTS = \
 dist_man8_MANS = \
 	vdsm-reg.8
 
-noinst_DATA = \
+vdsmreg_SUBST = \
 	vdsm-reg.conf
 
-vdsmreg_SUBST = \
-	$(noinst_DATA)
+noinst_DATA = \
+	$(vdsmreg_SUBST)
 
 CLEANFILES = \
 	$(vdsmreg_SUBST)
@@ -45,31 +45,54 @@ EXTRA_DIST = \
 do_subst = sed -e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g"
 
 $(vdsmreg_SUBST):
-	$(do_subst) < $@.in > $@
+	$(do_subst) < $(srcdir)/$@.in > $@
 
-install-data-local: install-data-init install-data-logger install-data-ovirt \
-		install-data-logrotate
+install-data-local: install-data-init install-data-logger \
+		install-data-ovirt install-data-logrotate
 	$(MKDIR_P)  $(DESTDIR)$(vdsmreglogdir)
 
-install-data-init: $(vdsmreg_SUBST)
+uninstall-local: uninstall-data-init uninstall-data-logger \
+		uninstall-data-ovirt uninstall-data-logrotate
+
+install-data-init:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/init.d
-	$(INSTALL_SCRIPT) vdsm-reg $(DESTDIR)$(sysconfdir)/init.d/vdsm-reg
+	$(INSTALL_SCRIPT) $(srcdir)/vdsm-reg \
+		$(DESTDIR)$(sysconfdir)/init.d/vdsm-reg
 
-install-data-logger: $(vdsmreg_SUBST)
+uninstall-data-init:
+	$(RM) $(DESTDIR)$(sysconfdir)/init.d/vdsm-reg
+
+install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmregconfdir)
-	$(INSTALL_DATA) logger.conf $(DESTDIR)$(vdsmregconfdir)/logger.conf
-	$(INSTALL_DATA) vdsm-reg.conf $(DESTDIR)$(vdsmregconfdir)/vdsm-reg.conf
+	$(INSTALL_DATA) $(srcdir)/logger.conf \
+		$(DESTDIR)$(vdsmregconfdir)/logger.conf
+	$(INSTALL_DATA) vdsm-reg.conf \
+		$(DESTDIR)$(vdsmregconfdir)/vdsm-reg.conf
 
-install-data-ovirt: $(vdsmreg_SUBST)
+uninstall-data-logger:
+	$(RM) $(DESTDIR)$(vdsmregconfdir)/logger.conf
+	$(RM) $(DESTDIR)$(vdsmregconfdir)/vdsm-reg.conf
+
+install-data-ovirt:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/ovirt-config-boot.d
-	$(INSTALL_SCRIPT) vdsm-config $(DESTDIR)$(sysconfdir)/ovirt-config-boot.d/vdsm-config
+	$(INSTALL_SCRIPT) $(srcdir)/vdsm-config \
+		$(DESTDIR)$(sysconfdir)/ovirt-config-boot.d/vdsm-config
 	$(MKDIR_P) $(DESTDIR)$(pythondir)/ovirt_config_setup
-	$(INSTALL_DATA) rhevm.py $(DESTDIR)$(pythondir)/ovirt_config_setup/rhevm.py
+	$(INSTALL_DATA) $(srcdir)/rhevm.py \
+		$(DESTDIR)$(pythondir)/ovirt_config_setup/rhevm.py
 
-install-data-logrotate: $(vdsmreg_SUBST)
+uninstall-data-ovirt:
+	$(RM) $(DESTDIR)$(sysconfdir)/ovirt-config-boot.d/vdsm-config
+	$(RM) $(DESTDIR)$(pythondir)/ovirt_config_setup/rhevm.py
+
+install-data-logrotate:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/logrotate.d
-	$(INSTALL_DATA) vdsm-reg-logrotate.conf \
+	$(INSTALL_DATA) $(srcdir)/vdsm-reg-logrotate.conf \
 		$(DESTDIR)$(sysconfdir)/logrotate.d/vdsm-reg
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly
-	$(INSTALL_SCRIPT) vdsm-reg-logrotate \
+	$(INSTALL_SCRIPT) $(srcdir)/vdsm-reg-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-reg-logrotate
+
+uninstall-data-logrotate:
+	$(RM) $(DESTDIR)$(sysconfdir)/logrotate.d/vdsm-reg
+	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-reg-logrotate

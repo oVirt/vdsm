@@ -16,10 +16,10 @@ install-data-hook:
 
 install-data-local: install-data-sudoers
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
-	$(INSTALL_SCRIPT) before_vm_start.py \
+	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_vhostmd
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy
-	$(INSTALL_SCRIPT) after_vm_destroy.py \
+	$(INSTALL_SCRIPT) $(srcdir)/after_vm_destroy.py \
 		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_vhostmd
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination
 	$(LN_S) ../before_vm_start/50_vhostmd \
@@ -28,7 +28,16 @@ install-data-local: install-data-sudoers
 	$(LN_S) ../before_vm_start/50_vhostmd \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
 
+uninstall-local: uninstall-data-sudoers
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_vhostmd
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_vhostmd
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
+
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
-	$(INSTALL_DATA) sudoers.vdsm_hook_vhostmd \
+	$(INSTALL_DATA) $(srcdir)/sudoers.vdsm_hook_vhostmd \
 		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
+
+uninstall-data-sudoers:
+	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
