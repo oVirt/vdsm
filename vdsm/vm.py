@@ -681,8 +681,7 @@ class Vm(object):
                 self._guestEventTime = now
                 self._guestEvent = 'Powering down'
                 self.log.debug('guestAgent shutdown called')
-                guest_message = 'shutdown,' + timeout + ',' + message
-                self.guestAgent.sendHcCmdToDesktop(guest_message)
+                self.guestAgent.desktopShutdown(timeout, message)
                 agent_timeout = int(timeout) + config.getint('vars', 'sys_shutdown_timeout')
                 timer = threading.Timer(agent_timeout, self._timedShutdown)
                 timer.start()

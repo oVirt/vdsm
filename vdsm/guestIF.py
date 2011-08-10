@@ -21,7 +21,7 @@
 import traceback, logging, threading
 import time
 import socket
-import struct
+import json
 from config import config
 import utils
 import constants
@@ -43,36 +43,6 @@ def _filterXmlChars(u):
 
     return ''.join([maskRestricted(c) for c in u])
 
-
-class guestMType:
-    powerup=1
-    powerdown=2
-    heartbeat=3
-    guestName=4
-    guestOs=5
-    IPAddresses=6
-    lastSessionMessage=7
-    userInfo=8
-    newApp=9
-    flushApps=10
-    sessionLock=12
-    sessionUnlock=13
-    sessionLogoff=14
-    sessionLogon=15
-    agentCmd = 16 # obsolete
-    agentUninstalled = 17
-    sessionStartup = 18
-    sessionShutdown = 19
-
-class protocolMtype:
-    register, unregister, forward = range(1, 4)
-    error = 0x80000001
-
-
-headerLength = 3
-wordSize = 4
-headerLengthBytes = headerLength * wordSize
-
 class GuestAgent (threading.Thread):
     def __init__(self, socketName, log, user='Unknown', ips='', connect=True):
         self.log = log
@@ -81,14 +51,9 @@ class GuestAgent (threading.Thread):
         self._stopped = True
         self.guestStatus = None
         self.guestInfo = {'username': user, 'memUsage': 0, 'guestIPs': ips,
-                          'session': 'Unknown', 'appsList': []}
+                          'session': 'Unknown', 'appsList': [], 'disksUsage': [],
+                          'netIfaces': []}
         self._agentTimestamp = 0
-
-        # A temporary storage to hold the guest's application list during an
-        # update from the guest. Will be obselete if a new virtual channel
-        # (that can handle large messages) will be implemented and used.
-        self._tempAppsList = []
-        self._firstAppsList = True
 
         threading.Thread.__init__(self)
         if connect:
@@ -108,109 +73,72 @@ class GuestAgent (threading.Thread):
                 time.sleep(1)
         return False
 
-    #The protocol envelope:
-    #DWORD(32Bit) - ChannelID
-    #DWORD(32Bit) - Action/Cmd
-    #   1 - Register (to receive ChannelID events)
-    #   2 - UnRegister (from ChannelID events)
-    #   3 - Forward Message to channel
-    #   0x80000001 - Error UnknownChannel
-    #DWORD(32Bit) MessageLength(In Bytes)
-    #message payload
-    # Simple protocol at this point. Just a single byte
-    # with enumeration of the event
-    #   1 - PowerUp
-    #   2 - PowerDown
-    #   3 - HeartBeat
+    def _forward(self, cmd, args = {}):
+        args['__name__'] = cmd
+        message = (json.dumps(args) + '\n').encode('utf8')
+        self._sock.send(message)
+        self.log.log(logging.TRACE, 'sent %s', message)
 
-    CHANNEL = 1
-    def _forward(self, s):
-        lens = len(s)
-        t = struct.pack('>III%ds' % lens, self.CHANNEL,
-                    protocolMtype.forward, headerLengthBytes + lens, s)
-        self._sock.send(t)
-        self.log.log(logging.TRACE, 'sent %s', repr(t))
-
-    def _parseHeader(self, header):
-        channel, messageType, length = struct.unpack('>III', header)
-        if channel != self.CHANNEL:
-            self.log.error("Illegal channel id %d" % (channel))
-            return 0
-        if messageType != protocolMtype.forward:
-            self.log.error("Unexpected message type " + str((channel, messageType, length)))
-            return 0
-        return length - headerLengthBytes
-
-    def _parseBody(self, body):
-        guestMessage, = struct.unpack('>I', body[:4])
-        body = body[4:]
-        self.log.log(logging.TRACE, 'guest message %s body %s',
-                     guestMessage, body)
+    def _handleMessage(self, message, args):
+        self.log.log(logging.TRACE, "Guest's message %s: %s", message, args)
         if self.guestStatus == None:
             self.guestStatus = 'Running'
-        if guestMessage == guestMType.heartbeat:
+        if message == 'heartbeat':
             self.guestStatus = 'Running'
-            self.guestInfo['memUsage'] = int(body.strip())
-        elif guestMessage == guestMType.powerup:
-            self.guestStatus = 'Running'
-        elif guestMessage == guestMType.powerdown:
-            self.guestStatus = 'Powered down'
-            if self.guestInfo['username'] not in 'None': #in case powerdown event hit before logoff
-                self.guestInfo['lastUser'] = '' + self.guestInfo['username']
-                self.guestInfo['username'] = 'None'
-                self.guestInfo['lastLogout'] = time.time()
-        elif guestMessage == guestMType.guestName:
-            self.guestInfo['guestName'] = _filterXmlChars(unicode(body, 'utf8'))
-        elif guestMessage == guestMType.guestOs:
-            self.guestInfo['guestOs'] = _filterXmlChars(unicode(body, 'utf8'))
-        elif guestMessage == guestMType.IPAddresses:
-            guestIPs = body.strip().split()
-            self.log.debug(str(guestIPs))
-            self.guestInfo['guestIPs'] = _filterXmlChars(' '.join(guestIPs))
-        elif guestMessage == guestMType.lastSessionMessage:
-            lastSessionMessage = body
-            self.log.debug(lastSessionMessage)
-            if 'Logoff' in lastSessionMessage:
-                self.guestInfo['lastUser'] = '' + self.guestInfo['username']
-                self.guestInfo['username'] = 'None'
-                self.guestInfo['lastLogout'] = time.time()
-        elif guestMessage == guestMType.flushApps:
-            if self._tempAppsList == self.guestInfo['appsList'] == []:
-                self._firstAppsList = True
-            else:
-                self._firstAppsList = False
-            self.guestInfo['appsList'] = self._tempAppsList
-            self._tempAppsList = []
-        elif guestMessage == guestMType.newApp:
-            app = _filterXmlChars(unicode(body, 'utf8').strip())
-            if app not in self._tempAppsList:
-                self._tempAppsList.append(app)
-            if self._firstAppsList:
-                self.guestInfo['appsList'] = self._tempAppsList
-        elif guestMessage == guestMType.userInfo:
-            self.log.debug(body)
-            currentUser = _filterXmlChars(unicode(body, 'utf8'))
+            self.guestInfo['memUsage'] = int(args['free-ram'])
+        elif message == 'host-name':
+            self.guestInfo['guestName'] = _filterXmlChars(args['name'])
+        elif message == 'os-version':
+            self.guestInfo['guestOs'] = _filterXmlChars(args['version'])
+        elif message == 'network-interfaces':
+            interfaces = []
+            old_ips = ''
+            for iface in args['interfaces']:
+                iface['name'] = _filterXmlChars(iface['name'])
+                iface['hw'] = _filterXmlChars(iface['hw'])
+                iface['inet'] = map(_filterXmlChars, iface['inet'])
+                iface['inet6'] = map(_filterXmlChars, iface['inet6'])
+                interfaces.append(iface)
+                # Provide the old information which includes only the IP addresses.
+                old_ips += ' '.join(iface['inet']) + ' '
+            self.guestInfo['netIfaces'] = interfaces
+            self.guestInfo['guestIPs'] = old_ips.strip()
+        elif message == 'applications':
+            self.guestInfo['appsList'] = map(_filterXmlChars, args['applications'])
+        elif message == 'active-user':
+            currentUser = _filterXmlChars(args['name'])
             if (currentUser != self.guestInfo['username']) and not (currentUser=='Unknown' and self.guestInfo['username']=='None'):
                 self.guestInfo['username'] = currentUser
                 self.guestInfo['lastLogin'] = time.time()
             self.log.debug(repr(self.guestInfo['username']))
-        elif guestMessage == guestMType.sessionLogon:
+        elif message == 'session-logon':
             self.guestInfo['session'] = "UserLoggedOn"
-        elif guestMessage == guestMType.sessionLock:
+        elif message == 'session-locked':
             self.guestInfo['session'] = "Locked"
-        elif guestMessage == guestMType.sessionUnlock:
+        elif message == 'session-unlock':
             self.guestInfo['session'] = "Active"
-        elif guestMessage == guestMType.sessionLogoff:
+        elif message == 'session-logoff':
             self.guestInfo['session'] = "LoggedOff"
-        elif guestMessage == guestMType.agentUninstalled:
+        elif message == 'uninstalled':
             self.log.debug("RHEV agent was uninstalled.")
             self.guestInfo['appsList'] = []
-        elif guestMessage == guestMType.sessionStartup:
+        elif message == 'session-startup':
             self.log.debug("Guest system is started or restarted.")
-        elif guestMessage == guestMType.sessionShutdown:
+        elif message == 'session-shutdown':
             self.log.debug("Guest system shuts down.")
+        elif message == 'disks-usage':
+            disks = []
+            for disk in args['disks']:
+                disk['path'] = _filterXmlChars(disk['path'])
+                disk['fs'] = _filterXmlChars(disk['fs'])
+                # Converting to string because XML-RPC doesn't support 64-bit
+                # integers.
+                disk['total'] = _filterXmlChars(str(disk['total']))
+                disk['used'] = _filterXmlChars(str(disk['used']))
+                disks.append(disk)
+            self.guestInfo['disksUsage'] = disks
         else:
-            self.log.error('Unknown message type %s', guestMessage)
+            self.log.error('Unknown message type %s', message)
 
     def stop (self):
         self._stopped = True
@@ -240,7 +168,7 @@ class GuestAgent (threading.Thread):
     def desktopLock(self):
         try:
             self.log.debug("desktopLock called")
-            self._forward("lock screen")
+            self._forward("lock-screen")
         except:
             self.log.error(traceback.format_exc())
 
@@ -251,18 +179,21 @@ class GuestAgent (threading.Thread):
                 username = user + '@' + domain
             else:
                 username = user
-            username = username.encode('utf-8')
-            password = password.encode('utf-8')
-            s = struct.pack('>6sI%ds%ds' % (len(username), len(password) + 1),
-                        'login', len(username), username, password)
-            self._forward(s)
+            self._forward('login', { 'username' : username, "password" : password })
         except:
             self.log.error(traceback.format_exc())
 
     def desktopLogoff (self, force):
         try:
             self.log.debug("desktopLogoff called")
-            self._forward('log off')
+            self._forward('log-off')
+        except:
+            self.log.error(traceback.format_exc())
+
+    def desktopShutdown (self, timeout, msg):
+        try:
+            self.log.debug("desktopShutdown called")
+            self._forward('shutdown', { 'timeout' : timeout, 'message' : msg })
         except:
             self.log.error(traceback.format_exc())
 
@@ -273,48 +204,61 @@ class GuestAgent (threading.Thread):
         except:
             self.log.error(traceback.format_exc())
 
+    def _onChannelTimeout(self):
+        self.guestInfo['memUsage'] = 0
+        if self.guestStatus not in ("Powered down", "RebootInProgress"):
+            self.log.log(logging.TRACE, "Guest connection timed out")
+            self.guestStatus = None
+
     READSIZE = 2**16
     def _readBuffer(self):
-        while not self._stopped:
-            try:
-                s = self._sock.recv(self.READSIZE)
-                if s:
-                    self._buffer += s
-                    self._agentTimestamp = time.time()
-                    break
+        try:
+            s = self._sock.recv(self.READSIZE)
+            if s:
+                self._buffer += s
+            else:
+                # s is None if recv() exit with an error. The sleep() is
+                # called in order to prevent a 100% CPU utilization while
+                # trying to read from the socket again (and again...).
                 time.sleep(1)
-            except socket.timeout:
-                # TODO move these specific bits out of here
-                self.guestInfo['memUsage'] = 0
-                if self.guestStatus not in ("Powered down", "RebootInProgress"):
-                    self.log.log(logging.TRACE, "Guest connection timed out")
-                    self.guestStatus = None
+        except socket.timeout:
+            self._onChannelTimeout()
 
-    def _readMessage(self):
-        msg = None
-        if len(self._buffer) >= headerLengthBytes:
-            msglen = self._parseHeader(self._buffer[:headerLengthBytes])
-            if len(self._buffer) >= headerLengthBytes + msglen:
-                msg = self._buffer[headerLengthBytes:headerLengthBytes + msglen]
-                self._buffer = self._buffer[headerLengthBytes + msglen:]
-        return msg
+    def _readLine(self):
+        newline = self._buffer.find('\n')
+        while not self._stopped and newline < 0:
+            self._readBuffer()
+            newline = self._buffer.find('\n')
+        if newline >= 0:
+            line, self._buffer = self._buffer.split('\n', 1)
+        else:
+            line = None
+        return line
 
-    def _parseMessages(self):
-        s = self._readMessage()
-        while not self._stopped and s:
-            self._parseBody(s)
-            s = self._readMessage()
+    def _parseLine(self, line):
+        args = json.loads(line.decode('utf8'))
+        name = args['__name__']
+        del args['__name__']
+        return (name, args)
 
     def run(self):
         self._stopped = False
         try:
             if not self._connect():
                 return
-            self.sendHcCmdToDesktop('refresh')
+            self._forward('refresh')
             self._buffer = ''
             while not self._stopped:
-                self._readBuffer()
-                self._parseMessages()
+                try:
+                    line = self._readLine()
+                    # line is always None after stop() is called and the
+                    # socket is closed.
+                    if line:
+                        (message, args) = self._parseLine(line)
+                        self._agentTimestamp = time.time()
+                        self._handleMessage(message, args)
+                except:
+                    self.log.exception("Run exception: %s", line)
         except:
             if not self._stopped:
                 self.log.error("Unexpected exception: " + traceback.format_exc())

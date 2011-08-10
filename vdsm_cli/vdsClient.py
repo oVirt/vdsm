@@ -1981,7 +1981,7 @@ if __name__ == '__main__':
             if o == "-s" or o == "--SSL":
                 serv.useSSL = True
             if o == "--truststore":
-		serv.truststore = v
+                serv.truststore = v
         if len(args) < 2:
             raise Exception("Need at least two arguments")
         server, command = args[0:2]
