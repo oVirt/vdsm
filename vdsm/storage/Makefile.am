@@ -51,6 +51,9 @@ dist_vdsmstorage_DATA = \
 EXTRA_DIST = \
 	12-vdsm-lvm.rules
 
+dist-hook:
+	python $(srcdir)/storage_exception.py
+
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/udev/rules.d
 	$(INSTALL_DATA) $(srcdir)/12-vdsm-lvm.rules \

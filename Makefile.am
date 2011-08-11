@@ -13,17 +13,10 @@ rpmversion = @PACKAGE_VERSION@
 rpmrelease = @PACKAGE_RELEASE@
 RPMTOP = $(PWD)/rpmtop
 
-test: pyflakes exceptions
-	echo $(rpmrelease) $(rpmversion)
+dist-hook:
+	pyflakes $(SUBDIRS)
 
-.PHONY: exceptions pyflakes srpm rpm
-
-exceptions:
-	python vdsm/storage/storage_exception.py | grep Collision && exit 1 || true
-
-pyflakes:
-	@git ls-files '*.py' | xargs pyflakes \
-	    || (echo "Pyflakes errors or pyflakes not found"; exit 1)
+.PHONY: srpm rpm
 
 srpm: dist
 	$(MKDIR_P) $(RPMTOP)/{RPMS,SRPMS,SOURCES,BUILD}
