@@ -844,7 +844,7 @@ class StoragePool:
 
         # Find out all domains for future cleanup
         domainpat = os.path.join(self.poolPath, constants.UUID_GLOB_PATTERN)
-        cleanupdomains = glob(domainpat)
+        oldLinks = glob(domainpat)
 
         # We should not rebuild non-active domains, because
         # they are probably disconnected from the host
@@ -871,26 +871,26 @@ class StoragePool:
                 continue
             # Remove domain from potential cleanup
             linkName = os.path.join(self.poolPath, domUUID)
-            if linkName in cleanupdomains:
-                cleanupdomains.remove(linkName)
+            if linkName in oldLinks:
+                oldLinks.remove(linkName)
         # Always try to build master links
         try:
             self._refreshDomainLinks(msd)
         except (se.StorageException, OSError):
             self.log.error("_refreshDomainLinks failed for master domain %s", msd.sdUUID, exc_info=True)
         linkName = os.path.join(self.poolPath, msd.sdUUID)
-        if linkName in cleanupdomains:
-            cleanupdomains.remove(linkName)
+        if linkName in oldLinks:
+            oldLinks.remove(linkName)
 
-        # Clenup old trash from the pool
-        for i in cleanupdomains:
+        # Cleanup old trash from the pool
+        for oldie in oldLinks:
             try:
-                os.remove(i)
+                os.remove(oldie)
             except OSError as e:
                 if e.errno != errno.ENOENT:
-                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", i, e)
+                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
             except Exception as e:
-                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", i, e)
+                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
 
 
     def refresh(self, msdUUID=None, masterVersion=None):
