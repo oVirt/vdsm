@@ -552,14 +552,6 @@ class StorageDomain:
             self.mountMaster()
             self.createMasterTree()
 
-    def deactivate(self):
-        """
-        Deactivate a storage domain.
-        """
-        if self.isBackup():
-            self.unmountMaster()
-
-
     def format(self):
         """
         Format detached storage domain.

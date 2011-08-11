@@ -745,18 +745,17 @@ class StoragePool:
         return True
 
 
-    def deactivateSD(self, sdUUID, msdUUID, masterVersion):
+    def deactivateSD(self, sdUUID, new_msdUUID, masterVersion):
         """
         Deactivate a storage domain.
         Validate that the storage domain is owned by the storage pool.
         Change storage domain status to "Attached" in the storage pool meta-data.
 
         :param sdUUID: The UUID of the storage domain you want to deactivate.
-        :param msdUUID: The UUID of the pool that owns this domain.
-                        If the deactivated domain *is* the master domain put a blank UUID.
+        :param new_msdUUID: The UUID of the new master storage domain.
         :param masterVersion: new master storage domain version
         """
-        self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID,  self.spUUID, msdUUID)
+        self.log.info("sdUUID=%s spUUID=%s new_msdUUID=%s", sdUUID,  self.spUUID, new_msdUUID)
         domList = self.getDomains()
         if sdUUID not in domList:
             raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
@@ -766,7 +765,7 @@ class StoragePool:
             dom.validate(False)
         except se.StorageException:
             self.log.warn("deactivaing MIA domain `%s`", sdUUID, exc_info=True)
-            if msdUUID != BLANK_POOL_UUID:
+            if new_msdUUID != BLANK_POOL_UUID:
                 #Trying to migrate master failed to reach actual msd.
                 raise se.StorageDomainAccessError(sdUUID)
         else:
@@ -774,9 +773,9 @@ class StoragePool:
                 #Maybe there should be information in the exception that the UUID is
                 #not invalid because of its format but because it is equal to the SD. Will be less confusing.
                 #TODO: verify in masterMigrate().
-                if sdUUID == msdUUID:
-                    raise se.InvalidParameterException("msdUUID", msdUUID)
-                self.masterMigrate(sdUUID, msdUUID, masterVersion)
+                if sdUUID == new_msdUUID:
+                    raise se.InvalidParameterException("new_msdUUID", new_msdUUID)
+                self.masterMigrate(sdUUID, new_msdUUID, masterVersion)
             elif dom.isBackup():
                 dom.unmountMaster()
 
