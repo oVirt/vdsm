@@ -1287,23 +1287,20 @@ class ResourceAcqusitionFailed(GeneralException):
     message = "Could not acquire resource. Probably resource factory threw an exception."
 
 if __name__ == "__main__":
-    import sys
+    import types
     codes = {}
-    col = 0
-    for name in dir():
-        try:
-            o = eval(name)
-            if issubclass(o, GeneralException):
-                if str(o.code) in codes:
-                    raise "Collision found: code %s o %s o %s" % (o.code, str(name), codes[str(o.code)])
-                    col += 1
-                elif o.code >= 5000:
-                    raise "Collision with RHEVM found: %s code %s: between 5000 and 6000" % (name, o.code)
-                else:
-                    codes[str(o.code)] = str(name)
-                print '%s\t%s\t"%s"' % (o.code, name, o.message)
-            else:
-                 print str(o) + " is not exception class:" + str(type(o))
-        except TypeError, e:
-            pass
-    sys.exit(col)
+    for name, obj in globals().items():
+        if not isinstance(obj, types.TypeType):
+            continue
+
+        if not issubclass(obj, GeneralException):
+            raise NameError, "%s is not exception class: %s" % (name, obj)
+
+        if obj.code in codes:
+            raise NameError, "Collision found: code %s is used by %s and %s" \
+                             % (obj.code, name, codes[obj.code])
+        if obj.code >= 5000:
+            raise NameError, "Collision with RHEVM found: %s code %s: " \
+                             "between 5000 and 6000" % (name, obj.code)
+
+        codes[obj.code] = name
