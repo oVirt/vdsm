@@ -840,7 +840,8 @@ class HSM:
         if size < MINIMALVGSIZE:
            raise se.VolumeGroupSizeError("VG size must be more than %s MiB" % str(MINIMALVGSIZE / constants.MEGAB))
 
-        lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG)
+        lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
+                     metadataSize=blockSD.VG_METADATASIZE)
 
         return dict(uuid=lvm.getVG(vgname).uuid)
 

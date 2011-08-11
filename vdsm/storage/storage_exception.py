@@ -1145,10 +1145,20 @@ class LogicalVolumeWrongTagError(StorageException):
     message = "Wrong logical volume tag"
 
 class VgMetadataCriticallyFull(StorageException):
+    def __init__(self, vgname, mdasize, mdafree):
+        self.value = "vgname=%s mdasize=%s mdafree=%s" % (vgname, mdasize, mdafree)
     code = 613
-    message = """Error - The system has reached the 80% watermark on the VG metadata area size.
+    message = """Error - The system has reached the high watermark on the VG metadata area size.
                  This is due high number of Vdisks or large Vdisks size allocated on this
                  specific VG. Please call Redhat Global Support to address the issue"""
+
+class SmallVgMetadata(StorageException):
+    def __init__(self, vgname, mdasize, mdafree):
+        self.value = "vgname=%s mdasize=%s mdafree=%s" % (vgname, mdasize, mdafree)
+    code = 614
+    message = """Warning - The allocated VG metadata area size is too small, which might limit
+                 its capacity (the number of Vdisks and/or their size). Refer to GSS knowledge
+                 base to understand the issue and how to resolve it"""
 
 #################################################
 #  SPM/HSM Exceptions

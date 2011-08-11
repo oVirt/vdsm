@@ -48,6 +48,10 @@ log = logging.getLogger("Storage.BlockSD")
 RESERVED_METADATA_SIZE = 40 * (2 ** 20)
 RESERVED_MAILBOX_SIZE = MAILBOX_SIZE * safelease.MAX_HOST_ID
 METADATA_BASE_SIZE = 378
+# VG's min metadata threshold is 20%
+VG_MDA_MIN_THRESHOLD = 0.2
+# VG's metadata size in MiB
+VG_METADATASIZE = 128
 
 MAX_PVS_LIMIT = 10 # BZ#648051
 MAX_PVS = config.getint('irs', 'maximum_allowed_pvs')
@@ -187,6 +191,24 @@ def selectMetadata(sdUUID):
         metadata = TagBasedSDMetadata(sdUUID)
     return metadata
 
+def metadataValidity(vg):
+    """
+    Return the metadata validity:
+     mdathreshold - False if the VG's metadata exceeded its threshold, else True
+     mdavalid - False if the VG's metadata size too small, else True
+    """
+    mdaStatus = {'mdavalid':True, 'mdathreshold':True}
+    mda_size = int(vg.vg_mda_size)
+    mda_free = int(vg.vg_mda_free)
+
+
+    if mda_size < (VG_METADATASIZE * constants.MEGAB)/2:
+        mdaStatus['mdavalid'] = False
+
+    if (mda_size * VG_MDA_MIN_THRESHOLD) > mda_free:
+        mdaStatus['mdathreshold'] = False
+
+    return mdaStatus
 
 class BlockStorageDomain(sd.StorageDomain):
     mountpoint = os.path.join(sd.StorageDomain.storage_repository,
@@ -705,7 +727,11 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         """
         vg = lvm.getVG(self.sdUUID)
-        return dict(disktotal=vg.size, diskfree=vg.free, mdavalid=lvm.isMetadataSizeValid(self.sdUUID))
+        vgMetadataStatus = metadataValidity(vg)
+        return dict(disktotal=vg.size, diskfree=vg.free,
+                    mdasize=vg.vg_mda_size, mdafree=vg.vg_mda_free,
+                    mdavalid=vgMetadataStatus['mdavalid'],
+                    mdathreshold=vgMetadataStatus['mdathreshold'])
 
     def getAllImages(self):
         """

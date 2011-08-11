@@ -1043,9 +1043,17 @@ class StoragePool:
                         stats['disktotal'] = repoStats[item]['disktotal']
                         stats['diskfree'] = repoStats[item]['diskfree']
                         if not repoStats[item]['mdavalid']:
+                            alerts.append({'code':se.SmallVgMetadata.code,
+                                           'message':se.SmallVgMetadata.message})
+                            self.log.warning("VG %s's metadata size too small %s",
+                                              dom.sdUUID, repoStats[item]['mdasize'])
+
+                        if not repoStats[item]['mdathreshold']:
                             alerts.append({'code':se.VgMetadataCriticallyFull.code,
                                            'message':se.VgMetadataCriticallyFull.message})
-                            self.log.warning("VG %s's metadata size exceeded critical size", dom.sdUUID)
+                            self.log.warning("VG %s's metadata size exceeded critical size: \
+                                             mdasize=%s mdafree=%s", dom.sdUUID,
+                                             repoStats[item]['mdasize'], repoStats[item]['mdafree'])
                     except KeyError:
                         # We might have been asked to run before the first repoStats cycle was run
                         if item not in self.repostats:

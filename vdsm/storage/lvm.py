@@ -133,8 +133,6 @@ log = logging.getLogger("Storage.LVM")
 """
 
 LVM_DEFAULT_TTL = 100
-# VG's min metadata threshold is 20%
-MDA_MIN_THRESHOLD = 0.2
 
 PV_FIELDS = "uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,pe_alloc_count,mda_count,dev_size"
 VG_FIELDS = "uuid,name,attr,size,free,extent_size,extent_count,free_count,tags,vg_mda_size,vg_mda_free"
@@ -692,9 +690,11 @@ def _fqpvname(pv):
         pv = os.path.join(PV_PREFIX, pv)
     return pv
 
-def _initpv(device, withmetadata=False):
-    if withmetadata:
-        cmd = ["pvcreate", "--metadatasize", "128m", device]
+def _initpv(device, metadataSize=0):
+    if metadataSize > 0:
+        # Size for pvcreate should be with units k|m|g
+        metadatasize = str(metadataSize) + 'm'
+        cmd = ["pvcreate", "--metadatasize", metadatasize, device]
     else:
         cmd = ["pvcreate", "--pvmetadatacopies", "0", device]
 
@@ -832,9 +832,9 @@ def getLV(vgName, lvName=None):
 # Public Volume Group interface
 #
 
-def createVG(vgName, devices, initialTag, extentsize="128m"):
+def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m"):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
-    _initpv(pvs[0], withmetadata=True)
+    _initpv(pvs[0], metadataSize)
     for dev in pvs[1:]:
         _initpv(dev)
 
@@ -1190,15 +1190,3 @@ def replaceLVTag(vg, lv, deltag, addtag):
     _lvminfo._invalidatelvs(vg, lv)
     if rc != 0:
         raise se.LogicalVolumeReplaceTagError("%s/%s" % (vg, lv), "%s,%s" % (deltag, addtag))
-
-def isMetadataSizeValid(vgName):
-    """
-    Return False if the VG's metadata exceeded its threshold else return True
-    """
-    vg = getVG(vgName)
-    mda_size = int(vg.vg_mda_size)
-    mda_free = int(vg.vg_mda_free)
-
-    if mda_size * MDA_MIN_THRESHOLD > mda_free:
-        return False
-    return True
