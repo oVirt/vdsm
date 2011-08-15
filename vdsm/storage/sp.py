@@ -31,7 +31,6 @@ import constants
 import storage_mailbox
 import blockSD
 import sd
-from blockSD import SD_METADATA_SIZE
 import misc
 from misc import Event
 import fileUtils
@@ -76,7 +75,7 @@ SP_MD_FIELDS = {
     }
 
 # Calculate how many domains can be in the pool before overflowing the Metadata
-MAX_DOMAINS = SD_METADATA_SIZE - blockSD.METADATA_BASE_SIZE
+MAX_DOMAINS = blockSD.SD_METADATA_SIZE - blockSD.METADATA_BASE_SIZE
 MAX_DOMAINS -= MAX_POOL_DESCRIPTION_SIZE + sd.MAX_DOMAIN_DESCRIPTION_SIZE
 MAX_DOMAINS -= blockSD.PVS_METADATA_SIZE
 MAX_DOMAINS /= 48
