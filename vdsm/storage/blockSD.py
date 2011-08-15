@@ -229,7 +229,7 @@ class BlockStorageDomain(sd.StorageDomain):
         domaindir = os.path.join(self.mountpoint, sdUUID)
         metadata = selectMetadata(sdUUID)
         sd.StorageDomain.__init__(self, sdUUID, domaindir, metadata)
-        self.refreshSpecialVolumes()
+        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
         self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
 
         # _extendlock is used to prevent race between
@@ -950,9 +950,6 @@ class BlockStorageDomain(sd.StorageDomain):
         isoPath = os.path.join(imagesPath, sd.ISO_IMAGE_UUID)
         if self.isISO():
             fileUtils.createdir(isoPath)
-
-    def refreshSpecialVolumes(self):
-        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         self._extendlock.acquire()
