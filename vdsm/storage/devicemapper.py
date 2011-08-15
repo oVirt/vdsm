@@ -31,22 +31,12 @@ DMPATH_FORMAT = "/dev/mapper/%s"
 
 def getDmId(deviceMultipathName):
     devlinkPath = DMPATH_FORMAT % deviceMultipathName
-    if os.path.islink(devlinkPath):
-        dmId = os.path.realpath(devlinkPath).split("/")[-1]
-        if os.path.exists("/sys/block/%s" % dmId):
-            return dmId
+    try:
+        devStat = os.stat(devlinkPath)
+    except OSError:
+        raise OSError(errno.ENODEV, "Could not find dm device named `%s`" % deviceMultipathName)
 
-    # Link doesn't exists for some reason, might be a weird
-    # udev configuration. Falling back to slow but sure method
-    for nameFile in glob("/sys/block/dm-*/dm/name"):
-        try:
-            with open(nameFile, "r") as f:
-                if f.read().rstrip("\n") == deviceMultipathName:
-                    return nameFile.split("/")[3]
-        except (IOError, OSError):
-            pass
-
-    raise OSError(errno.ENOENT, "Could not find dm device named `%s`" % deviceMultipathName)
+    return "dm-%d" % os.minor(devStat.st_rdev)
 
 def findDev(major, minor):
     return os.path.basename(os.path.realpath('/sys/dev/block/%d:%d' % (major, minor)))
