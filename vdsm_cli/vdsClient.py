@@ -460,18 +460,18 @@ class service:
             spUUID = args[0]
         else:
             spUUID = BLANK_UUID
-        list = self.s.getStorageDomainsList(spUUID)
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
-        for entry in list['domlist']:
+        domains = self.s.getStorageDomainsList(spUUID)
+        if domains['status']['code']:
+            return domains['status']['code'], domains['status']['message']
+        for entry in domains['domlist']:
             print entry
         return 0, ''
 
     def getDeviceList(self, args):
-        list = self.s.getDeviceList(*args)
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
-        pp.pprint(list['devList'])
+        devices = self.s.getDeviceList(*args)
+        if devices['status']['code']:
+            return devices['status']['code'], devices['status']['message']
+        pp.pprint(devices['devList'])
         return 0, ''
 
     def getDeviceInfo(self, args):
@@ -494,13 +494,13 @@ class service:
     def getVGList(self, args):
         if len(args) > 0:
             storageType = int(args[0])
-            list = self.s.getVGList(storageType)
+            vgs = self.s.getVGList(storageType)
         else:
-            list = self.s.getVGList()
+            vgs = self.s.getVGList()
 
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
-        for entry in list['vglist']:
+        if vgs['status']['code']:
+            return vgs['status']['code'], vgs['status']['message']
+        for entry in vgs['vglist']:
             print '============================'
             for element in entry.keys():
                 print "%s = %s " % (element, entry[element])
@@ -931,12 +931,12 @@ class service:
         sdUUID = args[1]
         spUUID = args[2]
         imgUUID = args[3]
-        list = self.s.getVolumesList(sdUUID, spUUID, imgUUID)
+        volumes = self.s.getVolumesList(sdUUID, spUUID, imgUUID)
         todelete = []
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
+        if volumes['status']['code']:
+            return volumes['status']['code'], volumes['status']['message']
         print "Images to delete:"
-        for entry in list['uuidlist']:
+        for entry in volumes['uuidlist']:
             info = self.s.getVolumeInfo(sdUUID, spUUID, imgUUID, entry)['info']
             if info['description']:
                 if args[0] in info['description']:
@@ -955,16 +955,16 @@ class service:
         if len(args)>2:
             images = [args[2]]
         else:
-            list = self.s.getImagesList(sdUUID)
-            if list['status']['code'] == 0:
-                images = list['imageslist']
+            imgs = self.s.getImagesList(sdUUID)
+            if imgs['status']['code'] == 0:
+                images = imgs['imageslist']
 
         for imgUUID in images:
-            list = self.s.getVolumesList(sdUUID, spUUID, imgUUID)
-            if list['status']['code']:
-                return list['status']['code'], list['status']['message']
+            volumes = self.s.getVolumesList(sdUUID, spUUID, imgUUID)
+            if volumes['status']['code']:
+                return volumes['status']['code'], volumes['status']['message']
 
-            for entry in list['uuidlist']:
+            for entry in volumes['uuidlist']:
                 message = entry + ' : '
                 res = self.s.getVolumeInfo(sdUUID, spUUID, imgUUID, entry)
                 if not 'info' in res:
@@ -991,30 +991,30 @@ class service:
 
     def getIsoList(self, args):
         spUUID = args[0]
-        list = self.s.getIsoList(spUUID)
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
+        isos = self.s.getIsoList(spUUID)
+        if isos['status']['code']:
+            return isos['status']['code'], isos['status']['message']
 
         print '------ ISO list with proper permissions only -------'
-        for entry in list['isolist']:
+        for entry in isos['isolist']:
             print entry
         return 0, ''
 
     def getFloppyList(self, args):
         spUUID = args[0]
-        list = self.s.getFloppyList(spUUID)
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
-        for entry in list['isolist']:
+        floppies = self.s.getFloppyList(spUUID)
+        if floppies['status']['code']:
+            return floppies['status']['code'], floppies['status']['message']
+        for entry in floppies['isolist']:
             print entry
         return 0, ''
 
     def getImagesList(self, args):
         sdUUID = args[0]
-        list = self.s.getImagesList(sdUUID)
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
-        for entry in list['imageslist']:
+        images = self.s.getImagesList(sdUUID)
+        if images['status']['code']:
+            return images['status']['code'], images['status']['message']
+        for entry in images['imageslist']:
             print entry
         return 0, ''
 
@@ -1023,20 +1023,20 @@ class service:
         imgUUID = args[1]
         if len(args) > 2:
             sdUUID = args[2]
-            list = self.s.getImageDomainsList(spUUID, imgUUID, sdUUID)
+            domains = self.s.getImageDomainsList(spUUID, imgUUID, sdUUID)
         else:
-            list = self.s.getImageDomainsList(spUUID, imgUUID)
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
-        for entry in list['domainslist']:
+            domains = self.s.getImageDomainsList(spUUID, imgUUID)
+        if domains['status']['code']:
+            return domains['status']['code'], domains['status']['message']
+        for entry in domains['domainslist']:
             print entry
         return 0, ''
 
     def getConnectedStoragePoolsList(self, args):
-        list = self.s.getConnectedStoragePoolsList()
-        if list['status']['code']:
-            return list['status']['code'], list['status']['message']
-        for entry in list['poollist']:
+        pools = self.s.getConnectedStoragePoolsList()
+        if pools['status']['code']:
+            return pools['status']['code'], pools['status']['message']
+        for entry in pools['poollist']:
             print entry
         return 0, ''
 
@@ -1432,12 +1432,12 @@ class service:
         code = 0
 
         for imgUUID in images:
-            list = self.s.checkImage(sdUUID, spUUID, imgUUID)
-            if list['status']['code']:
-                print "count not check image %s: code: %s message: %s" % (imgUUID, list['status']['code'], list['status']['message'])
-                code = int(list['status']['code'])
+            status = self.s.checkImage(sdUUID, spUUID, imgUUID)
+            if status['status']['code']:
+                print "count not check image %s: code: %s message: %s" % (imgUUID, status['status']['code'], status['status']['message'])
+                code = int(status['status']['code'])
                 continue
-            self.__image_status(imgUUID, list)
+            self.__image_status(imgUUID, status)
         return code, ''
 
     def checkDomain(self, args):
@@ -1446,12 +1446,12 @@ class service:
         code = 0
 
         for sdUUID in domains:
-            list = self.s.checkDomain(sdUUID, spUUID)
-            if list['status']['code']:
-                print "count not check domain %s: code: %s message: %s" % (sdUUID, list['status']['code'], list['status']['message'])
-                code = int(list['status']['code'])
+            status = self.s.checkDomain(sdUUID, spUUID)
+            if status['status']['code']:
+                print "count not check domain %s: code: %s message: %s" % (sdUUID, status['status']['code'], status['status']['message'])
+                code = int(status['status']['code'])
                 continue
-            self.__domain_status(sdUUID, list)
+            self.__domain_status(sdUUID, status)
         return code, ''
 
     def checkPool(self, args):
@@ -1459,12 +1459,12 @@ class service:
         code = 0
 
         for spUUID in pools:
-            list = self.s.checkPool(spUUID)
-            if list['status']['code']:
-                print "count not check pool %s: code: %s message: %s" % (spUUID, list['status']['code'], list['status']['message'])
-                code = int(list['status']['code'])
+            status = self.s.checkPool(spUUID)
+            if status['status']['code']:
+                print "count not check pool %s: code: %s message: %s" % (spUUID, status['status']['code'], status['status']['message'])
+                code = int(status['status']['code'])
                 continue
-            self.__pool_status(spUUID, list)
+            self.__pool_status(spUUID, status)
         return code, ''
 
     def repoStats(self, args):
