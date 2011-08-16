@@ -267,7 +267,7 @@ def pathListIter(filterGuids=None):
                 pathInfo["type"] = DEV_ISCSI
                 sessionID = iscsi.getiScsiSession(slave)
                 if sessionID not in knownSessions:
-                    knownSessions[sessionID] = iscsi.getdeviSCSIinfo(slave)
+                    knownSessions[sessionID] = svdsm.getdeviSCSIinfo(slave)
                 devInfo["connections"].append(knownSessions[sessionID])
             else:
                 devInfo["devtypes"].append(DEV_FCP)

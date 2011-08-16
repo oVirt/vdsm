@@ -31,6 +31,7 @@ from multiprocessing import Pipe, Process
 
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
+from storage.iscsi import getdeviSCSIinfo as _getdeviSCSIinfo
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
 from storage.fileUtils import chown, open_ex, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
@@ -75,6 +76,10 @@ class _SuperVdsm(object):
     @logDecorator
     def removeDeviceMapping(self, devName):
         return _removeMapping(devName)
+
+    @logDecorator
+    def getdeviSCSIinfo(self, *args, **kwargs):
+        return _getdeviSCSIinfo(*args, **kwargs)
 
     @logDecorator
     def getPathsStatus(self):

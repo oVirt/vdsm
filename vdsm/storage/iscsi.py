@@ -540,14 +540,10 @@ def forceIScsiScan():
 def devIsiSCSI(dev):
     hostdir = os.path.realpath(os.path.join("/sys/block", dev, "device/../../.."))
     host = os.path.basename(hostdir)
-    iscsi_host = os.path.join(hostdir, constants.STRG_ISCSI_HOST + host)
-    scsi_host = os.path.join(hostdir, constants.STRG_SCSI_HOST + host)
+    iscsi_host = os.path.join(hostdir, constants.STRG_ISCSI_HOST, host)
+    scsi_host = os.path.join(hostdir, constants.STRG_SCSI_HOST, host)
     proc_name = os.path.join(scsi_host, "proc_name")
-    if os.path.exists(iscsi_host) and os.path.exists(proc_name):
-        with open(proc_name, "r") as f:
-            return f.readline().startswith("iscsi_tcp")
-
-    return False
+    return (os.path.exists(iscsi_host) and os.path.exists(proc_name))
 
 def getiScsiTarget(dev):
     device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
@@ -595,12 +591,15 @@ def getdeviSCSIinfo(dev):
         paddr = os.path.join(iscsi_connection, "persistent_address")
         pport = os.path.join(iscsi_connection, "persistent_port")
 
-        cmd = [constants.EXT_CAT, targetname, tpgt, user, passwd, paddr, pport,
-            initiator]
-        rc, out, err = misc.execCmd(cmd)
-        if rc != 0 or len(out) != 7:
-            raise se.MiscFileReadException()
-        iqn, num, username, password, ip, port, initiator = out
+        res = []
+        for fname in (targetname, tpgt, user, passwd, paddr, pport, initiator):
+            try:
+                with open(fname, "r") as f:
+                    res.append(f.read().strip())
+            except (OSError, IOError):
+                res.append("")
+
+        iqn, num, username, password, ip, port, initiator = res
 
     # Fix username and password if needed (iscsi reports empty user/password
     # as "<NULL>" (RHEL5) or "(null)" (RHEL6)
