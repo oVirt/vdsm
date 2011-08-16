@@ -121,6 +121,10 @@ VDSM_DIR = "/usr/share/vdsm/"
 DTV_REPO='/tmp/dtv.'+rnum+'.repo'
 
 # Adding VDSM_DIR to the current python path
+try:
+    os.mkdir(VDSM_DIR, 0755)
+except OSError:
+    pass
 sys.path.append(VDSM_DIR)
 
 class Deploy:
