@@ -427,23 +427,30 @@ class BlockVolume(volume.Volume):
         Find the image(s) UUID by one of its volume UUID.
         Templated and shared disks volumes may result more then one image.
         """
-        volumes = lvm.lvsByTag(self.sdUUID, "%s%s" % (TAG_PREFIX_PARENT, self.volUUID))
-        volumes.append(lvm.getLV(self.volUUID))
-        images = []
-        for vol in volumes:
-            for tag in vol.tags:
+        lvs = lvm.getLV(self.sdUUID)
+        imgUUIDs = [self.imgUUID] #Add volume image
+        for lv in lvs:
+            imgUUID = ""
+            parent = ""
+            for tag in lv.tags:
                 if tag.startswith(TAG_PREFIX_IMAGE):
-                    img = tag[3:]
-                    if image.REMOVED_IMAGE_PREFIX not in img:
-                        images.append(img)
+                    imgUUID = tag[len(TAG_PREFIX_IMAGE):]
+                elif tag.startswith(TAG_PREFIX_PARENT):
+                    if tag[len(TAG_PREFIX_PARENT):] != self.volUUID:
+                        break #Not a child
+                    parent = tag[len(TAG_PREFIX_PARENT):]
+                if parent and image:
+                    if imgUUID not in imgUUIDs:
+                        imgUUIDs.append(imgUUID)
+                    break
 
         # Check image legallity, if needed
         if legal:
-            for img in images[:]:
-                if not image.Image(self.repoPath).isLegal(self.sdUUID, img):
-                    images.remove(img)
+            for imgUUID in imgUUIDs[:]:
+                if not image.Image(self.repoPath).isLegal(self.sdUUID, imgUUID):
+                    imgUUIDs.remove(imgUUID)
 
-        return images
+        return imgUUIDs
 
     def getVolumeTag(self, tagPrefix):
         return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
