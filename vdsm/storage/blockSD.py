@@ -946,11 +946,6 @@ class BlockStorageDomain(sd.StorageDomain):
                 src = lvm.lvPath(self.sdUUID, lvName)
                 os.symlink(src, dst)
 
-        # create special imageUUID for ISO/Floppy volumes
-        isoPath = os.path.join(imagesPath, sd.ISO_IMAGE_UUID)
-        if self.isISO():
-            fileUtils.createdir(isoPath)
-
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         self._extendlock.acquire()
         try:
