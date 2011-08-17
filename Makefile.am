@@ -7,11 +7,11 @@
 #
 
 SUBDIRS = vdsm vdsm_cli vds_bootstrap vdsm_reg vdsm_hooks
+
 EXTRA_DIST = vdsm.spec
 
-rpmversion = @PACKAGE_VERSION@
-rpmrelease = @PACKAGE_RELEASE@
-RPMTOP = $(PWD)/rpmtop
+CLEANFILES = \
+	$(DIST_ARCHIVES)
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)
@@ -19,15 +19,10 @@ check-local:
 .PHONY: srpm rpm
 
 srpm: dist
-	$(MKDIR_P) $(RPMTOP)/{RPMS,SRPMS,SOURCES,BUILD}
-	rpmbuild -ts \
-		--define="_topdir $(RPMTOP)" \
-		--define="_sourcedir $(PWD)" $(DIST_ARCHIVES)
+	rpmbuild -ts --define="extra_release $(BUILDID)" $(DIST_ARCHIVES)
 
 rpm: dist
-	rpmbuild -ta \
-		--define="extra_release $(BUILDID)" \
-		--define="_topdir $(RPMTOP)" $(DIST_ARCHIVES)
+	rpmbuild -ta --define="extra_release $(BUILDID)" $(DIST_ARCHIVES)
 
 dist-hook: gen-ChangeLog
 
