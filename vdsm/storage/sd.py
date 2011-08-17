@@ -430,12 +430,6 @@ class StorageDomain:
         # do any required cleanup
 
 
-    def validate(self):
-        """
-        Validate that the storage domain is accessible.
-        """
-        pass
-
     # I personally don't think there is a reason to pack these
     # but I already changed too much.
     def changeLeaseParams(self, leaseParamPack):

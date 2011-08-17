@@ -169,7 +169,7 @@ class FileStorageDomain(sd.StorageDomain):
                             volUUID, desc, srcImgUUID, srcVolUUID)
 
 
-    def validate(self):
+    def validate(self, useCache=False):
         """
         Validate that the storage domain is accessible.
         """
