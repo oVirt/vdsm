@@ -82,8 +82,8 @@ set_addresses() {
 					/etc/vdsm-reg/vdsm-reg.conf
 			fi
 
-			if [ ! -z "$managment_server_fingerprint" ]; then
-				res=`python "$DEPLOY_UTIL" --download-rhevm-cert --server-address="$vdc_managment_server" --server-port="$vdc_managment_port" --fingerprint="$managment_server_fingerprint"`
+			if [ ! -z "$management_server_fingerprint" ]; then
+				res=`python "$DEPLOY_UTIL" --download-rhevm-cert --server-address="$vdc_managment_server" --server-port="$vdc_managment_port" --fingerprint="$management_server_fingerprint"`
 				ret_val=$?
 				echo "$res" >> $LOG 2>&1
 				if [ ! $ret_val -eq 0 ];then
