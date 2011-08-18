@@ -628,6 +628,16 @@ class LVMCache(object):
             vg = vgs.get(vgName)
         return vg
 
+    def getVgs(self, vgNames):
+        """Reloads all the VGs of the set.
+
+        Can block for suspended devices.
+        Fills the cache but not uses it.
+        Only returns found VGs.
+        """
+        return [vg for vgName, vg in self._reloadvgs(vgNames).iteritems() if vgName in vgNames]
+
+
     def getAllVgs(self):
         # Get everything we have
         if self._stalevg:
@@ -816,6 +826,9 @@ def getVG(vgName):
         raise se.VolumeGroupDoesNotExist(vgName)
     else:
         return vg
+
+def getVGs(vgNames):
+    return _lvminfo.getVgs(vgNames) #returns list
 
 def getAllVGs():
     return _lvminfo.getAllVgs() #returns list

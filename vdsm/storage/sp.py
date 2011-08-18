@@ -30,6 +30,7 @@ import codecs
 import constants
 import storage_mailbox
 import blockSD
+import fileSD
 import sd
 import misc
 from misc import Event
@@ -512,6 +513,7 @@ class StoragePool:
     def __masterMigrate(self, sdUUID, msdUUID, masterVersion):
         curmsd = SDF.produce(sdUUID)
         newmsd = SDF.produce(msdUUID)
+        self._refreshDomainLinks(newmsd)
         curmsd.invalidateMetadata()
         newmsd.upgrade(curmsd.getVersion())
 
@@ -847,24 +849,29 @@ class StoragePool:
         if msdUUID in domUUIDs:
             domUUIDs.remove(msdUUID)
 
-        for domUUID in domUUIDs:
-            try:
-                d = SDF.produce(domUUID)
-            except se.StorageDomainDoesNotExist:
-                # We should not rebuild a non-master active domain
-                # if it is disconnected. Log the error and continue
-                self.log.error("pool %s metadata contains an unknown domain %s", self.spUUID, domUUID, exc_info=True)
-                continue
+        #TODO: Consider to remove this whole block. UGLY!
+        #We want to avoid lookups (vgs) of unknown block domains.
+        #domUUIDs includes all the domains, file or block.
+        block_mountpoint = os.path.join(sd.StorageDomain.storage_repository,
+                sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
+        blockDomUUIDs = blockSD.lvm.getVGs(domUUIDs)
+        domDirs = {} # {domUUID: domaindir}
+        #Add the block domains
+        for domUUID in blockDomUUIDs:
+            domaindir = os.path.join(block_mountpoint, domUUID)
+            domDirs[domUUID] = domaindir
+            # create domain special volumes folder
+            fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_META_DATA))
+            fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_IMAGES))
+        #Add the file domains
+        for domUUID, domaindir in fileSD.scanDomains(): #[(fileDomUUID, file_domaindir)]
+            domDirs[domUUID] = domaindir
 
-            try:
-                self._refreshDomainLinks(d)
-            except (se.StorageException, OSError):
-                self.log.error("Can't refresh domain links", exc_info=True)
-                continue
-            # Remove domain from potential cleanup
+        #Link all the domains to the pool
+        for domUUID, domaindir in domDirs.iteritems():
             linkName = os.path.join(self.poolPath, domUUID)
-            if linkName in oldLinks:
-                oldLinks.remove(linkName)
+            self._linkStorageDomain(domaindir, linkName)
+
         # Always try to build master links
         try:
             self._refreshDomainLinks(self.masterDomain)
@@ -876,13 +883,14 @@ class StoragePool:
 
         # Cleanup old trash from the pool
         for oldie in oldLinks:
-            try:
-                os.remove(oldie)
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
-            except Exception as e:
-                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
+            if oldie not in domUUIDs:
+                try:
+                    os.remove(oldie)
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
+                except Exception as e:
+                        self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
 
 
     def refresh(self, msdUUID=None, masterVersion=None):
