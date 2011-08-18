@@ -567,15 +567,17 @@ gpgcheck=0
         self._xmlOutput('CreateConf', self.status, None, None, self.message)
         return self.rc
 
-    def _addNetwork(self, vdcName):
+    def _addNetwork(self, vdcName, vdcPort):
         fReturn = True
 
         #add rhevm bridge
         try:
             fReturn = deployUtil.makeBridge(vdcName, VDSM_DIR)
             if fReturn: #save current config by removing the undo files:
+                vdcUrl = "http://%s:%s" % (
+                            vdcName, str(vdcPort) if vdcPort else "80")
                 try:
-                    if not deployUtil.waitRouteRestore(60, vdcName):
+                    if not deployUtil.waitRouteRestore(60, vdcUrl)
                         fReturn = False
                         self.message = "No route to %s. Check switch/router " \
                             "settings and try registering again." % vdcName
@@ -620,7 +622,7 @@ gpgcheck=0
                 logging.error(self.message)
                 #Do not set rc to allow changes from rhev-m.
             else:
-                self._addNetwork(url)
+                self._addNetwork(url, port)
 
         self._xmlOutput('SetNetworking', self.status, None, None, self.message)
         return self.rc
