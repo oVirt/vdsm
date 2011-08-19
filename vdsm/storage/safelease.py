@@ -21,13 +21,17 @@
 import os.path
 from config import config
 import misc
+import errno
 import subprocess
+import sanlock
+from contextlib import nested
 import constants
 import storage_exception as se
 import threading
 import logging
 
 MAX_HOST_ID = 250
+LEASE_NAME = 'SDM'
 
 class ClusterLock(object):
     log = logging.getLogger("ClusterLock")
@@ -114,3 +118,115 @@ class ClusterLock(object):
             if rc != 0:
                 self.log.error("Could not release cluster lock rc=%s out=%s, err=%s" % (str(rc), out, err))
             self.log.debug("Cluster lock released successfully")
+
+
+class SANLock(object):
+    log = logging.getLogger("SANLock")
+
+    _sanlock_fd = None
+    _sanlock_lock = threading.Lock()
+
+    def __init__(self, sdUUID, idsPath, leasesPath, *args):
+        self._lock = threading.Lock()
+        self._sdUUID = sdUUID
+        self._idsPath = idsPath
+        self._leasesPath = leasesPath
+        self._hostId = None
+        self._sanlockfd = None
+        self._lockAcquired = False
+
+    def initLock(self):
+        try:
+            sanlock.init_lockspace(self._sdUUID, self._idsPath)
+            sanlock.init_resource(self._sdUUID, LEASE_NAME, [self._leasesPath])
+        except sanlock.SanlockException:
+            self.log.warn("Cannot initialize clusterlock", exc_info=True)
+            raise se.ClusterLockInitError()
+
+    def setParams(self, *args):
+        pass
+
+    def getReservedId(self):
+        return MAX_HOST_ID
+
+    def acquireHostId(self, hostId):
+        with self._lock:
+            if self._hostId is not None:
+                raise se.AcquireHostIdFailure(self._sdUUID,
+                                              "Host id already acquired")
+
+            self.log.info("Acquiring host id for domain %s (id: %s)",
+                          self._sdUUID, hostId)
+
+            try:
+                sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath)
+            except sanlock.SanlockException, e:
+                if e.errno != errno.EEXIST:
+                    raise se.AcquireHostIdFailure(self._sdUUID, e)
+
+            self._hostId = hostId
+            self.log.debug("Host id for domain %s successfully acquired "
+                           "(id: %s)", self._sdUUID, self._hostId)
+
+    def releaseHostId(self, hostId):
+        with self._lock:
+            self.log.info("Releasing host id for domain %s (id: %s)",
+                          self._sdUUID, hostId)
+
+            try:
+                sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath, 0)
+            except sanlock.SanlockException, e:
+                raise se.ReleaseHostIdFailure(self._sdUUID, e)
+
+            self._hostId = None
+            self.log.debug("Host id for domain %s released successfully "
+                           "(id: %s)", self._sdUUID, self._hostId)
+
+    # The hostId parameter is maintained here only for compatibility with
+    # ClusterLock. We could consider to remove it in the future but keeping it
+    # for logging purpose is desirable.
+    def acquire(self, hostId):
+        with nested(self._lock, SANLock._sanlock_lock):
+            self.log.info("Acquiring cluster lock for domain %s (id: %s)",
+                          self._sdUUID, hostId)
+
+            while True:
+                if SANLock._sanlock_fd is None:
+                    try:
+                        SANLock._sanlock_fd = sanlock.register()
+                    except sanlock.SanlockException, e:
+                        raise se.AcquireLockFailure(self._sdUUID, e.errno,
+                                        "Cannot register to sanlock", str(e))
+
+                try:
+                    sanlock.acquire(self._sdUUID, LEASE_NAME,
+                                    [self._leasesPath],
+                                    slkfd=SANLock._sanlock_fd)
+                except sanlock.SanlockException, e:
+                    if e.errno != errno.EPIPE:
+                        raise se.AcquireLockFailure(self._sdUUID, e.errno,
+                                        "Cannot acquire cluster lock", str(e))
+                    SANLock._sanlock_fd = None
+                    continue
+
+                break
+
+            self._lockAcquired = True
+            self.log.debug("Cluster lock for domain %s successfully acquired "
+                           "(id: %s)", self._sdUUID, hostId)
+
+    def release(self):
+        with self._lock:
+            self.log.info("Releasing cluster lock for domain %s (id: %s)",
+                          self._sdUUID, self._hostId)
+
+            try:
+                sanlock.release(SANLock._sanlock_fd, self._sdUUID,
+                                LEASE_NAME, [self._leasesPath])
+            except sanlock.SanlockException, e:
+                raise se.ReleaseLockFailure(self._sdUUID, e)
+
+            self._sanlockfd = None
+            self._lockAcquired = False
+            self.log.debug("Cluster lock for domain %s successfully released "
+                           "(id: %s)", self._sdUUID, self._hostId)

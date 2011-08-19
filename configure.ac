@@ -59,6 +59,8 @@ AC_SUBST([METADATAUSER], [vdsm])
 AC_SUBST([METADATAGROUP], [kvm])
 AC_SUBST([QEMUUSER], [qemu])
 AC_SUBST([QEMUGROUP], [qemu])
+AC_SUBST([SNLKUSER], [sanlock])
+AC_SUBST([SNLKGROUP], [sanlock])
 
 # VDSM default paths
 AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])

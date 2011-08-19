@@ -32,7 +32,7 @@ RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
 CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
-NEEDED_SERVICES="iscsid multipathd ntpd"
+NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock"
 CONFLICTING_SERVICES="libvirt-guests"
 
 LCONF=/etc/libvirt/libvirtd.conf

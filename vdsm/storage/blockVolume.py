@@ -21,6 +21,7 @@
 import os.path
 import uuid
 import threading
+import sanlock
 
 from config import config
 import storage_exception as se
@@ -50,6 +51,11 @@ VOLUME_TAGS = [TAG_PREFIX_PARENT,
 # volume meta data block size
 VOLUME_METASIZE = 512
 VOLUME_MDNUMBLKS = 1
+
+# Reserved leases for special purposes:
+#  - 0       SDM
+#  - 1..100  (unassigned)
+RESERVED_LEASES = 100
 
 rmanager = rm.ResourceManager.getInstance()
 
@@ -236,6 +242,7 @@ class BlockVolume(volume.Volume):
                             size, volume.type2name(volFormat),
                             volume.type2name(preallocate), voltype,
                             diskType, desc, volume.LEGAL_VOL)
+            cls.newVolumeLease(sdUUID, volUUID, offs)
         except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
@@ -624,6 +631,16 @@ class BlockVolume(volume.Volume):
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError(str(metaid) + str(e))
+
+    @classmethod
+    def newVolumeLease(cls, sdUUID, volUUID, leaseSlot):
+        dom = sdCache.produce(sdUUID)
+
+        if dom.hasVolumeLeases():
+            leasePath = dom.getLeasesFilePath()
+            leaseOffset = ((leaseSlot + RESERVED_LEASES)
+                            * dom.logBlkSize * sd.LEASE_BLOCKS)
+            sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
 
     def getVolumeSize(self, bs=512):
         """

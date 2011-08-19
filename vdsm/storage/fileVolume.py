@@ -21,6 +21,7 @@
 from os.path import normpath
 import os
 import uuid
+import sanlock
 
 import storage_exception as se
 from config import config
@@ -32,6 +33,9 @@ import sd
 import misc
 import task
 from threadLocal import vars
+
+LEASE_FILEEXT = ".lease"
+LEASE_FILEOFFSET = 0
 
 def getDomUuidFromVolumePath(volPath):
     # Volume path has pattern:
@@ -183,9 +187,10 @@ class FileVolume(volume.Volume):
                                                  [vol_path]))
             # By definition volume is now a leaf
             cls.file_setrw(vol_path, rw=True)
-            # Set metadata and mark volume as legal.\
+            # Set metadata and mark volume as legal
             cls.newMetadata(vol_path, sdUUID, imgUUID, srcVolUUID, size, volume.type2name(volFormat),
                             volume.type2name(preallocate), voltype, diskType, desc, volume.LEGAL_VOL)
+            cls.newVolumeLease(sdUUID, volUUID, vol_path)
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumeMetadataWriteError(vol_path + ":" + str(e))
@@ -205,6 +210,7 @@ class FileVolume(volume.Volume):
         self.log.info("Request to delete volume %s", self.volUUID)
 
         vol_path = self.getVolumePath()
+        lease_path = self.__leaseVolumePath(vol_path)
 
         if not force:
             self.validateDelete()
@@ -228,7 +234,7 @@ class FileVolume(volume.Volume):
             self.log.warning("cannot finalize parent volume %s", puuid, exc_info=True)
 
         try:
-            self.oop.fileUtils.cleanupfiles([vol_path])
+            self.oop.fileUtils.cleanupfiles([vol_path, lease_path])
         except Exception, e:
             eFound = e
             self.log.error("cannot delete volume %s at path: %s", self.volUUID,
@@ -384,6 +390,18 @@ class FileVolume(volume.Volume):
         return volList
 
     @classmethod
+    def newVolumeLease(cls, sdUUID, volUUID, volPath):
+        dom = sdCache.produce(sdUUID)
+        procPool = oop.getProcessPool(sdUUID)
+
+        if dom.hasVolumeLeases():
+            leasePath = cls.__leaseVolumePath(volPath)
+            procPool.createSparseFile(leasePath, LEASE_FILEOFFSET)
+            cls.file_setrw(leasePath, rw=True)
+            sanlock.init_resource(sdUUID, volUUID,
+                                  [(leasePath, LEASE_FILEOFFSET)])
+
+    @classmethod
     def getAllChildrenList(cls, repoPath, sdUUID, imgUUID, pvolUUID):
         """
         Fetch the list of children volumes (across the all images in domain)
@@ -518,6 +536,13 @@ class FileVolume(volume.Volume):
     def __metaVolumePath(cls, vol_path):
         if vol_path:
             return vol_path + '.meta'
+        else:
+            return None
+
+    @classmethod
+    def __leaseVolumePath(cls, vol_path):
+        if vol_path:
+            return vol_path + LEASE_FILEEXT
         else:
             return None
 

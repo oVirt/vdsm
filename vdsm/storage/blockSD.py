@@ -84,7 +84,7 @@ DMDK_LOGBLKSIZE = "LOGBLKSIZE"
 DMDK_PHYBLKSIZE = "PHYBLKSIZE"
 
 VERS_METADATA_LV = (0,)
-VERS_METADATA_TAG = (2,)
+VERS_METADATA_TAG = (2, 3)
 
 def encodePVInfo(pvInfo):
     return (
@@ -635,11 +635,11 @@ class BlockStorageDomain(sd.StorageDomain):
         self.log.info("META MAPPING: %s" % meta)
         return meta
 
-    def _getIdsFilePath(self):
+    def getIdsFilePath(self):
         lvm.activateLVs(self.sdUUID, [sd.IDS])
         return lvm.lvPath(self.sdUUID, sd.IDS)
 
-    def _getLeasesFilePath(self):
+    def getLeasesFilePath(self):
         lvm.activateLVs(self.sdUUID, [sd.LEASES])
         return lvm.lvPath(self.sdUUID, sd.LEASES)
 

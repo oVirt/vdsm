@@ -98,6 +98,10 @@ ISO_DOMAIN = 2
 BACKUP_DOMAIN = 3
 DOMAIN_CLASSES = {DATA_DOMAIN:'Data', ISO_DOMAIN:'Iso', BACKUP_DOMAIN:'Backup'}
 
+# Lock Version
+DOM_SAFELEASE_VERS = (0,2)
+DOM_SANLOCK_VERS = (3,)
+
 # Metadata keys
 DMDK_VERSION = "VERSION"
 DMDK_SDUUID = "SDUUID"
@@ -127,6 +131,8 @@ TASKS_DIR = 'tasks'
 ISO_IMAGE_UUID = '11111111-1111-1111-1111-111111111111'
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 
+# Blocks used for each lease (valid on all domain types)
+LEASE_BLOCKS = 2048
 
 # This method has strange semantics, it's only here to keep with the old behaviuor
 # that someone might rely on.
@@ -236,13 +242,23 @@ class StorageDomain:
         self._metadata = metadata
         self._lock = threading.Lock()
         self.stat = None
-        leaseParams = (DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+
+        domversion = self.getVersion()
+
+        if domversion in DOM_SAFELEASE_VERS:
+            leaseParams = (
+                DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC],
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
                 DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC])
-        self._clusterLock = safelease.ClusterLock(self.sdUUID,
-                self._getIdsFilePath(), self._getLeasesFilePath(),
-                *leaseParams)
+            self._clusterLock = safelease.ClusterLock(self.sdUUID,
+                    self.getIdsFilePath(), self.getLeasesFilePath(),
+                    *leaseParams)
+        elif domversion in DOM_SANLOCK_VERS:
+            self._clusterLock = safelease.SANLock(self.sdUUID,
+                    self.getIdsFilePath(), self.getLeasesFilePath())
+        else:
+            raise se.UnsupportedDomainVersion(domversion)
 
     def __del__(self):
         if self.stat:
@@ -366,10 +382,10 @@ class StorageDomain:
         self.log.debug("Upgrading domain `%s`", self.sdUUID)
         self.setMetaParam(DMDK_VERSION, targetVersion)
 
-    def _getIdsFilePath(self):
+    def getIdsFilePath(self):
         return os.path.join(self.getMDPath(), IDS)
 
-    def _getLeasesFilePath(self):
+    def getLeasesFilePath(self):
         return os.path.join(self.getMDPath(), LEASES)
 
     def getReservedId(self):
@@ -380,6 +396,9 @@ class StorageDomain:
 
     def releaseHostId(self, hostId):
         self._clusterLock.releaseHostId(hostId)
+
+    def hasVolumeLeases(self):
+        return self.getVersion() in DOM_SANLOCK_VERS
 
     def acquireClusterLock(self, hostID):
         self.refresh()
