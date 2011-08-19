@@ -585,7 +585,8 @@ gpgcheck=0
                 try:
                     if not deployUtil.waitRouteRestore(60, vdcName):
                         fReturn = False
-                        self.message = "No route to VDC. Check switch/router settings and try registration again"
+                        self.message = "No route to %s. Check switch/router " \
+                            "settings and try registering again." % vdcName
                         logging.error(self.message)
                 except:
                     logging.error(traceback.format_exc())
@@ -622,7 +623,7 @@ gpgcheck=0
         else:
             url, port = deployUtil.getAddress(iurl)
             if url is None:
-                self.message = "Faild to parse VDC URL!"
+                self.message = "Failed to parse manager URL!"
                 self.status = "FAIL"
                 logging.error(self.message)
                 #Do not set rc to allow changes from rhev-m.

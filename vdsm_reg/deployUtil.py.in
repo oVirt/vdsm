@@ -288,20 +288,20 @@ def _getMGTIface(vdcHostName):
 
     try:
         if vdcHostName != "None":
-            logging.debug("_getMGTIface: read vdc_host_name: " + strVDCName)
+            logging.debug("_getMGTIface: read host name: " + strVDCName)
             #Now find the IP. Note that gethostbyname(IP) == IP
             strVDCIP = socket.gethostbyname(strVDCName)
     except:
             strVDCIP = "None"
-            logging.debug("_getMGTIface: error trying to figure out VDC's IP")
+            logging.debug("_getMGTIface: error trying to figure out IP")
 
-    logging.debug("_getMGTIface: using vdc_host_name " + strVDCName + " strVDCIP= " + strVDCIP)
+    logging.debug("_getMGTIface: using host name " + strVDCName + " strIP= " + strVDCIP)
 
     # Find the interface of the management IP
     if strVDCIP != "None":
         strReturn = _getIfaceByIP(strVDCIP)
 
-    logging.debug("_getMGTIface VDC IP=" + str(strVDCIP) + " strIface=" + str(strReturn))
+    logging.debug("_getMGTIface IP=" + str(strVDCIP) + " strIface=" + str(strReturn))
     return strReturn
 
 def getMGTIP(vdsmDir, vdcHostName):
