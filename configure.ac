@@ -45,6 +45,12 @@ AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
 AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
 AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 
+# Checking for pyflakes
+AC_PATH_PROG([PYFLAKES], [pyflakes])
+if test "x$PYFLAKES" = "x"; then
+  AC_MSG_ERROR([pyflakes not found, please install it.])
+fi
+
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLOCKDEV_PATH], [blockdev], [/sbin/blockdev])
 AC_PATH_PROG([BRCTL_PATH], [brctl], [/usr/sbin/brctl])

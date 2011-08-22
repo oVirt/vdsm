@@ -14,7 +14,7 @@ rpmrelease = @PACKAGE_RELEASE@
 RPMTOP = $(PWD)/rpmtop
 
 check-local:
-	pyflakes $(SUBDIRS)
+	$(PYFLAKES) $(SUBDIRS)
 
 .PHONY: srpm rpm
 
