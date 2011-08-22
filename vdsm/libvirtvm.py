@@ -1099,7 +1099,8 @@ class LibvirtVm(vm.Vm):
 #                                    time.gmtime(time.time() + float(seconds)))
 #            graphics.setAttribute('passwdValidTo', validto)
             graphics.setAttribute('passwdValidTo', '2035-01-01T00:00:01')
-        graphics.setAttribute('connected', connAct)
+        if graphics.getAttribute('type') == 'spice':
+            graphics.setAttribute('connected', connAct)
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
         return {'status': doneCode}
 
