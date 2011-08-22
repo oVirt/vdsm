@@ -126,6 +126,19 @@ def bondingOtherUsers(bridge, vlan, bonding):
     users.discard(owner)
     return users
 
+def nicSort(nics):
+    "Return a list of nics/interfaces ordered by name"
+    nics_list = []
+    nics_rexp = re.compile("([A-Za-z]+)([0-9]+)")
+
+    for nic_name in nics:
+        nic_sre = nics_rexp.match(nic_name)
+        if nic_sre:
+            nics_list.append((nic_sre.group(1), int(nic_sre.group(2))))
+        else:
+            nics_list.append((nic_name, ''))
+
+    return [x + str(y) for x, y in sorted(nics_list)]
 
 class ConfigWriter(object):
     NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
@@ -447,7 +460,9 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
             if nic not in vlanedIfaces:
                 ifdown(nic)
     ifdown(bridge)
-    for nic in nics:
+    # nics must be activated in the same order of boot time to expose the correct
+    # MAC address.
+    for nic in nicSort(nics):
         ifup(nic)
     if bonding:
         ifup(bonding)
