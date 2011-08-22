@@ -9,7 +9,9 @@ Makefile.in
 *.o
 aclocal.m4
 autom4te.cache/
-build-aux/
+build-aux/depcomp
+build-aux/install-sh
+build-aux/missing
 config.log
 config.status
 configure

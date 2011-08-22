@@ -26,3 +26,16 @@ srpm: dist
 
 rpm: dist
 	rpmbuild --define="_topdir $(RPMTOP)" -ta $(DIST_ARCHIVES)
+
+dist-hook: gen-ChangeLog
+
+# Generate the ChangeLog file and insert it into the directory
+# we're about to use to create a tarball.
+.PHONY: gen-ChangeLog
+gen-ChangeLog:
+	if test -d .git; then					\
+	  $(top_srcdir)/build-aux/gitlog-to-changelog		\
+	    > $(distdir)/cl-t;					\
+	  rm -f $(distdir)/ChangeLog;				\
+	  mv $(distdir)/cl-t $(distdir)/ChangeLog;		\
+	fi
