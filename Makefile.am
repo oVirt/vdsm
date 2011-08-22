@@ -13,7 +13,7 @@ rpmversion = @PACKAGE_VERSION@
 rpmrelease = @PACKAGE_RELEASE@
 RPMTOP = $(PWD)/rpmtop
 
-dist-hook:
+check-local:
 	pyflakes $(SUBDIRS)
 
 .PHONY: srpm rpm

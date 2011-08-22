@@ -51,7 +51,7 @@ dist_vdsmstorage_DATA = \
 EXTRA_DIST = \
 	12-vdsm-lvm.rules
 
-dist-hook:
+check-local:
 	python $(srcdir)/storage_exception.py
 
 install-data-local:

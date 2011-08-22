@@ -34,6 +34,7 @@ Requires: libvirt-python
 Requires: dosfstools
 Requires: policycoreutils-python
 Requires(post): cyrus-sasl-lib
+BuildRequires: pyflakes
 Conflicts: selinux-policy-targeted < 3.7.19-80.el6
 
 %description
@@ -56,6 +57,9 @@ make DESTDIR=%{buildroot} install
 # this is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps.
 install -dDm 1777 "%{buildroot}"%{_localstatedir}/log/core
+
+%check
+make check
 
 %clean
 %{__rm} -rf %{buildroot}
