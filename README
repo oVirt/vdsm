@@ -1,19 +1,61 @@
-Copyright 2009 Red Hat, Inc. and/or its affiliates.
+         VDSM: Virtual Desktop Server Manager
+         ====================================
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+The VDSM service exposes an XML-RPC API for managing virtualization
+hosts running the KVM hypervisor technology. VDSM manages and monitors
+the host's storage, memory and networks as well as virtual machine
+creation, other host administration tasks, statistics gathering, and
+log collection.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY, NONINFRINGEMENT or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License for more details.
+VDSM service originated as a service to be used by a RHEV Manager to
+control RHEV Hypervisors and Red Hat Enterprise Linux hosts. It is
+now independent of RHEV, usable by any management application and
+is intended to be portable to any Linux host providing the KVM
+virtualization technology.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301 USA.
+Installation
+============
+
+The VDSM service can be used by following the standard autotools
+installation process, documented in the INSTALL file. As a quick
+start you can do
+
+   ./configure --prefix=/usr --sysconfdir=/etc \
+        --localstatedir=/var --libdir=/usr/lib
+   make
+   sudo make install
+
+The 'vdsm.spec' file demonstrates how to distribute VDSM as an RPM
+package.
+
+
+Getting Help
+============
+
+There are two mailing lists for discussions:
+
+  - For technical discussions about the project and its code base.
+
+
+    https://fedorahosted.org/mailman/listinfo/vdsm-devel
+
+  - For questions by users, who do not want to be swamped by
+    technicalities.
+
+    https://fedorahosted.org/mailman/listinfo/vdsm-users
+
+The developers also hang out on IRC at #vdsm hosted on  freenode.net
+
+The latest upstream code can be obtained from GIT:
+
+   http://git.fedorahosted.org/git/?p=vdsm.git
+
+Licensing
+=========
+
+VDSM is provided under the terms of the GNU General Public License,
+version 2 or later. Please see the COPYING file for complete GPLv2+
+license terms.
 
 In addition, as a special exception, Red Hat, Inc. and its affiliates
 give you permission to distribute this program, or a work based on it,
@@ -26,5 +68,6 @@ contained in the combination.
 
 If you modify this program, you may extend this exception to your
 version, but you are not obligated to do so.  If you do not wish to do
-so, delete this exception statement from your version. 
+so, delete this exception statement from your version.
 
+-- End of readme
