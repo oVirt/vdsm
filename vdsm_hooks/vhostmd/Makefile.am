@@ -22,9 +22,11 @@ install-data-local: install-data-sudoers
 	$(INSTALL_SCRIPT) $(srcdir)/after_vm_destroy.py \
 		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_vhostmd
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
 	$(LN_S) ../before_vm_start/50_vhostmd \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
 	$(LN_S) ../before_vm_start/50_vhostmd \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
 

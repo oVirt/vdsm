@@ -13,6 +13,7 @@ EXTRA_DIST = \
 	before_vm_start.py
 
 install-data-local:
+	$(RM) $(DESTDIR)$(bindir)/qemu-system-x86_64
 	$(LN_S) qemu $(DESTDIR)$(bindir)/qemu-system-x86_64
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
