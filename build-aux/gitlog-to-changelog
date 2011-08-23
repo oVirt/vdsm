@@ -152,6 +152,9 @@ sub quoted_cmd(@)
       # Omit "Signed-off-by..." lines.
       @line = grep !/^Signed-off-by: .*>$/, @line;
 
+      # Omit gerrit lines.
+      @line = grep !/^(Change-Id|Reviewed-(on|by)|Tested-by): .*$/, @line;
+
       # If there were any lines
       if (@line == 0)
         {
