@@ -1038,7 +1038,7 @@ class HSM:
         vars.task.getSharedLock(STORAGE, spUUID)
         isoDom = self.getPool(spUUID).getIsoDomain()
         if not isoDom:
-            raise se.GetIsoListError(isoDom.sdUUID)
+            raise se.GetIsoListError(spUUID)
 
         # Get full iso files dictionary
         isodict = isoDom.getFileList(pattern='*.' + extension, caseSensitive=False)
