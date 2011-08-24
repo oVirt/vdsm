@@ -86,7 +86,7 @@ class BlockVolume(volume.Volume):
         try:
             #Fix me: assert resource lock.
             lvm.getLV(sdUUID, volUUID)
-            lvm.removeLV(sdUUID, volUUID)
+            lvm.removeLVs(sdUUID, volUUID)
         except se.LogicalVolumeDoesNotExistError, e:
             pass #It's OK: inexistent LV, don't try to remove.
         except se.CannotRemoveLogicalVolume, e:
@@ -298,7 +298,7 @@ class BlockVolume(volume.Volume):
 
         try:
             try:
-                lvm.removeLV(self.sdUUID, self.volUUID)
+                lvm.removeLVs(self.sdUUID, self.volUUID)
             except se.CannotRemoveLogicalVolume:
                 # At this point LV is already marked as illegal, we will try to cleanup whatever we can...
                 pass

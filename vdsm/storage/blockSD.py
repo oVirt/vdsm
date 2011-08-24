@@ -714,7 +714,7 @@ class BlockStorageDomain(sd.StorageDomain):
         for lv in lvs:
             #Fix me: Should raise and get resource lock.
             try:
-                lvm.removeLV(sdUUID, lv.name)
+                lvm.removeLVs(sdUUID, lv.name)
             except se.CannotRemoveLogicalVolume, e:
                 cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID, lv.name, str(e))
 

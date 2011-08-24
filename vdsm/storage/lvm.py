@@ -979,29 +979,35 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False, initialTag=N
         _setLVAvailability(vgName, lvName, "n")
 
 
-def removeLV(vgName, lvName):
-    #Assert that the LV is inactive before remove.
-    if _isLVActive(vgName, lvName):
-        #Fix me
-        #Should not remove active LVs
-        #raise se.CannotRemoveLogicalVolume(vgName, lvName)
-        log.warning("Removing active volume %s/%s" % (vgName, lvName))
+def removeLVs(vgName, lvNames):
+    lvNames = _normalizeargs(lvNames)
+    #Assert that the LVs are inactive before remove.
+    for lvName in lvNames:
+        if _isLVActive(vgName, lvName):
+            #Fix me
+            #Should not remove active LVs
+            #raise se.CannotRemoveLogicalVolume(vgName, lvName)
+            log.warning("Removing active volume %s/%s" % (vgName, lvName))
 
     #LV exists or not in cache, attempting to remove it.
     #Removing Stubs also. Active Stubs should raise.
     # Destroy LV
     #Fix me:removes active LVs too. "-f" should be removed.
-    cmd = ("lvremove", "-f") + LVM_NOBACKUP + ("%s/%s" % (vgName, lvName),)
+    cmd = ["lvremove", "-f"]
+    cmd.extend(LVM_NOBACKUP)
+    for lvName in lvNames:
+        cmd.append("%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd)
     if rc == 0:
-        # Remove the LV from the cache
-        _lvminfo._lvs.pop((vgName, lvName), None)
-        # If lvremove succeeded it affected VG as well
-        _lvminfo._invalidatevgs(vgName)
+        for lvName in lvNames:
+            # Remove the LV from the cache
+            _lvminfo._lvs.pop((vgName, lvName), None)
+            # If lvremove succeeded it affected VG as well
+            _lvminfo._invalidatevgs(vgName)
     else:
         # Otherwise LV info needs to be refreshed
         _lvminfo._invalidatelvs(vgName, lvName)
-        raise se.CannotRemoveLogicalVolume(vgName, lvName)
+        raise se.CannotRemoveLogicalVolume(vgName, str(lvNames))
 
 
 def extendLV(vgName, lvName, size):
