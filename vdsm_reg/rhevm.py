@@ -31,6 +31,9 @@ from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox, \
 sys.path.append('/usr/share/vdsm-reg')
 import deployUtil
 
+sys.path.append('/usr/share/vdsm')
+import constants
+
 VDSM_CONFIG = "/etc/vdsm/vdsm.conf"
 VDSM_REG_CONFIG = "/etc/vdsm-reg/vdsm-reg.conf"
 VDC_HOST_PORT = 8443
@@ -162,7 +165,11 @@ class Plugin(PluginBase):
                 else:
                     ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "Failed downloading RHEV-M certificate", buttons = ['Ok'])
                     self.ncs.reset_screen_colors()
+            # Stopping vdsm-reg may fail but its ok - its in the case when the menus are run after installation
+            deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg', 'stop'])
             if write_vdsm_config(self.rhevm_server.value(), self.rhevm_server_port.value()):
+                deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg',
+                    'start'])
                 ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "RHEV-M Configuration Successfully Updated", buttons = ['Ok'])
                 self.ncs.reset_screen_colors()
                 return True
