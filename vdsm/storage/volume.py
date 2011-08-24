@@ -382,12 +382,6 @@ class Volume:
             # So, there is no reasons to avoid its deletion
             self.log.warn("Volume %s metadata error (%s)", self.volUUID, str(e))
 
-    def delete(self, postZero, force):
-        """
-        Delete a volume
-        """
-        pass
-
     def extend(self, newsize):
         """
         Extend a logical volume
