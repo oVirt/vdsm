@@ -981,11 +981,10 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False, initialTag=N
 
 def removeLV(vgName, lvName):
     #Assert that the LV is inactive before remove.
-    lv = _lvminfo._lvs.get((vgName, lvName), None)
-    if lv and not isinstance(lv, Stub) and lv.active:
+    if _isLVActive(vgName, lvName):
         #Fix me
         #Should not remove active LVs
-        #raise se.CannotRemoveLogicalVolume(vg, lv)
+        #raise se.CannotRemoveLogicalVolume(vgName, lvName)
         log.warning("Removing active volume %s/%s" % (vgName, lvName))
 
     #LV exists or not in cache, attempting to remove it.
@@ -1036,14 +1035,14 @@ def extendLV(vgName, lvName, size):
 
 def activateLVs(vgName, lvNames):
     lvNames = _normalizeargs(lvNames)
-    toActivate = [lvName for lvName in lvNames if not os.path.exists(lvPath(vgName, lvName))]
+    toActivate = [lvName for lvName in lvNames if not _isLVActive(vgName, lvName)]
     if toActivate:
         _setLVAvailability(vgName, toActivate, "y")
 
 
 def deactivateLVs(vgName, lvNames):
     lvNames = _normalizeargs(lvNames)
-    toDeactivate = [lvName for lvName in lvNames if os.path.exists(lvPath(vgName, lvName))]
+    toDeactivate = [lvName for lvName in lvNames if _isLVActive(vgName, lvName)]
     if toDeactivate:
         _setLVAvailability(vgName, toDeactivate, "n")
 
@@ -1113,6 +1112,14 @@ def addLVTags(vg, lv, addTags):
 #
 def lvPath(vgName, lvName):
     return os.path.join("/dev", vgName, lvName)
+
+
+def _isLVActive(vgName, lvName):
+    """Active volumes have a mp link.
+
+    This function should not be used out of this module.
+    """
+    return os.path.exists(lvPath(vgName, lvName))
 
 
 def changeVGTags(vgName, delTags=[], addTags=[]):
