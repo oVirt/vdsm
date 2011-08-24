@@ -1005,7 +1005,7 @@ class service:
         list = self.s.getFloppyList(spUUID)
         if list['status']['code']:
             return list['status']['code'], list['status']['message']
-        for entry in list['floppylist']:
+        for entry in list['isolist']:
             print entry
         return 0, ''
 
