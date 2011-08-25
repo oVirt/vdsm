@@ -33,6 +33,7 @@ import deployUtil
 
 VDSM_CONFIG = "/etc/vdsm/vdsm.conf"
 VDSM_REG_CONFIG = "/etc/vdsm-reg/vdsm-reg.conf"
+VDC_HOST_PORT = 8443
 
 fWriteConfig = 0
 def set_defaults():
@@ -81,7 +82,7 @@ def write_vdsm_config(rhevm_host, rhevm_port):
 def get_rhevm_config():
     vdsm_config = open(VDSM_REG_CONFIG)
     config = {}
-    config["vdc_host_port"] = 443
+    config["vdc_host_port"] = VDC_HOST_PORT
     for line in vdsm_config:
         line = line.strip().replace(" ","").split("=")
         if "vdc_host_name" in line:
@@ -119,7 +120,7 @@ class Plugin(PluginBase):
         rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
         rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 1))
         elements.setField(rhevm_grid, 0, 2, anchorLeft = 1, padding = (0,1,0,0))
-        self.verify_rhevm_cert = Checkbox("Verify RHEVM Certificate")
+        self.verify_rhevm_cert = Checkbox("Connect to RHEV Manager and Validate Certificate", isOn=True)
         elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,1,0,0))
 
         if not is_network_up:
