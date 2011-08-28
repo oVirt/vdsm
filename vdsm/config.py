@@ -159,6 +159,7 @@ config.set('irs', 'maximum_allowed_pvs', '8')
 config.set('irs', 'repo_stats_cache_refresh_timeout', '300')
 
 config.set('irs', 'task_resource_default_timeout', '120000')
+config.set('irs', 'prepare_image_timeout', '600000')
 config.set('irs', 'gc_blocker_force_collect_interval', '60')
 
 config.set('irs', 'maximum_domains_in_pool', '100')

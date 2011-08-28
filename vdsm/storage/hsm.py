@@ -1702,8 +1702,9 @@ class HSM:
         vars.task.getSharedLock(STORAGE, sdUUID)
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
         lockType = rm.LockType.exclusive if rw else rm.LockType.shared
+        timeout = config.getint('irs', 'prepare_image_timeout') / 1000.0
 
-        imgResource = rmanager.acquireResource(imageResourcesNamespace, imgUUID, lockType)
+        imgResource = rmanager.acquireResource(imageResourcesNamespace, imgUUID, lockType, timeout)
         try:
             vol = SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
             # NB We want to be sure that at this point HSM does not use stale LVM

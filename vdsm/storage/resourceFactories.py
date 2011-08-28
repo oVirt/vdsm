@@ -102,7 +102,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
     storage_repository = config.get('irs', 'repository')
     # Resource timeouts are in seconds. It's written in ms in the config for
     # backward competability reasons
-    resource_default_timeout = config.getint('irs', 'task_resource_default_timeout') / 1000.0
+    resource_default_timeout = config.getint('irs', 'prepare_image_timeout') / 1000.0
 
     def __init__(self, sdUUID):
         rm.SimpleResourceFactory.__init__(self)
