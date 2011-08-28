@@ -339,7 +339,10 @@ EOF
     /bin/cat "$llogr" >> "$stanza"
     local oldmod=`/usr/bin/stat --format=%a "$llogr"`
     /bin/mv "$stanza" "$llogr"
-    /bin/chmod "$oldmod" "$llogr"
+    if [ -n "$oldmod" ]; then
+       /bin/chmod "$oldmod" "$llogr"
+    fi
+    restorecon "$llogr"
 
     ovirt_store_config "$lconf" "$qconf" "$ldconf" "$llogr"
 
