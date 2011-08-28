@@ -152,8 +152,7 @@ class SPM:
     # spm object when it is not started (not acting as an SPM for a pool)
     whitelist = ['start', 'public_getSpmStatus', 'isActive', '__cleanupSPM',
                 'public_fenceSpmStorage',  '__releaseLocks', 'public_spmStop',
-                '__cleanupMasterMount', '__cleanupSPMLinks',
-                '_createSpmLinks', 'prepareForShutdown']
+                '__cleanupMasterMount', 'prepareForShutdown']
 
     log = logging.getLogger("Storage.SPM")
     lock = threading.Lock()
@@ -169,7 +168,6 @@ class SPM:
         """
         Secure.setUnsafe()
         self.__overrideMethods()
-        self.__cleanupSPMLinks()
         self.__cleanupMasterMount()
         self.__releaseLocks()
 
@@ -191,7 +189,6 @@ class SPM:
         # TBD: what about running tasks? persist and die?
         self.__cleanupMasterMount()
         self.__releaseLocks()
-        self.__cleanupSPMLinks()
 
         # Stop spmMailer thread
         for spUUID in self.pools:
@@ -216,19 +213,6 @@ class SPM:
                     misc.panic("unmount %s failed - %s" % (master, e))
             else:
                 cls.log.debug("master `%s` is not mounted, skipping", master)
-
-    @classmethod
-    def __cleanupSPMLinks(cls):
-        """
-        Cleanup All SPM related links.
-        """
-        vms = glob.glob(os.path.join(cls.storage_repository, constants.UUID_GLOB_PATTERN, sd.VMS_DIR))
-        tasks = glob.glob(os.path.join(cls.storage_repository, constants.UUID_GLOB_PATTERN, sd.TASKS_DIR))
-        cls.log.debug("cleaning links; %s %s", vms, tasks)
-        for d in vms:
-            os.unlink(d)
-        for d in tasks:
-            os.unlink(d)
 
 
     def __overrideMethods(self):
@@ -316,13 +300,6 @@ class SPM:
         :type pool: :class:`sd.StoragePool`
         """
         self.log.debug("cleaning up SPM: %s" % pool.spUUID)
-        vmslink = os.path.join(pool.poolPath, sd.VMS_DIR)
-        if os.path.lexists(vmslink):
-            os.remove(vmslink)
-        taskslink = os.path.join(pool.poolPath, sd.TASKS_DIR)
-        if os.path.lexists(taskslink):
-            os.remove(taskslink)
-        self.tasksDir = None
         if  self.pools.has_key(pool.spUUID):
             if self.pools[pool.spUUID].spmMailer:
                 self.pools[pool.spUUID].spmMailer.stop()
@@ -520,7 +497,7 @@ class SPM:
 
                 masterDom.mountMaster()
                 masterDom.createMasterTree(log=True)
-                self._createSpmLinks(pool.poolPath)
+                self.tasksDir = os.path.join(self.pools[spUUID].poolPath, sp.POOL_MASTER_DOMAIN, sd.MASTER_FS_DIR, sd.TASKS_DIR)
 
                 try:
                     # Make sure backup domain is active
@@ -563,24 +540,6 @@ class SPM:
                 raise
         finally:
             self.lock.release()
-
-
-    def _createSpmLinks(self, poolPath):
-        """
-        Create links on SPM host
-        """
-        vmslink = os.path.join(poolPath, sd.VMS_DIR)
-        if os.path.lexists(vmslink):
-            os.remove(vmslink)
-        vms = os.path.join(sp.POOL_MASTER_DOMAIN, sd.MASTER_FS_DIR, sd.VMS_DIR)
-        os.symlink(vms, vmslink)
-
-        taskslink = os.path.join(poolPath, sd.TASKS_DIR)
-        if os.path.lexists(taskslink):
-            os.remove(taskslink)
-        tasks = os.path.join(sp.POOL_MASTER_DOMAIN, sd.MASTER_FS_DIR, sd.TASKS_DIR)
-        os.symlink(tasks, taskslink)
-        self.tasksDir = taskslink
 
 
     def public_spmStop(self, spUUID, options = None):
