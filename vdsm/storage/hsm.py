@@ -276,7 +276,11 @@ class HSM:
 
         for directory in rmDirList:
             try:
-                os.rmdir(directory)
+                # os.walk() can see a link to a directory as a directory
+                if os.path.islink(directory):
+                    os.unlink(directory)
+                else:
+                    os.rmdir(directory)
             except Exception, ex:
                 self.log.warn("Could not delete dir '%s' (%s: %s)." % (fullPath, ex.__class__.__name__, str(ex)))
 
