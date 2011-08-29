@@ -1063,11 +1063,11 @@ class StoragePool:
                         try:
                             stats.update(SDF.produce(item).getStats())
                         except:
-                            self.log.error("Could get information for domain `%s`", item, exc_info=True)
+                            self.log.error("Could not get information for domain %s", item, exc_info=True)
                             # Domain is unavailable and we have nothing in the cache
-                            # Return defaults
-                            stats['disktotal'] = ""
-                            stats['diskfree'] = ""
+                            # We need to return both of them or none
+                            stats.pop('disktotal', None)
+                            stats.pop('diskfree', None)
                     stats['alerts'] = alerts
 
             stats['status'] = domDict[item]
