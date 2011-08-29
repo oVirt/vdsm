@@ -803,7 +803,7 @@ class Image:
 
                 try:
                     (rc, out, err) = volume.qemuConvert(volParams['path'], dstPath,
-                        volParams['volFormat'], dstVolFormat, self.idle, vars.task.aborting,
+                        volParams['volFormat'], dstVolFormat, vars.task.aborting,
                         size=srcVol.getVolumeSize(bs=1), dstvolType=dstVol.getType())
                     if rc:
                         raise se.StorageException("rc: %s, err: %s" % (rc, err))
@@ -1053,7 +1053,7 @@ class Image:
         # Step 2: Convert successor to new volume
         #   qemu-img convert -f qcow2 successor -O raw newUUID
         (rc, out, err) = volume.qemuConvert(srcVolParams['path'], newVol.getVolumePath(),
-            srcVolParams['volFormat'], volParams['volFormat'], self.idle, vars.task.aborting,
+            srcVolParams['volFormat'], volParams['volFormat'], vars.task.aborting,
             size=volParams['apparentsize'], dstvolType=newVol.getType())
         if rc:
             raise se.MergeSnapshotsError(newUUID)

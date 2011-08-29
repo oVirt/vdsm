@@ -921,7 +921,7 @@ def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, idle, stop, r
     return (rc, out, err)
 
 
-def qemuConvert(src, dst, src_fmt, dst_fmt, idle, stop, size, dstvolType):
+def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
     """
     Convert the 'src' image (or chain of images) into a new single 'dst'
     """
