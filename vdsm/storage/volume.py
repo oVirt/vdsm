@@ -173,9 +173,9 @@ class Volume:
 
             try:
                 (rc, out, err) = qemuRebase(vol.getVolumePath(), vol.getFormat(),
-                                               os.path.join('..', srcImg, srcParent),
-                                               int(dstFormat), misc.parseBool(unsafe),
-                                               vol.idle, vars.task.aborting, False)
+                                            os.path.join('..', srcImg, srcParent),
+                                            int(dstFormat), misc.parseBool(unsafe),
+                                            vars.task.aborting, False)
                 if rc:
                     raise se.MergeVolumeRollbackError(srcVol)
 
@@ -205,7 +205,7 @@ class Volume:
                  str(pvol.getFormat()), pvol.volUUID, str(True)]))
 
         (rc, out, err) = qemuRebase(self.getVolumePath(), self.getFormat(), backingVolPath,
-                                    backingFormat, unsafe, self.idle, vars.task.aborting, rollback)
+                                    backingFormat, unsafe, vars.task.aborting, rollback)
         if rc:
             raise se.MergeSnapshotsError(self.volUUID)
         self.setParent(backingVol)
@@ -895,7 +895,7 @@ def qemuCommit(src, fmt, idle, stop):
     log.debug('(qemuCommit): MERGE %s DONE' % (src))
     return (rc, out, err)
 
-def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, idle, stop, rollback):
+def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, stop, rollback):
     """
     Rebase the 'src' volume on top of the new 'backingFile' with new 'backingFormat'
     """
