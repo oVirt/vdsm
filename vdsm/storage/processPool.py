@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from multiprocessing import Pipe, Process
+from multiprocessing import Pipe, Process, current_process
 from threading import Lock
 import os
 import signal
@@ -111,6 +111,11 @@ class ProcessPool(object):
         # The locks remain locked of purpose so no one will
         # be able to run further commands
 
+def disown(proc):
+    # I know touching _children is wrong but there is no public API for
+    # disowning a child
+    current_process()._children.discard(proc)
+
 class Helper(object):
     def __init__(self):
         self.lifeline, childsLifeline = os.pipe()
@@ -118,6 +123,8 @@ class Helper(object):
         self.proc = Process(target=_helperMainLoop, args=(hisPipe, childsLifeline, self.lifeline))
         self.proc.daemon = True
         self.proc.start()
+        disown(self.proc)
+
         os.close(childsLifeline)
 
     def kill(self):
