@@ -207,12 +207,13 @@ class Image:
             volumes = [volclass(self.repoPath, sdUUID, imgUUID, volUUID) for volUUID in uuidlist]
 
         # If we got here than go ahead and remove all of them without mercy
-        for vol in volumes:
+        if volumes:
             try:
-                vol.delete(postZero=postZero, force=True)
-            except Exception, ex:
-                # Volume deletion failed, but we don't really care at this point
-                self.log.warn("Problems during image %s deletion (%s). Continue...", imgUUID, str(ex))
+                #No, this is not a classmethod! No validations here
+                volclass.__module__.deleteMultipleVolumes(sdUUID, volumes, postZero)
+            except (se.CannotRemoveLogicalVolume, se.VolumeAccessError):
+                #Any volume deletion failed, but we don't really care at this point
+                self.log.warn("Problems during image %s deletion (%s). Continue...", exc_info=True)
 
         # Now clean the image directory
         removedImage = imageDir = self.getImageDir(sdUUID, imgUUID)

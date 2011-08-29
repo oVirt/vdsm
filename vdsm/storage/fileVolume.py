@@ -23,6 +23,7 @@ import uuid
 
 import storage_exception as se
 from sdf import StorageDomainFactory as SDF
+import outOfProcess as oop
 import volume
 import image
 import sd
@@ -31,11 +32,24 @@ import misc
 import task
 from threadLocal import vars
 
-
 def getDomUuidFromVolumePath(volPath):
     # Volume path has pattern:
     #  /rhev/data-center/spUUID/sdUUID/images/imgUUID/volUUID
     return volPath.split('/')[4]
+
+
+def deleteMultipleVolumes(sdUUID, volumes, postZero):
+    #Posix asserts that the blocks will be zeroed before reuse
+    volPaths = []
+    for vol in volumes:
+        vol.setLegality(volume.ILLEGAL_VOL)
+        volPaths.append(vol.getVolumePath())
+    try:
+        oop.fileUtils.cleanupfiles(volPaths)
+    except OSError:
+        volume.log.error("cannot delete some volumes at paths: %s",
+                            volPaths, exc_info=True)
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).

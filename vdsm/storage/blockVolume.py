@@ -648,3 +648,33 @@ def _getVolumeTag(sdUUID, volUUID, tagPrefix):
             return tag[len(tagPrefix):]
 
     raise se.MissingTagOnLogicalVolume(volUUID, tagPrefix)
+
+def _postZero(sdUUID, volumes):
+    #Assumed here that the volume is active.
+    #To activate all the volumes of an image at once get its resource.
+    #See http://gerrit.usersys.redhat.com/771
+    #Assert volumes are writable. (Don't do this at home.)
+    lvNames = (vol.volUUID for vol in volumes)
+    try:
+        lvm._lvminfo._changelv(sdUUID, lvNames, "--permission", "rw")
+    except se.StorageException, e:
+        #Hope this only means that some volumes were already writable
+        pass
+    for lv in lvm.getLV(sdUUID):
+        if lv.name in lvNames:
+        # wipe out the whole volume
+            try:
+                misc.ddWatchCopy("/dev/zero", lvm.lvPath(sdUUID, lv.name), vars.task.aborting, int(lv.size),
+                                 recoveryCallback=volume.baseAsyncTasksRollback)
+            except se.ActionStopped, e:
+                raise e
+            except Exception, e:
+                raise se.VolumesZeroingError(lv.name)
+
+def deleteMultipleVolumes(sdUUID, volumes, postZero):
+    "Delete multiple volumes (LVs) in the same domain (VG)."""
+    if postZero:
+        _postZero(sdUUID, volumes)
+    lvNames = (vol.volUUID for vol in volumes)
+    lvm.removeLVs(sdUUID, lvNames)
+

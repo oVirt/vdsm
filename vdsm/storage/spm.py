@@ -1525,6 +1525,12 @@ class SPM:
         hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(sdUUID)
 
+        #Need this resource to induce all the LVs in the image to be active
+        #at once if zeroed.
+        #See http://gerrit.usersys.redhat.com/771
+        if postZero:
+            vars.task.getSharedLock(STORAGE, imgUUID)
+
         vars.task.getSharedLock(STORAGE, sdUUID)
         # Do not validate if forced.
         repoPath = os.path.join(self.storage_repository, spUUID)
