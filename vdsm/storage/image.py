@@ -82,8 +82,6 @@ class Image:
     def __init__(self, repoPath):
         self.repoPath = repoPath
         self.storage_repository = config.get('irs', 'repository')
-        self.active = config.getfloat('irs', 'active')
-        self.idle = config.getfloat('irs', 'idle')
 
     def create(self, sdUUID, imgUUID):
         """Create placeholder for image's volumes

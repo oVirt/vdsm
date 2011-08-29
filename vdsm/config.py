@@ -107,9 +107,6 @@ config.add_section('irs')
 #####################################################################
 config.set('irs', 'irs_enable', 'true')
 
-#Irs throttling during copy. Set the active time vs idle time
-config.set('irs', 'active', '1.0')
-config.set('irs', 'idle', '1.0')
 
 #Image repository
 config.set('irs', 'repository', '/rhev/data-center')
