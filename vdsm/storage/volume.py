@@ -889,7 +889,7 @@ def qemuCommit(src, fmt, idle, stop):
     cwd = os.path.dirname(src)
     cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "commit",
                                    "-t", "none", "-f", fmt2str(fmt), src]
-    (rc, out, err) = misc.watchCmd(cmd, stop=stop, idle=idle, sudo=False, cwd=cwd,
+    (rc, out, err) = misc.watchCmd(cmd, stop=stop, sudo=False, cwd=cwd,
                                    recoveryCallback=baseAsyncTasksRollback)
 
     log.debug('(qemuCommit): MERGE %s DONE' % (src))
@@ -914,7 +914,7 @@ def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, idle, stop, r
     recoveryCallback = None
     if rollback:
         recoveryCallback = baseAsyncTasksRollback
-    (rc, out, err) = misc.watchCmd(cmd, stop=stop, idle=idle, sudo=False, cwd=cwd,
+    (rc, out, err) = misc.watchCmd(cmd, stop=stop, sudo=False, cwd=cwd,
                                    recoveryCallback=recoveryCallback)
 
     log.debug('(qemuRebase): REBASE %s DONE' % (src))
@@ -936,7 +936,7 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, idle, stop, size, dstvolType):
         cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert",
                                        "-t", "none", "-f", src_fmt, src,
                                        "-O",dst_fmt, dst]
-        (rc, out, err) = misc.watchCmd(cmd, stop=stop, idle=idle, sudo=False,
+        (rc, out, err) = misc.watchCmd(cmd, stop=stop, sudo=False,
                                        recoveryCallback=baseAsyncTasksRollback)
 
     log.debug('(qemuConvert): COPY %s to %s DONE' % (src, dst))

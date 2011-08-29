@@ -224,7 +224,7 @@ def getProcCtime(pid):
 
     return str(ctime)
 
-def watchCmd(command, stop, idle, sudo=True, cwd=None, infile=None, outfile=None,
+def watchCmd(command, stop, sudo=True, cwd=None, infile=None, outfile=None,
             data=None, recoveryCallback=None):
     """
     Executes an external command, optionally via sudo with stop abilities.
@@ -391,7 +391,7 @@ def ddWatchCopy(src, dst, stop, idle, size, offset=0, recoveryCallback=None):
         if not stop:
             (rc, out, err) = execCmd(cmd, sudo=False)
         else:
-            (rc, out, err) = watchCmd(cmd, stop=stop, idle=idle, sudo=False,
+            (rc, out, err) = watchCmd(cmd, stop=stop, sudo=False,
                                       recoveryCallback=recoveryCallback)
 
         if rc:
