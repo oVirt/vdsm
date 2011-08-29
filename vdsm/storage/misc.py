@@ -359,17 +359,18 @@ def _alignData(length, offset):
 def randomStr(strLen):
     return "".join(random.sample(string.letters, strLen))
 
-def ddWatchCopy(src, dst, stop, idle, size, offset=0, recoveryCallback=None):
+def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
     """
     Copy src to dst using dd command with stop abilities
     """
+    try:
+        size = int(size)
+        offset = int(offset)
+    except ValueError:
+        raise se.InvalidParameterException("size = %s, offset = %s" %  (size, offset))
+
     left = size
     baseoffset = offset
-
-    try:
-        int(size)
-    except:
-        raise se.InvalidParameterException("size", size)
 
     while left > 0:
         (iounit, count, iooffset) = _alignData(left, offset)
@@ -406,11 +407,11 @@ def ddWatchCopy(src, dst, stop, idle, size, offset=0, recoveryCallback=None):
     return (rc, out, err)
 
 
-def ddCopy(src, dst, size=None):
+def ddCopy(src, dst, size):
     """
     Copy src to dst using dd command
     """
-    return ddWatchCopy(src, dst, None, None, size=size)
+    return ddWatchCopy(src, dst, None, size=size)
 
 
 def parseBool(var):

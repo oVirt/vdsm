@@ -20,7 +20,6 @@
 
 import os
 import uuid
-from config import config
 
 import storage_exception as se
 from sdf import StorageDomainFactory as SDF
@@ -128,10 +127,9 @@ class FileVolume(volume.Volume):
         vars.task.pushRecovery(task.Recovery("halfbaked volume rollback", "fileVolume", "FileVolume", "halfbakedVolumeRollback",
                                              [vol_path]))
         if preallocate == volume.PREALLOCATED_VOL:
-            idle = config.getfloat('irs', 'idle')
             try:
                 # ddWatchCopy expects size to be in bytes
-                misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, idle, (int(size) * 512))
+                misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, (int(size) * 512))
             except se.ActionStopped, e:
                 raise e
             except Exception, e:

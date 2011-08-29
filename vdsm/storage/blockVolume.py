@@ -268,16 +268,13 @@ class BlockVolume(volume.Volume):
         if postZero:
             self.prepare(justme=True, rw=True, chainrw=force, setrw=True, force=True)
             try:
-                # wipe out the whole volume
-                idle = config.getfloat('irs', 'idle')
-                try:
-                    misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, idle, int(size),
-                                     recoveryCallback=volume.baseAsyncTasksRollback)
-                except se.ActionStopped, e:
-                    raise e
-                except Exception, e:
-                    self.log.error("Unexpected error", exc_info=True)
-                    raise se.VolumesZeroingError(vol_path)
+                misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, int(size),
+                                 recoveryCallback=volume.baseAsyncTasksRollback)
+            except se.ActionStopped, e:
+                raise e
+            except Exception, e:
+                self.log.error("Unexpected error", exc_info=True)
+                raise se.VolumesZeroingError(vol_path)
             finally:
                 self.teardown(self.sdUUID, self.volUUID, justme=True)
 

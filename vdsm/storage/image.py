@@ -571,7 +571,7 @@ class Image:
                 try:
                     dstVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=srcVol.volUUID)
                     srcSize = srcVol.getVolumeSize(bs=1)
-                    misc.ddWatchCopy(srcVol.getVolumePath(), dstVol.getVolumePath(), vars.task.aborting, self.idle, size=srcSize)
+                    misc.ddWatchCopy(srcVol.getVolumePath(), dstVol.getVolumePath(), vars.task.aborting, size=srcSize)
                 except se.ActionStopped:
                     raise
                 except se.StorageException:

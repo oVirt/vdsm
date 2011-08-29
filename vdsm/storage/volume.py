@@ -930,7 +930,7 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, idle, stop, size, dstvolType):
     log.debug('(qemuConvert): COPY %s (%s) to %s (%s) START' % (src, src_fmt, dst, dst_fmt))
 
     if src_fmt == "raw" and dst_fmt == "raw" and dstvolType == PREALLOCATED_VOL:
-        (rc, out, err) = misc.ddWatchCopy(src=src, dst=dst, stop=stop, idle=idle, size=size,
+        (rc, out, err) = misc.ddWatchCopy(src=src, dst=dst, stop=stop, size=size,
                                           recoveryCallback=baseAsyncTasksRollback)
     else:
         cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert",
