@@ -25,7 +25,9 @@ srpm: dist
 		--define="_sourcedir $(PWD)" $(DIST_ARCHIVES)
 
 rpm: dist
-	rpmbuild --define="_topdir $(RPMTOP)" -ta $(DIST_ARCHIVES)
+	rpmbuild -ta \
+		--define="extra_release $(BUILDID)" \
+		--define="_topdir $(RPMTOP)" $(DIST_ARCHIVES)
 
 dist-hook: gen-ChangeLog
 
