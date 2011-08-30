@@ -6,7 +6,7 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-dist_bin_SCRIPTS = \
+nodist_bin_SCRIPTS = \
 	vdsClient
 
 dist_vdsm_DATA = \
