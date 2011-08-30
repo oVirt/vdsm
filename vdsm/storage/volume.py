@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from config import config
 import os.path
 import logging
 import time
@@ -103,7 +102,6 @@ def name2type(name):
 
 
 class Volume:
-    idle = config.getfloat('irs', 'idle')
     log = logging.getLogger('Storage.Volume')
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
@@ -879,21 +877,6 @@ def baseAsyncTasksRollback(proc):
     name = "Kill-" + str(proc.pid)
     vars.task.pushRecovery(task.Recovery(name, "volume", "Volume", "killProcRollback",
                                          [str(proc.pid), str(misc.getProcCtime(proc.pid))]))
-
-def qemuCommit(src, fmt, idle, stop):
-    """
-    Merge single snapshot from 'successor (snapshot)' to its backing file.
-    """
-    log.debug('(qemuCommit): MERGE %s START' % (src))
-
-    cwd = os.path.dirname(src)
-    cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "commit",
-                                   "-t", "none", "-f", fmt2str(fmt), src]
-    (rc, out, err) = misc.watchCmd(cmd, stop=stop, sudo=False, cwd=cwd,
-                                   recoveryCallback=baseAsyncTasksRollback)
-
-    log.debug('(qemuCommit): MERGE %s DONE' % (src))
-    return (rc, out, err)
 
 def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, stop, rollback):
     """
