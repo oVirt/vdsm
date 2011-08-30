@@ -99,8 +99,18 @@ def isBlockDevice(devName):
         return False
 
 def isPartitioned(devName):
-    devName = resolveDevName(devName)
-    return (len(getHolders(devName)) > 0)
+    dmName = resolveDevName(devName)
+    #Sometimes partitions are not managed by device mapper
+    possiblePartPath = os.path.join("/sys/block/", devName, devName + "1")
+    if os.path.exists(possiblePartPath):
+            return True
+
+    mpathName = getDevName(dmName)
+    for holder in getHolders(dmName):
+        if getDevName(holder).startswith(mpathName):
+            return True
+
+    return False
 
 def getAllSlaves():
     deps = {}
