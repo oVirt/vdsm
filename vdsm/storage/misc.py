@@ -855,7 +855,17 @@ class AsyncProc(object):
                 # trun on only if data is waiting to be pushed
                 self._poller.modify(self._fdin, select.EPOLLOUT)
 
-            for fd, event in self._poller.poll(1):
+            try:
+                pollres = self._poller.poll(1)
+            except (OSError, IOError) as e:
+                # Callers will decide if they want to give this another go
+                # or not
+                if e.errno in (errno.EINTR, errno.EAGAIN):
+                    pollres = []
+                else:
+                    raise
+
+            for fd, event in pollres:
                 stream = self._fdMap[fd]
                 if event & select.EPOLLOUT and self._stdin.len > 0:
                     buff = self._stdin.read(BUFFSIZE)
