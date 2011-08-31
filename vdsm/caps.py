@@ -80,9 +80,14 @@ class CpuInfo(object):
 def _getEmulatedMachines():
     c = libvirtconnection.get()
     caps = minidom.parseString(c.getCapabilities())
-    return [ m.firstChild.toxml() for m
-             in caps.getElementsByTagName('guest')[0]
-                    .getElementsByTagName('machine') ]
+    guestTag = caps.getElementsByTagName('guest')
+    # Guest element is missing if kvm modules are not loaded
+    if len(guestTag) == 0:
+        return []
+
+    guestTag = guestTag[0]
+
+    return [ m.firstChild.toxml() for m in guestTag.getElementsByTagName('machine') ]
 
 @utils.memoized
 def _getCompatibleCpuModels():
