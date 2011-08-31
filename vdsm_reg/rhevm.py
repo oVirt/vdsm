@@ -26,7 +26,7 @@ import sys
 from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
                                      is_valid_port, PluginBase, log, network_up
 from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox, \
-                  FLAG_DISABLED, FLAGS_SET
+                  FLAG_DISABLED, FLAGS_SET, customColorset
 
 sys.path.append('/usr/share/vdsm-reg')
 import deployUtil
@@ -110,8 +110,10 @@ class Plugin(PluginBase):
             header_message = "RHEV-M Configuration"
         else:
             header_message = "Network Down, RHEV-M Configuration Disabled"
-
-        elements.setField(Label(header_message), 0, 0, anchorLeft = 1)
+        heading = Label(header_message)
+        self.ncs.screen.setColor(customColorset(1), "black", "magenta")
+        heading.setColors(customColorset(1))
+        elements.setField(heading, 0, 0, anchorLeft = 1)
         elements.setField(Label(""), 0, 1, anchorLeft = 1)
         rhevm_grid = Grid(2,2)
         rhevm_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
