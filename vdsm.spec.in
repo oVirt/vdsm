@@ -261,7 +261,6 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/dsaversion.py*
 %{_datadir}/%{vdsm_name}/pthread.py*
 %{_datadir}/%{vdsm_name}/betterThreading.py*
-%{_datadir}/%{vdsm_name}/logCollector.sh
 %{_libexecdir}/%{vdsm_name}/persist-vdsm-hooks
 %{_libexecdir}/%{vdsm_name}/unpersist-vdsm-hook
 %{_datadir}/%{vdsm_name}/storage/__init__.py*

@@ -41,7 +41,6 @@ dist_vdsm_SCRIPTS = \
 	delNetwork \
 	get-conf-item \
 	get-vm-pid \
-	logCollector.sh \
 	mk_sysprep_floppy \
 	prepare-vmchannel \
 	respawn \
