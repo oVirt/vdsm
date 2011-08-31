@@ -1224,11 +1224,11 @@ class OperationMutex(object):
                 self._lock.release()
                 self._cond.notifyAll()
 
-def killall(signum, name, group=False):
+def killall(name, signum, group=False):
     exception = None
     knownPgs = set()
     pidList = pgrep(name)
-    if len(pidList):
+    if len(pidList) == 0:
         raise OSError(errno.ESRCH, "Could not find processes named `%s`" % name)
 
     for pid in pidList:
@@ -1240,7 +1240,7 @@ def killall(signum, name, group=False):
                     continue
                 knownPgs.add(pgid)
 
-                os.killpg(pgid)
+                os.killpg(pgid, signum)
             else:
                 os.kill(pid, signum)
         except OSError, e:
