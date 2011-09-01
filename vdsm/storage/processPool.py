@@ -156,6 +156,13 @@ class Helper(object):
 def _helperMainLoop(pipe, lifeLine, parentLifelineFD):
     os.close(parentLifelineFD)
 
+    # Removing all the handlers from the loggers. This avoid a deadlock on
+    # the logging locks. Multi-process and multi-threading don't mix well.
+    #   - BZ#732652: https://bugzilla.redhat.com/show_bug.cgi?id=732652
+    #   - I6721: http://bugs.python.org/issue6721
+    for log in logging.Logger.manager.loggerDict.values():
+        if hasattr(log, 'handlers'): del log.handlers[:]
+
     # Close all file-descriptors we don't need
     # Logging won't work past this point
     for fd in misc.getfds():
