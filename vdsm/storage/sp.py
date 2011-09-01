@@ -482,6 +482,8 @@ class StoragePool:
                 self.setMetaParam(PMDK_DOMAINS, domains)
                 self.log.info("Set storage pool domains: %s", domains)
             finally:
+                # We need stop all repoStats threads that were started during reconstructMaster
+                self.disconnectDomains()
                 futureMaster.releaseClusterLock()
         finally:
             self.id = None
