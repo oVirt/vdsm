@@ -75,10 +75,9 @@ class VolumeGeneralException(GeneralException):
     def __init__(self, volume, *args):
         try:
             sdUUID = "sdUUID: %s" % volume.sdUUID
-            spUUID = "spUUID: %s" % volume.spUUID
             imgUUID = "imgUUID: %s" % volume.imgUUID
             volUUID = "volUUID: %s" % volume.volUUID
-            self.value = [spUUID, sdUUID, imgUUID, volUUID]
+            self.value = [sdUUID, imgUUID, volUUID]
         except:
             self.value = [repr(volume)]
 
