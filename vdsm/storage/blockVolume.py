@@ -38,15 +38,18 @@ from resourceFactories import LVM_ACTIVATION_NAMESPACE
 import fileUtils
 
 TAG_PREFIX_MD = "MD_"
+TAG_PREFIX_MDNUMBLKS = "MS_"
 TAG_PREFIX_IMAGE =  "IU_"
 TAG_PREFIX_PARENT = "PU_"
 VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_IMAGE,
-               TAG_PREFIX_MD]
+               TAG_PREFIX_MD,
+               TAG_PREFIX_MDNUMBLKS]
 
 
 # volume meta data block size
 VOLUME_METASIZE = 512
+VOLUME_MDNUMBLKS = 1
 
 rmanager = rm.ResourceManager.getInstance()
 
@@ -215,11 +218,10 @@ class BlockVolume(volume.Volume):
 
         try:
             with cls._tagCreateLock:
-                offs = mysd.mapMetaOffset(volUUID)
+                offs = mysd.mapMetaOffset(volUUID, VOLUME_MDNUMBLKS)
                 lvm.addLVTags(sdUUID, volUUID, ("%s%s" % (TAG_PREFIX_MD, offs),
                                                 "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
                                                 "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)))
-
 
             vars.task.pushRecovery(task.Recovery("create block volume metadata rollback", "blockVolume", "BlockVolume", "createVolumeMetadataRollback",
                                                  [sdUUID, str(offs)]))

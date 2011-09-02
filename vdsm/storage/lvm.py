@@ -947,6 +947,17 @@ def invalidateVG(vgName):
     _lvminfo._invalidatevgs(vgName)
     _lvminfo._invalidatelvs(vgName)
 
+def _getpvblksize(pv):
+    dev = devicemapper.getDmId(os.path.basename(pv))
+    return multipath.getDeviceBlockSizes(dev)
+
+def getVGBlockSizes(vgUUID):
+    pvs = listPVNames(vgUUID)
+    if not pvs:
+        raise se.VolumeGroupDoesNotExist("vg_uuid: %s" % vgUUID)
+    # Returning the block size of the first pv is correct since we don't allow
+    # devices with different block size to be on the same VG.
+    return _getpvblksize(pvs[0])
 
 #
 # Public Logical volume interface

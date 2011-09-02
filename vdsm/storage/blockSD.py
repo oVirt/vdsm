@@ -26,6 +26,7 @@ import errno
 import re
 from StringIO import StringIO
 import time
+import functools
 from operator import itemgetter
 
 from config import config
@@ -73,9 +74,12 @@ if MAX_PVS > MAX_PVS_LIMIT:
 PVS_METADATA_SIZE = MAX_PVS * 142
 
 SD_METADATA_SIZE = 2048
+DEFAULT_BLOCKSIZE = 512
 
 DMDK_VGUUID = "VGUUID"
 DMDK_PV_REGEX = re.compile(r"^PV\d+$")
+DMDK_LOGBLKSIZE = "LOGBLKSIZE"
+DMDK_PHYBLKSIZE = "PHYBLKSIZE"
 
 VERS_METADATA_LV = (0,)
 VERS_METADATA_TAG = (2,)
@@ -97,8 +101,13 @@ def decodePVInfo(value):
 
 BLOCK_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
 # TBD: Do we really need this key?
-BLOCK_SD_MD_FIELDS.update({DMDK_PV_REGEX : (decodePVInfo, encodePVInfo),
-                           DMDK_VGUUID : (str, str)})
+BLOCK_SD_MD_FIELDS.update({
+    # Key           dec,  enc
+    DMDK_PV_REGEX : (decodePVInfo, encodePVInfo),
+    DMDK_VGUUID : (str, str),
+    DMDK_LOGBLKSIZE : (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
+    DMDK_PHYBLKSIZE : (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
+})
 
 INVALID_CHARS = re.compile(r"[^a-zA-Z0-9_+.\-/=!:#]")
 LVM_ENC_ESCAPE = re.compile("&(\d+)&")
@@ -232,6 +241,9 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
         self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
 
+        self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
+        self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
+
         # _extendlock is used to prevent race between
         # VG extend and LV extend.
         self._extendlock = threading.Lock()
@@ -351,6 +363,8 @@ class BlockStorageDomain(sd.StorageDomain):
         elif version in VERS_METADATA_TAG:
             md = TagBasedSDMetadata(vgName)
 
+        logBlkSize, phyBlkSize = lvm.getVGBlockSizes(vgName)
+
         # create domain metadata
         # FIXME : This is 99% like the metadata in file SD
         #         Do we really need to keep the VGUUID?
@@ -368,7 +382,9 @@ class BlockStorageDomain(sd.StorageDomain):
                 sd.DMDK_LEASE_TIME_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
                 sd.DMDK_IO_OP_TIMEOUT_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
                 sd.DMDK_LEASE_RETRIES : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
-                DMDK_VGUUID : vgUUID
+                DMDK_VGUUID : vgUUID,
+                DMDK_LOGBLKSIZE : logBlkSize,
+                DMDK_PHYBLKSIZE : phyBlkSize,
                 }
 
         initialMetadata.update(mapping)
@@ -520,11 +536,11 @@ class BlockStorageDomain(sd.StorageDomain):
         finally:
             self._extendlock.release()
 
-    def mapMetaOffset(self, vol_name):
+    def mapMetaOffset(self, vol_name, slotSize):
         if self.getVersion() in VERS_METADATA_LV:
             return self.getVolumeMetadataOffsetFromPvMapping(vol_name)
         else:
-            return self.getFreeMetadataSlot(blockVolume.VOLUME_METASIZE)
+            return self.getFreeMetadataSlot(slotSize)
 
     def _getOccupiedMetadataSlots(self):
         stripPrefix = lambda s, pfx : s[len(pfx):]
@@ -535,21 +551,21 @@ class BlockStorageDomain(sd.StorageDomain):
                 continue
 
             offset = None
-            size = None
+            size = blockVolume.VOLUME_MDNUMBLKS
             for tag in lv.tags:
                 if tag.startswith(blockVolume.TAG_PREFIX_MD):
                     offset = int(stripPrefix(tag, blockVolume.TAG_PREFIX_MD))
 
-                if offset is not None and size is not None:
+                if tag.startswith(blockVolume.TAG_PREFIX_MDNUMBLKS):
+                    size = int(stripPrefix(tag, blockVolume.TAG_PREFIX_MDNUMBLKS))
+
+                if offset is not None and size != blockVolume.VOLUME_MDNUMBLKS:
                     # I've found everything I need
                     break
 
             if offset is None:
                 self.log.warn("Could not find mapping for lv %s/%s", self.sdUUID, lv.name)
                 continue
-
-            if size is None:
-                size = blockVolume.VOLUME_METASIZE
 
             occupiedSlots.append((offset, size))
 
@@ -558,14 +574,19 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def getFreeMetadataSlot(self, slotSize):
         occupiedSlots = self._getOccupiedMetadataSlots()
+        blkSize = max(self.logBlkSize, self.phyBlkSize)
 
-        # It might look weird skipping the sd metadata
-        # when it has been moved to tags. But this is
-        # here because domain metadata and volume
-        # metadata look the same. The domain might get
-        # confused and think it has lv metadata if it
-        # finds something is written in that area.
-        freeSlot = SD_METADATA_SIZE
+        # It might look weird skipping the sd metadata when it has been moved
+        # to tags. But this is here because domain metadata and volume metadata
+        # look the same. The domain might get confused and think it has lv
+        # metadata if it finds something is written in that area.
+        # At the moment this check is trivial but it will be needed in the
+        # future when we'll support multiple block sizes.
+        if blkSize >= SD_METADATA_SIZE:
+            freeSlot = 1
+        else:
+            freeSlot = (SD_METADATA_SIZE + blkSize - 1) / blkSize
+
         for offset, size in occupiedSlots:
             if offset - freeSlot > slotSize:
                 break
