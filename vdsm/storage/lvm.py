@@ -859,6 +859,12 @@ def getLV(vgName, lvName=None):
 def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m"):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs)
+
+    # Remove this check when we'll support different block sizes.
+    bs = _getpvblksize(pvs[0])
+    if bs not in constants.SUPPORTED_BLOCKSIZE:
+       raise se.DeviceBlockSizeError(bs)
+
     _initpv(pvs[0], metadataSize)
     for dev in pvs[1:]:
         _initpv(dev)

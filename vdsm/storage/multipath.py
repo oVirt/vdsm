@@ -226,6 +226,8 @@ def pathListIter(filterGuids=None):
                 "vendor" : "",
                 "product" :"",
                 "fwrev" : "",
+                "logicalblocksize" : "",
+                "physicalblocksize" : "",
                 }
 
 
@@ -251,6 +253,14 @@ def pathListIter(filterGuids=None):
                     devInfo["fwrev"] = getFwRev(slave)
                 except Exception:
                     log.warn("Problem getting fwrev from device `%s`", slave, exc_info=True)
+
+            if not devInfo["logicalblocksize"] or not devInfo["physicalblocksize"]:
+                try:
+                    logBlkSize, phyBlkSize = getDeviceBlockSizes(slave)
+                    devInfo["logicalblocksize"] = str(logBlkSize)
+                    devInfo["physicalblocksize"] = str(phyBlkSize)
+                except Exception:
+                    log.warn("Problem getting blocksize from device `%s`", slave, exc_info=True)
 
             pathInfo = {}
             pathInfo["physdev"] = slave

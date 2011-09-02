@@ -32,6 +32,7 @@ QEMU_PROCESS_USER = '@QEMUUSER@'
 # This is the domain version translation list
 # DO NOT CHANGE OLD VALUES ONLY APPEND
 DOMAIN_VERSIONS = (0, 2)
+SUPPORTED_BLOCKSIZE = ((512, 512),)
 
 # This contains the domains versions that this VDSM
 # accepts currently its all of the version but in the

@@ -1010,6 +1010,13 @@ class VolumeGroupBlockSizeError(StorageException):
     code = 517
     message = "All devices in domain must have the same block size"
 
+class DeviceBlockSizeError(StorageException):
+    def __init__(self, devsizes):
+        self.value = "logblksize=%s phyblksize=%s" % \
+                     (devsizes[0], devsizes[1])
+    code = 518
+    message = "Device block size is not supported"
+
 class CannotCreateLogicalVolume(StorageException):
     code = 550
     message = "Cannot create Logical Volume"

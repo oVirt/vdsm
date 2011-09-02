@@ -763,6 +763,8 @@ class HSM:
                         'devtype': dev.get("devtype", ""),
                         'pathstatus': dev.get("paths", []),
                         'pathlist': dev.get("connections", []),
+                        'logicalblocksize': dev.get("logicalblocksize", ""),
+                        'physicalblocksize': dev.get("physicalblocksize", ""),
                         'partitioned': partitioned}
                 for path in devInfo["pathstatus"]:
                     path["lun"] = path["hbtl"].lun
