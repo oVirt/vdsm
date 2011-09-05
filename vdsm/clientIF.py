@@ -30,6 +30,7 @@ import pickle
 import copy
 import SimpleXMLRPCServer
 from xml.dom import minidom
+import uuid
 
 import M2Crypto.threading
 
@@ -113,6 +114,7 @@ class clientIF:
         self.serverPort = config.get('addresses', 'management_port')
         self.serverIP = self._getServerIP()
         self.server = self._createXMLRPCServer()
+        self._generationID = str(uuid.uuid4())
         self._initIRS()
         try:
             self.vmContainer = {}
@@ -764,6 +766,7 @@ class clientIF:
         stats['ksmPages'] = self.ksmMonitor.pages
         stats['ksmCpu'] = self.ksmMonitor.cpuUsage
         stats['netConfigDirty'] = str(self._netConfigDirty)
+        stats['generationID'] = self._generationID
         return {'status': doneCode, 'info': stats}
 
     #Migration only methods
