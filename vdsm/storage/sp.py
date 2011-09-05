@@ -989,6 +989,15 @@ class StoragePool:
     def getVersion(self):
         return self.getMasterDomain().getVersion()
 
+    def getSpmId(self):
+        spmid = self.getMetaParam(PMDK_SPM_ID)
+        if spmid != self.id:
+            return spmid
+
+        # If we claim to be the SPM we have to be really sure we are
+        self.invalidateMetadata()
+        return self.getMetaParam(PMDK_SPM_ID)
+
     def getInfo(self):
         """
         Get storage pool info.
@@ -1015,8 +1024,8 @@ class StoragePool:
             info['type'] = msdInfo['type']
             info['domains'] = domainListEncoder(self.getDomains())
             info['name'] = self.getDescription()
+            info['spm_id'] = self.getSpmId()
             info['lver'] = self.getMetaParam(PMDK_LVER)
-            info['spm_id'] = self.getMetaParam(PMDK_SPM_ID)
             info['master_uuid'] = msdInfo['uuid']
             info['master_ver'] = self.getMasterVersion()
             info['version'] = str(self.getVersion())

@@ -719,8 +719,13 @@ class SPM:
         """
         pool = hsm.HSM.getPool(spUUID)
         try:
+            #If this is the SPM no need to double check
+            if self.spmRole == SPM_FREE:
+                spmId = pool.getSpmId()
+            else:
+                spmId = pool.getMetaParam(sp.PMDK_SPM_ID)
+
             lver = pool.getMetaParam(sp.PMDK_LVER)
-            spmId = pool.getMetaParam(sp.PMDK_SPM_ID)
         except se.LogicalVolumeRefreshError:
             # This happens when we cannot read the MD LV
             raise se.CannotRetrieveSpmStatus()
