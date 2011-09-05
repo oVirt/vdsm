@@ -152,13 +152,11 @@ class Plugin(PluginBase):
                     path, dontCare = deployUtil.certPaths('')
                     fp = deployUtil.generateFingerPrint(path)
                     approval = ButtonChoiceWindow(self.ncs.screen,
-                                "Certificate Fingerprint (Rejecting the finrgerprint will reboot the host):",
+                                "Certificate Fingerprint:",
                                 fp, buttons = ['Approve', 'Reject'])
                     if 'reject' == approval:
-                        out, err, rc = deployUtil._logExec(['/sbin/reboot'])
-                        if rc is not 0:
-                            log("Failed rebooting after fingerprint" + \
-                                "mismatch: %s", err)
+                        ButtonChoiceWindow(self.ncs.screen, "Fingerprint rejected", "RHEV-M Configuration Failed", buttons = ['Ok'])
+                        return False
                     else:
                         ovirt_store_config(path)
                         self.ncs.reset_screen_colors()
