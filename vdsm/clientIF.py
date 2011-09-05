@@ -109,6 +109,7 @@ class clientIF:
         self._shutdownSemaphore = threading.Semaphore()
         self.log = log
         self._recovery = True
+        self._libvirt = libvirtconnection.get()
         self.serverPort = config.get('addresses', 'management_port')
         self.serverIP = self._getServerIP()
         self.server = self._createXMLRPCServer()
@@ -976,9 +977,8 @@ class clientIF:
         """
         Return a list of vdsm created VM's.
         """
-        conn = libvirtconnection.get(self)
-        domIds = conn.listDomainsID()
-        vms = [conn.lookupByID(domId) for domId in domIds]
+        domIds = self._libvirt.listDomainsID()
+        vms = [self._libvirt.lookupByID(domId) for domId in domIds]
         return [vm for vm in vms if self.isVDSMVm(vm)]
 
     def _recoverVm(self, vmid):
