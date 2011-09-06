@@ -37,6 +37,7 @@ import httplib
 import glob
 import imp
 from optparse import OptionParser
+from itertools import dropwhile, islice
 
 try:
     from ovirtnode import ovirtfunctions
@@ -61,7 +62,6 @@ EX_ECHO = '@ECHO_PATH@'
 EX_GRUBBY = '@GRUBBY_PATH@'
 EX_HWCLOCK = '@HWCLOCK_PATH@'
 EX_IFCONFIG = '@IFCONFIG_PATH@'
-EX_LSB_RELEASE = '@LSB_RELEASE_PATH@'
 EX_OPENSSL = '@OPENSSL_PATH@'
 EX_REBOOT = '@REBOOT_PATH@'
 EX_RPM = '@RPM_PATH@'
@@ -350,18 +350,25 @@ def isOvirt():
 
 def getOSVersion():
     """
-        Return the OS' release from accordong to LSB specification.
+    Return the OS release, similarly to `lsb_release -rs`
+
+    Return "Unknown OS" on any failure.
     """
-    strReturn = "Unknown OS"
 
-    if os.path.exists(EX_LSB_RELEASE):
-        out, err, rc = _logExec([EX_LSB_RELEASE, "-rs"])
+    s = ''
+    for f in ('/etc/rhev-hypervisor-release', '/etc/redhat-release',
+              '/etc/fedora-release'):
         try:
-            strReturn = out.replace("\n","")
-        except:
-            strReturn = "Unknown OS"
+            s = file(f).read()
+        except OSError:
+            pass
 
-    return strReturn
+    try:
+        return islice(dropwhile(lambda x: x != 'release', s.split()),
+                      1, 2).next()
+    except:
+        logging.error('failed to parse os release from `%s`.', s, exc_info=True)
+        return "Unknown OS"
 
 def getKernelVersion():
     """

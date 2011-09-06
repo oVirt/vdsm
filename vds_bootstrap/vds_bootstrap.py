@@ -63,13 +63,6 @@ logging.basicConfig(level=logging.DEBUG,
 
 try:
     import deployUtil
-    res, msg = deployUtil.installAndVerify('REQ', 'redhat-lsb.x86_64', 'install')
-    if not res:
-        message = "Failed to verify installation of redhat-lsb"
-        print ("<BSTRAP component='INIT' status='FAIL' message='%s'/>" % message)
-        logging.debug("<BSTRAP component='INIT' status='FAIL' message='%s'/>", message)
-        logging.error(traceback.format_exc())
-        exit(-1)
 except:
     message = "Error trying to deploy library."
     print ("<BSTRAP component='INIT' status='FAIL' message='%s'/>" % message)
