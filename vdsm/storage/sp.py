@@ -829,7 +829,7 @@ class StoragePool:
         Rebuild storage pool.
         """
         # master domain must be refreshed first
-        msd = self.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+        self.masterDomain = self.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
         self.updateMonitoringThreads()
 
         fileUtils.createdir(self.poolPath)
@@ -867,10 +867,10 @@ class StoragePool:
                 oldLinks.remove(linkName)
         # Always try to build master links
         try:
-            self._refreshDomainLinks(msd)
+            self._refreshDomainLinks(self.masterDomain)
         except (se.StorageException, OSError):
-            self.log.error("_refreshDomainLinks failed for master domain %s", msd.sdUUID, exc_info=True)
-        linkName = os.path.join(self.poolPath, msd.sdUUID)
+            self.log.error("_refreshDomainLinks failed for master domain %s", self.masterDomain.sdUUID, exc_info=True)
+        linkName = os.path.join(self.poolPath, self.masterDomain.sdUUID)
         if linkName in oldLinks:
             oldLinks.remove(linkName)
 
@@ -1117,46 +1117,34 @@ class StoragePool:
         return self._metadata[key]
 
     def getMasterDomain(self, msdUUID, masterVersion):
-        # Either we have in cache or we got non blank msdUUID,
-        # no other option should be supported
-        self.masterDomain = self.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
-        self.log.debug("Master domain '%s' verified", self.masterDomain)
-
-        return self.masterDomain
-
-    def verifyMasterDomain(self, msdUUID, masterVersion=-1):
         """
-        Get master domain of this pool
-         'spUUID' - storage pool UUID
+        Get the (verified) master domain of this pool.
+
+        'msdUUID' - expected master domain UUID.
+        'masterVersion' - expected pool msd version.
         """
-        # Validate params, if given
         try:
-            # Make sure we did not receive a version without a domain
-            if not msdUUID:
-                masterVersion = -1
-            # Make sure that version is an integer
-            masterVersion = int(masterVersion)
-        except:
-            msdUUID = None
-            masterVersion = -1
+            domain = SDF.produce(msdUUID)
+        except se.StorageDomainDoesNotExist:
+            #Manager should start reconstructMaster if SPM.
+            raise se.StoragePoolMasterNotFound(self.spUUID, msdUUID)
 
-        domain = SDF.produce(msdUUID)
         if not domain.isMaster():
-            self.log.error("Requested master domain '%s' is not a master domain at all", msdUUID)
+            self.log.error("Requested master domain %s is not a master domain at all", msdUUID)
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
         pools = domain.getPools()
         if (self.spUUID not in pools):
-            self.log.error("Requested master domain '%s' does not belong to pool '%s'", msdUUID, self.spUUID)
+            self.log.error("Requested master domain %s does not belong to pool %s", msdUUID, self.spUUID)
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
-        ver = self._getPoolMD(domain)[PMDK_MASTER_VER]
-        if masterVersion != -1 and ver != masterVersion:
-            self.log.error("Requested master domain '%s' does not have expected version '%d' it is version '%s'",
-                        msdUUID, masterVersion, ver)
+        version = self._getPoolMD(domain)[PMDK_MASTER_VER]
+        if version != masterVersion:
+            self.log.error("Requested master domain %s does not have expected version %d it is version %s",
+                        msdUUID, masterVersion, version)
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
-        self.log.debug("Master domain '%s' verified", msdUUID)
+        self.log.debug("Master domain %s verified, version %d", msdUUID, masterVersion)
         return domain
 
 

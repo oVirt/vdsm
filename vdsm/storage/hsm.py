@@ -534,7 +534,10 @@ class HSM:
                 if not msdUUID or not masterVersion:
                     hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
                 misc.validateN(hostID, 'hostID')
-                pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+                #getMasterDomain is called because produce is required here
+                #since the master domain can be changed by the SPM if it is the
+                #refreshPool flow.
+                pool.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
                 return
 
         with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
@@ -546,7 +549,8 @@ class HSM:
                 if not msdUUID or not masterVersion:
                     hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
                 misc.validateN(hostID, 'hostID')
-                pool.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+                #Idem. See above.
+                pool.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
                 return
 
             pool = sp.StoragePool(spUUID)
