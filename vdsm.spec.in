@@ -6,9 +6,7 @@
 Summary: Virtual Desktop Server Manager
 Name: vdsm
 Source: %{vdsm_name}-%{version}.tar.gz
-# Url: no upstream project exists
-# tarball built from internal git repo with
-#       make tarball rpmversion=<version> rpmrelease=<release>
+Url: http://git.fedorahosted.org/git/?p=vdsm.git
 Version: @PACKAGE_VERSION@
 Release: @PACKAGE_RELEASE@%{?dist}%{?extra_release}
 License: GPLv2+
