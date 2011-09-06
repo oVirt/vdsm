@@ -345,7 +345,7 @@ class SPM:
 
             sd.validateDomainVersion(targetDomVersion)
             pool = hsm.HSM.getPool(spUUID)
-            masterDom = pool.getMasterDomain()
+            masterDom = pool.masterDomain
             sdUUID = masterDom.sdUUID
             self.log.info("Trying to upgrade master domain `%s`", sdUUID)
             with rmanager.acquireResource(STORAGE, masterDom.sdUUID, rm.LockType.exclusive):
@@ -382,7 +382,7 @@ class SPM:
             #Assumed that the domain can be attached only to one pool
             poolUUID = domain.getPools()[0]
             pool = hsm.HSM.getPool(poolUUID)
-            masterDom = pool.getMasterDomain()
+            masterDom = pool.masterDomain
             targetDomVersion = masterDom.getVersion()
         except:
             self.log.error("Error while preparing domain `%s` upgrade", sdUUID, exc_info=True)
@@ -457,7 +457,7 @@ class SPM:
             pool = hsm.HSM.getPool(spUUID)
             pool.updateMonitoringThreads()
             pool.invalidateMetadata()
-            masterDom = pool.getMasterDomain()
+            masterDom = pool.masterDomain
             oldlver = pool.getMetaParam(sp.PMDK_LVER)
             oldid = pool.getMetaParam(sp.PMDK_SPM_ID)
             masterDomVersion = pool.getVersion()
@@ -1016,7 +1016,7 @@ class SPM:
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (str(sdUUID), str(spUUID))))
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = hsm.HSM.getPool(spUUID)
-        if sdUUID == pool.getMasterDomain().sdUUID:
+        if sdUUID == pool.masterDomain.sdUUID:
             raise se.CannotDetachMasterStorageDomain(sdUUID)
         pool.forcedDetachSD(sdUUID)
 
@@ -1051,7 +1051,7 @@ class SPM:
         Detach all domains from pool before destroying pool
         """
         # First find out this pool master domain
-        mDom = pool.getMasterDomain()
+        mDom = pool.masterDomain
         # Find out domain list from the pool metadata
         domList = pool.getDomains().keys()
 
@@ -1336,7 +1336,7 @@ class SPM:
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         if sdUUID == None:
-            dom = self.getPool(spUUID).getMasterDomain()
+            dom = self.getPool(spUUID).masterDomain
         else:
             dom = SDF.produce(sdUUID)
 

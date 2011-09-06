@@ -1319,7 +1319,7 @@ class HSM:
             # make sure it's THE master
             try:
                 pool = self.getPool(dom.getPools()[0])
-                master = pool.getMasterDomain()
+                master = pool.masterDomain
                 if master.sdUUID == sdUUID:
                     poolInfo = pool.getInfo()
                     for key in ['lver', 'spm_id', 'master_ver']:
@@ -1867,7 +1867,7 @@ class HSM:
         for p in self.pools.values():
             # Find the master domains
             try:
-                master = p.getMasterDomain()
+                master = p.masterDomain
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 master = None

@@ -208,11 +208,11 @@ class StoragePool:
         return self.getMetaParam(PMDK_MASTER_VER)
 
     def acquireClusterLock(self):
-        msd = self.getMasterDomain()
+        msd = self.masterDomain
         msd.acquireClusterLock(self.id)
 
     def releaseClusterLock(self):
-        self.getMasterDomain().releaseClusterLock()
+        self.masterDomain.releaseClusterLock()
 
     def validateAttachedDomain(self, sdUUID):
         domList = self.getDomains()
@@ -236,15 +236,16 @@ class StoragePool:
             exception if masterVersion doesn't follow the rules
 
         """
-        d = self.getMasterDomain()
+        d = self.masterDomain
         mver = self.getMasterVersion()
         if not int(masterVersion) > mver:
             raise se.StoragePoolWrongMaster(self.spUUID, d.sdUUID)
 
 
     def getMaximumSupportedDomains(self):
-        msdType = sd.name2type(self.getMasterDomain().getInfo()["type"])
-        msdVersion = int(self.getMasterDomain().getInfo()["version"])
+        msdInfo = self.masterDomain.getInfo()
+        msdType = sd.name2type(msdInfo["type"])
+        msdVersion = int(msdInfo["version"])
         if msdType in sd.BLOCK_DOMAIN_TYPES and msdVersion in blockSD.VERS_METADATA_LV:
             return MAX_DOMAINS
         else:
@@ -700,7 +701,7 @@ class StoragePool:
 
                 # If the domain being detached is the 'master', move all pool
                 # metadata to the new 'master' domain (msdUUID)
-                if sdUUID == self.getMasterDomain().sdUUID:
+                if sdUUID == self.masterDomain.sdUUID:
                     self.masterMigrate(sdUUID, msdUUID, masterVersion)
 
                 # Remove pool info from domain metadata
@@ -906,7 +907,7 @@ class StoragePool:
                     master domain will be updated.
         """
         if sdUUID is None:
-            sdUUID = self.getMasterDomain().sdUUID
+            sdUUID = self.masterDomain.sdUUID
 
         self.log.info("spUUID=%s sdUUID=%s", self.spUUID, sdUUID)
         vms = self._getVMsPath(sdUUID)
@@ -975,7 +976,7 @@ class StoragePool:
 
     @property
     def _metadata(self):
-        master = self.getMasterDomain()
+        master = self.masterDomain
         return self._getPoolMD(master)
 
     def getDescription(self):
@@ -988,7 +989,7 @@ class StoragePool:
             return ""
 
     def getVersion(self):
-        return self.getMasterDomain().getVersion()
+        return self.masterDomain.getVersion()
 
     def getSpmId(self):
         spmid = self.getMetaParam(PMDK_SPM_ID)
@@ -1014,7 +1015,7 @@ class StoragePool:
 
         msdUUID = None
         try:
-            master = self.getMasterDomain()
+            master = self.masterDomain
             msdUUID = master.sdUUID
             msdInfo = master.getInfo()
         except Exception:
@@ -1120,16 +1121,11 @@ class StoragePool:
         """
         return self._metadata[key]
 
-    def getMasterDomain(self, msdUUID=None, masterVersion=None):
+    def getMasterDomain(self, msdUUID, masterVersion):
         # Either we have in cache or we got non blank msdUUID,
         # no other option should be supported
-        if msdUUID and msdUUID != sd.BLANK_UUID:
-            self.masterDomain = self.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
-            self.log.debug("Master domain '%s' verified", self.masterDomain)
-
-        if not self.masterDomain:
-            self.log.error("Couldn't find master domain for pool %s", self.spUUID, exc_info=True)
-            raise se.StoragePoolMasterNotFound(self.spUUID, str(msdUUID))
+        self.masterDomain = self.verifyMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+        self.log.debug("Master domain '%s' verified", self.masterDomain)
 
         return self.masterDomain
 
@@ -1261,7 +1257,7 @@ class StoragePool:
             vmPath = SDF.produce(sdUUID).getVMsDir()
         # Get VMs path from the pool (from the master domain)
         else:
-            vmPath = self.getMasterDomain().getVMsDir()
+            vmPath = self.masterDomain.getVMsDir()
 
         if not os.path.exists(vmPath):
             raise se.VMPathNotExists(vmPath)
@@ -1272,7 +1268,7 @@ class StoragePool:
         baddomains = {}
         message = "Pool OK"
         try:
-            masterdomain = self.getMasterDomain()
+            masterdomain = self.masterDomain
             self.invalidateMetadata()
             spmId = self.getMetaParam(PMDK_SPM_ID)
             domains = self.getDomains(activeOnly=True)
