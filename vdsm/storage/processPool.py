@@ -37,6 +37,48 @@ class Timeout(RuntimeError): pass
 class NoFreeHelpersError(RuntimeError): pass
 class PoolClosedError(RuntimeError): pass
 
+class ProcessPoolLimiter(object):
+    def __init__(self, procPool, limit):
+        self._procPool = procPool
+        self._limit = limit
+        self._lock = threading.Lock()
+        self._counter = 0
+
+    def wrapFunction(self, func):
+        @wraps(func)
+        def wrapper(*args, **kwds):
+            return self.runExternally(func, *args, **kwds)
+        return wrapper
+
+    def runExternally(self, *args, **kwargs):
+        with self._lock:
+            if self._counter >= self._limit:
+                raise NoFreeHelpersError("You reached the process limit")
+
+            self._counter += 1
+
+        try:
+            return self._procPool.runExternally(*args, **kwargs)
+        finally:
+            with self._lock:
+                self._counter -= 1
+
+class ProcessPoolMultiplexer(object):
+    def __init__(self, processPool, helperPerUser):
+        self._lock = threading.Lock()
+        self._pool = processPool
+        self._helpersPerUser = helperPerUser
+        self._userDict = {}
+
+    def __getitem__(self, key):
+        try:
+            return self._userDict[key]
+        except KeyError:
+            with self._lock:
+                if key not in self._userDict:
+                    self._userDict[key] = ProcessPoolLimiter(self._pool, self._helpersPerUser)
+                return self._userDict[key]
+
 class ProcessPool(object):
     def __init__(self, maxSubProcess, gracePeriod, timeout):
         self._log = logging.getLogger("ProcessPool")

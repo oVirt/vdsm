@@ -32,12 +32,14 @@ from processPool import Timeout
 import supervdsm
 import constants
 
+getProcPool = oop.getGlobalProcPool
+
 def validateDirAccess(dirPath):
-    oop.fileUtils.validateAccess(dirPath)
+    getProcPool().fileUtils.validateAccess(dirPath)
     supervdsm.getProxy().validateAccess(constants.QEMU_PROCESS_USER,
             (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
             (os.R_OK | os.X_OK))
-    oop.fileUtils.validatePermissions(dirPath)
+    getProcPool().fileUtils.validatePermissions(dirPath)
 
 
 class StorageServerConnection:
@@ -164,24 +166,24 @@ class StorageServerConnection:
                     # BUT if someone deletes the export on the servers side. We will keep
                     # getting stale handles and this is unresolvable unless you umount and
                     # remount.
-                    if oop.fileUtils.isStaleHandle(mntPath):
+                    if getProcPool().fileUtils.isStaleHandle(mntPath):
                         # A VM might be holding a stale handle, we have to umount
                         # but we can't umount as long as someone is holding a handle
                         # even if it's stale. We use lazy so we can at least recover.
                         # Processes having an open file handle will not recover until
                         # they reopen the files.
-                        oop.fileUtils.umount(con['rp'], mntPath, lazy=True)
+                        getProcPool().fileUtils.umount(con['rp'], mntPath, lazy=True)
 
                 fileUtils.createdir(mntPath)
 
-                rc = oop.fileUtils.mount(con['rp'], mntPath, fsType)
+                rc = getProcPool().fileUtils.mount(con['rp'], mntPath, fsType)
                 if rc == 0:
                     try:
                         validateDirAccess(mntPath)
                     except se.StorageServerAccessPermissionError, ex:
                         self.log.debug("Unmounting file system %s "
                             "(not enough access permissions)" % con['rp'])
-                        oop.fileUtils.umount(con['rp'], mntPath, fsType)
+                        getProcPool().fileUtils.umount(con['rp'], mntPath, fsType)
                         raise
                 else:
                     self.log.error("Error during storage connection: rc=%s", rc, exc_info=True)
@@ -266,7 +268,7 @@ class StorageServerConnection:
             try:
                 mountpoint = tempfile.mkdtemp()
                 try:
-                    rc = oop.fileUtils.mount(con['rp'], mountpoint, fsType)
+                    rc = getProcPool().fileUtils.mount(con['rp'], mountpoint, fsType)
                     if rc == 0:
                         try:
                             validateDirAccess(mountpoint)
@@ -277,9 +279,9 @@ class StorageServerConnection:
                         rc = se.StorageServerValidationError.code
                 finally:
                     try:
-                        oop.fileUtils.umount(con['rp'], mountpoint, fsType)
+                        getProcPool().fileUtils.umount(con['rp'], mountpoint, fsType)
                     finally:
-                        oop.os.rmdir(mountpoint)
+                        getProcPool().os.rmdir(mountpoint)
 
             except se.StorageException, ex:
                 rc = ex.code
@@ -340,10 +342,10 @@ class StorageServerConnection:
                 mntPoint = fileUtils.transformPath(con['rp'])
                 mntPath = os.path.join(localPath, mntPoint)
 
-                rc = oop.fileUtils.umount(con['rp'], mntPath, fsType)
+                rc = getProcPool().fileUtils.umount(con['rp'], mntPath, fsType)
                 if rc == 0:
                     try:
-                        oop.os.rmdir(mntPath)
+                        getProcPool().os.rmdir(mntPath)
                     except (OSError, Timeout):
                         # Report the error to the log, but keep going,
                         # afterall we succeeded to disconnect the FS server

@@ -24,7 +24,6 @@ import logging
 import glob
 
 import sd
-from sd import processPoolDict
 import fileUtils
 import storage_exception as se
 import fileVolume
@@ -56,29 +55,30 @@ class FileMetadataRW(object):
         # FileSDMetadata is kept in the file
         self._metafile = metafile
         self._sdUUID = getDomUuidFromMetafilePath(metafile)
+        self._oop = oop.getProcessPool(self._sdUUID)
 
     def readlines(self):
-        if not processPoolDict[self._sdUUID].fileUtils.pathExists(self._metafile):
+        if not self._oop.fileUtils.pathExists(self._metafile):
                 return []
-        return misc.stripNewLines(processPoolDict[self._sdUUID].directReadLines(self._metafile))
+        return misc.stripNewLines(self._oop.directReadLines(self._metafile))
 
     def writelines(self, metadata):
         metadata = [i + '\n' for i in metadata]
         tmpFilePath = self._metafile + ".new"
         try:
-            processPoolDict[self._sdUUID].writeLines(tmpFilePath, metadata)
+            self._oop.writeLines(tmpFilePath, metadata)
         except IOError, e:
             if e.errno != errno.ESTALE:
                 raise
-            processPoolDict[self._sdUUID].writeLines(tmpFilePath, metadata)
-        processPoolDict[self._sdUUID].os.rename(tmpFilePath, self._metafile)
+            self._oop.writeLines(tmpFilePath, metadata)
+        self._oop.os.rename(tmpFilePath, self._metafile)
 
 FileSDMetadata = lambda metafile: DictValidator(PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
 
 def createmetafile(path, size_str):
     try:
         size = sd.sizeStr2Int(size_str)
-        oop.createSparseFile(path, size)
+        oop.getGlobalProcPool().createSparseFile(path, size)
     except Exception, e:
         raise se.StorageDomainMetadataCreationError("create meta file failed: %s: %s" % (path, str(e)))
 
@@ -109,7 +109,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         # create domain metadata folder
         metadataDir = os.path.join(domPath, sd.DOMAIN_META_DATA)
-        processPoolDict[sdUUID].fileUtils.createdir(metadataDir, 0775)
+        oop.getProcessPool(sdUUID).fileUtils.createdir(metadataDir, 0775)
 
         createmetafile(os.path.join(metadataDir, sd.LEASES), sd.LEASES_SIZE)
         createmetafile(os.path.join(metadataDir, sd.IDS), sd.IDS_SIZE)
@@ -141,7 +141,7 @@ class FileStorageDomain(sd.StorageDomain):
 
     def getReadDelay(self):
         t = time.time()
-        processPoolDict[self.sdUUID].directReadLines(self.metafile)
+        oop.getProcessPool(self.sdUUID).directReadLines(self.metafile)
         return time.time() - t
 
     def produceVolume(self, imgUUID, volUUID):
@@ -218,7 +218,7 @@ class FileStorageDomain(sd.StorageDomain):
         This removes all data from the storage domain.
         """
         cls.log.info("Formating domain %s", sdUUID)
-        processPoolDict[sdUUID].fileUtils.cleanupdir(domaindir, ignoreErrors = False)
+        oop.getProcessPool(sdUUID).fileUtils.cleanupdir(domaindir, ignoreErrors = False)
         return True
 
     def getRemotePath(self):
@@ -322,7 +322,7 @@ def scanDomains(pattern="*"):
 
     def collectMetaFiles(possibleDomain):
         try:
-            metaFiles = oop.glob.glob(os.path.join(possibleDomain,
+            metaFiles = oop.getGlobalProcPool().glob.glob(os.path.join(possibleDomain,
                 constants.UUID_GLOB_PATTERN, sd.DOMAIN_META_DATA))
 
             for metaFile in metaFiles:

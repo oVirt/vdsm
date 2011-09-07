@@ -23,11 +23,11 @@ import fnmatch
 import re
 
 import sd
-from sd import processPoolDict
 import fileSD
 import fileUtils
 import storage_exception as se
 from storage_connection import validateDirAccess
+import outOfProcess as oop
 
 class NfsStorageDomain(fileSD.FileStorageDomain):
 
@@ -47,7 +47,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)
-        if len(processPoolDict[sdUUID].glob.glob(mdpat)) > 0:
+        if len(oop.getProcessPool(sdUUID).glob.glob(mdpat)) > 0:
             raise se.StorageDomainNotEmpty(typeSpecificArg)
 
     @classmethod
@@ -76,12 +76,12 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
         # create domain images folder
         imagesDir = os.path.join(domainDir, sd.DOMAIN_IMAGES)
-        processPoolDict[sdUUID].fileUtils.createdir(imagesDir)
+        oop.getProcessPool(sdUUID).fileUtils.createdir(imagesDir)
 
         # create special imageUUID for ISO/Floppy volumes
         if domClass is sd.ISO_DOMAIN:
             isoDir = os.path.join(imagesDir, sd.ISO_IMAGE_UUID)
-            processPoolDict[sdUUID].fileUtils.createdir(isoDir)
+            oop.getProcessPool(sdUUID).fileUtils.createdir(isoDir)
 
         fsd = NfsStorageDomain(os.path.join(mntPoint, sdUUID))
         fsd.initSPMlease()

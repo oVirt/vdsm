@@ -23,19 +23,30 @@ import glob as mod_glob
 import types
 from config import config
 import threading
-from functools import wraps
 
 from fileUtils import open_ex
 import fileUtils as mod_fileUtils
 
-from processPool import ProcessPool, NoFreeHelpersError
+from processPool import ProcessPool, ProcessPoolMultiplexer
 
 MAX_HELPERS = config.getint("irs", "process_pool_size")
 GRACE_PERIOD = config.getint("irs", "process_pool_grace_period")
 DEFAULT_TIMEOUT = config.getint("irs", "process_pool_timeout")
 HELPERS_PER_DOMAIN = config.getint("irs", "process_pool_max_slots_per_domain")
 
-_globalPool = ProcessPool(MAX_HELPERS, GRACE_PERIOD, DEFAULT_TIMEOUT)
+_multiplexerLock = threading.Lock()
+_multiplexer = [None]
+def getProcessPool(clientName):
+    if _multiplexer[0] is None:
+        with _multiplexerLock:
+            if _multiplexer[0] is None:
+                pool = ProcessPool(MAX_HELPERS, GRACE_PERIOD, DEFAULT_TIMEOUT)
+                _multiplexer[0] = ProcessPoolMultiplexer(pool, HELPERS_PER_DOMAIN)
+
+    return OopWrapper(_multiplexer[0][clientName])
+
+def getGlobalProcPool():
+    return getProcessPool("Global")
 
 def _simpleWalk(top, topdown=True, onerror=None, followlinks=False):
     # We need this _simpleWalk wrapper because of regular os.walk return iterator
@@ -45,77 +56,34 @@ def _simpleWalk(top, topdown=True, onerror=None, followlinks=False):
         for f in files:
             filesList.append(mod_os.path.join(base,f))
     return filesList
-simpleWalk = _globalPool.wrapFunction(_simpleWalk)
 
 def _directReadLines(path):
     with open_ex(path, "dr") as f:
         return f.readlines()
-directReadLines = _globalPool.wrapFunction(_directReadLines)
 
 def _directWriteLines(path, lines):
     with open_ex(path, "dw") as f:
         return f.writelines(lines)
-directWriteLines = _globalPool.wrapFunction(_directWriteLines)
 
 def _createSparseFile(path, size):
     with open(path, "w") as f:
         f.truncate(size)
-createSparseFile = _globalPool.wrapFunction(_createSparseFile)
 
 def _readLines(path):
     with open(path, "r") as f:
         return f.readlines()
-readLines = _globalPool.wrapFunction(_readLines)
 
 def _writeLines(path, lines):
     with open(path, "w") as f:
         return f.writelines(lines)
-writeLines = _globalPool.wrapFunction(_writeLines)
 
 class _ModuleWrapper(types.ModuleType):
-    def __init__(self, wrappedModule, procPool=None):
+    def __init__(self, wrappedModule, procPool):
         self._wrappedModule = wrappedModule
         self._procPool = procPool
 
     def __getattr__(self, name):
-        if self._procPool:
-            return self._procPool.wrapFunction(getattr(self._wrappedModule, name))
-        else:
-            return _globalPool.wrapFunction(getattr(self._wrappedModule, name))
-
-glob = _ModuleWrapper(mod_glob)
-
-os = _ModuleWrapper(mod_os)
-setattr(os, 'path', _ModuleWrapper(mod_os.path))
-
-fileUtils = _ModuleWrapper(mod_fileUtils)
-
-class ProcessPoolLimiter(object):
-    def __init__(self, procPool, limit):
-        self._procPool = procPool
-        self._limit = limit
-        self._lock = threading.Lock()
-        self._counter = 0
-
-    def wrapFunction(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwds):
-            return self.runExternally(func, *args, **kwds)
-        return wrapper
-
-    def runExternally(self, *args, **kwargs):
-        with self._lock:
-            if self._counter >= self._limit:
-                raise NoFreeHelpersError("You reached the process limit")
-
-            self._counter += 1
-
-        try:
-            return self._procPool.runExternally(*args, **kwargs)
-        finally:
-            with self._lock:
-                self._counter -= 1
-
+        return self._procPool.wrapFunction(getattr(self._wrappedModule, name))
 
 class OopWrapper(object):
     def __init__(self, procPool):

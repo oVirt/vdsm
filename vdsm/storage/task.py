@@ -58,6 +58,9 @@ from config import config
 import outOfProcess as oop
 from logUtils import SimpleLogAdapter
 
+
+getProcPool = oop.getGlobalProcPool
+
 KEY_SEPERATOR = "="
 TASK_EXT = ".task"
 JOB_EXT = ".job"
@@ -507,7 +510,7 @@ class Task:
             log.warn("Task was autocleaned")
             owner.releaseAll()
             if taskDir is not None:
-                oop.fileUtils.cleanupdir(taskDir)
+                getProcPool().fileUtils.cleanupdir(taskDir)
 
         if not self.state.isDone():
             taskDir = None
@@ -636,7 +639,7 @@ class Task:
     def _loadMetaFile(cls, filename, obj, fields):
         #cls.log.debug("load file %s read obj %s fields %s", filename, str(obj), fields.keys())
         try:
-            for line in oop.readLines(filename):
+            for line in getProcPool().readLines(filename):
                 #cls.log.debug("-- line: %s", line)
                 # process current line
                 if line.find(KEY_SEPERATOR) < 0:
@@ -677,7 +680,7 @@ class Task:
     @classmethod
     def _saveMetaFile(cls, filename, obj, fields):
         try:
-            oop.writeLines(filename, [ l + "\n" for l in cls._dump(obj, fields) ])
+            getProcPool().writeLines(filename, [ l + "\n" for l in cls._dump(obj, fields) ])
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.TaskMetaDataSaveError(filename)
@@ -725,7 +728,7 @@ class Task:
 
     def _getResourcesKeyList(self, taskDir):
         keys = []
-        for path in  oop.glob.glob(os.path.join(taskDir, "*" + RESOURCE_EXT)):
+        for path in  getProcPool().glob.glob(os.path.join(taskDir, "*" + RESOURCE_EXT)):
             filename = os.path.basename(path)
             keys.append(filename[:filename.rfind(RESOURCE_EXT)])
         return keys
@@ -736,7 +739,7 @@ class Task:
         if self.state != State.init:
             raise se.TaskMetaDataLoadError("task %s - can't load self: not in init state" % str(self))
         taskDir = os.path.join(storPath, str(self.id) + str(ext))
-        if not oop.os.path.exists(taskDir):
+        if not getProcPool().os.path.exists(taskDir):
             raise se.TaskDirError("load: no such task dir '%s'" % taskDir)
         oldid = self.id
         self._loadTaskMetaFile(taskDir)
@@ -756,13 +759,13 @@ class Task:
 
     def _save(self, storPath):
         origTaskDir = os.path.join(storPath, self.id)
-        if not oop.os.path.exists(origTaskDir):
+        if not getProcPool().os.path.exists(origTaskDir):
             raise se.TaskDirError("_save: no such task dir '%s'" % origTaskDir)
         taskDir = os.path.join(storPath, self.id + TEMP_EXT)
         self.log.debug("_save: orig %s temp %s", origTaskDir, taskDir)
-        if oop.os.path.exists(taskDir):
-            oop.fileUtils.cleanupdir(taskDir)
-        oop.os.mkdir(taskDir)
+        if getProcPool().os.path.exists(taskDir):
+            getProcPool().fileUtils.cleanupdir(taskDir)
+        getProcPool().os.mkdir(taskDir)
         try:
             self.njobs = len(self.jobs)
             self.nrecoveries = len(self.recoveries)
@@ -776,21 +779,21 @@ class Task:
         except Exception, e:
             self.log.error("Unexpected error", exc_info=True)
             try:
-                oop.fileUtils.cleanupdir(taskDir)
+                getProcPool().fileUtils.cleanupdir(taskDir)
             except:
                 self.log.warning("can't remove temp taskdir %s" % taskDir)
             raise se.TaskPersistError("%s persist failed: %s" % (str(self), str(e)))
         # Make sure backup dir doesn't exist
-        oop.fileUtils.cleanupdir(origTaskDir + BACKUP_EXT)
-        oop.os.rename(origTaskDir, origTaskDir + BACKUP_EXT)
-        oop.os.rename(taskDir, origTaskDir)
-        oop.fileUtils.cleanupdir(origTaskDir + BACKUP_EXT)
-        oop.fileUtils.fsyncPath(origTaskDir)
+        getProcPool().fileUtils.cleanupdir(origTaskDir + BACKUP_EXT)
+        getProcPool().os.rename(origTaskDir, origTaskDir + BACKUP_EXT)
+        getProcPool().os.rename(taskDir, origTaskDir)
+        getProcPool().fileUtils.cleanupdir(origTaskDir + BACKUP_EXT)
+        getProcPool().fileUtils.fsyncPath(origTaskDir)
 
 
     def _clean(self, storPath):
         taskDir = os.path.join(storPath, self.id)
-        oop.fileUtils.cleanupdir(taskDir)
+        getProcPool().fileUtils.cleanupdir(taskDir)
 
 
     def _recoverDone(self):
@@ -1121,7 +1124,7 @@ class Task:
             raise se.TaskPersistError("no store defined")
         taskDir = os.path.join(self.store, self.id)
         try:
-            oop.fileUtils.createdir(taskDir)
+            getProcPool().fileUtils.createdir(taskDir)
         except Exception, e:
             self.log.error("Unexpected error", exc_info=True)
             raise se.TaskPersistError("%s: cannot access/create taskdir %s: %s" % (str(self), taskDir, str(e)))
@@ -1157,12 +1160,12 @@ class Task:
     @classmethod
     def loadTask(cls, store, taskid):
         t = Task(taskid)
-        if oop.os.path.exists(os.path.join(store, taskid)):
+        if getProcPool().os.path.exists(os.path.join(store, taskid)):
             ext = ""
         # TBD: is this the correct order (temp < backup) + should temp be considered at all?
-        elif oop.os.path.exists(os.path.join(store, taskid + TEMP_EXT)):
+        elif getProcPool().os.path.exists(os.path.join(store, taskid + TEMP_EXT)):
             ext = TEMP_EXT
-        elif oop.os.path.exists(os.path.join(store, taskid + BACKUP_EXT)):
+        elif getProcPool().os.path.exists(os.path.join(store, taskid + BACKUP_EXT)):
             ext = BACKUP_EXT
         else:
             raise se.TaskDirError("loadTask: no such task dir '%s/%s'" % (store, taskid))

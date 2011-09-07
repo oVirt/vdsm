@@ -27,7 +27,6 @@ import outOfProcess as oop
 import volume
 import image
 import sd
-from sd import processPoolDict
 import misc
 import task
 from threadLocal import vars
@@ -45,7 +44,7 @@ def deleteMultipleVolumes(sdUUID, volumes, postZero):
         vol.setLegality(volume.ILLEGAL_VOL)
         volPaths.append(vol.getVolumePath())
     try:
-        oop.fileUtils.cleanupfiles(volPaths)
+        oop.getGlobalProcPool().fileUtils.cleanupfiles(volPaths)
     except OSError:
         volume.log.error("cannot delete some volumes at paths: %s",
                             volPaths, exc_info=True)
@@ -59,7 +58,7 @@ class FileVolume(volume.Volume):
 
     @property
     def oop(self):
-        return processPoolDict[self.sdUUID]
+        return oop.getProcessPool(self.sdUUID)
 
     @staticmethod
     def file_setrw(volPath, rw):
@@ -67,16 +66,16 @@ class FileVolume(volume.Volume):
         mode = 0440
         if rw:
             mode |= 0220
-        if processPoolDict[sdUUID].os.path.isdir(volPath):
+        if oop.getProcessPool(sdUUID).os.path.isdir(volPath):
             mode |= 0110
-        processPoolDict[sdUUID].os.chmod(volPath, mode)
+        oop.getProcessPool(sdUUID).os.chmod(volPath, mode)
 
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, volPath):
         cls.log.info("halfbakedVolumeRollback: volPath=%s" % (volPath))
         sdUUID = getDomUuidFromVolumePath(volPath)
-        if processPoolDict[sdUUID].fileUtils.pathExists(volPath):
-            processPoolDict[sdUUID].os.unlink(volPath)
+        if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath):
+            oop.getProcessPool(sdUUID).os.unlink(volPath)
 
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
@@ -98,8 +97,8 @@ class FileVolume(volume.Volume):
         cls.log.info("createVolumeMetadataRollback: volPath=%s" % (volPath))
         metaPath = cls.__metaVolumePath(volPath)
         sdUUID = getDomUuidFromVolumePath(volPath)
-        if processPoolDict[sdUUID].os.path.lexists(metaPath):
-            processPoolDict[sdUUID].os.unlink(metaPath)
+        if oop.getProcessPool(sdUUID).os.path.lexists(metaPath):
+            oop.getProcessPool(sdUUID).os.unlink(metaPath)
 
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID):
@@ -126,7 +125,7 @@ class FileVolume(volume.Volume):
         voltype = "LEAF"
         pvol = None
         # Check if volume already exists
-        if processPoolDict[sdUUID].fileUtils.pathExists(vol_path):
+        if oop.getProcessPool(sdUUID).fileUtils.pathExists(vol_path):
             raise se.VolumeAlreadyExists(vol_path)
         # Check if snapshot creation required
         if srcVolUUID != volume.BLANK_UUID:
@@ -151,7 +150,7 @@ class FileVolume(volume.Volume):
                 raise se.VolumesZeroingError(vol_path)
         else:
             # Sparse = Normal file
-            processPoolDict[sdUUID].createSparseFile(vol_path, 0)
+            oop.getProcessPool(sdUUID).createSparseFile(vol_path, 0)
 
         cls.log.info("fileVolume: create: volUUID %s srcImg %s srvVol %s" % (volUUID, srcImgUUID, srcVolUUID))
         if not pvol:
@@ -338,7 +337,7 @@ class FileVolume(volume.Volume):
                 f.close()
 
         sdUUID = getDomUuidFromVolumePath(vol_path)
-        processPoolDict[sdUUID].os.rename(meta + ".new", meta)
+        oop.getProcessPool(sdUUID).os.rename(meta + ".new", meta)
 
 
     @classmethod
@@ -366,7 +365,7 @@ class FileVolume(volume.Volume):
         """
         # Get Volumes of an image
         pattern = os.path.join(os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID, "*.meta"))
-        files = processPoolDict[sdUUID].glob.glob(pattern)
+        files = oop.getProcessPool(sdUUID).glob.glob(pattern)
         volList = []
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
@@ -392,7 +391,7 @@ class FileVolume(volume.Volume):
      ##     return volList
         # scan whole domain
         pattern = os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES, "*", "*.meta")
-        files = processPoolDict[sdUUID].glob.glob(pattern)
+        files = oop.getProcessPool(sdUUID).glob.glob(pattern)
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
             imgUUID = os.path.basename(os.path.dirname(i))
@@ -464,7 +463,7 @@ class FileVolume(volume.Volume):
         try:
             cls.log.info("oldPath=%s newPath=%s", oldPath, newPath)
             sdUUID = getDomUuidFromVolumePath(oldPath)
-            processPoolDict[sdUUID].os.rename(oldPath, newPath)
+            oop.getProcessPool(sdUUID).os.rename(oldPath, newPath)
         except Exception:
             cls.log.error("Could not rollback volume rename (oldPath=%s newPath=%s)", oldPath, newPath, exc_info=True)
 

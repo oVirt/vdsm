@@ -33,7 +33,6 @@ import resourceManager as rm
 import constants
 import safelease
 import outOfProcess as oop
-from processPool import ProcessPool
 
 from config import config
 
@@ -231,37 +230,6 @@ SD_MD_FIELDS = {
         }
 
 
-class ProcessPoolDict(dict):
-    def __init__(self):
-        dict.__init__(self)
-        self._lock = threading.RLock()
-        self._pool = None
-
-    def __getitem__(self, key):
-        try:
-            return dict.__getitem__(self, key)
-        except KeyError:
-            with self._lock:
-                if key not in self:
-                    self[key] = self._createProcessPool(key)
-                return dict.__getitem__(self, key)
-
-    def init(self):
-        with self._lock:
-            if self._pool is None:
-                self._pool = ProcessPool(oop.MAX_HELPERS, oop.GRACE_PERIOD, oop.DEFAULT_TIMEOUT)
-
-    def _createProcessPool(self, key):
-        # I initialize the pool dict on first call
-        # because it's created on import and generating
-        # hundreds of subprocess on import is not recommended
-        if self._pool is None:
-            self.init()
-
-        return oop.OopWrapper(oop.ProcessPoolLimiter(self._pool, oop.HELPERS_PER_DOMAIN))
-
-# Dictionary for process pools per sdUUID
-processPoolDict = ProcessPoolDict()
 
 class StorageDomain:
     log = logging.getLogger("Storage.StorageDomain")
@@ -288,7 +256,7 @@ class StorageDomain:
 
     @property
     def oop(self):
-        return processPoolDict[self.sdUUID]
+        return oop.getProcessPool(self.sdUUID)
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version):
