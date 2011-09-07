@@ -577,7 +577,7 @@ gpgcheck=0
                 vdcUrl = "http://%s:%s" % (
                             vdcName, str(vdcPort) if vdcPort else "80")
                 try:
-                    if not deployUtil.waitRouteRestore(60, vdcUrl)
+                    if not deployUtil.waitRouteRestore(60, vdcUrl):
                         fReturn = False
                         self.message = "No route to %s. Check switch/router " \
                             "settings and try registering again." % vdcName
