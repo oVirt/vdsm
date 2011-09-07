@@ -156,6 +156,13 @@ class Helper(object):
 def _helperMainLoop(pipe, lifeLine, parentLifelineFD):
     os.close(parentLifelineFD)
 
+    # Restoring signal handlers that might deadlock on prepareForShutdown
+    # in the children.
+    # This must be improved using pthread_sigmask before forking so that
+    # we don't risk to have a race condition.
+    for signum in (signal.SIGTERM, signal.SIGUSR1):
+        signal.signal(signum, signal.SIG_DFL)
+
     # Removing all the handlers from the loggers. This avoid a deadlock on
     # the logging locks. Multi-process and multi-threading don't mix well.
     #   - BZ#732652: https://bugzilla.redhat.com/show_bug.cgi?id=732652
