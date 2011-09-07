@@ -24,9 +24,13 @@
 import os
 import sys
 from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
-                                     is_valid_port, PluginBase, log, network_up
+                                     is_valid_port, PluginBase, log, network_up, \
+                                     password_check, augtool
+from ovirtnode.password import set_password
+
 from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox, \
-                  FLAG_DISABLED, FLAGS_SET, customColorset
+                  FLAG_DISABLED, FLAGS_SET, customColorset, Textbox
+import subprocess
 
 sys.path.append('/usr/share/vdsm-reg')
 import deployUtil
@@ -104,7 +108,7 @@ class Plugin(PluginBase):
         PluginBase.__init__(self, "RHEV-M", ncs)
 
     def form(self):
-        elements = Grid(2, 10)
+        elements = Grid(2, 8)
         is_network_up = network_up()
         if is_network_up:
             header_message = "RHEV-M Configuration"
@@ -114,7 +118,6 @@ class Plugin(PluginBase):
         self.ncs.screen.setColor(customColorset(1), "black", "magenta")
         heading.setColors(customColorset(1))
         elements.setField(heading, 0, 0, anchorLeft = 1)
-        elements.setField(Label(""), 0, 1, anchorLeft = 1)
         rhevm_grid = Grid(2,2)
         rhevm_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
         self.rhevm_server = Entry(25, "")
@@ -122,14 +125,34 @@ class Plugin(PluginBase):
         rhevm_grid.setField(Label("Management Server Port:"), 0, 1, anchorLeft = 1)
         self.rhevm_server_port = Entry(6, "", scroll = 0)
         self.rhevm_server_port.setCallback(self.valid_rhevm_server_port_callback)
-        rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
-        rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 1))
-        elements.setField(rhevm_grid, 0, 2, anchorLeft = 1, padding = (0,1,0,0))
+        rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(0, 0, 0, 0))
+        rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(0, 0, 0, 0))
+        elements.setField(rhevm_grid, 0, 1, anchorLeft = 1, padding = (0,0,0,0))
+        elements.setField(Label(""), 0, 2, anchorLeft = 1)
         self.verify_rhevm_cert = Checkbox("Connect to RHEV Manager and Validate Certificate", isOn=True)
-        elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,1,0,0))
+        elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,0,0,0))
+        elements.setField(Label(""), 0, 4, anchorLeft = 1)
 
+        elements.setField(Label("Set RHEV-M Admin Password"), 0, 5, anchorLeft = 1)
+        pw_elements = Grid(3,3)
+
+        pw_elements.setField(Label("Password: "), 0, 1, anchorLeft = 1)
+        self.root_password_1 = Entry(15,password = 1)
+        self.root_password_1.setCallback(self.password_check_callback)
+        pw_elements.setField(self.root_password_1, 1, 1)
+        pw_elements.setField(Label("Confirm Password: "), 0, 2, anchorLeft = 1)
+        self.root_password_2 = Entry(15,password = 1)
+        self.root_password_2.setCallback(self.password_check_callback)
+        pw_elements.setField(self.root_password_2, 1, 2)
+        self.pw_msg = Textbox(60, 6, "", wrap=1)
+
+        elements.setField(pw_elements, 0, 6, anchorLeft=1)
+        elements.setField(self.pw_msg, 0, 7, padding = (0,0,0,0))
+
+        inputFields = [self.rhevm_server, self.rhevm_server_port, self.verify_rhevm_cert,
+                       self.root_password_1, self.root_password_2]
         if not is_network_up:
-            for field in self.rhevm_server, self.rhevm_server_port, self.verify_rhevm_cert:
+            for field in inputFields:
                 field.setFlags(FLAG_DISABLED, FLAGS_SET)
 
         try:
@@ -145,9 +168,19 @@ class Plugin(PluginBase):
             pass
         return [Label(""), elements]
 
+    def password_check_callback(self):
+        resp, msg = password_check(self.root_password_1.value(), self.root_password_2.value())
+        self.pw_msg.setText(msg)
+        return
+
     def action(self):
         self.ncs.screen.setColor("BUTTON", "black", "red")
         self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
+        if self.root_password_1.value() != "" and self.root_password_2.value() != "" and self.root_password_1.value() == self.root_password_2.value():
+            set_password(self.root_password_1.value(), "root")
+            augtool("set", "/files/etc/ssh/sshd_config/PasswordAuthentication", "yes")
+            dn = file('/dev/null', 'w+')
+            subprocess.Popen(['/sbin/service', 'sshd', 'restart'], stdout=dn, stderr=dn)
         if len(self.rhevm_server.value()) > 0:
             if self.verify_rhevm_cert.selected():
                 if deployUtil.getRhevmCert(self.rhevm_server.value(),  self.rhevm_server_port.value()):
