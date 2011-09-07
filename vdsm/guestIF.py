@@ -26,22 +26,26 @@ from config import config
 import utils
 import constants
 
+__RESTRICTED_CHARS = set(range(8+1)).union(
+    set(range(0xB,0xC+1))).union(
+    set(range(0xE,0x1F+1))).union(
+    set(range(0x7F,0x84+1))).union(
+    set(range(0x86,0x9F+1)))
+
 def _filterXmlChars(u):
     """
-    Filter out restarted xml chars from unicode string
+    Filter out restarted xml chars from unicode string. Not using
+    Python's xmlcharrefreplace because it accepts '\x01', which
+    the spec frown upon.
 
     Set taken from http://www.w3.org/TR/xml11/#NT-RestrictedChar
     """
-    restricted = set(range(8+1)).union(
-                 set(range(0xB,0xC+1))).union(
-                 set(range(0xE,0x1F+1))).union(
-                 set(range(0x7F,0x84+1))).union(
-                 set(range(0x86,0x9F+1)))
+
     def maskRestricted(c):
-        if ord(c) in restricted: return '?'
+        if ord(c) in __RESTRICTED_CHARS: return '?'
         else: return c
 
-    return ''.join([maskRestricted(c) for c in u])
+    return ''.join(maskRestricted(c) for c in u)
 
 class GuestAgent (threading.Thread):
     def __init__(self, socketName, log, user='Unknown', ips='', connect=True):
