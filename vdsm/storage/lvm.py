@@ -712,47 +712,67 @@ def _fqpvname(pv):
         pv = os.path.join(PV_PREFIX, pv)
     return pv
 
-def _initpv(device, metadataSize=0):
-    if metadataSize > 0:
-        # Size for pvcreate should be with units k|m|g
-        metadatasize = str(metadataSize) + 'm'
-        cmd = ["pvcreate", "--metadatasize", metadatasize, device]
-    else:
-        cmd = ["pvcreate", "--pvmetadatacopies", "0", device]
+def _initpvs(devices, metadataSize):
+    devices = _normalizeargs(devices)
+    # Size for pvcreate should be with units k|m|g
+    metadatasize = str(metadataSize) + 'm'
+    cmd = ["pvcreate", "--metadatasize", metadatasize, "--metadatacopies", "2",
+           "--metadataignore", "y"]
+    cmd.extend(devices)
 
     #pvcreate on a dev that is already a PV but not in a VG returns rc = 0.
     #The device is created with the new parameters.
     rc, out, err = _lvminfo.cmd(cmd)
     if rc != 0:
-        # This could have failed because a VG
-        # was removed on another host. Let us
-        # check with lvm
-        if isPvPartOfVg(device):
-            raise se.PhysDevInitializationError(device)
-
-        try:
-            devicemapper.removeMappingsHoldingDevice(os.path.basename(device))
-        except OSError, e:
-            if e.errno == errno.ENODEV:
-                raise se.PhysDevInitializationError("%s: %s" % (device, str(e)))
-            else:
-                raise
+        # This could have failed because a VG was removed on another host.
+        #Let us check with lvm
+        found, notFound = getVGsOfReachablePVs(devices)
+        #If returned not found devices or any device is in a VG
+        if notFound or any(found.itervalues()):
+            raise se.PhysDevInitializationError("found: %s notFound: %s",
+                                                found, notFound)
+        #All devices are free and reachable, calling the ghostbusters!
+        for device in devices:
+            try:
+                devicemapper.removeMappingsHoldingDevice(os.path.basename(device))
+            except OSError, e:
+                if e.errno == errno.ENODEV:
+                    raise se.PhysDevInitializationError("%s: %s" % (device, str(e)))
+                else:
+                    raise
+        #Retry pvcreate
         rc, out, err = _lvminfo.cmd(cmd)
         if rc != 0:
             raise se.PhysDevInitializationError(device)
 
-    _lvminfo._invalidatepvs(device)
+    _lvminfo._invalidatepvs(devices)
 
 def getLvDmName(vgName, lvName):
     return "%s-%s" % (vgName.replace("-", "--"), lvName)
 
-def isPvPartOfVg(pvName):
-    cmd = ["pvs", "-o", "vg_name", "--noheading", pvName]
+def getVGsOfReachablePVs(pvNames):
+    """
+    Return a (found, notFound) tuple.
+    found: {pvName: vgName} of reachable PVs.
+    notFound: (PvName, ...) for unreachable PVs.
+    """
+    pvNames = _normalizeargs(pvNames)
+    cmd = ["pvs", "-o", "vg_name,pv_name", "--noheading"]
+    cmd.extend(pvNames)
     rc, out, err = _lvminfo.cmd(cmd)
-    if rc != 0:
-        return False
+    found = {} #{pvName, vgName}
+    for line in out:
+        try:
+            #Safe: volume group name containg spaces is invalid
+            vgName, pvName = line.strip().split()
+        except ValueError:
+            pvName = line.strip()
+            found[pvName] = None #Free PV
+        else:
+            found[pvName] = vgName
+    notFound = (pvName for pvName in pvNames if pvName not in found.iterkeys())
 
-    return ("".join(out).strip() != "")
+    return found, notFound
 
 def removeVgMapping(vgName):
     """
@@ -872,9 +892,13 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m"):
     if bs not in constants.SUPPORTED_BLOCKSIZE:
        raise se.DeviceBlockSizeError(bs)
 
-    _initpv(pvs[0], metadataSize)
-    for dev in pvs[1:]:
-        _initpv(dev)
+    _initpvs(pvs, metadataSize)
+    #Activate the 1st PV metadata areas
+    cmd = ["pvchange", "--metadataignore", "n"]
+    cmd.append(pvs[0])
+    rc, out, err = _lvminfo.cmd(cmd)
+    if rc != 0:
+        raise se.PhysDevInitializationError(pvs[0])
 
     options = ["--physicalextentsize", extentsize]
     if initialTag:
@@ -927,22 +951,21 @@ def renameVG(oldvg, newvg):
         raise se.VolumeGroupRenameError()
 
 
-def extendVG(vg, devices):
+def extendVG(vgName, devices):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
-    _checkpvsblksize(pvs, getVGBlockSizes(vg))
-    for dev in pvs:
-        pv = _lvminfo.getPv(dev)
-        if not pv or pv.mda_count != 0:
-            _initpv(dev)
+    _checkpvsblksize(pvs, getVGBlockSizes(vgName))
+    vg = _lvminfo.getVg(vgName)
+    #Format extension PVs as all the other already in the VG
+    _initpvs(pvs, int(vg.vg_mda_size) / 2 ** 20)
 
-    cmd = ["vgextend", vg] + pvs
+    cmd = ["vgextend", vgName] + pvs
     rc, out, err = _lvminfo.cmd(cmd)
     if rc == 0:
         _lvminfo._invalidatepvs(pvs)
-        _lvminfo._invalidatevgs(vg)
+        _lvminfo._invalidatevgs(vgName)
         log.debug("Cache after extending vg %s", _lvminfo._vgs)
     else:
-        raise se.VolumeGroupExtendError(vg, pvs)
+        raise se.VolumeGroupExtendError(vgName, pvs)
 
 
 def chkVG(vgName):
