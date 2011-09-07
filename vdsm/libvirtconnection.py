@@ -18,10 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import threading
+import traceback
+
 import libvirt
+
 import libvirtev
 import constants
-import traceback
 
 # Make sure to never reload this module, or you would lose events
 # TODO: make this internal to libvirtev, and make the thread stoppable
@@ -63,6 +66,7 @@ def __eventCallback(conn, dom, *args):
         cif.log.error(traceback.format_exc())
 
 __connections = {}
+__connectionLock = threading.Lock()
 def get(cif=None):
     """Return current connection to libvirt or open a new one.
 
@@ -101,20 +105,22 @@ def get(cif=None):
 
     auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE], req, None]
 
-    conn = __connections.get(id(cif))
-    if not conn:
-        conn = libvirt.openAuth('qemu:///system', auth, 0)
-        __connections[id(cif)] = conn
-        if cif != None:
-            for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
-                       libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
-                       libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
-                       libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
-                       libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS):
-                conn.domainEventRegisterAny(None, ev, __eventCallback, (cif, ev))
-            for name in dir(libvirt.virConnect):
-                method = getattr(conn, name)
-                if callable(method) and name[0] != '_':
-                    setattr(conn, name, wrapMethod(method))
+    with __connectionLock:
+        conn = __connections.get(id(cif))
+        if not conn:
+            conn = libvirt.openAuth('qemu:///system', auth, 0)
+            __connections[id(cif)] = conn
+            if cif != None:
+                for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
+                           libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
+                           libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
+                           libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
+                           libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS):
+                    conn.domainEventRegisterAny(None, ev,
+                                                __eventCallback, (cif, ev))
+                for name in dir(libvirt.virConnect):
+                    method = getattr(conn, name)
+                    if callable(method) and name[0] != '_':
+                        setattr(conn, name, wrapMethod(method))
 
-    return conn
+        return conn

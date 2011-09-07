@@ -831,7 +831,7 @@ class LibvirtVm(vm.Vm):
     def __init__(self, cif, params):
         self._dom = None
         vm.Vm.__init__(self, cif, params)
-        # no race in getLibvirtConnection, thanks to _ongoingCreations
+
         self._connection = libvirtconnection.get(cif)
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
