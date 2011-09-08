@@ -244,6 +244,10 @@ class BlockStorageDomain(sd.StorageDomain):
         self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
         self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
 
+        # Check that all devices in the VG have the same logical and physical
+        # block sizes.
+        lvm.checkVGBlockSizes(sdUUID, (self.logBlkSize, self.phyBlkSize))
+
         # _extendlock is used to prevent race between
         # VG extend and LV extend.
         self._extendlock = threading.Lock()

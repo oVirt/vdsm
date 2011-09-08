@@ -858,6 +858,7 @@ def getLV(vgName, lvName=None):
 
 def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m"):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
+    _checkpvsblksize(pvs)
     _initpv(pvs[0], metadataSize)
     for dev in pvs[1:]:
         _initpv(dev)
@@ -914,6 +915,7 @@ def renameVG(oldvg, newvg):
 
 def extendVG(vg, devices):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
+    _checkpvsblksize(pvs, getVGBlockSizes(vg))
     for dev in pvs:
         pv = _lvminfo.getPv(dev)
         if not pv or pv.mda_count != 0:
@@ -950,6 +952,22 @@ def invalidateVG(vgName):
 def _getpvblksize(pv):
     dev = devicemapper.getDmId(os.path.basename(pv))
     return multipath.getDeviceBlockSizes(dev)
+
+def _checkpvsblksize(pvs, vgBlkSize=None):
+    for pv in pvs:
+        pvBlkSize = _getpvblksize(pv)
+
+        if vgBlkSize is None:
+            vgBlkSize = pvBlkSize
+
+        if pvBlkSize != vgBlkSize:
+            raise se.VolumeGroupBlockSizeError(vgBlkSize, pvBlkSize)
+
+def checkVGBlockSizes(vgUUID, vgBlkSize=None):
+    pvs = listPVNames(vgUUID)
+    if not pvs:
+        raise se.VolumeGroupDoesNotExist("vg_uuid: %s" % vgUUID)
+    _checkpvsblksize(pvs, vgBlkSize)
 
 def getVGBlockSizes(vgUUID):
     pvs = listPVNames(vgUUID)
