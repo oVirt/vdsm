@@ -145,7 +145,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         if dom.__class__.__name__ == "BlockStorageDomain":
             lvm.activateLVs(self.sdUUID, volUUIDChain)
 
-        e = None
+        failed = False
         # Acquire template locks:
         # - 'lockType' for template's image itself
         # - Always 'shared' lock for image based on template
@@ -167,13 +167,17 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
                 volResourcesList.append(volRes)
         except (rm.RequestTimedOutError, se.ResourceAcqusitionFailed), e:
             log.debug("Cannot acquire volume resource (%s)", str(e))
+            failed = True
+            raise
         except Exception, e:
             log.debug("Cannot acquire volume resource", exc_info=True)
-
-        if e:
-            # Release already acquired template/volumes locks
-            for volRes in volResourcesList:
-                volRes.release()
+            failed = True
+            raise
+        finally:
+            if failed:
+                # Release already acquired template/volumes locks
+                for volRes in volResourcesList:
+                    volRes.release()
 
         return volResourcesList
 
