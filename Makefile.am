@@ -19,10 +19,10 @@ check-local:
 .PHONY: srpm rpm
 
 srpm: dist
-	rpmbuild -ts --define="extra_release $(BUILDID)" $(DIST_ARCHIVES)
+	rpmbuild -ts $(if $(BUILDID),--define="extra_release .$(BUILDID)") $(DIST_ARCHIVES)
 
 rpm: dist
-	rpmbuild -ta --define="extra_release $(BUILDID)" $(DIST_ARCHIVES)
+	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") $(DIST_ARCHIVES)
 
 dist-hook: gen-ChangeLog
 
