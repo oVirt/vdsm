@@ -818,7 +818,7 @@ class BlockStorageDomain(sd.StorageDomain):
         if rc != 0:
             raise se.BlockStorageDomainMasterMountError(masterfsdev, rc, out)
 
-        cmd = [constants.EXT_CHOWN, lvm.USER_GROUP, masterDir]
+        cmd = [constants.EXT_CHOWN, "%s:%s" % (constants.METADATA_USER, constants.METADATA_GROUP), masterDir]
         (rc, out, err) = misc.execCmd(cmd)
         if rc != 0:
             self.log.error("failed to chown %s", masterDir)
