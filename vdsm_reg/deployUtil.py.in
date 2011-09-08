@@ -356,14 +356,9 @@ def getOSVersion():
     """
 
     s = ''
-    for f in ('/etc/rhev-hypervisor-release', '/etc/redhat-release',
-              '/etc/fedora-release'):
-        try:
-            s = file(f).read()
-        except OSError:
-            pass
-
     try:
+        s = file('/etc/system-release', 'r').read()
+
         return islice(dropwhile(lambda x: x != 'release', s.split()),
                       1, 2).next()
     except:
