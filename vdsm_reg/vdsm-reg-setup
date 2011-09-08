@@ -24,6 +24,7 @@ from config import config
 import deployUtil
 import createDaemon
 
+TICKET_RETRIES=3
 DEFAULT_CONFIG_FILE="/etc/vdsm-reg/vdsm-reg.conf"
 VDSM_CONF="/etc/vdsm/vdsm.conf"
 SCRIPT_NAME_SAVE="vdsm-store-net-config"
@@ -33,7 +34,7 @@ class Setup:
     """
     Makes sure that vdsmd has its Certificate in place
     """
-    def __init__(self):
+    def __init__(self, ticket=""):
         logging.debug("__init__ begin.")
         self.registered = False
         self.fInitOK = True
@@ -58,6 +59,7 @@ class Setup:
         self.vdcPORT = config.get('vars', 'vdc_host_port')
         self.vdcURI = config.get('vars', 'vdc_reg_uri')
         self.vdcRegPort = config.get('vars', 'vdc_reg_port')
+        self.ticket = ticket
         self.VDCTime = None
         logging.debug("Setup::__init__ vars:" +
             "\n\tself.vdcURL " + self.vdcURL +
@@ -67,7 +69,8 @@ class Setup:
             "\n\tself.ovirtURL " + self.ovirtURL +
             "\n\tself.ovirtName " + self.ovirtName +
             "\n\tself.ovirtUID " + self.ovirtUID +
-            "\n\tself.vdcName " + self.vdcName
+            "\n\tself.vdcName " + self.vdcName +
+            "\n\tself.ticket " + self.ticket
         )
 
     def validateData(self):
@@ -117,13 +120,13 @@ class Setup:
 
     def registerVDS(self):
         logging.debug("registerVDS begin.")
-
+        ticket = "&ticket=" + urllib.quote(self.ticket) if self.ticket else ""
         strFullURI = (
             self.vdcURI + "?vds_ip=" + urllib.quote(self.ovirtURL) +
             "&vds_name=" + urllib.quote(self.ovirtName) +
             "&vds_unique_id=" + urllib.quote(self.ovirtUID) +
             "&port=" + urllib.quote(self.vdcRegPort) +
-            "&__VIEWSTATE="
+            "&__VIEWSTATE=" + ticket
         )
         logging.debug("registerVDS URI= " + strFullURI + "\n")
         if self.ovirtUID == "None" and "localhost.localdomain" in self.ovirtName:
@@ -230,6 +233,8 @@ def run(confFile, daemonize):
     try:
         try:
             config.read([confFile])
+            ticket = config.get('vars', 'ticket')
+            ticketRetries = TICKET_RETRIES if ticket else 0
             loggerConf = config.get('vars','logger_conf')
             vdsmDir = config.get('vars', 'vdsm_dir')
             pidfile = config.get('vars','pidfile')
@@ -252,11 +257,19 @@ def run(confFile, daemonize):
 
             itr = 0
             while daemonize and not registered:
-                oSetup = Setup()
+                oSetup = Setup(ticket=ticket)
                 if oSetup.validateData():
                     oSetup.execute()
-                registered = oSetup.registered;
+                if ticketRetries:
+                    ticketRetries = ticketRetries - 1
+                registered = oSetup.registered
                 oSetup = None
+                if ticket:
+                    if registered or ticketRetries is 0:
+                        config.remove_option('vars', 'ticket')
+                        config.write(file(confFile, 'w+'))
+                        deployUtil.ovirtfunctions.ovirt_store_config(confFile)
+                        ticket = ""
                 itr += 1
                 nRandom = random.randint(1, 5)
                 if not registered:

@@ -70,11 +70,11 @@ def write_vdsm_config(rhevm_host, rhevm_port):
         sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name="+rhevm_host+"/\" " + VDSM_REG_CONFIG
         ret = os.system(sed_cmd)
         if ret == 0:
-            log("The RHEV Manager's address is set.\n")
+            log("The RHEV Manager's address is set: %s\n" % rhevm_host)
         if rhevm_port != "":
             sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port="+str(rhevm_port)+"/\" " + VDSM_REG_CONFIG
             os.system(sed_cmd)
-            log("The RHEV Manager's port set.\n")
+            log("The RHEV Manager's port set: %s\n" % rhevm_port)
             fWriteConfig=1
     else:
         log("Either " + rhevm_host + " is an invalid address or the RHEV Manager unresponsive.\n")
@@ -125,8 +125,8 @@ class Plugin(PluginBase):
         rhevm_grid.setField(Label("Management Server Port:"), 0, 1, anchorLeft = 1)
         self.rhevm_server_port = Entry(6, "", scroll = 0)
         self.rhevm_server_port.setCallback(self.valid_rhevm_server_port_callback)
-        rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(0, 0, 0, 0))
-        rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(0, 0, 0, 0))
+        rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
+        rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 1))
         elements.setField(rhevm_grid, 0, 1, anchorLeft = 1, padding = (0,0,0,0))
         elements.setField(Label(""), 0, 2, anchorLeft = 1)
         self.verify_rhevm_cert = Checkbox("Connect to RHEV Manager and Validate Certificate", isOn=True)
@@ -137,11 +137,11 @@ class Plugin(PluginBase):
         pw_elements = Grid(3,3)
 
         pw_elements.setField(Label("Password: "), 0, 1, anchorLeft = 1)
-        self.root_password_1 = Entry(15,password = 1)
+        self.root_password_1 = Entry(15, password=1)
         self.root_password_1.setCallback(self.password_check_callback)
         pw_elements.setField(self.root_password_1, 1, 1)
         pw_elements.setField(Label("Confirm Password: "), 0, 2, anchorLeft = 1)
-        self.root_password_2 = Entry(15,password = 1)
+        self.root_password_2 = Entry(15, password=1)
         self.root_password_2.setCallback(self.password_check_callback)
         pw_elements.setField(self.root_password_2, 1, 2)
         self.pw_msg = Textbox(60, 6, "", wrap=1)
