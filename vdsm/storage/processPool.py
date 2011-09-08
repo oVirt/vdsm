@@ -225,22 +225,27 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD):
     poller.register(lifeLine, 0) # Only SIGERR\SIGHUP
     poller.register(pipe.fileno(), select.EPOLLIN | select.EPOLLPRI)
 
-    while True:
+    try:
+        while True:
 
-        for (fd, event) in poller.poll():
-            # If something happened in lifeLine, it means that papa is gone
-            # and we should go as well
-            if fd == lifeLine or event in (select.EPOLLHUP, select.EPOLLERR):
-                return
+            for (fd, event) in poller.poll():
+                # If something happened in lifeLine, it means that papa is gone
+                # and we should go as well
+                if fd == lifeLine or event in (select.EPOLLHUP, select.EPOLLERR):
+                    return
 
-        func, args, kwargs = pipe.recv()
-        res = err = None
-        try:
-            res = func(*args, **kwargs)
-        except KeyboardInterrupt as ex:
-            err = ex
-        except Exception as ex:
-            err = ex
+            func, args, kwargs = pipe.recv()
+            res = err = None
+            try:
+                res = func(*args, **kwargs)
+            except KeyboardInterrupt as ex:
+                err = ex
+            except Exception as ex:
+                err = ex
 
-        pipe.send((res, err))
+            pipe.send((res, err))
+    except:
+        # If for some reason communication with the host failed crash silently
+        # There is no logging in oop and VDSM will handle it.
+        pass
 
