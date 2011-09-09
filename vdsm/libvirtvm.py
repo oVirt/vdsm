@@ -296,6 +296,7 @@ class MigrationSourceThread(vm.MigrationSourceThread):
             hooks.before_vm_migrate_source(self._vm._dom.XMLDesc(0), self._vm.conf)
             response = self.destServer.migrationCreate(self._machineParams)
             if response['status']['code']:
+                self.status = response
                 raise RuntimeError('migration destination error: ' + response['status']['message'])
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'

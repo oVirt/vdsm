@@ -51,6 +51,8 @@ import traceback
 import random
 import re
 import ConfigParser
+import ethtool
+import socket
 
 # set logging before deployUtil is first used
 rnum = str(random.randint(100,1000000))
@@ -599,6 +601,38 @@ gpgcheck=0
 
         return fReturn
 
+    def checkLocalHostname(self):
+        self.status = "OK"
+        self.rc = True
+        self.message = "Local hostname is correct."
+
+        try:
+            localip = map(ethtool.get_ipaddr, ethtool.get_active_devices())
+            localip = filter(lambda x: x != "127.0.0.1", localip)
+        except:
+            logging.error("ethtool error", exc_info=True)
+            localip = ()
+
+        try:
+            fqdnip = socket.gethostbyname(socket.gethostname())
+        except:
+            logging.error("gethostbyname error", exc_info=True)
+            fqdnip = None
+
+        if fqdnip is None or fqdnip not in localip:
+            if len(localip) < 1:
+                self.message = "Unable to get local ip addresses."
+            elif fqdnip is None:
+                self.message = "Unable to resolve local hostname."
+            else:
+                self.message = "Local hostname is configured badly."
+            self.status = "WARN"
+            logging.error(self.message)
+
+        self._xmlOutput('CheckLocalHostname',
+                        self.status, None, None, self.message)
+        return self.rc
+
     def setNetworking(self, iurl):
         """
             Create rhevm bridge.
@@ -759,6 +793,10 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime, usevdcre
 
     if not oDeploy.createConf():
         logging.error('createConf failed')
+        return False
+
+    if not oDeploy.checkLocalHostname():
+        logging.error('checkLocalHostname test failed')
         return False
 
     if not oDeploy.setNetworking(iurl):

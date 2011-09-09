@@ -36,6 +36,7 @@ errCode = { 'noVM':         {'status': {'code': 1, 'message': 'Virtual machine d
             'ticketErr':    {'status': {'code':18, 'message': 'Error while setting spice ticket'}},
             'nonresp':      {'status': {'code':19, 'message': 'Guest agent non-responsive'}},
 # codes 20-29 are reserved for add/delNetwork
+            'wrongHost':    {'status': {'code':39, 'message': 'Migration destination has an invalid hostname'}},
             'unavail':      {'status': {'code':40, 'message': 'Resource unavailable'}},
             'changeDisk':   {'status': {'code':41, 'message': 'Failed to change disk image'}},
             'destroyErr':   {'status': {'code':42, 'message': 'Virtual machine destroy error'}},

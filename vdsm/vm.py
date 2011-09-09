@@ -183,7 +183,8 @@ class MigrationSourceThread(threading.Thread):
             self._vm.lastStatus = 'Migration Source'
 
     def _recover(self, message):
-        self.status = errCode['migrateErr']
+        if not self.status['status']['code']:
+            self.status = errCode['migrateErr']
         self.log.error(message)
         if self._mode != 'file':
             try:
