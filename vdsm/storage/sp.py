@@ -208,8 +208,7 @@ class StoragePool:
         return self.getMetaParam(PMDK_MASTER_VER)
 
     def acquireClusterLock(self):
-        msd = self.masterDomain
-        msd.acquireClusterLock(self.id)
+        self.masterDomain.acquireClusterLock(self.id)
 
     def releaseClusterLock(self):
         self.masterDomain.releaseClusterLock()
@@ -236,10 +235,9 @@ class StoragePool:
             exception if masterVersion doesn't follow the rules
 
         """
-        d = self.masterDomain
         mver = self.getMasterVersion()
         if not int(masterVersion) > mver:
-            raise se.StoragePoolWrongMaster(self.spUUID, d.sdUUID)
+            raise se.StoragePoolWrongMaster(self.spUUID, self.masterDomain.sdUUID)
 
 
     def getMaximumSupportedDomains(self):
@@ -976,8 +974,7 @@ class StoragePool:
 
     @property
     def _metadata(self):
-        master = self.masterDomain
-        return self._getPoolMD(master)
+        return self._getPoolMD(self.masterDomain)
 
     def getDescription(self):
         try:
@@ -1013,11 +1010,9 @@ class StoragePool:
                 'lver': -1, 'spm_id': -1, 'isoprefix': '', 'pool_status': 'uninitialized', 'version': -1}
         list_and_stats = {}
 
-        msdUUID = None
+        msdUUID = self.masterDomain.sdUUID
         try:
-            master = self.masterDomain
-            msdUUID = master.sdUUID
-            msdInfo = master.getInfo()
+            msdInfo = self.masterDomain.getInfo()
         except Exception:
             self.log.error("Couldn't read from master domain", exc_info=True)
             raise se.StoragePoolMasterNotFound(self.spUUID, msdUUID)
@@ -1268,7 +1263,6 @@ class StoragePool:
         baddomains = {}
         message = "Pool OK"
         try:
-            masterdomain = self.masterDomain
             self.invalidateMetadata()
             spmId = self.getMetaParam(PMDK_SPM_ID)
             domains = self.getDomains(activeOnly=True)
@@ -1288,7 +1282,7 @@ class StoragePool:
             message = "Pool is bad"
 
         return dict(poolstatus = poolstatus, baddomains = baddomains,
-                    masterdomain = masterdomain.sdUUID, spmhost=spmId,
+                    masterdomain = self.masterDomain.sdUUID, spmhost=spmId,
                     message = message)
 
 

@@ -345,16 +345,14 @@ class SPM:
 
             sd.validateDomainVersion(targetDomVersion)
             pool = hsm.HSM.getPool(spUUID)
-            masterDom = pool.masterDomain
-            sdUUID = masterDom.sdUUID
-            self.log.info("Trying to upgrade master domain `%s`", sdUUID)
-            with rmanager.acquireResource(STORAGE, masterDom.sdUUID, rm.LockType.exclusive):
-                masterDom.upgrade(targetDomVersion)
+            self.log.info("Trying to upgrade master domain `%s`", pool.masterDomain.sdUUID)
+            with rmanager.acquireResource(STORAGE, pool.masterDomain.sdUUID, rm.LockType.exclusive):
+                pool.masterDomain.upgrade(targetDomVersion)
 
             self.log.debug("Marking all domains for upgrade")
             self._domainsToUpgrade = pool.getDomains(activeOnly=True).keys()
             try:
-                self._domainsToUpgrade.remove(masterDom.sdUUID)
+                self._domainsToUpgrade.remove(pool.masterDomain.sdUUID)
             except ValueError:
                 pass
 
@@ -365,7 +363,7 @@ class SPM:
                 threading.Thread(target=self.__class__._upgradePoolDomain, args=(self, sdUUID, True)).start()
 
     def _upgradePoolDomain(self, sdUUID, isValid):
-        # This method is called everytime the onDomainConnectivityStateChange
+            # This method is called everytime the onDomainConnectivityStateChange
         # event is emited, this event is emited even when a domain goes INVALID
         # if this happens there is nothing for us to do no matter what the
         # domain is
@@ -382,8 +380,7 @@ class SPM:
             #Assumed that the domain can be attached only to one pool
             poolUUID = domain.getPools()[0]
             pool = hsm.HSM.getPool(poolUUID)
-            masterDom = pool.masterDomain
-            targetDomVersion = masterDom.getVersion()
+            targetDomVersion = pool.masterDomain.getVersion()
         except:
             self.log.error("Error while preparing domain `%s` upgrade", sdUUID, exc_info=True)
             return
@@ -457,7 +454,6 @@ class SPM:
             pool = hsm.HSM.getPool(spUUID)
             pool.updateMonitoringThreads()
             pool.invalidateMetadata()
-            masterDom = pool.masterDomain
             oldlver = pool.getMetaParam(sp.PMDK_LVER)
             oldid = pool.getMetaParam(sp.PMDK_SPM_ID)
             masterDomVersion = pool.getVersion()
@@ -466,7 +462,7 @@ class SPM:
                 expectedDomVersion = masterDomVersion
 
             if masterDomVersion > expectedDomVersion:
-                raise se.CurrentVersionTooAdvancedError(masterDom.sdUUID,
+                raise se.CurrentVersionTooAdvancedError(pool.masterDomain.sdUUID,
                         curVer=masterDomVersion, expVer=expectedDomVersion)
 
             if int(oldlver) != int(prevLVER) or int(oldid) != int(prevID):
@@ -495,8 +491,8 @@ class SPM:
                 # Upgrade the master domain now if needed
                 self.__class__._upgradePool(self, spUUID, expectedDomVersion)
 
-                masterDom.mountMaster()
-                masterDom.createMasterTree(log=True)
+                pool.masterDomain.mountMaster()
+                pool.masterDomain.createMasterTree(log=True)
                 self.tasksDir = os.path.join(self.pools[spUUID].poolPath, sp.POOL_MASTER_DOMAIN, sd.MASTER_FS_DIR, sd.TASKS_DIR)
 
                 try:
@@ -522,7 +518,7 @@ class SPM:
                 # or once one is activated
 
                 #FIXME : Use a system wide grouping mechanizm
-                sanPool = masterDom.getStorageType() in sd.BLOCK_DOMAIN_TYPES  # Check if pool is SAN or NAS
+                sanPool = pool.masterDomain.getStorageType() in sd.BLOCK_DOMAIN_TYPES  # Check if pool is SAN or NAS
                 if sanPool and self.lvExtendPolicy == "ON":
                     self.pools[spUUID].spmMailer = storage_mailbox.SPM_MailMonitor(self, spUUID, maxHostID)
                 else:
@@ -1051,18 +1047,17 @@ class SPM:
         Detach all domains from pool before destroying pool
         """
         # First find out this pool master domain
-        mDom = pool.masterDomain
         # Find out domain list from the pool metadata
         domList = pool.getDomains().keys()
 
         for sdUUID in domList:
             # master domain should be detached last, after spm is stopped
-            if sdUUID == mDom.sdUUID:
+            if sdUUID == pool.masterDomain.sdUUID:
                 continue
             pool.detachSD(sdUUID=sdUUID, msdUUID=sd.BLANK_UUID, masterVersion=0)
         self._stop(pool.spUUID)
         # Forced detach 'master' domain after stopping SPM
-        pool.detachSD(mDom.sdUUID, sd.BLANK_UUID, 0)
+        pool.detachSD(pool.masterDomain.sdUUID, sd.BLANK_UUID, 0)
 
 
     def public_attachStorageDomain(self, sdUUID, spUUID, options = None):
