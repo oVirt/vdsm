@@ -185,7 +185,6 @@ class ConfigWriter(object):
         if os.path.exists('/usr/libexec/ovirt-functions'):
             subprocess.call([constants.EXT_SH, '/usr/libexec/ovirt-functions', 'unmount_config', filename])
             logging.debug("unmounted %s using ovirt" % filename)
-            return
 
         (dummy, basename) = os.path.split(filename)
         backup = os.path.join(NET_CONF_BACK_DIR, basename)
