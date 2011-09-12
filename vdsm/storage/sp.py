@@ -964,6 +964,8 @@ class StoragePool:
 
         # Check if we are migrating to or just unmounting last master
         if msdUUID != sd.BLANK_UUID:
+            # TODO: is this check relevant?
+            self.validatePoolMVerHigher(masterVersion)
             self.__masterMigrate(sdUUID, msdUUID, masterVersion)
             return False    # not last master
 
