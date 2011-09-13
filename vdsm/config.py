@@ -139,9 +139,9 @@ config.set('irs', 'sd_health_check_delay', '10')
 # NFS mount options
 # nfs_mount_options = comma-separated list (NB no white space allowed !)
 #
-# Default: soft,timeo=600,retrans=2,nosharecache
+# Default: soft,timeo=600,retrans=6,nosharecache
 #
-config.set('irs', 'nfs_mount_options', 'soft,timeo=600,retrans=2,nosharecache,vers=3')
+config.set('irs', 'nfs_mount_options', 'soft,timeo=600,retrans=6,nosharecache,vers=3')
 
 config.set('irs', 'pools_data_dir', constants.P_STORAGEPOOLS)
 config.set('irs', 'vol_extend_policy', 'ON')
