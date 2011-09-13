@@ -833,12 +833,18 @@ def getVGs(vgNames):
 def getAllVGs():
     return _lvminfo.getAllVgs() #returns list
 
-
+# TODO: lvm VG UUID should not be exposed.
+# Remove this function when hsm.public_createVG is removed.
 def getVGbyUUID(vgUUID):
     # cycle through all the VGs until the one with the given UUID found
     for vg in getAllVGs():
-        if vg.uuid == vgUUID:
-            return vg
+        try:
+            if vg.uuid == vgUUID:
+                return vg
+        except AttributeError, e:
+            # An unreloadable VG found but may be we are not looking for it.
+            log.debug("%s" % e.message, exc_info=True)
+            continue
     # If not cry loudly
     raise se.VolumeGroupDoesNotExist("vg_uuid: %s" % vgUUID)
 
