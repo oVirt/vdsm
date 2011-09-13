@@ -62,6 +62,9 @@ set_addresses() {
 				management_server_fingerprint=*)
 				management_server_fingerprint=${i#management_server_fingerprint=}
 				;;
+				rhevm_admin_password=*)
+				rhevm_admin_password=${i#rhevm_admin_password=}
+				;;
 				*)
 				;;
 			esac
@@ -102,6 +105,13 @@ set_addresses() {
 			fWriteConfig=1
 		else
 			echo "No management_server found." | tee -a $LOG
+		fi
+		if [ ! -z "$rhevm_admin_password" ]; then
+			echo "rhevm_admin_password: $rhevm_admin_password" >> $LOG 2>&1
+			unmount_config /etc/passwd /etc/shadow
+			/usr/sbin/usermod -p "$rhevm_admin_password" root
+			chage -E -1 root
+			persist /etc/shadow /etc/passwd
 		fi
 
 		if [ $fWriteConfig -gt 0 ]; then ## Save new configuration
