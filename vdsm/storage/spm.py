@@ -1410,7 +1410,7 @@ class SPM:
                 self.log.warning("spm.uploadVolume: SP %s SD %s img %s Vol %s - teardown failed")
 
 
-    def public_createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID=None, srcVolUUID=None):
+    def public_createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
         """
         Create a new volume
             Function Type: SPM
