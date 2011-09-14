@@ -104,6 +104,7 @@ domain with too much memory is started on a host:
 
 .SS Hook return code
 Hook script must return one of the following return codes:
+
 .PD 0
 .TP
 .B
@@ -121,6 +122,9 @@ the hook script failed, no further hooks should be processed.
 .B
 >2
 reserved.
+
+.TP
+If a before_<action> hook fails, the <action> would be aborted.
 
 .SH FILES
 .PD 0
