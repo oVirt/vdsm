@@ -80,6 +80,8 @@ config.set('vars', 'vm_sample_cpu_interval', '15')
 config.set('vars', 'vm_sample_cpu_window', '2')
 config.set('vars', 'vm_sample_disk_interval', '60')
 config.set('vars', 'vm_sample_disk_window', '2')
+config.set('vars', 'vm_sample_disk_latency_interval', '60')
+config.set('vars', 'vm_sample_disk_latency_window', '2')
 config.set('vars', 'vm_sample_net_interval', '5')
 config.set('vars', 'vm_sample_net_window', '2')
 
