@@ -253,6 +253,7 @@ class GuestAgent (threading.Thread):
             self._forward('refresh')
             self._buffer = ''
             while not self._stopped:
+                line = None
                 try:
                     line = self._readLine()
                     # line is always None after stop() is called and the
