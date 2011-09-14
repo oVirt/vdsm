@@ -157,7 +157,7 @@ class Image:
             raise
         except Exception, e:
             self.log.error("Unexpected error", exc_info=True)
-            raise se.ImageDeleteError("%s: %s" % (imgUUID), str(e))
+            raise se.ImageDeleteError("%s: %s" % (imgUUID, str(e)))
 
     @classmethod
     def deleteRecover(cls, taskObj, repoPath, sdUUID, imgUUID, postZero, force):
