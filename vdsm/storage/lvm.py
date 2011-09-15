@@ -787,7 +787,7 @@ def _setVgAvailability(vgs, available):
         else:
             raise se.VolumeGroupActionError("vgchange on vg(s) %s failed. %d %s %s" % (vgs, rc, out, err))
 
-def _changelv(vg, lvs, attrName, attrValue):
+def changelv(vg, lvs, attrName, attrValue):
     # Note:
     # You may activate an activated LV without error
     # but lvchange returns an error (RC=5) when activating rw if already rw
@@ -804,7 +804,7 @@ def _changelv(vg, lvs, attrName, attrValue):
 
 def _setLVAvailability(vg, lvs, available):
     try:
-        _changelv(vg, lvs, "--available", available)
+        changelv(vg, lvs, "--available", available)
     except se.StorageException, e:
         error = {"y":se.CannotActivateLogicalVolumes, "n":se.CannotDeactivateLogicalVolume}.get(available, se.VolumeGroupActionError)
         raise error(str(e))
@@ -1200,7 +1200,7 @@ def listPVNames(vgName):
 def setrwLV(vg, lv, rw=True):
     permission = {False:'r', True:'rw'}[rw]
     try:
-        _changelv(vg, lv, "--permission", permission)
+        changelv(vg, lv, "--permission", permission)
     except se.StorageException:
         l = getLV(vg, lv)
         if l.writeable == rw:

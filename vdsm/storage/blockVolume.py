@@ -656,7 +656,7 @@ def _postZero(sdUUID, volumes):
     #Assert volumes are writable. (Don't do this at home.)
     lvNames = (vol.volUUID for vol in volumes)
     try:
-        lvm._lvminfo._changelv(sdUUID, lvNames, "--permission", "rw")
+        lvm.changelv(sdUUID, lvNames, "--permission", "rw")
     except se.StorageException, e:
         #Hope this only means that some volumes were already writable
         pass
@@ -675,6 +675,6 @@ def deleteMultipleVolumes(sdUUID, volumes, postZero):
     "Delete multiple volumes (LVs) in the same domain (VG)."""
     if postZero:
         _postZero(sdUUID, volumes)
-    lvNames = (vol.volUUID for vol in volumes)
+    lvNames = [vol.volUUID for vol in volumes]
     lvm.removeLVs(sdUUID, lvNames)
 
