@@ -288,6 +288,7 @@ class clientIF:
                 (self.list, 'list'),
                 (self.pause, 'pause'),
                 (self.cont, 'cont'),
+                (self.snapshot, 'snapshot'),
                 (self.sysReset, 'reset'),
                 (self.shutdown, 'shutdown'),
                 (self.setVmTicket, 'setVmTicket'),
@@ -499,6 +500,12 @@ class clientIF:
         if not v:
             return errCode['noVM']
         return v.cont()
+
+    def snapshot(self, vmId, snapDrives):
+        v = self.vmContainer.get(vmId)
+        if not v:
+            return errCode['noVM']
+        return v.snapshot(snapDrives)
 
     def changeCD(self, vmId, path):
         """

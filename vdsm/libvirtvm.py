@@ -1020,7 +1020,7 @@ class Drive(vm.Device):
         """
         Create domxml for disk/cdrom/floppy.
 
-        <disk type='file' device='disk'>
+        <disk type='file' device='disk' snapshot='no'>
           <driver name='qemu' type='qcow2' cache='none'/>
           <source file='/path/to/image'/>
           <target dev='hda' bus='ide'/>
@@ -1038,6 +1038,7 @@ class Drive(vm.Device):
         else:
             diskelem.setAttribute('type', 'file')
             source.setAttribute('file', self.path)
+        diskelem.setAttribute('snapshot', 'no')
         diskelem.appendChild(source)
         target = doc.createElement('target')
         target.setAttribute('dev', self.name)
@@ -1415,6 +1416,173 @@ class LibvirtVm(vm.Vm):
         hooks.before_vm_pause(self._dom.XMLDesc(0), self.conf)
         self._dom.suspend()
 
+    def snapshot(self, snapDrives):
+        """Live snapshot command"""
+
+        def _diskSnapshot(vmDev, newpath):
+            """Libvirt snapshot XML"""
+
+            disk = xml.dom.minidom.Element('disk')
+            disk.setAttribute('name', vmDev)
+            disk.setAttribute('snapshot', 'external')
+
+            source = xml.dom.minidom.Element('source')
+            source.setAttribute('file', newpath)
+
+            disk.appendChild(source)
+            return disk
+
+        def _normSnapDriveParams(drive):
+            """Normalize snapshot parameters"""
+
+            if drive.has_key("baseVolumeID"):
+                baseDrv = {"domainID": drive["domainID"],
+                           "imageID": drive["imageID"],
+                           "volumeID": drive["baseVolumeID"]}
+                tgetDrv = baseDrv.copy()
+                tgetDrv["volumeID"] = drive["volumeID"]
+
+            elif drive.has_key("baseGUID"):
+                baseDrv = {"GUID": drive["baseGUID"]}
+                tgetDrv = {"GUID": drive["GUID"]}
+
+            elif drive.has_key("baseUUID"):
+                baseDrv = {"UUID": drive["baseUUID"]}
+                tgetDrv = {"UUID": drive["UUID"]}
+
+            else:
+                baseDrv, tgetDrv = (None, None)
+
+            return baseDrv, tgetDrv
+
+        def _findSnapDrive(drive):
+            """Find a drive given its definition"""
+
+            if drive.has_key("domainID"):
+                tgetDrv = (drive["domainID"], drive["imageID"],
+                           drive["volumeID"])
+
+                for device in self._devices[vm.DISK_DEVICES][:]:
+                    if not hasattr(device, "domainID"):
+                        continue
+                    if ((device.domainID, device.imageID,
+                            device.volumeID) == tgetDrv):
+                        return device
+
+            elif drive.has_key("GUID"):
+                for device in self._devices[vm.DISK_DEVICES][:]:
+                    if not hasattr(device, "GUID"):
+                        continue
+                    if device.GUID == drive["GUID"]:
+                        return device
+
+            elif drive.has_key("UUID"):
+                for device in self._devices[vm.DISK_DEVICES][:]:
+                    if not hasattr(device, "UUID"):
+                        continue
+                    if device.UUID == drive["UUID"]:
+                        return device
+
+            return None
+
+        def _rollbackDrives(newDrives):
+            """Rollback the prepared volumes for the snapshot"""
+
+            for vmDevName, drive in newDrives.iteritems():
+                try:
+                    self.cif.teardownVolumePath(drive)
+                except:
+                    self.log.error("Unable to teardown drive: %s", vmDevName,
+                                   exc_info=True)
+
+        def _updateDrive(drive):
+            """Update the drive with the new volume information"""
+
+            # Updating the drive object
+            for device in self._devices[vm.DISK_DEVICES][:]:
+                if device.name == drive["name"]:
+                    for k, v in drive.iteritems():
+                        setattr(device, k, v)
+                    break
+            else:
+                self.log.error("Unable to update the drive object for: %s",
+                               drive["name"])
+
+            # Updating the VM configuration
+            for device in self.conf["devices"][:]:
+                if (device['type'] == vm.DISK_DEVICES and
+                        device.get("name") == drive["name"]):
+                    device.update(drive)
+                    break
+            else:
+                self.log.error("Unable to update the device configuration ",
+                               "for: %s", drive["name"])
+
+            self.saveState()
+
+        snap = xml.dom.minidom.Element('domainsnapshot')
+        disks = xml.dom.minidom.Element('disks')
+        newDrives = {}
+
+        for drive in snapDrives:
+            baseDrv, tgetDrv = _normSnapDriveParams(drive)
+
+            if _findSnapDrive(tgetDrv):
+                # The snapshot volume is the current one, skipping
+                self.log.debug("The volume is already in use: %s", tgetDrv)
+                continue
+
+            vmDrive = _findSnapDrive(baseDrv)
+
+            if vmDrive is None:
+                # The volume we want to snapshot doesn't exist
+                _rollbackDrives(newDrives)
+                self.log.error("The base volume doesn't exist: %s", baseDrv)
+                return errCode['snapshotErr']
+
+            vmDevName = vmDrive.name
+
+            newDrives[vmDevName] = tgetDrv.copy()
+            newDrives[vmDevName]["poolID"] = vmDrive.poolID
+            newDrives[vmDevName]["name"] = vmDevName
+
+            try:
+                newDrives[vmDevName]["path"] = \
+                            self.cif.prepareVolumePath(newDrives[vmDevName])
+            except Exception:
+                _rollbackDrives(newDrives)
+                self.log.error("Unable to prepare the volume path "
+                               "for the disk: %s", vmDevName, exc_info=True)
+                return errCode['snapshotErr']
+
+            snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"])
+            disks.appendChild(snapelem)
+
+        # If all the drives are the corrent ones, return success
+        if len(newDrives) == 0:
+            self.log.debug("All the drives are already in use, success")
+            return {'status': doneCode}
+
+        snap.appendChild(disks)
+        snapxml = snap.toprettyxml()
+
+        self.log.debug(snapxml)
+        self._volumesPrepared = False
+
+        try:
+            self._dom.snapshotCreateXML(snapxml,
+                libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY)
+        except:
+            self.log.error("Unable to take snapshot", exc_info=True)
+            return errCode['snapshotErr']
+        else:
+            # Update the drive information
+            for drive in newDrives.values(): _updateDrive(drive)
+        finally:
+            self._volumesPrepared = True
+
+        return {'status': doneCode}
+
     def changeCD(self, drivespec):
         return self._changeBlockDev('cdrom', 'hdc', drivespec)
 
@@ -1760,6 +1928,12 @@ class LibvirtVm(vm.Vm):
             else:
                 devPath = ''
 
+            target = x.getElementsByTagName('target')
+            if target:
+                name = target[0].getAttribute('dev')
+            else:
+                name = ''
+
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             readonly = bool(x.getElementsByTagName('readonly'))
             boot = x.getElementsByTagName('boot')
@@ -1775,6 +1949,7 @@ class LibvirtVm(vm.Vm):
 
             for d in self._devices[vm.DISK_DEVICES]:
                 if d.path == devPath:
+                    d.name = name
                     d.type = devType
                     d.drv = drv
                     d.alias = alias
@@ -1786,6 +1961,7 @@ class LibvirtVm(vm.Vm):
             knownDev = False
             for dev in self.conf['devices']:
                 if dev['type'] == vm.DISK_DEVICES and dev['path'] == devPath:
+                    dev['name'] = name
                     dev['address'] = address
                     dev['alias'] = alias
                     dev['readonly'] = str(readonly)
@@ -1796,7 +1972,7 @@ class LibvirtVm(vm.Vm):
             if not knownDev:
                 iface = 'ide' if address['type'] == 'drive' else 'pci'
                 diskDev = {'type': vm.DISK_DEVICES, 'device': devType,
-                           'iface': iface, 'path': devPath,
+                           'iface': iface, 'path': devPath, 'name': name,
                            'address': address, 'alias': alias}
                 diskDev['readonly'] = str(readonly)
                 if bootOrder:

@@ -45,6 +45,7 @@ errCode = { 'noVM':         {'status': {'code': 1, 'message': 'Virtual machine d
             'hotplugDisk':  {'status': {'code':45, 'message': 'Failed to hotplug disk'}},
             'hotunplugDisk':{'status': {'code':46, 'message': 'Failed to hotunplug disk'}},
             'migCancelErr': {'status': {'code':47, 'message': 'Migration not in progress'}},
+            'snapshotErr':  {'status': {'code':48, 'message': 'Snapshot failed'}},
             'recovery':     {'status': {'code':99, 'message': 'Recovering from crash or Initializing'}},
             }
 doneCode = {'code': 0, 'message': 'Done'}
