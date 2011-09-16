@@ -96,6 +96,8 @@ config.set('vars', 'qemu_drive_cache', 'none')
 
 config.set('vars', 'fake_kvm_support', 'false')
 
+config.set('vars', 'max_open_files', '4096')
+
 #####################################################################
 config.add_section('ksm')
 #####################################################################
