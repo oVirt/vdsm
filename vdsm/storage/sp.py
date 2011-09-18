@@ -1147,12 +1147,12 @@ class StoragePool:
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
         version = self._getPoolMD(domain)[PMDK_MASTER_VER]
-        if version != masterVersion:
-            self.log.error("Requested master domain %s does not have expected version %d it is version %s",
+        if version != int(masterVersion):
+            self.log.error("Requested master domain %s does not have expected version %s it is version %s",
                         msdUUID, masterVersion, version)
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
-        self.log.debug("Master domain %s verified, version %d", msdUUID, masterVersion)
+        self.log.debug("Master domain %s verified, version %s", msdUUID, masterVersion)
         return domain
 
 
