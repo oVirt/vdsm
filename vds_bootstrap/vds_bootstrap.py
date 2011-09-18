@@ -52,6 +52,8 @@ import random
 import re
 import ConfigParser
 import socket
+import tempfile
+import selinux
 
 # set logging before deployUtil is first used
 rnum = str(random.randint(100,1000000))
@@ -136,6 +138,32 @@ try:
 except OSError:
     pass
 sys.path.append(VDSM_DIR)
+
+__SYSCONFIG_IPTABLES__ = '/etc/sysconfig/iptables'
+
+def _safeWrite(fname, s):
+    "Write s into fname atomically"
+
+    t = tempfile.NamedTemporaryFile(delete=False)
+    t.write(s)
+    t.close()
+
+    try:
+        oldstat = os.stat(fname)
+    except:
+        oldstat = None
+
+    shutil.move(t.name, fname)
+
+    try:
+        if oldstat is not None:
+            os.chmod(fname, oldstat.st_mode)
+            os.chown(fname, oldstat.st_uid, oldstat.st_gid)
+
+        selinux.restorecon(fname)
+    except OSError:
+        logging.debug('trying to maintain file permissions', exc_info=True)
+
 
 class Deploy:
     """
@@ -515,7 +543,6 @@ gpgcheck=0
         return self.rc
 
     def _makeConfig(self):
-        import tempfile
         import datetime
         from config import config
 
@@ -693,6 +720,22 @@ gpgcheck=0
         self._xmlOutput('SetSSHAccess', self.status, None, None, self.message)
         return self.rc
 
+    def overrideFirewall(self, firewallRulesFile):
+        self.message = 'overridden firewall successfully'
+        self.rc = True
+        self.st = 'OK'
+
+        try:
+            rules = file(firewallRulesFile).read()
+            _safeWrite(__SYSCONFIG_IPTABLES__, rules)
+        except Exception, e:
+            self.message = str(e)
+            self.rc = False
+            self.st = 'FAIL'
+
+        self._xmlOutput('Firewall', self.st, None, None, self.message)
+        return self.rc
+
     def setSystemTime(self, systime):
         """
             Set host system time
@@ -761,7 +804,8 @@ gpgcheck=0
         self._xmlOutput('Encryption setup', 'OK', None, None, "Ended successfully")
 # End of deploy class.
 
-def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime, usevdcrepo):
+def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
+        usevdcrepo, firewallRulesFile):
     """ --- Check VDS Compatibility.
     """
     logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s')"%(subject, random_num, rev_num))
@@ -809,6 +853,11 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime, usevdcre
         logging.error('setSSHAccess test failed')
         return False
 
+    if firewallRulesFile:
+        if not oDeploy.overrideFirewall(firewallRulesFile):
+            logging.error('Failed to set default firewall')
+            return False
+
     if systime:
         if not oDeploy.setSystemTime(systime):
             logging.error('setSystemTime failed')
@@ -825,14 +874,16 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime, usevdcre
 def main():
     """
         Usage: vds_compat.py [-r rev_num] [-O organizationName] [-t systemTime]
-            [-n netconsole_host:port] [-u (seProductRepo) true|false ] <url> <subject> <random_num>
+            [-n netconsole_host:port] [-u (seProductRepo) true|false ]
+            [-f firewall_rules_file ] <url> <subject> <random_num>
     """
     try:
         rev_num = None
         orgName = 'Red Hat Inc.'
         systime = None
         usevdcrepo = False
-        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:n:u:")
+        firewallRulesFile = None
+        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:n:u:f:")
         for o,v in opts:
             if o == "-r":
                 rev_num = v
@@ -845,6 +896,10 @@ def main():
                 pass
             if o == "-u":
                 usevdcrepo = (v.upper() == 'TRUE')
+            elif o == '-f':
+                firewallRulesFile = v
+                NEEDED_SERVICES.append('iptables')
+
         url = args[0]
         subject = args[1]
         random_num = args[2]
@@ -858,7 +913,7 @@ def main():
     logging.debug('**** Start VDS Validation ****')
     try:
         ret = VdsValidation(url, subject, random_num, rev_num,
-                            orgName, systime, usevdcrepo)
+                            orgName, systime, usevdcrepo, firewallRulesFile)
     except:
         logging.error(traceback.format_exc())
         logging.error(main.__doc__)
