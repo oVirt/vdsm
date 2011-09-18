@@ -854,7 +854,7 @@ class StoragePool:
         #domUUIDs includes all the domains, file or block.
         block_mountpoint = os.path.join(sd.StorageDomain.storage_repository,
                 sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
-        blockDomUUIDs = blockSD.lvm.getVGs(domUUIDs)
+        blockDomUUIDs = [vg.name for vg in blockSD.lvm.getVGs(domUUIDs)]
         domDirs = {} # {domUUID: domaindir}
         #Add the block domains
         for domUUID in blockDomUUIDs:
