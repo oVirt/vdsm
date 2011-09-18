@@ -19,7 +19,7 @@
 #
 
 import os
-from glob import glob
+from glob import iglob
 import logging
 import time
 import threading
@@ -838,7 +838,7 @@ class StoragePool:
 
         # Find out all domains for future cleanup
         domainpat = os.path.join(self.poolPath, constants.UUID_GLOB_PATTERN)
-        oldLinks = glob(domainpat)
+        oldLinks = set(iglob(domainpat))
 
         # We should not rebuild non-active domains, because
         # they are probably disconnected from the host
@@ -871,8 +871,7 @@ class StoragePool:
         for domUUID, domaindir in domDirs.iteritems():
             linkName = os.path.join(self.poolPath, domUUID)
             self._linkStorageDomain(domaindir, linkName)
-            if linkName in oldLinks:
-                oldLinks.remove(linkName)
+            oldLinks.discard(linkName)
 
         # Always try to build master links
         try:
@@ -880,8 +879,7 @@ class StoragePool:
         except (se.StorageException, OSError):
             self.log.error("_refreshDomainLinks failed for master domain %s", self.masterDomain.sdUUID, exc_info=True)
         linkName = os.path.join(self.poolPath, self.masterDomain.sdUUID)
-        if linkName in oldLinks:
-            oldLinks.remove(linkName)
+        oldLinks.discard(linkName)
 
         # Cleanup old trash from the pool
         for oldie in oldLinks:
