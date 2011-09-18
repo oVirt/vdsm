@@ -871,6 +871,8 @@ class StoragePool:
         for domUUID, domaindir in domDirs.iteritems():
             linkName = os.path.join(self.poolPath, domUUID)
             self._linkStorageDomain(domaindir, linkName)
+            if linkName in oldLinks:
+                oldLinks.remove(linkName)
 
         # Always try to build master links
         try:
@@ -883,14 +885,13 @@ class StoragePool:
 
         # Cleanup old trash from the pool
         for oldie in oldLinks:
-            if oldie not in domUUIDs:
-                try:
-                    os.remove(oldie)
-                except OSError as e:
-                    if e.errno != errno.ENOENT:
-                        self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
-                except Exception as e:
-                        self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
+            try:
+                os.remove(oldie)
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
+            except Exception as e:
+                    self.log.warn("Could not clean all trash from the pool dom `%s` (%s)", oldie, e)
 
 
     def refresh(self, msdUUID=None, masterVersion=None):
