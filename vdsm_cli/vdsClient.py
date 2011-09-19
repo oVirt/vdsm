@@ -192,19 +192,39 @@ class service:
         return self.ExecAndExit(self.s.changeFloppy(vmId, file))
 
     def do_list(self, args):
+        """
+        Usage: vdsClient 0 list [table/long/ids] [vms:vmId1,vmId2]
+        """
+        def _vmsParser(vmsParam):
+            vmsList = vmsParam.split(':')[1].strip()
+            if vmsList:
+               vmsList = [vm.strip() for vm in vmsList.split(',')]
+            else:
+               raise ValueError('Empty VMs list.')
+            return vmsList
+
         vmListViews = ('table', 'long', 'ids')
         view = 'long' #Default view
+        vms = []
 
         if args:
-            view = args[0]
+            if args[0].startswith('vms:'):
+                vms = _vmsParser(args[0])
+            else:
+                view = args[0]
+                if len(args) > 1 and args[1].startswith('vms:'):
+                   vms = _vmsParser(args[1])
+
             if view not in vmListViews:
-                raise ValueError('Invalid argument "%s".' % args[0])
+                raise ValueError('Invalid argument "%s".' % view)
             if view == 'table':
                 allStats = {}
-                for s in self.s.getAllVmStats()['statsList']:
-                    allStats[ s['vmId'] ] = s
+                #if not vms:
+                for res in self.s.getAllVmStats()['statsList']:
+                    if not vms or res['vmId'] in vms:
+                        allStats[ res['vmId'] ] = res
 
-        response = self.s.list(True)
+        response = self.s.list(True, vms)
         for conf in response['vmList']:
             if view == 'long':
                 if 'sysprepInf' in conf:
@@ -1537,8 +1557,9 @@ if __name__ == '__main__':
                             'Stops the emulation and graceful shutdown the virtual machine.'
                            )),
             'list'    :  ( serv.do_list,
-                           ('[view]',
+                           ('[view] [vms:vmId1,vmId2]',
                             'Lists all available machines on the specified server.',
+                            "Optional vms list, should start with 'vms:' and follow with 'vmId1,vmId2,...'",
                             'Optional views:',
                             '    "long"   all available configuration info (Default).',
                             '    "table"  table output with the fields: vmId, vmName, Status and IP.',

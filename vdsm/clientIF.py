@@ -683,7 +683,7 @@ class clientIF:
             self.log.debug(traceback.format_exc())
             return errCode['unexpected']
 
-    def list(self, full=False):
+    def list(self, full=False, vms=[]):
         """ return a list of known VMs with full (or partial) config each """
         def reportedStatus(vm, full):
             d = vm.status()
@@ -691,9 +691,11 @@ class clientIF:
                 return d
             else:
                 return {'vmId': d['vmId'], 'status': d['status']}
+        # To improve complexity, convert 'vms' to set(vms)
+        vms = set(vms)
         return {'status': doneCode,
-                'vmList': [reportedStatus(vm, full) for vm
-                            in self.vmContainer.values()]}
+                'vmList': [reportedStatus(vm, full) for vm in self.vmContainer.values()
+                            if not vms or vm.id in vms]}
 
     def _getSingleVmStats (self, vmId):
         v = self.vmContainer.get(vmId)
