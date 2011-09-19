@@ -667,6 +667,9 @@ def getHostUUID():
                              close_fds=True, stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
+        out = '\n'.join( line for line in out.splitlines()
+                         if not line.startswith('#') )
+
         if p.returncode == 0 and 'Not' not in out:
             #Avoid error string - 'Not Settable' or 'Not Present'
             __hostUUID = out.strip()

@@ -230,6 +230,9 @@ def getMachineUUID():
     strReturn = "None"
 
     out, err, ret = _logExec([EX_DMIDECODE, "-s", "system-uuid"])
+    out = '\n'.join( line for line in out.splitlines()
+                     if not line.startswith('#') )
+
     if ret == 0 and "Not" not in out: #Avoid error string- 'Not Settable' or 'Not Present'
         strReturn = out.replace ("\n", "")
     else:
