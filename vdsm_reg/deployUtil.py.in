@@ -314,7 +314,7 @@ def getMGTIP(vdsmDir, vdcHostName):
         sys.path.append(vdsmDir)
         import netinfo # taken from vdsm rpm
     except:
-        logging.error("getMGTIP: Faild to find vdsm modules!")
+        logging.error("getMGTIP: Failed to find vdsm modules!")
         return strReturn
 
     arNICs = None
@@ -762,7 +762,7 @@ def makeBridge(vdcName, vdsmDir):
     try:
         imp.find_module('netinfo') # taken from vdsm rpm
     except ImportError:
-        logging.error("makeBridge Faild to find vdsm modules!")
+        logging.error("makeBridge Failed to find vdsm modules!")
         return False
 
     fReturn = True
