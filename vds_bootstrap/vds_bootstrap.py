@@ -51,7 +51,6 @@ import traceback
 import random
 import re
 import ConfigParser
-import ethtool
 import socket
 
 # set logging before deployUtil is first used
@@ -603,6 +602,9 @@ gpgcheck=0
         return fReturn
 
     def checkLocalHostname(self):
+        # This is missing and not used on rhel5
+        import ethtool
+
         self.status = "OK"
         self.rc = True
         self.message = "Local hostname is correct."
@@ -796,9 +798,10 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime, usevdcre
         logging.error('createConf failed')
         return False
 
-    if not oDeploy.checkLocalHostname():
-        logging.error('checkLocalHostname test failed')
-        return False
+    if rhel6based:
+        if not oDeploy.checkLocalHostname():
+            logging.error('checkLocalHostname test failed')
+            return False
 
     if not oDeploy.setNetworking(iurl):
         logging.error('setNetworking test failed')
