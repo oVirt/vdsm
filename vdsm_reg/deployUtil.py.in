@@ -360,7 +360,7 @@ def getOSVersion():
 
     s = ''
     try:
-        s = file('/etc/system-release', 'r').read()
+        s = file('/etc/redhat-release', 'r').read()
 
         return islice(dropwhile(lambda x: x != 'release', s.split()),
                       1, 2).next()
