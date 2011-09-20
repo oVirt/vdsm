@@ -576,8 +576,9 @@ gpgcheck=0
         try:
             fReturn = deployUtil.makeBridge(vdcName, VDSM_DIR)
             if fReturn: #save current config by removing the undo files:
-                vdcUrl = "http://%s:%s" % (
-                            vdcName, str(vdcPort) if vdcPort else "80")
+                if not vdcPort:
+                    vdcPort = 80
+                vdcUrl = "http://%s:%s" % (vdcName, vdcPort)
                 try:
                     if not deployUtil.waitRouteRestore(60, vdcUrl):
                         fReturn = False
