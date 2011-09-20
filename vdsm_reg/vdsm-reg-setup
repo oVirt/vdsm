@@ -266,7 +266,7 @@ def run(confFile, daemonize):
                 oSetup = None
                 if ticket:
                     if registered or ticketRetries is 0:
-                        config.remove_option('vars', 'ticket')
+                        config.set('vars', 'ticket', '')
                         config.write(file(confFile, 'w+'))
                         deployUtil.ovirtfunctions.ovirt_store_config(confFile)
                         ticket = ""
