@@ -841,19 +841,18 @@ class HSM:
         vars.task.setDefaultException(se.VolumeGroupCreateError(str(vgname), str(devlist)))
         misc.validateUUID(vgname, 'vgname')
         #getSharedLock(connectionsResource...)
-        knowndevs = list(multipath.getMPDevNamesIter())
+        knowndevs = set(multipath.getMPDevNamesIter())
+        size = 0
         devices = []
-        devSizes = []
 
         for dev in devlist:
             if dev in knowndevs:
                 devices.append(dev)
-                devSizes.append(multipath.getDeviceSize(devicemapper.getDmId(dev)))
+                size += multipath.getDeviceSize(devicemapper.getDmId(dev))
             else:
                 raise se.InvalidPhysDev(dev)
 
         #Minimal size check
-        size = sum(devSizes)
         if size < MINIMALVGSIZE:
            raise se.VolumeGroupSizeError("VG size must be more than %s MiB" % str(MINIMALVGSIZE / constants.MEGAB))
 
