@@ -31,7 +31,7 @@ CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
 NEEDED_SERVICES="iscsid multipathd"
-CONFLICTING_SERVICES="libvirt-guests libvirtd"
+CONFLICTING_SERVICES="libvirt-guests"
 
 LCONF=/etc/libvirt/libvirtd.conf
 QCONF=/etc/libvirt/qemu.conf
@@ -39,6 +39,8 @@ LDCONF=/etc/sysconfig/libvirtd
 
 is_coredump=`$GETCONFITEM $CONF_FILE vars core_dump_enable false | tr A-Z a-z`
 [ $is_coredump != true ] && is_coredump=false
+
+SYSTEMCTL_SKIP_REDIRECT=true
 
 . /etc/init.d/functions
 
@@ -135,6 +137,10 @@ shutdown_conflicting_srv() {
         fi
     done
     return 0
+}
+
+upstart_libvirt() {
+    [[ -x /bin/initctl ]]
 }
 
 start_needed_srv() {
@@ -368,9 +374,23 @@ reconfigure() {
     configure_libvirt $args
 }
 
+stop_libvirtd_sysv() {
+    # stop libvirt SysV service if we intend to configure upstart
+
+    if upstart_libvirt; then
+        /sbin/chkconfig libvirtd off
+        /sbin/service libvirtd stop
+    fi
+}
+
 start_libvirtd() {
     local packaged installed target
     local startout
+
+    if ! upstart_libvirt; then
+        /sbin/service libvirtd start
+        return
+    fi
 
     packaged=`/bin/rpm -ql libvirt | /bin/grep libvirtd.upstart | \
                  /usr/bin/tail -1`
@@ -397,7 +417,7 @@ start() {
     local ret_val
     python @VDSMDIR@/hooks.pyc before_vdsm_start
 
-    shutdown_conflicting_srv
+    shutdown_conflicting_srv && stop_libvirtd_sysv
 
     reconfigure noforce
     ret_val=$?
