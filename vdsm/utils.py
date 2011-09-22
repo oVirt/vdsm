@@ -43,6 +43,10 @@ import constants
 from config import config
 import netinfo
 
+_THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
+if not os.path.exists(_THP_STATE_PATH):
+    _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
+
 def rmFile(fileToRemove):
     """
     Try to remove a file.
@@ -227,11 +231,11 @@ class HostSample(BaseSample):
             self.cpuLoad = '0.0'
         self.diskStats = self._getDiskStats()
         try:
-            with file('/sys/kernel/mm/redhat_transparent_hugepage/enabled') as f:
+            with file(_THP_STATE_PATH) as f:
                 s = f.read()
                 self.thpState = s[s.index('[')+1:s.index(']')]
         except:
-            self.thpState = ''
+            self.thpState = 'never'
 
 class AdvancedStatsFunction(object):
     """
