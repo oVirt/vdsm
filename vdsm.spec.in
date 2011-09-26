@@ -127,8 +127,10 @@ then
         lconf=/etc/libvirt/libvirtd.conf
         qconf=/etc/libvirt/qemu.conf
         ldconf=/etc/sysconfig/libvirtd
+        scconf=/etc/sysctl.conf
 
         sed -i '/# by vdsm$/d' $lconf $qconf $ldconf
+        sed -i '/# VDSM section begin/,/# VDSM section end/d' $scconf
 
         /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
 virt_use_nfs=0
