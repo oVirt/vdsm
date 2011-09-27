@@ -339,7 +339,7 @@ configure_libvirt()
 }
 # end vdsm
 EOF
-    /bin/cat "$llogr" >> "$stanza"
+    /bin/sed -e "/# vdsm/,/# end vdsm/d" "$llogr" >> "$stanza"
     local oldmod=`/usr/bin/stat --format=%a "$llogr"`
     /bin/mv "$stanza" "$llogr"
     if [ -n "$oldmod" ]; then
