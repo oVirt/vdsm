@@ -117,7 +117,7 @@ class GuestAgent (threading.Thread):
             self.log.debug(repr(self.guestInfo['username']))
         elif message == 'session-logon':
             self.guestInfo['session'] = "UserLoggedOn"
-        elif message == 'session-locked':
+        elif message == 'session-lock':
             self.guestInfo['session'] = "Locked"
         elif message == 'session-unlock':
             self.guestInfo['session'] = "Active"
