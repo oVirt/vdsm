@@ -32,7 +32,6 @@ import os, traceback, time
 import logging
 import errno
 import subprocess
-import socket
 import pwd
 import fcntl
 import functools
@@ -746,13 +745,6 @@ def getUserPermissions(userName, path):
             isSameOwner and isExec(ownerBits)
 
     return permissions
-
-def validLocalHostname():
-    try:
-        localip = socket.gethostbyname(socket.gethostname())
-    except socket.gaierror:
-        return False
-    return localip in map(ethtool.get_ipaddr, ethtool.get_active_devices())
 
 def listSplit(l, elem, maxSplits=None):
     splits = []

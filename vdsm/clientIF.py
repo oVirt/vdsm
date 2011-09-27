@@ -802,10 +802,6 @@ class clientIF:
         """
         self.log.debug('Migration create')
 
-        if not utils.validLocalHostname():
-            self.log.error('Migration failed: local hostname is not correct')
-            return errCode['wrongHost']
-
         response = self.create(params)
         if response['status']['code']:
             self.log.debug('Migration create - Failed')

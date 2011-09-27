@@ -401,6 +401,7 @@ class MigrationSourceThread(vm.MigrationSourceThread):
             else:
                 transport = 'tcp'
             duri = 'qemu+%s://%s/system' % (transport, self.remoteHost)
+            muri = 'tcp://%s' % self.remoteHost
             self._vm.log.debug('starting migration to %s', duri)
 
             t = MigrationDowntimeThread(self._vm, int(self._downtime),
@@ -417,8 +418,9 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                     self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
                 maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
-                self._vm._dom.migrateToURI(duri, libvirt.VIR_MIGRATE_LIVE |
-                                        libvirt.VIR_MIGRATE_PEER2PEER, None, maxBandwidth)
+                self._vm._dom.migrateToURI2(duri, muri, None,
+                    libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER,
+                    None, maxBandwidth)
             finally:
                 t.cancel()
                 if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
