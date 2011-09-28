@@ -960,7 +960,7 @@ class HSM:
         :type spUUID: UUID (deprecated)
         :options: ?
 
-        :returns: :keyword:`True` if task was stopped successfuly.
+        :returns: :keyword:`True` if task was stopped successfully.
         :rtype: bool
         """
         force = False
@@ -983,7 +983,7 @@ class HSM:
         :type spUUID: UUID (deprecated)
         :options: ?
 
-        :returns: :keyword:`True` if task was cleared successfuly.
+        :returns: :keyword:`True` if task was cleared successfully.
         :rtype: bool
         """
         #getExclusiveLock(tasksResource...)

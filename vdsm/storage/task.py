@@ -920,7 +920,7 @@ class Task:
                     result = ""
                 i += 1
             j = None
-            self._updateResult(0, "%s jobs completed successfuly" % i, result)
+            self._updateResult(0, "%s jobs completed successfully" % i, result)
             self._updateState(State.finished)
             self.log.debug('Task.run: exit - success: result %s' % result)
             return result
