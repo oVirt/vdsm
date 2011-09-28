@@ -409,33 +409,6 @@ class TaskResult(object):
 
 
 
-class TaskResource(object):
-    fields = {
-        "namespace": str,
-        "name": str,
-        "lockType": resourceManager.LockType,
-    }
-
-    def __init__(self, namespace, name, lockType):
-        self.namespace = namespace
-        self.name = name
-        self.lockType = lockType
-
-
-    def key(self):
-        return "%s%s%s" % (self.namespace, RESOURCE_SEP, self.name)
-
-
-    def tuple(self):
-        return (self.namespace, self.name, self.lockType)
-
-
-    def __str__(self):
-        return "%s/%s - %s" % (self.namespace, self.name, str(self.lockType))
-
-
-
-
 class TaskPriority(EnumType):
     low = "low"
     medium = "medium"
