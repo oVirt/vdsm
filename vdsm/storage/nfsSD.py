@@ -138,6 +138,12 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 
+    def getRealPath(self):
+        for mount in fileUtils.getMounts():
+            if self.mountpoint == mount[1]:
+                return mount[0]
+        return ""
+
 def findDomain(sdUUID):
     return NfsStorageDomain(NfsStorageDomain.findDomainPath(sdUUID))
 

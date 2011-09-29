@@ -93,5 +93,8 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 
+    def getRealPath(self):
+        return os.readlink(self.mountpoint)
+
 def findDomain(sdUUID):
     return LocalFsStorageDomain(LocalFsStorageDomain.findDomainPath(sdUUID))

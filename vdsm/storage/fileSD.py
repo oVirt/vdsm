@@ -24,7 +24,6 @@ import logging
 import glob
 
 import sd
-import fileUtils
 import storage_exception as se
 import fileVolume
 import image
@@ -224,6 +223,13 @@ class FileStorageDomain(sd.StorageDomain):
     def getRemotePath(self):
         return self.remotePath
 
+    def getRealPath(self):
+        """
+        Return the actual path to the underlying storage.
+        This function needs to be overloaded by the child classes.
+        """
+        return ""
+
     def getInfo(self):
         """
         Get storage domain info
@@ -232,13 +238,7 @@ class FileStorageDomain(sd.StorageDomain):
         # First call parent getInfo() - it fills in all the common details
         info = sd.StorageDomain.getInfo(self)
         # Now add fileSD specific data
-        info['remotePath'] = ''
-        mounts = fileUtils.getMounts()
-        for mount in mounts:
-            if self.mountpoint == mount[1]:
-                info['remotePath'] = mount[0]
-                break
-
+        info['remotePath'] = self.getRealPath()
         return info
 
     def getStats(self):
