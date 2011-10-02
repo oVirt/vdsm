@@ -874,9 +874,16 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
 
 def main():
     """
-        Usage: vds_compat.py [-r rev_num] [-O organizationName] [-t systemTime]
-            [-n netconsole_host:port] [-u (seProductRepo) true|false ]
-            [-f firewall_rules_file ] <url> <subject> <random_num>
+Usage: vds_bootstrap.py [options] <url> <subject> <random_num>
+
+options:
+    -O <organizationName>
+    -t <systemTime>
+    -u {true|false} -- use rhev-m-deployed yum repo
+    -f <firewall_rules_file> -- override firewall rules.
+obsolete options:
+    -n <netconsole_host:port>
+    -r <rev_num>
     """
     try:
         rev_num = None
