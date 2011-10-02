@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from multiprocessing import Pipe, Process, current_process
+from multiprocessing import Queue, Pipe, Process, current_process
 from threading import Lock
 import os
 import signal
@@ -30,8 +30,11 @@ import threading
 import misc
 
 from config import config
+from logUtils import QueueHandler
 
 MANAGE_PORT = config.getint("addresses", "management_port")
+_log = logging.getLogger("ProcessPool")
+LOGGING_THREAD_NAME = '__loggingThreadName__'
 
 class Timeout(RuntimeError): pass
 class NoFreeHelpersError(RuntimeError): pass
@@ -81,10 +84,10 @@ class ProcessPoolMultiplexer(object):
 
 class ProcessPool(object):
     def __init__(self, maxSubProcess, gracePeriod, timeout):
-        self._log = logging.getLogger("ProcessPool")
         self._maxSubProcess = maxSubProcess
         self._gracePeriod = gracePeriod
         self.timeout = timeout
+        self._logQueue = Queue(-1)
         # We start all the helpers at once because of fork() semantics.
         # Every time you fork() the memory of the application is shared
         # with the child process until one of the processes writes to it.
@@ -92,9 +95,13 @@ class ProcessPool(object):
         # and all the mem will just get wasted untouched on the child's side.
         # What we count on is having all the child processes share the mem.
         # This is best utilized by starting all child processes at once.
-        self._helperPool = [Helper() for i in range(self._maxSubProcess)]
+        self._helperPool = [Helper(self._logQueue) for i in range(self._maxSubProcess)]
         self._lockPool = [Lock() for i in range(self._maxSubProcess)]
         self._closed = False
+        # Add thread for logging from oop
+        self.logProc = threading.Thread(target=_helperLoggerLoop, args=(self._logQueue,))
+        self.logProc.daemon = True
+        self.logProc.start()
 
     def wrapFunction(self, func):
         @wraps(func)
@@ -118,9 +125,10 @@ class ProcessPool(object):
         try:
             helper = self._helperPool[i]
             if helper is None:
-                helper = Helper()
+                helper = Helper(self._logQueue)
                 self._helperPool[i] = helper
 
+            kwargs[LOGGING_THREAD_NAME] = threading.current_thread().name
             helper.pipe.send((func, args, kwargs))
             if not helper.pipe.poll(self.timeout):
                 helper.interrupt()
@@ -160,16 +168,30 @@ class ProcessPool(object):
         # The locks remain locked of purpose so no one will
         # be able to run further commands
 
+def _helperLoggerLoop(logQueue):
+    while True:
+        try:
+            record = logQueue.get()
+            logger = logging.getLogger(record.name)
+            logger.handle(record)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Queue.Empty:
+            pass
+        except:
+            pass
+
 def disown(proc):
     # I know touching _children is wrong but there is no public API for
     # disowning a child
     current_process()._children.discard(proc)
 
 class Helper(object):
-    def __init__(self):
+    def __init__(self, logQueue):
+        self._logQueue = logQueue
         self.lifeline, childsLifeline = os.pipe()
         self.pipe, hisPipe = Pipe()
-        self.proc = Process(target=_helperMainLoop, args=(hisPipe, childsLifeline, self.lifeline))
+        self.proc = Process(target=_helperMainLoop, args=(hisPipe, childsLifeline, self.lifeline, self._logQueue))
         self.proc.daemon = True
         self.proc.start()
         disown(self.proc)
@@ -195,7 +217,7 @@ class Helper(object):
     def interrupt(self):
         os.kill(self.proc.pid, signal.SIGINT)
 
-def _helperMainLoop(pipe, lifeLine, parentLifelineFD):
+def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     os.close(parentLifelineFD)
 
     # Restoring signal handlers that might deadlock on prepareForShutdown
@@ -214,12 +236,21 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD):
 
     # Close all file-descriptors we don't need
     # Logging won't work past this point
+    FDSWHITELIST = (0, 1, 2, lifeLine, parentLifelineFD, pipe.fileno(),
+                     logQueue._reader.fileno(), logQueue._writer.fileno())
     for fd in misc.getfds():
-        if fd not in (0, 1, 2, lifeLine, parentLifelineFD, pipe.fileno()):
+        if fd not in FDSWHITELIST:
             try:
                 os.close(fd)
             except OSError:
                 pass    # Nothing we can do
+
+    # Add logger handler (via Queue)
+    hdlr = QueueHandler(logQueue)
+    hdlr.setLevel(_log.getEffectiveLevel())
+    logging.root.handlers = [hdlr]
+    for log in logging.Logger.manager.loggerDict.values():
+        if hasattr(log, 'handlers'): log.handlers.append(hdlr)
 
     poller = select.poll()
     poller.register(lifeLine, 0) # Only SIGERR\SIGHUP
@@ -235,6 +266,8 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD):
                     return
 
             func, args, kwargs = pipe.recv()
+            threading.current_thread().setName(kwargs[LOGGING_THREAD_NAME])
+            kwargs.pop(LOGGING_THREAD_NAME)
             res = err = None
             try:
                 res = func(*args, **kwargs)
