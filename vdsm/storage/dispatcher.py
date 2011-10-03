@@ -19,9 +19,7 @@
 #
 
 import traceback
-import inspect
 import logging
-import types
 from config import config
 
 import task
@@ -37,19 +35,9 @@ class Protect:
     STATUS_ERROR = {'status': {'code': 100, 'message': "ERROR"}}
     log = logging.getLogger('Storage.Dispatcher.Protect')
 
-    def __init__(self, func, name, loggableArgsFunc=None, loggableRespFunc=None):
+    def __init__(self, func, name):
         self.name = name
         self.func = func
-        if loggableArgsFunc:
-            self.loggableArgs = loggableArgsFunc
-        if loggableRespFunc:
-            self.loggableResp = loggableRespFunc
-        try:
-            self.argNames = func.im_self.innerArgNames
-        except:
-            self.argNames, args, kwargs, defValues = inspect.getargspec(func)
-        if isinstance(func, types.MethodType):
-            del self.argNames[0]
 
         self.help = None
         try:
@@ -65,19 +53,6 @@ class Protect:
         if not self.help:
             self.help = "No help available for method %s" % name
 
-
-    def loggableArgs(self, *args, **kwargs):
-        s = ""
-        numArgs = len(args)
-        if numArgs <= len(self.argNames):
-            for i in range(numArgs):
-                s += " %s=%s" % (self.argNames[i], str(args[i]))
-        if kwargs:
-            s += " " + str(kwargs)
-        return s
-
-    def loggableResp(self, resp):
-        return str(resp)
 
     def run(self, *rawArgs, **rawKwargs):
         try:
@@ -105,14 +80,10 @@ class Protect:
                 return se.UnicodeArgumentException().response()
 
             try:
-                s = self.loggableArgs(*args, **kwargs)
-                self.log.info("Run and protect: %s, args: (%s)" % (str(self.name), s))
                 response = self.STATUS_OK.copy()
                 result = ctask.prepare(self.func, *args, **kwargs)
                 if type(result) == dict:
                     response.update(result)
-                s = self.loggableResp(response)
-                self.log.info("Run and protect: %s, Return response: %s" % (str(self.name), s))
                 return response
             except se.GeneralException, e:
                 self.log.error(e.response())
@@ -123,13 +94,13 @@ class Protect:
                 exceptionObj = ctask.defaultException
                 if exceptionObj and hasattr(exceptionObj, "response"):
                     return exceptionObj.response()
-                return se.GeneralException("method %s args: (%s), error: %s" % (str(self.name), s, str(e))).response()
+                return se.GeneralException("method %s, error: %s" % (str(self.name), str(e))).response()
             except:
                 self.log.error(traceback.format_exc())
                 exceptionObj = ctask.defaultException
                 if exceptionObj and hasattr(exceptionObj, "response"):
                     return exceptionObj.response()
-                return se.GeneralException("method %s args: (%s)" % (str(self.name), s)).response()
+                return se.GeneralException("method %s" % (str(self.name))).response()
         except:
             try:
                 try:
@@ -162,14 +133,7 @@ class StorageDispatcher:
                     self.log.error("StorageDispatcher: init - multiple public functions with same name: %s" % publicName)
                     continue
                 # Create a new entry in instance's "dict" that will mask the original method
-                argsFuncName = "_log_" + publicName
-                respFuncName = "_logResp_" + publicName
-                argsFunc = respFunc = None
-                if hasattr(obj, argsFuncName):
-                    argsFunc = getattr(obj, argsFuncName)
-                if hasattr(obj, respFuncName):
-                    respFunc = getattr(obj, respFuncName)
-                self.__dict__[publicName] = Protect(funcObj, publicName, argsFunc, respFunc).run
+                self.__dict__[publicName] = Protect(funcObj, publicName).run
 
 
     def _init_public_functions(self):

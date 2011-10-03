@@ -20,6 +20,55 @@
 
 import logging
 import sys
+from functools import wraps
+from inspect import ismethod
+
+def funcName(func):
+    if ismethod(func):
+        return func.im_func.func_name
+
+    return func.func_name
+
+def logcall(loggerName, pattern="%s", loglevel=logging.INFO, printers={}, resPrinter=repr, resPattern="%(name)s->%(result)s"):
+    def phase2(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            logger = logging.getLogger(loggerName)
+            logger.log(loglevel, pattern % (call2str(f, args, kwargs, printers),))
+            res = f(*args, **kwargs)
+            logger.log(loglevel, resPattern % {"name": funcName(f), "result": resPrinter(res)})
+            return res
+
+        return wrapper
+
+    return phase2
+
+def call2str(func, args, kwargs, printers={}):
+    kwargs = kwargs.copy()
+    varnames = func.func_code.co_varnames[:func.func_code.co_argcount]
+    if ismethod(func):
+        args = [func.im_self] + list(args)
+        func = func.im_func
+
+    for name, val in zip(varnames, args):
+        kwargs[name] = val
+
+    defaults = func.func_defaults if func.func_defaults else []
+
+    for name, val in zip(varnames[-len(defaults):], defaults):
+        if name not in kwargs:
+            kwargs[name] = val
+
+    argsStrs = []
+    for i, argName in enumerate(varnames):
+        if i == 0 and argName == "self":
+            continue
+
+        val = kwargs[argName]
+        printer = printers.get(argName, repr)
+        argsStrs.append("%s=%s" % (argName, printer(val)))
+
+    return "%s(%s)" % (func.func_name, ", ".join(argsStrs))
 
 class SimpleLogAdapter(logging.LoggerAdapter):
     # Because of how python implements the fact that warning

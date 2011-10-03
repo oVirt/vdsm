@@ -27,10 +27,11 @@ import threading
 import logging
 from fnmatch import fnmatch
 from copy import deepcopy
-from config import config
 from itertools import imap
 from collections import defaultdict
+from functools import partial
 
+from config import config
 import sp
 import sd
 import blockSD
@@ -55,6 +56,7 @@ from task import Job
 from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 import devicemapper
+import logUtils
 
 GUID = "guid"
 NAME = "name"
@@ -64,8 +66,31 @@ INITIALIZED = "initialized"
 CAPACITY = "capacity"
 PATHLIST = "pathlist"
 
+logged = partial(logUtils.logcall, "dispatcher", "Run and protect: %s",
+        resPattern="Run and protect: %(name)s, Return response: %(result)s")
 
 rmanager = rm.ResourceManager.getInstance()
+
+def loggableCon(con):
+    conCopy = con.copy()
+    for key in conCopy:
+        if key.upper() == 'PASSWORD':
+            conCopy[key] = '******'
+    return conCopy
+
+def loggableConList(conList):
+    cons = []
+    for con in conList:
+        conCopy = loggableCon(con)
+        cons.append(conCopy)
+
+    return cons
+
+def connectionListPrinter(conList):
+    return repr(loggableConList(conList))
+
+def connectionPrinter(con):
+    return repr(loggableCon(con))
 
 class HSM:
     """
@@ -289,6 +314,7 @@ class HSM:
         self.log.debug("Finished cleaning storage repository at '%s'" % self.storage_repository)
 
 
+    @logged()
     def public_getConnectedStoragePoolsList(self, options = None):
         """
         Get a list of all the connected storage pools.
@@ -304,6 +330,7 @@ class HSM:
         return dict(poollist = self.pools.keys())
 
 
+    @logged()
     def public_spmStart(self, spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
             maxHostID=safelease.MAX_HOST_ID, domVersion=None, options = None):
         """
@@ -377,6 +404,7 @@ class HSM:
                 pool.hsmMailer.sendExtendMsg(volDict, newSize, callbackFunc)
 
 
+    @logged()
     def public_refreshStoragePool(self, spUUID, msdUUID, masterVersion, options = None):
         """
         Refresh the Storage Pool info in HSM.
@@ -411,6 +439,7 @@ class HSM:
             pool.hsmMailer.flushMessages()
 
 
+    @logged()
     def public_createStoragePool(self, poolType, spUUID, poolName, masterDom, domList, masterVersion, lockPolicy=None, lockRenewalIntervalSec=None, leaseTimeSec=None, ioOpTimeoutSec=None, leaseRetries=None, options = None):
         """
         Create new storage pool with single/multiple image data domain.
@@ -492,6 +521,7 @@ class HSM:
 
         return sp.StoragePool(spUUID).create(poolName, masterDom, domList, masterVersion, safeLease)
 
+    @logged()
     def public_connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID, masterVersion, options = None):
         """
         Connect a Host to a specific storage pool.
@@ -563,6 +593,7 @@ class HSM:
                 self.pools[spUUID] = pool
             return res
 
+    @logged()
     def public_disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False, options = None):
         """
         Disconnect a Host from a specific storage pool.
@@ -605,6 +636,7 @@ class HSM:
         return res
 
 
+    @logged()
     def public_destroyStoragePool(self, spUUID, hostID, scsiKey, options = None):
         """
         Destroy a storage pool.
@@ -635,6 +667,7 @@ class HSM:
         return self._disconnectPool(pool, hostID, scsiKey, remove=True)
 
 
+    @logged()
     def public_reconstructMaster(self, spUUID, poolName, masterDom, domDict,
                                  masterVersion, lockPolicy=None,
                                  lockRenewalIntervalSec=None, leaseTimeSec=None,
@@ -694,6 +727,7 @@ class HSM:
                 con['password'] = "******"
         return logableDevs
 
+    @logged(resPrinter=partial(_logResp_getDeviceList, None))
     def public_getDeviceList(self, storageType=None, options = None):
         """
         List all Block Devices.
@@ -779,6 +813,7 @@ class HSM:
 
         return devices
 
+    @logged()
     def public_getDeviceInfo(self, guid, options = None):
         """
         Get info of block device.
@@ -805,6 +840,7 @@ class HSM:
            raise se.DeviceNotFound(str(guid))
 
 
+    @logged()
     def public_getDevicesVisibility(self, guids, options=None):
         """
         Check which of the luns with specified guids are visible
@@ -827,6 +863,7 @@ class HSM:
         return {'visible' : dict(zip(guids, map(devVisible, guids)))}
 
 
+    @logged()
     def public_createVG(self, vgname, devlist, options = None):
         """
         Creates a volume group with the name 'vgname' out of the devices in 'devlist'
@@ -866,6 +903,7 @@ class HSM:
         return dict(uuid=lvm.getVG(vgname).uuid)
 
 
+    @logged()
     def public_removeVG(self, vgUUID, options = None):
         """
         DEPRECATED: formatSD effectively removes the VG.
@@ -884,6 +922,7 @@ class HSM:
             pass
 
 
+    @logged()
     def public_getTaskStatus(self, taskID, spUUID=None, options = None):
         """
         Gets the status of a task.
@@ -902,6 +941,7 @@ class HSM:
         return dict(taskStatus=taskStatus)
 
 
+    @logged()
     def public_getAllTasksStatuses(self, spUUID=None, options = None):
         """
         Gets the status of all public tasks.
@@ -915,6 +955,7 @@ class HSM:
         return dict(allTasksStatus=allTasksStatus)
 
 
+    @logged()
     def public_getTaskInfo(self, taskID, spUUID=None, options = None):
         """
         Gets information about a Task.
@@ -935,6 +976,7 @@ class HSM:
         return dict(TaskInfo=inf)
 
 
+    @logged()
     def public_getAllTasksInfo(self, spUUID=None, options = None):
         """
         Get the information of all the tasks in a storage pool.
@@ -952,6 +994,7 @@ class HSM:
         return dict(allTasksInfo=allTasksInfo)
 
 
+    @logged()
     def public_stopTask(self, taskID, spUUID=None, options = None):
         """
         Stops a task.
@@ -975,6 +1018,7 @@ class HSM:
         return self.taskMng.stopTask(taskID=taskID, force=force)
 
 
+    @logged()
     def public_clearTask(self, taskID, spUUID=None, options = None):
         """
         Clears a task. ?
@@ -992,6 +1036,7 @@ class HSM:
         return self.taskMng.clearTask(taskID=taskID)
 
 
+    @logged()
     def public_revertTask(self, taskID, spUUID=None, options = None):
         """
         Revert a task.
@@ -1008,6 +1053,7 @@ class HSM:
         #getExclusiveLock(tasksResource...)
         return self.taskMng.revertTask(taskID=taskID)
 
+    @logged()
     def public_getFileList(self, sdUUID, pattern='*', options=None):
         """
         Returns a list of all files in the domain filtered according to extension.
@@ -1030,6 +1076,7 @@ class HSM:
         filesDict = dom.getFileList(pattern=pattern, caseSensitive=True)
         return {'files':filesDict}
 
+    @logged()
     def public_getIsoList(self, spUUID, extension='iso', options = None):
         """
         Gets a list of all ISO/Floppy volumes in a storage pool.
@@ -1056,6 +1103,7 @@ class HSM:
         return {'isolist':isolist}
 
 
+    @logged()
     def public_getFloppyList(self, spUUID, options = None):
         """
         Gets a list of all Floppy volumes if a storage pool.
@@ -1071,10 +1119,7 @@ class HSM:
         return self.public_getIsoList(spUUID=spUUID, extension='vfd')
 
 
-    def _log_connectStorageServer(self, domType, spUUID, conList):
-        cons = storage_connection.StorageServerConnection.loggableConList(conList=conList)
-        return "domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)
-
+    @logged(printers={'conList': connectionListPrinter})
     def public_connectStorageServer(self, domType, spUUID, conList, options = None):
         """
         Connects to a storage low level entity (server).
@@ -1090,7 +1135,7 @@ class HSM:
         :returns: a list of statuses ?
         :rtype: dict
         """
-        cons = storage_connection.StorageServerConnection.loggableConList(conList=conList)
+        cons = loggableConList(conList=conList)
         vars.task.setDefaultException(se.StorageServerConnectionError("domType=%s, spUUID=%s, conList=%s" % (str(domType), str(spUUID), cons)))
         #getExclusiveLock(connectionsResource...)
         statusList = storage_connection.StorageServerConnection().connect(domType=domType, conList=conList)
@@ -1100,7 +1145,7 @@ class HSM:
         return dict(statuslist=statusList)
 
 
-    _log_validateStorageServerConnection = _log_connectStorageServer
+    @logged(printers={'conList': connectionListPrinter})
     def public_validateStorageServerConnection(self, domType, spUUID, conList, options = None):
         """
         Validates if we can connect to a storage server.
@@ -1113,14 +1158,14 @@ class HSM:
         :type conList: list
         :param options: ?
         """
-        cons = storage_connection.StorageServerConnection.loggableConList(conList=conList)
+        cons = loggableConList(conList=conList)
         vars.task.setDefaultException(se.StorageServerValidationError("domType=%s, spUUID=%s, conList=%s" % (str(domType), str(spUUID), cons)))
         #getSharedLock(connectionsResource...)
         statusList = storage_connection.StorageServerConnection().validate(domType=domType, conList=conList)
         return dict(statuslist=statusList)
 
 
-    _log_disconnectStorageServer = _log_connectStorageServer
+    @logged(printers={'conList': connectionListPrinter})
     def public_disconnectStorageServer(self, domType, spUUID, conList, options = None):
         """
         Disconnects from a storage low level entity (server).
@@ -1134,7 +1179,7 @@ class HSM:
         :returns: a dict with a list of statuses
         :rtype: dict
         """
-        cons = storage_connection.StorageServerConnection.loggableConList(conList=conList)
+        cons = loggableConList(conList=conList)
         vars.task.setDefaultException(se.StorageServerDisconnectionError("domType=%s, spUUID=%s, conList=%s" % (str(domType), str(spUUID), cons)))
         #getExclusiveLock(connectionsResource...)
         statusList = storage_connection.StorageServerConnection().disconnect(domType=domType, conList=conList)
@@ -1163,6 +1208,7 @@ class HSM:
         #return dict(connectionslist=connectionslist)
 
 
+    @logged()
     def public_getStoragePoolInfo(self, spUUID, options = None):
         """
         Gets info about a storage pool.
@@ -1178,6 +1224,7 @@ class HSM:
         return self.getPool(spUUID).getInfo()
 
 
+    @logged()
     def public_createStorageDomain(self, storageType, sdUUID, domainName,
                                     typeSpecificArg, domClass,
                                     domVersion=constants.SUPPORTED_DOMAIN_VERSIONS[0],
@@ -1226,6 +1273,7 @@ class HSM:
         sdCache.manuallyAddDomain(newSD)
 
 
+    @logged()
     def public_validateStorageDomain(self, sdUUID, options = None):
         """
         Validates that the storage domain is accessible.
@@ -1250,6 +1298,7 @@ class HSM:
 
         dom.format(dom.sdUUID)
 
+    @logged()
     def public_formatStorageDomain(self, sdUUID, autoDetach = False, options = None):
         """
         Formats a detached storage domain.
@@ -1289,6 +1338,7 @@ class HSM:
         self._recycle(sd)
 
 
+    @logged()
     def public_setStorageDomainDescription(self, sdUUID, description, options = None):
         """
         Sets a storage domain's description.
@@ -1308,6 +1358,7 @@ class HSM:
         dom.setDescription(descr=description)
 
 
+    @logged()
     def public_getStorageDomainInfo(self, sdUUID, options = None):
         """
         Gets the info of a storage domain.
@@ -1351,6 +1402,7 @@ class HSM:
         return dict(info=info)
 
 
+    @logged()
     def public_getStorageDomainStats(self, sdUUID, options = None):
         """
         Gets a storage domain's statistics.
@@ -1370,6 +1422,7 @@ class HSM:
         return dict(stats=stats)
 
 
+    @logged()
     def public_getStorageDomainsList(self, spUUID = None, domainClass = None, storageType = None, remotePath = None, options = None):
         """
         Returns a List of all or pool specific storage domains.
@@ -1460,6 +1513,7 @@ class HSM:
         return info
 
 
+    @logged()
     def public_getVGList(self, storageType=None, options = None):
         """
         Returns a list all VGs.
@@ -1537,6 +1591,7 @@ class HSM:
             vgInfo["type"] = vgType
 
 
+    @logged()
     def public_getVGInfo(self, vgUUID, options = None):
         """
         Gets the info of a VG.
@@ -1555,11 +1610,8 @@ class HSM:
         #getSharedLock(connectionsResource...)
         return dict(info=self.__getVGsInfo([vgUUID])[0])
 
-    def _log_discoverSendTargets(self, con, options = None):
-        cons = storage_connection.StorageServerConnection.loggableConList(conList=[con])
-        return "con=%s, options=%s" % (cons[0], options)
-
     @staticmethod
+    @logged(printers={'con': connectionPrinter})
     def public_discoverSendTargets(con, options = None):
         """
         Discovers iSCSI targets.
@@ -1591,6 +1643,7 @@ class HSM:
         return dict(targets=partialTargets, fullTargets=targets)
 
 
+    @logged()
     def public_cleanupUnusedConnections(self, options = None):
         """
         .. warning::
@@ -1602,6 +1655,7 @@ class HSM:
         pass
 
 
+    @logged()
     def public_refreshVolume(self, sdUUID, spUUID, imgUUID, volUUID):
         """
         Refresh low level volume after change in the shared storage initiated from another host
@@ -1622,6 +1676,7 @@ class HSM:
         return sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
 
 
+    @logged()
     def public_getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
         """
         Gets the size of a volume.
@@ -1648,6 +1703,7 @@ class HSM:
         return dict(apparentsize=apparentsize, truesize=truesize)
 
 
+    @logged()
     def public_getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
         """
         Gets a volume's info.
@@ -1673,6 +1729,7 @@ class HSM:
         return dict(info=info)
 
 
+    @logged()
     def public_getVolumePath(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
         """
         Gets the path to a volume.
@@ -1697,6 +1754,7 @@ class HSM:
         return dict(path=path)
 
 
+    @logged()
     def public_prepareVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=True, options = None):
         """
         Prepares a volume (used in SAN).
@@ -1737,6 +1795,7 @@ class HSM:
             raise
 
 
+    @logged()
     def public_teardownVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=False, options = None):
         """
         Tears down a volume (used in SAN).
@@ -1767,6 +1826,7 @@ class HSM:
         except Exception:
             self.log.warn("Problem tearing down volume", exc_info=True)
 
+    @logged()
     def public_getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID, options = None):
         """
         Gets a list of all volumes.
@@ -1795,6 +1855,7 @@ class HSM:
         return dict(uuidlist=uuidlist)
 
 
+    @logged()
     def public_getImagesList(self, sdUUID, options = None):
         """
         Gets a list of all the images of specific domain.
@@ -1811,6 +1872,7 @@ class HSM:
         return dict(imageslist=imageslist)
 
 
+    @logged()
     def public_getImageDomainsList(self, spUUID, imgUUID, datadomains=True, options = None):
         """
         Gets a list of all domains in the pool that contains imgUUID.
@@ -1838,6 +1900,7 @@ class HSM:
         return dict(domainslist=domainslist)
 
 
+    @logged()
     def public_prepareForShutdown(self, options = None):
         """
         Prepares to shutdown host.
@@ -1876,6 +1939,7 @@ class HSM:
             pass
 
 
+    @logged()
     def public_repoStats(self, options = None):
         """
         Collects a storage repository's information and stats.

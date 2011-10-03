@@ -54,6 +54,10 @@ import resourceManager as rm
 from contextlib import nested
 import fileUtils
 from processPool import Timeout
+import logUtils
+
+logged = partial(logUtils.logcall, "dispatcher", "Run and protect: %s",
+        resPattern="Run and protect: %(name)s, Return response: %(result)s")
 
 rmanager = rm.ResourceManager.getInstance()
 
@@ -333,6 +337,7 @@ class SPM:
         return dict(spm_st=st)
 
 
+    @logged()
     def public_upgradeStoragePool(self, spUUID, targetDomVersion):
         targetDomVersion = int(targetDomVersion)
         self._upgradePool(spUUID, targetDomVersion)
@@ -538,6 +543,7 @@ class SPM:
             self.lock.release()
 
 
+    @logged()
     def public_spmStop(self, spUUID, options = None):
         """
         Stops the SPM functionality.
@@ -659,6 +665,7 @@ class SPM:
         self.spmRole = SPM_FREE
 
 
+    @logged()
     def public_getSpmStatus(self, spUUID, options = None):
         """
         Gets the status of the SPM.
@@ -871,6 +878,7 @@ class SPM:
             image.Image(repoPath).merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
 
 
+    @logged()
     def public_extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size, isShuttingDown=None, options=None):
         """
         Extends an existing volume.
@@ -903,6 +911,7 @@ class SPM:
         pool = hsm.HSM.getPool(spUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
+    @logged()
     def public_extendStorageDomain(self, sdUUID, spUUID, devlist, options = None):
         """
         Extends a VG. ?
@@ -1003,6 +1012,7 @@ class SPM:
         raise se.NotImplementedException
 
 
+    @logged()
     def public_forcedDetachStorageDomain(self, sdUUID, spUUID, options = None):
         """Forced detach a storage domain from a storage pool.
            This removes the storage domain entry in the storage pool meta-data
@@ -1017,6 +1027,7 @@ class SPM:
         pool.forcedDetachSD(sdUUID)
 
 
+    @logged()
     def public_detachStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
         """
         Detachs a storage domain from a storage pool.
@@ -1060,6 +1071,7 @@ class SPM:
         pool.detachSD(pool.masterDomain.sdUUID, sd.BLANK_UUID, 0)
 
 
+    @logged()
     def public_attachStorageDomain(self, sdUUID, spUUID, options = None):
         """
         Attach a storage domain to a storage pool.
@@ -1088,6 +1100,7 @@ class SPM:
         pool.attachSD(sdUUID)
 
 
+    @logged()
     def public_deactivateStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
         """
         1. Deactivates a storage domain.
@@ -1122,6 +1135,7 @@ class SPM:
         pool.deactivateSD(sdUUID, msdUUID, masterVersion)
 
 
+    @logged()
     def public_activateStorageDomain(self, sdUUID, spUUID, options = None):
         """
         1. Activates a storage domain that is already a member in a storage pool.
@@ -1158,6 +1172,7 @@ class SPM:
         pool.activateSD(sdUUID)
 
 
+    @logged()
     def public_setStoragePoolDescription(self, spUUID, description, options = None):
         """
         Sets the storage pool's description.
@@ -1174,6 +1189,7 @@ class SPM:
         pool.setDescription(description)
 
 
+    @logged()
     def public_setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID, description, options = None):
         """
         Sets a Volume's Description
@@ -1199,6 +1215,7 @@ class SPM:
                                               volUUID=volUUID).setDescription(descr=description)
 
 
+    @logged()
     def public_setVolumeLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality, options = None):
         """
         Sets a Volume's Legality
@@ -1224,6 +1241,7 @@ class SPM:
                                               volUUID=volUUID).setLegality(legality=legality)
 
 
+    @logged()
     def public_updateVM(self, spUUID, vmList, sdUUID=None, options = None):
         """
         Updates a VM list in a storage pool or in a Backup domain.
@@ -1250,6 +1268,7 @@ class SPM:
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
 
+    @logged()
     def public_removeVM(self, spUUID, vmList, sdUUID=None, options = None):
         """
         Removes a VM list from a storage pool or from a Backup domain.
@@ -1271,6 +1290,7 @@ class SPM:
         pool = hsm.HSM.getPool(spUUID)
         pool.removeVM(vmList=vmList, sdUUID=sdUUID)
 
+    @logged()
     def public_checkImage(self, sdUUID, spUUID, imgUUID, options = None):
         """
         Check an image. Why? For what?
@@ -1288,6 +1308,7 @@ class SPM:
         repoPath = os.path.join(self.storage_repository, spUUID)
         return image.Image(repoPath).check(sdUUID=sdUUID, imgUUID=imgUUID)
 
+    @logged()
     def public_checkDomain(self, sdUUID, spUUID, options = None):
         """
         Check a domain. Why? For what?
@@ -1303,6 +1324,7 @@ class SPM:
         return sdCache.produce(sdUUID).checkDomain(spUUID=spUUID)
 
 
+    @logged()
     def public_checkPool(self, spUUID, options = None):
         """
         Check a domain. Why? For what?
@@ -1314,6 +1336,7 @@ class SPM:
         pool = hsm.HSM.getPool(spUUID)
         return pool.check()
 
+    @logged()
     def public_getVmsList(self, spUUID, sdUUID=None, options = None):
         """
         Gets a list of VMs from the pool.
@@ -1338,6 +1361,7 @@ class SPM:
         vms = dom.getVMsList()
         return dict(vmlist=vms)
 
+    @logged()
     def public_getVmsInfo(self, spUUID, sdUUID=None, vmList=None, options = None):
         """
         Gets a list of VMs with their info from the pool.
@@ -1360,6 +1384,7 @@ class SPM:
         vms = sdCache.produce(sdUUID).getVMsInfo(vmList=vmList)
         return dict(vmlist=vms)
 
+    @logged()
     def public_uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size, method="rsync", options = None):
         """
         Uploads a volume to the server. (NFS only?)
@@ -1410,6 +1435,7 @@ class SPM:
                 self.log.warning("spm.uploadVolume: SP %s SD %s img %s Vol %s - teardown failed")
 
 
+    @logged()
     def public_createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
         """
         Create a new volume
@@ -1448,6 +1474,7 @@ class SPM:
         )
 
 
+    @logged()
     def public_deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False, force=False):
         """
         Delete a volume
@@ -1471,6 +1498,7 @@ class SPM:
         )
 
 
+    @logged()
     def public_deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False, force=False):
         """
         Delete Image folder with all volumes
@@ -1510,6 +1538,7 @@ class SPM:
             self._schedule(spUUID, "deleteImage", lambda : True)
 
 
+    @logged()
     def public_moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero=False, force=False):
         """
         Move/Copy image between storage domains within same storage pool
@@ -1541,6 +1570,7 @@ class SPM:
         )
 
 
+    @logged()
     def public_moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force=False):
         """
         Move multiple images between storage domains within same storage pool
@@ -1573,6 +1603,7 @@ class SPM:
         )
 
 
+    @logged()
     def public_copyImage(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
                        description='', dstSdUUID=sd.BLANK_UUID, volType=volume.SHARED_VOL,
                        volFormat=volume.UNKNOWN_VOL, preallocate=volume.UNKNOWN_VOL,
@@ -1621,6 +1652,7 @@ class SPM:
         )
 
 
+    @logged()
     def public_mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor, postZero=False):
         """
         Merge source volume to the destination volume.

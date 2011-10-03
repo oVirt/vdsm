@@ -40,62 +40,50 @@ def validateDirAccess(dirPath):
             (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
             (os.R_OK | os.X_OK))
 
+PARAMS_FILE_DOMAIN = (('cid', 'id'), ('rp', 'connection'))
+PARAMS_BLOCK_DOMAIN = (
+        ('cid', 'id'),
+        ('ip', 'connection'),
+        ('iqn', 'iqn'),
+        ('tpgt', 'portal'),
+        ('user', 'user'),
+        ('password', 'password'),
+        ('port', 'port'),
+        ('initiatorName', 'initiatorName', None))
 
 class StorageServerConnection:
     log = logging.getLogger('Storage.ServerConnection')
     storage_repository = config.get('irs', 'repository')
 
-    @staticmethod
-    def loggableConList(conList):
-        cons = []
-        for con in conList:
-            conCopy = con.copy()
-            for key in conCopy:
-                if key.upper() == 'PASSWORD':
-                    conCopy[key] = '******'
-            cons.append(conCopy)
-        return cons
-
     def __validateConnectionParams(self, domType, conList):
         """
         Validate connection parameters
         """
-        cons = self.loggableConList(conList=conList)
-        self.log.info("conList=%s", cons)
         conParamsList = []
 
         if domType in sd.FILE_DOMAIN_TYPES:
-            for con in conList:
-                conParams = {}
-                try:
-                    conParams['cid'] = con['id']
-                    conParams['rp'] = con['connection']
-                except KeyError:
-                    raise se.InvalidParameterException("connection", self.loggableConList([con]))
-
-                conParamsList.append(conParams)
+            paramInfos = PARAMS_FILE_DOMAIN
         elif domType in sd.BLOCK_DOMAIN_TYPES:
-            for con in conList:
-                conParams = {}
-                try:
-                    conParams['cid'] = con['id']
-                    conParams['ip'] = con['connection']
-                    conParams['port'] = con['port']
-                    conParams['iqn'] = con['iqn']
-                    conParams['tpgt'] = con['portal']
-                    conParams['user'] = con['user']
-                    conParams['password'] = con['password']
-                    # For the sake of backward compatibility we do not insist
-                    # on presense of 'initiatorName'. We just assume it is
-                    # None if it is absent. All the layers below can cope
-                    # with initiatorName being None.
-                    conParams['initiatorName'] = con.get('initiatorName')
-                except KeyError:
-                    raise se.InvalidParameterException("connection", self.loggableConList([con]))
-
-                conParamsList.append(conParams)
+            paramInfos = PARAMS_BLOCK_DOMAIN
         else:
             raise se.InvalidParameterException("type", domType)
+
+        for con in conList:
+            conParams = {}
+            for paramInfo in paramInfos:
+                conParamName, paramName = paramInfo[:2]
+                hasDefault = len(paramInfo) > 2
+                try:
+                    if hasDefault:
+                        value = con.get(paramName, paramInfo[2])
+                    else:
+                        value = con[paramName]
+
+                    conParams[conParamName] = value
+                except KeyError:
+                    raise se.InvalidParameterException('parameter "%s" is missing from connection info %s' % (paramName, con.get('id', "")))
+
+            conParamsList.append(conParams)
 
         return conParamsList
 
