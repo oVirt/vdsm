@@ -42,7 +42,7 @@ import sd
 import hsm
 import blockSD
 import image
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 import volume
 import misc
 import logging
@@ -370,7 +370,7 @@ class SPM:
         if not isValid:
             return
 
-        domain = SDF.produce(sdUUID)
+        domain = sdCache.produce(sdUUID)
         if sdUUID not in self._domainsToUpgrade:
             return
 
@@ -835,7 +835,7 @@ class SPM:
         """
         volParams = None
         repoPath = os.path.join(self.storage_repository, spUUID)
-        if SDF.produce(sdUUID).isBackup():
+        if sdCache.produce(sdUUID).isBackup():
             # Pre-delete requisites
             volParams = image.Image(repoPath).preDeleteHandler(sdUUID=sdUUID, imgUUID=imgUUID)
 
@@ -923,7 +923,7 @@ class SPM:
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         # We need to let the domain to extend itself
-        SDF.produce(sdUUID).extend(devlist)
+        sdCache.produce(sdUUID).extend(devlist)
 
 
     def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID=None,
@@ -963,7 +963,7 @@ class SPM:
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
-            uuid = SDF.produce(sdUUID).createVolume(imgUUID=imgUUID, size=size,
+            uuid = sdCache.produce(sdUUID).createVolume(imgUUID=imgUUID, size=size,
                                                     volFormat=volFormat, preallocate=preallocate,
                                                     diskType=diskType, volUUID=volUUID, desc=desc,
                                                     srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID)
@@ -989,7 +989,7 @@ class SPM:
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
             for volUUID in volumes:
-                SDF.produce(sdUUID).produceVolume(imgUUID, volUUID).delete(postZero=postZero,
+                sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).delete(postZero=postZero,
                                                                            force=force)
 
 
@@ -1195,7 +1195,7 @@ class SPM:
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
-            SDF.produce(sdUUID).produceVolume(imgUUID=imgUUID,
+            sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID,
                                               volUUID=volUUID).setDescription(descr=description)
 
 
@@ -1220,7 +1220,7 @@ class SPM:
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
-            SDF.produce(sdUUID).produceVolume(imgUUID=imgUUID,
+            sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID,
                                               volUUID=volUUID).setLegality(legality=legality)
 
 
@@ -1300,7 +1300,7 @@ class SPM:
         """
         hsm.HSM.validatePoolSD(spUUID, sdUUID)
         hsm.HSM.validateSdUUID(sdUUID)
-        return SDF.produce(sdUUID).checkDomain(spUUID=spUUID)
+        return sdCache.produce(sdUUID).checkDomain(spUUID=spUUID)
 
 
     def public_checkPool(self, spUUID, options = None):
@@ -1333,7 +1333,7 @@ class SPM:
         if sdUUID == None:
             dom = self.getPool(spUUID).masterDomain
         else:
-            dom = SDF.produce(sdUUID)
+            dom = sdCache.produce(sdUUID)
 
         vms = dom.getVMsList()
         return dict(vmlist=vms)
@@ -1357,7 +1357,7 @@ class SPM:
             # Only backup domains are allowed in this path
             hsm.HSM.validateBackupDom(sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
-        vms = SDF.produce(sdUUID).getVMsInfo(vmList=vmList)
+        vms = sdCache.produce(sdUUID).getVMsInfo(vmList=vmList)
         return dict(vmlist=vms)
 
     def public_uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size, method="rsync", options = None):
@@ -1379,7 +1379,7 @@ class SPM:
         :param options: ?
         """
         vars.task.getSharedLock(STORAGE, spUUID)
-        vol = SDF.produce(sdUUID).produceVolume(imgUUID, volUUID)
+        vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
         if not vol.isLeaf():
             raise se.NonLeafVolumeNotWritable(vol)
         targetPath = vol.getVolumePath()
@@ -1439,7 +1439,7 @@ class SPM:
         if srcVolUUID:
             misc.validateUUID(srcVolUUID, 'srcVolUUID')
         # Validate volume type and format
-        SDF.produce(sdUUID).validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        sdCache.produce(sdUUID).validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._schedule(spUUID, "createVolume", self.createVolume, sdUUID,
@@ -1464,7 +1464,7 @@ class SPM:
         # Do not validate if forced.
         if not misc.parseBool(force):
             for volUUID in volumes:
-                SDF.produce(sdUUID).produceVolume(imgUUID, volUUID).validateDelete()
+                sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).validateDelete()
 
         self._schedule(spUUID, "deleteVolume", self.deleteVolume, sdUUID,
             imgUUID, volumes, misc.parseBool(postZero), misc.parseBool(force)
@@ -1526,7 +1526,7 @@ class SPM:
         hsm.HSM.validateSdUUID(dstDomUUID)
         # Do not validate images in Backup domain
         repoPath = os.path.join(self.storage_repository, spUUID)
-        if not SDF.produce(dstDomUUID).isBackup():
+        if not sdCache.produce(dstDomUUID).isBackup():
             image.Image(repoPath).validate(srcDomUUID, dstDomUUID, imgUUID, op)
 
         domains = [srcDomUUID, dstDomUUID]
@@ -1559,7 +1559,7 @@ class SPM:
             images[imgUUID.strip()] = misc.parseBool(pZero)
         # Do not validate images in Backup domain
         repoPath = os.path.join(self.storage_repository, spUUID)
-        if not SDF.produce(dstDomUUID).isBackup():
+        if not sdCache.produce(dstDomUUID).isBackup():
             for imgUUID in imgDict:
                 imgUUID = imgUUID.strip()
                 image.Image(repoPath).validate(srcDomUUID, dstDomUUID, imgUUID)
@@ -1602,7 +1602,7 @@ class SPM:
             dom = dstSdUUID
         else:
             dom = sdUUID
-        SDF.produce(dom).validateCreateVolumeParams(volFormat, preallocate, volume.BLANK_UUID)
+        sdCache.produce(dom).validateCreateVolumeParams(volFormat, preallocate, volume.BLANK_UUID)
 
         # If dstSdUUID defined, means we copy image to it
         domains = [sdUUID]

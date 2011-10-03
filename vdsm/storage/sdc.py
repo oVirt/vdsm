@@ -138,5 +138,5 @@ class StorageDomainCache:
 
 
 storage_repository = config.get('irs', 'repository')
-StorageDomainFactory = StorageDomainCache(storage_repository)
+sdCache = StorageDomainCache(storage_repository)
 

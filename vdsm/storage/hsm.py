@@ -40,7 +40,7 @@ import spm
 import lvm
 import fileUtils
 import multipath
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 import volume
 import iscsi
 import misc
@@ -87,7 +87,7 @@ class HSM:
         :param sdUUID: the UUID of the storage domain you want to validate.
         :type sdUUID: UUID
         """
-        SDF.produce(sdUUID=sdUUID).validate()
+        sdCache.produce(sdUUID=sdUUID).validate()
 
     @classmethod
     def validateBackupDom(cls, sdUUID):
@@ -100,7 +100,7 @@ class HSM:
         If the domain doesn't exist an exeption will be thrown.
         If the domain isn't a backup domain a :exc:`storage_exception.StorageDomainTypeNotBackup` exception will be raised.
         """
-        if not SDF.produce(sdUUID=sdUUID).isBackup():
+        if not sdCache.produce(sdUUID=sdUUID).isBackup():
             raise se.StorageDomainTypeNotBackup(sdUUID)
 
     @classmethod
@@ -119,7 +119,7 @@ class HSM:
         :raises: :exc:`storage_exception.StorageDomainAlreadyExists` exception if a domain with this UUID exists.
         """
         try:
-            SDF.produce(sdUUID=sdUUID)
+            sdCache.produce(sdUUID=sdUUID)
             raise se.StorageDomainAlreadyExists(sdUUID)
         #If partial metadata exists the method will throw MetadataNotFound.
         #Though correct the logical response in this context is StorageDomainNotEmpty.
@@ -165,7 +165,7 @@ class HSM:
         lvm._lvminfo.bootstrap()
 
         def storageRefresh():
-            SDF.refreshStorage()
+            sdCache.refreshStorage()
 
             self.tasksDir = config.get('irs', 'hsm_tasks')
             try:
@@ -467,7 +467,7 @@ class HSM:
         if len(poolName) > sp.MAX_POOL_DESCRIPTION_SIZE:
             raise se.StoragePoolDescriptionTooLongError()
 
-        msd = SDF.produce(sdUUID=masterDom)
+        msd = sdCache.produce(sdUUID=masterDom)
         msdType = msd.getStorageType()
         msdVersion = msd.getVersion()
         if msdType in sd.BLOCK_DOMAIN_TYPES and msdVersion in blockSD.VERS_METADATA_LV and len(domList) > sp.MAX_DOMAINS:
@@ -475,7 +475,7 @@ class HSM:
 
         for sdUUID in domList:
             try:
-                dom = SDF.produce(sdUUID=sdUUID)
+                dom = sdCache.produce(sdUUID=sdUUID)
                 # TODO: consider removing validate() from here, as the domains
                 # are going to be accessed much later, and may loose validity
                 # until then.
@@ -710,7 +710,7 @@ class HSM:
         return dict(devList=devices)
 
     def _getDeviceList(self, storageType=None, guids=None):
-        SDF.refreshStorage()
+        sdCache.refreshStorage()
         typeFilter = lambda dev : True
         if storageType:
             if sd.storageType(storageType) == sd.type2name(sd.ISCSI_DOMAIN):
@@ -1024,7 +1024,7 @@ class HSM:
         vars.task.setDefaultException(se.GetFileListError(sdUUID))
         vars.task.getSharedLock(STORAGE, sdUUID)
 
-        dom = SDF.produce(sdUUID=sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
         if not dom.isISO or dom.getStorageType() != sd.NFS_DOMAIN:
             raise se.GetFileListError(sdUUID)
         filesDict = dom.getFileList(pattern=pattern, caseSensitive=True)
@@ -1096,7 +1096,7 @@ class HSM:
         statusList = storage_connection.StorageServerConnection().connect(domType=domType, conList=conList)
         # Connecting new device may change the visible storage domain list
         # so invalidate caches
-        SDF.invalidateStorage()
+        sdCache.invalidateStorage()
         return dict(statuslist=statusList)
 
 
@@ -1140,7 +1140,7 @@ class HSM:
         statusList = storage_connection.StorageServerConnection().disconnect(domType=domType, conList=conList)
         # Disconnecting a device may change the visible storage domain list
         # so invalidate the caches
-        SDF.refreshStorage()
+        sdCache.refreshStorage()
         return dict(statuslist=statusList)
 
 
@@ -1223,7 +1223,7 @@ class HSM:
                     domClass, typeSpecificArg, storageType, domVersion)
         else:
             raise se.StorageDomainTypeError(storageType)
-        SDF.manuallyAddDomain(newSD)
+        sdCache.manuallyAddDomain(newSD)
 
 
     def public_validateStorageDomain(self, sdUUID, options = None):
@@ -1238,13 +1238,13 @@ class HSM:
         :rtype: bool
         """
         vars.task.setDefaultException(se.StorageDomainCreationError("sdUUID=%s" % str(sdUUID)))
-        return SDF.produce(sdUUID=sdUUID).validate()
+        return sdCache.produce(sdUUID=sdUUID).validate()
 
 
     #TODO: Remove this  function when formatStorageDomain() is removed.
     def _recycle(self, dom):
         try:
-            SDF.manuallyRemoveDomain(dom.sdUUID)
+            sdCache.manuallyRemoveDomain(dom.sdUUID)
         except KeyError:
             self.log.warn("Storage domain %s doesn't exist in cache. Trying recycle leftovers ...", dom.sdUUID)
 
@@ -1275,7 +1275,7 @@ class HSM:
                 raise se.CannotFormatStorageDomainInConnectedPool(sdUUID)
 
         # For domains that attached to disconnected pool, format domain if 'autoDetach' flag set
-        sd = SDF.produce(sdUUID=sdUUID)
+        sd = sdCache.produce(sdUUID=sdUUID)
         try:
             sd.invalidateMetadata()
             #TODO: autoDetach is True
@@ -1303,7 +1303,7 @@ class HSM:
             raise se.StorageDomainDescriptionTooLongError()
 
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, description=%s" % (str(sdUUID), str(description))))
-        dom = SDF.produce(sdUUID=sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         dom.setDescription(descr=description)
 
@@ -1324,7 +1324,7 @@ class HSM:
         #getSharedLock(connectionsResource...)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        dom = SDF.produce(sdUUID=sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
         info = dom.getInfo()
         # This only occurred because someone
         # thought it would be clever to return pool
@@ -1364,7 +1364,7 @@ class HSM:
         """
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % str(sdUUID)))
         vars.task.getSharedLock(STORAGE, sdUUID)
-        dom = SDF.produce(sdUUID=sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
         dom.refresh()
         stats = dom.getStats()
         return dict(stats=stats)
@@ -1383,17 +1383,17 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.StorageDomainActionError("spUUID: %s" % str(spUUID)))
-        SDF.refreshStorage()
+        sdCache.refreshStorage()
         if spUUID and spUUID != volume.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
             domains = domList.keys()
         else:
             #getSharedLock(connectionsResource...)
-            domains = SDF.getUUIDs()
+            domains = sdCache.getUUIDs()
 
         for sdUUID in domains[:]:
             try:
-                dom = SDF.produce(sdUUID=sdUUID)
+                dom = sdCache.produce(sdUUID=sdUUID)
                 # Filter domains according to 'storageType'
                 if storageType and storageType != dom.getStorageType():
                     domains.remove(sdUUID)
@@ -1470,7 +1470,7 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.VolumeGroupActionError())
-        SDF.refreshStorage()
+        sdCache.refreshStorage()
         #getSharedLock(connectionsResource...)
         vglist = []
         vgs = self.__getVGsInfo()
@@ -1619,7 +1619,7 @@ class HSM:
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        return SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
+        return sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
 
 
     def public_getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
@@ -1669,7 +1669,7 @@ class HSM:
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        info = SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getInfo()
+        info = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getInfo()
         return dict(info=info)
 
 
@@ -1693,7 +1693,7 @@ class HSM:
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        path = SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getVolumePath()
+        path = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getVolumePath()
         return dict(path=path)
 
 
@@ -1723,7 +1723,7 @@ class HSM:
 
         imgResource = rmanager.acquireResource(imageResourcesNamespace, imgUUID, lockType, timeout)
         try:
-            vol = SDF.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+            vol = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
             # NB We want to be sure that at this point HSM does not use stale LVM
             # cache info, so we call refresh explicitely. We may want to remove
             # this refresh later, when we come up with something better.
@@ -1762,7 +1762,7 @@ class HSM:
         imgResource.release()
 
         try:
-            volclass = SDF.produce(sdUUID).getVolumeClass()
+            volclass = sdCache.produce(sdUUID).getVolumeClass()
             volclass.teardown(sdUUID=sdUUID, volUUID=volUUID)
         except Exception:
             self.log.warn("Problem tearing down volume", exc_info=True)
@@ -1781,7 +1781,7 @@ class HSM:
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        dom = SDF.produce(sdUUID=sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
         if imgUUID == volume.BLANK_UUID:
             images = dom.getAllImages()
         else:
@@ -1807,7 +1807,7 @@ class HSM:
         :rtype: dict
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
-        imageslist = SDF.produce(sdUUID=sdUUID).getAllImages()
+        imageslist = sdCache.produce(sdUUID=sdUUID).getAllImages()
         return dict(imageslist=imageslist)
 
 

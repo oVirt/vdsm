@@ -24,7 +24,7 @@ import logging
 import lvm
 import resourceManager as rm
 import storage_exception as se
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 import sd
 import image
 
@@ -115,7 +115,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         """
         volResourcesList = []
         template = None
-        dom = SDF.produce(sdUUID=self.sdUUID)
+        dom = sdCache.produce(sdUUID=self.sdUUID)
         # Get the list of the volumes
         repoPath = os.path.join(self.storage_repository, dom.getPools()[0])
         try:

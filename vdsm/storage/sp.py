@@ -36,7 +36,7 @@ import misc
 from misc import Event
 import fileUtils
 from config import config
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 import storage_exception as se
 from persistentDict import DictValidator
 from processPool import Timeout
@@ -104,7 +104,7 @@ class StatsThread(threading.Thread):
         while self._statsletrun:
             try:
                 if self._domain is None:
-                    self._domain = SDF.produce(self._sdUUID)
+                    self._domain = sdCache.produce(self._sdUUID)
                 stats, code = self._statsfunc(self._domain)
             except se.StorageException, e:
                 self.log.error("Unexpected error", exc_info=True)
@@ -198,7 +198,7 @@ class StoragePool:
         # Go through all the domains and detach them from the pool
         # Since something went wrong (otherwise why would we be cleaning
         # the mess up?) do not expect all the domains to exist
-        domains = [SDF.produce(d) for d in domlist]
+        domains = [sdCache.produce(d) for d in domlist]
         for d in domains:
             try:
                 self.detachSD(d, msdUUID, masterVersion)
@@ -220,7 +220,7 @@ class StoragePool:
         if sdUUID not in domList:
             raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
         # Avoid handle domains if not owned by pool
-        dom = SDF.produce(sdUUID)
+        dom = sdCache.produce(sdUUID)
         pools = dom.getPools()
         if self.spUUID not in pools:
             raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
@@ -272,7 +272,7 @@ class StoragePool:
         # Check the domains before pool creation
         for dom in domList:
             try:
-                domain = SDF.produce(dom)
+                domain = sdCache.produce(dom)
                 domain.validate()
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
@@ -294,7 +294,7 @@ class StoragePool:
             self.id = 1000
             # Master domain is unattached and all changes to unattached domains
             # must be performed under storage lock
-            msd = SDF.produce(msdUUID)
+            msd = sdCache.produce(msdUUID)
             msd.changeLeaseParams(safeLease)
             msd.acquireClusterLock(self.id)
         except:
@@ -372,7 +372,7 @@ class StoragePool:
         self.id = hostID
         self.scsiKey = scsiKey
         # Make sure SDCache doesn't have stale data (it can be in case of FC)
-        SDF.refresh()
+        sdCache.refresh()
         # Rebuild whole Pool
         self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
         self.__createMailboxMonitor()
@@ -469,7 +469,7 @@ class StoragePool:
             self.id = 1000
             # Master domain is unattached and all changes to unattached domains
             # must be performed under storage lock
-            futureMaster = SDF.produce(msdUUID)
+            futureMaster = sdCache.produce(msdUUID)
             futureMaster.changeLeaseParams(safeLease)
             futureMaster.acquireClusterLock(self.id)
             try:
@@ -512,8 +512,8 @@ class StoragePool:
             newMD.changeLeaseParams(leaseParams)
 
     def __masterMigrate(self, sdUUID, msdUUID, masterVersion):
-        curmsd = SDF.produce(sdUUID)
-        newmsd = SDF.produce(msdUUID)
+        curmsd = sdCache.produce(sdUUID)
+        newmsd = sdCache.produce(msdUUID)
         self._refreshDomainLinks(newmsd)
         curmsd.invalidateMetadata()
         newmsd.upgrade(curmsd.getVersion())
@@ -611,14 +611,14 @@ class StoragePool:
 
 
     def __unmountLastMaster(self, sdUUID):
-        curmsd = SDF.produce(sdUUID)
+        curmsd = sdCache.produce(sdUUID)
         # Check if it's last domain and allow it detaching
         dl = self.getDomains(activeOnly=True)
         domList = dl.keys()
         if curmsd.sdUUID in domList:
             domList.remove(curmsd.sdUUID)
         for item in domList:
-            domain = SDF.produce(item)
+            domain = sdCache.produce(item)
             if domain.isData():
                 # Failure, we have at least one more data domain
                 # in the pool and one which can become 'master'
@@ -652,7 +652,7 @@ class StoragePool:
         if len(domains) >= self.getMaximumSupportedDomains():
             raise se.TooManyDomainsInStoragePoolError()
 
-        dom = SDF.produce(sdUUID)
+        dom = sdCache.produce(sdUUID)
         dom.acquireClusterLock(self.id)
         try:
             #If you remove this condition, remove it from public_createStoragePool too.
@@ -689,7 +689,7 @@ class StoragePool:
         """
         self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID,  self.spUUID, msdUUID)
 
-        dom = SDF.produce(sdUUID)
+        dom = sdCache.produce(sdUUID)
         if dom.isISO():
             dom.acquireClusterLock(self.id)
         try:
@@ -732,7 +732,7 @@ class StoragePool:
         # Avoid domain activation if not owned by pool
         self.validateAttachedDomain(sdUUID)
         domList = self.getDomains()
-        dom = SDF.produce(sdUUID)
+        dom = sdCache.produce(sdUUID)
         sd.validateSDStateTransition(sdUUID, domList[sdUUID], sd.DOM_ACTIVE_STATUS)
 
         # Do nothing if already active
@@ -766,7 +766,7 @@ class StoragePool:
         if sdUUID not in domList:
             raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
         try:
-            dom = SDF.produce(sdUUID)
+            dom = sdCache.produce(sdUUID)
             #Check that dom is really reachable and not a cached value.
             dom.validate(False)
         except (se.StorageException, Timeout):
@@ -898,8 +898,7 @@ class StoragePool:
         Refresh storage pool.
          'msdUUID' - master storage domain UUID
         """
-        # Make sure the StorageDomainFactory has its internal cache refreshed
-        SDF.refresh()
+        sdCache.refresh()
         self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
 
 
@@ -971,7 +970,7 @@ class StoragePool:
 
 
     def extendVolume(self, sdUUID, volumeUUID, size, isShuttingDown=None):
-        SDF.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
+        sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
     @classmethod
     def _getPoolMD(cls, domain):
@@ -1048,7 +1047,7 @@ class StoragePool:
             alerts = []
             if domDict[item] == sd.DOM_ACTIVE_STATUS:
                 try:
-                    dom = SDF.produce(item)
+                    dom = sdCache.produce(item)
                     if dom.isISO():
                         info['isoprefix'] = os.path.join(self.poolPath, item,
                                               sd.DOMAIN_IMAGES, sd.ISO_IMAGE_UUID)
@@ -1080,7 +1079,7 @@ class StoragePool:
                             self.log.warn("RepoStats is not active for active domain `%s`", item)
 
                         try:
-                            stats.update(SDF.produce(item).getStats())
+                            stats.update(sdCache.produce(item).getStats())
                         except:
                             self.log.error("Could not get information for domain %s", item, exc_info=True)
                             # Domain is unavailable and we have nothing in the cache
@@ -1103,7 +1102,7 @@ class StoragePool:
         domDict = self.getDomains(activeOnly=True)
         for item in domDict:
             try:
-                dom = SDF.produce(item)
+                dom = sdCache.produce(item)
             except se.StorageDomainDoesNotExist :
                self.log.warn("Storage domain %s does not exist", item)
                continue
@@ -1135,7 +1134,7 @@ class StoragePool:
         'masterVersion' - expected pool msd version.
         """
         try:
-            domain = SDF.produce(msdUUID)
+            domain = sdCache.produce(msdUUID)
         except se.StorageDomainDoesNotExist:
             #Manager should start reconstructMaster if SPM.
             raise se.StoragePoolMasterNotFound(self.spUUID, msdUUID)
@@ -1195,7 +1194,7 @@ class StoragePool:
     def checkBackupDomain(self):
         domDict = self.getDomains(activeOnly=True)
         for sdUUID in domDict:
-            dom = SDF.produce(sdUUID)
+            dom = sdCache.produce(sdUUID)
             if dom.isBackup():
                 dom.mountMaster()
                 # Master tree should be exist in this point
@@ -1216,7 +1215,7 @@ class StoragePool:
 
         for dom in domainsdict:
             try:
-                d = SDF.produce(dom)
+                d = sdCache.produce(dom)
             except Exception:
                 # Pass over invisible active domains
                 self.log.error("Unexpected error", exc_info=True)
@@ -1249,7 +1248,7 @@ class StoragePool:
         if sdUUID and sdUUID != sd.BLANK_UUID:
             if not self.isActive(sdUUID):
                 raise se.StorageDomainNotActive(sdUUID)
-            vmPath = SDF.produce(sdUUID).getVMsDir()
+            vmPath = sdCache.produce(sdUUID).getVMsDir()
         # Get VMs path from the pool (from the master domain)
         else:
             vmPath = self.masterDomain.getVMsDir()
@@ -1268,7 +1267,7 @@ class StoragePool:
             domains = self.getDomains(activeOnly=True)
 
             for dom in domains:
-                d = SDF.produce(dom)
+                d = sdCache.produce(dom)
                 domstatus = d.checkDomain(spUUID=self.spUUID)
                 if domstatus["domainstatus"] != 0:
                     baddomains[dom] = domstatus

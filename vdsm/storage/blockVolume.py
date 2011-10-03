@@ -33,7 +33,7 @@ import task
 import lvm
 import resourceManager as rm
 from threadLocal import vars
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 from resourceFactories import LVM_ACTIVATION_NAMESPACE
 import fileUtils
 
@@ -142,7 +142,7 @@ class BlockVolume(volume.Volume):
         # internal flows using volume creation.
         cls.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
-        mysd = SDF.produce(sdUUID=sdUUID)
+        mysd = sdCache.produce(sdUUID=sdUUID)
         try:
             lvm.getLV(sdUUID, volUUID)
         except se.LogicalVolumeDoesNotExistError:
@@ -627,7 +627,7 @@ class BlockVolume(volume.Volume):
         # Just call the class method getVSize() - apparently it does what
         # we need. We consider incurred overhead of producing the SD object
         # to be a small price for code de-duplication.
-        sdobj = SDF.produce(sdUUID=self.sdUUID)
+        sdobj = sdCache.produce(sdUUID=self.sdUUID)
         return self.getVSize(sdobj, self.imgUUID, self.volUUID, bs)
 
     getVolumeTrueSize = getVolumeSize

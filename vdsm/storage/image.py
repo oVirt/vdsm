@@ -25,7 +25,7 @@ import uuid
 from contextlib import contextmanager
 
 import volume
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 import sd
 import misc
 import fileUtils
@@ -171,7 +171,7 @@ class Image:
         Validate image before deleting
         """
         # Get the list of the volumes
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
         volumes = [volclass(self.repoPath, sdUUID, imgUUID, volUUID) for volUUID in uuidlist]
 
@@ -197,7 +197,7 @@ class Image:
             'force'   - make it brutal
         """
         # Get the list of the volumes
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
 
         # If we are not 'force'd to remove check that there will be no issues
@@ -247,7 +247,7 @@ class Image:
 
     def preDeleteRename(self, sdUUID, imgUUID):
         # Get the list of the volumes
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
         imageDir = self.getImageDir(sdUUID, imgUUID)
 
@@ -305,7 +305,7 @@ class Image:
         """
         newsize = 0
         for volUUID in chain:
-            vol = SDF.produce(sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+            vol = sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
             newsize += vol.getVolumeSize()
         if newsize > size:
             newsize = size
@@ -319,7 +319,7 @@ class Image:
         """
         chain = []
         # Find all volumes of image
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
         if not uuidlist:
             raise se.ImageDoesNotExistInSD(imgUUID, sdUUID)
@@ -374,7 +374,7 @@ class Image:
         # Find all volumes of source image
         chain = self.getChain(srcSdUUID, imgUUID)
         leafVol = chain[-1]
-        srcDom = SDF.produce(srcSdUUID)
+        srcDom = sdCache.produce(srcSdUUID)
         # Avoid move template's image if there is a VM based on it (except 'Backup' domain)
         if op == MOVE_OP and leafVol.isShared() and not srcDom.isBackup():
             chList = leafVol.getAllChildrenList(self.repoPath, srcSdUUID, imgUUID, leafVol.volUUID)
@@ -388,7 +388,7 @@ class Image:
                 raise se.ImageIsNotLegalChain("Base image parent vol %s is not shared" % pvol.volUUID)
             pimg = pvol.getImage()      # pimg == template image
             try:
-                volclass = SDF.produce(dstSdUUID).getVolumeClass()
+                volclass = sdCache.produce(dstSdUUID).getVolumeClass()
                 # Validate that the destination template exists and accessible
                 volclass(self.repoPath, dstSdUUID, pimg, pvol.volUUID)
             except se.StorageException, e:
@@ -426,7 +426,7 @@ class Image:
         """
         with self._fakeTemplateLock:
             try:
-                destDom = SDF.produce(sdUUID)
+                destDom = sdCache.produce(sdUUID)
                 volclass = destDom.getVolumeClass()
                 # Validate that the destination template exists and accessible
                 volclass(self.repoPath, sdUUID, volParams['imgUUID'], volParams['volUUID'])
@@ -457,7 +457,7 @@ class Image:
         """
         try:
             legal = True
-            volclass = SDF.produce(sdUUID).getVolumeClass()
+            volclass = sdCache.produce(sdUUID).getVolumeClass()
             vollist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
             self.log.info("image %s in domain %s has vollist %s", imgUUID, sdUUID, str(vollist))
             for v in vollist:
@@ -611,7 +611,7 @@ class Image:
             "imgUUID=%s vmUUID=%s op=%s force=%s postZero=%s",
             srcSdUUID, dstSdUUID, imgUUID, vmUUID, OP_TYPES[op], str(force), str(postZero))
 
-        destDom = SDF.produce(dstSdUUID)
+        destDom = sdCache.produce(dstSdUUID)
         # If image already exists check whether it illegal/fake, overwrite it
         if not self.isLegal(destDom.sdUUID, imgUUID):
             force = True
@@ -721,8 +721,8 @@ class Image:
             # Find out dest sdUUID
             if dstSdUUID == sd.BLANK_UUID:
                 dstSdUUID = sdUUID
-            volclass = SDF.produce(sdUUID).getVolumeClass()
-            destDom = SDF.produce(dstSdUUID)
+            volclass = sdCache.produce(sdUUID).getVolumeClass()
+            destDom = sdCache.produce(dstSdUUID)
 
             # find src volume
             try:
@@ -780,7 +780,7 @@ class Image:
                                       diskType=volParams['disktype'], volUUID=dstVolUUID, desc=descr,
                                       srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID)
 
-                dstVol = SDF.produce(dstSdUUID).produceVolume(imgUUID=dstImgUUID, volUUID=dstVolUUID)
+                dstVol = sdCache.produce(dstSdUUID).produceVolume(imgUUID=dstImgUUID, volUUID=dstVolUUID)
                 # For convert to 'raw' we need use the virtual disk size instead of apparent size
                 if dstVolFormat == volume.RAW_FORMAT:
                     newsize = volParams['size']
@@ -838,7 +838,7 @@ class Image:
         Check if startUUID..endUUID is a valid simple link list (and not a tree).
         """
         chain = [startUUID]
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         volUUID = startUUID
         try:
             while volUUID != endUUID:
@@ -864,7 +864,7 @@ class Image:
         try:
             cls.log.info("markIllegalVolumeRollback: sdUUID=%s img=%s vol=%s "\
                             "legality=%s" % (sdUUID, imgUUID, volUUID, legality))
-            vol = SDF.produce(sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+            vol = sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
             vol.setLegality(legality)
         except Exception:
             cls.log.error("Failure in mark illegal volume rollback: sdUUID=%s img=%s vol=%s "\
@@ -877,7 +877,7 @@ class Image:
         if not chain:
             raise se.InvalidParameterException("chain", str(chain))
 
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         ancestor = chain[0]
         successor = chain[-1]
         tmpVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
@@ -908,7 +908,7 @@ class Image:
         # chain before rebase, but during rebase we detached all of them from the chain
         # and couldn't teardown they properly.
         # So, now we must teardown them to release they resources.
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         ancestor = chain[0]
         successor = chain[-1]
         srcVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
@@ -931,7 +931,7 @@ class Image:
         if not chain:
             raise se.InvalidParameterException("chain", str(chain))
 
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
         ancestor = chain[0]
         successor = chain[-1]
         srcVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
@@ -952,7 +952,7 @@ class Image:
         """
         Merge internal volume
         """
-        srcVol = SDF.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
+        srcVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
         srcVol.extend(newSize)
 
@@ -981,18 +981,18 @@ class Image:
         # Step 2: Rebase (safely) successor volume on top of this temporary volume
         # Step 3: Rebase (unsafely) successor volume on top of "" (empty string)
         # Step 4: Delete temporary volume
-        srcVol = SDF.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
+        srcVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
         srcVol.extend(newSize)
         # Step 1: Create temporary volume with destination volume's parent parameters
         newUUID = str(uuid.uuid4())
-        SDF.produce(sdUUID).createVolume(imgUUID=srcVolParams['imgUUID'],
+        sdCache.produce(sdUUID).createVolume(imgUUID=srcVolParams['imgUUID'],
                                          size=volParams['size'], volFormat=volParams['volFormat'],
                                          preallocate=volume.SPARSE_VOL, diskType=volParams['disktype'],
                                          volUUID=newUUID, desc="New base volume",
                                          srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID)
 
-        tmpVol = SDF.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
+        tmpVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
         tmpVol.prepare(rw=True, justme=True, setrw=True)
 
         # We should prepare/teardown volume for every single rebase.
@@ -1036,19 +1036,19 @@ class Image:
         # Step 2: Convert successor to new temporary volume
         # Step 3: Rename temporary volume as successor
         # Step 4: Unsafely rebase successor's children on top of temporary volume
-        srcVol = SDF.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
+        srcVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         # Find out successor's children list
         chList = srcVol.getChildrenList()
         # Step 1: Create temporary volume with destination volume's parent parameters
         newUUID = str(uuid.uuid4())
-        SDF.produce(sdUUID).createVolume(imgUUID=srcVolParams['imgUUID'],
+        sdCache.produce(sdUUID).createVolume(imgUUID=srcVolParams['imgUUID'],
                                          size=volParams['size'], volFormat=volParams['volFormat'],
                                          preallocate=volParams['prealloc'], diskType=volParams['disktype'],
                                          volUUID=newUUID, desc=srcVolParams['descr'],
                                          srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID)
 
-        newVol = SDF.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
+        newVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
         newVol.prepare(rw=True, justme=True, setrw=True)
 
         # Step 2: Convert successor to new volume
@@ -1072,7 +1072,7 @@ class Image:
         # Step 4: Rebase children 'unsafely' on top of new volume
         #   qemu-img rebase -u -b tmpBackingFile -F backingFormat -f srcFormat src
         for v in chList:
-            ch = SDF.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=v)
+            ch = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=v)
             ch.prepare(rw=True, chainrw=True, setrw=True, force=True)
             try:
                 backingVolPath = os.path.join('..', srcVolParams['imgUUID'], srcVolParams['volUUID'])
@@ -1098,7 +1098,7 @@ class Image:
                       ancestor, successor, str(postZero))
         chain = []
         srcVol = dstVol = None
-        volclass = SDF.produce(sdUUID).getVolumeClass()
+        volclass = sdCache.produce(sdUUID).getVolumeClass()
 
         try:
             srcVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
@@ -1174,7 +1174,7 @@ class Image:
         message = "Image OK"
         try:
             # Find all volumes of source image
-            volclass = SDF.produce(sdUUID).getVolumeClass()
+            volclass = sdCache.produce(sdUUID).getVolumeClass()
             vollist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
             vol = None
             for volUUID in vollist:

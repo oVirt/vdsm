@@ -22,7 +22,7 @@ import os
 import uuid
 
 import storage_exception as se
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 import outOfProcess as oop
 import volume
 import image
@@ -369,7 +369,7 @@ class FileVolume(volume.Volume):
         volList = []
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
-            if SDF.produce(sdUUID).produceVolume(imgUUID, volid).getImage() == imgUUID:
+            if sdCache.produce(sdUUID).produceVolume(imgUUID, volid).getImage() == imgUUID:
                 volList.append(volid)
         return volList
 
@@ -395,7 +395,7 @@ class FileVolume(volume.Volume):
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
             imgUUID = os.path.basename(os.path.dirname(i))
-            if SDF.produce(sdUUID).produceVolume(imgUUID, volid).getParent() == pvolUUID:
+            if sdCache.produce(sdUUID).produceVolume(imgUUID, volid).getParent() == pvolUUID:
                 volList.append({'imgUUID':imgUUID, 'volUUID':volid})
 
         return volList
@@ -531,7 +531,7 @@ class FileVolume(volume.Volume):
             raise se.VolumeDoesNotExist(self.volUUID)
 
         self.volumePath = volPath
-        if not SDF.produce(self.sdUUID).isISO():
+        if not sdCache.produce(self.sdUUID).isISO():
             self.validateMetaVolumePath()
 
     def validateMetaVolumePath(self):

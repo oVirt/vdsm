@@ -26,7 +26,7 @@ import signal
 import constants
 import storage_exception as se
 import sd
-from sdc import StorageDomainFactory as SDF
+from sdc import sdCache
 import misc
 import fileUtils
 import task
@@ -162,7 +162,7 @@ class Volume:
         imageResourcesNamespace = sd.getNamespace(sdUUID, resourceFactories.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, srcImg, rm.LockType.exclusive):
             try:
-                vol = SDF.produce(sdUUID).produceVolume(imgUUID=srcImg, volUUID=srcVol)
+                vol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcImg, volUUID=srcVol)
                 vol.prepare(rw=True, chainrw=True, setrw=True)
             except Exception:
                 cls.log.error("sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
@@ -285,7 +285,7 @@ class Volume:
         """
         Return volume size
         """
-        mysd = SDF.produce(sdUUID=sdUUID)
+        mysd = sdCache.produce(sdUUID=sdUUID)
         return mysd.getVolumeClass().getVSize(mysd, imgUUID, volUUID, bs)
 
 
@@ -294,7 +294,7 @@ class Volume:
         """
         Return allocated volume size
         """
-        mysd = SDF.produce(sdUUID=sdUUID)
+        mysd = sdCache.produce(sdUUID=sdUUID)
         return mysd.getVolumeClass().getVTrueSize(mysd, imgUUID, volUUID, bs)
 
 
@@ -304,7 +304,7 @@ class Volume:
                      " pvolUUID=%s" % (sdUUID, pimgUUID, pvolUUID))
         try:
             if pvolUUID != BLANK_UUID and pimgUUID != BLANK_UUID:
-                pvol = SDF.produce(sdUUID).produceVolume(pimgUUID, pvolUUID)
+                pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID, pvolUUID)
                 if not pvol.isShared() and not pvol.recheckIfLeaf():
                     pvol.setLeaf()
                 pvol.teardown(sdUUID, pvolUUID)
@@ -329,7 +329,7 @@ class Volume:
     def createVolumeRollback(cls, taskObj, repoPath, sdUUID, imgUUID, volUUID, imageDir):
         cls.log.info("createVolumeRollback: repoPath=%s sdUUID=%s imgUUID=%s "\
                         "volUUID=%s imageDir=%s" % (repoPath, sdUUID, imgUUID, volUUID, imageDir))
-        vol = SDF.produce(sdUUID).produceVolume(imgUUID, volUUID)
+        vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
         # Avoid rollback if volume has children
         if len(vol.getChildrenList()):
             raise se.createVolumeRollbackError(volUUID)
@@ -677,7 +677,7 @@ class Volume:
         vols = self.getImageVolumes(self.repoPath, self.sdUUID, self.imgUUID)
         children = []
         for v in vols:
-            if SDF.produce(self.sdUUID).produceVolume(self.imgUUID, v).getParent() == self.volUUID:
+            if sdCache.produce(self.sdUUID).produceVolume(self.imgUUID, v).getParent() == self.volUUID:
                 children.append(v)
         return children
 
@@ -725,7 +725,7 @@ class Volume:
         """
         puuid = self.getParent()
         if puuid and puuid != BLANK_UUID:
-            return SDF.produce(self.sdUUID).produceVolume(self.imgUUID, puuid)
+            return sdCache.produce(self.sdUUID).produceVolume(self.imgUUID, puuid)
         return None
 
     def getMetadata(self, vol_path = None, nocache=False):
