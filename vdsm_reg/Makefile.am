@@ -35,6 +35,7 @@ EXTRA_DIST = \
 	logger.conf \
 	rhevm.py \
 	vdsm-config \
+	vdsm-reg-cmdline \
 	vdsm-reg \
 	vdsm-reg.conf.in \
 	vdsm-reg-logrotate \
@@ -77,6 +78,9 @@ install-data-ovirt:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/ovirt-config-boot.d
 	$(INSTALL_SCRIPT) $(srcdir)/vdsm-config \
 		$(DESTDIR)$(sysconfdir)/ovirt-config-boot.d/vdsm-config
+	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/ovirt-commandline.d
+	$(INSTALL_DATA) $(srcdir)/vdsm-reg-cmdline \
+		$(DESTDIR)$(sysconfdir)/ovirt-commandline.d/vdsm-reg
 	$(MKDIR_P) $(DESTDIR)$(pythondir)/ovirt_config_setup
 	$(INSTALL_DATA) $(srcdir)/rhevm.py \
 		$(DESTDIR)$(pythondir)/ovirt_config_setup/rhevm.py

@@ -403,6 +403,7 @@ machines without running real guests.
 %{py_sitedir}/ovirt_config_setup/rhevm.py*
 %{_datadir}/%{vdsm_reg}/save-config
 %{_sysconfdir}/ovirt-config-boot.d/vdsm-config
+%{_sysconfdir}/ovirt-commandline.d/vdsm-reg
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
 %{_sysconfdir}/cron.hourly/vdsm-reg-logrotate
 %{_mandir}/man8/vdsm-reg.8*
