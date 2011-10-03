@@ -182,6 +182,7 @@ class Plugin(PluginBase):
             dn = file('/dev/null', 'w+')
             subprocess.Popen(['/sbin/service', 'sshd', 'restart'], stdout=dn, stderr=dn)
         if len(self.rhevm_server.value()) > 0:
+            deployUtil.nodeCleanup()
             if self.verify_rhevm_cert.selected():
                 if deployUtil.getRhevmCert(self.rhevm_server.value(),  self.rhevm_server_port.value()):
                     path, dontCare = deployUtil.certPaths('')

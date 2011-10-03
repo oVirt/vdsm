@@ -1326,6 +1326,12 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
     logging.debug('getRemoteFile end.')
     return data
 
+def nodeCleanup():
+    if isOvirt():
+        CACERT, _ = certPaths('')
+        if os.path.exists(CACERT):
+            ovirtfunctions.ovirt_safe_delete_config(CACERT)
+
 def getRhevmCert(IP, port):
 
     CACERT, VDSMCERT = certPaths('')
@@ -1379,6 +1385,10 @@ def parseOptions():
             The fingerprint to compare to the fingerprint of the downloaded
             certificate""")
 
+    parser.add_option("-c", "--node-cleanup", action="store_true",
+                      default=False, dest="nodeCleanup",
+                      help="Clean node from possible past residuals")
+
     options, args = parser.parse_args()
 
     return (options, args)
@@ -1386,6 +1396,10 @@ def parseOptions():
 def main():
     options, args = parseOptions()
 
+    if options.nodeCleanup:
+        nodeCleanup()
+        print 'Node clean-up successful'
+        return 0
     if options.downloadRhevmCert:
         if not options.serverIp or not options.serverPort or \
                 not options.fingerPrint:
