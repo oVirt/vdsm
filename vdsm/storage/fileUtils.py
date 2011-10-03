@@ -197,17 +197,6 @@ def validateQemuReadable(targetPath):
             st.st_mode & stat.S_IROTH):
         raise se.StorageServerAccessPermissionError(targetPath)
 
-def validatePermissions(targetPath):
-    """
-    Validate 'vdsm:kvm' permissions
-    """
-    uid = pwd.getpwnam(constants.METADATA_USER).pw_uid
-    gid = grp.getgrnam(constants.METADATA_GROUP).gr_gid
-    st = os.stat(targetPath)
-    # Check to proper uid and gid
-    if st.st_uid != uid or st.st_gid != gid:
-        raise se.StorageServerAccessPermissionError(targetPath)
-
 def pathExists(filename, writable=False):
     check = os.R_OK
 

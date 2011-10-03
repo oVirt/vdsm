@@ -39,7 +39,6 @@ def validateDirAccess(dirPath):
     supervdsm.getProxy().validateAccess(constants.QEMU_PROCESS_USER,
             (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
             (os.R_OK | os.X_OK))
-    getProcPool().fileUtils.validatePermissions(dirPath)
 
 
 class StorageServerConnection:
