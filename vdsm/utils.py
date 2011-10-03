@@ -361,6 +361,13 @@ class AdvancedStatsThread(threading.Thread):
 
         self._log.debug("Stats thread finished")
 
+    def handleStatsException(self, ex):
+        """
+        Handle the registered function exceptions and eventually stop the
+        sampling if a fatal error occurred.
+        """
+        return False
+
     def collect(self):
         # TODO: improve this with lcm
         _mInt = map(lambda x: x.interval, self._statsFunctions)
@@ -381,9 +388,10 @@ class AdvancedStatsThread(threading.Thread):
                 if intervalAccum % statsFunction.interval == 0:
                     try:
                         statsFunction()
-                    except:
-                        self._log.error("Stats function failed: %s",
-                                        statsFunction, exc_info=True)
+                    except Exception, e:
+                        if not self.handleStatsException(e):
+                            self._log.error("Stats function failed: %s",
+                                            statsFunction, exc_info=True)
 
             self._stopEvent.wait(waitInterval)
             intervalAccum = (intervalAccum + waitInterval) % maxInterval
