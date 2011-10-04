@@ -196,14 +196,12 @@ class TaskManager:
 
     def loadDumpedTasks(self, store):
         if not os.path.exists(store):
+            self.log.debug("task dump path %s does not exist.", store)
             return
-        dirList = os.listdir(store)
-        dirList = [os.path.basename(os.path.splitext(t)[0]) for t in dirList]
-        d = {}
-        for x in dirList:
-            d[x] = x
-        dirList = d.values()
-        for taskID in dirList:
+        #taskID is the root part of each (root.ext) entry in the dump task dir
+        tasksIDs = set(os.path.splitext(tid)[0] for tid in os.listdir(store))
+        for taskID in tasksIDs:
+            self.log.debug("Loading dumped task %s", taskID)
             try:
                 t = Task.loadTask(store, taskID)
                 t.setPersistence(store, str(t.persistPolicy), str(t.cleanPolicy))
