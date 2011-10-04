@@ -45,7 +45,8 @@ dist_vdsmstorage_DATA = \
 	task.py \
 	threadLocal.py \
 	threadPool.py \
-	volume.py
+	volume.py \
+	securable.py
 
 EXTRA_DIST = \
 	12-vdsm-lvm.rules

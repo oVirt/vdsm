@@ -297,6 +297,7 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/storage/processPool.py*
 %{_datadir}/%{vdsm_name}/storage/iscsi.py*
 %{_datadir}/%{vdsm_name}/storage/devicemapper.py*
+%{_datadir}/%{vdsm_name}/storage/securable.py*
 %{_datadir}/%{vdsm_name}/storage/multipath.py*
 %{_datadir}/%{vdsm_name}/storage/sdc.py*
 %{_datadir}/%{vdsm_name}/storage/persistentDict.py*

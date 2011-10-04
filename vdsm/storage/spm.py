@@ -28,13 +28,11 @@ import os
 import glob
 import threading
 import types
-from config import config
 from functools import partial
 import errno
 import signal
 
 import time
-import inspect
 import constants
 import storage_mailbox
 import sp
@@ -54,6 +52,8 @@ import resourceManager as rm
 from contextlib import nested
 import fileUtils
 from processPool import Timeout
+from securable import Securable, secured
+from config import config
 import logUtils
 
 logged = partial(logUtils.logcall, "dispatcher", "Run and protect: %s",
@@ -85,60 +85,6 @@ SPM_FREE = 'Free'
 
 SECTOR_SIZE = 512
 
-class Secure:
-    """
-        A wrapper class to execute a method securly. I have not idea what it does in unsafe mode. ??
-    """
-    safe = False
-    log = logging.getLogger("Storage.SPM.Secure")
-
-    @classmethod
-    def setSafe(cls):
-        """Sets the Protector class to *safe* mode."""
-        cls.safe = True
-
-
-    @classmethod
-    def setUnsafe(cls):
-        """Sets the Protector class to *unsafe* mode."""
-        cls.safe = False
-
-
-    def __init__(self, name, func):
-        """
-        Initializes a protector instance.
-
-        :param name: The name of the function. For log purposes only.
-        :type name: str
-        :param func: The function to wrap.
-        :type func: callable
-        """
-        self.name = str(name)
-        self.func = func
-        self.innerArgNames, args, kwargs, defValues = inspect.getargspec(func)
-        self.help = getattr(func, "__doc__", None)
-        if not self.help:
-            self.help = "No help available for method %s" % name
-
-    def run(self, *args, **kwargs):
-        """
-        Runs the wrapped method.
-
-        :returns: Whatever the wrapped method returns.
-
-        :raises: :exc:`storage_exception.SpmStatusError` if in unsafe mode and a non whitelisted method was trying to be run.
-        """
-        if self.safe:
-            return self.func(*args, **kwargs)
-        else:
-            try:
-                caller = inspect.stack()[1][3]
-            except:
-                caller = ""
-            self.log.error("SPM: spm method call rejected: Not SPM!!!  method: %s, called by: %s" % (self.name, caller))
-            raise se.SpmStatusError(self.name)
-
-
 class SPM:
     """
     A class to manage a storage pool.
@@ -147,6 +93,8 @@ class SPM:
 
         Contains a list of all functions which are allowed to run on an spm object when it is not started (not acting as an SPM for a pool).
     """
+
+    __metaclass__ = Securable
 
     storage_repository = config.get('irs', 'repository')
     lvExtendPolicy = config.get('irs', 'vol_extend_policy')
@@ -170,8 +118,7 @@ class SPM:
         :param defExcFunc: A function to set the default exception for the SPM.
         :type defExcFunc: callable
         """
-        Secure.setUnsafe()
-        self.__overrideMethods()
+        self._setUnsafe()
         self.__cleanupMasterMount()
         self.__releaseLocks()
 
@@ -218,27 +165,7 @@ class SPM:
                 cls.log.debug("master `%s` is not mounted, skipping", master)
 
 
-    def __overrideMethods(self):
-        """
-        Override class methods with object methods which do nothing -
-        This protects against running SPM functions when we do not hold the SPM
-        role.  This way there is no need to remember to add code to every new method
-        we write
-        """
-        Secure.setUnsafe()
-
-        mangledPrefix = "_" + self.__class__.__name__
-        for funcName in dir(self):
-            funcBareName = funcName # funcBareName contains the bare function name (if name mangling is used, the prefix is stripped from funcBareName)
-            if funcName.startswith(mangledPrefix):
-                funcBareName = funcName[len(mangledPrefix):]
-            func = getattr(self, funcName)
-            if funcBareName not in self.whitelist and callable(func):
-               # Create a new entry in instance's "dict" that will mask the original method
-                self.__dict__[funcName] = Secure(funcBareName, func).run
-
-
-    def _schedule(self, spUUID, name, func, *args):
+    def _schedule(self, name, func, *args):
         """
         Scheduler
         """
@@ -337,12 +264,14 @@ class SPM:
         return dict(spm_st=st)
 
 
+    @secured
     @logged()
     def public_upgradeStoragePool(self, spUUID, targetDomVersion):
         targetDomVersion = int(targetDomVersion)
         self._upgradePool(spUUID, targetDomVersion)
         return {"upgradeStatus" : "started"}
 
+    @secured
     def _upgradePool(self, spUUID, targetDomVersion):
         with rmanager.acquireResource(STORAGE, "upgrade_" + spUUID, rm.LockType.exclusive):
             if len(self._domainsToUpgrade) > 0:
@@ -365,8 +294,9 @@ class SPM:
             sp.StatsThread.onDomainConnectivityStateChange.register(self._upgradePoolDomain)
             self.log.debug("Running initial domain upgrade threads")
             for sdUUID in self._domainsToUpgrade:
-                threading.Thread(target=self.__class__._upgradePoolDomain, args=(self, sdUUID, True)).start()
+                threading.Thread(target=self._upgradePoolDomain, args=(sdUUID, True), kwargs={"__securityOverride": True}).start()
 
+    @secured
     def _upgradePoolDomain(self, sdUUID, isValid):
             # This method is called everytime the onDomainConnectivityStateChange
         # event is emited, this event is emited even when a domain goes INVALID
@@ -494,7 +424,7 @@ class SPM:
                 self.pools[spUUID]._maxHostID = maxHostID
 
                 # Upgrade the master domain now if needed
-                self.__class__._upgradePool(self, spUUID, expectedDomVersion)
+                self._upgradePool(spUUID, expectedDomVersion, __securityOverride=True)
 
                 pool.masterDomain.mountMaster()
                 pool.masterDomain.createMasterTree(log=True)
@@ -512,10 +442,10 @@ class SPM:
                 self.spmRole = SPM_ACQUIRED
 
                 # Once setSafe completes we are running as SPM
-                Secure.setSafe()
+                self._setSafe()
 
                 # Mailbox issues SPM commands, therefore we start it AFTER spm commands are allowed to run to prevent
-                # a race between the mailbox and the "Secure.setSafe() call"
+                # a race between the mailbox and the "self._setSafe() call"
 
                 # Create mailbox if SAN pool (currently not needed on nas)
                 # FIXME: Once pool contains mixed type domains (NFS + Block) the mailbox
@@ -537,12 +467,14 @@ class SPM:
             except Exception, e:
                 self.log.error("Unexpected error", exc_info=True)
                 self.log.error("failed: %s" % str(e))
-                self.__class__._stop(self, spUUID)
+                self._stop(spUUID, __securityOverride=True)
                 raise
         finally:
             self.lock.release()
 
 
+
+    @secured
     @logged()
     def public_spmStop(self, spUUID, options = None):
         """
@@ -590,6 +522,7 @@ class SPM:
         self._stop(spUUID)
 
 
+    @secured
     def _stop(self, spUUID):
         """
         Stop SPM
@@ -626,7 +559,7 @@ class SPM:
             self.log.warning("Pool %s not found in cache", spUUID)
 
 
-        Secure.setUnsafe()
+        self._setUnsafe()
 
         # Clean all spm tasks from memory (so they are not accessible)
         try:
@@ -705,6 +638,7 @@ class SPM:
         return dict(spm_st=status)
 
 
+    @secured
     def copyImage(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                   dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate, postZero, force):
         """
@@ -758,6 +692,7 @@ class SPM:
         return dict(uuid=dstUUID)
 
 
+    @secured
     def moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero, force):
         """
         Moves or Copys an image between storage domains within same storage pool.
@@ -795,6 +730,7 @@ class SPM:
             image.Image(repoPath).move(srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero, force)
 
 
+    @secured
     def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force):
         """
         Moves multiple images between storage domains within same storage pool.
@@ -828,6 +764,7 @@ class SPM:
             image.Image(repoPath).multiMove(srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
 
 
+    @secured
     def deleteImage(self, sdUUID, spUUID, imgUUID, postZero, force):
         """
         Deletes an Image folder with all it's volumes.
@@ -854,6 +791,7 @@ class SPM:
             image.Image(repoPath).createFakeTemplate(sdUUID=sdUUID, volParams=volParams)
 
 
+    @secured
     def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor, postZero):
         """
         Merges the source volume to the destination volume.
@@ -878,6 +816,8 @@ class SPM:
             image.Image(repoPath).merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
 
 
+
+    @secured
     @logged()
     def public_extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size, isShuttingDown=None, options=None):
         """
@@ -911,6 +851,7 @@ class SPM:
         pool = hsm.HSM.getPool(spUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
+    @secured
     @logged()
     def public_extendStorageDomain(self, sdUUID, spUUID, devlist, options = None):
         """
@@ -935,6 +876,7 @@ class SPM:
         sdCache.produce(sdUUID).extend(devlist)
 
 
+    @secured
     def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID=None,
                      desc="", srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
         """
@@ -979,6 +921,7 @@ class SPM:
         return dict(uuid=uuid)
 
 
+    @secured
     def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force):
         """
         Deletes a given volume.
@@ -1002,6 +945,7 @@ class SPM:
                                                                            force=force)
 
 
+    @secured
     def setMaxHostID(self, spUUID, maxID):
         """
         Set maximum host ID
@@ -1012,6 +956,7 @@ class SPM:
         raise se.NotImplementedException
 
 
+    @secured
     @logged()
     def public_forcedDetachStorageDomain(self, sdUUID, spUUID, options = None):
         """Forced detach a storage domain from a storage pool.
@@ -1027,6 +972,7 @@ class SPM:
         pool.forcedDetachSD(sdUUID)
 
 
+    @secured
     @logged()
     def public_detachStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
         """
@@ -1053,6 +999,7 @@ class SPM:
         pool.detachSD(sdUUID, msdUUID, masterVersion)
 
 
+    @secured
     def detachAllDomains(self, pool):
         """
         Detach all domains from pool before destroying pool
@@ -1071,6 +1018,7 @@ class SPM:
         pool.detachSD(pool.masterDomain.sdUUID, sd.BLANK_UUID, 0)
 
 
+    @secured
     @logged()
     def public_attachStorageDomain(self, sdUUID, spUUID, options = None):
         """
@@ -1100,6 +1048,7 @@ class SPM:
         pool.attachSD(sdUUID)
 
 
+    @secured
     @logged()
     def public_deactivateStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
         """
@@ -1135,6 +1084,7 @@ class SPM:
         pool.deactivateSD(sdUUID, msdUUID, masterVersion)
 
 
+    @secured
     @logged()
     def public_activateStorageDomain(self, sdUUID, spUUID, options = None):
         """
@@ -1172,6 +1122,7 @@ class SPM:
         pool.activateSD(sdUUID)
 
 
+    @secured
     @logged()
     def public_setStoragePoolDescription(self, spUUID, description, options = None):
         """
@@ -1189,6 +1140,7 @@ class SPM:
         pool.setDescription(description)
 
 
+    @secured
     @logged()
     def public_setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID, description, options = None):
         """
@@ -1215,6 +1167,7 @@ class SPM:
                                               volUUID=volUUID).setDescription(descr=description)
 
 
+    @secured
     @logged()
     def public_setVolumeLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality, options = None):
         """
@@ -1241,6 +1194,7 @@ class SPM:
                                               volUUID=volUUID).setLegality(legality=legality)
 
 
+    @secured
     @logged()
     def public_updateVM(self, spUUID, vmList, sdUUID=None, options = None):
         """
@@ -1268,6 +1222,7 @@ class SPM:
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
 
+    @secured
     @logged()
     def public_removeVM(self, spUUID, vmList, sdUUID=None, options = None):
         """
@@ -1290,6 +1245,7 @@ class SPM:
         pool = hsm.HSM.getPool(spUUID)
         pool.removeVM(vmList=vmList, sdUUID=sdUUID)
 
+    @secured
     @logged()
     def public_checkImage(self, sdUUID, spUUID, imgUUID, options = None):
         """
@@ -1308,6 +1264,7 @@ class SPM:
         repoPath = os.path.join(self.storage_repository, spUUID)
         return image.Image(repoPath).check(sdUUID=sdUUID, imgUUID=imgUUID)
 
+    @secured
     @logged()
     def public_checkDomain(self, sdUUID, spUUID, options = None):
         """
@@ -1324,6 +1281,7 @@ class SPM:
         return sdCache.produce(sdUUID).checkDomain(spUUID=spUUID)
 
 
+    @secured
     @logged()
     def public_checkPool(self, spUUID, options = None):
         """
@@ -1336,6 +1294,7 @@ class SPM:
         pool = hsm.HSM.getPool(spUUID)
         return pool.check()
 
+    @secured
     @logged()
     def public_getVmsList(self, spUUID, sdUUID=None, options = None):
         """
@@ -1361,6 +1320,7 @@ class SPM:
         vms = dom.getVMsList()
         return dict(vmlist=vms)
 
+    @secured
     @logged()
     def public_getVmsInfo(self, spUUID, sdUUID=None, vmList=None, options = None):
         """
@@ -1384,6 +1344,7 @@ class SPM:
         vms = sdCache.produce(sdUUID).getVMsInfo(vmList=vmList)
         return dict(vmlist=vms)
 
+    @secured
     @logged()
     def public_uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size, method="rsync", options = None):
         """
@@ -1435,6 +1396,7 @@ class SPM:
                 self.log.warning("spm.uploadVolume: SP %s SD %s img %s Vol %s - teardown failed")
 
 
+    @secured
     @logged()
     def public_createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
         """
@@ -1474,6 +1436,7 @@ class SPM:
         )
 
 
+    @secured
     @logged()
     def public_deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False, force=False):
         """
@@ -1498,6 +1461,7 @@ class SPM:
         )
 
 
+    @secured
     @logged()
     def public_deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False, force=False):
         """
@@ -1538,6 +1502,7 @@ class SPM:
             self._schedule(spUUID, "deleteImage", lambda : True)
 
 
+    @secured
     @logged()
     def public_moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero=False, force=False):
         """
@@ -1570,6 +1535,7 @@ class SPM:
         )
 
 
+    @secured
     @logged()
     def public_moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force=False):
         """
@@ -1603,6 +1569,7 @@ class SPM:
         )
 
 
+    @secured
     @logged()
     def public_copyImage(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
                        description='', dstSdUUID=sd.BLANK_UUID, volType=volume.SHARED_VOL,
@@ -1652,6 +1619,7 @@ class SPM:
         )
 
 
+    @secured
     @logged()
     def public_mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor, postZero=False):
         """
