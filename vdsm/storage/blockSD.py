@@ -241,8 +241,14 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
         self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
 
-        self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
-        self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
+        try:
+            self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
+            self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
+        except KeyError:
+            # Initialize the block sizes metadata if not defined
+            self.logBlkSize, self.phyBlkSize = lvm.getVGBlockSizes(sdUUID)
+            self.setMetaParam(DMDK_LOGBLKSIZE, self.logBlkSize)
+            self.setMetaParam(DMDK_PHYBLKSIZE, self.phyBlkSize)
 
         # Check that all devices in the VG have the same logical and physical
         # block sizes.

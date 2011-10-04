@@ -969,6 +969,9 @@ def _checkpvsblksize(pvs, vgBlkSize=None):
     for pv in pvs:
         pvBlkSize = _getpvblksize(pv)
 
+        if pvBlkSize not in constants.SUPPORTED_BLOCKSIZE:
+            raise se.DeviceBlockSizeError(pvBlkSize)
+
         if vgBlkSize is None:
             vgBlkSize = pvBlkSize
 
