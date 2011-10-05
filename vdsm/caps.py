@@ -137,6 +137,8 @@ def osversion():
     if __osversion is not None:
         return __osversion
 
+    version = release = ''
+
     osname = getos()
     try:
         if osname == OSName.OVIRT:
@@ -150,9 +152,7 @@ def osversion():
                 stderr=subprocess.PIPE, close_fds=True)
             out, err = p.communicate()
             if p.returncode == 0:
-                version, release = out.split()
-            else:
-                version = release = ''
+                version, release = out.splitlines()[-1].split()
     except:
         logging.error('failed to find version/release', exc_info=True)
 
