@@ -102,9 +102,13 @@ class TaskManager:
         """
         self.log.debug("Entry.")
         subRes = {}
-        for key in self._tasks:
-            if not tag or tag in self._tasks[key].getTags():
-                subRes[key] = self.getTaskStatus(key)
+        for taskID, task in self._tasks.items():
+            if not tag or tag in task.getTags():
+                try:
+                    subRes[taskID] = self.getTaskStatus(taskID)
+                except se.UnknownTask:
+                    # Return statuses for existing tasks only.
+                    self.log.warn("Unknown task %s. Maybe task was already cleared.", taskID)
         self.log.debug("Return: %s", subRes)
         return subRes
 
@@ -115,9 +119,9 @@ class TaskManager:
         """
         self.log.debug("Entry.")
         subRes = {}
-        for key in self._tasks:
-            if not tag or tag in self._tasks[key].getTags():
-                subRes[key] = self._tasks[key]
+        for taskID, task in self._tasks.items():
+            if not tag or tag in task.getTags():
+                subRes[taskID] = task
         self.log.debug("Return: %s", subRes)
         return subRes
 
@@ -127,9 +131,9 @@ class TaskManager:
         Remove Tasks from managed tasks list
         """
         self.log.debug("Entry.")
-        for key in self._tasks.keys():
-            if not tag or tag in self._tasks[key].getTags():
-                del self._tasks[key]
+        for taskID, task in self._tasks.items():
+            if not tag or tag in task.getTags():
+                self._tasks.pop(taskID, None)
         self.log.debug("Return")
 
 
@@ -178,9 +182,13 @@ class TaskManager:
         """
         self.log.debug("Entry.")
         subRes = {}
-        for key in self._tasks:
-            if not tag or tag in self._tasks[key].getTags():
-                subRes[key] = self.getTaskInfo(key)
+        for taskID, task in self._tasks.items():
+            if not tag or tag in task.getTags():
+                try:
+                    subRes[taskID] = self.getTaskInfo(taskID)
+                except se.UnknownTask:
+                    # Return info for existing tasks only.
+                    self.log.warn("Unknown task %s. Maybe task was already cleared.", taskID)
         self.log.debug("Return. Response: %s", subRes)
         return subRes
 
