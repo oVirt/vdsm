@@ -101,7 +101,7 @@ then
     /bin/chown vdsm:kvm "$pfile"
     new_pwd=1
 fi
-if ! /usr/sbin/sasldblistusers2 -f /etc/libvirt/passwd.db 2>- | \
+if ! /usr/sbin/sasldblistusers2 -f /etc/libvirt/passwd.db 2> /dev/null | \
     /bin/grep -q '^vdsm@rhevh\b' || [[ -n "$new_pwd" ]] ;
 then
     /usr/sbin/saslpasswd2 -p -a libvirt vdsm@rhevh < "$pfile"
