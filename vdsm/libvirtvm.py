@@ -395,12 +395,21 @@ class _DomXML:
         """
         Add <clock> element to domain:
 
-        <clock offset="variable" adjustment="-3600"/>
+        <clock offset="variable" adjustment="-3600">
+            <timer name="rtc" tickpolicy="catchup">
+        </clock>
         """
 
         m = self.doc.createElement('clock')
         m.setAttribute('offset', 'variable')
         m.setAttribute('adjustment', str(self.conf.get('timeOffset', 0)))
+
+        if utils.tobool(self.conf.get('tdf', True)):
+            t = self.doc.createElement('timer')
+            t.setAttribute('name', 'rtc')
+            t.setAttribute('tickpolicy', 'catchup')
+            m.appendChild(t)
+
         self.dom.appendChild(m)
 
     def appendOs(self):
