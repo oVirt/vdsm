@@ -118,7 +118,6 @@ class StorageDispatcher:
         self.storage_repository = config.get('irs', 'repository')
         resourceManager.ResourceManager.getInstance().registerNamespace(STORAGE, resourceManager.SimpleResourceFactory())
         self.hsm = hsm.HSM()
-        self.spm = self.hsm.spm
         self._init_public_functions()
         self.log.info("Starting StorageDispatcher...")
 
@@ -141,7 +140,6 @@ class StorageDispatcher:
         publicPrefix = "public_"
         self._exposeFunctions(self.hsm, publicPrefix)
         self._exposeFunctions(self, privatePrefix)
-        self._exposeFunctions(self.spm, publicPrefix)
 
 
     def _methodHelp(self, method):

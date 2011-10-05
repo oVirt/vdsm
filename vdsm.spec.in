@@ -269,7 +269,6 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/storage/storage_exception.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
 %{_datadir}/%{vdsm_name}/storage/sd.py*
-%{_datadir}/%{vdsm_name}/storage/spm.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
 %{_datadir}/%{vdsm_name}/storage/hba.py*
 %{_datadir}/%{vdsm_name}/storage/safelease.py*

@@ -35,7 +35,6 @@ dist_vdsmstorage_DATA = \
 	safelease.py \
 	sdc.py \
 	sd.py \
-	spm.py \
 	sp.py \
 	storage_connection.py \
 	storageConstants.py \

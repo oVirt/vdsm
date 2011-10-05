@@ -19,13 +19,15 @@
 #
 
 import os
-from glob import iglob
+from glob import iglob, glob
 import logging
 import time
 import threading
 import errno
 import uuid
 import codecs
+from contextlib import nested
+from functools import partial
 
 import constants
 import storage_mailbox
@@ -40,6 +42,12 @@ from sdc import sdCache
 import storage_exception as se
 from persistentDict import DictValidator
 from processPool import Timeout
+from securable import Securable, secured
+import image
+from resourceFactories import IMAGE_NAMESPACE
+from storageConstants import STORAGE
+import resourceManager as rm
+import volume
 
 BLANK_POOL_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -52,6 +60,12 @@ PMDK_POOL_DESCRIPTION = "POOL_DESCRIPTION"
 PMDK_LVER = "POOL_SPM_LVER"
 PMDK_SPM_ID = "POOL_SPM_ID"
 PMDK_MASTER_VER = "MASTER_VERSION"
+
+rmanager = rm.ResourceManager.getInstance()
+
+SPM_ACQUIRED = 'SPM'
+SPM_CONTEND = 'Contend'
+SPM_FREE = 'Free'
 
 def domainListEncoder(domDict):
     domains = ','.join([ '%s:%s' % (k, v) for k, v in domDict.iteritems()])
@@ -161,26 +175,332 @@ class StoragePool:
     StoragePool object should be relatively cheap to construct. It should defer
     any heavy lifting activities until the time it is really needed.
     '''
+
+    __metaclass__ = Securable
+
     log = logging.getLogger('Storage.StoragePool')
     storage_repository = config.get('irs', 'repository')
     _poolsTmpDir = config.get('irs', 'pools_data_dir')
     lvExtendPolicy = config.get('irs', 'vol_extend_policy')
 
-    def __init__(self, spUUID):
+    def __init__(self, spUUID, taskManager):
+        self._domainsToUpgrade = []
+        self.lock = threading.Lock()
+        self._setUnsafe()
         self.spUUID = str(spUUID)
         self.poolPath = os.path.join(self.storage_repository, self.spUUID)
         self.id = None
         self.scsiKey = None
+        self.taskMng = taskManager
         self._poolFile = os.path.join(self._poolsTmpDir, self.spUUID)
         self.hsmMailer = None
         self.spmMailer = None
         self.masterDomain = None
         self.repostats = {}
         self.spmStarted = False
+        self.spmRole = SPM_FREE
+
+    def getSpmRole(self):
+        return self.spmRole
+
+    def getSpmLver(self):
+        return self.getMetaParam(PMDK_LVER)
+
+    def getSpmStatus(self):
+        #If this is the SPM no need to double check
+        return self.getSpmRole(), self.getSpmLver(), self.getSpmId()
+
 
     def __del__(self):
         if len(self.repostats) > 0:
             threading.Thread(target=self.disconnectDomains).start()
+
+    @secured
+    def forceFreeSpm(self):
+        # DO NOT USE, STUPID, HERE ONLY FOR BC
+        # TODO: SCSI Fence the 'lastOwner'
+        self.setMetaParams({PMDK_SPM_ID: -1, PMDK_LVER: -1})
+        self.spmRole = SPM_FREE
+
+    @secured
+    def _upgradePoolDomain(self, sdUUID, isValid):
+        # This method is called everytime the onDomainConnectivityStateChange
+        # event is emited, this event is emited even when a domain goes INVALID
+        # if this happens there is nothing for us to do no matter what the
+        # domain is
+        if not isValid:
+            return
+
+        domain = sdCache.produce(sdUUID)
+        if sdUUID not in self._domainsToUpgrade:
+            return
+
+        self.log.debug("Preparing to upgrade domain %s", sdUUID)
+
+        try:
+            #Assumed that the domain can be attached only to one pool
+            targetDomVersion = self.masterDomain.getVersion()
+        except:
+            self.log.error("Error while preparing domain `%s` upgrade", sdUUID, exc_info=True)
+            return
+
+        with rmanager.acquireResource(STORAGE, "upgrade_" + sdUUID, rm.LockType.exclusive):
+            with rmanager.acquireResource(STORAGE, sdUUID, rm.LockType.exclusive):
+                if sdUUID not in self._domainsToUpgrade:
+                    return
+
+                # This can never be the master
+                # Non data domain should not be upgraded
+                domClass = domain.getDomainClass()
+                if domClass != sd.DATA_DOMAIN:
+                    self.log.debug("Domain `%s` is not a data domain it is an %s domain, not upgrading", sdUUID, domClass)
+                else:
+                    domain.invalidateMetadata()
+                    domVersion = domain.getVersion()
+                    if domVersion > targetDomVersion:
+                        self.log.critical("Found a domain with a more advanced version then the master domain")
+                    elif domVersion < targetDomVersion:
+                        try:
+                            domain.upgrade(targetDomVersion)
+                        except:
+                            self.log.warn("Could not upgrade domain `%s`", sdUUID, exc_info=True)
+                            return
+
+                self._domainsToUpgrade.remove(sdUUID)
+                if len(self._domainsToUpgrade) == 0:
+                    self.log.debug("All domains are upgraded, unregistering from state change event")
+                    try:
+                        StatsThread.onDomainConnectivityStateChange.unregister(self._upgradePoolDomain)
+                    except KeyError:
+                        pass
+    def startSpm(self, prevID, prevLVER, recoveryMode, scsiFencing, maxHostID, expectedDomVersion=None):
+        """
+        Starts the SPM functionality.
+
+        :param spUUID: The UUID of the storage pool you want to manage with the SPM.
+        :type spUUID: UUID
+        :param prevID: obsolete
+        :param prevLVER: obsolete
+        :param recoveryMode: One of the following:
+
+                             * Manual - ?
+                             * Safe - ?
+                             * Fast - ?
+
+        :type recoveryMode: str?
+        :param scsiFencing: Should there be scsi fencing.?
+        :type scsiFencing: bool
+        :param maxHostID: The maximun ID of the host.?
+        :type maxHostID: int
+
+        .. note::
+            if the SPM is already started the function will fail silently.
+
+        :raises: :exc:`storage_exception.OperationInProgress` if called during an allready running connection attempt.
+                 (makes the fact that it fails silently does not matter very much).
+        """
+        self.lock.acquire()
+        try:
+            if self.spmRole == SPM_ACQUIRED:
+                return True
+            # Since we added the lock the following should NEVER happen
+            if self.spmRole == SPM_CONTEND:
+                raise se.OperationInProgress("spm start %s" % self.spUUID)
+
+            self.updateMonitoringThreads()
+            self.invalidateMetadata()
+            oldlver = self.getSpmLver()
+            oldid = self.getSpmId()
+            masterDomVersion = self.getVersion()
+            # If no specific domain version was specified use current master domain version
+            if expectedDomVersion is None:
+                expectedDomVersion = masterDomVersion
+
+            if masterDomVersion > expectedDomVersion:
+                raise se.CurrentVersionTooAdvancedError(self.masterDomain.sdUUID,
+                        curVer=masterDomVersion, expVer=expectedDomVersion)
+
+            if int(oldlver) != int(prevLVER) or int(oldid) != int(prevID):
+                self.log.info("expected previd:%s lver:%s got request for previd:%s lver:%s" % (oldid, oldlver, prevID, prevLVER))
+
+
+            # Acquire spm lock
+            try:
+                self.spmRole = SPM_CONTEND
+                self.acquireClusterLock()
+            except:
+                self.spmRole = SPM_FREE
+                raise
+
+            self.log.debug("spm lock acquired successfully")
+
+            try:
+                self.lver = int(oldlver) + 1
+
+                self.invalidateMetadata()
+                self.setMetaParams({PMDK_LVER: self.lver,
+                    PMDK_SPM_ID: self.id})
+                self._maxHostID = maxHostID
+
+                # Upgrade the master domain now if needed
+                self._upgradePool(expectedDomVersion, __securityOverride=True)
+
+                self.masterDomain.mountMaster()
+                self.masterDomain.createMasterTree(log=True)
+                self.tasksDir = os.path.join(self.poolPath, POOL_MASTER_DOMAIN, sd.MASTER_FS_DIR, sd.TASKS_DIR)
+
+                try:
+                    # Make sure backup domain is active
+                    self.checkBackupDomain()
+                except Exception, e:
+                    self.log.error("Backup domain validation failed, exc_info=True")
+
+                self.taskMng.loadDumpedTasks(self.tasksDir)
+
+                self.spmStarted = True
+                self.spmRole = SPM_ACQUIRED
+
+                # Once setSafe completes we are running as SPM
+                self._setSafe()
+
+                # Mailbox issues SPM commands, therefore we start it AFTER spm commands are allowed to run to prevent
+                # a race between the mailbox and the "self._setSafe() call"
+
+                # Create mailbox if SAN pool (currently not needed on nas)
+                # FIXME: Once pool contains mixed type domains (NFS + Block) the mailbox
+                # will have to be created if there is an active block domain in the pool
+                # or once one is activated
+
+                #FIXME : Use a system wide grouping mechanizm
+                sanPool = self.masterDomain.getStorageType() in sd.BLOCK_DOMAIN_TYPES  # Check if pool is SAN or NAS
+                if sanPool and self.lvExtendPolicy == "ON":
+                    self.spmMailer = storage_mailbox.SPM_MailMonitor(self, maxHostID)
+                    self.spmMailer.registerMessageType('xtnd', partial(storage_mailbox.SPM_Extend_Message, self))
+                else:
+                    self.spmMailer = None
+
+                # Restore tasks is last because tasks are spm ops (spm has to be started)
+                self.taskMng.recoverDumpedTasks()
+
+                self.log.debug("ended.")
+
+            except Exception, e:
+                self.log.error("Unexpected error", exc_info=True)
+                self.log.error("failed: %s" % str(e))
+                self.stopSpm(force=True, __securityOverride=True)
+                raise
+        finally:
+            self.lock.release()
+
+    def _shutDownUpgrade(self):
+        with rmanager.acquireResource(STORAGE, "upgrade_" + self.spUUID, rm.LockType.exclusive):
+            domains = self._domainsToUpgrade
+            try:
+                StatsThread.onDomainConnectivityStateChange.unregister(self._upgradePoolDomain)
+            except KeyError:
+                pass
+            requests = []
+
+            def cancelUpgrade(sdUUID, req, res):
+                try:
+                    self._domainsToUpgrade.remove(sdUUID)
+                except ValueError:
+                    pass
+
+                res.release()
+
+            for sdUUID in domains:
+                req = rmanager.registerResource(STORAGE, "upgrade_" + sdUUID, rm.LockType.exclusive, partial(cancelUpgrade, sdUUID))
+                requests.append(req)
+
+            for req in requests:
+                req.wait()
+
+    @classmethod
+    def __cleanupMasterMount(cls):
+        """
+        Check whether there are any dangling master file systems still mounted
+        and unmount them if found.
+        """
+        masters = os.path.join(cls.storage_repository, sd.DOMAIN_MNT_POINT,
+                               sd.BLOCKSD_DIR, "*", sd.MASTER_FS_DIR)
+        for master in glob(masters):
+            if fileUtils.isMounted(mountPoint=master):
+                cls.log.debug("unmounting %s", master)
+                try:
+                    blockSD.BlockStorageDomain.doUnmountMaster(master)
+                except se.StorageDomainMasterUnmountError, e:
+                    misc.panic("unmount %s failed - %s" % (master, e))
+            else:
+                cls.log.debug("master `%s` is not mounted, skipping", master)
+
+    @secured
+    def stopSpm(self, force=False):
+        self.lock.acquire()
+        if not force and self.getSpmRole() in SPM_FREE:
+            return True
+
+        self._shutDownUpgrade()
+        self._setUnsafe()
+
+        stopFailed = False
+
+        try:
+            self.__cleanupMasterMount()
+        except:
+            # If unmounting fails the vdsm panics.
+            stopFailed = True
+
+        try:
+            if self.spmMailer:
+                self.spmMailer.stop()
+        except:
+            # Here we are just begin polite.
+            # SPM will also clean this on start up.
+            pass
+
+        if not stopFailed:
+            try:
+                self.setMetaParam(PMDK_SPM_ID, -1)
+            except:
+                pass # The system can handle this inconsistency
+
+        try:
+            self.releaseClusterLock()
+        except:
+            stopFailed = True
+
+        if stopFailed:
+            misc.panic("Unrecoverable errors during SPM stop process.")
+
+        self.spmStarted = False
+        self.spmRole = SPM_FREE
+
+    @secured
+    def _upgradePool(self, targetDomVersion):
+        with rmanager.acquireResource(STORAGE, "upgrade_" + self.spUUID, rm.LockType.exclusive):
+            if len(self._domainsToUpgrade) > 0:
+                raise se.PoolUpgradeInProgress(self.spUUID)
+
+            sd.validateDomainVersion(targetDomVersion)
+            self.log.info("Trying to upgrade master domain `%s`", self.masterDomain.sdUUID)
+            with rmanager.acquireResource(STORAGE, self.masterDomain.sdUUID, rm.LockType.exclusive):
+                self.masterDomain.upgrade(targetDomVersion)
+
+            self.log.debug("Marking all domains for upgrade")
+            self._domainsToUpgrade = self.getDomains(activeOnly=True).keys()
+            try:
+                self._domainsToUpgrade.remove(self.masterDomain.sdUUID)
+            except ValueError:
+                pass
+
+            self.log.debug("Registering with state change event")
+            StatsThread.onDomainConnectivityStateChange.register(self._upgradePoolDomain)
+            self.log.debug("Running initial domain upgrade threads")
+            for sdUUID in self._domainsToUpgrade:
+                threading.Thread(target=self._upgradePoolDomain, args=(sdUUID, True), kwargs={"__securityOverride": True}).start()
+
+
 
     def __createMailboxMonitor(self):
         # Currently mailbox is not needed for non block device sd's
@@ -969,6 +1289,7 @@ class StoragePool:
         self.setMetaParam(PMDK_POOL_DESCRIPTION, descr)
 
 
+    @secured
     def extendVolume(self, sdUUID, volumeUUID, size, isShuttingDown=None):
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
@@ -997,7 +1318,7 @@ class StoragePool:
 
     def getSpmId(self):
         spmid = self.getMetaParam(PMDK_SPM_ID)
-        if spmid != self.id:
+        if spmid != self.id or self.spmRole != SPM_FREE:
             return spmid
 
         # If we claim to be the SPM we have to be really sure we are
@@ -1333,3 +1654,372 @@ class StoragePool:
             result[d] = repostats[d].getStatsResults()
 
         return result
+
+    @secured
+    def copyImage(self, sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
+                  dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate, postZero, force):
+        """
+        Creates a new template/volume from VM.
+        It does this it by collapse and copy the whole chain (baseVolUUID->srcVolUUID).
+
+        :param sdUUID: The UUID of the storage domain in which the image resides.
+        :type sdUUID: UUID
+        :param spUUID: The UUID of the storage pool in which the image resides.
+        :type spUUID: UUID
+        :param vmUUID: The UUID of the virtual machine you want to copy from.
+        :type vmUUID: UUID
+        :param srcImageUUID: The UUID of the source image you want to copy from.
+        :type srcImageUUID: UUID
+        :param srcVolUUID: The UUID of the source volume you want to copy from.
+        :type srcVolUUID: UUID
+        :param dstImageUUID: The UUID of the destination image you want to copy to.
+        :type dstImageUUID: UUID
+        :param dstVolUUID: The UUID of the destination volume you want to copy to.
+        :type dstVolUUID: UUID
+        :param descr: The human readable description of the new template.
+        :type descr: str
+        :param dstSdUUID: The UUID of the destination storage domain you want to copy to.
+        :type dstSdUUID: UUID
+        :param volType: The volume type of the volume being copied to.
+        :type volType: some enum?!
+        :param volFormat: The format of the volume being copied to.
+        :type volFormat: some enum?!
+        :param preallocate: Should the data be preallocated.
+        :type preallocate: bool
+        :param postZero: ?
+        :type postZero: ?
+        :param force: Should the copy be forced.
+        :type force: bool
+
+        :returns: a dict containing the UUID of the newly created image.
+        :rtype: dict
+        """
+        srcImageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        if dstSdUUID not in [sdUUID, sd.BLANK_UUID]:
+            dstImageResourcesNamespace = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
+        else:
+            dstImageResourcesNamespace = srcImageResourcesNamespace
+
+        with nested(rmanager.acquireResource(srcImageResourcesNamespace, srcImgUUID, rm.LockType.shared),
+                    rmanager.acquireResource(dstImageResourcesNamespace, dstImgUUID, rm.LockType.exclusive)):
+            repoPath = os.path.join(self.storage_repository, self.spUUID)
+            dstUUID = image.Image(repoPath).copy(sdUUID, vmUUID, srcImgUUID,
+                                            srcVolUUID, dstImgUUID, dstVolUUID, descr, dstSdUUID,
+                                            volType, volFormat, preallocate, postZero, force)
+        return dict(uuid=dstUUID)
+
+
+    @secured
+    def moveImage(self, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero, force):
+        """
+        Moves or Copys an image between storage domains within same storage pool.
+
+        :param spUUID: The storage pool where the operation will take place.
+        :type spUUID: UUID
+        :param srcDomUUID: The UUID of the storage domain you want to copy from.
+        :type srcDomUUID: UUID
+        :param dstDomUUID: The UUID of the storage domain you want to copy to.
+        :type dstDomUUID: UUID
+        :param imgUUID: The UUID of the image you want to copy.
+        :type imgUUID: UUID
+        :param vmUUID: The UUID of the vm that owns the images. ?
+        :type vmUUID: UUID
+        :param op: The operation code?
+        :type op: some enum?
+        :param postZero: ?
+        :param force: Should the operation be forced.
+        :type force: bool
+        """
+        srcImageResourcesNamespace = sd.getNamespace(srcDomUUID, IMAGE_NAMESPACE)
+        dstImageResourcesNamespace = sd.getNamespace(dstDomUUID, IMAGE_NAMESPACE)
+        # For MOVE_OP acqure exclusive lock
+        # For COPY_OP shared lock is enough
+        if op == image.MOVE_OP:
+            srcLock = rm.LockType.exclusive
+        elif op == image.COPY_OP:
+            srcLock = rm.LockType.shared
+        else:
+            raise se.MoveImageError(imgUUID)
+
+        with nested(rmanager.acquireResource(srcImageResourcesNamespace, imgUUID, srcLock),
+                    rmanager.acquireResource(dstImageResourcesNamespace, imgUUID, rm.LockType.exclusive)):
+            repoPath = os.path.join(self.storage_repository, self.spUUID)
+            image.Image(repoPath).move(srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero, force)
+
+
+    @secured
+    def moveMultipleImages(self, srcDomUUID, dstDomUUID, imgDict, vmUUID, force):
+        """
+        Moves multiple images between storage domains within same storage pool.
+
+        :param spUUID: The storage pool where the operation will take place.
+        :type spUUID: UUID
+        :param srcDomUUID: The UUID of the storage domain you want to copy from.
+        :type srcDomUUID: UUID
+        :param dstDomUUID: The UUID of the storage domain you want to copy to.
+        :type dstDomUUID: UUID
+        :param imgDict: A dict of images in for form of ``{somthing:idunno}``
+        :type imgDict: dict
+        :param vmUUID: The UUID of the vm that owns the images.
+        :type vmUUID: UUID
+        :param force: Should the operation be forced.
+        :type force: bool
+        """
+        srcImageResourcesNamespace = sd.getNamespace(srcDomUUID, IMAGE_NAMESPACE)
+        dstImageResourcesNamespace = sd.getNamespace(dstDomUUID, IMAGE_NAMESPACE)
+
+        imgList = imgDict.keys()
+        imgList.sort()
+
+        resourceList = []
+        for imgUUID in imgList:
+            resourceList.append(rmanager.acquireResource(srcImageResourcesNamespace, imgUUID, rm.LockType.exclusive))
+            resourceList.append(rmanager.acquireResource(dstImageResourcesNamespace, imgUUID, rm.LockType.exclusive))
+
+        with nested(*resourceList):
+            repoPath = os.path.join(self.storage_repository, self.spUUID)
+            image.Image(repoPath).multiMove(srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
+
+
+    @secured
+    def deleteImage(self, sdUUID, imgUUID, postZero, force):
+        """
+        Deletes an Image folder with all it's volumes.
+
+        :param sdUUID: The UUID of the storage domain that contains the images.
+        :type sdUUID: UUID
+        :param imgUUID: The UUID of the image you want to delete.
+        :type imgUUID: UUID
+        :param postZero: ?
+        :param force: Should the operation be forced.
+        :type force: bool
+        """
+        volParams = None
+        repoPath = os.path.join(self.storage_repository, self.spUUID)
+        if sdCache.produce(sdUUID).isBackup():
+            # Pre-delete requisites
+            volParams = image.Image(repoPath).preDeleteHandler(sdUUID=sdUUID, imgUUID=imgUUID)
+
+        # Delete required image
+        image.Image(repoPath).delete(sdUUID=sdUUID, imgUUID=imgUUID, postZero=postZero, force=force)
+
+        # We need create 'fake' image instead of deleted one
+        if volParams:
+            image.Image(repoPath).createFakeTemplate(sdUUID=sdUUID, volParams=volParams)
+
+
+    @secured
+    def mergeSnapshots(self, sdUUID, vmUUID, imgUUID, ancestor, successor, postZero):
+        """
+        Merges the source volume to the destination volume.
+
+        :param sdUUID: The UUID of the storage domain that contains the images.
+        :type sdUUID: UUID
+        :param spUUID: The UUID of the storage pool that contains the images.
+        :type spUUID: UUID
+        :param imgUUID: The UUID of the new image you will be created after the merge.?
+        :type imgUUID: UUID
+        :param ancestor: The UUID of the source volume.?
+        :type ancestor: UUID
+        :param successor: The UUID of the destination volume.?
+        :type successor: UUID
+        :param postZero: ?
+        :type postZero: bool?
+        """
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
+            repoPath = os.path.join(self.storage_repository, self.spUUID)
+            image.Image(repoPath).merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
+
+
+
+    @secured
+    def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID=None,
+                     desc="", srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
+        """
+        Creates a new volume.
+
+        .. note::
+            If the *imgUUID* is **identical** to the *srcImgUUID* the new volume
+            will be logically considered a snapshot of the old volume.
+            If the *imgUUID* is **different** from the *srcImgUUID* the old volume
+            will be logically considered a template of the new volume.
+
+        :param sdUUID: The UUID of the storage domain that contains the volume.
+        :type sdUUID: UUID
+        :param imgUUID: The UUID of the image that id that the new volume will have.
+        :type imgUUID: UUID
+        :param size: The size of the new volume in bytes.
+        :type size: int
+        :param volFormat: The format of the new volume.
+        :type volFormat: some enum ?!
+        :param preallocate: Should the volume be preallocated.
+        :type preallocate: bool
+        :param diskType: The disk type of the new volume.
+        :type diskType: some enum ?!
+        :param volUUID: The UUID of the new volume that will be created.
+        :type volUUID: UUID
+        :param desc: A human readable description of the new volume.
+        :param srcImgUUID: The UUID of the image that resides on the volume that will be the base of the new volume.
+        :type srcImgUUID: UUID
+        :param srcVolUUID: The UUID of the volume that will be the base of the new volume.
+        :type srcVolUUID: UUID
+
+        :returns: a dicts with the UUID of the new volume.
+        :rtype: dict
+        """
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
+            uuid = sdCache.produce(sdUUID).createVolume(imgUUID=imgUUID, size=size,
+                                                    volFormat=volFormat, preallocate=preallocate,
+                                                    diskType=diskType, volUUID=volUUID, desc=desc,
+                                                    srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID)
+        return dict(uuid=uuid)
+
+
+    @secured
+    def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force):
+        """
+        Deletes a given volume.
+
+        .. note::
+            This function assumes:
+
+                * If more than 1 volume, all volumes are a part of the **same** chain.
+                * Given volumes are ordered, so predecessor is deleted before ancestor. ? (might be confused?)
+
+        :param sdUUID: The UUID of the storage domain that contains the volume.
+        :type sdUUID: UUID
+        :param imgUUID: The UUID of the image that id that the new volume will have.
+        :type imgUUID: UUID
+        """
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
+            for volUUID in volumes:
+                sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).delete(postZero=postZero,
+                                                                           force=force)
+
+
+    @secured
+    def setMaxHostID(self, spUUID, maxID):
+        """
+        Set maximum host ID
+        """
+        self.log.error("TODO: Implement")
+        self._maxHostID
+        self.spmMailer.setMaxHostID(maxID)
+        raise se.NotImplementedException
+
+
+    @secured
+    def detachAllDomains(self):
+        """
+        Detach all domains from pool before destroying pool
+        """
+        # First find out this pool master domain
+        # Find out domain list from the pool metadata
+        domList = self.getDomains().keys()
+
+        for sdUUID in domList:
+            # master domain should be detached last, after spm is stopped
+            if sdUUID == self.masterDomain.sdUUID:
+                continue
+            self.detachSD(sdUUID=sdUUID, msdUUID=sd.BLANK_UUID, masterVersion=0)
+        self.stopSpm(self.spUUID)
+        # Forced detach 'master' domain after stopping SPM
+        self.detachSD(self.masterDomain.sdUUID, sd.BLANK_UUID, 0)
+
+    @secured
+    def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
+            sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID,
+                                              volUUID=volUUID).setDescription(descr=description)
+
+    @secured
+    def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID, rm.LockType.exclusive):
+            sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID,
+                                              volUUID=volUUID).setLegality(legality=legality)
+
+    @secured
+    def checkDomain(self, sdUUID):
+        return sdCache.produce(sdUUID).checkDomain(spUUID=self.spUUID)
+
+    @secured
+    def getVmsList(self, sdUUID=None):
+        if sdUUID == None:
+            dom = self.masterDomain
+        else:
+            dom = sdCache.produce(sdUUID)
+
+        return dom.getVMsList()
+
+    @secured
+    def getVmsInfo(self, sdUUID, vmList=None):
+        return sdCache.produce(sdUUID).getVMsInfo(vmList=vmList)
+
+    @secured
+    def uploadVolume(self, sdUUID, imgUUID, volUUID, srcPath, size, method="rsync"):
+        vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
+        if not vol.isLeaf():
+            raise se.NonLeafVolumeNotWritable(vol)
+        targetPath = vol.getVolumePath()
+        if vol.isSparse():
+            vol.extend(int(size))
+
+        vol.prepare(rw=True, setrw=False)
+        try:
+            if method.lower() == "wget":
+                cmd = [constants.EXT_WGET, "-O", targetPath, srcPath]
+                (rc, out, err) = misc.execCmd(cmd, sudo=False)
+
+                if rc:
+                    self.log.error("uploadVolume - error while trying to retrieve: %s into: %s, stderr: %s" % (srcPath, targetPath, err))
+                    raise se.VolumeCopyError(vol, err)
+            #CR : should be elif 'rsync' and and else "error not supported" in the end
+            else:
+                cmd = [constants.EXT_RSYNC, "-aq", srcPath, targetPath]
+                (rc, out, err) = misc.execCmd(cmd, sudo=False)
+
+                if rc:
+                    self.log.error("uploadVolume - error while trying to copy: %s into: %s, stderr: %s" % (srcPath, targetPath, err))
+                    raise se.VolumeCopyError(vol, err)
+        finally:
+            try:
+                vol.teardown(sdUUID, volUUID)
+            except:
+                self.log.warning("SP %s SD %s img %s Vol %s - teardown failed")
+
+    @secured
+    def preDeleteRename(self, sdUUID, imgUUID):
+        repoPath = os.path.join(self.storage_repository, self.spUUID)
+        return image.Image(repoPath).preDeleteRename(sdUUID, imgUUID)
+
+    @secured
+    def validateDelete(self, sdUUID, imgUUID):
+        repoPath = os.path.join(self.storage_repository, self.spUUID)
+        image.Image(repoPath).validateDelete(sdUUID, imgUUID)
+
+    @secured
+    def validateImage(self, srcDomUUID, dstDomUUID, imgUUID, op=image.MOVE_OP):
+        repoPath = os.path.join(self.storage_repository, self.spUUID)
+        image.Image(repoPath).validate(srcDomUUID, dstDomUUID, imgUUID, op)
+
+    @secured
+    def validateVolumeChain(self, sdUUID, imgUUID):
+        repoPath = os.path.join(self.storage_repository, self.spUUID)
+        image.Image(repoPath).validateVolumeChain(sdUUID, imgUUID)
+
+    def checkImage(self, sdUUID, imgUUID):
+        repoPath = os.path.join(self.storage_repository, self.spUUID)
+        image.Image(repoPath).check(sdUUID, imgUUID)
+
+    @secured
+    def extendSD(sdUUID, devlist):
+        sdCache.produce(sdUUID).extend(devlist)
+
