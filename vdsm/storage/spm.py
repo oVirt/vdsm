@@ -455,7 +455,8 @@ class SPM:
                 #FIXME : Use a system wide grouping mechanizm
                 sanPool = pool.masterDomain.getStorageType() in sd.BLOCK_DOMAIN_TYPES  # Check if pool is SAN or NAS
                 if sanPool and self.lvExtendPolicy == "ON":
-                    self.pools[spUUID].spmMailer = storage_mailbox.SPM_MailMonitor(self, spUUID, maxHostID)
+                    mailer = self.pools[spUUID].spmMailer = storage_mailbox.SPM_MailMonitor(self.pools[spUUID], maxHostID)
+                    mailer.registerMessageType('xtnd', partial(storage_mailbox.SPM_Extend_Message.processRequest, self, spUUID))
                 else:
                     self.pools[spUUID].spmMailer = None
 

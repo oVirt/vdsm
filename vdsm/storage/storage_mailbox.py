@@ -115,7 +115,7 @@ class SPM_Extend_Message:
 
     def checkReply(self, reply):
         # Sanity check - Make sure reply is for current message
-        sizeOffset = 5+2*PACKED_UUID_SIZE
+        sizeOffset = 5 + 2 * PACKED_UUID_SIZE
         if (self.payload[0:sizeOffset] != reply[0:sizeOffset]):
             self.log.error("SPM_Extend_Message: Reply message volume data (domainID + volumeID)"\
                            " differs from request message, reply : %s, orig: %s", reply, self.payload)
@@ -449,15 +449,21 @@ class HSM_MailMonitor(threading.Thread):
 
 class SPM_MailMonitor:
 
-    messageTypes = { 'xtnd': SPM_Extend_Message }
     log = logging.getLogger('Storage.MailBox.SpmMailMonitor')
 
-    def __init__(self, spm, spUUID, maxHostID, monitorInterval=2):
+    def registerMessageType(self, messageType, callback):
+        self._messageTypes[messageType] = callback
+
+    def unregisterMessageType(self, messageType):
+        del self._messageTypes[messageType]
+
+    def __init__(self, pool, maxHostID, monitorInterval=2):
+        self._messageTypes = {}
         # Save arguments
         self._stop = False
         self._stopped = False
-        self._poolID = str(spUUID)
-        self._spmStorageDir = spm.storage_repository
+        self._poolID = str(pool.spUUID)
+        self._spmStorageDir = pool.storage_repository
         tpSize = config.getfloat('irs', 'thread_pool_size') / 2
         waitTimeout = 3
         maxTasks = config.getfloat('irs', 'max_tasks')
@@ -474,7 +480,6 @@ class SPM_MailMonitor:
         self._numHosts = int(maxHostID)
         self._outMailLen = MAILBOX_SIZE * self._numHosts
         self._monitorInterval = monitorInterval
-        self._spm = spm
         # TODO: add support for multiple paths (multiple mailboxes)
         self._outgoingMail = self._outMailLen * "\0"
         self._incomingMail = self._outgoingMail
@@ -599,13 +604,12 @@ class SPM_MailMonitor:
                 # We only get here if there is a novel request
                 try:
                     msgType = newMail[msgStart+1 : msgStart+5]
-                    if msgType in SPM_MailMonitor.messageTypes:
+                    if msgType in SPM_MailMonitor._messageTypes:
                         # Use message class to process request according to message specific logic
                         id = str(uuid.uuid4())
                         self.log.debug("SPM_MailMonitor: processing request: %s" % repr(newMail[msgStart : msgStart+MESSAGE_SIZE]))
                         res = self.tp.queueTask(id, runTask,
-                                (SPM_MailMonitor.messageTypes[msgType].processRequest,
-                                self._spm, self._poolID, msgId,
+                                (SPM_MailMonitor._messageTypes[msgType], msgId,
                                 newMail[msgStart : msgStart+MESSAGE_SIZE])
                         )
                         if not res:
