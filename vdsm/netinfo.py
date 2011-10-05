@@ -74,8 +74,11 @@ def speed(dev):
     try:
         try:
             if not os.path.exists('/sys/class/net/%s/bonding' % dev):
-                return max(0,
-                           int(file('/sys/class/net/%s/speed' % dev).read()))
+                s = int(file('/sys/class/net/%s/speed' % dev).read())
+                if s in (2**16 - 1, 2**32 - 1) or s < 0:
+                    return 0
+                else:
+                    return s
         except IOError, e:
             if e.errno == os.errno.EINVAL and (isbonding(dev) or
                                                operstate(dev) != 'up'):
