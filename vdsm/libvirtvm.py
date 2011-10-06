@@ -890,11 +890,12 @@ class _DomXML:
                     m.setAttribute('mode', 'secure')
                     graphics.appendChild(m)
 
-            for i in range(int(self.conf.get('spiceMonitors', '1'))):
+            monitors = int(self.conf.get('spiceMonitors', '1'))
+            for i in range(monitors):
                 video = self.doc.createElement('video')
                 m = self.doc.createElement('model')
                 m.setAttribute('type', 'qxl')
-                m.setAttribute('vram', '65536')
+                m.setAttribute('vram', '65536' if monitors <= 2 else '32768')
                 m.setAttribute('heads', '1')
                 video.appendChild(m)
                 self._devices.appendChild(video)
