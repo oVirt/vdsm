@@ -75,6 +75,7 @@ AC_SUBST([vdsmhooksdir], ['${vdsmexecdir}/hooks'])
 AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
 AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pythondir}/vdsm'])
+AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 
 # VDSM registration default paths
 AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
@@ -147,19 +148,19 @@ AC_PATH_PROG([VCONFIG_PATH], [vconfig], [/sbin/vconfig])
 AC_PATH_PROG([WGET_PATH], [wget], [/usr/bin/wget])
 AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 
+# Keep sorted
 AC_OUTPUT([
 	Makefile
 	vds_bootstrap/Makefile
 	vdsm_cli/Makefile
-	vdsm_hooks/faqemu/Makefile
-	vdsm_hooks/Makefile
-	vdsm_hooks/vhostmd/Makefile
 	vdsm_hooks/directlun/Makefile
+	vdsm_hooks/faqemu/Makefile
 	vdsm_hooks/fileinject/Makefile
 	vdsm_hooks/floppy/Makefile
 	vdsm_hooks/hostusb/Makefile
 	vdsm_hooks/hugepages/Makefile
 	vdsm_hooks/isolatedprivatevlan/Makefile
+	vdsm_hooks/Makefile
 	vdsm_hooks/numa/Makefile
 	vdsm_hooks/pincpu/Makefile
 	vdsm_hooks/promisc/Makefile
@@ -168,11 +169,13 @@ AC_OUTPUT([
 	vdsm_hooks/smartcard/Makefile
 	vdsm_hooks/smbios/Makefile
 	vdsm_hooks/sriov/Makefile
+	vdsm_hooks/vhostmd/Makefile
 	vdsm_hooks/vmdisk/Makefile
 	vdsm/Makefile
 	vdsm_reg/Makefile
+	vdsm/sos/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/protect/Makefile
-	vdsm/sos/Makefile
+	vdsm-tool/Makefile
 	tests/Makefile
 ])

@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = vdsm vdsm_cli vds_bootstrap vdsm_reg vdsm_hooks tests
+SUBDIRS = vdsm vdsm_cli vds_bootstrap vdsm_reg vdsm_hooks tests vdsm-tool
 
 include $(top_srcdir)/build-aux/Makefile.subs
 

@@ -69,6 +69,7 @@ Requires: dosfstools
 Requires: policycoreutils-python
 Requires: libselinux-python
 Requires: kernel >= 2.6.32-198
+Requires: %{name}-python = %{version}-%{release}
 Requires: selinux-policy-targeted >= 3.7.19-80.el6
 Requires(post): /usr/sbin/saslpasswd2
 
@@ -77,6 +78,49 @@ The VDSM service is required by a Virtualization Manager to manage the
 Linux hosts. VDSM manages and monitors the host's storage, memory and
 networks as well as virtual machine creation, other host administration
 tasks, statistics gathering, and log collection.
+
+%package cli
+Summary:        VDSM command line interface
+BuildArch:      noarch
+
+Requires: %{name}-python = %{version}-%{release}
+
+%description cli
+Call VDSM commands from the command line. Used for testing and debugging.
+
+%package bootstrap
+Summary:        VDSM bootstrapping package
+BuildArch:      noarch
+
+%description bootstrap
+VDSM bootstrapping package. Used for delivering the bootstrap code onto the
+Virtualization Manager.
+
+%package reg
+Summary:        VDSM registration package
+BuildArch:      noarch
+
+Requires: %{name} = %{version}-%{release}
+Requires: traceroute
+
+%description reg
+VDSM registration package. Used to register a Linux host to a Virtualization
+Manager.
+
+%package python
+Summary:        VDSM python libraries
+BuildArch:      noarch
+
+%description python
+Shared libraries beween the various VDSM packages.
+
+%package debug-plugin
+Summary:        VDSM Debug Plugin
+Requires:       vdsm
+BuildArch:      noarch
+
+%description debug-plugin
+Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
 
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
@@ -214,40 +258,6 @@ BuildArch:      noarch
 
 %description hook-vmdisk
 Hook adds additional disk image for a VM (raw or qcow2)
-
-%package debug-plugin
-Summary:        VDSM Debug Plugin
-Requires:       vdsm
-BuildArch:      noarch
-
-%description debug-plugin
-Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
-
-%package cli
-Summary:        VDSM command line interface
-BuildArch:      noarch
-
-%description cli
-Call VDSM commands from the command line. Used for testing and debugging.
-
-%package bootstrap
-Summary:        VDSM bootstrapping package
-BuildArch:      noarch
-
-%description bootstrap
-VDSM bootstrapping package. Used for delivering the bootstrap code onto the
-Virtualization Manager.
-
-%package reg
-Summary:        VDSM registration package
-BuildArch:      noarch
-
-Requires: %{name} = %{version}-%{release}
-Requires: traceroute
-
-%description reg
-VDSM registration package. Used to register a Linux host to a Virtualization
-Manager.
 
 %prep
 %setup -q
@@ -434,7 +444,6 @@ exit 0
 %else
 /lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
-%config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %endif
 %dir %attr(0775, root, root) @vdsmrepo@
 %dir %{_libexecdir}/%{vdsm_name}
@@ -546,14 +555,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/ksm.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
-%{python_sitelib}/%{vdsm_name}/__init__.py*
-%{python_sitelib}/%{vdsm_name}/config.py*
-%{python_sitelib}/%{vdsm_name}/constants.py*
-%{python_sitelib}/%{vdsm_name}/define.py*
-%{python_sitelib}/%{vdsm_name}/netinfo.py*
-%{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
-%{python_sitelib}/%{vdsm_name}/utils.py*
-%{python_sitelib}/%{vdsm_name}/vdscli.py*
 %{python_sitelib}/sos/plugins/vdsm.py*
 /lib/udev/rules.d/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
@@ -578,6 +579,22 @@ exit 0
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}/pools
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
+
+%files python
+%defattr(-, root, root, -)
+%{_bindir}/vdsm-tool
+%if !0%{?rhel}
+%config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
+%endif
+%{python_sitelib}/%{vdsm_name}/__init__.py*
+%{python_sitelib}/%{vdsm_name}/config.py*
+%{python_sitelib}/%{vdsm_name}/constants.py*
+%{python_sitelib}/%{vdsm_name}/define.py*
+%{python_sitelib}/%{vdsm_name}/netinfo.py*
+%{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
+%{python_sitelib}/%{vdsm_name}/utils.py*
+%{python_sitelib}/%{vdsm_name}/vdscli.py*
+%{python_sitelib}/%{vdsm_name}/tool/__init__.py*
 
 %files hook-vhostmd
 %defattr(-, root, root, -)
@@ -678,8 +695,6 @@ exit 0
 %{_bindir}/vdsClient
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
-%{python_sitelib}/%{vdsm_name}/vdscli.py*
-%{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{_mandir}/man1/vdsClient.1*
 
 %files bootstrap

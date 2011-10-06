@@ -1,0 +1,120 @@
+#!/usr/bin/python
+# Copyright 2011 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import os
+import sys
+import imp
+import getopt
+import textwrap
+
+import vdsm.tool
+
+tool_modules = [ ]
+tool_command = { }
+
+def load_modules():
+    """
+    Dynamically load the modules present in the tool package.
+
+    This means that vdsm-tool doesn't need to know in advance the modules
+    and the commands present in the package. The commands to be exposed in
+    the command line must be decorated with:
+
+        from vdsm.tool import vdsm_tool_expose
+        @vdsm_tool_expose(command_name)
+
+    Two global structures are maintained:
+
+        tool_modules: an ordered list of modules and functions whose main
+                      purpose is to be used for the help output
+        tool_command: a lookup dictionary of the commands useful to execute
+                      the commands when requested
+    """
+    global tool_modules, tool_command
+
+    mod_path = os.path.dirname(vdsm.tool.__file__)
+
+    for mod_file in os.listdir(mod_path):
+        if (mod_file.startswith("_")
+            or not mod_file.endswith(".py")): continue
+
+        mod_name = mod_file[:-3]
+
+        mod_fobj, mod_absp, mod_desc = imp.find_module(mod_name, [mod_path])
+        module = imp.load_module(mod_name, mod_fobj, mod_absp, mod_desc)
+
+        mod_cmds = []
+
+        for cmd in [getattr(module, x) for x in dir(module)]:
+            if not hasattr(cmd, "_vdsm_tool"): continue
+
+            cmd_name = cmd._vdsm_tool["name"]
+
+            tool_command[cmd_name] = cmd
+            mod_cmds.append((cmd_name, cmd.__doc__))
+
+        tool_modules.append((mod_name, mod_cmds))
+
+def _usage_command(cmd_name, cmd_docs):
+    cmd_help = "  %-20s" % cmd_name
+    cmd_indent = " " * len(cmd_help)
+
+    print textwrap.fill(cmd_docs, initial_indent=cmd_help,
+                                  subsequent_indent=cmd_indent)
+
+def _usage_module(mod_name, mod_desc):
+    print
+    print "Commands in module %s:" % mod_name
+
+    for cmd_name, cmd_docs in mod_desc:
+        _usage_command(cmd_name, cmd_docs)
+
+def usage_and_exit(exit_code):
+    print "Usage: %s [options] <action> <module>\n" % sys.argv[0]
+
+    print "Valid options:"
+    print "  -h, --help"
+
+    for mod_name, mod_desc in tool_modules:
+        _usage_module(mod_name, mod_desc)
+
+    print
+    sys.exit(exit_code)
+
+def main():
+    load_modules()
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    except getopt.GetoptError, err:
+        usage_and_exit(1)
+
+    if len(args) < 1:
+        usage_and_exit(1)
+
+    cmd = args[0]
+
+    if cmd not in tool_command.keys():
+        usage_and_exit(1)
+
+    tool_command[cmd](*args[1:])
+
+if __name__ == "__main__":
+    main()
