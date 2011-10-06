@@ -184,9 +184,9 @@ class FileStorageDomain(sd.StorageDomain):
         Validate that the storage domain is accessible.
         """
         self.log.info("sdUUID=%s", self.sdUUID)
-        # TODO: use something less intensive
-        self._metadata.invalidate()
-        self._metadata.copy()
+        if not useCache:
+            self.invalidateMetadata()
+        self.getMetadata()
 
     def validateMasterMount(self):
          return self.oop.fileUtils.pathExists(self.getMasterDir())

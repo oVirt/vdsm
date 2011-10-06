@@ -172,7 +172,6 @@ class SPM:
         self.__releaseLocks()
 
         self.taskMng = taskMng
-        self.spmStarted = False
         self.pools = hsm.HSM.pools
         self.lver = 0
         self.spmRole = SPM_FREE
@@ -235,13 +234,14 @@ class SPM:
                 self.__dict__[funcName] = Secure(funcBareName, func).run
 
 
-    def _schedule(self, name, func, *args):
+    def _schedule(self, spUUID, name, func, *args):
         """
         Scheduler
         """
         self.lock.acquire()
+        pool = hsm.HSM.getPool(spUUID)
         try:
-            if not self.spmStarted or self._goingDown:
+            if not pool.spmStarted or self._goingDown:
                 raise se.SpmStatusError(name)
             self.taskMng.scheduleJob("spm", self.tasksDir, vars.task, name, func, *args)
         finally:
@@ -503,7 +503,7 @@ class SPM:
 
                 self.taskMng.loadDumpedTasks(self.tasksDir)
 
-                self.spmStarted = True
+                pool.spmStarted = True
                 self.spmRole = SPM_ACQUIRED
 
                 # Once setSafe completes we are running as SPM
@@ -556,16 +556,16 @@ class SPM:
         # Get lock to prevent new spm async tasks from starting
         self.lock.acquire()
         try:
-            # This validation must come first to ensure spmStop returns successfully
-            # if we are not currently the spm.  This is needed for RHEV-M to
-            # function properly.
-            if not self.spmStarted:
-                return True
-
             #Validates that we are connected to the spUUID pool.
             #Ideally should be checked 1st, but we're preserving semantics.
             #This is different from _stop() semantics.
-            hsm.HSM.getPool(spUUID)
+            pool = hsm.HSM.getPool(spUUID)
+
+            # This validation must come first to ensure spmStop returns successfully
+            # if we are not currently the spm.  This is needed for RHEV-M to
+            # function properly.
+            if not pool.spmStarted:
+                return True
 
             dictTasks = self.taskMng.getAllTasks(tag="spm")
             for taskKey in dictTasks:
@@ -655,7 +655,7 @@ class SPM:
         if stopFailed:
             misc.panic("Unrecoverable errors during SPM stop process.")
 
-        self.spmStarted = False
+        pool.spmStarted = False
         self.spmRole = SPM_FREE
 
 
@@ -1442,7 +1442,7 @@ class SPM:
         SDF.produce(sdUUID).validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        self._schedule("createVolume", self.createVolume, sdUUID,
+        self._schedule(spUUID, "createVolume", self.createVolume, sdUUID,
             imgUUID, size, volFormat, preallocate, diskType, volUUID, desc,
             srcImgUUID, srcVolUUID
         )
@@ -1466,7 +1466,7 @@ class SPM:
             for volUUID in volumes:
                 SDF.produce(sdUUID).produceVolume(imgUUID, volUUID).validateDelete()
 
-        self._schedule("deleteVolume", self.deleteVolume, sdUUID,
+        self._schedule(spUUID, "deleteVolume", self.deleteVolume, sdUUID,
             imgUUID, volumes, misc.parseBool(postZero), misc.parseBool(force)
         )
 
@@ -1494,7 +1494,7 @@ class SPM:
         # else delete image in sync. stage
         if misc.parseBool(postZero):
             newImgUUID = image.Image(repoPath).preDeleteRename(sdUUID, imgUUID)
-            self._schedule("deleteImage", self.deleteImage, sdUUID, spUUID, newImgUUID,
+            self._schedule(spUUID, "deleteImage", self.deleteImage, sdUUID, spUUID, newImgUUID,
                             misc.parseBool(postZero), misc.parseBool(force)
             )
         else:
@@ -1507,7 +1507,7 @@ class SPM:
             # intended to quickly fix the integration issue with rhev-m. In 2.3
             # we should use the new resource system to synchronize the process
             # an eliminate all race conditions
-            self._schedule("deleteImage", lambda : True)
+            self._schedule(spUUID, "deleteImage", lambda : True)
 
 
     def public_moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero=False, force=False):
@@ -1535,7 +1535,7 @@ class SPM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._schedule("moveImage", self.moveImage, spUUID, srcDomUUID,
+        self._schedule(spUUID, "moveImage", self.moveImage, spUUID, srcDomUUID,
                     dstDomUUID, imgUUID, vmUUID, op, misc.parseBool(postZero),
                     misc.parseBool(force)
         )
@@ -1568,7 +1568,7 @@ class SPM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._schedule("moveMultipleImages", self.moveMultipleImages, spUUID,
+        self._schedule(spUUID, "moveMultipleImages", self.moveMultipleImages, spUUID,
                 srcDomUUID, dstDomUUID, images, vmUUID, misc.parseBool(force)
         )
 
@@ -1614,7 +1614,7 @@ class SPM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._schedule("copyImage", self.copyImage,
+        self._schedule(spUUID, "copyImage", self.copyImage,
             sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
             dstVolUUID, description, dstSdUUID, volType, volFormat,
             preallocate, misc.parseBool(postZero), misc.parseBool(force)
@@ -1632,7 +1632,7 @@ class SPM:
         hsm.HSM.getPool(spUUID) #Validates that the pool is connected. WHY?
         hsm.HSM.validateSdUUID(sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
-        self._schedule("mergeSnapshots", self.mergeSnapshots, sdUUID, spUUID,
+        self._schedule(spUUID, "mergeSnapshots", self.mergeSnapshots, sdUUID, spUUID,
                     vmUUID, imgUUID, ancestor, successor, misc.parseBool(postZero)
         )
 

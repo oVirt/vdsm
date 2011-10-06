@@ -670,33 +670,30 @@ class BlockStorageDomain(sd.StorageDomain):
                 self._metadata = oldProvider
                 raise
 
-
-
     def selftest(self):
         """
         Run the underlying VG validation routine
         """
-        useCache = True
+
         timeout = config.getint("irs", "repo_stats_cache_refresh_timeout")
         now = time.time()
-        if now - self._lastUncachedSelftest > timeout:
-            useCache = False
-            self._lastUncachedSelftest = now
 
-        self.validate(useCache=useCache)
+        if now - self._lastUncachedSelftest > timeout:
+            self._lastUncachedSelftest = now
+            lvm.chkVG(self.sdUUID)
+        elif lvm.getVG(self.sdUUID).partial != lvm.VG_OK:
+            raise se.StorageDomainAccessError(self.sdUUID)
 
     def validate(self, useCache=False):
         """
         Validate that the storage domain metadata
         """
         self.log.info("sdUUID=%s", self.sdUUID)
-        if not useCache:
-            lvm.chkVG(self.sdUUID)
-        elif lvm.getVG(self.sdUUID).partial != lvm.VG_OK:
-            raise se.StorageDomainAccessError(self.sdUUID)
+        self.selftest()
 
         if not useCache:
             self.invalidateMetadata()
+
         self.getMetadata()
 
     def invalidate(self):

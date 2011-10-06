@@ -176,6 +176,7 @@ class StoragePool:
         self.spmMailer = None
         self.masterDomain = None
         self.repostats = {}
+        self.spmStarted = False
 
     def __del__(self):
         if len(self.repostats) > 0:
@@ -1159,7 +1160,8 @@ class StoragePool:
 
 
     def invalidateMetadata(self):
-        self._metadata.invalidate()
+        if not self.spmStarted:
+            self._metadata.invalidate()
 
     @misc.samplingmethod
     def updateMonitoringThreads(self):
