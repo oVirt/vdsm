@@ -1056,8 +1056,11 @@ class StoragePool:
 
                 if item in repoStats:
                     try:
-                        stats['disktotal'] = repoStats[item]['disktotal']
-                        stats['diskfree'] = repoStats[item]['diskfree']
+                        # For unreachable domains repoStats will return disktotal/diskfree as None.
+                        # We should drop these parameters in this case
+                        if repoStats[item]['disktotal'] != None and repoStats[item]['diskfree'] != None:
+                            stats['disktotal'] = repoStats[item]['disktotal']
+                            stats['diskfree'] = repoStats[item]['diskfree']
                         if not repoStats[item]['mdavalid']:
                             alerts.append({'code':se.SmallVgMetadata.code,
                                            'message':se.SmallVgMetadata.message})
@@ -1284,8 +1287,8 @@ class StoragePool:
     def _repostats(self, domain):
         # self.selftest() should return True if things are looking good
         # and False otherwise
-        stats = { 'disktotal' : '0',
-                  'diskfree' : '0',
+        stats = { 'disktotal' : None,
+                  'diskfree' : None,
                   'masterValidate' : { 'mount' : False, 'valid' : False }
                 }
         code = 0
