@@ -169,10 +169,21 @@ class ProcessPool(object):
         # be able to run further commands
 
 def _helperLoggerLoop(logQueue):
+    prevMessage = ''
     while True:
         try:
             record = logQueue.get()
             logger = logging.getLogger(record.name)
+            # FIXME: Very, Very UGLY hack.
+            # Somehow we get every log 3 times in queue.
+            # So, because I still don't know the real reason
+            # I just drop identical messages.
+            # But, it very ugly and we need to find real reason for
+            # such behavior
+            if prevMessage == record.message:
+                continue
+            prevMessage = record.message
+
             logger.handle(record)
         except (KeyboardInterrupt, SystemExit):
             raise
