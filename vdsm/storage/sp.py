@@ -1293,8 +1293,7 @@ class StoragePool:
                 }
         code = 0
         try:
-            if not domain.selftest():
-                code = 200
+            domain.selftest()
 
             res = domain.getStats()
             stats.update(res)

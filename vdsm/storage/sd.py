@@ -353,7 +353,6 @@ class StorageDomain:
         """
         Run internal self test
         """
-        return True
 
     def upgrade(self, targetVersion):
         """

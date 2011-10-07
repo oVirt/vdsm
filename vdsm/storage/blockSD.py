@@ -683,7 +683,7 @@ class BlockStorageDomain(sd.StorageDomain):
             useCache = False
             self._lastUncachedSelftest = now
 
-        return self.validate(useCache=useCache)
+        self.validate(useCache=useCache)
 
     def validate(self, useCache=False):
         """
@@ -698,7 +698,6 @@ class BlockStorageDomain(sd.StorageDomain):
         if not useCache:
             self.invalidateMetadata()
         self.getMetadata()
-        return True
 
     def invalidate(self):
         """

@@ -187,7 +187,6 @@ class FileStorageDomain(sd.StorageDomain):
         # TODO: use something less intensive
         self._metadata.invalidate()
         self._metadata.copy()
-        return True
 
     def validateMasterMount(self):
          return self.oop.fileUtils.pathExists(self.getMasterDir())
@@ -290,8 +289,6 @@ class FileStorageDomain(sd.StorageDomain):
                 self.oop.fileUtils.umount(mountPoint=self.mountpoint)
                 raise se.FileStorageDomainStaleNFSHandle
             raise
-
-        return True
 
     def imageGarbageCollector(self):
         """

@@ -127,7 +127,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
             raise se.StorageDomainFSNotMounted
 
         # Run general part of selftest
-        return fileSD.FileStorageDomain.selftest(self)
+        fileSD.FileStorageDomain.selftest(self)
 
 
     @staticmethod
