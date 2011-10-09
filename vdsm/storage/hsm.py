@@ -385,7 +385,7 @@ class HSM:
         vars.task.setManager(self.taskMng)
         vars.task.setRecoveryPolicy("auto")
         vars.task.addJob(Job("spmStart", pool.startSpm, prevID, prevLVER,
-                recoveryMode, scsiFencing, maxHostID, domVersion))
+                scsiFencing, maxHostID, domVersion))
 
     @logged()
     def public_spmStop(self, spUUID, options = None):

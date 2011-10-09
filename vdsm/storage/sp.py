@@ -273,7 +273,8 @@ class StoragePool:
                         StatsThread.onDomainConnectivityStateChange.unregister(self._upgradePoolDomain)
                     except KeyError:
                         pass
-    def startSpm(self, prevID, prevLVER, recoveryMode, scsiFencing, maxHostID, expectedDomVersion=None):
+
+    def startSpm(self, prevID, prevLVER, scsiFencing, maxHostID, expectedDomVersion=None):
         """
         Starts the SPM functionality.
 
@@ -281,13 +282,6 @@ class StoragePool:
         :type spUUID: UUID
         :param prevID: obsolete
         :param prevLVER: obsolete
-        :param recoveryMode: One of the following:
-
-                             * Manual - ?
-                             * Safe - ?
-                             * Fast - ?
-
-        :type recoveryMode: str?
         :param scsiFencing: Should there be scsi fencing.?
         :type scsiFencing: bool
         :param maxHostID: The maximun ID of the host.?
