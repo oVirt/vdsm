@@ -874,11 +874,7 @@ class HSM:
     @logged()
     def public_activateStorageDomain(self, sdUUID, spUUID, options = None):
         """
-        1. Activates a storage domain that is already a member in a storage pool.
-        2. Validates that the storage domain is owned by the storage pool.
-
-        .. note::
-            The target domain must be accessible in this point (storage connected).
+        Activates a storage domain that is already a member in a storage pool.
 
         :param sdUUID: The UUID of the storage domain that you want to activate.
         :type sdUUID: UUID
@@ -891,20 +887,6 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
-        try:
-            self.validateSdUUID(sdUUID)
-            self.validatePoolSD(spUUID, sdUUID)
-        except Timeout:
-            self.log.error("Timeout reached activating storage domain "
-                           "sdUUID=%s, spUUID=%s", sdUUID, spUUID)
-            raise se.StorageDomainActivateError(sdUUID)
-        except Exception:
-            self.log.warn("Could not validate storage domain sdUUID=%s, "
-                           "spUUID=%s, refreshing and retrying", sdUUID, spUUID,
-                           exc_info=True)
-            pool.refresh()
-            self.validateSdUUID(sdUUID)
-            self.validatePoolSD(spUUID, sdUUID)
         pool.activateSD(sdUUID)
 
 
