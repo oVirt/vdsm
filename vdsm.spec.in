@@ -236,6 +236,7 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/utils.py*
 %{_datadir}/%{vdsm_name}/constants.py*
 %{_datadir}/%{vdsm_name}/vm.py*
+%{_datadir}/%{vdsm_name}/vdscli.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
 %{_datadir}/%{vdsm_name}/libvirtvm.py*
