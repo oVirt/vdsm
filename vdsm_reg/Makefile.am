@@ -9,8 +9,13 @@
 dist_vdsmreg_DATA = \
 	config.py \
 	createDaemon.py \
-	define.py \
+	define.py
+
+nodist_vdsmreg_DATA = \
 	deployUtil.py
+
+nodist_noinst_DATA = \
+	vdsm-reg.conf
 
 dist_vdsmreg_SCRIPTS = \
 	save-config \
@@ -23,20 +28,19 @@ dist_man8_MANS = \
 	vdsm-reg.8
 
 vdsmreg_SUBST = \
-	vdsm-reg.conf
-
-noinst_DATA = \
-	$(vdsmreg_SUBST)
+	$(nodist_vdsmreg_DATA) \
+	$(nodist_noinst_DATA)
 
 CLEANFILES = \
 	$(vdsmreg_SUBST)
 
 EXTRA_DIST = \
+	deployUtil.py.in \
 	logger.conf \
 	rhevm.py \
 	vdsm-config \
-	vdsm-reg-cmdline \
 	vdsm-reg \
+	vdsm-reg-cmdline \
 	vdsm-reg.conf.in \
 	vdsm-reg-logrotate \
 	vdsm-reg-logrotate.conf

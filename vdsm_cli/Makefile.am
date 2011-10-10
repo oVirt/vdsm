@@ -35,7 +35,7 @@ do_subst = sed -e "s,[@]VDSMDIR[@],$(vdsmdir),g" \
 	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
 
 $(vdsmcli_SUBST):
-	$(do_subst) < $@.in > $@
+	$(do_subst) < $(srcdir)/$@.in > $@
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/bash_completion.d

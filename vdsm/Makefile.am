@@ -14,7 +14,6 @@ dist_vdsm_DATA = \
 	clientIF.py \
 	configNetwork.py \
 	config.py \
-	constants.py \
 	define.py \
 	dsaversion.py \
 	guestIF.py \
@@ -36,6 +35,20 @@ dist_vdsm_DATA = \
 	vdsmDebugPlugin.py \
 	vm.py
 
+nodist_vdsm_DATA = \
+	constants.py
+
+nodist_vdsm_SCRIPTS = \
+	vdsm-restore-net-config \
+	vdsm-store-net-config
+
+nodist_noinst_DATA = \
+	logger.conf \
+	sudoers.vdsm \
+	vdsm.conf.sample \
+	vdsmd \
+	vdsm-sosplugin.py
+
 dist_vdsm_SCRIPTS = \
 	addNetwork \
 	delNetwork \
@@ -46,37 +59,25 @@ dist_vdsm_SCRIPTS = \
 	respawn \
 	set-conf-item \
 	vdsm \
-	vdsm-restore-net-config \
-	vdsm-store-net-config \
 	write-net-config
 
 dist_man8_MANS = \
 	vdsmd.8
 
 vdsm_SUBST = \
-	constants.py \
-	logger.conf \
-	sudoers.vdsm \
-	vdsm.conf.sample \
-	vdsmd \
-	vdsm-restore-net-config \
-	vdsm-sosplugin.py \
-	vdsm-store-net-config
-
-noinst_DATA = \
-	$(vdsm_SUBST)
+	$(nodist_vdsm_DATA) \
+	$(nodist_vdsm_SCRIPTS) \
+	$(nodist_noinst_DATA)
 
 CLEANFILES = \
 	$(vdsm_SUBST)
 
 EXTRA_DIST = \
-	constants.py.in \
 	logger.conf.in \
 	mk-vdsm-conf-sample.py \
-	sudoers.vdsm.in \
 	vdsmd.in \
-	vdsm-logrotate \
 	vdsm-libvirt-logrotate \
+	vdsm-logrotate \
 	vdsm-logrotate.conf \
 	vdsm-restore-net-config.in \
 	vdsm.rwtab \
@@ -100,6 +101,8 @@ $(vdsm_SUBST): Makefile
 	if test "$@" = "vdsm.conf.sample"; then \
 		python $(srcdir)/mk-vdsm-conf-sample.py \
 			$(srcdir)/config.py > vdsm.conf.sample; \
+	elif test -f "$@.in"; then \
+		$(do_subst) < $@.in > $@; \
 	else \
 		$(do_subst) < $(srcdir)/$@.in > $@; \
 	fi
