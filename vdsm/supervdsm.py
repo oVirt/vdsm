@@ -19,6 +19,7 @@
 #
 
 import os
+from multiprocessing import AuthenticationError
 from multiprocessing.managers import BaseManager
 import logging
 import threading
@@ -46,7 +47,7 @@ class ProxyCaller(object):
         callMethod = lambda : getattr(self._supervdsmProxy._svdsm, self._funcName)(*args, **kwargs)
         try:
             return callMethod()
-        except (IOError, socket.error):
+        except (IOError, socket.error, AuthenticationError):
             self._supervdsmProxy._restartSupervdsm()
             return callMethod()
 
