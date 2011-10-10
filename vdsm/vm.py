@@ -307,7 +307,6 @@ class Vm(object):
         self._pathsPreparedEvent = threading.Event()
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                          SOUND_DEVICES: [], VIDEO_DEVICES: []}
-        self.saveState()
 
     def _get_lastStatus(self):
         SHOW_PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')

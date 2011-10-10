@@ -826,6 +826,11 @@ class VideoDevice(vm.Device):
         m.setAttribute('vram', self.specParams['vram'])
         m.setAttribute('heads', '1')
         video.appendChild(m)
+        if hasattr(self, 'address'):
+            address = doc.createElement('address')
+            for key, value in self.address:
+                address.setAttribute(key, value)
+            video.appendChild(address)
         return video
 
 class SoundDevice(vm.Device):
@@ -839,6 +844,11 @@ class SoundDevice(vm.Device):
         doc = xml.dom.minidom.Document()
         sound = doc.createElement('sound')
         sound.setAttribute('model', self.device)
+        if hasattr(self, 'address'):
+            address = doc.createElement('address')
+            for key, value in self.address:
+                address.setAttribute(key, value)
+            sound.appendChild(address)
         return sound
 
 class NetworkInterfaceDevice(vm.Device):
@@ -894,10 +904,15 @@ class NetworkInterfaceDevice(vm.Device):
         m = doc.createElement('source')
         m.setAttribute('bridge', self.network)
         iface.appendChild(m)
-        if getattr(self, 'bootOrder', False):
+        if hasattr(self, 'bootOrder'):
             bootOrder = doc.createElement('boot')
             bootOrder.setAttribute('order', self.bootOrder)
             iface.appendChild(bootOrder)
+        if hasattr(self, 'address'):
+            address = doc.createElement('address')
+            for key, value in self.address:
+                address.setAttribute(key, value)
+            iface.appendChild(address)
         if self.driver:
             m = doc.createElement('driver')
             m.setAttribute('name', self.driver)
@@ -978,14 +993,19 @@ class Drive(vm.Device):
         if utils.tobool(self.readonly):
             readonly = doc.createElement('readonly')
             diskelem.appendChild(readonly)
-        if getattr(self, 'serial', False):
+        if hasattr(self, 'serial'):
             serial = doc.createElement('serial')
             serial.appendChild(doc.createTextNode(self.serial))
             diskelem.appendChild(serial)
-        if getattr(self, 'bootOrder', False):
+        if hasattr(self, 'bootOrder'):
             bootOrder = doc.createElement('boot')
             bootOrder.setAttribute('order', self.bootOrder)
             diskelem.appendChild(bootOrder)
+        if hasattr(self, 'address'):
+            address = doc.createElement('address')
+            for key, value in self.address:
+                address.setAttribute(key, value)
+            diskelem.appendChild(address)
         if device == 'disk':
             driver = doc.createElement('driver')
             driver.setAttribute('name', 'qemu')
@@ -1031,8 +1051,10 @@ class LibvirtVm(vm.Vm):
             * config.getint('irs', 'volume_utilization_chunk_mb') * 2**20 \
             / 100
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
+        self._devXmlHash = '0'
         self._released = False
         self._releaseLock = threading.Lock()
+        self.saveState()
 
 
     def _buildCmdLine(self):
@@ -1078,9 +1100,13 @@ class LibvirtVm(vm.Vm):
             except:
                 pass
             raise Exception('destroy() called before Vm started')
+
+        self._getUnderlyingVmInfo()
         self._getUnderlyingNetworkInterfaceInfo()
         self._getUnderlyingDriveInfo()
         self._getUnderlyingDisplayPort()
+        self._getUnderlyingSoundDeviceInfo()
+        self._getUnderlyingVideoDeviceInfo()
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
@@ -1339,10 +1365,18 @@ class LibvirtVm(vm.Vm):
             pass
         return pid
 
+    def _getUnderlyingVmInfo(self):
+        self._lastXMLDesc = self._dom.XMLDesc(0)
+        devxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
+                    .childNodes[0].getElementsByTagName('devices')[0]
+        self._devXmlHash = str(hash(devxml.toxml()))
+
+        return self._lastXMLDesc
+
     def saveState(self):
         vm.Vm.saveState(self)
         try:
-            self._lastXMLDesc = self._dom.XMLDesc(0)
+            self._getUnderlyingVmInfo()
         except:
             # we do not care if _dom suddenly died now
             pass
@@ -1411,20 +1445,91 @@ class LibvirtVm(vm.Vm):
 
         return {'status': doneCode}
 
+    def getStats(self):
+        stats = vm.Vm.getStats(self)
+        stats['hash'] = self._devXmlHash
+        return stats
+
+    def _getUnderlyingDeviceAddress(self, devXml):
+        """
+        Obtain device's address from libvirt
+        """
+        address = {}
+        adrXml = devXml.getElementsByTagName('address')[0]
+        # Parse address to create proper dictionary.
+        # Libvirt device's address definition is:
+        # PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
+        #        'slot':'0x0c', 'function':'0x0'}
+        # IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
+        for key in adrXml.attributes.keys():
+            address[key] = adrXml.getAttribute(key)
+
+        return address
+
+    def _getUnderlyingVideoDeviceInfo(self):
+        """
+        Obtain video devices info from libvirt.
+        """
+        videosxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
+                    .childNodes[0].getElementsByTagName('devices')[0] \
+                    .getElementsByTagName('video')
+        for x in videosxml:
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            # Get video card address
+            address = self._getUnderlyingDeviceAddress(x)
+
+            # FIXME. We have an identification problem here.
+            # Video card device has not unique identifier, except the alias
+            # (but backend not aware to device's aliases).
+            # So, for now we can only assign the address according to devices order.
+            for vc in self._devices[vm.VIDEO_DEVICES]:
+                if not hasattr(vc, 'address'):
+                    vc.alias = alias
+                    vc.address = address
+            # Update vm's conf with address
+            for dev in self.conf['devices']:
+                if (dev['type'] == vm.VIDEO_DEVICES) and not dev.get('address'):
+                    dev['address'] = address
+
+    def _getUnderlyingSoundDeviceInfo(self):
+        """
+        Obtain sound devices info from libvirt.
+        """
+        soundsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
+                    .childNodes[0].getElementsByTagName('devices')[0] \
+                    .getElementsByTagName('sound')
+        for x in soundsxml:
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            # Get sound card address
+            address = self._getUnderlyingDeviceAddress(x)
+
+            # FIXME. We have an identification problem here.
+            # Sound device has not unique identifier, except the alias
+            # (but backend not aware to device's aliases).
+            # So, for now we can only assign the address according to devices order.
+            for sc in self._devices[vm.SOUND_DEVICES]:
+                if not hasattr(sc, 'address'):
+                    sc.alias = alias
+                    sc.address = address
+            # Update vm's conf with address
+            for dev in self.conf['devices']:
+                if (dev['type'] == vm.SOUND_DEVICES) and not dev.get('address'):
+                    dev['address'] = address
+
     def _getUnderlyingDriveInfo(self):
         """
         Obtain block devices info from libvirt.
         """
-        disksxml = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
+        disksxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
                     .childNodes[0].getElementsByTagName('devices')[0] \
                     .getElementsByTagName('disk')
         for x in disksxml:
             sources = x.getElementsByTagName('source')
             if sources:
-                path = sources[0].getAttribute('file') \
-                       or sources[0].getAttribute('dev')
+                devPath = sources[0].getAttribute('file') \
+                            or sources[0].getAttribute('dev')
             else:
-                path = ''
+                devPath = ''
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             ty = x.getAttribute('device')
             if ty == 'disk':
@@ -1432,17 +1537,25 @@ class LibvirtVm(vm.Vm):
                 drv = x.getElementsByTagName('driver')[0].getAttribute('type') # raw/qcow2
             else:
                 drv = 'raw'
+            # Get disk address
+            address = self._getUnderlyingDeviceAddress(x)
+
             for d in self._devices[vm.DISK_DEVICES]:
-                if d.path == path:
+                if d.path == devPath:
                     d.type = ty
                     d.drv = drv
                     d.alias = alias
+                    d.address = address
+            # Update vm's conf with address
+            for dev in self.conf['devices']:
+                if dev['type'] == vm.DISK_DEVICES and dev['path'] == devPath:
+                    dev['address'] = address
 
     def _getUnderlyingDisplayPort(self):
         """
         Obtain display port info from libvirt.
         """
-        graphics = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
+        graphics = xml.dom.minidom.parseString(self._lastXMLDesc) \
                           .childNodes[0].getElementsByTagName('graphics')[0]
         port = graphics.getAttribute('port')
         if port:
@@ -1456,15 +1569,24 @@ class LibvirtVm(vm.Vm):
         Obtain network interface info from libvirt.
         """
         # TODO use xpath instead of parseString (here and elsewhere)
-        ifsxml = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
+        ifsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
                     .childNodes[0].getElementsByTagName('devices')[0] \
                     .getElementsByTagName('interface')
         for x in ifsxml:
             name = x.getElementsByTagName('target')[0].getAttribute('dev')
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            # Get nic address
+            address = self._getUnderlyingDeviceAddress(x)
             for nic in self._devices[vm.NIC_DEVICES]:
                 if nic.macAddr == mac:
                     nic.name = name
+                    nic.alias = alias
+                    nic.address = address
+            # Update vm's conf with address
+            for dev in self.conf['devices']:
+                if dev['type'] == vm.NIC_DEVICES and dev['macAddr'] == mac:
+                    dev['address'] = address
 
     def _setWriteWatermarks(self):
         """
