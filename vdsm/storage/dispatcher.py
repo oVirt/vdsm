@@ -91,19 +91,15 @@ class Protect:
             except se.GeneralException, e:
                 self.log.error(e.response())
                 return e.response()
-            except Exception, e:
-                self.log.error(e)
-                self.log.error(traceback.format_exc())
-                exceptionObj = ctask.defaultException
-                if exceptionObj and hasattr(exceptionObj, "response"):
-                    return exceptionObj.response()
-                return se.GeneralException("method %s, error: %s" % (str(self.name), str(e))).response()
-            except:
-                self.log.error(traceback.format_exc())
-                exceptionObj = ctask.defaultException
-                if exceptionObj and hasattr(exceptionObj, "response"):
-                    return exceptionObj.response()
-                return se.GeneralException("method %s" % (str(self.name))).response()
+            except BaseException, e:
+                self.log.error(e, exc_info=True)
+                defaultException = ctask.defaultException
+                if defaultException and hasattr(defaultException, "response"):
+                    resp = defaultException.response()
+                    defaultExceptionInfo = (resp['status']['code'], resp['status']['message'])
+                    return se.generateResponse(e, defaultExceptionInfo)
+
+                return se.generateResponse(e)
         except:
             try:
                 try:

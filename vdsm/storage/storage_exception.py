@@ -31,6 +31,19 @@
 ##
 #######################################################
 
+GENERAL_EXCEPTION = lambda e: (100, str(e))
+ERROR_MAP = {
+        }
+
+def generateResponse(error, default=GENERAL_EXCEPTION):
+    resp = ERROR_MAP.get(type(error), default)
+    if callable(resp):
+        resp = resp(error)
+
+    code, msg = resp
+
+    return { 'status': {'code': code, 'message': msg} }
+
 class GeneralException(Exception):
     code = 100
     message = "General Exception"
@@ -1337,9 +1350,6 @@ if __name__ == "__main__":
     for name, obj in globals().items():
         if not isinstance(obj, types.TypeType):
             continue
-
-        if not issubclass(obj, GeneralException):
-            raise NameError, "%s is not exception class: %s" % (name, obj)
 
         if obj.code in codes:
             raise NameError, "Collision found: code %s is used by %s and %s" \
