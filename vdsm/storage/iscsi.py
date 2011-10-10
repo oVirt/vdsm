@@ -49,210 +49,8 @@ LOGIN_AUTH_USER = ["-o", "update", "-n", "node.session.auth.username", "-v"]
 LOGIN_AUTH_PASS = ["-o", "update", "-n", "node.session.auth.password", "-v"]
 AUTH_EXEC_DISCOVER = ["--discover"]
 ISCSID_CONF = "/etc/iscsi/iscsid.conf"
-ISCSID_CONF_TAG = "# RHEV REVISION 0"
 SCAN_PATTERN = "/sys/class/scsi_host/host*/scan"
-ISCSID_CONF_TEMPLATE = ISCSID_CONF_TAG + """
-#
-# Open-iSCSI default configuration.
-# Could be located at /etc/iscsi/iscsid.conf or ~/.iscsid.conf
-#
-# Note: To set any of these values for a specific node/session run
-# the iscsiadm --mode node --op command for the value. See the README
-# and man page for iscsiadm for details on the --op command.
-#
-
-################
-# iSNS settings
-################
-# Address of iSNS server
-#isns.address = 192.168.0.1
-#isns.port = 3205
-
-#############################
-# NIC/HBA and driver settings
-#############################
-# open-iscsi can create a session and bind it to a NIC/HBA.
-# To set this up see the example iface config file.
-
-#*****************
-# Startup settings
-#*****************
-
-# To request that the iscsi initd scripts startup a session set to "automatic".
-# node.startup = automatic
-#
-# To manually startup the session set to "manual". The default is automatic.
-node.startup = manual
-
-# *************
-# CHAP Settings
-# *************
-
-# To enable CHAP authentication set node.session.auth.authmethod
-# to CHAP. The default is None.
-#node.session.auth.authmethod = CHAP
-
-# To set a CHAP username and password for initiator
-# authentication by the target(s), uncomment the following lines:
-#node.session.auth.username = username
-#node.session.auth.password = password
-
-# To set a CHAP username and password for target(s)
-# authentication by the initiator, uncomment the following lines:
-#node.session.auth.username_in = username_in
-#node.session.auth.password_in = password_in
-
-# To enable CHAP authentication for a discovery session to the target
-# set discovery.sendtargets.auth.authmethod to CHAP. The default is None.
-#discovery.sendtargets.auth.authmethod = CHAP
-
-# To set a discovery session CHAP username and password for the initiator
-# authentication by the target(s), uncomment the following lines:
-#discovery.sendtargets.auth.username = username
-#discovery.sendtargets.auth.password = password
-
-# To set a discovery session CHAP username and password for target(s)
-# authentication by the initiator, uncomment the following lines:
-#discovery.sendtargets.auth.username_in = username_in
-#discovery.sendtargets.auth.password_in = password_in
-
-# ********
-# Timeouts
-# ********
-#
-# See the iSCSI REAME's Advanced Configuration section for tips
-# on setting timeouts when using multipath or doing root over iSCSI.
-#
-# To specify the length of time to wait for session re-establishment
-# before failing SCSI commands back to the application when running
-# the Linux SCSI Layer error handler, edit the line.
-# The value is in seconds and the default is 120 seconds.
-node.session.timeo.replacement_timeout = 120
-
-# To specify the time to wait for login to complete, edit the line.
-# The value is in seconds and the default is 15 seconds.
-node.conn[0].timeo.login_timeout = 15
-
-# To specify the time to wait for logout to complete, edit the line.
-# The value is in seconds and the default is 15 seconds.
-node.conn[0].timeo.logout_timeout = 15
-
-# Time interval to wait for on connection before sending a ping.
-node.conn[0].timeo.noop_out_interval = 5
-
-# To specify the time to wait for a Nop-out response before failing
-# the connection, edit this line. Failing the connection will
-# cause IO to be failed back to the SCSI layer. If using dm-multipath
-# this will cause the IO to be failed to the multipath layer.
-node.conn[0].timeo.noop_out_timeout = 5
-
-#******
-# Retry
-#******
-
-# To speficy the number of times iscsiadm should retry a login
-# to the target when we first login, modify the following line.
-# The default is 4. Valid values are any integer value. This only
-# affects the initial login. Setting it to a high value can slow
-# down the iscsi service startup. Setting it to a low value can
-# cause a session to not get logged into, if there are distuptions
-# during startup or if the network is not ready at that time.
-node.session.initial_login_retry_max = 4
-
-################################
-# session and device queue depth
-################################
-
-# To control how many commands the session will queue set
-# node.session.cmds_max to an integer between 2 and 2048 that is also
-# a power of 2. The default is 128.
-node.session.cmds_max = 128
-
-# To control the device's queue depth set node.session.queue_depth
-# to a value between 1 and 128. The default is 32.
-node.session.queue_depth = 32
-
-#***************
-# iSCSI settings
-#***************
-
-# To enable R2T flow control (i.e., the initiator must wait for an R2T
-# command before sending any data), uncomment the following line:
-#
-#node.session.iscsi.InitialR2T = Yes
-#
-# To disable R2T flow control (i.e., the initiator has an implied
-# initial R2T of "FirstBurstLength" at offset 0), uncomment the following line:
-#
-# The defaults is No.
-node.session.iscsi.InitialR2T = No
-
-#
-# To disable immediate data (i.e., the initiator does not send
-# unsolicited data with the iSCSI command PDU), uncomment the following line:
-#
-#node.session.iscsi.ImmediateData = No
-#
-# To enable immediate data (i.e., the initiator sends unsolicited data
-# with the iSCSI command packet), uncomment the following line:
-#
-# The default is Yes
-node.session.iscsi.ImmediateData = Yes
-
-# To specify the maximum number of unsolicited data bytes the initiator
-# can send in an iSCSI PDU to a target, edit the following line.
-#
-# The value is the number of bytes in the range of 512 to (2^24-1) and
-# the default is 262144
-node.session.iscsi.FirstBurstLength = 262144
-
-# To specify the maximum SCSI payload that the initiator will negotiate
-# with the target for, edit the following line.
-#
-# The value is the number of bytes in the range of 512 to (2^24-1) and
-# the defauls it 16776192
-node.session.iscsi.MaxBurstLength = 16776192
-
-# To specify the maximum number of data bytes the initiator can receive
-# in an iSCSI PDU from a target, edit the following line.
-#
-# The value is the number of bytes in the range of 512 to (2^24-1) and
-# the default is 131072
-node.conn[0].iscsi.MaxRecvDataSegmentLength = 131072
-
-
-# To specify the maximum number of data bytes the initiator can receive
-# in an iSCSI PDU from a target during a discovery session, edit the
-# following line.
-#
-# The value is the number of bytes in the range of 512 to (2^24-1) and
-# the default is 32768
-#
-discovery.sendtargets.iscsi.MaxRecvDataSegmentLength = 32768
-
-# To allow the targets to control the setting of the digest checking,
-# with the initiator requesting a preference of enabling the checking, uncommen
-# the following lines (Data digests are not supported and on ppc/ppc64
-# both header and data digests are not supported.):
-#node.conn[0].iscsi.HeaderDigest = CRC32C,None
-#
-# To allow the targets to control the setting of the digest checking,
-# with the initiator requesting a preference of disabling the checking,
-# uncomment the following lines:
-#node.conn[0].iscsi.HeaderDigest = None,CRC32C
-#
-# To enable CRC32C digest checking for the header and/or data part of
-# iSCSI PDUs, uncomment the following lines:
-#node.conn[0].iscsi.HeaderDigest = CRC32C
-#
-# To disable digest checking for the header and/or data part of
-# iSCSI PDUs, uncomment the following lines:
-#node.conn[0].iscsi.HeaderDigest = None
-#
-# The default is to never use DataDigests and to allow the target to control
-# the setting of the HeaderDigest checking with the initiator requesting
-# a preference of disabling the checking.
-"""
+ISCSID_CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), "iscsid.conf.template")
 
 # iscsiadm exit statuses
 ISCSI_ERR_SESS_EXISTS = 15
@@ -260,14 +58,18 @@ ISCSI_ERR_LOGIN_AUTH_FAILED = 24
 
 log = logging.getLogger('Storage.iScsi')
 
+def _getConfTag():
+    with open(ISCSID_CONF_TEMPLATE, "r") as f:
+        return f.readline().strip()
+
 def isConfigured():
+    confTag = _getConfTag()
     if os.path.exists(ISCSID_CONF):
         tagline = misc.readfileSUDO(ISCSID_CONF)[0]
-        if ISCSID_CONF_TAG in tagline:
+        if confTag in tagline:
             return True
 
     return False
-
 
 def setupiSCSI():
     """
@@ -281,7 +83,8 @@ def setupiSCSI():
         if rc != 0:
             raise se.iSCSISetupError("Backup original iscsid.conf file")
     f = tempfile.NamedTemporaryFile()
-    f.write(ISCSID_CONF_TEMPLATE)
+    with open(ISCSID_CONF_TEMPLATE, "r") as tf:
+        f.write(tf)
     f.flush()
     cmd = [constants.EXT_CP, f.name, ISCSID_CONF]
     rc = misc.execCmd(cmd)[0]

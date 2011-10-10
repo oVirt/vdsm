@@ -45,7 +45,8 @@ dist_vdsmstorage_DATA = \
 	threadLocal.py \
 	threadPool.py \
 	volume.py \
-	securable.py
+	securable.py \
+	iscsid.conf.template
 
 EXTRA_DIST = \
 	12-vdsm-lvm.rules
