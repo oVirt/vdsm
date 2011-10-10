@@ -53,32 +53,35 @@ class Protect:
         if not self.help:
             self.help = "No help available for method %s" % name
 
-
-    def run(self, *rawArgs, **rawKwargs):
+    def convertUnicodeArgs(self, rawArgs, rawKwargs):
+        # Make sure all arguments do not contain non ASCII chars
+        args = [None] * len(rawArgs)
+        kwargs = {}
         try:
+            for i in range(len(rawArgs)):
+                if isinstance(rawArgs[i], unicode):
+                    args[i] = str(rawArgs[i])
+                else:
+                    args[i] = rawArgs[i]
+
+            for i in rawKwargs:
+                if isinstance(rawKwargs[i], unicode):
+                    kwargs[i] = str(rawKwargs[i])
+                else:
+                    kwargs[i] = rawKwargs[i]
+
+        except UnicodeEncodeError, e:
+            self.log.error(e)
+            return se.UnicodeArgumentException().response()
+
+        return args, kwargs
+
+    def run(self, *args, **kwargs):
+        try:
+            # TODO : Support unicode
+            args, kwargs = self.convertUnicodeArgs(args, kwargs)
             ctask = task.Task(id=None, name=self.name)
             vars.task = ctask
-            # Make sure all arguments are non unicode.
-            # TODO : Support unicode
-            args = [None] * len(rawArgs)
-            kwargs = {}
-            try:
-                for i in range(len(rawArgs)):
-                    if isinstance(rawArgs[i], unicode):
-                        args[i] = str(rawArgs[i])
-                    else:
-                        args[i] = rawArgs[i]
-
-                for i in rawKwargs:
-                    if isinstance(rawKwargs[i], unicode):
-                        kwargs[i] = str(rawKwargs[i])
-                    else:
-                        kwargs[i] = rawKwargs[i]
-
-            except UnicodeEncodeError, e:
-                self.log.error(e)
-                return se.UnicodeArgumentException().response()
-
             try:
                 response = self.STATUS_OK.copy()
                 result = ctask.prepare(self.func, *args, **kwargs)
