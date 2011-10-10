@@ -1,34 +1,48 @@
 %define vdsm_reg vdsm-reg
 %define vdsm_name vdsm
 %define vdsm_bootstrap vdsm-bootstrap
-%include %{_rpmconfigdir}/macros.python
 
-Summary: Virtual Desktop Server Manager
-Name: vdsm
-Source: %{vdsm_name}-%{version}.tar.gz
-Url: http://git.fedorahosted.org/git/?p=vdsm.git
-Version: @PACKAGE_VERSION@
-Release: @PACKAGE_RELEASE@%{?dist}%{?extra_release}
-License: GPLv2+
-Group: Applications/System
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
-ExclusiveArch: x86_64
-BuildRequires: python redhat-lsb redhat-rpm-config
+Name:           %{vdsm_name}
+Version:        @PACKAGE_VERSION@
+Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
+Summary:        Virtual Desktop Server Manager
+
+Group:          Applications/System
+License:        GPLv2+
+Url:            http://git.fedorahosted.org/git/?p=vdsm.git
+Source0:        %{vdsm_name}-%{version}.tar.gz
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+BuildRequires: python
+BuildRequires: redhat-rpm-config
+
 Requires: python which
 Requires: sudo >= 1.7.3
+Requires: logrotate
+Requires: python-ethtool
+Requires: nfs-utils dmidecode
+Requires: lvm2 >= 2.02.72-8
+
+%if 0%{?rhel}
 Requires: qemu-kvm >= 2:0.12.1.2-2.189
 Requires: qemu-img >= 2:0.12.1.2-2.189
-Requires: ethtool logrotate
+Requires: libvirt >= 0.9.4-13
+Requires: libvirt-python >= 0.9.4-13
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
-Requires: nfs-utils dmidecode
-Requires: lvm2 >= 2.02.72-8.el6_0.4
-Requires: device-mapper-multipath >= 0.4.9-31.el6
-Requires: psmisc >= 22.6-15.el6_0.1
+Requires: device-mapper-multipath >= 0.4.9-31
+%else
+Requires: qemu-kvm >= 2:0.15.0-4
+Requires: qemu-img >= 2:0.15.0-4
+Requires: libvirt >= 0.9.6-2
+Requires: libvirt-python >= 0.9.6-2
+Requires: iscsi-initiator-utils >= 6.2.0.872-12
+Requires: device-mapper-multipath >= 0.4.9-18
+%endif
+
+Requires: psmisc >= 22.6-15
 Requires: fence-agents
 Requires: bridge-utils
 Requires: sos
-Requires: libvirt >= 0.9.4-13
-Requires: libvirt-python >= 0.9.4-13
 Requires: dosfstools
 Requires: policycoreutils-python
 Requires: libselinux-python
@@ -38,10 +52,60 @@ BuildRequires: pyflakes
 Conflicts: selinux-policy-targeted < 3.7.19-80.el6
 
 %description
-The VDSM service is required by a RHEV Manager to manage RHEV Hypervisors
-and Red Hat Enterprise Linux hosts. VDSM manages and monitors the host's
-storage, memory and networks as well as virtual machine creation, other host
-administration tasks, statistics gathering, and log collection.
+The VDSM service is required by a Virtualization Manager to manage the
+Linux hosts. VDSM manages and monitors the host's storage, memory and
+networks as well as virtual machine creation, other host administration
+tasks, statistics gathering, and log collection.
+
+%package hook-vhostmd
+Summary:        VDSM hook set for interaction with vhostmd
+Requires:       vhostmd
+BuildArch:      noarch
+
+%description hook-vhostmd
+VDSM hook to use vhostmd per VM according to Virtualization Manager requests.
+
+%package hook-faqemu
+Summary:        Fake qemu process for VDSM quality assurance
+BuildArch:      noarch
+
+%description hook-faqemu
+VDSM hook used for testing VDSM with multiple fake virtual machines without
+running real guests.
+
+%package debug-plugin
+Summary:        VDSM Debug Plugin
+Requires:       vdsm
+BuildArch:      noarch
+
+%description debug-plugin
+Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
+
+%package cli
+Summary:        VDSM command line interface
+BuildArch:      noarch
+
+%description cli
+Call VDSM commands from the command line. Used for testing and debugging.
+
+%package bootstrap
+Summary:        VDSM bootstrapping package
+BuildArch:      noarch
+
+%description bootstrap
+VDSM bootstrapping package. Used for delivering the bootstap code onto the
+Virtualization Manager.
+
+%package reg
+Summary:        VDSM registration package
+BuildArch:      noarch
+
+Requires: %{name} = %{version}-%{release}
+Requires: traceroute
+
+%description reg
+VDSM registration package. Used to register a Linux host to a Virtualization
+Manager.
 
 %prep
 %setup -q
@@ -54,28 +118,36 @@ make
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 
+%if 0%{?rhel}
 # this is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps.
-install -dDm 1777 "%{buildroot}"%{_localstatedir}/log/core
+install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
+
+# faqemu symlinks
+ln -s vdsm-faqemu %{buildroot}%{_bindir}/qemu
+ln -s vdsm-faqemu %{buildroot}%{_bindir}/qemu-system-x86_64
+%endif
 
 %check
 make check
 
 %clean
-%{__rm} -rf %{buildroot}
+rm -rf %{buildroot}
 
 %pre
-getent passwd vdsm > /dev/null || /usr/sbin/useradd -u 36 -g kvm -o -r vdsm -c "RHEV node manager" -d / -s /sbin/nologin
+/usr/bin/getent passwd vdsm >/dev/null || \
+    /usr/sbin/useradd -r -u 36 -g kvm -d /var/lib/vdsm \
+        -s /sbin/nologin -c "Node Virtualization Manager" vdsm
 /usr/sbin/usermod -a -G qemu vdsm
 
 %post
 tmp_sudoers=$(mktemp)
-cp -a /etc/sudoers $tmp_sudoers
+/bin/cp -a /etc/sudoers $tmp_sudoers
 /bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers
 
-if ! grep -q "^#includedir /etc/sudoers.d" "$tmp_sudoers";
+if ! /bin/grep -q "^#includedir /etc/sudoers.d" "$tmp_sudoers";
 then
-    cat >> $tmp_sudoers <<EOF
+    /bin/cat >> $tmp_sudoers <<EOF
 # vdsm customizations
 #include /etc/sudoers.d/50_vdsm
 # end vdsm customizations
@@ -85,8 +157,8 @@ fi
 if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
     /bin/cp -a $tmp_sudoers /etc/sudoers
 else
-    echo "Failed to add vdsm section to /etc/sudoers" 1>&2
-    echo "$outerr" 1>&2
+    /bin/echo "Failed to add vdsm section to /etc/sudoers" 1>&2
+    /bin/echo "$outerr" 1>&2
 fi
 rm -f $tmp_sudoers
 
@@ -98,7 +170,7 @@ pfile=/etc/pki/%{vdsm_name}/keys/libvirt_password
 if [[ ! -f "$pfile" ]];
 then
     umask 077
-    echo -n shibboleth > "$pfile"
+    /bin/echo -n shibboleth > "$pfile"
     /bin/chown vdsm:kvm "$pfile"
     new_pwd=1
 fi
@@ -111,52 +183,55 @@ fi
 %preun
 if [ "$1" -eq 0 ]
 then
-        /sbin/service vdsmd stop > /dev/null 2>&1 || :
-        /sbin/chkconfig --del vdsmd
+    /sbin/service vdsmd stop > /dev/null 2>&1 || :
+    /sbin/chkconfig --del vdsmd
 
-        tmp_sudoers=$(mktemp)
-        cp -a /etc/sudoers $tmp_sudoers
-        /bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers /etc/logrotate.d/libvirtd
-        if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
-            /bin/cp -a $tmp_sudoers /etc/sudoers
-        else
-            echo "Failed to add vdsm section to /etc/sudoers" 1>&2
-            echo "$outerr" 1>&2
-        fi
-        rm -f $tmp_sudoers
+    tmp_sudoers=$(mktemp)
+    /bin/cp -a /etc/sudoers $tmp_sudoers
+    /bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers /etc/logrotate.d/libvirtd
+    if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
+        /bin/cp -a $tmp_sudoers /etc/sudoers
+    else
+        /bin/echo "Failed to add vdsm section to /etc/sudoers" 1>&2
+        /bin/echo "$outerr" 1>&2
+    fi
+    rm -f $tmp_sudoers
 
-        lconf=/etc/libvirt/libvirtd.conf
-        qconf=/etc/libvirt/qemu.conf
-        ldconf=/etc/sysconfig/libvirtd
-        scconf=/etc/sysctl.conf
+    /bin/sed -i '/# by vdsm$/d' \
+        /etc/libvirt/libvirtd.conf \
+        /etc/libvirt/qemu.conf \
+        /etc/sysconfig/libvirtd \
+        /etc/sysctl.conf
 
-        sed -i '/# by vdsm$/d' $lconf $qconf $ldconf
-        sed -i '/# VDSM section begin/,/# VDSM section end/d' $scconf
+    /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
+        /etc/sysctl.conf
 
-        /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
+    /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
 virt_use_nfs=0
 _EOF
 
-        if selinuxenabled; then
-            setsebool virt_use_nfs off
-        fi
+    if selinuxenabled; then
+        /usr/sbin/setsebool virt_use_nfs off
+    fi
 
+%if 0%{?rhel}
+    if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
+        /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
+        rm -f /etc/init/libvirtd.conf
 
-        if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
-            /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
-            rm -f /etc/init/libvirtd.conf
-
-            /sbin/chkconfig libvirtd on
-            /sbin/service libvirtd start >/dev/null
-        fi
+        /sbin/chkconfig libvirtd on
+        /sbin/service libvirtd start >/dev/null
+    fi
+%endif
 fi
 
 %postun
 if [ "$1" -ge 1 ]; then
-        /sbin/service vdsmd condrestart > /dev/null 2>&1
+    /sbin/service vdsmd condrestart > /dev/null 2>&1
 fi
 exit 0
 
+%if 0%{?rhel}
 %triggerun -- libvirt
 if [ "$2" -eq "0" ]; then
     /sbin/initctl stop libvirtd > /dev/null 2>&1 || :
@@ -166,46 +241,7 @@ fi
 if [ "$2" -ge "1" ]; then
     /sbin/initctl restart libvirtd > /dev/null 2>&1 || :
 fi
-
-%package hook-vhostmd
-Summary: VDSM hook set for interaction with vhostmd
-Group: Applications/System
-Requires: vhostmd
-
-%description hook-vhostmd
-start vhostmd and use it per VM according to requests from RHEV-M
-
-%package debug-plugin
-Summary:       VDSM Debug Plugin
-Requires:      vdsm
-
-%description debug-plugin
-Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM
-
-%package cli
-Summary: VDSM command line interface
-Group: Applications/System
-
-%description cli
-Call VDSM commands from the command line. Used for testing and debugging.
-
-%package bootstrap
-Summary: VDSM bootstrapping package
-Group: Applications/System
-
-%description bootstrap
-VDSM bootstrapping package. Used for delivering the bootstap code onto RHEV
-Manager.
-
-%package reg
-Summary: VDSM registration package
-Group: Applications/System
-Requires: %{name} = %{version}-%{release}
-Requires: traceroute
-
-%description reg
-VDSM registration package. Used to register a RHEV hypervisor to a RHEV
-Manager.
+%endif
 
 %post reg
 /sbin/chkconfig --add vdsm-reg
@@ -213,21 +249,14 @@ Manager.
 %preun reg
 if [ "$1" -eq 0 ]
 then
-        /sbin/service vdsm-reg stop > /dev/null 2>&1
-        /sbin/chkconfig --del vdsm-reg
+    /sbin/service vdsm-reg stop > /dev/null 2>&1 || :
+    /sbin/chkconfig --del vdsm-reg
 fi
 
-%package hook-faqemu
-Summary: Fake qemu process for VDSM quality assurance
-Group: Applications/System
-
-%description hook-faqemu
-The faqemu process is used for testing VDSM with multiple, fake, virtual
-machines without running real guests.
-
 %files
-%defattr(-,root,root,-)
-%doc vdsm/vdsm.conf.sample
+%defattr(-, root, root, -)
+%doc COPYING README vdsm/vdsm.conf.sample
+%{_initrddir}/vdsmd
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
@@ -334,12 +363,11 @@ machines without running real guests.
 %{_datadir}/%{vdsm_name}/netinfo.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
 %{_sysconfdir}/udev/rules.d/12-vdsm-lvm.rules
-%dir %{_localstatedir}/log/core
-
-%{_initrddir}/vdsmd
-%doc COPYING README
-%{py_sitedir}/sos/plugins/vdsm.py*
+%{python_sitelib}/sos/plugins/vdsm.py*
 %{_mandir}/man8/vdsmd.8*
+%if 0%{?rhel}
+%dir %{_localstatedir}/log/core
+%endif
 
 %defattr(-, vdsm, qemu, -)
 %dir %{_localstatedir}/lib/libvirt/qemu/channels
@@ -356,42 +384,42 @@ machines without running real guests.
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 
 %files hook-vhostmd
-%defattr(-,root,root,-)
+%defattr(-, root, root, -)
 %doc COPYING
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
 
 %files debug-plugin
-%defattr(-,root,root,-)
+%defattr(-, root, root, -)
 %{_datadir}/%{vdsm_name}/vdsmDebugPlugin.py*
 
 %files cli
-%defattr(-,root,root,-)
+%defattr(-, root, root, -)
 %doc COPYING
+%{_bindir}/vdsClient
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
 %{_datadir}/%{vdsm_name}/vdscli.py*
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/SecureXMLRPCServer.py*
-%attr (755,root,root) %{_bindir}/vdsClient
 %{_mandir}/man1/vdsClient.1*
 
 %files bootstrap
-%defattr(-,root,root,-)
+%defattr(-, root, root, -)
 %doc COPYING
 %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap.py*
 %{_datadir}/%{vdsm_bootstrap}/deployUtil.py*
 %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap_complete.py*
 
-
 %files reg
-%defattr(-,root,root,-)
+%defattr(-, root, root, -)
 %doc COPYING
 %dir %{_sysconfdir}/%{vdsm_reg}
 %dir %{_datadir}/%{vdsm_reg}
+%config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/vdsm-reg.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/logger.conf
 %{_sysconfdir}/init.d/vdsm-reg
@@ -403,42 +431,29 @@ machines without running real guests.
 %{_datadir}/%{vdsm_reg}/config.py*
 %{_datadir}/%{vdsm_reg}/deployUtil.py*
 %{_datadir}/%{vdsm_reg}/createDaemon.py*
-%{py_sitedir}/ovirt_config_setup/rhevm.py*
+%{python_sitelib}/ovirt_config_setup/rhevm.py*
 %{_datadir}/%{vdsm_reg}/save-config
 %{_sysconfdir}/ovirt-config-boot.d/vdsm-config
 %{_sysconfdir}/ovirt-commandline.d/vdsm-reg
-%config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
 %{_sysconfdir}/cron.hourly/vdsm-reg-logrotate
 %{_mandir}/man8/vdsm-reg.8*
+
 %defattr(-, vdsm, kvm,-)
 %dir %{_var}/log/%{vdsm_reg}
 
 %files hook-faqemu
-%defattr(-,root,root,-)
+%defattr(-, root, root, -)
 %doc COPYING
+%{_bindir}/vdsm-faqemu
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
+%if 0%{?rhel}
 %{_bindir}/qemu
 %{_bindir}/qemu-system-x86_64
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
+%endif
 
 %changelog
-* Thu May 10 2009 Doron Fediuck <doron@redhat.com> - 4.4-3
-- Fixed execution bit for registration bash scripts: config-rhev-manager, save-config.
-* Thu Feb 26 2009 Cyril Plisko <cplisko@redhat.com> - 4.4-3
-- Add dependency on iscsi-initiator-utils
-* Sun Feb 08 2009 Doron Fediuck <doron@redhat.com> - 4.4-2
-- Added vdsm registration with log rotate.
-* Sun Jan 18 2009 Cyril Plisko <cyril.plisko@grigale.com> - 4.4-1
-- Add NFS backend
-* Wed Dec 17 2008 Dan Kenigsberg <danken@redhat.com> - 4.4-0
-- Unified spec for vdsm, multi_vdsm, and vdsClient.
-* Mon May 19 2008 Igor Lvovsky <igorl@qumranet.com> - 4.2-0
-- Remove handling of smb.conf.CD
-* Sun Jan 06 2008 Cyril Plisko <cyril.plisko@qumranet.com> - 4.0-0
-- Make kvm run as non-root user
-* Sun Oct 21 2007 Barak Azulay <bazulay@qumranet.com> - 0.0-3
-- added Required field
-- added the handling of smb.conf.CD
-* Mon Jan 01 2007 Cyril Plisko <cyril.plisko@qumranet.com> - 0.0-2
-- Make the post and preun scriptlets work during upgrade too
+* Wed Oct 12 2011 Federico Simoncelli <fsimonce@redhat.com> - 4.9.0-0
+- Initial upstream release
+
 * Thu Nov 02 2006 Simon Grinberg <simong@qumranet.com> -  0.0-1
 - Initial build

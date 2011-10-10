@@ -132,7 +132,7 @@ install-data-init:
 	$(INSTALL_SCRIPT) vdsmd $(DESTDIR)$(sysconfdir)/rc.d/init.d/vdsmd
 
 uninstall-data-init:
-	$(RM) $(DESTDIR)$(sysconfdir)/init.d/vdsmd
+	$(RM) $(DESTDIR)$(sysconfdir)/rc.d/init.d/vdsmd
 
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
