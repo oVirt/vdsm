@@ -1355,6 +1355,9 @@ if __name__ == "__main__":
         if not isinstance(obj, types.TypeType):
             continue
 
+        if not issubclass(obj, GeneralException):
+            continue
+
         if obj.code in codes:
             raise NameError, "Collision found: code %s is used by %s and %s" \
                              % (obj.code, name, codes[obj.code])

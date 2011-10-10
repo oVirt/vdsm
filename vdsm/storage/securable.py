@@ -1,6 +1,9 @@
 from threading import Event
 from functools import wraps
 
+OVERRIDE_ARG = "__securityOverride"
+SECURE_FIELD = "__secured__"
+
 class SecureError(RuntimeError): pass
 
 class Securable(type):
@@ -15,6 +18,19 @@ class Securable(type):
         def _setUnsafe(self):
             self._safety.clear()
 
+        for name, val in fdict.iteritems():
+            if not callable(val):
+                continue
+
+            if hasattr(val, SECURE_FIELD) and (not getattr(val, SECURE_FIELD)):
+                continue
+
+            if name.startswith("__"):
+                #Wrapping builtins might cause weird results
+                continue
+
+            fdict[name] = secured(val)
+
         fdict['__securable__'] = True
         fdict['_safety'] = Event()
         fdict['_isSafe'] = _isSafe
@@ -22,7 +38,9 @@ class Securable(type):
         fdict['_setUnsafe'] = _setUnsafe
         return type.__new__(mcs, name, bases, fdict)
 
-OVERRIDE_ARG = "__securityOverride"
+def unsecured(f):
+    setattr(f, SECURE_FIELD, False)
+    return f
 
 def secured(f):
     @wraps(f)
@@ -40,6 +58,7 @@ def secured(f):
             raise SecureError()
 
         return f(*args, **kwargs)
+
     return wrapper
 
 
