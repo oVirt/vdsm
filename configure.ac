@@ -42,6 +42,7 @@ AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
 
 # VDSM registration default paths
 AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
+AC_SUBST([vdsmbootstrapdir], ['${datarootdir}/vdsm-bootstrap'])
 AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
 AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 

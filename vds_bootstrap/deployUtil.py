@@ -1,1 +1,0 @@
-../vdsm_reg/deployUtil.py

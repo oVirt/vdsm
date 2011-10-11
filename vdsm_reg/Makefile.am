@@ -14,6 +14,9 @@ dist_vdsmreg_DATA = \
 nodist_vdsmreg_DATA = \
 	deployUtil.py
 
+nodist_vdsmbootstrap_DATA = \
+        deployUtil.py
+
 nodist_noinst_DATA = \
 	vdsm-reg.conf
 

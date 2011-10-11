@@ -6,9 +6,6 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-vdsmbootstrapdir = $(datarootdir)/vdsm-bootstrap
-
 dist_vdsmbootstrap_DATA = \
-	deployUtil.py \
 	vds_bootstrap_complete.py \
 	vds_bootstrap.py
