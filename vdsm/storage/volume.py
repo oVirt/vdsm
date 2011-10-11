@@ -305,7 +305,7 @@ class Volume:
         try:
             if pvolUUID != BLANK_UUID and pimgUUID != BLANK_UUID:
                 pvol = SDF.produce(sdUUID).produceVolume(pimgUUID, pvolUUID)
-                if not pvol.recheckIfLeaf():
+                if not pvol.isShared() and not pvol.recheckIfLeaf():
                     pvol.setLeaf()
                 pvol.teardown(sdUUID, pvolUUID)
         except Exception:
