@@ -223,6 +223,7 @@ class Helper(object):
             except:
                 pass
             self.proc.join()
+        os.close(self.lifeline)
         threading.Thread(target=terminationFlow).start()
 
     def interrupt(self):
