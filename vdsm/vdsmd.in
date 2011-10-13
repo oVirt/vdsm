@@ -91,6 +91,17 @@ mk_core_path() {
     /bin/chmod a+tw $core_path > /dev/null 2>&1
 }
 
+mk_run_path() {
+    local run_path
+
+    for run_path in "@VDSMRUNDIR@" "@POOLSDIR@"; do
+        /bin/mkdir -p "$run_path"
+        /bin/chmod 755 "$run_path"
+        /bin/chown vdsm:kvm "$run_path"
+        /sbin/restorecon "$run_path"
+    done
+}
+
 get_libvirt_conf_item() {
     local cfile key
 
@@ -466,6 +477,7 @@ start() {
     mk_upgrade_path
     mk_core_path
     mk_dom_backup
+    mk_run_path
     /bin/chmod 1777 /dev/shm
     if [ $is_coredump == true ]; then
         export DAEMON_COREFILE_LIMIT=unlimited
