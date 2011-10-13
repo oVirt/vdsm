@@ -2164,10 +2164,11 @@ class HSM:
         """
         vgtype = self.__getVGType(vg)
         vgstate = vg.partial
-        #vg.attr._asdict() because nametuples are not pickled
-        return {'name':vg.name, 'vgUUID':vg.uuid, 'vgsize':str(vg.size),
-                'vgfree':str(vg.free), 'type':vgtype, 'attr':vg.attr._asdict(),
-                'state':vgstate}
+        # dict(vg.attr._asdict()) because nametuples and OrderedDict are not
+        # properly marshalled
+        return {'name': vg.name, 'vgUUID': vg.uuid, 'vgsize': str(vg.size),
+                'vgfree': str(vg.free), 'type': vgtype,
+                'attr': dict(vg.attr._asdict()), 'state': vgstate}
 
     def __fillPVDict(self, devInfo, pv, devtype):
         info = {}
@@ -2228,9 +2229,11 @@ class HSM:
         for i, vg in enumerate(vgList):
             #Should be fresh from the cache
             devNames.extend(imap(getGuid, lvm.listPVNames(vg.name)))
-            #vg.attr._asdict() because nametuples are not pickled
-            vgInfo = {'name': vg.name, 'vgUUID': vg.uuid, 'vgsize': str(vg.size),
-                      'vgfree': str(vg.free), 'type': "", 'attr': vg.attr._asdict(),
+            # dict(vg.attr._asdict()) because nametuples and OrderedDict are
+            # not properly marshalled
+            vgInfo = {'name': vg.name, 'vgUUID': vg.uuid,
+                      'vgsize': str(vg.size), 'vgfree': str(vg.free),
+                      'type': "", 'attr': dict(vg.attr._asdict()),
                       'state': vg.partial, "pvlist": [] }
             vgInfos.append(vgInfo)
             vgGuids[vg.uuid] = i
