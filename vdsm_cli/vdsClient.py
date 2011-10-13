@@ -219,12 +219,19 @@ class service:
                 raise ValueError('Invalid argument "%s".' % view)
             if view == 'table':
                 allStats = {}
-                #if not vms:
-                for res in self.s.getAllVmStats()['statsList']:
+
+                response = self.s.getAllVmStats()
+                if response['status']['code']:
+                    return response['status']['code'], response['status']['message']
+
+                for res in response['statsList']:
                     if not vms or res['vmId'] in vms:
                         allStats[ res['vmId'] ] = res
 
         response = self.s.list(True, vms)
+        if response['status']['code']:
+            return response['status']['code'], response['status']['message']
+
         for conf in response['vmList']:
             if view == 'long':
                 if 'sysprepInf' in conf:
@@ -584,6 +591,9 @@ class service:
             user=username, password=password)
 
         targets = self.s.discoverSendTargets(con)
+        if targets['status']['code']:
+            return targets['status']['code'], targets['status']['message']
+
         print "---- fullTargets"
         for target in targets['fullTargets']:
             print target
