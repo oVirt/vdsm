@@ -128,8 +128,8 @@ uninstall-local: uninstall-data-init uninstall-data-logger \
 		uninstall-data-sudoers uninstall-data-sosplugin
 
 install-data-init:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/init.d
-	$(INSTALL_SCRIPT) vdsmd $(DESTDIR)$(sysconfdir)/init.d/vdsmd
+	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rc.d/init.d
+	$(INSTALL_SCRIPT) vdsmd $(DESTDIR)$(sysconfdir)/rc.d/init.d/vdsmd
 
 uninstall-data-init:
 	$(RM) $(DESTDIR)$(sysconfdir)/init.d/vdsmd

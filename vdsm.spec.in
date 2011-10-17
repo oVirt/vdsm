@@ -336,7 +336,7 @@ machines without running real guests.
 %{_sysconfdir}/udev/rules.d/12-vdsm-lvm.rules
 %dir %{_localstatedir}/log/core
 
-/etc/init.d/vdsmd
+%{_initrddir}/vdsmd
 %doc COPYING README
 %{py_sitedir}/sos/plugins/vdsm.py*
 %{_mandir}/man8/vdsmd.8*
