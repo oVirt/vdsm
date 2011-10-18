@@ -150,6 +150,7 @@ class State:
         failed: [recovering, aborting, raborting],
     }
     _done = [finished, recovered, failed]
+    _recovering = [racquiring, recovering]
 
 
     def __init__(self, state = None):
@@ -168,6 +169,9 @@ class State:
 
     def isDone(self):
         return self.state in self._done
+
+    def isRecovering(self):
+        return self.state in self._recovering
 
 
     def canAbort(self):
@@ -1054,12 +1058,9 @@ class Task:
             raise ValueError("replaceRecoveries: name is required")
         recovery.setOwnerTask(self)
         rec = Recovery('stubName','stubMod','stubObj','stubFunc',[])
-        try:
-            while (rec.name != ROLLBACK_SENTINEL):
-                rec = self.popRecovery()
-            self.recoveries.append(recovery)
-        except IndexError:
-            self.recoveries = [recovery]
+        while (rec and (rec.name != ROLLBACK_SENTINEL)):
+            rec = self.popRecovery()
+        self.recoveries.append(recovery)
         self.persist()
 
 
@@ -1210,8 +1211,12 @@ class Task:
         self._incref(force)
         try:
             if self.state.isDone():
-                self.log.debug("Task allready stopped (%s), ignoring", self.state)
+                self.log.debug("Task already stopped (%s), ignoring", self.state)
                 return
+            elif self.state.isRecovering() and not force and (self.cleanPolicy == TaskCleanType.auto):
+                self.log.debug("Task (%s) in recovery and force is false, ignoring", self.state)
+                return
+
             self._aborting = True
             self._forceAbort = force
         finally:
