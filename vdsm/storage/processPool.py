@@ -124,15 +124,22 @@ class ProcessPool(object):
 
         try:
             helper = self._helperPool[i]
+
             if helper is None:
                 helper = Helper(self._logQueue)
                 self._helperPool[i] = helper
 
             kwargs[LOGGING_THREAD_NAME] = threading.current_thread().name
             helper.pipe.send((func, args, kwargs))
-            if not helper.pipe.poll(self.timeout):
+
+            pollres = misc.NoIntrPoll(helper.pipe.poll, self.timeout)
+
+            if not pollres:
                 helper.interrupt()
-                if not helper.pipe.poll(self._gracePeriod):
+
+                pollres = misc.NoIntrPoll(helper.pipe.poll, self._gracePeriod)
+
+                if not pollres:
                     helper.kill()
                     self._helperPool[i] = None
                     raise Timeout("Operation Stuck")
