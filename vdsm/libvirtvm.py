@@ -970,7 +970,7 @@ class LibvirtVm(vm.Vm):
 
         osd = caps.osversion()
         domxml.appendSysinfo(
-            osname=caps.OVIRT,
+            osname=caps.OSName.OVIRT,
             osversion=osd.get('version', '') + '-' + osd.get('release', ''),
             hostUUID=utils.getHostUUID() )
 
