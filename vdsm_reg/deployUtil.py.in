@@ -67,6 +67,7 @@ EX_REBOOT = '@REBOOT_PATH@'
 EX_RPM = '@RPM_PATH@'
 EX_SED = '@SED_PATH@'
 EX_SERVICE = '@SERVICE_PATH@'
+EX_SYSTEMCTL = '@SYSTEMCTL_PATH@'
 EX_UNAME = '@UNAME_PATH@'
 EX_YUM = '@YUM_PATH@'
 
@@ -473,19 +474,43 @@ def setService(srvName, action):
 
     return out, err, nReturn
 
+def systemCtl(srvName, action, level=None):
+    """
+    Perform a set action (on/off/reset) on a systemd service
+    """
+
+    srvCtlName = srvName + ".service"
+
+    if action == "off":
+        out, err, nReturn = _logExec([EX_SYSTEMCTL, "is-enabled", srvCtlName])
+
+        # Service not present or not enabled
+        if nReturn != 0:
+            return "", "", 0
+
+        out, err, nReturn = _logExec([EX_SYSTEMCTL, "disable", srvCtlName])
+
+    elif action == "on":
+        out, err, nReturn = _logExec([EX_SYSTEMCTL, "enable", srvCtlName])
+
+    elif action == "reset":
+        raise Exception, \
+                "The 'reset' action is not yet implemented for systemd"
+
+    return out, err, nReturn
+
 def chkConfig(srvName, action, level=None):
     """
-        Perform a set action (on/off/reset) on an init script
+    Perform a set action (on/off/reset) on an init script
     """
+    if os.path.exists(EX_SYSTEMCTL):
+        return systemCtl(srvName, action, level)
+
     nReturn = 0
     out = None
     err = None
-    if type(srvName) == type(None):
-        nReturn = 1
-        message = "chkConfig: ignoring None service."
-        err = message
-        logging.error(message)
-    elif os.path.exists(P_ETC_INITD + srvName):
+
+    if os.path.exists(P_ETC_INITD + srvName):
         if level:
             out, err, nReturn = _logExec([EX_CHKCONFIG, '--level', level, srvName, action])
         else:
