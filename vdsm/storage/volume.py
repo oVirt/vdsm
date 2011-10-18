@@ -324,6 +324,20 @@ class Volume:
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
 
+    @classmethod
+    def startCreateVolumeRollback(cls, taskObj, sdUUID, imgUUID, volUUID):
+        cls.log.info("startCreateVolumeRollback: sdUUID=%s imgUUID=%s "\
+                        "volUUID=%s " % ( sdUUID, imgUUID, volUUID))
+        # This rollback doesn't actually do anything.
+        # In general the createVolume rollbacks are a list of small rollbacks
+        # that are replaced by the one major rollback at the end of the task.
+        # This rollback is a simple marker that must be the first rollback
+        # in the list of createVolume rollbacks.
+        # We need it in cases when createVolume is part of a composite task and
+        # not a task by itself. In such cases when we will replace the list of
+        # small rollbacks with the major one, we want to be able remove only the relevant
+        # rollbacks from the rollback list.
+        pass
 
     @classmethod
     def createVolumeRollback(cls, taskObj, repoPath, sdUUID, imgUUID, volUUID, imageDir):

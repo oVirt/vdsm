@@ -74,6 +74,7 @@ FIELD_SEP = ","
 RESOURCE_SEP = "!"
 TASK_METADATA_VERSION = 1
 
+ROLLBACK_SENTINEL = "rollback sentinel"
 
 class State:
     unknown = "unknown"
@@ -384,7 +385,6 @@ class Recovery:
 
     def __str__(self):
         return "%s: %s->%s(%s)" % (self.name, self.object, self.function, str(self.params))
-
 
 
 class TaskResult(object):
@@ -1053,9 +1053,13 @@ class Task:
         if not recovery.name:
             raise ValueError("replaceRecoveries: name is required")
         recovery.setOwnerTask(self)
-        rec = []
-        rec.append(recovery)
-        self.recoveries = rec
+        rec = Recovery('stubName','stubMod','stubObj','stubFunc',[])
+        try:
+            while (rec.name != ROLLBACK_SENTINEL):
+                rec = self.popRecovery()
+            self.recoveries.append(recovery)
+        except IndexError:
+            self.recoveries = [recovery]
         self.persist()
 
 

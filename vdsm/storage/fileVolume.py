@@ -136,6 +136,9 @@ class FileVolume(volume.Volume):
             if not pvol.isLegal():
                 raise se.createIllegalVolumeSnapshotError(pvol.volUUID)
 
+        # Rollback sentinel, just to mark the start of the task
+        vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL, "fileVolume", "FileVolume", "startCreateVolumeRollback",
+                                             [sdUUID, imgUUID, volUUID]))
         # create volume rollback
         vars.task.pushRecovery(task.Recovery("halfbaked volume rollback", "fileVolume", "FileVolume", "halfbakedVolumeRollback",
                                              [vol_path]))

@@ -185,6 +185,11 @@ class BlockVolume(volume.Volume):
             else:
                 # should stay %d and size should be int(size)
                 volsize = "%s" % (size / 2 / 1024)
+
+            # Rollback sentinel, just to mark the start of the task
+            vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL, "blockVolume", "BlockVolume", "startCreateVolumeRollback",
+                                                 [sdUUID, imgUUID, volUUID]))
+            # create volume rollback
             vars.task.pushRecovery(task.Recovery("halfbaked volume rollback", "blockVolume", "BlockVolume", "halfbakedVolumeRollback",
                                                  [sdUUID, volUUID, vol_path]))
             lvm.createLV(sdUUID, volUUID, volsize, activate=True)
