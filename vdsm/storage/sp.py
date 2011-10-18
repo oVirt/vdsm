@@ -768,7 +768,7 @@ class StoragePool:
             dom = SDF.produce(sdUUID)
             #Check that dom is really reachable and not a cached value.
             dom.validate(False)
-        except se.StorageException:
+        except (se.StorageException, Timeout):
             self.log.warn("deactivaing MIA domain `%s`", sdUUID, exc_info=True)
             if new_msdUUID != BLANK_POOL_UUID:
                 #Trying to migrate master failed to reach actual msd.
