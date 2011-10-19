@@ -53,7 +53,6 @@ import re
 import ConfigParser
 import socket
 import tempfile
-import selinux
 
 # set logging before deployUtil is first used
 rnum = str(random.randint(100,1000000))
@@ -95,7 +94,8 @@ if rhel6based:
     DEVEL_PACK = ()
     VDS_PACK = ('qemu-kvm', 'qemu-kvm-tools', VDSM_NAME, VDSM_NAME+'-cli',
                 'libjpeg', 'spice-server', 'pixman',
-                'seabios', 'qemu-img', 'fence-agents')
+                'seabios', 'qemu-img', 'fence-agents',
+                'libselinux-python')
 else:
     # Devel packages
     DEVEL_PACK = ('gdb','tcpdump','strace','ltrace','sysstat','ntp',
@@ -160,6 +160,7 @@ def _safeWrite(fname, s):
             os.chmod(fname, oldstat.st_mode)
             os.chown(fname, oldstat.st_uid, oldstat.st_gid)
 
+        import selinux
         selinux.restorecon(fname)
     except OSError:
         logging.debug('trying to maintain file permissions', exc_info=True)

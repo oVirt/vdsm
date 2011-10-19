@@ -31,6 +31,7 @@ Requires: libvirt >= 0.9.4-13
 Requires: libvirt-python >= 0.9.4-13
 Requires: dosfstools
 Requires: policycoreutils-python
+Requires: libselinux-python
 Requires: kernel >= 2.6.32-198
 Requires(post): cyrus-sasl-lib
 BuildRequires: pyflakes

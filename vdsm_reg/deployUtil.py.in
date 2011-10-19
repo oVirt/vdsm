@@ -38,7 +38,6 @@ import glob
 import imp
 from optparse import OptionParser
 from itertools import dropwhile, islice
-import selinux
 
 try:
     from ovirtnode import ovirtfunctions
@@ -557,6 +556,7 @@ def handleSSHKey(strKey):
 
     if fReturn:
         try:
+            import selinux
             os.chmod(P_ROOT_AUTH_KEYS, 0644)
             selinux.restorecon(P_ROOT_AUTH_KEYS)
         except:
