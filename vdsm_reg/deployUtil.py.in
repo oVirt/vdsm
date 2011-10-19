@@ -38,6 +38,7 @@ import glob
 import imp
 from optparse import OptionParser
 from itertools import dropwhile, islice
+import selinux
 
 try:
     from ovirtnode import ovirtfunctions
@@ -557,9 +558,11 @@ def handleSSHKey(strKey):
     if fReturn:
         try:
             os.chmod(P_ROOT_AUTH_KEYS, 0644)
+            selinux.restorecon(P_ROOT_AUTH_KEYS)
         except:
             fReturn = False
-            logging.debug("handleSSHKey: failed to chmod authorized_keys")
+            logging.debug("handleSSHKey: failed to chmod authorized_keys",
+                          exc_info=True)
 
     if fReturn and isOvirt():
         # persist authorized_keys
