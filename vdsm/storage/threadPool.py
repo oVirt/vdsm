@@ -192,6 +192,7 @@ class WorkerThread(threading.Thread):
         threading.Thread.__init__(self)
         self.__pool = pool
         self.__isDying = False
+        self.daemon = True
 
     def run(self):
 

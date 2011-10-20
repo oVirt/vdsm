@@ -84,7 +84,7 @@ class TaskManager:
             if hasattr(t, 'stop'): t.stop()
             self.log.info(str(t))
 
-        self.tp.joinAll(waitForTasks=False)
+        self.tp.joinAll(waitForTasks=False, waitForThreads=False)
 
 
     def getTaskStatus(self, taskID):
