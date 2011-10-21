@@ -167,20 +167,9 @@ rm -f $tmp_sudoers
 # vdsm is intentionally on by default.
 /sbin/chkconfig --add vdsmd
 
-# create vdsm "secret" password for libvirt, if none exists
-pfile=/etc/pki/%{vdsm_name}/keys/libvirt_password
-if [[ ! -f "$pfile" ]];
-then
-    umask 077
-    /bin/echo -n shibboleth > "$pfile"
-    /bin/chown vdsm:kvm "$pfile"
-    new_pwd=1
-fi
-if ! /usr/sbin/sasldblistusers2 -f /etc/libvirt/passwd.db 2> /dev/null | \
-    /bin/grep -q '^vdsm@rhevh\b' || [[ -n "$new_pwd" ]] ;
-then
-    /usr/sbin/saslpasswd2 -p -a libvirt vdsm@rhevh < "$pfile"
-fi
+# update the vdsm "secret" password for libvirt
+/usr/sbin/saslpasswd2 -p -a libvirt vdsm@rhevh < \
+    /etc/pki/vdsm/keys/libvirt_password
 
 %preun
 if [ "$1" -eq 0 ]
@@ -215,6 +204,8 @@ _EOF
     if selinuxenabled; then
         /usr/sbin/setsebool virt_use_nfs off
     fi
+
+    /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@rhevh
 
 %if 0%{?rhel}
     if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
@@ -379,6 +370,7 @@ fi
 %dir %{_sysconfdir}/pki/%{vdsm_name}
 %dir %{_sysconfdir}/pki/%{vdsm_name}/keys
 %dir %{_sysconfdir}/pki/%{vdsm_name}/certs
+%config(noreplace) %{_sysconfdir}/pki/%{vdsm_name}/keys/libvirt_password
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/run/%{vdsm_name}

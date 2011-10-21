@@ -73,6 +73,7 @@ CLEANFILES = \
 	$(vdsm_SUBST)
 
 EXTRA_DIST = \
+	libvirt_password \
 	logger.conf.in \
 	mk-vdsm-conf-sample.py \
 	vdsmd.in \
@@ -113,7 +114,8 @@ install-data-hook:
 
 install-data-local: install-data-init install-data-logger \
 		install-data-rwtab install-data-logrotate \
-		install-data-sudoers install-data-sosplugin
+		install-data-sudoers install-data-sosplugin \
+		install-data-libvirtpass
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
@@ -125,7 +127,8 @@ install-data-local: install-data-init install-data-logger \
 
 uninstall-local: uninstall-data-init uninstall-data-logger \
 		uninstall-data-rwtab uninstall-data-logrotate \
-		uninstall-data-sudoers uninstall-data-sosplugin
+		uninstall-data-sudoers uninstall-data-sosplugin \
+		uninstall-data-libvirtpass
 
 install-data-init:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rc.d/init.d
@@ -140,6 +143,14 @@ install-data-logger:
 
 uninstall-data-logger:
 	$(RM) $(DESTDIR)$(vdsmconfdir)/logger.conf
+
+install-data-libvirtpass:
+	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
+	$(INSTALL_DATA) -m 600 $(srcdir)/libvirt_password \
+		$(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
+
+uninstall-data-libvirtpass:
+	$(RM) $(DESTDIR)$(vdsmtsdir)/libvirt_password
 
 install-data-rwtab:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d
