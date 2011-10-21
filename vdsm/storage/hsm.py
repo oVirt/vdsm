@@ -256,6 +256,7 @@ class HSM:
         mntDir = os.path.join(self.storage_repository, 'mnt')
         tasksFiles = os.path.join(self.tasksDir, "*")
         whiteList = [self.tasksDir, tasksFiles, mntDir]
+        mountList = []
 
         def isInWhiteList(fpath):
             fullpath = os.path.abspath(fpath)
@@ -277,19 +278,21 @@ class HSM:
             mountPoint = mnt.fs_file
             isInStorageRepo = (os.path.commonprefix([self.storage_repository, mountPoint]) == self.storage_repository)
             if isInStorageRepo:
+                mountList.append(mountPoint)
                 whiteList.extend([mountPoint, os.path.join(mountPoint, "*")])
 
         self.log.debug("White list is %s." % whiteList)
         #Clean whatever is left
         self.log.debug("Cleaning leftovers.")
-        # We can't list files form top to bottom because the it will go into
-        # mounts.A mounted NFS could be stuck and freeze vdsm startup. Because
-        # we will ignore files in mounts anyway using out of process file ops
-        # is useless. We just clean all directories before removing them.
-        # We push them at the start so we delete them from the inner moust
-        # outward.
+        # We can't list files form top to bottom because the process
+        # would descend into mounpoints and an unreachable NFS storage
+        # could freeze the vdsm startup. Since we will ignore files in
+        # mounts anyway using out of process file operations is useless.
+        # We just clean all directories before removing them from the
+        # innermost to the outermost.
         rmDirList = []
-        for base, dirs, files in os.walk(self.storage_repository):
+        for base, dirs, files in misc.walk(self.storage_repository,
+                                           blacklist=mountList):
             for directory in dirs:
                 fullPath = os.path.join(base, directory)
                 if isInWhiteList(fullPath):

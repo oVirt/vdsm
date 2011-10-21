@@ -1300,3 +1300,66 @@ try:
 except:
     pass
 
+def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=[]):
+    """Directory tree generator.
+
+    Custom implementation of os.walk that doesn't block if the destination of
+    a symlink is on an unreachable blacklisted path (typically a nfs mount).
+    All the general os.walk documentation applies.
+    """
+
+    # We may not have read permission for top, in which case we can't
+    # get a list of the files the directory contains.  os.path.walk
+    # always suppressed the exception then, rather than blow up for a
+    # minor reason when (say) a thousand readable directories are still
+    # left to visit.  That logic is copied here.
+    try:
+        names = os.listdir(top)
+    except OSError, err:
+        if onerror is not None:
+            onerror(err)
+        return
+
+    # Use absolute and normalized blacklist paths
+    normblacklist = [os.path.abspath(x) for x in blacklist]
+
+    dirs, nondirs = [], []
+    for name in names:
+        path = os.path.join(top, name)
+
+        # Begin of the part where we handle the unreachable symlinks
+        if os.path.abspath(path) in normblacklist:
+            continue
+
+        if not followlinks:
+            # Don't use os.path.islink because it relies on the syscall
+            # lstat which is getting stuck if the destination is unreachable
+            try:
+                os.readlink(path)
+            except OSError, err:
+                # EINVAL is thrown when "path" is not a symlink, in such
+                # case continue normally
+                if err.errno != errno.EINVAL:
+                    raise
+                # There is an hidden code path here, if we fail to read the
+                # link and the errno is EINVAL then skip the following else
+                # code block:
+            else:
+                nondirs.append(name)
+                continue
+        # End of the part where we handle the unreachable symlinks
+
+        if os.path.isdir(path):
+            dirs.append(name)
+        else:
+            nondirs.append(name)
+
+    if topdown:
+        yield top, dirs, nondirs
+    for name in dirs:
+        path = os.path.join(top, name)
+        if followlinks or not os.path.islink(path):
+            for x in walk(path, topdown, onerror, followlinks, blacklist):
+                yield x
+    if not topdown:
+        yield top, dirs, nondirs
