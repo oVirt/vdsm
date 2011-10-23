@@ -141,7 +141,7 @@ class InterfaceSample:
             flags = ethtool.get_flags(ifid)
         except IOError:
             return '0'
-        return 'up' if flags & ethtool.IFF_UP else 'down'
+        return 'up' if flags & ethtool.IFF_RUNNING else 'down'
 
     def __init__(self, ifid):
         self.rx = self.readIfaceStat(ifid, 'rx_bytes')
