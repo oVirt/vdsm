@@ -61,7 +61,6 @@ from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 import devicemapper
 import logUtils
-from processPool import Timeout
 
 GUID = "guid"
 NAME = "name"
@@ -1146,7 +1145,7 @@ class HSM:
         if srcVolUUID:
             misc.validateUUID(srcVolUUID, 'srcVolUUID')
         # Validate volume type and format
-        SDF.produce(sdUUID).validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        sdCache.produce(sdUUID).validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._schedule("createVolume", pool.createVolume, sdUUID,
@@ -1172,7 +1171,7 @@ class HSM:
         # Do not validate if forced.
         if not misc.parseBool(force):
             for volUUID in volumes:
-                SDF.produce(sdUUID).produceVolume(imgUUID, volUUID).validateDelete()
+                sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).validateDelete()
 
         self._schedule("deleteVolume", pool.deleteVolume, sdUUID,
             imgUUID, volumes, misc.parseBool(postZero), misc.parseBool(force)
@@ -1234,7 +1233,7 @@ class HSM:
         self.validateSdUUID(srcDomUUID)
         self.validateSdUUID(dstDomUUID)
         # Do not validate images in Backup domain
-        if not SDF.produce(dstDomUUID).isBackup():
+        if not sdCache.produce(dstDomUUID).isBackup():
             pool.validateImage(srcDomUUID, dstDomUUID, imgUUID, op)
 
         domains = [srcDomUUID, dstDomUUID]
@@ -1267,7 +1266,7 @@ class HSM:
         for (imgUUID, pZero) in imgDict.iteritems():
             images[imgUUID.strip()] = misc.parseBool(pZero)
         # Do not validate images in Backup domain
-        if not SDF.produce(dstDomUUID).isBackup():
+        if not sdCache.produce(dstDomUUID).isBackup():
             for imgUUID in imgDict:
                 imgUUID = imgUUID.strip()
                 pool.validateImage(srcDomUUID, dstDomUUID, imgUUID)
@@ -1310,7 +1309,7 @@ class HSM:
             dom = dstSdUUID
         else:
             dom = sdUUID
-        SDF.produce(dom).validateCreateVolumeParams(volFormat, preallocate, volume.BLANK_UUID)
+        sdCache.produce(dom).validateCreateVolumeParams(volFormat, preallocate, volume.BLANK_UUID)
 
         # If dstSdUUID defined, means we copy image to it
         domains = [sdUUID]
