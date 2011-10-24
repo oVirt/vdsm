@@ -20,6 +20,8 @@
 #
 # Description:    Constants definitions for vdsm and utilities.
 
+import os
+
 #
 # file ownership definitions
 #
@@ -80,7 +82,7 @@ EXT_DMSETUP = '@DMSETUP_PATH@'
 
 EXT_EDITNETWORK = '@VDSMDIR@/editNetwork'
 
-EXT_FENCE_PREFIX = '/usr/bin/fence_'
+EXT_FENCE_PREFIX = os.path.dirname('@FENCE_AGENT_PATH@') + '/fence_'
 EXT_FSCK = '@FSCK_PATH@'
 EXT_FUSER = '@FUSER_PATH@'
 
