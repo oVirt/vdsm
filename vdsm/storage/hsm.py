@@ -2717,7 +2717,7 @@ class HSM:
 
                 # Master validation makes sense for SPM only
                 # So we should analyze the 'getRepoStats' return value
-                if self.getSpmRole() == sp.SPM_FREE:
+                if p.getSpmRole() == sp.SPM_FREE:
                     # The SPM case
                     valid = (master_stats['masterValidate']['mount'] and
                         master_stats['masterValidate']['valid'])
