@@ -267,7 +267,7 @@ class Deploy:
                 self.message = "Server does not support virtualization"
                 self.rc = False
 
-            if "GenuineIntel" == deployUtil.cpuVendorID:
+            if "GenuineIntel" == deployUtil.cpuVendorID():
                 self.res = "Intel"
             else:
                 self.res = "AMD"
