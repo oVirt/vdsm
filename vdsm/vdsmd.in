@@ -420,7 +420,7 @@ stop_libvirtd_sysv() {
 }
 
 start_libvirtd() {
-    local packaged installed target
+    local packaged target
     local startout
 
     if ! upstart_libvirt; then
@@ -431,11 +431,10 @@ start_libvirtd() {
     packaged=`/bin/rpm -ql libvirt | /bin/grep libvirtd.upstart | \
                  /usr/bin/tail -1`
     target=/etc/init/libvirtd.conf
-    installed=`/bin/readlink -f "$target"`
 
-    if [[ "$packaged" != "$installed" ]];
+    if ! diff -q "$packaged" "$target" >/dev/null;
     then
-        /bin/ln -sf "$packaged" "$target" || return 1
+        /bin/cp -p "$packaged" "$target" || return 1
         /sbin/initctl reload-configuration
     fi
 
