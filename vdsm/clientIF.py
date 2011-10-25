@@ -544,29 +544,51 @@ class clientIF:
                     imageID=paramImageID, volumeID=paramVolumeID)
 
 
+    def _getUUIDSpecPath(self, uuid):
+        rc, out, err  = storage.misc.execCmd([constants.EXT_BLKID, "-U", uuid], sudo=False)
+        if not out or rc != 0:
+            self.log.info("blkid failed for UUID: %s" % uuid)
+            raise vm.VolumeError(uuid)
+        else:
+            path = out[0]
+        return path
+
     def _prepareVolumePath(self, drive):
         if type(drive) == dict:
-            res = self.irs.prepareVolume(drive['domainID'], drive['poolID'],
-                            drive['imageID'], drive['volumeID'])
-            if res['status']['code']:
-                raise vm.VolumeError(drive)
-            res = self.irs.getVolumePath(drive['domainID'],
-                            drive['poolID'],
-                            drive['imageID'], drive['volumeID'])
-            if res['status']['code']:
-                raise vm.VolumeError(drive)
-            path = res['path']
-        else:
-            if drive and not os.path.exists(drive):
-                raise vm.VolumeError(drive)
+            # drive specification is a quartet (vdsm image)?
+            if all(k in drive.keys() for k in ('volumeID', 'domainID', 'imageID', 'poolID')):
+                res = self.irs.prepareVolume(drive['domainID'], drive['poolID'],
+                                drive['imageID'], drive['volumeID'])
+                if res['status']['code']:
+                    raise vm.VolumeError(drive)
+                res = self.irs.getVolumePath(drive['domainID'],
+                                drive['poolID'],
+                                drive['imageID'], drive['volumeID'])
+                if res['status']['code']:
+                    raise vm.VolumeError(drive)
+                path = res['path']
+            #Another (dict) drive specification
+            elif drive.has_key("GUID") and os.path.exists(os.path.join("/dev/mapper", drive["GUID"])):
+                path = os.path.join("/dev/mapper", drive["GUID"])
+            elif drive.has_key("UUID"):
+                path = self._getUUIDSpecPath(drive["UUID"])
+        #For BC sake: a path as a string.
+        elif not drive:
             path = drive
+        elif os.path.exists(drive):
+            path = drive
+        self.log.info("prepared volume path: %s" % path)
         return path
 
     def _teardownVolumePath(self, drive):
         result = {'status':doneCode}
         if type(drive) == dict:
-            result = self.irs.teardownVolume(drive['domainID'], drive['poolID'],
+            try:
+                result = self.irs.teardownVolume(drive['domainID'], drive['poolID'],
                                              drive['imageID'], drive['volumeID'])
+            except KeyError:
+                #This drive is not a vdsm image (quartet)
+                self.log.info("Avoiding tear down drive %s", str(drive))
 
         return result['status']['code']
 

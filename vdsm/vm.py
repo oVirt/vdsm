@@ -412,14 +412,18 @@ class Vm(object):
             if not drive.get('serial') and drive.get('imageID'):
                 drive['serial'] = drive['imageID'][-20:]
 
-            res = self.cif.irs.getVolumeSize(drive['domainID'],
+            try:
+                res = self.cif.irs.getVolumeSize(drive['domainID'],
                                      drive['poolID'], drive['imageID'],
                                      drive['volumeID'])
-            drive['truesize'] = res['truesize']
-            drive['apparentsize'] = res['apparentsize']
-            drive['blockDev'] = not self.cif.irs.getStorageDomainInfo(
-                        drive['domainID'])['info']['type'] in ('NFS', 'LOCALFS')
-            self._drives.append(Drive(**drive))
+            except KeyError:
+                self.log.info("Ignoring drive %s", str(drive))
+            else:
+                drive['truesize'] = res['truesize']
+                drive['apparentsize'] = res['apparentsize']
+                drive['blockDev'] = not self.cif.irs.getStorageDomainInfo(
+                            drive['domainID'])['info']['type'] in ('NFS', 'LOCALFS')
+                self._drives.append(Drive(**drive))
 
     def preparePaths(self):
         for drive in self.conf.get('drives', []):

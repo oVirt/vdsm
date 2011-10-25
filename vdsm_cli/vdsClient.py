@@ -148,7 +148,7 @@ class service:
                 if '=' in line:
                     param,value = line.split("=",1)
                     if param == 'drive':
-                        drives += [self._parseDriveSpec(value)]
+                        drives.append(self._parseDriveSpec(value))
                     elif param in ('cdrom', 'floppy'):
                         value = self._parseDriveSpec(value)
                     if param.startswith('custom_'):
