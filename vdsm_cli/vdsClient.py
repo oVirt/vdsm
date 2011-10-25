@@ -1349,18 +1349,21 @@ class service:
             d[k] = v
         return d
 
+    def _splitDriveSpecItems(self, item):
+        """
+        BC is BC.
+        """
+        key, value = item.split(":", 1)
+        if key in ("domain", "pool", "image", "volume"):
+            key = "%sID" % key
+        return key, value
+
     def _parseDriveSpec(self, spec):
+        """
+        ',' means dict. (!)
+        """
         if ',' in spec:
-            d = {}
-            for s in spec.split(','):
-                k, v = s.split(':', 1)
-                if k == 'domain': d['domainID'] = v
-                if k == 'pool': d['poolID'] = v
-                if k == 'image': d['imageID'] = v
-                if k == 'volume': d['volumeID'] = v
-                if k == 'boot': d['boot'] = v
-                if k == 'format': d['format'] = v
-            return d
+            return dict(self._splitDriveSpecItems(item) for item in spec.split(',') if item)
         return spec
 
     def do_addNetwork(self, args):
