@@ -151,7 +151,7 @@ STRG_MPATH_CONF = """
 
 defaults {
     polling_interval        5
-    getuid_callout          "/sbin/scsi_id -g -u -d /dev/%n"
+    getuid_callout          "@SCSI_ID_PATH@ -g -u -d /dev/%n"
     no_path_retry           fail
     user_friendly_names     no
     flush_on_last_del       yes
