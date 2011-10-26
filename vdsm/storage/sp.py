@@ -295,8 +295,7 @@ class StoragePool:
         :raises: :exc:`storage_exception.OperationInProgress` if called during an allready running connection attempt.
                  (makes the fact that it fails silently does not matter very much).
         """
-        self.lock.acquire()
-        try:
+        with self.lock:
             if self.spmRole == SPM_ACQUIRED:
                 return True
             # Since we added the lock the following should NEVER happen
@@ -385,8 +384,6 @@ class StoragePool:
                 self.log.error("failed: %s" % str(e))
                 self.stopSpm(force=True, __securityOverride=True)
                 raise
-        finally:
-            self.lock.release()
 
     @unsecured
     def _shutDownUpgrade(self):
@@ -432,45 +429,45 @@ class StoragePool:
                 cls.log.debug("master `%s` is not mounted, skipping", master)
 
     def stopSpm(self, force=False):
-        self.lock.acquire()
-        if not force and self.getSpmRole() in SPM_FREE:
-            return True
+        with self.lock:
+            if not force and self.getSpmRole() == SPM_FREE:
+                return True
 
-        self._shutDownUpgrade()
-        self._setUnsafe()
+            self._shutDownUpgrade()
+            self._setUnsafe()
 
-        stopFailed = False
+            stopFailed = False
 
-        try:
-            self.__cleanupMasterMount()
-        except:
-            # If unmounting fails the vdsm panics.
-            stopFailed = True
-
-        try:
-            if self.spmMailer:
-                self.spmMailer.stop()
-        except:
-            # Here we are just begin polite.
-            # SPM will also clean this on start up.
-            pass
-
-        if not stopFailed:
             try:
-                self.setMetaParam(PMDK_SPM_ID, -1)
+                self.__cleanupMasterMount()
             except:
-                pass # The system can handle this inconsistency
+                # If unmounting fails the vdsm panics.
+                stopFailed = True
 
-        try:
-            self.releaseClusterLock()
-        except:
-            stopFailed = True
+            try:
+                if self.spmMailer:
+                    self.spmMailer.stop()
+            except:
+                # Here we are just begin polite.
+                # SPM will also clean this on start up.
+                pass
 
-        if stopFailed:
-            misc.panic("Unrecoverable errors during SPM stop process.")
+            if not stopFailed:
+                try:
+                    self.setMetaParam(PMDK_SPM_ID, -1)
+                except:
+                    pass # The system can handle this inconsistency
 
-        self.spmStarted = False
-        self.spmRole = SPM_FREE
+            try:
+                self.releaseClusterLock()
+            except:
+                stopFailed = True
+
+            if stopFailed:
+                misc.panic("Unrecoverable errors during SPM stop process.")
+
+            self.spmStarted = False
+            self.spmRole = SPM_FREE
 
     def _upgradePool(self, targetDomVersion):
         with rmanager.acquireResource(STORAGE, "upgrade_" + self.spUUID, rm.LockType.exclusive):
