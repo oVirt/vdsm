@@ -218,6 +218,7 @@ class StoragePool:
         if len(self.repostats) > 0:
             threading.Thread(target=self.disconnectDomains).start()
 
+    @unsecured
     def forceFreeSpm(self):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
         # TODO: SCSI Fence the 'lastOwner'
