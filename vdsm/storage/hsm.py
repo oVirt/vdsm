@@ -1382,7 +1382,7 @@ class HSM:
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
-            pool = sp.StoragePool(spUUID)
+            pool = sp.StoragePool(spUUID, self.taskMng)
         else:
             raise se.StoragePoolConnected(spUUID)
 
