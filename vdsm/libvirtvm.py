@@ -40,6 +40,8 @@ import caps
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 _VHOST_MAP = {'true': 'vhost', 'false': 'qemu'}
 
+DEFAULT_BRIDGE = config.get("vars", "default_bridge")
+
 class VmStatsThread(utils.AdvancedStatsThread):
     MBPS_TO_BPS = 10**6 / 8
 
@@ -661,7 +663,7 @@ class _DomXML:
     def appendNetIfaces(self):
         macs = self.conf.get('macAddr', '').split(',')
         models = self.conf.get('nicModel', '').split(',')
-        bridges = self.conf.get('bridge', 'rhevm').split(',')
+        bridges = self.conf.get('bridge', DEFAULT_BRIDGE).split(',')
         if macs == ['']: macs = []
         if models == ['']: models = []
         if bridges == ['']: bridges = []
@@ -701,7 +703,7 @@ class _DomXML:
         <interface type="bridge">
             <mac address="aa:bb:dd:dd:aa:bb"/>
             <model type="virtio"/>
-            <source bridge="rhevm"/>
+            <source bridge="engine"/>
             [<tune><sndbuf>0</sndbuf></tune>]
         </interface>
         """

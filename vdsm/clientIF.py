@@ -56,6 +56,8 @@ USER_SHUTDOWN_MESSAGE = 'System going down'
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
+DEFAULT_BRIDGE = config.get("vars", "default_bridge")
+
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         try:
@@ -147,7 +149,7 @@ class clientIF:
         if addr:
             return addr
         try:
-            addr = netinfo.ifconfig()['rhevm']['addr']
+            addr = netinfo.ifconfig()[DEFAULT_BRIDGE]['addr']
         except:
             pass
         return addr

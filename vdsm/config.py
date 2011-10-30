@@ -53,6 +53,8 @@ config.set('vars', 'migration_monitor_interval', '10')
 # comma-separated list of fnmatch-patterns for host nics to be hidden from vdsm
 config.set('vars', 'hidden_nics', 'wlan*,usb*')
 
+config.set('vars', 'default_bridge', 'engine')
+
 # maxmium allowed downtime for live migration in milliseconds (anything below
 # 100ms is ignored) if you do not care about liveness of migration, set to a
 # very high value, such as 600000
