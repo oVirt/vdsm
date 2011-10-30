@@ -810,7 +810,7 @@ class StoragePool:
                 for sdUUID in domDict:
                     domains[sdUUID] = domDict[sdUUID].capitalize()
                 # Add domain to domain list in pool metadata
-                self.setMetaParam(PMDK_DOMAINS, domains)
+                self.setMetaParam(PMDK_DOMAINS, domains, __securityOverride=True)
                 self.log.info("Set storage pool domains: %s", domains)
             finally:
                 # We need stop all repoStats threads that were started during reconstructMaster
