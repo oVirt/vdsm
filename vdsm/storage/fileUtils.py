@@ -162,10 +162,18 @@ def isMounted(resource=None, mountPoint=None, mountType=None):
     if mountPoint is None and resource is None:
         raise ValueError("`mountPoint` or `resource` must be specified")
 
+    cleanPath = lambda path: path[:-1] if path is not None and path.endswith("/") else path
+
+    mountPoint = cleanPath(mountPoint)
+    resource = cleanPath(resource)
+
     mounts = getMounts()
 
     for m in mounts:
         (res, mp, fs) = m[0:3]
+        res = cleanPath(res)
+        mp = cleanPath(mp)
+
         if ( (mountPoint is None or mp == mountPoint)
          and (resource is None   or res == resource)
          and (mountType is None  or fs.startswith(mountType)) ):
