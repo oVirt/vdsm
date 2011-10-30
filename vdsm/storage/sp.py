@@ -197,7 +197,6 @@ class StoragePool:
         self.spmMailer = None
         self.masterDomain = None
         self.repostats = {}
-        self.spmStarted = False
         self.spmRole = SPM_FREE
 
     @unsecured
@@ -353,7 +352,6 @@ class StoragePool:
 
                 self.taskMng.loadDumpedTasks(self.tasksDir)
 
-                self.spmStarted = True
                 self.spmRole = SPM_ACQUIRED
 
                 # Once setSafe completes we are running as SPM
@@ -467,7 +465,6 @@ class StoragePool:
             if stopFailed:
                 misc.panic("Unrecoverable errors during SPM stop process.")
 
-            self.spmStarted = False
             self.spmRole = SPM_FREE
 
     def _upgradePool(self, targetDomVersion):
@@ -1506,7 +1503,7 @@ class StoragePool:
 
     @unsecured
     def invalidateMetadata(self):
-        if not self.spmStarted:
+        if not self.spmRole == SPM_ACQUIRED:
             self._metadata.invalidate()
 
     @unsecured
