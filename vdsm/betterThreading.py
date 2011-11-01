@@ -19,12 +19,11 @@
 #
 
 """
-betterThreading module provides Lock, Condition and Event synchronization
+betterThreading module provides Lock and Condition synchronization
 objects compatible with Python native threading module.
 The implementation, however, is based on POSIX thread library as delivered
 by the libpthread. Lock and Condition are designed to be a drop-in
-replacement for their respective threading counterpart, and Event is a
-verbatim copy of that of the threading module.
+replacement for their respective threading counterpart.
 """
 
 import time
@@ -97,48 +96,6 @@ class Condition(object):
 
     notify_all = notifyAll
 
-
-#
-# This class is copied verbatim from threading.py since it is
-# a convenience wrapper around Condition and I didn't feel like
-# re-inventing the wheel.
-#
-class Event(object):
-
-    # After Tim Peters' event class (without is_posted())
-
-    def __init__(self):
-        self.__cond = Condition(Lock())
-        self.__flag = False
-
-    def isSet(self):
-        return self.__flag
-
-    is_set = isSet
-
-    def set(self):
-        self.__cond.acquire()
-        try:
-            self.__flag = True
-            self.__cond.notify_all()
-        finally:
-            self.__cond.release()
-
-    def clear(self):
-        self.__cond.acquire()
-        try:
-            self.__flag = False
-        finally:
-            self.__cond.release()
-
-    def wait(self, timeout=None):
-        self.__cond.acquire()
-        try:
-            if not self.__flag:
-                self.__cond.wait(timeout)
-            return self.__flag
-        finally:
-            self.__cond.release()
 
 # hack threading module to use our classes, so that Queue and SocketServer can
 # easily enjoy them.
