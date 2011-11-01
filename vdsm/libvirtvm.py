@@ -411,6 +411,11 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                 monitorThread.start()
 
             try:
+                if 'qxl' in self._vm.conf['display'] and \
+                   self._vm.conf.get('clientIp'):
+                    SPICE_MIGRATION_HANDOVER_TIME = 120
+                    self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
+
                 maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
                 self._vm._dom.migrateToURI(duri, libvirt.VIR_MIGRATE_LIVE |
                                         libvirt.VIR_MIGRATE_PEER2PEER, None, maxBandwidth)
@@ -1212,6 +1217,20 @@ class LibvirtVm(vm.Vm):
             graphics.setAttribute('connected', connAct)
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
         return {'status': doneCode}
+
+    def _reviveTicket(self, newlife):
+        """Revive an existing ticket, if it has expired or about to expire"""
+        graphics = xml.dom.minidom.parseString(
+                      self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)) \
+                      .childNodes[0].getElementsByTagName('graphics')[0]
+        validto = max(time.strptime(graphics.getAttribute('passwdValidTo'),
+                                   '%Y-%m-%dT%H:%M:%S'),
+                      time.gmtime(time.time() + newlife))
+        graphics.setAttribute('passwdValidTo',
+                time.strftime('%Y-%m-%dT%H:%M:%S', validto))
+        graphics.setAttribute('connected', 'keep')
+        self._dom.updateDeviceFlags(graphics.toxml(), 0)
+
 
     def _onAbnormalStop(self, blockDevAlias, err):
         """
