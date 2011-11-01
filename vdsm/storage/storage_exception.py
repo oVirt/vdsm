@@ -645,6 +645,7 @@ class StorageDomainAlreadyAttached(StorageException):
     code = 380
     message = "Storage domain already attached to pool"
 
+#DEPRECATED. Should be removed.
 class StorageDomainStateTransitionIllegal(StorageException):
     def __init__(self, sdUUID, currState, nextState):
         self.value = [sdUUID, currState, nextState]

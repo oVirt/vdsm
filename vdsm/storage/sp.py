@@ -532,16 +532,15 @@ class StoragePool:
         self.masterDomain.releaseClusterLock()
 
     @unsecured
-    def validateAttachedDomain(self, sdUUID):
-        domList = self.getDomains()
-        if sdUUID not in domList:
-            raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
-        # Avoid handle domains if not owned by pool
-        dom = sdCache.produce(sdUUID)
+    def validateAttachedDomain(self, dom, domainStatuses):
+        """
+        Avoid handling domains if not owned by pool.
+        """
+        if dom.sdUUID not in domainStatuses.iterkeys():
+            raise se.StorageDomainNotInPool(self.spUUID, dom.sdUUID)
         pools = dom.getPools()
         if self.spUUID not in pools:
-            raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
-
+            raise se.StorageDomainNotInPool(self.spUUID, dom.sdUUID)
 
     @unsecured
     def validatePoolMVerHigher(self, masterVersion):
@@ -1018,36 +1017,37 @@ class StoragePool:
         """
         self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID,  self.spUUID, msdUUID)
 
-        dom = sdCache.produce(sdUUID)
-        if dom.isISO():
-            dom.acquireClusterLock(self.id)
         try:
-            dom.invalidateMetadata()
+            domStatuses = self.getDomains()
+            dom = sdCache.produce(sdUUID)
+            # Avoid detach domains if not owned by pool
+            self.validateAttachedDomain(dom, domStatuses)
+
+            # If the domain being detached is the 'master', move all pool
+            # metadata to the new 'master' domain (msdUUID)
+            if sdUUID == self.masterDomain.sdUUID:
+                self.masterMigrate(sdUUID, msdUUID, masterVersion, __securityOverride=True)
+
+            # Remove pool info from domain metadata
+            #TODO: clusterLock protection should be moved to StorageDomain.[at,de]tach()
+            detachingISO = dom.isISO()
+            if detachingISO:
+                #An ISO domain can be shared by many pools
+                dom.acquireClusterLock(self.id)
             try:
-                # Avoid detach domains if not owned by pool
-                self.validateAttachedDomain(sdUUID)
-                domList = self.getDomains()
-                sd.validateSDStateTransition(sdUUID, domList[sdUUID], sd.DOM_UNATTACHED_STATUS)
-
-                # If the domain being detached is the 'master', move all pool
-                # metadata to the new 'master' domain (msdUUID)
-                if sdUUID == self.masterDomain.sdUUID:
-                    self.masterMigrate(sdUUID, msdUUID, masterVersion, __securityOverride=True)
-
-                # Remove pool info from domain metadata
                 dom.detach(self.spUUID)
+            finally:
+                if detachingISO:
+                    dom.releaseClusterLock()
 
-                # Remove domain from pool metadata
-                del domList[sdUUID]
-                self.setMetaParam(PMDK_DOMAINS, domList, __securityOverride=True)
-                self._cleanupDomainLinks(sdUUID)
+            # Remove domain from pool metadata
+            del domStatuses[sdUUID]
+            self.setMetaParam(PMDK_DOMAINS, domStatuses, __securityOverride=True)
+            self._cleanupDomainLinks(sdUUID)
 
-                self.updateMonitoringThreads()
-            except Exception:
-                self.log.error("Unexpected error", exc_info=True)
-        finally:
-            if dom.isISO():
-                dom.releaseClusterLock()
+            self.updateMonitoringThreads()
+        except Exception:
+            self.log.error("Unexpected error", exc_info=True)
 
 
     def activateSD(self, sdUUID):
@@ -1058,14 +1058,13 @@ class StoragePool:
         """
         self.log.info("sdUUID=%s spUUID=%s", sdUUID,  self.spUUID)
 
-        # Avoid domain activation if not owned by pool
-        self.validateAttachedDomain(sdUUID)
-        domList = self.getDomains()
+        domainStatuses = self.getDomains()
         dom = sdCache.produce(sdUUID)
-        sd.validateSDStateTransition(sdUUID, domList[sdUUID], sd.DOM_ACTIVE_STATUS)
+        # Avoid domain activation if not owned by pool
+        self.validateAttachedDomain(dom, domainStatuses)
 
         # Do nothing if already active
-        if domList[sdUUID] == sd.DOM_ACTIVE_STATUS:
+        if domainStatuses[sdUUID] == sd.DOM_ACTIVE_STATUS:
             return True
 
         if dom.getDomainClass() == sd.DATA_DOMAIN:
@@ -1073,8 +1072,8 @@ class StoragePool:
 
         dom.activate()
         # set domains also do rebuild
-        domList[sdUUID] = sd.DOM_ACTIVE_STATUS
-        self.setMetaParam(PMDK_DOMAINS, domList)
+        domainStatuses[sdUUID] = sd.DOM_ACTIVE_STATUS
+        self.setMetaParam(PMDK_DOMAINS, domainStatuses)
         self._refreshDomainLinks(dom)
         self.updateMonitoringThreads()
         return True

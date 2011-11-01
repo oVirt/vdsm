@@ -87,10 +87,6 @@ DOM_ACTIVE_STATUS = 'Active'
 DOMAIN_STATUSES = [DOM_UNKNOWN_STATUS, DOM_ATTACHED_STATUS, DOM_UNATTACHED_STATUS, DOM_ACTIVE_STATUS]
 DEPRECATED_STATUSES = {DEPRECATED_DOM_INACTIVE_STATUS: DOM_ATTACHED_STATUS}
 
-DOMAIN_TRANSITIONS = {DOM_ATTACHED_STATUS: [DOM_UNATTACHED_STATUS, DOM_ATTACHED_STATUS, DEPRECATED_DOM_INACTIVE_STATUS, DOM_ACTIVE_STATUS],
-                        DEPRECATED_DOM_INACTIVE_STATUS: [DOM_UNATTACHED_STATUS, DOM_ATTACHED_STATUS, DEPRECATED_DOM_INACTIVE_STATUS, DOM_ACTIVE_STATUS],
-                        DOM_UNATTACHED_STATUS: [DOM_ATTACHED_STATUS, DEPRECATED_DOM_INACTIVE_STATUS],
-                        DOM_ACTIVE_STATUS: [DOM_ATTACHED_STATUS, DEPRECATED_DOM_INACTIVE_STATUS, DOM_ACTIVE_STATUS]}
 # Domain Role
 MASTER_DOMAIN = 'Master'
 REGULAR_DOMAIN = 'Regular'
@@ -144,11 +140,6 @@ def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec, leaseR
 def validateDomainVersion(version):
     if version not in constants.SUPPORTED_DOMAIN_VERSIONS:
         raise se.UnsupportedDomainVersion(version)
-
-
-def validateSDStateTransition(sdUUID, currState, nextState):
-    if nextState not in DOMAIN_TRANSITIONS[currState]:
-        raise se.StorageDomainStateTransitionIllegal(sdUUID, currState, nextState)
 
 def validateSDDeprecatedStatus(status):
     if not status.capitalize() in DEPRECATED_STATUSES:
