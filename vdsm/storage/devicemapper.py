@@ -98,6 +98,10 @@ def isBlockDevice(devName):
     except OSError:
         return False
 
+def isDmDevice(devName):
+    devName = resolveDevName(devName)
+    return os.path.exists("/sys/block/%s/dm" % devName)
+
 def isPartitioned(devName):
     dmName = resolveDevName(devName)
     #Sometimes partitions are not managed by device mapper
@@ -105,9 +109,13 @@ def isPartitioned(devName):
     if os.path.exists(possiblePartPath):
             return True
 
+    if not isVirtualDevice(devName) or not isDmDevice(devName):
+        return False
+
+
     mpathName = getDevName(dmName)
     for holder in getHolders(dmName):
-        if getDevName(holder).startswith(mpathName):
+        if resolveDevName(holder).startswith(mpathName):
             return True
 
     return False
