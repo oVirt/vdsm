@@ -1204,12 +1204,10 @@ class LibvirtVm(vm.Vm):
         graphics = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
                           .childNodes[0].getElementsByTagName('graphics')[0]
         graphics.setAttribute('passwd', otp)
-# TODO revert when libvirt bug 725009 is solved
         if int(seconds) > 0:
-#            validto = time.strftime('%Y-%m-%dT%H:%M:%S',
-#                                    time.gmtime(time.time() + float(seconds)))
-#            graphics.setAttribute('passwdValidTo', validto)
-            graphics.setAttribute('passwdValidTo', '2035-01-01T00:00:01')
+            validto = time.strftime('%Y-%m-%dT%H:%M:%S',
+                                    time.gmtime(time.time() + float(seconds)))
+            graphics.setAttribute('passwdValidTo', validto)
         if graphics.getAttribute('type') == 'spice':
             graphics.setAttribute('connected', connAct)
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
