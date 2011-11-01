@@ -604,12 +604,12 @@ class SPM_MailMonitor:
                 # We only get here if there is a novel request
                 try:
                     msgType = newMail[msgStart+1 : msgStart+5]
-                    if msgType in SPM_MailMonitor._messageTypes:
+                    if msgType in self._messageTypes:
                         # Use message class to process request according to message specific logic
                         id = str(uuid.uuid4())
                         self.log.debug("SPM_MailMonitor: processing request: %s" % repr(newMail[msgStart : msgStart+MESSAGE_SIZE]))
                         res = self.tp.queueTask(id, runTask,
-                                (SPM_MailMonitor._messageTypes[msgType], msgId,
+                                (self._messageTypes[msgType], msgId,
                                 newMail[msgStart : msgStart+MESSAGE_SIZE])
                         )
                         if not res:

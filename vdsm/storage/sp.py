@@ -371,7 +371,7 @@ class StoragePool:
                 sanPool = self.masterDomain.getStorageType() in sd.BLOCK_DOMAIN_TYPES  # Check if pool is SAN or NAS
                 if sanPool and self.lvExtendPolicy == "ON":
                     self.spmMailer = storage_mailbox.SPM_MailMonitor(self, maxHostID)
-                    self.spmMailer.registerMessageType('xtnd', partial(storage_mailbox.SPM_Extend_Message, self))
+                    self.spmMailer.registerMessageType('xtnd', partial(storage_mailbox.SPM_Extend_Message.processRequest, self))
                 else:
                     self.spmMailer = None
 
