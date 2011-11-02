@@ -921,8 +921,8 @@ class StoragePool:
             curmsd.changeRole(sd.REGULAR_DOMAIN)
 
             # Clean up the old data from previous master fs
-            for dir in [curmsd.getVMsDir(), curmsd.getTasksDir()]:
-                fileUtils.cleanupdir(dir)
+            for directory in [curmsd.getVMsDir(), curmsd.getTasksDir()]:
+                fileUtils.cleanupdir(directory)
 
             # NOTE: here we unmount the *previous* master file system !!!
             curmsd.unmountMaster()
