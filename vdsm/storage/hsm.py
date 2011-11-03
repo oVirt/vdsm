@@ -2578,15 +2578,9 @@ class HSM:
                     self.pools[spUUID].hsmMailer.stop()
 
                 # Stop repoStat threads
-                try:
-                    domDict = self.pools[spUUID].getDomains(activeOnly=True)
-                except Exception:
-                    self.log.warning("Failed to get domains list", exc_info=True)
-                    continue
-
-                for dom in domDict:
+                for pool in self.pools.values():
                     try:
-                        self.pools[spUUID].stopRepoStats(dom)
+                        pool.stopMonitoringDomains()
                     except Exception:
                         self.log.warning("Failed to stop RepoStats thread", exc_info=True)
                         continue

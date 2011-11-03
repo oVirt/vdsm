@@ -27,6 +27,7 @@ dist_vdsmstorage_PYTHON = \
 	blockVolume.py \
 	devicemapper.py \
 	dispatcher.py \
+	domainMonitor.py \
 	fileSD.py \
 	fileUtils.py \
 	fileVolume.py \

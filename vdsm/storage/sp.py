@@ -21,7 +21,6 @@
 import os
 from glob import iglob, glob
 import logging
-import time
 import threading
 import errno
 import uuid
@@ -35,7 +34,6 @@ import blockSD
 import fileSD
 import sd
 import misc
-from misc import Event
 import fileUtils
 from config import config
 from sdc import sdCache
@@ -49,6 +47,7 @@ from storageConstants import STORAGE
 import resourceManager as rm
 import volume
 import mount
+from domainMonitor import DomainMonitor
 
 BLANK_POOL_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -96,81 +95,6 @@ MAX_DOMAINS -= MAX_POOL_DESCRIPTION_SIZE + sd.MAX_DOMAIN_DESCRIPTION_SIZE
 MAX_DOMAINS -= blockSD.PVS_METADATA_SIZE
 MAX_DOMAINS /= 48
 
-class StatsThread(threading.Thread):
-    log = logging.getLogger('Storage.StatsThread')
-    onDomainConnectivityStateChange = Event("StatsThread.onDomainConnectivityStateChange")
-    def __init__(self, func, sdUUID):
-        """
-        StatsThread gets two arguments on instatiation:
-        func - function to call
-        dom - argument to pass to func()
-        """
-        threading.Thread.__init__(self)
-        self._statscache = dict(result=
-            dict(code=200, lastCheck=0.0, delay='0', valid=True))
-        self._statsdelay = config.getint('irs', 'sd_health_check_delay')
-        self._statsletrun = True
-        self._statsfunc = func
-        self._sdUUID = sdUUID
-        self._domain = None
-
-
-    def run(self):
-        while self._statsletrun:
-            try:
-                if self._domain is None:
-                    self._domain = sdCache.produce(self._sdUUID)
-                stats, code = self._statsfunc(self._domain)
-            except se.StorageException, e:
-                self.log.error("Unexpected error", exc_info=True)
-                code = e.code
-            except Exception, e:
-                self.log.error("Unexpected error", exc_info=True)
-                code = 200
-
-            delay = 0
-            if self._domain is not None:
-                try:
-                    # This is handled seperatly because in case of this kind
-                    # of failure we don't want to print stack trace
-                    delay = self._domain.getReadDelay()
-                except Exception, e:
-                    self.log.error("Could not figure out delay for domain `%s` (%s)", self._sdUUID, e)
-                    code = 200
-
-            if code != 0:
-                self._domain = None
-
-            finish = time.time()
-
-            stats['finish'] = finish
-            stats['result'] = dict(code=code, lastCheck=finish,
-                delay=str(delay), valid=(code == 0))
-
-            try:
-                if self._statscache["result"]["valid"] != stats["result"]["valid"]:
-                    self.onDomainConnectivityStateChange.emit(self._sdUUID, stats["result"]["valid"])
-            except:
-                self.log.error("Could not emit domain state event", exc_info=True)
-
-            self._statscache.update(stats)
-
-            count = 0
-            while self._statsletrun and count < self._statsdelay:
-                count += 1
-                time.sleep(1)
-
-        self._statsfunc = None
-
-
-    def stop(self):
-        self._statsletrun = False
-
-
-    def getStatsResults(self):
-        return self._statscache.copy()
-
-
 class StoragePool:
     '''
     StoragePool object should be relatively cheap to construct. It should defer
@@ -183,6 +107,7 @@ class StoragePool:
     storage_repository = config.get('irs', 'repository')
     _poolsTmpDir = config.get('irs', 'pools_data_dir')
     lvExtendPolicy = config.get('irs', 'vol_extend_policy')
+    monitorInterval = config.getint('irs', 'sd_health_check_delay')
 
     def __init__(self, spUUID, taskManager):
         self._domainsToUpgrade = []
@@ -197,8 +122,9 @@ class StoragePool:
         self.hsmMailer = None
         self.spmMailer = None
         self.masterDomain = None
-        self.repostats = {}
         self.spmRole = SPM_FREE
+        self.domainMonitor = DomainMonitor(self.monitorInterval)
+        self._upgradeCallback = partial(StoragePool._upgradePoolDomain, self)
 
     @unsecured
     def getSpmRole(self):
@@ -210,13 +136,12 @@ class StoragePool:
 
     @unsecured
     def getSpmStatus(self):
-        #If this is the SPM no need to double check
         return self.getSpmRole(), self.getSpmLver(), self.getSpmId()
 
 
     def __del__(self):
-        if len(self.repostats) > 0:
-            threading.Thread(target=self.disconnectDomains).start()
+        if len(self.domainMonitor.monitoredDomains) > 0:
+            threading.Thread(target=self.stopMonitoringDomains).start()
 
     @unsecured
     def forceFreeSpm(self):
@@ -272,7 +197,7 @@ class StoragePool:
                 if len(self._domainsToUpgrade) == 0:
                     self.log.debug("All domains are upgraded, unregistering from state change event")
                     try:
-                        StatsThread.onDomainConnectivityStateChange.unregister(self._upgradePoolDomain)
+                        self.domainMonitor.onDomainConnectivityStateChange.unregister(self._upgradeCallback)
                     except KeyError:
                         pass
 
@@ -387,10 +312,11 @@ class StoragePool:
 
     @unsecured
     def _shutDownUpgrade(self):
+        self.log.debug("Shutting down upgrade process")
         with rmanager.acquireResource(STORAGE, "upgrade_" + self.spUUID, rm.LockType.exclusive):
             domains = self._domainsToUpgrade
             try:
-                StatsThread.onDomainConnectivityStateChange.unregister(self._upgradePoolDomain)
+                self.domainMonitor.onDomainConnectivityStateChange.unregister(self._upgradeCallback)
             except KeyError:
                 pass
             requests = []
@@ -486,10 +412,10 @@ class StoragePool:
                 pass
 
             self.log.debug("Registering with state change event")
-            StatsThread.onDomainConnectivityStateChange.register(self._upgradePoolDomain)
+            self.domainMonitor.onDomainConnectivityStateChange.register(self._upgradeCallback)
             self.log.debug("Running initial domain upgrade threads")
             for sdUUID in self._domainsToUpgrade:
-                threading.Thread(target=self._upgradePoolDomain, args=(sdUUID, True), kwargs={"__securityOverride": True}).start()
+                threading.Thread(target=self._upgradeCallback, args=(sdUUID, True), kwargs={"__securityOverride": True}).start()
 
 
 
@@ -655,7 +581,7 @@ class StoragePool:
             msd.releaseClusterLock()
             self.id = None
 
-        self.disconnectDomains()
+        self.stopMonitoringDomains()
         return True
 
     @unsecured
@@ -702,9 +628,8 @@ class StoragePool:
 
 
     @unsecured
-    def disconnectDomains(self):
-        for sdUUID in self.repostats.keys():
-            self.stopRepoStats(sdUUID)
+    def stopMonitoringDomains(self):
+        self.domainMonitor.close()
         return True
 
 
@@ -730,7 +655,7 @@ class StoragePool:
         if os.path.exists(self.poolPath):
             fileUtils.cleanupdir(self.poolPath)
 
-        self.disconnectDomains()
+        self.stopMonitoringDomains()
 
         return True
 
@@ -810,8 +735,8 @@ class StoragePool:
                 self.setMetaParam(PMDK_DOMAINS, domains, __securityOverride=True)
                 self.log.info("Set storage pool domains: %s", domains)
             finally:
-                # We need stop all repoStats threads that were started during reconstructMaster
-                self.disconnectDomains()
+                # We need stop all domain monitoring threads that were started during reconstructMaster
+                self.stopMonitoringDomains()
                 futureMaster.releaseClusterLock()
         finally:
             self.id = None
@@ -1346,6 +1271,43 @@ class StoragePool:
         return self.getMetaParam(PMDK_SPM_ID)
 
     @unsecured
+    def getRepoStats(self):
+        #FIXME : this should actually be  built in HSM
+        res = {}
+        for sdUUID in self.domainMonitor.monitoredDomains:
+            st = self.domainMonitor.getStatus(sdUUID)
+            if st.error is None:
+                code = 0
+            elif isinstance(st.error, se.StorageException):
+                code = st.error.code
+            else:
+                code = 200
+            disktotal, diskfree = st.diskUtilization
+            vgmdtotal, vgmdfree = st.vgMdUtilization
+            res[sdUUID] = {
+                    'finish' : st.lastCheck,
+                    'result' : {
+                        'code'      : code,
+                        'lastCheck' : st.lastCheck,
+                        'delay'     : str(st.readDelay),
+                        'valid'     : (st.error is None)
+                        },
+                    'disktotal' : disktotal,
+                    'diskfree' : diskfree,
+
+                    'mdavalid' : st.vgMdHasEnoughFreeSpace,
+                    'mdathreshold' : st.vgMdFreeBelowThreashold,
+                    'mdasize' : vgmdtotal,
+                    'mdafree' : vgmdfree,
+
+                    'masterValidate' : {
+                        'mount' : st.masterMounted,
+                        'valid' : st.masterValid
+                        }
+                    }
+        return res
+
+    @unsecured
     def getInfo(self):
         """
         Get storage pool info.
@@ -1397,37 +1359,24 @@ class StoragePool:
                     self.log.warn("Could not get full domain information, it is probably unavailable", exc_info=True)
 
                 if item in repoStats:
-                    try:
-                        # For unreachable domains repoStats will return disktotal/diskfree as None.
-                        # We should drop these parameters in this case
-                        if repoStats[item]['disktotal'] != None and repoStats[item]['diskfree'] != None:
-                            stats['disktotal'] = repoStats[item]['disktotal']
-                            stats['diskfree'] = repoStats[item]['diskfree']
-                        if not repoStats[item]['mdavalid']:
-                            alerts.append({'code':se.SmallVgMetadata.code,
-                                           'message':se.SmallVgMetadata.message})
-                            self.log.warning("VG %s's metadata size too small %s",
-                                              dom.sdUUID, repoStats[item]['mdasize'])
+                    # For unreachable domains repoStats will return disktotal/diskfree as None.
+                    # We should drop these parameters in this case
+                    if repoStats[item]['disktotal'] != None and repoStats[item]['diskfree'] != None:
+                        stats['disktotal'] = repoStats[item]['disktotal']
+                        stats['diskfree'] = repoStats[item]['diskfree']
+                    if not repoStats[item]['mdavalid']:
+                        alerts.append({'code':se.SmallVgMetadata.code,
+                                       'message':se.SmallVgMetadata.message})
+                        self.log.warning("VG %s's metadata size too small %s",
+                                          dom.sdUUID, repoStats[item]['mdasize'])
 
-                        if not repoStats[item]['mdathreshold']:
-                            alerts.append({'code':se.VgMetadataCriticallyFull.code,
-                                           'message':se.VgMetadataCriticallyFull.message})
-                            self.log.warning("VG %s's metadata size exceeded critical size: \
-                                             mdasize=%s mdafree=%s", dom.sdUUID,
-                                             repoStats[item]['mdasize'], repoStats[item]['mdafree'])
-                    except KeyError:
-                        # We might have been asked to run before the first repoStats cycle was run
-                        if item not in self.repostats:
-                            self.log.warn("RepoStats is not active for active domain `%s`", item)
+                    if not repoStats[item]['mdathreshold']:
+                        alerts.append({'code':se.VgMetadataCriticallyFull.code,
+                                       'message':se.VgMetadataCriticallyFull.message})
+                        self.log.warning("VG %s's metadata size exceeded critical size: \
+                                         mdasize=%s mdafree=%s", dom.sdUUID,
+                                         repoStats[item]['mdasize'], repoStats[item]['mdafree'])
 
-                        try:
-                            stats.update(sdCache.produce(item).getStats())
-                        except:
-                            self.log.error("Could not get information for domain %s", item, exc_info=True)
-                            # Domain is unavailable and we have nothing in the cache
-                            # We need to return both of them or none
-                            stats.pop('disktotal', None)
-                            stats.pop('diskfree', None)
                     stats['alerts'] = alerts
 
             stats['status'] = domDict[item]
@@ -1516,21 +1465,21 @@ class StoragePool:
         # sdUUID1:status1,sdUUID2:status2,...
         self.invalidateMetadata()
         activeDomains = self.getDomains(activeOnly=True)
-        monitoredDomains = self.repostats.keys()
+        monitoredDomains = self.domainMonitor.monitoredDomains
 
         for sdUUID in monitoredDomains:
             if sdUUID not in activeDomains:
                 try:
-                    self.stopRepoStats(sdUUID)
-                    self.log.debug("sp `%s` stopped monitoring domain `%s`" % (self.spUUID, sdUUID))
+                    self.domainMonitor.stopMonitoring(sdUUID)
+                    self.log.debug("sp `%s` stopped monitoring domain `%s`", self.spUUID, sdUUID)
                 except se.StorageException:
                     self.log.error("Unexpected error while trying to stop monitoring domain `%s`", sdUUID, exc_info=True)
 
         for sdUUID in activeDomains:
             if sdUUID not in monitoredDomains:
                 try:
-                    self.startRepoStats(sdUUID)
-                    self.log.debug("sp `%s` started monitoring domain `%s`" % (self.spUUID, sdUUID))
+                    self.domainMonitor.startMonitoring(sdCache.produce(sdUUID))
+                    self.log.debug("sp `%s` started monitoring domain `%s`", self.spUUID, sdUUID)
                 except se.StorageException:
                     self.log.error("Unexpected error while trying to monitor domain `%s`", sdUUID, exc_info=True)
 
@@ -1609,59 +1558,6 @@ class StoragePool:
         if not os.path.exists(vmPath):
             raise se.VMPathNotExists(vmPath)
         return vmPath
-
-    @unsecured
-    def _repostats(self, domain):
-        # self.selftest() should return True if things are looking good
-        # and False otherwise
-        stats = { 'disktotal' : None,
-                  'diskfree' : None,
-                  'masterValidate' : { 'mount' : False, 'valid' : False }
-                }
-        code = 0
-        try:
-            domain.selftest()
-
-            res = domain.getStats()
-            stats.update(res)
-            # Add here more selftests if needed
-            # Fill stats to get it back to the caller
-            # Keys 'finish' and 'result' are reserved and may not be used
-            stats['masterValidate'] = domain.validateMaster()
-        except se.StorageException, e:
-            code = e.code
-        except (OSError, Timeout):
-            code = se.StorageDomainAccessError.code
-
-        return stats, code
-
-
-    @unsecured
-    def startRepoStats(self, sdUUID):
-        statthread = self.repostats.get(sdUUID)
-        if not statthread:
-            statthread = StatsThread(self._repostats, sdUUID)
-            statthread.start()
-            self.repostats[sdUUID] = statthread
-        self.log.debug("%s stat %s", sdUUID, statthread)
-
-
-    @unsecured
-    def stopRepoStats(self, domain):
-        statthread = self.repostats.pop(domain, None)
-        if statthread:
-            statthread.stop()
-        self.log.debug("%s stat %s", domain, statthread)
-
-
-    @unsecured
-    def getRepoStats(self):
-        repostats = self.repostats.copy()
-        result = {}
-        for d in repostats:
-            result[d] = repostats[d].getStatsResults()
-
-        return result
 
     def copyImage(self, sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                   dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate, postZero, force):
