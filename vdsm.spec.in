@@ -125,10 +125,6 @@ make DESTDIR=%{buildroot} install
 # this is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps.
 install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
-
-# faqemu symlinks
-ln -s vdsm-faqemu %{buildroot}%{_bindir}/qemu
-ln -s vdsm-faqemu %{buildroot}%{_bindir}/qemu-system-x86_64
 %endif
 
 %check
@@ -407,12 +403,8 @@ fi
 %files hook-faqemu
 %defattr(-, root, root, -)
 %doc COPYING
-%{_bindir}/vdsm-faqemu
+%{_libexecdir}/%{vdsm_name}/vdsm-faqemu
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
-%if 0%{?rhel}
-%{_bindir}/qemu
-%{_bindir}/qemu-system-x86_64
-%endif
 
 %changelog
 * Wed Oct 12 2011 Federico Simoncelli <fsimonce@redhat.com> - 4.9.0-0

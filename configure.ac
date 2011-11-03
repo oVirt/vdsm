@@ -85,6 +85,7 @@ AC_PATH_PROG([OPENSSL_PATH], [openssl], [/usr/bin/openssl])
 AC_PATH_PROG([PERSIST_PATH], [persist], [/usr/sbin/persist])
 AC_PATH_PROG([PGREP_PATH], [pgrep], [/usr/bin/pgrep])
 AC_PATH_PROG([PYTHON_PATH], [python], [/usr/bin/python])
+AC_PATH_PROG([QEMU_PATH], [qemu-kvm], [/usr/libexec/qemu-kvm])
 AC_PATH_PROG([QEMUIMG_PATH], [qemu-img], [/usr/bin/qemu-img])
 AC_PATH_PROG([REBOOT_PATH], [reboot], [/usr/bin/reboot])
 AC_PATH_PROG([RPM_PATH], [rpm], [/bin/rpm])
@@ -112,6 +113,7 @@ AC_OUTPUT([
 	vds_bootstrap/Makefile
 	vdsm_cli/Makefile
 	vdsm_hooks/faqemu/Makefile
+	vdsm_hooks/faqemu/vdsm-faqemu
 	vdsm_hooks/Makefile
 	vdsm_hooks/vhostmd/Makefile
 	vdsm/Makefile

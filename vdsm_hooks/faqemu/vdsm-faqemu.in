@@ -3,7 +3,7 @@
 import os
 import sys
 
-qemu_bin = "/usr/libexec/qemu-kvm"
+qemu_bin = "@QEMU_PATH@"
 qemu_argv = [ qemu_bin ]
 
 if not "-no-kvm" in sys.argv:

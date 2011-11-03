@@ -37,4 +37,13 @@ if config.getboolean('vars', 'fake_kvm_support'):
     for cputag in domxml.getElementsByTagName("cpu"):
         cputag.parentNode.removeChild(cputag)
 
+    devices = domxml.getElementsByTagName('devices')[0]
+    if devices.getElementsByTagName('emulator'):
+        pass # TODO override emulator tag
+    else:
+        emulator = domxml.createElement('emulator')
+        emulatorPath = domxml.createTextNode('/usr/libexec/vdsm/vdsm-faqemu')
+        emulator.appendChild(emulatorPath)
+        devices.appendChild(emulator)
+
     hooking.write_domxml(domxml)

@@ -6,8 +6,8 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-dist_bin_SCRIPTS = \
-	vdsm-faqemu
+dist_noinst_SCRIPTS = \
+	vdsm-faqemu.in
 
 EXTRA_DIST = \
 	before_vm_start.py
@@ -16,7 +16,9 @@ install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/10_faqemu
+	$(INSTALL_SCRIPT) $(srcdir)/vdsm-faqemu \
+		$(DESTDIR)$(vdsmexecdir)/
 
 uninstall-local:
-	$(RM) $(DESTDIR)$(bindir)/qemu-system-x86_64
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/10_faqemu
+	$(RM) $(DESTDIR)$(vdsmexecdir)/vdsm-faqemu
