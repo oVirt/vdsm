@@ -84,7 +84,7 @@ def setupiSCSI():
             raise se.iSCSISetupError("Backup original iscsid.conf file")
     f = tempfile.NamedTemporaryFile()
     with open(ISCSID_CONF_TEMPLATE, "r") as tf:
-        f.write(tf)
+        f.write(tf.read())
     f.flush()
     cmd = [constants.EXT_CP, f.name, ISCSID_CONF]
     rc = misc.execCmd(cmd)[0]
