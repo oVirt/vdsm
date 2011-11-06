@@ -1103,13 +1103,15 @@ class StoragePool:
             dom = sdCache.produce(sdUUID)
             #Check that dom is really reachable and not a cached value.
             dom.validate(False)
-        except (se.StorageException, Timeout):
-            self.log.warn("deactivaing MIA domain `%s`", sdUUID, exc_info=True)
+        except (se.StorageException, AttributeError, Timeout):
+            # AttributeError: Unreloadable blockSD
+            # Timeout: NFS unreachable domain
+            self.log.warn("deactivating missing domain %s", sdUUID, exc_info=True)
             if new_msdUUID != BLANK_POOL_UUID:
                 #Trying to migrate master failed to reach actual msd.
                 raise se.StorageDomainAccessError(sdUUID)
         else:
-            if dom.isMaster():
+            if self.masterDomain.sdUUID == sdUUID:
                 #Maybe there should be information in the exception that the UUID is
                 #not invalid because of its format but because it is equal to the SD. Will be less confusing.
                 #TODO: verify in masterMigrate().
