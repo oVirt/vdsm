@@ -542,8 +542,9 @@ class HSM:
             if pool.hsmMailer:
                 pool.hsmMailer.sendExtendMsg(volDict, newSize, callbackFunc)
 
-    def _schedule(self, name, func, *args):
-        self.taskMng.scheduleJob("spm", self.tasksDir, vars.task, name, func, *args)
+    def _spmSchedule(self, spUUID, name, func, *args):
+        pool = self.getPool(spUUID)
+        self.taskMng.scheduleJob("spm", pool.tasksDir, vars.task, name, func, *args)
 
     @logged()
     def public_refreshStoragePool(self, spUUID, msdUUID, masterVersion, options = None):
@@ -1148,7 +1149,7 @@ class HSM:
         sdCache.produce(sdUUID).validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        self._schedule("createVolume", pool.createVolume, sdUUID,
+        self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
             imgUUID, size, volFormat, preallocate, diskType, volUUID, desc,
             srcImgUUID, srcVolUUID
         )
@@ -1173,7 +1174,7 @@ class HSM:
             for volUUID in volumes:
                 sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).validateDelete()
 
-        self._schedule("deleteVolume", pool.deleteVolume, sdUUID,
+        self._spmSchedule(spUUID, "deleteVolume", pool.deleteVolume, sdUUID,
             imgUUID, volumes, misc.parseBool(postZero), misc.parseBool(force)
         )
 
@@ -1201,7 +1202,7 @@ class HSM:
         # else delete image in sync. stage
         if misc.parseBool(postZero):
             newImgUUID = pool.preDeleteRename(sdUUID, imgUUID)
-            self._schedule("deleteImage", pool.deleteImage, sdUUID, newImgUUID,
+            self._spmSchedule(spUUID, "deleteImage", pool.deleteImage, sdUUID, newImgUUID,
                             misc.parseBool(postZero), misc.parseBool(force)
             )
         else:
@@ -1214,7 +1215,7 @@ class HSM:
             # intended to quickly fix the integration issue with rhev-m. In 2.3
             # we should use the new resource system to synchronize the process
             # an eliminate all race conditions
-            self._schedule("deleteImage", lambda : True)
+            self._spmSchedule(spUUID, "deleteImage", lambda : True)
 
 
     @logged()
@@ -1242,7 +1243,7 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._schedule("moveImage", pool.moveImage, srcDomUUID,
+        self._spmSchedule(spUUID, "moveImage", pool.moveImage, srcDomUUID,
                     dstDomUUID, imgUUID, vmUUID, op, misc.parseBool(postZero),
                     misc.parseBool(force)
         )
@@ -1275,7 +1276,7 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._schedule("moveMultipleImages", pool.moveMultipleImages,
+        self._spmSchedule(spUUID, "moveMultipleImages", pool.moveMultipleImages,
                 srcDomUUID, dstDomUUID, images, vmUUID, misc.parseBool(force)
         )
 
@@ -1321,7 +1322,7 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._schedule("copyImage", pool.copyImage,
+        self._spmSchedule(spUUID, "copyImage", pool.copyImage,
             sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
             dstVolUUID, description, dstSdUUID, volType, volFormat,
             preallocate, misc.parseBool(postZero), misc.parseBool(force)
@@ -1340,7 +1341,7 @@ class HSM:
         pool = self.getPool(spUUID)
         self.validateSdUUID(sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
-        self._schedule("mergeSnapshots", pool.mergeSnapshots, sdUUID,
+        self._spmSchedule(spUUID, "mergeSnapshots", pool.mergeSnapshots, sdUUID,
                     vmUUID, imgUUID, ancestor, successor, misc.parseBool(postZero)
         )
 
