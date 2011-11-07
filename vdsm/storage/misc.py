@@ -859,15 +859,7 @@ class AsyncProc(object):
                 # trun on only if data is waiting to be pushed
                 self._poller.modify(self._fdin, select.EPOLLOUT)
 
-            try:
-                pollres = self._poller.poll(1)
-            except (OSError, IOError) as e:
-                # Callers will decide if they want to give this another go
-                # or not
-                if e.errno in (errno.EINTR, errno.EAGAIN):
-                    pollres = []
-                else:
-                    raise
+            pollres = NoIntrPoll(self._poller.poll, 1)
 
             for fd, event in pollres:
                 stream = self._fdMap[fd]
@@ -1292,6 +1284,24 @@ def itmap(func, iterable):
 
     for i in xrange(n):
         yield respQueue.get()
+
+def NoIntrPoll(pollfun, timeout=-1):
+    """
+    This wrapper is used to handle the interrupt exceptions that might
+    occur during a poll system call.
+    The wrapped function must be defined as poll([timeout]) where the
+    special timeout value 0 is used to return immediately and -1 is used
+    to wait indefinitely.
+    """
+    endtime = time.time() + timeout
+
+    while True:
+        try:
+            return pollfun(timeout)
+        except (OSError, IOError), e:
+            if not e.errno in (errno.EINTR, errno.EAGAIN):
+                raise
+        timeout = max(0, endtime - time.time())
 
 # Upon import determine if we are running on ovirt
 try:
