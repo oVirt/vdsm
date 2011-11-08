@@ -566,7 +566,9 @@ def handleSSHKey(strKey):
     if not os.path.exists(P_ROOT_SSH):
         logging.debug("handleSSHKey: creating .ssh dir.")
         try:
+            import selinux
             os.mkdir(P_ROOT_SSH, 0700)
+            selinux.restorecon(P_ROOT_SSH)
         except OSError:
             fReturn = False
             logging.debug("handleSSHKey: failed to create ssh dir!")
