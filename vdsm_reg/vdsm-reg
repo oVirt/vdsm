@@ -22,7 +22,7 @@ fi
 start() {
 	echo "vdsm-reg: starting"
 
-	pid=`pidofproc -p $PIDFILE $VDSM_BIN`
+	pid=`pidofproc -p $PIDFILE $VDSM_REG_BIN`
 	RETVAL=$?
 	if [ "$RETVAL" -eq 0 ]; then
 		log_failure_msg "$prog: already running"
