@@ -30,6 +30,7 @@ Requires: libvirt >= 0.9.4-13
 Requires: libvirt-python >= 0.9.4-13
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-31
+Requires: e2fsprogs >= 1.41.12-11
 %else
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
@@ -37,6 +38,7 @@ Requires: libvirt >= 0.9.6-2
 Requires: libvirt-python >= 0.9.6-2
 Requires: iscsi-initiator-utils >= 6.2.0.872-12
 Requires: device-mapper-multipath >= 0.4.9-18
+Requires: e2fsprogs >= 1.41.14
 %endif
 
 Requires: psmisc >= 22.6-15
