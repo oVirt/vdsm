@@ -828,13 +828,6 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
-        try:
-            self.validateSdUUID(sdUUID)
-        except:
-            pool.refresh()
-            self.validateSdUUID(sdUUID)
-            pool = self.getPool(spUUID)
-
         pool.attachSD(sdUUID)
 
     @logged()
