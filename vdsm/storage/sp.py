@@ -518,8 +518,10 @@ class StoragePool:
             try:
                 self.detachSD(d, msdUUID, masterVersion)
             except Exception:
-                self.log.error("Unexpected error", exc_info=True)
-        self.refresh()
+                self.log.error("Domain %s detach from MSD %s Ver %s failed.", \
+                               d.sdUUID, msdUUID, masterVersion, exc_info=True)
+        # Cleanup links to domains under /rhev/datacenter/poolName
+        self.refresh(msdUUID, masterVersion)
 
     @unsecured
     def getMasterVersion(self):
@@ -1234,7 +1236,7 @@ class StoragePool:
 
 
     @unsecured
-    def refresh(self, msdUUID=None, masterVersion=None):
+    def refresh(self, msdUUID, masterVersion):
         """
         Refresh storage pool.
          'msdUUID' - master storage domain UUID
