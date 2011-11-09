@@ -2034,6 +2034,6 @@ class StoragePool:
         repoPath = os.path.join(self.storage_repository, self.spUUID)
         image.Image(repoPath).check(sdUUID, imgUUID)
 
-    def extendSD(sdUUID, devlist):
+    def extendSD(self, sdUUID, devlist):
         sdCache.produce(sdUUID).extend(devlist)
 
