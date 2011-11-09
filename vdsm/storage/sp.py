@@ -598,6 +598,8 @@ class StoragePool:
             try:
                 domain = sdCache.produce(dom)
                 domain.validate()
+                if dom == msdUUID:
+                    msd = domain
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.StorageDomainAccessError(dom)
@@ -612,50 +614,44 @@ class StoragePool:
 
         fileUtils.createdir(self.poolPath)
 
+        # Seeing as we are just creating the pool then the host doesn't
+        # have an assigned Id for this pool.  When locking the domain we must use an Id
+        self.id = 1000
+        # Master domain is unattached and all changes to unattached domains
+        # must be performed under storage lock
         try:
-            # Seeing as we are just creating the pool then the host doesn't
-            # have an assigned Id for this pool.  When locking the domain we must use an Id
-            self.id = 1000
-            # Master domain is unattached and all changes to unattached domains
-            # must be performed under storage lock
-            msd = sdCache.produce(msdUUID)
             msd.changeLeaseParams(safeLease)
             msd.acquireClusterLock(self.id)
-        except:
+        finally:
             self.id = None
-            raise
+
         try:
-            try:
-                # Mark 'master' domain
-                # We should do it before actually attaching this domain to the pool.
-                # During 'master' marking we create pool metadata and each attached
-                # domain should register there
-                self.createMaster(poolName, msd, masterVersion, safeLease)
-                self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
-                # Attach storage domains to the storage pool
-                # Since we are creating the pool then attach is done from the hsm and not the spm
-                # therefore we must manually take the master domain lock
-                # TBD: create will receive only master domain and further attaches should be done
-                # under SPM
+            # Mark 'master' domain
+            # We should do it before actually attaching this domain to the pool.
+            # During 'master' marking we create pool metadata and each attached
+            # domain should register there
+            self.createMaster(poolName, msd, masterVersion, safeLease)
+            self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
+            # Attach storage domains to the storage pool
+            # Since we are creating the pool then attach is done from the hsm and not the spm
+            # therefore we must manually take the master domain lock
+            # TBD: create will receive only master domain and further attaches should be done
+            # under SPM
 
-                # Master domain was already attached (in createMaster),
-                # no need to reattach
-                for sdUUID in domList:
-                    # No need to attach the master
-                    if sdUUID == msdUUID:
-                        continue
-
+            # Master domain was already attached (in createMaster),
+            # no need to reattach
+            for sdUUID in domList:
+                # No need to attach the master
+                if sdUUID != msdUUID:
                     self.attachSD(sdUUID)
-            except Exception:
-                self.log.error("Create domain canceled due to an unexpected error", exc_info=True)
-
-                try:
-                    fileUtils.cleanupdir(self.poolPath)
-                    self.__cleanupDomains(domList, msdUUID, masterVersion)
-                except:
-                    self.log.error("Cleanup failed due to an unexpected error", exc_info=True)
-
-                raise
+        except Exception:
+            self.log.error("Create pool %s canceled ", poolName, exc_info=True)
+            try:
+                fileUtils.cleanupdir(self.poolPath)
+                self.__cleanupDomains(domList, msdUUID, masterVersion)
+            except:
+                self.log.error("Cleanup failed due to an unexpected error", exc_info=True)
+            raise
         finally:
             msd.releaseClusterLock()
             self.id = None
