@@ -150,7 +150,7 @@ install-data-libvirtpass:
 		$(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
 
 uninstall-data-libvirtpass:
-	$(RM) $(DESTDIR)$(vdsmtsdir)/libvirt_password
+	$(RM) $(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
 
 install-data-rwtab:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d

@@ -31,7 +31,6 @@ dist_man8_MANS = \
 	vdsm-reg.8
 
 vdsmreg_SUBST = \
-	$(nodist_vdsmreg_DATA) \
 	$(nodist_noinst_DATA)
 
 CLEANFILES = \

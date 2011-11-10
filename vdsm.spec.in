@@ -1,6 +1,6 @@
-%define vdsm_reg vdsm-reg
-%define vdsm_name vdsm
-%define vdsm_bootstrap vdsm-bootstrap
+%global vdsm_name vdsm
+%global vdsm_bootstrap vdsm-bootstrap
+%global vdsm_reg vdsm-reg
 
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
@@ -49,9 +49,9 @@ Requires: dosfstools
 Requires: policycoreutils-python
 Requires: libselinux-python
 Requires: kernel >= 2.6.32-198
+Requires: selinux-policy-targeted >= 3.7.19-80.el6
 Requires(post): cyrus-sasl-lib
 BuildRequires: pyflakes
-Conflicts: selinux-policy-targeted < 3.7.19-80.el6
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -143,27 +143,6 @@ rm -rf %{buildroot}
 /usr/sbin/usermod -a -G qemu vdsm
 
 %post
-tmp_sudoers=$(mktemp)
-/bin/cp -a /etc/sudoers $tmp_sudoers
-/bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers
-
-if ! /bin/grep -q "^#includedir /etc/sudoers.d" "$tmp_sudoers";
-then
-    /bin/cat >> $tmp_sudoers <<EOF
-# vdsm customizations
-#include /etc/sudoers.d/50_vdsm
-# end vdsm customizations
-EOF
-fi
-
-if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
-    /bin/cp -a $tmp_sudoers /etc/sudoers
-else
-    /bin/echo "Failed to add vdsm section to /etc/sudoers" 1>&2
-    /bin/echo "$outerr" 1>&2
-fi
-rm -f $tmp_sudoers
-
 # vdsm is intentionally on by default.
 /sbin/chkconfig --add vdsmd
 
@@ -176,17 +155,6 @@ if [ "$1" -eq 0 ]
 then
     /sbin/service vdsmd stop > /dev/null 2>&1 || :
     /sbin/chkconfig --del vdsmd
-
-    tmp_sudoers=$(mktemp)
-    /bin/cp -a /etc/sudoers $tmp_sudoers
-    /bin/sed -i -e "/# vdsm/,/# end vdsm/d" $tmp_sudoers /etc/logrotate.d/libvirtd
-    if outerr=$(/usr/sbin/visudo -c -f $tmp_sudoers 2>&1) ; then
-        /bin/cp -a $tmp_sudoers /etc/sudoers
-    else
-        /bin/echo "Failed to add vdsm section to /etc/sudoers" 1>&2
-        /bin/echo "$outerr" 1>&2
-    fi
-    rm -f $tmp_sudoers
 
     /bin/sed -i '/# by vdsm$/d' \
         /etc/libvirt/libvirtd.conf \
