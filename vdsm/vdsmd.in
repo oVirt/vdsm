@@ -151,7 +151,7 @@ shutdown_conflicting_srv() {
 }
 
 upstart_libvirt() {
-    [[ -x /bin/initctl ]]
+    [[ -x /sbin/initctl ]]
 }
 
 start_needed_srv() {
