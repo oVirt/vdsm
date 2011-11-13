@@ -590,15 +590,15 @@ class StoragePool:
             raise se.InvalidParameterException("masterDomain", msdUUID)
 
         # Check the domains before pool creation
-        for dom in domList:
+        for sdUUID in domList:
             try:
-                domain = sdCache.produce(dom)
+                domain = sdCache.produce(sdUUID)
                 domain.validate()
-                if dom == msdUUID:
+                if sdUUID == msdUUID:
                     msd = domain
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
-                raise se.StorageDomainAccessError(dom)
+                raise se.StorageDomainAccessError(sdUUID)
 
             # Validate unattached domains
             if not domain.isISO():
@@ -606,7 +606,7 @@ class StoragePool:
                 spUUIDs = domain.getPools()
                 # Non ISO domains have only 1 pool
                 if len(spUUIDs) > 0:
-                    raise se.StorageDomainAlreadyAttached(spUUIDs[0], dom)
+                    raise se.StorageDomainAlreadyAttached(spUUIDs[0], sdUUID)
 
         fileUtils.createdir(self.poolPath)
 
@@ -1560,9 +1560,9 @@ class StoragePool:
         domainsdict = self.getDomains(activeOnly=True)
         domainslist = []
 
-        for dom in domainsdict:
+        for sdUUID in domainsdict:
             try:
-                d = sdCache.produce(dom)
+                d = sdCache.produce(sdUUID)
             except Exception:
                 # Pass over invisible active domains
                 self.log.error("Unexpected error", exc_info=True)
@@ -1573,7 +1573,7 @@ class StoragePool:
 
             imageslist = d.getAllImages()
             if imgUUID in imageslist:
-                domainslist.append(dom)
+                domainslist.append(sdUUID)
 
         return domainslist
 
