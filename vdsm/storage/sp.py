@@ -510,13 +510,12 @@ class StoragePool:
         # Go through all the domains and detach them from the pool
         # Since something went wrong (otherwise why would we be cleaning
         # the mess up?) do not expect all the domains to exist
-        domains = [sdCache.produce(d) for d in domlist]
-        for d in domains:
+        for sdUUID in domlist:
             try:
-                self.detachSD(d, msdUUID, masterVersion)
+                self.detachSD(sdUUID, msdUUID, masterVersion)
             except Exception:
                 self.log.error("Domain %s detach from MSD %s Ver %s failed.", \
-                               d.sdUUID, msdUUID, masterVersion, exc_info=True)
+                               sdUUID, msdUUID, masterVersion, exc_info=True)
         # Cleanup links to domains under /rhev/datacenter/poolName
         self.refresh(msdUUID, masterVersion)
 
