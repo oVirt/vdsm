@@ -896,13 +896,14 @@ def removeVG(vgName):
     # and now destroy it
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd)
-    # If vgremove failed reload the VG cache
-    if rc != 0:
-        _lvminfo._invalidatevgs(vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
     # if vg remove failed, something must be wrong with devices and we want
     # cache updated as well
     _lvminfo._invalidatepvs(pvs)
+    # If vgremove failed reintroduce the VG into the cache
+    if rc != 0:
+        _lvminfo._invalidatevgs(vgName)
+        raise se.VolumeGroupRemoveError("VG %s remove failed." % vgName)
 
 def removeVGbyUUID(vgUUID):
     vg = getVGbyUUID(vgUUID)
