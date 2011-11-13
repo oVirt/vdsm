@@ -185,6 +185,9 @@ class HSM:
         self._cachedStats = {}
         self._statslock = threading.Lock()
 
+        sp.StoragePool.cleanupMasterMount()
+        self.__releaseLocks()
+
         self._preparedVolumes = defaultdict(list)
 
         if not iscsi.isConfigured():
@@ -2588,7 +2591,7 @@ class HSM:
         """
         # TODO: Implement!!!! TBD: required functionality (stop hsm tasks, stop spm tasks if spm etc.)
         try:
-            sp.StoragePool.__cleanupMasterMount()
+            sp.StoragePool.cleanupMasterMount()
             self.__releaseLocks()
 
             for spUUID in self.pools:

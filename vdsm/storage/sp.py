@@ -410,7 +410,7 @@ class StoragePool:
                 req.wait()
 
     @classmethod
-    def __cleanupMasterMount(cls):
+    def cleanupMasterMount(cls):
         """
         Check whether there are any dangling master file systems still mounted
         and unmount them if found.
@@ -438,7 +438,7 @@ class StoragePool:
             stopFailed = False
 
             try:
-                self.__cleanupMasterMount()
+                self.cleanupMasterMount()
             except:
                 # If unmounting fails the vdsm panics.
                 stopFailed = True
