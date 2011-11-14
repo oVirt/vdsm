@@ -100,7 +100,7 @@ def get(cif=None):
                 cred[4] = 'vdsm@rhevh'
             elif cred[0] == libvirt.VIR_CRED_PASSPHRASE:
                 cred[4] = file(constants.P_VDSM_KEYS +
-                               'libvirt_password').read()
+                               'libvirt_password').readline().rstrip("\n")
         return 0
 
     auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE], req, None]
