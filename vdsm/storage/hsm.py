@@ -29,7 +29,7 @@ from fnmatch import fnmatch
 from copy import deepcopy
 from itertools import imap
 from collections import defaultdict
-from functools import partial
+from functools import partial, wraps
 import errno
 import time
 import signal
@@ -62,6 +62,7 @@ import resourceManager as rm
 import devicemapper
 import logUtils
 import mount
+import dispatcher
 
 GUID = "guid"
 NAME = "name"
@@ -78,6 +79,14 @@ rmanager = rm.ResourceManager.getInstance()
 
 # FIXME: moved from spm.py but this should be somewhere else
 SECTOR_SIZE = 512
+
+def public(f=None, **kwargs):
+    if f is None:
+        return partial(public, **kwargs)
+
+    publicFunctionLogger = kwargs.get("logger", logged())
+
+    return dispatcher.exported(wraps(f)(publicFunctionLogger(f)))
 
 def loggableCon(con):
     conCopy = con.copy()
@@ -179,6 +188,7 @@ class HSM:
         :param defExcFunc: The function that will set the default exception for this thread
         :type defExcFun: function
         """
+        rm.ResourceManager.getInstance().registerNamespace(STORAGE, rm.SimpleResourceFactory())
         self.storage_repository = config.get('irs', 'repository')
         self.sd_validate_timeout = config.getint('irs', 'sd_validate_timeout')
         self.taskMng = taskManager.TaskManager()
@@ -335,8 +345,8 @@ class HSM:
                        "repository at '%s'", self.storage_repository)
 
 
-    @logged()
-    def public_getConnectedStoragePoolsList(self, options = None):
+    @public
+    def getConnectedStoragePoolsList(self, options = None):
         """
         Get a list of all the connected storage pools.
 
@@ -351,8 +361,8 @@ class HSM:
         return dict(poollist = self.pools.keys())
 
 
-    @logged()
-    def public_spmStart(self, spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
+    @public
+    def spmStart(self, spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
             maxHostID=safelease.MAX_HOST_ID, domVersion=None, options = None):
         """
         Starts an SPM.
@@ -400,8 +410,8 @@ class HSM:
         vars.task.addJob(Job("spmStart", pool.startSpm, prevID, prevLVER,
                 scsiFencing, maxHostID, domVersion))
 
-    @logged()
-    def public_spmStop(self, spUUID, options = None):
+    @public
+    def spmStop(self, spUUID, options = None):
         """
         Stops the SPM functionality.
 
@@ -418,8 +428,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.stopSpm()
 
-    @logged()
-    def public_getSpmStatus(self, spUUID, options = None):
+    @public
+    def getSpmStatus(self, spUUID, options = None):
         pool = self.getPool(spUUID)
         try:
             status = {'spmStatus':pool.getSpmRole(), 'spmLver': pool.getSpmLver(), 'spmId':pool.getSpmId()}
@@ -435,8 +445,8 @@ class HSM:
 
         return dict(spm_st=status)
 
-    @logged()
-    def public_extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size, isShuttingDown=None, options=None):
+    @public
+    def extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size, isShuttingDown=None, options=None):
         """
         Extends an existing volume.
 
@@ -468,8 +478,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
-    @logged()
-    def public_extendStorageDomain(self, sdUUID, spUUID, devlist, options = None):
+    @public
+    def extendStorageDomain(self, sdUUID, spUUID, devlist, options = None):
         """
         Extends a VG. ?
 
@@ -492,8 +502,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.extendSD(sdUUID, devlist)
 
-    @logged()
-    def public_forcedDetachStorageDomain(self, sdUUID, spUUID, options = None):
+    @public
+    def forcedDetachStorageDomain(self, sdUUID, spUUID, options = None):
         """Forced detach a storage domain from a storage pool.
            This removes the storage domain entry in the storage pool meta-data
            and leaves the storage domain in 'unattached' status.
@@ -507,8 +517,8 @@ class HSM:
         pool.forcedDetachSD(sdUUID)
 
 
-    @logged()
-    def public_detachStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
+    @public
+    def detachStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
         """
         Detachs a storage domain from a storage pool.
         This removes the storage domain entry in the storage pool meta-data
@@ -560,8 +570,8 @@ class HSM:
         pool = self.getPool(spUUID)
         self.taskMng.scheduleJob("spm", pool.tasksDir, vars.task, name, func, *args)
 
-    @logged()
-    def public_refreshStoragePool(self, spUUID, msdUUID, masterVersion, options = None):
+    @public
+    def refreshStoragePool(self, spUUID, msdUUID, masterVersion, options = None):
         """
         Refresh the Storage Pool info in HSM.
 
@@ -595,8 +605,8 @@ class HSM:
             pool.hsmMailer.flushMessages()
 
 
-    @logged()
-    def public_createStoragePool(self, poolType, spUUID, poolName, masterDom, domList, masterVersion, lockPolicy=None, lockRenewalIntervalSec=None, leaseTimeSec=None, ioOpTimeoutSec=None, leaseRetries=None, options = None):
+    @public
+    def createStoragePool(self, poolType, spUUID, poolName, masterDom, domList, masterVersion, lockPolicy=None, lockRenewalIntervalSec=None, leaseTimeSec=None, ioOpTimeoutSec=None, leaseRetries=None, options = None):
         """
         Create new storage pool with single/multiple image data domain.
         The command will create new storage pool meta-data attach each
@@ -677,8 +687,8 @@ class HSM:
 
         return sp.StoragePool(spUUID, self.taskMng).create(poolName, masterDom, domList, masterVersion, safeLease)
 
-    @logged()
-    def public_connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID, masterVersion, options = None):
+    @public
+    def connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID, masterVersion, options = None):
         """
         Connect a Host to a specific storage pool.
 
@@ -749,8 +759,8 @@ class HSM:
                 self.pools[spUUID] = pool
             return res
 
-    @logged()
-    def public_disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False, options = None):
+    @public
+    def disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False, options = None):
         """
         Disconnect a Host from a specific storage pool.
 
@@ -792,8 +802,8 @@ class HSM:
         return res
 
 
-    @logged()
-    def public_destroyStoragePool(self, spUUID, hostID, scsiKey, options = None):
+    @public
+    def destroyStoragePool(self, spUUID, hostID, scsiKey, options = None):
         """
         Destroy a storage pool.
         The command will detach all inactive domains from the pool
@@ -822,8 +832,8 @@ class HSM:
         pool.detachAllDomains()
         return self._disconnectPool(pool, hostID, scsiKey, remove=True)
 
-    @logged()
-    def public_attachStorageDomain(self, sdUUID, spUUID, options = None):
+    @public
+    def attachStorageDomain(self, sdUUID, spUUID, options = None):
         """
         Attach a storage domain to a storage pool.
         This marks the storage domain as status 'attached' and link it to the storage pool
@@ -844,8 +854,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.attachSD(sdUUID)
 
-    @logged()
-    def public_deactivateStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
+    @public
+    def deactivateStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
         """
         1. Deactivates a storage domain.
         2. Validates that the storage domain is owned by the storage pool.
@@ -878,8 +888,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.deactivateSD(sdUUID, msdUUID, masterVersion)
 
-    @logged()
-    def public_activateStorageDomain(self, sdUUID, spUUID, options = None):
+    @public
+    def activateStorageDomain(self, sdUUID, spUUID, options = None):
         """
         Activates a storage domain that is already a member in a storage pool.
 
@@ -897,8 +907,8 @@ class HSM:
         pool.activateSD(sdUUID)
 
 
-    @logged()
-    def public_setStoragePoolDescription(self, spUUID, description, options = None):
+    @public
+    def setStoragePoolDescription(self, spUUID, description, options = None):
         """
         Sets the storage pool's description.
 
@@ -914,8 +924,8 @@ class HSM:
         pool.setDescription(description)
 
 
-    @logged()
-    def public_setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID, description, options = None):
+    @public
+    def setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID, description, options = None):
         """
         Sets a Volume's Description
 
@@ -936,8 +946,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.setVolumeDescription(sdUUID,imgUUID, volUUID, description)
 
-    @logged()
-    def public_setVolumeLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality, options = None):
+    @public
+    def setVolumeLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality, options = None):
         """
         Sets a Volume's Legality
 
@@ -959,8 +969,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.setVolumeLegality(sdUUID, imgUUID, volUUID, legality)
 
-    @logged()
-    def public_updateVM(self, spUUID, vmList, sdUUID=None, options = None):
+    @public
+    def updateVM(self, spUUID, vmList, sdUUID=None, options = None):
         """
         Updates a VM list in a storage pool or in a Backup domain.
         Creates the VMs if a domain with the specified UUID does not exist.
@@ -986,8 +996,8 @@ class HSM:
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
 
-    @logged()
-    def public_removeVM(self, spUUID, vmList, sdUUID=None, options = None):
+    @public
+    def removeVM(self, spUUID, vmList, sdUUID=None, options = None):
         """
         Removes a VM list from a storage pool or from a Backup domain.
 
@@ -1008,8 +1018,8 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.removeVM(vmList=vmList, sdUUID=sdUUID)
 
-    @logged()
-    def public_getVmsList(self, spUUID, sdUUID=None, options = None):
+    @public
+    def getVmsList(self, spUUID, sdUUID=None, options = None):
         """
         Gets a list of VMs from the pool.
         If 'sdUUID' is given and it's a bakup domain the function will get the list of VMs from it
@@ -1028,8 +1038,8 @@ class HSM:
         vms = pool.getVmsList(sdUUID)
         return dict(vmlist=vms)
 
-    @logged()
-    def public_getVmsInfo(self, spUUID, sdUUID, vmList=None, options = None):
+    @public
+    def getVmsInfo(self, spUUID, sdUUID, vmList=None, options = None):
         """
         Gets a list of VMs with their info from the pool.
 
@@ -1052,8 +1062,8 @@ class HSM:
         vms = pool.getVmsInfo(sdUUID, vmList)
         return dict(vmlist=vms)
 
-    @logged()
-    def public_uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size, method="rsync", options = None):
+    @public
+    def uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size, method="rsync", options = None):
         """
         Uploads a volume to the server. (NFS only?)
 
@@ -1076,8 +1086,8 @@ class HSM:
         pool.uploadVolume(sdUUID, imgUUID, volUUID, srcPath, size, method="rsync")
 
 
-    @logged()
-    def public_createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
+    @public
+    def createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
         """
         Create a new volume
             Function Type: SPM
@@ -1115,8 +1125,8 @@ class HSM:
         )
 
 
-    @logged()
-    def public_deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False, force=False):
+    @public
+    def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False, force=False):
         """
         Delete a volume
         """
@@ -1139,8 +1149,8 @@ class HSM:
         )
 
 
-    @logged()
-    def public_deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False, force=False):
+    @public
+    def deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False, force=False):
         """
         Delete Image folder with all volumes
         """
@@ -1178,8 +1188,8 @@ class HSM:
             self._spmSchedule(spUUID, "deleteImage", lambda : True)
 
 
-    @logged()
-    def public_moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero=False, force=False):
+    @public
+    def moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero=False, force=False):
         """
         Move/Copy image between storage domains within same storage pool
         """
@@ -1209,8 +1219,8 @@ class HSM:
         )
 
 
-    @logged()
-    def public_moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force=False):
+    @public
+    def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force=False):
         """
         Move multiple images between storage domains within same storage pool
         """
@@ -1241,8 +1251,8 @@ class HSM:
         )
 
 
-    @logged()
-    def public_copyImage(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
+    @public
+    def copyImage(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
                        description='', dstSdUUID=sd.BLANK_UUID, volType=volume.SHARED_VOL,
                        volFormat=volume.UNKNOWN_VOL, preallocate=volume.UNKNOWN_VOL,
                        postZero=False, force=False):
@@ -1289,8 +1299,8 @@ class HSM:
         )
 
 
-    @logged()
-    def public_mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor, postZero=False):
+    @public
+    def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor, postZero=False):
         """
         Merge source volume to the destination volume.
         """
@@ -1306,8 +1316,8 @@ class HSM:
         )
 
 
-    @logged()
-    def public_reconstructMaster(self, spUUID, poolName, masterDom, domDict,
+    @public
+    def reconstructMaster(self, spUUID, poolName, masterDom, domDict,
                                  masterVersion, lockPolicy=None,
                                  lockRenewalIntervalSec=None, leaseTimeSec=None,
                                  ioOpTimeoutSec=None, leaseRetries=None, options = None):
@@ -1366,8 +1376,8 @@ class HSM:
                 con['password'] = "******"
         return logableDevs
 
-    @logged(resPrinter=partial(_logResp_getDeviceList, None))
-    def public_getDeviceList(self, storageType=None, options = None):
+    @public(logger=logged(resPrinter=partial(_logResp_getDeviceList, None)))
+    def getDeviceList(self, storageType=None, options = None):
         """
         List all Block Devices.
 
@@ -1452,8 +1462,8 @@ class HSM:
 
         return devices
 
-    @logged()
-    def public_getDeviceInfo(self, guid, options = None):
+    @public
+    def getDeviceInfo(self, guid, options = None):
         """
         Get info of block device.
 
@@ -1479,8 +1489,8 @@ class HSM:
            raise se.DeviceNotFound(str(guid))
 
 
-    @logged()
-    def public_getDevicesVisibility(self, guids, options=None):
+    @public
+    def getDevicesVisibility(self, guids, options=None):
         """
         Check which of the luns with specified guids are visible
 
@@ -1502,8 +1512,8 @@ class HSM:
         return {'visible' : dict(zip(guids, map(devVisible, guids)))}
 
 
-    @logged()
-    def public_createVG(self, vgname, devlist, options = None):
+    @public
+    def createVG(self, vgname, devlist, options = None):
         """
         Creates a volume group with the name 'vgname' out of the devices in 'devlist'
 
@@ -1542,8 +1552,8 @@ class HSM:
         return dict(uuid=lvm.getVG(vgname).uuid)
 
 
-    @logged()
-    def public_removeVG(self, vgUUID, options = None):
+    @public
+    def removeVG(self, vgUUID, options = None):
         """
         DEPRECATED: formatSD effectively removes the VG.
 
@@ -1561,8 +1571,8 @@ class HSM:
             pass
 
 
-    @logged()
-    def public_getTaskStatus(self, taskID, spUUID=None, options = None):
+    @public
+    def getTaskStatus(self, taskID, spUUID=None, options = None):
         """
         Gets the status of a task.
 
@@ -1580,8 +1590,8 @@ class HSM:
         return dict(taskStatus=taskStatus)
 
 
-    @logged()
-    def public_getAllTasksStatuses(self, spUUID=None, options = None):
+    @public
+    def getAllTasksStatuses(self, spUUID=None, options = None):
         """
         Gets the status of all public tasks.
 
@@ -1594,8 +1604,8 @@ class HSM:
         return dict(allTasksStatus=allTasksStatus)
 
 
-    @logged()
-    def public_getTaskInfo(self, taskID, spUUID=None, options = None):
+    @public
+    def getTaskInfo(self, taskID, spUUID=None, options = None):
         """
         Gets information about a Task.
 
@@ -1615,8 +1625,8 @@ class HSM:
         return dict(TaskInfo=inf)
 
 
-    @logged()
-    def public_getAllTasksInfo(self, spUUID=None, options = None):
+    @public
+    def getAllTasksInfo(self, spUUID=None, options = None):
         """
         Get the information of all the tasks in a storage pool.
 
@@ -1633,8 +1643,8 @@ class HSM:
         return dict(allTasksInfo=allTasksInfo)
 
 
-    @logged()
-    def public_stopTask(self, taskID, spUUID=None, options = None):
+    @public
+    def stopTask(self, taskID, spUUID=None, options = None):
         """
         Stops a task.
 
@@ -1657,8 +1667,8 @@ class HSM:
         return self.taskMng.stopTask(taskID=taskID, force=force)
 
 
-    @logged()
-    def public_clearTask(self, taskID, spUUID=None, options = None):
+    @public
+    def clearTask(self, taskID, spUUID=None, options = None):
         """
         Clears a task. ?
 
@@ -1675,8 +1685,8 @@ class HSM:
         return self.taskMng.clearTask(taskID=taskID)
 
 
-    @logged()
-    def public_revertTask(self, taskID, spUUID=None, options = None):
+    @public
+    def revertTask(self, taskID, spUUID=None, options = None):
         """
         Revert a task.
 
@@ -1692,8 +1702,8 @@ class HSM:
         #getExclusiveLock(tasksResource...)
         return self.taskMng.revertTask(taskID=taskID)
 
-    @logged()
-    def public_getFileList(self, sdUUID, pattern='*', options=None):
+    @public
+    def getFileList(self, sdUUID, pattern='*', options=None):
         """
         Returns a list of all files in the domain filtered according to extension.
 
@@ -1715,8 +1725,8 @@ class HSM:
         filesDict = dom.getFileList(pattern=pattern, caseSensitive=True)
         return {'files':filesDict}
 
-    @logged()
-    def public_getIsoList(self, spUUID, extension='iso', options = None):
+    @public
+    def getIsoList(self, spUUID, extension='iso', options = None):
         """
         Gets a list of all ISO/Floppy volumes in a storage pool.
 
@@ -1742,8 +1752,8 @@ class HSM:
         return {'isolist':isolist}
 
 
-    @logged()
-    def public_getFloppyList(self, spUUID, options = None):
+    @public
+    def getFloppyList(self, spUUID, options = None):
         """
         Gets a list of all Floppy volumes if a storage pool.
 
@@ -1755,11 +1765,11 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.GetFloppyListError("%s" % spUUID))
-        return self.public_getIsoList(spUUID=spUUID, extension='vfd')
+        return self.getIsoList(spUUID=spUUID, extension='vfd')
 
 
-    @logged(printers={'conList': connectionListPrinter})
-    def public_connectStorageServer(self, domType, spUUID, conList, options = None):
+    @public(logger=logged(printers={'conList': connectionListPrinter}))
+    def connectStorageServer(self, domType, spUUID, conList, options = None):
         """
         Connects to a storage low level entity (server).
 
@@ -1784,8 +1794,8 @@ class HSM:
         return dict(statuslist=statusList)
 
 
-    @logged(printers={'conList': connectionListPrinter})
-    def public_validateStorageServerConnection(self, domType, spUUID, conList, options = None):
+    @public(logger=logged(printers={'conList': connectionListPrinter}))
+    def validateStorageServerConnection(self, domType, spUUID, conList, options = None):
         """
         Validates if we can connect to a storage server.
 
@@ -1804,8 +1814,8 @@ class HSM:
         return dict(statuslist=statusList)
 
 
-    @logged(printers={'conList': connectionListPrinter})
-    def public_disconnectStorageServer(self, domType, spUUID, conList, options = None):
+    @public(logger=logged(printers={'conList': connectionListPrinter}))
+    def disconnectStorageServer(self, domType, spUUID, conList, options = None):
         """
         Disconnects from a storage low level entity (server).
 
@@ -1827,8 +1837,8 @@ class HSM:
         sdCache.refreshStorage()
         return dict(statuslist=statusList)
 
-
-    def public_getStorageConnectionsList(self, spUUID, options = None):
+    @public
+    def getStorageConnectionsList(self, spUUID, options = None):
         """
         Gets a list of all the storage connections of the pool.
 
@@ -1847,8 +1857,8 @@ class HSM:
         #return dict(connectionslist=connectionslist)
 
 
-    @logged()
-    def public_getStoragePoolInfo(self, spUUID, options = None):
+    @public
+    def getStoragePoolInfo(self, spUUID, options = None):
         """
         Gets info about a storage pool.
 
@@ -1863,8 +1873,8 @@ class HSM:
         return self.getPool(spUUID).getInfo()
 
 
-    @logged()
-    def public_createStorageDomain(self, storageType, sdUUID, domainName,
+    @public
+    def createStorageDomain(self, storageType, sdUUID, domainName,
                                     typeSpecificArg, domClass,
                                     domVersion=constants.SUPPORTED_DOMAIN_VERSIONS[0],
                                     options=None):
@@ -1912,8 +1922,8 @@ class HSM:
         sdCache.manuallyAddDomain(newSD)
 
 
-    @logged()
-    def public_validateStorageDomain(self, sdUUID, options = None):
+    @public
+    def validateStorageDomain(self, sdUUID, options = None):
         """
         Validates that the storage domain is accessible.
 
@@ -1937,8 +1947,8 @@ class HSM:
 
         dom.format(dom.sdUUID)
 
-    @logged()
-    def public_formatStorageDomain(self, sdUUID, autoDetach = False, options = None):
+    @public
+    def formatStorageDomain(self, sdUUID, autoDetach = False, options = None):
         """
         Formats a detached storage domain.
 
@@ -1977,8 +1987,8 @@ class HSM:
         self._recycle(sd)
 
 
-    @logged()
-    def public_setStorageDomainDescription(self, sdUUID, description, options = None):
+    @public
+    def setStorageDomainDescription(self, sdUUID, description, options = None):
         """
         Sets a storage domain's description.
 
@@ -1997,8 +2007,8 @@ class HSM:
         dom.setDescription(descr=description)
 
 
-    @logged()
-    def public_getStorageDomainInfo(self, sdUUID, options = None):
+    @public
+    def getStorageDomainInfo(self, sdUUID, options = None):
         """
         Gets the info of a storage domain.
 
@@ -2041,8 +2051,8 @@ class HSM:
         return dict(info=info)
 
 
-    @logged()
-    def public_getStorageDomainStats(self, sdUUID, options = None):
+    @public
+    def getStorageDomainStats(self, sdUUID, options = None):
         """
         Gets a storage domain's statistics.
 
@@ -2061,8 +2071,8 @@ class HSM:
         return dict(stats=stats)
 
 
-    @logged()
-    def public_getStorageDomainsList(self, spUUID = None, domainClass = None, storageType = None, remotePath = None, options = None):
+    @public
+    def getStorageDomainsList(self, spUUID = None, domainClass = None, storageType = None, remotePath = None, options = None):
         """
         Returns a List of all or pool specific storage domains.
 
@@ -2153,8 +2163,8 @@ class HSM:
         return info
 
 
-    @logged()
-    def public_getVGList(self, storageType=None, options = None):
+    @public
+    def getVGList(self, storageType=None, options = None):
         """
         Returns a list all VGs.
 
@@ -2233,8 +2243,8 @@ class HSM:
             vgInfo["type"] = vgType
 
 
-    @logged()
-    def public_getVGInfo(self, vgUUID, options = None):
+    @public
+    def getVGInfo(self, vgUUID, options = None):
         """
         Gets the info of a VG.
 
@@ -2252,9 +2262,8 @@ class HSM:
         #getSharedLock(connectionsResource...)
         return dict(info=self.__getVGsInfo([vgUUID])[0])
 
-    @staticmethod
-    @logged(printers={'con': connectionPrinter})
-    def public_discoverSendTargets(con, options = None):
+    @public(logger=logged(printers={'con': connectionPrinter}))
+    def discoverSendTargets(self, con, options = None):
         """
         Discovers iSCSI targets.
 
@@ -2285,8 +2294,8 @@ class HSM:
         return dict(targets=partialTargets, fullTargets=targets)
 
 
-    @logged()
-    def public_cleanupUnusedConnections(self, options = None):
+    @public
+    def cleanupUnusedConnections(self, options = None):
         """
         .. warning::
             This method is not yet implemented.
@@ -2297,8 +2306,8 @@ class HSM:
         pass
 
 
-    @logged()
-    def public_refreshVolume(self, sdUUID, spUUID, imgUUID, volUUID):
+    @public
+    def refreshVolume(self, sdUUID, spUUID, imgUUID, volUUID):
         """
         Refresh low level volume after change in the shared storage initiated from another host
         :param sdUUID: The UUID of the storage domain that owns the volume.
@@ -2318,8 +2327,8 @@ class HSM:
         return sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
 
 
-    @logged()
-    def public_getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
+    @public
+    def getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
         """
         Gets the size of a volume.
 
@@ -2345,8 +2354,8 @@ class HSM:
         return dict(apparentsize=apparentsize, truesize=truesize)
 
 
-    @logged()
-    def public_getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
+    @public
+    def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
         """
         Gets a volume's info.
 
@@ -2371,8 +2380,8 @@ class HSM:
         return dict(info=info)
 
 
-    @logged()
-    def public_getVolumePath(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
+    @public
+    def getVolumePath(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
         """
         Gets the path to a volume.
 
@@ -2396,8 +2405,8 @@ class HSM:
         return dict(path=path)
 
 
-    @logged()
-    def public_prepareVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=True, options = None):
+    @public
+    def prepareVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=True, options = None):
         """
         Prepares a volume (used in SAN).
         Activates LV and rebuilds 'images' subtree.
@@ -2437,8 +2446,8 @@ class HSM:
             raise
 
 
-    @logged()
-    def public_teardownVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=False, options = None):
+    @public
+    def teardownVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=False, options = None):
         """
         Tears down a volume (used in SAN).
         Deactivates LV.
@@ -2468,8 +2477,8 @@ class HSM:
         except Exception:
             self.log.warn("Problem tearing down volume", exc_info=True)
 
-    @logged()
-    def public_getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID, options = None):
+    @public
+    def getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID, options = None):
         """
         Gets a list of all volumes.
 
@@ -2497,8 +2506,8 @@ class HSM:
         return dict(uuidlist=uuidlist)
 
 
-    @logged()
-    def public_getImagesList(self, sdUUID, options = None):
+    @public
+    def getImagesList(self, sdUUID, options = None):
         """
         Gets a list of all the images of specific domain.
 
@@ -2514,8 +2523,8 @@ class HSM:
         return dict(imageslist=imageslist)
 
 
-    @logged()
-    def public_getImageDomainsList(self, spUUID, imgUUID, datadomains=True, options = None):
+    @public
+    def getImageDomainsList(self, spUUID, imgUUID, datadomains=True, options = None):
         """
         Gets a list of all domains in the pool that contains imgUUID.
 
@@ -2542,8 +2551,8 @@ class HSM:
         return dict(domainslist=domainslist)
 
 
-    @logged()
-    def public_prepareForShutdown(self, options = None):
+    @public
+    def prepareForShutdown(self, options = None):
         """
         Prepares to shutdown host.
         Stops all tasks.
@@ -2616,8 +2625,8 @@ class HSM:
         cls.log.warning("Could not release locks, killing lock processes")
         misc.killall(lockCmd, signal.SIGKILL, group=True)
 
-    @logged()
-    def public_fenceSpmStorage(self, spUUID, lastOwner, lastLver, options = None):
+    @public
+    def fenceSpmStorage(self, spUUID, lastOwner, lastLver, options = None):
         """
         Fences the SPM via the storage. ?
         Right now it just clears the owner and last ver fields.
@@ -2639,15 +2648,15 @@ class HSM:
         st = {'spmStatus':pool.getSpmRole(), 'spmLver': pool.getSpmLver(), 'spmId':pool.getSpmId()}
         return dict(spm_st=st)
 
-    @logged()
-    def public_upgradeStoragePool(self, spUUID, targetDomVersion):
+    @public
+    def upgradeStoragePool(self, spUUID, targetDomVersion):
         targetDomVersion = int(targetDomVersion)
         pool = self.getPool(spUUID)
         pool._upgradePool(targetDomVersion)
         return {"upgradeStatus" : "started"}
 
-    @logged()
-    def public_repoStats(self, options = None):
+    @public
+    def repoStats(self, options = None):
         """
         Collects a storage repository's information and stats.
 

@@ -32,7 +32,8 @@ import SimpleXMLRPCServer
 from xml.dom import minidom
 import uuid
 
-from storage.dispatcher import StorageDispatcher
+from storage.dispatcher import Dispatcher
+from storage.hsm import HSM
 import storage.misc
 import storage.hba
 from config import config
@@ -265,7 +266,7 @@ class clientIF:
         self.irs = None
         if config.getboolean('irs', 'irs_enable'):
             try:
-                self.irs = StorageDispatcher()
+                self.irs = Dispatcher(HSM())
                 for name in dir(self.irs):
                     method = getattr(self.irs, name)
                     if callable(method) and name[0] != '_':

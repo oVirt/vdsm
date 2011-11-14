@@ -23,12 +23,10 @@ import logging
 from config import config
 
 import task
-import resourceManager
-import hsm
 import storage_exception as se
 from threadLocal import vars
-from storageConstants import STORAGE
 
+_EXPORTED_ATTRIBUTE = "__dispatcher_exported__"
 
 class Protect:
     STATUS_OK = {'status': {'code': 0, 'message': "OK"}}
@@ -110,36 +108,28 @@ class Protect:
                 return self.STATUS_ERROR.copy()
 
 
+def exported(f):
+    setattr(f, _EXPORTED_ATTRIBUTE, True)
+    return f
 
-class StorageDispatcher:
+class Dispatcher:
     log = logging.getLogger('Storage.Dispatcher')
 
-    def __init__(self):
+    def __init__(self, obj):
         self.storage_repository = config.get('irs', 'repository')
-        resourceManager.ResourceManager.getInstance().registerNamespace(STORAGE, resourceManager.SimpleResourceFactory())
-        self.hsm = hsm.HSM()
-        self._init_public_functions()
+        self._exposeFunctions(obj)
         self.log.info("Starting StorageDispatcher...")
 
 
-    def _exposeFunctions(self, obj, prefix):
+    def _exposeFunctions(self, obj):
         for funcName in dir(obj):
             funcObj = getattr(obj, funcName)
-            if funcName.startswith(prefix) and callable(funcObj):
-                publicName = funcName[len(prefix):]
-                if hasattr(self, publicName):
-                    self.log.error("StorageDispatcher: init - multiple public functions with same name: %s" % publicName)
+            if hasattr(funcObj, _EXPORTED_ATTRIBUTE) and callable(funcObj):
+                if hasattr(self, funcName):
+                    self.log.error("StorageDispatcher: init - multiple public functions with same name: %s" % funcName)
                     continue
                 # Create a new entry in instance's "dict" that will mask the original method
-                self.__dict__[publicName] = Protect(funcObj, publicName).run
-
-
-    def _init_public_functions(self):
-        """ Generate and expose protected functions """
-        privatePrefix = "_" + self.__class__.__name__ + "__do_"
-        publicPrefix = "public_"
-        self._exposeFunctions(self.hsm, publicPrefix)
-        self._exposeFunctions(self, privatePrefix)
+                self.__dict__[funcName] = Protect(funcObj, funcName).run
 
 
     def _methodHelp(self, method):
