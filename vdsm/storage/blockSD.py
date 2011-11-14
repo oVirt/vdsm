@@ -245,10 +245,12 @@ class BlockStorageDomain(sd.StorageDomain):
             self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
             self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
         except KeyError:
-            # Initialize the block sizes metadata if not defined
-            self.logBlkSize, self.phyBlkSize = lvm.getVGBlockSizes(sdUUID)
-            self.setMetaParam(DMDK_LOGBLKSIZE, self.logBlkSize)
-            self.setMetaParam(DMDK_PHYBLKSIZE, self.phyBlkSize)
+            # 512 by Saggi "Trust me (Smoch Alai (sic))"
+            # *blkSize keys may be missing from metadata only for domains that
+            # existed before the introduction of the keys.
+            # Such domains supported only 512 sizes
+            self.logBlkSize = 512
+            self.phyBlkSize = 512
 
         # Check that all devices in the VG have the same logical and physical
         # block sizes.
