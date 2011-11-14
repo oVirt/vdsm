@@ -708,7 +708,7 @@ class Owner(object):
                     self.log.debug("%s: resource '%s' does not exist" % (str(self), fullName))
                 except Exception, ex:
                     self.log.warn("Unexpected exception caught while owner '%s' tried to acquire '%s'" % (str(self), fullName), exc_info=True)
-                    raise se.ResourceException()
+                    raise se.ResourceException(fullName)
             except:
                 if raiseonfailure:
                     raise
