@@ -619,8 +619,9 @@ class StoragePool:
         try:
             msd.changeLeaseParams(safeLease)
             msd.acquireClusterLock(self.id)
-        finally:
+        except:
             self.id = None
+            raise
 
         try:
             # Mark 'master' domain
