@@ -80,17 +80,17 @@ def main():
             res = deployUtil.setVdsConf(vds_config_str, VDSM_CONF_FILE)
 
         deployUtil.setService("vdsmd", "reconfigure")
-
-        Reboot(arg)
     except:
         logging.error('bootstrap complete failed', exc_info=True)
         res = False
 
     if res:
         print "<BSTRAP component='RHEV_INSTALL' status='OK'/>"
+        sys.stdout.flush()
+        Reboot(arg)
     else:
         print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
-    sys.stdout.flush()
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     sys.exit(main())
