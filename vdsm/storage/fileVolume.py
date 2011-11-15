@@ -367,7 +367,7 @@ class FileVolume(volume.Volume):
         Fetch the list of the Volumes UUIDs, not including the shared base (template)
         """
         # Get Volumes of an image
-        pattern = os.path.join(os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID, "*.meta"))
+        pattern = os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID, "*.meta")
         files = oop.getProcessPool(sdUUID).glob.glob(pattern)
         volList = []
         for i in files:
