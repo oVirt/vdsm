@@ -24,6 +24,7 @@ import re
 from functools import partial
 from contextlib import nested
 from uuid import uuid4
+from Queue import Queue
 
 import storage_exception as se
 import misc
@@ -201,7 +202,7 @@ class Request(object):
     def canceled(self):
         return self._isCanceled
 
-    def grant(self, resource):
+    def grant(self):
         with self._syncRoot:
             if not self._isActive:
                 self._log.warn("Tried to grant a processed request")
@@ -209,13 +210,15 @@ class Request(object):
 
             self._isActive = False
             self._log.debug("Granted request")
-            try:
-                ref = RequestRef(self)
-                self._callback(ref, resource)
-            except Exception:
-                self._log.warn("Request callback threw an exception", exc_info=True)
-            self._callback = None
             self._doneEvent.set()
+
+    def emit(self, resource):
+        try:
+            ref = RequestRef(self)
+            self._callback(ref, resource)
+        except Exception:
+            self._log.warn("Request callback threw an exception", exc_info=True)
+
 
     def wait(self, timeout = None):
         return self._doneEvent.wait(timeout)
@@ -295,7 +298,7 @@ class ResourceRef(object):
                 # the last reference is freed. This means the __del__ method can be called
                 # inside of any context. The releaseResource method we use tries to acquire
                 # locks. So we might try to acquire the lock in a locked context and reach
-                # a deadlock. This is why I need use a timer. It will defer the operation
+                # a deadlock. This is why I need to use a timer. It will defer the operation
                 # and use a different context.
                 ResourceManager.getInstance().releaseResource(namespace, name)
             threading.Thread(target = release, args=(self._log, self.namespace, self.name)).start()
@@ -446,12 +449,9 @@ class ResourceManager(object):
             except ValueError:
                 raise TypeError("'timeout' must be number")
 
-        # Code in a nested function's body may access but not rebind
-        # local variables of an outer function. This is why using
-        # simple assignment would'nt work.
-        resource = []
+        resource = Queue()
         def callback(req, res):
-            resource.append(res)
+            resource.put(res)
 
         request = self.registerResource(namespace, name, lockType, callback)
         request.wait(timeout)
@@ -464,11 +464,7 @@ class ResourceManager(object):
                 if request.canceled():
                     raise se.ResourceAcqusitionFailed()
 
-        if resource[0] is None:
-            self._log.warn("Resource was granted but resource ref returned null. Please report to support")
-            raise se.ResourceAcqusitionFailed()
-
-        return resource[0]
+        return resource.get()
 
     def registerResource(self, namespace, name, lockType, callback):
         """
@@ -503,7 +499,8 @@ class ResourceManager(object):
                         resource.activeUsers += 1
                         self._log.debug("Resource '%s' found in shared state and queue is empty, Joining current shared lock (%d active users)"
                                             % (fullName, resource.activeUsers))
-                        contextCleanup.defer(request.grant, ResourceRef(namespace, name, resource.realObj, request.reqID))
+                        request.grant()
+                        contextCleanup.defer(request.emit, ResourceRef(namespace, name, resource.realObj, request.reqID))
                         return RequestRef(request)
 
                     resource.queue.insert(0, request)
@@ -526,7 +523,8 @@ class ResourceManager(object):
                 resource.activeUsers += 1
 
                 self._log.debug("Resource '%s' is free. Now locking as '%s' (1 active user)" % (fullName, request.lockType))
-                contextCleanup.defer(request.grant, ResourceRef(namespace, name, resource.realObj, request.reqID))
+                request.grant()
+                contextCleanup.defer(request.emit, ResourceRef(namespace, name, resource.realObj, request.reqID))
                 return RequestRef(request)
 
     def releaseResource(self, namespace, name):
@@ -535,7 +533,7 @@ class ResourceManager(object):
         fullName = "%s.%s" % (namespace, name)
 
         self._log.debug("Trying to release resource '%s'" % (fullName))
-        with self._syncRoot.shared:
+        with nested(misc.DeferableContext(), self._syncRoot.shared) as (contextCleanup, lock):
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:
@@ -580,7 +578,8 @@ class ResourceManager(object):
                             nextRequest.cancel()
                             continue
 
-                        nextRequest.grant(ResourceRef(namespace, name, resource.realObj, nextRequest.reqID))
+                        nextRequest.grant()
+                        contextCleanup.defer(partial(nextRequest.emit, ResourceRef(namespace, name, resource.realObj, nextRequest.reqID)))
 
                         resource.activeUsers += 1
 
@@ -605,7 +604,8 @@ class ResourceManager(object):
 
                     nextRequest = resource.queue.pop()
                     try:
-                        nextRequest.grant(ResourceRef(namespace, name, resource.realObj, nextRequest.reqID))
+                        nextRequest.grant()
+                        contextCleanup.defer(partial(nextRequest.emit, ResourceRef(namespace, name, resource.realObj, nextRequest.reqID)))
                     except RequestAlreadyProcessedError:
                         continue
 
