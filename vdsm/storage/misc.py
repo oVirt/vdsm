@@ -270,11 +270,13 @@ def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None):
     return (proc.returncode, out, err)
 
 
-def readfile(name):
+def readfile(name, buffersize=None):
     """
     Read the content of the file using /bin/dd command
     """
     cmd = [constants.EXT_DD, "iflag=%s" % DIRECTFLAG, "if=%s" % name]
+    if buffersize:
+        cmd.extend(["bs=%d" % buffersize, "count=1"])
     (rc, out, err) = execCmd(cmd, sudo=False)
     if rc:
         raise se.MiscFileReadException(name)
