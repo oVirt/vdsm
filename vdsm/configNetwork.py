@@ -27,17 +27,20 @@ import time
 import logging
 from collections import defaultdict
 import threading
+import libvirt
 
 import constants
 import utils
 import neterrors as ne
 import define
 from netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR
+import libvirtconnection
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
 MAX_VLAN_ID = 4095
 MAX_BRIDGE_NAME_LEN = 15
 ILLEGAL_BRIDGE_CHARS = ':. \t'
+NETPREFIX = 'vdsm-'
 
 class ConfigNetworkError(Exception):
     def __init__(self, errCode, message):
@@ -475,6 +478,17 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
     else:
         ifup(bridge)
 
+    # add libvirt network
+    createLibvirtNetwork(bridge)
+
+def createLibvirtNetwork(bridge):
+    conn = libvirtconnection.get()
+    netName = NETPREFIX + bridge
+    netXml = '''<network><name>%s</name><forward mode='bridge'/>
+                <bridge name='%s'/></network>''' % (netName, bridge)
+    net = conn.networkDefineXML(netXml)
+    net.create()
+    net.setAutostart(1)
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
     brifs = os.listdir('/sys/class/net/%s/brif/' % bridge)
@@ -560,6 +574,16 @@ def delNetwork(bridge, force=False, configWriter=None, **options):
         configWriter.removeVlan(vlan, bonding or nics[0])
     if bridge:
         configWriter.removeBridge(bridge)
+
+    netName = NETPREFIX + bridge
+    conn = libvirtconnection.get()
+    try:
+        net = conn.networkLookupByName(netName)
+        net.destroy()
+        net.undefine()
+    except libvirt.libvirtError:
+        logging.debug('failed to remove libvirt network %s' % netName)
+
 
 def clientSeen(timeout):
     start = time.time()

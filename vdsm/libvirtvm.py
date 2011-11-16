@@ -36,6 +36,7 @@ import libvirtconnection
 from config import config
 import hooks
 import caps
+import configNetwork
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 _VHOST_MAP = {'true': 'vhost', 'false': 'qemu'}
@@ -895,13 +896,11 @@ class _DomXML:
             graphics.setAttribute('type', 'vnc')
             graphics.setAttribute('port', self.conf['displayPort'])
             graphics.setAttribute('autoport', 'yes')
-            graphics.setAttribute('listen', self.conf['displayIp'])
         elif 'qxl' in self.conf['display']:
             graphics.setAttribute('type', 'spice')
             graphics.setAttribute('port', self.conf['displayPort'])
             graphics.setAttribute('tlsPort', self.conf['displaySecurePort'])
             graphics.setAttribute('autoport', 'yes')
-            graphics.setAttribute('listen', self.conf['displayIp'])
             if self.conf.get('spiceSecureChannels'):
                 for channel in self.conf['spiceSecureChannels'].split(','):
                     m = self.doc.createElement('channel')
@@ -926,6 +925,15 @@ class _DomXML:
             m.setAttribute('name', 'com.redhat.spice.0')
             vmc.appendChild(m)
             self._devices.appendChild(vmc)
+
+        if self.conf.get('displayNetwork'):
+            listen = self.doc.createElement('listen')
+            listen.setAttribute('type', 'network')
+            listen.setAttribute('network', configNetwork.NETPREFIX +
+                self.conf.get('displayNetwork'))
+            graphics.appendChild(listen)
+        else:
+            graphics.setAttribute('listen', '0')
 
         if self.conf.get('keyboardLayout'):
             graphics.setAttribute('keymap', self.conf['keyboardLayout'])
@@ -965,12 +973,6 @@ class LibvirtVm(vm.Vm):
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
         self._released = False
         self._releaseLock = threading.Lock()
-
-        # TODO remove when libvirt BZ#703851 is solved
-        # until then, displayNetwork cannot be honoured
-        if self.conf['displayIp'] != '0':
-            self.log.warning('ignoring displayNetwork until libvirt BZ#703851 is solved')
-            self.conf['displayIp'] = '0'
 
 
     def _buildCmdLine(self):

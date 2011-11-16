@@ -111,6 +111,7 @@ class clientIF:
         self.log = log
         self._recovery = True
         self._libvirt = libvirtconnection.get()
+        self._createLibvirtNetworks()
         self.serverPort = config.get('addresses', 'management_port')
         self.serverIP = self._getServerIP()
         self.server = self._createXMLRPCServer()
@@ -141,6 +142,18 @@ class clientIF:
             if self.irs:
                 self.irs.prepareForShutdown()
             raise
+
+    def _createLibvirtNetworks(self):
+        """
+            function is mostly for upgrade from versions that did not
+            have a libvirt network per vdsm network
+        """
+        nf = netinfo.NetInfo()
+        lvNetworks = self._libvirt.listNetworks()
+        for network in nf.networks.keys():
+            lvNetwork = configNetwork.NETPREFIX + network
+            if not lvNetwork in lvNetworks:
+                configNetwork.createLibvirtNetwork(network)
 
     def _getServerIP(self):
         """Return the IP address we should listen on"""
