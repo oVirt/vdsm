@@ -1,0 +1,20 @@
+hugepages vdsm hook
+===================
+hook is getting hugepages=512 and will preserve 512
+huge pages
+
+hook is doing the following:
+add pages: sysctl vm.nr_hugepages=516
+add the following xml in domain\devices:
+    <memoryBacking>
+        <hugepages/>
+    </memoryBacking>
+
+NOTE:
+hugepages must! be mounted prior to libvirt start up,
+ie:
+# mount -t hugetlbfs hugetlbfs /dev/hugepages
+# initctl restart libvirtd
+
+Syntax:
+hugepages=512

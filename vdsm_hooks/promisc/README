@@ -1,0 +1,22 @@
+promisc vdsm hook
+=================
+Hook provide ability to mirror/redirect other VMs network traffic to a single VM.
+
+Hook is getting network (bridge) name and mode: prmisc=blue:mirror,red:redirect and
+set the current running VM in promiscuous mode, ie: mirror all blue traffic to current VM
+
+syntax:
+1. promisc=blue:mirror
+    # mirror monitoring the network blue (all traffic will goto the VMs interface and the network)
+2. promisc=blue:redirect
+    # redirect network blue traffic to VMs interface (all traffic will goto the VMs interface,
+    # and the its the VM responsibility to redirect the traffic back to blues interfaces)
+
+How to test:
+from the promiscuous VM:
+# tcpdump -i eth0
+
+
+NOTE:
+Currently the redirect is not working,
+There is instructions for doing so with ebtables in after_vm_start.py script.

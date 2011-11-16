@@ -1,0 +1,20 @@
+numa hook
+=========
+add numa support for domain xml:
+
+<numatune>
+    <memory mode="strict" nodeset="1-4,^3"/>
+</numatune>
+
+memory=interleave|strict|preferred
+
+numaset="1" (use one NUMA node)
+numaset="1-4" (use 1-4 NUMA nodes)
+numaset="^3" (don't use NUMA node 3)
+numaset="1-4,^3,6" (or combinations)
+
+numa=strict:1-4
+numa: numa=strict:5
+    add NUMA support can be [interleave|strict|preferred] with 5 nodes,
+    nodes can be "1" (use one NUMA node) "1-4" (use 1-4 NUMA nodes)
+    "^3" (don't use NUMA node 3) "1-4,^3,6" (or combinations)

@@ -1,0 +1,37 @@
+isolated-privatevlan vdsm hook
+==============================
+limit VM traffic to a specific gateway by its mac address,
+hook prevents VM from spoofing its mac or ip address
+by using <filterref filter='clean-traffic'/> libvirt filter
+and by adding custom filter: isolatedprivatevlan-vdsm.xml
+
+hook is updating each interface entry in VM domain:
+<interface ...>
+    <filterref filter='isolatedprivatevlan-vdsm'>
+        <parameter name='GATEWAY_MAC' value='aa:bb:cc:dd:ee:ff'/>
+    </filterref>
+    <filterref filter='clean-traffic'>
+        <parameter name='IP' value='10.35.16.50'/>
+    </filterref>
+</interface>
+
+syntax:
+isolatedprivatevlan=aa:bb:cc:dd:ee:ff,10.35.16.50
+ie:
+    mac address of the GATEWAY
+    ip of the guest
+
+    if no ip supplied, the filter clean-traffic will not be added
+    (if it will, the vm will have no traffic)
+    if you have more then one interface you cannot send the IP,
+    use only the MAC address
+
+TODO:
+    support multiple interfaces IPs
+
+NOTE:
+the filter will be applied only after restart to libvirtd
+# initctl restart libvirtd
+
+to see libvirt filters use:
+# ebtables -t nat -L

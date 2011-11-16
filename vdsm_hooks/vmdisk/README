@@ -1,0 +1,6 @@
+vmdisk hook:
+============
+add additional disk image for a VM (raw or qcow2)
+
+syntax:
+    vmdisk=/path/to/disk.img:qcow2,/other/disk.img:raw

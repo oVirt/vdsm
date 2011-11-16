@@ -1,0 +1,58 @@
+                    IMPORTANT NOTE:
+***********************************************************************
+hooks are NOT part of VDSM. They are extensions that -
+if found useful - are to be integrated into oVirt in
+general and into VDSM in particular.
+Do not rely on their existence here.
+***********************************************************************
+
+Working with VDSM hooks
+=======================
+To work with VDSM hooks you need first to do the following:
+1. Update UserDefinedVMProperties property by using the rhevm-config tool:
+   # rhevm-config -s UserDefinedVMProperties='pincpu=^[0-9]+$' --cver=3.0
+   * Note: for simplification we use pincpu=^[0-9]+$ which enable only numbers, the actual
+           regex need to be pincpu=^[\^]?\d+(-\d+)?(,[\^]?\d+(-\d+)?)*$ which enable range of CPUs.
+
+   That command will enable VMs to use pincpu custom hook.
+   * Please note that this command will override the existing value of UserDefinedVMProperties
+     you can concatenate the old value by getting it with the following command:
+     # rhevm-config -g UserDefinedVMProperties --cver=3.0
+   * note for the version in rhevm-config tool, the current version is 3.0 and its the first
+     version that use custom hooks, to use the version you can do the following:
+     # rhevm-config -g UserDefinedVMProperties --cver=3.0
+
+   If you want to enable more then one custom hook use the semicolon as
+   a separator:
+   # rhevm-config -s UserDefinedVMProperties='pincpu=^[0-9]+$;smartcard=^(true|false)$' --cver=3.0
+
+   The convention is [hook name]=[value], the value is evaluate with regular expression,
+   If you find regular expression too complex, you can always use the following command:
+   # rhevm-config -s UserDefinedVMProperties='pincpu=.*' --cver=3.0
+
+   Which mean that RHEV-M validation will get any input - but please note that giving
+   a bad input - the hook will probably fail or run with unexpected results!
+
+   There is explanation to each hooks expected syntax in the syntax section in this
+   README file.
+
+2. In order that your changes will take effect you need to restart the JBoss service:
+   # service jbossas restart
+
+3. Edit the VM that you want to run the hook with by running the RHEV-M Admin GUI and
+   do one of the following options:
+   a. Select the VM and press "edit" button - edit dialog will pop-up,
+      select the last option from the left option list with the label "Custom Properties"
+      add your custom property value, in our pincpu hook case:
+      pincpu=1
+      if you want to use more then on hook and you did enable it with the rhevm-config
+      tool, you can use the semicolon as a separator:
+      pincpu=1;smartcard=true
+   b. Another option is to use "Run Once" dialog which mean that you add a custom property
+      only this time to the VM, next time that you run the VM it will run without the
+      custom property that you provided.
+      The "Run Once" dialog can be found in the VMs tab at the drop down menu beside the
+      green "Play" button (after the "Remove" button).
+      At the "Run Once" dialog in the lower panel you will see a label with
+      "Custom Properties" and an input box that you can use as explain in the "edit" dialog
+      option.

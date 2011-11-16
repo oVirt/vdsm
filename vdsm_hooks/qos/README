@@ -1,0 +1,24 @@
+QoS Hook
+========
+libvirt domain xml:
+<interface>
+    ...
+    <bandwidth>
+        <inbound average='1' peak='2' burst='5'/>
+        <outbound average='0.5'/>
+    </bandwidth>
+    ...
+</interface>
+
+Note:
+    for average, peak, and burst explanation look at:
+    # man tc tbf
+
+'average' attribute is mandatory,
+inbound or outbound elements can be once but not mandatory
+
+syntax:
+qos=00:11:22:33:44:55=in{'average':'1','peek':'2','burst':'5'}^out{'average':'1'}&11:11:11:11:11:11=...
+    i.e: qos=mac=in{...}^out{...}&mac..
+    add QoS to VM interface, can control the in and out traffic by:
+    average traffic, peek traffic and burst limit

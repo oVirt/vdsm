@@ -1,0 +1,5 @@
+vdsm  ALL=(ALL) NOPASSWD: /bin/chown
+vdsm  ALL=(ALL) NOPASSWD: /bin/chmod
+vdsm  ALL=(ALL) NOPASSWD: /bin/mkdir
+vdsm  ALL=(ALL) NOPASSWD: /bin/mknod
+vdsm  ALL=(ALL) NOPASSWD: /bin/rm

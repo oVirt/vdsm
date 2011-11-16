@@ -79,6 +79,127 @@ BuildArch:      noarch
 VDSM hook used for testing VDSM with multiple fake virtual machines without
 running real guests.
 
+%package hook-directlun
+Summary:        Direct LUN support for VDSM
+BuildArch:      noarch
+
+%description hook-directlun
+VDSM hook enable user to add storage LUN for VDSM
+without the sharing and storage handling of VDSM.
+
+%package hook-fileinject
+Summary:        Allow uploading file to VMs disk
+BuildArch:      noarch
+
+%description hook-fileinject
+Hook is getting target file name and its content and
+create that file in target machine.
+
+%package hook-floppy
+Summary:        Allow adding floppy to VM
+BuildArch:      noarch
+
+%description hook-floppy
+Allow adding floppy to VM
+
+%package hook-hostusb
+Summary:        Allow attaching USB device from host
+BuildArch:      noarch
+
+%description hook-hostusb
+Hook is getting vendor and product id of USB device
+disconnect it from host and attach it to VM
+
+%package hook-hugepages
+Summary:        Huge pages enable user to handle VM with 2048KB page files.
+BuildArch:      noarch
+
+%description hook-hugepages
+Hook is getting number of huge pages reserve them for the VM,
+and enable user to handle VM with 2048KB page files.
+
+%package hook-isolatedprivatevlan
+Summary:        Isolated network environment for VMs
+BuildArch:      noarch
+
+%description hook-isolatedprivatevlan
+limit VM traffic to a specific gateway by its mac address,
+hook prevent VM from spoofing its mac or  ip address
+by using <filterref filter='clean-traffic'/> libvirt filter
+and by adding custom filter: isolatedprivatevlan-vdsm.xml
+
+%package hook-numa
+Summary:        numa sopport for VDSM
+BuildArch:      noarch
+
+%description hook-numa
+Hooks is getting number/rage of numa nodes and numa mode,
+and update the VM xml.
+
+%package hook-pincpu
+Summary:        Hook pin VM so specific CPUs
+BuildArch:      noarch
+
+%description hook-pincpu
+pincpu is hook for VDSM.
+pincpu enable to pin virtual machine to a specific CPUs.
+
+%package hook-promisc
+Summary:        Network interface promiscuous mode support for VDSM
+BuildArch:      noarch
+
+%description hook-promisc
+VDSM promiscuous mode let user define a VM interface that will capture
+all network traffic.
+
+%package hook-qos
+Summary:        QoS network in/out traffic support for VDSM
+BuildArch:      noarch
+
+%description hook-qos
+Hook adds QoS in/out traffic to VMs interfaces
+
+%package hook-scratchpad
+Summary:        One time disk creation for VDSM
+BuildArch:      noarch
+
+%description hook-scratchpad
+scratchpad hook for VDSM
+Hook creates a disk for a VM onetime usage,
+the disk will be erased when the VM destroyed.
+VM cannot be migrated when using scratchpad hook
+
+%package hook-smartcard
+Summary:        Smartcard support for Spice protocol in VDSM
+BuildArch:      noarch
+
+%description hook-smartcard
+Smartcard hook add support for spice in VDSM.
+Smartcard hook enable user to use its smartcard inside virtual machines.
+
+%package hook-smbios
+Summary:        Adding custom smbios entries to libvirt domain via VDSM
+BuildArch:      noarch
+
+%description hook-smbios
+Adding custom smbios entries to libvirt domain via VDSM
+such as: vendor, version, date and release
+
+%package hook-sriov
+Summary:        sr-iov support for VDSM
+BuildArch:      noarch
+
+%description hook-sriov
+sr-iov hook enable to add virtual functions exposed by the device
+directly to a virtual machine.
+
+%package hook-vmdisk
+Summary:        External disk support for VDSM
+BuildArch:      noarch
+
+%description hook-vmdisk
+Hook adds additional disk image for a VM (raw or qcow2)
+
 %package debug-plugin
 Summary:        VDSM Debug Plugin
 Requires:       vdsm
@@ -117,7 +238,7 @@ Manager.
 %setup -q
 
 %build
-%configure
+%configure %{?with_hooks:--enable-hooks}
 make
 
 %install
@@ -413,6 +534,86 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
+
+%if 0%{?with_hooks}
+%files hook-directlun
+%defattr(-, vdsm, kvm, -)
+%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_directlun
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_directlun
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_directlun
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_directlun
+
+%files hook-fileinject
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_fileinject
+
+%files hook-floppy
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_floppy
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_floppy
+
+%files hook-hostusb
+%defattr(-, vdsm, kvm, -)
+%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_hostusb
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostusb
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_hostusb
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hostusb
+
+%files hook-hugepages
+%defattr(-, vdsm, kvm, -)
+%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_hugepages
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hugepages
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_hugepages
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hugepages
+
+%files hook-isolatedprivatevlan
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
+%config(noreplace) %{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
+
+%files hook-numa
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_numa
+
+%files hook-pincpu
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_pincpu
+
+%files hook-promisc
+%defattr(-, vdsm, kvm, -)
+%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_promisc
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_promisc
+
+%files hook-qos
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qos
+
+%files hook-scratchpad
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_scratchpad
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_scratchpad
+
+%files hook-smartcard
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smartcard
+
+%files hook-smbios
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smbios
+
+%files hook-sriov
+%defattr(-, vdsm, kvm, -)
+%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_sriov
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_sriov
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_sriov
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_sriov
+
+%files hook-vmdisk
+%defattr(-, vdsm, kvm, -)
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmdisk
+%endif
 
 %files debug-plugin
 %defattr(-, root, root, -)

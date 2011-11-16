@@ -22,6 +22,16 @@ AC_PROG_CC
 AC_PROG_LN_S
 AM_PATH_PYTHON([2.6])
 
+# Checking if hooks enables
+AC_ARG_ENABLE([hooks],
+[  --enable-hooks    build hooks RPMs],
+[case "${enableval}" in
+  yes) hooks=true ;;
+  no)  hooks=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-hooks]) ;;
+esac],[hooks=false])
+AM_CONDITIONAL([HOOKS], [test x$hooks = xtrue])
+
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
 AC_SUBST([VDSMGROUP], [kvm])
@@ -118,6 +128,21 @@ AC_OUTPUT([
 	vdsm_hooks/faqemu/vdsm-faqemu
 	vdsm_hooks/Makefile
 	vdsm_hooks/vhostmd/Makefile
+	vdsm_hooks/directlun/Makefile
+	vdsm_hooks/fileinject/Makefile
+	vdsm_hooks/floppy/Makefile
+	vdsm_hooks/hostusb/Makefile
+	vdsm_hooks/hugepages/Makefile
+	vdsm_hooks/isolatedprivatevlan/Makefile
+	vdsm_hooks/numa/Makefile
+	vdsm_hooks/pincpu/Makefile
+	vdsm_hooks/promisc/Makefile
+	vdsm_hooks/qos/Makefile
+	vdsm_hooks/scratchpad/Makefile
+	vdsm_hooks/smartcard/Makefile
+	vdsm_hooks/smbios/Makefile
+	vdsm_hooks/sriov/Makefile
+	vdsm_hooks/vmdisk/Makefile
 	vdsm/Makefile
 	vdsm_reg/Makefile
 	vdsm/storage/Makefile

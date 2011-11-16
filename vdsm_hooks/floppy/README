@@ -1,0 +1,20 @@
+floppy vdsm hook
+================
+adding floppy to livbirt domain entry:
+
+syntax:
+floppy=/path/to/vfd
+
+<disk type='file' device='floppy'>
+    <source file='/home/iso/my.vfd'/>
+    <target dev='fda' />
+</disk>
+
+Note:
+    some linux distro need to load the floppy disk kernel module:
+    # modprobe floppy
+
+Syntax:
+floppy: floppy=/path/to/vfd
+
+Add floppy to VM

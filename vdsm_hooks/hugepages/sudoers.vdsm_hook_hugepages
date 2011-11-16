@@ -1,0 +1,1 @@
+vdsm  ALL=(ALL) NOPASSWD: /sbin/sysctl, /bin/mkdir, /bin/chown

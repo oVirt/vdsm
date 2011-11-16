@@ -1,0 +1,5 @@
+<filter name='isolatedprivatevlan-vdsm' chain='ipv4'>
+    <rule action='drop' direction='out' priority='10'>
+        <mac match='no' dstmacaddr='$GATEWAY_MAC'/>
+    </rule>
+</filter>

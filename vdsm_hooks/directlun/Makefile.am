@@ -20,38 +20,33 @@
 
 EXTRA_DIST = \
 	after_vm_destroy.py \
+	before_vm_migrate_destination.py \
 	before_vm_start.py \
-	sudoers.vdsm_hook_vhostmd
+	sudoers.vdsm_hook_directlun
 
 install-data-hook:
-	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
+	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_directlun
 
 install-data-local: install-data-sudoers
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
-		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_vhostmd
+		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_directlun
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy
 	$(INSTALL_SCRIPT) $(srcdir)/after_vm_destroy.py \
-		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_vhostmd
+		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_directlun
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
-	$(LN_S) ../before_vm_start/50_vhostmd \
-		$(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
-	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
-	$(LN_S) ../before_vm_start/50_vhostmd \
-		$(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
+	$(INSTALL_SCRIPT) $(srcdir)/before_vm_migrate_destination.py \
+		$(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_directlun
 
 uninstall-local: uninstall-data-sudoers
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_vhostmd
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_vhostmd
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_directlun
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_directlun
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_directlun
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
-	$(INSTALL_DATA) $(srcdir)/sudoers.vdsm_hook_vhostmd \
-		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
+	$(INSTALL_DATA) $(srcdir)/sudoers.vdsm_hook_directlun \
+		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_directlun
 
 uninstall-data-sudoers:
-	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
+	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_directlun

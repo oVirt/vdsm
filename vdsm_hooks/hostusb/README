@@ -1,0 +1,26 @@
+host usb hook
+=============
+
+          !!! Disclaimer !!!
+*******************************************
+The host side usb support wasn't thoroughly
+tests in kvm!
+*******************************************
+
+add hosts usb device/s to VM:
+
+<hostdev mode='subsystem' type='usb'>
+    <source>
+        <vendor id='0x1234'/>
+        <product id='0xbeef'/>
+    </source>
+</hostdev>
+
+syntax:
+    hostusb=0x1234:0xbeef&0x2222:0xabaa
+    i.e.
+    hostusb=VendorId:ProductId (can add more then one with '&' separator)
+
+Note:
+    The VM must be pinned to host and this hook will
+    fail any migration attempt.

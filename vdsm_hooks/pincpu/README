@@ -1,0 +1,10 @@
+pincpu usages
+=============
+pincpu="0" (use the first cpu)
+pincpu="1-4" (use cpus 1-4)
+pincpu="^3" (dont use cpu 3)
+pincpu="1-4,^3,6" (or all together)
+
+syntax:
+pincpu: pincpu=1
+will pin the vm to cpu 1

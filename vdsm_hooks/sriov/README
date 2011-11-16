@@ -1,0 +1,26 @@
+sriov vdsm hook
+===============
+hook is getting VF via its os nic names, i.e. sriov=eth5
+and get its pci address, dettach it from the os, create xml
+representation of the device for libvirt domain and adding
+it to the guest xml
+
+syntax:
+sr-iov: sriov=eth10,eth11
+    attach 2 sr-iov VF to vm
+    notes at sr-iov/README
+
+
+
+RHEL6 sr-iov notes:
+===================
+o Enable IOMME:
+    o Intel CPU, pass intel_iommu=on to the kernel command line
+        (dmesg | grep "Intel-IOMMU: enabled" # make sure that iommu is enabled)
+    o AMD CPU
+
+o Load sr-iov PF and VF
+    o Intel Corporation 82576 Gigabit Network Connection:
+        modprobe igb max_vfs=7 # 7 is max for 82576 card
+o RHEV-M:
+    Add 'sriov=.*' to option_name' to UserDefinedVMProperties (';' is the seperator)

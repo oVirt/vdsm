@@ -1,0 +1,16 @@
+scratchpad vdsm hook
+====================
+Hook creates a disk for a VM onetime usage,
+the disk will be erased when the VM destroyed.
+VM cannot be migrated when using scratchpad hook
+
+syntax:
+    scratchpad=size,path
+    ie:
+    scratchpad=20G,/tmp/myimg
+
+    size: Optional suffixes "k" or "K" (kilobyte, 1024) "M" (megabyte, 1024k) and
+          "G" (gigabyte, 1024M) and T (terabyte, 1024G) are supported.  "b" is ignored (default)
+
+    note: more then one disk can be added:
+    scratchpad=20G,/tmp/disk1,1T,/tmp/disk2

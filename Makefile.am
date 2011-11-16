@@ -13,6 +13,10 @@ EXTRA_DIST = vdsm.spec
 CLEANFILES = \
 	$(DIST_ARCHIVES)
 
+if HOOKS
+WITH_HOOKS = --define="with_hooks 1"
+endif
+
 check-local:
 	$(PYFLAKES) $(SUBDIRS)
 
@@ -22,7 +26,8 @@ srpm: dist
 	rpmbuild -ts $(if $(BUILDID),--define="extra_release .$(BUILDID)") $(DIST_ARCHIVES)
 
 rpm: dist
-	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") $(DIST_ARCHIVES)
+	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
+				$(WITH_HOOKS) $(DIST_ARCHIVES)
 
 dist-hook: gen-ChangeLog
 

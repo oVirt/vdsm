@@ -1,0 +1,12 @@
+Syntax:
+directlun: directlun=3600144f0e90c870000004d4194ed001f
+           directlun=3600144f0e90c870000004d4194ed001f:readonly
+           directlun=lun1[:option1[;option2]][,lun2[:option1[;option2]]]...
+
+Notes:
+will add disk device of specify lun id
+(lun id in client side, i.e. the one that multipath cretae as in this example 3xxxxxxx,
+3 is Solaris prefix).
+
+there is also option section (now only readonly):
+directlun=lunid:readonly,lunid...

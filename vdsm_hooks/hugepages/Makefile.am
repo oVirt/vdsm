@@ -20,38 +20,33 @@
 
 EXTRA_DIST = \
 	after_vm_destroy.py \
+	before_vm_migrate_destination.py \
 	before_vm_start.py \
-	sudoers.vdsm_hook_vhostmd
+	sudoers.vdsm_hook_hugepages
 
 install-data-hook:
-	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
+	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_hugepages
 
 install-data-local: install-data-sudoers
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
-		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_vhostmd
+		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_hugepages
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy
 	$(INSTALL_SCRIPT) $(srcdir)/after_vm_destroy.py \
-		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_vhostmd
+		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_hugepages
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
-	$(LN_S) ../before_vm_start/50_vhostmd \
-		$(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
-	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
-	$(LN_S) ../before_vm_start/50_vhostmd \
-		$(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
+	$(INSTALL_SCRIPT) $(srcdir)/before_vm_migrate_destination.py \
+		$(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_hugepages
 
 uninstall-local: uninstall-data-sudoers
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_vhostmd
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_vhostmd
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_vhostmd
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_dehibernate/50_vhostmd
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_hugepages
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_hugepages
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_destination/50_hugepages
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
-	$(INSTALL_DATA) $(srcdir)/sudoers.vdsm_hook_vhostmd \
-		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
+	$(INSTALL_DATA) $(srcdir)/sudoers.vdsm_hook_hugepages \
+		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_hugepages
 
 uninstall-data-sudoers:
-	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_vhostmd
+	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_hugepages

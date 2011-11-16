@@ -1,0 +1,7 @@
+smbios vdsm hook
+================
+adding/changing entries to smbios domain entry:
+
+syntax:
+smbios: smbios={'serial': '1234'}^{'vendor': 'redhat'}
+    add/edit 2 attributes to smbios: serial and vendor
