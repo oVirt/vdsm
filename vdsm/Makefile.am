@@ -46,7 +46,7 @@ nodist_noinst_DATA = \
 	logger.conf \
 	sudoers.vdsm \
 	vdsm.conf.sample \
-	vdsmd \
+	vdsmd.init \
 	vdsm-sosplugin.py
 
 dist_vdsm_SCRIPTS = \
@@ -76,7 +76,8 @@ EXTRA_DIST = \
 	libvirt_password \
 	logger.conf.in \
 	mk-vdsm-conf-sample.py \
-	vdsmd.in \
+	vdsmd.init.in \
+	vdsmd.service \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf \
@@ -112,9 +113,12 @@ install-data-hook:
 	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
-install-data-local: install-data-init install-data-logger \
-		install-data-rwtab install-data-logrotate \
-		install-data-sudoers install-data-sosplugin \
+install-data-local: \
+		install-data-logger \
+		install-data-rwtab \
+		install-data-logrotate \
+		install-data-sudoers \
+		install-data-sosplugin \
 		install-data-libvirtpass
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
@@ -125,17 +129,13 @@ install-data-local: install-data-init install-data-logger \
 	$(MKDIR_P) $(DESTDIR)$(vdsmbackupdir)
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
-uninstall-local: uninstall-data-init uninstall-data-logger \
-		uninstall-data-rwtab uninstall-data-logrotate \
-		uninstall-data-sudoers uninstall-data-sosplugin \
+uninstall-local: \
+		uninstall-data-logger \
+		uninstall-data-rwtab \
+		uninstall-data-logrotate \
+		uninstall-data-sudoers \
+		uninstall-data-sosplugin \
 		uninstall-data-libvirtpass
-
-install-data-init:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rc.d/init.d
-	$(INSTALL_SCRIPT) vdsmd $(DESTDIR)$(sysconfdir)/rc.d/init.d/vdsmd
-
-uninstall-data-init:
-	$(RM) $(DESTDIR)$(sysconfdir)/rc.d/init.d/vdsmd
 
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)

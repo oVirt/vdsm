@@ -1,0 +1,13 @@
+[Unit]
+Description=Virtual Desktop Server Manager
+Requires=multipathd.service libvirtd.service
+Conflicts=libvirt-guests.service
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/vdsm
+ExecStart=/lib/systemd/systemd-vdsmd start
+ExecStop=/lib/systemd/systemd-vdsmd stop
+
+[Install]
+WantedBy=multi-user.target

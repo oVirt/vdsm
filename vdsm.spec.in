@@ -121,10 +121,21 @@ make
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 
+# Install the respawn utility
+install -Dm 0755 vdsm/respawn \
+                 %{buildroot}%{_datadir}/%{vdsm_name}/respawn
+
 %if 0%{?rhel}
-# this is not commonplace, but we want /var/log/core to be a world-writable
-# dropbox for core dumps.
+# Install the SysV init scripts
+install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
+
+# This is not commonplace, but we want /var/log/core to be a world-writable
+# dropbox for core dumps
 install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
+%else
+# Install the systemd scripts
+install -Dm 0755 vdsm/vdsmd.init %{buildroot}/lib/systemd/systemd-vdsmd
+install -Dm 0644 vdsm/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
 %endif
 
 %check
@@ -140,14 +151,23 @@ rm -rf %{buildroot}
 /usr/sbin/usermod -a -G qemu vdsm
 
 %post
-# vdsm is intentionally on by default.
-/sbin/chkconfig --add vdsmd
-
 # update the vdsm "secret" password for libvirt
 /usr/sbin/saslpasswd2 -p -a libvirt vdsm@rhevh < \
     /etc/pki/vdsm/keys/libvirt_password
+%if 0%{?rhel}
+if [ "$1" -eq 1 ] ; then
+    /sbin/chkconfig --add vdsmd
+fi
+%else
+if [ "$1" -eq 1 ] ; then
+    /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
+    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+fi
+exit 0
+%endif
 
 %preun
+%if 0%{?rhel}
 if [ "$1" -eq 0 ]
 then
     /sbin/service vdsmd stop > /dev/null 2>&1 || :
@@ -172,7 +192,6 @@ _EOF
 
     /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@rhevh
 
-%if 0%{?rhel}
     if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
         /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
         rm -f /etc/init/libvirtd.conf
@@ -180,14 +199,27 @@ _EOF
         /sbin/chkconfig libvirtd on
         /sbin/service libvirtd start >/dev/null
     fi
-%endif
 fi
+%else
+if [ "$1" -eq 0 ]; then
+    /bin/systemctl --no-reload disable vdsmd.service > /dev/null 2>&1 || :
+    /bin/systemctl stop vdsmd.service > /dev/null 2>&1 || :
+fi
+exit 0
+%endif
 
 %postun
+%if 0%{?rhel}
 if [ "$1" -ge 1 ]; then
     /sbin/service vdsmd condrestart > /dev/null 2>&1
 fi
 exit 0
+%else
+if [ "$1" -ge 1 ] ; then
+    /bin/systemctl try-restart vdsmd.service >/dev/null 2>&1 || :
+fi
+exit 0
+%endif
 
 %if 0%{?rhel}
 %triggerun -- libvirt
@@ -202,19 +234,30 @@ fi
 %endif
 
 %post reg
+%if 0%{?rhel}
 /sbin/chkconfig --add vdsm-reg
+%else
+%endif
 
 %preun reg
+%if 0%{?rhel}
 if [ "$1" -eq 0 ]
 then
     /sbin/service vdsm-reg stop > /dev/null 2>&1 || :
     /sbin/chkconfig --del vdsm-reg
 fi
+%else
+%endif
 
 %files
 %defattr(-, root, root, -)
 %doc COPYING README vdsm/vdsm.conf.sample
+%if 0%{?rhel}
 %{_initrddir}/vdsmd
+%else
+/lib/systemd/systemd-vdsmd
+%{_unitdir}/vdsmd.service
+%endif
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage

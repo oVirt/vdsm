@@ -29,7 +29,7 @@ vdsm/vdsm-restore-net-config
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
 vdsm/vdsm.conf.sample
-vdsm/vdsmd
+vdsm/vdsmd.init
 vdsm_cli/vdsClient
 vdsm_cli/vdscli.py
 vdsm_reg/deployUtil.py
