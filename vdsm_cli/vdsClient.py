@@ -179,6 +179,20 @@ class service:
 
         return self.ExecAndExit(self.s.create(params))
 
+    def hotplugDisk(self, args):
+        drive = self._parseDriveSpec(args[1])
+        drive['type'] = 'disk'
+        drive['device'] = 'disk'
+        params={'vmId': args[0], 'drive': drive}
+        return self.ExecAndExit(self.s.hotplugDisk(params))
+
+    def hotunplugDisk(self, args):
+        drive = self._parseDriveSpec(args[1])
+        drive['type'] = 'disk'
+        drive['device'] = 'disk'
+        params={'vmId': args[0], 'drive': drive}
+        return self.ExecAndExit(self.s.hotunplugDisk(params))
+
     def do_changeCD(self, args):
         vmId = args[0]
         file = self._parseDriveSpec(args[1])
@@ -1499,6 +1513,34 @@ if __name__ == '__main__':
                         'o   cpuType : emulated cpu (with optional flags)',
                         'o   emulatedMachine : passed as qemu\'s -M',
                         )),
+        'hotplugDisk':  ( serv.hotplugDisk,
+                         ('<vmId> <drivespec>',
+                          'Hotplug disk to existing VM',
+                          'drivespec parameters list: r=required, o=optional',
+                          'r   iface:<ide|virtio> - Unique identification of the existing VM.',
+                          'r   index=<int> - disk index unique per interface virtio|ide',
+                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|[GUID:guid]|[UUID:uuid]',
+                          'r   format: cow|raw',
+                          'r   readonly: True|False   - default is False',
+                          'r   propagateErrors: off|on   - default is off',
+                          'o   bootOrder: <int>  - global boot order across all bootable devices',
+                          'o   shared: True|False',
+                          'o   optional: True|False'
+                          )),
+        'hotunplugDisk':  ( serv.hotunplugDisk,
+                         ('<vmId> <drivespec >',
+                          'Hotunplug disk from existing VM',
+                          'drivespec parameters list: r=required, o=optional',
+                          'r   iface:<ide|virtio> - Unique identification of the existing VM.',
+                          'r   index=<int> - disk index unique per interface virtio|ide',
+                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|[GUID:guid]|[UUID:uuid]',
+                          'r   format: cow|raw',
+                          'r   readonly: True|False   - default is False',
+                          'r   propagateErrors: off|on   - default is off',
+                          'o   bootOrder: <int>  - global boot order across all bootable devices',
+                          'o   shared: True|False',
+                          'o   optional: True|False'
+                         )),
         'changeCD':  ( serv.do_changeCD,
                        ('<vmId> <fileName|drivespec>',
                         'Changes the iso image of the cdrom'
