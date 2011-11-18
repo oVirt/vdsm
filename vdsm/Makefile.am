@@ -81,7 +81,6 @@ EXTRA_DIST = \
 	config.py.in \
 	libvirt_password \
 	logger.conf.in \
-	mk-vdsm-conf-sample.py \
 	vdsmd.init.in \
 	vdsmd.service \
 	vdsm-libvirt-access.pkla \
@@ -107,8 +106,7 @@ do_subst = sed -e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
 	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
 
 vdsm.conf.sample: config.py
-	python $(srcdir)/mk-vdsm-conf-sample.py \
-		$(srcdir)/config.py > $@;
+	python config.py > $@;
 
 $(vdsm_SUBST): Makefile
 	if test -f "$@.in"; then \

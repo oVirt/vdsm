@@ -250,6 +250,10 @@ make DESTDIR=%{buildroot} install
 install -Dm 0755 vdsm/respawn \
                  %{buildroot}%{_datadir}/%{vdsm_name}/respawn
 
+# Install the configuration sample
+install -Dm 0644 vdsm/vdsm.conf.sample \
+                 %{buildroot}%{_sysconfdir}/vdsm/vdsm.conf
+
 %if 0%{?rhel}
 # Install the SysV init scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
@@ -396,13 +400,14 @@ exit 0
 
 %files
 %defattr(-, root, root, -)
-%doc COPYING README vdsm/vdsm.conf.sample
+%doc COPYING README
 %if 0%{?rhel}
 %{_initrddir}/vdsmd
 %else
 /lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
 %endif
+%config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
