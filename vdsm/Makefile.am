@@ -42,12 +42,15 @@ nodist_vdsm_SCRIPTS = \
 	vdsm-restore-net-config \
 	vdsm-store-net-config
 
-nodist_noinst_DATA = \
+vdsm_data_SUBST = \
 	logger.conf \
 	sudoers.vdsm \
-	vdsm.conf.sample \
 	vdsmd.init \
 	vdsm-sosplugin.py
+
+nodist_noinst_DATA = \
+	$(vdsm_data_SUBST) \
+	vdsm.conf.sample
 
 dist_vdsm_SCRIPTS = \
 	addNetwork \
@@ -67,10 +70,11 @@ dist_man8_MANS = \
 vdsm_SUBST = \
 	$(nodist_vdsm_DATA) \
 	$(nodist_vdsm_SCRIPTS) \
-	$(nodist_noinst_DATA)
+	$(vdsm_data_SUBST)
 
 CLEANFILES = \
-	$(vdsm_SUBST)
+	$(vdsm_SUBST) \
+	vdsm.conf.sample
 
 EXTRA_DIST = \
 	libvirt_password \
@@ -100,11 +104,12 @@ do_subst = sed -e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
 	    -e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g" \
 	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
 
+vdsm.conf.sample: config.py
+	python $(srcdir)/mk-vdsm-conf-sample.py \
+		$(srcdir)/config.py > $@;
+
 $(vdsm_SUBST): Makefile
-	if test "$@" = "vdsm.conf.sample"; then \
-		python $(srcdir)/mk-vdsm-conf-sample.py \
-			$(srcdir)/config.py > vdsm.conf.sample; \
-	elif test -f "$@.in"; then \
+	if test -f "$@.in"; then \
 		$(do_subst) < $@.in > $@; \
 	else \
 		$(do_subst) < $(srcdir)/$@.in > $@; \
