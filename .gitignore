@@ -18,6 +18,7 @@ configure
 vdsm-*.tar.gz
 vdsm.spec
 .deps/
+vdsm/config.py
 vdsm/constants.py
 vdsm/constants.py.in
 vdsm/logger.conf

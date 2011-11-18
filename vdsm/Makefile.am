@@ -36,6 +36,7 @@ dist_vdsm_DATA = \
 	vm.py
 
 nodist_vdsm_DATA = \
+	config.py \
 	constants.py
 
 nodist_vdsm_SCRIPTS = \
@@ -77,6 +78,7 @@ CLEANFILES = \
 	vdsm.conf.sample
 
 EXTRA_DIST = \
+	config.py.in \
 	libvirt_password \
 	logger.conf.in \
 	mk-vdsm-conf-sample.py \

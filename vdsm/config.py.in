@@ -18,9 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-# for a "singleton" config object
+import os
 import ConfigParser
-import constants
 
 config = ConfigParser.ConfigParser()
 #####################################################################
@@ -88,7 +87,7 @@ config.set('vars', 'vm_sample_net_interval', '5')
 config.set('vars', 'vm_sample_net_window', '2')
 
 # where the certificates and keys are situated
-config.set('vars', 'trust_store_path', constants.P_TRUSTSTORE)
+config.set('vars', 'trust_store_path', '@TRUSTSTORE@')
 # whether to use ssl encryption and authentication. default is true
 config.set('vars', 'ssl', 'true')
 
@@ -149,16 +148,16 @@ config.set('irs', 'sd_health_check_delay', '10')
 #
 config.set('irs', 'nfs_mount_options', 'soft,timeo=600,retrans=6,nosharecache,vers=3')
 
-config.set('irs', 'pools_data_dir', constants.P_STORAGEPOOLS)
+config.set('irs', 'pools_data_dir', '@POOLSDIR@')
 config.set('irs', 'vol_extend_policy', 'ON')
-config.set('irs', 'lock_util_path', constants.P_VDSM_LIBEXEC)
+config.set('irs', 'lock_util_path', '@LIBEXECDIR@')
 config.set('irs', 'lock_cmd', 'spmprotect.sh')
 config.set('irs', 'free_lock_cmd', 'spmstop.sh')
 config.set('irs', 'thread_pool_size', '10')
 config.set('irs', 'max_tasks', '500')
 config.set('irs', 'lvm_dev_whitelist', '')
 config.set('irs', 'md_backup_versions', '30')
-config.set('irs', 'md_backup_dir', constants.P_VDSM_BACKUP)
+config.set('irs', 'md_backup_dir', '@BACKUPDIR@')
 # Note: the number of pvs per vg has a hard-coded limit of 10
 config.set('irs', 'maximum_allowed_pvs', '8')
 
@@ -184,4 +183,4 @@ config.set('addresses', 'management_ip', '')
 config.set('addresses', 'guests_gateway_ip', '')
 
 ### and finally, hide defaults with local definitions ###
-config.read([constants.P_VDSM_CONF + 'vdsm.conf'])
+config.read([os.path.join('@CONFDIR@', 'vdsm.conf')])

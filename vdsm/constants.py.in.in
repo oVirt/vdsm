@@ -51,13 +51,9 @@ MEGAB = 2 ** 20 # = 1024 ** 2 = 1 MiB
 # Path definitions
 #
 P_LIBVIRT_VMCHANNELS = '/var/lib/libvirt/qemu/channels/'
-P_STORAGEPOOLS = '@POOLSDIR@'
-P_TRUSTSTORE = '@TRUSTSTORE@'
 P_VDSM = '@VDSMDIR@/'
-P_VDSM_BACKUP = '@BACKUPDIR@'
 P_VDSM_HOOKS = '@HOOKSDIR@/'
 P_VDSM_LIB = '@VDSMLIBDIR@/'
-P_VDSM_LIBEXEC = '@LIBEXECDIR@/'
 P_VDSM_RUN = '@VDSMRUNDIR@/'
 P_VDSM_CONF = '@CONFDIR@/'
 P_VDSM_KEYS = '/etc/pki/vdsm/keys/'
