@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright 2011 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify

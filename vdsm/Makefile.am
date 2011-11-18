@@ -174,7 +174,7 @@ install-data-logrotate:
 	$(INSTALL_SCRIPT) $(srcdir)/vdsm-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.d
-	$(INSTALL_SCRIPT) $(srcdir)/vdsm-libvirt-logrotate \
+	$(INSTALL_DATA) $(srcdir)/vdsm-libvirt-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
 
 uninstall-data-logrotate:

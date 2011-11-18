@@ -19,6 +19,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: python
 BuildRequires: redhat-rpm-config
+BuildRequires: pyflakes
 
 Requires: python which
 Requires: sudo >= 1.7.3
@@ -41,7 +42,7 @@ Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
 Requires: libvirt >= 0.9.6-2
 Requires: libvirt-python >= 0.9.6-2
-Requires: iscsi-initiator-utils >= 6.2.0.872-12
+Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
 %endif
@@ -55,8 +56,7 @@ Requires: policycoreutils-python
 Requires: libselinux-python
 Requires: kernel >= 2.6.32-198
 Requires: selinux-policy-targeted >= 3.7.19-80.el6
-Requires(post): cyrus-sasl-lib
-BuildRequires: pyflakes
+Requires(post): /usr/sbin/saslpasswd2
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -253,6 +253,10 @@ install -Dm 0755 vdsm/respawn \
 # Install the configuration sample
 install -Dm 0644 vdsm/vdsm.conf.sample \
                  %{buildroot}%{_sysconfdir}/vdsm/vdsm.conf
+
+# Install the lvm rules
+install -Dm 0644 vdsm/storage/12-vdsm-lvm.rules \
+                 %{buildroot}/lib/udev/rules.d/12-vdsm-lvm.rules
 
 %if 0%{?rhel}
 # Install the SysV init scripts
@@ -513,7 +517,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/ksm.py*
 %{_datadir}/%{vdsm_name}/netinfo.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
-%{_sysconfdir}/udev/rules.d/12-vdsm-lvm.rules
+/lib/udev/rules.d/12-vdsm-lvm.rules
 %{python_sitelib}/sos/plugins/vdsm.py*
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}
@@ -532,8 +536,8 @@ exit 0
 %config(noreplace) %{_sysconfdir}/pki/%{vdsm_name}/keys/libvirt_password
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
-%dir %{_localstatedir}/run/%{vdsm_name}
-%dir %{_localstatedir}/run/%{vdsm_name}/pools
+%ghost %dir %{_localstatedir}/run/%{vdsm_name}
+%ghost %dir %{_localstatedir}/run/%{vdsm_name}/pools
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 

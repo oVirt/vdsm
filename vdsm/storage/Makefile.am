@@ -52,11 +52,3 @@ EXTRA_DIST = \
 
 check-local:
 	python $(srcdir)/storage_exception.py
-
-install-data-local:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/udev/rules.d
-	$(INSTALL_DATA) $(srcdir)/12-vdsm-lvm.rules \
-			$(DESTDIR)$(sysconfdir)/udev/rules.d/12-vdsm-lvm.rules
-
-uninstall-local:
-	$(RM) $(DESTDIR)$(sysconfdir)/udev/rules.d/12-vdsm-lvm.rules
