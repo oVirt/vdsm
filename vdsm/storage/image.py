@@ -1112,38 +1112,36 @@ class Image:
                 # The ancestor isn't a base volume of the chain.
                 self.log.info("Internal volume merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
                 chain = self._internalVolumeMerge(sdUUID, srcVolParams, volParams, newSize, chain)
+            # The ancestor is actually a base volume of the chain.
+            # We have 2 cases here:
+            # Case 1: ancestor is a COW volume (use 'rebase' workaround)
+            # Case 2: ancestor is a RAW volume (use 'convert + rebase')
+            elif volParams['volFormat'] == volume.RAW_FORMAT:
+                self.log.info("merge with convert: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
+                chain = self._baseRawVolumeMerge(sdUUID, srcVolParams, volParams, chain)
             else:
-                # The ancestor is actually a base volume of the chain.
-                # We have 2 cases here:
-                # Case 1: ancestor is a COW volume (use 'rebase' workaround)
-                # Case 2: ancestor is a RAW volume (use 'convert + rebase')
-                if volParams['volFormat'] == volume.RAW_FORMAT:
-                    self.log.info("merge with convert: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                    chain = self._baseRawVolumeMerge(sdUUID, srcVolParams, volParams, chain)
-                else:
-                    self.log.info("4 steps merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                    chain = self._baseCowVolumeMerge(sdUUID, srcVolParams, volParams, newSize, chain)
+                self.log.info("4 steps merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
+                chain = self._baseCowVolumeMerge(sdUUID, srcVolParams, volParams, newSize, chain)
 
             # This is unrecoverable point, clear all recoveries
             vars.task.clearRecoveries()
             # mark all snapshots from 'ancestor' to 'successor' as illegal
             self.markIllegalSubChain(sdUUID, imgUUID, chain)
-            try:
-                # remove all snapshots from 'ancestor' to 'successor'
-                self.removeSubChain(sdUUID, imgUUID, chain, postZero)
-            except Exception, e:
-                self.log.error("Failure to remove subchain %s -> %s in image %s", ancestor,
-                               successor, imgUUID, exc_info=True)
-
-            chain = [successor]
-        except se.ActionStopped, e:
-            raise e
-        except se.StorageException, e:
+        except se.ActionStopped:
+            raise
+        except se.StorageException:
             self.log.error("Unexpected error", exc_info=True)
             raise
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise se.SourceImageActionError(imgUUID, sdUUID, str(e))
+
+        try:
+            # remove all snapshots from 'ancestor' to 'successor'
+            self.removeSubChain(sdUUID, imgUUID, chain, postZero)
+        except Exception:
+            self.log.error("Failure to remove subchain %s -> %s in image %s", ancestor,
+                           successor, imgUUID, exc_info=True)
 
         self.log.info("Merge src=%s with dst=%s was successfully finished.", srcVol.getVolumePath(), dstVol.getVolumePath())
 
