@@ -856,20 +856,6 @@ class Image:
             self.log.error("Unexpected error", exc_info=True)
             raise se.ImageIsNotLegalChain("%s" % (str(e)))
 
-    @classmethod
-    def markIllegalVolumeRollback(cls, taskObj, sdUUID, imgUUID, volUUID, legality):
-        """
-        Mark illegal volume rollback
-        """
-        try:
-            cls.log.info("markIllegalVolumeRollback: sdUUID=%s img=%s vol=%s "\
-                            "legality=%s" % (sdUUID, imgUUID, volUUID, legality))
-            vol = sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-            vol.setLegality(legality)
-        except Exception:
-            cls.log.error("Failure in mark illegal volume rollback: sdUUID=%s img=%s vol=%s "\
-                            "legality=%s" % (sdUUID, imgUUID, volUUID, legality), exc_info=True)
-
     def markIllegalSubChain(self, sdUUID, imgUUID, chain):
         """
         Mark all volumes in the sub-chain as illegal
@@ -885,10 +871,6 @@ class Image:
 
         # Mark all volumes as illegal
         while tmpVol and dstParent != tmpVol.volUUID:
-            name = "Mark illegal volume: " + tmpVol.volUUID
-            vars.task.pushRecovery(task.Recovery(name, "image", "Image", "markIllegalVolumeRollback",
-                [sdUUID, imgUUID, tmpVol.volUUID, tmpVol.getLegality()]))
-
             vol = tmpVol.getParentVolume()
             tmpVol.setLegality(volume.ILLEGAL_VOL)
             tmpVol = vol
