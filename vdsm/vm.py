@@ -39,7 +39,7 @@ A module containing classes needed for VM communication.
 
 class Drive:
     def __init__(self, poolID, domainID, imageID, volumeID, path, truesize,
-            apparentsize, blockDev, index='', bus='', unit='', serial='',
+            apparentsize, blockDev, index='', unit='', serial='',
             format='raw', boot=None, propagateErrors='off', reqsize=0,
             alias='', **kwargs):
         self.poolID = poolID
@@ -55,7 +55,6 @@ class Drive:
         self.reqsize = int(reqsize)
         self.iface = kwargs.get('if')
         self.index = index
-        self.bus = bus
         self.unit = unit
         self.serial = serial
         self.format = format
