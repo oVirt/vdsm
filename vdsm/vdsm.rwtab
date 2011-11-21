@@ -1,1 +1,2 @@
 files    /usr/libexec/vdsm/hooks
+files    /var/lib/vdsm
