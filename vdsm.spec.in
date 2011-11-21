@@ -287,7 +287,6 @@ fi
 %{_datadir}/%{vdsm_name}/storage/outOfProcess.py*
 %{_datadir}/%{vdsm_name}/storage/processPool.py*
 %{_datadir}/%{vdsm_name}/storage/iscsi.py*
-%{_datadir}/%{vdsm_name}/storage/iscsid.conf.template*
 %{_datadir}/%{vdsm_name}/storage/devicemapper.py*
 %{_datadir}/%{vdsm_name}/storage/securable.py*
 %{_datadir}/%{vdsm_name}/storage/multipath.py*

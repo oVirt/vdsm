@@ -889,6 +889,7 @@ class iSCSILoginError(StorageServeriSCSIError):
     code = 464
     message = "Failed to login to iSCSI node"
 
+# Not in use anymore
 class iSCSISetupError(StorageServeriSCSIError):
     code = 465
     message = "Failed to setup iSCSI subsystem"

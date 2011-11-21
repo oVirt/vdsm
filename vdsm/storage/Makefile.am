@@ -35,6 +35,7 @@ dist_vdsmstorage_DATA = \
 	safelease.py \
 	sdc.py \
 	sd.py \
+	securable.py \
 	sp.py \
 	storage_connection.py \
 	storageConstants.py \
@@ -44,9 +45,7 @@ dist_vdsmstorage_DATA = \
 	task.py \
 	threadLocal.py \
 	threadPool.py \
-	volume.py \
-	securable.py \
-	iscsid.conf.template
+	volume.py
 
 EXTRA_DIST = \
 	12-vdsm-lvm.rules

@@ -190,9 +190,6 @@ class HSM:
 
         self._preparedVolumes = defaultdict(list)
 
-        if not iscsi.isConfigured():
-            iscsi.setupiSCSI()
-
         if not multipath.isEnabled():
             multipath.setupMultipath()
 

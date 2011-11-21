@@ -24,7 +24,6 @@ facility
 """
 import os.path
 import glob
-import tempfile
 import logging
 import socket
 import re
@@ -48,60 +47,13 @@ LOGIN_AUTH_CHAP = ["-o", "update", "-n", "node.session.auth.authmethod", "-v", "
 LOGIN_AUTH_USER = ["-o", "update", "-n", "node.session.auth.username", "-v"]
 LOGIN_AUTH_PASS = ["-o", "update", "-n", "node.session.auth.password", "-v"]
 AUTH_EXEC_DISCOVER = ["--discover"]
-ISCSID_CONF = "/etc/iscsi/iscsid.conf"
 SCAN_PATTERN = "/sys/class/scsi_host/host*/scan"
-ISCSID_CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), "iscsid.conf.template")
 
 # iscsiadm exit statuses
 ISCSI_ERR_SESS_EXISTS = 15
 ISCSI_ERR_LOGIN_AUTH_FAILED = 24
 
 log = logging.getLogger('Storage.iScsi')
-
-def _getConfTag():
-    with open(ISCSID_CONF_TEMPLATE, "r") as f:
-        return f.readline().strip()
-
-def isConfigured():
-    confTag = _getConfTag()
-    if os.path.exists(ISCSID_CONF):
-        tagline = misc.readfileSUDO(ISCSID_CONF)[0]
-        if confTag in tagline:
-            return True
-
-    return False
-
-def setupiSCSI():
-    """
-    Set up the iSCSI daemon configuration to the known and
-    supported state. The original configuration, if any, is saved
-    """
-    if os.path.exists(ISCSID_CONF):
-        backup = ISCSID_CONF + ".orig"
-        cmd = [constants.EXT_MV, ISCSID_CONF, backup]
-        rc = misc.execCmd(cmd)[0]
-        if rc != 0:
-            raise se.iSCSISetupError("Backup original iscsid.conf file")
-    f = tempfile.NamedTemporaryFile()
-    with open(ISCSID_CONF_TEMPLATE, "r") as tf:
-        f.write(tf.read())
-    f.flush()
-    cmd = [constants.EXT_CP, f.name, ISCSID_CONF]
-    rc = misc.execCmd(cmd)[0]
-    if rc != 0:
-        raise se.iSCSISetupError("Install new iscsid.conf file")
-    # f close also removes file - so close must be called after copy
-    f.close()
-
-    cmd = [constants.EXT_SERVICE, "iscsid", "stop"]
-    rc = misc.execCmd(cmd)[0]
-    if rc != 0:
-        raise se.iSCSISetupError("Stop iscsid service")
-
-    cmd = [constants.EXT_SERVICE, "iscsid", "force-start"]
-    rc = misc.execCmd(cmd)[0]
-    if rc != 0:
-        raise se.iSCSISetupError("Force-start iscsid service")
 
 
 def validateiSCSIParams(ip, port, username=None, password=None):
@@ -175,23 +127,37 @@ def addiSCSIPortal(ip, port, initiator, username=None, password=None):
         password)
     portal = "%s:%s" % (ip, port)
 
-    cmd = SENDTARGETS_DISCOVERY + ["-p", portal]
+    args = ["-p", portal]
 
     if initiator:
         if initiator not in getiSCSIifaces():
             addiSCSIiface(initiator)
-        cmd += ["-I", initiator]
+        args += ["-I", initiator]
+
+    cmd = SENDTARGETS_DISCOVERY + args
 
     if username or password:
         _configureAuthInformation(cmd, username, password)
 
     cmd.extend(AUTH_EXEC_DISCOVER)
 
-    (rc, out, err) = misc.execCmd(cmd)
-    if rc != 0:
-        raise se.iSCSIDiscoveryError(portal, err)
+    # Discovering the targets and setting them to "manual".
+    # NOTE: We are not taking for granted that iscsiadm is not going to write
+    #       the database when the discovery fails, therefore we try to set the
+    #       node startup to manual anyway.
+    (dRet, dOut, dErr) = misc.execCmd(cmd)
+    (mRet, mOut, mErr) = misc.execCmd(ISCSIADM_NODE + args + MANUAL_STARTUP)
 
-    return rc, out
+    # Even if the discovery failed it's important to log that we tried to set
+    # the node startup to manual and we failed.
+    if mRet != 0:
+        log.error("Could not set the iscsi node.startup to manual")
+
+    # Raise an exception if discovering the targets failed
+    if dRet != 0:
+        raise se.iSCSIDiscoveryError(portal, dErr)
+
+    return dRet, dOut
 
 def remiSCSIPortal(ip, port):
     """
