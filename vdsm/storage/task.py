@@ -1074,16 +1074,6 @@ class Task:
         self.persist()
 
 
-    def removeRecovery(self, name):
-        rec = None
-        for r in self.recoveries:
-            if name == r.name:
-                rec = r
-        if rec:
-            self.recoveries.remove(rec)
-            rec.setOwnerTask(None)
-
-
     def setManager(self, manager):
         # If need be, refactor out to "validateManager" method
         if not hasattr(manager, "queue"):
