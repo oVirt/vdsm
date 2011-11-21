@@ -1,0 +1,11 @@
+[Unit]
+Description=Virtual Desktop Server Registration
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/vdsm-reg
+ExecStart=/lib/systemd/systemd-vdsm-reg start
+ExecStop=/lib/systemd/systemd-vdsm-reg stop
+
+[Install]
+WantedBy=multi-user.target

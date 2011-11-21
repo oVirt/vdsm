@@ -128,6 +128,7 @@ install -Dm 0755 vdsm/respawn \
 %if 0%{?rhel}
 # Install the SysV init scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
+install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
 
 # This is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps
@@ -136,6 +137,10 @@ install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
 # Install the systemd scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}/lib/systemd/systemd-vdsmd
 install -Dm 0644 vdsm/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
+install -Dm 0755 vdsm_reg/vdsm-reg.init \
+                 %{buildroot}/lib/systemd/systemd-vdsm-reg
+install -Dm 0644 vdsm_reg/vdsm-reg.service \
+                 %{buildroot}%{_unitdir}/vdsm-reg.service
 %endif
 
 %check
@@ -235,8 +240,15 @@ fi
 
 %post reg
 %if 0%{?rhel}
-/sbin/chkconfig --add vdsm-reg
+if [ "$1" -eq 1 ] ; then
+    /sbin/chkconfig --add vdsm-reg
+fi
 %else
+if [ "$1" -eq 1 ] ; then
+    /bin/systemctl enable vdsmd-reg.service >/dev/null 2>&1 || :
+    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+fi
+exit 0
 %endif
 
 %preun reg
@@ -247,6 +259,11 @@ then
     /sbin/chkconfig --del vdsm-reg
 fi
 %else
+if [ "$1" -eq 0 ]; then
+    /bin/systemctl --no-reload disable vdsmd-reg.service > /dev/null 2>&1 || :
+    /bin/systemctl stop vdsmd-reg.service > /dev/null 2>&1 || :
+fi
+exit 0
 %endif
 
 %files
@@ -424,7 +441,12 @@ fi
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/vdsm-reg.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/logger.conf
-%{_sysconfdir}/init.d/vdsm-reg
+%if 0%{?rhel}
+%{_initrddir}/vdsm-reg
+%else
+/lib/systemd/systemd-vdsm-reg
+%{_unitdir}/vdsm-reg.service
+%endif
 %{_datadir}/%{vdsm_reg}/vdsm-reg-setup
 %{_datadir}/%{vdsm_reg}/define.py*
 %{_datadir}/%{vdsm_reg}/vdsm-complete

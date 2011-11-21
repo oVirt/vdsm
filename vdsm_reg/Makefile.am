@@ -41,11 +41,12 @@ EXTRA_DIST = \
 	logger.conf \
 	rhevm.py \
 	vdsm-config \
-	vdsm-reg \
 	vdsm-reg-cmdline \
 	vdsm-reg.conf.in \
+	vdsm-reg.init \
 	vdsm-reg-logrotate \
-	vdsm-reg-logrotate.conf
+	vdsm-reg-logrotate.conf \
+	vdsm-reg.service
 
 # Reference:
 # http://www.gnu.org/software/automake/manual/html_node/Scripts.html
@@ -54,20 +55,16 @@ do_subst = sed -e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g"
 $(vdsmreg_SUBST):
 	$(do_subst) < $(srcdir)/$@.in > $@
 
-install-data-local: install-data-init install-data-logger \
-		install-data-ovirt install-data-logrotate
+install-data-local: \
+		install-data-logger \
+		install-data-ovirt \
+		install-data-logrotate
 	$(MKDIR_P)  $(DESTDIR)$(vdsmreglogdir)
 
-uninstall-local: uninstall-data-init uninstall-data-logger \
-		uninstall-data-ovirt uninstall-data-logrotate
-
-install-data-init:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/init.d
-	$(INSTALL_SCRIPT) $(srcdir)/vdsm-reg \
-		$(DESTDIR)$(sysconfdir)/init.d/vdsm-reg
-
-uninstall-data-init:
-	$(RM) $(DESTDIR)$(sysconfdir)/init.d/vdsm-reg
+uninstall-local: \
+		uninstall-data-logger \
+		uninstall-data-ovirt \
+		uninstall-data-logrotate
 
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmregconfdir)
