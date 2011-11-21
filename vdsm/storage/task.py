@@ -1071,6 +1071,7 @@ class Task:
 
     def clearRecoveries(self):
         self.recoveries = []
+        self.persist()
 
 
     def removeRecovery(self, name):

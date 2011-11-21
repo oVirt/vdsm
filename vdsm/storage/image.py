@@ -1142,10 +1142,10 @@ class Image:
                     self.log.info("4 steps merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
                     chain = self._baseCowVolumeMerge(sdUUID, srcVolParams, volParams, newSize, chain)
 
-            # mark all snapshots from 'ancestor' to 'successor' as illegal
-            self.markIllegalSubChain(sdUUID, imgUUID, chain)
             # This is unrecoverable point, clear all recoveries
             vars.task.clearRecoveries()
+            # mark all snapshots from 'ancestor' to 'successor' as illegal
+            self.markIllegalSubChain(sdUUID, imgUUID, chain)
             try:
                 # remove all snapshots from 'ancestor' to 'successor'
                 self.removeSubChain(sdUUID, imgUUID, chain, postZero)
