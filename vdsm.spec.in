@@ -4,6 +4,7 @@
 %global vdsm_user @VDSMUSER@
 %global vdsm_group @VDSMGROUP@
 %global qemu_group @QEMUGROUP@
+%global _polkit_path %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
@@ -265,6 +266,9 @@ install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
                  %{buildroot}%{_unitdir}/vdsm-reg.service
+# Install the polkit for libvirt
+install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
+                 %{buildroot}%{_polkit_path}/10-vdsm-libvirt-access.pkla
 %endif
 
 %check
@@ -509,6 +513,8 @@ exit 0
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}
 %dir %{_localstatedir}/log/core
+%else
+%{_polkit_path}/10-vdsm-libvirt-access.pkla
 %endif
 
 %defattr(-, %{vdsm_user}, %{qemu_group}, -)

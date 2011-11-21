@@ -78,6 +78,7 @@ EXTRA_DIST = \
 	mk-vdsm-conf-sample.py \
 	vdsmd.init.in \
 	vdsmd.service \
+	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf \
