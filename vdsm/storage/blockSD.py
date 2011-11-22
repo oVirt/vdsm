@@ -1009,7 +1009,7 @@ def _createVMSfs(dev):
     """
     Create a special file system to store VM data
     """
-    cmd = [constants.EXT_MKFS, "-q", "-j", "-K", dev]
+    cmd = [constants.EXT_MKFS, "-q", "-j", "-E", "nodiscard", dev]
     rc = misc.execCmd(cmd)[0]
     if rc != 0:
         raise se.MkfsError(dev)
