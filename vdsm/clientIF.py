@@ -960,7 +960,7 @@ class clientIF:
                     self.log.info('loose qemu process with id: %s found, killing it.', vmId)
                     try:
                         vm.destroy()
-                    except libvirtvm.libvirt.libvirtError:
+                    except libvirt.libvirtError:
                         self.log.error('failed to kill loose qemu process with id: %s', vmId, exc_info=True)
 
             while self._enabled and \
