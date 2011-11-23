@@ -30,7 +30,7 @@ fi
 
 FLOPPY_NAME="$1"
 /sbin/mkfs.msdos -C "$FLOPPY_NAME" 1440
-/bin/chown @VDSMUSER@:@VDSMGROUP@ "$FLOPPY_NAME"
+/bin/chown @VDSMUSER@:@QEMUGROUP@ "$FLOPPY_NAME"
 /bin/chmod 0440 "$FLOPPY_NAME"
 mntpoint=`mktemp -d`
 mount -o loop,uid=`id -u`,gid=`id -g` "$FLOPPY_DIR/$FLOPPY_NAME" $mntpoint

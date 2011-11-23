@@ -72,6 +72,9 @@ EX_UNAME = '@UNAME_PATH@'
 EX_YUM = '@YUM_PATH@'
 
 # Other constants
+VDSM_USER = "@VDSMUSER@"
+VDSM_GROUP = "@VDSMGROUP@"
+QEMU_GROUP = "@QEMUGROUP@"
 READ_BUF_SIZE = 1024
 DEF_KEY_LEN = 1024
 HTTP_TIMEOUT = 30
@@ -1096,9 +1099,9 @@ def instCert(random_num, confFile):
         # build semi-random filenames
         cert_pemfile = '/tmp/cert_' + random_num + '.pem'
         ca_pemfile = '/tmp/CA_' + random_num + '.pem'
-        gGroup = grp.getgrnam('kvm')
+        gGroup = grp.getgrnam(VDSM_GROUP)
         nGID = gGroup.gr_gid
-        uUserInfo = pwd.getpwnam('vdsm')
+        uUserInfo = pwd.getpwnam(VDSM_USER)
         nUID = uUserInfo.pw_uid
         CACERT, VDSMCERT = certPaths(confFile)
 
@@ -1194,11 +1197,11 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey, dhKey):
                 "-config", req_conffile, "-out", cert_reqfile]
     _logExec(execfn)
     if versionCompare(getOSVersion(), "6.0") < 0:
-        gGroup = grp.getgrnam('kvm')
+        gGroup = grp.getgrnam(VDSM_GROUP)
     else:
-        gGroup = grp.getgrnam('qemu')
+        gGroup = grp.getgrnam(QEMU_GROUP)
     nGID = gGroup.gr_gid
-    uUserInfo = pwd.getpwnam('vdsm')
+    uUserInfo = pwd.getpwnam(VDSM_USER)
     nUID = uUserInfo.pw_uid
     os.chown (vdsmKey, nUID, nGID)
     os.chmod (vdsmKey, 0440)

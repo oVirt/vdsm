@@ -1,6 +1,9 @@
 %global vdsm_name vdsm
 %global vdsm_bootstrap vdsm-bootstrap
 %global vdsm_reg vdsm-reg
+%global vdsm_user @VDSMUSER@
+%global vdsm_group @VDSMGROUP@
+%global qemu_group @QEMUGROUP@
 
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
@@ -150,10 +153,10 @@ make check
 rm -rf %{buildroot}
 
 %pre
-/usr/bin/getent passwd vdsm >/dev/null || \
-    /usr/sbin/useradd -r -u 36 -g kvm -d /var/lib/vdsm \
-        -s /sbin/nologin -c "Node Virtualization Manager" vdsm
-/usr/sbin/usermod -a -G qemu vdsm
+/usr/bin/getent passwd %{vdsm_user} >/dev/null || \
+    /usr/sbin/useradd -r -u 36 -g %{vdsm_group} -d /var/lib/vdsm \
+        -s /sbin/nologin -c "Node Virtualization Manager" %{vdsm_user}
+/usr/sbin/usermod -a -G %{qemu_group} %{vdsm_user}
 
 %post
 # update the vdsm "secret" password for libvirt
@@ -387,10 +390,10 @@ exit 0
 %dir %{_localstatedir}/log/core
 %endif
 
-%defattr(-, vdsm, qemu, -)
+%defattr(-, %{vdsm_user}, %{qemu_group}, -)
 %dir %{_localstatedir}/lib/libvirt/qemu/channels
 
-%defattr(-, vdsm, kvm, -)
+%defattr(-, %{vdsm_user}, %{vdsm_group}, -)
 %dir %{_sysconfdir}/pki/%{vdsm_name}
 %dir %{_sysconfdir}/pki/%{vdsm_name}/keys
 %dir %{_sysconfdir}/pki/%{vdsm_name}/certs
@@ -462,7 +465,7 @@ exit 0
 %{_sysconfdir}/cron.hourly/vdsm-reg-logrotate
 %{_mandir}/man8/vdsm-reg.8*
 
-%defattr(-, vdsm, kvm,-)
+%defattr(-, %{vdsm_user}, %{vdsm_group},-)
 %dir %{_var}/log/%{vdsm_reg}
 
 %files hook-faqemu

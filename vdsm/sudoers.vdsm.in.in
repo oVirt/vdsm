@@ -15,8 +15,8 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @MKFS_PATH@ -q -j *, \
     @FUSER_PATH@ -m *, \
     @KILL_PATH@, \
-    @CHOWN_PATH@ @VDSMUSER@\:@VDSMGROUP@ *, \
-    @CHOWN_PATH@ @VDSMUSER@\:@METADATAGROUP@ *, \
+    @CHOWN_PATH@ @VDSMUSER@\:@QEMUGROUP@ *, \
+    @CHOWN_PATH@ @METADATAUSER@\:@METADATAGROUP@ *, \
     @MV_PATH@ /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.*, \
     @MV_PATH@ /etc/multipath.conf *, \
     @CP_PATH@ * /etc/iscsi/iscsid.conf, \

@@ -24,9 +24,11 @@ AM_PATH_PYTHON([2.6])
 
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
-AC_SUBST([VDSMGROUP], [qemu])
+AC_SUBST([VDSMGROUP], [kvm])
+AC_SUBST([METADATAUSER], [vdsm])
 AC_SUBST([METADATAGROUP], [kvm])
 AC_SUBST([QEMUUSER], [qemu])
+AC_SUBST([QEMUGROUP], [qemu])
 
 # VDSM default paths
 AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])
