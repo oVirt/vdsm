@@ -676,7 +676,7 @@ class StoragePool:
             (hostID, self.spUUID, msdUUID, masterVersion))
 
         if not os.path.exists(self._poolsTmpDir):
-            msg = ("StoragePoolConnectionError for hostId: %s, on poolId: %s," +
+            msg = ("StoragePoolConnectionError for hostId: %s, on poolId: %s,"
                    " Pools temp data dir: %s does not exist" %
                     (hostID, self.spUUID, self._poolsTmpDir))
             self.log.error(msg)
