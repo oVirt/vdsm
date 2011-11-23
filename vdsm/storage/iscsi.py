@@ -141,7 +141,7 @@ def addiSCSIiface(initiator):
     For the sake of simplicity the iface is created with the same name
     as an initiator. It makes the bookkeeping trivial.
     """
-    cmd = ISCSIADM_IFACE + ["-o", "new", "-I", initiator]
+    cmd = ISCSIADM_IFACE + NEW_REC + ["-I", initiator]
     rc, out, err = misc.execCmd(cmd)
     if rc != 0:
         raise se.iSCSIifaceError()
@@ -257,7 +257,7 @@ def addiSCSINode(ip, port, iqn, tpgt, initiator, username=None, password=None):
     try:
         addiSCSIPortal(ip, port, initiator, username, password)[0]
 
-        cmdt = [constants.EXT_ISCSIADM, "-m", "node", "-T", iqn]
+        cmdt = ISCSIADM_NODE + ["-T", iqn]
 
         if initiator:
             cmdt += ["-I", initiator]
@@ -314,15 +314,13 @@ def remiSCSINode(ip, port, iqn, tpgt, username=None, password=None, logout=True)
     portal = "%s:%s" % (ip, port)
 
     if logout:
-        cmd = [constants.EXT_ISCSIADM, "-m", "node", "-T", iqn,
-            "-p", portal, "-u"]
+        cmd = ISCSIADM_NODE + ["-T", iqn, "-p", portal, "-u"]
         rc = misc.execCmd(cmd)[0]
         if rc:
             raise se.iSCSILogoutError(portal)
 
     # FIXME: should we check if logout succeeds?
-    cmd = [constants.EXT_ISCSIADM, "-m", "node", "-o", "delete", "-T", iqn,
-        "-p", portal]
+    cmd = ISCSIADM_NODE + ["-o", "delete", "-T", iqn, "-p", portal]
     rc = misc.execCmd(cmd)[0]
     if rc:
         raise se.RemoveiSCSINodeError(portal)
