@@ -992,9 +992,14 @@ class clientIF:
         """
         Return True if vm seems as if it was created by vdsm.
         """
-        vmdom = minidom.parseString(vm.XMLDesc(0))
         try:
+            vmdom = minidom.parseString(vm.XMLDesc(0))
             sysinfo = vmdom.getElementsByTagName("sysinfo")[0]
+        except libvirt.libvirtError, e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                self.log.error("domId: %s is dead", vm.UUIDString())
+            else:
+                raise
         except IndexError:
             pass #no sysinfo in xml
         else:
@@ -1013,7 +1018,19 @@ class clientIF:
         Return a list of vdsm created VM's.
         """
         domIds = self._libvirt.listDomainsID()
-        vms = [self._libvirt.lookupByID(domId) for domId in domIds]
+        vms = []
+        for domId in domIds:
+            try:
+                vm = self._libvirt.lookupByID(domId)
+            except libvirt.libvirtError, e:
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    self.log.error("domId: %s is dead", domId, exc_info=True)
+                else:
+                    self.log.error("Can't look for domId: %s, code: %s",
+                                   domId, e.get_error_code(), exc_info=True)
+                    raise
+            else:
+                vms.append(vm)
         return [vm for vm in vms if self.isVDSMVm(vm)]
 
     def _recoverVm(self, vmid):
