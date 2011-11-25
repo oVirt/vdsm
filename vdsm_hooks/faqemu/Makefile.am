@@ -9,6 +9,9 @@
 dist_noinst_SCRIPTS = \
 	vdsm-faqemu.in
 
+nodist_vdsmexec_SCRIPTS = \
+	vdsm-faqemu
+
 EXTRA_DIST = \
 	before_vm_start.py
 
@@ -16,9 +19,6 @@ install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/10_faqemu
-	$(INSTALL_SCRIPT) $(srcdir)/vdsm-faqemu \
-		$(DESTDIR)$(vdsmexecdir)/
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/10_faqemu
-	$(RM) $(DESTDIR)$(vdsmexecdir)/vdsm-faqemu

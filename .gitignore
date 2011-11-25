@@ -34,4 +34,5 @@ vdsm_cli/vdsClient
 vdsm_cli/vdscli.py
 vdsm_reg/deployUtil.py
 vdsm_reg/vdsm-reg.conf
+vdsm_hooks/faqemu/vdsm-faqemu
 results.log
