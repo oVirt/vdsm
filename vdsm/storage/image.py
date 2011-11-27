@@ -245,6 +245,13 @@ class Image:
         fileUtils.cleanupdir(removedImage)
         return True
 
+    def deletedVolumeName(self, uuid):
+        """
+        Create REMOVED_IMAGE_PREFIX + <random> + uuid string.
+        """
+        randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
+        return "%s%s_%s" % (REMOVED_IMAGE_PREFIX, randomStr, uuid)
+
     def preDeleteRename(self, sdUUID, imgUUID):
         # Get the list of the volumes
         volclass = sdCache.produce(sdUUID).getVolumeClass()
@@ -255,12 +262,8 @@ class Image:
         if not os.path.exists(imageDir):
             return imgUUID
 
-        # Create random string
-        randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
-        renameFormat = lambda uuid: "%s%s_%s" % (REMOVED_IMAGE_PREFIX, randomStr, uuid)
-
         # Otherwise move it out of the way
-        newImgUUID = renameFormat(imgUUID)
+        newImgUUID = self.deletedVolumeName(imgUUID)
         self.log.info("Rename image %s -> %s", imgUUID, newImgUUID)
         if not imgUUID.startswith(REMOVED_IMAGE_PREFIX):
             removedImage = os.path.join(os.path.dirname(imageDir), newImgUUID)
@@ -271,7 +274,7 @@ class Image:
         volumes = [volclass(self.repoPath, sdUUID, newImgUUID, volUUID) for volUUID in uuidlist]
         for vol in volumes:
             if not vol.volUUID.startswith(REMOVED_IMAGE_PREFIX):
-                vol.rename(renameFormat(vol.volUUID), recovery=False)
+                vol.rename(self.deletedVolumeName(vol.volUUID), recovery=False)
             else:
                 self.log.warning("Volume %s of image %s already renamed", vol.volUUID, imgUUID)
             # We change image UUID in metadata
@@ -1048,6 +1051,7 @@ class Image:
 
         # Step 3: Rename successor as tmpUUID and new volume as successor
         tmpUUID = str(uuid.uuid4())
+
         srcVol.rename(tmpUUID)
         newVol.rename(srcVolParams['volUUID'])
 
