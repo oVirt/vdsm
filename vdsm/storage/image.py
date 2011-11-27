@@ -301,14 +301,14 @@ class Image:
         return newsize
 
     @classmethod
-    def subChainSizeCalc(cls, sdUUID, imgUUID, chain, size):
+    def subChainSizeCalc(cls, sdDom, imgUUID, chain, size):
         """
         Compute an estimate of the subchain size
         using the sum of the actual size of the subchain's volumes
         """
         newsize = 0
         for volUUID in chain:
-            vol = sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+            vol = sdDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
             newsize += vol.getVolumeSize()
         if newsize > size:
             newsize = size
@@ -858,18 +858,18 @@ class Image:
             self.log.error("Unexpected error", exc_info=True)
             raise se.ImageIsNotLegalChain("%s" % (str(e)))
 
-    def markIllegalSubChain(self, sdUUID, imgUUID, chain):
+    def markIllegalSubChain(self, sdDom, imgUUID, chain):
         """
         Mark all volumes in the sub-chain as illegal
         """
         if not chain:
             raise se.InvalidParameterException("chain", str(chain))
 
-        volclass = sdCache.produce(sdUUID).getVolumeClass()
+        volclass = sdDom.getVolumeClass()
         ancestor = chain[0]
         successor = chain[-1]
-        tmpVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
-        dstParent = volclass(self.repoPath, sdUUID, imgUUID, ancestor).getParent()
+        tmpVol = volclass(self.repoPath, sdDom.sdUUID, imgUUID, successor)
+        dstParent = volclass(self.repoPath, sdDom.sdUUID, imgUUID, ancestor).getParent()
 
         # Mark all volumes as illegal
         while tmpVol and dstParent != tmpVol.volUUID:
@@ -908,18 +908,18 @@ class Image:
                 self.log.info("Failure to teardown volume %s in subchain %s -> %s", srcVol.volUUID,
                               ancestor, successor, exc_info=True)
 
-    def removeSubChain(self, sdUUID, imgUUID, chain, postZero):
+    def removeSubChain(self, sdDom, imgUUID, chain, postZero):
         """
         Remove all volumes in the sub-chain
         """
         if not chain:
             raise se.InvalidParameterException("chain", str(chain))
 
-        volclass = sdCache.produce(sdUUID).getVolumeClass()
+        volclass = sdDom.getVolumeClass()
         ancestor = chain[0]
         successor = chain[-1]
-        srcVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
-        dstParent = volclass(self.repoPath, sdUUID, imgUUID, ancestor).getParent()
+        srcVol = volclass(self.repoPath, sdDom.sdUUID, imgUUID, successor)
+        dstParent = volclass(self.repoPath, sdDom.sdUUID, imgUUID, ancestor).getParent()
 
         while srcVol and dstParent != srcVol.volUUID:
             try:
@@ -932,11 +932,11 @@ class Image:
                 self.log.error("Failure to remove volume %s in subchain %s -> %s", srcVol.volUUID,
                               ancestor, successor, exc_info=True)
 
-    def _internalVolumeMerge(self, sdUUID, srcVolParams, volParams, newSize, chain):
+    def _internalVolumeMerge(self, sdDom, srcVolParams, volParams, newSize, chain):
         """
         Merge internal volume
         """
-        srcVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
+        srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
         srcVol.extend(newSize)
 
@@ -949,11 +949,11 @@ class Image:
 
         # Prepare chain for future erase
         chain.remove(srcVolParams['volUUID'])
-        self.__teardownSubChain(sdUUID, srcVolParams['imgUUID'], chain)
+        self.__teardownSubChain(sdDom.sdUUID, srcVolParams['imgUUID'], chain)
 
         return chain
 
-    def _baseCowVolumeMerge(self, sdUUID, srcVolParams, volParams, newSize, chain):
+    def _baseCowVolumeMerge(self, sdDom, srcVolParams, volParams, newSize, chain):
         """
         Merge snapshot with base COW volume
         """
@@ -965,18 +965,18 @@ class Image:
         # Step 2: Rebase (safely) successor volume on top of this temporary volume
         # Step 3: Rebase (unsafely) successor volume on top of "" (empty string)
         # Step 4: Delete temporary volume
-        srcVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
+        srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
         # Extend successor volume to new accumulated subchain size
         srcVol.extend(newSize)
         # Step 1: Create temporary volume with destination volume's parent parameters
         newUUID = str(uuid.uuid4())
-        sdCache.produce(sdUUID).createVolume(imgUUID=srcVolParams['imgUUID'],
+        sdDom.createVolume(imgUUID=srcVolParams['imgUUID'],
                                          size=volParams['size'], volFormat=volParams['volFormat'],
                                          preallocate=volume.SPARSE_VOL, diskType=volParams['disktype'],
                                          volUUID=newUUID, desc="New base volume",
                                          srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID)
 
-        tmpVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
+        tmpVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
         tmpVol.prepare(rw=True, justme=True, setrw=True)
 
         # We should prepare/teardown volume for every single rebase.
@@ -1005,11 +1005,11 @@ class Image:
 
         # Prepare chain for future erase
         chain.remove(srcVolParams['volUUID'])
-        self.__teardownSubChain(sdUUID, srcVolParams['imgUUID'], chain)
+        self.__teardownSubChain(sdDom.sdUUID, srcVolParams['imgUUID'], chain)
 
         return chain
 
-    def _baseRawVolumeMerge(self, sdUUID, srcVolParams, volParams, chain):
+    def _baseRawVolumeMerge(self, sdDom, srcVolParams, volParams, chain):
         """
         Merge snapshot with base RAW volume
         """
@@ -1020,19 +1020,19 @@ class Image:
         # Step 2: Convert successor to new temporary volume
         # Step 3: Rename temporary volume as successor
         # Step 4: Unsafely rebase successor's children on top of temporary volume
-        srcVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
+        srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         # Find out successor's children list
-        chList = srcVol.getChildrenList()
+        chList = srcVol.getAllChildrenList(self.repoPath, sdDom.sdUUID, srcVolParams['imgUUID'], srcVol.volUUID)
         # Step 1: Create temporary volume with destination volume's parent parameters
         newUUID = str(uuid.uuid4())
-        sdCache.produce(sdUUID).createVolume(imgUUID=srcVolParams['imgUUID'],
+        sdDom.createVolume(imgUUID=srcVolParams['imgUUID'],
                                          size=volParams['size'], volFormat=volParams['volFormat'],
                                          preallocate=volParams['prealloc'], diskType=volParams['disktype'],
                                          volUUID=newUUID, desc=srcVolParams['descr'],
                                          srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID)
 
-        newVol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
+        newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
         newVol.prepare(rw=True, justme=True, setrw=True)
 
         # Step 2: Convert successor to new volume
@@ -1057,7 +1057,7 @@ class Image:
         # Step 4: Rebase children 'unsafely' on top of new volume
         #   qemu-img rebase -u -b tmpBackingFile -F backingFormat -f srcFormat src
         for v in chList:
-            ch = sdCache.produce(sdUUID).produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=v)
+            ch = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=v['volUUID'])
             ch.prepare(rw=True, chainrw=True, setrw=True, force=True)
             try:
                 backingVolPath = os.path.join('..', srcVolParams['imgUUID'], srcVolParams['volUUID'])
@@ -1102,7 +1102,7 @@ class Image:
 
             chain = self.getSubChain(sdDom, imgUUID, ancestor, successor)
             # Calculate size of subchain ancestor -> successor
-            newSize = self.subChainSizeCalc(sdUUID, srcVolParams['imgUUID'], chain, volParams['size'])
+            newSize = self.subChainSizeCalc(sdDom, srcVolParams['imgUUID'], chain, volParams['size'])
         except se.StorageException, e:
             self.log.error("Unexpected error", exc_info=True)
             raise
@@ -1115,22 +1115,22 @@ class Image:
             if dstParent:
                 # The ancestor isn't a base volume of the chain.
                 self.log.info("Internal volume merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                chain = self._internalVolumeMerge(sdUUID, srcVolParams, volParams, newSize, chain)
+                chainToRemove = self._internalVolumeMerge(sdDom, srcVolParams, volParams, newSize, chain)
             # The ancestor is actually a base volume of the chain.
             # We have 2 cases here:
             # Case 1: ancestor is a COW volume (use 'rebase' workaround)
             # Case 2: ancestor is a RAW volume (use 'convert + rebase')
             elif volParams['volFormat'] == volume.RAW_FORMAT:
                 self.log.info("merge with convert: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                chain = self._baseRawVolumeMerge(sdUUID, srcVolParams, volParams, chain)
+                chainToRemove = self._baseRawVolumeMerge(sdDom, srcVolParams, volParams, chain)
             else:
                 self.log.info("4 steps merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                chain = self._baseCowVolumeMerge(sdUUID, srcVolParams, volParams, newSize, chain)
+                chainToRemove = self._baseCowVolumeMerge(sdDom, srcVolParams, volParams, newSize, chain)
 
             # This is unrecoverable point, clear all recoveries
             vars.task.clearRecoveries()
             # mark all snapshots from 'ancestor' to 'successor' as illegal
-            self.markIllegalSubChain(sdUUID, imgUUID, chain)
+            self.markIllegalSubChain(sdDom, imgUUID, chainToRemove)
         except se.ActionStopped:
             raise
         except se.StorageException:
@@ -1142,7 +1142,7 @@ class Image:
 
         try:
             # remove all snapshots from 'ancestor' to 'successor'
-            self.removeSubChain(sdUUID, imgUUID, chain, postZero)
+            self.removeSubChain(sdDom, imgUUID, chainToRemove, postZero)
         except Exception:
             self.log.error("Failure to remove subchain %s -> %s in image %s", ancestor,
                            successor, imgUUID, exc_info=True)
