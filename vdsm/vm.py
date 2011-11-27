@@ -47,7 +47,6 @@ class Drive:
         self.imageID = imageID
         self.volumeID = volumeID
         self.path = path
-        self.name = None
         self.truesize = int(truesize)
         self.apparentsize = int(apparentsize)
         self.blockDev = blockDev
@@ -61,8 +60,9 @@ class Drive:
         self.propagateErrors = propagateErrors
         self.boot = boot
         self.alias = alias
+        self.name = self._libvirtName()
 
-    def libvirtName(self):
+    def _libvirtName(self):
         devname = 'vd' if self.iface == 'virtio' else 'hd'
         devindex = ''
 

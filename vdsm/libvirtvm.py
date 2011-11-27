@@ -779,7 +779,7 @@ class _DomXML:
             source.setAttribute('file', drive.path)
         diskelem.appendChild(source)
         target = self.doc.createElement('target')
-        target.setAttribute('dev', drive.libvirtName())
+        target.setAttribute('dev', drive.name)
         if drive.iface:
             target.setAttribute('bus', drive.iface)
         diskelem.appendChild(target)
@@ -1372,7 +1372,6 @@ class LibvirtVm(vm.Vm):
                     .childNodes[0].getElementsByTagName('devices')[0] \
                     .getElementsByTagName('disk')
         for x in disksxml:
-            name = x.getElementsByTagName('target')[0].getAttribute('dev')
             sources = x.getElementsByTagName('source')
             if sources:
                 path = sources[0].getAttribute('file') \
@@ -1386,7 +1385,6 @@ class LibvirtVm(vm.Vm):
             drv = x.getElementsByTagName('driver')[0].getAttribute('type') # raw/qcow2
             for d in self._drives:
                 if d.path == path:
-                    d.name = name
                     d.type = ty
                     d.drv = drv
                     d.alias = alias
