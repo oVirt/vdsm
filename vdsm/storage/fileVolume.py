@@ -395,10 +395,11 @@ class FileVolume(volume.Volume):
         # scan whole domain
         pattern = os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES, "*", "*.meta")
         files = oop.getProcessPool(sdUUID).glob.glob(pattern)
+        sdDom = sdCache.produce(sdUUID)
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
             imgUUID = os.path.basename(os.path.dirname(i))
-            if sdCache.produce(sdUUID).produceVolume(imgUUID, volid).getParent() == pvolUUID:
+            if sdDom.produceVolume(imgUUID, volid).getParent() == pvolUUID:
                 volList.append({'imgUUID':imgUUID, 'volUUID':volid})
 
         return volList
