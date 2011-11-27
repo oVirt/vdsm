@@ -836,21 +836,20 @@ class Image:
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
 
-    def getSubChain(self, sdUUID, imgUUID, startUUID, endUUID):
+    def getSubChain(self, sdDom, imgUUID, startUUID, endUUID):
         """
         Check if startUUID..endUUID is a valid simple link list (and not a tree).
         """
         chain = [startUUID]
-        volclass = sdCache.produce(sdUUID).getVolumeClass()
+        volclass = sdDom.getVolumeClass()
         volUUID = startUUID
         try:
             while volUUID != endUUID:
-                vol = volclass(self.repoPath, sdUUID, imgUUID, volUUID)
-                ch = vol.getChildrenList()
+                childs = volclass.getAllChildrenList(self.repoPath, sdDom.sdUUID, imgUUID, volUUID)
                 # If a volume has more than 1 child, it is a tree.
-                if len(ch) != 1:
+                if len(childs) != 1:
                     raise se.ImageIsNotLegalChain("%s:%s..%s" % (imgUUID, startUUID, endUUID))
-                volUUID = ch[0]
+                volUUID = childs[0]["volUUID"]
                 chain.append(volUUID)
             return chain
         except se.StorageException:
@@ -1084,7 +1083,8 @@ class Image:
                       ancestor, successor, str(postZero))
         chain = []
         srcVol = dstVol = None
-        volclass = sdCache.produce(sdUUID).getVolumeClass()
+        sdDom = sdCache.produce(sdUUID)
+        volclass = sdDom.getVolumeClass()
 
         try:
             srcVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
@@ -1100,7 +1100,7 @@ class Image:
             else:
                 volParams = dstVol.getVolumeParams()
 
-            chain = self.getSubChain(sdUUID, imgUUID, ancestor, successor)
+            chain = self.getSubChain(sdDom, imgUUID, ancestor, successor)
             # Calculate size of subchain ancestor -> successor
             newSize = self.subChainSizeCalc(sdUUID, srcVolParams['imgUUID'], chain, volParams['size'])
         except se.StorageException, e:
