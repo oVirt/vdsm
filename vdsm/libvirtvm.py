@@ -280,14 +280,26 @@ class VmStatsThread(utils.AdvancedStatsThread):
         return stats
 
     def handleStatsException(self, ex):
-        if hasattr(ex, "get_error_code"):
-            if (ex.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN
-                    and self._vm.lastStatus not in
-                        ('Saving State', 'Migration Source', 'Down')):
-                self._log.debug("VM not found, moving to Down", exc_info=True)
-                self._vm.setDownStatus(ERROR, str(ex))
-                return True
-        return False
+        # We currently handle only libvirt exceptions
+        if not hasattr(ex, "get_error_code"):
+            return False
+
+        # We currently handle only the missing domain exception
+        if ex.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
+            return False
+
+        # If a VM is down, hibernating, migrating, destroyed or in the
+        # process of being shutdown we were expecting it to disappear
+        if ((self._vm.lastStatus in ('Down',
+                                     'Saving State', 'Migration Source'))
+                or self._vm.destroyed
+                or self._vm._guestEvent == 'Powering down'):
+            return True
+
+        self._log.debug("VM not found, moving to Down", exc_info=True)
+        self._vm.setDownStatus(ERROR, str(ex))
+
+        return True
 
 class MigrationDowntimeThread(threading.Thread):
     def __init__(self, vm, downtime, wait):
