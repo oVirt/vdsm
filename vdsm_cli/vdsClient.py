@@ -1487,19 +1487,6 @@ class service:
             self.__domain_status(sdUUID, status)
         return code, ''
 
-    def checkPool(self, args):
-        pools = args
-        code = 0
-
-        for spUUID in pools:
-            status = self.s.checkPool(spUUID)
-            if status['status']['code']:
-                print "count not check pool %s: code: %s message: %s" % (spUUID, status['status']['code'], status['status']['message'])
-                code = int(status['status']['code'])
-                continue
-            self.__pool_status(spUUID, status)
-        return code, ''
-
     def repoStats(self, args):
         stats = self.s.repoStats()
         if stats['status']['code']:
@@ -1993,10 +1980,6 @@ if __name__ == '__main__':
                            )),
             'checkDomain':  ( serv.checkDomain,
                            ('<spUUID><sdUUID>...',
-                            "check Image(s)"
-                           )),
-            'checkPool':  ( serv.checkPool,
-                           ('<spUUID>...',
                             "check Image(s)"
                            )),
             'repoStats':  ( serv.repoStats,

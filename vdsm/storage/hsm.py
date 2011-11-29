@@ -1030,18 +1030,6 @@ class HSM:
 
 
     @logged()
-    def public_checkPool(self, spUUID, options = None):
-        """
-        Check a domain. Why? For what?
-
-        :param spUUID: The UUID of the storage pool that contains domain being checked.
-        :type spUUID: UUID
-        :param options: ?
-        """
-        pool = self.getPool(spUUID)
-        return pool.check()
-
-    @logged()
     def public_getVmsList(self, spUUID, sdUUID=None, options = None):
         """
         Gets a list of VMs from the pool.

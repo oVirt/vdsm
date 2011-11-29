@@ -1607,35 +1607,6 @@ class StoragePool:
         return vmPath
 
     @unsecured
-    def check(self):
-        poolstatus = 0
-        baddomains = {}
-        message = "Pool OK"
-        try:
-            self.invalidateMetadata()
-            spmId = self.getMetaParam(PMDK_SPM_ID)
-            domains = self.getDomains(activeOnly=True)
-
-            for dom in domains:
-                d = sdCache.produce(dom)
-                domstatus = d.checkDomain(spUUID=self.spUUID)
-                if domstatus["domainstatus"] != 0:
-                    baddomains[dom] = domstatus
-                    poolstatus = se.StoragePoolCheckError.code
-                    message = "Pool has bad domains"
-        except se.StorageException, e:
-            poolstatus = e.code
-            message = str(e)
-        except:
-            poolstatus = se.StorageException.code
-            message = "Pool is bad"
-
-        return dict(poolstatus = poolstatus, baddomains = baddomains,
-                    masterdomain = self.masterDomain.sdUUID, spmhost=spmId,
-                    message = message)
-
-
-    @unsecured
     def _repostats(self, domain):
         # self.selftest() should return True if things are looking good
         # and False otherwise
