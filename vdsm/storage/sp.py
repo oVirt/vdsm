@@ -1997,10 +1997,6 @@ class StoragePool:
         repoPath = os.path.join(self.storage_repository, self.spUUID)
         image.Image(repoPath).validateVolumeChain(sdUUID, imgUUID)
 
-    def checkImage(self, sdUUID, imgUUID):
-        repoPath = os.path.join(self.storage_repository, self.spUUID)
-        image.Image(repoPath).check(sdUUID, imgUUID)
-
     def extendSD(self, sdUUID, devlist):
         sdCache.produce(sdUUID).extend(devlist)
 

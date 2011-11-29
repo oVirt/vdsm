@@ -1145,39 +1145,3 @@ class Image:
 
         self.log.info("Merge src=%s with dst=%s was successfully finished.", srcVol.getVolumePath(), dstVol.getVolumePath())
 
-    def check(self, sdUUID, imgUUID):
-        """
-        Validate image
-        """
-        badvols = {}
-        imagestatus = 0
-        message = "Image OK"
-        try:
-            # Find all volumes of source image
-            volclass = sdCache.produce(sdUUID).getVolumeClass()
-            vollist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
-            vol = None
-            for volUUID in vollist:
-                try:
-                    vol = volclass(self.repoPath, sdUUID, imgUUID, volUUID)
-                    if vol.isLeaf():
-                        vol.prepare(rw=True, setrw=True)
-                    else:
-                        vol.prepare(rw=False, setrw=True)
-                    vol.teardown(sdUUID=vol.sdUUID, volUUID=vol.volUUID)
-                    vol = None
-                except Exception, e:
-                    self.log.error("Unexpected error", exc_info=True)
-                    message = "Image has bad volumes"
-                    imagestatus = se.ImageIsNotLegalChain.code
-                    badvols[volUUID] = str(e)
-                    if vol:
-                        vol.teardown(sdUUID=vol.sdUUID, volUUID=vol.volUUID)
-        except se.StorageException, e:
-            imagestatus = e.code
-            message = str(e)
-        except Exception, e:
-            self.log.error("Unexpected error", exc_info=True)
-            imagestatus = se.ImageIsNotLegalChain.code
-            message = str(e)
-        return dict(imagestatus=imagestatus, message=message, badvols=badvols)

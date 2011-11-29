@@ -1456,21 +1456,6 @@ class service:
                     print "\tDomain %s is bad:" % (d)
                     self.__domain_status(d, list["baddomains"][d])
 
-    def checkImage(self, args):
-        spUUID = args[0]
-        sdUUID = args[1]
-        images = args[2:]
-        code = 0
-
-        for imgUUID in images:
-            status = self.s.checkImage(sdUUID, spUUID, imgUUID)
-            if status['status']['code']:
-                print "count not check image %s: code: %s message: %s" % (imgUUID, status['status']['code'], status['status']['message'])
-                code = int(status['status']['code'])
-                continue
-            self.__image_status(imgUUID, status)
-        return code, ''
-
     def repoStats(self, args):
         stats = self.s.repoStats()
         if stats['status']['code']:
@@ -1957,10 +1942,6 @@ if __name__ == '__main__':
             'fenceNode':   ( serv.do_fenceNode,
                            ('<addr> <port> <agent> <user> <passwd> <action> [<secure> [<options>]] \n\t<action> is one of (status, on, off, reboot),\n\t<agent> is one of (rsa, ilo, ipmilan, drac5, etc)\n\t<secure> (true|false) may be passed to some agents',
                             'send a fencing command to a remote node'
-                           )),
-            'checkImage':  ( serv.checkImage,
-                           ('<spUUID> <sdUUID> <imgUUID>...',
-                            "check Image(s)"
                            )),
             'repoStats':  ( serv.repoStats,
                            ('',

@@ -995,24 +995,6 @@ class HSM:
         pool.removeVM(vmList=vmList, sdUUID=sdUUID)
 
     @logged()
-    def public_checkImage(self, sdUUID, spUUID, imgUUID, options = None):
-        """
-        Check an image. Why? For what?
-
-        :param sdUUID: The UUID of the storage domain that contains the image being checked.
-        :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that contains image being checked.
-        :type spUUID: UUID
-        :param imgUUID: The UUID of the image you want to check.
-        :type imgUUID: UUID
-        :param options: ?
-        """
-        self.validatePoolSD(spUUID, sdUUID)
-        self.validateSdUUID(sdUUID)
-        pool = self.getPool(spUUID)
-        return pool.checkImage(sdUUID, imgUUID)
-
-    @logged()
     def public_getVmsList(self, spUUID, sdUUID=None, options = None):
         """
         Gets a list of VMs from the pool.
