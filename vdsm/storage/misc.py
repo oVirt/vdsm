@@ -365,9 +365,12 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
     """
     try:
         size = int(size)
+    except ValueError:
+        raise se.InvalidParameterException("size", "size = %s" %  (size,))
+    try:
         offset = int(offset)
     except ValueError:
-        raise se.InvalidParameterException("size = %s, offset = %s" %  (size, offset))
+        raise se.InvalidParameterException("offset", "offset = %s" %  (offset,))
 
     left = size
     baseoffset = offset

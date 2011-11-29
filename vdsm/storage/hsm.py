@@ -1174,7 +1174,7 @@ class HSM:
                         str(imgUUID), str(vmUUID), str(op), str(force), str(postZero), str(force))
         vars.task.setDefaultException(se.MoveImageError("%s" % argsStr))
         if srcDomUUID == dstDomUUID:
-            raise se.InvalidParameterException("srcDom must be different from dstDom: %s" % argsStr)
+            raise se.InvalidParameterException("srcDom", "must be different from dstDom: %s" % argsStr)
 
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
         self.validateSdUUID(srcDomUUID)

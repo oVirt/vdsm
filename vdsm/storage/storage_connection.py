@@ -81,7 +81,7 @@ class StorageServerConnection:
 
                     conParams[conParamName] = value
                 except KeyError:
-                    raise se.InvalidParameterException('parameter "%s" is missing from connection info %s' % (paramName, con.get('id', "")))
+                    raise se.InvalidParameterException(paramName, 'parameter is missing from connection info %s' % (con.get('id', "")))
 
             conParamsList.append(conParams)
 
