@@ -1939,9 +1939,6 @@ class StoragePool:
             sdCache.produce(sdUUID).produceVolume(imgUUID=imgUUID,
                                               volUUID=volUUID).setLegality(legality=legality)
 
-    def checkDomain(self, sdUUID):
-        return sdCache.produce(sdUUID).checkDomain(spUUID=self.spUUID)
-
     def getVmsList(self, sdUUID=None):
         if sdUUID == None:
             dom = self.masterDomain

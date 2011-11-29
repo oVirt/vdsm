@@ -1013,23 +1013,6 @@ class HSM:
         return pool.checkImage(sdUUID, imgUUID)
 
     @logged()
-    def public_checkDomain(self, sdUUID, spUUID, options = None):
-        """
-        Check a domain. Why? For what?
-
-        :param sdUUID: The UUID of the storage domain that the you want to checked.
-        :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that contains domain being checked.
-        :type spUUID: UUID
-        :param options: ?
-        """
-        self.validatePoolSD(spUUID, sdUUID)
-        self.validateSdUUID(sdUUID)
-        pool = self.getPool(spUUID)
-        return pool.checkDomain(sdUUID)
-
-
-    @logged()
     def public_getVmsList(self, spUUID, sdUUID=None, options = None):
         """
         Gets a list of VMs from the pool.

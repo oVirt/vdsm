@@ -662,40 +662,6 @@ class StorageDomain:
     def isData(self):
         return self.getMetaParam(DMDK_CLASS) == DATA_DOMAIN
 
-    def checkImages(self, spUUID):
-        import image
-        badimages = {}
-        imglist = self.getAllImages()
-        for img in imglist:
-            try:
-                repoPath = os.path.join(self.storage_repository, spUUID)
-                imgstatus = image.Image(repoPath).check(sdUUID=self.sdUUID, imgUUID=img)
-                if imgstatus["imagestatus"]:
-                    badimages[img] = imgstatus
-            except Exception, e:
-                self.log.info("sp %s sd %s: image check for img %s failed: %s" % (spUUID, self.sdUUID, img, str(e)))
-                badimages[img] = dict(imagestatus=e.code)
-        return badimages
-
-    def checkDomain(self, spUUID):
-        domainstatus = 0
-        message = "Domain is OK"
-        badimages = {}
-        try:
-            self.validate()
-            badimages = self.checkImages(spUUID)
-            if badimages:
-                message = "Domain has bad images"
-                domainstatus = se.StorageDomainCheckError.code
-        except se.StorageException, e:
-            self.log.error("Unexpected error", exc_info=True)
-            domainstatus = e.code
-            message = str(e)
-        except:
-            domainstatus = se.StorageException.code
-            message = "Domain error"
-        return dict(domainstatus=domainstatus, badimages=badimages, message=message)
-
     def imageGarbageCollector(self):
         """
         Image Garbage Collector

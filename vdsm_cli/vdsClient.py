@@ -1471,20 +1471,6 @@ class service:
             self.__image_status(imgUUID, status)
         return code, ''
 
-    def checkDomain(self, args):
-        spUUID = args[0]
-        domains = args[1:]
-        code = 0
-
-        for sdUUID in domains:
-            status = self.s.checkDomain(sdUUID, spUUID)
-            if status['status']['code']:
-                print "count not check domain %s: code: %s message: %s" % (sdUUID, status['status']['code'], status['status']['message'])
-                code = int(status['status']['code'])
-                continue
-            self.__domain_status(sdUUID, status)
-        return code, ''
-
     def repoStats(self, args):
         stats = self.s.repoStats()
         if stats['status']['code']:
@@ -1974,10 +1960,6 @@ if __name__ == '__main__':
                            )),
             'checkImage':  ( serv.checkImage,
                            ('<spUUID> <sdUUID> <imgUUID>...',
-                            "check Image(s)"
-                           )),
-            'checkDomain':  ( serv.checkDomain,
-                           ('<spUUID><sdUUID>...',
                             "check Image(s)"
                            )),
             'repoStats':  ( serv.repoStats,
