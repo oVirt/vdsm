@@ -387,6 +387,7 @@ class MigrationMonitorThread(threading.Thread):
         self._stop.set()
 
 class MigrationSourceThread(vm.MigrationSourceThread):
+
     def _setupRemoteMachineParams(self):
         vm.MigrationSourceThread._setupRemoteMachineParams(self)
         if self._mode != 'file':
@@ -394,6 +395,7 @@ class MigrationSourceThread(vm.MigrationSourceThread):
         self._machineParams['_srcDomXML'] = self._vm._dom.XMLDesc(0)
 
     def _startUnderlyingMigration(self):
+        self._preparingMigrationEvt = True
         if self._mode == 'file':
             hooks.before_vm_hibernate(self._vm._dom.XMLDesc(0), self._vm.conf)
             try:
@@ -434,13 +436,37 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                     self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
                 maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
-                self._vm._dom.migrateToURI2(duri, muri, None,
-                    libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER,
-                    None, maxBandwidth)
+                #FIXME: there still a race here with libvirt,
+                # if we call stop() and libvirt migrateToURI2 didn't start
+                # we may return migration stop but it will start at libvirt
+                # side
+                self._preparingMigrationEvt = False
+                if not self._migrationCanceledEvt:
+                    self._vm._dom.migrateToURI2(duri, muri, None,
+                        libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER,
+                        None, maxBandwidth)
             finally:
                 t.cancel()
                 if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
                     monitorThread.stop()
+
+    def stop(self):
+        # if its locks we are before the migrateToURI2()
+        # call so no need to abortJob()
+        try:
+            self._migrationCanceledEvt = True
+            self._vm._dom.abortJob()
+        except libvirt.libvirtError, e:
+            # TODO: yes its not nice searching in the error message,
+            # but this is the libvrirt solution
+            # this will be solved at bz #760149
+            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED and \
+                    'canceled by client' in e.get_error_message():
+                    # this is exception that libvirt raise when calling
+                    # abortJob()
+                    raise
+            elif not self._preparingMigrationEvt:
+                    raise
 
 class TimeoutError(libvirt.libvirtError): pass
 

@@ -405,9 +405,13 @@ class clientIF:
 
     def migrateCancel(self, vmId):
         """
-        Cancel a currently outgoing migration process. **Not implemented**
+        Cancel a currently outgoing migration process.
         """
-        return {'status': {'code': 0, 'message': 'Unsupported yet'}}
+        try:
+            vm = self.vmContainer[vmId]
+        except KeyError:
+            return errCode['noVM']
+        return vm.migrateCancel()
 
     def monitorCommand(self, vmId, cmd):
         """

@@ -96,6 +96,8 @@ class MigrationSourceThread(threading.Thread):
                             config.get('vars', 'migration_downtime')
         self.status = {'status': {'code': 0, 'message': 'Migration in process'}, 'progress': 0}
         threading.Thread.__init__(self)
+        self._preparingMigrationEvt = False
+        self._migrationCanceledEvt = False
 
     def getStat (self):
         """
@@ -220,6 +222,15 @@ class MigrationSourceThread(threading.Thread):
                     self._vm.saveState()
                     self._startUnderlyingMigration()
                 self._finishSuccessfully()
+            except libvirt.libvirtError, e:
+                # TODO: yes its not nice searching in the error message,
+                # but this is the libvrirt solution
+                # this will be solved at bz #760149
+                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED and \
+                        'canceled by client' in e.get_error_message():
+                    self.status = {'status': {'code': errCode['migCancelErr'],
+                        'message': 'Migration canceled'}}
+                raise
             finally:
                 if '_migrationParams' in self._vm.conf:
                     del self._vm.conf['_migrationParams']
@@ -910,3 +921,15 @@ class Vm(object):
     def migrateStatus(self):
         return self._migrationSourceThread.getStat()
 
+    def migrateCancel(self):
+        self._acquireCpuLockWithTimeout()
+        try:
+            self._migrationSourceThread.stop()
+            return {'status': {'code': 0,
+                               'message': 'Migration process stopped'}}
+        except libvirt.libvirtError, e:
+            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                return errCode['migCancelErr']
+            raise
+        finally:
+            self._guestCpuLock.release()
