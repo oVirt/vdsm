@@ -104,7 +104,7 @@ parameters = [
 
         ('vm_sample_disk_window', '2', None),
 
-        ('vm_sample_disk_latency_interval', 60, None),
+        ('vm_sample_disk_latency_interval', '60', None),
 
         ('vm_sample_disk_latency_window', '2', None),
 
