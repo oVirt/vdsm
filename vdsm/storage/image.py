@@ -1015,17 +1015,17 @@ class Image:
         """
         # In this case we need convert ancestor->successor subchain to new volume
         # and rebase successor's children (if exists) on top of it.
-        # At this point we can achive this result by 3 steps prosedure:
-        # Step 1: Create temporary empty volume similar to ancestor volume
-        # Step 2: Convert successor to new temporary volume
-        # Step 3: Rename temporary volume as successor
-        # Step 4: Unsafely rebase successor's children on top of temporary volume
+        # Step 1: Create an empty volume named sucessor_MERGE similar to ancestor volume.
+        # Step 2: qemuConvert successor -> sucessor_MERGE
+        # Step 3: Rename successor to _remove_me__successor
+        # Step 4: Rename successor_MERGE to successor
+        # Step 5: Unsafely rebase successor's children on top of temporary volume
         srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         # Find out successor's children list
         chList = srcVol.getAllChildrenList(self.repoPath, sdDom.sdUUID, srcVolParams['imgUUID'], srcVol.volUUID)
-        # Step 1: Create temporary volume with destination volume's parent parameters
-        newUUID = str(uuid.uuid4())
+        # Step 1: Create an empty volume named sucessor_MERGE with destination volume's parent parameters
+        newUUID = srcVol.volUUID + "_MERGE"
         sdDom.createVolume(imgUUID=srcVolParams['imgUUID'],
                                          size=volParams['size'], volFormat=volParams['volFormat'],
                                          preallocate=volParams['prealloc'], diskType=volParams['disktype'],
@@ -1048,13 +1048,13 @@ class Image:
         if chList:
             newVol.setInternal()
 
-        # Step 3: Rename successor as tmpUUID and new volume as successor
-        tmpUUID = str(uuid.uuid4())
-
+        # Step 3: Rename successor as to _remove_me__successor
+        tmpUUID = self.deletedVolumeName(srcVol.volUUID)
+        # Step 4: Rename successor_MERGE to successor
         srcVol.rename(tmpUUID)
         newVol.rename(srcVolParams['volUUID'])
 
-        # Step 4: Rebase children 'unsafely' on top of new volume
+        # Step 5: Rebase children 'unsafely' on top of new volume
         #   qemu-img rebase -u -b tmpBackingFile -F backingFormat -f srcFormat src
         for v in chList:
             ch = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=v['volUUID'])
