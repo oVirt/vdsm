@@ -1473,6 +1473,18 @@ class service:
             print 'Domain %s %s' % (d, str(stats[d]))
         return 0, ''
 
+    def snapshot(self, args):
+        vmUUID, sdUUID, imgUUID, baseVolUUID, volUUID = args
+
+        status = self.s.snapshot(vmUUID, [
+            {'domainID': sdUUID,
+             'imageID': imgUUID,
+             'baseVolumeID': baseVolUUID,
+             'volumeID': volUUID},
+        ])
+
+        return status['status']['code'], status['status']['message']
+
 if __name__ == '__main__':
     serv = service()
     commands = {
@@ -1974,6 +1986,10 @@ if __name__ == '__main__':
         'repoStats':  ( serv.repoStats,
                        ('',
                        "Get the the health status of the active domains"
+                      )),
+        'snapshot':  ( serv.snapshot,
+                       ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
+                       "Take a live snapshot"
                       )),
     }
     try:
