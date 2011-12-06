@@ -61,6 +61,7 @@ from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 import devicemapper
 import logUtils
+import mount
 
 GUID = "guid"
 NAME = "name"
@@ -272,9 +273,8 @@ class HSM:
             return False
 
         #Add mounted folders to whitelist
-        mounts = fileUtils.getMounts()
-        for mount in mounts:
-            mountPoint = mount[1]
+        for mnt in mount.iterMounts():
+            mountPoint = mnt.fs_file
             isInStorageRepo = (os.path.commonprefix([self.storage_repository, mountPoint]) == self.storage_repository)
             if isInStorageRepo:
                 whiteList.extend([mountPoint, os.path.join(mountPoint, "*")])

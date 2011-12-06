@@ -34,7 +34,6 @@ import subprocess
 
 import shutil
 import constants
-import misc
 import logging
 import storage_exception as se
 from config import config
@@ -44,57 +43,12 @@ libc = ctypes.CDLL("libc.so.6", use_errno=True)
 # We must insure there are no white spaces in the NFS options
 NFS_OPTIONS = "".join(config.get('irs', 'nfs_mount_options').split())
 
-FSTYPE_NFS = "nfs"
-FSTYPE_EXT = "ext"
-FSTYPE_EXT3 = "ext3"
-FSTYPE_EXT4 = "ext4"
-
 log = logging.getLogger('fileUtils')
 
 PAGESIZE = libc.getpagesize()
 CharPointer = ctypes.POINTER(ctypes.c_char)
 
 class TarCopyFailed(RuntimeError): pass
-
-def getMounts():
-    """
-    returns a list of tuples represnting the mounts in this host.
-    For each mount you have a tuple `` (resource, mount, type, options, freq, passno) ``.
-    """
-    rawMounts = open("/proc/mounts").readlines()
-    parsedMounts = []
-    for mount in rawMounts:
-        parsedMounts.append(tuple(mount.split()))
-
-    return parsedMounts
-
-def mount(resource, mountPoint, mountType):
-    """
-    Mount the requested resource
-    """
-    if isStaleHandle(mountPoint):
-        rc = umount(resource, mountPoint, mountType)
-        if rc != 0:
-            return rc
-
-    if isMounted(resource, mountPoint, mountType):
-        return 0
-
-    if mountType == FSTYPE_NFS:
-        cmd = [constants.EXT_MOUNT, "-o", NFS_OPTIONS, "-t", FSTYPE_NFS, resource, mountPoint]
-    elif mountType in [FSTYPE_EXT3, FSTYPE_EXT4]:
-        options = []
-        if os.path.isdir(resource):
-            # We should perform bindmount here,
-            # because underlying resource is FS and not a block device
-            options.append("-B")
-
-        cmd = [constants.EXT_MOUNT] + options + [resource, mountPoint]
-    else:
-        raise se.MountTypeError()
-
-    rc = misc.execCmd(cmd)[0]
-    return rc
 
 def tarCopy(src, dst, exclude=[]):
     excludeArgs = ["--exclude=%s" % path for path in exclude]
@@ -107,36 +61,6 @@ def tarCopy(src, dst, exclude=[]):
 
     if tdst.returncode != 0 or tsrc.returncode != 0:
         raise TarCopyFailed(tsrc.returncode, tdst.returncode, out, err)
-
-
-def umount(resource=None, mountPoint=None, mountType=None, force=True, lazy=False):
-    """
-    Unmount the requested resource from the associated mount point
-    """
-    if mountPoint is None and resource is None:
-        raise ValueError("`mountPoint` or `resource` must be specified")
-
-    if not isMounted(resource, mountPoint):
-        if isMounted(mountPoint=mountPoint):
-            return -1
-        elif isMounted(resource=resource):
-            return -1
-
-        return 0
-
-    options = []
-    if mountType is not None:
-        options.extend(["-t", mountType])
-
-    if force:
-        options.append("-f")
-
-    if lazy:
-        options.append("-l")
-
-    cmd = [constants.EXT_UMOUNT] + options + [mountPoint if mountPoint is not None else resource]
-    rc = misc.execCmd(cmd)[0]
-    return rc
 
 def isStaleHandle(path):
     exists = os.path.exists(path)
@@ -151,32 +75,6 @@ def isStaleHandle(path):
         # We could get contradictory results because of
         # soft mounts
         if (exists or st) and ex.errno == errno.ENOENT:
-            return True
-
-    return False
-
-def isMounted(resource=None, mountPoint=None, mountType=None):
-    """
-    Verify that "resource" (if given) is mounted on "mountPoint"
-    """
-    if mountPoint is None and resource is None:
-        raise ValueError("`mountPoint` or `resource` must be specified")
-
-    cleanPath = lambda path: path[:-1] if path is not None and path.endswith("/") else path
-
-    mountPoint = cleanPath(mountPoint)
-    resource = cleanPath(resource)
-
-    mounts = getMounts()
-
-    for m in mounts:
-        (res, mp, fs) = m[0:3]
-        res = cleanPath(res)
-        mp = cleanPath(mp)
-
-        if ( (mountPoint is None or mp == mountPoint)
-         and (resource is None   or res == resource)
-         and (mountType is None  or fs.startswith(mountType)) ):
             return True
 
     return False

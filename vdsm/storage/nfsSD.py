@@ -28,6 +28,7 @@ import fileUtils
 import storage_exception as se
 from storage_connection import validateDirAccess
 import outOfProcess as oop
+import mount
 
 class NfsStorageDomain(fileSD.FileStorageDomain):
 
@@ -40,8 +41,8 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         sd.validateDomainVersion(version)
 
         # Make sure the underlying file system is mounted
-        if not fileUtils.isMounted(mountPoint=domPath, mountType=fileUtils.FSTYPE_NFS):
-            raise se.StorageDomainFSNotMounted(typeSpecificArg)
+        if not mount.isMounted(domPath):
+            raise se.StorageDomainFSNotMounted(domPath)
 
         validateDirAccess(domPath)
 
@@ -123,8 +124,8 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         """
         Run internal self test
         """
-        if not fileUtils.isMounted(mountPoint=self.mountpoint, mountType=fileUtils.FSTYPE_NFS):
-            raise se.StorageDomainFSNotMounted
+        if not mount.isMounted(self.mountpoint):
+            raise se.StorageDomainFSNotMounted(self.mountpoint)
 
         # Run general part of selftest
         fileSD.FileStorageDomain.selftest(self)
@@ -139,10 +140,10 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         raise se.StorageDomainDoesNotExist(sdUUID)
 
     def getRealPath(self):
-        for mount in fileUtils.getMounts():
-            if self.mountpoint == mount[1]:
-                return mount[0]
-        return ""
+        try:
+            return mount.getMountFromTarget(self.mountpoint).fs_spec
+        except mount.MountError:
+            return ""
 
 def findDomain(sdUUID):
     return NfsStorageDomain(NfsStorageDomain.findDomainPath(sdUUID))

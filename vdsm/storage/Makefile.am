@@ -18,6 +18,7 @@ dist_vdsmstorage_DATA = \
 	fileSD.py \
 	fileUtils.py \
 	fileVolume.py \
+	fuser.py \
 	hba.py \
 	hsm.py \
 	image.py \
@@ -25,6 +26,7 @@ dist_vdsmstorage_DATA = \
 	localFsSD.py \
 	lvm.py \
 	misc.py \
+	mount.py \
 	multipath.py \
 	nfsSD.py \
 	outOfProcess.py \

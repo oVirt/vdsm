@@ -45,6 +45,8 @@ import iscsi
 import storage_exception as se
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
+import mount
+from fuser import fuser
 
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
@@ -799,7 +801,7 @@ class BlockStorageDomain(sd.StorageDomain):
         return images
 
     def validateMasterMount(self):
-        return fileUtils.isMounted(mountPoint=self.getMasterDir())
+        return mount.isMounted(self.getMasterDir())
 
     def mountMaster(self):
         """
@@ -838,18 +840,12 @@ class BlockStorageDomain(sd.StorageDomain):
         cmd = [constants.EXT_TUNE2FS, "-j", masterfsdev]
         misc.execCmd(cmd)
 
-        rc = fileUtils.mount(masterfsdev, masterDir, mountType=fileUtils.FSTYPE_EXT3)
-        # mount exit codes
-        # mount has the following return codes (the bits can be ORed):
-        # 0      success
-        # 1      incorrect invocation or permissions
-        # 2      system error (out of memory, cannot fork, no more loop devices)
-        # 4      internal mount bug or missing nfs support in mount
-        # 8      user interrupt
-        # 16     problems writing or locking /etc/mtab
-        # 32     mount failure
-        # 64     some mount succeeded
-        if rc != 0:
+        masterMount = mount.Mount(masterfsdev, masterDir)
+
+        try:
+            masterMount.mount(vfstype=mount.VFS_EXT3)
+        except mount.MountError as ex:
+            rc, out = ex
             raise se.BlockStorageDomainMasterMountError(masterfsdev, rc, out)
 
         cmd = [constants.EXT_CHOWN, "%s:%s" % (constants.METADATA_USER, constants.METADATA_GROUP), masterDir]
@@ -860,6 +856,14 @@ class BlockStorageDomain(sd.StorageDomain):
     @classmethod
     def __handleStuckUmount(cls, masterDir):
         umountPids = misc.pgrep("umount")
+        try:
+            masterMount = mount.getMountFromTarget(masterDir)
+        except OSError as ex:
+            if ex.errno == errno.ENOENT:
+                return
+
+            raise
+
         for umountPid in umountPids:
             try:
                 state = misc.pidStat(umountPid)[2]
@@ -885,10 +889,8 @@ class BlockStorageDomain(sd.StorageDomain):
                 # and wait for it to finish. That way I
                 # know that a umount ended.
                 try:
-                    rc = fileUtils.umount(mountPoint=masterDir)
-                    if rc == 0:
-                        return
-                except:
+                    masterMount.umount()
+                except mount.MountError:
                     # timeout! we are stuck again.
                     # if you are here spmprotect forgot to
                     # reboot the machine but in any case
@@ -912,28 +914,29 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         # fuser processes holding mount point and validate that the umount succeeded
         cls.__handleStuckUmount(masterdir)
-        if fileUtils.isMounted(mountPoint=masterdir):
+        try:
+            masterMount = mount.getMountFromTarget(masterdir)
+        except OSError as ex:
+            if ex.errno == errno.ENOENT:
+                return
+
+            raise
+        if masterMount.isMounted():
             # Try umount, take 1
-            fileUtils.umount(mountPoint=masterdir)
-            if fileUtils.isMounted(mountPoint=masterdir):
+            try:
+                masterMount.umount()
+            except mount.MountError:
                 # umount failed, try to kill that processes holding mount point
-                fuser_cmd = [constants.EXT_FUSER, "-m", masterdir]
-                (rc, out, err) = misc.execCmd(fuser_cmd)
+                pids = fuser(masterMount.fs_file, mountPoint=True)
 
                 # It was unmounted while I was checking no need to do anything
-                if not fileUtils.isMounted(mountPoint=masterdir):
+                if not masterMount.isMounted():
                     return
-                cls.log.warn(out)
-                if len(out) == 0:
+
+                if len(pids) == 0:
                     cls.log.warn("Unmount failed because of errors that fuser can't solve")
                 else:
-                    for match in out[0].split():
-                        try:
-                            pid = int(match)
-                        except ValueError:
-                            # Match can be "kernel"
-                            continue
-
+                    for pid in pids:
                         try:
                             cls.log.debug("Trying to kill pid %d", pid)
                             os.kill(pid, signal.SIGKILL)
@@ -948,11 +951,15 @@ class BlockStorageDomain(sd.StorageDomain):
                             cls.log.warn("Could not kill pid %d because an unexpected error", exc_info = True)
 
                 # Try umount, take 2
-                fileUtils.umount(mountPoint=masterdir)
-                if fileUtils.isMounted(mountPoint=masterdir):
+                try:
+                    masterMount.umount()
+                except mount.MountError:
+                    pass
+
+                if masterMount.isMounted():
                     # We failed to umount masterFS
                     # Forcibly rebooting the SPM host would be safer. ???
-                    raise se.StorageDomainMasterUnmountError(masterdir, rc)
+                    raise se.StorageDomainMasterUnmountError(masterdir, 1)
 
     def unmountMaster(self):
         """

@@ -28,9 +28,11 @@ import fileUtils
 import sd
 import storage_exception as se
 import outOfProcess as oop
-from processPool import Timeout
 import supervdsm
 import constants
+import mount
+
+CON_TIMEOUT = config.getint("irs", "process_pool_timeout")
 
 getProcPool = oop.getGlobalProcPool
 
@@ -95,7 +97,7 @@ class StorageServerConnection:
         conParams = self.__validateConnectionParams(domType, conList)
 
         if domType == sd.NFS_DOMAIN:
-            return self.__connectFileServer(conParams, fileUtils.FSTYPE_NFS)
+            return self.__connectFileServer(conParams)
         elif domType == sd.LOCALFS_DOMAIN:
             return self.__connectLocalConnection(conParams)
         elif domType in sd.BLOCK_DOMAIN_TYPES:
@@ -127,7 +129,7 @@ class StorageServerConnection:
         conParams = self.__validateConnectionParams(domType, conList)
 
         if domType == sd.NFS_DOMAIN:
-            return self.__validateFileServer(conParams, fileUtils.FSTYPE_NFS)
+            return self.__validateFileServer(conParams)
         elif domType == sd.LOCALFS_DOMAIN:
             return self.__validateLocalConnection(conParams)
         elif domType in sd.BLOCK_DOMAIN_TYPES:
@@ -135,7 +137,7 @@ class StorageServerConnection:
         else:
             raise se.InvalidParameterException("type", domType)
 
-    def __connectFileServer(self, conParams, fsType):
+    def __connectFileServer(self, conParams):
         """
         Connect to a storage low level entity.
         """
@@ -148,41 +150,45 @@ class StorageServerConnection:
                 mntPoint = fileUtils.transformPath(con['rp'])
                 mntPath = os.path.join(localPath, mntPoint)
 
-                if fsType == fileUtils.FSTYPE_NFS:
-                    # Stale handle usually resolves itself when doing directory lookups
-                    # BUT if someone deletes the export on the servers side. We will keep
-                    # getting stale handles and this is unresolvable unless you umount and
-                    # remount.
-                    if getProcPool().fileUtils.isStaleHandle(mntPath):
-                        # A VM might be holding a stale handle, we have to umount
-                        # but we can't umount as long as someone is holding a handle
-                        # even if it's stale. We use lazy so we can at least recover.
-                        # Processes having an open file handle will not recover until
-                        # they reopen the files.
-                        getProcPool().fileUtils.umount(con['rp'], mntPath, lazy=True)
+                rc = 0
+                mnt = mount.Mount(con['rp'], mntPath, timeout=CON_TIMEOUT)
 
-                fileUtils.createdir(mntPath)
+                # Stale handle usually resolves itself when doing directory lookups
+                # BUT if someone deletes the export on the servers side. We will keep
+                # getting stale handles and this is unresolvable unless you umount and
+                # remount.
+                if getProcPool().fileUtils.isStaleHandle(mnt.fs_file):
+                    # A VM might be holding a stale handle, we have to umount
+                    # but we can't umount as long as someone is holding a handle
+                    # even if it's stale. We use lazy so we can at least recover.
+                    # Processes having an open file handle will not recover until
+                    # they reopen the files.
+                    mnt.umount(lazy=True)
 
-                rc = getProcPool().fileUtils.mount(con['rp'], mntPath, fsType)
-                if rc == 0:
-                    try:
-                        validateDirAccess(mntPath)
-                    except se.StorageServerAccessPermissionError, ex:
-                        self.log.debug("Unmounting file system %s "
-                            "(not enough access permissions)" % con['rp'])
-                        getProcPool().fileUtils.umount(con['rp'], mntPath, fsType)
-                        raise
-                else:
-                    self.log.error("Error during storage connection: rc=%s", rc, exc_info=True)
+                fileUtils.createdir(mnt.fs_file)
+
+                try:
+                    if not mnt.isMounted():
+                        mnt.mount(fileUtils.NFS_OPTIONS, mount.VFS_NFS, timeout=CON_TIMEOUT)
+                except mnt.MountError:
+                    self.log.error("Error during storage connection", exc_info=True)
                     rc = se.StorageServerConnectionError.code
+
+                try:
+                    validateDirAccess(mnt.fs_file)
+                except se.StorageServerAccessPermissionError:
+                    self.log.debug("Unmounting file system %s "
+                        "(not enough access permissions)", con['rp'])
+                    mnt.umount(timeout=CON_TIMEOUT)
+                    raise
 
             # We should return error status instead of exception itself
             except se.StorageException, ex:
                 rc = ex.code
-                self.log.error("Error during storage connection: %s", str(ex), exc_info=True)
-            except Exception, ex:
+                self.log.error("Error during storage connection", exc_info=True)
+            except Exception:
                 rc = se.StorageServerConnectionError.code
-                self.log.error("Error during storage connection: %s", str(ex), exc_info=True)
+                self.log.error("Error during storage connection", exc_info=True)
 
             conStatus.append({'id':con['cid'], 'status': rc})
         return conStatus
@@ -245,7 +251,7 @@ class StorageServerConnection:
 
         return conStatus
 
-    def __validateFileServer(self, conParams, fsType):
+    def __validateFileServer(self, conParams):
         """
         Validate that we can connect to a storage server.
         """
@@ -253,22 +259,29 @@ class StorageServerConnection:
 
         for con in conParams:
             try:
+                rc = 0
                 mountpoint = tempfile.mkdtemp()
+                mnt = mount.Mount(con['rp'], mountpoint, timeout=CON_TIMEOUT)
                 try:
-                    rc = getProcPool().fileUtils.mount(con['rp'], mountpoint, fsType)
-                    if rc == 0:
-                        try:
-                            validateDirAccess(mountpoint)
-                        except se.StorageServerAccessPermissionError, ex:
-                            rc = ex.code
-                    else:
-                        self.log.error("Error during storage connection validation: rc=%s", rc, exc_info=True)
+                    try:
+                        mnt.mount(fileUtils.NFS_OPTIONS, mount.VFS_NFS)
+                    except mount.MountError:
+                        self.log.error("Error during storage connection validation", exc_info=True)
                         rc = se.StorageServerValidationError.code
+                        continue
+
+                    try:
+                        validateDirAccess(mountpoint)
+                    except se.StorageServerAccessPermissionError, ex:
+                        rc = ex.code
                 finally:
                     try:
-                        getProcPool().fileUtils.umount(con['rp'], mountpoint, fsType)
+                        if mnt.isMounted():
+                            mnt.umount(timeout=CON_TIMEOUT)
+                    except mount.MountError:
+                        self.log.error("Error cleaning mount %s", mnt)
                     finally:
-                        getProcPool().os.rmdir(mountpoint)
+                        getProcPool().os.rmdir(mnt.fs_file)
 
             except se.StorageException, ex:
                 rc = ex.code
@@ -276,8 +289,8 @@ class StorageServerConnection:
             except Exception, ex:
                 rc = se.StorageServerValidationError.code
                 self.log.error("Error during storage connection validation: %s", str(ex), exc_info=True)
-
-            conStatus.append({'id':con['cid'], 'status': rc})
+            finally:
+                conStatus.append({'id':con['cid'], 'status': rc})
         return conStatus
 
     def __validateLocalConnection(self, conParams):
@@ -317,6 +330,13 @@ class StorageServerConnection:
 
         return conStatus
 
+    def __getConnectionDictMount(self, con):
+        localPath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
+        mntPoint = fileUtils.transformPath(con['rp'])
+        mntPath = os.path.join(localPath, mntPoint)
+
+        return mount.Mount(con['rp'], mntPath)
+
     def __disconnectFileServer(self, conParams, fsType):
         """
         Disconnect from a storage low level entity (server).
@@ -325,33 +345,33 @@ class StorageServerConnection:
 
         for con in conParams:
             try:
-                localPath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
-                mntPoint = fileUtils.transformPath(con['rp'])
-                mntPath = os.path.join(localPath, mntPoint)
-
-                rc = getProcPool().fileUtils.umount(con['rp'], mntPath, fsType)
-                if rc == 0:
-                    try:
-                        getProcPool().os.rmdir(mntPath)
-                    except (OSError, Timeout):
-                        # Report the error to the log, but keep going,
-                        # afterall we succeeded to disconnect the FS server
-                        msg = ("Cannot remove mountpoint after umount()")
-                        self.log.warning(msg, exc_info=True)
-
-                else:
-                    self.log.error("Error during storage disconnection: rc=%s", rc, exc_info=True)
+                try:
+                    rc = 0
+                    mnt = self.__getConnectionDictMount(con)
+                    if mnt.isMounted():
+                        mnt.umount(timeout=CON_TIMEOUT)
+                except mount.MountError:
+                    self.log.error("Error during storage disconnection", exc_info=True)
                     rc = se.StorageServerDisconnectionError.code
+                    continue
+
+                try:
+                    os.rmdir(mnt.fs_file)
+                except OSError:
+                    # Report the error to the log, but keep going,
+                    # afterall we succeeded in disconnecting the NFS server
+                    self.log.warning("Cannot remove mountpoint after umount()", exc_info=True)
 
             # We should return error status instead of exception itself
             except se.StorageException, ex:
                 rc = ex.code
-                self.log.error("Error during storage disconnection: %s", str(ex), exc_info=True)
+                self.log.error("Error during storage disconnection:", exc_info=True)
             except Exception, ex:
                 rc = se.StorageException.code
-                self.log.error("Error during storage disconnection: %s", str(ex), exc_info=True)
+                self.log.error("Error during storage disconnection:", exc_info=True)
+            finally:
+                conStatus.append({'id':con['cid'], 'status': rc})
 
-            conStatus.append({'id':con['cid'], 'status': rc})
         return conStatus
 
     def __disconnectLocalConnection(self, conParams):

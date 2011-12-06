@@ -48,6 +48,7 @@ from resourceFactories import IMAGE_NAMESPACE
 from storageConstants import STORAGE
 import resourceManager as rm
 import volume
+import mount
 
 BLANK_POOL_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -418,7 +419,7 @@ class StoragePool:
         masters = os.path.join(cls.storage_repository, sd.DOMAIN_MNT_POINT,
                                sd.BLOCKSD_DIR, "*", sd.MASTER_FS_DIR)
         for master in glob(masters):
-            if fileUtils.isMounted(mountPoint=master):
+            if mount.isMounted(master):
                 cls.log.debug("unmounting %s", master)
                 try:
                     blockSD.BlockStorageDomain.doUnmountMaster(master)

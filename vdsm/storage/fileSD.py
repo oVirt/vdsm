@@ -33,6 +33,7 @@ from processPool import Timeout
 from persistentDict import PersistentDict, DictValidator
 import constants
 import time
+import mount
 
 REMOTE_PATH = "REMOTE_PATH"
 
@@ -291,8 +292,8 @@ class FileStorageDomain(sd.StorageDomain):
                 # that is the most intelligent thing we can do in this
                 # situation anyway.
                 self.log.debug("Unmounting stale file system %s", self.mountpoint)
-                self.oop.fileUtils.umount(mountPoint=self.mountpoint)
-                raise se.FileStorageDomainStaleNFSHandle
+                mount.getMountFromTarget(self.mountpoint).umount()
+                raise se.FileStorageDomainStaleNFSHandle()
             raise
 
     def imageGarbageCollector(self):
