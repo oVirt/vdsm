@@ -47,6 +47,7 @@ except ImportError:
 # Path constants
 P_BIN = '/bin/'
 P_ETC_INITD = '/etc/init.d/'
+P_LIB_SYSTEMD = '/lib/systemd/systemd-'
 P_ROOT_SSH = '/root/.ssh'
 P_ROOT_AUTH_KEYS = P_ROOT_SSH + '/authorized_keys'
 P_SBIN = '/sbin/'
@@ -461,6 +462,9 @@ def setService(srvName, action):
     """
         Perform an action (stop/start/status/...) on a service
     """
+
+    srvCtlName = srvName + ".service"
+
     nReturn = 0
     out = None
     err = None
@@ -471,6 +475,8 @@ def setService(srvName, action):
         logging.error(message)
     elif os.path.exists(P_ETC_INITD + srvName):
         out, err, nReturn = _logExec([EX_SERVICE, srvName, action])
+    elif os.path.exists(P_LIB_SYSTEMD + srvName):
+        out, err, nReturn = _logExec([EX_SYSTEMCTL, action, srvCtlName])
     else:
         nReturn = 1
         err = "No such service: " + srvName
