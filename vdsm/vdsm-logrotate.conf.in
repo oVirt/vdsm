@@ -16,4 +16,5 @@
     compresscmd /usr/bin/xz
     uncompresscmd /usr/bin/unxz
     compressext .xz
+    su @VDSMUSER@ @VDSMGROUP@
 }

@@ -176,5 +176,6 @@ AC_OUTPUT([
 	vdsm/constants.py.in
 	vdsm/sudoers.vdsm.in
 	vdsm/mk_sysprep_floppy
+	vdsm/vdsm-logrotate.conf
 	vdsm_reg/deployUtil.py
 ])
