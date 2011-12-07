@@ -354,7 +354,12 @@ def isOvirt():
     """
         This function checks if current machine runs ovirt platform.
     """
-    return os.path.exists('/etc/rhev-hypervisor-release')
+    if os.path.exists('/etc/rhev-hypervisor-release'):
+        return True
+    elif os.path.exists('/etc/ovirt-node-image-release'):
+        return True
+    else:
+        return False
 
 def getOSVersion():
     """
