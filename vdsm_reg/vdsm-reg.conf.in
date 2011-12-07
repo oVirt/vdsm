@@ -14,7 +14,7 @@ vdc_host_port=8443
 #The ssh file uri
 vdc_authkeys_path=/rhevm.ssh.key.txt
 #The registrtion uri
-vdc_reg_uri=/RHEVManagerWeb/VdsAutoRegistration.aspx
+vdc_reg_uri=/OvirtEngineWeb/register
 #Upgrade settings
 upgrade_iso_file=/data/updates/ovirt-node-image.iso
 upgrade_mount_point=@VDSMRUNDIR@/image-update
