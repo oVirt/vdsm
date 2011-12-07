@@ -796,3 +796,8 @@ class memoized(object):
     def __get__(self, obj, objtype):
         """Support instance methods."""
         return functools.partial(self.__call__, obj)
+
+def validateMinimalKeySet(dictionary, reqParams):
+    if not all(key in dictionary for key in reqParams):
+        raise ValueError
+
