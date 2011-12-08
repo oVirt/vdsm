@@ -55,6 +55,7 @@ class timespec(C.Structure):
 
 
 class PthreadMutex(object):
+    __slots__ = ("_mutex")
     def __init__(self, attr=None):
         self._mutex = MUTEX_T()
         res = _libpthread.pthread_mutex_init(self._mutex, attr)
@@ -81,6 +82,7 @@ class PthreadMutex(object):
 
 
 class PthreadCond(object):
+    __slots__ = ("_lock", "_cond")
     def __init__(self, attr=None, mutex=None):
         self._cond = COND_T()
         self._lock = mutex
