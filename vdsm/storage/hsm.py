@@ -1901,7 +1901,7 @@ class HSM:
         if storageType in sd.BLOCK_DOMAIN_TYPES:
             newSD = blockSD.BlockStorageDomain.create(sdUUID, domainName,
                     domClass, typeSpecificArg, storageType, domVersion)
-        elif storageType == sd.NFS_DOMAIN:
+        elif storageType in (sd.NFS_DOMAIN, sd.SHAREDFS_DOMAIN):
             newSD = nfsSD.NfsStorageDomain.create(sdUUID, domainName, domClass,
                     typeSpecificArg, storageType, domVersion)
         elif storageType == sd.LOCALFS_DOMAIN:

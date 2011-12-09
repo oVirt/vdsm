@@ -42,8 +42,13 @@ def validateDirAccess(dirPath):
             (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
             (os.R_OK | os.X_OK))
 
-PARAMS_FILE_DOMAIN = (('cid', 'id'), ('rp', 'connection'))
-PARAMS_BLOCK_DOMAIN = (
+PARAMS_LOCALFS = PARAMS_NFS = (('cid', 'id'), ('rp', 'connection'))
+PARAMS_SHAREDFS = (
+        ('cid', 'id'),
+        ('rp', 'spec'),
+        ('vfs_type', 'vfs_type'),
+        ('mnt_options', 'mnt_options', ""))
+PARAMS_BLOCK = (
         ('cid', 'id'),
         ('ip', 'connection'),
         ('iqn', 'iqn'),
@@ -53,21 +58,32 @@ PARAMS_BLOCK_DOMAIN = (
         ('port', 'port'),
         ('initiatorName', 'initiatorName', None))
 
+PARAM_VALIDATION_REGISTRAR = {
+        sd.LOCALFS_DOMAIN: PARAMS_LOCALFS,
+        sd.NFS_DOMAIN: PARAMS_NFS,
+        sd.ISCSI_DOMAIN: PARAMS_BLOCK,
+        # We should fail fcp connnections, old vdsms don't do it so I'm leaving
+        # it as is. In the future please prevent this.
+        sd.FCP_DOMAIN: PARAMS_BLOCK,
+        sd.SHAREDFS_DOMAIN: PARAMS_SHAREDFS }
+
+def getMountRoot():
+    storage_repository = config.get('irs', 'repository')
+    localPath = os.path.join(storage_repository, sd.DOMAIN_MNT_POINT)
+    fileUtils.createdir(localPath)
+    return localPath
+
 class StorageServerConnection:
     log = logging.getLogger('Storage.ServerConnection')
-    storage_repository = config.get('irs', 'repository')
 
     def __validateConnectionParams(self, domType, conList):
         """
         Validate connection parameters
         """
         conParamsList = []
-
-        if domType in sd.FILE_DOMAIN_TYPES:
-            paramInfos = PARAMS_FILE_DOMAIN
-        elif domType in sd.BLOCK_DOMAIN_TYPES:
-            paramInfos = PARAMS_BLOCK_DOMAIN
-        else:
+        try:
+            paramInfos = PARAM_VALIDATION_REGISTRAR[domType]
+        except KeyError:
             raise se.InvalidParameterException("type", domType)
 
         for con in conList:
@@ -117,6 +133,8 @@ class StorageServerConnection:
 
         if domType == sd.NFS_DOMAIN:
             func = self.__connectNFSServer
+        elif domType == sd.SHAREDFS_DOMAIN:
+            func = self.__connectSharedFS
         elif domType == sd.LOCALFS_DOMAIN:
             func = self.__connectLocalConnection
         elif domType in sd.BLOCK_DOMAIN_TYPES:
@@ -135,6 +153,8 @@ class StorageServerConnection:
         conParams = self.__validateConnectionParams(domType, conList)
 
         if domType == sd.NFS_DOMAIN:
+            func = self.__disconnectNFSServer
+        elif domType == sd.SHAREDFS_DOMAIN:
             func = self.__disconnectNFSServer
         elif domType == sd.LOCALFS_DOMAIN:
             func = self.__disconnectLocalConnection
@@ -157,6 +177,8 @@ class StorageServerConnection:
             func = self.__validateNFSServer
         elif domType == sd.LOCALFS_DOMAIN:
             func = self.__validateLocalConnection
+        elif domType == sd.SHAREDFS_DOMAIN:
+            func = self.__validateSharedFS
         elif domType in sd.BLOCK_DOMAIN_TYPES:
             func = self.__validateiSCSIConnection
         else:
@@ -165,18 +187,37 @@ class StorageServerConnection:
         return self.__processConnections(func, conParams,
                 se.StorageServerValidationError.code)
 
+    def __connectSharedFS(self, con):
+        """
+        Connect to a storage low level entity.
+        """
+        rc = 0
+        mnt = self.__getConnectionDictMount(con)
+        fileUtils.createdir(mnt.fs_file)
+
+        try:
+            if not mnt.isMounted():
+                mnt.mount(con['mnt_options'], con['vfs_type'])
+        except mount.MountError:
+            self.log.error("Error during storage connection", exc_info=True)
+            rc = se.StorageServerConnectionError.code
+
+        try:
+            validateDirAccess(mnt.fs_file)
+        except se.StorageServerAccessPermissionError:
+            self.log.debug("Unmounting file system %s "
+                "(not enough access permissions)", con['rp'])
+            mnt.umount()
+            raise
+
+        return rc
+
     def __connectNFSServer(self, con):
         """
         Connect to a storage low level entity.
         """
-        localPath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
-        fileUtils.createdir(localPath)
-
-        mntPoint = fileUtils.transformPath(con['rp'])
-        mntPath = os.path.join(localPath, mntPoint)
-
         rc = 0
-        mnt = mount.Mount(con['rp'], mntPath)
+        mnt = self.__getConnectionDictMount(con)
 
         # Stale handle usually resolves itself when doing directory lookups
         # BUT if someone deletes the export on the servers side. We will keep
@@ -195,7 +236,7 @@ class StorageServerConnection:
         try:
             if not mnt.isMounted():
                 mnt.mount(fileUtils.NFS_OPTIONS, mount.VFS_NFS, timeout=CON_TIMEOUT)
-        except mnt.MountError:
+        except mount.MountError:
             self.log.error("Error during storage connection", exc_info=True)
             rc = se.StorageServerConnectionError.code
 
@@ -213,8 +254,7 @@ class StorageServerConnection:
         """
         Connect to a storage low level entity.
         """
-        localPath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
-        fileUtils.createdir(localPath)
+        localPath = getMountRoot()
 
         rc = 0
         if os.path.exists(con['rp']):
@@ -239,6 +279,16 @@ class StorageServerConnection:
             iscsi.addiSCSINode(con['ip'], con['port'], con['iqn'],
                 con['tpgt'], con['initiatorName'],
                 con['user'], con['password'])
+        return 0
+
+    def __validateSharedFS(self, con):
+        """
+        Validate that we can connect to a storage server.
+        """
+        # This function is silly, it's not atomic and isn't faster then the
+        # regular connect. If you want to connect just connect. I refuse to
+        # play this game. In the future see if all validations can be removed
+        # and replaced with stubs.
         return 0
 
     def __validateNFSServer(self, con):
@@ -290,7 +340,7 @@ class StorageServerConnection:
         return 0
 
     def __getConnectionDictMount(self, con):
-        localPath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
+        localPath = getMountRoot()
         mntPoint = fileUtils.transformPath(con['rp'])
         mntPath = os.path.join(localPath, mntPoint)
 
@@ -317,7 +367,6 @@ class StorageServerConnection:
             self.log.warning("Cannot remove mountpoint after umount()", exc_info=True)
 
         return rc
-
 
     def __disconnectLocalConnection(self, con):
         """
