@@ -89,25 +89,6 @@ class StorageServerConnection:
 
         return conParamsList
 
-    def connect(self, domType, conList):
-        """
-        Connect to a storage low level entity (server).
-        """
-        self.log.info("Request to connect %s storage server", sd.type2name(domType))
-        conParams = self.__validateConnectionParams(domType, conList)
-
-        if domType == sd.NFS_DOMAIN:
-            func = self.__connectNFSServer
-        elif domType == sd.LOCALFS_DOMAIN:
-            func = self.__connectLocalConnection
-        elif domType in sd.BLOCK_DOMAIN_TYPES:
-            func = self.__connectiSCSIServer
-        else:
-            raise se.InvalidParameterException("type", domType)
-
-        return self.__processConnections(func, conParams,
-                se.StorageServerConnectionError.code)
-
 
     def __processConnections(self, func, conParams,
             defaultErrCode=se.StorageServerConnectionError.code):
@@ -127,7 +108,24 @@ class StorageServerConnection:
 
         return conStatus
 
+    def connect(self, domType, conList):
+        """
+        Connect to a storage low level entity (server).
+        """
+        self.log.info("Request to connect %s storage server", sd.type2name(domType))
+        conParams = self.__validateConnectionParams(domType, conList)
 
+        if domType == sd.NFS_DOMAIN:
+            func = self.__connectNFSServer
+        elif domType == sd.LOCALFS_DOMAIN:
+            func = self.__connectLocalConnection
+        elif domType in sd.BLOCK_DOMAIN_TYPES:
+            func = self.__connectiSCSIServer
+        else:
+            raise se.InvalidParameterException("type", domType)
+
+        return self.__processConnections(func, conParams,
+                se.StorageServerConnectionError.code)
 
     def disconnect(self, domType, conList):
         """

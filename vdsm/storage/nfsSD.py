@@ -84,7 +84,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
             isoDir = os.path.join(imagesDir, sd.ISO_IMAGE_UUID)
             oop.getProcessPool(sdUUID).fileUtils.createdir(isoDir)
 
-        fsd = NfsStorageDomain(os.path.join(mntPoint, sdUUID))
+        fsd = cls(os.path.join(mntPoint, sdUUID))
         fsd.initSPMlease()
 
         return fsd
@@ -133,8 +133,8 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
     @staticmethod
     def findDomainPath(sdUUID):
-        for tmpSdUUID, domainPath in fileSD.scanDomains("[!_]*:*"):
-            if tmpSdUUID == sdUUID:
+        for tmpSdUUID, domainPath in fileSD.scanDomains("*"):
+            if tmpSdUUID == sdUUID and mount.isMounted(os.path.join(domainPath, "..")):
                 return domainPath
 
         raise se.StorageDomainDoesNotExist(sdUUID)
