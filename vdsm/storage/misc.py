@@ -1295,7 +1295,8 @@ def itmap(func, iterable):
 
 # Upon import determine if we are running on ovirt
 try:
-    OVIRT_NODE = os.path.exists('/etc/rhev-hypervisor-release')
+    OVIRT_NODE = os.path.exists('/etc/rhev-hypervisor-release') or \
+        os.path.exists('/etc/ovirt-node-image-release')
 except:
     pass
 
