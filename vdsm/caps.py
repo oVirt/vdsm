@@ -42,8 +42,9 @@ import storage.hba
 
 class OSName:
     UNKNOWN = 'unknown'
-    OVIRT = 'RHEV Hypervisor'
+    OVIRT = 'oVirt Node'
     RHEL = 'RHEL'
+    RHEVH = 'RHEV Hypervisor'
 
 class CpuInfo(object):
     def __init__(self):
@@ -125,6 +126,8 @@ def _getIscsiIniName():
 
 def getos():
     if os.path.exists('/etc/rhev-hypervisor-release'):
+        return OSName.RHEV
+    elif os.path.exists('/etc/ovirt-node-image-release'):
         return OSName.OVIRT
     elif os.path.exists('/etc/redhat-release'):
         return OSName.RHEL
@@ -141,7 +144,7 @@ def osversion():
 
     osname = getos()
     try:
-        if osname == OSName.OVIRT:
+        if osname == OSName.RHEVH:
             d = _parseKeyVal( file('/etc/default/version') )
             version = d.get('VERSION', '')
             release = d.get('RELEASE', '')

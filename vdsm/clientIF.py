@@ -1009,7 +1009,8 @@ class clientIF:
                 for entry in entries:
                     if entry.getAttribute("name") == "product":
                         prod = entry.firstChild.data
-                        if prod == caps.OSName.RHEL or prod == caps.OSName.OVIRT:
+                        if prod in (caps.OSName.RHEL, caps.OSName.OVIRT, \
+                                caps.OSName.RHEVH):
                             return True
         return False
 
