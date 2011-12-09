@@ -60,6 +60,7 @@ Requires: psmisc >= 22.6-15
 Requires: fence-agents
 Requires: bridge-utils
 Requires: sos
+Requires: tree
 Requires: dosfstools
 Requires: policycoreutils-python
 Requires: libselinux-python
