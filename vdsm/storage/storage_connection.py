@@ -97,7 +97,7 @@ class StorageServerConnection:
         conParams = self.__validateConnectionParams(domType, conList)
 
         if domType == sd.NFS_DOMAIN:
-            func = self.__connectFileServer
+            func = self.__connectNFSServer
         elif domType == sd.LOCALFS_DOMAIN:
             func = self.__connectLocalConnection
         elif domType in sd.BLOCK_DOMAIN_TYPES:
@@ -137,7 +137,7 @@ class StorageServerConnection:
         conParams = self.__validateConnectionParams(domType, conList)
 
         if domType == sd.NFS_DOMAIN:
-            func = self.__disconnectFileServer
+            func = self.__disconnectNFSServer
         elif domType == sd.LOCALFS_DOMAIN:
             func = self.__disconnectLocalConnection
         elif domType in sd.BLOCK_DOMAIN_TYPES:
@@ -156,7 +156,7 @@ class StorageServerConnection:
         conParams = self.__validateConnectionParams(domType, conList)
 
         if domType == sd.NFS_DOMAIN:
-            func = self.__validateFileServer
+            func = self.__validateNFSServer
         elif domType == sd.LOCALFS_DOMAIN:
             func = self.__validateLocalConnection
         elif domType in sd.BLOCK_DOMAIN_TYPES:
@@ -167,7 +167,7 @@ class StorageServerConnection:
         return self.__processConnections(func, conParams,
                 se.StorageServerValidationError.code)
 
-    def __connectFileServer(self, con):
+    def __connectNFSServer(self, con):
         """
         Connect to a storage low level entity.
         """
@@ -243,7 +243,7 @@ class StorageServerConnection:
                 con['user'], con['password'])
         return 0
 
-    def __validateFileServer(self, con):
+    def __validateNFSServer(self, con):
         """
         Validate that we can connect to a storage server.
         """
@@ -298,7 +298,7 @@ class StorageServerConnection:
 
         return mount.Mount(con['rp'], mntPath)
 
-    def __disconnectFileServer(self, con):
+    def __disconnectNFSServer(self, con):
         """
         Disconnect from a storage low level entity (server).
         """
