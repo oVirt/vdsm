@@ -293,11 +293,9 @@ class Vm(object):
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._guestSocektFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
                                 '.guest.socket'
-        self._drives = []
         self._incomingMigrationFinished = threading.Event()
         self.id = self.conf['vmId']
         self._volPrepareLock = threading.Lock()
-        self._preparedDrives = {}
         self._initTimePauseCode = None
         self.guestAgent = None
         self._guestEvent = 'Powering up'
@@ -307,6 +305,10 @@ class Vm(object):
         self._guestCpuLock = threading.Lock()
         self._startTime = time.time() - float(
                                 self.conf.pop('elapsedTimeOffset', 0))
+
+        self._usedIndices = {} #{'ide': [], 'virtio' = []}
+        self._preparedDrives = {}
+        self._drives = []
         self._cdromPreparedPath = ''
         self._floppyPreparedPath = ''
         self._volumesPrepared = False
@@ -334,6 +336,54 @@ class Vm(object):
             self._lastStatus = value
 
     lastStatus = property(_get_lastStatus, _set_lastStatus)
+
+    def __getNextIndex(self, used):
+        for n in xrange(max(used or [0]) + 2):
+            if n not in used:
+                index = n
+                break
+        return index
+
+    def __normalizeVdsmImg(self, drv):
+        drv['needExtend'] = False
+        drv['reqsize'] = int(drv.get('reqsize', '0'))
+        res = self.cif.irs.getVolumeSize(drv['domainID'],
+                             drv['poolID'], drv['imageID'],
+                             drv['volumeID'])
+        drv['truesize'] = int(res['truesize'])
+        drv['apparentsize'] = int(res['apparentsize'])
+        drv['blockDev'] = not self.cif.irs.getStorageDomainInfo(
+                    drv['domainID'])['info']['type'] in ('NFS', 'LOCALFS')
+
+    def getConfDrives(self):
+        """
+        Normalize drives provided by conf.
+        """
+        # FIXME
+        # Will be better to change the self.conf but this implies an API change.
+        # Remove this when the API parameters will be consistent.
+
+        confDrives = self.conf['drives'] if self.conf['drives'] else []
+        drives = [(order, drv) for order, drv in enumerate(confDrives)]
+        indexed = []
+        for order, drv in drives:
+            try:
+                drv['iface'] = self.conf.pop('if')
+            except KeyError:
+                drv['iface'] = 'ide'
+            if not self._usedIndices.has_key(drv['iface']):
+                self._usedIndices[drv['iface']] = []
+            index = drv.get('index')
+            if index is not None:
+                self._usedIndices[drv['iface']].append(index)
+                indexed.append(order)
+            if isVdsmImage(drv):
+                self.__normalizeVdsmImg(drv)
+        for order, drv in drives:
+            if order not in indexed:
+                drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
+                self._usedIndices[drv['iface']].append(drv['index'])
+        return [drv for order, drv in drives]
 
     def run(self):
         self._creationThread.start()
@@ -402,35 +452,8 @@ class Vm(object):
 
         return volPath
 
-    def _initDriveList(self, drives):
-        vindex = 0
-        for d in drives:
-            if d.get('if') == 'virtio' and not 'index' in d:
-                d['index'] = str(vindex)
-                vindex += 1
-
-        for index, drive in zip(range(len(drives)), drives):
-            if not drive.get('if'):
-                drive['if'] = 'ide'
-                drive['index'] = index
-            if not drive.get('serial') and drive.get('imageID'):
-                drive['serial'] = drive['imageID'][-20:]
-
-            try:
-                res = self.cif.irs.getVolumeSize(drive['domainID'],
-                                     drive['poolID'], drive['imageID'],
-                                     drive['volumeID'])
-            except KeyError:
-                self.log.info("Ignoring drive %s", str(drive))
-            else:
-                drive['truesize'] = res['truesize']
-                drive['apparentsize'] = res['apparentsize']
-                drive['blockDev'] = not self.cif.irs.getStorageDomainInfo(
-                            drive['domainID'])['info']['type'] in ('NFS', 'LOCALFS')
-                self._drives.append(Drive(**drive))
-
-    def preparePaths(self):
-        for drive in self.conf.get('drives', []):
+    def preparePaths(self, drives):
+        for drive in drives:
             drive['path'] = self._prepareVolumePath(drive)
         # Now we got all needed resources
         self._volumesPrepared = True
@@ -563,7 +586,7 @@ class Vm(object):
 
             # store most recently requested size in conf, to be re-requested on
             # migration destination
-            for drive in self.conf.get('drives', []):
+            for drive in self.getConfDrives():
                 if drive.get('volumeID') == d.volumeID:
                     drive['reqsize'] = str(d.reqsize)
 

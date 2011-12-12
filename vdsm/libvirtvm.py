@@ -1074,14 +1074,15 @@ class LibvirtVm(vm.Vm):
         self.log.info("VM wrapper has started")
         self.conf['smp'] = self.conf.get('smp', '1')
 
-        if 'recover' in self.conf:
-            for drive in self.conf.get('drives', []):
-                self._drives.append(vm.Drive(**drive))
-        else:
-            self.preparePaths()
-            self._initDriveList(self.conf.get('drives', []))
-            # We should set this event as a last part of drives initialization
-            self._pathsPreparedEvent.set()
+        drives = self.getConfDrives()
+        # TODO: In recover should loop over disks running on the VM because
+        # conf may be outdated if something happened during restart.
+        if not 'recover' in self.conf:
+            self.preparePaths(drives)
+        for drive in drives:
+            self._drives.append(vm.Drive(**drive))
+        # We should set this event as a last part of drives initialization
+        self._pathsPreparedEvent.set()
 
         if self.conf.get('migrationDest'):
             return
