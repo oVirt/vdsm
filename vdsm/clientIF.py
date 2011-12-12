@@ -569,7 +569,7 @@ class clientIF:
     def _prepareVolumePath(self, drive):
         if type(drive) == dict:
             # drive specification is a quartet (vdsm image)?
-            if all(k in drive.keys() for k in ('volumeID', 'domainID', 'imageID', 'poolID')):
+            if vm.isVdsmImage(drive):
                 res = self.irs.prepareVolume(drive['domainID'], drive['poolID'],
                                 drive['imageID'], drive['volumeID'])
                 if res['status']['code']:

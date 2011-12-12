@@ -37,6 +37,11 @@ import vdscli
 A module containing classes needed for VM communication.
 """
 
+def isVdsmImage(drive):
+    return all(k in drive.keys() for k in ('volumeID', 'domainID', 'imageID',
+                'poolID'))
+
+
 class Drive:
     def __init__(self, poolID, domainID, imageID, volumeID, path, truesize,
             apparentsize, blockDev, index='', unit='', serial='',
