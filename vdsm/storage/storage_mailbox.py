@@ -137,16 +137,16 @@ class SPM_Extend_Message:
         volume['poolID'] = pool.spUUID
         volume['domainID'] = misc.unpackUuid(payload[sdOffset : sdOffset+PACKED_UUID_SIZE])
         volume['volumeID'] = misc.unpackUuid(payload[volumeOffset : volumeOffset+PACKED_UUID_SIZE])
-
-        cls.log.info("processRequest: extending volume: %s in domain: %s in pool %s", volume['volumeID'], volume['domainID'], volume['poolID'])
-
         size = int(payload[sizeOffset:sizeOffset + SIZE_CHARS], 16)
+
+        cls.log.info("processRequest: extending volume %s "
+                     "in domain %s (pool %s) to size %d", volume['volumeID'],
+                     volume['domainID'], volume['poolID'], size)
 
         msg = None
         try:
             try:
-                # Size passed in mailbox is in MBs but extendVolume expects size in bytes
-                pool.extendVolume(volume['domainID'], volume['volumeID'], size * 2**20)
+                pool.extendVolume(volume['domainID'], volume['volumeID'], size)
                 msg = SPM_Extend_Message(volume, size)
             except:
                 cls.log.error("processRequest: Exception caught while trying to extend volume: %s in domain: %s, trace: %s",
