@@ -126,7 +126,7 @@ def _getIscsiIniName():
 
 def getos():
     if os.path.exists('/etc/rhev-hypervisor-release'):
-        return OSName.RHEV
+        return OSName.RHEVH
     elif os.path.exists('/etc/ovirt-node-image-release'):
         return OSName.OVIRT
     elif os.path.exists('/etc/redhat-release'):
