@@ -537,6 +537,22 @@ class _DomXML:
         self._devices = self.doc.createElement('devices')
         self.dom.appendChild(self._devices)
 
+    def appendConsole(self):
+        """
+        Add <console> elelemt to domain
+
+        <console type='pty'>
+           <target type='virtio' port='0'/>
+        </console>
+        """
+        m = self.doc.createElement('console')
+        m.setAttribute('type', 'pty')
+        t = self.doc.createElement('target')
+        t.setAttribute('port', '0')
+        t.setAttribute('type', 'virtio')
+        m.appendChild(t)
+        self._devices.appendChild(m)
+
     def appendClock(self):
         """
         Add <clock> element to domain:
@@ -1113,6 +1129,7 @@ class LibvirtVm(vm.Vm):
         domxml._appendBalloon()
         domxml.appendInput()
         domxml.appendGraphics()
+        domxml.appendConsole()
 
         for devType in self._devices:
             for dev in self._devices[devType]:
