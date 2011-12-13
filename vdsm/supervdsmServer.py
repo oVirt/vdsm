@@ -124,7 +124,7 @@ class _SuperVdsm(object):
 
         if not pipe.poll(RUN_AS_TIMEOUT):
             try:
-                os.kill(proc.pid, errno.SIGKILL)
+                os.kill(proc.pid, signal.SIGKILL)
             except OSError, e:
                 # If it didn't fail because process is already dead
                 if e.errno != errno.ESRCH:
