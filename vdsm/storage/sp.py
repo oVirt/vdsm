@@ -622,6 +622,7 @@ class StoragePool:
             raise
 
         try:
+            self._setSafe()
             # Mark 'master' domain
             # We should do it before actually attaching this domain to the pool.
             # During 'master' marking we create pool metadata and each attached
@@ -649,6 +650,7 @@ class StoragePool:
                 self.log.error("Cleanup failed due to an unexpected error", exc_info=True)
             raise
         finally:
+            self._setUnsafe()
             msd.releaseClusterLock()
             self.id = None
 
