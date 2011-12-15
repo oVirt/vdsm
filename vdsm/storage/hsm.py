@@ -46,6 +46,7 @@ import lvm
 import fileUtils
 import multipath
 from sdc import sdCache
+import image
 import volume
 import iscsi
 import misc
@@ -2387,6 +2388,10 @@ class HSM:
         """
         Gets the path to a volume.
 
+        .. warning::
+            This method is obsolete and is kept only for testing purposes;
+            use prepareImage instead.
+
         :param sdUUID: The UUID of the storage domain that owns the volume.
         :type sdUUID: UUID
         :param spUUID: The UUID of the storage pool that owns the volume.
@@ -2430,6 +2435,10 @@ class HSM:
         Prepares a volume (used in SAN).
         Activates LV and rebuilds 'images' subtree.
 
+        .. warning::
+            This method is obsolete and is kept only for testing purposes;
+            use prepareImage instead.
+
         :param sdUUID: The UUID of the storage domain that owns the volume.
         :type sdUUID: UUID
         :param spUUID: The UUID of the storage pool that owns the volume.
@@ -2469,6 +2478,10 @@ class HSM:
         Tears down a volume (used in SAN).
         Deactivates LV.
 
+        .. warning::
+            This method is obsolete and is kept only for testing purposes;
+            use teardownImage instead.
+
         :param sdUUID: The UUID of the storage domain that owns the volume.
         :type sdUUID: UUID
         :param spUUID: The UUID of the storage pool that owns the volume.
@@ -2493,6 +2506,47 @@ class HSM:
             volclass.teardown(sdUUID=sdUUID, volUUID=volUUID)
         except Exception:
             self.log.warn("Problem tearing down volume", exc_info=True)
+
+
+    @public
+    def prepareImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
+        """
+        Prepare an image activating the needed volumes.
+        Returns the path to the leaf and the ordered volume chain.
+
+        :param sdUUID: The UUID of the storage domain that owns the volume.
+        :type sdUUID: UUID
+        :param spUUID: The UUID of the storage pool that owns the volume.
+        :type spUUID: UUID
+        :param imgUUID: The UUID of the image contained on the volume.
+        :type imgUUID: UUID
+        """
+        vars.task.getSharedLock(STORAGE, sdUUID)
+
+        img = image.Image(os.path.join(self.storage_repository, spUUID))
+        imgVolumes = img.prepare(sdUUID, imgUUID, volUUID)
+
+        chain = [{'volUUID': vol.volUUID,
+                  'path': vol.getVolumePath()} for vol in imgVolumes]
+
+        return {'path': chain[-1]['path'], 'chain': chain}
+
+    @public
+    def teardownImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
+        """
+        Teardown an image deactivating the volumes.
+
+        :param sdUUID: The UUID of the storage domain that owns the volume.
+        :type sdUUID: UUID
+        :param spUUID: The UUID of the storage pool that owns the volume.
+        :type spUUID: UUID
+        :param imgUUID: The UUID of the image contained on the volume.
+        :type imgUUID: UUID
+        """
+        vars.task.getSharedLock(STORAGE, sdUUID)
+
+        img = image.Image(os.path.join(self.storage_repository, spUUID))
+        img.teardown(sdUUID, imgUUID, volUUID)
 
     @public
     def getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID, options = None):

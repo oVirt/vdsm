@@ -800,6 +800,18 @@ class BlockStorageDomain(sd.StorageDomain):
                         if i.startswith(blockVolume.TAG_PREFIX_IMAGE) ]
         return images
 
+    def activateVolumes(self, volUUIDs):
+        """
+        Activate all the volumes listed in volUUIDs
+        """
+        lvm.activateLVs(self.sdUUID, volUUIDs)
+
+    def deactivateVolumes(self, volUUIDs):
+        """
+        Deactivate all the volumes listed in volUUIDs
+        """
+        lvm.deactivateLVs(self.sdUUID, volUUIDs)
+
     def validateMasterMount(self):
         return mount.isMounted(self.getMasterDir())
 

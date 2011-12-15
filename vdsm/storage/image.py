@@ -370,6 +370,31 @@ class Image:
 
         return tmpl
 
+    def prepare(self, sdUUID, imgUUID, volUUID=None):
+        chain = self.getChain(sdUUID, imgUUID, volUUID)
+
+        # Adding the image template to the chain
+        tmplVolume = chain[0].getParentVolume()
+
+        if tmplVolume:
+            chain.insert(0, tmplVolume)
+
+        # Activating the volumes
+        sdCache.produce(sdUUID).activateVolumes(
+                    volUUIDs=[vol.volUUID for vol in chain])
+
+        return chain
+
+    def teardown(self, sdUUID, imgUUID, volUUID=None):
+        chain = self.getChain(sdUUID, imgUUID, volUUID)
+
+        # Deactivating the volumes
+        sdCache.produce(sdUUID).deactivateVolumes(
+                    volUUIDs=[vol.volUUID for vol in chain])
+
+        # Do not deactivate the template yet (might be in use by an other vm)
+        # TODO: reference counting to deactivate when unused
+
     def validate(self, srcSdUUID, dstSdUUID, imgUUID, op=MOVE_OP):
         """
         Validate template on destination domain

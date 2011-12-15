@@ -575,13 +575,8 @@ class clientIF:
         if type(drive) == dict:
             # drive specification is a quartet (vdsm image)?
             if vm.isVdsmImage(drive):
-                res = self.irs.prepareVolume(drive['domainID'], drive['poolID'],
-                                drive['imageID'], drive['volumeID'])
-                if res['status']['code']:
-                    raise vm.VolumeError(drive)
-                res = self.irs.getVolumePath(drive['domainID'],
-                                drive['poolID'],
-                                drive['imageID'], drive['volumeID'])
+                res = self.irs.prepareImage(drive['domainID'], drive['poolID'],
+                                            drive['imageID'], drive['volumeID'])
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
                 path = res['path']
@@ -610,16 +605,16 @@ class clientIF:
         return path
 
     def _teardownVolumePath(self, drive):
-        result = {'status':doneCode}
+        res = {'status': doneCode}
         if type(drive) == dict:
             try:
-                result = self.irs.teardownVolume(drive['domainID'], drive['poolID'],
-                                             drive['imageID'], drive['volumeID'])
+                res = self.irs.teardownImage(drive['domainID'],
+                                             drive['poolID'], drive['imageID'])
             except KeyError:
                 #This drive is not a vdsm image (quartet)
                 self.log.info("Avoiding tear down drive %s", str(drive))
 
-        return result['status']['code']
+        return res['status']['code']
 
     def create(self, vmParams):
         """

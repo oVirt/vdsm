@@ -536,6 +536,18 @@ class StorageDomain:
         """
         pass
 
+    def activateVolumes(self, volUUIDs):
+        """
+        Activate all the volumes listed in volUUIDs
+        """
+        pass
+
+    def deactivateVolumes(self, volUUIDs):
+        """
+        Deactivate all the volumes listed in volUUIDs
+        """
+        pass
+
     def _getRepoPath(self):
         # This is here to make sure no one tries to get a repo
         # path from an ISO domain.
