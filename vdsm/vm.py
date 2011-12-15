@@ -42,29 +42,12 @@ def isVdsmImage(drive):
                 'poolID'))
 
 
-class Drive:
-    def __init__(self, poolID, domainID, imageID, volumeID, path, truesize,
-            apparentsize, blockDev, index='', unit='', serial='',
-            format='raw', boot=None, propagateErrors='off', reqsize=0,
-            alias='', **kwargs):
-        self.poolID = poolID
-        self.domainID = domainID
-        self.imageID = imageID
-        self.volumeID = volumeID
-        self.path = path
-        self.truesize = int(truesize)
-        self.apparentsize = int(apparentsize)
-        self.blockDev = blockDev
-        self.needExtend = False
-        self.reqsize = int(reqsize)
-        self.iface = kwargs.get('if')
-        self.index = index
-        self.unit = unit
-        self.serial = serial
-        self.format = format
-        self.propagateErrors = propagateErrors
-        self.boot = boot
-        self.alias = alias
+class Drive(object):
+    def __init__(self, **kwargs):
+        if not kwargs.get('serial'):
+            self.serial = kwargs.get('imageID'[-20:]) or ''
+        for attr, value in kwargs.iteritems():
+            setattr(self, attr, value)
         self.name = self._libvirtName()
 
     def _libvirtName(self):
@@ -367,10 +350,9 @@ class Vm(object):
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
         indexed = []
         for order, drv in drives:
-            try:
-                drv['iface'] = self.conf.pop('if')
-            except KeyError:
-                drv['iface'] = 'ide'
+            # FIXME: For BC we have now two identical keys: iface = if
+            # Till the day that conf will not returned as a status anymore.
+            drv['iface'] = self.conf.get('if', 'ide')
             if not self._usedIndices.has_key(drv['iface']):
                 self._usedIndices[drv['iface']] = []
             index = drv.get('index')
@@ -379,6 +361,8 @@ class Vm(object):
                 indexed.append(order)
             if isVdsmImage(drv):
                 self.__normalizeVdsmImg(drv)
+            drv['format'] = drv.get('format') or 'raw'
+            drv['propagateErrors'] = drv.get('propagateErrors') or 'off'
         for order, drv in drives:
             if order not in indexed:
                 drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
