@@ -92,6 +92,8 @@ class VmStatsThread(utils.AdvancedStatsThread):
             return
 
         for vmDrive in self._vm._drives:
+            if not vmDrive.isVdsmImage():
+                continue
             volSize = self._vm.cif.irs.getVolumeSize(vmDrive.domainID,
                       vmDrive.poolID, vmDrive.imageID, vmDrive.volumeID)
             if volSize['status']['code'] == 0 and not vmDrive.needExtend:
@@ -218,13 +220,14 @@ class VmStatsThread(utils.AdvancedStatsThread):
         sInfo, eInfo, sampleInterval = self.sampleDisk.getStats()
 
         for vmDrive in self._vm._drives:
+            if not vmDrive.isVdsmImage():
+                continue
             dName = vmDrive.name
-
-            dStats = {'truesize':     str(vmDrive.truesize),
-                      'apparentsize': str(vmDrive.apparentsize),
-                      'imageID':      vmDrive.imageID}
-
             try:
+                dStats = {'truesize':     str(vmDrive.truesize),
+                          'apparentsize': str(vmDrive.apparentsize),
+                          'imageID':      vmDrive.imageID}
+
                 dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1])
                                       / sampleInterval)
                 dStats['writeRate'] = ((eInfo[dName][3] - sInfo[dName][3])
@@ -259,9 +262,9 @@ class VmStatsThread(utils.AdvancedStatsThread):
                 dLatency['readLatency'], dLatency['writeLatency'], \
                 dLatency['flushLatency'] = _avgLatencyCalc(sInfo[dName], eInfo[dName])
             except (KeyError, TypeError):
-                self._log.debug("Disk latency not available")
-
-            stats[dName].update(dLatency)
+                self._log.debug("Disk %s latency not available", dName)
+            else:
+                stats[dName].update(dLatency)
 
     def get(self):
         stats = {}
@@ -769,7 +772,8 @@ class _DomXML:
         </disk>
         """
         diskelem = self.doc.createElement('disk')
-        diskelem.setAttribute('device', 'disk')
+        device = getattr(drive, 'device', 'disk')
+        diskelem.setAttribute('device', device)
         source = self.doc.createElement('source')
         if drive.blockDev:
             diskelem.setAttribute('type', 'block')
@@ -783,35 +787,36 @@ class _DomXML:
         if drive.iface:
             target.setAttribute('bus', drive.iface)
         diskelem.appendChild(target)
-        if drive.serial:
+        if getattr(drive, 'serial', False):
             serial = self.doc.createElement('serial')
             serial.appendChild(self.doc.createTextNode(drive.serial))
             diskelem.appendChild(serial)
-        driver = self.doc.createElement('driver')
-        driver.setAttribute('name', 'qemu')
-        if drive.blockDev:
-            driver.setAttribute('io', 'native')
-        else:
-            driver.setAttribute('io', 'threads')
-        if drive.format == 'cow':
-            driver.setAttribute('type', 'qcow2')
-        elif drive.format:
-            driver.setAttribute('type', 'raw')
+        if device == 'disk':
+            driver = self.doc.createElement('driver')
+            driver.setAttribute('name', 'qemu')
+            if drive.blockDev:
+                driver.setAttribute('io', 'native')
+            else:
+                driver.setAttribute('io', 'threads')
+            if drive.format == 'cow':
+                driver.setAttribute('type', 'qcow2')
+            elif drive.format:
+                driver.setAttribute('type', 'raw')
 
-        if drive.iface == 'virtio':
-            try:
-                cache = self.conf['custom']['viodiskcache']
-            except KeyError:
+            if drive.iface == 'virtio':
+                try:
+                    cache = self.conf['custom']['viodiskcache']
+                except KeyError:
+                    cache = config.get('vars', 'qemu_drive_cache')
+            else:
                 cache = config.get('vars', 'qemu_drive_cache')
-        else:
-            cache = config.get('vars', 'qemu_drive_cache')
-        driver.setAttribute('cache', cache)
+            driver.setAttribute('cache', cache)
 
-        if drive.propagateErrors == 'on':
-            driver.setAttribute('error_policy', 'enospace')
-        else:
-            driver.setAttribute('error_policy', 'stop')
-        diskelem.appendChild(driver)
+            if drive.propagateErrors == 'on':
+                driver.setAttribute('error_policy', 'enospace')
+            else:
+                driver.setAttribute('error_policy', 'stop')
+            diskelem.appendChild(driver)
         self._devices.appendChild(diskelem)
 
     def _appendCD(self, path):
@@ -1383,7 +1388,9 @@ class LibvirtVm(vm.Vm):
             ty = x.getAttribute('device')
             if ty == 'disk':
                 ty = 'hd'
-            drv = x.getElementsByTagName('driver')[0].getAttribute('type') # raw/qcow2
+                drv = x.getElementsByTagName('driver')[0].getAttribute('type') # raw/qcow2
+            else:
+                drv = 'raw'
             for d in self._drives:
                 if d.path == path:
                     d.type = ty

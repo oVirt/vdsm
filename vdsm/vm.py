@@ -61,6 +61,8 @@ class Drive(object):
 
         return devname + (devindex or 'a')
 
+    def isVdsmImage(self):
+        return getattr(self, 'poolID', False)
 
 class _MigrationError(RuntimeError): pass
 
@@ -501,7 +503,7 @@ class Vm(object):
             if 'floppy' in toSave: del toSave['floppy']
         for drive in toSave.get('drives', []):
             for d in self._drives:
-                if drive.get('volumeID') == d.volumeID:
+                if d.isVdsmImage() and drive.get('volumeID') == d.volumeID:
                     drive['truesize'] = str(d.truesize)
                     drive['apparentsize'] = str(d.apparentsize)
 

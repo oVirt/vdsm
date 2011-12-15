@@ -585,6 +585,8 @@ class clientIF:
                 path = os.path.join("/dev/mapper", drive["GUID"])
             elif drive.has_key("UUID"):
                 path = self._getUUIDSpecPath(drive["UUID"])
+            elif drive.has_key("path"):
+                path = drive['path']
         #For BC sake: a path as a string.
         elif not drive:
             path = drive
