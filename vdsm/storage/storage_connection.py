@@ -42,7 +42,12 @@ def validateDirAccess(dirPath):
             (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
             (os.R_OK | os.X_OK))
 
-PARAMS_LOCALFS = PARAMS_NFS = (('cid', 'id'), ('rp', 'connection'))
+PARAMS_LOCALFS = (('cid', 'id'), ('rp', 'connection'))
+PARAMS_NFS = (
+        ('cid', 'id'),
+        ('rp', 'connection'),
+        ('retrans', 'retrans', 6),
+        ('timeout', 'timeout', 600))
 PARAMS_SHAREDFS = (
         ('cid', 'id'),
         ('rp', 'spec'),
@@ -66,6 +71,10 @@ PARAM_VALIDATION_REGISTRAR = {
         # it as is. In the future please prevent this.
         sd.FCP_DOMAIN: PARAMS_BLOCK,
         sd.SHAREDFS_DOMAIN: PARAMS_SHAREDFS }
+
+def getNfsOptions(con):
+    return fileUtils.NFS_OPTIONS + (',timeo=%s,retrans=%s' % (con['timeout'],
+        con['retrans']))
 
 def getMountRoot():
     storage_repository = config.get('irs', 'repository')
@@ -235,7 +244,7 @@ class StorageServerConnection:
 
         try:
             if not mnt.isMounted():
-                mnt.mount(fileUtils.NFS_OPTIONS, mount.VFS_NFS, timeout=CON_TIMEOUT)
+                mnt.mount(getNfsOptions(con), mount.VFS_NFS, timeout=CON_TIMEOUT)
         except mount.MountError:
             self.log.error("Error during storage connection", exc_info=True)
             rc = se.StorageServerConnectionError.code
@@ -300,7 +309,7 @@ class StorageServerConnection:
         mnt = mount.Mount(con['rp'], mountpoint)
         try:
             try:
-                mnt.mount(fileUtils.NFS_OPTIONS, mount.VFS_NFS)
+                mnt.mount(getNfsOptions(con), mount.VFS_NFS, timeout=CON_TIMEOUT)
             except mount.MountError:
                 self.log.error("Error during storage connection validation", exc_info=True)
                 return se.StorageServerValidationError.code

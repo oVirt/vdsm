@@ -170,7 +170,7 @@ parameters = [
             'Storage domain health check delay, the amount of seconds to '
             'wait between two successive run of the domain health check.'),
 
-        ('nfs_mount_options', 'soft,timeo=600,retrans=6,nosharecache,vers=3',
+        ('nfs_mount_options', 'soft,nosharecache,vers=3',
             'NFS mount options, comma-separated list (NB: no white space '
             'allowed!)'),
 
