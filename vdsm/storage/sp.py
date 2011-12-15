@@ -497,6 +497,29 @@ class StoragePool:
             return config.getint("irs", "maximum_domains_in_pool")
 
     @unsecured
+    def _acquireTemporaryClusterLock(self, msdUUID, safeLease):
+        try:
+            # Master domain is unattached and all changes to unattached domains
+            # must be performed under storage lock
+            msd = sdCache.produce(msdUUID)
+
+            # As we are just creating the pool then the host doesn't have an
+            # assigned id for this pool
+            self.id = msd.getReservedId()
+
+            msd.changeLeaseParams(safeLease)
+            msd.acquireClusterLock(self.id)
+        except:
+            self.id = None
+            raise
+
+    @unsecured
+    def _releaseTemporaryClusterLock(self, msdUUID):
+        msd = sdCache.produce(msdUUID)
+        msd.releaseClusterLock()
+        self.id = None
+
+    @unsecured
     def create(self, poolName, msdUUID, domList, masterVersion, safeLease):
         """
         Create new storage pool with single/multiple image data domain.
@@ -535,18 +558,7 @@ class StoragePool:
                     raise se.StorageDomainAlreadyAttached(spUUIDs[0], sdUUID)
 
         fileUtils.createdir(self.poolPath)
-
-        # Seeing as we are just creating the pool then the host doesn't
-        # have an assigned Id for this pool.  When locking the domain we must use an Id
-        self.id = 1000
-        # Master domain is unattached and all changes to unattached domains
-        # must be performed under storage lock
-        try:
-            msd.changeLeaseParams(safeLease)
-            msd.acquireClusterLock(self.id)
-        except:
-            self.id = None
-            raise
+        self._acquireTemporaryClusterLock(msdUUID, safeLease)
 
         try:
             self._setSafe()
@@ -578,8 +590,7 @@ class StoragePool:
             raise
         finally:
             self._setUnsafe()
-            msd.releaseClusterLock()
-            self.id = None
+            self._releaseTemporaryClusterLock(msdUUID)
 
         self.stopMonitoringDomains()
         return True
@@ -714,15 +725,10 @@ class StoragePool:
         if msdUUID not in domDict:
             raise se.InvalidParameterException("masterDomain", msdUUID)
 
+        self._acquireTemporaryClusterLock(msdUUID, safeLease)
+
         try:
-            # Seeing as we are just creating the pool then the host doesn't
-            # have an assigned Id for this pool.  When locking the domain we must use an Id
-            self.id = 1000
-            # Master domain is unattached and all changes to unattached domains
-            # must be performed under storage lock
             futureMaster = sdCache.produce(msdUUID)
-            futureMaster.changeLeaseParams(safeLease)
-            futureMaster.acquireClusterLock(self.id)
             try:
                 self.createMaster(poolName, futureMaster, masterVersion, safeLease)
                 self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
@@ -735,12 +741,11 @@ class StoragePool:
                 self.setMetaParam(PMDK_DOMAINS, domains, __securityOverride=True)
                 self.log.info("Set storage pool domains: %s", domains)
             finally:
-                # We need stop all domain monitoring threads that were started during reconstructMaster
+                # We need stop all domain monitoring threads that were started
+                # during reconstructMaster
                 self.stopMonitoringDomains()
-                futureMaster.releaseClusterLock()
         finally:
-            self.id = None
-
+            self._releaseTemporaryClusterLock(msdUUID)
 
     @unsecured
     def copyPoolMD(self, prevMd, newMD):

@@ -368,6 +368,9 @@ class StorageDomain:
     def _getLeasesFilePath(self):
         return os.path.join(self.getMDPath(), LEASES)
 
+    def getReservedId(self):
+        return self._clusterLock.getReservedId()
+
     def acquireClusterLock(self, hostID):
         self.refresh()
         self._clusterLock.setParams(

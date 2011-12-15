@@ -65,6 +65,9 @@ class ClusterLock(object):
         self._leaseFailRetry = leaseFailRetry
         self._ioOpTimeoutSec = ioOpTimeoutSec
 
+    def getReservedId(self):
+        return 1000
+
     def acquire(self, hostID):
         leaseTimeMs = self._leaseTimeSec * 1000
         ioOpTimeoutMs = self._ioOpTimeoutSec * 1000
