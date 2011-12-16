@@ -1219,7 +1219,7 @@ class AcquireLockFailure(StorageException):
     def __init__(self, id, rc, out, err):
         self.value = "id=%s, rc=%s, out=%s, err=%s" % (id, rc, out, err)
     code = 651
-    message = "Could not obtain lock"
+    message = "Cannot obtain lock"
 
 class SpmParamsMismatch(StorageException):
     def __init__(self, oldlver, oldid, prevLVER, prevID):
@@ -1256,6 +1256,18 @@ class DomainLockDoesNotExist(StorageException):
 class CannotRetrieveSpmStatus(StorageException):
     code = 659
     message = "Cannot retrieve SPM status, master domain probably unavailable"
+
+class ReleaseLockFailure(StorageException):
+    code = 660
+    message = "Cannot release lock"
+
+class AcquireHostIdFailure(StorageException):
+    code = 661
+    message = "Cannot acquire host id"
+
+class ReleaseHostIdFailure(StorageException):
+    code = 662
+    message = "Cannot release host id"
 
 class HostIdMismatch(StorageException):
     code = 700

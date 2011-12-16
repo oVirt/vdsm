@@ -241,7 +241,8 @@ class StorageDomain:
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
                 DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC])
         self._clusterLock = safelease.ClusterLock(self.sdUUID,
-                self._getLeasesFilePath(), *leaseParams)
+                self._getIdsFilePath(), self._getLeasesFilePath(),
+                *leaseParams)
 
     def __del__(self):
         if self.stat:
@@ -321,7 +322,7 @@ class StorageDomain:
         Initialize the SPM lease
         """
         try:
-            safelease.ClusterLock.initLock(self._getLeasesFilePath())
+            self._clusterLock.initLock()
             self.log.debug("lease initialized successfully")
         except:
             # Original code swallowed the errors
@@ -365,11 +366,20 @@ class StorageDomain:
         self.log.debug("Upgrading domain `%s`", self.sdUUID)
         self.setMetaParam(DMDK_VERSION, targetVersion)
 
+    def _getIdsFilePath(self):
+        return os.path.join(self.getMDPath(), IDS)
+
     def _getLeasesFilePath(self):
         return os.path.join(self.getMDPath(), LEASES)
 
     def getReservedId(self):
         return self._clusterLock.getReservedId()
+
+    def acquireHostId(self, hostId):
+        self._clusterLock.acquireHostId(hostId)
+
+    def releaseHostId(self, hostId):
+        self._clusterLock.releaseHostId(hostId)
 
     def acquireClusterLock(self, hostID):
         self.refresh()

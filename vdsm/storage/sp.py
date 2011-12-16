@@ -201,6 +201,12 @@ class StoragePool:
                     except KeyError:
                         pass
 
+    def _acquireHostId(self, sdUUID, isValid):
+        if isValid:
+            self.log.debug("Domain %s is now valid, acquiring host id %s",
+                           sdUUID, self.id)
+            sdCache.produce(sdUUID).acquireHostId(self.id)
+
     @unsecured
     def startSpm(self, prevID, prevLVER, scsiFencing, maxHostID, expectedDomVersion=None):
         """
@@ -245,10 +251,9 @@ class StoragePool:
                 self.log.info("expected previd:%s lver:%s got request for previd:%s lver:%s" % (oldid, oldlver, prevID, prevLVER))
 
 
-            # Acquire spm lock
             try:
                 self.spmRole = SPM_CONTEND
-                self.acquireClusterLock()
+                self.masterDomain.acquireClusterLock(self.id)
             except:
                 self.spmRole = SPM_FREE
                 raise
@@ -385,7 +390,7 @@ class StoragePool:
                     pass # The system can handle this inconsistency
 
             try:
-                self.releaseClusterLock()
+                self.masterDomain.releaseClusterLock()
             except:
                 stopFailed = True
 
@@ -451,14 +456,6 @@ class StoragePool:
         return self.getMetaParam(PMDK_MASTER_VER)
 
     @unsecured
-    def acquireClusterLock(self):
-        self.masterDomain.acquireClusterLock(self.id)
-
-    @unsecured
-    def releaseClusterLock(self):
-        self.masterDomain.releaseClusterLock()
-
-    @unsecured
     def validateAttachedDomain(self, dom, domainStatuses):
         """
         Avoid handling domains if not owned by pool.
@@ -508,7 +505,14 @@ class StoragePool:
             self.id = msd.getReservedId()
 
             msd.changeLeaseParams(safeLease)
-            msd.acquireClusterLock(self.id)
+
+            msd.acquireHostId(self.id)
+
+            try:
+                msd.acquireClusterLock(self.id)
+            except:
+                msd.releaseHostId(self.id)
+                raise
         except:
             self.id = None
             raise
@@ -516,7 +520,10 @@ class StoragePool:
     @unsecured
     def _releaseTemporaryClusterLock(self, msdUUID):
         msd = sdCache.produce(msdUUID)
-        msd.releaseClusterLock()
+        try:
+            msd.releaseClusterLock()
+        finally:
+            msd.releaseHostId(self.id)
         self.id = None
 
     @unsecured
@@ -635,6 +642,14 @@ class StoragePool:
         self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
         self.__createMailboxMonitor()
 
+        # Acquire lock on each domain
+        for sdUUID in self.getDomains(activeOnly=True):
+            try:
+                sdCache.produce(sdUUID).acquireHostId(self.id)
+            except:
+                self.log.error("Unable to acquire host id on sdUUID=`%s`",
+                               sdUUID, exc_info=True)
+
         return True
 
 
@@ -652,6 +667,14 @@ class StoragePool:
         Caller must acquire resource Storage.spUUID so that this method would never be called twice concurrently.
         """
         self.log.info("Disconnect from the storage pool %s", self.spUUID)
+
+        # Release lock on each domain
+        for sdUUID in self.getDomains(activeOnly=True):
+            try:
+                sdCache.produce(sdUUID).releaseHostId(self.id)
+            except:
+                self.log.info("Unable to release host id on sdUUID=`%s`",
+                              sdUUID, exc_info=True)
 
         self.id = None
         self.scsiKey = None
@@ -815,7 +838,7 @@ class StoragePool:
             newmsd.unmountMaster()
             raise se.StorageDomainLayoutError("domain", msdUUID)
 
-        # Acquire safelease lock on new master
+        # Acquire cluster lock on new master
         try:
             # Reset SPM lock because of the host still SPM
             # It will speedup new lock acquiring
@@ -894,7 +917,11 @@ class StoragePool:
             self.__masterMigrate(sdUUID, msdUUID, masterVersion)
             return False    # not last master
 
+        # When we are unmounting the last master we need to stop the SPM
+        # since the domain will be deactivated
         self.__unmountLastMaster(sdUUID)
+        self.stopSpm(self.spUUID)
+
         return True     # last master
 
     def attachSD(self, sdUUID):
@@ -1004,6 +1031,7 @@ class StoragePool:
             dom.upgrade(self.getVersion())
 
         dom.activate()
+        dom.acquireHostId(self.id)
         # set domains also do rebuild
         domainStatuses[sdUUID] = sd.DOM_ACTIVE_STATUS
         self.setMetaParam(PMDK_DOMAINS, domainStatuses)
@@ -1048,6 +1076,7 @@ class StoragePool:
             elif dom.isBackup():
                 dom.unmountMaster()
 
+        dom.releaseHostId(self.id)
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
         self.setMetaParam(PMDK_DOMAINS, domList)
         self.updateMonitoringThreads()

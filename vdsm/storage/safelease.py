@@ -34,7 +34,8 @@ class ClusterLock(object):
     lockUtilPath = config.get('irs', 'lock_util_path')
     lockCmd = config.get('irs', 'lock_cmd')
     freeLockCmd = config.get('irs', 'free_lock_cmd')
-    def __init__(self, sdUUID, leaseFile,
+
+    def __init__(self, sdUUID, idFile, leaseFile,
             lockRenewalIntervalSec,
             leaseTimeSec,
             leaseFailRetry,
@@ -46,13 +47,12 @@ class ClusterLock(object):
                        leaseFailRetry, ioOpTimeoutSec)
         self.__hostID = None
 
-    @classmethod
-    def initLock(cls, path):
-        lockUtil = os.path.join(cls.lockUtilPath, "safelease")
-        initCommand = [ lockUtil, "release", "-f", str(path), "0" ]
-        rc, out, err = misc.execCmd(initCommand, sudo=False, cwd=cls.lockUtilPath)
+    def initLock(self):
+        lockUtil = os.path.join(self.lockUtilPath, "safelease")
+        initCommand = [ lockUtil, "release", "-f", self._leaseFile, "0" ]
+        rc, out, err = misc.execCmd(initCommand, sudo=False, cwd=self.lockUtilPath)
         if rc != 0:
-            cls.log.warn("could not initialise spm lease (%s): %s", rc, out)
+            self.log.warn("could not initialise spm lease (%s): %s", rc, out)
             raise se.ClusterLockInitError()
 
 
@@ -67,6 +67,12 @@ class ClusterLock(object):
 
     def getReservedId(self):
         return 1000
+
+    def acquireHostId(self, hostID):
+        pass
+
+    def releaseHostId(self, hostID):
+        pass
 
     def acquire(self, hostID):
         leaseTimeMs = self._leaseTimeSec * 1000

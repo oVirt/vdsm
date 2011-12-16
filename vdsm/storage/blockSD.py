@@ -635,6 +635,10 @@ class BlockStorageDomain(sd.StorageDomain):
         self.log.info("META MAPPING: %s" % meta)
         return meta
 
+    def _getIdsFilePath(self):
+        lvm.activateLVs(self.sdUUID, [sd.IDS])
+        return lvm.lvPath(self.sdUUID, sd.IDS)
+
     def _getLeasesFilePath(self):
         lvm.activateLVs(self.sdUUID, [sd.LEASES])
         return lvm.lvPath(self.sdUUID, sd.LEASES)
