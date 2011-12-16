@@ -250,66 +250,75 @@ class HSM:
 
     def __cleanStorageRepository(self):
         """
+        Cleanup the storage repository leftovers
         """
-        self.log.debug("Started cleaning storage repository at '%s'" % self.storage_repository)
 
-        mntDir = os.path.join(self.storage_repository, 'mnt')
-        tasksFiles = os.path.join(self.tasksDir, "*")
-        whiteList = [self.tasksDir, tasksFiles, mntDir]
+        self.log.debug("Started cleaning storage "
+                       "repository at '%s'", self.storage_repository)
+
         mountList = []
+        whiteList = [
+            self.tasksDir,
+            os.path.join(self.tasksDir, "*"),
+            os.path.join(self.storage_repository, 'mnt'),
+        ]
 
-        def isInWhiteList(fpath):
-            fullpath = os.path.abspath(fpath)
+        def isInWhiteList(path):
+            fullpath = os.path.abspath(path)
 
-            # 'readlink' doesn't following nested symlinks like 'realpath'
-            # but it's also doesn't stuck on inaccessible mounts like 'realpath'.
-            # Anyway, it's enough for our purposes.
+            # The readlink call doesn't follow nested symlinks like
+            # realpath but it doesn't hang on inaccessible mount points
             if os.path.islink(fullpath):
-                fullpath = os.readlink(fullpath)
+                symlpath = os.readlink(fullpath)
 
-            for entry in whiteList:
-                if fnmatch(fullpath, entry):
-                    return True
+                # If any os.path.join component is an absolute path all the
+                # previous paths will be discarded; therefore symlpath will
+                # be used when it is an absolute path.
+                basepath = os.path.dirname(fullpath)
+                fullpath = os.path.abspath(os.path.join(basepath, symlpath))
 
-            return False
+            # Taking advantage of the any lazy evaluation
+            return any(fnmatch(fullpath, x) for x in whiteList)
 
-        #Add mounted folders to whitelist
+        #Add mounted folders to mountlist
         for mnt in mount.iterMounts():
-            mountPoint = mnt.fs_file
-            isInStorageRepo = (os.path.commonprefix([self.storage_repository, mountPoint]) == self.storage_repository)
-            if isInStorageRepo:
+            mountPoint = os.path.abspath(mnt.fs_file)
+            if mountPoint.startswith(self.storage_repository):
                 mountList.append(mountPoint)
-                whiteList.extend([mountPoint, os.path.join(mountPoint, "*")])
 
-        self.log.debug("White list is %s." % whiteList)
-        #Clean whatever is left
-        self.log.debug("Cleaning leftovers.")
+        self.log.debug("White list: %s", whiteList)
+        self.log.debug("Mount list: %s", mountList)
+
+        self.log.debug("Cleaning leftovers")
+        rmDirList = []
+
         # We can't list files form top to bottom because the process
         # would descend into mounpoints and an unreachable NFS storage
         # could freeze the vdsm startup. Since we will ignore files in
         # mounts anyway using out of process file operations is useless.
         # We just clean all directories before removing them from the
         # innermost to the outermost.
-        rmDirList = []
         for base, dirs, files in misc.walk(self.storage_repository,
                                            blacklist=mountList):
             for directory in dirs:
                 fullPath = os.path.join(base, directory)
+
                 if isInWhiteList(fullPath):
                     dirs.remove(directory)
-                    continue
-
-                rmDirList.insert(0, os.path.join(base, fullPath))
+                else:
+                    rmDirList.insert(0, os.path.join(base, fullPath))
 
             for fname in files:
                 fullPath = os.path.join(base, fname)
+
                 if isInWhiteList(fullPath):
                     continue
 
                 try:
                     os.unlink(os.path.join(base, fullPath))
-                except Exception, ex:
-                    self.log.warn("Cold not delete file '%s' (%s: %s)." % (fullPath, ex.__class__.__name__, ex))
+                except Exception:
+                    self.log.warn("Cold not delete file "
+                                  "'%s'", fullPath, exc_info=True)
 
         for directory in rmDirList:
             try:
@@ -318,10 +327,12 @@ class HSM:
                     os.unlink(directory)
                 else:
                     os.rmdir(directory)
-            except Exception, ex:
-                self.log.warn("Could not delete dir '%s' (%s: %s)." % (fullPath, ex.__class__.__name__, ex))
+            except Exception:
+                self.log.warn("Cold not delete directory "
+                               "'%s'", directory, exc_info=True)
 
-        self.log.debug("Finished cleaning storage repository at '%s'" % self.storage_repository)
+        self.log.debug("Finished cleaning storage "
+                       "repository at '%s'", self.storage_repository)
 
 
     @logged()
