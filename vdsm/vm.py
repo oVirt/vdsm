@@ -294,7 +294,6 @@ class Vm(object):
         self._usedIndices = {} #{'ide': [], 'virtio' = []}
         self._preparedDrives = {}
         self._drives = []
-        self._cdromPreparedPath = ''
         self._floppyPreparedPath = ''
         self._volumesPrepared = False
         self._pathsPreparedEvent = threading.Event()
@@ -363,6 +362,7 @@ class Vm(object):
         confDrives = self.conf['drives'] if self.conf['drives'] else []
         if not confDrives:
             confDrives.extend(self.__legacyDrives())
+        confDrives.append({'device': 'cdrom', 'path': self.conf.get('cdrom', ''), 'iface': 'ide', 'index': 2, 'blockDev': False, 'truesize': 0})
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
         indexed = []
         for order, drv in drives:
@@ -458,13 +458,6 @@ class Vm(object):
         # Now we got all needed resources
         self._volumesPrepared = True
 
-        try:
-            self._cdromPreparedPath = self._prepareVolumePath(
-                                            self.conf.get('cdrom'))
-        except VolumeError:
-            self.log.warning(traceback.format_exc())
-            if self.conf.get('cdrom'):
-                del self.conf['cdrom']
         if 'floppy' in self.conf:
             self._floppyPreparedPath = self._prepareVolumePath(
                                             self.conf['floppy'])

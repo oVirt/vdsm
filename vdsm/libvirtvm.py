@@ -819,20 +819,6 @@ class _DomXML:
             diskelem.appendChild(driver)
         self._devices.appendChild(diskelem)
 
-    def _appendCD(self, path):
-        diskelem = self.doc.createElement('disk')
-        diskelem.setAttribute('type', 'file')
-        diskelem.setAttribute('device', 'cdrom')
-        if path:
-            source = self.doc.createElement('source')
-            source.setAttribute('file', path)
-            diskelem.appendChild(source)
-        target = xml.dom.minidom.Element('target')
-        target.setAttribute('dev', 'hdc')
-        target.setAttribute('bus', 'ide')
-        diskelem.appendChild(target)
-        self._devices.appendChild(diskelem)
-
     def _appendFloppy(self, path):
         diskelem = self.doc.createElement('disk')
         diskelem.setAttribute('type', 'file')
@@ -1009,7 +995,6 @@ class LibvirtVm(vm.Vm):
         for drive in self._drives:
             domxml._appendDisk(drive)
 
-        domxml._appendCD(self._cdromPreparedPath)
         if self._floppyPreparedPath:
             domxml._appendFloppy(self._floppyPreparedPath)
         if utils.tobool(self.conf.get('vmchannel', 'true')):
