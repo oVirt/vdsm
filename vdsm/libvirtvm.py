@@ -1008,17 +1008,7 @@ class LibvirtVm(vm.Vm):
 
         for drive in self._drives:
             domxml._appendDisk(drive)
-        # backward compatibility for qa scripts that specify direct paths
-        if not self._drives:
-            for index, linuxname in ((0, 'hda'), (1, 'hdb'),
-                                     (2, 'hdc'), (3, 'hdd')):
-                path = self.conf.get(linuxname)
-                if path:
-                    domxml._appendDisk(vm.Drive(poolID=None, domainID=None,
-                                                imageID=None, volumeID=None,
-                                                path=path, truesize=0,
-                                                apparentsize=0, blockDev='',
-                                                index=index))
+
         domxml._appendCD(self._cdromPreparedPath)
         if self._floppyPreparedPath:
             domxml._appendFloppy(self._floppyPreparedPath)

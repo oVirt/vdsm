@@ -340,6 +340,18 @@ class Vm(object):
         drv['blockDev'] = not self.cif.irs.getStorageDomainInfo(
                     drv['domainID'])['info']['type'] in ('NFS', 'LOCALFS')
 
+    def __legacyDrives(self):
+         """
+         Backward compatibility for qa scripts that specify direct paths.
+         """
+         legacies = []
+         for index, linuxName in ((0, 'hda'), (1, 'hdb'), (2, 'hdc'), (3, 'hdd')):
+             path = self.conf.get(linuxName)
+             if path:
+                 legacies.append({'path': path, 'iface': 'ide', 'index': index,
+                                  'blockDev': False, 'truesize': 0})
+         return legacies
+
     def getConfDrives(self):
         """
         Normalize drives provided by conf.
@@ -349,6 +361,8 @@ class Vm(object):
         # Remove this when the API parameters will be consistent.
 
         confDrives = self.conf['drives'] if self.conf['drives'] else []
+        if not confDrives:
+            confDrives.extend(self.__legacyDrives())
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
         indexed = []
         for order, drv in drives:
