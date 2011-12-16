@@ -28,6 +28,7 @@ import fileUtils
 import storage_exception as se
 import outOfProcess as oop
 import mount
+import misc
 
 class NfsStorageDomain(fileSD.FileStorageDomain):
 
@@ -61,6 +62,9 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         """
         cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
             "domClass=%s", sdUUID, domainName, remotePath, domClass)
+
+        if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
+            raise se.UnicodeArgumentException()
 
         # Create local path
         mntPath = fileUtils.transformPath(remotePath)

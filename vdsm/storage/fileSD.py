@@ -81,6 +81,11 @@ class FileMetadataRW(object):
         return misc.stripNewLines(self._oop.directReadLines(self._metafile))
 
     def writelines(self, metadata):
+        for i, line in enumerate(metadata):
+            if isinstance(line, unicode):
+                line = line.encode('utf-8')
+            metadata[i] = line
+
         metadata = [i + '\n' for i in metadata]
         tmpFilePath = self._metafile + ".new"
         try:

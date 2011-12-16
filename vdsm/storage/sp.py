@@ -38,7 +38,7 @@ import fileUtils
 from vdsm.config import config
 from sdc import sdCache
 import storage_exception as se
-from persistentDict import DictValidator
+from persistentDict import DictValidator, unicodeEncoder, unicodeDecoder
 from processPool import Timeout
 from securable import Securable, unsecured
 import image
@@ -81,7 +81,7 @@ def domainListDecoder(s):
 SP_MD_FIELDS = {
         # Key          dec,  enc
         PMDK_DOMAINS : (domainListDecoder, domainListEncoder),
-        PMDK_POOL_DESCRIPTION : (str, str), # should be decode\encode utf8
+        PMDK_POOL_DESCRIPTION : (unicodeDecoder, unicodeEncoder),
         PMDK_LVER : (int, str),
         PMDK_SPM_ID : (int, str),
         PMDK_MASTER_VER : (int, str)
@@ -728,6 +728,8 @@ class StoragePool:
                     domain.detach(spUUID)
             domain.attach(self.spUUID)
             domain.changeRole(sd.MASTER_DOMAIN)
+            if not misc.isAscii(poolName) and not domain.supportsUnicode():
+                raise se.UnicodeArgumentException()
 
             futurePoolMD.update({
             PMDK_SPM_ID: -1,
@@ -1228,7 +1230,6 @@ class StoragePool:
         if os.path.exists(os.path.join(vms, vmUUID)):
            fileUtils.cleanupdir(os.path.join(vms, vmUUID))
 
-
     def setDescription(self, descr):
         """
         Set storage pool description.
@@ -1238,6 +1239,10 @@ class StoragePool:
             raise se.StoragePoolDescriptionTooLongError()
 
         self.log.info("spUUID=%s descr=%s", self.spUUID, descr)
+
+        if not misc.isAscii(descr) and not self.masterDomain.supportsUnicode():
+            raise se.UnicodeArgumentException()
+
         self.setMetaParam(PMDK_POOL_DESCRIPTION, descr)
 
 

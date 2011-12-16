@@ -25,6 +25,7 @@ import sd
 import fileSD
 import fileUtils
 import storage_exception as se
+import misc
 
 
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
@@ -55,6 +56,9 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         """
         cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
             "domClass=%s", sdUUID, domainName, remotePath, domClass)
+
+        if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
+            raise se.UnicodeArgumentException()
 
         # Create local path
         mntPath = fileUtils.transformPath(remotePath)

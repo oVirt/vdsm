@@ -116,11 +116,9 @@ LVM_ENC_ESCAPE = re.compile("&(\d+)&")
 
 # Move to lvm
 def lvmTagEncode(s):
-    s = unicode(s)
-    return str(INVALID_CHARS.sub(lambda c: "&%s&" % ord(c.group()), s))
+    return INVALID_CHARS.sub(lambda c: "&%s&" % ord(c.group()), s)
 
 def lvmTagDecode(s):
-    s = unicode(s)
     return LVM_ENC_ESCAPE.sub(lambda c: unichr(int(c.groups()[0])), s)
 
 class VGTagMetadataRW(object):
@@ -310,6 +308,9 @@ class BlockStorageDomain(sd.StorageDomain):
         cls.log.info("sdUUID=%s domainName=%s domClass=%s vgUUID=%s "
             "storageType=%s version=%s", sdUUID, domainName, domClass, vgUUID,
             storageType, version)
+
+        if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
+            raise se.UnicodeArgumentException()
 
         if len(domainName) > sd.MAX_DOMAIN_DESCRIPTION_SIZE:
             raise se.StorageDomainDescriptionTooLongError()

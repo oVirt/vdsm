@@ -34,7 +34,17 @@ from itertools import ifilter
 
 SHA_CKSUM_TAG = "_SHA_CKSUM"
 
-_preprocessLine = lambda line : unicode.encode(unicode(line), 'ascii', 'xmlcharrefreplace')
+def _preprocessLine(line):
+    if not isinstance(line, unicode):
+        line = unicode(str(line), 'utf-8')
+
+    return unicode.encode(line, 'ascii', 'xmlcharrefreplace')
+
+def unicodeEncoder(s):
+    return s
+
+def unicodeDecoder(s):
+    return s
 
 class DictValidator(object):
     def __init__(self, dictObj, validatorDict):
@@ -267,7 +277,7 @@ class PersistentDict(object):
             keys.sort()
             for key in keys:
                 value = md[key]
-                line = "=".join([key, str(value).strip()])
+                line = "=".join([key, value.strip()])
                 checksumCalculator.update(_preprocessLine(line))
                 lines.append(line)
 

@@ -33,6 +33,7 @@ import resourceManager as rm
 from vdsm import constants
 import safelease
 import outOfProcess as oop
+from persistentDict import unicodeEncoder, unicodeDecoder
 
 from vdsm.config import config
 
@@ -134,6 +135,11 @@ BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 # Blocks used for each lease (valid on all domain types)
 LEASE_BLOCKS = 2048
 
+UNICODE_MINIMAL_VERSION = 3
+
+def supportsUnicode(version):
+    return version >= UNICODE_MINIMAL_VERSION
+
 # This method has strange semantics, it's only here to keep with the old behaviuor
 # that someone might rely on.
 def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec, leaseRetries):
@@ -217,8 +223,8 @@ SD_MD_FIELDS = {
         DMDK_VERSION : (int, str),
         DMDK_SDUUID : (str, str), # one day we might just use the uuid obj
         DMDK_TYPE : (name2type, type2name), # They should throw exceptions
-        DMDK_ROLE : (str, str), # shoudl be enum as well
-        DMDK_DESCRIPTION : (str, str), # should be decode\encode utf8
+        DMDK_ROLE : (str, str), # should be enum as well
+        DMDK_DESCRIPTION : (unicodeDecoder, unicodeEncoder),
         DMDK_CLASS: (name2class, class2name),
         DMDK_POOLS : (lambda s : s.split(",") if s else [], lambda poolUUIDs : ",".join(poolUUIDs)), # one day maybe uuid
         DMDK_LOCK_POLICY : (str, str),
@@ -276,7 +282,6 @@ class StorageDomain:
         at that point.
         """
         pass
-
 
     def _registerResourceNamespaces(self):
         """
@@ -592,12 +597,18 @@ class StorageDomain:
         """
         return  os.path.join(self.domaindir, DOMAIN_IMAGES, ISO_IMAGE_UUID)
 
+    def supportsUnicode(self):
+        return supportsUnicode(self.getVersion())
+
     def setDescription(self, descr):
         """
         Set storage domain description
             'descr' - domain description
         """
         self.log.info("sdUUID=%s descr=%s", self.sdUUID, descr)
+        if not misc.isAscii(descr) and not self.supportsUnicode():
+            raise se.UnicodeArgumentException()
+
         self.setMetaParam(DMDK_DESCRIPTION, descr)
 
     def getInfo(self):

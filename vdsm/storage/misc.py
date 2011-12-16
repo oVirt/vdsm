@@ -1408,6 +1408,13 @@ def NoIntrPoll(pollfun, timeout=-1):
                 raise
         timeout = max(0, endtime - time.time())
 
+def isAscii(s):
+    try:
+        s.decode('ascii')
+        return True
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        return False
+
 # Upon import determine if we are running on ovirt
 try:
     OVIRT_NODE = os.path.exists('/etc/rhev-hypervisor-release') or \
