@@ -51,7 +51,7 @@ class Drive(object):
         self.name = self._libvirtName()
 
     def _libvirtName(self):
-        devname = 'vd' if self.iface == 'virtio' else 'hd'
+        devname = {'ide': 'hd', 'virtio': 'vd', 'fd': 'fd'}
         devindex = ''
 
         i = int(self.index)
@@ -59,7 +59,7 @@ class Drive(object):
             devindex = chr(ord('a') + (i % 26)) + devindex
             i /= 26
 
-        return devname + (devindex or 'a')
+        return devname.get(self.iface, 'hd') + (devindex or 'a')
 
     def isVdsmImage(self):
         return getattr(self, 'poolID', False)
@@ -294,7 +294,6 @@ class Vm(object):
         self._usedIndices = {} #{'ide': [], 'virtio' = []}
         self._preparedDrives = {}
         self._drives = []
-        self._floppyPreparedPath = ''
         self._volumesPrepared = False
         self._pathsPreparedEvent = threading.Event()
         self.saveState()
@@ -351,6 +350,15 @@ class Vm(object):
                                   'blockDev': False, 'truesize': 0})
          return legacies
 
+    def __removableDrives(self):
+        removables =  [{'device': 'cdrom', 'path': self.conf.get('cdrom', ''),
+                'iface': 'ide', 'index': 2, 'blockDev': False, 'truesize': 0}]
+        floppyPath = self.conf.get('floppy')
+        if floppyPath:
+            removables.append({'device': 'floppy', 'path': floppyPath,
+                'iface': 'fd', 'index': 0, 'blockDev': False, 'truesize': 0})
+        return removables
+
     def getConfDrives(self):
         """
         Normalize drives provided by conf.
@@ -362,7 +370,7 @@ class Vm(object):
         confDrives = self.conf['drives'] if self.conf['drives'] else []
         if not confDrives:
             confDrives.extend(self.__legacyDrives())
-        confDrives.append({'device': 'cdrom', 'path': self.conf.get('cdrom', ''), 'iface': 'ide', 'index': 2, 'blockDev': False, 'truesize': 0})
+        confDrives.extend(self.__removableDrives())
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
         indexed = []
         for order, drv in drives:
@@ -457,10 +465,6 @@ class Vm(object):
             drive['path'] = self._prepareVolumePath(drive)
         # Now we got all needed resources
         self._volumesPrepared = True
-
-        if 'floppy' in self.conf:
-            self._floppyPreparedPath = self._prepareVolumePath(
-                                            self.conf['floppy'])
 
     def releaseVm(self):
         """

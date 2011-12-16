@@ -817,21 +817,9 @@ class _DomXML:
             else:
                 driver.setAttribute('error_policy', 'stop')
             diskelem.appendChild(driver)
-        self._devices.appendChild(diskelem)
-
-    def _appendFloppy(self, path):
-        diskelem = self.doc.createElement('disk')
-        diskelem.setAttribute('type', 'file')
-        diskelem.setAttribute('device', 'floppy')
-        if path:
-            source = self.doc.createElement('source')
-            source.setAttribute('file', path)
-            diskelem.appendChild(source)
-            if not utils.getUserPermissions(constants.QEMU_PROCESS_USER, path)['write']:
+        elif device == 'floppy':
+            if drive.path and not utils.getUserPermissions(constants.QEMU_PROCESS_USER, drive.path)['write']:
                 diskelem.appendChild(self.doc.createElement('readonly'))
-        target = xml.dom.minidom.Element('target')
-        target.setAttribute('dev', 'fda')
-        diskelem.appendChild(target)
         self._devices.appendChild(diskelem)
 
     def _appendBalloon(self):
@@ -995,8 +983,6 @@ class LibvirtVm(vm.Vm):
         for drive in self._drives:
             domxml._appendDisk(drive)
 
-        if self._floppyPreparedPath:
-            domxml._appendFloppy(self._floppyPreparedPath)
         if utils.tobool(self.conf.get('vmchannel', 'true')):
             domxml._appendAgentDevice(self._guestSocektFile.decode('utf-8'))
         domxml._appendBalloon()
