@@ -27,6 +27,7 @@ dist_vdsm_PYTHON = \
 	caps.py \
 	clientIF.py \
 	BindingXMLRPC.py \
+	API.py \
 	configNetwork.py \
 	define.py \
 	dsaversion.py \
