@@ -279,7 +279,7 @@ class HSM:
             if isInStorageRepo:
                 whiteList.extend([mountPoint, os.path.join(mountPoint, "*")])
 
-        self.log.debug("White list is %s." % str(whiteList))
+        self.log.debug("White list is %s." % whiteList)
         #Clean whatever is left
         self.log.debug("Cleaning leftovers.")
         # We can't list files form top to bottom because the it will go into
@@ -306,7 +306,7 @@ class HSM:
                 try:
                     os.unlink(os.path.join(base, fullPath))
                 except Exception, ex:
-                    self.log.warn("Cold not delete file '%s' (%s: %s)." % (fullPath, ex.__class__.__name__, str(ex)))
+                    self.log.warn("Cold not delete file '%s' (%s: %s)." % (fullPath, ex.__class__.__name__, ex))
 
         for directory in rmDirList:
             try:
@@ -316,7 +316,7 @@ class HSM:
                 else:
                     os.rmdir(directory)
             except Exception, ex:
-                self.log.warn("Could not delete dir '%s' (%s: %s)." % (fullPath, ex.__class__.__name__, str(ex)))
+                self.log.warn("Could not delete dir '%s' (%s: %s)." % (fullPath, ex.__class__.__name__, ex))
 
         self.log.debug("Finished cleaning storage repository at '%s'" % self.storage_repository)
 
@@ -444,7 +444,7 @@ class HSM:
         :param options: ?
         """
         vars.task.setDefaultException(se.VolumeExtendingError("spUUID=%s, sdUUID=%s, volumeUUID=%s, size=%s" % (
-                                                        str(spUUID), str(sdUUID), str(volumeUUID), str(size))))
+                                                        spUUID, sdUUID, volumeUUID, size)))
         self.validatePoolSD(spUUID, sdUUID)
         size = misc.validateN(size, "size")
         # ExtendVolume expects size in MB
@@ -470,7 +470,7 @@ class HSM:
         :type devlist: list of devices. ``[dev1, dev2]``. ?
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, devlist=%s" % (str(sdUUID), str(devlist))))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, devlist=%s" % (sdUUID, devlist)))
 
         self.validatePoolSD(spUUID, sdUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
@@ -485,7 +485,7 @@ class HSM:
            and leaves the storage domain in 'unattached' status.
            This action can only be performed on regular (i.e. non master) domains
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (str(sdUUID), str(spUUID))))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         if sdUUID == pool.masterDomain.sdUUID:
@@ -510,7 +510,7 @@ class HSM:
         :type masterVersion: int
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s, msdUUID=%s, masterVersion=%s" % (str(sdUUID), str(spUUID), str(msdUUID), str(masterVersion))))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s, msdUUID=%s, masterVersion=%s" % (sdUUID, spUUID, msdUUID, masterVersion)))
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
@@ -567,7 +567,7 @@ class HSM:
         """
         vars.task.setDefaultException(
             se.StoragePoolActionError("spUUID=%s, msdUUID=%s, masterVersion=%s" % (
-                                str(spUUID), str(msdUUID), str(masterVersion))))
+                                spUUID, msdUUID, masterVersion)))
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         try:
@@ -626,8 +626,8 @@ class HSM:
             se.StoragePoolCreationError("spUUID=%s, " \
                 "poolName=%s, masterDom=%s, domList=%s, masterVersion=%s, " \
                 "safelease params: (%s)" % (
-                    str(spUUID), str(poolName), str(masterDom), str(domList),
-                    str(masterVersion), str(safeLease)
+                    spUUID, poolName, masterDom, domList,
+                    masterVersion, safeLease
                 )
             )
         )
@@ -686,8 +686,8 @@ class HSM:
         """
         vars.task.setDefaultException(
             se.StoragePoolConnectionError("spUUID=%s, msdUUID=%s, masterVersion=%s, " \
-                                          "hostID=%s, scsiKey=%s" % (str(spUUID), str(msdUUID),
-                                          str(masterVersion), str(hostID), str(scsiKey))))
+                                          "hostID=%s, scsiKey=%s" % (spUUID, msdUUID,
+                                          masterVersion, hostID, scsiKey)))
         return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID, masterVersion, options)
 
     def _connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID, masterVersion, options=None):
@@ -755,7 +755,7 @@ class HSM:
         .. note::
             if storage pool is not connected or dosn't exist the opration will exit silently.
         """
-        vars.task.setDefaultException(se.StoragePoolDisconnectionError("spUUID=%s, hostID=%s, scsiKey=%s" % (str(spUUID), str(hostID), str(scsiKey))))
+        vars.task.setDefaultException(se.StoragePoolDisconnectionError("spUUID=%s, hostID=%s, scsiKey=%s" % (spUUID, hostID, scsiKey)))
         misc.validateN(hostID, 'hostID')
         # already disconnected/or pool is just unknown - return OK
         try:
@@ -792,7 +792,7 @@ class HSM:
         :param scsiKey: ?
         :param options: ?
         """
-        vars.task.setDefaultException(se.StoragePoolDestroyingError("spUUID=%s, hostID=%s, scsiKey=%s" % (str(spUUID), str(hostID), str(scsiKey))))
+        vars.task.setDefaultException(se.StoragePoolDestroyingError("spUUID=%s, hostID=%s, scsiKey=%s" % (spUUID, hostID, scsiKey)))
         self.log.info("spUUID=%s", spUUID)
 
         pool = self.getPool(spUUID)
@@ -823,7 +823,7 @@ class HSM:
         :type spUUID: UUID
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (str(sdUUID), str(spUUID))))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
@@ -854,7 +854,7 @@ class HSM:
         vars.task.setDefaultException(
             se.StorageDomainActionError(
                 "sdUUID=%s, spUUID=%s, msdUUID=%s, masterVersion=%s" %
-                (str(sdUUID), str(spUUID), str(msdUUID), str(masterVersion))
+                (sdUUID, spUUID, msdUUID, masterVersion)
             )
         )
         self.validatePoolSD(spUUID, sdUUID)
@@ -875,7 +875,7 @@ class HSM:
         :type spUUID: UUID
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (str(sdUUID), str(spUUID))))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
@@ -894,7 +894,7 @@ class HSM:
         :type description: str
         :param options: ?
         """
-        vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s, descr=%s" % (str(spUUID), str(description))))
+        vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s, descr=%s" % (spUUID, description)))
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         pool.setDescription(description)
@@ -1072,10 +1072,10 @@ class HSM:
         """
         argsStr = "sdUUID=%s, spUUID=%s, imgUUID=%s, size=%s, volFormat=%s, " \
                 "preallocate=%s, diskType=%s, volUUID=%s, desc=%s, " \
-                "srcImgUUID=%s, srcVolUUID=%s" % (str(sdUUID), str(spUUID),
-                 str(imgUUID), str(size), str(volFormat), str(preallocate),
-                 str(diskType), str(volUUID), str(desc),
-                 str(srcImgUUID), str(srcVolUUID))
+                "srcImgUUID=%s, srcVolUUID=%s" % (sdUUID, spUUID,
+                 imgUUID, size, volFormat, preallocate,
+                 diskType, volUUID, desc,
+                 srcImgUUID, srcVolUUID)
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
         self.validateSdUUID(sdUUID)
@@ -1107,8 +1107,8 @@ class HSM:
         Delete a volume
         """
         argsStr = "sdUUID=%s, spUUID=%s, imgUUID=%s, volumes=%s, " \
-                "postZero=%s, force=%s" % (str(sdUUID), str(spUUID),
-                str(imgUUID), str(volumes), str(postZero), str(force))
+                "postZero=%s, force=%s" % (sdUUID, spUUID,
+                imgUUID, volumes, postZero, force)
         vars.task.setDefaultException(se.CannotDeleteVolume(argsStr))
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
         self.validateSdUUID(sdUUID)
@@ -1130,7 +1130,7 @@ class HSM:
         """
         Delete Image folder with all volumes
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % str(args)))
+        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
         self.validateSdUUID(sdUUID)
 
@@ -1170,8 +1170,8 @@ class HSM:
         Move/Copy image between storage domains within same storage pool
         """
         argsStr = "spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgUUID=%s, vmUUID=%s, op=%s, "\
-                  "force=%s, postZero=%s force=%s" % (str(spUUID), str(srcDomUUID), str(dstDomUUID),
-                        str(imgUUID), str(vmUUID), str(op), str(force), str(postZero), str(force))
+                  "force=%s, postZero=%s force=%s" % (spUUID, srcDomUUID, dstDomUUID,
+                        imgUUID, vmUUID, op, force, postZero, force)
         vars.task.setDefaultException(se.MoveImageError("%s" % argsStr))
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException("srcDom", "must be different from dstDom: %s" % argsStr)
@@ -1200,8 +1200,8 @@ class HSM:
         """
         Move multiple images between storage domains within same storage pool
         """
-        argsStr = "spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgDict=%s, vmUUID=%s force=%s" % (str(spUUID),
-                                        str(srcDomUUID), str(dstDomUUID), str(imgDict), str(vmUUID), str(force))
+        argsStr = "spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgDict=%s, vmUUID=%s force=%s" % (spUUID,
+                                        srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
         vars.task.setDefaultException(se.MultipleMoveImageError("%s" % argsStr))
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException("dstDomUUID", dstDomUUID)
@@ -1238,9 +1238,9 @@ class HSM:
         """
         argsStr = "sdUUID=%s, spUUID=%s, vmUUID=%s, srcImgUUID=%s, srcVolUUID=%s, dstImgUUID=%s, "\
                    "dstVolUUID=%s, description=%s, dstSdUUID=%s, volType=%s, volFormat=%s, "\
-                   "preallocate=%s force=%s, postZero=%s" % (str(sdUUID), str(spUUID), str(vmUUID),
-                   str(srcImgUUID), str(srcVolUUID), str(dstImgUUID), str(dstVolUUID), str(description),
-                   str(dstSdUUID), str(volType), str(volFormat), str(preallocate), str(force), str(postZero))
+                   "preallocate=%s force=%s, postZero=%s" % (sdUUID, spUUID, vmUUID,
+                   srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID, description,
+                   dstSdUUID, volType, volFormat, preallocate, force, postZero)
         vars.task.setDefaultException(se.TemplateCreationError("%s" % argsStr))
         # Validate imgUUID in case of copy inside source domain itself
         if dstSdUUID in [sdUUID, sd.BLANK_UUID]:
@@ -1281,8 +1281,8 @@ class HSM:
         Merge source volume to the destination volume.
         """
         argsStr = "sdUUID=%s, spUUID=%s, vmUUID=%s, imgUUID=%s, ancestor=%s, successor=%s, "\
-                  "postZero=%s" % (str(sdUUID), str(spUUID), str(vmUUID), str(imgUUID),
-                                    str(ancestor), str(successor), str(postZero))
+                  "postZero=%s" % (sdUUID, spUUID, vmUUID, imgUUID,
+                                    ancestor, successor, postZero)
         vars.task.setDefaultException(se.MergeSnapshotsError("%s" % argsStr))
         pool = self.getPool(spUUID)
         self.validateSdUUID(sdUUID)
@@ -1324,7 +1324,7 @@ class HSM:
                                leaseTimeSec=leaseTimeSec,
                                ioOpTimeoutSec=ioOpTimeoutSec,
                                leaseRetries=leaseRetries)
-        vars.task.setDefaultException(se.ReconstructMasterError("spUUID=%s, masterDom=%s, masterVersion=%s, safelease params: (%s)" % (str(spUUID), str(masterDom), str(masterVersion), str(safeLease))))
+        vars.task.setDefaultException(se.ReconstructMasterError("spUUID=%s, masterDom=%s, masterVersion=%s, safelease params: (%s)" % (spUUID, masterDom, masterVersion, safeLease)))
         self.log.info("spUUID=%s master=%s", spUUID, masterDom)
         try:
             pool = self.getPool(spUUID)
@@ -1452,7 +1452,7 @@ class HSM:
 
         :raises: :exc:`storage_exception.DeviceNotFound` if a device with that GUID doesn't exist.
         """
-        vars.task.setDefaultException(se.BlockDeviceActionError("GUID: %s" % str(guid)))
+        vars.task.setDefaultException(se.BlockDeviceActionError("GUID: %s" % guid))
         #getSharedLock(connectionsResource...)
         try:
             devInfo = self._getDeviceList(guids=[guid])[0]
@@ -1539,7 +1539,7 @@ class HSM:
         :type vgUUID: UUID
         :param options: ?
         """
-        vars.task.setDefaultException(se.VolumeGroupActionError("%s" % str(vgUUID)))
+        vars.task.setDefaultException(se.VolumeGroupActionError("%s" % vgUUID))
         #getSharedLock(connectionsResource...)
         try:
             lvm.removeVGbyUUID(vgUUID)
@@ -1638,7 +1638,7 @@ class HSM:
             try:
                 force = options.get("force", False)
             except:
-                self.log.warning("options %s are ignored" % str(options))
+                self.log.warning("options %s are ignored" % options)
         #getExclusiveLock(tasksResource...)
         return self.taskMng.stopTask(taskID=taskID, force=force)
 
@@ -1740,7 +1740,7 @@ class HSM:
         :returns: a dict of all the floppy volumes found.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.GetFloppyListError("%s" % str(spUUID)))
+        vars.task.setDefaultException(se.GetFloppyListError("%s" % spUUID))
         return self.public_getIsoList(spUUID=spUUID, extension='vfd')
 
 
@@ -1761,7 +1761,7 @@ class HSM:
         :rtype: dict
         """
         cons = loggableConList(conList=conList)
-        vars.task.setDefaultException(se.StorageServerConnectionError("domType=%s, spUUID=%s, conList=%s" % (str(domType), str(spUUID), cons)))
+        vars.task.setDefaultException(se.StorageServerConnectionError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
         #getExclusiveLock(connectionsResource...)
         statusList = storage_connection.StorageServerConnection().connect(domType=domType, conList=conList)
         # Connecting new device may change the visible storage domain list
@@ -1784,7 +1784,7 @@ class HSM:
         :param options: ?
         """
         cons = loggableConList(conList=conList)
-        vars.task.setDefaultException(se.StorageServerValidationError("domType=%s, spUUID=%s, conList=%s" % (str(domType), str(spUUID), cons)))
+        vars.task.setDefaultException(se.StorageServerValidationError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
         #getSharedLock(connectionsResource...)
         statusList = storage_connection.StorageServerConnection().validate(domType=domType, conList=conList)
         return dict(statuslist=statusList)
@@ -1805,7 +1805,7 @@ class HSM:
         :rtype: dict
         """
         cons = loggableConList(conList=conList)
-        vars.task.setDefaultException(se.StorageServerDisconnectionError("domType=%s, spUUID=%s, conList=%s" % (str(domType), str(spUUID), cons)))
+        vars.task.setDefaultException(se.StorageServerDisconnectionError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
         #getExclusiveLock(connectionsResource...)
         statusList = storage_connection.StorageServerConnection().disconnect(domType=domType, conList=conList)
         # Disconnecting a device may change the visible storage domain list
@@ -1825,7 +1825,7 @@ class HSM:
         :type spUUID: UUID
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageServerActionError("spUUID=%s" % str(spUUID)))
+        vars.task.setDefaultException(se.StorageServerActionError("spUUID=%s" % spUUID))
         raise se.NotImplementedException("getStorageConnectionsList")
         # Once implemented, return value should look something like this:
         #getSharedLock(connectionsResource...)
@@ -1844,7 +1844,7 @@ class HSM:
 
         :returns: getPool(spUUID).getInfo
         """
-        vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s" % str(spUUID)))
+        vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s" % spUUID))
         vars.task.getSharedLock(STORAGE, spUUID)
         return self.getPool(spUUID).getInfo()
 
@@ -1910,7 +1910,7 @@ class HSM:
         :returns: :keyword:`True` if storage domain is valid.
         :rtype: bool
         """
-        vars.task.setDefaultException(se.StorageDomainCreationError("sdUUID=%s" % str(sdUUID)))
+        vars.task.setDefaultException(se.StorageDomainCreationError("sdUUID=%s" % sdUUID))
         return sdCache.produce(sdUUID=sdUUID).validate()
 
 
@@ -1938,7 +1938,7 @@ class HSM:
 
         :returns: Nothing
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % str(sdUUID)))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         #getSharedLock(connectionsResource...)
 
         vars.task.getExclusiveLock(STORAGE, sdUUID)
@@ -1958,7 +1958,7 @@ class HSM:
             # Allow format also for broken domain
         except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError, se.MiscFileReadException,
                 se.MiscBlockReadException, se.MiscBlockReadIncomplete), e:
-            self.log.warn("Domain %s has problem with metadata. Continue formating... (%s)", sdUUID, str(e))
+            self.log.warn("Domain %s has problem with metadata. Continue formating... (%s)", sdUUID, e)
 
         self._recycle(sd)
 
@@ -1977,7 +1977,7 @@ class HSM:
         if len(description) > sd.MAX_DOMAIN_DESCRIPTION_SIZE:
             raise se.StorageDomainDescriptionTooLongError()
 
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, description=%s" % (str(sdUUID), str(description))))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, description=%s" % (sdUUID, description)))
         dom = sdCache.produce(sdUUID=sdUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         dom.setDescription(descr=description)
@@ -1995,7 +1995,7 @@ class HSM:
         :returns: a dict containing the information about the domain.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % str(sdUUID)))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         self.validateSdUUID(sdUUID)
         #getSharedLock(connectionsResource...)
 
@@ -2039,7 +2039,7 @@ class HSM:
         :returns: a dict containing the statistics information.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % str(sdUUID)))
+        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
         dom.refresh()
@@ -2060,7 +2060,7 @@ class HSM:
         :returns: a dict containing list of storage domains.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("spUUID: %s" % str(spUUID)))
+        vars.task.setDefaultException(se.StorageDomainActionError("spUUID: %s" % spUUID))
         sdCache.refreshStorage()
         if spUUID and spUUID != volume.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
@@ -2234,7 +2234,7 @@ class HSM:
         :raises: :exc:`storage_exception.VolumeGroupDoesNotExist`
                  if no VG with the specified UUID is found
         """
-        vars.task.setDefaultException(se.VolumeGroupActionError("%s" % str(vgUUID)))
+        vars.task.setDefaultException(se.VolumeGroupActionError("%s" % vgUUID))
         #getSharedLock(connectionsResource...)
         return dict(info=self.__getVGsInfo([vgUUID])[0])
 
@@ -2251,7 +2251,7 @@ class HSM:
         :returns: a dict containing the send targets that were discovered.
         :rtype: dict
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % str(args)))
+        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
         #getSharedLock(connectionsResource...)
         ip = con['connection']
         port = con['port']
@@ -2277,7 +2277,7 @@ class HSM:
         .. warning::
             This method is not yet implemented.
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % str(args)))
+        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
         #getExclusiveLock(connectionsResource...)
         # TODO: Implement
         pass
@@ -2349,7 +2349,7 @@ class HSM:
         :returns: a dict with the info of the volume.
         :rtype: dict
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % str(args)))
+        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -2479,7 +2479,7 @@ class HSM:
         repoPath = os.path.join(self.storage_repository, spUUID)
         for img in images:
             uuidlist += dom.getVolumeClass().getImageVolumes(repoPath, sdUUID, img)
-        self.log.info("List of volumes is %s", str(uuidlist))
+        self.log.info("List of volumes is %s", uuidlist)
         return dict(uuidlist=uuidlist)
 
 
@@ -2516,7 +2516,7 @@ class HSM:
         :returns: a dict containing the list of domains found.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.GetStorageDomainListError("spUUID=%s imgUUID=%s" % (str(spUUID), str(imgUUID))))
+        vars.task.setDefaultException(se.GetStorageDomainListError("spUUID=%s imgUUID=%s" % (spUUID, imgUUID)))
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # Find out domain list from the pool metadata
@@ -2617,7 +2617,7 @@ class HSM:
         :returns: a dict containing the spms state?
         :rtype: dict
         """
-        vars.task.setDefaultException(se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" % (str(spUUID), str(lastOwner), str(lastLver))))
+        vars.task.setDefaultException(se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" % (spUUID, lastOwner, lastLver)))
         pool = self.getPool(spUUID)
         pool.invalidateMetadata()
         vars.task.getExclusiveLock(STORAGE, spUUID)
