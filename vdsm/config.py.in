@@ -127,6 +127,8 @@ parameters = [
         ('fake_kvm_support', 'false', None),
 
         ('max_open_files', '4096', None),
+
+        ('max_processes', '2048', None),
     ]),
 
     # Section: [ksm]
