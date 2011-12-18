@@ -53,6 +53,8 @@ def captureNetwork(networkName, ifaceName, mode):
         the monitoring interface. (the ip stay the same, so this way you know that the
         packets are not meant to the monitoring machine).
 
+        set the bridge in promisc mode
+        $ ifconfig <netwok name> promisc
         traffic to the monitoring machine
         $ ebtables -t nat -A PREROUTING -d 00:1a:4a:16:01:51 -i eth0 -j dnat --to-destination 00:1a:4a:16:01:11
         traffic from the monitoring machine

@@ -20,3 +20,7 @@ from the promiscuous VM:
 NOTE:
 Currently the redirect is not working,
 There is instructions for doing so with ebtables in after_vm_start.py script.
+
+the bridge interface must be in promisc mode:
+
+# ifconfig blue promisc
