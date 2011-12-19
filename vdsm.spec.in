@@ -425,27 +425,27 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
-%{_datadir}/%{vdsm_name}/define.py*
-%{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/caps.py*
-%{_datadir}/%{vdsm_name}/utils.py*
+%{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/constants.py*
-%{_datadir}/%{vdsm_name}/vm.py*
-%{_datadir}/%{vdsm_name}/vdscli.py*
+%{_datadir}/%{vdsm_name}/define.py*
+%{_datadir}/%{vdsm_name}/get-vm-pid
+%{_datadir}/%{vdsm_name}/hooking.py*
+%{_datadir}/%{vdsm_name}/hooks.py*
+%{_datadir}/%{vdsm_name}/libvirtconnection.py*
+%{_datadir}/%{vdsm_name}/libvirtev.py*
+%{_datadir}/%{vdsm_name}/libvirtvm.py*
+%{_datadir}/%{vdsm_name}/mk_sysprep_floppy
+%{_datadir}/%{vdsm_name}/prepare-vmchannel
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
-%{_datadir}/%{vdsm_name}/libvirtvm.py*
-%{_datadir}/%{vdsm_name}/libvirtconnection.py*
-%{_datadir}/%{vdsm_name}/hooks.py*
-%{_datadir}/%{vdsm_name}/hooking.py*
-%{_datadir}/%{vdsm_name}/libvirtev.py*
+%{_datadir}/%{vdsm_name}/utils.py*
+%{_datadir}/%{vdsm_name}/vdscli.py*
 %{_datadir}/%{vdsm_name}/vdsm
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
+%{_datadir}/%{vdsm_name}/vm.py*
 %{_datadir}/%{vdsm_name}/write-net-config
-%{_datadir}/%{vdsm_name}/mk_sysprep_floppy
-%{_datadir}/%{vdsm_name}/get-vm-pid
-%{_datadir}/%{vdsm_name}/prepare-vmchannel
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm

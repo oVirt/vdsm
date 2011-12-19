@@ -22,16 +22,18 @@ import os, traceback
 import time
 import threading, logging
 import constants
+import tempfile
+import pickle
+from copy import deepcopy
+
 import utils
 from define import NORMAL, ERROR, doneCode, errCode
 from config import config
 import kaxmlrpclib
-import pickle
 from logUtils import SimpleLogAdapter
-from copy import deepcopy
-import tempfile
 import libvirt
 import vdscli
+import caps
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
 
@@ -252,7 +254,7 @@ class Vm(object):
     its behaviour.
     """
     log = logging.getLogger("vm.Vm")
-    _ongoingCreations = threading.BoundedSemaphore(1)
+    _ongoingCreations = threading.BoundedSemaphore(caps.CpuInfo().cores())
     MigrationSourceThreadClass = MigrationSourceThread
     def __init__(self, cif, params):
         """
