@@ -363,10 +363,13 @@ class ResourceManager(object):
             return self._namespaces.keys()
 
     def registerNamespace(self, namespace, factory, force=False):
-        with self._syncRoot.exclusive:
-            if not self._namespaceValidator.match(namespace):
-                raise ValueError("Illegal namespace '%s'" % namespace)
+        if not self._namespaceValidator.match(namespace):
+            raise ValueError("Illegal namespace '%s'" % namespace)
 
+        if (namespace in self._namespaces) and not force:
+                raise ValueError("Namespace '%s' already exists." % namespace)
+
+        with self._syncRoot.exclusive:
             if (namespace in self._namespaces):
                 if force:
                     self.unregisterNamespace(namespace)
