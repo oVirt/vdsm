@@ -35,6 +35,7 @@ import subprocess
 import pwd
 import fcntl
 import functools
+import stat
 
 import ethtool
 
@@ -45,6 +46,11 @@ import netinfo
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
+
+def isBlockDevice(path):
+    path = os.abspath(path)
+    return stat.S_ISBLK(os.stat(path).st_mode)
+
 
 def rmFile(fileToRemove):
     """

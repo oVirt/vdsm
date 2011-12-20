@@ -346,8 +346,7 @@ class Vm(object):
                              drv['volumeID'])
         drv['truesize'] = res['truesize']
         drv['apparentsize'] = res['apparentsize']
-        drv['blockDev'] = not self.cif.irs.getStorageDomainInfo(
-                    drv['domainID'])['info']['type'] in ('NFS', 'LOCALFS')
+        drv['blockDev'] = utils.isBlockDevice(drv['path'])
 
     def __legacyDrives(self):
          """
