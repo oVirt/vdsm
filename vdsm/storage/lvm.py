@@ -34,6 +34,7 @@ from collections import namedtuple
 import pprint as pp
 import threading
 from itertools import chain
+from subprocess import list2cmdline
 
 import constants
 import misc
@@ -1127,7 +1128,7 @@ def refreshLV(vgName, lvName):
     rc, out, err = _lvminfo.cmd(cmd)
     _lvminfo._invalidatelvs(vgName, lvName)
     if rc != 0:
-        raise se.LogicalVolumeRefreshError("lvchange --refresh %s/%s failed" % (vgName, lvName))
+        raise se.LogicalVolumeRefreshError("%s failed" % list2cmdline(cmd))
 
 
 #Fix me: Function name should mention LV or unify with VG version.
