@@ -47,7 +47,8 @@ PARAMS_NFS = (
         ('cid', 'id'),
         ('rp', 'connection'),
         ('retrans', 'retrans', 6),
-        ('timeout', 'timeout', 600))
+        ('timeout', 'timeout', 600),
+        ('version', 'protocol_version', None))
 PARAMS_SHAREDFS = (
         ('cid', 'id'),
         ('rp', 'spec'),
@@ -73,8 +74,13 @@ PARAM_VALIDATION_REGISTRAR = {
         sd.SHAREDFS_DOMAIN: PARAMS_SHAREDFS }
 
 def getNfsOptions(con):
-    return fileUtils.NFS_OPTIONS + (',timeo=%s,retrans=%s' % (con['timeout'],
+    opts = fileUtils.NFS_OPTIONS + (',timeo=%s,retrans=%s' % (con['timeout'],
         con['retrans']))
+
+    if con['version']:
+        opts += ",vers=%s" % con['version']
+
+    return opts
 
 def getMountRoot():
     storage_repository = config.get('irs', 'repository')
