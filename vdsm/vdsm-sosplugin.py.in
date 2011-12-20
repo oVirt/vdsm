@@ -83,7 +83,6 @@ class vdsm(sos.plugintools.PluginBase):
         self.collectExtOutput(vdsclient + "list")
         self.collectExtOutput(vdsclient + "getVGList")
         self.collectExtOutput(vdsclient + "getDeviceList")
-        self.collectExtOutput(vdsclient + "getSessionList")
         self.collectExtOutput(vdsclient + "getAllTasksInfo")
         self.collectExtOutput(vdsclient + "getAllTasksStatuses")
         p = subprocess.Popen(vdsclient + "getConnectedStoragePoolsList",

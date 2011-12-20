@@ -82,7 +82,6 @@ Storage Server Managment
 .. automethod:: storage.hsm.HSM.public_discoverSendTargets
 .. automethod:: storage.hsm.HSM.public_validateStorageServerConnection
 
-.. automethod:: storage.hsm.HSM.public_getSessionList
 .. automethod:: storage.hsm.HSM.public_getStorageConnectionsList
 
 .. automethod:: storage.hsm.HSM.public_repoStats

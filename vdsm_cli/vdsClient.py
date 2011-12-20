@@ -598,14 +598,6 @@ class service:
         print "---- targets"
         for target in targets['targets']:
             print target
-
-        return 0, ''
-
-    def getSessionList(self, args):
-        sessions = self.s.getSessionList()
-        for session in sessions['sessions']:
-            print session
-
         return 0, ''
 
     def cleanupUnusedConnections(self, args):
@@ -1622,10 +1614,6 @@ if __name__ == '__main__':
             'discoverST' : ( serv.discoverST,
                            ('ip[:port] [username password]',
                             'Discover the available iSCSI targetnames on a specified iSCSI portal'
-                            )),
-            'getSessionList' : ( serv.getSessionList,
-                           ('',
-                            'Collect the list of active SAN storage sessions'
                             )),
             'cleanupUnusedConnections' : ( serv.cleanupUnusedConnections,
                            ('',
