@@ -64,6 +64,11 @@ class Drive(object):
     def isVdsmImage(self):
         return getattr(self, 'poolID', False)
 
+    def __str__(self):
+        attrs = [":".join((a, str(getattr(self, a)))) for a in dir(self)
+                 if not a.startswith('__')]
+        return " ".join(attrs)
+
 class _MigrationError(RuntimeError): pass
 
 class MigrationSourceThread(threading.Thread):
