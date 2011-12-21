@@ -59,6 +59,11 @@ RESERVED_LEASES = 100
 
 rmanager = rm.ResourceManager.getInstance()
 
+def _getDeviceSize(devPath):
+    with open(devPath, "rb") as f:
+        f.seek(0, 2)
+        return f.tell()
+
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
@@ -83,6 +88,16 @@ class BlockVolume(volume.Volume):
 
     @classmethod
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
+        try:
+            return _getDeviceSize(lvm.lvPath(sdobj.sdUUID, volUUID)) / bs
+        except OSError:
+            # This is OK, the volume might not be active. Try the traditional
+            # way
+            pass
+        except Exception:
+            cls.log.warn("Could not get size for vol %s/%s using optimized methods",
+                    sdobj.sdUUID, volUUID, exc_info=True)
+
         return int(int(lvm.getLV(sdobj.sdUUID, volUUID).size) / bs)
 
     getVTrueSize = getVSize
