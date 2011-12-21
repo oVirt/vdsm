@@ -170,6 +170,11 @@ class HSM:
         except se.StorageDomainDoesNotExist:
             pass
 
+    def validateSPM(self, spUUID):
+        pool = self.getPool(spUUID)
+        if pool.getSpmRole() != sp.SPM_ACQUIRED:
+            raise se.SpmStatusError(spUUID)
+
     def validateNotSPM(self, spUUID):
         pool = self.getPool(spUUID)
         if pool.getSpmRole() != sp.SPM_FREE:
@@ -567,6 +572,7 @@ class HSM:
                 pool.hsmMailer.sendExtendMsg(volDict, newSize, callbackFunc)
 
     def _spmSchedule(self, spUUID, name, func, *args):
+        self.validateSPM(spUUID)
         pool = self.getPool(spUUID)
         self.taskMng.scheduleJob("spm", pool.tasksDir, vars.task, name, func, *args)
 
