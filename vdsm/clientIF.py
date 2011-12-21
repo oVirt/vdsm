@@ -583,15 +583,21 @@ class clientIF:
             #Another (dict) drive specification
             elif drive.has_key("GUID") and os.path.exists(os.path.join("/dev/mapper", drive["GUID"])):
                 path = os.path.join("/dev/mapper", drive["GUID"])
+                drive['blockDev'] = True
             elif drive.has_key("UUID"):
                 path = self._getUUIDSpecPath(drive["UUID"])
+                drive['blockDev'] = True
             elif drive.has_key("path"):
                 path = drive['path']
+                drive['blockDev'] = False
         #For BC sake: a path as a string.
         elif not drive:
             path = drive
         elif os.path.exists(drive):
             path = drive
+        else:
+             raise vm.VolumeError(drive)
+
         self.log.info("prepared volume path: %s" % path)
         return path
 
