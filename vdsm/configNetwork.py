@@ -224,8 +224,8 @@ class ConfigWriter(object):
         os.chown(backup, vdsm_uid, 0)
         logging.debug("Persistently backed up %s (until next 'set safe config')" % filename)
 
-    def addBridge(self, name, ipaddr=None, netmask=None, gateway=None,
-            bootproto=None, delay='0', onboot='yes', **kwargs):
+    def addBridge(self, name, ipaddr=None, netmask=None, mtu=None,
+            gateway=None, bootproto=None, delay='0', onboot='yes', **kwargs):
         "Based on addNetwork"
 
         s = """DEVICE=%s\nTYPE=Bridge\nONBOOT=%s\n""" % (pipes.quote(name), pipes.quote(onboot))
@@ -236,6 +236,8 @@ class ConfigWriter(object):
         else:
             if bootproto:
                 s = s + 'BOOTPROTO=%s\n' % pipes.quote(bootproto)
+        if mtu:
+            s = s + 'MTU=%d\n' % mtu
         s += 'DELAY=%s\n' % pipes.quote(delay)
         s += 'NM_CONTROLLED=no\n'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
@@ -252,14 +254,17 @@ class ConfigWriter(object):
         open(conffile, 'w').write(s)
         os.chmod(conffile, 0664)
 
-    def addVlan(self, vlanId, iface, bridge):
+    def addVlan(self, vlanId, iface, bridge, mtu=None):
         "Based on addNetwork"
         conffile = self.NET_CONF_PREF + iface + '.' + vlanId
         self._backup(conffile)
-        open(conffile, 'w').write("""DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\nBRIDGE=%s\nNM_CONTROLLED=no\n""" % (pipes.quote(iface), vlanId, pipes.quote(bridge)))
+        content = """DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\nBRIDGE=%s\nNM_CONTROLLED=no\n"""
+        if mtu:
+            content = content + 'MTU=%d\n' % mtu
+        open(conffile, 'w').write(content % (pipes.quote(iface), vlanId, pipes.quote(bridge)))
         os.chmod(conffile, 0664)
 
-    def addBonding(self, bonding, bridge=None, bondingOptions=None):
+    def addBonding(self, bonding, bridge=None, bondingOptions=None, mtu=None):
         "Based on addNetwork"
         conffile = self.NET_CONF_PREF + bonding
         self._backup(conffile)
@@ -271,12 +276,14 @@ class ConfigWriter(object):
                 bondingOptions = 'mode=802.3ad miimon=150'
             f.write('BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or ''))
             f.write('NM_CONTROLLED=no\n')
+            if mtu:
+                f.write('MTU=%d\n' % mtu)
         os.chmod(conffile, 0664)
         # create the bonding device to avoid initscripts noise
         if bonding not in open('/sys/class/net/bonding_masters').read().split():
             open('/sys/class/net/bonding_masters', 'w').write('+%s\n' % bonding)
 
-    def addNic(self, nic, bonding=None, bridge=None):
+    def addNic(self, nic, bonding=None, bridge=None, mtu=None):
         "Based on addNetwork"
         conffile = self.NET_CONF_PREF + nic
         self._backup(conffile)
@@ -292,6 +299,8 @@ class ConfigWriter(object):
                 f.write('MASTER=%s\n' % pipes.quote(bonding))
                 f.write('SLAVE=yes\n')
             f.write('NM_CONTROLLED=no\n')
+            if mtu:
+                f.write('MTU=%d\n' % mtu)
         os.chmod(conffile, 0664)
 
     def removeNic(self, nic):
@@ -320,7 +329,127 @@ class ConfigWriter(object):
         if bridge in NetInfo().networks:
             raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'delNetwork: bridge %s still exists' % bridge)
 
+    def _getConfigValue(self, conffile, entry):
+        """
+        Get value from network configuration file
 
+        :param entry: entry to look for (entry=value)
+        :type entry: string
+
+        :returns: value for entry (or None)
+        :rtype: string
+
+        Search for entry in conffile and return
+        its value or None if not found
+        """
+        with open(conffile) as f:
+            entries = [ line for line in f.readlines()
+                        if line.startswith(entry + '=') ]
+        if len(entries) != 0:
+            value = entries[0].split('=', 1)[1]
+            return value.strip()
+        return None
+
+    def _updateConfigValue(self, conffile, entry, value, delete=False):
+        """
+        Set value for network configuration file
+
+        :param entry: entry to update (entry=value)
+        :type entry: string
+
+        :param value: value to update (entry=value)
+        :type value: string
+
+        :param delete: delete entry
+        :type delete: boolean
+
+        Search for entry in conffile and return
+        its value or None if not found,
+        if delete is True the entry will be deleted from
+        the configuration file
+        """
+        with open(conffile) as f:
+            entries = [ line for line in f.readlines()
+                        if not line.startswith(entry + '=') ]
+
+        if not delete:
+            entries.append('\n' + entry + '=' + value)
+
+        self._backup(conffile)
+        try:
+            with open(conffile, 'w') as f:
+                f.writelines(entries)
+                f.close()
+        except:
+            self.restoreAtomicBackup()
+            raise
+
+    def getMaxMtu(self, nics, mtu):
+        """
+        Get the max MTU value from configuration/parameter
+
+        :param nics: list of nics
+        :type nics: list
+
+        :param mtu: mtu value
+        :type mtu: integer
+
+        getMaxMtu retuen the highest value in a connection tree,
+        it check if a vlan, bond that have a higher mtu value
+        """
+        for nic in nics:
+            cf = self.NET_CONF_PREF + nic
+            mtuval = self._getConfigValue(cf, 'MTU')
+            if not mtuval is None:
+                if int(mtuval) > mtu:
+                    mtu = mtuval
+        return mtu
+
+    def setNewMtu(self, bridge):
+        """
+        Set new MTU value to bridge and its interfaces
+
+        :param bridge: bridge name
+        :type bridge: string
+
+        Update MTU to devices (bridge, interfaces, bonds and vlans)
+        Or added a new value,
+        also set the bridge to the higher value if its under vlans or bond
+        """
+        _netinfo = NetInfo()
+        cf = self.NET_CONF_PREF + bridge
+        currmtu = self._getConfigValue(cf, 'MTU')
+        if currmtu is None:
+            return
+
+        nics, delvlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(bridge)
+        if delvlan is None:
+            return
+
+        if bonding:
+            networks, vlans = _netinfo.getNetworksAndVlansForBonding(bonding)
+            delvlan = bonding + '.' + delvlan
+        else:
+            vlans = _netinfo.getVlansForNic(nics[0])
+            delvlan = nics[0] + '.' + delvlan
+
+        newmtu = None
+        for vlan in vlans:
+            if vlan == delvlan:
+                continue
+            cf = self.NET_CONF_PREF + vlan
+            mtu = self._getConfigValue(cf, 'MTU')
+            newmtu = max(newmtu, mtu)
+
+        if newmtu != currmtu:
+            if bonding:
+                slaves = NetInfo.slaves(bonding)
+                for slave in slaves:
+                    cf = self.NET_CONF_PREF + slave
+                    self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
+            else:
+                cf = self.NET_CONF_PREF + nics[0]
+                self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
 
 def isBridgeNameValid(bridgeName):
     return bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and len(set(bridgeName) & set(ILLEGAL_BRIDGE_CHARS)) == 0
@@ -440,10 +569,13 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
         if bondingForNics and bondingForNics != bonding:
             raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already enslaved to %s' % (nic, bondingForNics))
 
-def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, gateway=None,
-               force=False, configWriter=None, bondingOptions=None, **options):
+def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, mtu=None,
+               gateway=None, force=False, configWriter=None, bondingOptions=None, **options):
     nics = nics or ()
     _netinfo = NetInfo()
+
+    if mtu:
+        mtu = int(mtu)
 
     # Validation
     if not _isTrue(force):
@@ -451,28 +583,33 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
         _addNetworkValidation(_netinfo, bridge, vlan=vlan, bonding=bonding, nics=nics,
                               ipaddr=ipaddr, netmask=netmask, gateway=gateway,
                               bondingOptions=bondingOptions)
-    logging.info("Adding bridge %s with vlan=%s, bonding=%s, nics=%s. bondingOptions=%s, options=%s"
-                 %(bridge, vlan, bonding, nics, bondingOptions, options))
+    logging.info("Adding bridge %s with vlan=%s, bonding=%s, nics=%s. bondingOptions=%s, options=%s, mtu=%s"
+                 %(bridge, vlan, bonding, nics, bondingOptions, options, mtu))
 
     if configWriter is None:
         configWriter = ConfigWriter()
 
-    configWriter.addBridge(bridge, ipaddr=ipaddr, netmask=netmask, gateway=gateway, **options)
+    prevmtu = None
+    if mtu and vlan:
+        prevmtu = configWriter.getMaxMtu(nics, mtu)
+
+    configWriter.addBridge(bridge, ipaddr=ipaddr, netmask=netmask, mtu=mtu,
+                           gateway=gateway, **options)
     ifaceBridge = bridge
     if vlan:
-        configWriter.addVlan(vlan, bonding or nics[0], bridge)
+        configWriter.addVlan(vlan, bonding or nics[0], bridge, mtu=mtu)
         # since we have vlan device, it is connected to the bridge. other
         # interfaces should be connected to the bridge through vlan, and not
         # directly.
         ifaceBridge = None
 
     if bonding:
-        configWriter.addBonding(bonding, ifaceBridge, bondingOptions=bondingOptions)
+        configWriter.addBonding(bonding, ifaceBridge, bondingOptions=bondingOptions, mtu=mtu)
         for nic in nics:
-            configWriter.addNic(nic, bonding=bonding)
+            configWriter.addNic(nic, bonding=bonding, mtu=max(prevmtu, mtu))
     else:
         for nic in nics:
-            configWriter.addNic(nic, bridge=ifaceBridge)
+            configWriter.addNic(nic, bridge=ifaceBridge, mtu=max(prevmtu, mtu))
 
     # take down nics that need to be changed
     vlanedIfaces = [v['iface'] for v in _netinfo.vlans.values()]
@@ -568,6 +705,8 @@ def delNetwork(bridge, force=False, configWriter=None, **options):
 
     if configWriter is None:
         configWriter = ConfigWriter()
+
+    configWriter.setNewMtu(bridge)
 
     if bridge:
         ifdown(bridge)

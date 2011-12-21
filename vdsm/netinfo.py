@@ -57,6 +57,10 @@ def slaves(bonding):
 def ports(bridge):
     return os.listdir('/sys/class/net/' + bridge + '/brif')
 
+def getMtu(iface):
+    mtu = file('/sys/class/net/%s/mtu' % iface).readline().rstrip()
+    return mtu
+
 def bridge_stp_state(bridge):
     stp = file('/sys/class/net/%s/bridge/stp_state' % bridge).readline()
     if stp == '1\n':
@@ -211,12 +215,14 @@ def get():
                                      'addr': ifaces[bridge]['addr'],
                                      'netmask': ifaces[bridge]['netmask'],
                                      'gateway': routes.get(bridge, '0.0.0.0'),
-                                     'cfg': getIfaceCfg(bridge)})
+                                     'cfg': getIfaceCfg(bridge),
+                                     'mtu': getMtu(bridge)})
                            for bridge in bridges() ])
     d['nics'] = dict([ (nic, {'speed': speed(nic),
                               'addr': ifaces[nic]['addr'],
                               'netmask': ifaces[nic]['netmask'],
-                              'hwaddr': ifaces[nic]['hwaddr']})
+                              'hwaddr': ifaces[nic]['hwaddr'],
+                              'mtu': getMtu(nic)})
                         for nic in nics() ])
     paddr = permAddr()
     for nic, nd in d['nics'].iteritems():
@@ -226,11 +232,13 @@ def get():
                               'addr': ifaces[bond]['addr'],
                               'netmask': ifaces[bond]['netmask'],
                               'hwaddr': ifaces[bond]['hwaddr'],
-                              'cfg': getIfaceCfg(bond)})
+                              'cfg': getIfaceCfg(bond),
+                              'mtu': getMtu(bond)})
                         for bond in bondings() ])
     d['vlans'] = dict([ (vlan, {'iface': vlan.split('.')[0],
                                 'addr': ifaces[vlan]['addr'],
-                                'netmask': ifaces[vlan]['netmask']})
+                                'netmask': ifaces[vlan]['netmask'],
+                                'mtu': getMtu(vlan)})
                         for vlan in vlans() ])
     return d
 
