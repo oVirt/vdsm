@@ -9,24 +9,9 @@ import traceback
 MODE_MIRROR = 'mirror'
 MODE_INLINE = 'redirect'
 
-'''
-promisc vdsm hook
-=================
-hook is getting network (bridge) name and mode: prmisc=blue:mirror,red:redirect and
-set the current running vm in promiscuous mode, ie: mirror all blue traffic to current vm
-
-syntax:
-1. promisc=blue:mirror
-    # mirror monitoring the network blue (all traffic will goto the VMs interface and the network)
-2. promisc=blue:redirect
-    # redirect network blue traffic to VMs interface (all traffic will goto the VMs interface,
-    # and the its the VM responsibility to redirect the traffic back to blues interfaces)
-'''
-
 def getIfaceName(iface):
     target = iface.getElementsByTagName('target')[0]
     return target.attributes['dev'].value
-
 
 def captureNetwork(networkName, ifaceName, mode):
     '''
@@ -46,19 +31,9 @@ def captureNetwork(networkName, ifaceName, mode):
 
     NOTE:
     =====
-    1. use redirect instead of mirror for in-line mode (ie dont copy the packets
-        forward it to ifaceName and he will redirect them)
-    2. redirect (not mirror) with ebtables:
-        need to change the mac address of the packets from monitored interface to
-        the monitoring interface. (the ip stay the same, so this way you know that the
-        packets are not meant to the monitoring machine).
-
-        set the bridge in promisc mode
-        $ ifconfig <netwok name> promisc
-        traffic to the monitoring machine
-        $ ebtables -t nat -A PREROUTING -d 00:1a:4a:16:01:51 -i eth0 -j dnat --to-destination 00:1a:4a:16:01:11
-        traffic from the monitoring machine
-        $ ebtables -t nat -A PREROUTING -s 00:1a:4a:16:01:51 -i vnet0 -j dnat --to-destination 00:1a:4a:16:01:11
+    in in-line mode we don't filter a network
+    the network parameter here is a tap device for the
+    security vm
     '''
 
     command = ['/sbin/tc', 'qdisc', 'add', 'dev', networkName, 'ingress']
@@ -123,7 +98,18 @@ if os.environ.has_key('promisc'):
             for iface in interfaces:
                 if iface.hasAttribute('type') and iface.attributes['type'].value == 'bridge':
                     ifaceName = getIfaceName(iface)
-                    captureNetwork(network, ifaceName, mode)
+                    if mode == MODE_MIRROR:
+                        captureNetwork(network, ifaceName, mode)
+                    else:
+                        #NOTE:
+                        #in in-line mode we don't filter a network
+                        #the network parameter here is a tap device for the
+                        #security vm, so we switch the ifaceName and network
+                        #parameter order
+                        #TODO: it may be right to use the mirror as we do with the
+                        #in-line mode now, ie not filter the network but filter
+                        #the vm interface
+                        captureNetwork(ifaceName, network, mode)
 
     except:
         sys.stderr.write('promisc: [unexpected error]: %s\n' % traceback.format_exc())
