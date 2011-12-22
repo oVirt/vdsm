@@ -39,9 +39,6 @@ import caps
 import configNetwork
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
-_VHOST_MAP = {'true': 'vhost', 'false': 'qemu'}
-
-DEFAULT_BRIDGE = config.get("vars", "default_bridge")
 
 class VmStatsThread(utils.AdvancedStatsThread):
     MBPS_TO_BPS = 10**6 / 8
@@ -76,7 +73,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
             # Avoid queries from storage during recovery process
             return
 
-        for vmDrive in self._vm._drives:
+        for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             if vmDrive.blockDev and vmDrive.format == 'cow':
                 capacity, alloc, physical = \
                                         self._vm._dom.blockInfo(vmDrive.path, 0)
@@ -91,7 +88,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
             # Avoid queries from storage during recovery process
             return
 
-        for vmDrive in self._vm._drives:
+        for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             if not vmDrive.isVdsmImage():
                 continue
             volSize = self._vm.cif.irs.getVolumeSize(vmDrive.domainID,
@@ -110,7 +107,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
             return
 
         diskSamples = {}
-        for vmDrive in self._vm._drives:
+        for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             diskSamples[vmDrive.name] = self._vm._dom.blockStats(vmDrive.name)
 
         return diskSamples
@@ -156,7 +153,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
         out = json.loads(res)
 
         stats = _blockstatsParses(out)
-        for vmDrive in self._vm._drives:
+        for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             try:
                 diskLatency[vmDrive.name] = stats[vmDrive.alias]
             except KeyError:
@@ -170,8 +167,8 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
     def _sampleNet(self):
         netSamples = {}
-        for vmIface in self._vm.interfaces.keys():
-            netSamples[vmIface] = self._vm._dom.interfaceStats(vmIface)
+        for nic in self._vm._devices[vm.NIC_DEVICES]:
+            netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
         return netSamples
 
     def _getCpuStats(self, stats):
@@ -190,23 +187,23 @@ class VmStatsThread(utils.AdvancedStatsThread):
         stats['network'] = {}
         sInfo, eInfo, sampleInterval = self.sampleNet.getStats()
 
-        for ifName, ifInfo in self._vm.interfaces.items():
-            ifSpeed = [100, 1000][ifInfo[1] in ('e1000', 'virtio')]
+        for nic in self._vm._devices[vm.NIC_DEVICES]:
+            ifSpeed = [100, 1000][nic.nicModel in ('e1000', 'virtio')]
 
-            ifStats = {'macAddr':   ifInfo[0],
-                       'name':      ifName,
+            ifStats = {'macAddr':   nic.macAddr,
+                       'name':      nic.name,
                        'speed':     str(ifSpeed),
                        'state':     'unknown'}
 
             try:
-                ifStats['rxErrors']  = str(eInfo[ifName][2])
-                ifStats['rxDropped'] = str(eInfo[ifName][3])
-                ifStats['txErrors']  = str(eInfo[ifName][6])
-                ifStats['txDropped'] = str(eInfo[ifName][7])
+                ifStats['rxErrors']  = str(eInfo[nic.name][2])
+                ifStats['rxDropped'] = str(eInfo[nic.name][3])
+                ifStats['txErrors']  = str(eInfo[nic.name][6])
+                ifStats['txDropped'] = str(eInfo[nic.name][7])
 
-                ifRxBytes = (100.0 * (eInfo[ifName][0] - sInfo[ifName][0])
+                ifRxBytes = (100.0 * (eInfo[nic.name][0] - sInfo[nic.name][0])
                              / sampleInterval / ifSpeed / self.MBPS_TO_BPS)
-                ifTxBytes = (100.0 * (eInfo[ifName][4] - sInfo[ifName][4])
+                ifTxBytes = (100.0 * (eInfo[nic.name][4] - sInfo[nic.name][4])
                              / sampleInterval / ifSpeed / self.MBPS_TO_BPS)
 
                 ifStats['rxRate'] = '%.1f' % ifRxBytes
@@ -214,15 +211,14 @@ class VmStatsThread(utils.AdvancedStatsThread):
             except (KeyError, TypeError, ZeroDivisionError):
                 self._log.debug("Network stats not available")
 
-            stats['network'][ifName] = ifStats
+            stats['network'][nic.name] = ifStats
 
     def _getDiskStats(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleDisk.getStats()
 
-        for vmDrive in self._vm._drives:
-            if not vmDrive.isVdsmImage():
-                continue
+        for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             dName = vmDrive.name
+            dStats = {}
             try:
                 dStats = {'truesize':     str(vmDrive.truesize),
                           'apparentsize': str(vmDrive.apparentsize),
@@ -232,8 +228,8 @@ class VmStatsThread(utils.AdvancedStatsThread):
                                       / sampleInterval)
                 dStats['writeRate'] = ((eInfo[dName][3] - sInfo[dName][3])
                                        / sampleInterval)
-            except (KeyError, TypeError, ZeroDivisionError):
-                self._log.debug("Disk stats not available")
+            except (AttributeError, KeyError, TypeError, ZeroDivisionError):
+                self._log.debug("Disk %s stats not available", dName)
 
             stats[dName] = dStats
 
@@ -253,7 +249,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
             return str(readLatency), str(writeLatency), str(flushLatency)
 
-        for vmDrive in self._vm._drives:
+        for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             dName = vmDrive.name
             dLatency = {'readLatency':  '0',
                         'writeLatency': '0',
@@ -709,145 +705,6 @@ class _DomXML:
             cpu.appendChild(f)
         self.dom.appendChild(cpu)
 
-    def appendNetIfaces(self):
-        macs = self.conf.get('macAddr', '').split(',')
-        models = self.conf.get('nicModel', '').split(',')
-        bridges = self.conf.get('bridge', DEFAULT_BRIDGE).split(',')
-        if macs == ['']: macs = []
-        if models == ['']: models = []
-        if bridges == ['']: bridges = []
-        if len(models) < len(macs) or len(models) < len(bridges):
-            raise ValueError('Bad nic specification')
-        if models and not (macs or bridges):
-            raise ValueError('Bad nic specification')
-        if not macs or not models or not bridges:
-            return ''
-        macs = macs + [macs[-1]] * (len(models) - len(macs))
-        bridges = bridges + [bridges[-1]] * (len(models) - len(bridges))
-        vhosts = self._getVHostSettings()
-
-        for mac, model, bridge in zip(macs, models, bridges):
-            if model == 'pv':
-                model = 'virtio'
-            self._appendNetIface(mac, model, bridge, vhosts.get(bridge, False))
-
-    def _getVHostSettings(self):
-        vhosts = {}
-        vhostProp = self.conf.get('custom', {}).get('vhost', '')
-
-        if vhostProp != '':
-            for vhost in vhostProp.split(','):
-                try:
-                    vbridge, vstatus = vhost.split(':', 1)
-                    vhosts[vbridge] = _VHOST_MAP[vstatus.lower()]
-                except (ValueError, KeyError):
-                    self.log.warning("Unknown vhost format: %s", vhost)
-
-        return vhosts
-
-    def _appendNetIface(self, mac, model, bridge, setDriver=False):
-        """
-        Add a single network interface.
-
-        <interface type="bridge">
-            <mac address="aa:bb:dd:dd:aa:bb"/>
-            <model type="virtio"/>
-            <source bridge="engine"/>
-            [<tune><sndbuf>0</sndbuf></tune>]
-        </interface>
-        """
-        iface = self.doc.createElement('interface')
-        iface.setAttribute('type', 'bridge')
-        m = self.doc.createElement('mac')
-        m.setAttribute('address', mac)
-        iface.appendChild(m)
-        m = self.doc.createElement('model')
-        m.setAttribute('type', model)
-        iface.appendChild(m)
-        m = self.doc.createElement('source')
-        m.setAttribute('bridge', bridge)
-        iface.appendChild(m)
-        if setDriver:
-            m = self.doc.createElement('driver')
-            m.setAttribute('name', setDriver)
-            iface.appendChild(m)
-
-        try:
-            sndbufParam = self.conf['custom']['sndbuf']
-            tune = self.doc.createElement('tune')
-
-            sndbuf = self.doc.createElement('sndbuf')
-            sndbuf.appendChild(self.doc.createTextNode(sndbufParam))
-            tune.appendChild(sndbuf)
-
-            iface.appendChild(tune)
-        except KeyError:
-            pass    # custom_sndbuf not specified
-
-        self._devices.appendChild(iface)
-
-    def _appendDisk(self, drive):
-        """
-        Add a single disk element.
-
-        <disk type='file' device='disk'>
-          <driver name='qemu' type='qcow2' cache='none'/>
-          <source file='/path/to/image'/>
-          <target dev='hda' bus='ide'/>
-          <serial>54-a672-23e5b495a9ea</serial>
-        </disk>
-        """
-        diskelem = self.doc.createElement('disk')
-        device = getattr(drive, 'device', 'disk')
-        diskelem.setAttribute('device', device)
-        source = self.doc.createElement('source')
-        if drive.blockDev:
-            diskelem.setAttribute('type', 'block')
-            source.setAttribute('dev', drive.path)
-        else:
-            diskelem.setAttribute('type', 'file')
-            source.setAttribute('file', drive.path)
-        diskelem.appendChild(source)
-        target = self.doc.createElement('target')
-        target.setAttribute('dev', drive.name)
-        if drive.iface:
-            target.setAttribute('bus', drive.iface)
-        diskelem.appendChild(target)
-        if getattr(drive, 'serial', False):
-            serial = self.doc.createElement('serial')
-            serial.appendChild(self.doc.createTextNode(drive.serial))
-            diskelem.appendChild(serial)
-        if device == 'disk':
-            driver = self.doc.createElement('driver')
-            driver.setAttribute('name', 'qemu')
-            if drive.blockDev:
-                driver.setAttribute('io', 'native')
-            else:
-                driver.setAttribute('io', 'threads')
-            if drive.format == 'cow':
-                driver.setAttribute('type', 'qcow2')
-            elif drive.format:
-                driver.setAttribute('type', 'raw')
-
-            if drive.iface == 'virtio':
-                try:
-                    cache = self.conf['custom']['viodiskcache']
-                except KeyError:
-                    cache = config.get('vars', 'qemu_drive_cache')
-            else:
-                cache = config.get('vars', 'qemu_drive_cache')
-            driver.setAttribute('cache', cache)
-
-            if drive.propagateErrors == 'on':
-                driver.setAttribute('error_policy', 'enospace')
-            else:
-                driver.setAttribute('error_policy', 'stop')
-            diskelem.appendChild(driver)
-        elif device == 'floppy':
-            if drive.path and not utils.getUserPermissions(constants.QEMU_PROCESS_USER, drive.path)['write']:
-                diskelem.appendChild(self.doc.createElement('readonly'))
-        self._devices.appendChild(diskelem)
-
     def _appendBalloon(self):
         """Add balloon device. Currently unsupported by RHEV-M"""
         m = self.doc.createElement('memballoon')
@@ -902,8 +759,9 @@ class _DomXML:
 
         or
 
-        <video><model heads="1" type="qxl" vram="65536"/></video>
-        <graphics autoport="yes" keymap="en-us" listen="0" port="5910" tlsPort="5890" type="spice" passwd="foo" passwdValidTo="2010-04-09T15:51:00"/>
+        <graphics autoport="yes" keymap="en-us" listen="0" port="5910"
+                  tlsPort="5890" type="spice" passwd="foo"
+                  passwdValidTo="2010-04-09T15:51:00"/>
         <channel type='spicevmc'>
            <target type='virtio' name='com.redhat.spice.0'/>
          </channel>
@@ -924,16 +782,6 @@ class _DomXML:
                     m.setAttribute('name', channel[1:])
                     m.setAttribute('mode', 'secure')
                     graphics.appendChild(m)
-
-            monitors = int(self.conf.get('spiceMonitors', '1'))
-            for i in range(monitors):
-                video = self.doc.createElement('video')
-                m = self.doc.createElement('model')
-                m.setAttribute('type', 'qxl')
-                m.setAttribute('vram', '65536' if monitors <= 2 else '32768')
-                m.setAttribute('heads', '1')
-                video.appendChild(m)
-                self._devices.appendChild(video)
 
             vmc = self.doc.createElement('channel')
             vmc.setAttribute('type', 'spicevmc')
@@ -959,15 +807,203 @@ class _DomXML:
             graphics.setAttribute('passwdValidTo', '1970-01-01T00:00:01')
         self._devices.appendChild(graphics)
 
-    def appendSound(self):
-        if self.conf.get('soundDevice'):
-            m = self.doc.createElement('sound')
-            m.setAttribute('model', self.conf.get('soundDevice'))
-            self._devices.appendChild(m)
-
     def toxml(self):
         return self.doc.toprettyxml(encoding='utf-8')
 
+
+class VideoDevice(vm.Device):
+    def __init__(self, conf, log, **kwargs):
+        vm.Device.__init__(self, conf, log, **kwargs)
+
+    def getXML(self):
+        """
+        Create domxml for video device
+        """
+        doc = xml.dom.minidom.Document()
+        video = doc.createElement('video')
+        m = doc.createElement('model')
+        m.setAttribute('type', self.device)
+        m.setAttribute('vram', self.specParams)
+        m.setAttribute('heads', '1')
+        video.appendChild(m)
+        return video
+
+class SoundDevice(vm.Device):
+    def __init__(self, conf, log, **kwargs):
+        vm.Device.__init__(self, conf, log, **kwargs)
+
+    def getXML(self):
+        """
+        Create domxml for sound device
+        """
+        doc = xml.dom.minidom.Document()
+        sound = doc.createElement('sound')
+        sound.setAttribute('model', self.device)
+        return sound
+
+class NetworkInterfaceDevice(vm.Device):
+    def __init__(self, conf, log, **kwargs):
+        vm.Device.__init__(self, conf, log, **kwargs)
+        self.sndbufParam = False
+        self._customize()
+
+    def _customize(self):
+        # Customize network device
+        vhosts = self._getVHostSettings()
+        self.driver = vhosts.get(self.network, False)
+        try:
+            self.sndbufParam = self.conf['custom']['sndbuf']
+        except KeyError:
+            pass    # custom_sndbuf not specified
+
+    def _getVHostSettings(self):
+        VHOST_MAP = {'true': 'vhost', 'false': 'qemu'}
+        vhosts = {}
+        vhostProp = self.conf.get('custom', {}).get('vhost', '')
+
+        if vhostProp != '':
+            for vhost in vhostProp.split(','):
+                try:
+                    vbridge, vstatus = vhost.split(':', 1)
+                    vhosts[vbridge] = VHOST_MAP[vstatus.lower()]
+                except (ValueError, KeyError):
+                    self.log.warning("Unknown vhost format: %s", vhost)
+
+        return vhosts
+
+    def getXML(self):
+        """
+        Create domxml for network interface.
+
+        <interface type="bridge">
+            <mac address="aa:bb:dd:dd:aa:bb"/>
+            <model type="virtio"/>
+            <source bridge="engine"/>
+            [<tune><sndbuf>0</sndbuf></tune>]
+        </interface>
+        """
+        doc = xml.dom.minidom.Document()
+        iface = doc.createElement('interface')
+        iface.setAttribute('type', self.device)
+        m = doc.createElement('mac')
+        m.setAttribute('address', self.macAddr)
+        iface.appendChild(m)
+        m = doc.createElement('model')
+        m.setAttribute('type', self.nicModel)
+        iface.appendChild(m)
+        m = doc.createElement('source')
+        m.setAttribute('bridge', self.network)
+        iface.appendChild(m)
+        if getattr(self, 'bootOrder', False):
+            bootOrder = doc.createElement('boot')
+            bootOrder.setAttribute('order', self.bootOrder)
+            iface.appendChild(bootOrder)
+        if self.driver:
+            m = doc.createElement('driver')
+            m.setAttribute('name', self.driver)
+            iface.appendChild(m)
+        if self.sndbufParam:
+            tune = doc.createElement('tune')
+            sndbuf = doc.createElement('sndbuf')
+            sndbuf.appendChild(doc.createTextNode(self.sndbufParam))
+            tune.appendChild(sndbuf)
+            iface.appendChild(tune)
+
+        return iface
+
+class Drive(vm.Device):
+    def __init__(self, conf, log, **kwargs):
+        if not kwargs.get('serial'):
+            self.serial = kwargs.get('imageID'[-20:]) or ''
+        vm.Device.__init__(self, conf, log, **kwargs)
+        self.name = self._makeName()
+        self._customize()
+
+    def _customize(self):
+        # Customize disk device
+        if self.iface == 'virtio':
+            try:
+                self.cache = self.conf['custom']['viodiskcache']
+            except KeyError:
+                self.cache = config.get('vars', 'qemu_drive_cache')
+        else:
+            self.cache = config.get('vars', 'qemu_drive_cache')
+
+    def _makeName(self):
+        devname = {'ide': 'hd', 'virtio': 'vd', 'fdc': 'fd'}
+        devindex = ''
+
+        i = int(self.index)
+        while i > 0:
+            devindex = chr(ord('a') + (i % 26)) + devindex
+            i /= 26
+
+        return devname.get(self.iface, 'hd') + (devindex or 'a')
+
+    def isVdsmImage(self):
+        return getattr(self, 'poolID', False)
+
+    def getXML(self):
+        """
+        Create domxml for disk/cdrom/floppy.
+
+        <disk type='file' device='disk'>
+          <driver name='qemu' type='qcow2' cache='none'/>
+          <source file='/path/to/image'/>
+          <target dev='hda' bus='ide'/>
+          <serial>54-a672-23e5b495a9ea</serial>
+        </disk>
+        """
+        doc = xml.dom.minidom.Document()
+        diskelem = doc.createElement('disk')
+        device = getattr(self, 'device', 'disk')
+        diskelem.setAttribute('device', device)
+        source = doc.createElement('source')
+        if self.blockDev:
+            diskelem.setAttribute('type', 'block')
+            source.setAttribute('dev', self.path)
+        else:
+            diskelem.setAttribute('type', 'file')
+            source.setAttribute('file', self.path)
+        diskelem.appendChild(source)
+        target = doc.createElement('target')
+        target.setAttribute('dev', self.name)
+        if self.iface:
+            target.setAttribute('bus', self.iface)
+        diskelem.appendChild(target)
+        if getattr(self, 'serial', False):
+            serial = doc.createElement('serial')
+            serial.appendChild(doc.createTextNode(self.serial))
+            diskelem.appendChild(serial)
+        if getattr(self, 'bootOrder', False):
+            bootOrder = doc.createElement('boot')
+            bootOrder.setAttribute('order', self.bootOrder)
+            diskelem.appendChild(bootOrder)
+        if device == 'disk':
+            driver = doc.createElement('driver')
+            driver.setAttribute('name', 'qemu')
+            if self.blockDev:
+                driver.setAttribute('io', 'native')
+            else:
+                driver.setAttribute('io', 'threads')
+            if self.format == 'cow':
+                driver.setAttribute('type', 'qcow2')
+            elif self.format:
+                driver.setAttribute('type', 'raw')
+
+            driver.setAttribute('cache', self.cache)
+
+            if self.propagateErrors == 'on':
+                driver.setAttribute('error_policy', 'enospace')
+            else:
+                driver.setAttribute('error_policy', 'stop')
+            diskelem.appendChild(driver)
+        elif device == 'floppy':
+            if self.path and not utils.getUserPermissions(constants.QEMU_PROCESS_USER,
+                                                          self.path)['write']:
+                diskelem.appendChild(doc.createElement('readonly'))
+
+        return diskelem
 
 class LibvirtVm(vm.Vm):
     MigrationSourceThreadClass = MigrationSourceThread
@@ -1005,18 +1041,17 @@ class LibvirtVm(vm.Vm):
         domxml.appendClock()
         domxml.appendFeatures()
         domxml.appendCpu()
-
-        for drive in self._drives:
-            domxml._appendDisk(drive)
-
         if utils.tobool(self.conf.get('vmchannel', 'true')):
             domxml._appendAgentDevice(self._guestSocektFile.decode('utf-8'))
         domxml._appendBalloon()
-
-        domxml.appendNetIfaces()
         domxml.appendInput()
         domxml.appendGraphics()
-        domxml.appendSound()
+
+        for devType in self._devices:
+            for dev in self._devices[devType]:
+                devElem = dev.getXML()
+                domxml._devices.appendChild(devElem)
+
         return domxml.toxml()
 
     def _initVmStats(self):
@@ -1036,7 +1071,7 @@ class LibvirtVm(vm.Vm):
             except:
                 pass
             raise Exception('destroy() called before Vm started')
-        self._initInterfaces()
+        self._getUnderlyingNetworkInterfaceInfo()
         self._getUnderlyingDriveInfo()
         self._getUnderlyingDisplayPort()
         # VmStatsThread may use block devices info from libvirt.
@@ -1066,13 +1101,29 @@ class LibvirtVm(vm.Vm):
         self.log.info("VM wrapper has started")
         self.conf['smp'] = self.conf.get('smp', '1')
 
-        drives = self.getConfDrives()
-        # TODO: In recover should loop over disks running on the VM because
-        # conf may be outdated if something happened during restart.
         if not 'recover' in self.conf:
-            self.preparePaths(drives)
-        for drive in drives:
-            self._drives.append(vm.Drive(**drive))
+            devices = self.buildConfDevices()
+            self.preparePaths(devices[vm.DISK_DEVICES])
+            # Update self.conf with updated devices
+            # For old type vmParams, new 'devices' key will be
+            # created with all devices info
+            newDevices = []
+            for dev in devices.values():
+                newDevices.extend(dev)
+
+            self.conf['devices'] = newDevices
+        else:
+            # TODO: In recover should loop over disks running on the VM because
+            # conf may be outdated if something happened during restart.
+            devices = self.getConfDevices()
+
+        devMap = {vm.DISK_DEVICES: Drive, vm.NIC_DEVICES: NetworkInterfaceDevice,
+                  vm.SOUND_DEVICES: SoundDevice, vm.VIDEO_DEVICES: VideoDevice}
+
+        for devType, devClass in devMap.items():
+            for dev in devices[devType]:
+                self._devices[devType].append(devClass(self.conf, self.log, **dev))
+
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
 
@@ -1113,18 +1164,6 @@ class LibvirtVm(vm.Vm):
             self.setDownStatus(ERROR, 'failed to start libvirt vm')
             return
         self._domDependentInit()
-
-    def _initInterfaces(self):
-        self.interfaces = {}
-        # TODO use xpath instead of parseString (here and elsewhere)
-        ifsxml = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
-                    .childNodes[0].getElementsByTagName('devices')[0] \
-                    .getElementsByTagName('interface')
-        for x in ifsxml:
-            name = x.getElementsByTagName('target')[0].getAttribute('dev')
-            mac = x.getElementsByTagName('mac')[0].getAttribute('address')
-            model = x.getElementsByTagName('model')[0].getAttribute('type')
-            self.interfaces[name] = (mac, model)
 
     def _readPauseCode(self, timeout):
         self.log.warning('_readPauseCode unsupported by libvirt vm')
@@ -1252,7 +1291,7 @@ class LibvirtVm(vm.Vm):
         self.conf['pauseCode'] = err.upper()
         self._guestCpuRunning = False
         if err.upper() == 'ENOSPC':
-            for d in self._drives:
+            for d in self._devices[vm.DISK_DEVICES]:
                 if d.alias == blockDevAlias:
                     #in the case of a qcow2-like file stored inside a block
                     #device 'physical' will give the block device size, while
@@ -1359,8 +1398,9 @@ class LibvirtVm(vm.Vm):
         return {'status': doneCode}
 
     def _getUnderlyingDriveInfo(self):
-        """Obtain block devices info from libvirt."""
-
+        """
+        Obtain block devices info from libvirt.
+        """
         disksxml = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
                     .childNodes[0].getElementsByTagName('devices')[0] \
                     .getElementsByTagName('disk')
@@ -1378,21 +1418,17 @@ class LibvirtVm(vm.Vm):
                 drv = x.getElementsByTagName('driver')[0].getAttribute('type') # raw/qcow2
             else:
                 drv = 'raw'
-            for d in self._drives:
+            for d in self._devices[vm.DISK_DEVICES]:
                 if d.path == path:
                     d.type = ty
                     d.drv = drv
                     d.alias = alias
 
-    def _setWriteWatermarks(self):
-        """Define when to receive an event about high write to guest image
-        Currently unavailable by libvirt."""
-        pass
-
     def _getUnderlyingDisplayPort(self):
-        from xml.dom import minidom
-
-        graphics = minidom.parseString(self._dom.XMLDesc(0)) \
+        """
+        Obtain display port info from libvirt.
+        """
+        graphics = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
                           .childNodes[0].getElementsByTagName('graphics')[0]
         port = graphics.getAttribute('port')
         if port:
@@ -1400,6 +1436,28 @@ class LibvirtVm(vm.Vm):
         port = graphics.getAttribute('tlsPort')
         if port:
             self.conf['displaySecurePort'] = port
+
+    def _getUnderlyingNetworkInterfaceInfo(self):
+        """
+        Obtain network interface info from libvirt.
+        """
+        # TODO use xpath instead of parseString (here and elsewhere)
+        ifsxml = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
+                    .childNodes[0].getElementsByTagName('devices')[0] \
+                    .getElementsByTagName('interface')
+        for x in ifsxml:
+            name = x.getElementsByTagName('target')[0].getAttribute('dev')
+            mac = x.getElementsByTagName('mac')[0].getAttribute('address')
+            for nic in self._devices[vm.NIC_DEVICES]:
+                if nic.macAddr == mac:
+                    nic.name = name
+
+    def _setWriteWatermarks(self):
+        """
+        Define when to receive an event about high write to guest image
+        Currently unavailable by libvirt.
+        """
+        pass
 
     def _onLibvirtLifecycleEvent(self, event, detail, opaque):
         self.log.debug('event %s detail %s opaque %s',

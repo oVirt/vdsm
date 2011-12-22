@@ -33,6 +33,13 @@ import tempfile
 import libvirt
 import vdscli
 
+DEFAULT_BRIDGE = config.get("vars", "default_bridge")
+
+DISK_DEVICES = 'disk'
+NIC_DEVICES = 'interface'
+VIDEO_DEVICES = 'video'
+SOUND_DEVICES = 'sound'
+
 """
 A module containing classes needed for VM communication.
 """
@@ -42,27 +49,12 @@ def isVdsmImage(drive):
                 'poolID'))
 
 
-class Drive(object):
-    def __init__(self, **kwargs):
-        if not kwargs.get('serial'):
-            self.serial = kwargs.get('imageID'[-20:]) or ''
+class Device(object):
+    def __init__(self, conf, log, **kwargs):
         for attr, value in kwargs.iteritems():
             setattr(self, attr, value)
-        self.name = self._libvirtName()
-
-    def _libvirtName(self):
-        devname = {'ide': 'hd', 'virtio': 'vd', 'fdc': 'fd'}
-        devindex = ''
-
-        i = int(self.index)
-        while i > 0:
-            devindex = chr(ord('a') + (i % 26)) + devindex
-            i /= 26
-
-        return devname.get(self.iface, 'hd') + (devindex or 'a')
-
-    def isVdsmImage(self):
-        return getattr(self, 'poolID', False)
+        self.conf = conf
+        self.log = log
 
     def __str__(self):
         attrs = [":".join((a, str(getattr(self, a)))) for a in dir(self)
@@ -309,9 +301,10 @@ class Vm(object):
 
         self._usedIndices = {} #{'ide': [], 'virtio' = []}
         self._preparedDrives = {}
-        self._drives = []
         self._volumesPrepared = False
         self._pathsPreparedEvent = threading.Event()
+        self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
+                         SOUND_DEVICES: [], VIDEO_DEVICES: []}
         self.saveState()
 
     def _get_lastStatus(self):
@@ -367,13 +360,108 @@ class Vm(object):
          return legacies
 
     def __removableDrives(self):
-        removables =  [{'device': 'cdrom', 'path': self.conf.get('cdrom', ''),
-                'iface': 'ide', 'index': 2, 'blockDev': False, 'truesize': 0}]
+        removables =  [{'type': DISK_DEVICES, 'device': 'cdrom', 'iface': 'ide',
+                        'path': self.conf.get('cdrom', ''), 'index': 2,
+                        'blockDev': False, 'truesize': 0}]
         floppyPath = self.conf.get('floppy')
         if floppyPath:
-            removables.append({'device': 'floppy', 'path': floppyPath,
-                'iface': 'fdc', 'index': 0, 'blockDev': False, 'truesize': 0})
+            removables.append({'type': DISK_DEVICES, 'device': 'floppy',
+                               'path': floppyPath, 'iface': 'fdc',
+                               'index': 0, 'blockDev': False, 'truesize': 0})
         return removables
+
+    def getConfDevices(self):
+        devices = {DISK_DEVICES: [], NIC_DEVICES: [],
+                   SOUND_DEVICES: [], VIDEO_DEVICES: []}
+        for dev in self.conf.get('devices'):
+            try:
+                devices[dev['type']].append(dev)
+            except KeyError:
+                self.log.error("Unknown device type '%s'", dev['type'])
+
+        return devices
+
+    def buildConfDevices(self):
+        """
+        Return the "devices" section of this Vm's conf.
+        If missing, create it according to old API.
+        """
+        # For BC we need to save previous behaviour for old type parameters.
+        # The new/old type parameter will be distinguished
+        # by existence/absence of the 'devices' key
+        devices = {}
+        # Build devices structure
+        if self.conf.get('devices') == None:
+            self.conf['devices'] = []
+            devices[DISK_DEVICES] = self.getConfDrives()
+            devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
+            devices[SOUND_DEVICES] = self.getConfSound()
+            devices[VIDEO_DEVICES] = self.getConfVideo()
+        else:
+            devices = self.getConfDevices()
+
+        # Normalize vdsm images
+        for drv in devices[DISK_DEVICES]:
+            if isVdsmImage(drv):
+                self.__normalizeVdsmImg(drv)
+
+        return devices
+
+    def getConfVideo(self):
+        """
+        Normalize video device provided by conf.
+        """
+        vcards =[]
+        if self.conf.get('display') == 'vnc':
+            devType = 'cirrus'
+        elif self.conf.get('display') == 'qxl':
+            devType = 'qxl'
+
+        monitors = int(self.conf.get('spiceMonitors', '1'))
+        vram = '65536' if (monitors <= 2) else '32768'
+        for idx in range(monitors):
+            vcards.append({'type': VIDEO_DEVICES, 'specParams': vram,
+                           'device': devType})
+
+        return vcards
+
+    def getConfSound(self):
+        """
+        Normalize sound device provided by conf.
+        """
+        scards = []
+        if self.conf.get('soundDevice'):
+            scards.append({'type': SOUND_DEVICES,
+                           'device': self.conf.get('soundDevice')})
+
+        return scards
+
+    def getConfNetworkInterfaces(self):
+        """
+        Normalize networks interfaces provided by conf.
+        """
+        nics = []
+        macs = self.conf.get('macAddr', '').split(',')
+        models = self.conf.get('nicModel', '').split(',')
+        bridges = self.conf.get('bridge', DEFAULT_BRIDGE).split(',')
+        if macs == ['']: macs = []
+        if models == ['']: models = []
+        if bridges == ['']: bridges = []
+        if len(models) < len(macs) or len(models) < len(bridges):
+            raise ValueError('Bad nic specification')
+        if models and not (macs or bridges):
+            raise ValueError('Bad nic specification')
+        if not macs or not models or not bridges:
+            return ''
+        macs = macs + [macs[-1]] * (len(models) - len(macs))
+        bridges = bridges + [bridges[-1]] * (len(models) - len(bridges))
+
+        for mac, model, bridge in zip(macs, models, bridges):
+            if model == 'pv':
+                model = 'virtio'
+            nics.append({'type': NIC_DEVICES, 'macAddr': mac, 'nicModel': model,
+                         'network': bridge, 'device': 'bridge'})
+        return nics
 
     def getConfDrives(self):
         """
@@ -382,7 +470,6 @@ class Vm(object):
         # FIXME
         # Will be better to change the self.conf but this implies an API change.
         # Remove this when the API parameters will be consistent.
-
         confDrives = self.conf['drives'] if self.conf['drives'] else []
         if not confDrives:
             confDrives.extend(self.__legacyDrives())
@@ -390,6 +477,7 @@ class Vm(object):
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
         indexed = []
         for order, drv in drives:
+            drv['type'] = DISK_DEVICES
             # FIXME: For BC we have now two identical keys: iface = if
             # Till the day that conf will not returned as a status anymore.
             drv['iface'] = drv.get('iface') or drv.get('if', 'ide')
@@ -399,8 +487,6 @@ class Vm(object):
             if index is not None:
                 self._usedIndices[drv['iface']].append(index)
                 indexed.append(order)
-            if isVdsmImage(drv):
-                self.__normalizeVdsmImg(drv)
             drv['format'] = drv.get('format') or 'raw'
             drv['propagateErrors'] = drv.get('propagateErrors') or 'off'
         for order, drv in drives:
@@ -530,7 +616,7 @@ class Vm(object):
             del toSave['sysprepInf']
             if 'floppy' in toSave: del toSave['floppy']
         for drive in toSave.get('drives', []):
-            for d in self._drives:
+            for d in self._devices[DISK_DEVICES]:
                 if d.isVdsmImage() and drive.get('volumeID') == d.volumeID:
                     drive['truesize'] = str(d.truesize)
                     drive['apparentsize'] = str(d.apparentsize)
@@ -579,7 +665,8 @@ class Vm(object):
         self._lvExtend(block_dev)
 
     def _lvExtend(self, block_dev, newsize=None):
-        for d in self._drives:
+        volID = None
+        for d in self._devices[DISK_DEVICES]:
             if not d.blockDev: continue
             if d.name != block_dev: continue
             if newsize is None:
@@ -598,11 +685,14 @@ class Vm(object):
                            d.volumeID, d.name, d.apparentsize / constants.MEGAB,
                            newsize) #in MiB
 
-            # store most recently requested size in conf, to be re-requested on
-            # migration destination
-            for drive in self.getConfDrives():
-                if drive.get('volumeID') == d.volumeID:
-                    drive['reqsize'] = str(d.reqsize)
+            volID = d.volumeID
+            break
+
+        # store most recently requested size in conf, to be re-requested on
+        # migration destination
+        for dev in self.conf['devices']:
+            if dev['type'] == DISK_DEVICES and dev.get('volumeID') == volID:
+                    dev['reqsize'] = str(newsize)
 
     def _refreshLV(self, domainID, poolID, imageID, volumeID):
         """ Stop vm before refreshing LV. """
@@ -620,7 +710,7 @@ class Vm(object):
 
     def _afterLvExtend(self, drive):
         self.log.debug('_afterLvExtend %s' % drive)
-        for d in self._drives:
+        for d in self._devices[DISK_DEVICES]:
             if (d.poolID, d.domainID,
                 d.imageID, d.volumeID) != (
                                  drive['poolID'], drive['domainID'],
