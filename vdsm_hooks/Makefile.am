@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2008-2011 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,32 +20,39 @@
 
 SUBDIRS = faqemu vhostmd
 
+include $(top_srcdir)/build-aux/Makefile.subs
+
+# Additional hooks
 if HOOKS
- SUBDIRS += directlun fileinject \
-		  floppy hostusb hugepages isolatedprivatevlan numa \
-		  pincpu promisc qos scratchpad smartcard smbios \
-		  sriov vmdisk
+SUBDIRS += \
+	directlun \
+	fileinject \
+	floppy \
+	hostusb \
+	hugepages \
+	isolatedprivatevlan \
+	numa \
+	pincpu \
+	promisc \
+	qos \
+	scratchpad \
+	smartcard \
+	smbios \
+	sriov \
+	vmdisk
 endif
 
 dist_vdsmexec_SCRIPTS = \
-	persist-vdsm-hooks \
 	unpersist-vdsm-hook
 
-vdsmhooks_SUBST = \
-        persist-vdsm-hooks
+nodist_vdsmexec_SCRIPTS = \
+	persist-vdsm-hooks
 
 CLEANFILES = \
-        $(vdsmhooks_SUBST)
+        $(nodist_vdsmexec_SCRIPTS)
 
 EXTRA_DIST = \
 	persist-vdsm-hooks.in
-
-# Reference:
-# http://www.gnu.org/software/automake/manual/html_node/Scripts.html
-do_subst = sed -e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g"
-
-$(vdsmhooks_SUBST):
-	$(do_subst) < $(srcdir)/$@.in > $@
 
 VDSMHOOKS = \
 	before_vm_start \
@@ -65,6 +72,9 @@ VDSMHOOKS = \
 	after_vm_destroy \
 	before_vdsm_start \
 	after_vdsm_stop
+
+all-local: \
+	$(nodist_vdsmexec_SCRIPTS)
 
 install-data-local:
 	(for hook in $(VDSMHOOKS); do \

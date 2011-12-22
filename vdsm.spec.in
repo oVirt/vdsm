@@ -23,7 +23,6 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: python
-BuildRequires: redhat-rpm-config
 BuildRequires: pyflakes
 
 %if !0%{?rhel}
@@ -255,8 +254,6 @@ make
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
-
-mkdir -p %{buildroot}@vdsmrepo@
 
 # Install the respawn utility
 install -Dm 0755 vdsm/respawn \

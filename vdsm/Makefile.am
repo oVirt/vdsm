@@ -1,19 +1,32 @@
-# Copyright 2008 Red Hat, Inc. and/or its affiliates.
 #
-# Licensed to you under the GNU General Public License as published by
+# Copyright 2008-2011 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.  See the files README and
-# LICENSE_GPL_v2 which accompany this distribution.
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = storage
+SUBDIRS = sos storage
 
-dist_vdsm_DATA = \
+include $(top_srcdir)/build-aux/Makefile.subs
+
+dist_vdsm_PYTHON = \
 	betterThreading.py \
 	caps.py \
 	clientIF.py \
 	configNetwork.py \
-	config.py \
 	define.py \
 	dsaversion.py \
 	guestIF.py \
@@ -38,49 +51,41 @@ dist_vdsm_DATA = \
 dist_vdsmexec_SCRIPTS = \
 	ovirt_functions.sh
 
-nodist_vdsm_DATA = \
+nodist_vdsm_PYTHON = \
 	config.py \
 	constants.py
 
 nodist_vdsm_SCRIPTS = \
+	mk_sysprep_floppy \
 	vdsm-restore-net-config \
 	vdsm-store-net-config
 
-vdsm_data_SUBST = \
+nodist_noinst_DATA = \
 	logger.conf \
 	sudoers.vdsm \
-	vdsm.rwtab \
+	vdsm.conf.sample \
 	vdsmd.init \
-	vdsm-sosplugin.py
-
-nodist_noinst_DATA = \
-	$(vdsm_data_SUBST) \
-	vdsm.conf.sample
+	vdsm.rwtab
 
 dist_vdsm_SCRIPTS = \
 	addNetwork \
 	delNetwork \
 	get-conf-item \
 	get-vm-pid \
-	mk_sysprep_floppy \
 	prepare-vmchannel \
 	respawn \
 	set-conf-item \
 	vdsm \
 	write-net-config
 
-dist_man8_MANS = \
+nodist_man8_MANS = \
 	vdsmd.8
 
-vdsm_SUBST = \
-	$(nodist_vdsm_DATA) \
-	$(nodist_vdsm_SCRIPTS) \
-	$(vdsm_data_SUBST) \
-	$(dist_man8_MANS)
-
 CLEANFILES = \
-	$(vdsm_SUBST) \
-	vdsm.conf.sample
+	$(nodist_vdsm_PYTHON) \
+	$(nodist_vdsm_SCRIPTS) \
+	$(nodist_noinst_DATA) \
+	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
 	config.py.in \
@@ -95,32 +100,16 @@ EXTRA_DIST = \
 	vdsm-logrotate.conf \
 	vdsm-restore-net-config.in \
 	vdsm.rwtab.in \
-	vdsm-sosplugin.py.in \
 	vdsm-store-net-config.in
 
-# Reference:
-# http://www.gnu.org/software/automake/manual/html_node/Scripts.html
-do_subst = sed -e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
-	    -e "s,[@]VDSMLOGDIR[@],$(vdsmlogdir),g" \
-	    -e "s,[@]VDSMDIR[@],$(vdsmdir),g" \
-	    -e "s,[@]HOOKSDIR[@],$(vdsmhooksdir),g" \
-	    -e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g" \
-	    -e "s,[@]VDSMLIBDIR[@],$(vdsmlibdir),g" \
-	    -e "s,[@]POOLSDIR[@],$(vdsmpoolsdir),g" \
-	    -e "s,[@]BACKUPDIR[@],$(vdsmbackupdir),g" \
-	    -e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g" \
-	    -e "s,[@]VDSMREPO[@],$(vdsmrepo),g" \
-	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
+vdsm.conf.sample: Makefile config.py
+	@echo "  CONFIG $@"; python $(builddir)/config.py > $@
 
-vdsm.conf.sample: config.py
-	python config.py > $@;
-
-$(vdsm_SUBST): Makefile
-	if test -f "$@.in"; then \
-		$(do_subst) < $@.in > $@; \
-	else \
-		$(do_subst) < $(srcdir)/$@.in > $@; \
-	fi
+all-local: \
+	$(nodist_vdsm_PYTHON) \
+	$(nodist_vdsm_SCRIPTS) \
+	$(nodist_noinst_DATA) \
+	$(nodist_man8_MANS)
 
 install-data-hook:
 	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
@@ -131,8 +120,8 @@ install-data-local: \
 		install-data-rwtab \
 		install-data-logrotate \
 		install-data-sudoers \
-		install-data-sosplugin \
 		install-data-libvirtpass
+	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
@@ -147,7 +136,6 @@ uninstall-local: \
 		uninstall-data-rwtab \
 		uninstall-data-logrotate \
 		uninstall-data-sudoers \
-		uninstall-data-sosplugin \
 		uninstall-data-libvirtpass
 
 install-data-logger:
@@ -196,11 +184,3 @@ install-data-sudoers:
 
 uninstall-data-sudoers:
 	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
-
-install-data-sosplugin:
-	$(MKDIR_P) $(DESTDIR)$(pythondir)/sos/plugins
-	$(INSTALL_DATA) vdsm-sosplugin.py \
-		$(DESTDIR)$(pythondir)/sos/plugins/vdsm.py
-
-uninstall-data-sosplugin:
-	$(RM) $(DESTDIR)$(pythondir)/sos/plugins/vdsm.py

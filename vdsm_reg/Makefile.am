@@ -1,47 +1,64 @@
-# Copyright 2008 Red Hat, Inc. and/or its affiliates.
 #
-# Licensed to you under the GNU General Public License as published by
+# Copyright 2008-2011 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.  See the files README and
-# LICENSE_GPL_v2 which accompany this distribution.
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# Refer to the README and COPYING files for full details of the license
 #
 
-dist_vdsmreg_DATA = \
+include $(top_srcdir)/build-aux/Makefile.subs
+
+ovirtsetupdir = $(pythondir)/ovirt_config_setup
+
+dist_vdsmreg_PYTHON = \
 	config.py \
 	createDaemon.py \
 	define.py
 
-nodist_vdsmreg_DATA = \
+dist_ovirtsetup_PYTHON = \
+	rhevm.py
+
+nodist_vdsmreg_PYTHON = \
 	deployUtil.py
 
-nodist_vdsmbootstrap_DATA = \
+nodist_vdsmbootstrap_PYTHON = \
         deployUtil.py
 
 nodist_noinst_DATA = \
-	vdsm-reg.conf \
-	vdsm-reg-setup
+	vdsm-reg.conf
 
 dist_vdsmreg_SCRIPTS = \
 	save-config \
 	vdsm-complete \
 	vdsm-gen-cert \
-	vdsm-reg-setup \
 	vdsm-upgrade
+
+nodist_vdsmreg_SCRIPTS = \
+	vdsm-reg-setup
 
 dist_man8_MANS = \
 	vdsm-reg.8
 
-vdsmreg_SUBST = \
-	$(nodist_noinst_DATA)
-
 CLEANFILES = \
-	$(vdsmreg_SUBST)
+	$(nodist_noinst_DATA) \
+	$(nodist_vdsmreg_SCRIPTS)
 
 EXTRA_DIST = \
 	deployUtil.py.in \
 	logger.conf \
 	vdsm-reg-setup.in \
-	rhevm.py \
 	vdsm-config \
 	vdsm-reg-cmdline \
 	vdsm-reg.conf.in \
@@ -50,13 +67,9 @@ EXTRA_DIST = \
 	vdsm-reg-logrotate.conf \
 	vdsm-reg.service
 
-# Reference:
-# http://www.gnu.org/software/automake/manual/html_node/Scripts.html
-do_subst = sed -e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g" \
-	    -e "s,[@]VDSMBRIDGE[@],$(vdsmbridge),g"
-
-$(vdsmreg_SUBST):
-	$(do_subst) < $(srcdir)/$@.in > $@
+all-local: \
+	$(nodist_noinst_DATA) \
+	$(nodist_vdsmreg_SCRIPTS)
 
 install-data-local: \
 		install-data-logger \
@@ -87,13 +100,9 @@ install-data-ovirt:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/ovirt-commandline.d
 	$(INSTALL_DATA) $(srcdir)/vdsm-reg-cmdline \
 		$(DESTDIR)$(sysconfdir)/ovirt-commandline.d/vdsm-reg
-	$(MKDIR_P) $(DESTDIR)$(pythondir)/ovirt_config_setup
-	$(INSTALL_DATA) $(srcdir)/rhevm.py \
-		$(DESTDIR)$(pythondir)/ovirt_config_setup/rhevm.py
 
 uninstall-data-ovirt:
 	$(RM) $(DESTDIR)$(sysconfdir)/ovirt-config-boot.d/vdsm-config
-	$(RM) $(DESTDIR)$(pythondir)/ovirt_config_setup/rhevm.py
 
 install-data-logrotate:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/logrotate.d

@@ -18,51 +18,23 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = protect
+SUFFIXES: .in
 
-vdsmstoragedir = $(vdsmdir)/storage
-dist_vdsmstorage_PYTHON = \
-	__init__.py \
-	blockSD.py \
-	blockVolume.py \
-	devicemapper.py \
-	dispatcher.py \
-	fileSD.py \
-	fileUtils.py \
-	fileVolume.py \
-	fuser.py \
-	hba.py \
-	hsm.py \
-	image.py \
-	iscsi.py \
-	localFsSD.py \
-	lvm.py \
-	misc.py \
-	mount.py \
-	multipath.py \
-	nfsSD.py \
-	outOfProcess.py \
-	persistentDict.py \
-	processPool.py \
-	resourceFactories.py \
-	resourceManager.py \
-	safelease.py \
-	sdc.py \
-	sd.py \
-	securable.py \
-	sp.py \
-	storage_connection.py \
-	storageConstants.py \
-	storage_exception.py \
-	storage_mailbox.py \
-	taskManager.py \
-	task.py \
-	threadLocal.py \
-	threadPool.py \
-	volume.py
+# Reference:
+# http://www.gnu.org/software/automake/manual/html_node/Scripts.html
+PATHSUBST = sed \
+	-e "s,[@]BACKUPDIR[@],$(vdsmbackupdir),g" \
+	-e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
+	-e "s,[@]HOOKSDIR[@],$(vdsmhooksdir),g" \
+	-e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g" \
+	-e "s,[@]POOLSDIR[@],$(vdsmpoolsdir),g" \
+	-e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g" \
+	-e "s,[@]VDSMBRIDGE[@],$(vdsmbridge),g" \
+	-e "s,[@]VDSMDIR[@],$(vdsmdir),g" \
+	-e "s,[@]VDSMLIBDIR[@],$(vdsmlibdir),g" \
+	-e "s,[@]VDSMLOGDIR[@],$(vdsmlogdir),g" \
+	-e "s,[@]VDSMREPO[@],$(vdsmrepo),g" \
+	-e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g"
 
-EXTRA_DIST = \
-	12-vdsm-lvm.rules
-
-check-local:
-	python $(srcdir)/storage_exception.py
+%: %.in
+	@echo "  SED $@"; $(PATHSUBST) < $< > $@

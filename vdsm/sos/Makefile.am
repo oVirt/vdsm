@@ -18,51 +18,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = protect
+include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmstoragedir = $(vdsmdir)/storage
-dist_vdsmstorage_PYTHON = \
-	__init__.py \
-	blockSD.py \
-	blockVolume.py \
-	devicemapper.py \
-	dispatcher.py \
-	fileSD.py \
-	fileUtils.py \
-	fileVolume.py \
-	fuser.py \
-	hba.py \
-	hsm.py \
-	image.py \
-	iscsi.py \
-	localFsSD.py \
-	lvm.py \
-	misc.py \
-	mount.py \
-	multipath.py \
-	nfsSD.py \
-	outOfProcess.py \
-	persistentDict.py \
-	processPool.py \
-	resourceFactories.py \
-	resourceManager.py \
-	safelease.py \
-	sdc.py \
-	sd.py \
-	securable.py \
-	sp.py \
-	storage_connection.py \
-	storageConstants.py \
-	storage_exception.py \
-	storage_mailbox.py \
-	taskManager.py \
-	task.py \
-	threadLocal.py \
-	threadPool.py \
-	volume.py
+sospluginsdir = $(pythondir)/sos/plugins
+
+nodist_sosplugins_PYTHON = \
+	vdsm.py
+
+CLEANFILES = \
+	$(nodist_sosplugins_PYTHON)
 
 EXTRA_DIST = \
-	12-vdsm-lvm.rules
+	vdsm.py.in
 
-check-local:
-	python $(srcdir)/storage_exception.py
+all-local: \
+	$(nodist_sosplugins_PYTHON)
