@@ -6,9 +6,11 @@
 # Description:	  Persist all VDSM hooks
 #
 
+. @LIBEXECDIR@/ovirt_functions.sh
+
 HOOKS_DIR=/usr/libexec/vdsm/hooks
 
-if [[ -f /etc/rhev-hypervisor-release ]]
+if isOvirt
 then
     . /usr/libexec/ovirt-functions
     for hook in "$HOOKS_DIR"/*/*

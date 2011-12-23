@@ -3,11 +3,13 @@
 # vdsm-store-net-config: store network configuration files persistently
 #
 
+. @LIBEXECDIR@/ovirt_functions.sh
+
 NET_CONF_DIR='/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR=@VDSMLIBDIR@/netconfback
 DELETE_HEADER='# original file did not exist'
 
-if [ -f /etc/rhev-hypervisor-release ];
+if isOvirt
 then
     # for ovirt, persist the changed configuration files
 

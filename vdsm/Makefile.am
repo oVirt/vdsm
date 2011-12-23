@@ -35,6 +35,9 @@ dist_vdsm_DATA = \
 	vdsmDebugPlugin.py \
 	vm.py
 
+dist_vdsmexec_SCRIPTS = \
+	ovirt_functions.sh
+
 nodist_vdsm_DATA = \
 	config.py \
 	constants.py

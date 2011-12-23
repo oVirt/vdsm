@@ -31,6 +31,22 @@ dist_vdsmexec_SCRIPTS = \
 	persist-vdsm-hooks \
 	unpersist-vdsm-hook
 
+vdsmhooks_SUBST = \
+        persist-vdsm-hooks
+
+CLEANFILES = \
+        $(vdsmhooks_SUBST)
+
+EXTRA_DIST = \
+	persist-vdsm-hooks.in
+
+# Reference:
+# http://www.gnu.org/software/automake/manual/html_node/Scripts.html
+do_subst = sed -e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g"
+
+$(vdsmhooks_SUBST):
+	$(do_subst) < $(srcdir)/$@.in > $@
+
 VDSMHOOKS = \
 	before_vm_start \
 	after_vm_start \

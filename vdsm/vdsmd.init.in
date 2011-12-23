@@ -21,6 +21,8 @@
 # Short-Description: init script for the VDS management server
 ### END INIT INFO
 
+. @LIBEXECDIR@/ovirt_functions.sh
+
 VDSM_BIN=@VDSMDIR@/vdsm
 CONF_FILE=@CONFDIR@/vdsm.conf
 GETCONFITEM=@VDSMDIR@/get-conf-item
@@ -259,7 +261,7 @@ configure_libvirt()
           echo "$key=$val $BY_VDSM" >> "$cfile"
     }
 
-    if [ -f /etc/rhev-hypervisor-release ];
+    if isOvirt
     then
         . /usr/libexec/ovirt-functions
     else
@@ -280,8 +282,7 @@ configure_libvirt()
     fi
 
     # do not configure ovirt nodes before registration
-    if [ -f /etc/rhev-hypervisor-release -a \
-      ! -f $ts/certs/vdsmcert.pem ]
+    if isOvirt && [ ! -f /etc/pki/vdsm/certs/vdsmcert.pem ]
     then
         log_failure_msg "$prog: Missing certificates, $prog not registered "
         return 6
