@@ -113,7 +113,7 @@ class StorageServerConnection:
         conParams = self.__validateConnectionParams(domType, conList)
 
         if domType == sd.NFS_DOMAIN:
-            return self.__disconnectFileServer(conParams, fileUtils.FSTYPE_NFS)
+            return self.__disconnectFileServer(conParams, mount.VFS_NFS)
         elif domType == sd.LOCALFS_DOMAIN:
             return self.__disconnectLocalConnection(conParams)
         elif domType in sd.BLOCK_DOMAIN_TYPES:
