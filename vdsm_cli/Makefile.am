@@ -19,6 +19,7 @@ dist_man1_MANS = \
 
 vdsmcli_SUBST = \
 	vdsClient \
+	dumpStorageTable.py \
 	vdscli.py
 
 CLEANFILES = \
@@ -27,11 +28,13 @@ CLEANFILES = \
 EXTRA_DIST = \
 	vdsClient.completion \
 	vdsClient.in \
+	dumpStorageTable.py.in \
 	vdscli.py.in
 
 # Reference:
 # http://www.gnu.org/software/automake/manual/html_node/Scripts.html
 do_subst = sed -e "s,[@]VDSMDIR[@],$(vdsmdir),g" \
+	    -e "s,[@]VDSMREPO[@],$(vdsmrepo),g" \
 	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
 
 $(vdsmcli_SUBST):

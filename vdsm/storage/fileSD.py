@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from os.path import normpath
 import os
 import errno
 import logging
@@ -29,6 +30,7 @@ import fileVolume
 import image
 import misc
 import outOfProcess as oop
+from config import config
 from processPool import Timeout
 from persistentDict import PersistentDict, DictValidator
 import constants
@@ -44,7 +46,13 @@ FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
 def getDomUuidFromMetafilePath(metafile):
     # Metafile path has pattern:
     #  /rhev/data-center/mnt/export-path/sdUUID/dom_md/metadata
-    return metafile.split('/')[5]
+
+    # sdUUID position after data-center
+    sdUUIDPos = 3
+
+    metaList = metafile.split('/')
+    sdUUID = len(normpath(config.get('irs', 'repository')).split('/')) + sdUUIDPos
+    return metaList[sdUUID]
 
 class FileMetadataRW(object):
     """

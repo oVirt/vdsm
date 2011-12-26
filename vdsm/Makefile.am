@@ -49,6 +49,7 @@ nodist_vdsm_SCRIPTS = \
 vdsm_data_SUBST = \
 	logger.conf \
 	sudoers.vdsm \
+	vdsm.rwtab \
 	vdsmd.init \
 	vdsm-sosplugin.py
 
@@ -74,7 +75,8 @@ dist_man8_MANS = \
 vdsm_SUBST = \
 	$(nodist_vdsm_DATA) \
 	$(nodist_vdsm_SCRIPTS) \
-	$(vdsm_data_SUBST)
+	$(vdsm_data_SUBST) \
+	$(dist_man8_MANS)
 
 CLEANFILES = \
 	$(vdsm_SUBST) \
@@ -84,6 +86,7 @@ EXTRA_DIST = \
 	config.py.in \
 	libvirt_password \
 	logger.conf.in \
+	vdsmd.8.in \
 	vdsmd.init.in \
 	vdsmd.service \
 	vdsm-libvirt-access.pkla \
@@ -91,7 +94,7 @@ EXTRA_DIST = \
 	vdsm-logrotate \
 	vdsm-logrotate.conf \
 	vdsm-restore-net-config.in \
-	vdsm.rwtab \
+	vdsm.rwtab.in \
 	vdsm-sosplugin.py.in \
 	vdsm-store-net-config.in
 
@@ -106,6 +109,7 @@ do_subst = sed -e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
 	    -e "s,[@]POOLSDIR[@],$(vdsmpoolsdir),g" \
 	    -e "s,[@]BACKUPDIR[@],$(vdsmbackupdir),g" \
 	    -e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g" \
+	    -e "s,[@]VDSMREPO[@],$(vdsmrepo),g" \
 	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
 
 vdsm.conf.sample: config.py
@@ -163,7 +167,7 @@ uninstall-data-libvirtpass:
 
 install-data-rwtab:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d
-	$(INSTALL_DATA) $(srcdir)/vdsm.rwtab \
+	$(INSTALL_DATA) vdsm.rwtab \
 		$(DESTDIR)$(sysconfdir)/rwtab.d/vdsm
 
 uninstall-data-rwtab:

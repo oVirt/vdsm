@@ -1,4 +1,4 @@
-.\"Copyright 2010 Red Hat, Inc. and/or its affiliates.
+.\"Copyright 2011 Red Hat, Inc. and/or its affiliates.
 .\"
 .\"Licensed to you under the GNU General Public License as published by
 .\"the Free Software Foundation; either version 2 of the License, or
@@ -139,7 +139,7 @@ Default log location for vdsm.
 .FN /etc/pki/vdsm
 VDSM's trust store: server key, certificate, and RHEV-M CA's certificate.
 .TP
-.FN /rhev/data-center/
+.FN @VDSMREPO@
 VDSM's image repository, or more exactly, links to NFS exports and iSCSI or
 FiberChannel devices which VDSM uses.
 
@@ -156,4 +156,4 @@ probably others.
 Report bugs to <http://bugzilla.redhat.com>
 
 .SH COPYRIGHT
-Copyright 2010 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
+Copyright 2011 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.

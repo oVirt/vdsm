@@ -18,10 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from os.path import normpath
 import os
 import uuid
 
 import storage_exception as se
+from config import config
 from sdc import sdCache
 import outOfProcess as oop
 import volume
@@ -34,8 +36,13 @@ from threadLocal import vars
 def getDomUuidFromVolumePath(volPath):
     # Volume path has pattern:
     #  /rhev/data-center/spUUID/sdUUID/images/imgUUID/volUUID
-    return volPath.split('/')[4]
 
+    # sdUUID position after data-center
+    sdUUIDPos = 3
+
+    volList = volPath.split('/')
+    sdUUID = len(normpath(config.get('irs', 'repository')).split('/')) + sdUUIDPos
+    return volList[sdUUID]
 
 def deleteMultipleVolumes(sdUUID, volumes, postZero):
     #Posix asserts that the blocks will be zeroed before reuse

@@ -256,6 +256,8 @@ make
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 
+mkdir -p %{buildroot}@vdsmrepo@
+
 # Install the respawn utility
 install -Dm 0755 vdsm/respawn \
                  %{buildroot}%{_datadir}/%{vdsm_name}/respawn
@@ -422,6 +424,7 @@ exit 0
 %{_unitdir}/vdsmd.service
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %endif
+%dir %attr(0775, root, root) @vdsmrepo@
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
