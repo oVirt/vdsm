@@ -151,7 +151,7 @@ class StorageServerConnection:
                 mntPath = os.path.join(localPath, mntPoint)
 
                 rc = 0
-                mnt = mount.Mount(con['rp'], mntPath, timeout=CON_TIMEOUT)
+                mnt = mount.Mount(con['rp'], mntPath)
 
                 # Stale handle usually resolves itself when doing directory lookups
                 # BUT if someone deletes the export on the servers side. We will keep
@@ -163,7 +163,7 @@ class StorageServerConnection:
                     # even if it's stale. We use lazy so we can at least recover.
                     # Processes having an open file handle will not recover until
                     # they reopen the files.
-                    mnt.umount(lazy=True)
+                    mnt.umount(lazy=True, timeout=CON_TIMEOUT)
 
                 fileUtils.createdir(mnt.fs_file)
 
@@ -261,10 +261,10 @@ class StorageServerConnection:
             try:
                 rc = 0
                 mountpoint = tempfile.mkdtemp()
-                mnt = mount.Mount(con['rp'], mountpoint, timeout=CON_TIMEOUT)
+                mnt = mount.Mount(con['rp'], mountpoint)
                 try:
                     try:
-                        mnt.mount(fileUtils.NFS_OPTIONS, mount.VFS_NFS)
+                        mnt.mount(fileUtils.NFS_OPTIONS, mount.VFS_NFS, timeout=CON_TIMEOUT)
                     except mount.MountError:
                         self.log.error("Error during storage connection validation", exc_info=True)
                         rc = se.StorageServerValidationError.code
