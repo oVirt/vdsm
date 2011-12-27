@@ -18,7 +18,8 @@ nodist_vdsmbootstrap_DATA = \
         deployUtil.py
 
 nodist_noinst_DATA = \
-	vdsm-reg.conf
+	vdsm-reg.conf \
+	vdsm-reg-setup
 
 dist_vdsmreg_SCRIPTS = \
 	save-config \
@@ -39,6 +40,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	deployUtil.py.in \
 	logger.conf \
+	vdsm-reg-setup.in \
 	rhevm.py \
 	vdsm-config \
 	vdsm-reg-cmdline \
@@ -50,7 +52,8 @@ EXTRA_DIST = \
 
 # Reference:
 # http://www.gnu.org/software/automake/manual/html_node/Scripts.html
-do_subst = sed -e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g"
+do_subst = sed -e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g" \
+	    -e "s,[@]VDSMBRIDGE[@],$(vdsmbridge),g"
 
 $(vdsmreg_SUBST):
 	$(do_subst) < $(srcdir)/$@.in > $@

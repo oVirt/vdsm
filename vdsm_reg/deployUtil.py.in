@@ -83,7 +83,7 @@ ERR_NO_ROUTE = 7
 SCRIPT_NAME_ADD = "addNetwork"
 SCRIPT_NAME_DEL = "delNetwork"
 IFACE_CONFIG = "/etc/sysconfig/network-scripts/ifcfg-"
-MGT_BRIDGE_NAME = "rhevm"
+MGT_BRIDGE_NAME = "@vdsmbridge@"
 REMOTE_SSH_KEY_FILE = "/rhevm.ssh.key.txt"
 CORE_DUMP_PATH = '/var/lib/vdsm/core'
 CORE_PATTERN = '/proc/sys/kernel/core_pattern'
@@ -338,15 +338,15 @@ def getMGTIP(vdsmDir, vdcHostName):
 
 def preventDuplicate():
     """
-      This function checks if the needed bridge (rhevm) already exist.
+      This function checks if the needed bridge (@vdsmbridge@) already exist.
     """
     fFound = False
 
     if os.path.exists('/sys/class/net/' + MGT_BRIDGE_NAME):
         fFound = True
-        logging.debug("Bridge rhevm already exists.")
+        logging.debug("Bridge " + MGT_BRIDGE_NAME + " already exists.")
     else:
-        logging.debug("Bridge rhevm not found, need to create it.")
+        logging.debug("Bridge " + MGT_BRIDGE_NAME + " not found, need to create it.")
 
     return fFound
 
@@ -774,11 +774,9 @@ def _getRHELBridgeParams(mgtIface):
             nic = mgtIface
 
         if nic in netinfo.bondings():
-            logging.error(
-                "_getRHELBridgeParams Found bonding: " +
-                str(nic) +
-                ". This network configuration is not supported! Please configure rhevm bridge manually and re-install."
-            )
+            logging.error("_getRHELBridgeParams Found bonding: " + str(nic) + \
+               ". This network configuration is not" \
+                "supported! Please configure " + MGT_BRIDGE_NAME + " bridge manually and re-install.")
             nic = None
     except:
         logging.error("_getRHELBridgeParams Failed to test for VLAN data")
@@ -802,7 +800,7 @@ def setSafeVdsmNetworkConfig():
 
 def makeBridge(vdcName, vdsmDir):
     """
-        Create (for RHEL) or rename (oVirt default bridge) to rhevm bridge.
+        Create (for RHEL) or rename (oVirt default bridge) to @vdsmbridge@ bridge.
     """
     logging.debug('makeBridge begin.')
     sys.path.append(vdsmDir)
@@ -866,17 +864,17 @@ def makeBridge(vdcName, vdsmDir):
             fReturn = False
             logging.debug("makeBridge Failed to del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
 
-    #Add rhevm bridge
+    #Add @vdsmbridge@ bridge
     if fReturn:
         try:
             lstBridgeOptions.append('blockingdhcp=true')
             out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_ADD) , MGT_BRIDGE_NAME, vlan, bonding, nic] + lstBridgeOptions)
             if ret:
                 fReturn = False
-                logging.debug("makeBridge Failed to add rhevm bridge out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+                logging.debug("makeBridge Failed to add " + MGT_BRIDGE_NAME + " bridge out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
         except:
             fReturn = False
-            logging.debug("makeBridge Failed to add rhevm bridge out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+            logging.debug("makeBridge Failed to add " + MGT_BRIDGE_NAME + " bridge out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
 
     #Save current config by removing the undo files:
     try:

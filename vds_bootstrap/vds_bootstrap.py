@@ -607,7 +607,7 @@ gpgcheck=0
     def _addNetwork(self, vdcName, vdcPort):
         fReturn = True
 
-        #add rhevm bridge
+        #add management bridge
         try:
             fReturn = deployUtil.makeBridge(vdcName, VDSM_DIR)
             if fReturn: #save current config by removing the undo files:
@@ -623,12 +623,12 @@ gpgcheck=0
                 except:
                     logging.error(traceback.format_exc())
             else:
-                self.message = "addNetwork error trying to add rhevm bridge"
+                self.message = "addNetwork error trying to add management bridge"
                 logging.error(self.message)
                 fReturn = False
         except:
             fReturn = False
-            self.message = "addNetwork Failed to add rhevm bridge"
+            self.message = "addNetwork Failed to add management bridge"
             logging.error(self.message)
 
         if not fReturn:
@@ -674,18 +674,18 @@ gpgcheck=0
 
     def setNetworking(self, iurl):
         """
-            Create rhevm bridge.
+            Create management bridge.
             This class will try to create a managment bridge named "rehvm". Class
             always succeeds to allow network configuration from managment server
-            even in case this class will fail to set the rhevm bridge.
+            even in case this class will fail to set the management bridge.
             Note: expected input format: http://www.redhat.com/a/b/c or: ftp://10.0.0.23/d/e/f
         """
         self.status = "OK"
         self.rc = True
-        self.message = "Created rhevm bridge."
+        self.message = "Created management bridge."
 
         if deployUtil.preventDuplicate():
-            self.message = "Bridge rhevm already exists. Skipping bridge creation."
+            self.message = "Bridge management already exists. Skipping bridge creation."
             logging.debug(self.message)
         else:
             url, port = deployUtil.getAddress(iurl)

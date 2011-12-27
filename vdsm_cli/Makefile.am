@@ -35,6 +35,7 @@ EXTRA_DIST = \
 # http://www.gnu.org/software/automake/manual/html_node/Scripts.html
 do_subst = sed -e "s,[@]VDSMDIR[@],$(vdsmdir),g" \
 	    -e "s,[@]VDSMREPO[@],$(vdsmrepo),g" \
+	    -e "s,[@]VDSMBRIDGE[@],$(vdsmbridge),g" \
 	    -e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g"
 
 $(vdsmcli_SUBST):

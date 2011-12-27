@@ -59,6 +59,9 @@ AC_SUBST([vdsmbootstrapdir], ['${datarootdir}/vdsm-bootstrap'])
 AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
 AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 
+# Network
+AC_SUBST([vdsmbridge], ['brVDSM'])
+
 # Checking for pyflakes
 AC_PATH_PROG([PYFLAKES], [pyflakes])
 if test "x$PYFLAKES" = "x"; then

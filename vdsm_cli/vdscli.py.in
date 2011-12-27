@@ -46,7 +46,7 @@ def __guessDefaults():
                     d_addr = config.get('addresses', 'management_ip')
                 else:
                     import netinfo
-                    proposed_addr = netinfo.ifconfig()['rhevm']['addr']
+                    proposed_addr = netinfo.ifconfig()['@VDSMBRIDGE@']['addr']
                     if proposed_addr:
                         d_addr = proposed_addr
         except:
