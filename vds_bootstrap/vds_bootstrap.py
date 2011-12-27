@@ -73,6 +73,11 @@ except:
     exit(-1)
 
 rhel6based = deployUtil.versionCompare(deployUtil.getOSVersion(), "6.0") >= 0
+
+# TODO this is an infra-hackish heuristic for identifying Fedora
+# drop as soon as possible
+fedorabased = deployUtil.versionCompare(deployUtil.getOSVersion(), "16") >= 0
+
 if rhel6based:
     VDSM_NAME = "vdsm"
     VDSM_MIN_VER = VDSM_NAME + "-4.9"
@@ -301,7 +306,9 @@ class Deploy:
         elif verTest < 0:
             self.rc = False
         else:
-            if rhel6based:
+            if fedorabased:
+                os_name = "FEDORA"
+            elif rhel6based:
                 os_name = "RHEL6"
             else:
                 os_name = "RHEL5"
@@ -319,7 +326,10 @@ class Deploy:
             except:
                 kernel_ver = 0
 
-            if kernel_ver >= KERNEL_MIN_VER:
+            if fedorabased:
+                kernel_status = "OK"
+                kernel_message = "Skipped kernel version check"
+            elif kernel_ver >= KERNEL_MIN_VER:
                 kernel_status = "OK"
                 kernel_message = "Supported kernel version: " + str(kernel_ver)
             else:
@@ -794,7 +804,10 @@ gpgcheck=0
         try:
             tsDir = config.get('vars', 'trust_store_path')
         except:
-            tsDir = '/var/vdsm/ts'
+            if rhel6based:
+                tsDir = '/etc/pki/vdsm'
+            else:
+                tsDir = '/var/vdsm/ts'
 
         vdsmKey = tsDir + '/keys/vdsmkey.pem'
         vdsmCert = tsDir + '/certs/vdsmcert.pem'
