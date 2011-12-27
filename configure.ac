@@ -60,7 +60,7 @@ AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
 AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 
 # Network
-AC_SUBST([vdsmbridge], ['brVDSM'])
+AC_SUBST([vdsmbridge], ['ovirtmgmt'])
 
 # Checking for pyflakes
 AC_PATH_PROG([PYFLAKES], [pyflakes])
