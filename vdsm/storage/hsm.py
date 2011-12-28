@@ -2345,8 +2345,6 @@ class HSM:
         :returns: a dict with the size of the volume.
         :rtype: dict
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
         # Return string because xmlrpc's "int" is very limited
         apparentsize = str(volume.Volume.getVSize(sdUUID, imgUUID, volUUID, bs=1))
