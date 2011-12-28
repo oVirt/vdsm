@@ -2321,8 +2321,6 @@ class HSM:
 
         :returns: Nothing ? Stuff not implemented
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
         return sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
 
@@ -2370,9 +2368,6 @@ class HSM:
         :returns: a dict with the info of the volume.
         :rtype: dict
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
         info = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getInfo()
         return dict(info=info)
@@ -2396,8 +2391,6 @@ class HSM:
         :returns: a dict with the path to the volume.
         :rtype: dict
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
         path = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getVolumePath()
         return dict(path=path)
@@ -2421,8 +2414,6 @@ class HSM:
         :type rw: bool
         :param options: ?
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
         lockType = rm.LockType.exclusive if rw else rm.LockType.shared
@@ -2487,8 +2478,6 @@ class HSM:
         :param imgUUID: The UUID of the an image you want to filter the results.
                         if imgUUID equals :attr:`~volume.BLANK_UUID` no filtering will be done.
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
         if imgUUID == volume.BLANK_UUID:
