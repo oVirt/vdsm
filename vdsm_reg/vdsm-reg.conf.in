@@ -11,8 +11,6 @@ logger_conf=/etc/vdsm-reg/logger.conf
 vdc_host_name=None
 #The port of the RHEV Manager. Allows http or https connections.
 vdc_host_port=8443
-#The ssh file uri
-vdc_authkeys_path=/rhevm.ssh.key.txt
 #The registrtion uri
 vdc_reg_uri=/OvirtEngineWeb/register
 #Upgrade settings
