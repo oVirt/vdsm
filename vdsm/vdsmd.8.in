@@ -1,4 +1,4 @@
-.\"Copyright 2011 Red Hat, Inc. and/or its affiliates.
+.\"Copyright 2010-2012 Red Hat, Inc. and/or its affiliates.
 .\"
 .\"Licensed to you under the GNU General Public License as published by
 .\"the Free Software Foundation; either version 2 of the License, or
@@ -11,23 +11,26 @@
 .de FN
 \fI\|\\$1\|\fP
 ..
-.TH VDSMD 8 "September 19, 2010" "" ""
+.TH VDSMD 8 "January 1, 2012" "" ""
 .SH NAME
-vdsmd \- Red Hat Enterprise Virtualization Manager's host agent
+vdsmd \- Virtual Desktops and Servers Manager
+.br
+oVirt Engine host agent
 .SH SYNOPSIS
 .BR "service vdsmd start"
 .SH DESCRIPTION
 The
 .B VDSM
 service is required by a
-.B RHEV Manager
-to manage RHEV Hypervisors
-and Red Hat Enterprise Linux hosts. VDSM manages and monitors the host's
+.B oVirt Engine
+to manage oVirt Nodes
+and Linux hosts. Currently, only Fedora and Red Hat Enterprise Linux
+are supported. VDSM manages and monitors the host's
 storage, memory and networks as well as virtual machine creation, other host
 administration tasks, statistics gathering, and log collection.
 
-VDSM should be run as a daemon on each node managed by RHEV-M.
-It answers XML-RPC calls from clients (mostly RHEV-M). 
+VDSM should be run as a daemon on each node managed by oVirt Engine.
+It answers XML-RPC calls from clients (mostly oVirt Engine).
 
 .SH HOOKS
 VDSM is extendible: it has hooks in strategic locations, where it executes
@@ -60,7 +63,7 @@ The uuid of the virtual machine may be deduced from that xml, but it is also
 available as the environment variable
 .B vmId.
 
-On top of these, RHEV-M allows to set a collection of "custom parameters" for
+On top of these, oVirt Engine allows to set a collection of "custom parameters" for
 each virtual machine.  Each of these parameters is provided to hooks as an
 environment variable.
 
@@ -137,7 +140,7 @@ VDSM main configuration file. Use with great caution; some information about ava
 Default log location for vdsm.
 .TP
 .FN /etc/pki/vdsm
-VDSM's trust store: server key, certificate, and RHEV-M CA's certificate.
+VDSM's trust store: server key, certificate, and oVirt Engine CA's certificate.
 .TP
 .FN @VDSMREPO@
 VDSM's image repository, or more exactly, links to NFS exports and iSCSI or
@@ -146,6 +149,8 @@ FiberChannel devices which VDSM uses.
 
 .SH SEE ALSO
 .BR vdsClient(1)
+.br
+.BR http://www.ovirt.org/wiki/Category:Vdsm
 
 .SH AUTHOR
 VDSM was written by Ayal Baron, Barak Azulay, Cyril Plisko, Dan Kenigsberg,
@@ -156,4 +161,4 @@ probably others.
 Report bugs to <http://bugzilla.redhat.com>
 
 .SH COPYRIGHT
-Copyright 2011 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
+Copyright 2010-2012 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
