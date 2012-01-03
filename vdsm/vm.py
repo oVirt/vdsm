@@ -51,7 +51,7 @@ class Drive(object):
         self.name = self._libvirtName()
 
     def _libvirtName(self):
-        devname = {'ide': 'hd', 'virtio': 'vd', 'fd': 'fd'}
+        devname = {'ide': 'hd', 'virtio': 'vd', 'fdc': 'fd'}
         devindex = ''
 
         i = int(self.index)
@@ -361,7 +361,7 @@ class Vm(object):
         floppyPath = self.conf.get('floppy')
         if floppyPath:
             removables.append({'device': 'floppy', 'path': floppyPath,
-                'iface': 'fd', 'index': 0, 'blockDev': False, 'truesize': 0})
+                'iface': 'fdc', 'index': 0, 'blockDev': False, 'truesize': 0})
         return removables
 
     def getConfDrives(self):
@@ -381,7 +381,7 @@ class Vm(object):
         for order, drv in drives:
             # FIXME: For BC we have now two identical keys: iface = if
             # Till the day that conf will not returned as a status anymore.
-            drv['iface'] = self.conf.get('if', 'ide')
+            drv['iface'] = drv.get('iface') or drv.get('if', 'ide')
             if not self._usedIndices.has_key(drv['iface']):
                 self._usedIndices[drv['iface']] = []
             index = drv.get('index')
@@ -396,6 +396,7 @@ class Vm(object):
             if order not in indexed:
                 drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
                 self._usedIndices[drv['iface']].append(drv['index'])
+
         return [drv for order, drv in drives]
 
     def run(self):
