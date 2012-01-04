@@ -314,7 +314,7 @@ class StoragePool:
     def _shutDownUpgrade(self):
         self.log.debug("Shutting down upgrade process")
         with rmanager.acquireResource(STORAGE, "upgrade_" + self.spUUID, rm.LockType.exclusive):
-            domains = self._domainsToUpgrade
+            domains = self._domainsToUpgrade[:]
             try:
                 self.domainMonitor.onDomainConnectivityStateChange.unregister(self._upgradeCallback)
             except KeyError:
