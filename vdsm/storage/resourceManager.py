@@ -367,14 +367,14 @@ class ResourceManager(object):
             raise ValueError("Illegal namespace '%s'" % namespace)
 
         if (namespace in self._namespaces) and not force:
-                raise ValueError("Namespace '%s' already exists." % namespace)
+                raise KeyError("Namespace '%s' already exists." % namespace)
 
         with self._syncRoot.exclusive:
             if (namespace in self._namespaces):
                 if force:
                     self.unregisterNamespace(namespace)
                 else:
-                    raise ValueError("Namespace '%s' already exists." % namespace)
+                    raise KeyError("Namespace '%s' already exists." % namespace)
 
             self._log.debug("Registering namespace '%s'", namespace)
 
@@ -383,7 +383,7 @@ class ResourceManager(object):
     def unregisterNamespace(self, namespace):
         with self._syncRoot.exclusive:
             if not namespace in self._namespaces:
-                raise ValueError("Namespace '%s' doesn't exist" % namespace)
+                raise KeyError("Namespace '%s' doesn't exist" % namespace)
 
             self._log.debug("Unregistering namespace '%s'", namespace)
             namespaceObj = self._namespaces[namespace]
