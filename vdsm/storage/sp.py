@@ -660,6 +660,9 @@ class StoragePool:
 
     @unsecured
     def _saveReconnectInformation(self, hostID, scsiKey, msdUUID, masterVersion):
+        if os.path.exists(self._poolFile):
+            os.unlink(self._poolFile)
+
         pers = ["id=%d\n" % hostID]
         pers.append("scsiKey=%s\n" % scsiKey)
         pers.append("sdUUID=%s\n" % msdUUID)
@@ -685,9 +688,6 @@ class StoragePool:
             self.log.error(msg)
             msg = "Pools temp data dir: %s does not exist" % (self._poolsTmpDir)
             raise se.StoragePoolConnectionError(msg)
-
-        if os.path.exists(self._poolFile):
-            os.unlink(self._poolFile)
 
         self._saveReconnectInformation(hostID, scsiKey, msdUUID, masterVersion)
         self.id = hostID
