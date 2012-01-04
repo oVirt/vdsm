@@ -59,23 +59,23 @@ def write_vdsm_config(rhevm_host, rhevm_port):
     if os.path.getsize(VDSM_CONFIG) == 0:
         set_defaults()
         ovirt_store_config(VDSM_CONFIG)
-        log("RHEV agent configuration files created.")
+        log("oVirt agent configuration files created.")
     else:
-        log("RHEV agent configuration files already exist.")
+        log("oVirt agent configuration files already exist.")
 
     ret = os.system("ping -c 1 " + rhevm_host + " &> /dev/null")
     if ret == 0:
         sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name="+rhevm_host+"/\" " + VDSM_REG_CONFIG
         ret = os.system(sed_cmd)
         if ret == 0:
-            log("The RHEV Manager's address is set: %s\n" % rhevm_host)
+            log("The oVirt Engine's address is set: %s\n" % rhevm_host)
         if rhevm_port != "":
             sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port="+str(rhevm_port)+"/\" " + VDSM_REG_CONFIG
             os.system(sed_cmd)
-            log("The RHEV Manager's port set: %s\n" % rhevm_port)
+            log("The oVirt Engine's port set: %s\n" % rhevm_port)
             fWriteConfig=1
     else:
-        log("Either " + rhevm_host + " is an invalid address or the RHEV Manager unresponsive.\n")
+        log("Either " + rhevm_host + " is an invalid address or the oVirt Engine unresponsive.\n")
         return False
 
     if fWriteConfig == 1:
@@ -99,19 +99,19 @@ def get_rhevm_config():
     return vdc_server
 
 class Plugin(PluginBase):
-    """Plugin for RHEV-M configuration.
+    """Plugin for oVirt Engine configuration.
     """
 
     def __init__(self, ncs):
-        PluginBase.__init__(self, "RHEV-M", ncs)
+        PluginBase.__init__(self, "oVirt Engine", ncs)
 
     def form(self):
         elements = Grid(2, 8)
         is_network_up = network_up()
         if is_network_up:
-            header_message = "RHEV-M Configuration"
+            header_message = "oVirt Engine Configuration"
         else:
-            header_message = "Network Down, RHEV-M Configuration Disabled"
+            header_message = "Network Down, oVirt Engine Configuration Disabled"
         heading = Label(header_message)
         self.ncs.screen.setColor(customColorset(1), "black", "magenta")
         heading.setColors(customColorset(1))
@@ -127,11 +127,11 @@ class Plugin(PluginBase):
         rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 1))
         elements.setField(rhevm_grid, 0, 1, anchorLeft = 1, padding = (0,0,0,0))
         elements.setField(Label(""), 0, 2, anchorLeft = 1)
-        self.verify_rhevm_cert = Checkbox("Connect to RHEV Manager and Validate Certificate", isOn=True)
+        self.verify_rhevm_cert = Checkbox("Connect to oVirt Engine and Validate Certificate", isOn=True)
         elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,0,0,0))
         elements.setField(Label(""), 0, 4, anchorLeft = 1)
 
-        elements.setField(Label("Set RHEV-M Admin Password"), 0, 5, anchorLeft = 1)
+        elements.setField(Label("Set oVirt Engine Admin Password"), 0, 5, anchorLeft = 1)
         pw_elements = Grid(3,3)
 
         pw_elements.setField(Label("Password: "), 0, 1, anchorLeft = 1)
@@ -189,24 +189,24 @@ class Plugin(PluginBase):
                                 "Certificate Fingerprint:",
                                 fp, buttons = ['Approve', 'Reject'])
                     if 'reject' == approval:
-                        ButtonChoiceWindow(self.ncs.screen, "Fingerprint rejected", "RHEV-M Configuration Failed", buttons = ['Ok'])
+                        ButtonChoiceWindow(self.ncs.screen, "Fingerprint rejected", "oVirt Engine Configuration Failed", buttons = ['Ok'])
                         return False
                     else:
                         ovirt_store_config(path)
                         self.ncs.reset_screen_colors()
                 else:
-                    ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "Failed downloading RHEV-M certificate", buttons = ['Ok'])
+                    ButtonChoiceWindow(self.ncs.screen, "oVirt Engine Configuration", "Failed downloading oVirt Engine certificate", buttons = ['Ok'])
                     self.ncs.reset_screen_colors()
             # Stopping vdsm-reg may fail but its ok - its in the case when the menus are run after installation
             deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg', 'stop'])
             if write_vdsm_config(self.rhevm_server.value(), self.rhevm_server_port.value()):
                 deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg',
                     'start'])
-                ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "RHEV-M Configuration Successfully Updated", buttons = ['Ok'])
+                ButtonChoiceWindow(self.ncs.screen, "oVirt Engine Configuration", "oVirt Engine Configuration Successfully Updated", buttons = ['Ok'])
                 self.ncs.reset_screen_colors()
                 return True
             else:
-                ButtonChoiceWindow(self.ncs.screen, "RHEV-M Configuration", "RHEV-M Configuration Failed", buttons = ['Ok'])
+                ButtonChoiceWindow(self.ncs.screen, "oVirt Engine Configuration", "oVirt Engine Configuration Failed", buttons = ['Ok'])
                 self.ncs.reset_screen_colors()
                 return False
 
@@ -214,7 +214,7 @@ class Plugin(PluginBase):
         if not is_valid_host_or_ip(self.rhevm_server.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
-            ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid RHEV-M Hostname or Address", buttons = ['Ok'])
+            ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid oVirt Engine Hostname or Address", buttons = ['Ok'])
             self.ncs.reset_screen_colors()
 
 
@@ -222,7 +222,7 @@ class Plugin(PluginBase):
         if not is_valid_port(self.rhevm_server_port.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
-            ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid RHEV-M Server Port", buttons = ['Ok'])
+            ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid oVirt Engine Server Port", buttons = ['Ok'])
             self.ncs.reset_screen_colors()
 
 def get_plugin(ncs):
