@@ -833,14 +833,20 @@ def setupNetworks(networks={}, bondings={}, **options):
 
         logger.debug("Applying...")
         try:
-            for network, networkAttrs in networks.items():
+            delnetworks = {}
+            for network, networkAttrs in networks.iteritems():
+                if 'remove' in networkAttrs:
+                    delnetworks[network] = networkAttrs
+
+            for network, networkAttrs in delnetworks.iteritems():
                 if networkAttrs.pop('remove', False):
                     assert not networkAttrs
 
                     logger.debug('Removing network %r'%network)
                     delNetwork(network, force=force)
-                    continue
+                    del networks[network]
 
+            for network, networkAttrs in networks.items():
                 if network in _netinfo.networks:
                     delNetwork(network, force=force)
                 else:
