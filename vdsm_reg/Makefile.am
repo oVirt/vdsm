@@ -28,7 +28,7 @@ dist_vdsmreg_PYTHON = \
 	define.py
 
 dist_ovirtsetup_PYTHON = \
-	rhevm.py
+	engine.py
 
 nodist_vdsmreg_PYTHON = \
 	deployUtil.py
