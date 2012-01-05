@@ -23,6 +23,7 @@ import sys
 import os
 import errno
 import threading
+import re
 from time import sleep
 import signal
 from multiprocessing import Pipe, Process
@@ -33,10 +34,17 @@ from storage.iscsi import getdeviSCSIinfo as _getdeviSCSIinfo
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
 from storage.fileUtils import chown, open_ex, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
-from constants import METADATA_GROUP, METADATA_USER
+from constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, DISKIMAGE_USER, DISKIMAGE_GROUP
 from storage.devicemapper import _removeMapping, _getPathsStatus
+import storage.misc
 import configNetwork
 from config import config
+
+_UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
+_UDEV_RULE_FILE_PREFIX = "99-vdsm-"
+_UDEV_RULE_FILE_EXT = ".rules"
+_UDEV_RULE_FILE_NAME = _UDEV_RULE_FILE_DIR + _UDEV_RULE_FILE_PREFIX + "%s-%s" + \
+                      _UDEV_RULE_FILE_EXT
 
 RUN_AS_TIMEOUT= config.getint("irs", "process_pool_timeout")
 class Timeout(RuntimeError): pass
@@ -147,6 +155,37 @@ class _SuperVdsm(object):
     @logDecorator
     def setSafeNetworkConfig(self):
         return configNetwork.setSafeNetworkConfig()
+
+    @logDecorator
+    def udevTrigger(self, guid):
+        cmd =  [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
+                '--property-match=DM_NAME="%s"' % guid]
+        rc, out, err = storage.misc.execCmd(cmd, sudo=False)
+        if rc:
+            raise OSError(errno.EINVAL, "Could not trigger change for device \
+                          %s, out %s\nerr %s" % (guid, out, err))
+
+    @logDecorator
+    def appropriateDevice(self, guid, thiefId):
+        ruleFile = _UDEV_RULE_FILE_NAME % (guid, thiefId)
+        rule = 'SYMLINK=="mapper/%s", OWNER="%s", GROUP="%s"\n' % (guid,
+                DISKIMAGE_USER, DISKIMAGE_GROUP)
+        with open(ruleFile, "w") as rf:
+            rf.write(rule)
+
+    @logDecorator
+    def rmAppropriateRules(self, thiefId):
+        re_apprDevRule = "^" + _UDEV_RULE_FILE_PREFIX + ".*?-" + thiefId + \
+                         _UDEV_RULE_FILE_EXT + "$"
+        rules = [os.path.join(_UDEV_RULE_FILE_DIR, r) for r in
+                 os.listdir(_UDEV_RULE_FILE_DIR) if re.match(re_apprDevRule, r)]
+        fails = []
+        for r in rules:
+            try:
+                os.remove(r)
+            except OSError:
+                fails.append(r)
+        return fails
 
 def __pokeParent(parentPid):
     try:

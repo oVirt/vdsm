@@ -1465,6 +1465,8 @@ class LibvirtVm(vm.Vm):
                 self.log.error("Destroy failed, not all drives were teardown")
                 return errCode['destroyErr']
 
+            self.cif.irs.inappropriateDevices(self.id)
+
             hooks.after_vm_destroy(self._lastXMLDesc, self.conf)
 
             self._released = True

@@ -571,7 +571,7 @@ class clientIF:
             path = out[0]
         return path
 
-    def _prepareVolumePath(self, drive):
+    def _prepareVolumePath(self, drive, vmId=None):
         if type(drive) == dict:
             # drive specification is a quartet (vdsm image)?
             if vm.isVdsmImage(drive):
@@ -589,6 +589,9 @@ class clientIF:
             elif drive.has_key("GUID") and os.path.exists(os.path.join("/dev/mapper", drive["GUID"])):
                 path = os.path.join("/dev/mapper", drive["GUID"])
                 drive['blockDev'] = True
+                res = self.irs.appropriateDevice(drive["GUID"], vmId)
+                if res['status']['code']:
+                    raise vm.VolumeError(drive)
             elif drive.has_key("UUID"):
                 path = self._getUUIDSpecPath(drive["UUID"])
                 drive['blockDev'] = True

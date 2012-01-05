@@ -63,6 +63,7 @@ import devicemapper
 import logUtils
 import mount
 import dispatcher
+import supervdsm
 
 GUID = "guid"
 NAME = "name"
@@ -2401,6 +2402,25 @@ class HSM:
         path = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getVolumePath()
         return dict(path=path)
 
+
+    @public
+    def appropriateDevice(self, guid, thiefId):
+        """
+        Change ownership of the guid device to vdsm:qemu
+
+        Warning: Internal use only.
+        """
+        supervdsm.getProxy().appropriateDevice(guid, thiefId)
+        supervdsm.getProxy().udevTrigger(guid)
+
+    @public
+    def inappropriateDevices(self, thiefId):
+        """
+        Warning: Internal use only.
+        """
+        fails = supervdsm.getProxy().rmAppropriateRules(thiefId)
+        if fails:
+            self.log.error("Failed to remove the following rules: %s", fails)
 
     @public
     def prepareVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=True, options = None):

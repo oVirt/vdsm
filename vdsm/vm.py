@@ -575,7 +575,7 @@ class Vm(object):
         if not self.destroyed:
             with self._volPrepareLock:
                 if not self.destroyed:
-                    volPath = self.cif._prepareVolumePath(drive)
+                    volPath = self.cif._prepareVolumePath(drive, self.id)
                     self._preparedDrives[volPath] = drive
 
         return volPath
