@@ -48,7 +48,8 @@ dist_vdsm_PYTHON = \
 	supervdsmServer.py \
 	utils.py \
 	vdsmDebugPlugin.py \
-	vm.py
+	vm.py \
+	vmChannels.py
 
 dist_vdsmexec_SCRIPTS = \
 	ovirt_functions.sh

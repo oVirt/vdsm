@@ -1204,8 +1204,9 @@ class LibvirtVm(vm.Vm):
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
-        self.guestAgent = guestIF.GuestAgent(self._guestSocektFile, self.log,
-                   connect=utils.tobool(self.conf.get('vmchannel', 'true')))
+        self.guestAgent = guestIF.GuestAgent(self._guestSocektFile,
+            self.cif.channelListener, self.log,
+            connect=utils.tobool(self.conf.get('vmchannel', 'true')))
 
         self._guestCpuRunning = self._dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
         if self.lastStatus not in ('Migration Destination',

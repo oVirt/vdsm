@@ -41,6 +41,7 @@ import utils
 import configNetwork
 import caps
 from BindingXMLRPC import BindingXMLRPC
+from vmChannels import Listener
 import API
 
 class clientIF:
@@ -63,6 +64,7 @@ class clientIF:
         self._recovery = True
         self._libvirt = libvirtconnection.get()
         self._syncLibvirtNetworks()
+        self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
         self._initIRS()
         try:
@@ -83,6 +85,8 @@ class clientIF:
             self._netConfigDirty = False
             threading.Thread(target=self._recoverExistingVms,
                              name='clientIFinit').start()
+            self.channelListener.settimeout(config.getint('vars', 'guest_agent_timeout'))
+            self.channelListener.start()
             self.threadLocal = threading.local()
             self.threadLocal.client = ''
         except:
@@ -138,6 +142,7 @@ class clientIF:
             for binding in self.bindings.values():
                 binding.prepareForShutdown()
             self._enabled = False
+            self.channelListener.stop()
             self._hostStats.stop()
             if self.irs:
                 return self.irs.prepareForShutdown()

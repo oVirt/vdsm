@@ -18,11 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import logging, threading
+import logging
 import time
 import socket
 import json
-from config import config
 import utils
 import constants
 
@@ -47,10 +46,14 @@ def _filterXmlChars(u):
 
     return ''.join(maskRestricted(c) for c in u)
 
-class GuestAgent (threading.Thread):
-    def __init__(self, socketName, log, user='Unknown', ips='', connect=True):
+class GuestAgent ():
+    def __init__(self, socketName, channelListener, log, user='Unknown',
+                 ips='', connect=True):
         self.log = log
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        # Save the socket's fileno because a call to fileno() fails if the
+        # socket is closed before GuestAgent.stop() is called.
+        self._sock_fd = self._sock.fileno()
         self._socketName = socketName
         self._stopped = True
         self.guestStatus = None
@@ -58,25 +61,31 @@ class GuestAgent (threading.Thread):
                           'session': 'Unknown', 'appsList': [], 'disksUsage': [],
                           'netIfaces': []}
         self._agentTimestamp = 0
-
-        threading.Thread.__init__(self)
+        self._channelListener = channelListener
         if connect:
-            self.start()
+            self._prepare_socket()
+            self._channelListener.register(self._sock_fd, self._connect,
+                self._onChannelRead, self._onChannelTimeout, self)
 
-    def _connect(self):
-        logging.debug("Attempting connection to %s", self._socketName)
+    def _prepare_socket(self):
         utils.execCmd([constants.EXT_PREPARE_VMCHANNEL, self._socketName],
-                sudo=True)
-        self._sock.settimeout(5)
-        while not self._stopped:
-            try:
-                self._sock.connect(self._socketName)
-                logging.debug("connected to %s", self._socketName)
-                self._sock.settimeout(config.getint('vars', 'guest_agent_timeout'))
-                return True
-            except:
-                time.sleep(1)
-        return False
+            sudo=True)
+        self._sock.setblocking(0)
+
+    @staticmethod
+    def _connect(self):
+        ret = False
+        try:
+            self.log.debug("Attempting connection to %s", self._socketName)
+            if self._sock.connect_ex(self._socketName) == 0:
+                self.log.debug("Connected to %s", self._socketName)
+                self._buffer = ''
+                self._forward('refresh')
+                self._stopped = False
+                ret = True
+        except socket.error as err:
+            self.log.debug("Connection attempt failed: %s", err)
+        return ret
 
     def _forward(self, cmd, args = {}):
         args['__name__'] = cmd
@@ -145,8 +154,9 @@ class GuestAgent (threading.Thread):
         else:
             self.log.error('Unknown message type %s', message)
 
-    def stop (self):
+    def stop(self):
         self._stopped = True
+        self._channelListener.unregister(self._sock_fd)
         self._sock.close()
 
     def isResponsive (self):
@@ -209,62 +219,33 @@ class GuestAgent (threading.Thread):
         except:
             self.log.error("sendHcCmdToDesktop failed", exc_info=True)
 
+    @staticmethod
     def _onChannelTimeout(self):
         self.guestInfo['memUsage'] = 0
         if self.guestStatus not in ("Powered down", "RebootInProgress"):
             self.log.log(logging.TRACE, "Guest connection timed out")
             self.guestStatus = None
 
-    READSIZE = 2**16
-    def _readBuffer(self):
+    @staticmethod
+    def _onChannelRead(self):
         try:
-            s = self._sock.recv(self.READSIZE)
-            if s:
-                self._buffer += s
-            else:
-                # s is None if recv() exit with an error. The sleep() is
-                # called in order to prevent a 100% CPU utilization while
-                # trying to read from the socket again (and again...).
-                time.sleep(1)
-        except socket.timeout:
-            self._onChannelTimeout()
-
-    def _readLine(self):
-        newline = self._buffer.find('\n')
-        while not self._stopped and newline < 0:
-            self._readBuffer()
-            newline = self._buffer.find('\n')
-        if newline >= 0:
+            while True:
+                self._buffer += self._sock.recv(2**16)
+        except socket.error as err:
+            if err.errno == 11:
+                # Nothing more to receive (Resource temporarily unavailable).
+                pass
+        while (not self._stopped) and (self._buffer.find('\n') >= 0):
             line, self._buffer = self._buffer.split('\n', 1)
-        else:
-            line = None
-        return line
+            try:
+                (message, args) = self._parseLine(line)
+                self._agentTimestamp = time.time()
+                self._handleMessage(message, args)
+            except ValueError as err:
+                self.log.error("%s: %s" % (err, repr(line)))
 
     def _parseLine(self, line):
         args = json.loads(line.decode('utf8'))
         name = args['__name__']
         del args['__name__']
         return (name, args)
-
-    def run(self):
-        self._stopped = False
-        try:
-            if not self._connect():
-                return
-            self._forward('refresh')
-            self._buffer = ''
-            while not self._stopped:
-                line = None
-                try:
-                    line = self._readLine()
-                    # line is always None after stop() is called and the
-                    # socket is closed.
-                    if line:
-                        (message, args) = self._parseLine(line)
-                        self._agentTimestamp = time.time()
-                        self._handleMessage(message, args)
-                except:
-                    self.log.exception("Run exception: %s", line)
-        except:
-            if not self._stopped:
-                self.log.error("Unexpected exception", exc_info=True)

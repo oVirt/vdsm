@@ -458,6 +458,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
 %{_datadir}/%{vdsm_name}/utils.py*
 %{_datadir}/%{vdsm_name}/vdscli.py*
+%{_datadir}/%{vdsm_name}/vmChannels.py*
 %{_datadir}/%{vdsm_name}/vdsm
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
