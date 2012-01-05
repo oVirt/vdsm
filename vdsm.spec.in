@@ -263,6 +263,9 @@ install -Dm 0755 vdsm/respawn \
 install -Dm 0644 vdsm/storage/12-vdsm-lvm.rules \
                  %{buildroot}/lib/udev/rules.d/12-vdsm-lvm.rules
 
+install -Dm 0644 vdsm/limits.conf \
+                 %{buildroot}/etc/security/limits.d/99-vdsm.conf
+
 %if 0%{?rhel}
 # Install the SysV init scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
@@ -532,6 +535,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/netinfo.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
 /lib/udev/rules.d/12-vdsm-lvm.rules
+/etc/security/limits.d/99-vdsm.conf
 %{python_sitelib}/sos/plugins/vdsm.py*
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}

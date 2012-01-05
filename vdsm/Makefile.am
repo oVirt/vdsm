@@ -90,6 +90,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	config.py.in \
 	libvirt_password \
+	limits.conf \
 	logger.conf.in \
 	vdsmd.8.in \
 	vdsmd.init.in \

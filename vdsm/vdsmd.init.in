@@ -483,8 +483,6 @@ start() {
         export DAEMON_COREFILE_LIMIT=unlimited
         echo $CORE_DUMP_PATH > $CORE_PATTERN
     fi
-    ulimit -n `$GETCONFITEM $CONF_FILE vars max_open_files 4096`
-    ulimit -u `$GETCONFITEM $CONF_FILE vars max_processes 2048`
 
     test_already_running && return 0
 
