@@ -121,7 +121,7 @@ else:
     DEL_PACK = ('vdsm.x86_64', 'vdsm-cli.x86_64')
 
 # Services VDSM needs
-NEEDED_SERVICES = ['iscsid', 'multipathd']
+NEEDED_SERVICES = ['iscsid', 'multipathd', 'ntpd']
 
 # Services conflicting VDSM
 CONFLICT_SERVICES = ['cpuspeed']
