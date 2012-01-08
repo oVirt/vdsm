@@ -40,6 +40,7 @@ from storage.devicemapper import _removeMapping, _getPathsStatus
 import storage.misc
 import configNetwork
 from vdsm.config import config
+import tc
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -183,6 +184,31 @@ class _SuperVdsm(object):
             except OSError:
                 fails.append(r)
         return fails
+
+    @logDecorator
+    def setMirrorPromisc(self, networkName, ifaceName):
+        '''
+        Copy networkName traffic of a bridge to an interface
+
+        :param networkName: networkName bridge name to capture the traffic from
+        :type networkName: string
+
+        :param ifaceName: ifaceName to copy (mirror) the traffic to
+        :type ifaceName: string
+
+        this commands mirror all 'networkName' traffic to 'ifaceName'
+        '''
+        tc.setMirrorPromisc(networkName, ifaceName)
+
+    @logDecorator
+    def unsetMirrorPromisc(self, networkName):
+        '''
+        Release captured  mirror networkName traffic from networkName bridge
+
+        :param networkName: networkName to release the traffic capture
+        :type networkName: string
+        '''
+        tc.unsetMirrorPromisc(networkName)
 
 def __pokeParent(parentPid):
     try:

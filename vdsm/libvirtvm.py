@@ -36,6 +36,7 @@ from vdsm.config import config
 import hooks
 import caps
 import configNetwork
+import supervdsm
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 
@@ -1209,6 +1210,12 @@ class LibvirtVm(vm.Vm):
         self._getUnderlyingVmInfo()
         self._getUnderlyingVmDevicesInfo()
 
+        #Currently there is no protection agains mirroring a network twice,
+        for nic in self._devices[vm.NIC_DEVICES]:
+            if hasattr(nic, 'promisc'):
+                for network in nic.promisc:
+                    supervdsm.getProxy().setMirrorPromisc(network, nic)
+
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
@@ -1971,6 +1978,12 @@ class LibvirtVm(vm.Vm):
         """
         Stop VM and release all resources
         """
+        #unsetting mirror network will clear both mirroring (on the same network).
+        for nic in self._devices[vm.NIC_DEVICES]:
+            if hasattr(nic, 'promisc'):
+                for network in nic.promisc:
+                    supervdsm.getProxy().unsetMirrorPromisc(network)
+
         with self._releaseLock:
             if self._released:
                 return {'status': doneCode}

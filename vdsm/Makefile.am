@@ -45,6 +45,7 @@ dist_vdsm_PYTHON = \
 	pthread.py \
 	supervdsm.py \
 	supervdsmServer.py \
+	tc.py \
 	vdsmDebugPlugin.py \
 	vm.py \
 	vmChannels.py
