@@ -628,7 +628,7 @@ gpgcheck=0
         except:
             fReturn = False
             self.message = "addNetwork Failed to add management bridge"
-            logging.error(self.message)
+            logging.error(self.message, exc_info=True)
 
         if not fReturn:
             self.status = "FAIL"
