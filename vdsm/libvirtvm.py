@@ -1115,7 +1115,14 @@ class LibvirtVm(vm.Vm):
         else:
             # TODO: In recover should loop over disks running on the VM because
             # conf may be outdated if something happened during restart.
-            devices = self.getConfDevices()
+
+            # For BC we should to keep running VM run after vdsm upgrade.
+            # So, because this vm doesn't have normalize conf we need to build it
+            # in recovery flow
+            if not self.conf.get('devices'):
+                devices = self.buildConfDevices()
+            else:
+                devices = self.getConfDevices()
 
         devMap = {vm.DISK_DEVICES: Drive, vm.NIC_DEVICES: NetworkInterfaceDevice,
                   vm.SOUND_DEVICES: SoundDevice, vm.VIDEO_DEVICES: VideoDevice}
