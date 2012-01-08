@@ -542,7 +542,7 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.detachSD(sdUUID, msdUUID, masterVersion)
 
-
+    @public
     def sendExtendMsg(self, spUUID, volDict, newSize, callbackFunc):
         """
         Send an extended message?

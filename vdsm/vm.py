@@ -679,7 +679,7 @@ class Vm(object):
             d.needExtend = True
             d.reqsize = newsize
             # sendExtendMsg expects size in bytes
-            self.cif.irs.hsm.sendExtendMsg(d.poolID, volDict, newsize * 2**20,
+            self.cif.irs.sendExtendMsg(d.poolID, volDict, newsize * 2**20,
                                            self._afterLvExtend)
             self.log.debug('%s/%s (%s): apparentsize %s req %s', d.domainID,
                            d.volumeID, d.name, d.apparentsize / constants.MEGAB,
