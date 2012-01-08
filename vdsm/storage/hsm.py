@@ -1384,7 +1384,7 @@ class HSM:
         return logableDevs
 
     @public(logger=logged(resPrinter=partial(_logResp_getDeviceList, None)))
-    def getDeviceList(self, storageType=None, options = None):
+    def getDeviceList(self, storageType=None, options={}):
         """
         List all Block Devices.
 
@@ -1396,10 +1396,12 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.BlockDeviceActionError())
-        devices = self._getDeviceList(storageType)
+        devices = self._getDeviceList(storageType,
+                includePartitioned=options.get('includePartitioned', False))
         return dict(devList=devices)
 
-    def _getDeviceList(self, storageType=None, guids=None):
+    def _getDeviceList(self, storageType=None, guids=None,
+            includePartitioned=False):
         sdCache.refreshStorage()
         typeFilter = lambda dev : True
         if storageType:
@@ -1430,11 +1432,9 @@ class HSM:
                     continue
 
                 partitioned = devicemapper.isPartitioned(dev['guid'])
-                # One day we'll stop hiding partitioned devices and let
-                # the gui grey them out so users would not just wonder
-                # where is the device. Until that glorious day leave this
-                # here.
-                if partitioned:
+                # Stop hiding partitioned devices for ovirt-Engines that can
+                # handle them.
+                if not includePartitioned and partitioned:
                     self.log.warning("Ignoring partitioned device %s", dev)
                     continue
 
@@ -1470,7 +1470,7 @@ class HSM:
         return devices
 
     @public
-    def getDeviceInfo(self, guid, options = None):
+    def getDeviceInfo(self, guid, options={}):
         """
         Get info of block device.
 
@@ -1486,7 +1486,9 @@ class HSM:
         vars.task.setDefaultException(se.BlockDeviceActionError("GUID: %s" % guid))
         #getSharedLock(connectionsResource...)
         try:
-            devInfo = self._getDeviceList(guids=[guid])[0]
+            devInfo = self._getDeviceList(guids=[guid],
+                                includePartitioned=
+                                options.get('includePartitioned', False))[0]
             for p in devInfo["pathstatus"]:
                 if p.get("state", "error") == "active":
                     return {"info" : devInfo }
