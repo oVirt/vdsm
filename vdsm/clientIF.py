@@ -966,13 +966,13 @@ class clientIF:
         try:
             vdsmVms = self.getVDSMVms()
             #Recover
-            for vm in vdsmVms:
-                vmId = vm.UUIDString()
+            for v in vdsmVms:
+                vmId = v.UUIDString()
                 if not self._recoverVm(vmId):
                     #RH qemu proc without recovery
                     self.log.info('loose qemu process with id: %s found, killing it.', vmId)
                     try:
-                        vm.destroy()
+                        v.destroy()
                     except libvirt.libvirtError:
                         self.log.error('failed to kill loose qemu process with id: %s', vmId, exc_info=True)
 
@@ -995,7 +995,7 @@ class clientIF:
                 try:
                     # Do not prepare volumes when system goes down
                     if self._enabled:
-                        vmObj.preparePaths()
+                        vmObj.preparePaths(vmObj.getConfDevices()[vm.DISK_DEVICES])
                 except:
                     self.log.error("Vm %s recovery failed", vmId, exc_info=True)
         except:
