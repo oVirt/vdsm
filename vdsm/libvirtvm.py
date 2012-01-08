@@ -823,7 +823,7 @@ class VideoDevice(vm.Device):
         video = doc.createElement('video')
         m = doc.createElement('model')
         m.setAttribute('type', self.device)
-        m.setAttribute('vram', self.specParams)
+        m.setAttribute('vram', self.specParams['vram'])
         m.setAttribute('heads', '1')
         video.appendChild(m)
         return video

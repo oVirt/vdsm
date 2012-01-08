@@ -420,7 +420,7 @@ class Vm(object):
         monitors = int(self.conf.get('spiceMonitors', '1'))
         vram = '65536' if (monitors <= 2) else '32768'
         for idx in range(monitors):
-            vcards.append({'type': VIDEO_DEVICES, 'specParams': vram,
+            vcards.append({'type': VIDEO_DEVICES, 'specParams': {'vram': vram},
                            'device': devType})
 
         return vcards
