@@ -1460,7 +1460,6 @@ class StoragePool:
         'msdUUID' - expected master domain UUID.
         'masterVersion' - expected pool msd version.
         """
-        masterVersion = int(masterVersion)
         try:
             domain = sdCache.produce(msdUUID)
         except se.StorageDomainDoesNotExist:
@@ -1477,7 +1476,7 @@ class StoragePool:
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
         version = self._getPoolMD(domain)[PMDK_MASTER_VER]
-        if version != masterVersion and masterVersion != -1:
+        if version != int(masterVersion):
             self.log.error("Requested master domain %s does not have expected version %s it is version %s",
                         msdUUID, masterVersion, version)
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
