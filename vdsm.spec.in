@@ -666,9 +666,9 @@ exit 0
 %files bootstrap
 %defattr(-, root, root, -)
 %doc COPYING
-%attr (755, root, root) %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap.py*
+%{_datadir}/%{vdsm_bootstrap}/vds_bootstrap.py*
 %{_datadir}/%{vdsm_bootstrap}/deployUtil.py*
-%attr (755, root, root) %{_datadir}/%{vdsm_bootstrap}/vds_bootstrap_complete.py*
+%{_datadir}/%{vdsm_bootstrap}/vds_bootstrap_complete.py*
 
 %files reg
 %defattr(-, root, root, -)

@@ -33,7 +33,7 @@ dist_ovirtsetup_PYTHON = \
 nodist_vdsmreg_PYTHON = \
 	deployUtil.py
 
-nodist_vdsmbootstrap_PYTHON = \
+nodist_vdsmbootstrap_DATA = \
         deployUtil.py
 
 nodist_noinst_DATA = \

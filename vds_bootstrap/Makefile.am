@@ -18,6 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-dist_vdsmbootstrap_PYTHON = \
+dist_vdsmbootstrap_SCRIPTS = \
 	vds_bootstrap_complete.py \
 	vds_bootstrap.py
