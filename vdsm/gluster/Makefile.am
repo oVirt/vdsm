@@ -23,6 +23,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 vdsmglusterdir = $(vdsmdir)/gluster
 dist_vdsmgluster_PYTHON = \
 	__init__.py \
+	api.py \
 	cli.py \
 	exception.py \
 	hostname.py

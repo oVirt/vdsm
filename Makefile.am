@@ -47,6 +47,7 @@ PEP8_WHITELIST = \
 	vdsm/md_utils.py \
 	vdsm/parted_utils.py \
 	vdsm/gluster/__init__.py \
+	vdsm/gluster/api.py \
 	vdsm/gluster/cli.py \
 	vdsm/gluster/exception.py \
 	vdsm/gluster/hostname.py \
@@ -57,6 +58,7 @@ PEP8_WHITELIST = \
 	vdsm/supervdsmServer.py \
 	vdsm/rest/BindingREST.py \
 	vdsm/rest/Controller.py \
+	vdsm_cli/vdsClientGluster.py \
 	vdsm_cli/vdsClient.py \
 	vdsm_cli/vdscli.py.in
 

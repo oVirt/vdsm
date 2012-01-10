@@ -765,6 +765,7 @@ exit 0
 %doc COPYING
 %{_bindir}/vdsClient
 %{_datadir}/%{vdsm_name}/vdsClient.py*
+%{_datadir}/%{vdsm_name}/vdsClientGluster.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
 %{_mandir}/man1/vdsClient.1*
 
@@ -835,6 +836,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/gluster
 %doc COPYING
 %{_datadir}/%{vdsm_name}/gluster/__init__.py*
+%{_datadir}/%{vdsm_name}/gluster/api.py*
 %{_datadir}/%{vdsm_name}/gluster/cli.py*
 %{_datadir}/%{vdsm_name}/gluster/exception.py*
 %{_datadir}/%{vdsm_name}/gluster/hostname.py*

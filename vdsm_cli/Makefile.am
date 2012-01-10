@@ -21,7 +21,8 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
-	vdsClient.py
+	vdsClient.py \
+	vdsClientGluster.py
 
 nodist_bin_SCRIPTS = \
 	vdsClient

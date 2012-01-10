@@ -31,6 +31,13 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.define import doneCode, errCode
 import API
+from vdsm.exception import VdsmException
+try:
+    from gluster.api import getGlusterMethods
+    _glusterEnabled = True
+except ImportError:
+    _glusterEnabled = False
+
 
 class BindingXMLRPC(object):
     def __init__(self, cif, log, ip, port, ssl, vds_resp_timeout,
@@ -170,6 +177,9 @@ class BindingXMLRPC(object):
             self.server.register_function(wrapApiMethod(method), name)
         for (method, name) in irsMethods:
             self.server.register_function(wrapIrsMethod(method), name)
+        if _glusterEnabled and self.cif.gluster:
+            for (method, name) in getGlusterMethods(self.cif.gluster):
+                self.server.register_function(wrapApiMethod(method), name)
 
     #
     # Callable methods:
@@ -860,6 +870,9 @@ def wrapApiMethod(f):
                 return errCode['noVM']
             else:
                 return errCode['unexpected']
+        except VdsmException, e:
+            f.im_self.cif.log.error("vdsm exception occured", exc_info=True)
+            return e.response()
         except:
             f.im_self.cif.log.error("unexpected error", exc_info=True)
             return errCode['unexpected']

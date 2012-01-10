@@ -42,6 +42,11 @@ from vmChannels import Listener
 import API
 import blkid
 import supervdsm
+try:
+    import gluster.api as gapi
+    _glusterEnabled = True
+except ImportError:
+    _glusterEnabled = False
 
 class clientIF:
     """
@@ -66,6 +71,10 @@ class clientIF:
         self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
         self._initIRS()
+        if _glusterEnabled:
+            self.gluster = gapi.GlusterApi(self, log)
+        else:
+            self.gluster = None
         try:
             self.vmContainer = {}
             ifids = netinfo.nics() + netinfo.bondings()
