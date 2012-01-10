@@ -338,12 +338,12 @@ class Vm(object):
 
     def __normalizeVdsmImg(self, drv):
         drv['needExtend'] = False
-        drv['reqsize'] = int(drv.get('reqsize', '0'))
+        drv['reqsize'] = drv.get('reqsize', '0')
         res = self.cif.irs.getVolumeSize(drv['domainID'],
                              drv['poolID'], drv['imageID'],
                              drv['volumeID'])
-        drv['truesize'] = int(res['truesize'])
-        drv['apparentsize'] = int(res['apparentsize'])
+        drv['truesize'] = res['truesize']
+        drv['apparentsize'] = res['apparentsize']
         drv['blockDev'] = not self.cif.irs.getStorageDomainInfo(
                     drv['domainID'])['info']['type'] in ('NFS', 'LOCALFS')
 

@@ -916,6 +916,10 @@ class Drive(vm.Device):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
         vm.Device.__init__(self, conf, log, **kwargs)
+        # Keep sizes as int
+        self.reqsize = int(kwargs.get('reqsize'))
+        self.truesize = int(kwargs.get('truesize'))
+        self.apparentsize = int(kwargs.get('apparentsize'))
         self.name = self._makeName()
         self._customize()
 
