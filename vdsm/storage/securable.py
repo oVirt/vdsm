@@ -18,18 +18,18 @@ class Securable(type):
         def _setUnsafe(self):
             self._safety.clear()
 
-        for name, val in fdict.iteritems():
+        for fun, val in fdict.iteritems():
             if not callable(val):
                 continue
 
             if hasattr(val, SECURE_FIELD) and (not getattr(val, SECURE_FIELD)):
                 continue
 
-            if name.startswith("__"):
+            if fun.startswith("__"):
                 #Wrapping builtins might cause weird results
                 continue
 
-            fdict[name] = secured(val)
+            fdict[fun] = secured(val)
 
         fdict['__securable__'] = True
         fdict['_safety'] = Event()
@@ -60,5 +60,3 @@ def secured(f):
         return f(*args, **kwargs)
 
     return wrapper
-
-
