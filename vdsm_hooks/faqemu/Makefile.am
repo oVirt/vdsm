@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,14 +18,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-dist_noinst_SCRIPTS = \
-	vdsm-faqemu.in
+include $(top_srcdir)/build-aux/Makefile.subs
 
 nodist_vdsmexec_SCRIPTS = \
 	vdsm-faqemu
 
+CLEANFILES = \
+	config.log \
+	$(nodist_vdsmexec_SCRIPTS)
+
 EXTRA_DIST = \
-	before_vm_start.py
+	before_vm_start.py \
+	vdsm-faqemu.in
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start

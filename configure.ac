@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2008-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -149,7 +149,6 @@ AC_OUTPUT([
 	vds_bootstrap/Makefile
 	vdsm_cli/Makefile
 	vdsm_hooks/faqemu/Makefile
-	vdsm_hooks/faqemu/vdsm-faqemu
 	vdsm_hooks/Makefile
 	vdsm_hooks/vhostmd/Makefile
 	vdsm_hooks/directlun/Makefile
@@ -172,10 +171,4 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm/sos/Makefile
-	vdsm.spec
-	vdsm/constants.py.in
-	vdsm/sudoers.vdsm.in
-	vdsm/mk_sysprep_floppy
-	vdsm/vdsm-logrotate.conf
-	vdsm_reg/deployUtil.py
 ])

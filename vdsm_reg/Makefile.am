@@ -52,20 +52,23 @@ dist_man8_MANS = \
 	vdsm-reg.8
 
 CLEANFILES = \
+	config.log \
 	$(nodist_noinst_DATA) \
-	$(nodist_vdsmreg_SCRIPTS)
+	$(nodist_vdsmreg_SCRIPTS) \
+	$(nodist_vdsmreg_PYTHON) \
+	$(nodist_vdsmbootstrap_PYTHON)
 
 EXTRA_DIST = \
 	deployUtil.py.in \
 	logger.conf \
-	vdsm-reg-setup.in \
 	vdsm-config \
 	vdsm-reg-cmdline \
 	vdsm-reg.conf.in \
 	vdsm-reg.init \
 	vdsm-reg-logrotate \
 	vdsm-reg-logrotate.conf \
-	vdsm-reg.service
+	vdsm-reg.service \
+	vdsm-reg-setup.in
 
 all-local: \
 	$(nodist_noinst_DATA) \

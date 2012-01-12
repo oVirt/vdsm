@@ -49,7 +49,8 @@ nodist_vdsmexec_SCRIPTS = \
 	persist-vdsm-hooks
 
 CLEANFILES = \
-        $(nodist_vdsmexec_SCRIPTS)
+	config.log \
+	$(nodist_vdsmexec_SCRIPTS)
 
 EXTRA_DIST = \
 	persist-vdsm-hooks.in

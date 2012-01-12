@@ -2,8 +2,6 @@
 *~
 *.tmp
 *.swp
-rpmtop/
-vdsm/doc/build/
 Makefile
 Makefile.in
 *.o
@@ -21,12 +19,13 @@ vdsm.spec
 .deps/
 vdsm/config.py
 vdsm/constants.py
-vdsm/constants.py.in
 vdsm/logger.conf
+vdsm/vdsm.rwtab
+vdsm/vdsmd.8
+vdsm/vdsm-logrotate.conf
 vdsm/mk_sysprep_floppy
 vdsm/storage/protect/safelease
 vdsm/sudoers.vdsm
-vdsm/sudoers.vdsm.in
 vdsm/vdsm-restore-net-config
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
@@ -35,8 +34,9 @@ vdsm/vdsmd.init
 vdsm/sos/vdsm.py
 vdsm_cli/vdsClient
 vdsm_cli/vdscli.py
+vdsm_cli/dumpStorageTable.py
 vdsm_reg/deployUtil.py
 vdsm_reg/vdsm-reg.conf
+vdsm_reg/vdsm-reg-setup
 vdsm_hooks/faqemu/vdsm-faqemu
 vdsm_hooks/persist-vdsm-hooks
-results.log

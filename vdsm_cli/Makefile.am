@@ -34,6 +34,7 @@ dist_man1_MANS = \
 	vdsClient.1
 
 CLEANFILES = \
+	config.log \
 	$(nodist_bin_SCRIPTS) \
 	$(nodist_vdsm_PYTHON)
 

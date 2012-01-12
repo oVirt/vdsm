@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2008-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@ nodist_man8_MANS = \
 	vdsmd.8
 
 CLEANFILES = \
+	config.log \
 	$(nodist_vdsm_PYTHON) \
 	$(nodist_vdsm_SCRIPTS) \
 	$(nodist_noinst_DATA) \
@@ -89,9 +90,12 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	config.py.in \
+	constants.py.in \
 	libvirt_password \
 	limits.conf \
 	logger.conf.in \
+	mk_sysprep_floppy.in \
+	sudoers.vdsm.in \
 	vdsmd.8.in \
 	vdsmd.init.in \
 	vdsmd.service \

@@ -26,6 +26,7 @@ nodist_sosplugins_PYTHON = \
 	vdsm.py
 
 CLEANFILES = \
+	config.log \
 	$(nodist_sosplugins_PYTHON)
 
 EXTRA_DIST = \
