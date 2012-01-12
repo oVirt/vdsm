@@ -41,6 +41,10 @@ DISK_DEVICES = 'disk'
 NIC_DEVICES = 'interface'
 VIDEO_DEVICES = 'video'
 SOUND_DEVICES = 'sound'
+CONTROLLER_DEVICES = 'controller'
+
+VM_DEVICES = (DISK_DEVICES, NIC_DEVICES, VIDEO_DEVICES, SOUND_DEVICES,
+              CONTROLLER_DEVICES)
 
 """
 A module containing classes needed for VM communication.
@@ -306,7 +310,8 @@ class Vm(object):
         self._volumesPrepared = False
         self._pathsPreparedEvent = threading.Event()
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
-                         SOUND_DEVICES: [], VIDEO_DEVICES: []}
+                         SOUND_DEVICES: [], VIDEO_DEVICES: [],
+                         CONTROLLER_DEVICES: []}
 
     def _get_lastStatus(self):
         SHOW_PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -371,7 +376,8 @@ class Vm(object):
 
     def getConfDevices(self):
         devices = {DISK_DEVICES: [], NIC_DEVICES: [],
-                   SOUND_DEVICES: [], VIDEO_DEVICES: []}
+                   SOUND_DEVICES: [], VIDEO_DEVICES: [],
+                   CONTROLLER_DEVICES: []}
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
@@ -396,6 +402,7 @@ class Vm(object):
             devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
             devices[SOUND_DEVICES] = self.getConfSound()
             devices[VIDEO_DEVICES] = self.getConfVideo()
+            devices[CONTROLLER_DEVICES] = self.getConfController()
         else:
             devices = self.getConfDevices()
 
@@ -405,6 +412,15 @@ class Vm(object):
                 self.__normalizeVdsmImg(drv)
 
         return devices
+
+    def getConfController(self):
+        """
+        Normalize controller device.
+        """
+        controllers = []
+        # For now we create by default only 'virtio-serial' controller
+        controllers.append({'type': CONTROLLER_DEVICES, 'device': 'virtio-serial'})
+        return controllers
 
     def getConfVideo(self):
         """

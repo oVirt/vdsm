@@ -713,17 +713,11 @@ class _DomXML:
 
     def _appendAgentDevice(self, path):
         """
-          <controller type='virtio-serial' index='0' ports='16'/>
           <channel type='unix'>
              <target type='virtio' name='org.linux-kvm.port.0'/>
              <source mode='bind' path='/tmp/socket'/>
           </channel>
         """
-        ctrl = self.doc.createElement('controller')
-        ctrl.setAttribute('type', 'virtio-serial')
-        ctrl.setAttribute('index', '0')
-        ctrl.setAttribute('ports', '16')
-        self._devices.appendChild(ctrl)
         channel = self.doc.createElement('channel')
         channel.setAttribute('type', 'unix')
         target = xml.dom.minidom.Element('target')
@@ -811,6 +805,28 @@ class _DomXML:
         return self.doc.toprettyxml(encoding='utf-8')
 
 
+class ControllerDevice(vm.Device):
+    def __init__(self, conf, log, **kwargs):
+        vm.Device.__init__(self, conf, log, **kwargs)
+
+    def getXML(self):
+        """
+        Create domxml for controller device
+        """
+        doc = xml.dom.minidom.Document()
+        ctrl = doc.createElement('controller')
+        ctrl.setAttribute('type', self.device)
+        if self.device == 'virtio-serial':
+            ctrl.setAttribute('index', '0')
+            ctrl.setAttribute('ports', '16')
+        if hasattr(self, 'address'):
+            address = doc.createElement('address')
+            for key, value in self.address:
+                address.setAttribute(key, value)
+            ctrl.appendChild(address)
+
+        return ctrl
+
 class VideoDevice(vm.Device):
     def __init__(self, conf, log, **kwargs):
         vm.Device.__init__(self, conf, log, **kwargs)
@@ -831,6 +847,7 @@ class VideoDevice(vm.Device):
             for key, value in self.address:
                 address.setAttribute(key, value)
             video.appendChild(address)
+
         return video
 
 class SoundDevice(vm.Device):
@@ -849,6 +866,7 @@ class SoundDevice(vm.Device):
             for key, value in self.address:
                 address.setAttribute(key, value)
             sound.appendChild(address)
+
         return sound
 
 class NetworkInterfaceDevice(vm.Device):
@@ -1107,6 +1125,7 @@ class LibvirtVm(vm.Vm):
         self._getUnderlyingDisplayPort()
         self._getUnderlyingSoundDeviceInfo()
         self._getUnderlyingVideoDeviceInfo()
+        self._getUnderlyingControllerDeviceInfo()
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
@@ -1158,7 +1177,8 @@ class LibvirtVm(vm.Vm):
                 devices = self.getConfDevices()
 
         devMap = {vm.DISK_DEVICES: Drive, vm.NIC_DEVICES: NetworkInterfaceDevice,
-                  vm.SOUND_DEVICES: SoundDevice, vm.VIDEO_DEVICES: VideoDevice}
+                  vm.SOUND_DEVICES: SoundDevice, vm.VIDEO_DEVICES: VideoDevice,
+                  vm.CONTROLLER_DEVICES: ControllerDevice}
 
         for devType, devClass in devMap.items():
             for dev in devices[devType]:
@@ -1465,6 +1485,32 @@ class LibvirtVm(vm.Vm):
             address[key] = adrXml.getAttribute(key)
 
         return address
+
+    def _getUnderlyingControllerDeviceInfo(self):
+        """
+        Obtain controller devices info from libvirt.
+        """
+        ctrlsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
+                    .childNodes[0].getElementsByTagName('devices')[0] \
+                    .getElementsByTagName('controller')
+        for x in ctrlsxml:
+            # Ignore controller devices without address
+            if not x.getElementsByTagName('address'):
+                continue
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            device = x.getAttribute('type')
+            # Get controller address
+            address = self._getUnderlyingDeviceAddress(x)
+
+            for ctrl in self._devices[vm.CONTROLLER_DEVICES]:
+                if ctrl.device == device:
+                    ctrl.alias = alias
+                    ctrl.address = address
+            # Update vm's conf with address
+            for dev in self.conf['devices']:
+                if (dev['type'] == vm.CONTROLLER_DEVICES) and \
+                   (dev['device'] == device):
+                    dev['address'] = address
 
     def _getUnderlyingVideoDeviceInfo(self):
         """
