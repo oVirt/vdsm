@@ -477,7 +477,8 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
         ifup(bridge)
 
     # add libvirt network
-    createLibvirtNetwork(bridge)
+    if not utils.tobool(options.get('skipLibvirt', False)):
+        createLibvirtNetwork(bridge)
 
 def createLibvirtNetwork(bridge):
     conn = libvirtconnection.get()
@@ -573,14 +574,15 @@ def delNetwork(bridge, force=False, configWriter=None, **options):
     if bridge:
         configWriter.removeBridge(bridge)
 
-    netName = NETPREFIX + bridge
-    conn = libvirtconnection.get()
-    try:
-        net = conn.networkLookupByName(netName)
-        net.destroy()
-        net.undefine()
-    except libvirt.libvirtError:
-        logging.debug('failed to remove libvirt network %s' % netName)
+    if not utils.tobool(options.get('skipLibvirt', False)):
+        netName = NETPREFIX + bridge
+        conn = libvirtconnection.get()
+        try:
+            net = conn.networkLookupByName(netName)
+            net.destroy()
+            net.undefine()
+        except libvirt.libvirtError:
+            logging.debug('failed to remove libvirt network %s' % netName)
 
 
 def clientSeen(timeout):
