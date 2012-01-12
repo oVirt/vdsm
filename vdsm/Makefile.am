@@ -49,7 +49,8 @@ dist_vdsm_PYTHON = \
 	vm.py
 
 dist_vdsmexec_SCRIPTS = \
-	ovirt_functions.sh
+	ovirt_functions.sh \
+	vdsm-gencerts.sh
 
 nodist_vdsm_PYTHON = \
 	config.py \
@@ -99,6 +100,7 @@ EXTRA_DIST = \
 	vdsmd.8.in \
 	vdsmd.init.in \
 	vdsmd.service \
+	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
