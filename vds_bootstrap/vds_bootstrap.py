@@ -165,8 +165,7 @@ def _safeWrite(fname, s):
             os.chmod(fname, oldstat.st_mode)
             os.chown(fname, oldstat.st_uid, oldstat.st_gid)
 
-        import selinux
-        selinux.restorecon(fname)
+        deployUtil.silentRestoreCon(fname)
     except OSError:
         logging.debug('trying to maintain file permissions', exc_info=True)
 

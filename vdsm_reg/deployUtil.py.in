@@ -571,6 +571,14 @@ def addSSHKey(path, strKey):
         open(tmpFilePath, 'w').write(''.join(resKeys))
         os.rename(tmpFilePath, path)
 
+def silentRestoreCon(path):
+    """silently ignore restorecon exceptios, when SELinux is disabled"""
+    import selinux
+    try:
+        return selinux.restorecon(path)
+    except:
+        logging.error('restorecon %s failed', path, exc_info=True)
+
 def handleSSHKey(strKey):
     """
         This functions appends a given key to the root's authorized_keys file.
@@ -580,9 +588,8 @@ def handleSSHKey(strKey):
     if not os.path.exists(P_ROOT_SSH):
         logging.debug("handleSSHKey: creating .ssh dir.")
         try:
-            import selinux
             os.mkdir(P_ROOT_SSH, 0700)
-            selinux.restorecon(P_ROOT_SSH)
+            silentRestoreCon(P_ROOT_SSH)
         except OSError:
             fReturn = False
             logging.debug("handleSSHKey: failed to create ssh dir!")
@@ -597,9 +604,8 @@ def handleSSHKey(strKey):
 
     if fReturn:
         try:
-            import selinux
             os.chmod(P_ROOT_AUTH_KEYS, 0644)
-            selinux.restorecon(P_ROOT_AUTH_KEYS)
+            silentRestoreCon(P_ROOT_AUTH_KEYS)
         except:
             fReturn = False
             logging.debug("handleSSHKey: failed to chmod authorized_keys",
