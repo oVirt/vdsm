@@ -35,7 +35,7 @@ from netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR
 import libvirtconnection
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
-MAX_VLAN_ID = 4095
+MAX_VLAN_ID = 4094
 MAX_BRIDGE_NAME_LEN = 15
 ILLEGAL_BRIDGE_CHARS = ':. \t'
 NETPREFIX = 'vdsm-'
