@@ -1022,5 +1022,9 @@ class Vm(object):
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
                 return errCode['migCancelErr']
             raise
+        except AttributeError:
+            if self._dom is None:
+                return errCode['migCancelErr']
+            raise
         finally:
             self._guestCpuLock.release()
