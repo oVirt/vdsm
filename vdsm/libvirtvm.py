@@ -975,6 +975,9 @@ class Drive(vm.Device):
         if self.iface:
             target.setAttribute('bus', self.iface)
         diskelem.appendChild(target)
+        if utils.tobool(self.readonly):
+            readonly = doc.createElement('readonly')
+            diskelem.appendChild(readonly)
         if getattr(self, 'serial', False):
             serial = doc.createElement('serial')
             serial.appendChild(doc.createTextNode(self.serial))

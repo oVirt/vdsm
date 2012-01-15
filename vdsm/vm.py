@@ -489,6 +489,7 @@ class Vm(object):
                 indexed.append(order)
             drv['format'] = drv.get('format') or 'raw'
             drv['propagateErrors'] = drv.get('propagateErrors') or 'off'
+            drv['readonly'] = False
         for order, drv in drives:
             if order not in indexed:
                 drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
