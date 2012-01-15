@@ -594,14 +594,6 @@ def execCmd(*args, **kwargs):
     from storage.misc import execCmd
     return execCmd(*args, **kwargs)
 
-def execAndGetOutput(command):
-    """Obsolete. Use execCmd in new code"""
-    p = subprocess.Popen(command, shell=True, close_fds=True,
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
-    out, err = p.communicate()
-    return out.splitlines(True)
-
 def checkPathStat(pathToCheck):
     try:
         startTime = time.time()
