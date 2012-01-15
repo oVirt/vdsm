@@ -472,7 +472,7 @@ class Vm(object):
         # FIXME
         # Will be better to change the self.conf but this implies an API change.
         # Remove this when the API parameters will be consistent.
-        confDrives = self.conf['drives'] if self.conf['drives'] else []
+        confDrives = self.conf['drives'] if self.conf.get('drives') else []
         if not confDrives:
             confDrives.extend(self.__legacyDrives())
         confDrives.extend(self.__removableDrives())
