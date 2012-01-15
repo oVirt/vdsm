@@ -805,6 +805,26 @@ class _DomXML:
         return self.doc.toprettyxml(encoding='utf-8')
 
 
+class GeneralDevice(vm.Device):
+    def __init__(self, conf, log, **kwargs):
+        vm.Device.__init__(self, conf, log, **kwargs)
+
+    def getXML(self):
+        """
+        Create domxml for general device
+        """
+        doc = xml.dom.minidom.Document()
+        dev = doc.createElement(self.type)
+        if self.device:
+            dev.setAttribute('type', self.device)
+        if hasattr(self, 'address'):
+            address = doc.createElement('address')
+            for key, value in self.address:
+                address.setAttribute(key, value)
+            dev.appendChild(address)
+
+        return dev
+
 class ControllerDevice(vm.Device):
     def __init__(self, conf, log, **kwargs):
         vm.Device.__init__(self, conf, log, **kwargs)
@@ -1109,6 +1129,19 @@ class LibvirtVm(vm.Vm):
     def updateGuestCpuRunning(self):
         self._guestCpuRunning = self._dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
 
+    def _getUnderlyingVmDevicesInfo(self):
+        """
+        Obtain underluing vm's devices info from libvirt.
+        """
+        self._getUnderlyingNetworkInterfaceInfo()
+        self._getUnderlyingDriveInfo()
+        self._getUnderlyingDisplayPort()
+        self._getUnderlyingSoundDeviceInfo()
+        self._getUnderlyingVideoDeviceInfo()
+        self._getUnderlyingControllerDeviceInfo()
+        # Obtain info of all uknown devices. Must be last!
+        self._getUnderlyingUnknownDeviceInfo()
+
     def _domDependentInit(self):
         if self.destroyed:
             # reaching here means that Vm.destroy() was called before we could
@@ -1120,12 +1153,8 @@ class LibvirtVm(vm.Vm):
             raise Exception('destroy() called before Vm started')
 
         self._getUnderlyingVmInfo()
-        self._getUnderlyingNetworkInterfaceInfo()
-        self._getUnderlyingDriveInfo()
-        self._getUnderlyingDisplayPort()
-        self._getUnderlyingSoundDeviceInfo()
-        self._getUnderlyingVideoDeviceInfo()
-        self._getUnderlyingControllerDeviceInfo()
+        self._getUnderlyingVmDevicesInfo()
+
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
@@ -1178,7 +1207,7 @@ class LibvirtVm(vm.Vm):
 
         devMap = {vm.DISK_DEVICES: Drive, vm.NIC_DEVICES: NetworkInterfaceDevice,
                   vm.SOUND_DEVICES: SoundDevice, vm.VIDEO_DEVICES: VideoDevice,
-                  vm.CONTROLLER_DEVICES: ControllerDevice}
+                  vm.CONTROLLER_DEVICES: ControllerDevice, vm.GENERAL_DEVICES: GeneralDevice}
 
         for devType, devClass in devMap.items():
             for dev in devices[devType]:
@@ -1486,6 +1515,40 @@ class LibvirtVm(vm.Vm):
 
         return address
 
+    def _getUnderlyingUnknownDeviceInfo(self):
+        """
+        Obtain unknown devices info from libvirt.
+
+        Unknown device is a device that has an address but wasn't
+        passed during VM creation request.
+        """
+        def isKnownDevice(alias):
+            for dev in self.conf['devices']:
+                if dev['alias'] == alias:
+                    return True
+            return False
+
+        devsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
+                    .childNodes[0].getElementsByTagName('devices')[0]
+
+        for x in devsxml.childNodes:
+            # Ignore empty nodes and devices without address
+            if x.nodeName == '#text' or \
+                not x.getElementsByTagName('address'):
+                continue
+
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            if not isKnownDevice(alias):
+                address = self._getUnderlyingDeviceAddress(x)
+                # I general case we assume that device has attribute 'type',
+                # if it hasn't getAttribute returns ''.
+                device = x.getAttribute('type')
+                newDev = {'type': x.nodeName,
+                          'alias': alias,
+                          'device': device,
+                          'address': address}
+                self.conf['devices'].append(newDev)
+
     def _getUnderlyingControllerDeviceInfo(self):
         """
         Obtain controller devices info from libvirt.
@@ -1506,11 +1569,20 @@ class LibvirtVm(vm.Vm):
                 if ctrl.device == device:
                     ctrl.alias = alias
                     ctrl.address = address
-            # Update vm's conf with address
+            # Update vm's conf with address for known controller devices
+            knownDev = False
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.CONTROLLER_DEVICES) and \
-                   (dev['device'] == device):
+                                            (dev['device'] == device):
                     dev['address'] = address
+                    dev['alias'] = alias
+                    knownDev = True
+            # Add unknown controller device to vm's conf
+            if not knownDev:
+                self.conf['devices'].append({'type': vm.CONTROLLER_DEVICES,
+                                             'device': device,
+                                             'address': address,
+                                             'alias': alias})
 
     def _getUnderlyingVideoDeviceInfo(self):
         """
@@ -1536,6 +1608,7 @@ class LibvirtVm(vm.Vm):
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.VIDEO_DEVICES) and not dev.get('address'):
                     dev['address'] = address
+                    dev['alias'] = alias
 
     def _getUnderlyingSoundDeviceInfo(self):
         """
@@ -1561,6 +1634,7 @@ class LibvirtVm(vm.Vm):
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.SOUND_DEVICES) and not dev.get('address'):
                     dev['address'] = address
+                    dev['alias'] = alias
 
     def _getUnderlyingDriveInfo(self):
         """
@@ -1592,10 +1666,22 @@ class LibvirtVm(vm.Vm):
                     d.drv = drv
                     d.alias = alias
                     d.address = address
-            # Update vm's conf with address
+            # Update vm's conf with address for known disk devices
+            knownDev = False
             for dev in self.conf['devices']:
                 if dev['type'] == vm.DISK_DEVICES and dev['path'] == devPath:
                     dev['address'] = address
+                    dev['alias'] = alias
+                    knownDev = True
+            # Add unknown disk device to vm's conf
+            if not knownDev:
+                iface = 'ide' if address['type'] == 'drive' else 'pci'
+                self.conf['devices'].append({'type': vm.DISK_DEVICES,
+                                             'device': ty,
+                                             'iface': iface,
+                                             'path': devPath,
+                                             'address': address,
+                                             'alias': alias})
 
     def _getUnderlyingDisplayPort(self):
         """
@@ -1619,9 +1705,12 @@ class LibvirtVm(vm.Vm):
                     .childNodes[0].getElementsByTagName('devices')[0] \
                     .getElementsByTagName('interface')
         for x in ifsxml:
+            devType = x.getAttribute('type')
             name = x.getElementsByTagName('target')[0].getAttribute('dev')
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            model = x.getElementsByTagName('model')[0].getAttribute('type')
+            bridge = x.getElementsByTagName('source')[0].getAttribute('bridge')
             # Get nic address
             address = self._getUnderlyingDeviceAddress(x)
             for nic in self._devices[vm.NIC_DEVICES]:
@@ -1629,10 +1718,22 @@ class LibvirtVm(vm.Vm):
                     nic.name = name
                     nic.alias = alias
                     nic.address = address
-            # Update vm's conf with address
+            # Update vm's conf with address for known nic devices
+            knownDev = False
             for dev in self.conf['devices']:
                 if dev['type'] == vm.NIC_DEVICES and dev['macAddr'] == mac:
                     dev['address'] = address
+                    dev['alias'] = alias
+                    knownDev = True
+            # Add unknown nic device to vm's conf
+            if not knownDev:
+                self.conf['devices'].append({'type': vm.NIC_DEVICES,
+                                             'device': devType,
+                                             'macAddr': mac,
+                                             'nicModel': model,
+                                             'network': bridge,
+                                             'address': address,
+                                             'alias': alias})
 
     def _setWriteWatermarks(self):
         """

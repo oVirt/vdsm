@@ -42,9 +42,7 @@ NIC_DEVICES = 'interface'
 VIDEO_DEVICES = 'video'
 SOUND_DEVICES = 'sound'
 CONTROLLER_DEVICES = 'controller'
-
-VM_DEVICES = (DISK_DEVICES, NIC_DEVICES, VIDEO_DEVICES, SOUND_DEVICES,
-              CONTROLLER_DEVICES)
+GENERAL_DEVICES = 'general'
 
 """
 A module containing classes needed for VM communication.
@@ -311,7 +309,7 @@ class Vm(object):
         self._pathsPreparedEvent = threading.Event()
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
-                         CONTROLLER_DEVICES: []}
+                         CONTROLLER_DEVICES: [], GENERAL_DEVICES: []}
 
     def _get_lastStatus(self):
         SHOW_PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -377,12 +375,14 @@ class Vm(object):
     def getConfDevices(self):
         devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                    SOUND_DEVICES: [], VIDEO_DEVICES: [],
-                   CONTROLLER_DEVICES: []}
+                   CONTROLLER_DEVICES: [], GENERAL_DEVICES: []}
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
             except KeyError:
-                self.log.error("Unknown device type '%s'", dev['type'])
+                # Unknown general device found
+                self.log.error("Unknown device '%s' found", dev['type'])
+                devices[GENERAL_DEVICES].append(dev)
 
         return devices
 
@@ -403,6 +403,7 @@ class Vm(object):
             devices[SOUND_DEVICES] = self.getConfSound()
             devices[VIDEO_DEVICES] = self.getConfVideo()
             devices[CONTROLLER_DEVICES] = self.getConfController()
+            devices[GENERAL_DEVICES] = []
         else:
             devices = self.getConfDevices()
 
