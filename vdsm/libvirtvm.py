@@ -1261,6 +1261,89 @@ class LibvirtVm(vm.Vm):
             return
         self._domDependentInit()
 
+    def hotplugDisk(self, params):
+        diskParams = params.get('drive', {})
+        diskParams['path'] = self.cif.prepareVolumePath(diskParams)
+        if vm.isVdsmImage(diskParams):
+            self._normalizeVdsmImg(diskParams)
+
+        drive = Drive(self.conf, self.log, **diskParams)
+        driveXml =  drive.getXML().toprettyxml(encoding='utf-8')
+        self.log.debug("Hotplug disk xml: %s" % (driveXml))
+
+        try:
+            self._dom.attachDevice(driveXml)
+        except libvirt.libvirtError, e:
+            self.log.error("Hotplug failed", exc_info=True)
+            self.cif.teardownVolumePath(diskParams)
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return errCode['noVM']
+            return {'status' : {'code': errCode['hotplugDisk']['status']['code'],
+                                'message': e.message}}
+        else:
+            # FIXME!  We may have a problem here if vdsm dies right after
+            # we sent command to libvirt and before save conf. In this case
+            # we will gather almost all needed info about this drive from
+            # the libvirt during recovery process.
+            self._devices[vm.DISK_DEVICES].append(drive)
+            self.conf['devices'].append(diskParams)
+            self.saveState()
+            self._getUnderlyingDriveInfo()
+
+        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+
+    def hotunplugDisk(self, params):
+        diskParams = params.get('drive', {})
+        diskParams['path'] = self.cif.prepareVolumePath(diskParams)
+
+        # Find disk object in vm's drives list
+        drive = None
+        for drv in self._devices[vm.DISK_DEVICES][:]:
+            if drv.path == diskParams['path']:
+                drive = drv
+                break
+
+        if drive:
+            driveXml = drive.getXML().toprettyxml(encoding='utf-8')
+            self.log.debug("Hotunplug disk xml: %s", driveXml)
+        else:
+            self.log.error("Hotunplug disk failed - Disk not found: %s", diskParams)
+            return {'status' : {'code': errCode['hotunplugDisk']['status']['code'],
+                                'message': "Disk not found"}}
+
+        # Remove found disk from vm's drives list
+        if drive:
+            self._devices[vm.DISK_DEVICES].remove(drive)
+        # Find and remove disk device from vm's conf
+        diskDev = None
+        for dev in self.conf['devices'][:]:
+            if dev['type'] == vm.DISK_DEVICES and \
+                                        dev['path'] == diskParams['path']:
+                self.conf['devices'].remove(dev)
+                diskDev = dev
+                break
+
+        self.saveState()
+
+        try:
+            self._dom.detachDevice(driveXml)
+        except libvirt.libvirtError, e:
+            self.log.error("Hotunplug failed", exc_info=True)
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return errCode['noVM']
+            # Restore disk device in vm's conf and _devices
+            if diskDev:
+                self.conf['devices'].append(diskDev)
+            if drive:
+                self._devices[vm.DISK_DEVICES].append(drive)
+            self.saveState()
+            return {'status' : {'code': errCode['hotunplugDisk']['status']['code'],
+                                'message': e.message}}
+        else:
+            self._cleanup()
+
+        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+
     def _readPauseCode(self, timeout):
         self.log.warning('_readPauseCode unsupported by libvirt vm')
         return 'NOERR'
@@ -1648,6 +1731,9 @@ class LibvirtVm(vm.Vm):
         disksxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
                     .childNodes[0].getElementsByTagName('devices')[0] \
                     .getElementsByTagName('disk')
+        # FIXME!  We need to gather as much info as possible from the libvirt.
+        # In the future we can return this real data to managment instead of
+        # vm's conf
         for x in disksxml:
             sources = x.getElementsByTagName('source')
             if sources:
@@ -1655,10 +1741,14 @@ class LibvirtVm(vm.Vm):
                             or sources[0].getAttribute('dev')
             else:
                 devPath = ''
+
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            ty = x.getAttribute('device')
-            if ty == 'disk':
-                ty = 'hd'
+            readonly = bool(x.getElementsByTagName('readonly'))
+            boot = x.getElementsByTagName('boot')
+            bootOrder = boot[0].getAttribute('order') if boot else ''
+
+            devType = x.getAttribute('device')
+            if devType == 'disk':
                 drv = x.getElementsByTagName('driver')[0].getAttribute('type') # raw/qcow2
             else:
                 drv = 'raw'
@@ -1667,26 +1757,33 @@ class LibvirtVm(vm.Vm):
 
             for d in self._devices[vm.DISK_DEVICES]:
                 if d.path == devPath:
-                    d.type = ty
+                    d.type = devType
                     d.drv = drv
                     d.alias = alias
                     d.address = address
+                    d.readonly = readonly
+                    if bootOrder:
+                        d.bootOrder = bootOrder
             # Update vm's conf with address for known disk devices
             knownDev = False
             for dev in self.conf['devices']:
                 if dev['type'] == vm.DISK_DEVICES and dev['path'] == devPath:
                     dev['address'] = address
                     dev['alias'] = alias
+                    dev['readonly'] = str(readonly)
+                    if bootOrder:
+                        dev['bootOrder'] = bootOrder
                     knownDev = True
             # Add unknown disk device to vm's conf
             if not knownDev:
                 iface = 'ide' if address['type'] == 'drive' else 'pci'
-                self.conf['devices'].append({'type': vm.DISK_DEVICES,
-                                             'device': ty,
-                                             'iface': iface,
-                                             'path': devPath,
-                                             'address': address,
-                                             'alias': alias})
+                diskDev = {'type': vm.DISK_DEVICES, 'device': devType,
+                           'iface': iface, 'path': devPath,
+                           'address': address, 'alias': alias}
+                diskDev['readonly'] = str(readonly)
+                if bootOrder:
+                    diskDev['bootOrder'] = bootOrder
+                self.conf['devices'].append(diskDev)
 
     def _getUnderlyingDisplayPort(self):
         """

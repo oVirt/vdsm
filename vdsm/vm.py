@@ -339,7 +339,7 @@ class Vm(object):
                 break
         return index
 
-    def __normalizeVdsmImg(self, drv):
+    def _normalizeVdsmImg(self, drv):
         drv['needExtend'] = False
         drv['reqsize'] = drv.get('reqsize', '0')
         res = self.cif.irs.getVolumeSize(drv['domainID'],
@@ -409,7 +409,7 @@ class Vm(object):
         # Normalize vdsm images
         for drv in devices[DISK_DEVICES]:
             if isVdsmImage(drv):
-                self.__normalizeVdsmImg(drv)
+                self._normalizeVdsmImg(drv)
 
         return devices
 

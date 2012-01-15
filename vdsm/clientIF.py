@@ -317,6 +317,8 @@ class clientIF:
                 (self.fenceNode, 'fenceNode'),
                 (self.prepareForShutdown, 'prepareForShutdown'),
                 (self.setLogLevel, 'setLogLevel'),
+                (self.hotplugDisk, 'hotplugDisk'),
+                (self.hotunplugDisk, 'hotunplugDisk'),
                         ):
            self.server.register_function(wrapApiMethod(method), name)
 
@@ -626,6 +628,36 @@ class clientIF:
                 self.log.info("Avoiding tear down drive %s", str(drive))
 
         return res['status']['code']
+
+    def hotplugDisk(self, params):
+        try:
+            utils.validateMinimalKeySet(params, ('vmId', 'drive'))
+        except ValueError:
+            self.log.error('Missing one of required parameters: vmId, drive')
+            return {'status': {'code': errCode['MissParam']['status']['code'],
+                               'message': 'Missing one of required parameters: vmId, drive'}}
+        try:
+            curVm = self.vmContainer[params['vmId']]
+        except KeyError:
+            self.log.warning("vm %s doesn't exists", params['vmId'])
+            return errCode['noVM']
+
+        return curVm.hotplugDisk(params)
+
+    def hotunplugDisk(self, params):
+        try:
+            utils.validateMinimalKeySet(params, ('vmId', 'drive'))
+        except ValueError:
+            self.log.error('Missing one of required parameters: vmId, drive')
+            return {'status': {'code': errCode['MissParam']['status']['code'],
+                               'message': 'Missing one of required parameters: vmId, drive'}}
+        try:
+            curVm = self.vmContainer[params['vmId']]
+        except KeyError:
+            self.log.warning("vm %s doesn't exists", params['vmId'])
+            return errCode['noVM']
+
+        return curVm.hotunplugDisk(params)
 
     def create(self, vmParams):
         """

@@ -42,6 +42,8 @@ errCode = { 'noVM':         {'status': {'code': 1, 'message': 'Virtual machine d
             'destroyErr':   {'status': {'code':42, 'message': 'Virtual machine destroy error'}},
             'fenceAgent':   {'status': {'code':43, 'message': 'Unsupported fencing agent'}},
             'noimpl':       {'status': {'code':44, 'message': 'Not implemented'}},
+            'hotplugDisk':  {'status': {'code':45, 'message': 'Failed to hotplug disk'}},
+            'hotunplugDisk':{'status': {'code':46, 'message': 'Failed to hotunplug disk'}},
             'migCancelErr': {'status': {'code':47, 'message': 'Migration not in progress'}},
             'recovery':     {'status': {'code':99, 'message': 'Recovering from crash or Initializing'}},
             }
