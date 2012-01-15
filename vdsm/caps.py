@@ -44,6 +44,7 @@ class OSName:
     UNKNOWN = 'unknown'
     OVIRT = 'oVirt Node'
     RHEL = 'RHEL'
+    FEDORA = 'Fedora'
     RHEVH = 'RHEV Hypervisor'
 
 class CpuInfo(object):
@@ -129,6 +130,8 @@ def getos():
         return OSName.RHEVH
     elif os.path.exists('/etc/ovirt-node-image-release'):
         return OSName.OVIRT
+    elif os.path.exists('/etc/fedora-release'):
+        return OSName.FEDORA
     elif os.path.exists('/etc/redhat-release'):
         return OSName.RHEL
     else:
