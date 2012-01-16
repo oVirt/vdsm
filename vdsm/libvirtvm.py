@@ -1712,7 +1712,7 @@ class LibvirtVm(vm.Vm):
             # Get nic address
             address = self._getUnderlyingDeviceAddress(x)
             for nic in self._devices[vm.NIC_DEVICES]:
-                if nic.macAddr == mac:
+                if nic.macAddr.lower() == mac.lower():
                     nic.name = name
                     nic.alias = alias
                     nic.address = address
