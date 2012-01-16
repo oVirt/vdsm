@@ -1790,15 +1790,15 @@ class HSM:
         """
         Connects to a storage low level entity (server).
 
-        :param domType: The type of the domain ...?
-        :type domType: Some enum?
-        :param spUUID: The UUID of the storage pool ...?
-        :type spUUID: UUID
-        :param conList: A list of connections. ?
+        :param domType: The type of the connection sometimes expressed as the
+                        corresponding domain type
+        :param spUUID: deprecated, unused
+        :param conList: A list of connections. Each connection being a dict
+                        with keys depending on the type
         :type conList: list
-        :param options: ?
+        :param options: unused
 
-        :returns: a list of statuses ?
+        :returns: a list of statuses status will be 0 if connection was successful
         :rtype: dict
         """
         cons = loggableConList(conList=conList)
