@@ -119,7 +119,7 @@ class Mount(object):
         if rc == 0:
             return
 
-        raise MountError(rc, ";".join(out + err))
+        raise MountError(rc, ";".join((out, err)))
 
     def umount(self, force=False, lazy=False, timeout=None):
         cmd = [constants.EXT_UMOUNT]
