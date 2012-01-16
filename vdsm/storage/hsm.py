@@ -1814,22 +1814,18 @@ class HSM:
     @public(logger=logged(printers={'conList': connectionListPrinter}))
     def validateStorageServerConnection(self, domType, spUUID, conList, options = None):
         """
-        Validates if we can connect to a storage server.
-
-        :param domType: The domain type ....?
-        :type domType: Some enum?
-        :param spUUID: The UUID of the storage pool ....?
-        :type spUUID: UUID
-        :param conList: a list of connections ...?
-        :type conList: list
-        :param options: ?
+        This call is useless and slow. It check different things in different
+        levels for different storage types and does not guarantee a future
+        connect will succeed. Until someone actually defines what is actually
+        being validated (params? hostname? permissions? authentication tokens?)
+        I suggest to just disable this verb so it doesn't make any NFS
+        connection take twice as long and be exponentially more complex.
         """
-        cons = loggableConList(conList=conList)
-        vars.task.setDefaultException(se.StorageServerValidationError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
-        #getSharedLock(connectionsResource...)
-        statusList = storage_connection.StorageServerConnection().validate(domType=domType, conList=conList)
-        return dict(statuslist=statusList)
+        res = []
+        for con in conList:
+            res.append({'id':con['id'], 'status': 0})
 
+        return dict(statuslist=res)
 
     @public(logger=logged(printers={'conList': connectionListPrinter}))
     def disconnectStorageServer(self, domType, spUUID, conList, options = None):
