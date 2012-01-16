@@ -32,7 +32,7 @@ from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
 from storage.iscsi import getdeviSCSIinfo as _getdeviSCSIinfo
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
-from storage.fileUtils import chown, open_ex, resolveGid, resolveUid
+from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, DISKIMAGE_USER, DISKIMAGE_GROUP
 from storage.devicemapper import _removeMapping, _getPathsStatus
@@ -70,14 +70,6 @@ class _SuperVdsm(object):
     @logDecorator
     def forceIScsiScan(self, *args, **kwargs):
         return _forceIScsiScan(*args, **kwargs)
-
-    @logDecorator
-    def testReadDevices(self, devices):
-        for device in devices:
-            with open_ex(device, "dr") as f:
-                f.seek(TEST_BUFF_LEN)
-                if len(f.read(TEST_BUFF_LEN)) < TEST_BUFF_LEN:
-                    raise OSError("Could not read from device %s" % device)
 
     @logDecorator
     def removeDeviceMapping(self, devName):
