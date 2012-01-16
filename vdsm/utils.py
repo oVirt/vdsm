@@ -48,7 +48,7 @@ if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 
 def isBlockDevice(path):
-    path = os.abspath(path)
+    path = os.path.abspath(path)
     return stat.S_ISBLK(os.stat(path).st_mode)
 
 

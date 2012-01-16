@@ -346,7 +346,6 @@ class Vm(object):
                              drv['volumeID'])
         drv['truesize'] = res['truesize']
         drv['apparentsize'] = res['apparentsize']
-        drv['blockDev'] = utils.isBlockDevice(drv['path'])
 
     def __legacyDrives(self):
          """
@@ -567,6 +566,7 @@ class Vm(object):
     def preparePaths(self, drives):
         for drive in drives:
             drive['path'] = self._prepareVolumePath(drive)
+            drive['blockDev'] = utils.isBlockDevice(drive['path'])
         # Now we got all needed resources
         self._volumesPrepared = True
 
