@@ -53,8 +53,10 @@ ServerProxy = Server
 class TcpkeepTransport(xmlrpclib.Transport):
 
     def make_connection(self, host):
-        conn = TcpkeepHTTP(host)
-        return conn
+        if hasattr(xmlrpclib.Transport, "single_request"): # Python 2.7
+            return TcpkeepHTTPConnection(host)
+        else:
+            return TcpkeepHTTP(host)
 
 class TcpkeepHTTPConnection(httplib.HTTPConnection):
     def connect(self):
