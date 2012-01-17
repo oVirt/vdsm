@@ -721,10 +721,10 @@ def _getBridgeParams(bridgeName):
     try:
         for line in file(fileName):
             line = line.strip()
-            if line.startswith("DEVICE=") or \
-               line.startswith("#") or \
-               line.startswith("HWADDR="):
-                pass
+            if not line or line.startswith('#'):
+                continue
+            elif line.startswith("DEVICE=") or line.startswith("HWADDR="):
+                continue
             elif line.startswith("TYPE="):
                 t = line.split("=", 1)[1].strip()
                 fIsBridgeDevice = (t == "Bridge")
