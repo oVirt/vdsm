@@ -28,6 +28,7 @@ import time
 import struct
 import socket
 import itertools
+import linecache
 
 import libvirt
 
@@ -40,12 +41,21 @@ import utils
 import constants
 import storage.hba
 
+# For debian systems we can use python-apt if available
+try:
+  import apt
+  python_apt = True
+except ImportError:
+  python_apt = False
+
+
 class OSName:
     UNKNOWN = 'unknown'
     OVIRT = 'oVirt Node'
     RHEL = 'RHEL'
     FEDORA = 'Fedora'
     RHEVH = 'RHEV Hypervisor'
+    DEBIAN = 'Debian'
 
 class CpuInfo(object):
     def __init__(self):
@@ -134,6 +144,8 @@ def getos():
         return OSName.FEDORA
     elif os.path.exists('/etc/redhat-release'):
         return OSName.RHEL
+    elif os.path.exists('/etc/debian_version'):
+        return OSName.DEBIAN
     else:
         return OSName.UNKNOWN
 
@@ -151,6 +163,9 @@ def osversion():
             d = _parseKeyVal( file('/etc/default/version') )
             version = d.get('VERSION', '')
             release = d.get('RELEASE', '')
+        if osname == OSName.DEBIAN:
+            version = linecache.getline('/etc/debian_version', 1).strip("\n")
+            release = "" # Debian just has a version entry
         else:
             p = subprocess.Popen([constants.EXT_RPM, '-qf', '--qf',
                 '%{VERSION} %{RELEASE}\n', '/etc/redhat-release'],
@@ -240,21 +255,38 @@ def _getKeyPackages():
             t = '0'
         return dict(version=ver, release=rel, buildtime=t)
 
-    KEY_PACKAGES = ['qemu-kvm', 'qemu-img',
-                    'vdsm', 'spice-server', 'libvirt']
-
     pkgs = {'kernel': kernelDict()}
-    try:
+
+    if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL):
+        KEY_PACKAGES = ['qemu-kvm', 'qemu-img',
+                        'vdsm', 'spice-server', 'libvirt']
+
+        try:
+            for pkg in KEY_PACKAGES:
+                rc, out, err = utils.execCmd([constants.EXT_RPM, '-q', '--qf',
+                      '%{NAME}\t%{VERSION}\t%{RELEASE}\t%{BUILDTIME}\n', pkg],
+                      sudo=False)
+                if rc: continue
+                line = out[-1]
+                n, v, r, t = line.split()
+                pkgs[pkg] = dict(version=v, release=r, buildtime=t)
+        except:
+            logging.error('', exc_info=True)
+
+    elif getos() == OSName.DEBIAN and python_apt == True:
+        KEY_PACKAGES = { 'qemu-kvm':'qemu-kvm', 'qemu-img':'qemu-utils',
+                         'vdsm':'vdsmd', 'spice-server':'libspice-server1',
+                         'libvirt':'libvirt0' }
+
+        cache = apt.Cache()
+
         for pkg in KEY_PACKAGES:
-            rc, out, err = utils.execCmd([constants.EXT_RPM, '-q', '--qf',
-                  '%{NAME}\t%{VERSION}\t%{RELEASE}\t%{BUILDTIME}\n', pkg],
-                  sudo=False)
-            if rc: continue
-            line = out[-1]
-            n, v, r, t = line.split()
-            pkgs[pkg] = dict(version=v, release=r, buildtime=t)
-    except:
-        logging.error('', exc_info=True)
+            try:
+                deb_pkg = KEY_PACKAGES[pkg]
+                ver = cache[deb_pkg].installed.version
+                pkgs[pkg] = dict(version=ver, release="", buildtime="") # Debian just offers a version
+            except:
+                logging.error('', exc_info=True)
 
     return pkgs
 
