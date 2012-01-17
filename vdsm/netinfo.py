@@ -158,7 +158,7 @@ def intToAddress(ip_num):
     return '.'.join(ip_address)
 
 def getRoutes():
-    """Return the interface gateway or None if not found."""
+    """Return the interface default gateway or None if not found."""
 
     gateways = dict()
 
@@ -168,7 +168,7 @@ def getRoutes():
         for route_line in route_file.xreadlines():
             route_parm = route_line.rstrip().split('\t')
 
-            if route_parm[2] != '00000000':
+            if route_parm[1] == '00000000' and route_parm[2] != '00000000':
                 ip_num = int(route_parm[2], 16)
                 gateways[route_parm[0]] = intToAddress(ip_num)
 
