@@ -1286,7 +1286,7 @@ class StoragePool:
             elif isinstance(st.error, se.StorageException):
                 code = st.error.code
             else:
-                code = 200
+                code = se.StorageException.code
             disktotal, diskfree = st.diskUtilization
             vgmdtotal, vgmdfree = st.vgMdUtilization
             res[sdUUID] = {
