@@ -127,19 +127,36 @@ def bondingOtherUsers(bridge, vlan, bonding):
     users.discard(owner)
     return users
 
+# This function must respect the order used in:
+#
+#   /etc/rc.d/init.d/network
+#
+#   echo -e "ifcfg-eth0\nifcfg-eth1" \
+#       | sed -e '/ifcfg-[A-Za-z0-9#\._-]\+$/ { s/^ifcfg-//g;s/[0-9]/ &/}' \
+#       | sort -k 1,1 -k 2n
+#
+# Relevant cases:
+#   nicSort(["p33p2", "p33p10"]) => ["p33p10", "p33p2"]
+#   nicSort(["p331", "p33p1"]) => ["p33p1", "p331"]
+#
 def nicSort(nics):
     "Return a list of nics/interfaces ordered by name"
+
     nics_list = []
-    nics_rexp = re.compile("([A-Za-z]+)([0-9]+)")
+    nics_rexp = re.compile("^(\D*)(\d*)(.*)$")
 
     for nic_name in nics:
         nic_sre = nics_rexp.match(nic_name)
-        if nic_sre:
-            nics_list.append((nic_sre.group(1), int(nic_sre.group(2))))
-        else:
-            nics_list.append((nic_name, ''))
+        prefix, stridx, postfix = nic_sre.groups((nic_name, "0", ""))
 
-    return [x + str(y) for x, y in sorted(nics_list)]
+        try:
+            intidx = int(stridx)
+        except ValueError:
+            intidx = 0
+
+        nics_list.append((prefix, intidx, stridx + postfix))
+
+    return [x + z for x, y, z in sorted(nics_list)]
 
 class ConfigWriter(object):
     NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
