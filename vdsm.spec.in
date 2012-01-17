@@ -457,6 +457,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/write-net-config
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm
+%config(noreplace) %{_sysconfdir}/modprobe.d/vdsm.conf
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
