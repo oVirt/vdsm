@@ -200,6 +200,16 @@ class FileStorageDomain(sd.StorageDomain):
                             imgUUID, size, volFormat, preallocate, diskType,
                             volUUID, desc, srcImgUUID, srcVolUUID)
 
+    def getVolumeLease(self, imgUUID, volUUID):
+        """
+        Return the volume lease (leasePath, leaseOffset)
+        """
+        if self.hasVolumeLeases():
+            vol = self.produceVolume(imgUUID, volUUID)
+            volumePath = vol.getVolumePath()
+            leasePath = volumePath + fileVolume.LEASE_FILEEXT
+            return leasePath, fileVolume.LEASE_FILEOFFSET
+        return None, None
 
     def validate(self, useCache=False):
         """

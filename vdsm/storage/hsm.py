@@ -2687,9 +2687,21 @@ class HSM:
         img = image.Image(os.path.join(self.storage_repository, spUUID))
         imgVolumes = img.prepare(sdUUID, imgUUID, volUUID)
 
-        chain = [{'domainID': sdUUID, 'imageID': imgUUID,
-                  'volumeID': vol.volUUID, 'path': vol.getVolumePath()}
-                 for vol in imgVolumes]
+        chain = []
+        dom = sdCache.produce(sdUUID=sdUUID)
+
+        for vol in imgVolumes:
+            volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
+                       'volumeID': vol.volUUID, 'path': vol.getVolumePath()}
+
+            leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
+                                                        vol.volUUID)
+
+            if leasePath and leaseOffset is not None:
+                volInfo.update({'leasePath': leasePath,
+                                'leaseOffset':  leaseOffset})
+
+            chain.append(volInfo)
 
         return {'path': chain[-1]['path'], 'chain': chain}
 

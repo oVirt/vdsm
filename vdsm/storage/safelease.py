@@ -174,7 +174,7 @@ class SANLock(object):
                           self._sdUUID, hostId)
 
             try:
-                sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath, 0)
+                sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath)
             except sanlock.SanlockException, e:
                 raise se.ReleaseHostIdFailure(self._sdUUID, e)
 
@@ -221,8 +221,8 @@ class SANLock(object):
                           self._sdUUID, self._hostId)
 
             try:
-                sanlock.release(SANLock._sanlock_fd, self._sdUUID,
-                                LEASE_NAME, [self._leasesPath])
+                sanlock.release(self._sdUUID, LEASE_NAME, [self._leasesPath],
+                                slkfd=SANLock._sanlock_fd)
             except sanlock.SanlockException, e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 

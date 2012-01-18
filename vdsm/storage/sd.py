@@ -405,6 +405,12 @@ class StorageDomain:
     def hasVolumeLeases(self):
         return self.getVersion() in DOM_SANLOCK_VERS
 
+    def getVolumeLease(self, volUUID):
+        """
+        Return the volume lease (leasePath, leaseOffset)
+        """
+        return None, None
+
     def acquireClusterLock(self, hostID):
         self.refresh()
         self._clusterLock.setParams(

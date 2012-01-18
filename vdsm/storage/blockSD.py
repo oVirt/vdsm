@@ -813,6 +813,18 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         lvm.deactivateLVs(self.sdUUID, volUUIDs)
 
+    def getVolumeLease(self, imgUUID, volUUID):
+        """
+        Return the volume lease (leasePath, leaseOffset)
+        """
+        if self.hasVolumeLeases():
+            # TODO: use the sanlock specific offset when present
+            leaseSlot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
+            leaseOffset = ((leaseSlot + blockVolume.RESERVED_LEASES)
+                                * self.logBlkSize * sd.LEASE_BLOCKS)
+            return self.getLeasesFilePath(), leaseOffset
+        return None, None
+
     def validateMasterMount(self):
         return mount.isMounted(self.getMasterDir())
 

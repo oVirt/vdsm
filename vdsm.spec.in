@@ -39,7 +39,7 @@ Requires: ntp
 Requires: python-ethtool
 Requires: nfs-utils dmidecode
 Requires: lvm2 >= 2.02.95
-Requires: sanlock >= 1.8, sanlock-python
+Requires: sanlock >= 2.1, sanlock-python
 
 %if 0%{?rhel}
 # Update the qemu-kvm requires when block_stream will be included

@@ -1148,6 +1148,35 @@ class LibvirtVm(vm.Vm):
         self._releaseLock = threading.Lock()
         self.saveState()
 
+    def _buildLease(self, domainID, volumeID, leasePath, leaseOffset):
+        """
+        Add a single SANLock lease.
+
+        <lease>
+          <key>imgUUID</key>
+          <lockspace>sdUUID</lockspace>
+          <target path='/dev/sdUUID/leases' offset='0'/>
+        </lease>
+        """
+
+        doc = xml.dom.minidom.Document()
+
+        keyElem = doc.createElement('key')
+        keyElem.appendChild(doc.createTextNode(volumeID))
+
+        lksElem = doc.createElement('lockspace')
+        lksElem.appendChild(doc.createTextNode(domainID))
+
+        tgtElem = doc.createElement('target')
+        tgtElem.setAttribute('path', leasePath)
+        tgtElem.setAttribute('offset', str(leaseOffset))
+
+        leaseElem = doc.createElement('lease')
+        leaseElem.appendChild(keyElem)
+        leaseElem.appendChild(lksElem)
+        leaseElem.appendChild(tgtElem)
+
+        return leaseElem
 
     def _buildCmdLine(self):
         domxml = _DomXML(self.conf, self.log)
@@ -1172,6 +1201,17 @@ class LibvirtVm(vm.Vm):
             for dev in self._devices[devType]:
                 devElem = dev.getXML()
                 domxml._devices.appendChild(devElem)
+
+        for drive in self._devices[vm.DISK_DEVICES][:]:
+            if not hasattr(drive, 'volumeChain'):
+                continue
+
+            for lease in drive.volumeChain:
+                if 'leasePath' not in lease or 'leaseOffset' not in lease:
+                    continue
+                leaseElem = self._buildLease(drive.domainID, lease['volumeID'],
+                                     lease['leasePath'], lease['leaseOffset'])
+                domxml._devices.appendChild(leaseElem)
 
         return domxml.toxml()
 
