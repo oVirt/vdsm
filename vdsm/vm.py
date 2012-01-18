@@ -191,12 +191,12 @@ class MigrationSourceThread(threading.Thread):
                 if ignoreParam in self._machineParams:
                     del self._machineParams[ignoreParam]
 
-            fname = self._vm.cif._prepareVolumePath(self._dstparams)
+            fname = self._vm.cif.prepareVolumePath(self._dstparams)
             try:
                 with file(fname, "w") as f:
                     pickle.dump(self._machineParams, f)
             finally:
-                self._vm.cif._teardownVolumePath(self._dstparams)
+                self._vm.cif.teardownVolumePath(self._dstparams)
 
             self._vm.setDownStatus(NORMAL, "SaveState succeeded")
             self.status = {'status': {'code': 0, 'message': 'SaveState done'}, 'progress': 100}
@@ -304,7 +304,6 @@ class Vm(object):
                                 self.conf.pop('elapsedTimeOffset', 0))
 
         self._usedIndices = {} #{'ide': [], 'virtio' = []}
-        self._preparedDrives = {}
         self._volumesPrepared = False
         self._pathsPreparedEvent = threading.Event()
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
@@ -570,22 +569,17 @@ class Vm(object):
     def _incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
 
-    def _prepareVolumePath(self, drive):
-        volPath = ''
-        if not self.destroyed:
-            with self._volPrepareLock:
-                if not self.destroyed:
-                    volPath = self.cif._prepareVolumePath(drive, self.id)
-                    self._preparedDrives[volPath] = drive
-
-        return volPath
-
     def preparePaths(self, drives):
         for drive in drives:
-            drive['path'] = self._prepareVolumePath(drive)
-            drive['blockDev'] = utils.isBlockDevice(drive['path'])
-        # Now we got all needed resources
-        self._volumesPrepared = True
+            with self._volPrepareLock:
+                if self.destroyed:
+                    # A destroy request has been issued, exit early
+                    break
+                drive['path'] = self.cif.prepareVolumePath(drive)
+                drive['blockDev'] = utils.isBlockDevice(drive['path'])
+        else:
+            # Now we got all the resources we needed
+            self._volumesPrepared = True
 
     def releaseVm(self):
         """
@@ -856,23 +850,14 @@ class Vm(object):
         except:
             self.log.error(traceback.format_exc())
 
-    def _teardownVolumePath(self, drive):
-        try:
-            if self._preparedDrives.has_key(drive):
-                resCode = self.cif._teardownVolumePath(self._preparedDrives[drive])
-                # If teardown failed leave drive in _preparedDrives for next try.
-                if not resCode:
-                    del self._preparedDrives[drive]
-            else:
-                self.log.warn("Volume %s missing from preparedDrives", str(drive))
-        except:
-            self.log.error(traceback.format_exc())
-
     def _cleanup(self):
         with self._volPrepareLock:
-            for drive in self._preparedDrives.keys():
-                self.log.debug("Drive %s cleanup" % drive)
-                self._teardownVolumePath(drive)
+            for drive in self._devices[DISK_DEVICES]:
+                try:
+                    self.cif.teardownVolumePath(drive)
+                except:
+                    self.log.error("Drive teardown failure for %s",
+                                   drive, exc_info=True)
 
         if self.conf.get('volatileFloppy'):
             try:
@@ -880,10 +865,12 @@ class Vm(object):
                 utils.rmFile(self.conf['floppy'])
             except:
                 pass
+
         try:
             self.guestAgent.stop()
         except:
             pass
+
         utils.rmFile(self._guestSocektFile)
         utils.rmFile(self._recoveryFile)
 

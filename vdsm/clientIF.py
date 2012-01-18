@@ -571,7 +571,7 @@ class clientIF:
             path = out[0]
         return path
 
-    def _prepareVolumePath(self, drive, vmId=None):
+    def prepareVolumePath(self, drive, vmId=None):
         if type(drive) == dict:
             # drive specification is a quartet (vdsm image)?
             if vm.isVdsmImage(drive):
@@ -599,12 +599,12 @@ class clientIF:
         elif os.path.exists(drive):
             path = drive
         else:
-             raise vm.VolumeError(drive)
+            raise vm.VolumeError(drive)
 
         self.log.info("prepared volume path: %s" % path)
         return path
 
-    def _teardownVolumePath(self, drive):
+    def teardownVolumePath(self, drive):
         res = {'status': doneCode}
         if type(drive) == dict:
             try:
@@ -635,7 +635,7 @@ class clientIF:
                 # NOTE: pickled params override command-line params. this
                 # might cause problems if an upgrade took place since the
                 # parmas were stored.
-                    fname = self._prepareVolumePath(paramFilespec)
+                    fname = self.prepareVolumePath(paramFilespec)
                     try:
                         with file(fname) as f:
                             pickledMachineParams = pickle.load(f)
@@ -646,7 +646,7 @@ class clientIF:
                             self.log.debug('former conf ' + str(vmParams))
                             vmParams.update(pickledMachineParams)
                     finally:
-                        self._teardownVolumePath(paramFilespec)
+                        self.teardownVolumePath(paramFilespec)
                 except:
                     self.log.error(traceback.format_exc())
 

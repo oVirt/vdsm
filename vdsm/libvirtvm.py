@@ -396,11 +396,11 @@ class MigrationSourceThread(vm.MigrationSourceThread):
             hooks.before_vm_hibernate(self._vm._dom.XMLDesc(0), self._vm.conf)
             try:
                 self._vm._vmStats.pause()
-                fname = self._vm.cif._prepareVolumePath(self._dst)
+                fname = self._vm.cif.prepareVolumePath(self._dst)
                 try:
                     self._vm._dom.save(fname)
                 finally:
-                    self._vm.cif._teardownVolumePath(self._dst)
+                    self._vm.cif.teardownVolumePath(self._dst)
             except:
                 self._vm._vmStats.cont()
                 raise
@@ -1228,11 +1228,11 @@ class LibvirtVm(vm.Vm):
         elif 'restoreState' in self.conf:
             hooks.before_vm_dehibernate(self.conf.pop('_srcDomXML'), self.conf)
 
-            fname = self.cif._prepareVolumePath(self.conf['restoreState'])
+            fname = self.cif.prepareVolumePath(self.conf['restoreState'])
             try:
                 self._connection.restore(fname)
             finally:
-                self.cif._teardownVolumePath(self.conf['restoreState'])
+                self.cif.teardownVolumePath(self.conf['restoreState'])
 
             self._dom = NotifyingVirDomain(
                             self._connection.lookupByUUIDString(self.id),
@@ -1316,7 +1316,7 @@ class LibvirtVm(vm.Vm):
 
     def _changeBlockDev(self, vmDev, blockdev, drivespec):
         try:
-            path = self._prepareVolumePath(drivespec)
+            path = self.cif.prepareVolumePath(drivespec)
         except vm.VolumeError, e:
             return {'status': {'code': errCode['imageErr']['status']['code'],
               'message': errCode['imageErr']['status']['message'] % str(e)}}
@@ -1335,10 +1335,10 @@ class LibvirtVm(vm.Vm):
                                   libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
         except:
             self.log.debug(traceback.format_exc())
-            self._teardownVolumePath(drivespec)
+            self.cif.teardownVolumePath(drivespec)
             return {'status': {'code': errCode['changeDisk']['status']['code'],
               'message': errCode['changeDisk']['status']['message']}}
-        self._teardownVolumePath(self.conf.get(vmDev))
+        self.cif.teardownVolumePath(self.conf.get(vmDev))
         self.conf[vmDev] = path
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -1460,10 +1460,6 @@ class LibvirtVm(vm.Vm):
 
             self.cif.ksmMonitor.adjust()
             self._cleanup()
-            # Check successful teardown of all drives and fail destroy if not
-            if len(self._preparedDrives):
-                self.log.error("Destroy failed, not all drives were teardown")
-                return errCode['destroyErr']
 
             self.cif.irs.inappropriateDevices(self.id)
 
