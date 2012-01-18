@@ -63,6 +63,7 @@ nodist_vdsm_SCRIPTS = \
 
 nodist_noinst_DATA = \
 	logger.conf \
+	vdsm-logrotate.conf \
 	sudoers.vdsm \
 	vdsm.conf.sample \
 	vdsmd.init \
@@ -104,7 +105,7 @@ EXTRA_DIST = \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
-	vdsm-logrotate.conf \
+	vdsm-logrotate.conf.in \
 	vdsm-modprobe.conf \
 	vdsm-restore-net-config.in \
 	vdsm.rwtab.in \
