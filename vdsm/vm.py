@@ -576,7 +576,6 @@ class Vm(object):
                     # A destroy request has been issued, exit early
                     break
                 drive['path'] = self.cif.prepareVolumePath(drive)
-                drive['blockDev'] = utils.isBlockDevice(drive['path'])
         else:
             # Now we got all the resources we needed
             self._volumesPrepared = True

@@ -572,37 +572,48 @@ class clientIF:
         return path
 
     def prepareVolumePath(self, drive, vmId=None):
-        if type(drive) == dict:
-            # drive specification is a quartet (vdsm image)?
+        if type(drive) is dict:
+            # PDIV drive format
             if vm.isVdsmImage(drive):
                 res = self.irs.prepareImage(drive['domainID'], drive['poolID'],
                                             drive['imageID'], drive['volumeID'])
+
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
-                path = res['path']
-            #Another (dict) drive specification
-            elif drive.has_key("GUID") and os.path.exists(os.path.join("/dev/mapper", drive["GUID"])):
-                path = os.path.join("/dev/mapper", drive["GUID"])
-                drive['blockDev'] = True
+
+                volPath = res['path']
+                drive['volumeChain'] = res['chain']
+
+            # GUID drive format
+            elif drive.has_key("GUID"):
+                volPath = os.path.join("/dev/mapper", drive["GUID"])
+
+                if not os.path.exists(volPath):
+                    raise vm.VolumeError(drive)
+
                 res = self.irs.appropriateDevice(drive["GUID"], vmId)
+
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
+
+            # UUID drive format
             elif drive.has_key("UUID"):
-                path = self._getUUIDSpecPath(drive["UUID"])
-                drive['blockDev'] = True
+                volPath = self._getUUIDSpecPath(drive["UUID"])
+
+            # Path drive format
             elif drive.has_key("path"):
-                path = drive['path']
-                drive['blockDev'] = False
-        #For BC sake: a path as a string.
-        elif not drive:
-            path = drive
+                volPath = drive['path']
+
         elif os.path.exists(drive):
-            path = drive
+            volPath = drive
+
         else:
             raise vm.VolumeError(drive)
 
-        self.log.info("prepared volume path: %s" % path)
-        return path
+        drive['blockDev'] = utils.isBlockDevice(volPath)
+        self.log.info("prepared volume path: %s", volPath)
+
+        return volPath
 
     def teardownVolumePath(self, drive):
         res = {'status': doneCode}
