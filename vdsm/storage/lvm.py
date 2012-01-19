@@ -630,8 +630,8 @@ def _initpvs(devices, metadataSize):
         found, notFound = getVGsOfReachablePVs(devices)
         #If returned not found devices or any device is in a VG
         if notFound or any(found.itervalues()):
-            raise se.PhysDevInitializationError("found: %s notFound: %s",
-                                                found, notFound)
+            raise se.PhysDevInitializationError("found: %s notFound: %s" %
+                                                (found, notFound))
         #All devices are free and reachable, calling the ghostbusters!
         for device in devices:
             try:
@@ -671,7 +671,7 @@ def getVGsOfReachablePVs(pvNames):
             found[pvName] = None #Free PV
         else:
             found[pvName] = vgName
-    notFound = (pvName for pvName in pvNames if pvName not in found.iterkeys())
+    notFound = tuple(pvName for pvName in pvNames if pvName not in found.iterkeys())
 
     return found, notFound
 
