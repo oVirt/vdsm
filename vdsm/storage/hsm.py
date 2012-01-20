@@ -2122,7 +2122,7 @@ class HSM:
                     domains.remove(sdUUID)
                     continue
                 # Filter domains according to 'remotePath'
-                if remotePath and fileUtils.transformPath(remotePath) != dom.getRemotePath():
+                if remotePath and remotePath != dom.getRemotePath():
                     domains.remove(sdUUID)
                     continue
             except Exception:
