@@ -123,8 +123,13 @@ def after_vm_dehibernate(domxml, vmconf={}):
     return _runHooksDir(domxml, 'after_vm_hibernate', vmconf=vmconf,
                         raiseError=False)
 
+def before_vm_destroy(domxml, vmconf={}):
+    return _runHooksDir(None, 'before_vm_destroy', vmconf=vmconf,
+                        raiseError=False)
+
 def after_vm_destroy(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_destroy', vmconf=vmconf, raiseError=False)
+    return _runHooksDir(domxml, 'after_vm_destroy', vmconf=vmconf,
+                        raiseError=False)
 
 def before_vdsm_start():
     return _runHooksDir(None, 'before_vdsm_start', raiseError=False)

@@ -70,6 +70,7 @@ VDSMHOOKS = \
 	after_vm_migrate_source \
 	before_vm_migrate_destination \
 	after_vm_migrate_destination \
+	before_vm_destroy \
 	after_vm_destroy \
 	before_vdsm_start \
 	after_vdsm_stop

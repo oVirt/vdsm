@@ -45,7 +45,7 @@ Currently-supported hooks have self-explanatory names:
     before_vm_dehibernate, after_vm_dehibernate,
     before_vm_migrate_source, after_vm_migrate_source,
     before_vm_migrate_destination, after_vm_migrate_destination,
-    after_vm_destroy,
+    before_vm_destroy, after_vm_destroy,
     before_vdsm_start, after_vdsm_stop.
 
 Each hook executes the scripts under
@@ -128,6 +128,7 @@ reserved.
 
 .TP
 If a before_<action> hook fails, the <action> would be aborted.
+However, before_vm_destroy's failure does not abort destroy().
 
 .SH FILES
 .PD 0
