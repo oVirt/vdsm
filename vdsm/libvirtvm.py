@@ -1193,6 +1193,13 @@ class LibvirtVm(vm.Vm):
                 newDevices.extend(dev)
 
             self.conf['devices'] = newDevices
+            # We need to save conf here before we actually run VM.
+            # It's not enough to save conf only on status changes as we did before,
+            # because if vdsm will restarted between VM run and conf saving
+            # we will fail in inconsistent state during recovery.
+            # So, to get proper device objects during VM recovery flow
+            # we must to have updated conf before VM run
+            self.saveState()
         else:
             # TODO: In recover should loop over disks running on the VM because
             # conf may be outdated if something happened during restart.
