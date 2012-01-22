@@ -819,7 +819,7 @@ class GeneralDevice(vm.Device):
             dev.setAttribute('type', self.device)
         if hasattr(self, 'address'):
             address = doc.createElement('address')
-            for key, value in self.address:
+            for key, value in self.address.iteritems():
                 address.setAttribute(key, value)
             dev.appendChild(address)
 
@@ -841,7 +841,7 @@ class ControllerDevice(vm.Device):
             ctrl.setAttribute('ports', '16')
         if hasattr(self, 'address'):
             address = doc.createElement('address')
-            for key, value in self.address:
+            for key, value in self.address.iteritems():
                 address.setAttribute(key, value)
             ctrl.appendChild(address)
 
@@ -864,7 +864,7 @@ class VideoDevice(vm.Device):
         video.appendChild(m)
         if hasattr(self, 'address'):
             address = doc.createElement('address')
-            for key, value in self.address:
+            for key, value in self.address.iteritems():
                 address.setAttribute(key, value)
             video.appendChild(address)
 
@@ -883,7 +883,7 @@ class SoundDevice(vm.Device):
         sound.setAttribute('model', self.device)
         if hasattr(self, 'address'):
             address = doc.createElement('address')
-            for key, value in self.address:
+            for key, value in self.address.iteritems():
                 address.setAttribute(key, value)
             sound.appendChild(address)
 
@@ -948,7 +948,7 @@ class NetworkInterfaceDevice(vm.Device):
             iface.appendChild(bootOrder)
         if hasattr(self, 'address'):
             address = doc.createElement('address')
-            for key, value in self.address:
+            for key, value in self.address.iteritems():
                 address.setAttribute(key, value)
             iface.appendChild(address)
         if self.driver:
@@ -1041,7 +1041,7 @@ class Drive(vm.Device):
             diskelem.appendChild(bootOrder)
         if hasattr(self, 'address'):
             address = doc.createElement('address')
-            for key, value in self.address:
+            for key, value in self.address.iteritems():
                 address.setAttribute(key, value)
             diskelem.appendChild(address)
         if device == 'disk':
