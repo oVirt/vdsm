@@ -49,7 +49,9 @@ dist_vdsm_PYTHON = \
 	vm.py
 
 dist_vdsmexec_SCRIPTS = \
-	ovirt_functions.sh \
+	ovirt_functions.sh
+
+nodist_vdsmexec_SCRIPTS = \
 	vdsm-gencerts.sh
 
 nodist_vdsm_PYTHON = \
