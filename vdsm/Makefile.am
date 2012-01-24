@@ -26,6 +26,7 @@ dist_vdsm_PYTHON = \
 	betterThreading.py \
 	caps.py \
 	clientIF.py \
+	BindingXMLRPC.py \
 	configNetwork.py \
 	define.py \
 	dsaversion.py \
