@@ -49,7 +49,6 @@ class LvmActivation(object):
         self._lv = lv
 
         lvm.activateLVs(self._vg, self._lv)
-        self.switchLockType(lockType)
 
     def close(self):
         try:
@@ -59,10 +58,6 @@ class LvmActivation(object):
             # the LV deactivation will failure.
             # We can live with it and still release the resource.
             log.warn("Failure deactivate LV %s/%s (%s)", self._vg, self._lv, e)
-
-    def switchLockType(self, lockType):
-        rw = False if lockType == rm.LockType.shared else True
-        lvm.setrwLV(self._vg, self._lv, rw)
 
 
 class LvmActivationFactory(rm.SimpleResourceFactory):
