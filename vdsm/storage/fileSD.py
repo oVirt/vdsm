@@ -83,13 +83,6 @@ class FileMetadataRW(object):
 
 FileSDMetadata = lambda metafile: DictValidator(PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
 
-def createmetafile(path, size_str):
-    try:
-        size = sd.sizeStr2Int(size_str)
-        oop.getGlobalProcPool().createSparseFile(path, size)
-    except Exception, e:
-        raise se.StorageDomainMetadataCreationError("create meta file failed: %s: %s" % (path, str(e)))
-
 class FileStorageDomain(sd.StorageDomain):
     def __init__(self, domainPath):
         # Using glob might look like the simplest thing to do but it isn't
@@ -117,12 +110,17 @@ class FileStorageDomain(sd.StorageDomain):
         """
         # create domain metadata folder
         metadataDir = os.path.join(domPath, sd.DOMAIN_META_DATA)
-        oop.getProcessPool(sdUUID).fileUtils.createdir(metadataDir, 0775)
 
-        createmetafile(os.path.join(metadataDir, sd.LEASES), sd.LEASES_SIZE)
-        createmetafile(os.path.join(metadataDir, sd.IDS), sd.IDS_SIZE)
-        createmetafile(os.path.join(metadataDir, sd.INBOX), sd.INBOX_SIZE)
-        createmetafile(os.path.join(metadataDir, sd.OUTBOX), sd.OUTBOX_SIZE)
+        procPool = oop.getProcessPool(sdUUID)
+        procPool.fileUtils.createdir(metadataDir, 0775)
+
+        for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
+            try:
+                procPool.createSparseFile(
+                                os.path.join(metadataDir, metaFile), 0, 0660)
+            except Exception, e:
+                raise se.StorageDomainMetadataCreationError(
+                    "create meta file '%s' failed: %s" % (metaFile, str(e)))
 
         metaFile = os.path.join(metadataDir, sd.METADATA)
 

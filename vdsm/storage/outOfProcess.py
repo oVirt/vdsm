@@ -65,8 +65,10 @@ def _directWriteLines(path, lines):
     with open_ex(path, "dw") as f:
         return f.writelines(lines)
 
-def _createSparseFile(path, size):
+def _createSparseFile(path, size, mode=None):
     with open(path, "w") as f:
+        if mode is not None:
+            mod_os.chmod(path, mode)
         f.truncate(size)
 
 def _readLines(path):
