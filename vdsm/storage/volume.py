@@ -547,7 +547,7 @@ class Volume:
             if not chainrw and rw and self.isInternal() and setrw and not self.recheckIfLeaf():
                 raise se.InternalVolumeNonWritable(self)
 
-        self.llPrepare(rw=rw, setrw=False)
+        self.llPrepare(rw=rw, setrw=setrw)
         try:
             # Mtime is the time of the last prepare for RW
             if rw:
