@@ -1038,6 +1038,8 @@ class Drive(vm.Device):
         else:
             diskelem.setAttribute('type', 'file')
             source.setAttribute('file', self.path)
+            if device == 'cdrom' or device == 'floppy':
+                source.setAttribute('startupPolicy', 'optional')
         diskelem.setAttribute('snapshot', 'no')
         diskelem.appendChild(source)
         target = doc.createElement('target')
