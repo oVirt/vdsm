@@ -1589,7 +1589,7 @@ class LibvirtVm(vm.Vm):
 
     def destroy(self):
         self.log.debug('destroy Called')
-        hooks.before_vm_destroy(self._dom.XMLDesc(0), self.conf)
+        hooks.before_vm_destroy(self._lastXMLDesc, self.conf)
         self.destroyed = True
 
         response = self.releaseVm()
