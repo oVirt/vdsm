@@ -1929,11 +1929,7 @@ class LibvirtVm(vm.Vm):
                 devPath = ''
 
             target = x.getElementsByTagName('target')
-            if target:
-                name = target[0].getAttribute('dev')
-            else:
-                name = ''
-
+            name = target[0].getAttribute('dev') if target else ''
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             readonly = bool(x.getElementsByTagName('readonly'))
             boot = x.getElementsByTagName('boot')
@@ -1973,8 +1969,8 @@ class LibvirtVm(vm.Vm):
                 iface = 'ide' if address['type'] == 'drive' else 'pci'
                 diskDev = {'type': vm.DISK_DEVICES, 'device': devType,
                            'iface': iface, 'path': devPath, 'name': name,
-                           'address': address, 'alias': alias}
-                diskDev['readonly'] = str(readonly)
+                           'address': address, 'alias': alias,
+                           'readonly': str(readonly)}
                 if bootOrder:
                     diskDev['bootOrder'] = bootOrder
                 self.conf['devices'].append(diskDev)
