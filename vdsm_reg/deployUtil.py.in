@@ -482,6 +482,11 @@ def setService(srvName, action):
         out, err, nReturn = _logExec([EX_SERVICE, srvName, action])
     elif os.path.exists(P_LIB_SYSTEMD + srvName):
         out, err, nReturn = _logExec([EX_SYSTEMCTL, action, srvCtlName])
+        # a hack until we have vdsm-tool to reconfigure Vdsm after installation
+        EX_SYSTEMD_VDSMD = '/lib/systemd/systemd-vdsmd'
+        if nReturn == 1 and srvName == 'vdsmd' \
+                and err.startswith('Unknown operation'):
+            out, err, nReturn = _logExec([EX_SYSTEMD_VDSMD, action])
     else:
         nReturn = 1
         err = "No such service: " + srvName
