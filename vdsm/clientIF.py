@@ -59,6 +59,142 @@ PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
 
+class BindingXMLRPC(object):
+    def __init__(self, cif, log, params):
+        """
+        Initialize the XMLRPC Bindings.
+
+        params must contain the following configuration parameters:
+          'ip' : The IP address to listen on
+          'port': The port number to listen on
+          'ssl': Enable SSL?
+          'vds_responsiveness_timeout': Server responsiveness timeout
+          'trust_store_path': Location of the SSL certificates
+        """
+        self.log = log
+        self.cif = cif
+        self._enabled = False
+
+        self.serverPort = params['port']
+        self.serverIP = self._getServerIP(params['ip'])
+        self.enableSSL = params['ssl']
+        self.serverRespTimeout = params['vds_responsiveness_timeout']
+        self.trustStorePath = params['trust_store_path']
+        self.server = self._createXMLRPCServer(params)
+
+    def start(self):
+        """
+        Register xml-rpc functions and serve clients until stopped
+        """
+
+        self._registerFunctions()
+        self.server.timeout = 1
+        self._enabled = True
+
+        while self._enabled:
+            try:
+                self.server.handle_request()
+            except Exception, e:
+                if e[0] != EINTR:
+                    self.log.error("xml-rpc handler exception", exc_info=True)
+
+    def prepareForShutdown(self):
+        self._enabled = False
+        self.server.server_close()
+
+    def getServerInfo(self):
+        """
+        Return the IP address and last client information
+        """
+        last = self.server.lastClient
+        return { 'management_ip': self.serverIP,
+                 'lastClient': last,
+                 'lastClientIface': caps._getIfaceByIP(last) }
+
+    def _getServerIP(self, addr=None):
+        """Return the IP address we should listen on"""
+
+        if addr:
+            return addr
+        try:
+            addr = netinfo.ifconfig()[DEFAULT_BRIDGE]['addr']
+        except:
+            pass
+        return addr
+
+    def _getKeyCertFilenames(self):
+        """
+        Get the locations of key and certificate files.
+        """
+        KEYFILE = self.trustStorePath + '/keys/vdsmkey.pem'
+        CERTFILE = self.trustStorePath + '/certs/vdsmcert.pem'
+        CACERT = self.trustStorePath + '/certs/cacert.pem'
+        return KEYFILE, CERTFILE, CACERT
+
+    def _createXMLRPCServer(self, params):
+        """
+        Create xml-rpc server over http or https.
+        """
+        threadLocal = self.cif.threadLocal
+        class LoggingMixIn:
+            def log_request(self, code='-', size='-'):
+                """Track from where client connections are coming."""
+                self.server.lastClient = self.client_address[0]
+                self.server.lastClientTime = time.time()
+                # FIXME: The editNetwork API uses this log file to
+                # determine if this host is still accessible.  We use a
+                # file (rather than an event) because editNetwork is
+                # performed by a separate, root process.  To clean this
+                # up we need to move this to an API wrapper that is only
+                # run for real clients (not vdsm internal API calls).
+                file(constants.P_VDSM_CLIENT_LOG, 'w')
+
+        server_address = (self.serverIP, int(self.serverPort))
+        if self.enableSSL:
+            class LoggingHandler(LoggingMixIn, SecureXMLRPCServer.SecureXMLRPCRequestHandler):
+                def setup(self):
+                    threadLocal.client = self.client_address[0]
+                    return SecureXMLRPCServer.SecureXMLRPCRequestHandler.setup(self)
+            KEYFILE, CERTFILE, CACERT = self._getKeyCertFilenames()
+            s = SecureXMLRPCServer.SecureThreadedXMLRPCServer(server_address,
+                        keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
+                        timeout=self.serverRespTimeout,
+                        requestHandler=LoggingHandler)
+        else:
+            class LoggingHandler(LoggingMixIn, SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
+                def setup(self):
+                    threadLocal.client = self.client_address[0]
+                    return SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.setup(self)
+            s = utils.SimpleThreadedXMLRPCServer(server_address,
+                        requestHandler=LoggingHandler, logRequests=True)
+        utils.closeOnExec(s.socket.fileno())
+
+        return s
+
+    def _registerFunctions(self):
+        def wrapIrsMethod(f):
+            def wrapper(*args, **kwargs):
+                if self.cif.threadLocal.client:
+                    f.im_self.log.debug('[%s]', self.cif.threadLocal.client)
+                return f(*args, **kwargs)
+            wrapper.__name__ = f.__name__
+            wrapper.__doc__ = f.__doc__
+            return wrapper
+
+        globalMethods = self.cif.getGlobalMethods()
+        irsMethods = self.cif.getIrsMethods()
+        if not irsMethods:
+            err = errCode['recovery'].copy()
+            err['status'] = err['status'].copy()
+            err['status']['message'] = 'Failed to initialize storage'
+            self.server._dispatch = lambda method, params: err
+
+        self.server.register_introspection_functions()
+        for (method, name) in globalMethods:
+            self.server.register_function(wrapApiMethod(method), name)
+        for (method, name) in irsMethods:
+            self.server.register_function(wrapIrsMethod(method), name)
+
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         try:
@@ -113,9 +249,6 @@ class clientIF:
         self._recovery = True
         self._libvirt = libvirtconnection.get()
         self._createLibvirtNetworks()
-        self.serverPort = config.get('addresses', 'management_port')
-        self.serverIP = self._getServerIP()
-        self.server = self._createXMLRPCServer()
         self._generationID = str(uuid.uuid4())
         self._initIRS()
         try:
@@ -143,6 +276,18 @@ class clientIF:
             if self.irs:
                 self.irs.prepareForShutdown()
             raise
+        self._prepareBindings()
+
+    def _prepareBindings(self):
+        self.bindings = {}
+        xmlrpc_params = {
+            'ip': config.get('addresses', 'management_ip'),
+            'port': config.get('addresses', 'management_port'),
+            'ssl': config.getboolean('vars', 'ssl'),
+            'vds_responsiveness_timeout':
+                config.getint('vars', 'vds_responsiveness_timeout'),
+            'trust_store_path': config.get('vars', 'trust_store_path') }
+        self.bindings['xmlrpc'] = BindingXMLRPC(self, log, xmlrpc_params)
 
     def _createLibvirtNetworks(self):
         """
@@ -155,18 +300,6 @@ class clientIF:
             lvNetwork = configNetwork.NETPREFIX + network
             if not lvNetwork in lvNetworks:
                 configNetwork.createLibvirtNetwork(network)
-
-    def _getServerIP(self):
-        """Return the IP address we should listen on"""
-
-        addr = config.get('addresses', 'management_ip')
-        if addr:
-            return addr
-        try:
-            addr = netinfo.ifconfig()[DEFAULT_BRIDGE]['addr']
-        except:
-            pass
-        return addr
 
     def prepareForShutdown(self):
         """
@@ -181,8 +314,8 @@ class clientIF:
             if not self._enabled:
                 self.log.debug('cannot run prepareForShutdown twice')
                 return errCode['unavail']
-            # stop listening ASAP
-            self.server.server_close()
+            for binding in self.bindings.values():
+                binding.prepareForShutdown()
             self._enabled = False
             self._hostStats.stop()
             if self.irs:
@@ -192,6 +325,8 @@ class clientIF:
         finally:
             self._shutdownSemaphore.release()
 
+    def serve(self):
+        self.bindings['xmlrpc'].start()
 
     def setLogLevel(self, level):
         """
@@ -209,81 +344,26 @@ class clientIF:
 
         return dict(status=doneCode)
 
-    def getKeyCertFilenames(self):
-        """
-        Get the locations of key and certificate files.
-        """
-        tsPath = config.get('vars', 'trust_store_path')
-        KEYFILE = tsPath + '/keys/vdsmkey.pem'
-        CERTFILE = tsPath + '/certs/vdsmcert.pem'
-        CACERT = tsPath + '/certs/cacert.pem'
-        return KEYFILE, CERTFILE, CACERT
-
-    def _createXMLRPCServer(self):
-        """
-        Create xml-rpc server over http or https.
-        """
-        cif = self
-        class LoggingMixIn:
-            def log_request(self, code='-', size='-'):
-                """Track from where client connections are coming."""
-                self.server.lastClient = self.client_address[0]
-                self.server.lastClientTime = time.time()
-                file(constants.P_VDSM_CLIENT_LOG, 'w')
-
-        server_address = (self.serverIP, int(self.serverPort))
-        if config.getboolean('vars', 'ssl'):
-            class LoggingHandler(LoggingMixIn, SecureXMLRPCServer.SecureXMLRPCRequestHandler):
-                def setup(self):
-                    cif.threadLocal.client = self.client_address[0]
-                    return SecureXMLRPCServer.SecureXMLRPCRequestHandler.setup(self)
-            KEYFILE, CERTFILE, CACERT = self.getKeyCertFilenames()
-            s = SecureXMLRPCServer.SecureThreadedXMLRPCServer(server_address,
-                        keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
-                        timeout=config.getint('vars',
-                                              'vds_responsiveness_timeout'),
-                        requestHandler=LoggingHandler)
-        else:
-            class LoggingHandler(LoggingMixIn, SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
-                def setup(self):
-                    cif.threadLocal.client = self.client_address[0]
-                    return SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.setup(self)
-            s = utils.SimpleThreadedXMLRPCServer(server_address,
-                        requestHandler=LoggingHandler, logRequests=True)
-        utils.closeOnExec(s.socket.fileno())
-
-        return s
-
     def _initIRS(self):
-        def wrapIrsMethod(f):
-            def wrapper(*args, **kwargs):
-                if self.threadLocal.client:
-                    f.im_self.log.debug('[%s]', self.threadLocal.client)
-                return f(*args, **kwargs)
-            wrapper.__name__ = f.__name__
-            wrapper.__doc__ = f.__doc__
-            return wrapper
         self.irs = None
         if config.getboolean('irs', 'irs_enable'):
             try:
                 self.irs = Dispatcher(HSM())
-                for name in dir(self.irs):
-                    method = getattr(self.irs, name)
-                    if callable(method) and name[0] != '_':
-                        self.server.register_function(wrapIrsMethod(method), name)
             except:
                 self.log.error(traceback.format_exc())
+
+    def getIrsMethods(self):
         if not self.irs:
-            err = errCode['recovery'].copy()
-            err['status'] = err['status'].copy()
-            err['status']['message'] = 'Failed to initialize storage'
-            self.server._dispatch = lambda method, params: err
+            return None
+        methodList = []
+        for name in dir(self.irs):
+            method = getattr(self.irs, name)
+            if callable(method) and name[0] != '_':
+                methodList.append((method, name))
+        return methodList
 
-
-    def _registerFunctions(self):
-        self.server.register_introspection_functions()
-        for method, name in (
-                (self.destroy, 'destroy'),
+    def getGlobalMethods(self):
+        return ((self.destroy, 'destroy'),
                 (self.create, 'create'),
                 (self.list, 'list'),
                 (self.pause, 'pause'),
@@ -319,30 +399,8 @@ class clientIF:
                 (self.prepareForShutdown, 'prepareForShutdown'),
                 (self.setLogLevel, 'setLogLevel'),
                 (self.hotplugDisk, 'hotplugDisk'),
-                (self.hotunplugDisk, 'hotunplugDisk'),
-                        ):
-           self.server.register_function(wrapApiMethod(method), name)
+                (self.hotunplugDisk, 'hotunplugDisk'))
 
-
-    def serve(self):
-        """
-        Register xml-rpc functions and serve clients until stopped
-        """
-
-        try:
-            self._registerFunctions()
-            self.server.timeout = 1
-        except:
-            if self.irs:
-                self.irs.prepareForShutdown()
-            raise
-
-        while self._enabled:
-            try:
-                self.server.handle_request()
-            except Exception, e:
-                if e[0] != EINTR:
-                    self.log.error("xml-rpc handler exception", exc_info=True)
 
     #Global services
 
@@ -829,12 +887,7 @@ class clientIF:
         Report host capabilities.
         """
         c = caps.get()
-
-        c['management_ip'] = self.serverIP
-
-        if hasattr(self, 'server') and hasattr(self.server, 'lastClient'):
-            c['lastClient'] = self.server.lastClient
-            c['lastClientIface'] = caps._getIfaceByIP(self.server.lastClient)
+        c.update(self.bindings['xmlrpc'].getServerInfo())
 
         return {'status': doneCode, 'info': c}
 

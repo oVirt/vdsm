@@ -104,6 +104,8 @@ class MigrationSourceThread(threading.Thread):
     def _setupVdsConnection(self):
         if self._mode == 'file': return
         self.remoteHost = self._dst.split(':')[0]
+        # FIXME: The port will depend on the binding being used.
+        # This assumes xmlrpc
         self.remotePort = self._vm.cif.serverPort
         try:
             self.remotePort = self._dst.split(':')[1]
