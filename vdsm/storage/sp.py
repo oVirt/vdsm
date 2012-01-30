@@ -49,8 +49,6 @@ import volume
 import mount
 from domainMonitor import DomainMonitor
 
-BLANK_POOL_UUID = '00000000-0000-0000-0000-000000000000'
-
 POOL_MASTER_DOMAIN = 'mastersd'
 
 MAX_POOL_DESCRIPTION_SIZE = 50
@@ -1062,7 +1060,7 @@ class StoragePool:
             # AttributeError: Unreloadable blockSD
             # Timeout: NFS unreachable domain
             self.log.warn("deactivating missing domain %s", sdUUID, exc_info=True)
-            if new_msdUUID != BLANK_POOL_UUID:
+            if new_msdUUID != sd.BLANK_UUID:
                 #Trying to migrate master failed to reach actual msd.
                 raise se.StorageDomainAccessError(sdUUID)
         else:
@@ -1632,7 +1630,7 @@ class StoragePool:
         :rtype: dict
         """
         srcImageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
-        if dstSdUUID not in [sdUUID, sd.BLANK_UUID]:
+        if dstSdUUID not in (sdUUID, sd.BLANK_UUID):
             dstImageResourcesNamespace = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
         else:
             dstImageResourcesNamespace = srcImageResourcesNamespace
