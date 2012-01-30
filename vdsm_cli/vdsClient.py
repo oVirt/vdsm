@@ -179,6 +179,18 @@ class service:
 
         return self.ExecAndExit(self.s.create(params))
 
+    def hotplugNic(self, args):
+        nic = self._parseDriveSpec(args[1])
+        nic['type'] = 'interface'
+        params={'vmId': args[0], 'nic': nic}
+        return self.ExecAndExit(self.s.hotplugNic(params))
+
+    def hotunplugNic(self, args):
+        nic = self._parseDriveSpec(args[1])
+        nic['type'] = 'interface'
+        params={'vmId': args[0], 'nic': nic}
+        return self.ExecAndExit(self.s.hotunplugNic(params))
+
     def hotplugDisk(self, args):
         drive = self._parseDriveSpec(args[1])
         drive['type'] = 'disk'
@@ -1525,12 +1537,32 @@ if __name__ == '__main__':
                         'o   cpuType : emulated cpu (with optional flags)',
                         'o   emulatedMachine : passed as qemu\'s -M',
                         )),
+        'hotplugNic':  ( serv.hotplugNic,
+                         ('<vmId> <nicspec>',
+                          'Hotplug NIC to existing VM',
+                          'nicspec parameters list: r=required, o=optional',
+                          'r   device: bridge|sriov|vnlink|bridgeless.',
+                          'r   network: network name',
+                          'r   macAddr: mac address',
+                          'r   nicModel: pv|rtl8139|e1000',
+                          'o   bootOrder: <int>  - global boot order across all bootable devices'
+                          )),
+        'hotunplugNic':  ( serv.hotunplugNic,
+                         ('<vmId> <nicspec>',
+                          'Hotunplug NIC from existing VM',
+                          'nicspec parameters list: r=required, o=optional',
+                          'r   device: bridge|sriov|vnlink|bridgeless.',
+                          'r   network: network name',
+                          'r   macAddr: mac address',
+                          'r   nicModel: pv|rtl8139|e1000',
+                          'o   bootOrder: <int>  - global boot order across all bootable devices'
+                          )),
         'hotplugDisk':  ( serv.hotplugDisk,
                          ('<vmId> <drivespec>',
                           'Hotplug disk to existing VM',
                           'drivespec parameters list: r=required, o=optional',
                           'r   iface:<ide|virtio> - Unique identification of the existing VM.',
-                          'r   index=<int> - disk index unique per interface virtio|ide',
+                          'r   index:<int> - disk index unique per interface virtio|ide',
                           'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|[GUID:guid]|[UUID:uuid]',
                           'r   format: cow|raw',
                           'r   readonly: True|False   - default is False',
@@ -1544,7 +1576,7 @@ if __name__ == '__main__':
                           'Hotunplug disk from existing VM',
                           'drivespec parameters list: r=required, o=optional',
                           'r   iface:<ide|virtio> - Unique identification of the existing VM.',
-                          'r   index=<int> - disk index unique per interface virtio|ide',
+                          'r   index:<int> - disk index unique per interface virtio|ide',
                           'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|[GUID:guid]|[UUID:uuid]',
                           'r   format: cow|raw',
                           'r   readonly: True|False   - default is False',
