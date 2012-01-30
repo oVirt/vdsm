@@ -242,14 +242,20 @@ def get():
     ifaces = ifconfig()
     routes = getRoutes()
     # FIXME handle bridge/nic missing from ifconfig
-    d['networks'] = dict([ (bridge, {'ports': ports(bridge),
-                                     'stp': bridge_stp_state(bridge),
-                                     'addr': ifaces[bridge]['addr'],
-                                     'netmask': ifaces[bridge]['netmask'],
-                                     'gateway': routes.get(bridge, '0.0.0.0'),
-                                     'cfg': getIfaceCfg(bridge),
-                                     'mtu': getMtu(bridge)})
-                           for bridge in bridges() ])
+    d['networks'] = {}
+    nets = networks()
+    for netname in nets.iterkeys():
+        d['networks'][netname] = {}
+        if nets[netname]['bridged']:
+            d['networks'][netname] = { 'ports': ports(netname),
+                    'stp': bridge_stp_state(netname),
+                    'addr': ifaces[netname]['addr'],
+                    'netmask': ifaces[netname]['netmask'],
+                    'gateway': routes.get(netname, '0.0.0.0'),
+                    'mtu': getMtu(netname), 'cfg': getIfaceCfg(netname) }
+        else:
+            d['networks'][netname] = { 'interface': nets[netname]['interface'] }
+        d['networks'][netname]['bridged'] = str(nets[netname]['bridged'])
     d['nics'] = dict([ (nic, {'speed': speed(nic),
                               'addr': ifaces[nic]['addr'],
                               'netmask': ifaces[nic]['netmask'],
@@ -350,7 +356,14 @@ class NetInfo(object):
         vlan = None
         bonding = None
         nics = []
-        for port in self.networks[network]['ports']:
+
+        if networks()[network]['bridged']:
+            ports =  self.networks[network]['ports']
+        else:
+            ports = []
+            interface = networks()[network]['interface']
+            ports.append(interface)
+        for port in ports:
             if port in self.vlans:
                 assert vlan is None
                 nic, vlan = port.split('.',1)
@@ -364,3 +377,11 @@ class NetInfo(object):
                 nics.append(port)
         return nics, vlan, bonding
 
+    def getBridgelessNetworks(self):
+        """
+        Get list of birdgeless networks
+
+        :returns: list of networks name
+        :rtype: List
+        """
+        return [ netname for (netname, net) in networks().iteritems() if not 'bridge' in net ]

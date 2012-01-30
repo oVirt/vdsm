@@ -25,20 +25,21 @@ import time
 import logging
 from collections import defaultdict
 import threading
+from xml.sax.saxutils import escape
+
 import libvirt
 
 import constants
 import utils
 import neterrors as ne
 import define
-from netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR, LIBVIRT_NET_PREFIX
+from netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR, LIBVIRT_NET_PREFIX, networks
 import libvirtconnection
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
 MAX_VLAN_ID = 4094
 MAX_BRIDGE_NAME_LEN = 15
 ILLEGAL_BRIDGE_CHARS = ':. \t'
-NETPREFIX = 'vdsm-'
 
 class ConfigNetworkError(Exception):
     def __init__(self, errCode, message):
@@ -246,14 +247,16 @@ class ConfigWriter(object):
         open(conffile, 'w').write(s)
         os.chmod(conffile, 0664)
 
-    def addVlan(self, vlanId, iface, bridge, mtu=None):
+    def addVlan(self, vlanId, iface, network, mtu=None, bridged=True):
         "Based on addNetwork"
         conffile = self.NET_CONF_PREF + iface + '.' + vlanId
         self._backup(conffile)
-        content = """DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\nBRIDGE=%s\nNM_CONTROLLED=no\n"""
+        content = """DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\nNM_CONTROLLED=no\n"""
         if mtu:
             content = content + 'MTU=%d\n' % mtu
-        open(conffile, 'w').write(content % (pipes.quote(iface), vlanId, pipes.quote(bridge)))
+        if bridged:
+            content = content + 'BRIDGE=%s\n' % pipes.quote(network)
+        open(conffile, 'w').write(content % (pipes.quote(iface), vlanId))
         os.chmod(conffile, 0664)
 
     def addBonding(self, bonding, bridge=None, bondingOptions=None, mtu=None):
@@ -419,7 +422,7 @@ class ConfigWriter(object):
             return
 
         if bonding:
-            networks, vlans = _netinfo.getNetworksAndVlansForBonding(bonding)
+            _, vlans = _netinfo.getNetworksAndVlansForBonding(bonding)
             delvlan = bonding + '.' + delvlan
         else:
             vlans = _netinfo.getVlansForNic(nics[0])
@@ -489,14 +492,19 @@ def validateVlanId(vlan):
         raise ConfigNetworkError(ne.ERR_BAD_VLAN, 'vlan id must be a number')
 
 
-def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask, gateway, bondingOptions):
+def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask, gateway,
+        bondingOptions, bridged=True, skipLibvirt=False):
     if (vlan or bonding) and not nics:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'vlan/bonding definition requires nics. got: %r'%(nics,))
 
      # Check bridge
-    validateBridgeName(bridge)
-    if bridge in _netinfo.networks:
-        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'Bridge already exists')
+    if bridged:
+        validateBridgeName(bridge)
+        if bridge in _netinfo.networks:
+            raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'Bridge already exists')
+    elif not skipLibvirt:
+        if bridge in _netinfo.getBridgelessNetworks():
+            raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'network already exists')
 
     # vlan
     if vlan:
@@ -512,7 +520,7 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
     # Check ip, netmask, gateway
     if ipaddr:
         if not netmask:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Must specify netmask to configure ip for bridge")
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Must specify netmask to configure ip for network")
         validateIpAddress(ipaddr)
         validateNetmask(netmask)
         if gateway:
@@ -529,7 +537,7 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
         bridgesForNic = list(_netinfo.getNetworksForNic(nic))
         if bridgesForNic:
             assert len(bridgesForNic) == 1
-            raise ConfigNetworkError(ne.ERR_USED_NIC, "nic %r is already bound to bridge %r"%(nic, bridgesForNic[0]))
+            raise ConfigNetworkError(ne.ERR_USED_NIC, "nic %r is already bound to network %r"%(nic, bridgesForNic[0]))
 
     if bonding and not vlan:
         for nic in nics:
@@ -543,7 +551,7 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
         if vlan:    # Make sure all connected interfaces (if any) are vlans
             for (bonding_bridge, bonding_vlan) in bonding_ifaces:
                 if bonding_vlan is None:
-                    raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'bonding %r is already member of bridge %r'%(
+                    raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'bonding %r is already member of network %r'%(
                                              bonding, bonding_bridge ))
         else:
             bonding_ifaces = list(bonding_ifaces)
@@ -561,10 +569,12 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
         if bondingForNics and bondingForNics != bonding:
             raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already enslaved to %s' % (nic, bondingForNics))
 
-def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, mtu=None,
-               gateway=None, force=False, configWriter=None, bondingOptions=None, **options):
+def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, mtu=None,
+               gateway=None, force=False, configWriter=None, bondingOptions=None, bridged=True, **options):
     nics = nics or ()
     _netinfo = NetInfo()
+    skipLibvirt = utils.tobool(options.get('skipLibvirt', False))
+    bridged = utils.tobool(bridged)
 
     if mtu:
         mtu = int(mtu)
@@ -572,11 +582,13 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
     # Validation
     if not utils.tobool(force):
         logging.debug('validating bridge...')
-        _addNetworkValidation(_netinfo, bridge, vlan=vlan, bonding=bonding, nics=nics,
-                              ipaddr=ipaddr, netmask=netmask, gateway=gateway,
-                              bondingOptions=bondingOptions)
-    logging.info("Adding bridge %s with vlan=%s, bonding=%s, nics=%s. bondingOptions=%s, options=%s, mtu=%s"
-                 %(bridge, vlan, bonding, nics, bondingOptions, options, mtu))
+        _addNetworkValidation(_netinfo, bridge=network if bridged else None,
+                vlan=vlan, bonding=bonding, nics=nics, ipaddr=ipaddr,
+                netmask=netmask, gateway=gateway, bondingOptions=bondingOptions,
+                bridged=bridged, skipLibvirt=skipLibvirt)
+
+    logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s. bondingOptions=%s, mtu=%s, bridged=%s, options=%s"
+                 %(network, vlan, bonding, nics, bondingOptions, str(mtu), str(bridged), options))
 
     if configWriter is None:
         configWriter = ConfigWriter()
@@ -585,23 +597,7 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
     if mtu and vlan:
         prevmtu = configWriter.getMaxMtu(nics, mtu)
 
-    configWriter.addBridge(bridge, ipaddr=ipaddr, netmask=netmask, mtu=mtu,
-                           gateway=gateway, **options)
-    ifaceBridge = bridge
-    if vlan:
-        configWriter.addVlan(vlan, bonding or nics[0], bridge, mtu=mtu)
-        # since we have vlan device, it is connected to the bridge. other
-        # interfaces should be connected to the bridge through vlan, and not
-        # directly.
-        ifaceBridge = None
-
-    if bonding:
-        configWriter.addBonding(bonding, ifaceBridge, bondingOptions=bondingOptions, mtu=mtu)
-        for nic in nics:
-            configWriter.addNic(nic, bonding=bonding, mtu=max(prevmtu, mtu))
-    else:
-        for nic in nics:
-            configWriter.addNic(nic, bridge=ifaceBridge, mtu=max(prevmtu, mtu))
+    iface = bonding or nics[0]
 
     # take down nics that need to be changed
     vlanedIfaces = [v['iface'] for v in _netinfo.vlans.values()]
@@ -609,32 +605,56 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
         for nic in nics:
             if nic not in vlanedIfaces:
                 ifdown(nic)
-    ifdown(bridge)
+
+    if bridged:
+        configWriter.addBridge(network, ipaddr=ipaddr, netmask=netmask, mtu=mtu,
+                gateway=gateway, **options)
+        ifdown(network)
+
+    # since we have vlan device, it is connected to the bridge. other
+    # interfaces should be connected to the bridge through vlan, and not directly.
+    brName = network if bridged and not vlan else None
+
     # nics must be activated in the same order of boot time to expose the correct
     # MAC address.
     for nic in nicSort(nics):
+        if not bonding and bridged:
+            configWriter.addNic(nic, bridge=brName, mtu=max(prevmtu, mtu))
         ifup(nic)
     if bonding:
+        configWriter.addBonding(bonding, bridge=brName, bondingOptions=bondingOptions, mtu=mtu)
+        for nic in nics:
+            configWriter.addNic(nic, bonding=bonding, mtu=max(prevmtu, mtu))
         ifup(bonding)
     if vlan:
+        iface += '.' + vlan
+        configWriter.addVlan(vlan, bonding or nics[0], network=network if bridged else None, mtu=mtu, bridged=bridged)
+        # since we have vlan device, it is connected to the network. other
+        # interfaces should be connected to the network through vlan, and not
+        # directly.
         ifup((bonding or nics[0]) + '.' + vlan)
-    if options.get('bootproto') == 'dhcp' and not utils.tobool(options.get('blockingdhcp')):
+    if bridged:
+        ifup(network)
+    if options.get('bootproto') == 'dhcp' and not utils.tobool(options.get('blockingdhcp')) \
+            and bridged:
         # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
-        t = threading.Thread(target=ifup, name='ifup-waiting-on-dhcp', args=(bridge,))
+        t = threading.Thread(target=ifup, name='ifup-waiting-on-dhcp', args=(network,))
         t.daemon = True
         t.start()
-    else:
-        ifup(bridge)
 
     # add libvirt network
-    if not utils.tobool(options.get('skipLibvirt', False)):
-        createLibvirtNetwork(bridge)
+    if not skipLibvirt:
+        createLibvirtNetwork(network, bridged, iface)
 
-def createLibvirtNetwork(bridge):
+def createLibvirtNetwork(network, bridged=True, iface=None):
     conn = libvirtconnection.get()
-    netName = NETPREFIX + bridge
-    netXml = '''<network><name>%s</name><forward mode='bridge'/>
-                <bridge name='%s'/></network>''' % (netName, bridge)
+    netName = LIBVIRT_NET_PREFIX + network
+    if bridged:
+        netXml = '''<network><name>%s</name><forward mode='bridge'/>
+                    <bridge name='%s'/></network>''' % (escape(netName), escape(network))
+    else:
+        netXml = '''<network><name>%s</name><forward mode='passthrough'>
+                    <interface dev='%s'/></forward></network>''' % (escape(netName), escape(iface))
     net = conn.networkDefineXML(netXml)
     net.create()
     net.setAutostart(1)
@@ -684,16 +704,16 @@ def listNetworks():
     print "Nics:", _netinfo.nics.keys()
     print "Bondings:", _netinfo.bondings.keys()
 
-def delNetwork(bridge, force=False, configWriter=None, **options):
+def delNetwork(network, force=False, configWriter=None, **options):
     _netinfo = NetInfo()
 
-    validateBridgeName(bridge)
-    if bridge not in _netinfo.networks:
-        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete bridge %r: It doesn't exist"%bridge)
+    validateBridgeName(network)
+    if network not in networks().keys():
+        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network %r: It doesn't exist" % network)
+    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
+    bridged = networks()[network]['bridged']
 
-    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(bridge)
-
-    logging.info("Removing bridge %s with vlan=%s, bonding=%s, nics=%s. options=%s"%(bridge, vlan, bonding, nics, options))
+    logging.info("Removing network %s with vlan=%s, bonding=%s, nics=%s. options=%s"%(network, vlan, bonding, nics, options))
 
     if not utils.tobool(force):
         if bonding:
@@ -703,41 +723,38 @@ def delNetwork(bridge, force=False, configWriter=None, **options):
         if vlan:
             #assertVlan(vlan)
             validateVlanId(vlan)
-        assertBridgeClean(bridge, vlan, bonding, nics)
+        if bridged:
+            assertBridgeClean(network, vlan, bonding, nics)
 
     if configWriter is None:
         configWriter = ConfigWriter()
 
-    configWriter.setNewMtu(bridge)
+    if not utils.tobool(options.get('skipLibvirt', False)):
+        removeLibvirtNetwork(network)
 
-    if bridge:
-        ifdown(bridge)
-        subprocess.call([constants.EXT_BRCTL, 'delbr', bridge])
+    if bridged:
+        configWriter.setNewMtu(network)
+
+    if network and bridged:
+        ifdown(network)
+        subprocess.call([constants.EXT_BRCTL, 'delbr', network])
+        configWriter.removeBridge(network)
     if vlan:
         vlandev = (bonding or nics[0]) + '.' + vlan
         ifdown(vlandev)
         subprocess.call([constants.EXT_VCONFIG, 'rem', vlandev], stderr=subprocess.PIPE)
-    if bonding:
-        if not bondingOtherUsers(bridge, vlan, bonding):
-            ifdown(bonding)
-    for nic in nics:
-        if not nicOtherUsers(bridge, vlan, bonding, nic):
-            ifdown(nic)
-    for nic in nics:
-        if nicOtherUsers(bridge, vlan, bonding, nic):
-            continue
-
-        configWriter.removeNic(nic)
-    if bonding:
-        if not bondingOtherUsers(bridge, vlan, bonding):
-            configWriter.removeBonding(bonding)
-    if vlan:
         configWriter.removeVlan(vlan, bonding or nics[0])
-    if bridge:
-        configWriter.removeBridge(bridge)
-
-    if not utils.tobool(options.get('skipLibvirt', False)):
-        removeLibvirtNetwork(bridge)
+    if bonding:
+        if not bridged or not bondingOtherUsers(network, vlan, bonding):
+            ifdown(bonding)
+        if not bridged or not bondingOtherUsers(network, vlan, bonding):
+            configWriter.removeBonding(bonding)
+    for nic in nics:
+        if not bridged or not nicOtherUsers(network, vlan, bonding, nic):
+            ifdown(nic)
+        if bridged and nicOtherUsers(network, vlan, bonding, nic):
+            continue
+        configWriter.removeNic(nic)
 
 def clientSeen(timeout):
     start = time.time()

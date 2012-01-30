@@ -115,7 +115,7 @@ class clientIF:
         bridges = netinfo.bridges()
         for bridge in bridges:
             if not bridge in nets:
-                configNetwork.createLibvirtNetwork(bridge)
+                configNetwork.createLibvirtNetwork(network=bridge, bridged=True)
         # remove bridged networks that their bridge not exists
         #TODO:
         # this should probably go into vdsm-restore-net script
