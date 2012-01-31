@@ -340,7 +340,7 @@ class VM(object):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required parameters: vmId, drive'}}
         try:
-            curVm = self.vmContainer[self._UUID]
+            curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
             self.log.warning("vm %s doesn't exists", self._UUID)
             return errCode['noVM']
@@ -355,7 +355,7 @@ class VM(object):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required parameters: vmId, drive'}}
         try:
-            curVm = self.vmContainer[self._UUID]
+            curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
             self.log.warning("vm %s doesn't exists", self._UUID)
             return errCode['noVM']
@@ -396,7 +396,7 @@ class VM(object):
         Cancel a currently outgoing migration process.
         """
         try:
-            v = self.vmContainer[vmId]
+            v = self._cif.vmContainer[vmId]
         except KeyError:
             return errCode['noVM']
         return v.migrateCancel()
