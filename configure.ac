@@ -173,4 +173,5 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm/sos/Makefile
+	tests/Makefile
 ])

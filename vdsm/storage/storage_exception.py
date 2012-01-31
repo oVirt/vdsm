@@ -1361,22 +1361,3 @@ class ResourceReferenceInvalid(GeneralException):
 class ResourceAcqusitionFailed(GeneralException):
     code = 855
     message = "Could not acquire resource. Probably resource factory threw an exception."
-
-if __name__ == "__main__":
-    import types
-    codes = {}
-    for name, obj in globals().items():
-        if not isinstance(obj, types.TypeType):
-            continue
-
-        if not issubclass(obj, GeneralException):
-            continue
-
-        if obj.code in codes:
-            raise NameError, "Collision found: code %s is used by %s and %s" \
-                             % (obj.code, name, codes[obj.code])
-        if obj.code >= 5000:
-            raise NameError, "Collision with RHEVM found: %s code %s: " \
-                             "between 5000 and 6000" % (name, obj.code)
-
-        codes[obj.code] = name
