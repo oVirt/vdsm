@@ -730,6 +730,8 @@ def _getBridgeParams(bridgeName):
                 continue
             elif line.startswith("DEVICE=") or line.startswith("HWADDR="):
                 continue
+            elif line.startswith("NM_CONTROLLED="):
+                continue
             elif line.startswith("TYPE="):
                 t = line.split("=", 1)[1].strip()
                 fIsBridgeDevice = (t == "Bridge")
