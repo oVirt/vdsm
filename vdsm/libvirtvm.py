@@ -1280,8 +1280,12 @@ class LibvirtVm(vm.Vm):
         self._domDependentInit()
 
     def hotplugDisk(self, params):
+        if self.isMigrating():
+           return errCode['migInProgress']
+
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
+
         if vm.isVdsmImage(diskParams):
             self._normalizeVdsmImg(diskParams)
 
@@ -1311,6 +1315,9 @@ class LibvirtVm(vm.Vm):
         return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
 
     def hotunplugDisk(self, params):
+        if self.isMigrating():
+           return errCode['migInProgress']
+
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
@@ -1523,6 +1530,9 @@ class LibvirtVm(vm.Vm):
         snap = xml.dom.minidom.Element('domainsnapshot')
         disks = xml.dom.minidom.Element('disks')
         newDrives = {}
+
+        if self.isMigrating():
+           return errCode['migInProgress']
 
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)

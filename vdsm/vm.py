@@ -260,6 +260,7 @@ class Vm(object):
     log = logging.getLogger("vm.Vm")
     _ongoingCreations = threading.BoundedSemaphore(caps.CpuInfo().cores())
     MigrationSourceThreadClass = MigrationSourceThread
+
     def __init__(self, cif, params):
         """
         Initialize a new VM instance.
@@ -946,7 +947,7 @@ class Vm(object):
         try:
             if self._vmStats:
                 decStats = self._vmStats.get()
-                if (not self._migrationSourceThread.isAlive()
+                if (not self.isMigrating()
                     and decStats['statsAge'] > config.getint('vars',
                                                        'vm_command_timeout')):
                     stats['monitorResponse'] = '-1'
@@ -968,7 +969,7 @@ class Vm(object):
 
         if self.lastStatus in ('Saving State', 'Restoring state', 'Migration Source', 'Migration Destination', 'Paused'):
             stats['status'] = self.lastStatus
-        elif self._migrationSourceThread.isAlive():
+        elif self.isMigrating():
             if self._migrationSourceThread._mode == 'file':
                 stats['status'] = 'Saving State'
             else:
@@ -993,10 +994,13 @@ class Vm(object):
         stats['memUsage'] = utils.convertToStr(int(memUsage))
         return stats
 
+    def isMigrating(self):
+        return self._migrationSourceThread.isAlive()
+
     def migrate(self, params):
         self._acquireCpuLockWithTimeout()
         try:
-            if self._migrationSourceThread.isAlive():
+            if self.isMigrating():
                 self.log.warning('vm already migrating')
                 return errCode['exist']
             # while we were blocking, another migrationSourceThread could have
