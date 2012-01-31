@@ -237,9 +237,11 @@ class ConfigWriter(object):
             if bootproto:
                 s = s + 'BOOTPROTO=%s\n' % pipes.quote(bootproto)
         s += 'DELAY=%s\n' % pipes.quote(delay)
+        s += 'NM_CONTROLLED=no\n'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
                      'force', 'blockingdhcp',
-                     'connectivityCheck', 'connectivityTimeout']
+                     'connectivityCheck', 'connectivityTimeout',
+                     'skipLibvirt']
         for k in set(kwargs.keys()).difference(set(BLACKLIST)):
             if re.match('^[a-zA-Z_]\w*$', k):
                 s += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
@@ -254,7 +256,7 @@ class ConfigWriter(object):
         "Based on addNetwork"
         conffile = self.NET_CONF_PREF + iface + '.' + vlanId
         self._backup(conffile)
-        open(conffile, 'w').write("""DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\nBRIDGE=%s\n""" % (pipes.quote(iface), vlanId, pipes.quote(bridge)))
+        open(conffile, 'w').write("""DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\nBRIDGE=%s\nNM_CONTROLLED=no\n""" % (pipes.quote(iface), vlanId, pipes.quote(bridge)))
         os.chmod(conffile, 0664)
 
     def addBonding(self, bonding, bridge=None, bondingOptions=None):
@@ -267,7 +269,8 @@ class ConfigWriter(object):
                 f.write('BRIDGE=%s\n' % pipes.quote(bridge))
             if not bondingOptions:
                 bondingOptions = 'mode=802.3ad miimon=150'
-            f.write('BONDING_OPTS=%s' % pipes.quote(bondingOptions or ''))
+            f.write('BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or ''))
+            f.write('NM_CONTROLLED=no\n')
         os.chmod(conffile, 0664)
         # create the bonding device to avoid initscripts noise
         if bonding not in open('/sys/class/net/bonding_masters').read().split():
@@ -288,6 +291,7 @@ class ConfigWriter(object):
             if bonding:
                 f.write('MASTER=%s\n' % pipes.quote(bonding))
                 f.write('SLAVE=yes\n')
+            f.write('NM_CONTROLLED=no\n')
         os.chmod(conffile, 0664)
 
     def removeNic(self, nic):
