@@ -332,6 +332,36 @@ class VM(object):
             response['status']['message'] = 'Hibernation process starting'
         return response
 
+    def hotplugNic(self, params):
+        try:
+            utils.validateMinimalKeySet(params, ('vmId', 'nic'))
+        except ValueError:
+            self.log.error('Missing one of required parameters: vmId, nic')
+            return {'status': {'code': errCode['MissParam']['status']['code'],
+                               'message': 'Missing one of required parameters: vmId, nic'}}
+        try:
+            curVm = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            self.log.warning("vm %s doesn't exists", self._UUID)
+            return errCode['noVM']
+
+        return curVm.hotplugNic(params)
+
+    def hotunplugNic(self, params):
+        try:
+            utils.validateMinimalKeySet(params, ('vmId', 'nic'))
+        except ValueError:
+            self.log.error('Missing one of required parameters: vmId, nic')
+            return {'status': {'code': errCode['MissParam']['status']['code'],
+                               'message': 'Missing one of required parameters: vmId, nic'}}
+        try:
+            curVm = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            self.log.warning("vm %s doesn't exists", self._UUID)
+            return errCode['noVM']
+
+        return curVm.hotunplugNic(params)
+
     def hotplugDisk(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'drive'))

@@ -1279,6 +1279,87 @@ class LibvirtVm(vm.Vm):
             return
         self._domDependentInit()
 
+    def hotplugNic(self, params):
+        if self.isMigrating():
+           return errCode['migInProgress']
+
+        nicParams = params.get('nic', {})
+        nic = NetworkInterfaceDevice(self.conf, self.log, **nicParams)
+        nicXml =  nic.getXML().toprettyxml(encoding='utf-8')
+        self.log.debug("Hotplug NIC xml: %s" % (nicXml))
+
+        try:
+            self._dom.attachDevice(nicXml)
+        except libvirt.libvirtError, e:
+            self.log.error("Hotplug failed", exc_info=True)
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return errCode['noVM']
+            return {'status' : {'code': errCode['hotplugNic']['status']['code'],
+                                'message': e.message}}
+        else:
+            # FIXME!  We may have a problem here if vdsm dies right after
+            # we sent command to libvirt and before save conf. In this case
+            # we will gather almost all needed info about this NIC from
+            # the libvirt during recovery process.
+            self._devices[vm.NIC_DEVICES].append(nic)
+            self.conf['devices'].append(nicParams)
+            self.saveState()
+            self._getUnderlyingNetworkInterfaceInfo()
+
+        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+
+    def hotunplugNic(self, params):
+        if self.isMigrating():
+           return errCode['migInProgress']
+
+        nicParams = params.get('nic', {})
+
+        # Find NIC object in vm's NICs list
+        nic = None
+        for dev in self._devices[vm.NIC_DEVICES][:]:
+            if dev.macAddr.lower() == nicParams['macAddr'].lower():
+                nic = dev
+                break
+
+        if nic:
+            nicXml = nic.getXML().toprettyxml(encoding='utf-8')
+            self.log.debug("Hotunplug NIC xml: %s", nicXml)
+        else:
+            self.log.error("Hotunplug NIC failed - NIC not found: %s", nicParams)
+            return {'status' : {'code': errCode['hotunplugNic']['status']['code'],
+                                'message': "NIC not found"}}
+
+        # Remove found NIC from vm's NICs list
+        if nic:
+            self._devices[vm.NIC_DEVICES].remove(nic)
+        # Find and remove NIC device from vm's conf
+        nicDev = None
+        for dev in self.conf['devices'][:]:
+            if dev['type'] == vm.NIC_DEVICES and \
+                        dev['macAddr'].lower() == nicParams['macAddr'].lower():
+                self.conf['devices'].remove(dev)
+                nicDev = dev
+                break
+
+        self.saveState()
+
+        try:
+            self._dom.detachDevice(nicXml)
+        except libvirt.libvirtError, e:
+            self.log.error("Hotunplug failed", exc_info=True)
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return errCode['noVM']
+            # Restore NIC device in vm's conf and _devices
+            if nicDev:
+                self.conf['devices'].append(nicDev)
+            if nic:
+                self._devices[vm.NIC_DEVICES].append(nic)
+            self.saveState()
+            return {'status' : {'code': errCode['hotunplugNic']['status']['code'],
+                                'message': e.message}}
+
+        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+
     def hotplugDisk(self, params):
         if self.isMigrating():
            return errCode['migInProgress']

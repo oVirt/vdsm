@@ -242,6 +242,14 @@ class BindingXMLRPC(object):
         vm = API.VM(self.cif, params['vmId'])
         return vm.hotunplugDisk(params)
 
+    def vmHotplugNic(self, params):
+        vm = API.VM(self.cif, params['vmId'])
+        return vm.hotplugNic(params)
+
+    def vmHotunplugNic(self, params):
+        vm = API.VM(self.cif, params['vmId'])
+        return vm.hotunplugNic(params)
+
     def vmSnapshot(self, vmId, snapDrives):
         vm = API.VM(self.cif, vmId)
         return vm.snapshot(snapDrives)
@@ -718,7 +726,9 @@ class BindingXMLRPC(object):
                 (self.cif.prepareForShutdown, 'prepareForShutdown'),
                 (self.setLogLevel, 'setLogLevel'),
                 (self.vmHotplugDisk, 'hotplugDisk'),
-                (self.vmHotunplugDisk, 'hotunplugDisk'))
+                (self.vmHotunplugDisk, 'hotunplugDisk'),
+                (self.vmHotplugNic, 'hotplugNic'),
+                (self.vmHotunplugNic, 'hotunplugNic'))
 
     def getIrsMethods(self):
         return ((self.domainActivate, 'activateStorageDomain'),
