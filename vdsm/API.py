@@ -1153,7 +1153,7 @@ class Global(object):
         return self._irs.getVGList(storageType)
 
     def getDeviceList(self, storageType=None):
-        return self._irs.getStorageDeviceList(storageType)
+        return self._irs.getDeviceList(storageType)
 
     def getDeviceInfo(self, guid):
         return self._irs.getDeviceInfo(guid)

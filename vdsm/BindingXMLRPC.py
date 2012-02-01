@@ -342,7 +342,7 @@ class BindingXMLRPC(object):
 
     def domainAttach(self, sdUUID, spUUID, options=None):
         domain = API.StorageDomain(self.cif, sdUUID, spUUID)
-        return domain.attach()
+        return domain.attach(spUUID)
 
     def domainCreate(self, storageType, sdUUID, domainName,
                      typeSpecificArg, domClass,
