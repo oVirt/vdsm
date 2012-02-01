@@ -191,7 +191,7 @@ class State:
 
     def moveto(self, state, force=False):
         if state not in self._moveto:
-            raise ValueError("not a valid target state: %s" % str(state))
+            raise ValueError("not a valid target state: %s" % state)
         if not force and self.state not in self._moveto[state]:
             raise se.TaskStateTransitionError("from %s to %s" % (self.state, state))
         self.state = state
@@ -268,7 +268,7 @@ class ParamList:
         elif isinstance(params, types.StringTypes):
             self.params = [ s.strip() for s in params.split(sep) ]
         else:
-            raise ValueError("ParamList: params type not supported (%s)" % str(type(params)))
+            raise ValueError("ParamList: params type not supported (%s)" % type(params))
 
 
     def getList(self):
@@ -278,7 +278,7 @@ class ParamList:
     def __str__(self):
         s = ""
         for i in self.params:
-            s += str(i) + self.sep
+            s += unicode(i) + self.sep
         # remove last sep
         if s:
             s = s[:-1]
@@ -288,8 +288,8 @@ class ParamList:
 
 class Job:
     fields = {
-        "name": str,
-        "runcmd": str,
+        "name": unicode,
+        "runcmd": unicode,
     }
 
     def __init__(self, name, cmd, *argslist, **argsdict):
@@ -297,7 +297,7 @@ class Job:
         self.cmd = cmd       # function pointer to run
         self.argslist = argslist
         self.argsdict = argsdict
-        self.runcmd = "%s (args: %s kwargs: %s)" % (repr(cmd), str(argslist), str(argsdict))          # args str
+        self.runcmd = "%r (args: %s kwargs: %s)" % (cmd, argslist, argsdict)
         self.callback = None    # callback to call before running the job
         self.task = None
 
@@ -313,8 +313,8 @@ class Job:
 
     def run(self):
         if not self.task:
-            raise se.InvalidJob("Job %s: no parent task" % str(self))
-        self.task.log.debug("Job.run: running %s callback %s" % (str(self), repr(self.callback)))
+            raise se.InvalidJob("Job %s: no parent task" % self)
+        self.task.log.debug("Job.run: running %s callback %r", self, self.callback)
         if self.callback:
             self.callback(self)
         return self.cmd(*self.argslist, **self.argsdict)
@@ -334,10 +334,10 @@ class Recovery:
     All other parameters if any must be strings.
     '''
     fields = {
-        "name": str,
-        "moduleName": str,
-        "object": str,
-        "function": str,
+        "name": unicode,
+        "moduleName": unicode,
+        "object": unicode,
+        "function": unicode,
         "params": ParamList,
     }
 
@@ -364,7 +364,7 @@ class Recovery:
     def setCallback(self, callback):
         if not callable(callback):
             raise ValueError("Task.Recovery: callback %s is not callable" % repr(callback))
-        self.task.log.debug("Recovery.run: running %s callback %s" % (str(self), repr(self.callback)))
+        self.task.log.debug("Recovery.run: running %s callback %r", self, self.callback)
         self.callback = callback
 
 
@@ -374,7 +374,7 @@ class Recovery:
 
     def run(self):
         if not self.task:
-            raise se.InvalidRecovery("Recovery - %s: no parent task" % str(self))
+            raise se.InvalidRecovery("Recovery - %s: no parent task" % self)
         self.validateName(self.object)
         self.validateName(self.function)
         if self.callback:
@@ -388,14 +388,14 @@ class Recovery:
 
 
     def __str__(self):
-        return "%s: %s->%s(%s)" % (self.name, self.object, self.function, str(self.params))
+        return "%s: %s->%s(%s)" % (self.name, self.object, self.function, self.params)
 
 
 class TaskResult(object):
     fields = {
         "code": int,
-        "message": str,
-        "result": str,
+        "message": unicode,
+        "result": unicode,
     }
 
     def __init__(self, code=0, message="", result=""):
@@ -425,9 +425,9 @@ class Task:
     fields = {
         # field_name: type
         "id": str,
-        "name": str,
-        "tag": str,
-        "store": str,
+        "name": unicode,
+        "tag": unicode,
+        "store": unicode,
         "recoveryPolicy": TaskRecoveryType,
         "persistPolicy": TaskPersistType,
         "cleanPolicy": TaskCleanType,
@@ -614,11 +614,10 @@ class Task:
 
     @classmethod
     def _loadMetaFile(cls, filename, obj, fields):
-        #cls.log.debug("load file %s read obj %s fields %s", filename, str(obj), fields.keys())
         try:
             for line in getProcPool().readLines(filename):
-                #cls.log.debug("-- line: %s", line)
                 # process current line
+                line = line.encode('utf8')
                 if line.find(KEY_SEPERATOR) < 0:
                     continue
                 parts = line.split(KEY_SEPERATOR)
@@ -633,7 +632,6 @@ class Task:
                     continue
 
                 ftype = fields[field]
-                #cls.log.debug("file %s obj %s field %s ftype %s value %s", filename, str(obj), field, ftype, value)
                 setattr(obj, field, ftype(value))
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
@@ -645,19 +643,19 @@ class Task:
         lines = []
         for field in fields:
             try:
-                value = str(getattr(obj, field))
+                value = unicode(getattr(obj, field))
                 if KEY_SEPERATOR in field or KEY_SEPERATOR in value:
                     raise ValueError("field and value cannot include %s character" % KEY_SEPERATOR)
                 lines.append("%s %s %s" % (field, KEY_SEPERATOR, value))
             except Exception:
-                cls.log.warning("Task._dump: object %s skipping field %s" % (str(obj), field), exc_info=True)
+                cls.log.warning("Task._dump: object %s skipping field %s" % (obj, field), exc_info=True)
         return lines
 
 
     @classmethod
     def _saveMetaFile(cls, filename, obj, fields):
         try:
-            getProcPool().writeLines(filename, [ l + "\n" for l in cls._dump(obj, fields) ])
+            getProcPool().writeLines(filename, [ l.encode('utf8') + "\n" for l in cls._dump(obj, fields) ])
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.TaskMetaDataSaveError(filename)
@@ -712,16 +710,16 @@ class Task:
 
 
     def _load(self, storPath, ext=""):
-        self.log.debug("%s: load from %s, ext '%s'", str(self), storPath, ext)
+        self.log.debug("%s: load from %s, ext '%s'", self, storPath, ext)
         if self.state != State.init:
-            raise se.TaskMetaDataLoadError("task %s - can't load self: not in init state" % str(self))
+            raise se.TaskMetaDataLoadError("task %s - can't load self: not in init state" % self)
         taskDir = os.path.join(storPath, str(self.id) + str(ext))
         if not getProcPool().os.path.exists(taskDir):
             raise se.TaskDirError("load: no such task dir '%s'" % taskDir)
         oldid = self.id
         self._loadTaskMetaFile(taskDir)
         if self.id != oldid:
-            raise se.TaskMetaDataLoadError("task %s: loaded file do not match id (%s != %s)" % (str(self), self.id, oldid))
+            raise se.TaskMetaDataLoadError("task %s: loaded file do not match id (%s != %s)" % (self, self.id, oldid))
         if self.state == State.finished:
             self._loadTaskResultMetaFile(taskDir)
         for jn in range (self.njobs):
@@ -759,7 +757,7 @@ class Task:
                 getProcPool().fileUtils.cleanupdir(taskDir)
             except:
                 self.log.warning("can't remove temp taskdir %s" % taskDir)
-            raise se.TaskPersistError("%s persist failed: %s" % (str(self), str(e)))
+            raise se.TaskPersistError("%s persist failed: %s" % (self, e))
         # Make sure backup dir doesn't exist
         getProcPool().fileUtils.cleanupdir(origTaskDir + BACKUP_EXT)
         getProcPool().os.rename(origTaskDir, origTaskDir + BACKUP_EXT)
@@ -790,16 +788,16 @@ class Task:
     def _recover(self):
         self.log.debug("_recover")
         if not self.state == State.recovering:
-            raise se.TaskStateError("%s: _recover in state %s" % (str(self), self.state))
+            raise se.TaskStateError("%s: _recover in state %s" % (self, self.state))
         try:
             while self.state == State.recovering:
                 rec = self.popRecovery()
-                self.log.debug("running recovery %s", str(rec))
+                self.log.debug("running recovery %s", rec)
                 if not rec:
                     break
                 self._run(rec.run)
         except Exception, e:
-            self.log.warning("task %s: recovery failed: %s", str(self), str(e), exc_info=True)
+            self.log.warning("task %s: recovery failed: %s", self, e, exc_info=True)
             # protect agains races with stop/abort
             try:
                 if self.state == State.recovering:
@@ -866,12 +864,12 @@ class Task:
             message = e.message
             self._setError(e)
         except Exception, e:
-            message = str(e)
+            message = unicode(e)
             self._setError(e)
         except:
             self._setError()
 
-        self.log.debug("Task._run: %s %s %s failed - stopping task", str(self), str(args), str(kargs))
+        self.log.debug("Task._run: %s %s %s failed - stopping task", self, args, kargs)
         self.stop()
         raise se.TaskAborted(message, code)
 
@@ -886,12 +884,12 @@ class Task:
             if self.aborting():
                 raise se.TaskAborted("shutting down")
             if not self.state == State.running:
-                raise se.TaskStateError("%s: can't run Jobs in state %s" % (str(self), (self.state)))
+                raise se.TaskStateError("%s: can't run Jobs in state %s" % (self, self.state))
             # for now: result is the last job result, jobs are run sequentially
             for j in self.jobs:
                 if self.aborting():
                     raise se.TaskAborted("shutting down")
-                self.log.debug("Task.run: running job %s: %s" % (i, str(j)))
+                self.log.debug("Task.run: running job %s: %s" % (i, j))
                 result = self._run(j.run)
                 if result is None:
                     result = ""
@@ -902,7 +900,7 @@ class Task:
             self.log.debug('Task.run: exit - success: result %s' % result)
             return result
         except se.TaskAborted, e:
-            self.log.debug("aborting: %s", str(e))
+            self.log.debug("aborting: %s", e)
             message = e.value
             code = e.abortedcode
             if not self.aborting():
@@ -923,7 +921,7 @@ class Task:
         try:
             try:
                 if not self.state.canAbort() and (force and not self.state.canAbortRecover()):
-                    self.log.warning("Task._doAbort %s: ignoring - at state %s", str(self), str(self.state))
+                    self.log.warning("Task._doAbort %s: ignoring - at state %s", self, self.state)
                     return
                 self.resOwner.cancelAll()
                 if self.state.canAbort():
@@ -947,7 +945,7 @@ class Task:
         # Am I really the last?
         if self.ref != 0:
             self.lock.release()
-            raise se.TaskHasRefs(str(self))
+            raise se.TaskHasRefs(unicode(self))
         self.ref += 1
         self.lock.release()
         try:
@@ -962,7 +960,7 @@ class Task:
         self.lock.acquire()
         try:
             if self.aborting() and (self._forceAbort or not force):
-                raise se.TaskAborted(str(self))
+                raise se.TaskAborted(unicode(self))
 
             self.ref += 1
             ref = self.ref
@@ -990,14 +988,14 @@ class Task:
     def setDefaultException(self, exceptionObj):
         # defaultException must have response method
         if exceptionObj and not hasattr(exceptionObj, "response"):
-            raise se.InvalidDefaultExceptionException(str(exceptionObj))
+            raise se.InvalidDefaultExceptionException(unicode(exceptionObj))
         self.defaultException = exceptionObj
 
 
     def setTag(self, tag):
         if KEY_SEPERATOR in tag:
             raise ValueError("tag cannot include %s character" % KEY_SEPERATOR)
-        self.tag = str(tag)
+        self.tag = unicode(tag)
 
 
     def isDone(self):
@@ -1009,7 +1007,7 @@ class Task:
         Add async job to the task. Assumes all resources are acquired or registered.
         """
         if not self.mng:
-            raise se.UnmanagedTask(str(self))
+            raise se.UnmanagedTask(unicode(self))
         if not isinstance(job, Job):
             raise TypeError("Job param %s(%s) must be Job object" % (repr(job), type(job)))
         if self.state != State.preparing:
@@ -1077,7 +1075,7 @@ class Task:
     def setManager(self, manager):
         # If need be, refactor out to "validateManager" method
         if not hasattr(manager, "queue"):
-            raise se.InvalidTaskMng(str(manager))
+            raise se.InvalidTaskMng(unicode(manager))
         self.mng = manager
 
 
@@ -1096,7 +1094,7 @@ class Task:
             getProcPool().fileUtils.createdir(taskDir)
         except Exception, e:
             self.log.error("Unexpected error", exc_info=True)
-            raise se.TaskPersistError("%s: cannot access/create taskdir %s: %s" % (str(self), taskDir, str(e)))
+            raise se.TaskPersistError("%s: cannot access/create taskdir %s: %s" % (self, taskDir, e))
         if self.persistPolicy == TaskPersistType.auto and self.state != State.init:
             self.persist()
 
@@ -1143,7 +1141,7 @@ class Task:
 
 
     def prepare(self, func, *args, **kwargs):
-        message = str(self.error)
+        message = self.error
         try:
             self._incref()
         except se.TaskAborted:
@@ -1156,13 +1154,13 @@ class Task:
                 if func:
                     result = self._run(func, *args, **kwargs)
             except se.TaskAborted, e:
-                self.log.info("aborting: %s", str(e))
+                self.log.info("aborting: %s", e)
                 code = e.abortedcode
                 message = e.value
 
             if self.aborting():
-                self.log.debug("Prepare: aborted: %s", str(message))
-                self._updateResult(code, "Task prepare failed: %s" % (message), "")
+                self.log.debug("Prepare: aborted: %s", message)
+                self._updateResult(code, "Task prepare failed: %s" % (message,), "")
                 raise self.error
 
             if self.jobs:
