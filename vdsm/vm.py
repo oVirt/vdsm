@@ -43,6 +43,7 @@ VIDEO_DEVICES = 'video'
 SOUND_DEVICES = 'sound'
 CONTROLLER_DEVICES = 'controller'
 GENERAL_DEVICES = 'general'
+BALLOON_DEVICES = 'balloon'
 
 """
 A module containing classes needed for VM communication.
@@ -311,7 +312,8 @@ class Vm(object):
         self._pathsPreparedEvent = threading.Event()
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
-                         CONTROLLER_DEVICES: [], GENERAL_DEVICES: []}
+                         CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
+                         BALLOON_DEVICES: []}
 
     def _get_lastStatus(self):
         SHOW_PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -377,7 +379,8 @@ class Vm(object):
     def getConfDevices(self):
         devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                    SOUND_DEVICES: [], VIDEO_DEVICES: [],
-                   CONTROLLER_DEVICES: [], GENERAL_DEVICES: []}
+                   CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
+                   BALLOON_DEVICES: []}
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
@@ -406,6 +409,7 @@ class Vm(object):
             devices[VIDEO_DEVICES] = self.getConfVideo()
             devices[CONTROLLER_DEVICES] = self.getConfController()
             devices[GENERAL_DEVICES] = []
+            devices[BALLOON_DEVICES] = []
         else:
             devices = self.getConfDevices()
 
@@ -413,6 +417,12 @@ class Vm(object):
         for drv in devices[DISK_DEVICES]:
             if isVdsmImage(drv):
                 self._normalizeVdsmImg(drv)
+
+        # Preserve old behavior. Since libvirt add a memory balloon device
+        # to all guests, we need to specifically request not to add it.
+        if len(devices[BALLOON_DEVICES]) == 0:
+            devices[BALLOON_DEVICES].append({'type': BALLOON_DEVICES,
+                'device': 'memballoon', 'model': 'none'})
 
         return devices
 

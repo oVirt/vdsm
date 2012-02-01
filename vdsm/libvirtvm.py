@@ -721,12 +721,6 @@ class _DomXML:
             cpu.appendChild(f)
         self.dom.appendChild(cpu)
 
-    def _appendBalloon(self):
-        """Add balloon device. Currently unsupported by RHEV-M"""
-        m = self.doc.createElement('memballoon')
-        m.setAttribute('model', 'none')
-        self._devices.appendChild(m)
-
     def _appendAgentDevice(self, path):
         """
           <channel type='unix'>
@@ -1091,6 +1085,28 @@ class Drive(vm.Device):
 
         return diskelem
 
+class BalloonDevice(vm.Device):
+    def __init__(self, conf, log, **kwargs):
+        vm.Device.__init__(self, conf, log, **kwargs)
+
+    def getXML(self):
+        """
+        Create domxml for a memory balloon device.
+
+        <memballoon model='virtio'>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+        </memballoon>
+        """
+        doc = xml.dom.minidom.Document()
+        m = doc.createElement(self.device)
+        m.setAttribute('model', self.model)
+        if hasattr(self, 'address'):
+            address = doc.createElement('address')
+            for key, value in self.address.iteritems():
+                address.setAttribute(key, value)
+            m.appendChild(address)
+        return m
+
 class LibvirtVm(vm.Vm):
     MigrationSourceThreadClass = MigrationSourceThread
     def __init__(self, cif, params):
@@ -1131,7 +1147,6 @@ class LibvirtVm(vm.Vm):
         domxml.appendCpu()
         if utils.tobool(self.conf.get('vmchannel', 'true')):
             domxml._appendAgentDevice(self._guestSocektFile.decode('utf-8'))
-        domxml._appendBalloon()
         domxml.appendInput()
         domxml.appendGraphics()
         domxml.appendConsole()
@@ -1161,6 +1176,7 @@ class LibvirtVm(vm.Vm):
         self._getUnderlyingSoundDeviceInfo()
         self._getUnderlyingVideoDeviceInfo()
         self._getUnderlyingControllerDeviceInfo()
+        self._getUnderlyingBalloonDeviceInfo()
         # Obtain info of all uknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
@@ -1234,9 +1250,13 @@ class LibvirtVm(vm.Vm):
             else:
                 devices = self.getConfDevices()
 
-        devMap = {vm.DISK_DEVICES: Drive, vm.NIC_DEVICES: NetworkInterfaceDevice,
-                  vm.SOUND_DEVICES: SoundDevice, vm.VIDEO_DEVICES: VideoDevice,
-                  vm.CONTROLLER_DEVICES: ControllerDevice, vm.GENERAL_DEVICES: GeneralDevice}
+        devMap = {vm.DISK_DEVICES: Drive,
+                  vm.NIC_DEVICES: NetworkInterfaceDevice,
+                  vm.SOUND_DEVICES: SoundDevice,
+                  vm.VIDEO_DEVICES: VideoDevice,
+                  vm.CONTROLLER_DEVICES: ControllerDevice,
+                  vm.GENERAL_DEVICES: GeneralDevice,
+                  vm.BALLOON_DEVICES: BalloonDevice}
 
         for devType, devClass in devMap.items():
             for dev in devices[devType]:
@@ -1893,7 +1913,7 @@ class LibvirtVm(vm.Vm):
         """
         def isKnownDevice(alias):
             for dev in self.conf['devices']:
-                if dev['alias'] == alias:
+                if dev.get('alias') == alias:
                     return True
             return False
 
@@ -1952,6 +1972,31 @@ class LibvirtVm(vm.Vm):
                                              'device': device,
                                              'address': address,
                                              'alias': alias})
+
+    def _getUnderlyingBalloonDeviceInfo(self):
+        """
+        Obtain balloon device info from libvirt.
+        """
+        balloonxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
+            .childNodes[0].getElementsByTagName('devices')[0] \
+            .getElementsByTagName('memballoon')
+        for x in balloonxml:
+            # Ignore balloo devices without address.
+            if not x.getElementsByTagName('address'):
+                continue
+
+            model = x.getAttribute('model')
+            address = self._getUnderlyingDeviceAddress(x)
+
+            for dev in self._devices[vm.BALLOON_DEVICES]:
+                if not hasattr(dev, 'address'):
+                    dev.model = model
+                    dev.address = address
+
+            for dev in self.conf['devices']:
+                if (dev['type'] == vm.BALLOON_DEVICES) and not dev.get('address'):
+                    dev['model'] = model
+                    dev['address'] = address
 
     def _getUnderlyingVideoDeviceInfo(self):
         """
