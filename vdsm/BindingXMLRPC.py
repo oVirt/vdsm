@@ -243,7 +243,7 @@ class BindingXMLRPC(object):
         return vm.hotunplugDisk(params)
 
     def vmSnapshot(self, vmId, snapDrives):
-        vm = API.VM(self.cif, snapDrives)
+        vm = API.VM(self.cif, vmId)
         return vm.snapshot(snapDrives)
 
     def getCapabilities(self):
