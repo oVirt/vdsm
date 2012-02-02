@@ -19,7 +19,7 @@
 #
 
 EXTRA_DIST = \
-	after_vm_destroy.py \
+	before_vm_destroy.py \
 	after_vm_start.py \
 	sudoers.vdsm_hook_promisc
 
@@ -30,13 +30,13 @@ install-data-local: install-data-sudoers
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/after_vm_start.py \
 		$(DESTDIR)$(vdsmhooksdir)/after_vm_start/50_promisc
-	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy
-	$(INSTALL_SCRIPT) $(srcdir)/after_vm_destroy.py \
-		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_promisc
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_destroy
+	$(INSTALL_SCRIPT) $(srcdir)/before_vm_destroy.py \
+		$(DESTDIR)$(vdsmhooksdir)/before_vm_destroy/50_promisc
 
 uninstall-local: uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_start/50_promisc
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/50_promisc
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_destroy/50_promisc
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d

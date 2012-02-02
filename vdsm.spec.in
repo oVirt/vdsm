@@ -634,7 +634,7 @@ exit 0
 %defattr(-, vdsm, kvm, -)
 %attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc
 %attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_promisc
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_promisc
+%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy/50_promisc
 
 %files hook-qos
 %defattr(-, vdsm, kvm, -)
