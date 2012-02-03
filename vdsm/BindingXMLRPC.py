@@ -800,11 +800,11 @@ def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         try:
             logLevel = logging.DEBUG
-            if f.__name__ in ('list', 'getAllVmStats', 'getVdsStats',
+            if f.__name__ in ('getVMList', 'getAllVmStats', 'getStats',
                               'fenceNode'):
                 logLevel = logging.TRACE
             displayArgs = args
-            if f.__name__ == 'desktopLogin':
+            if f.__name__ == 'vmDesktopLogin':
                 assert 'password' not in kwargs
                 if len(args) > 3:
                     displayArgs = args[:3] + ('****',) + args[4:]
