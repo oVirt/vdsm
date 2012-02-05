@@ -42,6 +42,7 @@ import utils
 import configNetwork
 import caps
 from BindingXMLRPC import BindingXMLRPC
+import API
 
 class clientIF:
     """
@@ -311,7 +312,7 @@ class clientIF:
             pt = float(params.pop('startTime', now))
             params['elapsedTimeOffset'] = now - pt
             self.log.debug("Trying to recover " + params['vmId'])
-            if not self.create(params)['status']['code']:
+            if not API.VM(self, vmid).create(params)['status']['code']:
                 return recoveryFile
         except:
             self.log.debug(traceback.format_exc())

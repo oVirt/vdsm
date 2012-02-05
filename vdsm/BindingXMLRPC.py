@@ -269,7 +269,7 @@ class BindingXMLRPC(object):
         for s in vms['vmList']:
             response = self.vmGetStats(s['vmId'])
             if response:
-                statsList.append(response)
+                statsList.append(response['statsList'][0])
         return {'status': doneCode, 'statsList': statsList}
 
     def vmMigrationCreate(self, params):
