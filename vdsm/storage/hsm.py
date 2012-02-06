@@ -82,6 +82,8 @@ rmanager = rm.ResourceManager.getInstance()
 # FIXME: moved from spm.py but this should be somewhere else
 SECTOR_SIZE = 512
 
+STORAGE_CONNECTION_DIR = "/var/run/vdsm/connections/"
+
 def public(f=None, **kwargs):
     if f is None:
         return partial(public, **kwargs)
@@ -268,6 +270,7 @@ class HSM:
         mountBasePath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
         storageServer.MountConnection.setLocalPathBase(mountBasePath)
         storageServer.LocalDirectoryConnection.setLocalPathBase(mountBasePath)
+        self._connectionAliasRegistrar = storageServer.ConnectionAliasRegistrar(STORAGE_CONNECTION_DIR)
 
         sp.StoragePool.cleanupMasterMount()
         self.__releaseLocks()

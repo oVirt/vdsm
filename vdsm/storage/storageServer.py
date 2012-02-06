@@ -19,8 +19,13 @@
 #
 from itertools import chain
 import errno
+import logging
+from os.path import normpath, basename, splitext
 import os
+from threading import Lock
 import socket
+import pickle
+import glob
 from collections import namedtuple
 import misc
 
@@ -370,6 +375,79 @@ class LocalDirectoryConnection(object):
 
     def __hash__(self):
         return hash(type(self)) ^ hash(self._path)
+
+class IlligalAliasError(RuntimeError): pass
+class ConnectionAliasRegistrar(object):
+    log = logging.getLogger("StorageServer.ConnectionAliasRegistrar")
+    def __init__(self, persistDir):
+        self._aliases = {}
+        self._syncroot = Lock()
+        self._persistDir = persistDir
+        for alias, conInfo in self._iterPersistedConnectionInfo():
+            self._aliases[alias] = conInfo
+
+    def register(self, alias, connectionInfo):
+        with self._syncroot:
+            if alias in self._aliases:
+                raise AliasAlreadyRegisteredError(alias)
+
+            self._persistAlias(alias, connectionInfo)
+            self._aliases[alias] = connectionInfo
+
+    def unregister(self, alias):
+        with self._syncroot:
+            try:
+                del self._aliases[alias]
+            except KeyError:
+                raise AliasNotRegisteredError(alias)
+
+            self._unpersistAlias(alias)
+
+    def getConnectionInfo(self, alias):
+        with self._syncroot:
+            try:
+                info = self._aliases[alias]
+            except KeyError:
+                raise AliasNotRegisteredError(alias)
+
+            return info
+
+    def getAliases(self):
+        # No need for deep copy as strings and tuples ar immutable
+        return self._aliases.copy()
+
+    def _getConnectionFile(self, alias):
+        if "/" in alias:
+            raise IlligalAliasError(alias)
+
+        try:
+            os.makedirs(self._persistDir)
+        except OSError, e:
+            if e.errno != errno.EEXIST:
+                raise
+
+        return os.path.join(self._persistDir, alias + ".con")
+
+    def _iterPersistedConnectionInfo(self):
+        for path in glob.iglob(os.path.join(self._persistDir, "*.con")):
+            alias = splitext(basename(path))[0]
+            with open(path, "r") as f:
+                conInfo = pickle.load(f)
+
+            # Yield out of scope so the file is closed before giving the flow
+            # back to calling method
+            yield alias, conInfo
+
+    def _persistAlias(self, alias, conInfo):
+        path = self._getConnectionFile(alias)
+        tmpPath = path + ".tmp"
+        with open(tmpPath, "w") as f:
+            pickle.dump(conInfo, f)
+
+        os.rename(tmpPath, path)
+
+    def _unpersistAlias(self, alias):
+        os.unlink(self._getConnectionFile(alias))
 
 class UnknownConnectionTypeError(RuntimeError): pass
 
