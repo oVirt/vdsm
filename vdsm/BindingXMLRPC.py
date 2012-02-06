@@ -749,7 +749,7 @@ class BindingXMLRPC(object):
                 (self.domainValidate, 'validateStorageDomain'),
                 (self.imageDelete, 'deleteImage'),
                 (self.imageDeleteVolumes, 'deleteVolume'),
-                (self.imageMergeSnapshots, 'mergeShapshots'),
+                (self.imageMergeSnapshots, 'mergeSnapshots'),
                 (self.imageMove, 'moveImage'),
                 (self.poolConnect, 'connectStoragePool'),
                 (self.poolConnectStorageServer, 'connectStorageServer'),
