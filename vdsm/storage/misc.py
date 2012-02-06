@@ -51,7 +51,7 @@ import string
 import random
 import errno
 from collections import defaultdict
-from itertools import chain
+from itertools import chain, imap
 from functools import wraps, partial
 import select
 import gc
@@ -74,6 +74,9 @@ MEGA = 1 << 20
 SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 log = logging.getLogger('Storage.Misc')
+
+def namedtuple2dict(nt):
+    return dict(imap(lambda f: (f, getattr(nt, f)), nt._fields))
 
 def enableLogSkip(logger, *args, **kwargs):
     skipFunc = partial(findCaller, *args, **kwargs)
