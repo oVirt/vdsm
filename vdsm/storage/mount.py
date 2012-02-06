@@ -93,6 +93,12 @@ class Mount(object):
         except Exception:
             return False
 
+    def __hash__(self):
+        hsh = hash(type(self))
+        hsh ^= hash(self.fs_spec)
+        hsh ^= hash(self.fs_file)
+        return hsh
+
     def mount(self, mntOpts=None, vfstype=None, timeout=None):
         cmd = [constants.EXT_MOUNT]
 
