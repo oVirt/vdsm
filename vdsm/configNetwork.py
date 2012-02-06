@@ -757,7 +757,8 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
 
     # Step 4: Verify Setup
     for nic, nicAttrs in nics.iteritems():
-        if nicAttrs['networks'] and nicAttrs['bonding']:
+        networks = nicAttrs['networks']
+        if networks and nicAttrs['bonding']:
             raise ConfigNetworkError(ne.ERR_USED_NIC, "Setup attached both network and bonding to nic %s"%(nic))
         if len(networks) > 1:
             for network, networkAttrs in networks.iteritems():
