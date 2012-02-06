@@ -145,7 +145,8 @@ class StoragePool:
     def forceFreeSpm(self):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
         # TODO: SCSI Fence the 'lastOwner'
-        self.setMetaParams({PMDK_SPM_ID: -1, PMDK_LVER: -1})
+        self.setMetaParams({PMDK_SPM_ID: -1, PMDK_LVER: -1},
+                           __securityOverride=True)
         self.spmRole = SPM_FREE
 
     def _upgradePoolDomain(self, sdUUID, isValid):
