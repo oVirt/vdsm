@@ -9,11 +9,12 @@ ISCSI_ERR_OBJECT_NOT_FOUND = 21
 
 class IscsiError(RuntimeError): pass
 class ReservedInterfaceNameError(IscsiError): pass
-class IsciInterfaceAlreadyExistsError(IscsiError): pass
-class IsciInterfaceCreationError(IscsiError): pass
-class IscsiInterfaceDoesNotExistError(IscsiError): pass
-class IscsiInterfaceUpdateError(IscsiError): pass
-class IscsiInterfaceDeletionError(IscsiError): pass
+class IscsiInterfaceError(IscsiError): pass
+class IsciInterfaceAlreadyExistsError(IscsiInterfaceError): pass
+class IsciInterfaceCreationError(IscsiInterfaceError): pass
+class IscsiInterfaceDoesNotExistError(IscsiInterfaceError): pass
+class IscsiInterfaceUpdateError(IscsiInterfaceError): pass
+class IscsiInterfaceDeletionError(IscsiInterfaceError): pass
 class IscsiDiscoverdbError(IscsiError): pass
 class IscsiInterfaceListingError(IscsiError): pass
 class IscsiAuthenticationError(IscsiError): pass

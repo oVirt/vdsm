@@ -35,6 +35,7 @@ from processPool import Timeout
 from persistentDict import PersistentDict, DictValidator
 from vdsm import constants
 import time
+import supervdsm
 import mount
 
 REMOTE_PATH = "REMOTE_PATH"
@@ -42,6 +43,15 @@ REMOTE_PATH = "REMOTE_PATH"
 FILE_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
 # TBD: Do we really need this key?
 FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
+
+getProcPool = oop.getGlobalProcPool
+
+def validateDirAccess(dirPath):
+    getProcPool().fileUtils.validateAccess(dirPath)
+    supervdsm.getProxy().validateAccess(constants.QEMU_PROCESS_USER,
+            (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
+            (os.R_OK | os.X_OK))
+
 
 def getDomUuidFromMetafilePath(metafile):
     # Metafile path has pattern:

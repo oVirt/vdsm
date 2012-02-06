@@ -945,6 +945,11 @@ class iSCSIDiscoveryError(StorageServeriSCSIError):
 class iSCSILoginAuthError(StorageServeriSCSIError):
     code = 476
     message = "Failed to login to iSCSI node due to authorization failure"
+
+class MountError(StorageException):
+    code = 477
+    message = "Problem while trying to mount target"
+
 #################################################
 #  LVM related Exceptions
 #################################################

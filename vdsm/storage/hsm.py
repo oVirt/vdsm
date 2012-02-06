@@ -52,7 +52,6 @@ import iscsi
 import misc
 import taskManager
 import safelease
-import storage_connection
 import storage_exception as se
 from threadLocal import vars
 from vdsm import constants
@@ -65,6 +64,7 @@ import logUtils
 import mount
 import dispatcher
 import supervdsm
+import storageServer
 
 GUID = "guid"
 NAME = "name"
@@ -110,6 +110,68 @@ def connectionListPrinter(conList):
 
 def connectionPrinter(con):
     return repr(loggableCon(con))
+
+# Connection Management API competability code
+# Remove when deprecating dis\connectStorageServer
+
+CON_TYPE_ID_2_CON_TYPE = {
+    sd.LOCALFS_DOMAIN: 'localfs',
+    sd.NFS_DOMAIN: 'nfs',
+    sd.ISCSI_DOMAIN: 'iscsi',
+    # FCP domain shouldn't even be on the list but VDSM use to just
+    # accept this type as iscsi so we are stuck with it
+    sd.FCP_DOMAIN: 'iscsi',
+    sd.SHAREDFS_DOMAIN: 'posixfs' }
+
+def _BCInitiatorNameResolve(ifaceName):
+    if not ifaceName:
+        return iscsi.IscsiInterface('default')
+
+    for iface in iscsi.iterateIscsiInterfaces:
+        if iface.name == ifaceName:
+            return iface
+
+    iface = iscsi.IscsiInterface(ifaceName, initiatorName=ifaceName)
+    iface.create()
+    return iface
+
+def _connectionDict2ConnectionInfo(conTypeId, conDict):
+    typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
+    if typeName == 'localfs':
+        params = storageServer.LocaFsConnectionParameters(
+                conDict.get('connection', None))
+    elif typeName == 'nfs':
+        params = storageServer.NfsConnectionParameters(
+                conDict.get('connection', None),
+                conDict.get('retrans', None),
+                conDict.get('timeout', None),
+                conDict.get('protocol_version', None))
+    elif typeName == 'posixfs':
+        params = storageServer.PosixFsConnectionParameters(
+                conDict.get('connection', None),
+                conDict.get('vfs_type', None),
+                conDict.get('mnt_options', None))
+    elif typeName == 'iscsi':
+        portal = iscsi.IscsiPortal(
+                conDict.get('connection', None),
+                int(conDict.get('port', None)))
+        target = iscsi.IscsiTarget(portal,
+                int(conDict.get('portal', None)),
+                conDict.get('iqn', None))
+
+        iface = _BCInitiatorNameResolve(conDict.get('initiatorName', None))
+
+        cred = None
+        username = conDict.get('user', None)
+        password = conDict.get('password', None)
+        if username or password:
+            cred = iscsi.ChapCredentials(username, password)
+
+        storageServer.IscsiConnectionParameters(target, iface, cred)
+    else:
+        raise se.StorageServerActionError()
+
+    return storageServer.ConnectionInfo(typeName, params)
 
 class HSM:
     """
@@ -202,6 +264,10 @@ class HSM:
         self._domstats = {}
         self._cachedStats = {}
         self._statslock = threading.Lock()
+
+        mountBasePath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
+        storageServer.MountConnection.setLocalPathBase(mountBasePath)
+        storageServer.LocalDirectoryConnection.setLocalPathBase(mountBasePath)
 
         sp.StoragePool.cleanupMasterMount()
         self.__releaseLocks()
@@ -1803,12 +1869,32 @@ class HSM:
         """
         cons = loggableConList(conList=conList)
         vars.task.setDefaultException(se.StorageServerConnectionError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
-        #getExclusiveLock(connectionsResource...)
-        statusList = storage_connection.StorageServerConnection().connect(domType=domType, conList=conList)
+
+        res = []
+        for conDef in conList:
+            conInfo = _connectionDict2ConnectionInfo(domType, conDef)
+            conObj = storageServer.ConnectionFactory(conInfo)
+            try:
+                conObj.connect()
+                status = 0
+            except mount.MountError:
+                status = se.MountError.code
+            except iscsi.iscsiadm.IscsiAuthenticationError:
+                status = se.iSCSILoginAuthError.code
+            except iscsi.iscsiadm.IscsiInterfaceError:
+                status = se.iSCSIifaceError.code
+            except iscsi.iscsiadm.IscsiError:
+                status = se.iSCSISetupError.code
+            except Exception as err:
+                self.log.error("Could not connect to storageServer", exc_info=True)
+                status, _ = self._translateConnectionError(err)
+
+            res.append({'id': conDef["id"], 'status': status})
+
         # Connecting new device may change the visible storage domain list
         # so invalidate caches
         sdCache.invalidateStorage()
-        return dict(statuslist=statusList)
+        return dict(statuslist=res)
 
 
     @public(logger=logged(printers={'conList': connectionListPrinter}))
@@ -1832,23 +1918,54 @@ class HSM:
         """
         Disconnects from a storage low level entity (server).
 
-        :param domType: The type of the domain....?
-        :type domType: Some enum?
-        :param spUUID: The UUID of the storage pool that...
-        :type spUUID: UUID
-        :param options: ?
+        :param domType: The type of the connection expressed as the sometimes
+                        corosponding domains type
+        :param spUUID: deprecated, unused
+        :param conList: A list of connections. Each connection being a dict
+                        with keys depnding ont the type
+        :type conList: list
+        :param options: unused
 
-        :returns: a dict with a list of statuses
+        :returns: a list of statuses status will be 0 if disconnection was successful
         :rtype: dict
         """
         cons = loggableConList(conList=conList)
         vars.task.setDefaultException(se.StorageServerDisconnectionError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
-        #getExclusiveLock(connectionsResource...)
-        statusList = storage_connection.StorageServerConnection().disconnect(domType=domType, conList=conList)
+
+        res = []
+        for conDef in conList:
+            conInfo = _connectionDict2ConnectionInfo(domType, conDef)
+            conObj = storageServer.ConnectionFactory(conInfo)
+            try:
+                conObj.disconnect()
+                status = 0
+            except mount.MountError:
+                status = se.MountError.code
+            except iscsi.iscsiadm.IscsiAuthenticationError:
+                status = se.iSCSILoginAuthError.code
+            except iscsi.iscsiadm.IscsiInterfaceError:
+                status = se.iSCSIifaceError.code
+            except iscsi.iscsiadm.IscsiError:
+                status = se.iSCSISetupError.code
+            except Exception as err:
+                self.log.error("Could not disconnect from storageServer", exc_info=True)
+                status, _ = self._translateConnectionError(err)
+
+            res.append({'id': conDef["id"], 'status': status})
+
         # Disconnecting a device may change the visible storage domain list
         # so invalidate the caches
         sdCache.refreshStorage()
-        return dict(statuslist=statusList)
+        return dict(statuslist=res)
+
+    def _translateConnectionError(self, e):
+        if e is None:
+            return 0, ""
+
+        if hasattr(e, 'code'):
+            return e.code, e.message
+
+        return se.GeneralException.code, str(e)
 
     @public
     def getStorageConnectionsList(self, spUUID, options = None):
@@ -2300,7 +2417,11 @@ class HSM:
         if username or password:
             cred = iscsi.ChapCredentials(username, password)
 
-        targets = iscsi.discoverSendTargets(iface, portal, cred)
+        try:
+            targets = iscsi.discoverSendTargets(iface, portal, cred)
+        except iscsi.iscsiadm.IscsiError:
+            self.log.error("Discovery failed", exc_info=True)
+            raise se.iSCSIDiscoveryError()
         # I unparse the response. Why you ask? Backward compatibility! At
         # least now if iscsiadm changes the output we can handle it gracefully
         fullTargets = []

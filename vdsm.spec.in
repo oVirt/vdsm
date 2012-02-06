@@ -516,10 +516,10 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/sd.py*
 %{_datadir}/%{vdsm_name}/storage/securable.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
-%{_datadir}/%{vdsm_name}/storage/storage_connection.py*
 %{_datadir}/%{vdsm_name}/storage/storageConstants.py*
 %{_datadir}/%{vdsm_name}/storage/storage_exception.py*
 %{_datadir}/%{vdsm_name}/storage/storage_mailbox.py*
+%{_datadir}/%{vdsm_name}/storage/storageServer.py*
 %{_datadir}/%{vdsm_name}/storage/taskManager.py*
 %{_datadir}/%{vdsm_name}/storage/task.py*
 %{_datadir}/%{vdsm_name}/storage/threadLocal.py*

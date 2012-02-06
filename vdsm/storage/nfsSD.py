@@ -26,7 +26,6 @@ import sd
 import fileSD
 import fileUtils
 import storage_exception as se
-from storage_connection import validateDirAccess
 import outOfProcess as oop
 import mount
 
@@ -44,7 +43,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         if not mount.isMounted(domPath):
             raise se.StorageDomainFSNotMounted(domPath)
 
-        validateDirAccess(domPath)
+        fileSD.validateDirAccess(domPath)
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)

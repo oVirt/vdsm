@@ -53,10 +53,10 @@ dist_vdsmstorage_PYTHON = \
 	sd.py \
 	securable.py \
 	sp.py \
-	storage_connection.py \
 	storageConstants.py \
 	storage_exception.py \
 	storage_mailbox.py \
+        storageServer.py \
 	taskManager.py \
 	task.py \
 	threadLocal.py \
