@@ -999,12 +999,12 @@ def setupNetworks(networks={}, bondings={}, **options):
                     assert not networkAttrs
 
                     logger.debug('Removing network %r'%network)
-                    delNetwork(network, force=force)
+                    delNetwork(network, configWriter=configWriter, force=force)
                     del networks[network]
 
             for network, networkAttrs in networks.items():
                 if network in _netinfo.networks:
-                    delNetwork(network, force=force)
+                    delNetwork(network, configWriter=configWriter, force=force)
                 else:
                     networksAdded.append(network)
                 d = dict(networkAttrs)
@@ -1016,19 +1016,20 @@ def setupNetworks(networks={}, bondings={}, **options):
                 d['force'] = force
 
                 logger.debug('Adding network %r'%network)
-                addNetwork(network, **d)
+                addNetwork(network, configWriter=configWriter, **d)
 
+            if utils.tobool(options.get('connectivityCheck', True)):
+                logger.debug('Checking connectivity...')
+                if not clientSeen(int(options.get('connectivityTimeout',
+                                      CONNECTIVITY_TIMEOUT_DEFAULT))):
+                    logger.info('Connectivity check failed, rolling back')
+                    for network in networksAdded:
+                        delNetwork(network, force=True)
+                    raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
+                                             'connectivity check failed')
         except:
             configWriter.restoreAtomicBackup()
             raise
-        if utils.tobool(options.get('connectivityCheck', True)):
-            logger.debug('Checking connectivity...')
-            if not clientSeen(int(options.get('connectivityTimeout', CONNECTIVITY_TIMEOUT_DEFAULT))):
-                logger.info('Connectivity check failed, rolling back')
-                for bridge in networksAdded:
-                    delNetwork(bridge, force=True)
-                configWriter.restoreAtomicBackup()
-                raise ConfigNetworkError(ne.ERR_LOST_CONNECTION, 'connectivity check failed')
 
     except Exception, e:
         # SuperVdsm eats the error, so let's print it ourselves
