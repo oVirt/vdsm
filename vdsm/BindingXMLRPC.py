@@ -148,6 +148,9 @@ class BindingXMLRPC(object):
                         requestHandler=LoggingHandler, logRequests=True)
         utils.closeOnExec(s.socket.fileno())
 
+        s.lastClientTime = 0
+        s.lastClient = ''
+
         return s
 
     def _registerFunctions(self):
