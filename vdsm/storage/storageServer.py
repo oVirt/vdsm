@@ -22,7 +22,7 @@ import errno
 import logging
 from os.path import normpath, basename, splitext
 import os
-from threading import Lock
+from threading import RLock, Lock, Event, Thread
 import socket
 import pickle
 import glob
@@ -31,6 +31,7 @@ import misc
 
 import mount
 import iscsi
+from sync import asyncmethod, AsyncCallStub
 
 class AliasAlreadyRegisteredError(RuntimeError): pass
 class AliasNotRegisteredError(RuntimeError): pass
@@ -216,6 +217,7 @@ class IscsiConnection(object):
 
     def __init__(self, target, iface=None, credentials=None):
         self._target = target
+
         if iface is None:
             iface = iscsi.IscsiInterface('default')
 
@@ -460,12 +462,170 @@ class ConnectionFactory(object):
         }
 
     @classmethod
-    def _createConnection(cls, conInfo):
+    def createConnection(cls, conInfo):
         conType = conInfo.type
         params = misc.namedtuple2dict(conInfo.params)
+        for param in params.keys():
+            if params[param] is None:
+                del params[param]
         try:
             ctor = cls._registeredConnectionTypes[conType]
         except KeyError:
             raise UnknownConnectionTypeError(conType)
 
         return ctor(**params)
+
+
+class ConnectionMonitor(object):
+    _log = logging.getLogger("ConnectionMonitor")
+
+    TAG = "managed"
+
+    def __init__(self, aliasRegistrar, checkInterval=10):
+        self._aliasRegistrar = aliasRegistrar
+        self.checkInterval = checkInterval
+        self._conDict = {}
+        self._conDictLock = RLock()
+
+        self._lastErrors = {}
+        self._activeOperations = {}
+        self._activeOpsLock = Lock()
+        self._stopEvent = Event()
+        self._stopEvent.set()
+        for alias, conInfo in self._aliasRegistrar.getAliases().iteritems():
+            self._conDict[alias] = ConnectionFactory.createConnection(conInfo)
+
+    def startMonitoring(self):
+        t = Thread(target=self._monitorConnections)
+        t.setDaemon(True)
+        self._stopEvent.clear()
+        t.start()
+
+    def stopMonitoring(self):
+        self._stopEvent.set()
+
+    def _recoverLostConnection(self, conId, con):
+        with self._activeOpsLock:
+            if con in self._activeOperations:
+                e = self._activeOperations[con]
+                if not e.wait(0):
+                    return
+
+                del self._activeOperations[con]
+
+                if con.isConnected():
+                    return
+
+            self._log.debug("Recovering lost connection '%s'", conId)
+            self._activeOperations[con] = self._asyncConnect(con)
+
+
+    def _checkConnections(self):
+        for conId, con in self._conDict.iteritems():
+            # Spread checks over time so we don't get cpu spikes
+            # I'm not sure it's the best way to go but I would like to try it
+            # out. It feels like it might be a good pattern to use.
+            self._stopEvent.wait(self.checkInterval / float(len(self._conDict)))
+
+            if self._stopEvent.isSet():
+                break
+
+            if con.isConnected():
+                continue
+
+            self._log.debug("Connection '%s' is not connected", conId)
+
+            self._recoverLostConnection(conId, con)
+
+    def _monitorConnections(self):
+        while True:
+            try:
+                self._checkConnections()
+
+                if len(self._conDict) == 0:
+                    self._stopEvent.wait(self.checkInterval)
+
+                if self._stopEvent.isSet():
+                    break
+            except:
+                self._log.error("Monitoring failed", exc_info=True)
+
+        self._log.debug("Monitoring stopped")
+
+    def getConnectionsStatus(self):
+        res = {}
+        for key in self._monitorConnections.keys():
+            # A key could be removed while iterating
+            value = self._monitorConnections.get(key, None)
+            if value == None:
+                continue
+
+            res[key] = (value.isConnected(), "")
+
+        return res
+
+    def _addConnection(self, alias):
+        with self._conDictLock:
+            if alias in self._conDict:
+                return self._conDict[alias]
+
+            conInfo = self._aliasRegistrar.getConnectionInfo(alias)
+
+            con = ConnectionFactory.createConnection(conInfo)
+
+            self._conDict[alias] = con
+
+            return con
+
+    def _delConnection(self, alias):
+        with self._conDictLock:
+            del self._conDict[alias]
+
+    def getMonitoredConnectionsDict(self):
+        return self._conDict.copy()
+
+    def manage(self, alias):
+        conObj = self._addConnection(alias)
+        self._log.info("Started managing connection alias %s", alias)
+
+        with self._activeOpsLock:
+            res = self._activeOperations.get(conObj, None)
+            if res is not None:
+                return res
+
+            res = self._activeOperations[conObj] = self._asyncConnect(conObj)
+
+        return res
+
+    def unmanage(self, alias):
+        with self._conDictLock:
+            con = self._conDict[alias]
+            self._delConnection(alias)
+            self._log.info("Stopped managing connection alias %s", alias)
+            if not con in self._conDict.values():
+                return self._asyncDisconnect(con)
+
+        return AsyncCallStub(None)
+
+    def getLastError(self, conId):
+        return self._lastErrors.get(self._conDict[conId], None)
+
+    @asyncmethod
+    def _asyncConnect(self, con):
+        try:
+            con.connect()
+            self._lastErrors.pop(con, None)
+        except Exception as e:
+            self._lastErrors[con] = e
+            self._log.error("Could not connect to %s", con, exc_info=True)
+            raise
+
+    @asyncmethod
+    def _asyncDisconnect(self, con):
+        try:
+            con.disconnect()
+        except:
+            self._log.error("Could not disconnect from %s", con, exc_info=True)
+            raise
+        finally:
+            self._lastErrors.pop(con, None)

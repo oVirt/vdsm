@@ -57,6 +57,7 @@ dist_vdsmstorage_PYTHON = \
 	storage_exception.py \
 	storage_mailbox.py \
         storageServer.py \
+	sync.py \
 	taskManager.py \
 	task.py \
 	threadLocal.py \
