@@ -109,7 +109,7 @@ class StoragePool:
 
     def __init__(self, spUUID, taskManager):
         self._domainsToUpgrade = []
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self._setUnsafe()
         self.spUUID = str(spUUID)
         self.poolPath = os.path.join(self.storage_repository, self.spUUID)
