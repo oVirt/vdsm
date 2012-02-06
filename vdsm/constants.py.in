@@ -146,7 +146,6 @@ CMD_LOWPRIO = [EXT_NICE, '-n', '19', EXT_IONICE, '-c', '2', '-n', '7']
 STRG_ISCSI_HOST = "iscsi_host/"
 STRG_SCSI_HOST = "scsi_host/"
 STRG_ISCSI_SESSION = "iscsi_session/"
-STRG_ISCSI_CONNECION = "iscsi_connection/"
 STRG_MPATH_CONF = """
 
 defaults {

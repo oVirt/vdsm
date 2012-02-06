@@ -277,7 +277,25 @@ def pathListIter(filterGuids=None):
                 pathInfo["type"] = DEV_ISCSI
                 sessionID = iscsi.getiScsiSession(slave)
                 if sessionID not in knownSessions:
-                    knownSessions[sessionID] = svdsm.getdeviSCSIinfo(slave)
+                    # FIXME: This entire part is for BC. It should be moved to
+                    # hsm and not preserved for new APIs. New APIs should keep
+                    # numeric types and sane field names.
+                    sess = iscsi.getSessionInfo(sessionID)
+                    sessionInfo = {
+                            "connection": sess.target.portal.hostname,
+                            "port": str(sess.target.portal.port),
+                            "iqn": sess.target.iqn,
+                            "portal": str(sess.target.tpgt),
+                            "initiatorname": sess.iface.name
+                            }
+
+                    # FIXME: When updating the API remember not to send back credential information
+                    if sess.credentials:
+                        cred = sess.credentials
+                        sessionInfo['username'] = cred.username
+                        sessionInfo['password'] = cred.password
+
+                    knownSessions[sessionID] = sessionInfo
                 devInfo["connections"].append(knownSessions[sessionID])
             else:
                 devInfo["devtypes"].append(DEV_FCP)

@@ -498,6 +498,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/hba.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
 %{_datadir}/%{vdsm_name}/storage/image.py*
+%{_datadir}/%{vdsm_name}/storage/iscsiadm.py*
 %{_datadir}/%{vdsm_name}/storage/iscsi.py*
 %{_datadir}/%{vdsm_name}/storage/localFsSD.py*
 %{_datadir}/%{vdsm_name}/storage/lvm.py*

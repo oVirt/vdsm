@@ -30,7 +30,7 @@ from multiprocessing import Pipe, Process
 
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
-from storage.iscsi import getdeviSCSIinfo as _getdeviSCSIinfo
+from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess

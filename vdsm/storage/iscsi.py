@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,284 +22,342 @@
 iSCSI service module. Provides helper functions to interact with iscsiadm
 facility
 """
-import os.path
+import os
 import glob
 import logging
-import socket
 import re
-import sys
+import errno
+from collections import namedtuple
 
 from vdsm import constants
 import misc
-import storage_exception as se
 import devicemapper
+from threading import RLock
 
-SENDTARGETS_DISCOVERY = [constants.EXT_ISCSIADM, "-m", "discoverydb", "-t", "sendtargets"]
-ISCSIADM_NODE = [constants.EXT_ISCSIADM, "-m", "node"]
-ISCSIADM_IFACE = [constants.EXT_ISCSIADM, "-m", "iface"]
-ISCSI_DEFAULT_PORT = "3260"
-MANUAL_STARTUP = ["-o", "update", "-n", "node.startup", "-v", "manual"]
-NEW_REC = ["-o", "new"]
-AUTH_CHAP = ["-o", "update", "-n", "discovery.sendtargets.auth.authmethod", "-v", "CHAP"]
-AUTH_USER = ["-o", "update", "-n", "discovery.sendtargets.auth.username", "-v"]
-AUTH_PASS = ["-o", "update", "-n", "discovery.sendtargets.auth.password", "-v"]
-LOGIN_AUTH_CHAP = ["-o", "update", "-n", "node.session.auth.authmethod", "-v", "CHAP"]
-LOGIN_AUTH_USER = ["-o", "update", "-n", "node.session.auth.username", "-v"]
-LOGIN_AUTH_PASS = ["-o", "update", "-n", "node.session.auth.password", "-v"]
-AUTH_EXEC_DISCOVER = ["--discover"]
+import iscsiadm
+
+IscsiPortal = namedtuple("IscsiPortal", "hostname, port")
+IscsiTarget = namedtuple("IscsiTarget", "portal, tpgt, iqn")
+
+ISCSI_DEFAULT_PORT = 3260
 SCAN_PATTERN = "/sys/class/scsi_host/host*/scan"
 
-# iscsiadm exit statuses
-ISCSI_ERR_SESS_EXISTS = 15
-ISCSI_ERR_LOGIN_AUTH_FAILED = 24
+IscsiSession = namedtuple("IscsiSession", "id, iface, target, credentials")
 
-log = logging.getLogger('Storage.iScsi')
+_iscsiadmDiscoveryLock = RLock()
 
+log = logging.getLogger('Storage.ISCSI')
 
-def validateiSCSIParams(ip, port, username=None, password=None):
-    if not ip:
-        raise se.InvalidParameterException("IP", ip)
-    else:
-        try:
-            ip = socket.gethostbyname(ip)
-        except socket.gaierror:
-            raise se.InvalidIpAddress(ip)
-    if not port:
-        raise se.InvalidParameterException("Port", port)
-
-    return (ip, port, username, password)
-
-
-def getiSCSIifaces():
+def getDevIscsiInfo(dev):
     """
-    Collect the dictionary of all the existing iSCSI ifaces
-    (including the default and hw/fw)
-    """
-    rc, out, err = misc.execCmd(ISCSIADM_IFACE, sudo=True)
-    if rc != 0:
-        raise se.iSCSIifaceError()
-    ifaces = dict()
-    for i in out:
-        iface, params = i.split()
-        params = params.split(',')
-        ifaces[iface] = params
+    Reports the iSCSI parameters of the given device 'dev'
+    Arguments:
+        dev - for example 'sdf'
+    Returns:
+        IscsiSession
 
-    return ifaces
-
-
-def addiSCSIiface(initiator):
-    """
-    Create the iSCSI iface with the given initiator name.
-    For the sake of simplicity the iface is created with the same name
-    as an initiator. It makes the bookkeeping trivial.
-    """
-    cmd = ISCSIADM_IFACE + NEW_REC + ["-I", initiator]
-    rc, out, err = misc.execCmd(cmd, sudo=True)
-    if rc != 0:
-        raise se.iSCSIifaceError()
-
-    cmd = ISCSIADM_IFACE + ["-o", "update", "-I", initiator, "-n",
-        "iface.initiatorname", "-v", initiator]
-    rc, out, err = misc.execCmd(cmd, sudo=True)
-    if rc != 0:
-        raise se.iSCSIifaceError()
-
-
-def remiSCSIiface(initiator):
-    """
-    Remove the iface with the given initiator name.
-    """
-    cmd = ISCSIADM_IFACE + ["-o", "delete", "-I", initiator]
-    rc, out, err = misc.execCmd(cmd, sudo=True)
-    if rc != 0:
-        raise se.iSCSIifaceError()
-
-
-def addiSCSIPortal(ip, port, initiator, username=None, password=None):
-    """
-    Attempts SendTarget discovery at the portal ip:port.
     """
 
-    if port == "":
-        port = ISCSI_DEFAULT_PORT
+    device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
+    if os.path.exists(device) and devIsiSCSI(dev):
+        sessiondir = os.path.realpath(os.path.join(device, "../.."))
+        sessionID = int(os.path.basename(sessiondir)[7:])
+        return getSessionInfo(sessionID)
 
-    ip, port, username, password = validateiSCSIParams(ip, port, username,
-        password)
-    portal = "%s:%s" % (ip, port)
+    #FIXME: raise exception instead of returning an empty object
+    return IscsiSession(0, IscsiInterface(""),
+            IscsiTarget(IscsiPortal("", 0), 0, ""), None)
 
-    args = ["-p", portal]
+def getSessionInfo(sessionID):
+    sessionName = "session%d" % sessionID
+    sessionDir = glob.glob("/sys/devices/platform/host*/%s/" % sessionName)
+    if len(sessionDir) == 0:
+        raise OSError(errno.ENOENT, "No such session")
 
-    if initiator:
-        if initiator not in getiSCSIifaces():
-            addiSCSIiface(initiator)
-        args += ["-I", initiator]
+    sessionDir = sessionDir[0]
 
-    cmd = SENDTARGETS_DISCOVERY + args
+    iscsi_session = os.path.join(sessionDir, "iscsi_session", sessionName)
+    if not os.path.exists(iscsi_session):
+        raise OSError(errno.ENOENT, "No such session")
 
-    if username or password:
-        _configureAuthInformation(cmd, username, password)
+    targetname = os.path.join(iscsi_session, "targetname")
+    iface = os.path.join(iscsi_session, "ifacename")
+    tpgt = os.path.join(iscsi_session, "tpgt")
 
-    cmd.extend(AUTH_EXEC_DISCOVER)
+    user = os.path.join(iscsi_session, "username")
+    passwd = os.path.join(iscsi_session, "password")
 
-    # Discovering the targets and setting them to "manual".
-    # NOTE: We are not taking for granted that iscsiadm is not going to write
-    #       the database when the discovery fails, therefore we try to set the
-    #       node startup to manual anyway.
-    (dRet, dOut, dErr) = misc.execCmd(cmd, sudo=True)
-    (mRet, mOut, mErr) = misc.execCmd(ISCSIADM_NODE + args + MANUAL_STARTUP,
-            sudo=True)
-
-    # Even if the discovery failed it's important to log that we tried to set
-    # the node startup to manual and we failed.
-    if mRet != 0:
-        log.error("Could not set the iscsi node.startup to manual")
-
-    # Raise an exception if discovering the targets failed
-    if dRet != 0:
-        raise se.iSCSIDiscoveryError(portal, dErr)
-
-    return dRet, dOut
-
-def remiSCSIPortal(ip, port):
-    """
-    Removes iSCSI portal from discovery list
-    """
-
-    if port == "":
-        port = ISCSI_DEFAULT_PORT
-
-    ip, port, username, password = validateiSCSIParams(ip, port)
-    portal = "%s:%s" % (ip, port)
-
-    cmd = [constants.EXT_ISCSIADM, "-m", "discovery", "-o", "delete", "-p", portal]
-    rc = misc.execCmd(cmd, sudo=True)[0]
-    if rc != 0:
-        raise se.RemoveiSCSIPortalError(portal)
-
-
-def discoverSendTargets(ip, port, username=None, password=None):
-    """
-    Perform iSCSI SendTargets discovery for a given iSCSI portal
-    """
-    ip, port, username, password = validateiSCSIParams(ip, port, username,
-        password)
-    rc, out = addiSCSIPortal(ip, port, None, username, password)
-    targets = [target for target in out]
-
-    # Ideally we would remove the discovery record right away,
-    # however there is some subtle issue with tpgt if I add
-    # the node manually via iscsiadm -m node - it is being
-    # recorded as -1 inside the node record. the record itself,
-    # nonetheless, doesn't bear any tpgt in its name.
-    # That causes conflicts later.
-
-    #remiSCSIPortal(ip, port)
-    return targets
-
-def _configureAuthInformation(cmd, usr, passwd):
-    cmdList = [(cmd + NEW_REC, None), # Create a new record
-               (cmd + AUTH_CHAP, None), # Set auth method to CHAP
-               (cmd + AUTH_PASS + [passwd], cmd + AUTH_PASS + ["******"])] # Set password
-    if usr:
-        cmdList.append((cmd + AUTH_USER + [usr], None)) # Set username
-
-    for cmd in cmdList:
-        if cmd == None:
-            continue
-        (rc, out, err) = misc.execCmd(cmd[0],printable=cmd[1], sudo=True)
-        if rc != 0:
-            raise se.SetiSCSIAuthError(cmd[0])
-
-def addiSCSINode(ip, port, iqn, tpgt, initiator, username=None, password=None):
-    """
-    Add a specific node/iSCSI target
-    """
-    ip, port, username, password = validateiSCSIParams(ip, port, username,
-        password)
-    if port == "":
-        port = ISCSI_DEFAULT_PORT
-
-    portal = "%s:%s" % (ip, port)
-
+    conn_pattern = os.path.join(sessionDir, "connection*")
     try:
-        addiSCSIPortal(ip, port, initiator, username, password)[0]
+        connectiondir = glob.glob(conn_pattern)[0]
+    except IndexError:
+        raise OSError(errno.ENOENT, "No such session")
 
-        cmdt = ISCSIADM_NODE + ["-T", iqn]
+    connection = os.path.basename(connectiondir)
+    iscsi_connection = os.path.join(connectiondir, "iscsi_connection", connection)
+    paddr = os.path.join(iscsi_connection, "persistent_address")
+    pport = os.path.join(iscsi_connection, "persistent_port")
 
-        if initiator:
-            cmdt += ["-I", initiator]
-
-        # If username or password exists assume CHAP authentication is required
-        if username or password:
-            # Set authentication type
-            cmd = cmdt + LOGIN_AUTH_CHAP
-            rc = misc.execCmd(cmd, sudo=True)[0]
-            if rc != 0:
-                raise se.SetiSCSIAuthError(portal)
-
-            if username:
-                # Set username
-                cmd = cmdt + LOGIN_AUTH_USER + [username]
-                rc = misc.execCmd(cmd, sudo=True)[0]
-                if rc != 0:
-                    raise se.SetiSCSIUsernameError(portal)
-
-            # Set password
-            cmd = cmdt + LOGIN_AUTH_PASS
-            rc = misc.execCmd(cmd + [password], printable=cmd + ["******"],
-                    sudo=True)[0]
-            if rc != 0:
-                raise se.SetiSCSIPasswdError(portal)
-
-        # Finally instruct the iscsi initiator to login to the target
-        cmd = cmdt + ["-l", "-p", portal]
-        rc = misc.execCmd(cmd, sudo=True)[0]
-        if rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
-            raise se.iSCSILoginAuthError(portal)
-        elif rc not in (0, ISCSI_ERR_SESS_EXISTS):
-            raise se.iSCSILoginError(portal)
-
-    except se.StorageException:
-        exc_class, exc, tb = sys.exc_info()
-        # Do not try to disconnect - we may remove live node!
+    res = []
+    for fname in (targetname, tpgt, user, passwd, paddr, pport, iface):
         try:
-            remiSCSINode(ip, port, iqn, tpgt, username, password, logout=False)
-        except Exception:
-            log.error("Could not remove iscsi node", exc_info=True)
+            with open(fname, "r") as f:
+                res.append(f.read().strip())
+        except (OSError, IOError):
+            res.append("")
 
-        raise exc_class, exc, tb
+    iqn, tpgt, username, password, ip, port, iface = res
+    port = int(port)
+    tpgt = int(tpgt)
 
+    # Fix username and password if needed (iscsi reports empty user/password
+    # as "<NULL>" (RHEL5) or "(null)" (RHEL6)
+    if username in ["<NULL>", "(null)"]:
+        username = None
+    if password in ["<NULL>", "(null)"]:
+        password = None
 
-def remiSCSINode(ip, port, iqn, tpgt, username=None, password=None, logout=True):
-    """
-    Remove a specific node/iSCSI target
-    """
-    ip, port, username, password = validateiSCSIParams(ip, port, username,
-        password)
-    if port == "":
-        port = ISCSI_DEFAULT_PORT
+    iface = IscsiInterface(iface)
+    portal = IscsiPortal(ip, port)
+    target = IscsiTarget(portal, tpgt, iqn)
+    cred = None
+    #FIXME: Don't just assume CHAP
+    if username or password:
+        cred = ChapCredentials(user, password)
 
-    portal = "%s:%s" % (ip, port)
+    return IscsiSession(sessionID, iface, target, cred)
 
-    if logout:
-        cmd = ISCSIADM_NODE + ["-T", iqn, "-p", portal, "-u"]
-        rc = misc.execCmd(cmd, sudo=True)[0]
-        if rc:
-            raise se.iSCSILogoutError(portal)
+def addIscsiNode(iface, target, credentials=None):
+    targetName = target.iqn
+    portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
+    iscsiadm.node_new(iface.name, portalStr, targetName)
+    try:
+        iscsiadm.node_update(iface.name, portalStr, targetName, "node.startup", "manual")
 
-    # FIXME: should we check if logout succeeds?
-    cmd = ISCSIADM_NODE + ["-o", "delete", "-T", iqn, "-p", portal]
-    rc = misc.execCmd(cmd, sudo=True)[0]
-    if rc:
-        raise se.RemoveiSCSINodeError(portal)
+        if credentials is not None:
+            for key, value in credentials.getIscsiadmOptions():
+                key = "node.session." + key
+                iscsiadm.node_update(iface.name, portalStr, targetName, key, value, hideValue=True)
 
+        iscsiadm.node_login(iface.name, portalStr, targetName)
+    except:
+        removeIscsiNode(iface, target)
+        raise
 
-def discoveriSNS():
-    pass
+def removeIscsiNode(iface, target):
+    targetName = target.iqn
+    portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
+    try:
+        iscsiadm.node_disconnect(iface.name, portalStr, targetName)
+    except iscsiadm.IscsiSessionNotFound:
+        pass
 
-def addiSCSIiSNS():
-    pass
+    iscsiadm.node_delete(iface.name, portalStr, targetName)
 
+def addIscsiPortal(iface, portal, credentials=None):
+    discoverType = "sendtargets"
+    portalStr = "%s:%d" % (portal.hostname, portal.port)
+
+    with _iscsiadmDiscoveryLock:
+        iscsiadm.discoverydb_new(discoverType, iface.name, portalStr)
+
+        # NOTE: We are not taking for granted that iscsiadm is not going to write
+        #       the database when the discovery fails, therefore we try to set the
+        #       node startup to manual anyway.
+        try:
+            iscsiadm.discoverydb_update(discoverType, iface.name, portalStr, "node.startup", "manual")
+        except:
+            # this is just a to be polite we don't really care
+            pass
+
+        try:
+            # Push credentials
+            if credentials is not None:
+                for key, value in credentials.getIscsiadmOptions():
+                    key = "discovery.sendtargets." + key
+                    iscsiadm.discoverydb_update(discoverType, iface.name, portalStr, key, value, hideValue=True)
+
+        except:
+            deleteIscsiPortal(iface, portal)
+            raise
+
+def deleteIscsiPortal(iface, portal):
+    discoverType = "sendtargets"
+    portalStr = "%s:%d" % (portal.hostname, portal.port)
+    iscsiadm.discoverydb_delete(discoverType, iface.name, portalStr)
+
+def discoverSendTargets(iface, portal, credentials=None):
+    # Because proper discovery actually has to clear the DB having multiple
+    # discoveries at once will cause unpredicrable results
+    discoverType = "sendtargets"
+    portalStr = "%s:%d" % (portal.hostname, portal.port)
+
+    with _iscsiadmDiscoveryLock:
+        addIscsiPortal(iface, portal, credentials)
+        try:
+            targets = iscsiadm.discoverydb_discover(discoverType, iface.name, portalStr)
+        finally:
+            deleteIscsiPortal(iface, portal)
+
+        res = []
+        for ip, port, tpgt, iqn in targets:
+            # Do not reuse the portal from argument as the portal that
+            # returns here has it's IP resolved!
+            res.append(IscsiTarget(IscsiPortal(ip, port), tpgt, iqn))
+
+        return res
+
+def iterateIscsiSessions():
+    for sessionDir in glob.iglob("/sys/devices/platform/host*/session*/iscsi_session/session?*"):
+        sessionID = int(os.path.basename(sessionDir)[len("session"):])
+        try:
+            yield getSessionInfo(sessionID)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+
+            continue
+
+class ChapCredentials(object):
+    def __init__(self, username=None, password=None):
+        self.username = username
+        self.password = password
+
+    def getIscsiadmOptions(self):
+        res = [("auth.authmethod", "CHAP")]
+        if self.username is not None:
+            res.append(("auth.username", self.username))
+        if self.password is not None:
+            res.append(("auth.password", self.password))
+
+        return res
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(self.username) ^ hash(self.password)
+
+# Technically there are a lot more interface properties but VDSM doesn't
+# support them at the moment
+class IscsiInterface(object):
+
+    _fields = {
+            "name": ('iface.iscsi_ifacename', 'rw'),
+            'transport': ("iface.transport_name", 'r'),
+            'hardwareAddress': ("iface.hwaddress", 'rw'),
+            'ipAddress': ('iface.ipaddress', 'rw'),
+            'intitatorName': ('iface.initiatorname', 'rw')
+            }
+
+    def __getattr__(self, name):
+        if name in ("_conf", "_fields", "_loaded"):
+            return object.__getattr__(self, name)
+
+        if name not in self._fields:
+            raise AttributeError(name)
+
+        key, mode = self._fields[name]
+
+        if not "r" in mode:
+            raise AttributeError(name)
+
+        value = self._conf[key]
+        if value == None and not self._loaded:
+            # Lazy load
+            self._loaded = True
+            self._load()
+            return getattr(self, name)
+
+        if value == "<empty>":
+            return None
+
+        return value
+
+    def __setattr__(self, name, value):
+        if name in ("_conf", "_fields", "_loaded"):
+            return object.__setattr__(self, name, value)
+
+        if name not in self._fields:
+            raise AttributeError(name)
+
+        key, mode = self._fields[name]
+        if not "w" in mode:
+            raise AttributeError(name)
+
+        self._conf[key] = value
+
+    def __init__(self, name,
+            hardwareAddress=None,
+            ipAddress=None,
+            initiatorName=None):
+
+        # Only new tcp interfaces are supported for now
+        self._conf = {'iface.transport_name': 'tcp'}
+
+        self.name = name
+        self._loaded = False
+
+        if hardwareAddress:
+            self.hardwareAddress = hardwareAddress
+
+        if ipAddress:
+            self.ipAddress = ipAddress
+
+        if initiatorName:
+            self.initiatorname = initiatorName
+
+    @staticmethod
+    def fromConf(conf):
+        tmp = IscsiInterface("tmp")
+        tmp._conf = conf
+        return tmp
+
+    def create(self):
+        # If VDSM crashes while creating an interface a grabages interface will
+        # still exist. If you have an idea how to go about making this atomic
+        # please fix this.
+
+        iscsiadm.iface_new(self.name)
+        try:
+            self.udpate()
+        except:
+            self.delete()
+            raise
+
+    def update(self):
+        # If this fails mid operation we get a partially updated interface.
+        # Suggestions are welcome.
+        for key, value in self._conf:
+            if key == 'iface.iscsi_ifacename':
+                continue
+
+            iscsiadm.iface_update(self.name, key, value)
+
+    def delete(self):
+        iscsiadm.iface_delete(self.name)
+
+    def _load(self):
+        conf = iscsiadm.iface_info(self.name)
+        conf.update(self._conf)
+        self._conf = conf
+
+    def __repr__(self):
+        return "<IscsiInterface name='%s' transport='%s'>" % (self.name, self.transport)
+
+def iterateIscsiInterfaces():
+    names = iscsiadm.iface_list()
+    for name in names:
+        yield IscsiInterface(name)
+
+@misc.samplingmethod
+def rescan():
+    try:
+        iscsiadm.session_rescan()
+    except iscsiadm.IscsiError:
+        pass
+
+@misc.samplingmethod
 def forceIScsiScan():
     for host in glob.glob(SCAN_PATTERN):
         try:
@@ -318,6 +376,7 @@ def devIsiSCSI(dev):
     return (os.path.exists(iscsi_host) and os.path.exists(proc_name))
 
 def getiScsiTarget(dev):
+    # FIXME: Use the new target object instead of a string
     device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
     sessiondir = os.path.realpath(os.path.join(device, "../.."))
     session = os.path.basename(sessiondir)
@@ -326,69 +385,16 @@ def getiScsiTarget(dev):
         return f.readline().strip()
 
 def getiScsiSession(dev):
+    # FIXME: Use the new session object instead of a string
     device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
     sessiondir = os.path.realpath(os.path.join(device, "../.."))
     session = os.path.basename(sessiondir)
-    return session
+    return int(session[len('session'):])
 
-def getdeviSCSIinfo(dev):
-    """
-    Reports the iSCSI parameters of the given device 'dev'
-    Arguments:
-        dev - for example 'sdf'
-    Returns:
-        (ip, port, iqn, num, username, password)
+def getDefaultInitiatorName():
+    with open("/etc/iscsi/initiatorname.iscsi", "r") as f:
+        return f.read().strip().split("=",1)[1]
 
-    """
-
-    ip = port = iqn = num = username = password = initiator = ""
-
-    device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
-    if os.path.exists(device) and devIsiSCSI(dev):
-        sessiondir = os.path.realpath(os.path.join(device, "../.."))
-        session = os.path.basename(sessiondir)
-        iscsi_session = os.path.join(sessiondir, constants.STRG_ISCSI_SESSION + session)
-
-        targetname = os.path.join(iscsi_session, "targetname")
-        initiator = os.path.join(iscsi_session, "initiatorname")
-        tpgt = os.path.join(iscsi_session, "tpgt")
-        user = os.path.join(iscsi_session, "username")
-        passwd = os.path.join(iscsi_session, "password")
-
-        conn_pattern = os.path.join(sessiondir, "connection*")
-        connectiondir = glob.glob(conn_pattern)[0]
-        connection = os.path.basename(connectiondir)
-        iscsi_connection = os.path.join(connectiondir,
-            constants.STRG_ISCSI_CONNECION + connection)
-        paddr = os.path.join(iscsi_connection, "persistent_address")
-        pport = os.path.join(iscsi_connection, "persistent_port")
-
-        res = []
-        for fname in (targetname, tpgt, user, passwd, paddr, pport, initiator):
-            try:
-                with open(fname, "r") as f:
-                    res.append(f.read().strip())
-            except (OSError, IOError):
-                res.append("")
-
-        iqn, num, username, password, ip, port, initiator = res
-
-    # Fix username and password if needed (iscsi reports empty user/password
-    # as "<NULL>" (RHEL5) or "(null)" (RHEL6)
-    if username in ["<NULL>", "(null)"]:
-        username = ""
-    if password in ["<NULL>", "(null)"]:
-        password = ""
-
-    info = dict(connection=ip, port=port, iqn=iqn, portal=num,
-        user=username, password=password, initiator=initiator)
-
-    return info
-
-@misc.samplingmethod
-def rescan():
-    cmd = [constants.EXT_ISCSIADM, "-m", "session", "-R"]
-    misc.execCmd(cmd, sudo=True)
 
 def findUnderlyingStorage(devPath):
     # make sure device exists and is accessible
@@ -425,8 +431,12 @@ def disconnectFromUndelyingStorage(devPath):
     return res
 
 def disconnectiScsiSession(sessionID):
+    #FIXME : Should throw exception on error
     sessionID = int(sessionID)
-    rc, out, err = misc.execCmd([constants.EXT_ISCSIADM, "-m", "session", "-r",
-        str(sessionID), "-u"], sudo=True)
-    return rc
+    try:
+        iscsiadm.session_logout(sessionID)
+    except iscsiadm.IscsiError as e:
+        return e[0]
+
+    return 0
 

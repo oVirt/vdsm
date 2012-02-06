@@ -36,6 +36,7 @@ dist_vdsmstorage_PYTHON = \
 	hsm.py \
 	image.py \
 	iscsi.py \
+        iscsiadm.py \
 	localFsSD.py \
 	lvm.py \
 	misc.py \

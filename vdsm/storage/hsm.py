@@ -2287,24 +2287,29 @@ class HSM:
         :returns: a dict containing the send targets that were discovered.
         :rtype: dict
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
-        #getSharedLock(connectionsResource...)
         ip = con['connection']
-        port = con['port']
+        port = int(con['port'])
         username = con['user']
         password = con['password']
         if username == "":
             username = password = None
-        # This call to validateiSCSIParam() is not really needed,
-        # since the first thing discoverSendTargets() is doing is calling
-        # this validator (Similar to all the other iscsi functions.
-        # We may revisit our strategy (where to validate parameters) later.
-        # So I do not remove this call, but comment it out for now
-        # iscsi.validateiSCSIParams(ip=ip, port=port, username=username, password=password)
-        targets = iscsi.discoverSendTargets(ip=ip, port=port, username=username, password=password)
-        partialTargets = [target.split()[1] for target in targets]
 
-        return dict(targets=partialTargets, fullTargets=targets)
+        iface = iscsi.IscsiInterface("default")
+        portal = iscsi.IscsiPortal(ip, port)
+        cred = None
+        if username or password:
+            cred = iscsi.ChapCredentials(username, password)
+
+        targets = iscsi.discoverSendTargets(iface, portal, cred)
+        # I unparse the response. Why you ask? Backward compatibility! At
+        # least now if iscsiadm changes the output we can handle it gracefully
+        fullTargets = []
+        partialTargets = []
+        for target in targets:
+            fullTargets.append("%s:%d,%d %s" % (target.portal.host, target.portal.port, target.tpgt, target.iqn))
+            partialTargets.append(target.iqn)
+
+        return dict(targets=partialTargets, fullTargets=fullTargets)
 
 
     @public
