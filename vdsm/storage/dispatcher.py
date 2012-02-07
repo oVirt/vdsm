@@ -42,41 +42,18 @@ class Protect:
                 self.help = getattr(func.im_self, "help")
         except:
             pass
+
         if not self.help:
             try:
                 self.help = getattr(func, "__doc__")
             except:
                 pass
+
         if not self.help:
             self.help = "No help available for method %s" % name
 
-    def convertUnicodeArgs(self, rawArgs, rawKwargs):
-        # Make sure all arguments do not contain non ASCII chars
-        args = [None] * len(rawArgs)
-        kwargs = {}
-        try:
-            for i in range(len(rawArgs)):
-                if isinstance(rawArgs[i], unicode):
-                    args[i] = str(rawArgs[i])
-                else:
-                    args[i] = rawArgs[i]
-
-            for i in rawKwargs:
-                if isinstance(rawKwargs[i], unicode):
-                    kwargs[i] = str(rawKwargs[i])
-                else:
-                    kwargs[i] = rawKwargs[i]
-
-        except UnicodeEncodeError, e:
-            self.log.error(e)
-            return se.UnicodeArgumentException().response()
-
-        return args, kwargs
-
     def run(self, *args, **kwargs):
         try:
-            # TODO : Support unicode
-            args, kwargs = self.convertUnicodeArgs(args, kwargs)
             ctask = task.Task(id=None, name=self.name)
             vars.task = ctask
             try:
