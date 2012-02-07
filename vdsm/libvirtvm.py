@@ -2104,7 +2104,7 @@ class LibvirtVm(vm.Vm):
             # Update vm's conf with address for known nic devices
             knownDev = False
             for dev in self.conf['devices']:
-                if dev['type'] == vm.NIC_DEVICES and dev['macAddr'] == mac:
+                if dev['type'] == vm.NIC_DEVICES and dev['macAddr'].lower() == mac.lower():
                     dev['address'] = address
                     dev['alias'] = alias
                     knownDev = True
