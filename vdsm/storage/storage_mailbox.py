@@ -35,6 +35,7 @@ import task
 from threadLocal import vars
 from threadPool import ThreadPool
 from storage_exception import InvalidParameterException
+import constants
 
 __author__="ayalb"
 __date__ ="$Mar 9, 2009 5:25:07 PM$"
@@ -223,14 +224,14 @@ class HSM_MailMonitor(threading.Thread):
         self._incomingMail = EMPTYMAILBOX
         # TODO: add support for multiple paths (multiple mailboxes)
         self._spmStorageDir = config.get('irs', 'repository')
-        self._inCmd = ['dd',
+        self._inCmd = [ constants.EXT_DD,
                         'if=' + str(inbox),
                         'iflag=direct,fullblock',
                         'bs=' + str(BLOCK_SIZE),
                         'count=' + str(BLOCKS_PER_MAILBOX),
                         'skip=' + str(self._hostID*BLOCKS_PER_MAILBOX)
                         ]
-        self._outCmd = ['dd',
+        self._outCmd = [constants.EXT_DD,
                         'of=' + str(outbox),
                         'iflag=fullblock',
                         'oflag=direct',
