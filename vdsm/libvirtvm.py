@@ -909,6 +909,8 @@ class NetworkInterfaceDevice(vm.Device):
     def __init__(self, conf, log, **kwargs):
         vm.Device.__init__(self, conf, log, **kwargs)
         self.sndbufParam = False
+        if self.nicModel == 'pv':
+            self.nicModel = 'virtio'
         self._customize()
 
     def _customize(self):
