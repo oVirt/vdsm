@@ -5402,11 +5402,14 @@
 #
 # @method:     #optional
 #
+# @tunneled:   #optional use libvirt's tunneled migration. default it False.
+#
 # Since: 4.10.0
 ##
 {'type': 'MigrateParams',
  'data': {'vmId': 'UUID', 'dst': 'str', 'dstparams': 'str',
-          '*mode': 'MigrateMode', '*method': 'MigrateMethod'}}
+          '*mode': 'MigrateMode', '*method': 'MigrateMethod',
+          '*tunneled': 'bool'}}
 
 ##
 # @VM.migrate:

@@ -94,7 +94,8 @@ class MigrationSourceThread(threading.Thread):
         cls._ongoingMigrations = threading.BoundedSemaphore(n)
 
     def __init__(self, vm, dst='', dstparams='',
-                 mode='remote', method='online', **kwargs):
+                 mode='remote', method='online',
+                 tunneled=False, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dst = dst
@@ -102,6 +103,7 @@ class MigrationSourceThread(threading.Thread):
         self._method = method
         self._dstparams = dstparams
         self._machineParams = {}
+        self._tunneled = utils.tobool(tunneled)
         self._downtime = kwargs.get('downtime') or \
             config.get('vars', 'migration_downtime')
         self.status = {
