@@ -58,11 +58,11 @@ class OSName:
     DEBIAN = 'Debian'
 
 class CpuInfo(object):
-    def __init__(self):
+    def __init__(self, cpuinfo='/proc/cpuinfo'):
         """Parse /proc/cpuinfo"""
         self._info = {}
         p = {}
-        for line in file('/proc/cpuinfo'):
+        for line in file(cpuinfo):
             if line.strip() == '':
                 p = {}
                 continue
@@ -73,7 +73,8 @@ class CpuInfo(object):
                 p[key] = value
 
     def cores(self):
-        return len(self._info)
+        return len(set( (p['core id'], p['physical id']) for p
+                        in self._info.values()) )
 
     def sockets(self):
         phys_ids = [ p.get('physical id', '0') for p in self._info.values() ]
