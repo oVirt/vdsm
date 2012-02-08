@@ -149,7 +149,7 @@ class BindingXMLRPC(object):
         utils.closeOnExec(s.socket.fileno())
 
         s.lastClientTime = 0
-        s.lastClient = ''
+        s.lastClient = '0.0.0.0'
 
         return s
 
