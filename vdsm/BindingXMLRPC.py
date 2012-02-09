@@ -114,6 +114,8 @@ class BindingXMLRPC(object):
         """
         Create xml-rpc server over http or https.
         """
+        HTTP_HEADER_FLOWID = "FlowID"
+
         threadLocal = self.cif.threadLocal
         class LoggingMixIn:
             def log_request(self, code='-', size='-'):
@@ -138,6 +140,10 @@ class BindingXMLRPC(object):
             def setup(self):
                 threadLocal.client = self.client_address[0]
                 return basehandler.setup(self)
+            def parse_request(self):
+                r = SecureXMLRPCServer.SecureXMLRPCRequestHandler.parse_request(self)
+                threadLocal.flowID = self.headers.get(HTTP_HEADER_FLOWID)
+                return r
 
         if self.enableSSL:
             KEYFILE, CERTFILE, CACERT = self._getKeyCertFilenames()
@@ -823,9 +829,20 @@ def wrapApiMethod(f):
                 assert 'password' not in kwargs
                 if len(args) > 3:
                     displayArgs = args[:3] + ('****',) + args[4:]
-            f.im_self.cif.log.log(logLevel, '[%s]::call %s with %s %s',
-                              getattr(f.im_self.cif.threadLocal, 'client', ''),
-                              f.__name__, displayArgs, kwargs)
+
+            # Logging current call
+            logStr = 'client [%s]::call %s with %s %s' % \
+                             (getattr(f.im_self.cif.threadLocal, 'client', ''),
+                             f.__name__, displayArgs, kwargs)
+
+            # if flowID exists
+            if getattr(f.im_self.cif.threadLocal, 'flowID', '') != None:
+                logStr += " flowID [%s]" % getattr(f.im_self.cif.threadLocal,
+                        'flowID', '')
+
+            # Ready to show the log into vdsm.log
+            f.im_self.log.log(logLevel, logStr)
+
             if f.im_self.cif._recovery:
                 res = errCode['recovery']
             else:
