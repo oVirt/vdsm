@@ -130,20 +130,22 @@ class BindingXMLRPC(object):
 
         server_address = (self.serverIP, int(self.serverPort))
         if self.enableSSL:
-            class LoggingHandler(LoggingMixIn, SecureXMLRPCServer.SecureXMLRPCRequestHandler):
-                def setup(self):
-                    threadLocal.client = self.client_address[0]
-                    return SecureXMLRPCServer.SecureXMLRPCRequestHandler.setup(self)
+            basehandler = SecureXMLRPCServer.SecureXMLRPCRequestHandler
+        else:
+            basehandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
+
+        class LoggingHandler(LoggingMixIn, basehandler):
+            def setup(self):
+                threadLocal.client = self.client_address[0]
+                return basehandler.setup(self)
+
+        if self.enableSSL:
             KEYFILE, CERTFILE, CACERT = self._getKeyCertFilenames()
             s = SecureXMLRPCServer.SecureThreadedXMLRPCServer(server_address,
                         keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
                         timeout=self.serverRespTimeout,
                         requestHandler=LoggingHandler)
         else:
-            class LoggingHandler(LoggingMixIn, SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
-                def setup(self):
-                    threadLocal.client = self.client_address[0]
-                    return SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.setup(self)
             s = utils.SimpleThreadedXMLRPCServer(server_address,
                         requestHandler=LoggingHandler, logRequests=True)
         utils.closeOnExec(s.socket.fileno())
