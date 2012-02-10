@@ -2529,8 +2529,9 @@ class HSM:
         img = image.Image(os.path.join(self.storage_repository, spUUID))
         imgVolumes = img.prepare(sdUUID, imgUUID, volUUID)
 
-        chain = [{'volUUID': vol.volUUID,
-                  'path': vol.getVolumePath()} for vol in imgVolumes]
+        chain = [{'domainID': sdUUID, 'imageID': imgUUID,
+                  'volumeID': vol.volUUID, 'path': vol.getVolumePath()}
+                 for vol in imgVolumes]
 
         return {'path': chain[-1]['path'], 'chain': chain}
 

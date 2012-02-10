@@ -568,6 +568,18 @@ class VM(object):
             return errCode['noVM']
         return v.snapshot(snapDrives)
 
+    def merge(self, mergeDrives):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.merge(mergeDrives)
+
+    def mergeStatus(self):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.mergeStatus()
+
 class Volume(object):
     def __init__(self, cif, UUID, spUUID, sdUUID, imgUUID):
         self._irs = cif.irs

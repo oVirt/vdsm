@@ -49,6 +49,7 @@ errCode = { 'noVM':         {'status': {'code': 1, 'message': 'Virtual machine d
             'hotplugNic':   {'status': {'code':49, 'message': 'Failed to hotplug NIC'}},
             'hotunplugNic': {'status': {'code':50, 'message': 'Failed to hotunplug NIC'}},
             'migInProgress':{'status': {'code':51, 'message': 'Command not supported during migration'}},
+            'mergeErr':     {'status': {'code':52, 'message': 'Merge failed'}},
             'recovery':     {'status': {'code':99, 'message': 'Recovering from crash or Initializing'}},
             }
 doneCode = {'code': 0, 'message': 'Done'}

@@ -269,6 +269,14 @@ class BindingXMLRPC(object):
         vm = API.VM(self.cif, vmId)
         return vm.snapshot(snapDrives)
 
+    def vmMerge(self, vmId, mergeDrives):
+        vm = API.VM(self.cif, vmId)
+        return vm.merge(mergeDrives)
+
+    def vmMergeStatus(self, vmId):
+        vm = API.VM(self.cif, vmId)
+        return vm.mergeStatus()
+
     def getCapabilities(self):
         api = API.Global(self.cif)
         ret = api.getCapabilities()
@@ -711,6 +719,8 @@ class BindingXMLRPC(object):
                 (self.vmPause, 'pause'),
                 (self.vmCont, 'cont'),
                 (self.vmSnapshot, 'snapshot'),
+                (self.vmMerge, 'merge'),
+                (self.vmMergeStatus, 'mergeStatus'),
                 (self.vmReset, 'reset'),
                 (self.vmShutdown, 'shutdown'),
                 (self.vmSetTicket, 'setVmTicket'),

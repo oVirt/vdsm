@@ -1136,6 +1136,7 @@ class LibvirtVm(vm.Vm):
         self._devXmlHash = '0'
         self._released = False
         self._releaseLock = threading.Lock()
+        self._liveMergeStatus = []
         self.saveState()
 
 
@@ -1281,6 +1282,8 @@ class LibvirtVm(vm.Vm):
             self._dom = NotifyingVirDomain(
                             self._connection.lookupByUUIDString(self.id),
                             self._timeoutExperienced)
+            # Reinitialize the merge statuses
+            self._runMerge()
         elif 'restoreState' in self.conf:
             hooks.before_vm_dehibernate(self.conf.pop('_srcDomXML'), self.conf)
 
@@ -1536,6 +1539,36 @@ class LibvirtVm(vm.Vm):
         hooks.before_vm_pause(self._dom.XMLDesc(0), self.conf)
         self._dom.suspend()
 
+    def _findDriveByUUIDs(self, drive):
+        """Find a drive given its definition"""
+
+        if drive.has_key("domainID"):
+            tgetDrv = (drive["domainID"], drive["imageID"],
+                       drive["volumeID"])
+
+            for device in self._devices[vm.DISK_DEVICES][:]:
+                if not hasattr(device, "domainID"):
+                    continue
+                if ((device.domainID, device.imageID,
+                        device.volumeID) == tgetDrv):
+                    return device
+
+        elif drive.has_key("GUID"):
+            for device in self._devices[vm.DISK_DEVICES][:]:
+                if not hasattr(device, "GUID"):
+                    continue
+                if device.GUID == drive["GUID"]:
+                    return device
+
+        elif drive.has_key("UUID"):
+            for device in self._devices[vm.DISK_DEVICES][:]:
+                if not hasattr(device, "UUID"):
+                    continue
+                if device.UUID == drive["UUID"]:
+                    return device
+
+        return None
+
     def snapshot(self, snapDrives):
         """Live snapshot command"""
 
@@ -1574,36 +1607,6 @@ class LibvirtVm(vm.Vm):
                 baseDrv, tgetDrv = (None, None)
 
             return baseDrv, tgetDrv
-
-        def _findSnapDrive(drive):
-            """Find a drive given its definition"""
-
-            if drive.has_key("domainID"):
-                tgetDrv = (drive["domainID"], drive["imageID"],
-                           drive["volumeID"])
-
-                for device in self._devices[vm.DISK_DEVICES][:]:
-                    if not hasattr(device, "domainID"):
-                        continue
-                    if ((device.domainID, device.imageID,
-                            device.volumeID) == tgetDrv):
-                        return device
-
-            elif drive.has_key("GUID"):
-                for device in self._devices[vm.DISK_DEVICES][:]:
-                    if not hasattr(device, "GUID"):
-                        continue
-                    if device.GUID == drive["GUID"]:
-                        return device
-
-            elif drive.has_key("UUID"):
-                for device in self._devices[vm.DISK_DEVICES][:]:
-                    if not hasattr(device, "UUID"):
-                        continue
-                    if device.UUID == drive["UUID"]:
-                        return device
-
-            return None
 
         def _rollbackDrives(newDrives):
             """Rollback the prepared volumes for the snapshot"""
@@ -1650,12 +1653,12 @@ class LibvirtVm(vm.Vm):
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)
 
-            if _findSnapDrive(tgetDrv):
+            if self._findDriveByUUIDs(tgetDrv):
                 # The snapshot volume is the current one, skipping
                 self.log.debug("The volume is already in use: %s", tgetDrv)
                 continue
 
-            vmDrive = _findSnapDrive(baseDrv)
+            vmDrive = self._findDriveByUUIDs(baseDrv)
 
             if vmDrive is None:
                 # The volume we want to snapshot doesn't exist
@@ -1705,6 +1708,79 @@ class LibvirtVm(vm.Vm):
             self._volumesPrepared = True
 
         return {'status': doneCode}
+
+    def _runMerge(self):
+        # FIXME: this method is called also during the VM initalization
+        #        (LibvirtVm.__init__) to prepare the _liveMergeStatus data
+        #        structure. Here we need to detect if any of the block jobs
+        #        ended while VDSM was down and mark them as failed (or we
+        #        should use something smart to detect if they succeeded)
+        self._liveMergeStatus = []
+
+        for drive in self.conf.get('liveMerge', []):
+            mergeDrive = self._findDriveByUUIDs(drive)
+            mergeStatus = drive.copy()
+
+            # Drive not found
+            if not mergeDrive or not hasattr(mergeDrive, 'volumeChain'):
+                mergeStatus['status'] = 'Drive Not Found'
+            else:
+                try:
+                    mergeStatus['path'] = mergeDrive.path
+                    self._dom.blockPull(mergeDrive.path, 0, 0)
+                except:
+                    self.log.error("Live merge failed for %s",
+                                            mergeDrive.path, exc_info=True)
+                    mergeStatus['status'] = 'Failed'
+                else:
+                    mergeStatus['status'] = 'In Progress'
+
+            self._liveMergeStatus.append(mergeStatus)
+
+    def merge(self, mergeDrives):
+        """Live merge command"""
+
+        # Check if there is a merge still in progress
+        for mergeStatus in self._liveMergeStatus:
+            if mergeStatus['status'] == 'In Progress':
+                return errCode['mergeErr']
+
+        # FIXME: it might be better to persist the _liveMergeStatus instead of
+        #        the mergeDrive command
+        self.conf['liveMerge'] = mergeDrives
+        self.saveState()
+
+        self._runMerge()
+        return {'status': doneCode}
+
+    def mergeStatus(self):
+        mergeStatus = self._liveMergeStatus[:]
+
+        # Don't report the volume path in the status
+        for mergeDriveStatus in mergeStatus:
+            if 'path' in mergeDriveStatus:
+                del mergeDriveStatus['path']
+
+        return {'status': doneCode, 'mergeStatus': mergeStatus}
+
+    def _onBlockJobEvent(self, path, type, status):
+        for mergeStatus in self._liveMergeStatus:
+            if mergeStatus['path'] == path:
+                break
+        else:
+            self.log.error("Live merge completed for an unexpected "
+                           "path: %s", path)
+            return
+
+        if status == libvirt.VIR_DOMAIN_BLOCK_JOB_COMPLETED:
+            mergeStatus['status'] = "Completed"
+        else:
+            mergeStatus['status'] = "Failed"
+
+        # FIXME: unpersist the mergeDrive command if all (any?) the block jobs
+        #        ended. If we decide to persist _liveMergeStatus then we might
+        #        want to skip this removal and get for free that the merge
+        #        status is kept when vdsm is restarted
 
     def changeCD(self, drivespec):
         return self._changeBlockDev('cdrom', 'hdc', drivespec)
