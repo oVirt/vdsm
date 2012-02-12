@@ -91,6 +91,7 @@ Call VDSM commands from the command line. Used for testing and debugging.
 %package bootstrap
 Summary:        VDSM bootstrapping package
 BuildArch:      noarch
+Conflicts:      ovirt-engine < 3.1
 
 %description bootstrap
 VDSM bootstrapping package. Used for delivering the bootstrap code onto the

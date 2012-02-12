@@ -370,8 +370,7 @@ class Deploy:
 
         return self.rc
 
-    def _initPackagesExplorer(self, iurl, rev_num, usevdcrepo):
-        self.url = iurl
+    def _initPackagesExplorer(self):
         self.req_pack = []
         self.devel_pack = []
         self.vds_pack = []
@@ -380,21 +379,6 @@ class Deploy:
         self.res = ''
         self.message = ''
         self.rc = 0
-        self.usevdcrepo = usevdcrepo
-
-        if self.usevdcrepo:
-            repo_info = """
-include=/etc/yum.conf
-reposdir=/etc/yum.repos.d/
-
-[dtv]
-name=RHEVM repo
-baseurl=%s
-enabled=1
-gpgkey=%s/RPM-GPG-KEY-RHEV
-gpgcheck=0
-            """ % (self.url, self.url)
-            open(DTV_REPO,'w').write(repo_info)
 
     def _avoidPKGConflict(self):
         for pack in CONFL_PACK:
@@ -463,10 +447,7 @@ gpgcheck=0
             if update == 1:
                 yumcmd = "update"
 
-            if self.usevdcrepo:
-                self.res, self.message = deployUtil.installAndVerify(type, pack, yumcmd, ["-c",DTV_REPO])
-            else:
-                self.res, self.message = deployUtil.installAndVerify(type, pack, yumcmd)
+            self.res, self.message = deployUtil.installAndVerify(type, pack, yumcmd)
             res = "OK"
             if not self.res:
                 res = "FAIL"
@@ -523,11 +504,11 @@ gpgcheck=0
             logging.debug('Install development packages ...')
             self._installPackage(self.devel_pack.pop(),"DEVEL")
 
-    def packagesExplorer(self, iurl, rev_num, usevdcrepo=False):
+    def packagesExplorer(self):
         """
             Check and install software packages
         """
-        self._initPackagesExplorer(iurl, rev_num, usevdcrepo)
+        self._initPackagesExplorer()
 
         self._avoidPKGConflict()
         if len(self.confl_pack) > 0:
@@ -545,9 +526,6 @@ gpgcheck=0
             self._getAllPackages()
             deployUtil.setService("vdsmd", "stop")
             self._installPackages()
-
-        if self.usevdcrepo:
-            os.unlink(DTV_REPO)
 
         return self.rc
 
@@ -817,7 +795,7 @@ gpgcheck=0
 # End of deploy class.
 
 def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
-        usevdcrepo, firewallRulesFile):
+        firewallRulesFile):
     """ --- Check VDS Compatibility.
     """
     logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s')"%(subject, random_num, rev_num))
@@ -844,7 +822,7 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
         logging.error('kernelArgs failed')
         return False
 
-    if oDeploy.packagesExplorer(iurl, rev_num, usevdcrepo):
+    if oDeploy.packagesExplorer():
         logging.error('packagesExplorer test failed')
         return False
 
@@ -890,19 +868,16 @@ Usage: vds_bootstrap.py [options] <url> <subject> <random_num>
 options:
     -O <organizationName>
     -t <systemTime>
-    -u {true|false} -- use rhev-m-deployed yum repo
     -f <firewall_rules_file> -- override firewall rules.
 obsolete options:
-    -n <netconsole_host:port>
     -r <rev_num>
     """
     try:
         rev_num = None
         orgName = 'Red Hat Inc.'
         systime = None
-        usevdcrepo = False
         firewallRulesFile = None
-        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:n:u:f:")
+        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:")
         for o,v in opts:
             if o == "-r":
                 rev_num = v
@@ -910,11 +885,6 @@ obsolete options:
                 orgName = v
             if o == "-t":
                 systime = v
-            if o == "-n":
-                # TODO: remove me as soon as possible (BZ#689726)
-                pass
-            if o == "-u":
-                usevdcrepo = (v.upper() == 'TRUE')
             elif o == '-f':
                 firewallRulesFile = v
                 NEEDED_SERVICES.append('iptables')
@@ -932,7 +902,7 @@ obsolete options:
     logging.debug('**** Start VDS Validation ****')
     try:
         ret = VdsValidation(url, subject, random_num, rev_num,
-                            orgName, systime, usevdcrepo, firewallRulesFile)
+                            orgName, systime, firewallRulesFile)
     except:
         logging.error("VDS validation failed", exc_info=True)
         logging.error(main.__doc__)
