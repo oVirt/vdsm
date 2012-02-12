@@ -315,7 +315,7 @@ class BindingXMLRPC(object):
 
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
         api = API.Global(self.cif)
-        return api.addNetwork(bridge, vlan, bond, nics, options={})
+        return api.addNetwork(bridge, vlan, bond, nics, options)
 
     def delNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
         api = API.Global(self.cif)
