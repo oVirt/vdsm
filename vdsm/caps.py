@@ -73,8 +73,8 @@ class CpuInfo(object):
                 p[key] = value
 
     def cores(self):
-        return len(set( (p['core id'], p['physical id']) for p
-                        in self._info.values()) )
+        return len(set((p.get('core id', '0'), p.get('physical id', '0'))
+                    for p in self._info.values()))
 
     def sockets(self):
         phys_ids = [ p.get('physical id', '0') for p in self._info.values() ]
