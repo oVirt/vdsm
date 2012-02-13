@@ -47,14 +47,6 @@ class ConfigNetworkError(Exception):
         Exception.__init__(self, self.errCode, self.message)
 
 
-def _isTrue(b):
-    "Check all kinds of boolean input"
-    if b in ('true', 'True'):
-        return True
-    elif b in ('false', 'False'):
-        return False
-    return bool(b)
-
 def ipcalc(checkopt, s):
     "Validate an ip address (or netmask) using ipcalc"
     if not isinstance(s, basestring):
@@ -578,7 +570,7 @@ def addNetwork(bridge, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=
         mtu = int(mtu)
 
     # Validation
-    if not _isTrue(force):
+    if not utils.tobool(force):
         logging.debug('validating bridge...')
         _addNetworkValidation(_netinfo, bridge, vlan=vlan, bonding=bonding, nics=nics,
                               ipaddr=ipaddr, netmask=netmask, gateway=gateway,
@@ -693,7 +685,7 @@ def delNetwork(bridge, force=False, configWriter=None, **options):
 
     logging.info("Removing bridge %s with vlan=%s, bonding=%s, nics=%s. options=%s"%(bridge, vlan, bonding, nics, options))
 
-    if not _isTrue(force):
+    if not utils.tobool(force):
         if bonding:
             validateBondingName(bonding)
             if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
@@ -971,7 +963,7 @@ def setupNetworks(networks={}, bondings={}, **options):
         logger.debug("Setting up network according to configuration: networks:%r, bondings:%r, options:%r" % (networks, bondings, options))
 
         force = options.get('force', False)
-        if not _isTrue(force):
+        if not utils.tobool(force):
             logging.debug("Validating configuration")
             _validateNetworkSetup(dict(networks), dict(bondings), explicitBonding=options.get('explicitBonding', False))
 
