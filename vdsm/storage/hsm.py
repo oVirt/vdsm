@@ -526,29 +526,35 @@ class HSM:
 
 
     @public
-    def detachStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
+    def detachStorageDomain(self, sdUUID, spUUID, msdUUID = None,
+                                  masterVersion = None, options = None):
         """
-        Detachs a storage domain from a storage pool.
+        Detaches a storage domain from a storage pool.
         This removes the storage domain entry in the storage pool meta-data
         and leaves the storage domain in 'unattached' status.
 
         :param sdUUID: The UUID of the storage domain that you want to detach.
         :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that contains the storage domain being detached.
+        :param spUUID: The UUID of the storage pool that contains the storage
+                       domain being detached.
         :type spUUID: UUID
-        :param msdUUID: The UUID of the master domain.
+        :param msdUUID: Obsolete (was: the UUID of the master domain).
         :type msdUUID: UUID
-        :param masterVersion: The version of the pool.
+        :param masterVersion: Obsolete (was: the version of the pool).
         :type masterVersion: int
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s, msdUUID=%s, masterVersion=%s" % (sdUUID, spUUID, msdUUID, masterVersion)))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError("sdUUID=%s, spUUID=%s, msdUUID=%s, "
+                "masterVersion=%s" % (sdUUID, spUUID, msdUUID, masterVersion))
+        )
+
         self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
-        pool.detachSD(sdUUID, msdUUID, masterVersion)
+        pool.detachSD(sdUUID)
 
     @public
     def sendExtendMsg(self, spUUID, volDict, newSize, callbackFunc):

@@ -443,9 +443,9 @@ class StoragePool:
         # the mess up?) do not expect all the domains to exist
         for sdUUID in domlist:
             try:
-                self.detachSD(sdUUID, msdUUID, masterVersion)
+                self.detachSD(sdUUID)
             except Exception:
-                self.log.error("Domain %s detach from MSD %s Ver %s failed.", \
+                self.log.error("Domain %s detach from MSD %s Ver %s failed.",
                                sdUUID, msdUUID, masterVersion, exc_info=True)
         # Cleanup links to domains under /rhev/datacenter/poolName
         self.refresh(msdUUID, masterVersion)
@@ -791,7 +791,13 @@ class StoragePool:
             newMD.changeLeaseParams(leaseParams)
 
     @unsecured
-    def __masterMigrate(self, sdUUID, msdUUID, masterVersion):
+    def masterMigrate(self, sdUUID, msdUUID, masterVersion):
+        self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID,
+                                                        self.spUUID, msdUUID)
+
+        # TODO: is this check still relevant?
+        self.validatePoolMVerHigher(masterVersion)
+
         curmsd = sdCache.produce(sdUUID)
         newmsd = sdCache.produce(msdUUID)
         self._refreshDomainLinks(newmsd)
@@ -802,6 +808,8 @@ class StoragePool:
         domList = self.getDomains()
         if msdUUID not in domList:
             raise se.StorageDomainNotInPool(self.spUUID, msdUUID)
+        if msdUUID == sdUUID:
+            raise se.InvalidParameterException("msdUUID", msdUUID)
         if domList[msdUUID] != sd.DOM_ACTIVE_STATUS:
             raise se.StorageDomainNotActive(msdUUID)
         if newmsd.isISO():
@@ -889,40 +897,6 @@ class StoragePool:
         except Exception:
             self.log.error("Unexpected error", exc_info=True)
 
-
-    @unsecured
-    def __unmountLastMaster(self, sdUUID):
-        curmsd = sdCache.produce(sdUUID)
-        # Check if it's last domain and allow it detaching
-        dl = self.getDomains(activeOnly=True)
-        domList = dl.keys()
-        if curmsd.sdUUID in domList:
-            domList.remove(curmsd.sdUUID)
-        for item in domList:
-            domain = sdCache.produce(item)
-            if domain.isData():
-                # Failure, we have at least one more data domain
-                # in the pool and one which can become 'master'
-                raise se.StoragePoolHasPotentialMaster(item)
-        curmsd.unmountMaster()
-
-    def masterMigrate(self, sdUUID, msdUUID, masterVersion):
-        self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID,  self.spUUID, msdUUID)
-
-        # Check if we are migrating to or just unmounting last master
-        if msdUUID != sd.BLANK_UUID:
-            # TODO: is this check relevant?
-            self.validatePoolMVerHigher(masterVersion)
-            self.__masterMigrate(sdUUID, msdUUID, masterVersion)
-            return False    # not last master
-
-        # When we are unmounting the last master we need to stop the SPM
-        # since the domain will be deactivated
-        self.__unmountLastMaster(sdUUID)
-        self.stopSpm(self.spUUID)
-
-        return True     # last master
-
     def attachSD(self, sdUUID):
         """
         Attach a storage domain to the storage pool.
@@ -953,7 +927,6 @@ class StoragePool:
             dom.releaseClusterLock()
         self.updateMonitoringThreads()
 
-
     def forcedDetachSD(self, sdUUID):
         self.log.warn("Force detaching domain `%s`", sdUUID)
         domains = self.getDomains()
@@ -965,49 +938,42 @@ class StoragePool:
         self.updateMonitoringThreads()
         self.log.debug("Force detach for domain `%s` is done", sdUUID)
 
-    def detachSD(self, sdUUID, msdUUID, masterVersion):
+    def detachSD(self, sdUUID):
         """
         Detach a storage domain from a storage pool.
         This removes the storage domain entry in the storage pool meta-data
         and leaves the storage domain in 'unattached' status.
          'sdUUID' - storage domain UUID
-         'msdUUID' - master storage domain UUID
-         'masterVersion' - new master storage domain version
         """
-        self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID,  self.spUUID, msdUUID)
+
+        self.log.info("sdUUID=%s spUUID=%s", sdUUID, self.spUUID)
+
+        dom = sdCache.produce(sdUUID)
+        domStatuses = self.getDomains()
+
+        # Avoid detach domains if not owned by pool
+        self.validateAttachedDomain(dom, domStatuses)
+
+        if sdUUID == self.masterDomain.sdUUID:
+            raise se.CannotDetachMasterStorageDomain(sdUUID)
+
+        # TODO: clusterLock protection should be moved to
+        #       StorageDomain.[at,de]tach()
+        detachingISO = dom.isISO()
+
+        if detachingISO:
+            #An ISO domain can be shared by many pools
+            dom.acquireClusterLock(self.id)
 
         try:
-            domStatuses = self.getDomains()
-            dom = sdCache.produce(sdUUID)
-            # Avoid detach domains if not owned by pool
-            self.validateAttachedDomain(dom, domStatuses)
-
-            # If the domain being detached is the 'master', move all pool
-            # metadata to the new 'master' domain (msdUUID)
-            if sdUUID == self.masterDomain.sdUUID:
-                self.masterMigrate(sdUUID, msdUUID, masterVersion, __securityOverride=True)
-
             # Remove pool info from domain metadata
-            #TODO: clusterLock protection should be moved to StorageDomain.[at,de]tach()
-            detachingISO = dom.isISO()
+            dom.detach(self.spUUID)
+        finally:
             if detachingISO:
-                #An ISO domain can be shared by many pools
-                dom.acquireClusterLock(self.id)
-            try:
-                dom.detach(self.spUUID)
-            finally:
-                if detachingISO:
-                    dom.releaseClusterLock()
+                dom.releaseClusterLock()
 
-            # Remove domain from pool metadata
-            del domStatuses[sdUUID]
-            self.setMetaParam(PMDK_DOMAINS, domStatuses, __securityOverride=True)
-            self._cleanupDomainLinks(sdUUID)
-
-            self.updateMonitoringThreads()
-        except Exception:
-            self.log.error("Unexpected error", exc_info=True)
-
+        # Remove domain from pool metadata
+        self.forcedDetachSD(sdUUID)
 
     def activateSD(self, sdUUID):
         """
@@ -1039,39 +1005,49 @@ class StoragePool:
         return True
 
 
-    def deactivateSD(self, sdUUID, new_msdUUID, masterVersion):
+    def deactivateSD(self, sdUUID, newMsdUUID, masterVersion):
         """
         Deactivate a storage domain.
         Validate that the storage domain is owned by the storage pool.
         Change storage domain status to "Attached" in the storage pool meta-data.
 
         :param sdUUID: The UUID of the storage domain you want to deactivate.
-        :param new_msdUUID: The UUID of the new master storage domain.
+        :param newMsdUUID: The UUID of the new master storage domain.
         :param masterVersion: new master storage domain version
         """
-        self.log.info("sdUUID=%s spUUID=%s new_msdUUID=%s", sdUUID,  self.spUUID, new_msdUUID)
+
+        self.log.info("sdUUID=%s spUUID=%s newMsdUUID=%s", sdUUID,
+                                                self.spUUID, newMsdUUID)
         domList = self.getDomains()
+
         if sdUUID not in domList:
             raise se.StorageDomainNotInPool(self.spUUID, sdUUID)
+
         try:
             dom = sdCache.produce(sdUUID)
-            #Check that dom is really reachable and not a cached value.
+            # Check that dom is really reachable and not a cached value
             dom.validate(False)
+
         except (se.StorageException, AttributeError, Timeout):
             # AttributeError: Unreloadable blockSD
             # Timeout: NFS unreachable domain
-            self.log.warn("deactivating missing domain %s", sdUUID, exc_info=True)
-            if new_msdUUID != sd.BLANK_UUID:
-                #Trying to migrate master failed to reach actual msd.
+            self.log.warn("deactivating missing domain %s", sdUUID,
+                                                            exc_info=True)
+            if newMsdUUID != sd.BLANK_UUID:
+                # Trying to migrate master failed to reach actual msd
                 raise se.StorageDomainAccessError(sdUUID)
+
         else:
             if self.masterDomain.sdUUID == sdUUID:
-                #Maybe there should be information in the exception that the UUID is
-                #not invalid because of its format but because it is equal to the SD. Will be less confusing.
-                #TODO: verify in masterMigrate().
-                if sdUUID == new_msdUUID:
-                    raise se.InvalidParameterException("new_msdUUID", new_msdUUID)
-                self.masterMigrate(sdUUID, new_msdUUID, masterVersion)
+                if newMsdUUID == sd.BLANK_UUID:
+                    # TODO: For backward compatibility VDSM is silently
+                    #       ignoring the deactivation request for the master
+                    #       domain. Remove this check as soon as possible.
+                    self.log.info("Silently ignoring the deactivation request "
+                                  "for the master domain %s", sdUUID)
+                    return
+                else:
+                    self.masterMigrate(sdUUID, newMsdUUID, masterVersion)
             elif dom.isBackup():
                 dom.unmountMaster()
 
@@ -1846,18 +1822,19 @@ class StoragePool:
         """
         Detach all domains from pool before destroying pool
         """
-        # First find out this pool master domain
         # Find out domain list from the pool metadata
         domList = self.getDomains().keys()
 
         for sdUUID in domList:
-            # master domain should be detached last, after spm is stopped
-            if sdUUID == self.masterDomain.sdUUID:
-                continue
-            self.detachSD(sdUUID=sdUUID, msdUUID=sd.BLANK_UUID, masterVersion=0)
-        self.stopSpm(self.spUUID)
-        # Forced detach 'master' domain after stopping SPM
-        self.detachSD(self.masterDomain.sdUUID, sd.BLANK_UUID, 0, __securityOverride=True)
+            # The Master domain should be detached last, after stopping the SPM
+            if sdUUID != self.masterDomain.sdUUID:
+                self.detachSD(sdUUID)
+
+        # Forced detach master domain after stopping SPM
+        self.forcedDetachSD(self.masterDomain.sdUUID)
+        self.masterDomain.detach(self.spUUID)
+
+        self.stopSpm()
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
