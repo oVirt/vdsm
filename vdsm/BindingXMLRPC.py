@@ -836,9 +836,8 @@ def wrapApiMethod(f):
                              f.__name__, displayArgs, kwargs)
 
             # if flowID exists
-            if getattr(f.im_self.cif.threadLocal, 'flowID', '') != None:
-                logStr += " flowID [%s]" % getattr(f.im_self.cif.threadLocal,
-                        'flowID', '')
+            if getattr(f.im_self.cif.threadLocal, 'flowID', None) != None:
+                logStr += " flowID [%s]" % f.im_self.cif.threadLocal.flowID
 
             # Ready to show the log into vdsm.log
             f.im_self.log.log(logLevel, logStr)
