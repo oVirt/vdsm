@@ -65,7 +65,8 @@ class GuestAgent (threading.Thread):
 
     def _connect(self):
         logging.debug("Attempting connection to %s", self._socketName)
-        utils.execCmd([constants.EXT_PREPARE_VMCHANNEL, self._socketName])
+        utils.execCmd([constants.EXT_PREPARE_VMCHANNEL, self._socketName],
+                sudo=True)
         self._sock.settimeout(5)
         while not self._stopped:
             try:

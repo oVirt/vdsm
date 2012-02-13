@@ -284,7 +284,7 @@ class LVMCache(object):
 
     def cmd(self, cmd):
         finalCmd = self._addExtraCfg(cmd)
-        rc, out, err = misc.execCmd(finalCmd)
+        rc, out, err = misc.execCmd(finalCmd, sudo=True)
         if rc != 0:
             #Filter might be stale
             self.invalidateFilter()
@@ -294,7 +294,7 @@ class LVMCache(object):
             # the devlist is sorted there is no fear
             # of two identical filters looking differently
             if newCmd != finalCmd:
-                return misc.execCmd(newCmd)
+                return misc.execCmd(newCmd, sudo=True)
 
         return rc, out, err
 
@@ -956,7 +956,7 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False, initialTag=N
         gName = grp.getgrgid(st.st_gid).gr_name
         if ":".join((uName, gName)) != USER_GROUP:
             cmd = [constants.EXT_CHOWN, USER_GROUP, lv_path]
-            if misc.execCmd(cmd)[0] != 0:
+            if misc.execCmd(cmd, sudo=True)[0] != 0:
                 log.warning("Could not change ownership of one or more volumes in vg (%s) - %s", vgName, lvName)
     else:
         _setLVAvailability(vgName, lvName, "n")

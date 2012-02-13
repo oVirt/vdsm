@@ -154,7 +154,7 @@ execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'), ignoreSo
                logSkipName="Storage.Misc.excCmd")
 
 @logskip("Storage.Misc.excCmd")
-def execCmd(command, sudo=True, cwd=None, infile=None, outfile=None,
+def execCmd(command, sudo=False, cwd=None, infile=None, outfile=None,
             data=None, raw=False, logErr=True, printable=None,
             env=None, sync=True):
     """
@@ -512,15 +512,18 @@ def rotateFiles(dir, prefixName, gen, cp=False, persist=False):
         newName = os.path.join(dir, fd[key]['new'])
         if OVIRT_NODE and persist and not cp:
             try:
-                execCmd([constants.EXT_UNPERSIST, oldName], logErr=False)
-                execCmd([constants.EXT_UNPERSIST, newName], logErr=False)
+                execCmd([constants.EXT_UNPERSIST, oldName], logErr=False,
+                        sudo=True)
+                execCmd([constants.EXT_UNPERSIST, newName], logErr=False,
+                        sudo=True)
             except:
                 pass
         try:
             if cp:
-                execCmd([constants.EXT_CP, oldName, newName])
+                execCmd([constants.EXT_CP, oldName, newName], sudo=True)
                 if OVIRT_NODE and persist and not os.path.exists(newName):
-                    execCmd([constants.EXT_PERSIST, newName], logErr=False)
+                    execCmd([constants.EXT_PERSIST, newName], logErr=False,
+                            sudo=True)
 
             else:
                 os.rename(oldName, newName)
@@ -528,14 +531,15 @@ def rotateFiles(dir, prefixName, gen, cp=False, persist=False):
             pass
         if OVIRT_NODE and persist and not cp:
             try:
-                execCmd([constants.EXT_PERSIST, newName], logErr=False)
+                execCmd([constants.EXT_PERSIST, newName], logErr=False,
+                        sudo=True)
             except:
                 pass
 
 
 def persistFile(name):
     if OVIRT_NODE:
-        execCmd([constants.EXT_PERSIST, name])
+        execCmd([constants.EXT_PERSIST, name], sudo=True)
 
 def parseHumanReadableSize(size):
     #FIXME : Maybe use a regex -> ^(?P<num>\d+)(?P<sizeChar>[KkMmGgTt])$

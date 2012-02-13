@@ -75,7 +75,7 @@ def getiSCSIifaces():
     Collect the dictionary of all the existing iSCSI ifaces
     (including the default and hw/fw)
     """
-    rc, out, err = misc.execCmd(ISCSIADM_IFACE)
+    rc, out, err = misc.execCmd(ISCSIADM_IFACE, sudo=True)
     if rc != 0:
         raise se.iSCSIifaceError()
     ifaces = dict()
@@ -94,13 +94,13 @@ def addiSCSIiface(initiator):
     as an initiator. It makes the bookkeeping trivial.
     """
     cmd = ISCSIADM_IFACE + NEW_REC + ["-I", initiator]
-    rc, out, err = misc.execCmd(cmd)
+    rc, out, err = misc.execCmd(cmd, sudo=True)
     if rc != 0:
         raise se.iSCSIifaceError()
 
     cmd = ISCSIADM_IFACE + ["-o", "update", "-I", initiator, "-n",
         "iface.initiatorname", "-v", initiator]
-    rc, out, err = misc.execCmd(cmd)
+    rc, out, err = misc.execCmd(cmd, sudo=True)
     if rc != 0:
         raise se.iSCSIifaceError()
 
@@ -110,7 +110,7 @@ def remiSCSIiface(initiator):
     Remove the iface with the given initiator name.
     """
     cmd = ISCSIADM_IFACE + ["-o", "delete", "-I", initiator]
-    rc, out, err = misc.execCmd(cmd)
+    rc, out, err = misc.execCmd(cmd, sudo=True)
     if rc != 0:
         raise se.iSCSIifaceError()
 
@@ -145,8 +145,9 @@ def addiSCSIPortal(ip, port, initiator, username=None, password=None):
     # NOTE: We are not taking for granted that iscsiadm is not going to write
     #       the database when the discovery fails, therefore we try to set the
     #       node startup to manual anyway.
-    (dRet, dOut, dErr) = misc.execCmd(cmd)
-    (mRet, mOut, mErr) = misc.execCmd(ISCSIADM_NODE + args + MANUAL_STARTUP)
+    (dRet, dOut, dErr) = misc.execCmd(cmd, sudo=True)
+    (mRet, mOut, mErr) = misc.execCmd(ISCSIADM_NODE + args + MANUAL_STARTUP,
+            sudo=True)
 
     # Even if the discovery failed it's important to log that we tried to set
     # the node startup to manual and we failed.
@@ -171,7 +172,7 @@ def remiSCSIPortal(ip, port):
     portal = "%s:%s" % (ip, port)
 
     cmd = [constants.EXT_ISCSIADM, "-m", "discovery", "-o", "delete", "-p", portal]
-    rc = misc.execCmd(cmd)[0]
+    rc = misc.execCmd(cmd, sudo=True)[0]
     if rc != 0:
         raise se.RemoveiSCSIPortalError(portal)
 
@@ -205,7 +206,7 @@ def _configureAuthInformation(cmd, usr, passwd):
     for cmd in cmdList:
         if cmd == None:
             continue
-        (rc, out, err) = misc.execCmd(cmd[0],printable=cmd[1])
+        (rc, out, err) = misc.execCmd(cmd[0],printable=cmd[1], sudo=True)
         if rc != 0:
             raise se.SetiSCSIAuthError(cmd[0])
 
@@ -232,26 +233,27 @@ def addiSCSINode(ip, port, iqn, tpgt, initiator, username=None, password=None):
         if username or password:
             # Set authentication type
             cmd = cmdt + LOGIN_AUTH_CHAP
-            rc = misc.execCmd(cmd)[0]
+            rc = misc.execCmd(cmd, sudo=True)[0]
             if rc != 0:
                 raise se.SetiSCSIAuthError(portal)
 
             if username:
                 # Set username
                 cmd = cmdt + LOGIN_AUTH_USER + [username]
-                rc = misc.execCmd(cmd)[0]
+                rc = misc.execCmd(cmd, sudo=True)[0]
                 if rc != 0:
                     raise se.SetiSCSIUsernameError(portal)
 
             # Set password
             cmd = cmdt + LOGIN_AUTH_PASS
-            rc = misc.execCmd(cmd + [password], printable=cmd + ["******"])[0]
+            rc = misc.execCmd(cmd + [password], printable=cmd + ["******"],
+                    sudo=True)[0]
             if rc != 0:
                 raise se.SetiSCSIPasswdError(portal)
 
         # Finally instruct the iscsi initiator to login to the target
         cmd = cmdt + ["-l", "-p", portal]
-        rc = misc.execCmd(cmd)[0]
+        rc = misc.execCmd(cmd, sudo=True)[0]
         if rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
             raise se.iSCSILoginAuthError(portal)
         elif rc not in (0, ISCSI_ERR_SESS_EXISTS):
@@ -281,13 +283,13 @@ def remiSCSINode(ip, port, iqn, tpgt, username=None, password=None, logout=True)
 
     if logout:
         cmd = ISCSIADM_NODE + ["-T", iqn, "-p", portal, "-u"]
-        rc = misc.execCmd(cmd)[0]
+        rc = misc.execCmd(cmd, sudo=True)[0]
         if rc:
             raise se.iSCSILogoutError(portal)
 
     # FIXME: should we check if logout succeeds?
     cmd = ISCSIADM_NODE + ["-o", "delete", "-T", iqn, "-p", portal]
-    rc = misc.execCmd(cmd)[0]
+    rc = misc.execCmd(cmd, sudo=True)[0]
     if rc:
         raise se.RemoveiSCSINodeError(portal)
 
@@ -386,7 +388,7 @@ def getdeviSCSIinfo(dev):
 @misc.samplingmethod
 def rescan():
     cmd = [constants.EXT_ISCSIADM, "-m", "session", "-R"]
-    misc.execCmd(cmd)
+    misc.execCmd(cmd, sudo=True)
 
 def findUnderlyingStorage(devPath):
     # make sure device exists and is accessible
@@ -424,6 +426,7 @@ def disconnectFromUndelyingStorage(devPath):
 
 def disconnectiScsiSession(sessionID):
     sessionID = int(sessionID)
-    rc, out, err = misc.execCmd([constants.EXT_ISCSIADM, "-m", "session", "-r", str(sessionID), "-u"])
+    rc, out, err = misc.execCmd([constants.EXT_ISCSIADM, "-m", "session", "-r",
+        str(sessionID), "-u"], sudo=True)
     return rc
 

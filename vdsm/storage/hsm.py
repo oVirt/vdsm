@@ -247,7 +247,8 @@ class HSM:
         """
         Check lvm locking type.
         """
-        rc, out, err = misc.execCmd([constants.EXT_LVM, "dumpconfig", "global/locking_type"])
+        rc, out, err = misc.execCmd([constants.EXT_LVM, "dumpconfig",
+            "global/locking_type"], sudo=True)
         if rc != 0:
             self.log.error("Can't validate lvm locking_type. %d %s %s", rc, out, err)
             return False

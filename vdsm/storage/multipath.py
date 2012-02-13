@@ -68,7 +68,7 @@ def rescan():
     supervdsm.getProxy().forceIScsiScan()
 
     # Now let multipath daemon pick up new devices
-    misc.execCmd([constants.EXT_MULTIPATH])
+    misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
 
 
 def isEnabled():
@@ -120,7 +120,7 @@ def setupMultipath():
     f.write(MPATH_CONF_TEMPLATE)
     f.flush()
     cmd = [constants.EXT_CP, f.name, MPATH_CONF]
-    rc = misc.execCmd(cmd)[0]
+    rc = misc.execCmd(cmd, sudo=True)[0]
     if rc != 0:
         raise se.MultipathSetupError()
     # f close removes file - must be after copy
@@ -128,14 +128,14 @@ def setupMultipath():
     misc.persistFile(MPATH_CONF)
 
     # Flush all unused multipath device maps
-    misc.execCmd([constants.EXT_MULTIPATH, "-F"])
+    misc.execCmd([constants.EXT_MULTIPATH, "-F"], sudo=True)
 
     cmd = [constants.EXT_SERVICE, "multipathd", "restart"]
-    rc = misc.execCmd(cmd)[0]
+    rc = misc.execCmd(cmd, sudo=True)[0]
     if rc != 0:
         # No dice - try to reload instead of restart
         cmd = [constants.EXT_SERVICE, "multipathd", "reload"]
-        rc = misc.execCmd(cmd)[0]
+        rc = misc.execCmd(cmd, sudo=True)[0]
         if rc != 0:
             raise se.MultipathRestartError()
 

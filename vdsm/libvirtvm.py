@@ -1798,7 +1798,7 @@ class LibvirtVm(vm.Vm):
         try:
             rc, out, err = utils.execCmd([constants.EXT_GET_VM_PID,
                                           self.conf['vmName'].encode('utf-8')],
-                                         raw=True)
+                                         raw=True, sudo=True)
             if rc == 0:
                 pid = out
         except:

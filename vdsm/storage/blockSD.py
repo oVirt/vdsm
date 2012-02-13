@@ -829,7 +829,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         masterfsdev = lvm.lvPath(self.sdUUID, MASTERLV)
         cmd = [constants.EXT_FSCK, "-p", masterfsdev]
-        (rc, out, err) = misc.execCmd(cmd)
+        (rc, out, err) = misc.execCmd(cmd, sudo=True)
         # fsck exit codes
         # 0    - No errors
         # 1    - File system errors corrected
@@ -854,7 +854,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # If there is a journal already tune2fs will do nothing, indicating this
         # condition only with exit code. However, we do not really care.
         cmd = [constants.EXT_TUNE2FS, "-j", masterfsdev]
-        misc.execCmd(cmd)
+        misc.execCmd(cmd, sudo=True)
 
         masterMount = mount.Mount(masterfsdev, masterDir)
 
@@ -865,7 +865,7 @@ class BlockStorageDomain(sd.StorageDomain):
             raise se.BlockStorageDomainMasterMountError(masterfsdev, rc, out)
 
         cmd = [constants.EXT_CHOWN, "%s:%s" % (constants.METADATA_USER, constants.METADATA_GROUP), masterDir]
-        (rc, out, err) = misc.execCmd(cmd)
+        (rc, out, err) = misc.execCmd(cmd, sudo=True)
         if rc != 0:
             self.log.error("failed to chown %s", masterDir)
 
@@ -1033,7 +1033,7 @@ def _createVMSfs(dev):
     Create a special file system to store VM data
     """
     cmd = [constants.EXT_MKFS, "-q", "-j", "-E", "nodiscard", dev]
-    rc = misc.execCmd(cmd)[0]
+    rc = misc.execCmd(cmd, sudo=True)[0]
     if rc != 0:
         raise se.MkfsError(dev)
 

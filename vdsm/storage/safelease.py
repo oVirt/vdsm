@@ -91,7 +91,7 @@ class ClusterLock(object):
             cmd = [constants.EXT_SETSID, constants.EXT_IONICE, '-c1', '-n0',
                 constants.EXT_SU, misc.IOUSER, '-s', constants.EXT_SH, '-c',
                 acquireLockCommand]
-            (rc, out, err) = misc.execCmd(cmd, cwd=self.lockUtilPath)
+            (rc, out, err) = misc.execCmd(cmd, cwd=self.lockUtilPath, sudo=True)
             if rc != 0:
                 raise se.AcquireLockFailure(self._sdUUID, rc, out, err)
             self.__hostID = hostID

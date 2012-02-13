@@ -71,14 +71,14 @@ class SuperVdsmProxy(object):
         self._log.debug("Launching Super Vdsm")
         superVdsmCmd = [constants.EXT_PYTHON, SUPERVDSM,
                         self._authkey, str(os.getpid())]
-        misc.execCmd(superVdsmCmd, sync=False)
+        misc.execCmd(superVdsmCmd, sync=False, sudo=True)
         sleep(2)
 
     def _killSupervdsm(self):
         try:
             with open(PIDFILE, "r") as f:
                 pid = int(f.read().strip())
-            misc.execCmd([constants.EXT_KILL, "-9", str(pid)])
+            misc.execCmd([constants.EXT_KILL, "-9", str(pid)], sudo=True)
         except Exception, ex:
             self._log.debug("Could not kill old Super Vdsm %s", ex)
 
