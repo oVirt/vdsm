@@ -166,7 +166,12 @@ class BindingXMLRPC(object):
             def wrapper(*args, **kwargs):
                 if self.cif.threadLocal.client:
                     f.im_self.log.debug('[%s]', self.cif.threadLocal.client)
-                return f(*args, **kwargs)
+                try:
+                    return f(*args, **kwargs)
+                except:
+                    f.im_self.log.error("Unexpected exception", exc_info=True)
+                    return errCode['unexpected']
+
             wrapper.__name__ = f.__name__
             wrapper.__doc__ = f.__doc__
             return wrapper
