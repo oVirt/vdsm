@@ -44,6 +44,7 @@ import storage.misc
 import configNetwork
 from vdsm.config import config
 import tc
+import mkimage
 from storage.multipath import MPATH_CONF
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
@@ -235,6 +236,18 @@ class _SuperVdsm(object):
         :type networkName: string
         '''
         tc.unsetMirrorPromisc(networkName)
+
+    @logDecorator
+    def mkFloppyFs(self, vmId, files):
+        return mkimage.mkFloppyFs(vmId, files)
+
+    @logDecorator
+    def mkIsoFs(self, vmId, files):
+        return mkimage.mkIsoFs(vmId, files)
+
+    @logDecorator
+    def removeFs(self, path):
+        return mkimage.removeFs(path)
 
 
 def __pokeParent(parentPid):

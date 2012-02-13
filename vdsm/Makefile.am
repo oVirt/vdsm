@@ -43,6 +43,7 @@ dist_vdsm_PYTHON = \
 	logUtils.py \
 	lsblk.py \
 	md_utils.py \
+	mkimage.py \
 	neterrors.py \
 	parted_utils.py \
 	pthread.py \
@@ -160,6 +161,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
 	$(MKDIR_P) $(DESTDIR)$(vdsmpoolsdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmbackupdir)

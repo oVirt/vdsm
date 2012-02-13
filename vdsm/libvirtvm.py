@@ -2009,11 +2009,17 @@ class LibvirtVm(vm.Vm):
         """
         Stop VM and release all resources
         """
+
         #unsetting mirror network will clear both mirroring (on the same network).
         for nic in self._devices[vm.NIC_DEVICES]:
             if hasattr(nic, 'promisc'):
                 for network in nic.promisc:
                     supervdsm.getProxy().unsetMirrorPromisc(network)
+        # delete the payload devices
+        for drive in self._devices[vm.DISK_DEVICES]:
+            if hasattr(drive, 'specParams') and \
+                drive.specParams.has_key('vmPayload'):
+                    supervdsm.getProxy().removeFs(drive.path)
 
         with self._releaseLock:
             if self._released:

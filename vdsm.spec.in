@@ -470,6 +470,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/md_utils.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/parted_utils.py*
+%{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/prepare-vmchannel
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
@@ -592,6 +593,7 @@ exit 0
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}/pools
+%ghost %dir %{_localstatedir}/run/%{vdsm_name}/payload
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 

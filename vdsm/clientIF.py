@@ -42,6 +42,7 @@ from BindingXMLRPC import BindingXMLRPC
 from vmChannels import Listener
 import API
 import blkid
+import supervdsm
 
 class clientIF:
     """
@@ -195,6 +196,19 @@ class clientIF:
             # UUID drive format
             elif drive.has_key("UUID"):
                 volPath = self._getUUIDSpecPath(drive["UUID"])
+
+            elif drive.has_key('specParams') and \
+                 drive['specParams'].has_key('vmPayload'):
+                '''
+                vmPayload is a key in specParams
+                'vmPayload': {'file': {'filename': 'content'}}
+                '''
+                for key, files in drive['specParams']['vmPayload'].iteritems():
+                    if key == 'file':
+                        if drive['device'] == 'cdrom':
+                            volPath = supervdsm.getProxy().mkIsoFs(vmId, files)
+                        elif drive['device'] == 'floppy':
+                            volPath = supervdsm.getProxy().mkFloppyFs(vmId, files)
 
             elif drive.has_key("path"):
                 volPath = drive['path']
