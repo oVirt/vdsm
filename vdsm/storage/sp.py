@@ -1899,14 +1899,16 @@ class StoragePool:
                 if rc:
                     self.log.error("uploadVolume - error while trying to retrieve: %s into: %s, stderr: %s" % (srcPath, targetPath, err))
                     raise se.VolumeCopyError(vol, err)
-            #CR : should be elif 'rsync' and and else "error not supported" in the end
-            else:
+            elif method.lower() == "rsync":
                 cmd = [constants.EXT_RSYNC, "-aq", srcPath, targetPath]
                 (rc, out, err) = misc.execCmd(cmd, sudo=False)
 
                 if rc:
                     self.log.error("uploadVolume - error while trying to copy: %s into: %s, stderr: %s" % (srcPath, targetPath, err))
                     raise se.VolumeCopyError(vol, err)
+            else:
+                self.log.error("uploadVolume - method '%s' not supported", method)
+                raise se.InvalidParameterException('method', method)
         finally:
             try:
                 vol.teardown(sdUUID, volUUID)
