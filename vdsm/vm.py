@@ -107,7 +107,7 @@ class MigrationSourceThread(threading.Thread):
         self.remoteHost = self._dst.split(':')[0]
         # FIXME: The port will depend on the binding being used.
         # This assumes xmlrpc
-        self.remotePort = self._vm.cif.serverPort
+        self.remotePort = self._vm.cif.bindings['xmlrpc'].serverPort
         try:
             self.remotePort = self._dst.split(':')[1]
         except:
