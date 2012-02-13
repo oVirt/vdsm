@@ -384,7 +384,7 @@ class StoragePool:
 
             if not stopFailed:
                 try:
-                    self.setMetaParam(PMDK_SPM_ID, -1)
+                    self.setMetaParam(PMDK_SPM_ID, -1, __securityOverride=True)
                 except:
                     pass # The system can handle this inconsistency
 
