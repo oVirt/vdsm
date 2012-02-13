@@ -1086,14 +1086,6 @@ class service:
             print entry
         return 0, ''
 
-    def clearAsyncTask(self, args):
-        task = args[0]
-        spUUID = args[1]
-        status = self.s.clearAsyncTask(task, spUUID)
-        if status['status']['code']:
-            return status['status']['code'], status['status']['message']
-        return 0, ''
-
     def getTaskInfo(self, args):
         taskID = args[0]
         status = self.s.getTaskInfo(taskID)
@@ -1902,10 +1894,6 @@ if __name__ == '__main__':
         'getConnectedStoragePoolsList': ( serv.getConnectedStoragePoolsList,
                          ('',
                           'Get storage pools list'
-                         )),
-        'clearAsyncTask': ( serv.clearAsyncTask,
-                         ('<Task name> <spUUID>',
-                         'Clear asynchronous task'
                          )),
         'getTaskInfo': ( serv.getTaskInfo,
                          ('<TaskID>',
