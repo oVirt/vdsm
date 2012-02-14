@@ -58,7 +58,8 @@ nodist_vdsmexec_SCRIPTS = \
 
 nodist_vdsm_PYTHON = \
 	config.py \
-	constants.py
+	constants.py \
+	dumpStorageTable.py
 
 nodist_vdsm_SCRIPTS = \
 	mk_sysprep_floppy \
@@ -97,6 +98,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	config.py.in \
 	constants.py.in \
+	dumpStorageTable.py.in \
 	libvirt_password \
 	limits.conf \
 	logger.conf.in \

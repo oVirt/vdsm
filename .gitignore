@@ -19,6 +19,7 @@ vdsm.spec
 .deps/
 vdsm/config.py
 vdsm/constants.py
+vdsm/dumpStorageTable.py
 vdsm/logger.conf
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
@@ -35,7 +36,6 @@ vdsm/vdsm-gencerts.sh
 vdsm/sos/vdsm.py
 vdsm_cli/vdsClient
 vdsm_cli/vdscli.py
-vdsm_cli/dumpStorageTable.py
 vdsm_reg/deployUtil.py
 vdsm_reg/vdsm-reg.conf
 vdsm_reg/vdsm-reg-setup

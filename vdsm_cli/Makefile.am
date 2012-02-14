@@ -27,7 +27,6 @@ nodist_bin_SCRIPTS = \
 	vdsClient
 
 nodist_vdsm_PYTHON = \
-	dumpStorageTable.py \
 	vdscli.py
 
 dist_man1_MANS = \
@@ -39,7 +38,6 @@ CLEANFILES = \
 	$(nodist_vdsm_PYTHON)
 
 EXTRA_DIST = \
-	dumpStorageTable.py.in \
 	vdsClient.completion \
 	vdsClient.in \
 	vdscli.py.in

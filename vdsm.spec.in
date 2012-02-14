@@ -547,6 +547,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/set-conf-item
 %{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
 %{_datadir}/%{vdsm_name}/config.py*
+%{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/ksm.py*
 %{_datadir}/%{vdsm_name}/netinfo.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
@@ -675,7 +676,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
 %{_datadir}/%{vdsm_name}/vdscli.py*
-%{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{_mandir}/man1/vdsClient.1*
 
