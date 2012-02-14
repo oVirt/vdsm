@@ -42,10 +42,8 @@ Requires: lvm2 >= 2.02.72-8
 Requires: sanlock >= 1.8, sanlock-python
 
 %if 0%{?rhel}
-# These should turn into a Require as soon as we have a rhel63 build that
-# supports the live snapshots again BZ#769111
-Conflicts: qemu-kvm >= 2:0.12.1.2-2.197
-Conflicts: qemu-img >= 2:0.12.1.2-2.197
+Requires: qemu-kvm >= 2:0.12.1.2-2.227
+Requires: qemu-img >= 2:0.12.1.2-2.227
 Requires: libvirt >= 0.9.4-13
 Requires: libvirt-python >= 0.9.4-13
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
