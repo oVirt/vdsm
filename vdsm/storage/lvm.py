@@ -40,7 +40,7 @@ import constants
 import misc
 import multipath
 import storage_exception as se
-import config
+from config import config
 import devicemapper
 
 log = logging.getLogger("Storage.LVM")
@@ -114,10 +114,7 @@ VAR_RUN_VDSM = constants.P_VDSM_RUN
 VDSM_LVM_SYSTEM_DIR = os.path.join(VAR_RUN_VDSM, "lvm")
 VDSM_LVM_CONF = os.path.join(VDSM_LVM_SYSTEM_DIR, "lvm.conf")
 
-try:
-    USER_DEV_LIST = config.config.get("irs", "lvm_dev_whitelist").split(",")
-except config.ConfigParser.Error:
-    USER_DEV_LIST = []
+USER_DEV_LIST = filter(None, config.get("irs", "lvm_dev_whitelist").split(","))
 
 def _buildFilter(devList):
     devList = list(devList)
