@@ -83,7 +83,7 @@ ERR_NO_ROUTE = 7
 SCRIPT_NAME_ADD = "addNetwork"
 SCRIPT_NAME_DEL = "delNetwork"
 IFACE_CONFIG = "/etc/sysconfig/network-scripts/ifcfg-"
-MGT_BRIDGE_NAME = "@vdsmbridge@"
+MGT_BRIDGE_NAME = "@VDSMBRIDGE@"
 REMOTE_SSH_KEY_FILE = "/engine.ssh.key.txt"
 CORE_DUMP_PATH = '/var/lib/vdsm/core'
 CORE_PATTERN = '/proc/sys/kernel/core_pattern'
@@ -338,7 +338,7 @@ def getMGTIP(vdsmDir, vdcHostName):
 
 def preventDuplicate():
     """
-      This function checks if the needed bridge (@vdsmbridge@) already exist.
+      This function checks if the needed bridge (@VDSMBRIDGE@) already exist.
     """
     fFound = False
 
@@ -813,7 +813,7 @@ def setSafeVdsmNetworkConfig():
 
 def makeBridge(vdcName, vdsmDir):
     """
-        Create (for RHEL) or rename (oVirt default bridge) to @vdsmbridge@ bridge.
+        Create (for RHEL) or rename (oVirt default bridge) to @VDSMBRIDGE@ bridge.
     """
     logging.debug('makeBridge begin.')
     sys.path.append(vdsmDir)
@@ -877,7 +877,7 @@ def makeBridge(vdcName, vdsmDir):
             fReturn = False
             logging.debug("makeBridge Failed to del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
 
-    #Add @vdsmbridge@ bridge
+    #Add @VDSMBRIDGE@ bridge
     if fReturn:
         try:
             lstBridgeOptions.append('blockingdhcp=true')
