@@ -29,7 +29,7 @@ import socket
 import re
 import sys
 
-import constants
+from vdsm import constants
 import misc
 import storage_exception as se
 import devicemapper

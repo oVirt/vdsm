@@ -29,7 +29,7 @@ import threading
 
 import misc
 
-from config import config
+from vdsm.config import config
 from logUtils import QueueHandler
 
 MANAGE_PORT = config.getint("addresses", "management_port")

@@ -4,7 +4,7 @@ import os
 import sys
 import grp
 import pwd
-import utils
+from vdsm import utils
 import hooking
 import libvirtconnection
 import traceback

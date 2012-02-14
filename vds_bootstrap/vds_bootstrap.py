@@ -553,7 +553,7 @@ gpgcheck=0
 
     def _makeConfig(self):
         import datetime
-        from config import config
+        from vdsm.config import config
 
         if not os.path.exists(VDSM_CONF):
             logging.debug("makeConfig: generating conf.")

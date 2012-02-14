@@ -30,10 +30,10 @@ import fileVolume
 import image
 import misc
 import outOfProcess as oop
-from config import config
+from vdsm.config import config
 from processPool import Timeout
 from persistentDict import PersistentDict, DictValidator
-import constants
+from vdsm import constants
 import time
 import mount
 

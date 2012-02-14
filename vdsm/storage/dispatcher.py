@@ -19,7 +19,7 @@
 #
 
 import logging
-from config import config
+from vdsm.config import config
 
 import task
 import storage_exception as se

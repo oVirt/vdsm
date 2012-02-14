@@ -33,10 +33,10 @@ from contextlib import contextmanager
 import subprocess
 
 import shutil
-import constants
+from vdsm import constants
 import logging
 import storage_exception as se
-from config import config
+from vdsm.config import config
 import errno
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
 

@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import misc
-import constants
+from vdsm import constants
 
 def fuser(path, mountPoint=False):
     cmd = [constants.EXT_FUSER]

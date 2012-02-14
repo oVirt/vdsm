@@ -24,7 +24,7 @@ import uuid
 import sanlock
 
 import storage_exception as se
-from config import config
+from vdsm.config import config
 from sdc import sdCache
 import outOfProcess as oop
 import volume

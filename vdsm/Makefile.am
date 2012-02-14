@@ -29,7 +29,6 @@ dist_vdsm_PYTHON = \
 	BindingXMLRPC.py \
 	API.py \
 	configNetwork.py \
-	define.py \
 	dsaversion.py \
 	guestIF.py \
 	hooking.py \
@@ -41,15 +40,23 @@ dist_vdsm_PYTHON = \
 	libvirtvm.py \
 	logUtils.py \
 	neterrors.py \
-	netinfo.py \
 	pthread.py \
-	SecureXMLRPCServer.py \
 	supervdsm.py \
 	supervdsmServer.py \
-	utils.py \
 	vdsmDebugPlugin.py \
 	vm.py \
 	vmChannels.py
+
+dist_vdsmpylib_PYTHON = \
+	__init__.py \
+	define.py \
+	netinfo.py \
+	SecureXMLRPCServer.py \
+	utils.py
+
+nodist_vdsmpylib_PYTHON = \
+	config.py \
+	constants.py
 
 dist_vdsmexec_SCRIPTS = \
 	ovirt_functions.sh
@@ -58,8 +65,6 @@ nodist_vdsmexec_SCRIPTS = \
 	vdsm-gencerts.sh
 
 nodist_vdsm_PYTHON = \
-	config.py \
-	constants.py \
 	dumpStorageTable.py
 
 nodist_vdsm_SCRIPTS = \
@@ -91,8 +96,8 @@ nodist_man8_MANS = \
 
 CLEANFILES = \
 	config.log \
-	$(nodist_vdsm_PYTHON) \
 	$(nodist_vdsm_SCRIPTS) \
+	$(nodist_vdsmlib_PYTHON) \
 	$(nodist_noinst_DATA) \
 	$(nodist_vdsmexec_SCRIPTS) \
 	$(nodist_man8_MANS)

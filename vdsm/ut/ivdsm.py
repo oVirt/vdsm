@@ -33,7 +33,7 @@ def runVdsm(baseDir="/usr/share/vdsm/", configFilePath="/etc/vdsm/vdsm.conf", lo
 
     sys.path.append(baseDir)
 
-    from config import config
+    from vdsm.config import config
     from logging import config as lconfig
     import clientIF
 

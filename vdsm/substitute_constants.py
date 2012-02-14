@@ -20,7 +20,7 @@
 #
 
 import sys, re
-import constants
+from vdsm import constants
 
 def replacement(m):
     s = m.group()

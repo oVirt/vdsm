@@ -22,7 +22,7 @@
 import os
 import subprocess
 import hooking
-import vdscli
+from vdsm import vdscli
 
 s = vdscli.connect()
 

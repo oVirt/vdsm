@@ -13,7 +13,7 @@ import threading
 import logging
 from logging import config as lconfig
 
-import constants
+from vdsm import constants
 import dsaversion
 import betterThreading # before threading is ever used
 

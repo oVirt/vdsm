@@ -19,13 +19,13 @@
 #
 
 import os.path
-from config import config
+from vdsm.config import config
 import misc
 import errno
 import subprocess
 import sanlock
 from contextlib import nested
-import constants
+from vdsm import constants
 import storage_exception as se
 import threading
 import logging

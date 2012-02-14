@@ -30,11 +30,11 @@ import misc
 import resourceFactories
 from resourceFactories import IMAGE_NAMESPACE, VOLUME_NAMESPACE
 import resourceManager as rm
-import constants
+from vdsm import constants
 import safelease
 import outOfProcess as oop
 
-from config import config
+from vdsm.config import config
 
 DOMAIN_MNT_POINT = 'mnt'
 DOMAIN_META_DATA = 'dom_md'

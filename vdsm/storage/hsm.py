@@ -36,7 +36,7 @@ import signal
 import types
 import math
 
-from config import config
+from vdsm.config import config
 import sp
 import sd
 import blockSD
@@ -55,7 +55,7 @@ import safelease
 import storage_connection
 import storage_exception as se
 from threadLocal import vars
-import constants
+from vdsm import constants
 from storageConstants import STORAGE
 from task import Job
 from resourceFactories import IMAGE_NAMESPACE

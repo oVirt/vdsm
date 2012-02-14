@@ -22,8 +22,8 @@ import logging
 import time
 import socket
 import json
-import utils
-import constants
+from vdsm import utils
+from vdsm import constants
 
 __RESTRICTED_CHARS = set(range(8+1)).union(
     set(range(0xB,0xC+1))).union(

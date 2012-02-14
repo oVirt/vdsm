@@ -23,7 +23,7 @@ import threading
 import libvirt
 
 import libvirtev
-import constants
+from vdsm import constants
 
 # Make sure to never reload this module, or you would lose events
 # TODO: make this internal to libvirtev, and make the thread stoppable

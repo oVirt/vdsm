@@ -23,7 +23,7 @@ from os.path import normpath
 import re
 import os
 
-import constants
+from vdsm import constants
 import misc
 
 # Common vfs types

@@ -19,7 +19,7 @@
 #
 
 import os
-from config import config
+from vdsm.config import config
 import logging
 import tempfile
 
@@ -29,7 +29,7 @@ import sd
 import storage_exception as se
 import outOfProcess as oop
 import supervdsm
-import constants
+from vdsm import constants
 import mount
 
 CON_TIMEOUT = config.getint("irs", "process_pool_timeout")

@@ -6,7 +6,7 @@ import grp
 import pwd
 import traceback
 
-import utils
+from vdsm import utils
 import hooking
 
 DEV_MAPPER_PATH = "/dev/mapper"

@@ -25,7 +25,7 @@ for keeping storage related data that is expensive to harvest, but needed often
 import logging
 import threading
 import weakref
-from config import config
+from vdsm.config import config
 
 import multipath
 import lvm

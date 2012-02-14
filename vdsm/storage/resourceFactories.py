@@ -19,7 +19,7 @@
 #
 
 import os
-from config import config
+from vdsm.config import config
 import logging
 import lvm
 import resourceManager as rm

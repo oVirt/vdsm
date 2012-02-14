@@ -3,7 +3,7 @@
 import os
 import sys
 import traceback
-import utils
+from vdsm import utils
 
 NUMBER_OF_HUGETPAGES = '/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages'
 

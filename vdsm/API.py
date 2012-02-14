@@ -27,17 +27,17 @@ import time
 import threading
 import logging
 
-import utils
+from vdsm import utils
 import configNetwork
-import netinfo
-import constants
+from vdsm import netinfo
+from vdsm import constants
 import storage.misc
 import storage.volume
 import storage.safelease
 import libvirtvm
-from define import doneCode, errCode, Kbytes, Mbytes
+from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
-from config import config
+from vdsm.config import config
 
 import supervdsm
 

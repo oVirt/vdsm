@@ -21,15 +21,15 @@
 import time
 from errno import EINTR
 import SimpleXMLRPCServer
-import SecureXMLRPCServer
+from vdsm import SecureXMLRPCServer
 import logging
 import libvirt
 
 import caps
-import constants
-import netinfo
-import utils
-from define import doneCode, errCode
+from vdsm import constants
+from vdsm import netinfo
+from vdsm import utils
+from vdsm.define import doneCode, errCode
 import API
 import storage.volume
 import storage.safelease

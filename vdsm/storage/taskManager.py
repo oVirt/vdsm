@@ -21,7 +21,7 @@
 import os
 import logging
 
-from config import config
+from vdsm.config import config
 import storage_exception as se
 from task import Task, Job, TaskCleanType
 from threadPool import ThreadPool

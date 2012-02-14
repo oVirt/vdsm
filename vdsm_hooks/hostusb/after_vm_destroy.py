@@ -3,7 +3,7 @@
 import os
 import re
 import sys
-import utils
+from vdsm import utils
 import traceback
 
 '''

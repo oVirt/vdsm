@@ -292,7 +292,7 @@ class StorageTable:
             return 1, traceback.format_exc()
 
 if __name__ == '__main__':
-    import vdscli
+    from vdsm import vdscli
     import sys
 
     rc, msg = StorageTable(vdscli.connect()).show()

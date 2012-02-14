@@ -29,7 +29,7 @@ from sdc import sdCache
 import sd
 import misc
 import fileUtils
-from config import config
+from vdsm.config import config
 import storage_exception as se
 import task
 from threadLocal import vars

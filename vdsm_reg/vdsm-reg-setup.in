@@ -19,7 +19,7 @@ import logging
 import logging.config
 import urllib
 import ssl
-from config import config
+from vdsm.config import config
 import deployUtil
 import createDaemon
 

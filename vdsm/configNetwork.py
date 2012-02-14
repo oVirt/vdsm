@@ -29,11 +29,11 @@ from xml.sax.saxutils import escape
 
 import libvirt
 
-import constants
-import utils
+from vdsm import constants
+from vdsm import utils
 import neterrors as ne
-import define
-from netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR, LIBVIRT_NET_PREFIX, networks
+from vdsm import define
+from vdsm.netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR, LIBVIRT_NET_PREFIX, networks
 import libvirtconnection
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4

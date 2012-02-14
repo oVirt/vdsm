@@ -29,7 +29,7 @@ import logging
 import re
 from collections import namedtuple
 
-import constants
+from vdsm import constants
 import misc
 import iscsi
 import supervdsm

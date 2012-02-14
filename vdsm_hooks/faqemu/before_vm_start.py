@@ -20,7 +20,7 @@
 #
 
 import hooking
-from config import config
+from vdsm.config import config
 
 if config.getboolean('vars', 'fake_kvm_support'):
     domxml = hooking.read_domxml()

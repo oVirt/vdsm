@@ -59,8 +59,8 @@ import re
 import weakref
 
 sys.path.append("../")
-import constants
-from config import config
+from vdsm import constants
+from vdsm.config import config
 import storage_exception as se
 
 IOUSER = "vdsm"

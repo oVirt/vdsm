@@ -36,11 +36,11 @@ import threading
 from itertools import chain
 from subprocess import list2cmdline
 
-import constants
+from vdsm import constants
 import misc
 import multipath
 import storage_exception as se
-from config import config
+from vdsm.config import config
 import devicemapper
 
 log = logging.getLogger("Storage.LVM")

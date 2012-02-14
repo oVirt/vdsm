@@ -20,9 +20,9 @@
 
 import threading, time
 import os
-import constants
-import utils
-from config import config
+from vdsm import constants
+from vdsm import utils
+from vdsm.config import config
 
 class KsmMonitorThread(threading.Thread):
     def __init__(self, cif):

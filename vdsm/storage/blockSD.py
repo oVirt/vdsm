@@ -29,8 +29,8 @@ import time
 import functools
 from operator import itemgetter
 
-from config import config
-import constants
+from vdsm.config import config
+from vdsm import constants
 import misc
 import fileUtils
 import sd

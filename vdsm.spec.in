@@ -444,8 +444,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 %{_datadir}/%{vdsm_name}/API.py*
-%{_datadir}/%{vdsm_name}/constants.py*
-%{_datadir}/%{vdsm_name}/define.py*
 %{_datadir}/%{vdsm_name}/get-vm-pid
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
@@ -456,8 +454,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/prepare-vmchannel
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
-%{_datadir}/%{vdsm_name}/utils.py*
-%{_datadir}/%{vdsm_name}/vdscli.py*
 %{_datadir}/%{vdsm_name}/vmChannels.py*
 %{_datadir}/%{vdsm_name}/vdsm
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
@@ -544,18 +540,23 @@ exit 0
 %{_datadir}/%{vdsm_name}/addNetwork
 %{_datadir}/%{vdsm_name}/delNetwork
 %{_datadir}/%{vdsm_name}/respawn
-%{_datadir}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{_datadir}/%{vdsm_name}/get-conf-item
 %{_datadir}/%{vdsm_name}/set-conf-item
 %{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
-%{_datadir}/%{vdsm_name}/config.py*
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/ksm.py*
-%{_datadir}/%{vdsm_name}/netinfo.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
+%{python_sitelib}/%{vdsm_name}/__init__.py*
+%{python_sitelib}/%{vdsm_name}/config.py*
+%{python_sitelib}/%{vdsm_name}/constants.py*
+%{python_sitelib}/%{vdsm_name}/define.py*
+%{python_sitelib}/%{vdsm_name}/netinfo.py*
+%{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
+%{python_sitelib}/%{vdsm_name}/utils.py*
+%{python_sitelib}/%{vdsm_name}/vdscli.py*
+%{python_sitelib}/sos/plugins/vdsm.py*
 /lib/udev/rules.d/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
-%{python_sitelib}/sos/plugins/vdsm.py*
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}
 %dir %{_localstatedir}/log/core
@@ -677,8 +678,8 @@ exit 0
 %{_bindir}/vdsClient
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
-%{_datadir}/%{vdsm_name}/vdscli.py*
-%{_datadir}/%{vdsm_name}/SecureXMLRPCServer.py*
+%{python_sitelib}/%{vdsm_name}/vdscli.py*
+%{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{_mandir}/man1/vdsClient.1*
 
 %files bootstrap

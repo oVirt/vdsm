@@ -34,11 +34,11 @@ from storage.iscsi import getdeviSCSIinfo as _getdeviSCSIinfo
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
-from constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, DISKIMAGE_USER, DISKIMAGE_GROUP
+from vdsm.constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, DISKIMAGE_USER, DISKIMAGE_GROUP
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import storage.misc
 import configNetwork
-from config import config
+from vdsm.config import config
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"

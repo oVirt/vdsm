@@ -29,15 +29,15 @@ from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 import storage.misc
 import storage.hba
-from config import config
+from vdsm.config import config
 import ksm
-import netinfo
-from define import doneCode, errCode
+from vdsm import netinfo
+from vdsm.define import doneCode, errCode
 import libvirt
 import libvirtconnection
 import vm
-import constants
-import utils
+from vdsm import constants
+from vdsm import utils
 import configNetwork
 import caps
 from BindingXMLRPC import BindingXMLRPC

@@ -54,7 +54,7 @@ import misc
 import resourceManager
 from threadLocal import vars
 from weakref import proxy
-from config import config
+from vdsm.config import config
 import outOfProcess as oop
 from logUtils import SimpleLogAdapter
 

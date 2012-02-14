@@ -23,7 +23,7 @@ import uuid
 import threading
 import sanlock
 
-from config import config
+from vdsm.config import config
 import storage_exception as se
 import volume
 import image

@@ -23,7 +23,7 @@ import logging
 import time
 import signal
 
-import constants
+from vdsm import constants
 import storage_exception as se
 import sd
 from sdc import sdCache

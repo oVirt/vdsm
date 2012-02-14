@@ -25,7 +25,7 @@ import errno
 import re
 
 from supervdsm import getProxy
-from constants import EXT_DMSETUP
+from vdsm.constants import EXT_DMSETUP
 
 DMPATH_FORMAT = "/dev/mapper/%s"
 

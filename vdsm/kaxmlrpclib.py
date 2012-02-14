@@ -102,7 +102,7 @@ class TcpkeepHTTP(httplib.HTTP):
 
 ###################
 # the same, for ssl
-import SecureXMLRPCServer
+from vdsm import SecureXMLRPCServer
 import ssl
 
 def SslServer(url, ctx, *args, **kwargs):

@@ -317,7 +317,7 @@ def getMGTIP(vdsmDir, vdcHostName):
 
     try:
         sys.path.append(vdsmDir)
-        import netinfo # taken from vdsm rpm
+        from vdsm import netinfo
     except:
         logging.error("getMGTIP: Failed to find vdsm modules!")
         return strReturn
@@ -752,7 +752,7 @@ def _getOvirtBridgeParams(mgtBridge):
         This helper function extract the relevant parameters of the existing
         ovirt bridge in order to re-create it as a managment bridge.
     """
-    import netinfo # taken from vdsm rpm
+    from vdsm import netinfo
     vlan = ''
     bonding = ''
     nic = None
@@ -773,7 +773,7 @@ def _getRHELBridgeParams(mgtIface):
         This helper function extract the relevant parameters of the existing
         RHEL interface, in order to create a managment bridge.
     """
-    import netinfo # taken from vdsm rpm
+    from vdsm import netinfo
     vlan = ''
     bonding = ''
     nic = None
@@ -818,7 +818,7 @@ def makeBridge(vdcName, vdsmDir):
     logging.debug('makeBridge begin.')
     sys.path.append(vdsmDir)
     try:
-        imp.find_module('netinfo') # taken from vdsm rpm
+        imp.find_module('netinfo')
     except ImportError:
         logging.error("makeBridge Failed to find vdsm modules!")
         return False

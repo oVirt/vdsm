@@ -21,7 +21,7 @@
 import os as mod_os
 import glob as mod_glob
 import types
-from config import config
+from vdsm.config import config
 import threading
 
 from fileUtils import open_ex

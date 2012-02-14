@@ -535,8 +535,8 @@ class HostStatsThread(StatsThread):
         StatsThread.stop(self)
 
     def _updateIfRates(self, hs0, hs1):
-        # import netinfo only after it imported utils
-        from netinfo import speed as nicspeed
+        # from vdsm import netinfo only after it imported utils
+        from vdsm.netinfo import speed as nicspeed
 
         i = 0
         for ifid in self._ifids:

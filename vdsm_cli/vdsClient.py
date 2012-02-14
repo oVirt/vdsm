@@ -25,7 +25,7 @@ import re
 import socket
 import pprint as pp
 
-import vdscli
+from vdsm import vdscli
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 

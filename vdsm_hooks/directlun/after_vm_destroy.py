@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-import utils
+from vdsm import utils
 import hooking
 
 '''

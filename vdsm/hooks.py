@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import utils
+from vdsm import utils
 import glob
 import os
 import tempfile
@@ -26,7 +26,7 @@ import logging
 
 import hashlib
 
-from constants import P_VDSM_HOOKS, P_VDSM
+from vdsm.constants import P_VDSM_HOOKS, P_VDSM
 
 class HookError(Exception): pass
 

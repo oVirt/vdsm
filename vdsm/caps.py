@@ -32,13 +32,13 @@ import linecache
 
 import libvirt
 
-from config import config
+from vdsm.config import config
 import libvirtconnection
 import dsaversion
-import netinfo
+from vdsm import netinfo
 import hooks
-import utils
-import constants
+from vdsm import utils
+from vdsm import constants
 import storage.hba
 
 # For debian systems we can use python-apt if available

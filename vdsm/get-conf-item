@@ -5,7 +5,7 @@
 
 import sys
 try:
-   from config import config
+   from vdsm.config import config
 except:
    import ConfigParser
    config = ConfigParser.ConfigParser()

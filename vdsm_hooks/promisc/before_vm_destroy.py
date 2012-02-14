@@ -2,7 +2,7 @@
 
 import os
 import sys
-import utils
+from vdsm import utils
 import traceback
 
 def removeMirrorNetwork(networkName):

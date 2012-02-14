@@ -27,14 +27,14 @@ import struct
 import logging
 
 import uuid
-from config import config
+from vdsm.config import config
 import sd
 import misc
 import task
 from threadLocal import vars
 from threadPool import ThreadPool
 from storage_exception import InvalidParameterException
-import constants
+from vdsm import constants
 
 __author__="ayalb"
 __date__ ="$Mar 9, 2009 5:25:07 PM$"

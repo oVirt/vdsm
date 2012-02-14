@@ -28,14 +28,14 @@ import codecs
 from contextlib import nested
 from functools import partial
 
-import constants
+from vdsm import constants
 import storage_mailbox
 import blockSD
 import fileSD
 import sd
 import misc
 import fileUtils
-from config import config
+from vdsm.config import config
 from sdc import sdCache
 import storage_exception as se
 from persistentDict import DictValidator

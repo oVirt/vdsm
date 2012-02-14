@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,39 +17,3 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
-include $(top_srcdir)/build-aux/Makefile.subs
-
-dist_vdsm_PYTHON = \
-	vdsClient.py
-
-nodist_bin_SCRIPTS = \
-	vdsClient
-
-nodist_vdsmpylib_PYTHON = \
-	vdscli.py
-
-dist_man1_MANS = \
-	vdsClient.1
-
-CLEANFILES = \
-	config.log \
-	$(nodist_bin_SCRIPTS) \
-	$(nodist_vdsm_PYTHON)
-
-EXTRA_DIST = \
-	vdsClient.completion \
-	vdsClient.in \
-	vdscli.py.in
-
-all-local: \
-	$(nodist_bin_SCRIPTS) \
-	$(nodist_vdsm_PYTHON)
-
-install-data-local:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/bash_completion.d
-	$(INSTALL_DATA) $(srcdir)/vdsClient.completion \
-		$(DESTDIR)$(sysconfdir)/bash_completion.d/vdsClient
-
-uninstall-local:
-	$(RM) $(DESTDIR)$(sysconfdir)/bash_completion.d/vdsClient

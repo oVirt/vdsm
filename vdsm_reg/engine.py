@@ -34,7 +34,7 @@ sys.path.append('/usr/share/vdsm-reg')
 import deployUtil
 
 sys.path.append('/usr/share/vdsm')
-import constants
+from vdsm import constants
 
 VDSM_CONFIG = "/etc/vdsm/vdsm.conf"
 VDSM_REG_CONFIG = "/etc/vdsm-reg/vdsm-reg.conf"

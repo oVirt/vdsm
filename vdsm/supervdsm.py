@@ -28,7 +28,7 @@ from time import sleep
 import socket
 
 import storage.misc as misc
-import constants
+from vdsm import constants
 
 _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()

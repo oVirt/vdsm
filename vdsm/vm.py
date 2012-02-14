@@ -21,18 +21,18 @@
 import os
 import time
 import threading, logging
-import constants
+from vdsm import constants
 import tempfile
 import pickle
 from copy import deepcopy
 
-import utils
-from define import NORMAL, ERROR, doneCode, errCode
-from config import config
+from vdsm import utils
+from vdsm.define import NORMAL, ERROR, doneCode, errCode
+from vdsm.config import config
 import kaxmlrpclib
 from logUtils import SimpleLogAdapter
 import libvirt
-import vdscli
+from vdsm import vdscli
 import caps
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
