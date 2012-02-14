@@ -107,16 +107,25 @@ def _getCompatibleCpuModels():
     c = libvirtconnection.get()
     cpu_map = minidom.parseString(
                     file('/usr/share/libvirt/cpu_map.xml').read())
-    allModels = [ m.getAttribute('name') for m
+    def vendor(modelElem):
+        vs = modelElem.getElementsByTagName('vendor')
+        if vs:
+            return vs[0].getAttribute('name')
+        else:
+            return None
+    allModels = [ (m.getAttribute('name'), vendor(m)) for m
           in cpu_map.getElementsByTagName('arch')[0].childNodes
           if m.nodeName == 'model' ]
-    def compatible(model):
-        xml = '<cpu match="minimum"><model>%s</model></cpu>' % model
+    def compatible(model, vendor):
+        if not vendor:
+            return False
+        xml = '<cpu match="minimum"><model>%s</model>' \
+              '<vendor>%s</vendor></cpu>' % (model, vendor)
         return c.compareCPU(xml, 0) in (
                                 libvirt.VIR_CPU_COMPARE_SUPERSET,
                                 libvirt.VIR_CPU_COMPARE_IDENTICAL)
-    return [ 'model_' + model for model
-             in allModels if compatible(model) ]
+    return [ 'model_' + model for (model, vendor)
+             in allModels if compatible(model, vendor) ]
 
 def _parseKeyVal(lines, delim='='):
     d = {}
