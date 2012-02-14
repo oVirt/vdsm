@@ -1394,6 +1394,7 @@ class LibvirtVm(vm.Vm):
         if vm.isVdsmImage(diskParams):
             self._normalizeVdsmImg(diskParams)
 
+        self.updateDriveIndex(diskParams)
         drive = Drive(self.conf, self.log, **diskParams)
         driveXml =  drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug disk xml: %s" % (driveXml))

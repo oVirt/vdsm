@@ -340,9 +340,9 @@ class Vm(object):
     def __getNextIndex(self, used):
         for n in xrange(max(used or [0]) + 2):
             if n not in used:
-                index = n
+                idx = n
                 break
-        return index
+        return str(idx)
 
     def _normalizeVdsmImg(self, drv):
         drv['needExtend'] = False
@@ -389,6 +389,8 @@ class Vm(object):
                 self.log.error("Unknown device '%s' found", dev['type'])
                 devices[GENERAL_DEVICES].append(dev)
 
+        # Update indecies for drives devices
+        self.normalizeDrivesIndices(devices[DISK_DEVICES])
         return devices
 
     def buildConfDevices(self):
@@ -502,26 +504,39 @@ class Vm(object):
         if not confDrives:
             confDrives.extend(self.__legacyDrives())
         confDrives.extend(self.__removableDrives())
-        drives = [(order, drv) for order, drv in enumerate(confDrives)]
-        indexed = []
-        for order, drv in drives:
+
+        for drv in confDrives:
             drv['type'] = DISK_DEVICES
-            # FIXME: For BC we have now two identical keys: iface = if
-            # Till the day that conf will not returned as a status anymore.
-            drv['iface'] = drv.get('iface') or drv.get('if', 'ide')
-            if not self._usedIndices.has_key(drv['iface']):
-                self._usedIndices[drv['iface']] = []
-            index = drv.get('index')
-            if index is not None:
-                self._usedIndices[drv['iface']].append(index)
-                indexed.append(order)
             drv['format'] = drv.get('format') or 'raw'
             drv['propagateErrors'] = drv.get('propagateErrors') or 'off'
             drv['readonly'] = False
+            # FIXME: For BC we have now two identical keys: iface = if
+            # Till the day that conf will not returned as a status anymore.
+            drv['iface'] = drv.get('iface') or drv.get('if', 'ide')
+
+        # Update indecies for drives devices
+        self.normalizeDrivesIndices(confDrives)
+
+        return confDrives
+
+    def updateDriveIndex(self, drv):
+        drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
+        self._usedIndices[drv['iface']].append(int(drv['index']))
+
+    def normalizeDrivesIndices(self, confDrives):
+        drives = [(order, drv) for order, drv in enumerate(confDrives)]
+        indexed = []
+        for order, drv in drives:
+            if not self._usedIndices.has_key(drv['iface']):
+                self._usedIndices[drv['iface']] = []
+            idx = drv.get('index')
+            if idx is not None:
+                self._usedIndices[drv['iface']].append(int(idx))
+                indexed.append(order)
+
         for order, drv in drives:
             if order not in indexed:
-                drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
-                self._usedIndices[drv['iface']].append(drv['index'])
+                self.updateDriveIndex(drv)
 
         return [drv for order, drv in drives]
 
