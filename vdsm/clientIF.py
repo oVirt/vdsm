@@ -187,28 +187,32 @@ class clientIF:
                 if not os.path.exists(volPath):
                     raise vm.VolumeError(drive)
 
+                drive['blockDev'] = True
                 res = self.irs.appropriateDevice(drive["GUID"], vmId)
-
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
 
             # UUID drive format
             elif drive.has_key("UUID"):
                 volPath = self._getUUIDSpecPath(drive["UUID"])
+                drive['blockDev'] = True
 
-            # Path drive format
             elif drive.has_key("path"):
                 volPath = drive['path']
+                drive['blockDev'] = False
 
+        # For BC sake: None as argument
+        elif not drive:
+            volPath = drive
+
+        #  For BC sake: path as a string.
         elif os.path.exists(drive):
             volPath = drive
 
         else:
             raise vm.VolumeError(drive)
 
-        drive['blockDev'] = utils.isBlockDevice(volPath)
         self.log.info("prepared volume path: %s", volPath)
-
         return volPath
 
     def teardownVolumePath(self, drive):
