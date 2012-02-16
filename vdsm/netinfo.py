@@ -22,6 +22,9 @@ import os, glob, subprocess
 import shlex
 import logging
 from fnmatch import fnmatch
+from xml.dom import minidom
+
+import libvirtconnection
 
 import constants
 from config import config
@@ -31,6 +34,8 @@ NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
+
+LIBVIRT_NET_PREFIX = 'vdsm-'
 
 def nics():
     res = []
@@ -49,6 +54,33 @@ def vlans():
 
 def bridges():
     return [ b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bridge')]
+
+def networks():
+    """
+    Get dict of networks from libvirt
+
+    :returns: dict of networkname={properties}
+    :rtype: dict of dict
+            { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True },
+              'red': { 'interface': 'red', 'bridged': False } }
+    """
+    nets = {}
+    conn = libvirtconnection.get()
+    for name in conn.listNetworks():
+        if name.startswith(LIBVIRT_NET_PREFIX):
+            # remove the LIBVIRT_NET_PREFIX from the network name
+            netname = name[len(LIBVIRT_NET_PREFIX):]
+            nets[netname] = {}
+            net = conn.networkLookupByName(name)
+            xml = minidom.parseString(net.XMLDesc(0))
+            interfaces = xml.getElementsByTagName('interface')
+            if len(interfaces) > 0:
+                nets[netname]['interface'] = interfaces[0].getAttribute('dev')
+                nets[netname]['bridged'] = False
+            else:
+                nets[netname]['bridge'] = xml.getElementsByTagName('bridge')[0].getAttribute('name')
+                nets[netname]['bridged'] = True
+    return nets
 
 def slaves(bonding):
     return [ b.split('/')[-1].split('_', 1)[-1] for b in

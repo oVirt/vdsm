@@ -63,7 +63,7 @@ class clientIF:
         self.log = log
         self._recovery = True
         self._libvirt = libvirtconnection.get()
-        self._createLibvirtNetworks()
+        self._syncLibvirtNetworks()
         self._generationID = str(uuid.uuid4())
         self._initIRS()
         try:
@@ -105,17 +105,23 @@ class clientIF:
             'default_bridge': config.get("vars", "default_bridge"), }
         self.bindings['xmlrpc'] = BindingXMLRPC(self, self.log, xmlrpc_params)
 
-    def _createLibvirtNetworks(self):
+    def _syncLibvirtNetworks(self):
         """
             function is mostly for upgrade from versions that did not
             have a libvirt network per vdsm network
         """
-        nf = netinfo.NetInfo()
-        lvNetworks = self._libvirt.listNetworks()
-        for network in nf.networks.keys():
-            lvNetwork = configNetwork.NETPREFIX + network
-            if not lvNetwork in lvNetworks:
-                configNetwork.createLibvirtNetwork(network)
+        # add libvirt networks
+        nets = netinfo.networks()
+        bridges = netinfo.bridges()
+        for bridge in bridges:
+            if not bridge in nets:
+                configNetwork.createLibvirtNetwork(bridge)
+        # remove bridged networks that their bridge not exists
+        #TODO:
+        # this should probably go into vdsm-restore-net script
+        for network in nets:
+            if nets[network]['bridged'] and network not in bridges:
+                configNetwork.removeLibvirtNetwork(network)
 
     def prepareForShutdown(self):
         """

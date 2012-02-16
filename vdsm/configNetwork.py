@@ -31,7 +31,7 @@ import constants
 import utils
 import neterrors as ne
 import define
-from netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR
+from netinfo import NetInfo, getIpAddresses, NET_CONF_DIR, NET_CONF_BACK_DIR, LIBVIRT_NET_PREFIX
 import libvirtconnection
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
@@ -639,6 +639,16 @@ def createLibvirtNetwork(bridge):
     net.create()
     net.setAutostart(1)
 
+def removeLibvirtNetwork(network):
+    netName = LIBVIRT_NET_PREFIX + network
+    conn = libvirtconnection.get()
+    try:
+        net = conn.networkLookupByName(netName)
+        net.destroy()
+        net.undefine()
+    except libvirt.libvirtError:
+        logging.debug('failed to remove libvirt network ' + netName, exec_info=True)
+
 def assertBridgeClean(bridge, vlan, bonding, nics):
     brifs = os.listdir('/sys/class/net/%s/brif/' % bridge)
     for nic in nics:
@@ -727,15 +737,7 @@ def delNetwork(bridge, force=False, configWriter=None, **options):
         configWriter.removeBridge(bridge)
 
     if not utils.tobool(options.get('skipLibvirt', False)):
-        netName = NETPREFIX + bridge
-        conn = libvirtconnection.get()
-        try:
-            net = conn.networkLookupByName(netName)
-            net.destroy()
-            net.undefine()
-        except libvirt.libvirtError:
-            logging.debug('failed to remove libvirt network %s' % netName)
-
+        removeLibvirtNetwork(bridge)
 
 def clientSeen(timeout):
     start = time.time()
