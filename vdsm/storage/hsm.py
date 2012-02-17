@@ -107,6 +107,10 @@ def loggableConList(conList):
 
     return cons
 
+def deprecated(f):
+    """Used to mark exported methods as deprecated"""
+    return f
+
 def connectionListPrinter(conList):
     return repr(loggableConList(conList))
 
@@ -169,7 +173,7 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         if username or password:
             cred = iscsi.ChapCredentials(username, password)
 
-        storageServer.IscsiConnectionParameters(target, iface, cred)
+        params = storageServer.IscsiConnectionParameters(target, iface, cred)
     else:
         raise se.StorageServerActionError()
 
@@ -313,6 +317,8 @@ class HSM:
 
         threading.Thread(target=storageRefresh).start()
 
+    def _hsmSchedule(self, name, func, *args):
+        self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task, name, func, *args)
 
     def __validateLvmLockingType(self):
         """
@@ -1856,6 +1862,9 @@ class HSM:
         return self.getIsoList(spUUID=spUUID, extension='vfd')
 
 
+
+
+    @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
     def connectStorageServer(self, domType, spUUID, conList, options = None):
         """
@@ -1878,18 +1887,10 @@ class HSM:
         res = []
         for conDef in conList:
             conInfo = _connectionDict2ConnectionInfo(domType, conDef)
-            conObj = storageServer.ConnectionFactory(conInfo)
+            conObj = storageServer.ConnectionFactory.createConnection(conInfo)
             try:
                 conObj.connect()
                 status = 0
-            except mount.MountError:
-                status = se.MountError.code
-            except iscsi.iscsiadm.IscsiAuthenticationError:
-                status = se.iSCSILoginAuthError.code
-            except iscsi.iscsiadm.IscsiInterfaceError:
-                status = se.iSCSIifaceError.code
-            except iscsi.iscsiadm.IscsiError:
-                status = se.iSCSISetupError.code
             except Exception as err:
                 self.log.error("Could not connect to storageServer", exc_info=True)
                 status, _ = self._translateConnectionError(err)
@@ -1902,6 +1903,7 @@ class HSM:
         return dict(statuslist=res)
 
 
+    @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
     def validateStorageServerConnection(self, domType, spUUID, conList, options = None):
         """
@@ -1918,6 +1920,7 @@ class HSM:
 
         return dict(statuslist=res)
 
+    @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
     def disconnectStorageServer(self, domType, spUUID, conList, options = None):
         """
@@ -1940,18 +1943,10 @@ class HSM:
         res = []
         for conDef in conList:
             conInfo = _connectionDict2ConnectionInfo(domType, conDef)
-            conObj = storageServer.ConnectionFactory(conInfo)
+            conObj = storageServer.ConnectionFactory.createConnection(conInfo)
             try:
                 conObj.disconnect()
                 status = 0
-            except mount.MountError:
-                status = se.MountError.code
-            except iscsi.iscsiadm.IscsiAuthenticationError:
-                status = se.iSCSILoginAuthError.code
-            except iscsi.iscsiadm.IscsiInterfaceError:
-                status = se.iSCSIifaceError.code
-            except iscsi.iscsiadm.IscsiError:
-                status = se.iSCSISetupError.code
             except Exception as err:
                 self.log.error("Could not disconnect from storageServer", exc_info=True)
                 status, _ = self._translateConnectionError(err)
@@ -1967,29 +1962,58 @@ class HSM:
         if e is None:
             return 0, ""
 
+        if isinstance(e, mount.MountError):
+            return se.MountError.code, se.MountError.message
+        if isinstance(e, iscsi.iscsiadm.IscsiAuthenticationError):
+            return se.iSCSILoginAuthError.code, se.iSCSILoginAuthError.message
+        if isinstance(e, iscsi.iscsiadm.IscsiInterfaceError):
+            return se.iSCSIifaceError.code, se.iSCSIifaceError.message
+        if isinstance(e, iscsi.iscsiadm.IscsiError):
+            return se.iSCSISetupError.code, se.iSCSISetupError.message
+
         if hasattr(e, 'code'):
             return e.code, e.message
 
         return se.GeneralException.code, str(e)
 
     @public
-    def getStorageConnectionsList(self, spUUID, options = None):
+    def storageServer_ConnectionRefs_statuses(self):
         """
-        Gets a list of all the storage connections of the pool.
-
-        .. warning::
-                This method is not yet implemented and will allways fail.
-
-        :param spUUID: The UUID of the storage pool you want to query.
-        :type spUUID: UUID
-        :param options: ?
+        Gets a list of all managed and active unmanaged storage connections and
+        their current status.
         """
-        vars.task.setDefaultException(se.StorageServerActionError("spUUID=%s" % spUUID))
-        raise se.NotImplementedException("getStorageConnectionsList")
-        # Once implemented, return value should look something like this:
-        #getSharedLock(connectionsResource...)
-        #connectionslist = ""
-        #return dict(connectionslist=connectionslist)
+        vars.task.setDefaultException(se.StorageServerActionError())
+        res = {}
+        conMonitor = self._connectionMonitor
+        managedConnections = conMonitor.getMonitoredConnectionsDict()
+        for conId, con in managedConnections.iteritems():
+            conErr = conMonitor.getLastError(conId)
+            errInfo = self._translateConnectionError(conErr)
+            conInfo = self._connectionAliasRegistrar.getConnectionInfo(conId)
+            params = conInfo.params
+            if conInfo.type == 'iscsi':
+                conInfoDict = {'target': {
+                                  'portal': misc.namedtuple2dict(params.target.portal),
+                                  'tpgt': params.target.tpgt,
+                                  'iqn': params.target.iqn},
+                               'iface': params.iface.name}
+            else:
+                conInfoDict = misc.namedtuple2dict(params)
+                for key in conInfoDict:
+                    if conInfoDict[key] is None:
+                        conInfoDict[key] = 'default'
+
+            r = {"connected": con.isConnected(),
+                 "lastError": errInfo,
+                 "connectionInfo": {
+                     "type": conInfo.type,
+                     "params": conInfoDict
+                     }
+                 }
+
+            res[conId] = r
+
+        return dict(connectionslist=res)
 
 
     @public
@@ -2432,7 +2456,7 @@ class HSM:
         fullTargets = []
         partialTargets = []
         for target in targets:
-            fullTargets.append("%s:%d,%d %s" % (target.portal.host, target.portal.port, target.tpgt, target.iqn))
+            fullTargets.append("%s:%d,%d %s" % (target.portal.hostname, target.portal.port, target.tpgt, target.iqn))
             partialTargets.append(target.iqn)
 
         return dict(targets=partialTargets, fullTargets=fullTargets)
@@ -2719,13 +2743,106 @@ class HSM:
         :type sdUUID: UUID.
         :param options: ?
 
-        :returns: a dict with a list of the images belonging to the specified domain.
+        :returns: a dict with a list of the images belonging to the specified
+                  domain.
         :rtype: dict
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
         imageslist = sdCache.produce(sdUUID=sdUUID).getAllImages()
         return dict(imageslist=imageslist)
 
+    def _parseConnectionInfo(conInfo):
+        conType = conInfo["type"].lower()
+        params = conInfo['params']
+        if conType == "iscsi":
+            portalParams = params['target']['portal']
+            portal = iscsi.IscsiPortal(portalParams['host'],
+                    portalParams.get("port", iscsi.ISCSI_DEFAULT_PORT))
+            target = iscsi.IscsiTarget(portal, params['target'].get('tpgt', 1),
+                    params['target']['iqn'])
+            iface = iscsi.IscsiInterface(params.get('ifaceName', 'default'))
+            authInfo = params.get('authInfo', None)
+            cred = None
+            if authInfo:
+                authMethod = authInfo['authMethod'].lower()
+                if authMethod != "chap":
+                    # TODO : Proper exception
+                    raise Exception("Authentication method '%s' is not"
+                            "supported by VDSM" % authMethod)
+
+                authParams = authInfo['params']
+                cred = iscsi.ChapCredentials(authParams.get('username', None),
+                        authParams.get('password', None))
+
+            conParams = storageServer.IscsiConnectionParameters(target, iface,
+                    cred)
+        elif conType == 'nfs':
+            conParams = storageServer.NfsConnectionParameters(**params)
+        elif conType == 'localfs':
+            conParams = storageServer.LocaFsConnectionParameters(**params)
+        elif conType == 'posixfs':
+            conParams = storageServer.PosixFsConnectionParameters(**params)
+        else:
+            # TODO : Proper exception
+            raise Exception("Unsupported connection type")
+
+        return storageServer.ConnectionInfo(conType, conParams)
+
+    @public
+    def storageServer_ConnectionRefs_acquire(self, conRefArgs):
+        res = {}
+        for refId, conInfo in conRefArgs.iteritems():
+            status = 0
+            try:
+                conInfo = storageServer.dict2conInfo(conInfo)
+            except Exception:
+                res[refId] = se.StorageServerValidationError.code
+                continue
+
+            try:
+                self._connectionAliasRegistrar.register(refId, conInfo)
+            except KeyError:
+                status = se.StorageServerConnectionRefIdAlreadyInUse.code
+            except Exception as e:
+                self.log.error("Could not acquire resource ref for '%s'", refId,
+                        exc_info=True)
+                status, _ = self._translateConnectionError(e)
+
+            try:
+                self._connectionMonitor.manage(refId)
+            except Exception as e:
+                self.log.error("Could not acquire resource ref for '%s'", refId,
+                        exc_info=True)
+                self._connectionAliasRegistrar.unregister(refId)
+                status, _ = self._translateConnectionError(e)
+
+            res[refId] = status
+
+        return {"results": res}
+
+    @public
+    def storageServer_ConnectionRefs_release(self, refIDs):
+        res = {}
+        for refID in refIDs:
+            status = 0
+            try:
+                self._connectionMonitor.unmanage(refID)
+            except KeyError:
+                # It's OK if we this alias is not managed
+                pass
+
+            try:
+                self._connectionAliasRegistrar.unregister(refID)
+            except KeyError:
+                status = se.StorageServerConnectionRefIdAlreadyInUse.code
+            except Exception as e:
+                self.log.error("Could not release resource ref for '%s'", refID,
+                        exc_info=True)
+                status, _ = self._translateConnectionError(e)
+
+            res[refID] = status
+
+        return {"results": res}
 
     @public
     def getImageDomainsList(self, spUUID, imgUUID, datadomains=True, options = None):

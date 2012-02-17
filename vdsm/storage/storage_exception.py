@@ -950,6 +950,14 @@ class MountError(StorageException):
     code = 477
     message = "Problem while trying to mount target"
 
+class StorageServerConnectionRefIdAlreadyInUse(StorageException):
+    code = 478
+    message = "Connection Reference ID is already in use"
+
+class StorageServerConnectionRefIdDoesNotExist(StorageException):
+    code = 479
+    message = "Connection Reference ID was not in the registered with this VDSM"
+
 #################################################
 #  LVM related Exceptions
 #################################################

@@ -28,6 +28,7 @@ import pickle
 import glob
 from collections import namedtuple
 import misc
+from functools import partial
 
 import mount
 import iscsi
@@ -35,12 +36,65 @@ from sync import asyncmethod, AsyncCallStub
 
 class AliasAlreadyRegisteredError(RuntimeError): pass
 class AliasNotRegisteredError(RuntimeError): pass
+class UnsupportedAuthenticationMethod(RuntimeError): pass
 
 IscsiConnectionParameters = namedtuple("IscsiConnectionParameters", "target, iface, credentials")
 PosixFsConnectionParameters = namedtuple("PosixFsConnectionParameters", "spec, vfsType, options")
 LocaFsConnectionParameters = namedtuple("LocaFsConnectionParameters", "path")
 NfsConnectionParameters = namedtuple("NfsConnectionParameters", "export, retrans, timeout, version")
 ConnectionInfo = namedtuple("ConnectionInfo", "type, params")
+
+def _credentialAssembly(credInfo):
+    authMethod = credInfo.get('type', 'chap').lower()
+    if authMethod != 'chap':
+        raise UnsupportedAuthenticationMethod(authMethod)
+
+    params = credInfo.get('params', {})
+    username = params.get('username', None)
+    password = params.get('password', None)
+    return iscsi.ChapCredentials(username, password)
+
+
+def _iscsiParameterAssembly(d):
+    port = d['portal'].get('port', iscsi.ISCSI_DEFAULT_PORT)
+    host = d['portal']['host']
+    portal = iscsi.IscsiPortal(host, port)
+    iqn = d['iqn']
+    tpgt = d.get('tpgt', 1)
+    target = iscsi.IscsiTarget(portal, tpgt, iqn)
+    iface = iscsi.IscsiInterface(d.get('iface', 'default'))
+    credInfo = d.get('credentials', None)
+    cred = None
+    if credInfo:
+        cred = _credentialAssembly(credInfo)
+
+    return IscsiConnectionParameters(target, iface, cred)
+
+def _namedtupleAssembly(nt, d):
+    d = d.copy()
+    for field in nt._fields:
+        if field not in d:
+            d[field] = None
+
+    return nt(**d)
+
+_posixFsParameterAssembly = partial(_namedtupleAssembly,
+        PosixFsConnectionParameters)
+_nfsParamerterAssembly = partial(_namedtupleAssembly, NfsConnectionParameters)
+_localFsParameterAssembly = partial(_namedtupleAssembly, LocaFsConnectionParameters)
+
+
+_TYPE_NT_MAPPING = {
+        'iscsi': _iscsiParameterAssembly,
+        'sharedfs': _posixFsParameterAssembly,
+        'posixfs': _posixFsParameterAssembly,
+        'nfs': _nfsParamerterAssembly,
+        'localfs': _localFsParameterAssembly}
+
+def dict2conInfo(d):
+    conType = d['type']
+    params = _TYPE_NT_MAPPING[conType](d.get('params', {}))
+    return ConnectionInfo(conType, params)
 
 class ExampleConnection(object):
     """Do not inherit from this object it is just to show and document the

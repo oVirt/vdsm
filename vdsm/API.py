@@ -46,6 +46,19 @@ USER_SHUTDOWN_MESSAGE = 'System going down'
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
+class ConnectionRefs(object):
+    def __init__(self, cif):
+        self._irs = cif.irs
+
+    def acquire(self, conRefArgs):
+        return self._irs.storageServer_ConnectionRefs_acquire(conRefArgs)
+
+    def release(self, refIDs):
+        return self._irs.storageServer_ConnectionRefs_release(refIDs)
+
+    def statuses(self):
+        return self._irs.storageServer_ConnectionRefs_statuses()
+
 class Task(object):
     def __init__(self, cif, UUID):
         self._irs = cif.irs
