@@ -35,7 +35,7 @@ VFS_EXT3 = "ext3"
 MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "
                           "fs_mntops fs_freq fs_passno")
 
-_RE_ESCAPE = re.compile(r"\\0\d+")
+_RE_ESCAPE = re.compile(r"\\0\d\d")
 
 class MountError(RuntimeError): pass
 
