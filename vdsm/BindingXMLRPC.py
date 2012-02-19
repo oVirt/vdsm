@@ -248,7 +248,7 @@ class BindingXMLRPC(object):
 
     def vmMigrationCancel(self, vmId):
         vm = API.VM(self.cif, vmId)
-        return vm.migrationCancel()
+        return vm.migrateCancel()
 
     def vmHotplugDisk(self, params):
         vm = API.VM(self.cif, params['vmId'])
