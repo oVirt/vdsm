@@ -986,6 +986,15 @@ class Drive(vm.Device):
         self.truesize = int(kwargs.get('truesize', '0'))
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
         self.name = self._makeName()
+        try:
+            self.blockDev = utils.isBlockDevice(self.path)
+        except OSError:
+            if self.device in ('cdrom', 'floppy'):
+                self.log.debug('removable device not found in %s', self.path,
+                               exc_info=True)
+                self.blockDev = False
+            else:
+                raise
         self._customize()
 
     def _customize(self):

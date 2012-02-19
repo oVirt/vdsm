@@ -187,7 +187,6 @@ class clientIF:
                 if not os.path.exists(volPath):
                     raise vm.VolumeError(drive)
 
-                drive['blockDev'] = True
                 res = self.irs.appropriateDevice(drive["GUID"], vmId)
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
@@ -195,11 +194,9 @@ class clientIF:
             # UUID drive format
             elif drive.has_key("UUID"):
                 volPath = self._getUUIDSpecPath(drive["UUID"])
-                drive['blockDev'] = True
 
             elif drive.has_key("path"):
                 volPath = drive['path']
-                drive['blockDev'] = False
 
         # For BC sake: None as argument
         elif not drive:

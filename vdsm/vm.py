@@ -362,18 +362,18 @@ class Vm(object):
              path = self.conf.get(linuxName)
              if path:
                  legacies.append({'path': path, 'iface': 'ide', 'index': index,
-                                  'blockDev': False, 'truesize': 0})
+                                  'truesize': 0})
          return legacies
 
     def __removableDrives(self):
         removables =  [{'type': DISK_DEVICES, 'device': 'cdrom', 'iface': 'ide',
                         'path': self.conf.get('cdrom', ''), 'index': 2,
-                        'blockDev': False, 'truesize': 0}]
+                        'truesize': 0}]
         floppyPath = self.conf.get('floppy')
         if floppyPath:
             removables.append({'type': DISK_DEVICES, 'device': 'floppy',
                                'path': floppyPath, 'iface': 'fdc',
-                               'index': 0, 'blockDev': False, 'truesize': 0})
+                               'index': 0, 'truesize': 0})
         return removables
 
     def getConfDevices(self):
