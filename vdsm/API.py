@@ -421,12 +421,12 @@ class VM(object):
             params['mode'] = 'remote'
         return v.migrate(params)
 
-    def migrateCancel(self, vmId):
+    def migrateCancel(self):
         """
         Cancel a currently outgoing migration process.
         """
         try:
-            v = self._cif.vmContainer[vmId]
+            v = self._cif.vmContainer[self._UUID]
         except KeyError:
             return errCode['noVM']
         return v.migrateCancel()
