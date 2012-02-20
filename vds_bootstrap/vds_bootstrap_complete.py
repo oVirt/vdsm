@@ -44,7 +44,7 @@ def Reboot(act=1):
         print "<BSTRAP component='Reboot' status='OK'/>"
         deployUtil.reboot()
     else:
-        print "<BSTRAP component='Reboot' status='FAIL'/>"
+        print "<BSTRAP component='Reboot' status='OK' message='Reboot avoided as requested'/>"
     sys.stdout.flush()
 
 def main():
@@ -63,7 +63,7 @@ def main():
         print main.__doc__
         return 0
     try:
-        arg = args[1]
+        arg = int(args[1])
     except:
         arg = 1
 
