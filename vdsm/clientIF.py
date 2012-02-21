@@ -170,7 +170,7 @@ class clientIF:
     def prepareVolumePath(self, drive, vmId=None):
         if type(drive) is dict:
             # PDIV drive format
-            if vm.isVdsmImage(drive):
+            if drive['device'] == 'disk' and vm.isVdsmImage(drive):
                 res = self.irs.prepareImage(drive['domainID'], drive['poolID'],
                                             drive['imageID'], drive['volumeID'])
 

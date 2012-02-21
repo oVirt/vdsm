@@ -347,11 +347,18 @@ class Vm(object):
     def _normalizeVdsmImg(self, drv):
         drv['needExtend'] = False
         drv['reqsize'] = drv.get('reqsize', '0')
-        res = self.cif.irs.getVolumeSize(drv['domainID'],
+        if not drv.has_key('device'):
+            drv['device'] = 'disk'
+
+        if drv['device'] == 'disk':
+            res = self.cif.irs.getVolumeSize(drv['domainID'],
                              drv['poolID'], drv['imageID'],
                              drv['volumeID'])
-        drv['truesize'] = res['truesize']
-        drv['apparentsize'] = res['apparentsize']
+            drv['truesize'] = res['truesize']
+            drv['apparentsize'] = res['apparentsize']
+        else:
+            drv['truesize'] = 0
+            drv['apparentsize'] = 0
 
     def __legacyDrives(self):
          """

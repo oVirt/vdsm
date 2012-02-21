@@ -89,13 +89,12 @@ class VmStatsThread(utils.AdvancedStatsThread):
             return
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
-            if not vmDrive.isVdsmImage():
-                continue
-            volSize = self._vm.cif.irs.getVolumeSize(vmDrive.domainID,
-                      vmDrive.poolID, vmDrive.imageID, vmDrive.volumeID)
-            if volSize['status']['code'] == 0 and not vmDrive.needExtend:
-                vmDrive.truesize = int(volSize['truesize'])
-                vmDrive.apparentsize = int(volSize['apparentsize'])
+            if vmDrive.device == 'disk' and vmDrive.isVdsmImage():
+                volSize = self._vm.cif.irs.getVolumeSize(vmDrive.domainID,
+                          vmDrive.poolID, vmDrive.imageID, vmDrive.volumeID)
+                if volSize['status']['code'] == 0 and not vmDrive.needExtend:
+                    vmDrive.truesize = int(volSize['truesize'])
+                    vmDrive.apparentsize = int(volSize['apparentsize'])
 
     def _sampleCpu(self):
         state, maxMem, memory, nrVirtCpu, cpuTime = self._vm._dom.info()
