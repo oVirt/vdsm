@@ -3,7 +3,16 @@
 import os
 import sys
 
-qemu_bin = "@QEMU_PATH@"
+qemu_paths = [
+    "/usr/bin/qemu-kvm",
+    "/usr/libexec/qemu-kvm",
+]
+
+for qemu_bin in qemu_paths:
+    if os.path.exists(qemu_bin): break
+else:
+    raise RuntimeError, "QEMU binary not found"
+
 qemu_argv = [ qemu_bin ]
 
 if not "-no-kvm" in sys.argv:

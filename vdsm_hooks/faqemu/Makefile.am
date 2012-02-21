@@ -20,7 +20,7 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-nodist_vdsmexec_SCRIPTS = \
+dist_vdsmexec_SCRIPTS = \
 	vdsm-faqemu
 
 CLEANFILES = \
@@ -28,8 +28,7 @@ CLEANFILES = \
 	$(nodist_vdsmexec_SCRIPTS)
 
 EXTRA_DIST = \
-	before_vm_start.py \
-	vdsm-faqemu.in
+	before_vm_start.py
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start

@@ -39,5 +39,4 @@ vdsm_cli/vdscli.py
 vdsm_reg/deployUtil.py
 vdsm_reg/vdsm-reg.conf
 vdsm_reg/vdsm-reg-setup
-vdsm_hooks/faqemu/vdsm-faqemu
 vdsm_hooks/persist-vdsm-hooks
