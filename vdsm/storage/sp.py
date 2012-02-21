@@ -1051,7 +1051,8 @@ class StoragePool:
             elif dom.isBackup():
                 dom.unmountMaster()
 
-        dom.releaseHostId(self.id)
+            dom.releaseHostId(self.id)
+
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
         self.setMetaParam(PMDK_DOMAINS, domList)
         self.updateMonitoringThreads()
