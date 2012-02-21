@@ -278,7 +278,7 @@ class StoragePool:
                     # Make sure backup domain is active
                     self.checkBackupDomain(__securityOverride=True)
                 except Exception, e:
-                    self.log.error("Backup domain validation failed, exc_info=True")
+                    self.log.error("Backup domain validation failed", exc_info=True)
 
                 self.taskMng.loadDumpedTasks(self.tasksDir)
 
