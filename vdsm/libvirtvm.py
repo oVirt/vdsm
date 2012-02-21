@@ -1983,7 +1983,14 @@ class LibvirtVm(vm.Vm):
                 if self.guestAgent:
                     self.guestAgent.stop()
                 if self._dom:
-                    self._dom.destroy()
+                    try:
+                        self._dom.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
+                    except libvirt.libvirtError, e:
+                        if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
+                            self.log.warn("Failed to destroy VM '%s' gracefully",
+                                                            self.conf['vmId'])
+                            time.sleep(30)
+                            self._dom.destroy()
             except libvirt.libvirtError, e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     self.log.warning("libvirt domain not found", exc_info=True)
