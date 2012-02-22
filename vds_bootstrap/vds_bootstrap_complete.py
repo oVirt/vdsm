@@ -38,14 +38,25 @@ VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
 
 def Reboot(act=1):
     """
-        Reboot.
+        Reboot: Either reboots the machine or restarts the vdsmd service.
     """
-    if act:
-        print "<BSTRAP component='Reboot' status='OK'/>"
+    logging.debug("Reboot: started.")
+    action = 'Reboot'
+    message = 'Rebooting machine'
+
+    if (act==1):
         deployUtil.reboot()
     else:
-        print "<BSTRAP component='Reboot' status='OK' message='Reboot avoided as requested'/>"
+        action = 'Restart'
+        message = 'Restarting vdsmd service'
+        deployUtil.setService("vdsmd", "restart")
+
+    result = "<BSTRAP component='" + action + "' status='OK' message='" + message + "' />"
+    logging.debug(result)
+    print result
     sys.stdout.flush()
+
+    logging.debug("Reboot: ended.")
 
 def main():
     """Usage: vds_bootstrap_complete.py  [-c vds_config_str] <random_num> [reboot]"""
