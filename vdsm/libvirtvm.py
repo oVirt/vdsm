@@ -39,6 +39,8 @@ from vdsm import netinfo
 import supervdsm
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
+# This device name is used as default both in the qemu-guest-agent
+# service/daemon and in libvirtd (to be used with the quiesce flag).
 _QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
 
 class MERGESTATUS:
@@ -1788,20 +1790,46 @@ class LibvirtVm(vm.Vm):
         self.log.debug(snapxml)
         self._volumesPrepared = False
 
-        try:
-            self._dom.snapshotCreateXML(snapxml,
-                (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
-                 libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT))
-        except:
-            self.log.error("Unable to take snapshot", exc_info=True)
-            return errCode['snapshotErr']
-        else:
-            # Update the drive information
-            for drive in newDrives.values(): _updateDrive(drive)
-        finally:
-            self._volumesPrepared = True
+        snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
+                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT |
+                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)
 
-        return {'status': doneCode}
+        while True:
+            try:
+                self._dom.snapshotCreateXML(snapxml, snapFlags)
+            except Exception, e:
+                # If we used VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE and the
+                # snapshot failed with a libvirt specific exception, try
+                # again without the flag. At the moment libvirt is returning
+                # two generic errors (INTERNAL_ERROR, ARGUMENT_UNSUPPORTED)
+                # which are too broad to be caught. BZ#845635
+                if (snapFlags & libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
+                        and type(e) == libvirt.libvirtError):
+
+                    snapFlags &= ~libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
+
+                    # Here we don't need a full stacktrace (exc_info) but
+                    # it's still interesting knowing what was the error
+                    self.log.debug("Snapshot failed using the quiesce flag, "
+                                   "trying again without it (%s)", e)
+                    continue
+
+                self.log.error("Unable to take snapshot", exc_info=True)
+                return errCode['snapshotErr']
+            else:
+                # Update the drive information
+                for drive in newDrives.values(): _updateDrive(drive)
+            finally:
+                self._volumesPrepared = True
+
+            # Successful
+            break
+
+        # Returning quiesce to notify the manager whether the guest agent
+        # froze and flushed the filesystems or not.
+        return {'status': doneCode, 'quiesce':
+                (snapFlags & libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
+                    == libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)}
 
     def _runMerge(self):
         for mergeStatus in self.conf.get('liveMerge', []):
