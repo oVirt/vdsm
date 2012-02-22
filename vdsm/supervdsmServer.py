@@ -28,6 +28,7 @@ from time import sleep
 import signal
 from multiprocessing import Pipe, Process
 
+from lsblk import getLsBlk as _getLsBlk
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
@@ -63,6 +64,10 @@ KB = 2**10
 TEST_BUFF_LEN = 4 * KB
 LOG_CONF_PATH = "/etc/vdsm/logger.conf"
 class _SuperVdsm(object):
+    @logDecorator
+    def getLsBlk(self, *args, **kwargs):
+        return _getLsBlk(*args, **kwargs)
+
     @logDecorator
     def getScsiSerial(self, *args, **kwargs):
         return _getScsiSerial(*args, **kwargs)

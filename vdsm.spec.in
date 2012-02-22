@@ -450,6 +450,7 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
+%{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
@@ -460,7 +461,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/libvirtconnection.py*
 %{_datadir}/%{vdsm_name}/libvirtev.py*
 %{_datadir}/%{vdsm_name}/libvirtvm.py*
-%{_datadir}/%{vdsm_name}/blkid.py*
+%{_datadir}/%{vdsm_name}/lsblk.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/prepare-vmchannel
 %{_datadir}/%{vdsm_name}/supervdsm.py*

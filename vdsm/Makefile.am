@@ -40,6 +40,7 @@ dist_vdsm_PYTHON = \
 	libvirtev.py \
 	libvirtvm.py \
 	logUtils.py \
+	lsblk.py \
 	neterrors.py \
 	pthread.py \
 	supervdsm.py \
