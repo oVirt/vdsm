@@ -78,6 +78,13 @@ def getMountFromTarget(target):
 
     raise OSError(errno.ENOENT, 'Mount target %s not found' % target)
 
+def getMountFromDevice(device):
+    device = normpath(device)
+    for rec in _iterMountRecords():
+        if rec.fs_spec == device:
+            return Mount(rec.fs_spec, rec.fs_file)
+    raise OSError(errno.ENOENT, 'device %s not mounted' % device)
+
 class Mount(object):
     def __init__(self, fs_spec, fs_file):
         self.fs_spec = normpath(fs_spec)
