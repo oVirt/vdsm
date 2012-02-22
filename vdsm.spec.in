@@ -459,6 +459,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/libvirtconnection.py*
 %{_datadir}/%{vdsm_name}/libvirtev.py*
 %{_datadir}/%{vdsm_name}/libvirtvm.py*
+%{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/prepare-vmchannel
 %{_datadir}/%{vdsm_name}/supervdsm.py*

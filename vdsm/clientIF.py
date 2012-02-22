@@ -43,6 +43,7 @@ import caps
 from BindingXMLRPC import BindingXMLRPC
 from vmChannels import Listener
 import API
+import blkid
 
 class clientIF:
     """
@@ -163,13 +164,11 @@ class clientIF:
                 self.log.error("Error initializing IRS", exc_info=True)
 
     def _getUUIDSpecPath(self, uuid):
-        rc, out, err  = storage.misc.execCmd([constants.EXT_BLKID, "-U", uuid], sudo=False)
-        if not out or rc != 0:
-            self.log.info("blkid failed for UUID: %s" % uuid)
+        try:
+            return blkid.getDeviceByUuid(uuid)
+        except blkid.BlockIdException:
+            self.log.info('Error finding path for device', exc_info=True)
             raise vm.VolumeError(uuid)
-        else:
-            path = out[0]
-        return path
 
     def prepareVolumePath(self, drive, vmId=None):
         if type(drive) is dict:

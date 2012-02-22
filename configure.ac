@@ -93,6 +93,7 @@ if test "x$PYFLAKES" = "x"; then
 fi
 
 # External programs (sorted, please keep in order)
+AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])
 AC_PATH_PROG([BLOCKDEV_PATH], [blockdev], [/sbin/blockdev])
 AC_PATH_PROG([BRCTL_PATH], [brctl], [/usr/sbin/brctl])
 AC_PATH_PROG([CAT_PATH], [cat], [/bin/cat])

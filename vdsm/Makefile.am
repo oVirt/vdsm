@@ -24,6 +24,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
 	betterThreading.py \
+	blkid.py \
 	caps.py \
 	clientIF.py \
 	BindingXMLRPC.py \
