@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import traceback
 import libvirt
 import libvirt_qemu
 import xml.dom.minidom
@@ -1733,7 +1732,7 @@ class LibvirtVm(vm.Vm):
             self._dom.updateDeviceFlags(diskelem.toxml(),
                                   libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
         except:
-            self.log.debug(traceback.format_exc())
+            self.log.debug("updateDeviceFlags failed", exc_info=True)
             self.cif.teardownVolumePath(drivespec)
             return {'status': {'code': errCode['changeDisk']['status']['code'],
               'message': errCode['changeDisk']['status']['message']}}
@@ -1853,7 +1852,7 @@ class LibvirtVm(vm.Vm):
                     self._dom.destroy()
             except libvirt.libvirtError, e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    self.log.warning(traceback.format_exc())
+                    self.log.warning("libvirt domain not found", exc_info=True)
                 else:
                     self.log.warn("VM %s is not running", self.conf['vmId'])
 

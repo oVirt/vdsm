@@ -22,7 +22,6 @@ import thread
 import os
 import time
 import threading
-import traceback
 import Queue
 import struct
 import logging
@@ -150,8 +149,8 @@ class SPM_Extend_Message:
                 pool.extendVolume(volume['domainID'], volume['volumeID'], size)
                 msg = SPM_Extend_Message(volume, size)
             except:
-                cls.log.error("processRequest: Exception caught while trying to extend volume: %s in domain: %s, trace: %s",
-                            volume['volumeID'], volume['domainID'], traceback.format_exc())
+                cls.log.error("processRequest: Exception caught while trying to extend volume: %s in domain: %s",
+                        volume['volumeID'], volume['domainID'], exc_info=True)
                 msg = SPM_Extend_Message(volume, 0)
         finally:
             pool.spmMailer.sendReply(msgID, msg)
@@ -312,14 +311,14 @@ class HSM_MailMonitor(threading.Thread):
                         if not self.tp.queueTask(id, runTask, (msg.callback, msg.volumeData)):
                             raise Exception()
                     except:
-                        self.log.error("HSM_MailMonitor: exception caught while running msg callback, for message: %s, callback function: %s, trace: %s", \
-                                            repr(msg.payload), msg.callback, traceback.format_exc())
+                        self.log.error("HSM_MailMonitor: exception caught while running msg callback, for message: %s, callback function: %s",
+                                repr(msg.payload), msg.callback, exc_info=True)
             except RuntimeError, e:
                 self.log.error("HSM_MailMonitor: exception: %s caught while checking reply for message: %s, reply: %s", \
                                 str(e), repr(msg.payload), repr(newMsg))
             except:
-                self.log.error("HSM_MailMonitor: exception caught while checking reply from SPM, request was: %s reply: %s, trace: %s", \
-                                repr(msg.payload), repr(newMsg), traceback.format_exc())
+                self.log.error("HSM_MailMonitor: exception caught while checking reply from SPM, request was: %s reply: %s",
+                        repr(msg.payload), repr(newMsg), exc_info=True)
         # Finished processing incoming mail, now save mail to compare against next batch
         self._incomingMail = newMsgs
         return rc
@@ -424,7 +423,8 @@ class HSM_MailMonitor(threading.Thread):
                         sendMail |= self._checkForMail()
                         failures = 0
                     except:
-                        self.log.error("HSM_MailboxMonitor - Exception caught while checking for mail: %s", traceback.format_exc())
+                        self.log.error("HSM_MailboxMonitor - Exception caught"
+                                " while checking for mail", exc_info=True)
                         failures += 1
 
                     if sendMail:
@@ -439,8 +439,9 @@ class HSM_MailMonitor(threading.Thread):
                             time.sleep(self._monitorInterval)
 
                 except:
-                    self.log.error("HSM_MailboxMonitor - Incoming mail monitoring thread caught exception (will try to recover, traceback follows)")
-                    self.log.error(traceback.format_exc())
+                    self.log.error("HSM_MailboxMonitor - Incoming mail"
+                            "monitoring thread caught exception; "
+                            "will try to recover", exc_info=True)
         finally:
             self.log.info("HSM_MailboxMonitor - Incoming mail monitoring thread stopped, clearing outgoing mail")
             self._outgoingMail = EMPTYMAILBOX
@@ -621,8 +622,9 @@ class SPM_MailMonitor:
                     self.log.error("SPM_MailMonitor: exception: %s caught while handling message: %s",
                                     str(e), newMail[msgStart:msgStart + MESSAGE_SIZE])
                 except:
-                    self.log.error("SPM_MailMonitor: exception caught while handling message: %s, trace: %s",
-                                    newMail[msgStart:msgStart + MESSAGE_SIZE], traceback.format_exc())
+                    self.log.error("SPM_MailMonitor: exception caught while handling message: %s",
+                            newMail[msgStart:msgStart + MESSAGE_SIZE],
+                            exc_info=True)
 
         self._incomingMail = newMail
         return send
@@ -681,7 +683,7 @@ class SPM_MailMonitor:
                 except:
                     if (self._inLock.locked()):
                         self._inLock.release()
-                    self.log.error(traceback.format_exc())
+                    self.log.error("Error checking for mail", exc_info=True)
                 time.sleep(self._monitorInterval)
         finally:
             self._stopped = True

@@ -34,7 +34,6 @@
 
 import sys, getopt
 import logging, logging.config
-import traceback
 import random
 import vds_bootstrap
 
@@ -98,7 +97,7 @@ def main():
     try:
         ret = VdsValidation(url, remote_nfs, rev)
     except:
-        logging.error(traceback.format_exc())
+        logging.error("VDS validation failed", exc_info=True)
         logging.error(main.__doc__)
         return 0
     else:

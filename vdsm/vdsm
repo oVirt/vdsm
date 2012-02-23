@@ -11,7 +11,6 @@
 import os, sys, getopt, signal
 import threading
 import logging
-import traceback
 from logging import config as lconfig
 
 import constants
@@ -71,7 +70,7 @@ def run():
              dsaversion.software_revision)
         serve_clients(log)
     except:
-        log.error(traceback.format_exc())
+        log.error("Exception raised", exc_info=True)
 
     log.info("VDSM main thread ended. Waiting for %d other threads..." % (threading.activeCount() - 1))
     for t in threading.enumerate():

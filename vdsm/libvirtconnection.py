@@ -19,7 +19,6 @@
 #
 
 import threading
-import traceback
 
 import libvirt
 
@@ -64,7 +63,7 @@ def __eventCallback(conn, dom, *args):
         else:
             v.log.warning('unkown eventid %s args %s', eventid, args)
     except:
-        cif.log.error(traceback.format_exc())
+        cif.log.error("Error running VM callback", exc_info=True)
 
 __connections = {}
 __connectionLock = threading.Lock()

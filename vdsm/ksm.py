@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import threading, traceback, time
+import threading, time
 import os
 import constants
 import utils
@@ -57,7 +57,7 @@ class KsmMonitorThread(threading.Thread):
                                 os.sysconf('SC_CLK_TCK') / KSM_MONITOR_INTERVAL
                 jiff0 = jiff1
         except:
-            self._cif.log.error(traceback.format_exc())
+            self._cif.log.error("Error monitoring KSM", exc_info=True)
 
     def readState(self):
         return running(), npages()

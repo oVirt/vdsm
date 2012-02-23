@@ -47,7 +47,6 @@ import os.path
 import shutil
 import logging
 import logging.config
-import traceback
 import random
 import re
 import ConfigParser
@@ -69,7 +68,7 @@ except:
     message = "Error trying to deploy library."
     print ("<BSTRAP component='INIT' status='FAIL' message='%s'/>" % message)
     logging.debug("<BSTRAP component='INIT' status='FAIL' message='%s'/>", message)
-    logging.error(traceback.format_exc())
+    logging.error(message, exc_info=True)
     exit(-1)
 
 rhel6based = deployUtil.versionCompare(deployUtil.getOSVersion(), "6.0") >= 0
@@ -214,8 +213,8 @@ class Deploy:
             rc = deployUtil.yumSearch(VDSM_NAME)
         except:
             rc = False
-            logging.error("checkRegistration: Error searching for VDSM package!")
-            logging.error(traceback.format_exc())
+            logging.error("checkRegistration: Error searching for VDSM package!",
+                    exc_info=True)
 
         if not rc:
             message = "Unable to fetch " + VDSM_NAME + " package. Please check if host is registered to RHN, Satellite or other yum repository"
@@ -239,8 +238,8 @@ class Deploy:
             rc = deployUtil.yumSearchVersion(VDSM_NAME, VDSM_MIN_VER, True)
         except:
             rc = False
-            logging.error("checkMajorVersion: Error searching for VDSM version!")
-            logging.error(traceback.format_exc())
+            logging.error("checkMajorVersion: Error searching for VDSM version!",
+                    exc_info=True)
 
         if not rc:
             message = "Unable to fetch VDSM with minimal version of " + VDSM_MIN_VER + ". Please check if host is properly registered with updated yum repository"
@@ -620,7 +619,7 @@ gpgcheck=0
                             "settings and try registering again." % vdcName
                         logging.error(self.message)
                 except:
-                    logging.error(traceback.format_exc())
+                    logging.error("Error restoring route", exc_info=True)
             else:
                 self.message = "addNetwork error trying to add management bridge"
                 logging.error(self.message)
@@ -935,7 +934,7 @@ obsolete options:
         ret = VdsValidation(url, subject, random_num, rev_num,
                             orgName, systime, usevdcrepo, firewallRulesFile)
     except:
-        logging.error(traceback.format_exc())
+        logging.error("VDS validation failed", exc_info=True)
         logging.error(main.__doc__)
         logging.debug("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
         print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"

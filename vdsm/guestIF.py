@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import traceback, logging, threading
+import logging, threading
 import time
 import socket
 import json
@@ -175,7 +175,7 @@ class GuestAgent (threading.Thread):
             self.log.debug("desktopLock called")
             self._forward("lock-screen")
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("desktopLock failed", exc_info=True)
 
     def desktopLogin (self, domain, user, password):
         try:
@@ -186,28 +186,28 @@ class GuestAgent (threading.Thread):
                 username = user
             self._forward('login', { 'username' : username, "password" : password })
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("desktopLogin failed", exc_info=True)
 
     def desktopLogoff (self, force):
         try:
             self.log.debug("desktopLogoff called")
             self._forward('log-off')
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("desktopLogoff failed", exc_info=True)
 
     def desktopShutdown (self, timeout, msg):
         try:
             self.log.debug("desktopShutdown called")
             self._forward('shutdown', { 'timeout' : timeout, 'message' : msg })
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("desktopShutdown failed", exc_info=True)
 
     def sendHcCmdToDesktop (self, cmd):
         try:
             self.log.debug("sendHcCmdToDesktop('%s')"%(cmd))
             self._forward(str(cmd))
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("sendHcCmdToDesktop failed", exc_info=True)
 
     def _onChannelTimeout(self):
         self.guestInfo['memUsage'] = 0
@@ -267,4 +267,4 @@ class GuestAgent (threading.Thread):
                     self.log.exception("Run exception: %s", line)
         except:
             if not self._stopped:
-                self.log.error("Unexpected exception: " + traceback.format_exc())
+                self.log.error("Unexpected exception", exc_info=True)

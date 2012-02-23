@@ -35,7 +35,6 @@ from contextlib import contextmanager
 import contextlib
 import logging
 import subprocess
-import traceback
 import types
 import time
 import signal
@@ -148,8 +147,7 @@ def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[], logSkipName
     return result
 
 def panic(msg):
-    log.error("Panic: %s" % (str(msg)))
-    log.error(traceback.format_exc())
+    log.error("Panic: %s", msg, exc_info=True)
     os.killpg(0, 9)
     sys.exit(-3)
 

@@ -19,7 +19,6 @@
 #
 
 import os
-import traceback
 import time
 import threading
 import pickle
@@ -156,7 +155,7 @@ class clientIF:
             try:
                 self.irs = Dispatcher(HSM())
             except:
-                self.log.error(traceback.format_exc())
+                self.log.error("Error initializing IRS", exc_info=True)
 
     def _getUUIDSpecPath(self, uuid):
         rc, out, err  = storage.misc.execCmd([constants.EXT_BLKID, "-U", uuid], sudo=False)
@@ -322,7 +321,7 @@ class clientIF:
             if not API.VM(self, vmid).create(params)['status']['code']:
                 return recoveryFile
         except:
-            self.log.debug(traceback.format_exc())
+            self.log.debug("Error recovering VM", exc_info=True)
         return None
 
     def _cleanOldFiles(self):

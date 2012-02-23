@@ -23,7 +23,6 @@ import signal
 import copy
 import subprocess
 import pickle
-import traceback
 import time
 import threading
 import logging
@@ -140,7 +139,8 @@ class VM(object):
                     finally:
                         self._cif.teardownVolumePath(paramFilespec)
                 except:
-                    self.log.error(traceback.format_exc())
+                    self.log.error("Error restoring VM parameters",
+                            exc_info=True)
 
             requiredParams = ['vmId', 'memSize', 'display']
             for param in requiredParams:
@@ -215,12 +215,12 @@ class VM(object):
             self.log.debug("Total desktops after creation of %s is %d" % (vmParams['vmId'], len(self._cif.vmContainer)))
             return {'status': doneCode, 'vmList': self._cif.vmContainer[vmParams['vmId']].status()}
         except OSError, e:
-            self.log.debug(traceback.format_exc())
+            self.log.debug("OS Error creating VM", exc_info=True)
             return {'status': {'code': errCode['createErr']['status']['code'],
                                'message': 'Failed to create VM. '
                                           'No space on /tmp? ' + e.message}}
         except:
-            self.log.debug(traceback.format_exc())
+            self.log.debug("Error creating VM", exc_info=True)
             return errCode['unexpected']
 
     def desktopLock(self):
@@ -537,7 +537,7 @@ class VM(object):
             else:
                 return True
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("Error creating sysprep floppy", exc_info=True)
             return False
 
     def _getHibernationPaths(self, hiberVolHandle):
@@ -915,7 +915,7 @@ class Global(object):
                                hidePasswd(inp),
                                p.stdout.read(), p.stderr.read())
             except:
-                self.log.error(traceback.format_exc())
+                self.log.error("Error killing fence script", exc_info=True)
 
         def hidePasswd(text):
             cleantext = ''

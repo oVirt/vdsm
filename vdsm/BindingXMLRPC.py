@@ -23,7 +23,6 @@ from errno import EINTR
 import SimpleXMLRPCServer
 import SecureXMLRPCServer
 import logging
-import traceback
 import libvirt
 
 import caps
@@ -854,13 +853,13 @@ def wrapApiMethod(f):
             f.im_self.cif.log.log(logLevel, 'return %s with %s', f.__name__, res)
             return res
         except libvirt.libvirtError, e:
-            f.im_self.cif.log.error(traceback.format_exc())
+            f.im_self.cif.log.error("libvirt error", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             else:
                 return errCode['unexpected']
         except:
-            f.im_self.cif.log.error(traceback.format_exc())
+            f.im_self.cif.log.error("unexpected error", exc_info=True)
             return errCode['unexpected']
     wrapper.__name__ = f.__name__
     wrapper.__doc__ = f.__doc__

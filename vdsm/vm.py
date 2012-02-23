@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os, traceback
+import os
 import time
 import threading, logging
 import constants
@@ -126,7 +126,7 @@ class MigrationSourceThread(threading.Thread):
                 self.log.error("Machine already exists on the destination")
                 self.status = errCode['exist']
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("Error initiating connection", exc_info=True)
             self.status = errCode['noConPeer']
 
     def _setupRemoteMachineParams(self):
@@ -177,7 +177,7 @@ class MigrationSourceThread(threading.Thread):
             try:
                 self.destServer.destroy(self._vm.id)
             except:
-                self.log.error(traceback.format_exc())
+                self.log.error("Failed to destroy remote VM", exc_info=True)
         # if the guest was stopped before migration, we need to cont it
         if self._mode == 'file' or self._method != 'online':
             self._vm.cont()
@@ -236,7 +236,7 @@ class MigrationSourceThread(threading.Thread):
                 MigrationSourceThread._ongoingMigrations.release()
         except Exception, e:
             self._recover(str(e))
-            self.log.error(traceback.format_exc())
+            self.log.error("Failed to migrate", exc_info=True)
 
 
 class VolumeError(RuntimeError):
@@ -687,7 +687,7 @@ class Vm(object):
             if withRelaunch:
                 self.cif.relaunch(self.status())
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("Reboot event failed", exc_info=True)
 
     def onShutdown (self):
         self.log.debug('onShutdown() event')
@@ -868,7 +868,7 @@ class Vm(object):
                 return {'status': {'code': errCode['exist']['status']['code'],
                         'message': 'VM without ACPI or active SolidICE tools. Try Forced Shutdown.'}}
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("Shutdown failed", exc_info=True)
         return {'status': {'code': doneCode['code'],
                 'message': 'Machine shut down'}}
 
@@ -882,7 +882,7 @@ class Vm(object):
             else:
                 self._acpiShutdown()
         except:
-            self.log.error(traceback.format_exc())
+            self.log.error("_timedShutdown failed", exc_info=True)
 
     def _cleanup(self):
         with self._volPrepareLock:

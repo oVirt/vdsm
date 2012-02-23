@@ -17,7 +17,6 @@ import httplib
 import time
 import logging
 import logging.config
-import traceback
 import urllib
 import ssl
 from config import config
@@ -155,8 +154,7 @@ class Setup:
                 logging.debug("registerVDS succeeded using HTTP.")
            except:
                 fReturn = False
-                logging.error("registerVDS failed using HTTP!")
-                logging.error(traceback.format_exc())
+                logging.error("registerVDS failed using HTTP!", exc_info=True)
 
         else:
             logging.debug("registerVDS status: " + str(res.status) +
@@ -174,7 +172,8 @@ class Setup:
                     logging.debug("registerVDS time read: " + str(self.VDCTime))
                 except:
                     fReturn = False
-                    logging.error(traceback.format_exc())
+                    logging.error("registerVDS time read failed",
+                            exc_info=True)
             finally:
                 if conn != None: conn.close()
 
@@ -279,7 +278,7 @@ def run(confFile, daemonize):
                 log.debug("Total retry count: %d, waited: %d seconds." % (itr, sleepTime+nRandom))
         except:
             if log is not None:
-                log.error(traceback.format_exc())
+                log.error("Reading config failed", exc_info=True)
     finally:
         if pidfile and os.path.exists(pidfile):
             os.unlink(pidfile)

@@ -16,7 +16,6 @@ import getopt
 from time import strftime
 import logging
 import logging.config
-import traceback
 import random
 import ConfigParser
 import deployUtil
@@ -80,7 +79,7 @@ def main():
         CSR(subject, random_num, orgName).runTest()
         ret = True
     except:
-        logging.error(traceback.format_exc())
+        logging.error("CSR validation failed", exc_info=True)
         logging.error(main.__doc__)
         logging.debug("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
         print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"

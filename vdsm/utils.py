@@ -28,7 +28,7 @@ A module containing miscellaneous functions and classes that are user plentifuly
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import SocketServer
 import threading
-import os, traceback, time
+import os, time
 import logging
 import errno
 import subprocess
@@ -87,8 +87,7 @@ def readMemInfo():
                 meminfo[var[:-1]] = int(val)
             return meminfo
         except:
-            logging.warning(traceback.format_exc())
-            logging.warning(lines)
+            logging.warning(lines, exc_info=True)
             if tries <= 0:
                 raise
             time.sleep(0.1)
@@ -125,13 +124,14 @@ class InterfaceSample:
                 s = file(f).read()
             except IOError, e:
                 if e.errno != errno.ENOENT: # silently ignore missing wifi stats
-                    logging.debug(traceback.format_exc())
+                    logging.debug("Could not read %s", f, exc_info=True)
                 return 0
             try:
                 return int(s)
             except:
                 if s != '':
-                    logging.warning(traceback.format_exc())
+                    logging.warning("Could not parse statistics (%s) from %s",
+                            f, s, exc_info=True)
                 logging.debug('bad %s: (%s)' % (f, s))
                 if not tries:
                     raise
@@ -448,11 +448,12 @@ class StatsThread(threading.Thread):
                         if len(self._samples) > self.AVERAGING_WINDOW:
                             self._samples.pop(0)
                     except libvirtvm.TimeoutError:
-                        self._log.error(traceback.format_exc())
+                        self._log.error("Timeout while sampling stats",
+                                exc_info=True)
                 self._stopEvent.wait(self.SAMPLE_INTERVAL_SEC)
         except:
             if not self._stopEvent.isSet():
-                self._log.error(traceback.format_exc())
+                self._log.error("Error while sampling stats", exc_info=True)
 
     def get(self):
         """
@@ -637,7 +638,8 @@ class ImagePathStatus(threading.Thread):
                     self._refreshStorageDomains()
                 self._stopEvent.wait(self._interval)
         except:
-            logging.error(traceback.format_exc())
+            logging.error("Error while refreshing storage domains",
+                    exc_info=True)
 
 def getPidNiceness(pid):
     """
@@ -697,7 +699,7 @@ def getHostUUID():
         else:
             __hostUUID = "_" + mac
     except:
-        logging.error(traceback.format_exc())
+        logging.error("Error retrieving host UUID", exc_info=True)
 
     return __hostUUID
 
