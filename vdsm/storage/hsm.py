@@ -1282,7 +1282,7 @@ class HSM:
                    dstSdUUID, volType, volFormat, preallocate, force, postZero)
         vars.task.setDefaultException(se.TemplateCreationError("%s" % argsStr))
         # Validate imgUUID in case of copy inside source domain itself
-        if dstSdUUID in [sdUUID, sd.BLANK_UUID]:
+        if dstSdUUID in (sdUUID, sd.BLANK_UUID):
             if srcImgUUID == dstImgUUID:
                 raise se.InvalidParameterException("dstImgUUID", dstImgUUID)
         pool = self.getPool(spUUID)
