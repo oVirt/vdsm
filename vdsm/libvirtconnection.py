@@ -37,7 +37,8 @@ def __eventCallback(conn, dom, *args):
         v = cif.vmContainer.get(vmid)
 
         if not v:
-            cif.log.debug('unkown vm %s eventid %s args %s', vmid, eventid, args)
+            cif.log.debug('unknown vm %s eventid %s args %s', vmid, eventid,
+                    args)
             return
 
         if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
