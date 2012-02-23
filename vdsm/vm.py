@@ -392,8 +392,8 @@ class Vm(object):
             try:
                 devices[dev['type']].append(dev)
             except KeyError:
-                # Unknown general device found
-                self.log.warn("Unknown device '%s' found", dev['type'])
+                # Unknown type device found
+                self.log.warn("Unknown type found, device: '%s' found", dev)
                 devices[GENERAL_DEVICES].append(dev)
 
         # Update indecies for drives devices
