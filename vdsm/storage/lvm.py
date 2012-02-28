@@ -834,21 +834,6 @@ def removeVGbyUUID(vgUUID):
         removeVG(vg.name)
 
 
-def renameVG(oldvg, newvg):
-    pvs = [pv.name for pv in _lvminfo.getAllPvs() if pv.vg_name == oldvg]
-    cmd = ["vgrename"] + [oldvg, newvg]
-    rc, out, err = _lvminfo.cmd(cmd)
-    # Renaming VG will affect our PV database as well,
-    # since we keep the VG name of each PV
-    _lvminfo._invalidatepvs(pvs)
-    if rc == 0:
-        _lvminfo._vgs.pop(oldvg, None)
-        _lvminfo._reloadvgs(newvg)
-    else:
-        _lvminfo._invalidatevgs(oldvg)
-        raise se.VolumeGroupRenameError()
-
-
 def extendVG(vgName, devices):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs, getVGBlockSizes(vgName))

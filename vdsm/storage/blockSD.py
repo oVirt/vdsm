@@ -332,10 +332,6 @@ class BlockStorageDomain(sd.StorageDomain):
             cls.log.debug("%d > %d" , numOfPVs, MAX_PVS)
             raise se.StorageDomainIsMadeFromTooManyPVs()
 
-        # Set the name of the VG to be the same as sdUUID
-        if vgName != sdUUID:
-            lvm.renameVG(vgName, sdUUID)
-            vgName = sdUUID
         # Create metadata service volume
         metasize = cls.metaSize(vgName)
         lvm.createLV(vgName, sd.METADATA, "%s" % (metasize))
