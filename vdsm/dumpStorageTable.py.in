@@ -37,9 +37,9 @@ class StorageTable:
         images = []
 
         for vmUUID in vmUUIDs:
-            vm_images_links = os.listdir(DC + '%s/vms/%s/' % (pool, vmUUID))
+            vm_images_links = os.listdir(DC + '%s/mastersd/master/vms/%s/' % (pool, vmUUID))
             for vm_image_link in vm_images_links:
-                ovf = open(DC + '%s/vms/%s/%s' % (pool, vmUUID, vm_image_link)).read()
+                ovf = open(DC + '%s/mastersd/master/vms/%s/%s' % (pool, vmUUID, vm_image_link)).read()
                 cont = ovf.split('ovf:fileRef=\"')
                 vmName = cont[-1].split('<Name>')[-1].split('</Name>')[0]
 
@@ -162,7 +162,7 @@ class StorageTable:
 
         # Check if its possible to access the ovf files
         try:
-            files = os.listdir(DC + '%s/vms/' % (self.pool,))
+            files = os.listdir(DC + '%s/mastersd/master/vms/' % (self.pool,))
             self.canAccessVms = True
         except (OSError, IOError):
             self.canAccessVms = False
