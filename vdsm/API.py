@@ -548,9 +548,11 @@ class VM(object):
             paramImageID, paramVolumeID = hiberVolHandle.split(',')
 
         return dict(domainID=domainID, poolID=poolID,
-                    imageID=stateImageID, volumeID=stateVolumeID), \
+                    imageID=stateImageID, volumeID=stateVolumeID,
+                    device='disk'), \
                dict(domainID=domainID, poolID=poolID,
-                    imageID=paramImageID, volumeID=paramVolumeID)
+                    imageID=paramImageID, volumeID=paramVolumeID,
+                    device='disk')
 
     def _getNetworkIp(self, bridge):
         try:
