@@ -93,6 +93,7 @@ CLEANFILES = \
 	$(nodist_vdsm_PYTHON) \
 	$(nodist_vdsm_SCRIPTS) \
 	$(nodist_noinst_DATA) \
+	$(nodist_vdsmexec_SCRIPTS) \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
@@ -180,7 +181,7 @@ uninstall-data-rwtab:
 
 install-data-logrotate:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/logrotate.d
-	$(INSTALL_DATA) $(srcdir)/vdsm-logrotate.conf \
+	$(INSTALL_DATA) $(builddir)/vdsm-logrotate.conf \
 		$(DESTDIR)$(sysconfdir)/logrotate.d/vdsm
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly
 	$(INSTALL_SCRIPT) $(srcdir)/vdsm-logrotate \
