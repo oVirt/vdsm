@@ -1600,7 +1600,8 @@ class LibvirtVm(vm.Vm):
             """Normalize snapshot parameters"""
 
             if drive.has_key("baseVolumeID"):
-                baseDrv = {"domainID": drive["domainID"],
+                baseDrv = {"device": "disk",
+                           "domainID": drive["domainID"],
                            "imageID": drive["imageID"],
                            "volumeID": drive["baseVolumeID"]}
                 tgetDrv = baseDrv.copy()
