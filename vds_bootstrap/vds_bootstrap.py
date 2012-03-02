@@ -795,10 +795,10 @@ class Deploy:
 # End of deploy class.
 
 def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
-        firewallRulesFile):
+        firewallRulesFile, installVirtualizationService, installGlusterService):
     """ --- Check VDS Compatibility.
     """
-    logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s')"%(subject, random_num, rev_num))
+    logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s', installVirtualizationService = '%s', installGlusterService = '%s')"%(subject, random_num, rev_num, installVirtualizationService, installGlusterService))
 
     oDeploy = Deploy()
 
@@ -810,9 +810,11 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
         logging.error('checkMajorVersion test failed')
         return False
 
-    if not oDeploy.virtExplorer(random_num):
-        logging.error('virtExplorer test failed')
-        return False
+    if installVirtualizationService:
+        logging.debug('virtExplorer testing')
+        if not oDeploy.virtExplorer(random_num):
+            logging.error('virtExplorer test failed')
+            return False
 
     if not oDeploy.osExplorer():
         logging.error('osExplorer test failed')
@@ -869,6 +871,8 @@ options:
     -O <organizationName>
     -t <systemTime>
     -f <firewall_rules_file> -- override firewall rules.
+    -v - install virtualization service
+    -g - install gluster service
 obsolete options:
     -r <rev_num>
     """
@@ -877,7 +881,9 @@ obsolete options:
         orgName = 'Red Hat Inc.'
         systime = None
         firewallRulesFile = None
-        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:")
+        installVirtualizationService = False
+        installGlusterService = False
+        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:vg")
         for o,v in opts:
             if o == "-r":
                 rev_num = v
@@ -885,6 +891,10 @@ obsolete options:
                 orgName = v
             if o == "-t":
                 systime = v
+            if o == "-v":
+                installVirtualizationService = True
+            if o == "-g":
+                installGlusterService = True
             elif o == '-f':
                 firewallRulesFile = v
                 NEEDED_SERVICES.append('iptables')
@@ -902,7 +912,7 @@ obsolete options:
     logging.debug('**** Start VDS Validation ****')
     try:
         ret = VdsValidation(url, subject, random_num, rev_num,
-                            orgName, systime, firewallRulesFile)
+                            orgName, systime, firewallRulesFile, installVirtualizationService, installGlusterService)
     except:
         logging.error("VDS validation failed", exc_info=True)
         logging.error(main.__doc__)
