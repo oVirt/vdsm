@@ -39,6 +39,15 @@ import configNetwork
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 
+class MERGESTATUS:
+    NOT_STARTED     = "Not Started"
+    IN_PROGRESS     = "In Progress"
+    FAILED          = "Failed"
+    COMPLETED       = "Completed"
+    UNKNOWN         = "Unknown"
+    DRIVE_NOT_FOUND = "Drive Not Found"
+    BASE_NOT_FOUND  = "Base Not Found"
+
 class VmStatsThread(utils.AdvancedStatsThread):
     MBPS_TO_BPS = 10**6 / 8
 
@@ -1136,7 +1145,6 @@ class LibvirtVm(vm.Vm):
         self._devXmlHash = '0'
         self._released = False
         self._releaseLock = threading.Lock()
-        self._liveMergeStatus = []
         self.saveState()
 
 
@@ -1284,7 +1292,7 @@ class LibvirtVm(vm.Vm):
                             self._connection.lookupByUUIDString(self.id),
                             self._timeoutExperienced)
             # Reinitialize the merge statuses
-            self._runMerge()
+            self._checkMerge()
         elif 'restoreState' in self.conf:
             hooks.before_vm_dehibernate(self.conf.pop('_srcDomXML'), self.conf)
 
@@ -1711,61 +1719,92 @@ class LibvirtVm(vm.Vm):
         return {'status': doneCode}
 
     def _runMerge(self):
-        # FIXME: this method is called also during the VM initalization
-        #        (LibvirtVm.__init__) to prepare the _liveMergeStatus data
-        #        structure. Here we need to detect if any of the block jobs
-        #        ended while VDSM was down and mark them as failed (or we
-        #        should use something smart to detect if they succeeded)
-        self._liveMergeStatus = []
+        for mergeStatus in self.conf.get('liveMerge', []):
+            if mergeStatus['status'] != MERGESTATUS.NOT_STARTED:
+                continue
 
-        for drive in self.conf.get('liveMerge', []):
-            mergeDrive = self._findDriveByUUIDs(drive)
-            mergeStatus = drive.copy()
-
-            # Drive not found
-            if not mergeDrive or not hasattr(mergeDrive, 'volumeChain'):
-                mergeStatus['status'] = 'Drive Not Found'
+            try:
+                self._dom.blockRebase(mergeStatus['path'], None, 0, 0)
+                                      #mergeStatus['basePath'], 0, 0)
+            except:
+                mergeStatus['status'] = MERGESTATUS.FAILED
+                self.log.error("Live merge failed for %s",
+                               mergeStatus['path'], exc_info=True)
             else:
-                try:
-                    mergeStatus['path'] = mergeDrive.path
-                    self._dom.blockPull(mergeDrive.path, 0, 0)
-                except:
-                    self.log.error("Live merge failed for %s",
-                                            mergeDrive.path, exc_info=True)
-                    mergeStatus['status'] = 'Failed'
-                else:
-                    mergeStatus['status'] = 'In Progress'
+                mergeStatus['status'] = MERGESTATUS.IN_PROGRESS
 
-            self._liveMergeStatus.append(mergeStatus)
+        self.saveState()
+
+    def _checkMerge(self):
+        for mergeStatus in self.conf.get('liveMerge', []):
+            if mergeStatus['status'] != MERGESTATUS.IN_PROGRESS:
+                continue
+
+            try:
+                jobInfo = self._dom.blockJobInfo(mergeStatus['path'], 0)
+            except:
+                jobInfo = None
+
+            if not jobInfo:
+                 mergeStatus['status'] = MERGESTATUS.UNKNOWN
+
+        self.saveState()
 
     def merge(self, mergeDrives):
         """Live merge command"""
 
         # Check if there is a merge still in progress
-        for mergeStatus in self._liveMergeStatus:
-            if mergeStatus['status'] == 'In Progress':
+        for mergeStatus in self.conf.get('liveMerge', []):
+            if mergeStatus['status'] == MERGESTATUS.IN_PROGRESS:
                 return errCode['mergeErr']
 
-        # FIXME: it might be better to persist the _liveMergeStatus instead of
-        #        the mergeDrive command
-        self.conf['liveMerge'] = mergeDrives
-        self.saveState()
+        self.conf['liveMerge'] = []
 
+        # Preparing the merge statuses
+        for drive in mergeDrives:
+            mergeDrive = self._findDriveByUUIDs(drive)
+
+            mergeStatus = drive.copy()
+            mergeStatus['status'] = MERGESTATUS.NOT_STARTED
+
+            if not mergeDrive or not hasattr(mergeDrive, 'volumeChain'):
+                mergeStatus['status'] = MERGESTATUS.DRIVE_NOT_FOUND
+            else:
+                for volume in mergeDrive.volumeChain:
+                    # qemu-kvm looks up for the backing file path looking at
+                    # the value sotred in the qcow2 header, therefore here
+                    # we can't use the absolute path provided by prepareImage
+                    if volume['volumeID'] == drive['baseVolumeID']:
+                        mergeStatus['basePath'] = "../%s/%s" % (
+                            volume['imageID'], volume['volumeID'])
+                        break
+                else:
+                    mergeStatus['status'] = MERGESTATUS.BASE_NOT_FOUND
+
+                mergeStatus['path'] = mergeDrive.path
+                mergeStatus['disk'] = mergeDrive.name
+
+            self.conf['liveMerge'].append(mergeStatus)
+
+        self.saveState()
         self._runMerge()
+
         return {'status': doneCode}
 
     def mergeStatus(self):
-        mergeStatus = self._liveMergeStatus[:]
+        def _filterInternalInfo(mergeStatus):
+            return dict(
+                (k, v) for k, v in mergeStatus.iteritems()
+                                if k not in ("path", "basePath")
+            )
 
-        # Don't report the volume path in the status
-        for mergeDriveStatus in mergeStatus:
-            if 'path' in mergeDriveStatus:
-                del mergeDriveStatus['path']
+        mergeStatus = [ _filterInternalInfo(x)
+                        for x in self.conf.get('liveMerge', []) ]
 
         return {'status': doneCode, 'mergeStatus': mergeStatus}
 
     def _onBlockJobEvent(self, path, type, status):
-        for mergeStatus in self._liveMergeStatus:
+        for mergeStatus in self.conf.get('liveMerge', []):
             if mergeStatus['path'] == path:
                 break
         else:
@@ -1774,14 +1813,11 @@ class LibvirtVm(vm.Vm):
             return
 
         if status == libvirt.VIR_DOMAIN_BLOCK_JOB_COMPLETED:
-            mergeStatus['status'] = "Completed"
+            mergeStatus['status'] = MERGESTATUS.COMPLETED
         else:
-            mergeStatus['status'] = "Failed"
+            mergeStatus['status'] = MERGESTATUS.FAILED
 
-        # FIXME: unpersist the mergeDrive command if all (any?) the block jobs
-        #        ended. If we decide to persist _liveMergeStatus then we might
-        #        want to skip this removal and get for free that the merge
-        #        status is kept when vdsm is restarted
+        self.saveState()
 
     def changeCD(self, drivespec):
         return self._changeBlockDev('cdrom', 'hdc', drivespec)
