@@ -40,6 +40,7 @@ CONNECTIVITY_TIMEOUT_DEFAULT = 4
 MAX_VLAN_ID = 4094
 MAX_BRIDGE_NAME_LEN = 15
 ILLEGAL_BRIDGE_CHARS = ':. \t'
+NETPREFIX = 'vdsm-'
 
 class ConfigNetworkError(Exception):
     def __init__(self, errCode, message):
