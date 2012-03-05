@@ -249,6 +249,23 @@ def _releaseLoggingModuleLock():
         except RuntimeError:
             break
 
+def _setUpLogging(logQueue):
+    _releaseLoggingModuleLock()
+
+    hdlr = QueueHandler(logQueue)
+    hdlr.setLevel(_log.getEffectiveLevel())
+    logging.root.handlers = [hdlr]
+
+    for log in logging.Logger.manager.loggerDict.values():
+        if hasattr(log, 'handlers'): log.handlers.append(hdlr)
+
+    # Removing all the handlers from the loggers. This avoid a deadlock on
+    # the logging locks. Multi-process and multi-threading don't mix well.
+    #   - BZ#732652: https://bugzilla.redhat.com/show_bug.cgi?id=732652
+    #   - I6721: http://bugs.python.org/issue6721
+    for log in logging.Logger.manager.loggerDict.values():
+        if hasattr(log, 'handlers'): del log.handlers[:]
+
 def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     os.close(parentLifelineFD)
 
@@ -259,17 +276,11 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     for signum in (signal.SIGTERM, signal.SIGUSR1):
         signal.signal(signum, signal.SIG_DFL)
 
-    # Removing all the handlers from the loggers. This avoid a deadlock on
-    # the logging locks. Multi-process and multi-threading don't mix well.
-    #   - BZ#732652: https://bugzilla.redhat.com/show_bug.cgi?id=732652
-    #   - I6721: http://bugs.python.org/issue6721
-    for log in logging.Logger.manager.loggerDict.values():
-        if hasattr(log, 'handlers'): del log.handlers[:]
-
     # Close all file-descriptors we don't need
     # Logging won't work past this point
     FDSWHITELIST = (0, 1, 2, lifeLine, parentLifelineFD, pipe.fileno(),
                      logQueue._reader.fileno(), logQueue._writer.fileno())
+
     for fd in misc.getfds():
         if fd not in FDSWHITELIST:
             try:
@@ -277,13 +288,7 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
             except OSError:
                 pass    # Nothing we can do
 
-    # Add logger handler (via Queue)
-    _releaseLoggingModuleLock()
-    hdlr = QueueHandler(logQueue)
-    hdlr.setLevel(_log.getEffectiveLevel())
-    logging.root.handlers = [hdlr]
-    for log in logging.Logger.manager.loggerDict.values():
-        if hasattr(log, 'handlers'): log.handlers.append(hdlr)
+    _setUpLogging(logQueue)
 
     poller = select.poll()
     poller.register(lifeLine, 0) # Only SIGERR\SIGHUP
