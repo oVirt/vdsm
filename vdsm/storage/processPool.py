@@ -236,6 +236,19 @@ class Helper(object):
     def interrupt(self):
         os.kill(self.proc.pid, signal.SIGINT)
 
+def _releaseLoggingModuleLock():
+    # As this is non public interface it might change. I would have logged a
+    # warning but I can't
+    if not hasattr(logging, "_releaseLock"):
+        return
+
+    # It's an RLock internally so we might have to release it multiple times
+    while True:
+        try:
+            logging._releaseLock()
+        except RuntimeError:
+            break
+
 def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     os.close(parentLifelineFD)
 
@@ -265,6 +278,7 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
                 pass    # Nothing we can do
 
     # Add logger handler (via Queue)
+    _releaseLoggingModuleLock()
     hdlr = QueueHandler(logQueue)
     hdlr.setLevel(_log.getEffectiveLevel())
     logging.root.handlers = [hdlr]
