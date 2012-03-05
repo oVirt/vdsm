@@ -60,17 +60,7 @@ class Setup:
         self.vdcRegPort = config.get('vars', 'vdc_reg_port')
         self.ticket = ticket
         self.VDCTime = None
-        logging.debug("Setup::__init__ vars:" +
-            "\n\tself.vdcURL " + self.vdcURL +
-            "\n\tself.vdcPORT " + self.vdcPORT +
-            "\n\tself.vdcURI " + self.vdcURI +
-            "\n\tself.vdcRegPort " + self.vdcRegPort +
-            "\n\tself.ovirtURL " + self.ovirtURL +
-            "\n\tself.ovirtName " + self.ovirtName +
-            "\n\tself.ovirtUID " + self.ovirtUID +
-            "\n\tself.vdcName " + self.vdcName +
-            "\n\tself.ticket " + self.ticket
-        )
+        logging.debug("Setup::__init__ vars: %s", self.__dict__)
 
     def validateData(self):
         logging.debug("validate start")
@@ -80,7 +70,7 @@ class Setup:
            self.ovirtName  == None or self.ovirtName == "" or self.ovirtName == "None":
             fReturn = False
 
-        logging.debug("validate end. return: " + str(fReturn))
+        logging.debug("validate end. return: %s", fReturn)
         return fReturn
 
     def renameBridge(self):
@@ -101,10 +91,13 @@ class Setup:
                 out, err, ret = deployUtil._logExec([os.path.join(self.vdsmDir, SCRIPT_NAME_SAVE)])
                 if ret:
                     fReturn = False
-                    logging.error("renameBridge Failed to persist @VDSMBRIDGE@ bridge changes. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+                    logging.error("renameBridge Failed to persist @VDSMBRIDGE@ "
+                            "bridge changes. out=%s\nerr=%s\nret=%d", out, err,
+                            ret)
             except:
                 fReturn = False
-                logging.error("renameBridge Failed to persist bridge changes. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+                logging.error("renameBridge Failed to persist bridge changes. "
+                        "out=%s\nerr=%s\nret=%d", out, err, ret)
 
         #Fix file permissions to relevant mask
         if fReturn:
@@ -127,7 +120,7 @@ class Setup:
             "&port=" + urllib.quote(self.vdcRegPort) +
             "&__VIEWSTATE=" + ticket
         )
-        logging.debug("registerVDS URI= " + strFullURI + "\n")
+        logging.debug("registerVDS URI= %s\n", strFullURI)
         if self.ovirtUID == "None" and "localhost.localdomain" in self.ovirtName:
             logging.warn("WARNING! registering RHEV-H with no UUID and no unique host-name!")
 
@@ -157,9 +150,8 @@ class Setup:
                 logging.error("registerVDS failed using HTTP!", exc_info=True)
 
         else:
-            logging.debug("registerVDS status: " + str(res.status) +
-                " reason: " + res.reason
-            )
+            logging.debug("registerVDS status: %d reason: %s", res.status,
+                    res.reason)
 
         if res == None or res.status != 200:
             if conn != None: conn.close()
@@ -169,7 +161,7 @@ class Setup:
             try:
                 try:
                     self.VDCTime = res.read()
-                    logging.debug("registerVDS time read: " + str(self.VDCTime))
+                    logging.debug("registerVDS time read: %s", self.VDCTime)
                 except:
                     fReturn = False
                     logging.error("registerVDS time read failed",
@@ -191,7 +183,7 @@ class Setup:
             logging.debug("execute: found existing management bridge. Skipping rename.")
         else:
             fOK = self.renameBridge()
-            logging.debug("execute: after renameBridge: " + str(fOK))
+            logging.debug("execute: after renameBridge: %s", fOK)
 
         if fOK:
             strKey = deployUtil.getAuthKeysFile(self.vdcURL, self.vdcPORT)
@@ -200,19 +192,17 @@ class Setup:
             else:
                 fOKNow = False
             fOK = fOK and fOKNow
-            logging.debug("execute: after getAuthKeysFile: " + str(fOK))
+            logging.debug("execute: after getAuthKeysFile: %s", fOK)
 
         if fOK:
             fOKNow = self.registerVDS()
             fOK = fOK and fOKNow
-            logging.debug("execute: after registerVDS: " + str(fOK))
+            logging.debug("execute: after registerVDS: %s", fOK)
 
         if fOK:
             self.registered = True
 
-        logging.debug("Registration status:" +
-            str(self.registered)
-        )
+        logging.debug("Registration status: %s", self.registered)
 
         # Utility settings. This will not fail the registration process.
         if self.registered == True:
@@ -250,7 +240,7 @@ def run(confFile, daemonize):
             if not daemonize:
                 log.handlers.append(logging.StreamHandler())
 
-            log.info("After daemonize - My pid is " + str(os.getpid()))
+            log.info("After daemonize - My pid is %d", os.getpid())
             file(pidfile, 'w').write(str(os.getpid()) + "\n")
             os.chmod(pidfile, 0664)
 
@@ -275,7 +265,8 @@ def run(confFile, daemonize):
                     # wait random time, so multiple machines access randomly.
                     time.sleep(sleepTime + nRandom)
 
-                log.debug("Total retry count: %d, waited: %d seconds." % (itr, sleepTime+nRandom))
+                log.debug("Total retry count: %d, waited: %d seconds.", itr,
+                        sleepTime+nRandom)
         except:
             if log is not None:
                 log.error("Reading config failed", exc_info=True)
