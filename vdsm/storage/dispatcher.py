@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import traceback
 import logging
 from config import config
 
@@ -100,10 +99,8 @@ class Protect:
                 return se.generateResponse(e)
         except:
             try:
-                try:
-                    self.log.error("Unhandled exception in run and protect: %s, args: %s " % (str(self.name), str(args)))
-                finally:
-                    self.log.error(traceback.format_exc())
+                self.log.error("Unhandled exception in run and protect: %s, "
+                        "args: %s ", self.name, args, exc_info=True)
             finally:
                 return self.STATUS_ERROR.copy()
 
