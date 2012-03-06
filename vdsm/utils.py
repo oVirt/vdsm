@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2008-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -803,3 +803,29 @@ def validateMinimalKeySet(dictionary, reqParams):
     if not all(key in dictionary for key in reqParams):
         raise ValueError
 
+class CommandPath(object):
+    def __init__(self, name, *args):
+        self.name = name
+        self.paths = args
+        self._cmd = None
+
+    @property
+    def cmd(self):
+        if not self._cmd:
+            for path in self.paths:
+                if os.path.exists(path):
+                    self._cmd = path
+                    break
+            else:
+                raise OSError(os.errno.ENOENT,
+                              os.strerror(os.errno.ENOENT), self.name)
+        return self._cmd
+
+    def __repr__(self):
+        return str(self.cmd)
+
+    def __str__(self):
+        return str(self.cmd)
+
+    def __unicode__(self):
+        return unicode(self.cmd)

@@ -55,6 +55,7 @@ dist_vdsmpylib_PYTHON = \
 	__init__.py \
 	define.py \
 	netinfo.py \
+	qemuImg.py \
 	SecureXMLRPCServer.py \
 	utils.py
 
