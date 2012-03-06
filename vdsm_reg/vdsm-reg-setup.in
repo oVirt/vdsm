@@ -112,14 +112,15 @@ class Setup:
 
     def registerVDS(self):
         logging.debug("registerVDS begin.")
-        ticket = "&ticket=" + urllib.quote(self.ticket) if self.ticket else ""
-        strFullURI = (
-            self.vdcURI + "?vds_ip=" + urllib.quote(self.ovirtURL) +
-            "&vds_name=" + urllib.quote(self.ovirtName) +
-            "&vds_unique_id=" + urllib.quote(self.ovirtUID) +
-            "&port=" + urllib.quote(self.vdcRegPort) +
-            "&__VIEWSTATE=" + ticket
-        )
+        params = {
+                'vds_ip': self.ovirtURL,
+                'vds_name': self.ovirtName,
+                'vds_unique_id': self.ovirtUID,
+                'port': self.vdcRegPort,
+                '__VIEWSTATE': '',
+                'ticket': self.ticket if self.ticket else "",
+        }
+        strFullURI = self.vdcURI + '?' + urllib.urlencode(params)
         logging.debug("registerVDS URI= %s\n", strFullURI)
         if self.ovirtUID == "None" and "localhost.localdomain" in self.ovirtName:
             logging.warn("WARNING! registering RHEV-H with no UUID and no unique host-name!")
