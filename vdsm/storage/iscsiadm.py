@@ -1,6 +1,6 @@
-import misc
-import constants
 from threading import Lock
+import misc
+from vdsm import constants
 
 # iscsiadm exit statuses
 ISCSI_ERR_SESS_EXISTS = 15
