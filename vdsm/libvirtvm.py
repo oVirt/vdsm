@@ -1581,7 +1581,7 @@ class LibvirtVm(vm.Vm):
     def snapshot(self, snapDrives):
         """Live snapshot command"""
 
-        def _diskSnapshot(vmDev, newpath):
+        def _diskSnapshot(vmDev, newPath, mirrorPath):
             """Libvirt snapshot XML"""
 
             disk = xml.dom.minidom.Element('disk')
@@ -1589,7 +1589,9 @@ class LibvirtVm(vm.Vm):
             disk.setAttribute('snapshot', 'external')
 
             source = xml.dom.minidom.Element('source')
-            source.setAttribute('file', newpath)
+            source.setAttribute('file', newPath)
+
+            # FIXME: Implement mirroring here using the libvirt XML definition
 
             disk.appendChild(source)
             return disk
@@ -1615,7 +1617,14 @@ class LibvirtVm(vm.Vm):
             else:
                 baseDrv, tgetDrv = (None, None)
 
-            return baseDrv, tgetDrv
+            if drive.has_key("mirrorDomainID"):
+                mirrorDrv = {"domainID": drive["mirrorDomainID"],
+                             "imageID": drive["mirrorImageID"],
+                             "volumeID": drive["mirrorVolumeID"]}
+            else:
+                mirrorDrv = None
+
+            return baseDrv, tgetDrv, mirrorDrv
 
         def _rollbackDrives(newDrives):
             """Rollback the prepared volumes for the snapshot"""
@@ -1660,7 +1669,7 @@ class LibvirtVm(vm.Vm):
            return errCode['migInProgress']
 
         for drive in snapDrives:
-            baseDrv, tgetDrv = _normSnapDriveParams(drive)
+            baseDrv, tgetDrv, mirrorDrv = _normSnapDriveParams(drive)
 
             if self._findDriveByUUIDs(tgetDrv):
                 # The snapshot volume is the current one, skipping
@@ -1680,17 +1689,28 @@ class LibvirtVm(vm.Vm):
             newDrives[vmDevName] = tgetDrv.copy()
             newDrives[vmDevName]["poolID"] = vmDrive.poolID
             newDrives[vmDevName]["name"] = vmDevName
+            newDrives[vmDevName]["mirror"] = mirrorDrv
 
             try:
                 newDrives[vmDevName]["path"] = \
                             self.cif.prepareVolumePath(newDrives[vmDevName])
+
+                if newDrives[vmDevName]["mirror"]:
+                    newDrives[vmDevName]["mirrorPath"] = \
+                            self.cif.prepareVolumePath(
+                                             newDrives[vmDevName]["mirror"])
+                else:
+                    newDrives[vmDevName]["mirrorPath"] = None
+
             except Exception:
                 _rollbackDrives(newDrives)
                 self.log.error("Unable to prepare the volume path "
                                "for the disk: %s", vmDevName, exc_info=True)
                 return errCode['snapshotErr']
 
-            snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"])
+            snapelem = _diskSnapshot(vmDevName,
+                                     newDrives[vmDevName]["path"],
+                                     newDrives[vmDevName]["mirrorPath"])
             disks.appendChild(snapelem)
 
         # If all the drives are the corrent ones, return success
