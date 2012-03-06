@@ -167,7 +167,7 @@ def addIscsiPortal(iface, portal, credentials=None):
         try:
             iscsiadm.discoverydb_update(discoverType, iface.name, portalStr, "node.startup", "manual")
         except:
-            # this is just a to be polite we don't really care
+            # this is just to be polite we don't really care
             pass
 
         try:
@@ -188,7 +188,7 @@ def deleteIscsiPortal(iface, portal):
 
 def discoverSendTargets(iface, portal, credentials=None):
     # Because proper discovery actually has to clear the DB having multiple
-    # discoveries at once will cause unpredicrable results
+    # discoveries at once will cause unpredictable results
     discoverType = "sendtargets"
     portalStr = "%s:%d" % (portal.hostname, portal.port)
 
@@ -314,7 +314,7 @@ class IscsiInterface(object):
         return tmp
 
     def create(self):
-        # If VDSM crashes while creating an interface a grabages interface will
+        # If VDSM crashes while creating an interface a garbage interface will
         # still exist. If you have an idea how to go about making this atomic
         # please fix this.
 

@@ -2451,8 +2451,9 @@ class HSM:
         except iscsi.iscsiadm.IscsiError:
             self.log.error("Discovery failed", exc_info=True)
             raise se.iSCSIDiscoveryError()
-        # I unparse the response. Why you ask? Backward compatibility! At
-        # least now if iscsiadm changes the output we can handle it gracefully
+        # I format the data to it's original textual representation the
+        # response. Why you ask? Backward compatibility! At least now if
+        # iscsiadm changes the output we can handle it gracefully
         fullTargets = []
         partialTargets = []
         for target in targets:
