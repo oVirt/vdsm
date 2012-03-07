@@ -247,7 +247,7 @@ class IscsiInterface(object):
             'transport': ("iface.transport_name", 'r'),
             'hardwareAddress': ("iface.hwaddress", 'rw'),
             'ipAddress': ('iface.ipaddress', 'rw'),
-            'intitatorName': ('iface.initiatorname', 'rw')
+            'initiatorName:': ('iface.initiatorname', 'rw')
             }
 
     def __getattr__(self, name):
@@ -305,7 +305,7 @@ class IscsiInterface(object):
             self.ipAddress = ipAddress
 
         if initiatorName:
-            self.initiatorname = initiatorName
+            self.initiatorName = initiatorName
 
     @staticmethod
     def fromConf(conf):
@@ -320,7 +320,7 @@ class IscsiInterface(object):
 
         iscsiadm.iface_new(self.name)
         try:
-            self.udpate()
+            self.update()
         except:
             self.delete()
             raise
@@ -328,7 +328,7 @@ class IscsiInterface(object):
     def update(self):
         # If this fails mid operation we get a partially updated interface.
         # Suggestions are welcome.
-        for key, value in self._conf:
+        for key, value in self._conf.iteritems():
             if key == 'iface.iscsi_ifacename':
                 continue
 

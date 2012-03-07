@@ -133,7 +133,7 @@ def _BCInitiatorNameResolve(ifaceName):
     if not ifaceName:
         return iscsi.IscsiInterface('default')
 
-    for iface in iscsi.iterateIscsiInterfaces:
+    for iface in iscsi.iterateIscsiInterfaces():
         if iface.name == ifaceName:
             return iface
 
