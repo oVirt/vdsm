@@ -213,6 +213,10 @@ parameters = [
 
         ('process_pool_max_slots_per_domain', '10', None),
 
+        ('iscsi_default_ifaces', 'default',
+            'Comma seperated ifaces to connect with. '
+            'i.e. iser,default' ),
+
     ]),
 
     # Section: [addresses]

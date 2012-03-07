@@ -1892,6 +1892,7 @@ class HSM:
             conInfo = _connectionDict2ConnectionInfo(domType, conDef)
             conObj = storageServer.ConnectionFactory.createConnection(conInfo)
             try:
+                self._connectStorageOverIser(conDef, conObj, domType)
                 conObj.connect()
                 status = 0
             except Exception as err:
@@ -1905,6 +1906,24 @@ class HSM:
         sdCache.invalidateStorage()
         return dict(statuslist=res)
 
+    @deprecated
+    def _connectStorageOverIser(self, conDef, conObj, conTypeId):
+        """
+        Tries to connect the storage server over iSER.
+        This applies if the storage type is iSCSI and 'iser' is in
+        the configuration option 'iscsi_default_ifaces'.
+        """
+        # FIXME: remove this method when iface selection is in higher interface
+        typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
+        if typeName == 'iscsi' and not conDef.has_key('initiatorName'):
+            ifaces = config.get('irs', 'iscsi_default_ifaces').split(',')
+            if 'iser' in ifaces:
+                conObj._iface = iscsi.IscsiInterface('iser')
+                try:
+                    conObj.connect()
+                    conObj.disconnect()
+                except:
+                    conObj._iface = iscsi.IscsiInterface('default')
 
     @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
