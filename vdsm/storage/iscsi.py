@@ -70,14 +70,10 @@ def getDevIscsiInfo(dev):
 
 def getSessionInfo(sessionID):
     sessionName = "session%d" % sessionID
-    sessionDir = glob.glob("/sys/devices/platform/host*/%s/" % sessionName)
-    if len(sessionDir) == 0:
-        raise OSError(errno.ENOENT, "No such session")
-
-    sessionDir = sessionDir[0]
-
-    iscsi_session = os.path.join(sessionDir, "iscsi_session", sessionName)
-    if not os.path.exists(iscsi_session):
+    connectionName = "connection%d:0" % sessionID
+    iscsi_session = "/sys/class/iscsi_session/%s/" % sessionName
+    iscsi_connection = "/sys/class/iscsi_connection/%s/" % connectionName
+    if not os.path.isdir(iscsi_session) or not os.path.isdir(iscsi_connection):
         raise OSError(errno.ENOENT, "No such session")
 
     targetname = os.path.join(iscsi_session, "targetname")
@@ -87,14 +83,6 @@ def getSessionInfo(sessionID):
     user = os.path.join(iscsi_session, "username")
     passwd = os.path.join(iscsi_session, "password")
 
-    conn_pattern = os.path.join(sessionDir, "connection*")
-    try:
-        connectiondir = glob.glob(conn_pattern)[0]
-    except IndexError:
-        raise OSError(errno.ENOENT, "No such session")
-
-    connection = os.path.basename(connectiondir)
-    iscsi_connection = os.path.join(connectiondir, "iscsi_connection", connection)
     paddr = os.path.join(iscsi_connection, "persistent_address")
     pport = os.path.join(iscsi_connection, "persistent_port")
 
@@ -208,7 +196,7 @@ def discoverSendTargets(iface, portal, credentials=None):
         return res
 
 def iterateIscsiSessions():
-    for sessionDir in glob.iglob("/sys/devices/platform/host*/session*/iscsi_session/session?*"):
+    for sessionDir in glob.iglob("/sys/class/iscsi_session/session*"):
         sessionID = int(os.path.basename(sessionDir)[len("session"):])
         try:
             yield getSessionInfo(sessionID)
