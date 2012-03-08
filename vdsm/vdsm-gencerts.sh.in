@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright 2012 Red Hat, Inc.
 #
@@ -19,43 +19,56 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-RAND_SOURCES=\
-"/proc/apm:/proc/cpuinfo:/proc/dma:/proc/filesystems:"\
-"/proc/interrupts:/proc/ioports:/proc/pci:/proc/rtc:/proc/uptime"
-
 VDSM_PKI="@TRUSTSTORE@"
 VDSM_KEY="$VDSM_PKI/keys/vdsmkey.pem"
 VDSM_CRT="$VDSM_PKI/certs/vdsmcert.pem"
 VDSM_CA="$VDSM_PKI/certs/cacert.pem"
 
-VDSM_PERMS="@VDSMUSER@:@VDSMGROUP@"
-VDSM_KEYSIZE=1024
+VDSM_TEMPLATE="$(mktemp)"
 
 VDSM_FQDN=`hostname -f`
 [ -z "$VDSM_FQDN" ] && VDSM_FQDN="localhost.localdomain"
 
+VDSM_PERMS="@VDSMUSER@:@VDSMGROUP@"
+
 umask 077
 
 if [ ! -f "$VDSM_KEY" ]; then
-    /usr/bin/openssl genrsa -rand "$RAND_SOURCES" \
-        "$VDSM_KEYSIZE" 2> /dev/null > "$VDSM_KEY"
+    /usr/bin/certtool --generate-privkey --outfile "$VDSM_KEY" 2> /dev/null
     /bin/chown "$VDSM_PERMS" "$VDSM_KEY"
     /sbin/restorecon "$VDSM_KEY"
 fi
 
-if [ ! -f "$VDSM_CRT" ]; then
-    /usr/bin/openssl req -new -key "$VDSM_KEY" \
-        -x509 -days 365 -set_serial "$RANDOM" -out "$VDSM_CRT" \
-        2> /dev/null << EOF
---
-SomeState
-SomeCity
-SomeOrganization
-SomeOrganizationalUnit
-$VDSM_FQDN
-root@$VDSM_FQDN
+if [ ! -f "$VDSM_CA" ]; then
+    /bin/cat > "$VDSM_TEMPLATE" <<EOF
+cn = "VDSM Certificate Authority"
+ca
+cert_signing_key
 EOF
-    /bin/chown "$VDSM_PERMS" "$VDSM_CRT"
-    /bin/ln -sf "$VDSM_CRT" "$VDSM_CA"
-    /sbin/restorecon "$VDSM_CRT" "$VDSM_CA"
+    /usr/bin/certtool --generate-self-signed --load-privkey  "$VDSM_KEY" \
+                      --template "$VDSM_TEMPLATE" --outfile "$VDSM_CA" \
+                      2> /dev/null
+    /bin/chown "$VDSM_PERMS" "$VDSM_CA"
+    /sbin/restorecon "$VDSM_CA"
 fi
+
+if [ ! -f "$VDSM_CRT" ]; then
+    /bin/cat > "$VDSM_TEMPLATE" <<EOF
+organization    = "VDSM Certificate"
+cn              = "$VDSM_FQDN"
+email           = "root@$VDSM_FQDN"
+signing_key
+encryption_key
+tls_www_server
+tls_www_client
+EOF
+    /usr/bin/certtool --generate-certificate --load-privkey "$VDSM_KEY" \
+                      --load-ca-privkey "$VDSM_KEY" \
+                      --load-ca-certificate "$VDSM_CA" \
+                      --template "$VDSM_TEMPLATE" --outfile "$VDSM_CRT" \
+                      2> /dev/null
+    /bin/chown "$VDSM_PERMS" "$VDSM_CRT"
+    /sbin/restorecon "$VDSM_CRT"
+fi
+
+/bin/rm -f "$VDSM_TEMPLATE"
