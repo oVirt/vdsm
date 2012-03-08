@@ -90,12 +90,9 @@ class Listener(threading.Thread):
 
     def _update_channels(self):
         """ Update channels list. """
-        try:
-            self._update_lock.acquire()
+        with self._update_lock:
             self._do_add_channels()
             self._do_del_channels()
-        finally:
-            self._update_lock.release()
 
     def _handle_unconnected(self):
         """
@@ -105,7 +102,7 @@ class Listener(threading.Thread):
         for (fileno, obj) in self._unconnected.items():
             self.log.debug("Trying to connect fileno %d.", fileno)
             try:
-                if obj['connect_cb'](obj['opaque']) == True:
+                if obj['connect_cb'](obj['opaque']):
                     self.log.debug("Connect fileno %d was successed.", fileno)
                     del self._unconnected[fileno]
                     self._channels[fileno] = obj
@@ -145,19 +142,13 @@ class Listener(threading.Thread):
     def register(self, fileno, connect_callback, read_callback, timeout_callback, opaque):
         """ Register a new file descriptor to the listener. """
         self.log.debug("Add fileno %d to listener's channels.", fileno)
-        try:
-            self._update_lock.acquire()
+        with self._update_lock:
             self._add_channels[fileno] = { 'connect_cb': connect_callback,
                 'read_cb': read_callback, 'timeout_cb': timeout_callback,
                 'opaque': opaque, 'read_time': 0.0 }
-        finally:
-            self._update_lock.release()
 
     def unregister(self, fileno):
         """ Unregister an exist file descriptor from the listener. """
         self.log.debug("Delete fileno %d from listener.", fileno)
-        try:
-            self._update_lock.acquire()
+        with self._update_lock:
             self._del_channels.append(fileno)
-        finally:
-            self._update_lock.release()
