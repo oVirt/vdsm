@@ -111,7 +111,10 @@ else:
                 'etherboot-zroms-kvm', 'kvm-qemu-img', 'fence-agents')
 
 # Conflicting packages- fail if exist
-CONFL_PACK = ('cman.x86_64', )
+if rhel6based:
+    CONFL_PACK = ( )
+else:
+    CONFL_PACK = ('cman.x86_64', )
 
 # Conflicting packages- delete if exist
 if rhel6based:
