@@ -741,12 +741,12 @@ class service:
 
     def removeVM(self, args):
         spUUID = args[0]
-        vmList = args[1]
+        vmUUID = args[1]
         if len(args) >= 3:
             sdUUID = args[2]
         else:
             sdUUID = BLANK_UUID
-        res = self.s.removeVM(spUUID, vmList, sdUUID)
+        res = self.s.removeVM(spUUID, vmUUID, sdUUID)
         if res['status']['code']:
             return res['status']['code'], res['status']['message']
         return 0, ''
@@ -1740,7 +1740,7 @@ if __name__ == '__main__':
                         'Upgrade a pool to a new version (Requires a running SPM)'
                         )),
         'removeVM' : ( serv.removeVM,
-                       ("<spUUID> <vmList> (vmUUID1,vmUUID2,...) [sdUUID]",
+                       ("<spUUID> <vmUUID> [sdUUID]",
                         'Remove VM from pool or Backup domain'
                         )),
         'reconstructMaster' : ( serv.reconstructMaster,

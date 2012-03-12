@@ -1095,14 +1095,14 @@ class HSM:
 
 
     @public
-    def removeVM(self, spUUID, vmList, sdUUID=None, options = None):
+    def removeVM(self, spUUID, vmUUID, sdUUID=None, options=None):
         """
         Removes a VM list from a storage pool or from a Backup domain.
 
         :param spUUID: The UUID of the storage pool that contains the VMs being removed.
         :type spUUID: UUID
-        :param vmList: The list of VMs being removed.?
-        :type vmList: list
+        :param vmUUID: The UUID of VM being removed.
+        :type vmUUID: UUID
         :param sdUUID: The UUID of the backup domain you want to update or :keyword:`None` if you want something something. ?
         :type sdUUID: UUID
         :param options: ?
@@ -1114,7 +1114,7 @@ class HSM:
         vars.task.getSharedLock(STORAGE, spUUID)
         #getExclusiveLock(vmList...)
         pool = self.getPool(spUUID)
-        pool.removeVM(vmList=vmList, sdUUID=sdUUID)
+        pool.removeVM(vmUUID=vmUUID, sdUUID=sdUUID)
 
     @public
     def getVmsList(self, spUUID, sdUUID=None, options = None):

@@ -900,11 +900,8 @@ class StoragePool(object):
     def updateVMs(self, vmList, sdUUID):
         return self._irs.updateVM(self._UUID, vmList, sdUUID)
 
-    def removeVMs(self, vmList, sdUUID):
-        # This internal API deviates horribly in that it takes a
-        # comma-separated list of VMs rather than a proper list
-        _vmString = ','.join(vmList)
-        return self._irs.removeVM(self._UUID, _vmString, sdUUID)
+    def removeVM(self, vmUUID, sdUUID):
+        return self._irs.removeVM(self._UUID, vmUUID, sdUUID)
 
 class Global(object):
     def __init__(self, cif):

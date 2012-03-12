@@ -1217,17 +1217,15 @@ class StoragePool:
                 raise
 
 
-    def removeVM(self, vmList, sdUUID=None):
+    def removeVM(self, vmUUID, sdUUID=None):
         """
-        Remove VMs.
-         'vmList' - vmUUID1,vmUUID2,...
+        Remove VM.
+         'vmUUID' - Virtual machine UUID
         """
-        self.log.info("spUUID=%s vmList=%s sdUUID=%s", self.spUUID, str(vmList), sdUUID)
+        self.log.info("spUUID=%s vmUUID=%s sdUUID=%s", self.spUUID, vmUUID, sdUUID)
         vms = self._getVMsPath(sdUUID)
-        vmUUIDs = vmList.split(',')
-        for vm in vmUUIDs:
-            if os.path.exists(os.path.join(vms, vm)):
-                fileUtils.cleanupdir(os.path.join(vms, vm))
+        if os.path.exists(os.path.join(vms, vmUUID)):
+           fileUtils.cleanupdir(os.path.join(vms, vmUUID))
 
 
     def setDescription(self, descr):

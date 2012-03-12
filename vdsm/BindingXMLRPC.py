@@ -574,9 +574,9 @@ class BindingXMLRPC(object):
         pool = API.StoragePool(self.cif, spUUID)
         return pool.updateVMs(vmList, sdUUID)
 
-    def poolRemoveVms(self, spUUID, vmList, sdUUID=None, options=None):
+    def poolRemoveVm(self, spUUID, vmUUID, sdUUID=None, options=None):
         pool = API.StoragePool(self.cif, spUUID)
-        return pool.removeVMs(vmList, sdUUID)
+        return pool.removeVM(vmUUID, sdUUID)
 
     def volumeCopy(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID,
                    dstImgUUID, dstVolUUID, description='',
@@ -809,7 +809,7 @@ class BindingXMLRPC(object):
                 (self.poolUpgrade, 'upgradeStoragePool'),
                 (self.poolValidateStorageServerConnection, 'validateStorageServerConnection'),
                 (self.poolUpdateVMs, 'updateVM'),
-                (self.poolRemoveVms, 'removeVM'),
+                (self.poolRemoveVm, 'removeVM'),
                 (self.taskClear, 'clearTask'),
                 (self.taskGetInfo, 'getTaskInfo'),
                 (self.taskGetStatus, 'getTaskStatus'),
