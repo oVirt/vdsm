@@ -44,7 +44,7 @@ SCAN_PATTERN = "/sys/class/scsi_host/host*/scan"
 
 IscsiSession = namedtuple("IscsiSession", "id, iface, target, credentials")
 
-_iscsiadmDiscoveryLock = RLock()
+_iscsiadmTransactionLock = RLock()
 
 log = logging.getLogger('Storage.ISCSI')
 
@@ -118,35 +118,37 @@ def getSessionInfo(sessionID):
 def addIscsiNode(iface, target, credentials=None):
     targetName = target.iqn
     portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
-    iscsiadm.node_new(iface.name, portalStr, targetName)
-    try:
-        iscsiadm.node_update(iface.name, portalStr, targetName, "node.startup", "manual")
+    with _iscsiadmTransactionLock:
+        iscsiadm.node_new(iface.name, portalStr, targetName)
+        try:
+            iscsiadm.node_update(iface.name, portalStr, targetName, "node.startup", "manual")
 
-        if credentials is not None:
-            for key, value in credentials.getIscsiadmOptions():
-                key = "node.session." + key
-                iscsiadm.node_update(iface.name, portalStr, targetName, key, value, hideValue=True)
+            if credentials is not None:
+                for key, value in credentials.getIscsiadmOptions():
+                    key = "node.session." + key
+                    iscsiadm.node_update(iface.name, portalStr, targetName, key, value, hideValue=True)
 
-        iscsiadm.node_login(iface.name, portalStr, targetName)
-    except:
-        removeIscsiNode(iface, target)
-        raise
+            iscsiadm.node_login(iface.name, portalStr, targetName)
+        except:
+            removeIscsiNode(iface, target)
+            raise
 
 def removeIscsiNode(iface, target):
     targetName = target.iqn
     portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
-    try:
-        iscsiadm.node_disconnect(iface.name, portalStr, targetName)
-    except iscsiadm.IscsiSessionNotFound:
-        pass
+    with _iscsiadmTransactionLock:
+        try:
+            iscsiadm.node_disconnect(iface.name, portalStr, targetName)
+        except iscsiadm.IscsiSessionNotFound:
+            pass
 
-    iscsiadm.node_delete(iface.name, portalStr, targetName)
+        iscsiadm.node_delete(iface.name, portalStr, targetName)
 
 def addIscsiPortal(iface, portal, credentials=None):
     discoverType = "sendtargets"
     portalStr = "%s:%d" % (portal.hostname, portal.port)
 
-    with _iscsiadmDiscoveryLock:
+    with _iscsiadmTransactionLock:
         iscsiadm.discoverydb_new(discoverType, iface.name, portalStr)
 
         # NOTE: We are not taking for granted that iscsiadm is not going to write
@@ -180,7 +182,7 @@ def discoverSendTargets(iface, portal, credentials=None):
     discoverType = "sendtargets"
     portalStr = "%s:%d" % (portal.hostname, portal.port)
 
-    with _iscsiadmDiscoveryLock:
+    with _iscsiadmTransactionLock:
         addIscsiPortal(iface, portal, credentials)
         try:
             targets = iscsiadm.discoverydb_discover(discoverType, iface.name, portalStr)
