@@ -161,8 +161,14 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         portal = iscsi.IscsiPortal(
                 conDict.get('connection', None),
                 int(conDict.get('port', None)))
+        tpgt = conDict.get('portal', None)
+        if tpgt:
+            tpgt = int(tpgt)
+        else:
+            tpgt = None
+
         target = iscsi.IscsiTarget(portal,
-                int(conDict.get('portal', None)),
+                tpgt,
                 conDict.get('iqn', None))
 
         iface = _BCInitiatorNameResolve(conDict.get('initiatorName', None))
