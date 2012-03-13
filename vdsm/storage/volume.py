@@ -28,6 +28,7 @@ import storage_exception as se
 import sd
 from sdc import sdCache
 import misc
+from misc import deprecated
 import fileUtils
 import task
 from threadLocal import vars
@@ -461,6 +462,19 @@ class Volume:
         self.setrw(rw=False)
         return self.voltype
 
+    @deprecated  # valid for domain version < 3
+    def setrw(self, rw):
+        # Since domain version 3 (V3) VDSM is not changing the internal volumes
+        # permissions to read-only because it would interfere with the live
+        # snapshots and the live merge processes. E.g.: during a live snapshot
+        # if the VM is running on the SPM it would lose the ability to write to
+        # the current volume.
+        # However to avoid lvm MDA corruption we still need to set the volume
+        # as read-only on domain version 2. The corruption is triggered on the
+        # HSMs that are using the resource manager to prepare the volume chain.
+        if int(sdCache.produce(self.sdUUID).getVersion()) < 3:
+            self._setrw(rw=rw)
+
     def setLeaf(self):
         self.setMetaParam(VOLTYPE, type2name(LEAF_VOL))
         self.voltype = type2name(LEAF_VOL)
@@ -529,18 +543,18 @@ class Volume:
         """
         Recheck if I am a leaf.
         """
-        oldtype = self.getVolType()
+
         if self.isShared():
             return False
-        children = self.getChildrenList()
-        if len(children) == 0:
-            self.voltype = type2name(LEAF_VOL)
-            self.setrw(rw=True)
-        else:
-            self.voltype = type2name(INTERNAL_VOL)
-            self.setrw(rw=False)
-        if self.voltype != oldtype:
-            self.setMetaParam(VOLTYPE, self.voltype)
+
+        type = self.getVolType()
+        childrenNum = len(self.getChildrenList())
+
+        if childrenNum == 0 and type != LEAF_VOL:
+            self.setLeaf()
+        elif childrenNum > 0 and type != INTERNAL_VOL:
+            self.setInternal()
+
         return self.isLeaf()
 
     def prepare(self, rw=True, justme=False,

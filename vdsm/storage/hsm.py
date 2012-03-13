@@ -50,6 +50,7 @@ import image
 import volume
 import iscsi
 import misc
+from misc import deprecated
 import taskManager
 import safelease
 import storage_exception as se
@@ -106,10 +107,6 @@ def loggableConList(conList):
         cons.append(conCopy)
 
     return cons
-
-def deprecated(f):
-    """Used to mark exported methods as deprecated"""
-    return f
 
 def connectionListPrinter(conList):
     return repr(loggableConList(conList))

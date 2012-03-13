@@ -31,6 +31,7 @@ import volume
 import image
 import sd
 import misc
+from misc import deprecated
 import task
 from threadLocal import vars
 
@@ -272,9 +273,10 @@ class FileVolume(volume.Volume):
         else:
             self.oop.os.symlink(src, dst)
 
-    def setrw(self, rw):
+    @deprecated  # valid only for domain version < 3, see volume.setrw
+    def _setrw(self, rw):
         """
-        Set the read/write permission on the volume
+        Set the read/write permission on the volume (deprecated)
         """
         self.file_setrw(self.getVolumePath(), rw=rw)
 

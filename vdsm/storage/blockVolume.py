@@ -30,6 +30,7 @@ import image
 import sd
 import misc
 from misc import logskip
+from misc import deprecated
 import task
 import lvm
 import resourceManager as rm
@@ -435,9 +436,10 @@ class BlockVolume(volume.Volume):
         """
         return lvm.lvPath(self.sdUUID, self.volUUID)
 
-    def setrw(self, rw):
+    @deprecated  # valid only for domain version < 3, see volume.setrw
+    def _setrw(self, rw):
         """
-        Set the read/write permission on the volume
+        Set the read/write permission on the volume (deprecated)
         """
         lvm.setrwLV(self.sdUUID, self.volUUID, rw)
 

@@ -1404,3 +1404,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=[]):
                 yield x
     if not topdown:
         yield top, dirs, nondirs
+
+
+def deprecated(f):
+    """Used to mark exported methods as deprecated"""
+    return f
