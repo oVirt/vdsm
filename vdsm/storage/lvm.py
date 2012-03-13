@@ -53,7 +53,7 @@ LV_FIELDS = "uuid,name,vg_name,attr,size,seg_start_pe,devices,tags"
 
 VG_ATTR_BITS = ("permission", "resizeable", "exported",
                   "partial", "allocation", "clustered")
-LV_ATTR_BITS = ("voltype, permission, allocations, fixedminor, state, devopen")
+LV_ATTR_BITS = ("voltype, permission, allocations, fixedminor, state, devopen, target, zero")
 
 PV = namedtuple("PV", PV_FIELDS + ",guid")
 VG = namedtuple("VG", VG_FIELDS + ",writeable,partial")

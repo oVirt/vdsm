@@ -38,7 +38,7 @@ Requires: xz
 Requires: ntp
 Requires: python-ethtool
 Requires: nfs-utils dmidecode
-Requires: lvm2 >= 2.02.72-8
+Requires: lvm2 >= 2.02.95
 Requires: sanlock >= 1.8, sanlock-python
 
 %if 0%{?rhel}
