@@ -141,11 +141,14 @@ class service:
                 param,value = line.split("=")
                 params[param] = value
         drives = []
+        devices = []
         if len(args) > 1:
             for line in args[1:]:
                 if '=' in line:
                     param,value = line.split("=",1)
-                    if param == 'drive':
+                    if param == 'devices':
+                        devices.append(self._parseDriveSpec(value))
+                    elif param == 'drive':
                         drives.append(self._parseDriveSpec(value))
                     elif param in ('cdrom', 'floppy'):
                         value = self._parseDriveSpec(value)
@@ -158,6 +161,8 @@ class service:
                     params[line.strip()] = ''
         if drives:
             params['drives'] = drives
+        if devices:
+            params['devices'] = devices
         ##Backward competability for vdsClient users
         if 'vt' in params:
             params['kvmEnable'] = params['vt']

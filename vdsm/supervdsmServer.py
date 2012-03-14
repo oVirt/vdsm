@@ -151,7 +151,7 @@ class _SuperVdsm(object):
     @logDecorator
     def udevTrigger(self, guid):
         cmd =  [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
-                '--property-match=DM_NAME="%s"' % guid]
+                '--property-match=DM_NAME=%s' % guid]
         rc, out, err = storage.misc.execCmd(cmd, sudo=False)
         if rc:
             raise OSError(errno.EINVAL, "Could not trigger change for device \

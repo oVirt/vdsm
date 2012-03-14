@@ -610,7 +610,7 @@ class Vm(object):
                 if self.destroyed:
                     # A destroy request has been issued, exit early
                     break
-                drive['path'] = self.cif.prepareVolumePath(drive)
+                drive['path'] = self.cif.prepareVolumePath(drive, self.id)
         else:
             # Now we got all the resources we needed
             self._volumesPrepared = True
