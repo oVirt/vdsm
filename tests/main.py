@@ -22,6 +22,7 @@ import types
 import unittest
 from storage import storage_exception
 from storage import securable
+from gluster import exception as gluster_exception
 
 
 class TestSecurable(unittest.TestCase):
@@ -51,6 +52,24 @@ class TestStorageExceptions(unittest.TestCase):
 
             self.assertFalse(obj.code in codes)
             self.assertTrue(obj.code < 5000)
+
+
+class TestGlusterExceptions(unittest.TestCase):
+    def test_collisions(self):
+        codes = {}
+
+        for name in dir(gluster_exception):
+            obj = getattr(gluster_exception, name)
+
+            if not isinstance(obj, types.TypeType):
+                continue
+
+            if not issubclass(obj, gluster_exception.GlusterException):
+                continue
+
+            self.assertFalse(obj.code in codes)
+            self.assertTrue(obj.code >= 5000)
+
 
 if __name__ == '__main__':
     unittest.main()

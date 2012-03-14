@@ -295,6 +295,16 @@ BuildArch:      noarch
 %description hook-vmdisk
 Hook adds additional disk image for a VM (raw or qcow2)
 
+%package gluster
+Summary:        Gluster Plugin for VDSM
+BuildArch:      noarch
+
+Requires: %{name} = %{version}-%{release}
+Requires: glusterfs glusterfs-server glusterfs-fuse
+
+%description gluster
+Gluster plugin enables VDSM to serve Gluster functionalities.
+
 %prep
 %setup -q
 
@@ -636,6 +646,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
 %{python_sitelib}/%{vdsm_name}/define.py*
+%{python_sitelib}/%{vdsm_name}/exception.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/netinfo.py*
 %{python_sitelib}/%{vdsm_name}/qemuImg.py*
@@ -818,6 +829,15 @@ exit 0
 %doc COPYING
 %{_libexecdir}/%{vdsm_name}/vdsm-faqemu
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
+
+%files gluster
+%defattr(-, root, root, -)
+%dir %{_datadir}/%{vdsm_name}/gluster
+%doc COPYING
+%{_datadir}/%{vdsm_name}/gluster/__init__.py*
+%{_datadir}/%{vdsm_name}/gluster/cli.py*
+%{_datadir}/%{vdsm_name}/gluster/exception.py*
+%{_datadir}/%{vdsm_name}/gluster/hostname.py*
 
 %changelog
 * Wed Oct 12 2011 Federico Simoncelli <fsimonce@redhat.com> - 4.9.0-0

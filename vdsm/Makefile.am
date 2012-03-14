@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = sos storage betterPopen rest
+SUBDIRS = sos storage betterPopen rest gluster
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -56,6 +56,7 @@ dist_vdsm_PYTHON = \
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
 	define.py \
+	exception.py \
 	libvirtconnection.py \
 	netinfo.py \
 	qemuImg.py \

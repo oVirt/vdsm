@@ -27,6 +27,7 @@ test_modules = \
 	betterThreadingTests.py \
 	capsTests.py \
 	fileUtilTests.py \
+	gluster_cli_tests.py \
 	guestIFTests.py \
 	hooksTests.py \
 	lsblkTests.py \

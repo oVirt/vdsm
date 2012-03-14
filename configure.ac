@@ -211,6 +211,7 @@ AC_OUTPUT([
 	vdsm/Makefile
 	vdsm_reg/Makefile
 	vdsm/betterPopen/Makefile
+	vdsm/gluster/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/protect/Makefile

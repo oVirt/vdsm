@@ -43,8 +43,13 @@ PEP8_WHITELIST = \
 	vdsm/API.py \
 	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \
+	vdsm/exception.py \
 	vdsm/md_utils.py \
 	vdsm/parted_utils.py \
+	vdsm/gluster/__init__.py \
+	vdsm/gluster/cli.py \
+	vdsm/gluster/exception.py \
+	vdsm/gluster/hostname.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
 	vdsm/storage/processPool.py \
