@@ -2454,9 +2454,9 @@ class HSM:
 
         try:
             targets = iscsi.discoverSendTargets(iface, portal, cred)
-        except iscsi.iscsiadm.IscsiError:
+        except iscsi.iscsiadm.IscsiError as e:
             self.log.error("Discovery failed", exc_info=True)
-            raise se.iSCSIDiscoveryError()
+            raise se.iSCSIDiscoveryError(portal, e)
         # I format the data to it's original textual representation the
         # response. Why you ask? Backward compatibility! At least now if
         # iscsiadm changes the output we can handle it gracefully
