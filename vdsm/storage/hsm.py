@@ -2280,32 +2280,6 @@ class HSM:
 
         return dict(domlist=domains)
 
-    def __getVGType(self, vg):
-        """
-        Returns the vg type as sd.DOMAIN_TYPES.
-
-        multipath.DEV_* types with sd.DOMAIN_TYPES coupling.
-        """
-        try:
-            pathtype = lvm.getVGType(vg.name)
-        except se.VolumeGeneralException: #Unsupported
-            vgtype = sd.DOMAIN_TYPES[sd.UNKNOWN_DOMAIN]
-        else:
-            vgtype = sd.name2type(pathtype)
-        return vgtype
-
-    def __fillVGDict(self, vg):
-        """
-        Returns the VG dict as required by mgmt.
-        """
-        vgtype = self.__getVGType(vg)
-        vgstate = vg.partial
-        # dict(vg.attr._asdict()) because nametuples and OrderedDict are not
-        # properly marshalled
-        return {'name': vg.name, 'vgUUID': vg.uuid, 'vgsize': str(vg.size),
-                'vgfree': str(vg.free), 'type': vgtype,
-                'attr': dict(vg.attr._asdict()), 'state': vgstate}
-
     def __fillPVDict(self, devInfo, pv, devtype):
         info = {}
         info["vendorID"] = devInfo["vendor"]
