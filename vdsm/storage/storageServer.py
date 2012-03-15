@@ -387,7 +387,7 @@ class LocalDirectoryConnection(object):
         cls.localPathBase = path
 
     def _getLocalPath(self):
-        return os.path.join(self.localPathBase, self._path.replace("/", "_"))
+        return os.path.join(self.localPathBase, self._path.replace("_", "__").replace("/", "_"))
 
     def checkTarget(self):
         return os.path.exists(self._path) and os.path.isdir(self._path)
