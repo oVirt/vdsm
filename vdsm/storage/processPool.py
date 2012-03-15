@@ -26,6 +26,7 @@ from functools import wraps
 import logging
 import select
 import threading
+import errno
 
 import misc
 
@@ -266,6 +267,32 @@ def _setUpLogging(logQueue):
     for log in logging.Logger.manager.loggerDict.values():
         if hasattr(log, 'handlers'): del log.handlers[:]
 
+def _robustCloseFD(fd):
+    while True:
+        try:
+            os.close(fd)
+            break
+        except OSError as e:
+            if e.errno in (errno.EINTR, errno.EAGAIN):
+                return
+
+            raise
+
+def _closeFDs(whitelist=[], retry=3):
+    for i in range(retry):
+        closeFailed = False
+        for fd in misc.getfds():
+            if fd in whitelist:
+                continue
+
+            try:
+                _robustCloseFD(fd)
+            except:
+                closeFailed = True
+
+        if not closeFailed:
+            break
+
 def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     os.close(parentLifelineFD)
 
@@ -281,12 +308,7 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     FDSWHITELIST = (0, 1, 2, lifeLine, parentLifelineFD, pipe.fileno(),
                      logQueue._reader.fileno(), logQueue._writer.fileno())
 
-    for fd in misc.getfds():
-        if fd not in FDSWHITELIST:
-            try:
-                os.close(fd)
-            except OSError:
-                pass    # Nothing we can do
+    _closeFDs(FDSWHITELIST)
 
     _setUpLogging(logQueue)
 
