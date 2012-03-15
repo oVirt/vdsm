@@ -2758,43 +2758,6 @@ class HSM:
         imageslist = sdCache.produce(sdUUID=sdUUID).getAllImages()
         return dict(imageslist=imageslist)
 
-    def _parseConnectionInfo(conInfo):
-        conType = conInfo["type"].lower()
-        params = conInfo['params']
-        if conType == "iscsi":
-            portalParams = params['target']['portal']
-            portal = iscsi.IscsiPortal(portalParams['host'],
-                    portalParams.get("port", iscsi.ISCSI_DEFAULT_PORT))
-            target = iscsi.IscsiTarget(portal, params['target'].get('tpgt', 1),
-                    params['target']['iqn'])
-            iface = iscsi.IscsiInterface(params.get('ifaceName', 'default'))
-            authInfo = params.get('authInfo', None)
-            cred = None
-            if authInfo:
-                authMethod = authInfo['authMethod'].lower()
-                if authMethod != "chap":
-                    # TODO : Proper exception
-                    raise Exception("Authentication method '%s' is not"
-                            "supported by VDSM" % authMethod)
-
-                authParams = authInfo['params']
-                cred = iscsi.ChapCredentials(authParams.get('username', None),
-                        authParams.get('password', None))
-
-            conParams = storageServer.IscsiConnectionParameters(target, iface,
-                    cred)
-        elif conType == 'nfs':
-            conParams = storageServer.NfsConnectionParameters(**params)
-        elif conType == 'localfs':
-            conParams = storageServer.LocaFsConnectionParameters(**params)
-        elif conType == 'posixfs':
-            conParams = storageServer.PosixFsConnectionParameters(**params)
-        else:
-            # TODO : Proper exception
-            raise Exception("Unsupported connection type")
-
-        return storageServer.ConnectionInfo(conType, conParams)
-
     @public
     def storageServer_ConnectionRefs_acquire(self, conRefArgs):
         res = {}
