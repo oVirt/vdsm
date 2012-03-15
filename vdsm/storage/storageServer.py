@@ -235,6 +235,9 @@ class NFSConnection(object):
         self._remotePath = normpath(export)
         self._version = version
         options = self.DEFAULT_OPTIONS[:]
+        self._timeout = timeout
+        self._version = version
+        self._retrans = retrans
         options.append("timeo=%d" % timeout)
         options.append("retrans=%d" % retrans)
         if version:
