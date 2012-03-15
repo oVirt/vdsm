@@ -33,8 +33,8 @@ class BlockIdException(Exception):
             self.message = 'ambivalent low-level probing result was ' + \
                 'detected for %s' % self.attrib
         else:
-            self.message = 'blkid execution failed with error code %s ' + \
-                'for %s' % (self.rc, self.attrib)
+            self.message = 'blkid execution failed with error ' + \
+                    'code %s for %s' % (self.rc, self.attrib)
 
     def __str__(self):
         return self.message
