@@ -400,7 +400,7 @@ def findUnderlyingStorage(devPath):
             sessions.append(getiScsiSession(realDev))
             continue
 
-        for slave in devicemapper.getSlaves():
+        for slave in devicemapper.getSlaves(realDev):
             sessions.extend(findUnderlyingStorage(os.path.join("/dev", slave)))
 
     return sessions
