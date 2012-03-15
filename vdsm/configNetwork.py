@@ -457,8 +457,6 @@ def validateBridgeName(bridgeName):
 def validateIpAddress(ipAddr):
     if not ipcalc('-4', ipAddr):
         raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad IP address: %r"%ipAddr)
-    if ipAddr in getIpAddresses():
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR, "IP address is already in use")
 
 def validateNetmask(netmask):
     if not ipcalc('-m', netmask):
