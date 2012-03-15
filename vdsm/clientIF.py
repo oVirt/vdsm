@@ -27,8 +27,6 @@ import uuid
 
 from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
-import storage.misc
-import storage.hba
 from vdsm.config import config
 import ksm
 from vdsm import netinfo
