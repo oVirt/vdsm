@@ -33,10 +33,20 @@ from vdsm import constants
 _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()
 
+def __supervdsmServerPath():
+    base = os.path.dirname(__file__)
+
+    for serverFile in ("supervdsmServer.py", "supervdsmServer.pyc"):
+        serverPath = os.path.join(base, serverFile)
+        if os.path.exists(serverPath):
+            return os.path.abspath(serverPath)
+
+    raise RuntimeError("SuperVDSM Server not found")
+
 PIDFILE = "/var/run/vdsm/svdsm.pid"
 ADDRESS = "/var/run/vdsm/svdsm.sock"
-SUPERVDSM = os.path.join(os.path.dirname(__file__), "supervdsmServer.pyc")
-SUPERVDSM = os.path.abspath(SUPERVDSM)
+SUPERVDSM = __supervdsmServerPath()
+
 class _SuperVdsmManager(BaseManager): pass
 
 class ProxyCaller(object):
