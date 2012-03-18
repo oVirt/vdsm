@@ -23,6 +23,7 @@ SUBDIRS = sos storage
 include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
+	alignmentScan.py \
 	API.py \
 	betterThreading.py \
 	BindingXMLRPC.py \

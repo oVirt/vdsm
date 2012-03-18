@@ -20,6 +20,7 @@
 
 test_modules = \
 	main.py \
+	alignmentScanTests.py \
 	betterThreadingTests.py \
 	fileUtilTests.py \
 	guestIFTests.py \

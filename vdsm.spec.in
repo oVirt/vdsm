@@ -452,6 +452,7 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
+%{_datadir}/%{vdsm_name}/alignmentScan.py*
 %{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
