@@ -304,13 +304,6 @@ class StorageDomain:
             self.log.warn("Resource namespace %s already registered", volumeResourcesNamespace)
 
 
-    def produceVolume(self, imgUUID, volUUID):
-        """
-        Produce a type specific volume object
-        """
-        pass
-
-
     def getVolumeClass(self):
         """
         Return a type specific volume generator object

@@ -264,12 +264,6 @@ class Volume:
         except Exception, e:
             raise se.CannotShareVolume(src, dst, str(e))
 
-    def getDevPath(self):
-        """
-        Return the underlying device (for sharing)
-        """
-        pass
-
     def refreshVolume(self):
         """
         Refresh volume
@@ -366,13 +360,6 @@ class Volume:
 
         if preallocate not in VOL_TYPE:
             raise se.IncorrectFormat(type2name(preallocate))
-
-    @classmethod
-    def create(cls, *args):
-        """
-        Create a new volume
-        """
-        pass
 
     def validateDelete(self):
         """
@@ -609,19 +596,6 @@ class Volume:
         cls.createMetadata(meta, metaid)
         return meta
 
-    @classmethod
-    def createMetadata(cls, meta, vol_path):
-        """
-        Create metadata
-        """
-        pass
-
-    def removeMetadata(self):
-        """
-        Remove metadata
-        """
-        pass
-
     def getInfo(self):
         """
         Get volume info
@@ -658,32 +632,6 @@ class Volume:
                       self.sdUUID, self.imgUUID, self.volUUID, str(info))
         return info
 
-    def findImagesByVolume(self, legal=False):
-        """
-        Find the image(s) UUID by one of its volume UUID.
-        Templated and shared disks volumes may result more then one image.
-        """
-        pass
-
-    @classmethod
-    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
-        """Fetch the list of the Volumes UUIDs
-        """
-        return []
-
-    def rename(self, newUUID, recovery=True):
-        """
-        Rename volume
-        """
-        pass
-
-    @classmethod
-    def getAllChildrenList(cls, repoPath, sdUUID, imgUUID, pvolUUID):
-        """
-        Fetch the list of children volumes (across the all images in domain)
-        """
-        pass
-
     def getChildrenList(self):
         """
         Fetch the list of children volumes (in single image)
@@ -695,44 +643,6 @@ class Volume:
                 children.append(v)
         return children
 
-    def validateImagePath(self):
-        """
-        Validate that the image path exists and accessible
-        Sets imagePath,
-        """
-        pass
-
-    def validateVolumePath(self):
-        """
-        Validates that the volume exists/linked in the image dir.
-        Set volumePath,
-        """
-        pass
-
-    def setParent(self, puuid):
-        """
-        Set parent volume UUID
-        """
-        pass
-
-    def getParent(self):
-        """
-        Return parent volume UUID
-        """
-        pass
-
-    def setImage(self, imgUUID):
-        """
-        Set volume's image UUID
-        """
-        pass
-
-    def getImage(self):
-        """
-        Return volume's image UUID
-        """
-        pass
-
     def getParentVolume(self):
         """
         Return parent volume object
@@ -741,18 +651,6 @@ class Volume:
         if puuid and puuid != BLANK_UUID:
             return sdCache.produce(self.sdUUID).produceVolume(self.imgUUID, puuid)
         return None
-
-    def getMetadata(self, vol_path = None, nocache=False):
-        """
-        Get Meta data dict of key,values
-        """
-        pass
-
-    def setMetadata(self, meta, vol_path = None, nocache=False):
-        """
-        Set Meta data dict of key,values
-        """
-        pass
 
     def getVolumePath(self):
         """
@@ -793,22 +691,10 @@ class Volume:
     def invalidateMetaCache(self):
         self._metacache = None
 
-    def getVolumeSize(self, bs=512):
-        """
-        Return the volume size in blocks
-        """
-        pass
-
     def getVolumeTrueSize(self, bs=512):
         """
         Return the size of the storage allocated for this volume
         on underlying storage
-        """
-        pass
-
-    def getVolumeMtime(self):
-        """
-        Return the volume mtime in msec
         """
         pass
 
