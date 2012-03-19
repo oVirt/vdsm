@@ -188,12 +188,19 @@ def _attr2NamedTuple(sAttr, attrMask, label):
     attrs = Attrs(*values)
     return attrs
 
+def fixPVName(devPath):
+    # FIXME: This is a hack to solve issues with 6.3. We assume that PVs are
+    # always under /dev/mapper. This is not true and stupid, remove this code
+    # when we have proper block device abstraction
+    dmId = devicemapper.getDmIdFromFile(devPath)
+    guid = devicemapper.getDevName(dmId)
+    return os.path.join(PV_PREFIX, guid)
 
 def makePV(*args):
+    name = fixPVName(args[1])
     guid = os.path.basename(args[1])
-    args += (guid,)
+    args = args[:1] + (name,) + args[2:] + (guid,)
     return PV(*args)
-
 
 def makeVG(*args):
     args = list(args)
@@ -208,9 +215,19 @@ def makeVG(*args):
     args.append(VG_OK if attrs.partial == "-" else VG_PARTIAL) #Partial
     return VG(*args)
 
+def fixDevicesField(device):
+    # FIXME: This is a hack to solve issues with 6.3. We assume that PVs are
+    # always under /dev/mapper. This is not true and stupid, remove this code
+    # when we have proper block device abstraction
+    dev, rest = device.rsplit("(", 1)
+    dev = fixPVName(dev)
+    return dev + "(" + rest
+
 
 def makeLV(*args):
     args = list(args)
+    devFieldIndex = LV._fields.index('devices')
+    args[devFieldIndex] = fixDevicesField(args[devFieldIndex])
     #Convert tag string into tuple.
     tags = _tags2Tuple(args[LV._fields.index("tags")])
     args[LV._fields.index("tags")] = tags
@@ -1142,12 +1159,11 @@ def remVGTags(vgName, tags):
 
 
 def getFirstExt(vg, lv):
-    return getLV(vg, lv).devices.strip(" )").split("(")
+    return getLV(vg, lv).devices.strip(" )").rsplit("(", 1)
 
 def listPVNames(vgName):
     pvs = getAllPVs()
     return [pv.name for pv in pvs if pv.vg_name == vgName]
-
 
 def setrwLV(vg, lv, rw=True):
     permission = {False:'r', True:'rw'}[rw]
