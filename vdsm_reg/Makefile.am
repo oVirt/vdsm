@@ -31,7 +31,8 @@ dist_ovirtsetup_PYTHON = \
 	engine.py
 
 nodist_vdsmreg_PYTHON = \
-	deployUtil.py
+	deployUtil.py \
+	register-to-engine.py
 
 nodist_vdsmbootstrap_DATA = \
         deployUtil.py
@@ -62,6 +63,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	deployUtil.py.in \
 	logger.conf \
+	register-to-engine.py \
 	vdsm-config \
 	vdsm-reg-cmdline \
 	vdsm-reg.conf.in \
