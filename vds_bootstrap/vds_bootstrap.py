@@ -534,7 +534,7 @@ class Deploy:
 
     def _makeConfig(self):
         import datetime
-        from vdsm.config import config
+        config = deployUtil.vdsmImport("config")
 
         if not os.path.exists(VDSM_CONF):
             logging.debug("makeConfig: generating conf.")

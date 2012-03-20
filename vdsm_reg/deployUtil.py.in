@@ -110,6 +110,25 @@ def _logExec(argv):
         logging.error(traceback.format_exc())
     return (out, err, rc)
 
+def vdsmImport(name, vdsmDir=None):
+    try:
+        fp, path, desc = imp.find_module(os.path.join("vdsm", name))
+
+    except ImportError:
+        # Legacy import for old vdsm packages
+
+        if vdsmDir and vdsmDir not in sys.path:
+            sys.path.append(vdsmDir)
+
+        fp, path, desc = imp.find_module(name)
+
+    try:
+        return imp.load_module(name, fp, path, desc)
+    finally:
+        # Since we may exit via an exception, close fp explicitly
+        if fp:
+            fp.close()
+
 #############################################################################################################
 # Host Misc functions.
 #############################################################################################################
@@ -316,8 +335,7 @@ def getMGTIP(vdsmDir, vdcHostName):
     strReturn = "None"
 
     try:
-        sys.path.append(vdsmDir)
-        from vdsm import netinfo
+        netinfo = vdsmImport("netinfo", vdsmDir)
     except:
         logging.error("getMGTIP: Failed to find vdsm modules!")
         return strReturn
@@ -752,7 +770,8 @@ def _getOvirtBridgeParams(mgtBridge):
         This helper function extract the relevant parameters of the existing
         ovirt bridge in order to re-create it as a managment bridge.
     """
-    from vdsm import netinfo
+    netinfo = vdsmImport("netinfo")
+
     vlan = ''
     bonding = ''
     nic = None
@@ -773,7 +792,8 @@ def _getRHELBridgeParams(mgtIface):
         This helper function extract the relevant parameters of the existing
         RHEL interface, in order to create a managment bridge.
     """
-    from vdsm import netinfo
+    netinfo = vdsmImport("netinfo")
+
     vlan = ''
     bonding = ''
     nic = None
@@ -816,9 +836,9 @@ def makeBridge(vdcName, vdsmDir):
         Create (for RHEL) or rename (oVirt default bridge) to @VDSMBRIDGE@ bridge.
     """
     logging.debug('makeBridge begin.')
-    sys.path.append(vdsmDir)
+
     try:
-        imp.find_module('netinfo')
+        vdsmImport("netinfo", vdsmDir)
     except ImportError:
         logging.error("makeBridge Failed to find vdsm modules!")
         return False
