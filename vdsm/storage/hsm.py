@@ -192,7 +192,8 @@ class HSM:
 
     .. attribute:: tasksDir
 
-        A string containing the path of the directory where backups of tasks a saved on the disk.
+        A string containing the path of the directory where backups of tasks a
+        saved on the disk.
     """
     pools = {}
     log = logging.getLogger('Storage.HSM')
@@ -1988,6 +1989,12 @@ class HSM:
         """
         Gets a list of all managed and active unmanaged storage connections and
         their current status.
+
+        :rtype: a dict in the format of
+           {id: {'connected': True/False,
+                 'lastError': (errcode, message),
+                 'connectionInfo': :class:: storageServer.ConnectionInfo}
+
         """
         vars.task.setDefaultException(se.StorageServerActionError())
         res = {}
@@ -2735,6 +2742,24 @@ class HSM:
 
     @public
     def storageServer_ConnectionRefs_acquire(self, conRefArgs):
+        """
+        Acquire connection references.
+
+        The method will persist the connection info in VDSM and create a
+        connection reference. Connection references can be accessed by their
+        IDs where appropriate.
+
+        Once a connection reference is created VDSM will try and connect to the
+        target specified by the connection information if not already
+        connected. VDSM will keep the target connected as long as a there is a
+        reference pointing to the same connection information.
+
+        :param conRefArgs: A map in the form of
+        {id: :class:: storageServer.ConnectionInfo), ... }
+
+        :rtype: dict {id: errcode, ...}
+
+        """
         res = {}
         for refId, conInfo in conRefArgs.iteritems():
             status = 0
@@ -2767,6 +2792,19 @@ class HSM:
 
     @public
     def storageServer_ConnectionRefs_release(self, refIDs):
+        """
+        Release connection references.
+
+        Releases the references, if a connection becomes orphaned as a result
+        of this action the connection will be disconnted. The connection might
+        remain active if VDSM detects that it is still under use but will not
+        be kept alive by VDSM anymore.
+
+        :param refIDs: a list of strings, each string representing a refIDs.
+
+        :rtype: dict {id: errcode, ...}
+
+        """
         res = {}
         for refID in refIDs:
             status = 0
