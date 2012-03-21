@@ -111,19 +111,26 @@ def _logExec(argv):
     return (out, err, rc)
 
 def vdsmImport(name, vdsmDir=None):
+    # Legacy import for old vdsm packages
+    if vdsmDir and vdsmDir not in sys.path:
+        sys.path.append(vdsmDir)
+
     try:
-        fp, path, desc = imp.find_module(os.path.join("vdsm", name))
+        # Loading vdsm package
+        fp, path, desc = imp.find_module("vdsm")
+        vdsm = imp.load_module("vdsm", fp, path, desc)
+
+        # Loading the module from the vdsm package
+        fp, path, desc = imp.find_module(name, vdsm.__path__)
+        imp_name = "vdsm." + name
 
     except ImportError:
         # Legacy import for old vdsm packages
-
-        if vdsmDir and vdsmDir not in sys.path:
-            sys.path.append(vdsmDir)
-
         fp, path, desc = imp.find_module(name)
+        imp_name = name
 
     try:
-        return imp.load_module(name, fp, path, desc)
+        return imp.load_module(imp_name, fp, path, desc)
     finally:
         # Since we may exit via an exception, close fp explicitly
         if fp:
