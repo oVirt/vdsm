@@ -278,6 +278,7 @@ class HSM:
         self._statslock = threading.Lock()
 
         mountBasePath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
+        fileUtils.createdir(mountBasePath)
         storageServer.MountConnection.setLocalPathBase(mountBasePath)
         storageServer.LocalDirectoryConnection.setLocalPathBase(mountBasePath)
         self._connectionAliasRegistrar = storageServer.ConnectionAliasRegistrar(STORAGE_CONNECTION_DIR)
