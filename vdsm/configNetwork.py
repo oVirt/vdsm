@@ -843,7 +843,7 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
 
     # Step 2: Make sure we have complete information about the Setup, more validation
     # (if explicitBonding==False we complete the missing information ourselves, else we raise an exception)
-    nics = defaultdict(lambda: {'networks':[], 'bonding':None})
+    nics = defaultdict(lambda: {'networks':{}, 'bonding':None})
     for network, networkAttrs in networks.iteritems():
         if networkAttrs.get('remove', False):
             continue
@@ -861,12 +861,12 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
                 bondings[bonding] =  {'nics':_netinfo.bondings[bonding]['slaves']}
 
             if '_networks' not in bondings[bonding]:
-                bondings[bonding]['_networks'] = []
-            bondings[bonding]['_networks'].append( network )
+                bondings[bonding]['_networks'] = {}
+            bondings[bonding]['_networks'][network] = networkAttrs
         else:
             assert 'nic' in networkAttrs
 
-            nics[networkAttrs['nic']]['networks'].append( network )
+            nics[networkAttrs['nic']]['networks'][network] = networkAttrs
 
     for bonding, bondingAttrs in bondings.iteritems():
         if bondingAttrs.get('remove', False):
