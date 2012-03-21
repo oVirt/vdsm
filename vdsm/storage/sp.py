@@ -1138,7 +1138,8 @@ class StoragePool:
             fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_IMAGES))
         #Add the file domains
         for domUUID, domaindir in fileSD.scanDomains(): #[(fileDomUUID, file_domaindir)]
-            domDirs[domUUID] = domaindir
+            if domUUID in domUUIDs:
+                domDirs[domUUID] = domaindir
 
         #Link all the domains to the pool
         for domUUID, domaindir in domDirs.iteritems():
