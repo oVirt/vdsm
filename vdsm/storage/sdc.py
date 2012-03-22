@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -35,20 +35,20 @@ import storage_exception as se
 # Default cache age until forcibly refreshed
 DEFAULT_REFRESH_INTERVAL = 300
 
+
 class StorageDomainCache:
     """
-    Storage Domain List keeps track of all the storage domains accessible by the
-    current system.
-    """
+    Storage Domain List keeps track of all the storage domains accessible by
+    the current system.  """
 
     log = logging.getLogger('Storage.StorageDomainCache')
+
     def __init__(self, storage_repo):
         self._syncroot = threading.Lock()
         self.__cache = {}
         self.__weakCache = {}
         self.storage_repo = storage_repo
         self.storageStale = True
-
 
     def invalidateStorage(self):
         self.storageStale = True
@@ -71,7 +71,6 @@ class StorageDomainCache:
             if ref() is None:
                 del self.__weakCache[sdUUID]
 
-
     def produce(self, sdUUID):
         dom = self._getDomainFromCache(sdUUID)
         if dom:
@@ -87,7 +86,8 @@ class StorageDomainCache:
 
             self._cleanStaleWeakrefs()
 
-            #_findDomain will raise StorageDomainDoesNotExist if sdUUID is not found in storage.
+            # _findDomain will raise StorageDomainDoesNotExist if sdUUID is not
+            # found in storage.
             dom = self._findDomain(sdUUID)
             self.__cache[sdUUID] = dom
             self.__weakCache[sdUUID] = weakref.ref(dom)
@@ -110,7 +110,8 @@ class StorageDomainCache:
             except se.StorageDomainDoesNotExist:
                 pass
             except Exception:
-                self.log.error("Error while looking for domain `%s`", sdUUID, exc_info=True)
+                self.log.error("Error while looking for domain `%s`", sdUUID,
+                        exc_info=True)
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 
@@ -139,4 +140,3 @@ class StorageDomainCache:
 
 storage_repository = config.get('irs', 'repository')
 sdCache = StorageDomainCache(storage_repository)
-
