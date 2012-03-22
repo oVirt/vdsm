@@ -36,6 +36,21 @@ import storage_exception as se
 DEFAULT_REFRESH_INTERVAL = 300
 
 
+class DomainProxy(object):
+    """Keeps domain references valid even when underlying domain object changes
+    (due to format conversion for example"""
+    def __init__(self, cache, sdUUID):
+        self._sdUUID = sdUUID
+        self._cache = cache
+
+    def __getattr__(self, attrName):
+        dom = self.getRealDomain()
+        return getattr(dom, attrName)
+
+    def getRealDomain(self):
+        return self._cache._realProduce(self._sdUUID)
+
+
 class StorageDomainCache:
     """
     Storage Domain List keeps track of all the storage domains accessible by
@@ -44,9 +59,9 @@ class StorageDomainCache:
     log = logging.getLogger('Storage.StorageDomainCache')
 
     def __init__(self, storage_repo):
-        self._syncroot = threading.Lock()
-        self.__cache = {}
-        self.__weakCache = {}
+        self._syncroot = threading.RLock()
+        self.__proxyCache = {}
+        self.__domainCache = {}
         self.storage_repo = storage_repo
         self.storageStale = True
 
@@ -64,14 +79,14 @@ class StorageDomainCache:
         if self.storageStale == True:
             return None
         try:
-            return self.__weakCache[sdUUID]()
+            return self.__proxyCache[sdUUID]()
         except KeyError:
             return None
 
     def _cleanStaleWeakrefs(self):
-        for sdUUID, ref in self.__weakCache.items():
+        for sdUUID, ref in self.__proxyCache.items():
             if ref() is None:
-                del self.__weakCache[sdUUID]
+                del self.__proxyCache[sdUUID]
 
     def produce(self, sdUUID):
         dom = self._getDomainFromCache(sdUUID)
@@ -88,11 +103,25 @@ class StorageDomainCache:
 
             self._cleanStaleWeakrefs()
 
+            dom = DomainProxy(self, sdUUID)
+            # This is needed to preserve the semantic where if the domain was
+            # absent from the cache and the domain cannot be found the
+            # operation would fail
+            dom.getRealDomain()
+            self.__proxyCache[sdUUID] = weakref.ref(dom)
+            return dom
+
+    def _realProduce(self, sdUUID):
+        with self._syncroot:
+            try:
+                return self.__domainCache[sdUUID]
+            except KeyError:
+                pass
+
             # _findDomain will raise StorageDomainDoesNotExist if sdUUID is not
             # found in storage.
             dom = self._findDomain(sdUUID)
-            self.__cache[sdUUID] = dom
-            self.__weakCache[sdUUID] = weakref.ref(dom)
+            self.__domainCache[sdUUID] = dom
             return dom
 
     def _findDomain(self, sdUUID):
@@ -129,15 +158,15 @@ class StorageDomainCache:
 
     def refresh(self):
         self.invalidateStorage()
-        self.__cache.clear()
+        self.__domainCache.clear()
 
     def manuallyAddDomain(self, dom):
         with self._syncroot:
-            self.__cache[dom.sdUUID] = dom
+            self.__domainCache[dom.sdUUID] = dom
 
     def manuallyRemoveDomain(self, sdUUID):
         with self._syncroot:
-            del self.__cache[sdUUID]
+            del self.__domainCache[sdUUID]
 
 
 storage_repository = config.get('irs', 'repository')
