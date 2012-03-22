@@ -395,6 +395,9 @@ class StorageDomain:
     def getVersion(self):
         return self.getMetaParam(DMDK_VERSION)
 
+    def getFormat(self):
+        return str(self.getVersion())
+
     def getPools(self):
         try:
             pools = self.getMetaParam(key=DMDK_POOLS)

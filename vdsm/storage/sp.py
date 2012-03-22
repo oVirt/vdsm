@@ -29,6 +29,8 @@ from contextlib import nested
 from functools import partial
 from weakref import proxy
 
+from imageRepository.formatConverter import DefaultFormatConverter
+
 from vdsm import constants
 import storage_mailbox
 import blockSD
@@ -108,6 +110,8 @@ class StoragePool(Securable):
 
     def __init__(self, spUUID, taskManager):
         Securable.__init__(self)
+
+        self._formatConverter = DefaultFormatConverter()
         self._domainsToUpgrade = []
         self.lock = threading.RLock()
         self._setUnsafe()
@@ -183,7 +187,7 @@ class StoragePool(Securable):
                         self.log.critical("Found a domain with a more advanced version then the master domain")
                     elif domVersion < targetDomVersion:
                         try:
-                            domain.upgrade(targetDomVersion)
+                            self._convertDomain(domain, str(targetDomVersion))
                         except:
                             self.log.warn("Could not upgrade domain `%s`", sdUUID, exc_info=True)
                             return
@@ -398,7 +402,7 @@ class StoragePool(Securable):
             sd.validateDomainVersion(targetDomVersion)
             self.log.info("Trying to upgrade master domain `%s`", self.masterDomain.sdUUID)
             with rmanager.acquireResource(STORAGE, self.masterDomain.sdUUID, rm.LockType.exclusive):
-                self.masterDomain.upgrade(targetDomVersion)
+                self._convertDomain(self.masterDomain, str(targetDomVersion))
 
             self.log.debug("Marking all domains for upgrade")
             self._domainsToUpgrade = self.getDomains(activeOnly=True).keys()
@@ -781,7 +785,7 @@ class StoragePool(Securable):
         newmsd = sdCache.produce(msdUUID)
         self._refreshDomainLinks(newmsd)
         curmsd.invalidateMetadata()
-        newmsd.upgrade(curmsd.getVersion())
+        self._convertDomain(newmsd, curmsd.getFormat())
 
         # new 'master' should be in 'active' status
         domList = self.getDomains()
@@ -989,6 +993,21 @@ class StoragePool(Securable):
         # Remove domain from pool metadata
         self.forcedDetachSD(sdUUID)
 
+    @unsecured
+    def _convertDomain(self, domain, targetFormat=None):
+        # Remember to get the sdUUID before upgrading because the object is
+        # broken after the upgrade
+        sdUUID = domain.sdUUID
+        if targetFormat is None:
+            targetFormat = self.getFormat()
+
+        self._formatConverter.convert(domain.getRealDomain(), targetFormat)
+        sdCache.manuallyRemoveDomain(sdUUID)
+
+    @unsecured
+    def getFormat(self):
+        return str(self.getVersion())
+
     def activateSD(self, sdUUID):
         """
         Activate a storage domain that is already a member in a storage pool.
@@ -1007,7 +1026,7 @@ class StoragePool(Securable):
             return True
 
         if dom.getDomainClass() == sd.DATA_DOMAIN:
-            dom.upgrade(self.getVersion())
+            self._convertDomain(dom)
 
         dom.activate()
         # set domains also do rebuild
@@ -1016,7 +1035,6 @@ class StoragePool(Securable):
         self._refreshDomainLinks(dom)
         self.updateMonitoringThreads()
         return True
-
 
     def deactivateSD(self, sdUUID, newMsdUUID, masterVersion):
         """

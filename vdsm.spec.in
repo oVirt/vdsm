@@ -540,6 +540,7 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/storage
+%dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %{_datadir}/%{vdsm_name}/alignmentScan.py*
 %{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
@@ -620,6 +621,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/threadLocal.py*
 %{_datadir}/%{vdsm_name}/storage/threadPool.py*
 %{_datadir}/%{vdsm_name}/storage/volume.py*
+%{_datadir}/%{vdsm_name}/storage/imageRepository/__init__.py*
+%{_datadir}/%{vdsm_name}/storage/imageRepository/formatConverter.py*
 %{_libexecdir}/%{vdsm_name}/safelease
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh

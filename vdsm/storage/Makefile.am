@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = protect
+SUBDIRS = protect imageRepository
 
 vdsmstoragedir = $(vdsmdir)/storage
 dist_vdsmstorage_PYTHON = \
