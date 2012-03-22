@@ -13,49 +13,52 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
 
-#FIXME: Some of the methods here contain SUDO in their names and some don't.
-#This doesn't mean if the method will use sudo by default or not.
-#Further more 'SUDO' never needs to be in a name of a method and should always be 'False' by default.
-#Using sudo isn't something a method should do by default. As a rule of thumb. If you didn't
-#have to you wouldn't use SUDO. This makes it the less desirable option thus making it the optional one.
+# FIXME: Some of the methods here contain SUDO in their names and some don't.
+# This doesn't mean if the method will use sudo by default or not.  Further
+# more 'SUDO' never needs to be in a name of a method and should always be
+# 'False' by default.  Using sudo isn't something a method should do by
+# default. As a rule of thumb. If you didn't have to you wouldn't use SUDO.
+# This makes it the less desirable option thus making it the optional one.
 
-#FIXME: A lot of methods here use DD. A smart thing would be to wrap DD in a method that does all
-#the arg concatenation and stream handling once. Also most method when they fail don't tell why even
-#though DD is more then happy to let you know. Exceptions thrown should contain DD's stderr output.
+# FIXME: A lot of methods here use DD. A smart thing would be to wrap DD in a
+# method that does all the arg concatenation and stream handling once. Also
+# most method when they fail don't tell why even though DD is more then happy
+# to let you know. Exceptions thrown should contain DD's stderr output.
 
 """
 Various storage misc procedures
 """
-from contextlib import contextmanager
-import contextlib
-import logging
-import subprocess
-import types
-import time
-import signal
-import os
-import io
-import struct
-import sys
-from StringIO import StringIO
 from array import array
-import threading
-import Queue
-import string
-import random
-import errno
 from collections import defaultdict
-from itertools import chain, imap
+from contextlib import contextmanager
 from functools import wraps, partial
-import select
-import gc
+from itertools import chain, imap
+from StringIO import StringIO
 from weakref import proxy
+import contextlib
+import errno
+import gc
+import glob
+import io
+import logging
+import os
+import Queue
+import random
 import re
+import select
+import signal
+import string
+import struct
+import subprocess
+import sys
+import threading
+import time
+import types
 import weakref
 
 sys.path.append("../")
@@ -74,8 +77,10 @@ SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 log = logging.getLogger('Storage.Misc')
 
+
 def namedtuple2dict(nt):
     return dict(imap(lambda f: (f, getattr(nt, f)), nt._fields))
+
 
 def enableLogSkip(logger, *args, **kwargs):
     skipFunc = partial(findCaller, *args, **kwargs)
@@ -84,16 +89,20 @@ def enableLogSkip(logger, *args, **kwargs):
 
     return logger
 
-# Buffsize is 1K because I tested it on some use cases and 1k was fastets
-# If you find this number to be a bottleneck in any way you are welcome to change it
+# Buffsize is 1K because I tested it on some use cases and 1k was fastets. If
+# you find this number to be a bottleneck in any way you are welcome to change
+# it
 BUFFSIZE = 1024
+
 
 def stripNewLines(lines):
     return [l[:-1] if l.endswith('\n') else l for l in lines]
 
+
 class _LogSkip(object):
     _ignoreMap = defaultdict(list)
     ALL_KEY = "##ALL##"
+
     @classmethod
     def registerSkip(cls, codeId, loggerName=None):
         if loggerName is None:
@@ -103,7 +112,8 @@ class _LogSkip(object):
 
     @classmethod
     def checkForSkip(cls, codeId, loggerName):
-        return codeId in chain(cls._ignoreMap[cls.ALL_KEY], cls._ignoreMap[loggerName])
+        return codeId in chain(cls._ignoreMap[cls.ALL_KEY],
+                cls._ignoreMap[loggerName])
 
     @classmethod
     def wrap(cls, func, loggerName):
@@ -116,13 +126,31 @@ def logskip(var):
         return lambda func: _LogSkip.wrap(func, var)
     return _LogSkip.wrap(var, None)
 
-def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[], logSkipName=None):
+
+def _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
+        logSkipName, code, filename):
+    if logSkipName is not None:
+        if _LogSkip.checkForSkip(id(code), logSkipName):
+            return True
+    elif (skipUp > 0):
+        return True
+    elif (os.path.splitext(filename)[0] in ignoreSourceFiles):
+        return True
+    elif (code.co_name in ignoreMethodNames):
+        return True
+
+    return False
+
+
+def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[],
+        logSkipName=None):
     """
     Find the stack frame of the caller so that we can note the source
     file name, line number and function name.
     """
     # Ignore file extension can be either py or pyc
-    ignoreSourceFiles = [os.path.splitext(sf)[0] for sf in ignoreSourceFiles + [logging._srcfile]]
+    ignoreSourceFiles = ignoreSourceFiles + [logging._srcfile]
+    ignoreSourceFiles = [os.path.splitext(sf)[0] for sf in ignoreSourceFiles]
     try:
         raise Exception
     except:
@@ -134,9 +162,11 @@ def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[], logSkipName
     while hasattr(frame, "f_code"):
         code = frame.f_code
         filename = os.path.normcase(code.co_filename)
-        logSkip = logSkipName is not None and _LogSkip.checkForSkip(id(code), logSkipName)
 
-        if logSkip or (skipUp > 0) or (os.path.splitext(filename)[0] in ignoreSourceFiles) or (code.co_name in ignoreMethodNames):
+        logSkip = _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
+        logSkipName, code, filename)
+
+        if logSkip:
             skipUp -= 1
             frame = frame.f_back
             continue
@@ -146,13 +176,16 @@ def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[], logSkipName
 
     return result
 
+
 def panic(msg):
     log.error("Panic: %s", msg, exc_info=True)
     os.killpg(0, 9)
     sys.exit(-3)
 
-execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'), ignoreSourceFiles=[__file__],
-               logSkipName="Storage.Misc.excCmd")
+
+execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'),
+        ignoreSourceFiles=[__file__], logSkipName="Storage.Misc.excCmd")
+
 
 @logskip("Storage.Misc.excCmd")
 def execCmd(command, sudo=False, cwd=None, infile=None, outfile=None,
@@ -163,13 +196,16 @@ def execCmd(command, sudo=False, cwd=None, infile=None, outfile=None,
     """
     if sudo:
         if isinstance(command, types.StringTypes):
-            command = " ".join([constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG, command])
+            command = " ".join([constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG,
+                command])
         else:
             command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG] + command
 
     if not printable:
         printable = command
-    execCmdLogger.debug("%s (cwd %s)", repr(subprocess.list2cmdline(printable)), cwd)
+
+    cmdline = repr(subprocess.list2cmdline(printable))
+    execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
 
     # FIXME: if infile == None and data:
     if infile == None:
@@ -194,7 +230,8 @@ def execCmd(command, sudo=False, cwd=None, infile=None, outfile=None,
         # Prevent splitlines() from barfing later on
         out = ""
 
-    execCmdLogger.debug("%s: <err> = %s; <rc> = %d", {True: "SUCCESS", False: "FAILED"}[p.returncode == 0],
+    execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
+            {True: "SUCCESS", False: "FAILED"}[p.returncode == 0],
         repr(err), p.returncode)
 
     if not raw:
@@ -216,21 +253,25 @@ def pidExists(pid):
 
     return True
 
+
 def getProcCtime(pid):
     try:
         stats = os.stat(os.path.join('/proc', str(pid)))
         ctime = stats.st_ctime
     except OSError:
-        raise OSError(os.errno.ESRCH, "Could not find process with pid %s" % str(pid))
+        raise OSError(os.errno.ESRCH,
+                "Could not find process with pid %s" % pid)
 
     return str(ctime)
+
 
 def watchCmd(command, stop, sudo=True, cwd=None, infile=None, outfile=None,
             data=None, recoveryCallback=None):
     """
     Executes an external command, optionally via sudo with stop abilities.
     """
-    proc = execCmd(command, sudo=sudo, cwd=cwd, infile=infile, outfile=outfile, data=data, sync=False)
+    proc = execCmd(command, sudo=sudo, cwd=cwd, infile=infile, outfile=outfile,
+            data=data, sync=False)
     if recoveryCallback:
         recoveryCallback(proc)
 
@@ -241,10 +282,12 @@ def watchCmd(command, stop, sudo=True, cwd=None, infile=None, outfile=None,
     out = stripNewLines(proc.stdout)
     err = stripNewLines(proc.stderr)
 
-    execCmdLogger.debug("%s: <err> = %s; <rc> = %d", {True: "SUCCESS", False: "FAILED"}[proc.returncode == 0],
+    execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
+            {True: "SUCCESS", False: "FAILED"}[proc.returncode == 0],
         repr(err), proc.returncode)
 
     return (proc.returncode, out, err)
+
 
 def readfile(name):
     """
@@ -256,6 +299,7 @@ def readfile(name):
         raise se.MiscFileReadException(name)
     return out
 
+
 def readfileSUDO(name):
     """
     Read the content of the file using 'cat' command via sudo.
@@ -265,6 +309,7 @@ def readfileSUDO(name):
     if rc:
         raise se.MiscFileReadException(name)
     return out
+
 
 def writefileSUDO(name, lines):
     """
@@ -282,6 +327,7 @@ def writefileSUDO(name, lines):
         raise se.MiscFileWriteException(name)
 
     return (rc, out)
+
 
 def readblockSUDO(name, offset, size, sudo=False):
     '''
@@ -305,7 +351,7 @@ def readblockSUDO(name, offset, size, sudo=False):
         (rc, out, err) = execCmd(cmd, raw=True, sudo=sudo)
         if rc:
             raise se.MiscBlockReadException(name, offset, size)
-        if not validateDDBytes(err.splitlines(), iounit*count):
+        if not validateDDBytes(err.splitlines(), iounit * count):
             raise se.MiscBlockReadIncomplete(name, offset, size)
 
         ret += out
@@ -357,8 +403,10 @@ def _alignData(length, offset):
 
     return (iounit, count, iooffset)
 
+
 def randomStr(strLen):
     return "".join(random.sample(string.letters, strLen))
+
 
 def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
     """
@@ -367,11 +415,11 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
     try:
         size = int(size)
     except ValueError:
-        raise se.InvalidParameterException("size", "size = %s" %  (size,))
+        raise se.InvalidParameterException("size", "size = %s" % (size,))
     try:
         offset = int(offset)
     except ValueError:
-        raise se.InvalidParameterException("offset", "offset = %s" %  (offset,))
+        raise se.InvalidParameterException("offset", "offset = %s" % (offset,))
 
     left = size
     baseoffset = offset
@@ -385,8 +433,9 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
         else:
             conv += ",%s" % DATASYNCFLAG
 
-        cmd = [constants.EXT_DD, "if=%s" % src, "of=%s" % dst, "bs=%d" % iounit,
-               "seek=%s" % iooffset, "skip=%s" % iooffset, "conv=%s" % conv, 'count=%s' % count]
+        cmd = [constants.EXT_DD, "if=%s" % src, "of=%s" % dst,
+                "bs=%d" % iounit, "seek=%s" % iooffset, "skip=%s" % iooffset,
+                "conv=%s" % conv, 'count=%s' % count]
 
         if oflag:
             cmd.append("oflag=%s" % oflag)
@@ -402,7 +451,7 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
         if rc:
             raise se.MiscBlockWriteException(dst, offset, size)
 
-        if not validateDDBytes(err, iounit*count):
+        if not validateDDBytes(err, iounit * count):
             raise se.MiscBlockWriteIncomplete(dst, offset, size)
 
         left = left % iounit
@@ -439,44 +488,53 @@ def checksum(string, numBytes):
 def packUuid(s):
     s = ''.join([c for c in s if c != '-'])
     uuid = int(s, 16)
-    high = uuid / 2**64
-    low = uuid % 2**64
+    high = uuid / 2 ** 64
+    low = uuid % 2 ** 64
     # pack as 128bit little-endian <QQ
     return struct.pack('<QQ', low, high)
 
 
 def unpackUuid(uuid):
     low, high = struct.unpack('<QQ', uuid)
-    uuid = hex(low + 2**64 * high)[2:-1].rjust(STR_UUID_SIZE - 4,"0").lower() # remove leading 0x and trailing L
+    # remove leading 0x and trailing L
+    uuid = hex(low + 2 ** 64 * high)[2:-1].rjust(STR_UUID_SIZE - 4, "0")
+    uuid = uuid.lower()
     s = ""
     prev = 0
     i = 0
     for hypInd in UUID_HYPHENS:
-        s += uuid[prev:hypInd-i] + '-'
-        prev = hypInd-i
+        s += uuid[prev:hypInd - i] + '-'
+        prev = hypInd - i
         i += 1
     s += uuid[prev:]
-    return s #'-'.join([ s[0:8], s[8:12], s[12:16], s[16:20], s[20:] ])
+    return s
 
 
 UUID_REGEX = re.compile("^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$")
+
+
 def validateUUID(uuid, name="uuid"):
     """
-    Ensure that uuid structure is 32 bytes long and is of the form: 8-4-4-4-12 (where each number depicts the amount of hex digits)
+    Ensure that uuid structure is 32 bytes long and is of the form: 8-4-4-4-12
+    (where each number depicts the amount of hex digits)
 
-    Even though UUIDs can contain capital letters (because HEX strings are case insensitive) we usually compare uuids with the `==`
-    operator, having uuids with upper case letters will cause unexpected bug so we filter them out
+    Even though UUIDs can contain capital letters (because HEX strings are case
+    insensitive) we usually compare uuids with the `==` operator, having uuids
+    with upper case letters will cause unexpected bug so we filter them out
     """
     m = UUID_REGEX.match(uuid)
     if m is None:
         raise se.InvalidParameterException(name, uuid)
     return True
 
-def validateInt(number, name): #FIXME: Consider using confutils validator?
+
+#FIXME: Consider using confutils validator?
+def validateInt(number, name):
     try:
         return int(number)
     except:
         raise se.InvalidParameterException(name, number)
+
 
 def validateN(number, name):
     n = validateInt(number, name)
@@ -484,33 +542,35 @@ def validateN(number, name):
         raise se.InvalidParameterException(name, number)
     return n
 
-def rotateFiles(dir, prefixName, gen, cp=False, persist=False):
-    log.debug("dir: %s, prefixName: %s, versions: %s" % (dir, prefixName, gen))
+
+def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
+    log.debug("dir: %s, prefixName: %s, versions: %s" %
+            (directory, prefixName, gen))
     gen = int(gen)
-    files = os.listdir(dir)
-    files = [file for file in files if file.startswith(prefixName)] #FIXME: Why not use glob.glob?
+    files = os.listdir(directory)
+    files = glob.glob("%s*" % prefixName)
     fd = {}
-    for file in files:
-        name = file.rsplit('.', 1)
+    for fname in files:
+        name = fname.rsplit('.', 1)
         try:
             ind = int(name[1])
         except ValueError:
-            name[0] = file
+            name[0] = fname
             ind = 0
         except IndexError:
             ind = 0
         except:
             continue
         if ind < gen:
-            fd[ind] = {'old': file, 'new': name[0] + '.' + str(ind+1)}
+            fd[ind] = {'old': fname, 'new': name[0] + '.' + str(ind + 1)}
 
     keys = fd.keys()
     keys.sort(reverse=True)
     log.debug("versions found: %s" % (keys))
 
     for key in keys:
-        oldName = os.path.join(dir, fd[key]['old'])
-        newName = os.path.join(dir, fd[key]['new'])
+        oldName = os.path.join(directory, fd[key]['old'])
+        newName = os.path.join(directory, fd[key]['new'])
         if OVIRT_NODE and persist and not cp:
             try:
                 execCmd([constants.EXT_UNPERSIST, oldName], logErr=False,
@@ -541,6 +601,7 @@ def rotateFiles(dir, prefixName, gen, cp=False, persist=False):
 def persistFile(name):
     if OVIRT_NODE:
         execCmd([constants.EXT_PERSIST, name], sudo=True)
+
 
 def parseHumanReadableSize(size):
     #FIXME : Maybe use a regex -> ^(?P<num>\d+)(?P<sizeChar>[KkMmGgTt])$
@@ -575,18 +636,18 @@ class RWLock(object):
     """
     A simple ReadWriteLock implementation.
 
-    The lock must be released by the thread that acquired it.
-    Once a thread has acquired a lock, the same thread may acquire
-    it again without blocking; the thread must release it once for each time
-    it has acquired it. Note that lock promotion (acquiring an exclusive lock
-    under a shared lock is forbidden and will raise an exception.
+    The lock must be released by the thread that acquired it.  Once a thread
+    has acquired a lock, the same thread may acquire it again without blocking;
+    the thread must release it once for each time it has acquired it. Note that
+    lock promotion (acquiring an exclusive lock under a shared lock is
+    forbidden and will raise an exception.
 
-    The lock puts all requests in a queue. The request is granted when
-    The previous one is released.
+    The lock puts all requests in a queue. The request is granted when The
+    previous one is released.
 
-    Each request is represented by a :class:`threading.Event` object. When the Event
-    is set the request is granted. This enables multiple callers to wait for a
-    request thus implementing a shared lock.
+    Each request is represented by a :class:`threading.Event` object. When the
+    Event is set the request is granted. This enables multiple callers to wait
+    for a request thus implementing a shared lock.
     """
     class _contextLock(object):
         def __init__(self, owner, exclusive):
@@ -641,12 +702,13 @@ class RWLock(object):
             try:
                 self._queue.put_nowait((currentEvent, exclusive))
             except Queue.Full:
-                raise RuntimeError("There are too many objects waiting for this lock")
+                raise RuntimeError(
+                        "There are too many objects waiting for this lock")
 
             if self._queue.unfinished_tasks == 1:
-                # Bootstrap the process if needed. A lock is released the when the
-                # next request is granted. When there is no one to grant the request
-                # you have to grant it yourself.
+                # Bootstrap the process if needed. A lock is released the when
+                # the next request is granted. When there is no one to grant
+                # the request you have to grant it yourself.
                 event, self._currentState = self._queue.get_nowait()
                 event.set()
 
@@ -678,6 +740,7 @@ class RWLock(object):
 
         nextRequest.set()
 
+
 class DeferableContext():
     def __init__(self, *args):
         self._finally = []
@@ -703,16 +766,20 @@ class DeferableContext():
     def prependDefer(self, func, *args, **kwargs):
         self._finally.insert(0, (func, args, kwargs))
 
-def retry(func, expectedException=Exception, tries=None, timeout=None, sleep=1):
+
+def retry(func, expectedException=Exception, tries=None,
+        timeout=None, sleep=1):
     """
     Retry a function. Wraps the retry logic so you don't have to
     implement it each time you need it.
 
     :param func: The callable to run.
-    :param expectedException: The exception you expect to recieve when the function fails.
+    :param expectedException: The exception you expect to recieve when the
+                              function fails.
     :param tries: The number of time to try. None\0,-1 means infinite.
-    :param timeout: The time you want to spend waiting. This **WILL NOT** stop the method.
-                    It will just not run it if it ended after the timeout.
+    :param timeout: The time you want to spend waiting. This **WILL NOT** stop
+                    the method. It will just not run it if it ended after the
+                    timeout.
     :param sleep: Time to sleep between calls in seconds.
     """
     if tries in [0, None]:
@@ -735,6 +802,7 @@ def retry(func, expectedException=Exception, tries=None, timeout=None, sleep=1):
                 raise
 
             time.sleep(sleep)
+
 
 class AsyncProc(object):
     """
@@ -781,7 +849,8 @@ class AsyncProc(object):
             return True
 
         def read(self, length):
-            if (self._stream.len - self._stream.pos) < length and not self._streamClosed:
+            hasNewData = (self._stream.len - self._stream.pos)
+            if hasNewData < length and not self._streamClosed:
                 self._parent._processStreams()
 
             with self._parent._streamLock:
@@ -819,7 +888,8 @@ class AsyncProc(object):
                 self._closed = True
 
             if self._stream.len != 0:
-                raise IOError(errno.EPIPE, "Could not write all data to stream")
+                raise IOError(errno.EPIPE,
+                        "Could not write all data to stream")
 
             return len(data)
 
@@ -841,13 +911,19 @@ class AsyncProc(object):
         self._poller.register(fdout, select.EPOLLIN | select.EPOLLPRI)
         self._poller.register(fderr, select.EPOLLIN | select.EPOLLPRI)
         self._poller.register(self._fdin, 0)
-        self._fdMap = { fdout: self._stdout,
+        self._fdMap = {fdout: self._stdout,
                         fderr: self._stderr,
-                        self._fdin: self._stdin }
+                        self._fdin: self._stdin}
 
-        self.stdout = io.BufferedReader(self._streamWrapper(self, self._stdout, fdout), BUFFSIZE)
-        self.stderr = io.BufferedReader(self._streamWrapper(self, self._stderr, fderr), BUFFSIZE)
-        self.stdin = io.BufferedWriter(self._streamWrapper(self, self._stdin, self._fdin), BUFFSIZE)
+        self.stdout = io.BufferedReader(self._streamWrapper(self,
+            self._stdout, fdout), BUFFSIZE)
+
+        self.stderr = io.BufferedReader(self._streamWrapper(self,
+            self._stderr, fderr), BUFFSIZE)
+
+        self.stdin = io.BufferedWriter(self._streamWrapper(self,
+            self._stdin, self._fdin), BUFFSIZE)
+
         self._returncode = None
 
     def _processStreams(self):
@@ -897,7 +973,6 @@ class AsyncProc(object):
         finally:
             self._streamLock.release()
 
-
     @property
     def pid(self):
         return self._proc.pid
@@ -914,7 +989,8 @@ class AsyncProc(object):
         except OSError as ex:
             if ex.errno != errno.EPERM:
                 raise
-            execCmd([constants.EXT_KILL, "-" + str(signal.SIGTERM), str(self.pid)], sudo=True)
+            execCmd([constants.EXT_KILL, "-" + str(signal.SIGTERM),
+                str(self.pid)], sudo=True)
 
     def wait(self, timeout=None, cond=None):
         startTime = time.time()
@@ -982,6 +1058,7 @@ class DynamicBarrier(object):
         finally:
             self._cond.release()
 
+
 class SamplingMethod(object):
     """
     This class is meant to be used as a decorator. Concurrent calls to the
@@ -999,6 +1076,7 @@ class SamplingMethod(object):
     make the code much more complex for no reason.
     """
     _log = logging.getLogger("SamplingMethod")
+
     def __init__(self, func):
         self.__func = func
         self.__lastResult = None
@@ -1011,15 +1089,16 @@ class SamplingMethod(object):
 
         self.__funcParent = None
 
-
     def __call__(self, *args, **kwargs):
         if self.__funcParent == None:
-            if hasattr(self.__func, "func_code") and self.__func.func_code.co_varnames == 'self':
+            if (hasattr(self.__func, "func_code") and
+                    self.__func.func_code.co_varnames == 'self'):
                 self.__funcParent = args[0].__class__.__name__
             else:
                 self.__funcParent = self.__func.__module__
 
-        self._log.debug("Trying to enter sampling method (%s.%s)", self.__funcParent, self.__funcName)
+        self._log.debug("Trying to enter sampling method (%s.%s)",
+                self.__funcParent, self.__funcName)
         if self.__barrier.enter():
             self._log.debug("Got in to sampling method")
             try:
@@ -1032,18 +1111,22 @@ class SamplingMethod(object):
         self._log.debug("Returning last result")
         return self.__lastResult
 
+
 def samplingmethod(func):
     sm = SamplingMethod(func)
+
     @wraps(func)
     def helper(*args, **kwargs):
         return sm(*args, **kwargs)
     return helper
 
+
 class _DisabledGcBlock(object):
     _refCount = 0
     _refLock = threading.Lock()
     _lastCollect = 0
-    forceCollectInterval = config.getint("irs", "gc_blocker_force_collect_interval")
+    forceCollectInterval = config.getint("irs",
+            "gc_blocker_force_collect_interval")
 
     def __enter__(self):
         self.enter()
@@ -1078,6 +1161,7 @@ class _DisabledGcBlock(object):
 
 disabledGcBlock = _DisabledGcBlock()
 
+
 def pgrep(name):
     res = []
     for pid in os.listdir("/proc"):
@@ -1094,13 +1178,15 @@ def pgrep(name):
             continue
     return res
 
+
 def getCmdArgs(pid):
-    with open("/proc/%d/cmdline" % pid , "r") as f:
+    with open("/proc/%d/cmdline" % pid, "r") as f:
         return tuple(f.readline().split("\0")[:-1])
+
 
 def pidStat(pid):
     res = []
-    with open("/proc/%d/stat" % pid , "r") as f:
+    with open("/proc/%d/stat" % pid, "r") as f:
         statline = f.readline()
         procNameStart = statline.find("(")
         procNameEnd = statline.rfind(")")
@@ -1111,9 +1197,11 @@ def pidStat(pid):
         res.extend([int(item) for item in args[1:]])
         return tuple(res)
 
+
 def tmap(func, iterable):
     resultsDict = {}
     error = [None]
+
     def wrapper(f, arg, index):
         try:
             resultsDict[index] = f(arg)
@@ -1145,8 +1233,10 @@ def tmap(func, iterable):
 
     return tuple(results)
 
+
 def getfds():
     return [int(fd) for fd in os.listdir("/proc/self/fd")]
+
 
 class Event(object):
     def __init__(self, name, sync=False):
@@ -1175,23 +1265,29 @@ class Event(object):
                         continue
                 try:
                     self._log.debug("Calling registered method `%s`",
-                            func.func_name if hasattr(func, "func_name") else str(func))
+                            func.func_name if hasattr(func, "func_name") \
+                                    else str(func))
                     if self._sync:
                         func(*args, **kwargs)
                     else:
-                        threading.Thread(target=func, args=args, kwargs=kwargs).start()
+                        threading.Thread(target=func, args=args,
+                                kwargs=kwargs).start()
                 except:
-                    self._log.warn("Could not run registered method because of an exception", exc_info=True)
+                    self._log.warn("Could not run registered method because "
+                     "of an exception", exc_info=True)
 
         self._log.debug("Event emitted")
 
     def emit(self, *args, **kwargs):
         if len(self._registrar) > 0:
-            threading.Thread(target=self._emit, args=args, kwargs=kwargs).start()
+            threading.Thread(target=self._emit, args=args,
+                    kwargs=kwargs).start()
+
 
 class OperationMutex(object):
     log = enableLogSkip(logging.getLogger("OperationMutex"),
             ignoreSourceFiles=[__file__, contextlib.__file__])
+
     def __init__(self):
         self._lock = threading.Lock()
         self._cond = threading.Condition()
@@ -1218,7 +1314,8 @@ class OperationMutex(object):
                         return
 
                 self._queueSize += 1
-                self.log.debug("Operation '%s' is holding the operation mutex, waiting...", self._active)
+                self.log.debug("Operation '%s' is holding the operation mutex,"
+                               " waiting...", self._active)
                 self._cond.wait()
                 generation += 1
                 self._queueSize -= 1
@@ -1231,16 +1328,19 @@ class OperationMutex(object):
         with self._cond:
             self._counter -= 1
             if self._counter == 0:
-                self.log.debug("Operation '%s' released the operation mutex", self._active)
+                self.log.debug("Operation '%s' released the operation mutex",
+                        self._active)
                 self._lock.release()
                 self._cond.notifyAll()
+
 
 def killall(name, signum, group=False):
     exception = None
     knownPgs = set()
     pidList = pgrep(name)
     if len(pidList) == 0:
-        raise OSError(errno.ESRCH, "Could not find processes named `%s`" % name)
+        raise OSError(errno.ESRCH,
+                "Could not find processes named `%s`" % name)
 
     for pid in pidList:
         try:
@@ -1290,13 +1390,13 @@ def itmap(func, iterable):
     for i in xrange(n):
         yield respQueue.get()
 
+
 def NoIntrPoll(pollfun, timeout=-1):
     """
-    This wrapper is used to handle the interrupt exceptions that might
-    occur during a poll system call.
-    The wrapped function must be defined as poll([timeout]) where the
-    special timeout value 0 is used to return immediately and -1 is used
-    to wait indefinitely.
+    This wrapper is used to handle the interrupt exceptions that might occur
+    during a poll system call.  The wrapped function must be defined as
+    poll([timeout]) where the special timeout value 0 is used to return
+    immediately and -1 is used to wait indefinitely.
     """
     endtime = time.time() + timeout
 
@@ -1314,6 +1414,7 @@ try:
         os.path.exists('/etc/ovirt-node-image-release')
 except:
     pass
+
 
 def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=[]):
     """Directory tree generator.
