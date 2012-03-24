@@ -11,7 +11,7 @@
 function isOvirt() {
     if [ -f /etc/rhev-hypervisor-release ]; then
         return 0
-    elif [ -f /etc/ovirt-node-image-release ]; then
+    elif [ -f /etc/ovirt-node-*-release ]; then
         return 0
     else
         return 1

@@ -29,6 +29,7 @@ import struct
 import socket
 import itertools
 import linecache
+import glob
 
 import libvirt
 
@@ -148,7 +149,7 @@ def _getIscsiIniName():
 def getos():
     if os.path.exists('/etc/rhev-hypervisor-release'):
         return OSName.RHEVH
-    elif os.path.exists('/etc/ovirt-node-image-release'):
+    elif len(glob.glob('/etc/ovirt-node-*-release')) == 0:
         return OSName.OVIRT
     elif os.path.exists('/etc/fedora-release'):
         return OSName.FEDORA

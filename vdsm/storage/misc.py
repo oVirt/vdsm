@@ -60,6 +60,7 @@ import threading
 import time
 import types
 import weakref
+import glob
 
 sys.path.append("../")
 from vdsm import constants
@@ -1419,7 +1420,7 @@ def isAscii(s):
 # Upon import determine if we are running on ovirt
 try:
     OVIRT_NODE = os.path.exists('/etc/rhev-hypervisor-release') or \
-        os.path.exists('/etc/ovirt-node-image-release')
+        not len(glob.glob('/etc/ovirt-node-*-release')) == 0
 except:
     pass
 

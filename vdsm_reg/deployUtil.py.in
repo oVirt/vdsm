@@ -381,7 +381,7 @@ def isOvirt():
     """
     if os.path.exists('/etc/rhev-hypervisor-release'):
         return True
-    elif os.path.exists('/etc/ovirt-node-image-release'):
+    elif not len(glob.glob('/etc/ovirt-node-*-release')) == 0:
         return True
     else:
         return False
