@@ -654,7 +654,7 @@ class Volume(object):
                 self._spUUID, self._imgUUID, self._UUID, legality)
 
     def tearDown(self):
-        return self._irs.tearDownVolume(self._sdUUID, self._spUUID,
+        return self._irs.teardownVolume(self._sdUUID, self._spUUID,
                 self._imgUUID, self._UUID)
 
 class Image(object):
