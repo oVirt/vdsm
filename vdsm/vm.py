@@ -74,11 +74,11 @@ class MigrationSourceThread(threading.Thread):
     """
     _ongoingMigrations = threading.BoundedSemaphore(1)
     @classmethod
-    def setMaxOutgoingMigrations(klass, n):
+    def setMaxOutgoingMigrations(cls, n):
         """Set the initial value of the _ongoingMigrations semaphore.
 
         must not be called after any vm has been run."""
-        klass._ongoingMigrations = threading.BoundedSemaphore(n)
+        cls._ongoingMigrations = threading.BoundedSemaphore(n)
 
     def __init__ (self, vm, dst='', dstparams='',
                   mode='remote', method='online', **kwargs):
