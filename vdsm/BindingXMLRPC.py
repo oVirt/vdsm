@@ -708,13 +708,13 @@ class BindingXMLRPC(object):
         api = API.Global(self.cif)
         return api.getDeviceInfo(guid)
 
-    def storageServerConnectionRefAcquire(self, conRefArgs):
+    def storageServerConnectionRefsAcquire(self, conRefArgs):
         return API.ConnectionRefs(self.cif).acquire(conRefArgs)
 
-    def storageServerConnectionRefRelease(self, refIDs):
+    def storageServerConnectionRefsRelease(self, refIDs):
         return API.ConnectionRefs(self.cif).release(refIDs)
 
-    def storageServerConnectionRefStatuses(self):
+    def storageServerConnectionRefsStatuses(self):
         return API.ConnectionRefs(self.cif).statuses()
 
     def getGlobalMethods(self):
@@ -835,9 +835,9 @@ class BindingXMLRPC(object):
                 (self.devicesGetList, 'getDeviceList'),
                 (self.devicesGetVisibility, 'getDevicesVisibility'),
                 (self.deviceGetInfo, 'getDeviceInfo'),
-                (self.storageServerConnectionRefAcquire, 'storageServer_ConnectionRef_acquire'),
-                (self.storageServerConnectionRefRelease, 'storageServer_ConnectionRef_release'),
-                (self.storageServerConnectionRefStatuses, 'storageServer_ConnectionRef_statuses'),)
+                (self.storageServerConnectionRefsAcquire, 'storageServer_ConnectionRefs_acquire'),
+                (self.storageServerConnectionRefsRelease, 'storageServer_ConnectionRefs_release'),
+                (self.storageServerConnectionRefsStatuses, 'storageServer_ConnectionRefs_statuses'),)
 
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
