@@ -2049,7 +2049,7 @@ class LibvirtVm(vm.Vm):
         #        'slot':'0x0c', 'function':'0x0'}
         # IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
         for key in adrXml.attributes.keys():
-            address[key] = adrXml.getAttribute(key)
+            address[key.strip()] = adrXml.getAttribute(key).strip()
 
         return address
 
@@ -2164,12 +2164,13 @@ class LibvirtVm(vm.Vm):
             # (but backend not aware to device's aliases).
             # So, for now we can only assign the address according to devices order.
             for vc in self._devices[vm.VIDEO_DEVICES]:
-                if not hasattr(vc, 'address'):
+                if not hasattr(vc, 'address') or not hasattr(vc, 'alias'):
                     vc.alias = alias
                     vc.address = address
             # Update vm's conf with address
             for dev in self.conf['devices']:
-                if (dev['type'] == vm.VIDEO_DEVICES) and not dev.get('address'):
+                if (dev['type'] == vm.VIDEO_DEVICES) and \
+                   (not dev.get('address') or not dev.get('alias')):
                     dev['address'] = address
                     dev['alias'] = alias
 
@@ -2190,12 +2191,13 @@ class LibvirtVm(vm.Vm):
             # (but backend not aware to device's aliases).
             # So, for now we can only assign the address according to devices order.
             for sc in self._devices[vm.SOUND_DEVICES]:
-                if not hasattr(sc, 'address'):
+                if not hasattr(sc, 'address') or not hasattr(sc, 'alias'):
                     sc.alias = alias
                     sc.address = address
             # Update vm's conf with address
             for dev in self.conf['devices']:
-                if (dev['type'] == vm.SOUND_DEVICES) and not dev.get('address'):
+                if (dev['type'] == vm.SOUND_DEVICES) and \
+                   (not dev.get('address') or not dev.get('alias')):
                     dev['address'] = address
                     dev['alias'] = alias
 
