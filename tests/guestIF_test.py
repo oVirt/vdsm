@@ -18,11 +18,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-dist_noinst_DATA = \
-	main.py
+import unittest
 
-PYTHONPATH = $(builddir)/vdsm:$(top_srcdir)/vdsm:$(top_srcdir)
+import guestIF
 
-check-local:
-	PYTHONPATH=$(PYTHONPATH) $(PYTHON) $(top_srcdir)/tests/main.py
-	PYTHONPATH=$(PYTHONPATH) $(PYTHON) $(top_srcdir)/tests/guestIF_test.py
+class TestGuestIF(unittest.TestCase):
+
+   def test_filterXmlChars(self):
+      ALL_LEGAL = "Hello World"
+      self.assertEqual(ALL_LEGAL, guestIF._filterXmlChars(ALL_LEGAL))
+      TM = u"\u2122".encode('utf8')
+      self.assertNotEqual(TM, guestIF._filterXmlChars(TM))
+
+if __name__ == '__main__':
+    unittest.main()
+
