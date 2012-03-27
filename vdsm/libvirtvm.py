@@ -1734,7 +1734,8 @@ class LibvirtVm(vm.Vm):
 
         try:
             self._dom.snapshotCreateXML(snapxml,
-                libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY)
+                (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
+                 libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT))
         except:
             self.log.error("Unable to take snapshot", exc_info=True)
             return errCode['snapshotErr']
