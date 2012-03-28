@@ -139,7 +139,14 @@ class Nfs(object):
         return socket.gethostname()
 
     def getLocalIP(self):
-        return socket.gethostbyname(socket.gethostname())
+        addr = "0.0.0.0"
+        try:
+            addr = socket.gethostbyname(socket.gethostname())
+        except socket.gaierror, err:
+            print "INFO: Cannot resolve hostname" \
+                    ": %s %s" % (socket.gethostname(), err)
+
+        return addr
 
     def exitCode(self, ret):
         sys.exit(ret)
