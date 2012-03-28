@@ -2167,12 +2167,14 @@ class LibvirtVm(vm.Vm):
                 if not hasattr(vc, 'address') or not hasattr(vc, 'alias'):
                     vc.alias = alias
                     vc.address = address
+                    break
             # Update vm's conf with address
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.VIDEO_DEVICES) and \
                    (not dev.get('address') or not dev.get('alias')):
                     dev['address'] = address
                     dev['alias'] = alias
+                    break
 
     def _getUnderlyingSoundDeviceInfo(self):
         """
@@ -2194,12 +2196,14 @@ class LibvirtVm(vm.Vm):
                 if not hasattr(sc, 'address') or not hasattr(sc, 'alias'):
                     sc.alias = alias
                     sc.address = address
+                    break
             # Update vm's conf with address
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.SOUND_DEVICES) and \
                    (not dev.get('address') or not dev.get('alias')):
                     dev['address'] = address
                     dev['alias'] = alias
+                    break
 
     def _getUnderlyingDriveInfo(self):
         """
