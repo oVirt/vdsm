@@ -21,6 +21,18 @@
 import types
 import unittest
 from storage import storage_exception
+from storage import securable
+
+class TestSecurable(unittest.TestCase):
+    class MySecureClass(securable.Securable):
+        pass
+
+    def test_safety(self):
+        objA = TestSecurable.MySecureClass()
+        objB = TestSecurable.MySecureClass()
+        objA._setSafe()
+        objB._setUnsafe()
+        self.assertTrue(objA._isSafe())
 
 class TestStorageExceptions(unittest.TestCase):
     def test_collisions(self):
