@@ -103,6 +103,8 @@ CLEANFILES = \
 	$(nodist_vdsmlib_PYTHON) \
 	$(nodist_noinst_DATA) \
 	$(nodist_vdsmexec_SCRIPTS) \
+	$(nodist_vdsm_PYTHON) \
+	$(nodist_vdsmpylib_PYTHON) \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \

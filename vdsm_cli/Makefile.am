@@ -35,6 +35,7 @@ dist_man1_MANS = \
 CLEANFILES = \
 	config.log \
 	$(nodist_bin_SCRIPTS) \
+	$(nodist_vdsmpylib_PYTHON) \
 	$(nodist_vdsm_PYTHON)
 
 EXTRA_DIST = \
