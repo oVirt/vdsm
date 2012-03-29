@@ -21,7 +21,7 @@
 from subprocess import list2cmdline
 
 import storage.misc
-from constants import EXT_TC, EXT_IFCONFIG
+from vdsm.constants import EXT_TC, EXT_IFCONFIG
 
 PROC_ERROR_MSG = 'error executing command "%s" error: %s'
 
