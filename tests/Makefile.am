@@ -21,8 +21,7 @@
 dist_noinst_DATA = \
 	main.py
 
-PYTHONPATH = $(builddir)/vdsm:$(top_srcdir)/vdsm:$(top_srcdir)
+PYTHONPATH = $(builddir)/vdsm:$(top_srcdir)/vdsm
 
 check-local:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) $(top_srcdir)/tests/main.py
-	PYTHONPATH=$(PYTHONPATH) $(PYTHON) $(top_srcdir)/tests/guestIF_test.py
