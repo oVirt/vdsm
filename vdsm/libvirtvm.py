@@ -1753,8 +1753,8 @@ class LibvirtVm(vm.Vm):
                 continue
 
             try:
-                self._dom.blockRebase(mergeStatus['path'], None, 0, 0)
-                                      #mergeStatus['basePath'], 0, 0)
+                self._dom.blockRebase(mergeStatus['path'],
+                                      mergeStatus['basePath'], 0, 0)
             except:
                 mergeStatus['status'] = MERGESTATUS.FAILED
                 self.log.error("Live merge failed for %s",
