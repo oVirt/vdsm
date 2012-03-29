@@ -93,13 +93,11 @@ MAX_DOMAINS -= MAX_POOL_DESCRIPTION_SIZE + sd.MAX_DOMAIN_DESCRIPTION_SIZE
 MAX_DOMAINS -= blockSD.PVS_METADATA_SIZE
 MAX_DOMAINS /= 48
 
-class StoragePool:
+class StoragePool(Securable):
     '''
     StoragePool object should be relatively cheap to construct. It should defer
     any heavy lifting activities until the time it is really needed.
     '''
-
-    __metaclass__ = Securable
 
     log = logging.getLogger('Storage.StoragePool')
     storage_repository = config.get('irs', 'repository')
@@ -108,6 +106,7 @@ class StoragePool:
     monitorInterval = config.getint('irs', 'sd_health_check_delay')
 
     def __init__(self, spUUID, taskManager):
+        Securable.__init__(self)
         self._domainsToUpgrade = []
         self.lock = threading.RLock()
         self._setUnsafe()

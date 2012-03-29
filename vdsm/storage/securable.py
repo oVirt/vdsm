@@ -26,37 +26,24 @@ SECURE_FIELD = "__secured__"
 
 class SecureError(RuntimeError): pass
 
-class Securable(type):
-    def __new__(mcs, name, bases, fdict):
-
-        def _isSafe(self):
-            return self._safety.isSet()
-
-        def _setSafe(self):
-            self._safety.set()
-
-        def _setUnsafe(self):
-            self._safety.clear()
-
-        for fun, val in fdict.iteritems():
+class MetaSecurable(type):
+    def __new__(cls, name, bases, dct):
+        for fun, val in dct.iteritems():
             if not callable(val):
                 continue
 
-            if hasattr(val, SECURE_FIELD) and (not getattr(val, SECURE_FIELD)):
+            if (hasattr(val, SECURE_FIELD)
+                    and not getattr(val, SECURE_FIELD)):
                 continue
 
             if fun.startswith("__"):
-                #Wrapping builtins might cause weird results
+                # Wrapping builtins might cause weird results
                 continue
 
-            fdict[fun] = secured(val)
+            dct[fun] = secured(val)
 
-        fdict['__securable__'] = True
-        fdict['_safety'] = Event()
-        fdict['_isSafe'] = _isSafe
-        fdict['_setSafe'] = _setSafe
-        fdict['_setUnsafe'] = _setUnsafe
-        return type.__new__(mcs, name, bases, fdict)
+        dct['__securable__'] = True
+        return type.__new__(cls, name, bases, dct)
 
 def unsecured(f):
     setattr(f, SECURE_FIELD, False)
@@ -64,19 +51,33 @@ def unsecured(f):
 
 def secured(f):
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not hasattr(args[0], "__securable__"):
+    def wrapper(self, *args, **kwargs):
+        if not hasattr(self, "__securable__"):
             raise RuntimeError("Secured object is not a securable")
 
-        override = kwargs.get(OVERRIDE_ARG, False)
-        try:
-            del kwargs[OVERRIDE_ARG]
-        except KeyError:
-            pass
+        override = kwargs.pop(OVERRIDE_ARG, False)
 
-        if not (args[0]._isSafe() or override):
+        if not (self._isSafe() or override):
             raise SecureError()
 
-        return f(*args, **kwargs)
+        return f(self, *args, **kwargs)
 
     return wrapper
+
+class Securable(object):
+    __metaclass__ = MetaSecurable
+
+    def __init__(self):
+        self._safety = Event()
+
+    @unsecured
+    def _isSafe(self):
+        return self._safety.isSet()
+
+    @unsecured
+    def _setSafe(self):
+        self._safety.set()
+
+    @unsecured
+    def _setUnsafe(self):
+        self._safety.clear()
