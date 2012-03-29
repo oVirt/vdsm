@@ -689,21 +689,25 @@ def _getVolumeTag(sdUUID, volUUID, tagPrefix):
     raise se.MissingTagOnLogicalVolume(volUUID, tagPrefix)
 
 def _postZero(sdUUID, volumes):
-    #Assumed here that the volume is active.
-    #To activate all the volumes of an image at once get its resource.
-    #See http://gerrit.usersys.redhat.com/771
+    # Assumed that there is no any thread that can deactivate these LVs
+    # on this host or change the rw permission on this or any other host.
+
+    lvNames = tuple(vol.volUUID for vol in volumes)
     #Assert volumes are writable. (Don't do this at home.)
-    lvNames = (vol.volUUID for vol in volumes)
     try:
         lvm.changelv(sdUUID, lvNames, "--permission", "rw")
     except se.StorageException, e:
-        #Hope this only means that some volumes were already writable
+        # Hope this only means that some volumes were already writable.
         pass
+
+    lvm.activateLVs(sdUUID, lvNames)
+
     for lv in lvm.getLV(sdUUID):
         if lv.name in lvNames:
-        # wipe out the whole volume
+            # wipe out the whole volume
             try:
-                misc.ddWatchCopy("/dev/zero", lvm.lvPath(sdUUID, lv.name), vars.task.aborting, int(lv.size),
+                misc.ddWatchCopy("/dev/zero", lvm.lvPath(sdUUID, lv.name),
+                                 vars.task.aborting, int(lv.size),
                                  recoveryCallback=volume.baseAsyncTasksRollback)
             except se.ActionStopped, e:
                 raise e

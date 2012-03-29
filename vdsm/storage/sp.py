@@ -1709,16 +1709,17 @@ class StoragePool:
         """
         volParams = None
         repoPath = os.path.join(self.storage_repository, self.spUUID)
+        img = image.Image(repoPath)
         if sdCache.produce(sdUUID).isBackup():
             # Pre-delete requisites
-            volParams = image.Image(repoPath).preDeleteHandler(sdUUID=sdUUID, imgUUID=imgUUID)
+            volParams = img.preDeleteHandler(sdUUID=sdUUID, imgUUID=imgUUID)
 
         # Delete required image
-        image.Image(repoPath).delete(sdUUID=sdUUID, imgUUID=imgUUID, postZero=postZero, force=force)
+        img.delete(sdUUID=sdUUID, imgUUID=imgUUID, postZero=postZero, force=force)
 
         # We need create 'fake' image instead of deleted one
         if volParams:
-            image.Image(repoPath).createFakeTemplate(sdUUID=sdUUID, volParams=volParams)
+            img.createFakeTemplate(sdUUID=sdUUID, volParams=volParams)
 
 
     def mergeSnapshots(self, sdUUID, vmUUID, imgUUID, ancestor, successor, postZero):
