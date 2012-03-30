@@ -336,8 +336,7 @@ class Image:
         for vol in uuidlist:
             srcVol = volclass(self.repoPath, sdUUID, imgUUID, vol)
             if srcVol.isLeaf():
-                if not volUUID or volUUID == srcVol.volUUID:
-                    break
+                break
             srcVol = None
 
         if not srcVol:
@@ -345,13 +344,21 @@ class Image:
             raise se.ImageIsNotLegalChain(imgUUID)
 
         # Build up the sorted (parent->child) chain
+        volFound = False
         while not srcVol.isShared():
-            chain.insert(0, srcVol)
+            if volUUID and srcVol.volUUID == volUUID:
+                volFound = True
+
+            if not volUUID or volFound:
+                chain.insert(0, srcVol)
+
             if srcVol.getParent() == volume.BLANK_UUID:
                 break
+
             srcVol = srcVol.getParentVolume()
 
-        self.log.info("sdUUID=%s imgUUID=%s chain=%s ", sdUUID, imgUUID, str(chain))
+        self.log.info("sdUUID=%s imgUUID=%s chain=%s ", sdUUID, imgUUID,
+                      str(chain))
         return chain
 
     def getTemplate(self, sdUUID, imgUUID):
