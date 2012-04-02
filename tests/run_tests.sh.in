@@ -1,0 +1,2 @@
+#!/bin/sh
+PYTHONPATH="@builddir@/vdsm:@top_srcdir@/vdsm" @PYTHON@ @top_srcdir@/tests/testrunner.py $@

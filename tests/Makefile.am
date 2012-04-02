@@ -18,10 +18,14 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-dist_noinst_DATA = \
+test_modules = \
 	main.py
 
-PYTHONPATH = $(builddir)/vdsm:$(top_srcdir)/vdsm
+dist_noinst_DATA = \
+	$(test_modules) \
+	testrunner.py
+	run_tests.sh
 
 check-local:
-	PYTHONPATH=$(PYTHONPATH) $(PYTHON) $(top_srcdir)/tests/main.py
+	$(top_srcdir)/tests/run_tests.sh $(test_modules)
+

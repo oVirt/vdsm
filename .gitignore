@@ -40,3 +40,4 @@ vdsm_reg/deployUtil.py
 vdsm_reg/vdsm-reg.conf
 vdsm_reg/vdsm-reg-setup
 vdsm_hooks/persist-vdsm-hooks
+tests/run_tests.sh

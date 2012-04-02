@@ -154,6 +154,7 @@ AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 # Keep sorted
 AC_OUTPUT([
 	Makefile
+	tests/Makefile
 	vds_bootstrap/Makefile
 	vdsm_cli/Makefile
 	vdsm_hooks/directlun/Makefile
@@ -180,5 +181,6 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm-tool/Makefile
-	tests/Makefile
 ])
+AC_OUTPUT([tests/run_tests.sh], [chmod +x tests/run_tests.sh])
+
