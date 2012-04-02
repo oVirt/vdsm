@@ -32,8 +32,9 @@ import configNetwork
 from vdsm import netinfo
 from vdsm import constants
 import storage.misc
-import storage.volume
 import storage.safelease
+import storage.volume
+import storage.sd
 import libvirtvm
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
@@ -596,6 +597,20 @@ class VM(object):
         return v.mergeStatus()
 
 class Volume(object):
+    class Types:
+        UNKNOWN = storage.volume.UNKNOWN_VOL
+        PREALLOCATED = storage.volume.PREALLOCATED_VOL
+        SPARSE = storage.volume.SPARSE_VOL
+    class Formats:
+        UNKNOWN = storage.volume.UNKNOWN_FORMAT
+        COW = storage.volume.COW_FORMAT
+        RAW = storage.volume.RAW_FORMAT
+    class Roles:
+        SHARED = storage.volume.SHARED_VOL
+        LEAF = storage.volume.LEAF_VOL
+
+    BLANK_UUID = storage.volume.BLANK_UUID
+
     def __init__(self, cif, UUID, spUUID, sdUUID, imgUUID):
         self._irs = cif.irs
         self._UUID = UUID
@@ -658,6 +673,8 @@ class Volume(object):
                 self._imgUUID, self._UUID)
 
 class Image(object):
+    BLANK_UUID = storage.volume.BLANK_UUID
+
     def __init__(self, cif, UUID, spUUID, sdUUID):
         self._irs = cif.irs
         self._UUID = UUID
@@ -725,6 +742,21 @@ class ISCSIConnection(object):
 
 
 class StorageDomain(object):
+    class Types:
+        UNKNOWN = storage.sd.UNKNOWN_DOMAIN
+        NFS = storage.sd.NFS_DOMAIN
+        FCP = storage.sd.FCP_DOMAIN
+        ISCSI = storage.sd.ISCSI_DOMAIN
+        LOCALFS = storage.sd.LOCALFS_DOMAIN
+        CIFS = storage.sd.CIFS_DOMAIN
+        SHAREDFS = storage.sd.SHAREDFS_DOMAIN
+    class Classes:
+        DATA = storage.sd.DATA_DOMAIN
+        ISO = storage.sd.ISO_DOMAIN
+        BACKUP = storage.sd.BACKUP_DOMAIN
+
+    BLANK_UUID = storage.sd.BLANK_UUID
+
     def __init__(self, cif, UUID, spUUID=None):
         self._irs = cif.irs
         self._UUID = UUID
@@ -775,7 +807,7 @@ class StorageDomain(object):
     def getStats(self):
         return self._irs.getStorageDomainStats(self._UUID)
 
-    def getVolumes(self, imgUUID=storage.volume.BLANK_UUID):
+    def getVolumes(self, imgUUID=Image.BLANK_UUID):
         return self._irs.getVolumesList(self._UUID, self._spUUID, imgUUID)
 
     def setDescription(self, description):

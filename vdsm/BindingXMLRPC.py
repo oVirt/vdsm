@@ -31,9 +31,6 @@ from vdsm import netinfo
 from vdsm import utils
 from vdsm.define import doneCode, errCode
 import API
-import storage.volume
-import storage.safelease
-import storage.sd
 
 class BindingXMLRPC(object):
     def __init__(self, cif, log, params):
@@ -377,8 +374,7 @@ class BindingXMLRPC(object):
 
     def domainCreate(self, storageType, sdUUID, domainName,
                      typeSpecificArg, domClass,
-                     domVersion=constants.SUPPORTED_DOMAIN_VERSIONS[0],
-                     options=None):
+                     domVersion=None, options=None):
         domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
         return domain.create(storageType, typeSpecificArg, domainName,
                              domClass, domVersion)
@@ -422,7 +418,7 @@ class BindingXMLRPC(object):
         return domain.getStats()
 
     def domainGetVolumes(self, sdUUID, spUUID,
-                         imgUUID=storage.volume.BLANK_UUID):
+                         imgUUID=API.Image.BLANK_UUID):
         domain = API.StorageDomain(self.cif, sdUUID, spUUID)
         return domain.getVolumes(imgUUID)
 
@@ -551,7 +547,7 @@ class BindingXMLRPC(object):
         return pool.setDescription(description)
 
     def poolSpmStart(self, spUUID, prevID, prevLVER, recoveryMode,
-                     scsiFencing, maxHostID=storage.safelease.MAX_HOST_ID,
+                     scsiFencing, maxHostID=None,
                      domVersion=None, options=None):
         pool = API.StoragePool(self.cif, spUUID)
         return pool.spmStart(prevID, prevLVER, scsiFencing,
@@ -580,10 +576,10 @@ class BindingXMLRPC(object):
 
     def volumeCopy(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID,
                    dstImgUUID, dstVolUUID, description='',
-                   dstSdUUID=storage.sd.BLANK_UUID,
-                   volType=storage.volume.SHARED_VOL,
-                   volFormat=storage.volume.UNKNOWN_VOL,
-                   preallocate=storage.volume.UNKNOWN_VOL, postZero=False,
+                   dstSdUUID=API.StorageDomain.BLANK_UUID,
+                   volType=API.Volume.Roles.SHARED,
+                   volFormat=API.Volume.Formats.UNKNOWN,
+                   preallocate=API.Volume.Types.UNKNOWN, postZero=False,
                    force=False):
         volume = API.Volume(self.cif, srcVolUUID, spUUID, sdUUID, srcImgUUID)
         return volume.copy(dstSdUUID, dstImgUUID, dstVolUUID,
@@ -592,8 +588,8 @@ class BindingXMLRPC(object):
 
     def volumeCreate(self, sdUUID, spUUID, imgUUID, size, volFormat,
                      preallocate, diskType, volUUID, desc,
-                     srcImgUUID=storage.volume.BLANK_UUID,
-                     srcVolUUID=storage.volume.BLANK_UUID):
+                     srcImgUUID=API.Image.BLANK_UUID,
+                     srcVolUUID=API.Volume.BLANK_UUID):
         volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
         return volume.create(size, volFormat, preallocate, diskType,
                 desc, srcImgUUID, srcVolUUID)
