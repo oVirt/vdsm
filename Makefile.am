@@ -35,8 +35,14 @@ if HOOKS
 WITH_HOOKS = --define="with_hooks 1"
 endif
 
+# When fixing a file to conform with pep8 add it to the WL here so it will be
+# checkd from now on
+PEP8_WHITELIST = tests \
+                 vdsm/storage/misc.py
+
 check-local:
 	$(PYFLAKES) $(SUBDIRS)
+	$(PEP8) $(PEP8_WHITELIST)
 
 all-local: \
 	vdsm.spec
