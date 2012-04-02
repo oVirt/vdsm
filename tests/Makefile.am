@@ -19,7 +19,8 @@
 #
 
 test_modules = \
-	main.py
+	main.py \
+	miscTests.py
 
 dist_noinst_DATA = \
 	$(test_modules) \
