@@ -21,7 +21,8 @@
 test_modules = \
 	main.py \
 	miscTests.py \
-	resourceManagerTests.py
+	resourceManagerTests.py \
+	processPoolTests.py
 
 dist_noinst_DATA = \
 	$(test_modules) \
