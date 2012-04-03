@@ -149,8 +149,6 @@ def getDeviceBlockSizes(dev):
     devName = os.path.basename(dev)
     logical = int(file(os.path.join("/sys/block/", devName, "queue", "logical_block_size")).read())
     physical = int(file(os.path.join("/sys/block/", devName, "queue", "physical_block_size")).read())
-    if logical != physical:
-        log.error("Different block sizes for %s! logical = %d, physical = %d", dev, logical, physical)
     return (logical, physical)
 
 def getDeviceSize(dev):

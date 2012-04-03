@@ -802,11 +802,6 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m"):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs)
 
-    # Remove this check when we'll support different block sizes.
-    bs = _getpvblksize(pvs[0])
-    if bs not in constants.SUPPORTED_BLOCKSIZE:
-       raise se.DeviceBlockSizeError(bs)
-
     _initpvs(pvs, metadataSize)
     #Activate the 1st PV metadata areas
     cmd = ["pvchange", "--metadataignore", "n"]
@@ -893,14 +888,21 @@ def _getpvblksize(pv):
 def _checkpvsblksize(pvs, vgBlkSize=None):
     for pv in pvs:
         pvBlkSize = _getpvblksize(pv)
+        logPvBlkSize, phyPvBlkSize = pvBlkSize
 
-        if pvBlkSize not in constants.SUPPORTED_BLOCKSIZE:
+        if logPvBlkSize not in constants.SUPPORTED_BLOCKSIZE:
             raise se.DeviceBlockSizeError(pvBlkSize)
 
+        if phyPvBlkSize < logPvBlkSize:
+            raise se.DeviceBlockSizeError(pvBlkSize)
+
+        # WARN: This is setting vgBlkSize to the first value found by
+        #       _getpvblksize (if not provided by the function call).
+        #       It makes sure that all the PVs have the same block size.
         if vgBlkSize is None:
             vgBlkSize = pvBlkSize
 
-        if pvBlkSize != vgBlkSize:
+        if logPvBlkSize != vgBlkSize[0]:
             raise se.VolumeGroupBlockSizeError(vgBlkSize, pvBlkSize)
 
 def checkVGBlockSizes(vgUUID, vgBlkSize=None):
