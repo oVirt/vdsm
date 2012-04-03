@@ -20,7 +20,8 @@
 
 test_modules = \
 	main.py \
-	miscTests.py
+	miscTests.py \
+	resourceManagerTests.py
 
 dist_noinst_DATA = \
 	$(test_modules) \
