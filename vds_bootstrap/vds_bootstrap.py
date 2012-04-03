@@ -663,6 +663,9 @@ class Deploy:
         self.rc = True
         self.message = "Created management bridge."
 
+        if rhel6based:
+             deployUtil.setService("libvirtd", "start")
+
         if deployUtil.preventDuplicate():
             self.message = "Bridge management already exists. Skipping bridge creation."
             logging.debug(self.message)
