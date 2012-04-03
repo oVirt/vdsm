@@ -157,6 +157,25 @@ def run():
 
     sys.exit(not core.run(config=conf, testRunner=runner, argv=argv))
 
+# This is an ungly hack to pretend that we have the vdsm module installed.
+# Remove this when source is properly orgenized.
+from types import ModuleType
+
+
+class vdsm(ModuleType):
+    def __init__(self):
+        ModuleType.__init__(self, "vdsm")
+        import config
+        import constants
+        self.config = config
+        self.constants = constants
+
+
+def hackVdsmModule():
+    sys.modules['vdsm'] = mod = vdsm()
+    sys.modules['vdsm.constants'] = mod.constants
+    sys.modules['vdsm.config'] = mod.config
 
 if __name__ == '__main__':
+    hackVdsmModule()
     run()
