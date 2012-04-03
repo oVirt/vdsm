@@ -175,18 +175,9 @@ class Nfs(object):
         if ret != -1:
             fileTest = pathName + "/" + TESTFILE
             cmdTouch = "/bin/touch " + fileTest
-            process = subprocess.Popen([SU, USER, "-c", cmdTouch, "-s", "/bin/bash"],
-                    shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            signal.signal(signal.SIGALRM, self.handler)
-            signal.alarm(TIMEOUT_NFS)
-
-            try:
-                errorMsg  = process.communicate()[1].strip()
-                signal.alarm(0)
-            except Alarm:
-                print "Timeout, cannot execute: %s" % cmdTouch
-                ret = -1
+            process, errorMsg, ret = self.runCommand(cmdTouch)
+            errorMsg = errorMsg.strip()
 
             if ret != -1:
                 # get the return from the command
@@ -211,8 +202,38 @@ class Nfs(object):
                 # remove the file
                 if ret != -1:
                     print "Removing %s file.." % TESTFILE
-                    os.remove(fileTest)
+                    cmdRemove = "/bin/rm " + fileTest
+
+                    process, errorMsg, ret = self.runCommand(cmdRemove)
+                    errorMsg = errorMsg.strip()
+
+                    if ret != -1:
+                        # get the return from the command
+                        ret = process.poll()
+                        if ret != 0:
+                            print "Error removing %s file, error = %s " \
+                                    % (TESTFILE, errorMsg)
+                            ret = -1
+
         return ret
+
+    def runCommand(self, cmd):
+        ret = 0
+
+        process = subprocess.Popen([SU, USER, "-c", cmd, "-s", "/bin/bash"],
+                shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        signal.signal(signal.SIGALRM, self.handler)
+        signal.alarm(TIMEOUT_NFS)
+
+        try:
+            errorMsg  = process.communicate()[1]
+            signal.alarm(0)
+        except Alarm:
+            print "Timeout, cannot execute: %s" % cmd
+            ret = -1
+
+        return process, errorMsg, ret
 
     def umount(self, pathName):
         process = subprocess.Popen([UMOUNT, pathName],
@@ -263,6 +284,8 @@ if __name__ == "__main__":
         ret = nfs.tests(LOCALPATH)
         if ret != 0:
             print "Status of tests [Failed]"
+            print "For more troubleshooting tips, visit " \
+                  "http://www.ovirt.org/wiki/Troubleshooting_NFS_Storage_Issues"
         else:
             print "Status of tests [OK]"
 
