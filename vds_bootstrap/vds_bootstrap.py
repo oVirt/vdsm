@@ -100,6 +100,9 @@ if rhel6based:
                 'libjpeg', 'spice-server', 'pixman',
                 'seabios', 'qemu-img', 'fence-agents',
                 'libselinux-python')
+    # Gluster packages
+    GLUSTER_PACK = ('vdsm-gluster', 'glusterfs-server', 'glusterfs-rdma',
+                    'glusterfs-geo-replication')
 else:
     # Devel packages
     DEVEL_PACK = ('gdb','tcpdump','strace','ltrace','sysstat','ntp',
@@ -109,6 +112,7 @@ else:
     VDS_PACK = ('kvm', 'kmod-kvm', 'kvm-tools', VDSM_NAME, VDSM_NAME+'-cli', 'qcairo',
                 'qffmpeg-libs', 'qspice-libs', 'qpixman', 'log4cpp',
                 'etherboot-zroms-kvm', 'kvm-qemu-img', 'fence-agents')
+    GLUSTER_PACK = ()
 
 # Conflicting packages- fail if exist
 if rhel6based:
@@ -456,9 +460,22 @@ class Deploy:
                 res = "FAIL"
                 nReturn = 1
             self._xmlOutput(type +' PACKAGES', res, "result", pack, self.message)
+        elif type == "GLUSTER":
+            yumcmd = "install"
+            if update == 1:
+                yumcmd = "update"
+
+            self.res, self.message = deployUtil.installAndVerify(type, pack,
+                                                                 yumcmd)
+            res = "OK"
+            if not self.res:
+                res = "FAIL"
+                nReturn = 1
+            self._xmlOutput(type +' PACKAGES', res, "result", pack,
+                            self.message)
         else:
             nReturn = 1
-            logging.debug('Unknown package type: %s',type)
+            logging.debug('Unknown package type: %s', type)
 
         return nReturn
 
@@ -530,6 +547,30 @@ class Deploy:
             deployUtil.setService("vdsmd", "stop")
             self._installPackages()
 
+        return self.rc
+
+    def installGlusterPackages(self):
+        packages = []
+        updates = []
+        for pack in GLUSTER_PACK:
+            self.res, self.message = deployUtil.getPackageInfo("GLUSTER", pack,
+                                                               'status')
+            self._xmlOutput('GLUSTER PACKAGES', self.res, "result", pack,
+                            self.message)
+            if self.res == "WARN":
+                packages.append(pack)
+            else:
+                updates.append(pack)
+
+        self.rc = 0
+        logging.debug('Install GLUSTER packages ... %s', packages.__repr__())
+        while (not self.rc and packages):
+            self.rc = self._installPackage(packages.pop(), "GLUSTER")
+
+        if not self.rc and updates:
+            logging.debug('Update GLUSTER packages ...  %s', updates.__repr__())
+        while (not self.rc and updates):
+            self.rc = self._installPackage(updates.pop(), "GLUSTER", 1)
         return self.rc
 
     def _makeConfig(self):
@@ -806,6 +847,11 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
     """
     logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s', installVirtualizationService = '%s', installGlusterService = '%s')"%(subject, random_num, rev_num, installVirtualizationService, installGlusterService))
 
+    if installGlusterService:
+        if not rhel6based:
+            logging.error('unsupported system for Gluster service')
+            return False
+
     oDeploy = Deploy()
 
     if not oDeploy.checkRegistration():
@@ -833,6 +879,11 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
     if oDeploy.packagesExplorer():
         logging.error('packagesExplorer test failed')
         return False
+
+    if installGlusterService:
+        if oDeploy.installGlusterPackages():
+            logging.error('installGlusterPackages failed')
+            return False
 
     if not oDeploy.createConf():
         logging.error('createConf failed')
