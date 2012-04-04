@@ -1408,6 +1408,7 @@ def NoIntrPoll(pollfun, timeout=-1):
                 raise
         timeout = max(0, endtime - time.time())
 
+
 def isAscii(s):
     try:
         s.decode('ascii')
