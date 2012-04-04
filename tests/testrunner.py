@@ -26,6 +26,8 @@ from nose import config
 from nose import core
 from nose import result
 
+from testValidation import SlowTestsPlugin
+
 
 class TermColor(object):
     black = 30
@@ -150,6 +152,7 @@ def run():
                       verbosity=verbosity,
                       workingDir=testdir,
                       plugins=core.DefaultPluginManager())
+    conf.plugins.addPlugin(SlowTestsPlugin())
 
     runner = VdsmTestRunner(stream=conf.stream,
                             verbosity=conf.verbosity,

@@ -26,6 +26,7 @@ import types
 
 import storage.resourceManager as resourceManager
 from testrunner import VdsmTestCase as TestCaseBase
+from testValidation import slowtest
 
 
 class NullResourceFactory(resourceManager.SimpleResourceFactory):
@@ -587,6 +588,7 @@ class ResourceManagerTests(TestCaseBase):
         self.assertTrue(exclusiveReq3.granted())
         resources.pop().release()  # exclusiveReq 3
 
+    @slowtest
     def testStressTest(self):
         """
         This tests raises thousands of threads and tries to acquire the same

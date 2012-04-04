@@ -20,6 +20,34 @@
 import os
 from nose.plugins.skip import SkipTest
 from functools import wraps
+from nose.plugins import Plugin
+
+
+class SlowTestsPlugin(Plugin):
+    """Skips tests that might be too slow to be run for quick iteration
+    builds"""
+    name = 'slowtests'
+    enabled = False
+
+    def add_options(self, parser, env=os.environ):
+        env_opt = 'NOSE_SKIP_SLOW_TESTS'
+        if env is None:
+            default = False
+        else:
+            default = env.get(env_opt)
+
+        parser.add_option('--without-slow-tests',
+                          action='store_true',
+                          default=default,
+                          dest='disable_slow_tests',
+                          help='Some tests might take a long time to run, ' +
+                               'use this to skip slow tests automatically.' +
+                               '  [%s]' % env_opt)
+
+    def configure(self, options, conf):
+        Plugin.configure(self, options, conf)
+        if options.disable_slow_tests:
+            SlowTestsPlugin.enabled = True
 
 
 def ValidateRunningAsRoot(f):
@@ -27,6 +55,17 @@ def ValidateRunningAsRoot(f):
     def wrapper(*args, **kwargs):
         if os.geteuid() != 0:
             raise SkipTest("This test must be run as root")
+
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def slowtest(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if SlowTestsPlugin.enabled:
+            raise SkipTest("Slow tests have been disabled")
 
         return f(*args, **kwargs)
 
