@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -22,6 +22,7 @@ import types
 import unittest
 from storage import storage_exception
 from storage import securable
+
 
 class TestSecurable(unittest.TestCase):
     class MySecureClass(securable.Securable):
@@ -33,6 +34,7 @@ class TestSecurable(unittest.TestCase):
         objA._setSafe()
         objB._setUnsafe()
         self.assertTrue(objA._isSafe())
+
 
 class TestStorageExceptions(unittest.TestCase):
     def test_collisions(self):
