@@ -13,25 +13,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301  USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
 
-test_modules = \
-	main.py \
-	miscTests.py \
-	resourceManagerTests.py \
-	processPoolTests.py \
-	fileUtilTests.py \
-	guestIFTests.py
+import guestIF
 
-dist_noinst_DATA = \
-	$(test_modules) \
-	testrunner.py \
-	testValidation.py \
-	run_tests.sh
+from testrunner import VdsmTestCase as TestCaseBase
 
-check-local:
-	$(top_srcdir)/tests/run_tests.sh $(test_modules)
 
+class TestGuestIF(TestCaseBase):
+
+    def testfilterXmlChars(self):
+        ALL_LEGAL = "Hello World"
+        self.assertEqual(ALL_LEGAL, guestIF._filterXmlChars(ALL_LEGAL))
+        TM = u"\u2122".encode('utf8')
+        self.assertNotEqual(TM, guestIF._filterXmlChars(TM))
