@@ -348,16 +348,10 @@ def getMGTIP(vdsmDir, vdcHostName):
         logging.error("getMGTIP: Failed to find vdsm modules!")
         return strReturn
 
-    arNICs = None
     strIface = _getMGTIface(vdcHostName)
 
     if strIface is not None:
-        arNICs = netinfo.ifconfig()
-
-    logging.debug("getMGTIP: Host parsed interfaces:\n" + str(arNICs) + "\n")
-
-    if arNICs != None:
-        strReturn = arNICs[strIface]['addr']
+        strReturn = netinfo.getaddr(strIface)
 
     logging.debug("getMGTIP: Host MGT IP=" + strReturn)
     return strReturn

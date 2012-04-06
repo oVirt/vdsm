@@ -593,7 +593,7 @@ class VM(object):
 
     def _getNetworkIp(self, bridge):
         try:
-            ip = netinfo.ifconfig()[bridge]['addr']
+            ip = netinfo.getaddr(bridge)
         except:
             ip = config.get('addresses', 'guests_gateway_ip')
             if ip == '':

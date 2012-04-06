@@ -92,7 +92,7 @@ class BindingXMLRPC(object):
         if addr:
             return addr
         try:
-            addr = netinfo.ifconfig()[self.defaultBridge]['addr']
+            addr = netinfo.getaddr(self.defaultBridge)
         except:
             pass
         return addr

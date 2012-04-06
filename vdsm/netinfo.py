@@ -18,7 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os, glob, subprocess
+import os
+import glob
+import ethtool
 import shlex
 import logging
 from fnmatch import fnmatch
@@ -126,34 +128,26 @@ def speed(dev):
         logging.error('cannot read %s speed', dev, exc_info=True)
     return 0
 
-def ifconfig():
-    """ Partial parser to ifconfig output """
+def getaddr(dev):
+    dev_info_list = ethtool.get_interfaces_info(dev)
+    addr = dev_info_list[0].ipv4_address
+    if addr is None:
+        addr = ''
+    return addr
 
-    p = subprocess.Popen([constants.EXT_IFCONFIG, '-a'],
-            close_fds=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-    out, err = p.communicate()
-    ifaces = {}
-    for ifaceblock in out.split('\n\n'):
-        if not ifaceblock: continue
-        addr = netmask = hwaddr = ''
-        for line in ifaceblock.splitlines():
-            if line[0] != ' ':
-                ls = line.split()
-                name = ls[0]
-                if ls[2] == 'encap:Ethernet' and ls[3] == 'HWaddr':
-                    hwaddr = ls[4]
-            if line.startswith('          inet addr:'):
-                sp = line.split()
-                for col in sp:
-                    if ':' not in col: continue
-                    k, v = col.split(':')
-                    if k == 'addr':
-                        addr = v
-                    if k == 'Mask':
-                        netmask = v
-        ifaces[name] = {'addr': addr, 'netmask': netmask, 'hwaddr': hwaddr}
-    return ifaces
+def bitmask_to_address(bitmask):
+    binary = ~((1L << (32-bitmask)) - 1)
+    return ".".join(map(lambda x: str(binary>>(x<<3) & 0xff), [3, 2, 1, 0]))
+
+def getnetmask(dev):
+    dev_info_list = ethtool.get_interfaces_info(dev)
+    netmask = dev_info_list[0].ipv4_netmask
+    if netmask == 0:
+        return ''
+    return bitmask_to_address(netmask)
+
+def gethwaddr(dev):
+    return file('/sys/class/net/%s/address' % dev).read().strip()
 
 def graph():
     for bridge in bridges():
@@ -239,7 +233,6 @@ def permAddr():
 
 def get():
     d = {}
-    ifaces = ifconfig()
     routes = getRoutes()
     # FIXME handle bridge/nic missing from ifconfig
     d['networks'] = {}
@@ -249,17 +242,17 @@ def get():
         if nets[netname]['bridged']:
             d['networks'][netname] = { 'ports': ports(netname),
                     'stp': bridge_stp_state(netname),
-                    'addr': ifaces[netname]['addr'],
-                    'netmask': ifaces[netname]['netmask'],
+                    'addr': getaddr(netname),
+                    'netmask': getnetmask(netname),
                     'gateway': routes.get(netname, '0.0.0.0'),
                     'mtu': getMtu(netname), 'cfg': getIfaceCfg(netname) }
         else:
             d['networks'][netname] = { 'interface': nets[netname]['interface'] }
         d['networks'][netname]['bridged'] = nets[netname]['bridged']
     d['nics'] = dict([ (nic, {'speed': speed(nic),
-                              'addr': ifaces[nic]['addr'],
-                              'netmask': ifaces[nic]['netmask'],
-                              'hwaddr': ifaces[nic]['hwaddr'],
+                              'addr': getaddr(nic),
+                              'netmask': getnetmask(nic),
+                              'hwaddr': gethwaddr(nic),
                               'mtu': getMtu(nic)})
                         for nic in nics() ])
     paddr = permAddr()
@@ -267,15 +260,15 @@ def get():
         if paddr.get(nic):
             nd['permhwaddr'] = paddr[nic]
     d['bondings'] = dict([ (bond, {'slaves': slaves(bond),
-                              'addr': ifaces[bond]['addr'],
-                              'netmask': ifaces[bond]['netmask'],
-                              'hwaddr': ifaces[bond]['hwaddr'],
+                              'addr': getaddr(bond),
+                              'netmask': getnetmask(bond),
+                              'hwaddr': gethwaddr(bond),
                               'cfg': getIfaceCfg(bond),
                               'mtu': getMtu(bond)})
                         for bond in bondings() ])
     d['vlans'] = dict([ (vlan, {'iface': vlan.split('.')[0],
-                                'addr': ifaces[vlan]['addr'],
-                                'netmask': ifaces[vlan]['netmask'],
+                                'addr': getaddr(vlan),
+                                'netmask': getnetmask(vlan),
                                 'mtu': getMtu(vlan)})
                         for vlan in vlans() ])
     return d
@@ -306,7 +299,7 @@ def getVlanID(vlan):
 
 def getIpAddresses():
     "Return a list of the host's IP addresses"
-    return filter(None, [i['addr'] for i in ifconfig().itervalues()])
+    return filter(None, [ getaddr(i) for i in ethtool.get_active_devices() ])
 
 class NetInfo(object):
     def __init__(self, _netinfo=None):

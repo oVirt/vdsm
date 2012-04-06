@@ -13,38 +13,24 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301  USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
 
-test_modules = \
-	main.py \
-	alignmentScanTests.py \
-	betterThreadingTests.py \
-	capsTests.py \
-	fileUtilTests.py \
-	guestIFTests.py \
-	hooksTests.py \
-	lsblkTests.py \
-	md_utils_tests.py \
-	miscTests.py \
-	mountTests.py \
-	netinfoTests.py \
-	parted_utils_tests.py \
-	persistentDictTests.py \
-	processPoolTests.py \
-	resourceManagerTests.py
+import os
+from testrunner import VdsmTestCase as TestCaseBase
 
-dist_noinst_DATA = \
-	$(test_modules) \
-	testrunner.py \
-	testValidation.py \
-	run_tests.sh \
-	cpu_info.out
+import netinfo
 
-check-local:
-	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
-	@echo '*** into your environment.  Do not submit untested code!    ***'
-	$(top_srcdir)/tests/run_tests.sh $(test_modules)
 
+class TestNetinfo(TestCaseBase):
+
+    def testNetmaskConversions(self):
+        path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
+        for line in file(path):
+            if line.startswith('#'):
+                continue
+            bitmask, address = map(str.strip, line.split())
+            self.assertEqual(netinfo.bitmask_to_address(int(bitmask)), address)
