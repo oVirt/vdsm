@@ -60,7 +60,6 @@ import threading
 import time
 import types
 import weakref
-import glob
 
 sys.path.append("../")
 from vdsm import constants
