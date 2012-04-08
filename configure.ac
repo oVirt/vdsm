@@ -98,6 +98,12 @@ if test "x$PEP8" = "x"; then
   AC_MSG_ERROR([python-pep8 not found, please install it.])
 fi
 
+# Checking for nosetests
+AC_PATH_PROG([NOSETESTS], [nosetests])
+if test "x$NOSETESTS" = "x"; then
+  AC_MSG_ERROR([python-nose not found, please install it.])
+fi
+
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])
 AC_PATH_PROG([BLOCKDEV_PATH], [blockdev], [/sbin/blockdev])
