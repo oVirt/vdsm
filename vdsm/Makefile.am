@@ -136,6 +136,7 @@ all-local: \
 	$(nodist_vdsm_PYTHON) \
 	$(nodist_vdsm_SCRIPTS) \
 	$(nodist_noinst_DATA) \
+	$(nodist_vdsmpylib_PYTHON) \
 	$(nodist_man8_MANS)
 
 install-data-hook:
