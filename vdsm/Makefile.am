@@ -43,6 +43,7 @@ dist_vdsm_PYTHON = \
 	logUtils.py \
 	lsblk.py \
 	neterrors.py \
+	parted_utils.py \
 	pthread.py \
 	supervdsm.py \
 	supervdsmServer.py \

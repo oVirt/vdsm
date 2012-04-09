@@ -28,6 +28,7 @@ from time import sleep
 import signal
 from multiprocessing import Pipe, Process
 
+from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 from lsblk import getLsBlk as _getLsBlk
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
@@ -74,6 +75,10 @@ LOG_CONF_PATH = "/etc/vdsm/logger.conf"
 
 
 class _SuperVdsm(object):
+    @logDecorator
+    def getDevicePartedInfo(self, *args, **kwargs):
+        return _getDevicePartedInfo(*args, **kwargs)
+
     @logDecorator
     def getLsBlk(self, *args, **kwargs):
         return _getLsBlk(*args, **kwargs)

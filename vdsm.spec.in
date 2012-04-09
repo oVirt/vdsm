@@ -73,6 +73,7 @@ Requires: libselinux-python
 Requires: kernel >= 2.6.32-198
 Requires: %{name}-python = %{version}-%{release}
 Requires: selinux-policy-targeted >= 3.7.19-80.el6
+Requires: pyparted
 Requires(post): /usr/sbin/saslpasswd2
 
 %description
@@ -465,6 +466,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/libvirtvm.py*
 %{_datadir}/%{vdsm_name}/lsblk.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
+%{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/prepare-vmchannel
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
