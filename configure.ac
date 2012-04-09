@@ -24,6 +24,8 @@ AC_INIT([vdsm],
         [vdsm-devel@lists.fedorahosted.org])
 AC_CONFIG_AUX_DIR([build-aux])
 
+m4_include([m4/ax_python_module.m4])
+
 # Package release
 AC_SUBST([PACKAGE_RELEASE],
          [m4_esyscmd([build-aux/release.sh])])
@@ -103,6 +105,10 @@ AC_PATH_PROG([NOSETESTS], [nosetests])
 if test "x$NOSETESTS" = "x"; then
   AC_MSG_ERROR([python-nose not found, please install it.])
 fi
+
+# Checking for python modules (sorted, please keep in order)
+AX_PYTHON_MODULE([ethtool], [fatal])
+AX_PYTHON_MODULE([libvirt], [fatal])
 
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])
