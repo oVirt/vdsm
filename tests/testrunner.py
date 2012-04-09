@@ -41,7 +41,10 @@ class TermColor(object):
 
 
 def colorWrite(stream, text, color):
-    stream.write('\x1b[%s;1m%s\x1b[0m' % (color, text))
+    if os.isatty(stream.fileno()):
+        stream.write('\x1b[%s;1m%s\x1b[0m' % (color, text))
+    else:
+        stream.write(text)
 
 
 class VdsmTestCase(unittest.TestCase):
