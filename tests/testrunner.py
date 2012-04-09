@@ -165,18 +165,21 @@ from types import ModuleType
 class vdsm(ModuleType):
     def __init__(self):
         ModuleType.__init__(self, "vdsm")
-        import config
-        import constants
-        import utils
-        self.config = config
-        self.constants = constants
-        self.utils = utils
 
 
 def hackVdsmModule():
     sys.modules['vdsm'] = mod = vdsm()
-    sys.modules['vdsm.constants'] = mod.constants
+
+    import config
+    mod.config = config
     sys.modules['vdsm.config'] = mod.config
+
+    import constants
+    mod.constants = constants
+    sys.modules['vdsm.constants'] = mod.constants
+
+    import utils
+    mod.utils = utils
     sys.modules['vdsm.utils'] = mod.utils
 
 if __name__ == '__main__':
