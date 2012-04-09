@@ -23,6 +23,7 @@ from time import sleep, time
 from testrunner import VdsmTestCase as TestCaseBase
 
 import storage.processPool as processPool
+from testValidation import slowtest
 
 
 def unstoppableTask(timeout):
@@ -85,6 +86,7 @@ class ProcessPoolTests(TestCaseBase):
         getpid_oop = self.pool.wrapFunction(os.getpid)
         self.assertTrue(getpid_oop() != os.getpid())
 
+    @slowtest
     def testMaxSimultaniousCalls(self):
         threads = []
         # It is possible that 10 seconds will pass
@@ -109,6 +111,7 @@ class ProcessPoolTests(TestCaseBase):
 
         self.assertEquals(exceptCounter[0], 1)
 
+    @slowtest
     def testClose(self):
         self.log.info("Running a command to create a helper")
         self.pool.runExternally(sum, (1, 2, 3, 4))
