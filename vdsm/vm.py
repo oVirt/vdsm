@@ -721,7 +721,8 @@ class Vm(object):
                                                      - 1) / 2**20
             # TODO cap newsize by max volume size
             volDict = {'poolID': d.poolID, 'domainID': d.domainID,
-                       'imageID': d.imageID, 'volumeID': d.volumeID}
+                       'imageID': d.imageID, 'volumeID': d.volumeID,
+                       'name': d.name}
             d.needExtend = True
             d.reqsize = newsize
             # sendExtendMsg expects size in bytes
@@ -757,15 +758,12 @@ class Vm(object):
     def _afterLvExtend(self, drive):
         self.log.debug('_afterLvExtend %s' % drive)
         for d in self._devices[DISK_DEVICES]:
-            if (d.poolID, d.domainID,
-                d.imageID, d.volumeID) != (
-                                 drive['poolID'], drive['domainID'],
-                                 drive['imageID'], drive['volumeID']):
+            if d.name != drive['name']:
                 continue
-            self._refreshLV(drive['domainID'], drive['poolID'],
-                            drive['imageID'], drive['volumeID'])
-            res = self.cif.irs.getVolumeSize(d.domainID, d.poolID, d.imageID,
-                                             d.volumeID)
+            self._refreshLV(d.domainID, d.poolID,
+                            d.imageID, d.volumeID)
+            res = self.cif.irs.getVolumeSize(d.domainID, d.poolID,
+                                             d.imageID, d.volumeID)
             if res['status']['code']:
                 self.log.debug("Get size failed for %s %s %s %s. Skipping.",
                                 d.domainID, d.poolID, d.imageID, d.volumeID)
