@@ -355,7 +355,7 @@ class NetInfo(object):
     def getNicsVlanAndBondingForNetwork(self, network):
         vlan = None
         bonding = None
-        nics = []
+        nic = []
 
         if networks()[network]['bridged']:
             ports =  self.networks[network]['ports']
@@ -372,10 +372,10 @@ class NetInfo(object):
             if port in self.bondings:
                 assert bonding is None
                 bonding = port
-                nics += self.bondings[bonding]['slaves']
+                nic += self.bondings[bonding]['slaves']
             else:
-                nics.append(port)
-        return nics, vlan, bonding
+                nic.append(port)
+        return nic, vlan, bonding
 
     def getBridgelessNetworks(self):
         """
