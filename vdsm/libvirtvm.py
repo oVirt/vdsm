@@ -909,10 +909,14 @@ class SoundDevice(vm.Device):
 
 class NetworkInterfaceDevice(vm.Device):
     def __init__(self, conf, log, **kwargs):
+        # pyLint can't tell that the Device.__init__() will
+        # set a nicModel attribute, so modify the kwarg list
+        # prior to device init.
+        for attr, value in kwargs.iteritems():
+            if attr == 'nicModel' and value == 'pv':
+                kwargs[attr] = 'virtio'
         vm.Device.__init__(self, conf, log, **kwargs)
         self.sndbufParam = False
-        if self.nicModel == 'pv':
-            self.nicModel = 'virtio'
         self._customize()
 
     def _customize(self):
