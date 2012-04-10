@@ -23,13 +23,14 @@ SUBDIRS = sos storage
 include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
+	API.py \
 	betterThreading.py \
+	BindingXMLRPC.py \
 	blkid.py \
 	caps.py \
 	clientIF.py \
-	BindingXMLRPC.py \
-	API.py \
 	configNetwork.py \
+	debugPluginClient.py \
 	dsaversion.py \
 	guestIF.py \
 	hooking.py \
@@ -47,8 +48,8 @@ dist_vdsm_PYTHON = \
 	supervdsmServer.py \
 	tc.py \
 	vdsmDebugPlugin.py \
-	vm.py \
-	vmChannels.py
+	vmChannels.py \
+	vm.py
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \

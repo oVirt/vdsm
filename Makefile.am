@@ -37,8 +37,10 @@ endif
 
 # When fixing a file to conform with pep8 add it to the WL here so it will be
 # checkd from now on
-PEP8_WHITELIST = tests \
-                 vdsm/storage/misc.py
+PEP8_WHITELIST = \
+	tests \
+	vdsm/debugPluginClient.py \
+	vdsm/storage/misc.py
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)
