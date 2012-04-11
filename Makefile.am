@@ -43,6 +43,7 @@ PEP8_WHITELIST = \
 	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \
 	vdsm/parted_utils.py \
+	vdsm/md_utils.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/processPool.py \
 	vdsm/supervdsm.py \

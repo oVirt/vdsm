@@ -42,6 +42,7 @@ dist_vdsm_PYTHON = \
 	libvirtvm.py \
 	logUtils.py \
 	lsblk.py \
+	md_utils.py \
 	neterrors.py \
 	parted_utils.py \
 	pthread.py \

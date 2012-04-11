@@ -13,31 +13,29 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
 
-test_modules = \
-	main.py \
-	alignmentScanTests.py \
-	betterThreadingTests.py \
-	fileUtilTests.py \
-	guestIFTests.py \
-	md_utils_tests.py \
-	miscTests.py \
-	parted_utils_tests.py \
-	persistentDictTests.py \
-	processPoolTests.py \
-	resourceManagerTests.py \
-	hooksTests.py
+import os
 
-dist_noinst_DATA = \
-	$(test_modules) \
-	testrunner.py \
-	testValidation.py \
-	run_tests.sh
 
-check-local:
-	$(top_srcdir)/tests/run_tests.sh $(test_modules)
+def _parseMdDeviceMap(lines):
+    mdUuidMap = {}
+    for l in lines:
+        tokens = l.strip().split()
+        mdUuidMap[os.path.realpath(tokens[-1])] = tokens[-2]
+    return mdUuidMap
 
+
+def getMdDeviceUuidMap():
+    """
+    returns all md/uuid map eg.
+        {'DEVICE': 'UUID', ...}
+    """
+    try:
+        with open('/dev/md/md-device-map') as f:
+            return _parseMdDeviceMap(f.readlines())
+    except IOError:
+        return {}

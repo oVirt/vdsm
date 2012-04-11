@@ -29,6 +29,7 @@ import signal
 from multiprocessing import Pipe, Process
 
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
+from md_utils import getMdDeviceUuidMap as _getMdDeviceUuidMap
 from lsblk import getLsBlk as _getLsBlk
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
@@ -78,6 +79,9 @@ class _SuperVdsm(object):
     @logDecorator
     def getDevicePartedInfo(self, *args, **kwargs):
         return _getDevicePartedInfo(*args, **kwargs)
+
+    def getMdDeviceUuidMap(self, *args, **kwargs):
+        return _getMdDeviceUuidMap(*args, **kwargs)
 
     @logDecorator
     def getLsBlk(self, *args, **kwargs):
