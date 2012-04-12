@@ -27,6 +27,7 @@ import uuid
 import codecs
 from contextlib import nested
 from functools import partial
+from weakref import proxy
 
 from vdsm import constants
 import storage_mailbox
@@ -121,7 +122,7 @@ class StoragePool(Securable):
         self.masterDomain = None
         self.spmRole = SPM_FREE
         self.domainMonitor = DomainMonitor(self.monitorInterval)
-        self._upgradeCallback = partial(StoragePool._upgradePoolDomain, self)
+        self._upgradeCallback = partial(StoragePool._upgradePoolDomain, proxy(self))
 
     @unsecured
     def getSpmRole(self):
