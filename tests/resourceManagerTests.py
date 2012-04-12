@@ -23,6 +23,7 @@ from random import Random
 import threading
 from StringIO import StringIO
 import types
+from resource import getrlimit, RLIMIT_NPROC
 
 import storage.resourceManager as resourceManager
 from testrunner import VdsmTestCase as TestCaseBase
@@ -594,9 +595,14 @@ class ResourceManagerTests(TestCaseBase):
         This tests raises thousands of threads and tries to acquire the same
         resource.
         """
-        threadLimit = threading.Semaphore(900)
         resources = []
         requests = []
+
+        procLimit, _ = getrlimit(RLIMIT_NPROC)
+        procLimit *= 0.75
+        procLimit = int(procLimit)
+        threadLimit = threading.Semaphore(procLimit)
+        nthreads = procLimit
 
         def callback(req, res):
             requests.insert(0, req)
@@ -624,7 +630,7 @@ class ResourceManagerTests(TestCaseBase):
                           resourceManager.LockType.shared]
 
         threads = []
-        for i in range(900):
+        for i in range(nthreads):
                 threadLimit.acquire()
                 threads.append(threading.Thread(target=register))
                 threads[-1].start()
