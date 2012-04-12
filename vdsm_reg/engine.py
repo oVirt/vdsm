@@ -131,7 +131,7 @@ class Plugin(PluginBase):
         elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,0,0,0))
         elements.setField(Label(""), 0, 4, anchorLeft = 1)
 
-        elements.setField(Label("Set oVirt Engine Admin Password"), 0, 5, anchorLeft = 1)
+        elements.setField(Label("Optional password for adding node through oVirt Engine UI"), 0, 5, anchorLeft = 1)
         pw_elements = Grid(3,3)
 
         pw_elements.setField(Label("Password: "), 0, 1, anchorLeft = 1)
