@@ -12,5 +12,5 @@ AWK_RELEASE='
       else if (NF == 3) print 0, $2, "git" substr($3, 2)
       else if (NF == 4) print $2, $3, "git" substr($4, 2)
     }'
-git describe 2> /dev/null \
+git describe --match="v[0-9]*" 2> /dev/null \
     | awk "$AWK_RELEASE" | tr -cd '[:alnum:].'

@@ -9,5 +9,6 @@ AWK_VERSION='
     /^v[0-9]/ {
       sub(/^v/,"") ; print $1
     }'
-git describe 2> /dev/null \
+
+git describe --match "v[0-9]*" 2> /dev/null \
     | awk "$AWK_VERSION" | tr -cd '[0-9].'
