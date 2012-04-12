@@ -24,6 +24,7 @@ test_modules = \
 	fileUtilTests.py \
 	guestIFTests.py \
 	miscTests.py \
+	persistentDictTests.py \
 	processPoolTests.py \
 	resourceManagerTests.py
 
