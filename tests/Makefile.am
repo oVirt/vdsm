@@ -20,11 +20,12 @@
 
 test_modules = \
 	main.py \
-	miscTests.py \
-	resourceManagerTests.py \
-	processPoolTests.py \
+	betterThreadingTests.py \
 	fileUtilTests.py \
-	guestIFTests.py
+	guestIFTests.py \
+	miscTests.py \
+	processPoolTests.py \
+	resourceManagerTests.py
 
 dist_noinst_DATA = \
 	$(test_modules) \
