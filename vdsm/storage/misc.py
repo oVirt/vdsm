@@ -1116,9 +1116,15 @@ class _DisabledGcBlock(object):
 disabledGcBlock = _DisabledGcBlock()
 
 
+def iteratePids():
+    for path in glob.iglob("/proc/[0-9]*"):
+        pid = os.path.basename(path)
+        yield int(pid)
+
+
 def pgrep(name):
     res = []
-    for pid in os.listdir("/proc"):
+    for pid in iteratePids():
         try:
             pid = int(pid)
         except ValueError:
