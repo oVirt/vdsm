@@ -41,6 +41,7 @@ PEP8_WHITELIST = \
 	tests \
 	vdsm/debugPluginClient.py \
 	vdsm/storage/misc.py
+	vdsm/storage/processPool.py
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)

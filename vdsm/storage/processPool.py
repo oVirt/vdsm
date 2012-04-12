@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -37,9 +37,18 @@ MANAGE_PORT = config.getint("addresses", "management_port")
 _log = logging.getLogger("ProcessPool")
 LOGGING_THREAD_NAME = '__loggingThreadName__'
 
-class Timeout(RuntimeError): pass
-class NoFreeHelpersError(RuntimeError): pass
-class PoolClosedError(RuntimeError): pass
+
+class Timeout(RuntimeError):
+    pass
+
+
+class NoFreeHelpersError(RuntimeError):
+    pass
+
+
+class PoolClosedError(RuntimeError):
+    pass
+
 
 class ProcessPoolLimiter(object):
     def __init__(self, procPool, limit):
@@ -67,6 +76,7 @@ class ProcessPoolLimiter(object):
             with self._lock:
                 self._counter -= 1
 
+
 class ProcessPoolMultiplexer(object):
     def __init__(self, processPool, helperPerUser):
         self._lock = threading.Lock()
@@ -80,8 +90,11 @@ class ProcessPoolMultiplexer(object):
         except KeyError:
             with self._lock:
                 if key not in self._userDict:
-                    self._userDict[key] = ProcessPoolLimiter(self._pool, self._helpersPerUser)
+                    limiter = ProcessPoolLimiter(self._pool,
+                                                 self._helpersPerUser)
+                    self._userDict[key] = limiter
                 return self._userDict[key]
+
 
 class ProcessPool(object):
     def __init__(self, maxSubProcess, gracePeriod, timeout):
@@ -96,11 +109,13 @@ class ProcessPool(object):
         # and all the mem will just get wasted untouched on the child's side.
         # What we count on is having all the child processes share the mem.
         # This is best utilized by starting all child processes at once.
-        self._helperPool = [Helper(self._logQueue) for i in range(self._maxSubProcess)]
+        self._helperPool = [Helper(self._logQueue)
+                for i in range(self._maxSubProcess)]
         self._lockPool = [Lock() for i in range(self._maxSubProcess)]
         self._closed = False
         # Add thread for logging from oop
-        self.logProc = threading.Thread(target=_helperLoggerLoop, args=(self._logQueue,))
+        self.logProc = threading.Thread(target=_helperLoggerLoop,
+                                        args=(self._logQueue,))
         self.logProc.daemon = True
         self.logProc.start()
 
@@ -200,17 +215,20 @@ def _helperLoggerLoop(logQueue):
         except:
             pass
 
+
 def disown(proc):
     # I know touching _children is wrong but there is no public API for
     # disowning a child
     current_process()._children.discard(proc)
+
 
 class Helper(object):
     def __init__(self, logQueue):
         self._logQueue = logQueue
         self.lifeline, childsLifeline = os.pipe()
         self.pipe, hisPipe = Pipe()
-        self.proc = Process(target=_helperMainLoop, args=(hisPipe, childsLifeline, self.lifeline, self._logQueue))
+        self.proc = Process(target=_helperMainLoop,
+                args=(hisPipe, childsLifeline, self.lifeline, self._logQueue))
         self.proc.daemon = True
         self.proc.start()
         disown(self.proc)
@@ -237,6 +255,7 @@ class Helper(object):
     def interrupt(self):
         os.kill(self.proc.pid, signal.SIGINT)
 
+
 def _releaseLoggingModuleLock():
     # As this is non public interface it might change. I would have logged a
     # warning but I can't
@@ -250,6 +269,7 @@ def _releaseLoggingModuleLock():
         except RuntimeError:
             break
 
+
 def _setUpLogging(logQueue):
     _releaseLoggingModuleLock()
 
@@ -258,14 +278,17 @@ def _setUpLogging(logQueue):
     logging.root.handlers = [hdlr]
 
     for log in logging.Logger.manager.loggerDict.values():
-        if hasattr(log, 'handlers'): log.handlers.append(hdlr)
+        if hasattr(log, 'handlers'):
+            log.handlers.append(hdlr)
 
     # Removing all the handlers from the loggers. This avoid a deadlock on
     # the logging locks. Multi-process and multi-threading don't mix well.
     #   - BZ#732652: https://bugzilla.redhat.com/show_bug.cgi?id=732652
     #   - I6721: http://bugs.python.org/issue6721
     for log in logging.Logger.manager.loggerDict.values():
-        if hasattr(log, 'handlers'): del log.handlers[:]
+        if hasattr(log, 'handlers'):
+            del log.handlers[:]
+
 
 def _robustCloseFD(fd):
     while True:
@@ -277,6 +300,7 @@ def _robustCloseFD(fd):
                 return
 
             raise
+
 
 def _closeFDs(whitelist=[], retry=3):
     for i in range(retry):
@@ -292,6 +316,7 @@ def _closeFDs(whitelist=[], retry=3):
 
         if not closeFailed:
             break
+
 
 def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     os.close(parentLifelineFD)
@@ -313,7 +338,7 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
     _setUpLogging(logQueue)
 
     poller = select.poll()
-    poller.register(lifeLine, 0) # Only SIGERR\SIGHUP
+    poller.register(lifeLine, 0)  # Only SIGERR\SIGHUP
     poller.register(pipe.fileno(), select.EPOLLIN | select.EPOLLPRI)
 
     try:
@@ -322,7 +347,10 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
             for (fd, event) in poller.poll():
                 # If something happened in lifeLine, it means that papa is gone
                 # and we should go as well
-                if fd == lifeLine or event in (select.EPOLLHUP, select.EPOLLERR):
+                if fd == lifeLine:
+                    return
+
+                if event in (select.EPOLLHUP, select.EPOLLERR):
                     return
 
             func, args, kwargs = pipe.recv()
@@ -341,4 +369,3 @@ def _helperMainLoop(pipe, lifeLine, parentLifelineFD, logQueue):
         # If for some reason communication with the host failed crash silently
         # There is no logging in oop and VDSM will handle it.
         pass
-
