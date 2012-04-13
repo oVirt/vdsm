@@ -49,15 +49,15 @@ def ddWatchCopy(srcPath, dstPath, callback, dataLen):
     return rc, out, err
 
 
-def watchCmd(cmd, stop, sudo=True, cwd=None, infile=None, outfile=None,
+def watchCmd(cmd, stop, cwd=None, infile=None, outfile=None,
         data=None, recoveryCallback=None):
     try:
-        ret, out, err = misc.watchCmd(cmd, stop, sudo=sudo, cwd=cwd,
+        ret, out, err = misc.watchCmd(cmd, stop, cwd=cwd,
                 infile=infile, outfile=outfile, data=data,
                 recoveryCallback=recoveryCallback)
     except TypeError:
         #For backwards compatibility
-        ret, out, err = misc.watchCmd(cmd, stop, None, sudo=sudo, cwd=cwd,
+        ret, out, err = misc.watchCmd(cmd, stop, None, cwd=cwd,
                 infile=infile, outfile=outfile, data=data,
                 recoveryCallback=recoveryCallback)
 
@@ -856,26 +856,22 @@ class WatchCmd(TestCaseBase):
                     I'm not in the mood for games. """
         # (C) BBC - Doctor Who
         data = data.strip()
-        ret, out, err = watchCmd([EXT_ECHO, "-n", data], lambda: False,
-                sudo=False)
+        ret, out, err = watchCmd([EXT_ECHO, "-n", data], lambda: False)
 
         self.assertEquals(ret, 0)
         self.assertEquals(out, data.splitlines())
 
-    def testStop(self, sudo=False):
+    def testStop(self):
         """
         Test that stopping the process really works.
         """
         sleepTime = "10"
         try:
-            watchCmd([EXT_SLEEP, sleepTime], lambda: True, sudo=sudo)
+            watchCmd([EXT_SLEEP, sleepTime], lambda: True)
         except misc.se.ActionStopped:
             self.log.info("Looks like task stopped!")
         else:
             self.fail("watchCmd didn't stop!")
-
-    def testStopSudo(self):
-        self.testStop(True)
 
     def testStdOut(self):
         """
@@ -884,8 +880,7 @@ class WatchCmd(TestCaseBase):
         """
         line = "Real stupidity beats artificial intelligence every time."
         # (C) Terry Pratchet - Hogfather
-        ret, stdout, stderr = watchCmd([EXT_ECHO, line], lambda: False,
-                sudo=False)
+        ret, stdout, stderr = watchCmd([EXT_ECHO, line], lambda: False)
         self.assertEquals(stdout[0], line)
 
     def testStdErr(self):
@@ -898,16 +893,8 @@ class WatchCmd(TestCaseBase):
         # (C) Terry Pratchet - Small Gods
         code = "import sys; sys.stderr.write('%s')" % line
         ret, stdout, stderr = watchCmd([EXT_PYTHON, "-c", code],
-                lambda: False, sudo=False)
+                lambda: False)
         self.assertEquals(stderr[0], line)
-
-    def testSudo(self):
-        """
-        Tests that when running with sudo the user really is root (or other
-        desired user).
-        """
-        ret, stdout, stderr = watchCmd([EXT_WHOAMI], lambda: False, sudo=True)
-        self.assertEquals(stdout[0], SUDO_USER)
 
     def testLeakFd(self):
         """

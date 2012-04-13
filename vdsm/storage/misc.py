@@ -259,13 +259,13 @@ def getProcCtime(pid):
     return str(ctime)
 
 
-def watchCmd(command, stop, sudo=True, cwd=None, infile=None, outfile=None,
+def watchCmd(command, stop, cwd=None, infile=None, outfile=None,
             data=None, recoveryCallback=None):
     """
     Executes an external command, optionally via sudo with stop abilities.
     """
-    proc = execCmd(command, sudo=sudo, cwd=cwd, infile=infile, outfile=outfile,
-            data=data, sync=False)
+    proc = execCmd(command, sudo=False, cwd=cwd, infile=infile,
+            outfile=outfile, data=data, sync=False)
     if recoveryCallback:
         recoveryCallback(proc)
 
@@ -410,7 +410,7 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
         if not stop:
             (rc, out, err) = execCmd(cmd, sudo=False)
         else:
-            (rc, out, err) = watchCmd(cmd, stop=stop, sudo=False,
+            (rc, out, err) = watchCmd(cmd, stop=stop,
                                       recoveryCallback=recoveryCallback)
 
         if rc:

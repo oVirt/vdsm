@@ -913,7 +913,7 @@ def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, stop, rollbac
     recoveryCallback = None
     if rollback:
         recoveryCallback = baseAsyncTasksRollback
-    (rc, out, err) = misc.watchCmd(cmd, stop=stop, sudo=False, cwd=cwd,
+    (rc, out, err) = misc.watchCmd(cmd, stop=stop, cwd=cwd,
                                    recoveryCallback=recoveryCallback)
 
     log.debug('(qemuRebase): REBASE %s DONE' % (src))
@@ -935,7 +935,7 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
         cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert",
                                        "-t", "none", "-f", src_fmt, src,
                                        "-O",dst_fmt, dst]
-        (rc, out, err) = misc.watchCmd(cmd, stop=stop, sudo=False,
+        (rc, out, err) = misc.watchCmd(cmd, stop=stop,
                                        recoveryCallback=baseAsyncTasksRollback)
 
     log.debug('(qemuConvert): COPY %s to %s DONE' % (src, dst))
