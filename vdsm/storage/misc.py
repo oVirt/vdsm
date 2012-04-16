@@ -311,24 +311,6 @@ def readfileSUDO(name):
     return out
 
 
-def writefileSUDO(name, lines):
-    """
-    Write the 'lines' to the file using /bin/echo command via sudo
-    """
-    cmd = [constants.EXT_DD, "of=%s" % name]
-    data = "".join(lines)
-    (rc, out, err) = execCmd(cmd, data=data, sudo=True)
-    if rc:
-        log.warning("write failed with rc: %s, stderr: %s", rc, repr(err))
-        raise se.MiscFileWriteException(name)
-
-    if not validateDDBytes(err, len(data)):
-        log.warning("write failed stderr: %s, data: %s", repr(err), len(data))
-        raise se.MiscFileWriteException(name)
-
-    return (rc, out)
-
-
 def readblockSUDO(name, offset, size, sudo=False):
     '''
     Read (direct IO) the content of device 'name' at offset, size bytes
