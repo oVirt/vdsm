@@ -26,7 +26,8 @@ test_modules = \
 	miscTests.py \
 	persistentDictTests.py \
 	processPoolTests.py \
-	resourceManagerTests.py
+	resourceManagerTests.py \
+	hooksTests.py
 
 dist_noinst_DATA = \
 	$(test_modules) \

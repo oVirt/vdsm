@@ -30,8 +30,14 @@ from vdsm.constants import P_VDSM_HOOKS, P_VDSM
 
 class HookError(Exception): pass
 
+# dir path is relative to '/' for test purposes
+# otherwise path is relative to P_VDSM_HOOKS
 def _scriptsPerDir(dir):
-    return [ s for s in glob.glob(P_VDSM_HOOKS + dir + '/*')
+    if (dir[0] == '/'):
+        path = dir
+    else:
+        path = P_VDSM_HOOKS + dir
+    return [ s for s in glob.glob(path + '/*')
              if os.access(s, os.X_OK) ]
 
 def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
