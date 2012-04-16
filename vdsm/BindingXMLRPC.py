@@ -174,8 +174,7 @@ class BindingXMLRPC(object):
 
         globalMethods = self.getGlobalMethods()
         irsMethods = self.getIrsMethods()
-        # XXX: Need another way to check if IRS init was okay
-        if not irsMethods:
+        if not self.cif.irs:
             err = errCode['recovery'].copy()
             err['status'] = err['status'].copy()
             err['status']['message'] = 'Failed to initialize storage'
