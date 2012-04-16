@@ -416,7 +416,7 @@ class LocalDirectoryConnection(object):
         os.chmod(lnPath, 0775)
 
     def isConnected(self):
-        return os.path.exists(self._path)
+        return os.path.exists(self._getLocalPath())
 
     def disconnect(self):
         lnPath = self._getLocalPath()
