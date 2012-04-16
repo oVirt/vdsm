@@ -998,8 +998,7 @@ class Drive(vm.Device):
             self.blockDev = utils.isBlockDevice(self.path)
         except OSError:
             if self.device in ('cdrom', 'floppy'):
-                self.log.debug('removable device not found in %s', self.path,
-                               exc_info=True)
+                self.log.debug('removable device not found in %s', self.path)
                 self.blockDev = False
             else:
                 raise
