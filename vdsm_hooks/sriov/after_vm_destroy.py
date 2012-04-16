@@ -4,7 +4,7 @@ import os
 import sys
 from vdsm import utils
 import traceback
-import libvirtconnection
+from vdsm import libvirtconnection
 
 SYS_NIC_PATH = '/sys/class/net/%s'
 VDSM_VAR_HOOKS_DIR = '/var/run/vdsm/hooks'

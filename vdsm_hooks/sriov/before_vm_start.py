@@ -6,7 +6,7 @@ import grp
 import pwd
 from vdsm import utils
 import hooking
-import libvirtconnection
+from vdsm import libvirtconnection
 import traceback
 from xml.dom import minidom
 

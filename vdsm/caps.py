@@ -34,7 +34,7 @@ import glob
 import libvirt
 
 from vdsm.config import config
-import libvirtconnection
+from vdsm import libvirtconnection
 import dsaversion
 from vdsm import netinfo
 import hooks

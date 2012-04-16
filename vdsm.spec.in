@@ -460,7 +460,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/get-vm-pid
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
-%{_datadir}/%{vdsm_name}/libvirtconnection.py*
 %{_datadir}/%{vdsm_name}/libvirtev.py*
 %{_datadir}/%{vdsm_name}/libvirtvm.py*
 %{_datadir}/%{vdsm_name}/lsblk.py*
@@ -598,6 +597,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
 %{python_sitelib}/%{vdsm_name}/define.py*
+%{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/netinfo.py*
 %{python_sitelib}/%{vdsm_name}/qemuImg.py*
 %{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*

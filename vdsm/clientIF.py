@@ -32,7 +32,7 @@ import ksm
 from vdsm import netinfo
 from vdsm.define import doneCode, errCode
 import libvirt
-import libvirtconnection
+from vdsm import libvirtconnection
 import vm
 from vdsm import constants
 from vdsm import utils

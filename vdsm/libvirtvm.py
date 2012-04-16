@@ -31,7 +31,7 @@ from vdsm import utils
 from vdsm import constants
 import guestIF
 import libvirtev
-import libvirtconnection
+from vdsm import libvirtconnection
 from vdsm.config import config
 import hooks
 import caps
