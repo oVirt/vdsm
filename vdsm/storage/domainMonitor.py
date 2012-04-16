@@ -22,6 +22,7 @@ from threading import Thread, Event
 from time import time
 import logging
 import misc
+from sdc import sdCache
 
 
 class DomainMonitorStatus(object):
@@ -111,9 +112,19 @@ class DomainMonitor(object):
     def _monitorDomain(self, domain, hostId, stopEvent, status):
         nextStatus = DomainMonitorStatus()
         isIsoDomain = domain.isISO()
+        lastRefresh = time()
+        refreshTime = config.getint("irs", "repo_stats_cache_refresh_timeout")
 
         while not stopEvent.is_set():
             nextStatus.clear()
+
+            # Refreshing the domain object in order to pick up changes as,
+            # for example, the domain upgrade.
+            if time() - lastRefresh > refreshTime:
+                self.log.debug("Refreshing domain %s", domain.sdUUID)
+                sdCache.manuallyRemoveDomain(domain.sdUUID)
+                lastRefresh = time()
+
             try:
                 domain.selftest()
 
@@ -169,8 +180,11 @@ class DomainMonitor(object):
 
         self.log.debug("Monitorg for domain %s is stopping", domain.sdUUID)
 
-        try:
-            domain.releaseHostId(hostId, unused=True)
-        except:
-            self.log.debug("Unable to release the host id %s for the domain "
-                           "%s",  hostId, domain.sdUUID, exc_info=True)
+        # If this is an ISO domain we didn't acquire the host id and releasing
+        # it is superfluous.
+        if not isIsoDomain:
+            try:
+                domain.releaseHostId(hostId, unused=True)
+            except:
+                self.log.debug("Unable to release the host id %s for the "
+                           "domain %s",  hostId, domain.sdUUID, exc_info=True)

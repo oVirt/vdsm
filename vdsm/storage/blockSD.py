@@ -695,41 +695,6 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.activateLVs(self.sdUUID, [sd.LEASES])
         return lvm.lvPath(self.sdUUID, sd.LEASES)
 
-    def upgrade(self, targetVersion):
-        sd.validateDomainVersion(targetVersion)
-        self.invalidateMetadata()
-        version = self.getVersion()
-        self.log.debug("Trying to upgrade domain `%s` from version %d to version %d", self.sdUUID, version, targetVersion)
-        if version > targetVersion:
-            raise se.CurrentVersionTooAdvancedError(self.sdUUID,
-                    curVer=version, expVer=targetVersion)
-
-        elif version == targetVersion:
-            self.log.debug("No need to upgrade domain `%s`, leaving unchanged", self.sdUUID)
-            return
-
-        self.log.debug("Upgrading domain `%s`", self.sdUUID)
-        if targetVersion in VERS_METADATA_LV:
-            self.setMetaParam(sd.DMDK_VERSION, targetVersion)
-
-        if targetVersion in VERS_METADATA_TAG:
-            self.log.debug("Upgrading domain `%s` to tag based metadata", self.sdUUID)
-            newProvider = TagBasedSDMetadata(self.sdUUID)
-            oldProvider = self._metadata
-            # I use _dict to bypass the validators
-            # We need to copy ALL metadata
-            metadata = oldProvider._dict.copy()
-            metadata[sd.DMDK_VERSION] = str(targetVersion)
-            newProvider._dict.update(metadata)
-            try:
-                self._metadata = newProvider
-                oldProvider._dict.clear()
-            except:
-                self.log.error("Could not commit upgrade", exc_info=True)
-                newProvider._dict.clear()
-                self._metadata = oldProvider
-                raise
-
     def selftest(self):
         """
         Run the underlying VG validation routine

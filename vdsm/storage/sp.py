@@ -998,10 +998,14 @@ class StoragePool(Securable):
         # Remember to get the sdUUID before upgrading because the object is
         # broken after the upgrade
         sdUUID = domain.sdUUID
+        isMsd = (self.masterDomain.sdUUID == sdUUID)
+        repoPath = os.path.join(self.storage_repository, self.spUUID)
+
         if targetFormat is None:
             targetFormat = self.getFormat()
 
-        self._formatConverter.convert(domain.getRealDomain(), targetFormat)
+        self._formatConverter.convert(repoPath, self.id, domain.getRealDomain(),
+                                      isMsd, targetFormat)
         sdCache.manuallyRemoveDomain(sdUUID)
 
     @unsecured

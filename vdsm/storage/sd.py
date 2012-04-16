@@ -410,27 +410,6 @@ class StorageDomain:
         except KeyError:
             return []
 
-    def upgrade(self, targetVersion):
-        """
-        Upgrade the domain to more advance version
-        """
-        validateDomainVersion(targetVersion)
-        version = self.getVersion()
-        self.log.debug(
-            "Trying to upgrade domain `%s` from version %d to version %d",
-            self.sdUUID, version, targetVersion)
-        if version > targetVersion:
-            raise se.CurrentVersionTooAdvancedError(self.sdUUID,
-                    curVer=version, expVer=targetVersion)
-
-        elif version == targetVersion:
-            self.log.debug("No need to upgrade domain `%s`, leaving unchanged",
-                           self.sdUUID)
-            return
-
-        self.log.debug("Upgrading domain `%s`", self.sdUUID)
-        self.setMetaParam(DMDK_VERSION, targetVersion)
-
     def getIdsFilePath(self):
         return os.path.join(self.getMDPath(), IDS)
 
