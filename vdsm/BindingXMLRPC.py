@@ -217,9 +217,9 @@ class BindingXMLRPC(object):
         vm = API.VM(self.cif, vmId)
         return vm.shutdown(delay, message)
 
-    def vmSetTicket(self, vmId, password, ttl, existingConnAction='disconnect'):
+    def vmSetTicket(self, vmId, password, ttl, existingConnAction='disconnect', params = {}):
         vm = API.VM(self.cif, vmId)
-        return vm.setTicket(password, ttl, existingConnAction)
+        return vm.setTicket(password, ttl, existingConnAction, params)
 
     def vmChangeCD(self, vmId, driveSpec):
         vm = API.VM(self.cif, vmId)

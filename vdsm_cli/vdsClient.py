@@ -306,12 +306,19 @@ class service:
         sys.exit(response['status']['code'])
 
     def do_setVmTicket(self, args):
-        if len(args) == 4:
-            vmId, otp64, secs, connAct = args
-        else:
-            vmId, otp64, secs = args
+        if len(args) == 3:
+            vmId, otp64, secs = args[:3]
             connAct = 'disconnect'
-        return self.ExecAndExit(self.s.setVmTicket(vmId, otp64, secs, connAct))
+            params = {}
+        else:
+            vmId, otp64, secs, connAct = args[:4]
+            params = {}
+
+        if (len(args) > 4):
+            params = self._parseDriveSpec(args[4])
+
+        return self.ExecAndExit(self.s.setVmTicket(vmId, otp64, secs,
+            connAct, params))
 
     def do_reset(self, args):
         vmId = args[0]
@@ -1620,9 +1627,10 @@ if __name__ == '__main__':
                         'Sends reset signal to the vm'
                        )),
         'setVmTicket': ( serv.do_setVmTicket,
-                        ('<vmId> <password> <sec> [disconnect|keep|fail]',
+                        ('<vmId> <password> <sec> [disconnect|keep|fail], [params={}]',
                          'Set the password to the vm display for the next <sec> seconds.',
-                         'Optional argument instructs spice regarding currently-connected client.'
+                         'Optional argument instructs spice regarding currently-connected client.',
+                         'Optional additional parameters in dictionary format, name:value,name:value'
                         )),
         'migrate':   ( serv.do_migrate,
                        ('vmId=<id> method=<offline|online> src=<host:[port]> dst=<host:[port]>',

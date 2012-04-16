@@ -46,6 +46,7 @@ Currently-supported hooks have self-explanatory names:
     before_vm_migrate_source, after_vm_migrate_source,
     before_vm_migrate_destination, after_vm_migrate_destination,
     before_vm_destroy, after_vm_destroy,
+    before_vm_set_ticket, after_vm_set_ticket
     before_vdsm_start, after_vdsm_stop.
 
 Each hook executes the scripts under
@@ -70,6 +71,9 @@ environment variable.
 before_migration_destination (and before_dehibernation) hooks currently receive
 the xml of the domain from the source host. The xml of the domain at the
 destination will differ in various details.
+
+The environment of before_vm_set_ticket and after_vm_set_ticket hooks is augmented
+with a set of params passed by the caller of setVmTicket.
 
 .SS Hook execution
 before_vdsm_start and after_vdsm_stop scripts are executed as user

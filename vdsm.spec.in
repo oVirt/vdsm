@@ -550,6 +550,8 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_migrate_destination
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_set_ticket
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_set_ticket
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vdsm_start
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
 %{_datadir}/%{vdsm_name}/configNetwork.py*

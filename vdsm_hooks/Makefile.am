@@ -72,6 +72,8 @@ VDSMHOOKS = \
 	after_vm_migrate_destination \
 	before_vm_destroy \
 	after_vm_destroy \
+    before_vm_set_ticket \
+	after_vm_set_ticket \
 	before_vdsm_start \
 	after_vdsm_stop
 

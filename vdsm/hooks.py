@@ -34,7 +34,7 @@ def _scriptsPerDir(dir):
     return [ s for s in glob.glob(P_VDSM_HOOKS + dir + '/*')
              if os.access(s, os.X_OK) ]
 
-def _runHooksDir(domxml, dir, vmconf={}, raiseError=True):
+def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
     scripts = _scriptsPerDir(dir)
     scripts.sort()
 
@@ -48,6 +48,8 @@ def _runHooksDir(domxml, dir, vmconf={}, raiseError=True):
 
         scriptenv = os.environ.copy()
         scriptenv.update(vmconf.get('custom', {}))
+        if len(params) > 0:
+            scriptenv.update(params)
         if vmconf.get('vmId'):
             scriptenv['vmId'] = vmconf.get('vmId')
         ppath = scriptenv.get('PYTHONPATH', '')
@@ -130,6 +132,14 @@ def before_vm_destroy(domxml, vmconf={}):
 def after_vm_destroy(domxml, vmconf={}):
     return _runHooksDir(domxml, 'after_vm_destroy', vmconf=vmconf,
                         raiseError=False)
+
+def before_vm_set_ticket(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'before_vm_set_ticket', vmconf=vmconf,
+                        raiseError=False, params=params)
+
+def after_vm_set_ticket(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'after_vm_set_ticket', vmconf=vmconf,
+                        raiseError=False, params=params)
 
 def before_vdsm_start():
     return _runHooksDir(None, 'before_vdsm_start', raiseError=False)

@@ -1925,7 +1925,7 @@ class LibvirtVm(vm.Vm):
         self.conf[vmDev] = path
         return {'status': doneCode, 'vmList': self.status()}
 
-    def setTicket(self, otp, seconds, connAct):
+    def setTicket(self, otp, seconds, connAct, params):
         graphics = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
                           .childNodes[0].getElementsByTagName('graphics')[0]
         graphics.setAttribute('passwd', otp)
@@ -1935,7 +1935,9 @@ class LibvirtVm(vm.Vm):
             graphics.setAttribute('passwdValidTo', validto)
         if graphics.getAttribute('type') == 'spice':
             graphics.setAttribute('connected', connAct)
+        hooks.before_vm_set_ticket(self._lastXMLDesc, self.conf, params)
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
+        hooks.after_vm_set_ticket(self._lastXMLDesc, self.conf, params)
         return {'status': doneCode}
 
     def _reviveTicket(self, newlife):

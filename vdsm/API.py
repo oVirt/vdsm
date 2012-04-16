@@ -499,7 +499,7 @@ class VM(object):
         """
         return errCode['noimpl']
 
-    def setTicket(self, password, ttl, existingConnAction):
+    def setTicket(self, password, ttl, existingConnAction, params):
         """
         Set the ticket (password) to be used to connect to a VM display
 
@@ -515,12 +515,13 @@ class VM(object):
                                  connected.
                 ``fail``       - abort command without disconnecting
                                  the current client.
+        :param additional parameters in dict format
         """
         try:
             v = self._cif.vmContainer[self._UUID]
         except KeyError:
             return errCode['noVM']
-        return v.setTicket(password, ttl, existingConnAction)
+        return v.setTicket(password, ttl, existingConnAction, params)
 
     def shutdown(self, delay=None, message=None):
         """
