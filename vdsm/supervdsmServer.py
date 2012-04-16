@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -35,7 +35,8 @@ from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
-from vdsm.constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, DISKIMAGE_USER, DISKIMAGE_GROUP
+from vdsm.constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, \
+        DISKIMAGE_USER, DISKIMAGE_GROUP
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import storage.misc
 import configNetwork
@@ -46,14 +47,19 @@ from storage.multipath import MPATH_CONF
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
 _UDEV_RULE_FILE_EXT = ".rules"
-_UDEV_RULE_FILE_NAME = _UDEV_RULE_FILE_DIR + _UDEV_RULE_FILE_PREFIX + "%s-%s" + \
-                      _UDEV_RULE_FILE_EXT
+_UDEV_RULE_FILE_NAME = _UDEV_RULE_FILE_DIR + _UDEV_RULE_FILE_PREFIX + \
+        "%s-%s" + _UDEV_RULE_FILE_EXT
 
-RUN_AS_TIMEOUT= config.getint("irs", "process_pool_timeout")
-class Timeout(RuntimeError): pass
+RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
+
+
+class Timeout(RuntimeError):
+    pass
+
 
 def logDecorator(func):
     callbackLogger = logging.getLogger("SuperVdsm.ServerCallback")
+
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -62,9 +68,11 @@ def logDecorator(func):
             raise
     return wrapper
 
-KB = 2**10
+KB = 2 ** 10
 TEST_BUFF_LEN = 4 * KB
 LOG_CONF_PATH = "/etc/vdsm/logger.conf"
+
+
 class _SuperVdsm(object):
     @logDecorator
     def getLsBlk(self, *args, **kwargs):
@@ -117,10 +125,10 @@ class _SuperVdsm(object):
             try:
                 uid = resolveUid(user)
                 if groups:
-                     gids = map(resolveGid, groups)
+                    gids = map(resolveGid, groups)
 
-                     os.setgid(gids[0])
-                     os.setgroups(gids)
+                    os.setgid(gids[0])
+                    os.setgroups(gids)
                 os.setuid(uid)
 
                 res = func(*args, **kwargs)
@@ -154,7 +162,8 @@ class _SuperVdsm(object):
 
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
-        return self._runAs(user, groups, _validateAccess, args=args, kwargs=kwargs)
+        return self._runAs(user, groups, _validateAccess, args=args,
+                kwargs=kwargs)
 
     @logDecorator
     def setSafeNetworkConfig(self):
@@ -162,7 +171,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def udevTrigger(self, guid):
-        cmd =  [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
+        cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
                 '--property-match=DM_NAME=%s' % guid]
         rc, out, err = storage.misc.execCmd(cmd, sudo=False)
         if rc:
@@ -182,7 +191,8 @@ class _SuperVdsm(object):
         re_apprDevRule = "^" + _UDEV_RULE_FILE_PREFIX + ".*?-" + thiefId + \
                          _UDEV_RULE_FILE_EXT + "$"
         rules = [os.path.join(_UDEV_RULE_FILE_DIR, r) for r in
-                 os.listdir(_UDEV_RULE_FILE_DIR) if re.match(re_apprDevRule, r)]
+                 os.listdir(_UDEV_RULE_FILE_DIR)
+                 if re.match(re_apprDevRule, r)]
         fails = []
         for r in rules:
             try:
@@ -216,6 +226,7 @@ class _SuperVdsm(object):
         '''
         tc.unsetMirrorPromisc(networkName)
 
+
 def __pokeParent(parentPid):
     try:
         while True:
@@ -225,11 +236,13 @@ def __pokeParent(parentPid):
         os.unlink(ADDRESS)
         os.kill(os.getpid(), signal.SIGTERM)
 
+
 def main():
     try:
         logging.config.fileConfig(LOG_CONF_PATH)
     except:
-        logging.basicConfig(filename='/dev/stdout', filemode='w+', level=logging.DEBUG)
+        logging.basicConfig(filename='/dev/stdout', filemode='w+',
+                level=logging.DEBUG)
         log = logging.getLogger("SuperVdsm.Server")
         log.warn("Could not init proper logging", exc_info=True)
 
@@ -251,7 +264,8 @@ def main():
             os.unlink(ADDRESS)
 
         log.debug("Setting up keep alive thread")
-        monThread = threading.Thread(target=__pokeParent, args=[int(parentPid)])
+        monThread = threading.Thread(target=__pokeParent,
+                args=[int(parentPid)])
         monThread.setDaemon(True)
         monThread.start()
 
