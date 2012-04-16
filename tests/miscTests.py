@@ -26,6 +26,7 @@ from testrunner import VdsmTestCase as TestCaseBase
 
 import storage.misc as misc
 import storage.fileUtils as fileUtils
+from testValidation import checkSudo
 
 EXT_DD = "/bin/dd"
 EXT_CHMOD = "/bin/chmod"
@@ -947,7 +948,9 @@ class ExecCmd(TestCaseBase):
         Tests that when running with sudo the user really is root (or other
         desired user).
         """
-        ret, stdout, stderr = misc.execCmd([EXT_WHOAMI], sudo=True)
+        cmd = [EXT_WHOAMI]
+        checkSudo(cmd)
+        ret, stdout, stderr = misc.execCmd(cmd, sudo=True)
         self.assertEquals(stdout[0], SUDO_USER)
 
 

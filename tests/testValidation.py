@@ -21,6 +21,7 @@ import os
 from nose.plugins.skip import SkipTest
 from functools import wraps
 from nose.plugins import Plugin
+import subprocess
 
 
 class SlowTestsPlugin(Plugin):
@@ -70,3 +71,13 @@ def slowtest(f):
         return f(*args, **kwargs)
 
     return wrapper
+
+
+def checkSudo(cmd):
+    p = subprocess.Popen(['sudo', '-l', '-n'] + cmd,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+    out, err = p.communicate()
+
+    if p.returncode != 0:
+        raise SkipTest("Test requires SUDO configuration (%s)" % err.strip())
