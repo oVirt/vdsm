@@ -172,7 +172,7 @@ class LvMetadataRW(object):
         # Fetch the metadata from metadata volume
         lvm.activateLVs(self._vgName, self._lvName)
 
-        m = misc.readblockSUDO(self.metavol, self._offset, self._size)
+        m = misc.readblock(self.metavol, self._offset, self._size)
         # Read from metadata volume will bring a load of zeroes trailing
         # actual metadata. Strip it out.
         metadata = [i for i in m if len(i) > 0 and i[0] != '\x00' and "=" in i]

@@ -651,7 +651,7 @@ class ValidateDDBytes(TestCaseBase):
                 misc.validateDDBytes, ["I AM", "PRETENDING TO", "BE DD"], 32)
 
 
-class ReadBlockSudo(TestCaseBase):
+class ReadBlock(TestCaseBase):
     def _createTempFile(self, neededFileSize, writeData):
         """
         Create a temp file with the data in *writeData* written continuously in
@@ -671,13 +671,7 @@ class ReadBlockSudo(TestCaseBase):
         f.close()
         return path
 
-    def testValidInputSUDO(self):
-        """
-        The same as testValidInput but with SUDO
-        """
-        self.testValidInput(True)
-
-    def testValidInput(self, sudo=False):
+    def testValidInput(self):
         """
         Test that when all arguments are correct the method works smoothly.
         """
@@ -698,47 +692,29 @@ class ReadBlockSudo(TestCaseBase):
         expectedResultData = \
             (expectedResultData[relOffset:] + expectedResultData[:relOffset])
         expectedResultData = expectedResultData[:size]
-        block = misc.readblockSUDO(path, offset, size, sudo=sudo)
+        block = misc.readblock(path, offset, size)
 
         os.unlink(path)
 
         self.assertEquals(block[0], expectedResultData)
 
-    def testInvalidOffsetSUDO(self):
-        """
-        The same as testInvalidOffset but with SUDO.
-        """
-        self.testInvalidOffset(True)
-
-    def testInvalidOffset(self, sudo=False):
+    def testInvalidOffset(self):
         """
         Make sure that we check for invalid (non 512 aligned) offset.
         """
         offset = 513
-        self.assertRaises(misc.se.MiscBlockReadException, misc.readblockSUDO,
-                "/dev/urandom", offset, 512, sudo)
+        self.assertRaises(misc.se.MiscBlockReadException, misc.readblock,
+                "/dev/urandom", offset, 512)
 
-    def testInvalidSizeSUDO(self):
-        """
-        The same as testInvalidSize but with SUDO.
-        """
-        self.testInvalidSize(True)
-
-    def testInvalidSize(self, sudo=False):
+    def testInvalidSize(self):
         """
         Make sure that we check for invalid (non 512 aligned) size.
         """
         size = 513
-        self.assertRaises(misc.se.MiscBlockReadException, misc.readblockSUDO,
-                "/dev/urandom", 512, size, sudo)
+        self.assertRaises(misc.se.MiscBlockReadException, misc.readblock,
+                "/dev/urandom", 512, size)
 
-    def testReadingMoreTheFileSizeSUDO(self):
-        """
-        The same as testReadingMoreTheFileSize but with SUDO.
-        """
-        self.testReadingMoreTheFileSize(True)
-
-    def testReadingMoreTheFileSize(self, sudo=False):
+    def testReadingMoreTheFileSize(self):
         """
         See that correct exception is raised when trying to read more then the
         file has to offer.
@@ -752,8 +728,8 @@ class ReadBlockSudo(TestCaseBase):
 
         path = self._createTempFile(offset + size - 100, writeData)
 
-        self.assertRaises(misc.se.MiscBlockReadIncomplete, misc.readblockSUDO,
-                path, offset, size, sudo)
+        self.assertRaises(misc.se.MiscBlockReadIncomplete, misc.readblock,
+                path, offset, size)
 
         os.unlink(path)
 

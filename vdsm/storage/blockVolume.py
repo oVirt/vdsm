@@ -617,7 +617,7 @@ class BlockVolume(volume.Volume):
             vgname = metaid[0]
             offs = metaid[1]
         try:
-            meta = misc.readblockSUDO(lvm.lvPath(vgname, sd.METADATA),
+            meta = misc.readblock(lvm.lvPath(vgname, sd.METADATA),
                 offs * VOLUME_METASIZE, VOLUME_METASIZE)
             out = {}
             for l in meta:

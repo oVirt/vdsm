@@ -18,13 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-# FIXME: Some of the methods here contain SUDO in their names and some don't.
-# This doesn't mean if the method will use sudo by default or not.  Further
-# more 'SUDO' never needs to be in a name of a method and should always be
-# 'False' by default.  Using sudo isn't something a method should do by
-# default. As a rule of thumb. If you didn't have to you wouldn't use SUDO.
-# This makes it the less desirable option thus making it the optional one.
-
 # FIXME: A lot of methods here use DD. A smart thing would be to wrap DD in a
 # method that does all the arg concatenation and stream handling once. Also
 # most method when they fail don't tell why even though DD is more then happy
@@ -301,7 +294,7 @@ def readfile(name):
     return out
 
 
-def readblockSUDO(name, offset, size, sudo=False):
+def readblock(name, offset, size):
     '''
     Read (direct IO) the content of device 'name' at offset, size bytes
     '''
@@ -320,7 +313,7 @@ def readblockSUDO(name, offset, size, sudo=False):
         cmd = [constants.EXT_DD, "iflag=%s" % DIRECTFLAG, "skip=%d" % iooffset,
                 "bs=%d" % iounit, "if=%s" % name, 'count=%s' % count]
 
-        (rc, out, err) = execCmd(cmd, raw=True, sudo=sudo)
+        (rc, out, err) = execCmd(cmd, raw=True)
         if rc:
             raise se.MiscBlockReadException(name, offset, size)
         if not validateDDBytes(err.splitlines(), iounit * count):
