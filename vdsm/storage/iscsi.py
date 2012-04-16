@@ -237,7 +237,7 @@ class IscsiInterface(object):
             'transport': ("iface.transport_name", 'r'),
             'hardwareAddress': ("iface.hwaddress", 'rw'),
             'ipAddress': ('iface.ipaddress', 'rw'),
-            'initiatorName:': ('iface.initiatorname', 'rw')
+            'initiatorName': ('iface.initiatorname', 'rw')
             }
 
     def __getattr__(self, name):
