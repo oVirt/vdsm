@@ -301,17 +301,6 @@ def readfile(name):
     return out
 
 
-def readfileSUDO(name):
-    """
-    Read the content of the file using 'cat' command via sudo.
-    """
-    cmd = [constants.EXT_CAT, name]
-    (rc, out, err) = execCmd(cmd, sudo=True)
-    if rc:
-        raise se.MiscFileReadException(name)
-    return out
-
-
 def readblockSUDO(name, offset, size, sudo=False):
     '''
     Read (direct IO) the content of device 'name' at offset, size bytes

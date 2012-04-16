@@ -82,7 +82,8 @@ def isEnabled():
     """
     if os.path.exists(MPATH_CONF):
         first = second = ''
-        mpathconf = misc.readfileSUDO(MPATH_CONF)
+        svdsm = supervdsm.getProxy()
+        mpathconf = svdsm.readMultipathConf()
         try:
             first = mpathconf[0]
             second = mpathconf[1]

@@ -41,6 +41,7 @@ import storage.misc
 import configNetwork
 from vdsm.config import config
 import tc
+from storage.multipath import MPATH_CONF
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -68,6 +69,11 @@ class _SuperVdsm(object):
     @logDecorator
     def getLsBlk(self, *args, **kwargs):
         return _getLsBlk(*args, **kwargs)
+
+    @logDecorator
+    def readMultipathConf(self):
+        with open(MPATH_CONF) as f:
+            return f.read()
 
     @logDecorator
     def getScsiSerial(self, *args, **kwargs):

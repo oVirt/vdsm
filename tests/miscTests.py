@@ -806,51 +806,6 @@ class CleanUpDir(TestCaseBase):
         self.assertTrue(os.path.lexists(baseDir))
 
 
-class ReadFileSudo(TestCaseBase):
-    def testValidInput(self):
-        """
-        Test if method works when given a valid file.
-        """
-        #make file
-        writeData = "The question seldom addressed is where Medusa " + \
-                    "had snakes. Underarm hair is an even more " + \
-                    "embarrassing problem when it keeps biting the top of " + \
-                    "the deodorant bottle."
-        # (C) Terry Pratchet - Soul Music
-        fd, path = tempfile.mkstemp()
-        f = os.fdopen(fd, "wb")
-        f.write(writeData)
-        f.close()
-
-        #Limit file to sudo
-        misc.execCmd([EXT_CHOWN, "%s:%s" % (SUDO_USER, SUDO_GROUP), path],
-                sudo=True)
-        misc.execCmd([EXT_CHMOD, "400", path], sudo=True)
-
-        #read
-        readData = misc.readfileSUDO(path)
-
-        #return permission so it can be deleted
-        misc.execCmd([EXT_CHMOD, "666", path], sudo=True)
-        misc.execCmd([EXT_CHOWN, "%d:%d" % (os.getuid(), os.getgid()), path],
-                sudo=True)
-
-        #clean
-        os.unlink(path)
-
-        self.assertEquals(writeData, readData[0])
-
-    def testInvalidInput(self):
-        """
-        Test if method works when input is a non existing file.
-        """
-        fd, path = tempfile.mkstemp()
-        os.unlink(path)
-
-        self.assertRaises(misc.se.MiscFileReadException,  misc.readfileSUDO,
-                path)
-
-
 class ReadFile(TestCaseBase):
     def testValidInput(self):
         """
