@@ -436,6 +436,17 @@ class BlockStorageDomain(sd.StorageDomain):
         return blockVolume.BlockVolume
 
 
+    def volumeExists(self, imgPath, volUUID):
+        """
+        Return True if the volume volUUID exists
+        """
+        try:
+            lvm.getLV(self.sdUUID, volUUID)
+        except se.LogicalVolumeDoesNotExistError:
+            return False
+        return True
+
+
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
         """

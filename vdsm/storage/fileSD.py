@@ -180,6 +180,14 @@ class FileStorageDomain(sd.StorageDomain):
         return fileVolume.FileVolume
 
 
+    def volumeExists(self, imgPath, volUUID):
+        """
+        Return True if the volume volUUID exists
+        """
+        volPath = os.path.join(imgPath, volUUID)
+        return self.oop.fileUtils.pathExists(volPath)
+
+
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
         """
