@@ -23,6 +23,7 @@ import logging
 import time
 import signal
 
+import image
 from vdsm import constants
 import storage_exception as se
 import sd
@@ -65,7 +66,7 @@ VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
                 SHARED_VOL: 'SHARED', INTERNAL_VOL: 'INTERNAL',
                 LEAF_VOL: 'LEAF'}
 
-BLANK_UUID = '00000000-0000-0000-0000-000000000000'
+BLANK_UUID = misc.UUID_BLANK
 
 # Volume meta data fields
 SIZE = "SIZE"
@@ -381,6 +382,118 @@ class Volume(object):
 
         if preallocate not in VOL_TYPE:
             raise se.IncorrectType(type2name(preallocate))
+
+    @classmethod
+    def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
+               diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+        """
+        Create a new volume with given size or snapshot
+            'size' - in sectors
+            'volFormat' - volume format COW / RAW
+            'preallocate' - Preallocate / Sparse
+            'diskType' - enum (API.Image.DiskTypes)
+            'srcImgUUID' - source image UUID
+            'srcVolUUID' - source volume UUID
+        """
+        # Validate volume parameters should be checked here for all
+        # internal flows using volume creation.
+        misc.validateUUID(sdUUID, "sdUUID", False)
+        misc.validateUUID(imgUUID, "imgUUID", False)
+        misc.validateUUID(srcImgUUID, "srcImgUUID", True)
+        misc.validateUUID(srcVolUUID, "srcVolUUID", True)
+        cls.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+
+        dom = sdCache.produce(sdUUID)
+        imgPath = image.Image(repoPath).create(sdUUID, imgUUID)
+
+        if dom.volumeExists(imgPath, volUUID):
+            raise se.VolumeAlreadyExists(volUUID)
+
+        volPath = os.path.join(imgPath, volUUID)
+        volParent = None
+        volType = type2name(LEAF_VOL)
+
+        # Get the specific class name and class module to be used in the
+        # Recovery tasks.
+        clsModule, clsName = cls._getModuleAndClass()
+
+        try:
+            if srcVolUUID != BLANK_UUID:
+                # When the srcImgUUID isn't specified we assume it's the same
+                # as the imgUUID
+                if srcImgUUID == BLANK_UUID:
+                    srcImgUUID = imgUUID
+
+                volParent = cls(repoPath, sdUUID, srcImgUUID, srcVolUUID)
+
+                if not volParent.isLegal():
+                    raise se.createIllegalVolumeSnapshotError(
+                            volParent.volUUID)
+
+                if imgUUID != srcImgUUID:
+                    volParent.share(imgPath)
+                    volParent = cls(repoPath, sdUUID, imgUUID, srcVolUUID)
+
+                # Override the size with the size of the parent
+                size = volParent.getSize()
+
+        except se.StorageException:
+            cls.log.error("Unexpected error", exc_info=True)
+            raise
+        except Exception, e:
+            cls.log.error("Unexpected error", exc_info=True)
+            raise se.VolumeCannotGetParent("Couldn't get parent %s for "
+                                "volume %s: %s" % (srcVolUUID, volUUID, e))
+
+        try:
+            cls.log.info("Creating volume %s", volUUID)
+
+            # Rollback sentinel to mark the start of the task
+            vars.task.pushRecovery(
+                task.Recovery(task.ROLLBACK_SENTINEL, clsModule, clsName,
+                              "startCreateVolumeRollback",
+                              [sdUUID, imgUUID, volUUID])
+            )
+
+            # Create volume rollback
+            vars.task.pushRecovery(
+                task.Recovery("Halfbaked volume rollback", clsModule, clsName,
+                              "halfbakedVolumeRollback",
+                              [sdUUID, volUUID, volPath])
+            )
+
+            # Specific volume creation (block, file, etc...)
+            metaId = cls._create(dom, imgUUID, volUUID, size, volFormat,
+                                 preallocate, volParent, srcImgUUID,
+                                 srcVolUUID, imgPath, volPath)
+
+            vars.task.pushRecovery(
+                task.Recovery("Create volume metadata rollback", clsModule,
+                              clsName, "createVolumeMetadataRollback",
+                              map(str, metaId))
+            )
+
+            cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, size,
+                            type2name(volFormat), type2name(preallocate),
+                            volType, diskType, desc, LEGAL_VOL)
+            cls.newVolumeLease(metaId, sdUUID, volUUID)
+
+        except se.StorageException:
+            cls.log.error("Unexpected error", exc_info=True)
+            raise
+        except Exception, e:
+            cls.log.error("Unexpected error", exc_info=True)
+            raise se.VolumeCreationError("Volume creation %s failed: %s",
+                                         volUUID, e)
+
+        # Remove the rollback for the halfbaked volume
+        vars.task.replaceRecoveries(
+            task.Recovery("Create volume rollback", clsModule, clsName,
+                          "createVolumeRollback",
+                          [repoPath, sdUUID, imgUUID, volUUID, imgPath])
+        )
+
+        return volUUID
 
     def validateDelete(self):
         """

@@ -19,7 +19,6 @@
 #
 
 import os
-import uuid
 import threading
 import sanlock
 
@@ -148,169 +147,52 @@ class BlockVolume(volume.Volume):
                             {"NONE": "#" * (sd.METASIZE - 10)})
 
     @classmethod
-    def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
-               diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+    def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
+                volParent, srcImgUUID, srcVolUUID, imgPath, volPath):
         """
-       Create a new volume with given size or snapshot
-            'size' - in sectors
-            'volFormat' - volume format COW / RAW
-            'preallocate' - Preallocate / Sparse
-            'diskType' - string that describes disk type
-                         System|Data|Shared|Swap|Temp
-            'srcImgUUID' - source image UUID
-            'srcVolUUID' - source volume UUID
+        Class specific implementation of volumeCreate. All the exceptions are
+        properly handled and logged in volume.create()
         """
-        if not volUUID:
-            volUUID = str(uuid.uuid4())
-        if volUUID == volume.BLANK_UUID:
-            raise se.InvalidParameterException("volUUID", volUUID)
 
-        # Validate volume parameters should be checked here for all
-        # internal flows using volume creation.
-        cls.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
-
-        mysd = sdCache.produce(sdUUID=sdUUID)
-        try:
-            lvm.getLV(sdUUID, volUUID)
-        except se.LogicalVolumeDoesNotExistError:
-            pass  # OK, this is a new volume
+        if preallocate == volume.SPARSE_VOL:
+            volSize = "%s" % config.get("irs", "volume_utilization_chunk_mb")
         else:
-            raise se.VolumeAlreadyExists(volUUID)
+            volSize = "%s" % (size / 2 / 1024)
 
-        imageDir = image.Image(repoPath).create(sdUUID, imgUUID)
-        vol_path = os.path.join(imageDir, volUUID)
-        pvol = None
-        voltype = "LEAF"
+        lvm.createLV(dom.sdUUID, volUUID, volSize, activate=True)
 
-        try:
-            if srcVolUUID != volume.BLANK_UUID:
-                # We have a parent
-                if srcImgUUID == volume.BLANK_UUID:
-                    srcImgUUID = imgUUID
-                pvol = BlockVolume(repoPath, sdUUID, srcImgUUID, srcVolUUID)
-                # Cannot create snapshot for ILLEGAL volume
-                if not pvol.isLegal():
-                    raise se.createIllegalVolumeSnapshotError(pvol.volUUID)
+        fileUtils.safeUnlink(volPath)
+        os.symlink(lvm.lvPath(dom.sdUUID, volUUID), volPath)
 
-                if imgUUID != srcImgUUID:
-                    pvol.share(imageDir, hard=False)
-                    pvol = BlockVolume(repoPath, sdUUID, imgUUID, srcVolUUID)
+        if not volParent:
+            cls.log.info("Request to create %s volume %s with size = %s "
+                         "sectors", volume.type2name(volFormat), volPath,
+                         size)
 
-                # override size param by parent's size
-                size = pvol.getSize()
-        except se.StorageException:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise
-        except Exception, e:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeCannotGetParent("blockVolume can't get parent %s "
-                                           "for volume %s: %s" %
-                                            (srcVolUUID, volUUID, str(e)))
+            if volFormat == volume.COW_FORMAT:
+                volume.createVolume(None, None, volPath, size, volFormat,
+                                    preallocate)
+        else:
+            # Create hardlink to template and its meta file
+            cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
+                         imgUUID, volUUID, srcImgUUID, srcVolUUID)
+            volParent.clone(imgPath, volUUID, volFormat, preallocate)
+
+        with cls._tagCreateLock:
+            mdSlot = dom.mapMetaOffset(volUUID, VOLUME_MDNUMBLKS)
+            lvm.addLVTags(dom.sdUUID, volUUID, (
+                            "%s%s" % (TAG_PREFIX_MD, mdSlot),
+                            "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
+                            "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)
+            ))
 
         try:
-            cls.log.info("blockVolume: creating LV: volUUID %s" % (volUUID))
-            if preallocate == volume.SPARSE_VOL:
-                volsize = "%s" % config.get("irs",
-                                            "volume_utilization_chunk_mb")
-            else:
-                # should stay %d and size should be int(size)
-                volsize = "%s" % (size / 2 / 1024)
-
-            # Rollback sentinel, just to mark the start of the task
-            vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL,
-                                   "blockVolume", "BlockVolume",
-                                   "startCreateVolumeRollback",
-                                   [sdUUID, imgUUID, volUUID]))
-
-            # create volume rollback
-            vars.task.pushRecovery(task.Recovery("halfbaked volume rollback",
-                                   "blockVolume", "BlockVolume",
-                                   "halfbakedVolumeRollback",
-                                   [sdUUID, volUUID, vol_path]))
-
-            lvm.createLV(sdUUID, volUUID, volsize, activate=True)
-            if os.path.exists(vol_path):
-                os.unlink(vol_path)
-            os.symlink(lvm.lvPath(sdUUID, volUUID), vol_path)
-        except se.StorageException:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise
-        except Exception, e:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeCreationError("blockVolume create/link lv %s "
-                                         "failed: %s" % (volUUID, str(e)))
-
-        # By definition volume is now a leaf and should be writeable.
-        # Default permission for lvcreate is read and write.
-        # No need to set permission.
-
-        try:
-            cls.log.info("blockVolume: create: volUUID %s srcImg %s srvVol %s"
-                         % (volUUID, srcImgUUID, srcVolUUID))
-            if not pvol:
-                cls.log.info("Request to create %s volume %s with size = %s "
-                             "sectors", volume.type2name(volFormat), vol_path,
-                              size)
-
-                # Create 'raw' volume via qemu-img actually redundant
-                if volFormat == volume.COW_FORMAT:
-                    volume.createVolume(None, None, vol_path, size, volFormat,
-                                        preallocate)
-            else:
-                ## Create hardlink to template and its meta file
-                cls.log.info("Request to create snapshot %s/%s of volume"
-                             " %s/%s", imgUUID, volUUID, srcImgUUID,
-                              srcVolUUID)
-
-                pvol.clone(imageDir, volUUID, volFormat, preallocate)
+            lvm.deactivateLVs(dom.sdUUID, volUUID)
         except Exception:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise
+            cls.log.warn("Cannot deactivate new created volume %s/%s",
+                         dom.sdUUID, volUUID, exc_info=True)
 
-        try:
-            with cls._tagCreateLock:
-                offs = mysd.mapMetaOffset(volUUID, VOLUME_MDNUMBLKS)
-                lvm.addLVTags(sdUUID, volUUID, ("%s%s" % (TAG_PREFIX_MD, offs),
-                              "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
-                              "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)))
-
-            vars.task.pushRecovery(task.Recovery("create block volume metadata"
-                                   " rollback", "blockVolume", "BlockVolume",
-                                   "createVolumeMetadataRollback",
-                                   [sdUUID, str(offs)]))
-
-            # Set metadata and mark volume as legal.
-            # FIXME: In next version we should remove imgUUID and srcVolUUID,
-            #        as they are saved on lvm tags
-            cls.newMetadata((sdUUID, offs), sdUUID, imgUUID, srcVolUUID,
-                            size, volume.type2name(volFormat),
-                            volume.type2name(preallocate), voltype,
-                            diskType, desc, volume.LEGAL_VOL)
-            # Create the volume lease
-            cls.newVolumeLease((sdUUID, offs), sdUUID, volUUID)
-        except se.StorageException:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise
-        except Exception, e:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeMetadataWriteError("tag target volume %s failed: %s"
-                                               % (volUUID, str(e)))
-
-        try:
-            lvm.deactivateLVs(sdUUID, volUUID)
-        except Exception:
-            cls.log.warn("Cannot deactivate new created volume %s/%s", sdUUID,
-                          volUUID, exc_info=True)
-
-        # Remove all previous rollbacks for 'halfbaked' volume and add rollback
-        # for 'real' volume creation
-        vars.task.replaceRecoveries(task.Recovery("create block volume "
-                                    "rollback", "blockVolume", "BlockVolume",
-                                    "createVolumeRollback",
-                                    [repoPath, sdUUID, imgUUID, volUUID,
-                                     imageDir]))
-
-        return volUUID
+        return (dom.sdUUID, mdSlot)
 
     def delete(self, postZero, force):
         """ Delete volume

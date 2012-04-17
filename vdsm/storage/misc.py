@@ -462,23 +462,30 @@ def unpackUuid(uuid):
 
 
 UUID_REGEX = re.compile("^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$")
+UUID_BLANK = "00000000-0000-0000-0000-000000000000"
 
 
-def validateUUID(uuid, name="uuid"):
+def validateUUID(uuid, name="uuid", blank=True):
     """
     Ensure that uuid structure is 32 bytes long and is of the form: 8-4-4-4-12
     (where each number depicts the amount of hex digits)
 
     Even though UUIDs can contain capital letters (because HEX strings are case
     insensitive) we usually compare uuids with the `==` operator, having uuids
-    with upper case letters will cause unexpected bug so we filter them out
+    with upper case letters will cause unexpected bug so we filter them out.
+    The blank argument specifies if it's allowed for the uuid to be blank or
+    not.
     """
-    if isinstance(uuid, basestring):
+    try:
         m = UUID_REGEX.match(uuid)
-        if m is not None:
-            return True
+    except TypeError:
+        raise se.InvalidParameterException(name, uuid)
 
-    raise se.InvalidParameterException(name, uuid)
+    if m is None:
+        raise se.InvalidParameterException(name, uuid)
+
+    if not blank and uuid == UUID_BLANK:
+        raise se.InvalidParameterException(name, uuid)
 
 
 #FIXME: Consider using confutils validator?

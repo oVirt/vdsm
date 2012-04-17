@@ -20,7 +20,6 @@
 
 from os.path import normpath
 import os
-import uuid
 import sanlock
 
 import storage_exception as se
@@ -125,118 +124,47 @@ class FileVolume(volume.Volume):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
 
     @classmethod
-    def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
-               diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+    def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
+                volParent, srcImgUUID, srcVolUUID, imgPath, volPath):
         """
-        Create a new volume with given size or snapshot
-            'size' - in sectors
-            'volFormat' - volume format COW / RAW
-            'preallocate' - Preallocate / Sparse
-            'diskType' - enum (API.Image.DiskTypes)
-            'srcImgUUID' - source image UUID
-            'srcVolUUID' - source volume UUID
+        Class specific implementation of volumeCreate. All the exceptions are
+        properly handled and logged in volume.create()
         """
-        if not volUUID:
-            volUUID = str(uuid.uuid4())
-        if volUUID == volume.BLANK_UUID:
-            raise se.InvalidParameterException("volUUID", volUUID)
 
-        # Validate volume parameters should be checked here for all
-        # internal flows using volume creation.
-        cls.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
-
-        imageDir = image.Image(repoPath).create(sdUUID, imgUUID)
-        vol_path = os.path.join(imageDir, volUUID)
-        voltype = "LEAF"
-        pvol = None
-        # Check if volume already exists
-        if oop.getProcessPool(sdUUID).fileUtils.pathExists(vol_path):
-            raise se.VolumeAlreadyExists(vol_path)
-        # Check if snapshot creation required
-        if srcVolUUID != volume.BLANK_UUID:
-            if srcImgUUID == volume.BLANK_UUID:
-                srcImgUUID = imgUUID
-            pvol = FileVolume(repoPath, sdUUID, srcImgUUID, srcVolUUID)
-            # Cannot create snapshot for ILLEGAL volume
-            if not pvol.isLegal():
-                raise se.createIllegalVolumeSnapshotError(pvol.volUUID)
-
-        # Rollback sentinel, just to mark the start of the task
-        vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL,
-                                             "fileVolume", "FileVolume",
-                                             "startCreateVolumeRollback",
-                                             [sdUUID, imgUUID, volUUID]))
-        # create volume rollback
-        vars.task.pushRecovery(task.Recovery("halfbaked volume rollback",
-                                             "fileVolume", "FileVolume",
-                                             "halfbakedVolumeRollback",
-                                             [sdUUID, volUUID, vol_path]))
         sizeBytes = int(size) * 512
-        if preallocate == volume.PREALLOCATED_VOL:
+
+        if preallocate == volume.SPARSE_VOL:
+            # Sparse = regular file
+            oop.getProcessPool(dom.sdUUID).createSparseFile(volPath, sizeBytes)
+        else:
             try:
                 # ddWatchCopy expects size to be in bytes
-                misc.ddWatchCopy("/dev/zero", vol_path,
+                misc.ddWatchCopy("/dev/zero", volPath,
                                  vars.task.aborting, sizeBytes)
             except se.ActionStopped, e:
                 raise e
             except Exception, e:
                 cls.log.error("Unexpected error", exc_info=True)
-                raise se.VolumesZeroingError(vol_path)
-        else:
-            # Sparse = Normal file
-            oop.getProcessPool(sdUUID).createSparseFile(vol_path, sizeBytes)
+                raise se.VolumesZeroingError(volPath)
 
-        cls.log.info("fileVolume: create: volUUID %s srcImg %s srvVol %s" %
-                     (volUUID, srcImgUUID, srcVolUUID))
-        if not pvol:
-            cls.log.info(
-                    "Request to create %s volume %s with size = %s sectors",
-                     volume.type2name(volFormat), vol_path, size)
+        if not volParent:
+            cls.log.info("Request to create %s volume %s with size = %s "
+                         "sectors", volume.type2name(volFormat), volPath,
+                         size)
+
             if volFormat == volume.COW_FORMAT:
-                volume.createVolume(None, None, vol_path, size,
-                                    volFormat, preallocate)
+                volume.createVolume(None, None, volPath, size, volFormat,
+                                    preallocate)
         else:
             # Create hardlink to template and its meta file
-            if imgUUID != srcImgUUID:
-                pvol.share(imageDir, hard=True)
+            cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
+                         imgUUID, volUUID, srcImgUUID, srcVolUUID)
+            volParent.clone(imgPath, volUUID, volFormat, preallocate)
 
-                # Make clone to link the new volume against
-                # the local shared volume
-                pvol = FileVolume(repoPath, sdUUID, imgUUID, srcVolUUID)
-            pvol.clone(imageDir, volUUID, volFormat, preallocate)
-            size = pvol.getMetaParam(volume.SIZE)
+        # By definition the volume is a leaf
+        cls.file_setrw(volPath, rw=True)
 
-        try:
-            vars.task.pushRecovery(task.Recovery(
-                                        "create file volume metadata rollback",
-                                        "fileVolume", "FileVolume",
-                                        "createVolumeMetadataRollback",
-                                        [vol_path]))
-            # By definition volume is now a leaf
-            cls.file_setrw(vol_path, rw=True)
-            # Set metadata and mark volume as legal
-            cls.newMetadata((vol_path,), sdUUID, imgUUID, srcVolUUID, size,
-                            volume.type2name(volFormat),
-                            volume.type2name(preallocate), voltype, diskType,
-                            desc, volume.LEGAL_VOL)
-            # Create the volume lease
-            cls.newVolumeLease((vol_path,), sdUUID, volUUID)
-        except Exception, e:
-            cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeMetadataWriteError(vol_path + ":" + str(e))
-
-        # Remove all previous rollbacks for 'halfbaked' volume and
-        # add rollback for 'real' volume creation
-        vars.task.replaceRecoveries(task.Recovery(
-                                        "create file volume rollback",
-                                        "fileVolume", "FileVolume",
-                                        "createVolumeRollback",
-                                        [repoPath,
-                                        sdUUID,
-                                        imgUUID,
-                                        volUUID,
-                                        imageDir]))
-        return volUUID
+        return (volPath,)
 
     def delete(self, postZero, force):
         """
