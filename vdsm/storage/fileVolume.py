@@ -170,8 +170,7 @@ class FileVolume(volume.Volume):
         if not pvol:
             cls.log.info("Request to create %s volume %s with size = %s sectors",
                      volume.type2name(volFormat), vol_path, size)
-            # Create preallocate/raw volume via qemu-img actually redundant
-            if preallocate == volume.SPARSE_VOL or volFormat == volume.COW_FORMAT:
+            if volFormat == volume.COW_FORMAT:
                 volume.createVolume(None, None, vol_path, size, volFormat, preallocate)
         else:
             # Create hardlink to template and its meta file
