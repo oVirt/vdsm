@@ -153,10 +153,12 @@ class FileVolume(volume.Volume):
         # create volume rollback
         vars.task.pushRecovery(task.Recovery("halfbaked volume rollback", "fileVolume", "FileVolume", "halfbakedVolumeRollback",
                                              [vol_path]))
+        sizeBytes = int(size) * 512
         if preallocate == volume.PREALLOCATED_VOL:
             try:
                 # ddWatchCopy expects size to be in bytes
-                misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, (int(size) * 512))
+                misc.ddWatchCopy("/dev/zero", vol_path,
+                                 vars.task.aborting, sizeBytes)
             except se.ActionStopped, e:
                 raise e
             except Exception, e:
@@ -164,7 +166,7 @@ class FileVolume(volume.Volume):
                 raise se.VolumesZeroingError(vol_path)
         else:
             # Sparse = Normal file
-            oop.getProcessPool(sdUUID).createSparseFile(vol_path, 0)
+            oop.getProcessPool(sdUUID).createSparseFile(vol_path, sizeBytes)
 
         cls.log.info("fileVolume: create: volUUID %s srcImg %s srvVol %s" % (volUUID, srcImgUUID, srcVolUUID))
         if not pvol:
