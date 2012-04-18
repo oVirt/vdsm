@@ -86,9 +86,18 @@ class FileVolume(volume.Volume):
         oop.getProcessPool(sdUUID).os.chmod(volPath, mode)
 
     @classmethod
-    def halfbakedVolumeRollback(cls, taskObj, volPath):
-        cls.log.info("halfbakedVolumeRollback: volPath=%s" % (volPath))
-        sdUUID = getDomUuidFromVolumePath(volPath)
+    def halfbakedVolumeRollback(cls, taskObj, *args):
+        if len(args) == 1:  # Backward compatibility
+            volPath, = args
+            sdUUID = getDomUuidFromVolumePath(volPath)
+        elif len(args) == 3:
+            (sdUUID, volUUID, volPath) = args
+        else:
+            raise TypeError("halfbakedVolumeRollback takes 1 or 3 "
+                            "arguments (%d given)" % len(args))
+
+        cls.log.info("Halfbaked volume rollback for volPath=%s", volPath)
+
         if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath):
             oop.getProcessPool(sdUUID).os.unlink(volPath)
 
@@ -161,7 +170,7 @@ class FileVolume(volume.Volume):
         vars.task.pushRecovery(task.Recovery("halfbaked volume rollback",
                                              "fileVolume", "FileVolume",
                                              "halfbakedVolumeRollback",
-                                             [vol_path]))
+                                             [sdUUID, volUUID, vol_path]))
         sizeBytes = int(size) * 512
         if preallocate == volume.PREALLOCATED_VOL:
             try:
@@ -206,11 +215,12 @@ class FileVolume(volume.Volume):
             # By definition volume is now a leaf
             cls.file_setrw(vol_path, rw=True)
             # Set metadata and mark volume as legal
-            cls.newMetadata(vol_path, sdUUID, imgUUID, srcVolUUID, size,
+            cls.newMetadata((vol_path,), sdUUID, imgUUID, srcVolUUID, size,
                             volume.type2name(volFormat),
                             volume.type2name(preallocate), voltype, diskType,
                             desc, volume.LEGAL_VOL)
-            cls.newVolumeLease(sdUUID, volUUID, vol_path)
+            # Create the volume lease
+            cls.newVolumeLease((vol_path,), sdUUID, volUUID)
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumeMetadataWriteError(vol_path + ":" + str(e))
@@ -369,13 +379,24 @@ class FileVolume(volume.Volume):
         if self.oop.os.path.lexists(metaPath):
             self.oop.os.unlink(metaPath)
 
-    def getMetadata(self, vol_path=None):
+    def getMetadataId(self):
+        """
+        Get the metadata Id
+        """
+        return (self.getVolumePath(),)
+
+    def getMetadata(self, metaId=None):
         """
         Get Meta data array of key,values lines
         """
-        meta = self._getMetaVolumePath(vol_path)
+        if not metaId:
+            metaId = self.getMetadataId()
+
+        volPath, = metaId
+        metaPath = self._getMetaVolumePath(volPath)
+
         try:
-            f = self.oop.directReadLines(meta)
+            f = self.oop.directReadLines(metaPath)
             out = {}
             for l in f:
                 if l.startswith("EOF"):
@@ -384,42 +405,42 @@ class FileVolume(volume.Volume):
                     continue
                 key, value = l.split("=")
                 out[key.strip()] = value.strip()
+
         except Exception, e:
             self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataReadError(meta + str(e))
+            raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
+
         return out
 
     @classmethod
-    def __putMetadata(cls, metaarr, vol_path):
-        meta = cls.__metaVolumePath(vol_path)
-        f = None
-        try:
-            f = open(meta + ".new", "w")
-            for key, value in metaarr.iteritems():
+    def __putMetadata(cls, metaId, meta):
+        volPath, = metaId
+        metaPath = cls.__metaVolumePath(volPath)
+
+        with open(metaPath + ".new", "w") as f:
+            for key, value in meta.iteritems():
                 f.write("%s=%s\n" % (key.strip(), str(value).strip()))
             f.write("EOF\n")
-        finally:
-            if f:
-                f.close()
 
-        sdUUID = getDomUuidFromVolumePath(vol_path)
-        oop.getProcessPool(sdUUID).os.rename(meta + ".new", meta)
+        sdUUID = getDomUuidFromVolumePath(volPath)
+        oop.getProcessPool(sdUUID).os.rename(metaPath + ".new", metaPath)
 
     @classmethod
-    def createMetadata(cls, metaarr, vol_path):
-        cls.__putMetadata(metaarr, vol_path)
+    def createMetadata(cls, metaId, meta):
+        cls.__putMetadata(metaId, meta)
 
-    def setMetadata(self, metaarr, vol_path=None):
+    def setMetadata(self, meta, metaId=None):
         """
         Set the meta data hash as the new meta data of the Volume
         """
-        if not vol_path:
-            vol_path = self.getVolumePath()
+        if not metaId:
+            metaId = self.getMetadataId()
+
         try:
-            self.__putMetadata(metaarr, vol_path)
+            self.__putMetadata(metaId, meta)
         except Exception, e:
             self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataWriteError(vol_path + ":" + str(e))
+            raise se.VolumeMetadataWriteError(str(metaId) + str(e))
 
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
@@ -441,16 +462,16 @@ class FileVolume(volume.Volume):
         return volList
 
     @classmethod
-    def newVolumeLease(cls, sdUUID, volUUID, volPath):
-        dom = sdCache.produce(sdUUID)
-        procPool = oop.getProcessPool(sdUUID)
-
-        if dom.hasVolumeLeases():
-            leasePath = cls.__leaseVolumePath(volPath)
-            procPool.createSparseFile(leasePath, LEASE_FILEOFFSET)
-            cls.file_setrw(leasePath, rw=True)
-            sanlock.init_resource(sdUUID, volUUID,
-                                  [(leasePath, LEASE_FILEOFFSET)])
+    def newVolumeLease(cls, metaId, sdUUID, volUUID):
+        cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
+                      "metaId=%s", volUUID, sdUUID, metaId)
+        volPath, = metaId
+        leasePath = cls.__leaseVolumePath(volPath)
+        oop.getProcessPool(sdUUID).createSparseFile(leasePath,
+                                                    LEASE_FILEOFFSET)
+        cls.file_setrw(leasePath, rw=True)
+        sanlock.init_resource(sdUUID, volUUID, [(leasePath,
+                                                 LEASE_FILEOFFSET)])
 
     def findImagesByVolume(self, legal=False):
         """

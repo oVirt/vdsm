@@ -598,42 +598,43 @@ class Volume(object):
         pass
 
     def metadata2info(self, meta):
-        info = {}
-        info["uuid"] = self.volUUID
-        info["type"] = meta.get(TYPE, "")
-        info["format"] = meta.get(FORMAT, "")
-        info["disktype"] = meta.get(DISKTYPE, "")
-        info["voltype"] = meta.get(VOLTYPE, "")
-        info["size"] = int(meta.get(SIZE, "0"))
-        info["parent"] = self.getParent()
-        info["description"] = meta.get(DESCRIPTION, "")
-        info["pool"] = meta.get(sd.DMDK_POOLS, "")
-        info["domain"] = meta.get(DOMAIN, "")
-        info["image"] = self.getImage()
-        info["ctime"] = meta.get(CTIME, "")
-        info["mtime"] = meta.get(MTIME, "")
-        info["legality"] = meta.get(LEGALITY, "")
-        return info
+        return {
+            "uuid": self.volUUID,
+            "type": meta.get(TYPE, ""),
+            "format":   meta.get(FORMAT, ""),
+            "disktype": meta.get(DISKTYPE, ""),
+            "voltype":  meta.get(VOLTYPE, ""),
+            "size": int(meta.get(SIZE, "0")),
+            "parent":   self.getParent(),
+            "description":  meta.get(DESCRIPTION, ""),
+            "pool": meta.get(sd.DMDK_POOLS, ""),
+            "domain":   meta.get(DOMAIN, ""),
+            "image":    self.getImage(),
+            "ctime":    meta.get(CTIME, ""),
+            "mtime":    meta.get(MTIME, ""),
+            "legality": meta.get(LEGALITY, ""),
+        }
 
     @classmethod
-    def newMetadata(cls, metaid, sdUUID, imgUUID, puuid, size,
-                    format, type, voltype, disktype,
-                    desc="", legality=ILLEGAL_VOL):
-        meta = {}
-        meta[FORMAT] = "%s" % format
-        meta[TYPE] = "%s" % type
-        meta[VOLTYPE] = "%s" % voltype
-        meta[DISKTYPE] = "%s" % disktype
-        meta[SIZE] = "%u" % int(size)
-        meta[CTIME] = "%u" % int(time.time())
-        meta[sd.DMDK_POOLS] = ""    # obsolete
-        meta[DOMAIN] = "%s" % sdUUID
-        meta[IMAGE] = "%s" % imgUUID
-        meta[DESCRIPTION] = str(desc)
-        meta[PUUID] = "%s" % puuid
-        meta[MTIME] = "%u" % int(time.time())
-        meta[LEGALITY] = "%s" % legality
-        cls.createMetadata(meta, metaid)
+    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
+                    voltype, disktype, desc="", legality=ILLEGAL_VOL):
+        meta = {
+            FORMAT: str(format),
+            TYPE:   str(type),
+            VOLTYPE:    str(voltype),
+            DISKTYPE:   str(disktype),
+            SIZE:   int(size),
+            CTIME:  int(time.time()),
+            sd.DMDK_POOLS:  "",  # obsolete
+            DOMAIN: str(sdUUID),
+            IMAGE:  str(imgUUID),
+            DESCRIPTION:    str(desc),
+            PUUID:  str(puuid),
+            MTIME:  int(time.time()),
+            LEGALITY:   str(legality),
+        }
+
+        cls.createMetadata(metaId, meta)
         return meta
 
     def getInfo(self):

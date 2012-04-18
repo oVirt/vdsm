@@ -143,10 +143,9 @@ class BlockVolume(volume.Volume):
 
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, sdUUID, offs):
-        cls.log.info("createVolumeMetadataRollback: sdUUID=%s offs=%s" %
-                      (sdUUID, offs))
-        metaid = [sdUUID, int(offs)]
-        cls.__putMetadata({"NONE": "#" * (sd.METASIZE - 10)}, metaid)
+        cls.log.info("Metadata rollback for sdUUID=%s offs=%s", sdUUID, offs)
+        cls.__putMetadata((sdUUID, int(offs)),
+                            {"NONE": "#" * (sd.METASIZE - 10)})
 
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
@@ -283,11 +282,12 @@ class BlockVolume(volume.Volume):
             # Set metadata and mark volume as legal.
             # FIXME: In next version we should remove imgUUID and srcVolUUID,
             #        as they are saved on lvm tags
-            cls.newMetadata([sdUUID, offs], sdUUID, imgUUID, srcVolUUID,
+            cls.newMetadata((sdUUID, offs), sdUUID, imgUUID, srcVolUUID,
                             size, volume.type2name(volFormat),
                             volume.type2name(preallocate), voltype,
                             diskType, desc, volume.LEGAL_VOL)
-            cls.newVolumeLease(sdUUID, volUUID, offs)
+            # Create the volume lease
+            cls.newVolumeLease((sdUUID, offs), sdUUID, volUUID)
         except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
@@ -622,23 +622,24 @@ class BlockVolume(volume.Volume):
         lvs = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_IMAGE, imgUUID))
         return [lv.name for lv in lvs]
 
-    def removeMetadata(self, metaid):
+    def removeMetadata(self, metaId):
         """
         Just wipe meta.
         """
         try:
-            self.__putMetadata({"NONE": "#" * (sd.METASIZE - 10)}, metaid)
+            self.__putMetadata(metaId, {"NONE": "#" * (sd.METASIZE - 10)})
         except Exception, e:
             self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataWriteError(str(metaid) + str(e))
+            raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
 
     @classmethod
-    def __putMetadata(cls, meta, metaid):
-        vgname = metaid[0]
-        offs = metaid[1]
+    def __putMetadata(cls, metaId, meta):
+        vgname, offs = metaId
+
         lines = ["%s=%s\n" % (key.strip(), str(value).strip())
-                 for key, value in meta.iteritems()]
+                                  for key, value in meta.iteritems()]
         lines.append("EOF\n")
+
         metavol = lvm.lvPath(vgname, sd.METADATA)
         with fileUtils.DirectFile(metavol, "r+d") as f:
             data = "".join(lines)
@@ -652,8 +653,8 @@ class BlockVolume(volume.Volume):
             f.write(data)
 
     @classmethod
-    def createMetadata(cls, meta, metaid):
-        cls.__putMetadata(meta, metaid)
+    def createMetadata(cls, metaId, meta):
+        cls.__putMetadata(metaId, meta)
 
     def getMetaOffset(self):
         if self.metaoff:
@@ -666,16 +667,21 @@ class BlockVolume(volume.Volume):
         raise se.VolumeMetadataReadError("missing offset tag on volume %s"
                                           % self.volUUID)
 
-    def getMetadata(self, metaid=None):
+    def getMetadataId(self):
+        """
+        Get the metadata Id
+        """
+        return (self.sdUUID, self.getMetaOffset())
+
+    def getMetadata(self, metaId=None):
         """
         Get Meta data array of key,values lines
         """
-        if not metaid:
-            vgname = self.sdUUID
-            offs = self.getMetaOffset()
-        else:
-            vgname = metaid[0]
-            offs = metaid[1]
+        if not metaId:
+            metaId = self.getMetadataId()
+
+        vgname, offs = metaId
+
         try:
             meta = misc.readblock(lvm.lvPath(vgname, sd.METADATA),
                 offs * VOLUME_METASIZE, VOLUME_METASIZE)
@@ -687,32 +693,38 @@ class BlockVolume(volume.Volume):
                     continue
                 key, value = l.split("=")
                 out[key.strip()] = value.strip()
+
         except Exception, e:
             self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataReadError(str(metaid) + ":" + str(e))
+            raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
+
         return out
 
-    def setMetadata(self, metaarr, metaid=None):
+    def setMetadata(self, meta, metaId=None):
         """
         Set the meta data hash as the new meta data of the Volume
         """
-        if not metaid:
-            metaid = [self.sdUUID, self.getMetaOffset()]
+        if not metaId:
+            metaId = self.getMetadataId()
+
         try:
-            self.__putMetadata(metaarr, metaid)
+            self.__putMetadata(metaId, meta)
         except Exception, e:
             self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataWriteError(str(metaid) + str(e))
+            raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
 
     @classmethod
-    def newVolumeLease(cls, sdUUID, volUUID, leaseSlot):
+    def newVolumeLease(cls, metaId, sdUUID, volUUID):
+        cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
+                      "metaId=%s", volUUID, sdUUID, metaId)
         dom = sdCache.produce(sdUUID)
+        metaSdUUID, mdSlot = metaId
 
-        if dom.hasVolumeLeases():
-            leasePath = dom.getLeasesFilePath()
-            leaseOffset = ((leaseSlot + RESERVED_LEASES)
+        leasePath = dom.getLeasesFilePath()
+        leaseOffset = ((mdSlot + RESERVED_LEASES)
                             * dom.logBlkSize * sd.LEASE_BLOCKS)
-            sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
+
+        sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
 
     def getVolumeSize(self, bs=512):
         """
