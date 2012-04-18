@@ -23,7 +23,7 @@ import os
 import sys
 from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
                                      is_valid_port, PluginBase, log, network_up, \
-                                     password_check, augtool
+                                     password_check, augtool, is_console
 from ovirtnode.password import set_password
 
 from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox, \
@@ -113,8 +113,9 @@ class Plugin(PluginBase):
         else:
             header_message = "Network Down, oVirt Engine Configuration Disabled"
         heading = Label(header_message)
-        self.ncs.screen.setColor(customColorset(1), "black", "magenta")
-        heading.setColors(customColorset(1))
+        if is_console():
+            self.ncs.screen.setColor(customColorset(1), "black", "magenta")
+            heading.setColors(customColorset(1))
         elements.setField(heading, 0, 0, anchorLeft = 1)
         rhevm_grid = Grid(2,2)
         rhevm_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
@@ -172,8 +173,9 @@ class Plugin(PluginBase):
         return
 
     def action(self):
-        self.ncs.screen.setColor("BUTTON", "black", "red")
-        self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
+        if is_console():
+            self.ncs.screen.setColor("BUTTON", "black", "red")
+            self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
         if self.root_password_1.value() != "" and self.root_password_2.value() != "" and self.root_password_1.value() == self.root_password_2.value():
             set_password(self.root_password_1.value(), "root")
             augtool("set", "/files/etc/ssh/sshd_config/PasswordAuthentication", "yes")
