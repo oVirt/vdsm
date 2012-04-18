@@ -1130,11 +1130,13 @@ class HSM:
         :type sdUUID: UUID
         :param options: ?
         """
+        pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             self.validatePoolSD(spUUID, sdUUID)
             self.validateSdUUID(sdUUID)
+        else:
+            sdUUID = pool.masterDomain.sdUUID
         vars.task.getSharedLock(STORAGE, sdUUID)
-        pool = self.getPool(spUUID)
         vms = pool.getVmsList(sdUUID)
         return dict(vmlist=vms)
 
@@ -1153,12 +1155,14 @@ class HSM:
         :param vmList: A UUID list of the VMs you want info on or :keyword:`None` for all VMs in pool or backup domain.
         :param options: ?
         """
+        pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             self.validatePoolSD(spUUID, sdUUID)
             # Only backup domains are allowed in this path
             self.validateBackupDom(sdUUID)
+        else:
+            sdUUID = pool.masterDomain.sdUUID
         vars.task.getSharedLock(STORAGE, sdUUID)
-        pool = self.getPool(spUUID)
         vms = pool.getVmsInfo(sdUUID, vmList)
         return dict(vmlist=vms)
 
