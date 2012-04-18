@@ -487,10 +487,12 @@ def validateUUID(uuid, name="uuid"):
     insensitive) we usually compare uuids with the `==` operator, having uuids
     with upper case letters will cause unexpected bug so we filter them out
     """
-    m = UUID_REGEX.match(uuid)
-    if m is None:
-        raise se.InvalidParameterException(name, uuid)
-    return True
+    if isinstance(uuid, basestring):
+        m = UUID_REGEX.match(uuid)
+        if m is not None:
+            return True
+
+    raise se.InvalidParameterException(name, uuid)
 
 
 #FIXME: Consider using confutils validator?
