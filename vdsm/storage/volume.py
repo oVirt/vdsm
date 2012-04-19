@@ -108,7 +108,7 @@ def name2type(name):
     return None
 
 
-class Volume:
+class Volume(object):
     log = logging.getLogger('Storage.Volume')
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
@@ -125,6 +125,12 @@ class Volume:
         self.voltype = None
         self._metacache = None
         self.validate()
+
+    @classmethod
+    def _getModuleAndClass(cls):
+        clsName = cls.__name__
+        clsModule = cls.__module__.split(".").pop()
+        return clsModule, clsName
 
     def validate(self):
         """
@@ -267,35 +273,31 @@ class Volume:
                            (self.volumePath, dst_path))
             raise se.CannotCloneVolume(self.volumePath, dst_path, str(e))
 
-    def share(self, dst_image_dir, hard=True):
+    def share(self, dstImgPath):
         """
-        Share this volume to dst_image_dir
-        'hard' - link type:
-               file volumes should use hardlinks (default behaviour)
-               block volumes should use softlinks (explicitly hard=False)
+        Share this volume to dstImgPath
         """
-        self.log.debug("Volume.share)share  %s to %s hard %s" %
-                       (self.volUUID, dst_image_dir, hard))
+        self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
+
         if not self.isShared():
             raise se.VolumeNonShareable(self)
-        if os.path.basename(dst_image_dir) == os.path.basename(self.imagePath):
+
+        if os.path.basename(dstImgPath) == os.path.basename(self.imagePath):
             raise se.VolumeOwnershipError(self)
+
+        dstPath = os.path.join(dstImgPath, self.volUUID)
+        clsModule, clsName = type(self)._getModuleAndClass()
+
         try:
-            src = self.getDevPath()
-            dst = os.path.join(dst_image_dir, self.volUUID)
-            taskName = "share volume rollback: " + dst
             vars.task.pushRecovery(
-                        task.Recovery(taskName, "volume", "Volume",
-                                      "shareVolumeRollback",
-                                      [dst]))
-            if os.path.lexists(dst):
-                os.unlink(dst)
-            if hard:
-                os.link(src, dst)
-            else:
-                os.symlink(src, dst)
+                task.Recovery("Share volume rollback: %s" % dstPath, clsModule,
+                              clsName, "shareVolumeRollback", [dstPath])
+            )
+
+            self._share(dstImgPath)
+
         except Exception, e:
-            raise se.CannotShareVolume(src, dst, str(e))
+            raise se.CannotShareVolume(self.getVolumePath(), dstPath, str(e))
 
     def refreshVolume(self):
         """
@@ -330,18 +332,6 @@ class Volume:
                 if not pvol.isShared() and not pvol.recheckIfLeaf():
                     pvol.setLeaf()
                 pvol.teardown(sdUUID, pvolUUID)
-        except Exception:
-            cls.log.error("Unexpected error", exc_info=True)
-
-    @classmethod
-    def shareVolumeRollback(cls, taskObj, volPath):
-        cls.log.info("shareVolumeRollback: volPath=%s" % (volPath))
-        try:
-            if os.path.lexists(volPath):
-                os.unlink(volPath)
-            metaPath = volPath + '.meta'
-            if os.path.lexists(metaPath):
-                os.unlink(metaPath)
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
 

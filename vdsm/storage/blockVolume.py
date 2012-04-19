@@ -435,6 +435,25 @@ class BlockVolume(volume.Volume):
         """
         return lvm.lvPath(self.sdUUID, self.volUUID)
 
+    def _share(self, dstImgPath):
+        """
+        Share this volume to dstImgPath
+        """
+        dstPath = os.path.join(dstImgPath, self.volUUID)
+
+        self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
+        os.symlink(self.getDevPath(), dstPath)
+
+    @classmethod
+    def shareVolumeRollback(cls, taskObj, volPath):
+        cls.log.info("Volume rollback for volPath=%s", volPath)
+
+        try:
+            fileUtils.safeUnlink(volPath)
+
+        except Exception:
+            cls.log.error("Unexpected error", exc_info=True)
+
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):
         """

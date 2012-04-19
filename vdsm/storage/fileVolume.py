@@ -285,23 +285,46 @@ class FileVolume(volume.Volume):
         """
         return self.getVolumePath()
 
-    def share(self, dst_image_dir, hard=True):
+    def _share(self, dstImgPath):
         """
-        Share this volume to dst_image_dir, including the meta file
+        Share this volume to dstImgPath, including the metadata and the lease
         """
-        volume.Volume.share(self, dst_image_dir, hard=hard)
+        dstVolPath = os.path.join(dstImgPath, self.volUUID)
+        dstMetaPath = self._getMetaVolumePath(dstVolPath)
 
-        self.log.debug("share  meta of %s to %s hard %s" %
-                       (self.volUUID, dst_image_dir, hard))
-        src = self._getMetaVolumePath()
-        dst = self._getMetaVolumePath(os.path.join(dst_image_dir,
-                                                   self.volUUID))
-        if self.oop.fileUtils.pathExists(dst):
-            self.oop.os.unlink(dst)
-        if hard:
-            self.oop.os.link(src, dst)
-        else:
-            self.oop.os.symlink(src, dst)
+        self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
+
+        self.oop.fileUtils.safeUnlink(dstVolPath)
+        self.oop.os.link(self.getVolumePath(), dstVolPath)
+
+        self.log.debug("Share volume metadata of %s to %s", self.volUUID,
+                       dstImgPath)
+
+        self.oop.fileUtils.safeUnlink(dstMetaPath)
+        self.oop.os.link(self._getMetaVolumePath(), dstMetaPath)
+
+        # Link the lease file if the domain uses sanlock
+        if sdCache.produce(self.sdUUID).hasVolumeLeases():
+            dstLeasePath = self._getLeaseVolumePath(dstVolPath)
+
+            self.log.debug("Share volume lease of %s to %s", self.volUUID,
+                           dstImgPath)
+
+            self.oop.fileUtils.safeUnlink(dstLeasePath)
+            self.oop.os.link(self._getLeaseVolumePath(), dstLeasePath)
+
+    @classmethod
+    def shareVolumeRollback(cls, taskObj, volPath):
+        cls.log.info("Volume rollback for volPath=%s", volPath)
+
+        try:
+            procPool = oop.getProcessPool(getDomUuidFromVolumePath(volPath))
+            procPool.fileUtils.safeUnlink(volPath)
+            procPool.fileUtils.safeUnlink(cls.__metaVolumePath(volPath))
+            procPool.fileUtils.safeUnlink(cls.__leaseVolumePath(volPath))
+
+        except Exception:
+            cls.log.error("Unexpected error", exc_info=True)
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):
@@ -564,11 +587,19 @@ class FileVolume(volume.Volume):
 
     def _getMetaVolumePath(self, vol_path=None):
         """
-        Get/Set the path of the metadata volume file/link
+        Get the volume metadata file/link path
         """
         if not vol_path:
             vol_path = self.getVolumePath()
-        return self.__metaVolumePath(vol_path)
+        return type(self).__metaVolumePath(vol_path)
+
+    def _getLeaseVolumePath(self, vol_path=None):
+        """
+        Get the volume lease file/link path
+        """
+        if not vol_path:
+            vol_path = self.getVolumePath()
+        return type(self).__leaseVolumePath(vol_path)
 
     def validateVolumePath(self):
         """
