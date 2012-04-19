@@ -84,7 +84,7 @@ SCRIPT_NAME_ADD = "addNetwork"
 SCRIPT_NAME_DEL = "delNetwork"
 IFACE_CONFIG = "/etc/sysconfig/network-scripts/ifcfg-"
 MGT_BRIDGE_NAME = "@VDSMBRIDGE@"
-REMOTE_SSH_KEY_FILE = "/engine.ssh.key.txt"
+REMOTE_SSH_KEY_FILE = ('/engine.ssh.key.txt', '')
 CORE_DUMP_PATH = '/var/lib/vdsm/core'
 CORE_PATTERN = '/proc/sys/kernel/core_pattern'
 XML_QUOTES = {
@@ -575,11 +575,16 @@ def chkConfig(srvName, action, level=None):
 
 def getAuthKeysFile(IP, port):
     """
-        This functions returns the public ssh key of rhev-m.
+        This functions returns the public ssh key of oVirt Engine.
     """
     CACERT, dontcare = certPaths('')
-    return getRemoteFile(IP, port, REMOTE_SSH_KEY_FILE, timeout=HTTP_TIMEOUT,
-            certPath=CACERT)
+    for cert in REMOTE_SSH_KEY_FILE:
+        data = getRemoteFile(IP, port, cert,
+                   timeout=HTTP_TIMEOUT, certPath=CACERT)
+        if data != None:
+            break
+
+    return data
 
 def addSSHKey(path, strKey):
     resKeys = []
