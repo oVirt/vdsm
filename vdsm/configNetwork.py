@@ -703,14 +703,20 @@ def listNetworks():
     print "Nics:", _netinfo.nics.keys()
     print "Bondings:", _netinfo.bondings.keys()
 
-def delNetwork(network, force=False, configWriter=None, **options):
+def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
+               configWriter=None, **options):
     _netinfo = NetInfo()
 
     validateBridgeName(network)
-    if network not in networks().keys():
-        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network %r: It doesn't exist" % network)
-    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
-    bridged = networks()[network]['bridged']
+
+    if not utils.tobool(options.get('skipLibvirt', False)):
+        if network not in networks().keys():
+            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network %r: It doesn't exist" % network)
+
+        nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
+        bridged = networks()[network]['bridged']
+    else:
+        bridged = True
 
     logging.info("Removing network %s with vlan=%s, bonding=%s, nics=%s. options=%s"%(network, vlan, bonding, nics, options))
 
