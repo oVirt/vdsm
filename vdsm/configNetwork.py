@@ -1046,13 +1046,13 @@ def setSafeNetworkConfig():
 
 def usage():
     print """Usage:
-    ./configNetwork.py add bridge <attributes> <options>
-                       edit oldBridge newBridge <attributes> <options>
-                       del bridge <options>
-                       setup bridge [None|attributes] [++ bridge [None|attributes] [++ ...]] [:: <options>]
+    ./configNetwork.py add Network <attributes> <options>
+                       edit oldNetwork newNetwork <attributes> <options>
+                       del Network <options>
+                       setup Network [None|attributes] [++ Network [None|attributes] [++ ...]] [:: <options>]
 
                        attributes = [vlan=...] [bonding=...] [nics=<nic1>,...]
-                       options = [Force=<True|False>] ...
+                       options = [Force=<True|False>] [bridged=<True|False>]...
     """
 
 
