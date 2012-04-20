@@ -666,14 +666,10 @@ class BlockVolume(volume.Volume):
         raise se.VolumeMetadataReadError("missing offset tag on volume %s"
                                           % self.volUUID)
 
-    def getMetadata(self, metaid=None, nocache=False):
+    def getMetadata(self, metaid=None):
         """
         Get Meta data array of key,values lines
         """
-        if nocache:
-            out = self.metaCache()
-            if out:
-                return out
         if not metaid:
             vgname = self.sdUUID
             offs = self.getMetaOffset()
@@ -694,10 +690,9 @@ class BlockVolume(volume.Volume):
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError(str(metaid) + ":" + str(e))
-        self.putMetaCache(out)
         return out
 
-    def setMetadata(self, metaarr, metaid=None, nocache=False):
+    def setMetadata(self, metaarr, metaid=None):
         """
         Set the meta data hash as the new meta data of the Volume
         """
@@ -705,8 +700,6 @@ class BlockVolume(volume.Volume):
             metaid = [self.sdUUID, self.getMetaOffset()]
         try:
             self.__putMetadata(metaarr, metaid)
-            if not nocache:
-                self.putMetaCache(metaarr)
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError(str(metaid) + str(e))

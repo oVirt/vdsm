@@ -369,14 +369,10 @@ class FileVolume(volume.Volume):
         if self.oop.os.path.lexists(metaPath):
             self.oop.os.unlink(metaPath)
 
-    def getMetadata(self, vol_path=None, nocache=False):
+    def getMetadata(self, vol_path=None):
         """
         Get Meta data array of key,values lines
         """
-        if nocache:
-            out = self.metaCache()
-            if out:
-                return out
         meta = self._getMetaVolumePath(vol_path)
         try:
             f = self.oop.directReadLines(meta)
@@ -391,7 +387,6 @@ class FileVolume(volume.Volume):
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError(meta + str(e))
-        self.putMetaCache(out)
         return out
 
     @classmethod
@@ -414,7 +409,7 @@ class FileVolume(volume.Volume):
     def createMetadata(cls, metaarr, vol_path):
         cls.__putMetadata(metaarr, vol_path)
 
-    def setMetadata(self, metaarr, vol_path=None, nocache=False):
+    def setMetadata(self, metaarr, vol_path=None):
         """
         Set the meta data hash as the new meta data of the Volume
         """
@@ -422,8 +417,6 @@ class FileVolume(volume.Volume):
             vol_path = self.getVolumePath()
         try:
             self.__putMetadata(metaarr, vol_path)
-            if not nocache:
-                self.putMetaCache(metaarr)
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError(vol_path + ":" + str(e))

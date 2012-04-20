@@ -123,7 +123,6 @@ class Volume(object):
         if not volUUID or volUUID == BLANK_UUID:
             raise se.InvalidParameterException("volUUID", volUUID)
         self.voltype = None
-        self._metacache = None
         self.validate()
 
     @classmethod
@@ -704,21 +703,21 @@ class Volume(object):
             raise se.VolumeAccessError(self.volUUID)
         return self.volumePath
 
-    def getMetaParam(self, key, nocache=False):
+    def getMetaParam(self, key):
         """
         Get a value of a specific key
         """
-        meta = self.getMetadata(nocache=nocache)
+        meta = self.getMetadata()
         try:
             return meta[key]
         except KeyError:
             raise se.MetaDataKeyNotFoundError(str(meta) + ":" + str(key))
 
-    def setMetaParam(self, key, value, nocache=False):
+    def setMetaParam(self, key, value):
         """
         Set a value of a specific key
         """
-        meta = self.getMetadata(nocache=nocache)
+        meta = self.getMetadata()
         try:
             meta[str(key)] = str(value)
             self.setMetadata(meta)
@@ -726,15 +725,6 @@ class Volume(object):
             self.log.error("Volume.setMetaParam: %s: %s=%s" %
                            (self.volUUID, key, value))
             raise
-
-    def metaCache(self):
-        return self._metacache
-
-    def putMetaCache(self, newcache):
-        self._metacache = newcache
-
-    def invalidateMetaCache(self):
-        self._metacache = None
 
     def getVolumeTrueSize(self, bs=512):
         """
