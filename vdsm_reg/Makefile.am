@@ -54,6 +54,7 @@ dist_man8_MANS = \
 CLEANFILES = \
 	config.log \
 	$(nodist_noinst_DATA) \
+	$(dist_ovirtsetup_PYTHON) \
 	$(nodist_vdsmreg_SCRIPTS) \
 	$(nodist_vdsmreg_PYTHON) \
 	$(nodist_vdsmbootstrap_PYTHON)
@@ -72,6 +73,7 @@ EXTRA_DIST = \
 
 all-local: \
 	$(nodist_noinst_DATA) \
+	$(dist_ovirtsetup_PYTHON) \
 	$(nodist_vdsmreg_SCRIPTS)
 
 install-data-local: \

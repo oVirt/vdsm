@@ -15,22 +15,22 @@
 .SH NAME
 vdsmd \- Virtual Desktops and Servers Manager
 .br
-oVirt Engine host agent
+@ENGINENAME@ host agent
 .SH SYNOPSIS
 .BR "service vdsmd start"
 .SH DESCRIPTION
 The
 .B VDSM
 service is required by a
-.B oVirt Engine
+.B @ENGINENAME@
 to manage oVirt Nodes
 and Linux hosts. Currently, only Fedora and Red Hat Enterprise Linux
 are supported. VDSM manages and monitors the host's
 storage, memory and networks as well as virtual machine creation, other host
 administration tasks, statistics gathering, and log collection.
 
-VDSM should be run as a daemon on each node managed by oVirt Engine.
-It answers XML-RPC calls from clients (mostly oVirt Engine).
+VDSM should be run as a daemon on each node managed by @ENGINENAME@.
+It answers XML-RPC calls from clients (mostly @ENGINENAME@).
 
 .SH HOOKS
 VDSM is extendible: it has hooks in strategic locations, where it executes
@@ -64,7 +64,7 @@ The uuid of the virtual machine may be deduced from that xml, but it is also
 available as the environment variable
 .B vmId.
 
-On top of these, oVirt Engine allows to set a collection of "custom parameters" for
+On top of these, @ENGINENAME@ allows to set a collection of "custom parameters" for
 each virtual machine.  Each of these parameters is provided to hooks as an
 environment variable.
 
@@ -145,7 +145,7 @@ VDSM main configuration file. Use with great caution; some information about ava
 Default log location for vdsm.
 .TP
 .FN /etc/pki/vdsm
-VDSM's trust store: server key, certificate, and oVirt Engine CA's certificate.
+VDSM's trust store: server key, certificate, and @ENGINENAME@ CA's certificate.
 .TP
 .FN @VDSMREPO@
 VDSM's image repository, or more exactly, links to NFS exports and iSCSI or

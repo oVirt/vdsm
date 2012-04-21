@@ -575,7 +575,7 @@ def chkConfig(srvName, action, level=None):
 
 def getAuthKeysFile(IP, port):
     """
-        This functions returns the public ssh key of oVirt Engine.
+        This functions returns the public ssh key of @ENGINENAME@.
     """
     CACERT, dontcare = certPaths('')
     for cert in REMOTE_SSH_KEY_FILE:

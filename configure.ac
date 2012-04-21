@@ -88,6 +88,9 @@ AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 # Network
 AC_SUBST([VDSMBRIDGE], ['ovirtmgmt'])
 
+# Engine Name
+AC_SUBST([ENGINENAME], ['oVirt Engine'])
+
 # Checking for pyflakes
 AC_PATH_PROG([PYFLAKES], [pyflakes])
 if test "x$PYFLAKES" = "x"; then
