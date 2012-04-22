@@ -22,7 +22,6 @@ import os
 import logging
 import threading
 import uuid
-import time
 from contextlib import contextmanager
 
 import volume
@@ -966,18 +965,11 @@ class Image:
         dstParent = volclass(self.repoPath, sdDom.sdUUID, imgUUID, ancestor).getParent()
 
         while srcVol and dstParent != srcVol.volUUID:
-            try:
-                self.log.info("Remove volume %s from image %s", srcVol.volUUID, imgUUID)
-                vol = srcVol.getParentVolume()
-                srcVol.delete(postZero=postZero, force=True)
-                chain.remove(srcVol.volUUID)
-                srcVol = vol
-            except Exception:
-                self.log.error("Failure to remove volume %s in subchain %s -> %s", srcVol.volUUID,
-                              ancestor, successor, exc_info=True)
-                # We may fall in infinite loop if delete volume raise exception
-                # so, we want at least to avoid tight loop
-                time.sleep(10)
+            self.log.info("Remove volume %s from image %s", srcVol.volUUID, imgUUID)
+            vol = srcVol.getParentVolume()
+            srcVol.delete(postZero=postZero, force=True)
+            chain.remove(srcVol.volUUID)
+            srcVol = vol
 
     def _internalVolumeMerge(self, sdDom, srcVolParams, volParams, newSize, chain):
         """
