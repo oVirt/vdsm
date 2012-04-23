@@ -54,8 +54,9 @@ VOLUME_METASIZE = 512
 VOLUME_MDNUMBLKS = 1
 
 # Reserved leases for special purposes:
-#  - 0       SDM
-#  - 1..100  (unassigned)
+#  - 0       SPM (Backward comapatibility with V0 and V2)
+#  - 1       SDM (SANLock V3)
+#  - 2..100  (Unassigned)
 RESERVED_LEASES = 100
 
 rmanager = rm.ResourceManager.getInstance()

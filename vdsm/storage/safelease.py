@@ -30,8 +30,15 @@ import storage_exception as se
 import threading
 import logging
 
+
 MAX_HOST_ID = 250
-LEASE_NAME = 'SDM'
+
+# The LEASE_OFFSET is used by SANLock to not overlap with safelease in
+# orfer to preserve the ability to acquire both locks (e.g.: during the
+# domain upgrade)
+SDM_LEASE_NAME = 'SDM'
+SDM_LEASE_OFFSET = 512 * 2048
+
 
 class ClusterLock(object):
     log = logging.getLogger("ClusterLock")
@@ -135,7 +142,8 @@ class SANLock(object):
     def initLock(self):
         try:
             sanlock.init_lockspace(self._sdUUID, self._idsPath)
-            sanlock.init_resource(self._sdUUID, LEASE_NAME, [self._leasesPath])
+            sanlock.init_resource(self._sdUUID, SDM_LEASE_NAME,
+                                  [(self._leasesPath, SDM_LEASE_OFFSET)])
         except sanlock.SanlockException:
             self.log.warn("Cannot initialize clusterlock", exc_info=True)
             raise se.ClusterLockInitError()
@@ -196,8 +204,8 @@ class SANLock(object):
                                         "Cannot register to sanlock", str(e))
 
                 try:
-                    sanlock.acquire(self._sdUUID, LEASE_NAME,
-                                    [self._leasesPath],
+                    sanlock.acquire(self._sdUUID, SDM_LEASE_NAME,
+                                    [(self._leasesPath, SDM_LEASE_OFFSET)],
                                     slkfd=SANLock._sanlock_fd)
                 except sanlock.SanlockException, e:
                     if e.errno != errno.EPIPE:
@@ -218,7 +226,8 @@ class SANLock(object):
                           self._sdUUID, self._hostId)
 
             try:
-                sanlock.release(self._sdUUID, LEASE_NAME, [self._leasesPath],
+                sanlock.release(self._sdUUID, SDM_LEASE_NAME,
+                                [(self._leasesPath, SDM_LEASE_OFFSET)],
                                 slkfd=SANLock._sanlock_fd)
             except sanlock.SanlockException, e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
