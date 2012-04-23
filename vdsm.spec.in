@@ -156,7 +156,7 @@ Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: policycoreutils >= 2.0.83-19.30
 Requires: policycoreutils-python >= 2.0.83-19.30
 Requires: python-pthreading
-Requires: selinux-policy-targeted >= 3.7.19-155
+Requires: selinux-policy-targeted >= 3.7.19-213
 Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
 %endif
@@ -184,7 +184,7 @@ Requires: sanlock >= 2.4-2, sanlock-python
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
-Requires: selinux-policy-targeted >= 3.10.0-149
+Requires: selinux-policy-targeted >= 3.12.1-71
 Requires: lvm2 >= 2.02.95
 %endif
 

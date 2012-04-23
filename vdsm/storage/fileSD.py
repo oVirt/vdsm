@@ -27,6 +27,7 @@ import re
 
 import sd
 import storage_exception as se
+import fileUtils
 import fileVolume
 import misc
 import outOfProcess as oop
@@ -417,6 +418,31 @@ class FileStorageDomain(sd.StorageDomain):
         return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
                     for k, v in volumes.iteritems())
 
+    def createImageLinks(self, srcImgPath, imgUUID):
+        """
+        qcow chain is build by reading each qcow header and reading the path
+        to the parent. When creating the qcow layer, we pass a relative path
+        which allows us to build a directory with links to all volumes in the
+        chain anywhere we want. This method creates a directory with the image
+        uuid under /var/run/vdsm and creates sym links to all the volumes in
+        the chain.
+
+        srcImgPath: Dir where the image volumes are.
+        """
+        sdRunDir = os.path.join(constants.P_VDSM_STORAGE, self.sdUUID)
+        fileUtils.createdir(sdRunDir)
+        imgRunDir = os.path.join(sdRunDir, imgUUID)
+        try:
+            os.symlink(srcImgPath, imgRunDir)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                self.log.debug("img run dir already exists: %s", imgRunDir)
+            else:
+                self.log.error("Failed to create img run dir: %s", imgRunDir)
+                raise
+
+        return imgRunDir
+
     def activateVolumes(self, imgUUID, volUUIDs):
         """
         Activate all the volumes listed in volUUIDs
@@ -426,8 +452,13 @@ class FileStorageDomain(sd.StorageDomain):
         # NFS volumes. In theory it is necessary to fix the permission
         # of the leaf only but to not introduce an additional requirement
         # (ordered volUUIDs) we fix them all.
-        for vol in [self.produceVolume(imgUUID, x) for x in volUUIDs]:
-            self.oop.fileUtils.copyUserModeToGroup(vol.getVolumePath())
+        imgDir = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
+                              imgUUID)
+        volPaths = tuple(os.path.join(imgDir, v) for v in volUUIDs)
+        for volPath in volPaths:
+            self.oop.fileUtils.copyUserModeToGroup(volPath)
+
+        return self.createImageLinks(imgDir, imgUUID)
 
     @classmethod
     def format(cls, sdUUID):

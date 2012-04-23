@@ -3213,10 +3213,10 @@ class HSM:
             self.log.warn("Problem tearing down volume", exc_info=True)
 
     @public
-    def prepareImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
+    def prepareImage(self, sdUUID, spUUID, imgUUID, leafUUID):
         """
-        Prepare an image activating the needed volumes.
-        Returns the path to the leaf and the ordered volume chain.
+        Prepare an image, activating the needed volumes.
+        Return the path to the leaf and an unsorted list of the image volumes.
 
         :param sdUUID: The UUID of the storage domain that owns the volume.
         :type sdUUID: UUID
@@ -3227,32 +3227,36 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
 
-        img = image.Image(os.path.join(self.storage_repository, spUUID))
-        imgVolumes = img.prepare(sdUUID, imgUUID, volUUID)
+        imgVolumesInfo = []
+        dom = sdCache.produce(sdUUID)
+        allVols = dom.getAllVolumes()
+        # Filter volumes related to this image
+        imgVolumes = sd.getVolsOfImage(allVols, imgUUID).keys()
+        imgPath = dom.activateVolumes(imgUUID, imgVolumes)
 
-        chain = []
-        dom = sdCache.produce(sdUUID=sdUUID)
-
-        for vol in imgVolumes:
+        leafPath = os.path.join(imgPath, leafUUID)
+        for volUUID in imgVolumes:
+            path = os.path.join(dom.domaindir, sd.DOMAIN_IMAGES, imgUUID,
+                                volUUID)
             volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
-                       'volumeID': vol.volUUID, 'path': vol.getVolumePath(),
-                       'vmVolInfo': vol.getVmVolumeInfo()}
+                       'volumeID': volUUID, 'path': path,
+                       'volType': "path"}
 
-            leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
-                                                        vol.volUUID)
+            if config.getboolean('irs', 'use_volume_leases'):
+                leasePath, leaseOffset = dom.getVolumeLease(imgUUID, volUUID)
 
-            if leasePath and type(leaseOffset) in (int, long):
-                volInfo.update({
-                    'leasePath': leasePath,
-                    'leaseOffset': leaseOffset,
-                    'shared': (vol.getVolType() ==
-                               volume.type2name(volume.SHARED_VOL)),
-                })
+                if leasePath and leaseOffset is not None:
+                    volInfo.update({
+                                   'leasePath': leasePath,
+                                   'leaseOffset': leaseOffset,
+                                   })
 
-            chain.append(volInfo)
+            imgVolumesInfo.append(volInfo)
+            if volUUID == leafUUID:
+                leafInfo = volInfo
 
-        return {'path': chain[-1]['path'], 'info': chain[-1]['vmVolInfo'],
-                'chain': chain}
+        return {'path': leafPath, 'info': leafInfo,
+                'imgVolumesInfo': imgVolumesInfo}
 
     @public
     def teardownImage(self, sdUUID, spUUID, imgUUID, volUUID=None):

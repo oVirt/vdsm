@@ -280,7 +280,8 @@ class clientIF:
                     raise vm.VolumeError(drive)
 
                 volPath = res['path']
-                drive['volumeChain'] = res['chain']
+                # The order of imgVolumesInfo is not guaranteed
+                drive['volumeChain'] = res['imgVolumesInfo']
                 drive['volumeInfo'] = res['info']
 
             # GUID drive format

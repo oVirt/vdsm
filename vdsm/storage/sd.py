@@ -385,8 +385,8 @@ class StorageDomain:
         """
         Produce a type specific volume object
         """
-        repoPath = self._getRepoPath()
-        return self.getVolumeClass()(repoPath, self.sdUUID, imgUUID, volUUID)
+        return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
+                                     volUUID)
 
     def getVolumeClass(self):
         """

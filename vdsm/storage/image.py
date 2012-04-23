@@ -231,22 +231,6 @@ class Image:
 
         return tmpl
 
-    def prepare(self, sdUUID, imgUUID, volUUID=None):
-        chain = self.getChain(sdUUID, imgUUID, volUUID)
-
-        # Adding the image template to the chain
-        tmplVolume = chain[0].getParentVolume()
-
-        if tmplVolume:
-            chain.insert(0, tmplVolume)
-
-        # Activating the volumes
-        sdCache.produce(sdUUID).activateVolumes(
-            imgUUID, volUUIDs=[vol.volUUID for vol in chain])
-        chain[-1].updateInvalidatedSize()
-
-        return chain
-
     def createFakeTemplate(self, sdUUID, volParams):
         """
         Create fake template (relevant for Backup domain only)

@@ -1029,11 +1029,46 @@ class BlockStorageDomain(sd.StorageDomain):
         vols, rems = self.getAllVolumesImages()
         return rems
 
+    def createImageLinks(self, srcImgPath, imgUUID, volUUIDs):
+        """
+        qcow chain is build by reading each qcow header and reading the path
+        to the parent. When creating the qcow layer, we pass a relative path
+        which allows us to build a directory with links to all volumes in the
+        chain anywhere we want. This method creates a directory with the image
+        uuid under /var/run/vdsm and creates sym links to all the volumes in
+        the chain.
+
+        srcImgPath: Dir where the image volumes are.
+        """
+        sdRunDir = os.path.join(constants.P_VDSM_STORAGE, self.sdUUID)
+        imgRunDir = os.path.join(sdRunDir, imgUUID)
+        fileUtils.createdir(imgRunDir)
+        for volUUID in volUUIDs:
+            srcVol = os.path.join(srcImgPath, volUUID)
+            dstVol = os.path.join(imgRunDir, volUUID)
+            try:
+                os.symlink(srcVol, dstVol)
+            except OSError as e:
+                if e.errno == errno.EEXIST:
+                    self.log.debug("img run vol already exists: %s", dstVol)
+                else:
+                    self.log.error("Failed to create img run vol: %s", dstVol)
+                    raise
+
+        return imgRunDir
+
     def activateVolumes(self, imgUUID, volUUIDs):
         """
-        Activate all the volumes listed in volUUIDs
+        Activate all the volumes belonging to the image.
+
+        imgUUID: the image to be deactivated.
+        allVols: getAllVolumes result.
+
+        If the image is based on a template image it will be activated.
         """
         lvm.activateLVs(self.sdUUID, volUUIDs)
+        vgDir = os.path.join("/dev", self.sdUUID)
+        return self.createImageLinks(vgDir, imgUUID, volUUIDs)
 
     def getVolumeLease(self, imgUUID, volUUID):
         """

@@ -25,7 +25,6 @@ from vdsm import qemuImg
 
 from storage import sd
 from storage import blockSD
-from storage import image
 from storage import volume
 from storage import blockVolume
 from storage import storage_exception as se
@@ -240,8 +239,6 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                 # same volume in the other images.
                 vol._shareLease(dstVol.imagePath)
 
-        img = image.Image(repoPath)
-
         # Updating the volumes to fix BZ#811880, here the activation is
         # required and to be more effective we do it by image (one shot).
         for imgUUID in allImages:
@@ -269,24 +266,21 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             #     This is safe because the upgrade process will fail (unable
             #     to read the image virtual size) and it can be restarted
             #     later.
+            imgVolumes = sd.getVolsOfImage(allVolumes, imgUUID).keys()
             try:
-                for vol in img.prepare(domain.sdUUID, imgUUID):
+                try:
+                    domain.activateVolumes(imgUUID, imgVolumes)
+                except (OSError, se.CannotActivateLogicalVolumes):
+                    log.error("Image %s can't be activated.",
+                              imgUUID, exc_info=True)
+
+                for vol in imgVolumes:
                     try:
                         v3ResetMetaVolSize(vol)  # BZ#811880
                     except qemuImg.QImgError:
                         log.error("It is not possible to read the volume %s "
                                   "using qemu-img, the content looks damaged",
                                   vol.volUUID, exc_info=True)
-
-            except se.VolumeDoesNotExist:
-                log.error("It is not possible to prepare the image %s, the "
-                          "volume chain looks damaged", imgUUID, exc_info=True)
-
-            except se.MetaDataKeyNotFoundError:
-                log.error("It is not possible to prepare the image %s, the "
-                          "volume metadata looks damaged", imgUUID,
-                          exc_info=True)
-
             finally:
                 try:
                     domain.deactivateImage(imgUUID)
