@@ -549,6 +549,13 @@ class ValidateUuid(TestCaseBase):
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
                 "Dc08ff668-4072-4191-9fbb-f1c8f2daz333")
 
+    def testInvalidInputInteger(self):
+        """
+        Test that validator detects when an integer is in the input.
+        """
+        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
+                23)
+
     def testWrongLength(self):
         """
         Test that the validator detects when the input is not in the correct
