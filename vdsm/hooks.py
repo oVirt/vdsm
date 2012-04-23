@@ -1,3 +1,4 @@
+import os.path
 #
 # Copyright 2010-2011 Red Hat, Inc.
 #
@@ -162,9 +163,7 @@ def _getScriptInfo(path):
     return {'md5': md5}
 
 def _getHookInfo(dir):
-    def scripthead(script):
-        return script[len(P_VDSM_HOOKS) + len(dir) + 1:]
-    return dict([ (scripthead(script), _getScriptInfo(script))
+    return dict([ (os.path.basename(script), _getScriptInfo(script))
                   for script in _scriptsPerDir(dir) ])
 
 def installed():

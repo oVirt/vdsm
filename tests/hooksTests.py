@@ -1,3 +1,4 @@
+import os.path
 #
 # Copyright 2012 Red Hat, Inc.
 #
@@ -71,3 +72,34 @@ echo -n %s >> "$_hook_domxml"
         res = hooks._runHooksDir(DOMXML, dirName)
         self.assertEqual(expectedResult, res)
         self.destroyTempScripts(scripts, dirName)
+
+    def test_getNEScriptInfo(self):
+        path = '/tmp/nonExistent'
+        info = hooks._getScriptInfo(path)
+        self.assertEqual({'md5': ''}, info)
+
+    def createScript(self, dir='/tmp'):
+        script = tempfile.NamedTemporaryFile(dir=dir, delete=False)
+        code = """#! /bin/bash
+echo "81212590184644762"
+        """
+        script.write(code)
+        script.close()
+        os.chmod(script.name, 0775)
+        return script.name, '683394fc34f6830dd1882418eefd9b66'
+
+    def test_getScriptInfo(self):
+        sName, md5 = self.createScript()
+        info = hooks._getScriptInfo(sName)
+        os.unlink(sName)
+        self.assertEqual({'md5': md5}, info)
+
+    def test_getHookInfo(self):
+        dir = tempfile.mkdtemp()
+        sName, md5 = self.createScript(dir)
+        NEscript = tempfile.NamedTemporaryFile(dir=dir)
+        os.chmod(NEscript.name, 0000)
+        info = hooks._getHookInfo(dir)
+        os.unlink(sName)
+        expectedRes = dict([(os.path.basename(sName), {'md5': md5})])
+        self.assertEqual(expectedRes, info)
