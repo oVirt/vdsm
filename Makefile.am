@@ -39,6 +39,7 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	tests \
+        vdsm/API.py \
 	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \
 	vdsm/storage/misc.py \

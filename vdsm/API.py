@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -47,7 +47,9 @@ USER_SHUTDOWN_MESSAGE = 'System going down'
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
+
 class ConnectionRefs(object):
+
     def __init__(self, cif):
         self._irs = cif.irs
 
@@ -60,7 +62,9 @@ class ConnectionRefs(object):
     def statuses(self):
         return self._irs.storageServer_ConnectionRefs_statuses()
 
+
 class Task(object):
+
     def __init__(self, cif, UUID):
         self._irs = cif.irs
         self._UUID = UUID
@@ -80,7 +84,9 @@ class Task(object):
     def stop(self):
         return self._irs.stopTask(self._UUID)
 
+
 class VM(object):
+
     def __init__(self, cif, UUID):
         self._cif = cif
         self.log = cif.log
@@ -135,7 +141,7 @@ class VM(object):
 
             if 'hiberVolHandle' in vmParams:
                 vmParams['restoreState'], paramFilespec = \
-                         self._getHibernationPaths(vmParams.pop('hiberVolHandle'))
+                    self._getHibernationPaths(vmParams.pop('hiberVolHandle'))
                 try: # restore saved vm parameters
                 # NOTE: pickled params override command-line params. this
                 # might cause problems if an upgrade took place since the
@@ -160,20 +166,25 @@ class VM(object):
             for param in requiredParams:
                 if param not in vmParams:
                     self.log.error('Missing required parameter %s' % (param))
-                    return {'status': {'code': errCode['MissParam']['status']['code'],
-                                       'message': 'Missing required parameter %s' % (param)}}
+                    return {'status': {'code': errCode['MissParam']
+                                                      ['status']['code'],
+                                       'message': 'Missing required' + \
+                                       'parameter %s' % (param)}}
             try:
                 storage.misc.validateUUID(vmParams['vmId'])
             except:
-                return {'status': {'code': errCode['MissParam']['status']['code'],
+                return {'status': {'code': errCode['MissParam']
+                                                  ['status']['code'],
                                    'message': 'vmId must be a valid UUID'}}
             if vmParams['memSize'] == 0:
-                return {'status': {'code': errCode['MissParam']['status']['code'],
+                return {'status': {'code': errCode['MissParam']
+                                                  ['status']['code'],
                                    'message': 'Must specify nonzero memSize'}}
 
             if vmParams.get('boot') == 'c' and not 'hda' in vmParams \
                                            and not vmParams.get('drives'):
-                return {'status': {'code': errCode['MissParam']['status']['code'],
+                return {'status': {'code': errCode['MissParam']
+                                                  ['status']['code'],
                                    'message': 'missing boot disk'}}
 
             if 'vmType' not in vmParams:
@@ -207,27 +218,32 @@ class VM(object):
                 return {'status': {'code': errCode['createErr']
                                                   ['status']['code'],
                                    'message': 'Unknown display type %s'
-                                                % vmParams.get('display') }}
+                                                % vmParams.get('display')}}
             if 'nicModel' not in vmParams:
                 vmParams['nicModel'] = config.get('vars', 'nic_model')
             vmParams['displayIp'] = self._getNetworkIp(vmParams.get(
                                                         'displayNetwork'))
             self._cif.vmContainerLock.acquire()
-            self.log.info("vmContainerLock acquired by vm %s", vmParams['vmId'])
+            self.log.info("vmContainerLock acquired by vm %s",
+                          vmParams['vmId'])
             try:
                 if 'recover' not in vmParams:
                     if vmParams['vmId'] in self._cif.vmContainer:
-                        self.log.warning('vm %s already exists' % vmParams['vmId'])
+                        self.log.warning('vm %s already exists' %
+                                         vmParams['vmId'])
                         return errCode['exist']
                 vmParams['displayPort'] = '-1' # selected by libvirt
                 vmParams['displaySecurePort'] = '-1'
                 VmClass = libvirtvm.LibvirtVm
-                self._cif.vmContainer[vmParams['vmId']] = VmClass(self._cif, vmParams)
+                self._cif.vmContainer[vmParams['vmId']] = \
+                        VmClass(self._cif, vmParams)
             finally:
                 self._cif.vmContainerLock.release()
             self._cif.vmContainer[vmParams['vmId']].run()
-            self.log.debug("Total desktops after creation of %s is %d" % (vmParams['vmId'], len(self._cif.vmContainer)))
-            return {'status': doneCode, 'vmList': self._cif.vmContainer[vmParams['vmId']].status()}
+            self.log.debug("Total desktops after creation of %s is %d" %
+                           (vmParams['vmId'], len(self._cif.vmContainer)))
+            return {'status': doneCode,
+                    'vmList': self._cif.vmContainer[vmParams['vmId']].status()}
         except OSError, e:
             self.log.debug("OS Error creating VM", exc_info=True)
             return {'status': {'code': errCode['createErr']['status']['code'],
@@ -352,7 +368,8 @@ class VM(object):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, nic')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required parameters: vmId, nic'}}
+                               'message': 'Missing one of required' + \
+                                          'parameters: vmId, nic'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
@@ -367,7 +384,8 @@ class VM(object):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, nic')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required parameters: vmId, nic'}}
+                               'message': 'Missing one of required' + \
+                                          'parameters: vmId, nic'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
@@ -382,7 +400,8 @@ class VM(object):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, drive')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required parameters: vmId, drive'}}
+                               'message': 'Missing one of required' + \
+                                          'parameters: vmId, drive'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
@@ -397,7 +416,8 @@ class VM(object):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, drive')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required parameters: vmId, drive'}}
+                               'message': 'Missing one of required' + \
+                                          'parameters: vmId, drive'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
@@ -449,7 +469,8 @@ class VM(object):
         """
         Start a migration-destination VM.
 
-        :param params: parameters of new VM, to be passed to :meth:`~clientIF.create`.
+        :param params: parameters of new VM, to be passed to
+            *:meth:* - `~clientIF.create`.
         :type params: dict
         """
         self.log.debug('Migration create')
@@ -466,7 +487,8 @@ class VM(object):
             return errCode['createErr']
 
         self.log.debug('Destination VM creation succeeded')
-        return {'status': doneCode, 'migrationPort': 0, 'params': response['vmList']}
+        return {'status': doneCode, 'migrationPort': 0,
+                'params': response['vmList']}
 
     def monitorCommand(self, command):
         """
@@ -597,15 +619,19 @@ class VM(object):
             return errCode['noVM']
         return v.mergeStatus()
 
+
 class Volume(object):
+
     class Types:
         UNKNOWN = storage.volume.UNKNOWN_VOL
         PREALLOCATED = storage.volume.PREALLOCATED_VOL
         SPARSE = storage.volume.SPARSE_VOL
+
     class Formats:
         UNKNOWN = storage.volume.UNKNOWN_FORMAT
         COW = storage.volume.COW_FORMAT
         RAW = storage.volume.RAW_FORMAT
+
     class Roles:
         SHARED = storage.volume.SHARED_VOL
         LEAF = storage.volume.LEAF_VOL
@@ -673,6 +699,7 @@ class Volume(object):
         return self._irs.teardownVolume(self._sdUUID, self._spUUID,
                 self._imgUUID, self._UUID)
 
+
 class Image(object):
     BLANK_UUID = storage.volume.BLANK_UUID
 
@@ -706,7 +733,9 @@ class Image(object):
         return self._irs.moveImage(self._spUUID, self._sdUUID,
                 dstSdUUID, self._UUID, vmUUID, operation, postZero, force)
 
+
 class LVMVolumeGroup(object):
+
     def __init__(self, cif, UUID=None):
         self._irs = cif.irs
         self._UUID = UUID
@@ -728,7 +757,9 @@ class LVMVolumeGroup(object):
             # FIXME: Add proper error return
             return None
 
+
 class ISCSIConnection(object):
+
     def __init__(self, cif, host, port, user="", password=""):
         self._irs = cif.irs
         self._host = host
@@ -737,12 +768,13 @@ class ISCSIConnection(object):
         self._pass = password
 
     def discoverSendTargets(self):
-        params = { 'connection': self._host, 'port': self._port,
-                   'user': self._user, 'password': self._pass }
+        params = {'connection': self._host, 'port': self._port,
+                  'user': self._user, 'password': self._pass}
         return self._irs.discoverSendTargets(params)
 
 
 class StorageDomain(object):
+
     class Types:
         UNKNOWN = storage.sd.UNKNOWN_DOMAIN
         NFS = storage.sd.NFS_DOMAIN
@@ -751,6 +783,7 @@ class StorageDomain(object):
         LOCALFS = storage.sd.LOCALFS_DOMAIN
         CIFS = storage.sd.CIFS_DOMAIN
         SHAREDFS = storage.sd.SHAREDFS_DOMAIN
+
     class Classes:
         DATA = storage.sd.DATA_DOMAIN
         ISO = storage.sd.ISO_DOMAIN
@@ -822,7 +855,9 @@ class StorageDomain(object):
     def validate(self):
         return self._irs.validateStorageDomain(self._UUID)
 
+
 class StoragePool(object):
+
     def __init__(self, cif, UUID):
         self._irs = cif.irs
         self._UUID = UUID
@@ -913,7 +948,7 @@ class StoragePool(object):
     def spmStart(self, prevID, prevLver, enableScsiFencing,
                  maxHostID=None, domVersion=None):
         if maxHostID is None:
-            maxHostID=storage.safelease.MAX_HOST_ID
+            maxHostID = storage.safelease.MAX_HOST_ID
         recoveryMode = None # unused
         return self._irs.spmStart(self._UUID, prevID, prevLver,
                 recoveryMode, enableScsiFencing, maxHostID, domVersion)
@@ -936,7 +971,9 @@ class StoragePool(object):
     def removeVM(self, vmUUID, sdUUID):
         return self._irs.removeVM(self._UUID, vmUUID, sdUUID)
 
+
 class Global(object):
+
     def __init__(self, cif):
         self._cif = cif
         self._irs = cif.irs
@@ -1001,7 +1038,7 @@ class Global(object):
             raise
 
         inp = ('agent=fence_%s\nipaddr=%s\nlogin=%s\noption=%s\n' +
-                      'passwd=%s\n') % (agent, addr, username, action, password)
+               'passwd=%s\n') % (agent, addr, username, action, password)
         if port != '':
             inp += 'port=%s\n' % (port,)
         if utils.tobool(secure):
@@ -1029,7 +1066,7 @@ class Global(object):
 
     def ping(self):
         "Ping the server. Useful for tests"
-        return {'status':doneCode}
+        return {'status': doneCode}
 
     def getCapabilities(self):
         """
@@ -1043,6 +1080,7 @@ class Global(object):
         """
         Report host statistics.
         """
+
         def _readSwapTotalFree():
             meminfo = utils.readMemInfo()
             return meminfo['SwapTotal'] / 1024, meminfo['SwapFree'] / 1024
@@ -1055,7 +1093,8 @@ class Global(object):
         stats['memShared'] = self._memShared() / Mbytes
         stats['memCommitted'] = self._memCommitted() / Mbytes
         stats['swapTotal'], stats['swapFree'] = _readSwapTotalFree()
-        stats['vmCount'], stats['vmActive'], stats['vmMigrating'] = self._countVms()
+        stats['vmCount'], stats['vmActive'], stats['vmMigrating'] = \
+                self._countVms()
         (tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec,
              dummy, dummy, dummy) = time.gmtime(time.time())
         stats['dateTime'] = '%02d-%02d-%02dT%02d:%02d:%02d GMT' % (
@@ -1076,9 +1115,11 @@ class Global(object):
 
         Doesn't survive a restart
         """
-        logging.getLogger('clientIF.setLogLevel').info('Setting loglevel to %s' % level)
+        logging.getLogger('clientIF.setLogLevel').info('Setting loglevel' + \
+                                                       'to %s' % level)
         handlers = logging.getLogger().handlers
-        [fileHandler] = [h for h in handlers if isinstance(h, logging.FileHandler)]
+        [fileHandler] = [h for h in handlers if
+                         isinstance(h, logging.FileHandler)]
         fileHandler.setLevel(int(level))
 
         return dict(status=doneCode)
@@ -1086,6 +1127,7 @@ class Global(object):
     # VM-related functions
     def getVMList(self, fullStatus=False, vmList=[]):
         """ return a list of known VMs with full (or partial) config each """
+
         def reportedStatus(v, full):
             d = v.status()
             if full:
@@ -1159,21 +1201,27 @@ class Global(object):
 
             if vlan or bond or nics:
                 # Backwards compatibility
-                self.log.warn('Specifying vlan, bond or nics to delNetwork is deprecated')
+                self.log.warn('Specifying vlan,' + \
+                              'bond or nics to delNetwork is deprecated')
                 _netinfo = netinfo.NetInfo()
                 try:
                     if bond:
                         configNetwork.validateBondingName(bond)
                     if vlan:
                         configNetwork.validateVlanId(vlan)
-                    if nics and bond and set(nics) != set(_netinfo.bondings[bond]["slaves"]):
-                            self.log.error('delNetwork: not all nics specified are enslaved (%s != %s)'
-                                    % (nics, _netinfo.bondings[bond]["slaves"])
-                                )
-                            raise configNetwork.ConfigNetworkError(configNetwork.ne.ERR_BAD_NIC, "not all nics are enslaved")
+                    if nics and bond and set(nics) != \
+                            set(_netinfo.bondings[bond]["slaves"]):
+                        self.log.error('delNetwork: not all nics specified' + \
+                                       'are enslaved (%s != %s)' %
+                                       (nics,
+                                        _netinfo.bondings[bond]["slaves"]))
+                        raise configNetwork.ConfigNetworkError(
+                                configNetwork.ne.ERR_BAD_NIC,
+                                "not all nics are enslaved")
                 except configNetwork.ConfigNetworkError, e:
                     self.log.error(e.message, exc_info=True)
-                    return {'status': {'code': e.errCode, 'message': e.message}}
+                    return {'status': {'code': e.errCode,
+                                       'message': e.message}}
 
             self._cif._netConfigDirty = True
 
@@ -1260,6 +1308,7 @@ class Global(object):
     # resident set size of qemu processes may grow - up to  memCommitted.
     # Thus, we deduct the growth potential of qemu processes, which is
     # (memCommitted - resident)
+
     def _memAvailable(self):
         """
         Return an approximation of available memory for new VMs.
@@ -1267,7 +1316,8 @@ class Global(object):
         memCommitted = self._memCommitted()
         resident = 0
         for v in self._cif.vmContainer.values():
-            if v.conf['pid'] == '0': continue
+            if v.conf['pid'] == '0':
+                continue
             try:
                 statmfile = file('/proc/' + v.conf['pid'] + '/statm')
                 resident += int(statmfile.read().split()[1])
@@ -1287,7 +1337,8 @@ class Global(object):
         """
         shared = 0
         for v in self._cif.vmContainer.values():
-            if v.conf['pid'] == '0': continue
+            if v.conf['pid'] == '0':
+                continue
             try:
                 statmfile = file('/proc/' + v.conf['pid'] + '/statm')
                 shared += int(statmfile.read().split()[2]) * PAGE_SIZE_BYTES
@@ -1328,7 +1379,8 @@ class Global(object):
             'ONBOOT': 'onboot',
             'BONDING_OPTS': 'bondingOptions',
         }
-        for k,v in options.items():
+        for k, v in options.items():
             if k in _translationMap:
-                self.log.warn("options %s is deprecated. Use %s instead"%(k, _translationMap[k]))
+                self.log.warn("options %s is deprecated. Use %s instead" %
+                              (k, _translationMap[k]))
                 options[_translationMap[k]] = options.pop(k)
