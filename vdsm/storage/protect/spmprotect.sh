@@ -27,7 +27,7 @@ VDS_CLIENT="/usr/bin/vdsClient"
 LEASE_UTIL="./safelease"
 KILL="/bin/kill"
 PKILL="/usr/bin/pkill"
-spUUID=$2
+sdUUID=$2
 CHECKVDSM=${CHECKVDSM:-"/usr/bin/pgrep vdsm"}
 REBOOTCMD=${REBOOTCMD:-"sudo /sbin/reboot -f"}
 RENEWDIR="/var/run/vdsm/spmprotect/$$"
@@ -41,9 +41,9 @@ function usage() {
     trap EXIT
     echo "usage: $0 COMMAND PARAMETERS"
     echo "Commands:"
-    echo "  start { spUUID hostId renewal_interval_sec lease_path[:offset] lease_time_ms io_op_timeout_ms fail_retries }"
+    echo "  start { sdUUID hostId renewal_interval_sec lease_path[:offset] lease_time_ms io_op_timeout_ms fail_retries }"
     echo "Parameters:"
-    echo "  spUUID -                pool uuid"
+    echo "  sdUUID -                domain uuid"
     echo "  hostId -                host id in pool"
     echo "  renewal_interval_sec -  intervals for lease renewals attempts"
     echo "  lease_path -            path to lease file/volume"
@@ -70,11 +70,11 @@ function fence() {
     trap "" EXIT
     trap "" INT
 
-    log "Fencing spUUID=$spUUID id=$ID lease_path=$LEASE_FILE"
+    log "Fencing sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE"
     (sleep 20 && echodo $REBOOTCMD) &
     disown
     (sleep 7
-        log "Trying to stop vdsm for spUUID=$spUUID id=$ID lease_path=$LEASE_FILE"
+        log "Trying to stop vdsm for sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE"
         echodo $KILL "$VDSM_PID"
         sleep 2
         echodo $KILL -9 "$VDSM_PID"
@@ -97,7 +97,7 @@ function release() {
     trap "" EXIT
     trap "" INT
     trap "" USR1
-    log "releasing lease spUUID=$spUUID id=$ID lease_path=$LEASE_FILE"
+    log "releasing lease sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE"
     $KILL -USR1 0
     $LEASE_UTIL release $LEASE_FILE $ID
     rm -fr $RENEWDIR
@@ -210,18 +210,18 @@ log "Protecting spm lock for vdsm pid $VDSM_PID"
 
 case $1 in
 start)
-    log "Trying to acquire lease - spUUID=$spUUID lease_file=$LEASE_FILE id=$ID lease_time_ms=$LEASE_TIME_MS io_op_to_ms=$IO_OP_TIMEOUT_MS"
+    log "Trying to acquire lease - sdUUID=$sdUUID lease_file=$LEASE_FILE id=$ID lease_time_ms=$LEASE_TIME_MS io_op_to_ms=$IO_OP_TIMEOUT_MS"
     if ! LAST_RENEWAL=`$LEASE_UTIL $dbg acquire $LEASE_FILE $ID $LEASE_TIME_MS $IO_OP_TIMEOUT_MS`; then
-        log "Acquire failed for spUUID=$spUUID id=$ID lease_path=$LEASE_FILE"
+        log "Acquire failed for sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE"
         fail
     fi
-    log "Lease acquired spUUID=$spUUID id=$ID lease_path=$LEASE_FILE, TS=$LAST_RENEWAL"
+    log "Lease acquired sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE, TS=$LAST_RENEWAL"
     trap fence EXIT
     trap release INT
     trap release USR1
 
     exec 0>&- && exec 1>&- && exec 2>&- # Close stdin, stdout and stderr
-    $SETSID $0 renew $spUUID $ID $RENEWAL_INTERVAL $LEASE_FILE $LEASE_TIME_MS $IO_OP_TIMEOUT_MS $LAST_RENEWAL $DEBUG >> $LOGFILE 2>&1 &
+    $SETSID $0 renew $sdUUID $ID $RENEWAL_INTERVAL $LEASE_FILE $LEASE_TIME_MS $IO_OP_TIMEOUT_MS $LAST_RENEWAL $DEBUG >> $LOGFILE 2>&1 &
     trap EXIT
     exit 0
     ;;
@@ -231,7 +231,7 @@ renew)
     trap release USR1
 
     mkdir -p $RENEWDIR
-    log "Started renewal process (pid=$$) for spUUID=$spUUID id=$ID lease_path=$LEASE_FILE"
+    log "Started renewal process (pid=$$) for sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE"
     start_renewal_loop
     ;;
 *)
