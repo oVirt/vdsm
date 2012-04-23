@@ -556,6 +556,13 @@ class ValidateUuid(TestCaseBase):
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
                 23)
 
+    def testInvalidInputUTF(self):
+        """
+        Test that validator detects encoded utf-8 is in the input
+        """
+        self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
+                u'\xe4\xbd\xa0\xe5\xa5\xbd')
+
     def testWrongLength(self):
         """
         Test that the validator detects when the input is not in the correct
