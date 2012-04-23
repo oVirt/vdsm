@@ -39,7 +39,7 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	tests \
-        vdsm/API.py \
+	vdsm/API.py \
 	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \
 	vdsm/parted_utils.py \

@@ -142,7 +142,7 @@ class VM(object):
             if 'hiberVolHandle' in vmParams:
                 vmParams['restoreState'], paramFilespec = \
                     self._getHibernationPaths(vmParams.pop('hiberVolHandle'))
-                try: # restore saved vm parameters
+                try:   # restore saved vm parameters
                 # NOTE: pickled params override command-line params. this
                 # might cause problems if an upgrade took place since the
                 # parmas were stored.
@@ -232,7 +232,7 @@ class VM(object):
                         self.log.warning('vm %s already exists' %
                                          vmParams['vmId'])
                         return errCode['exist']
-                vmParams['displayPort'] = '-1' # selected by libvirt
+                vmParams['displayPort'] = '-1'   # selected by libvirt
                 vmParams['displaySecurePort'] = '-1'
                 VmClass = libvirtvm.LibvirtVm
                 self._cif.vmContainer[vmParams['vmId']] = \
@@ -647,7 +647,7 @@ class Volume(object):
 
     def copy(self, dstSdUUID, dstImgUUID, dstVolUUID, desc, volType,
              volFormat, preallocate, postZero, force):
-        vmUUID = '' # vmUUID is never used
+        vmUUID = ''   # vmUUID is never used
         return self._irs.copyImage(self._sdUUID, self._spUUID, vmUUID,
                 self._imgUUID, self._UUID, dstImgUUID, dstVolUUID, desc,
                 dstSdUUID, volType, volFormat, preallocate, postZero,
@@ -722,13 +722,13 @@ class Image(object):
                 self._UUID)
 
     def mergeSnapshots(self, ancestor, successor, postZero):
-        vmUUID = '' # Not used
+        vmUUID = ''   # Not used
         # XXX: On success, self._sdUUID needs to be updated
         return self._irs.mergeSnapshots(self._sdUUID, self._spUUID,
                 vmUUID, self._UUID, ancestor, successor, postZero)
 
     def move(self, dstSdUUID, operation, postZero, force):
-        vmUUID = '' # Not used
+        vmUUID = ''   # Not used
         # XXX: On success, self._sdUUID needs to be updated
         return self._irs.moveImage(self._spUUID, self._sdUUID,
                 dstSdUUID, self._UUID, vmUUID, operation, postZero, force)
@@ -873,8 +873,8 @@ class StoragePool(object):
     def create(self, name, masterSdUUID, masterVersion, domainList,
                lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
                leaseRetries):
-        poolType = None # Not used
-        lockPolicy = None # Not used
+        poolType = None   # Not used
+        lockPolicy = None   # Not used
         return self._irs.createStoragePool(poolType, self._UUID,
                 name, masterSdUUID, domainList, masterVersion,
                 lockPolicy, lockRenewalIntervalSec, leaseTimeSec,
@@ -892,8 +892,8 @@ class StoragePool(object):
                 connectionParams)
 
     def fence(self):
-        lastOwner = None # Unused
-        lastLver = None # Unused
+        lastOwner = None   # Unused
+        lastLver = None   # Unused
         return self._irs.fenceSpmStorage(self._UUID, lastOwner,
                 lastLver)
 
@@ -924,14 +924,14 @@ class StoragePool(object):
 
     def moveMultipleImages(self, srcSdUUID, dstSdUUID, imgDict,
                            force=False):
-        vmUUID = None # Unused parameter
+        vmUUID = None   # Unused parameter
         return self._irs.moveMultipleImages(self._UUID, srcSdUUID,
                 dstSdUUID, imgDict, vmUUID, force)
 
     def reconstructMaster(self, name, masterSdUUID, masterVersion,
                           domainDict, lockRenewalIntervalSec,
                           leaseTimeSec, ioOpTimeoutSec, leaseRetries):
-        lockPolicy = None # Not used
+        lockPolicy = None   # Not used
         return self._irs.reconstructMaster(self._UUID, name,
                 masterSdUUID, domainDict, masterVersion, lockPolicy,
                 lockRenewalIntervalSec, leaseTimeSec,
@@ -949,7 +949,7 @@ class StoragePool(object):
                  maxHostID=None, domVersion=None):
         if maxHostID is None:
             maxHostID = storage.safelease.MAX_HOST_ID
-        recoveryMode = None # unused
+        recoveryMode = None   # unused
         return self._irs.spmStart(self._UUID, prevID, prevLver,
                 recoveryMode, enableScsiFencing, maxHostID, domVersion)
 
