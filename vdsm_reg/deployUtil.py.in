@@ -666,7 +666,7 @@ def setHostTime(VDCTime):
     try:
         ttp = time.strptime(VDCTime, '%Y-%m-%dT%H:%M:%S')
     except ValueError, e:
-        logging.debug("setHostTime: Failed to parse RHEVM time. message= " + str(e))
+        logging.debug("setHostTime: Failed to parse @ENGINENAME@ time. message= " + str(e))
         fReturn = False
 
     if fReturn:
@@ -1491,11 +1491,11 @@ def main():
     if options.downloadRhevmCert:
         if not options.serverIp or not options.serverPort or \
                 not options.fingerPrint:
-            print "Must supply RHEVM's IP, port and a fingerprint to " + \
+            print "Must supply @ENGINENAME@'s IP, port and a fingerprint to " + \
                   "verify against"
             return -1
         if not getRhevmCert(options.serverIp, options.serverPort):
-            print 'Failed downloading the RHEVM certificate file'
+            print 'Failed downloading the @ENGINENAME@ certificate file'
             return -1
         CACERT, dontcare = certPaths('')
         fp = generateFingerPrint(CACERT)
@@ -1505,7 +1505,7 @@ def main():
 
         if isOvirt():
             ovirtfunctions.ovirt_store_config(CACERT)
-        print 'RHEVM certificate downloaded and verified successfully.'
+        print '@ENGINENAME@ certificate downloaded and verified successfully.'
         return 0
     print 'Missing arguments'
     return -1
