@@ -13,7 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA  02110-1301  USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -21,12 +22,14 @@
 from vdsm import constants
 from vdsm import utils
 
+
 class BlockIdException(Exception):
     def __init__(self, rc, attrib):
         self.rc = rc
         self.attrib = attrib
         if self.rc == 2:
-            self.message = 'device could not be identified for %s' % self.attrib
+            self.message = \
+                'device could not be identified for %s' % self.attrib
         elif self.rc == 4:
             self.message = 'blkid usage or other errors for %s' % self.attrib
         elif self.rc == 8:

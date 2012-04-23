@@ -39,11 +39,12 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	tests \
-	vdsm/supervdsmServer.py \
+	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/processPool.py \
-	vdsm/supervdsm.py
+	vdsm/supervdsm.py \
+	vdsm/supervdsmServer.py
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)
