@@ -1477,14 +1477,14 @@ def parseOptions():
 
     parser.add_option("-s", "--server-address",
         action="store", dest="serverIp", type="string", default=None,
-        help="IP address of RHEVM")
+        help="IP address of @ENGINENAME@")
     parser.add_option("-p", "--server-port",
         action="store", dest="serverPort", default=None, type="string",
-        help="Port of RHEVM")
+        help="Port of @ENGINENAME@")
 
     parser.add_option("-d", "--download-rhevm-cert", action="store_true",
                       default=False, dest="downloadRhevmCert",
-                      help="Download certificate from RHEVM")
+                      help="Download certificate from @ENGINENAME@")
     parser.add_option("-f", "--fingerprint", action="store",
             dest="fingerPrint", default=None, type="string",
             help="""
