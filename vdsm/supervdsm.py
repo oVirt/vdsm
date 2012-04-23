@@ -13,7 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -33,6 +34,7 @@ from vdsm import constants
 _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()
 
+
 def __supervdsmServerPath():
     base = os.path.dirname(__file__)
 
@@ -47,19 +49,26 @@ PIDFILE = "/var/run/vdsm/svdsm.pid"
 ADDRESS = "/var/run/vdsm/svdsm.sock"
 SUPERVDSM = __supervdsmServerPath()
 
-class _SuperVdsmManager(BaseManager): pass
+
+class _SuperVdsmManager(BaseManager):
+    pass
+
 
 class ProxyCaller(object):
     def __init__(self, supervdsmProxy, funcName):
         self._funcName = funcName
         self._supervdsmProxy = supervdsmProxy
+
     def __call__(self, *args, **kwargs):
-        callMethod = lambda : getattr(self._supervdsmProxy._svdsm, self._funcName)(*args, **kwargs)
+        callMethod = lambda: \
+            getattr(self._supervdsmProxy._svdsm, self._funcName)(*args,
+                                                                 **kwargs)
         try:
             return callMethod()
         except (IOError, socket.error, AuthenticationError):
             self._supervdsmProxy._restartSupervdsm()
             return callMethod()
+
 
 class SuperVdsmProxy(object):
     """
@@ -68,7 +77,8 @@ class SuperVdsmProxy(object):
     _log = logging.getLogger("SuperVdsmProxy")
 
     def __init__(self):
-        # Kill supervdsm from previous session (if exists), and launch a new one
+        # Kill supervdsm from previous session (if exists),
+        # and launch a new one
         self._restartSupervdsm()
 
         self._log.debug("Connected to Super Vdsm")
@@ -96,7 +106,8 @@ class SuperVdsmProxy(object):
         self._manager = None
 
     def _connect(self):
-        self._manager = _SuperVdsmManager(address=ADDRESS, authkey=self._authkey)
+        self._manager = _SuperVdsmManager(address=ADDRESS,
+                                          authkey=self._authkey)
         self._manager.register('instance')
         self._manager.register('open')
         self._log.debug("Trying to connect to Super Vdsm")
@@ -107,7 +118,6 @@ class SuperVdsmProxy(object):
             raise
         self._svdsm = self._manager.instance()
 
-
     def _restartSupervdsm(self):
         self._killSupervdsm()
         self._launchSupervdsm()
@@ -115,6 +125,7 @@ class SuperVdsmProxy(object):
 
     def __getattr__(self, name):
         return ProxyCaller(self, name)
+
 
 def getProxy():
     global _g_singletonSupervdsmInstance
