@@ -22,21 +22,23 @@ test_modules = \
 	main.py \
 	alignmentScanTests.py \
 	betterThreadingTests.py \
+	capsTests.py \
 	fileUtilTests.py \
 	guestIFTests.py \
+	hooksTests.py \
 	md_utils_tests.py \
 	miscTests.py \
 	parted_utils_tests.py \
 	persistentDictTests.py \
 	processPoolTests.py \
-	resourceManagerTests.py \
-	hooksTests.py
+	resourceManagerTests.py
 
 dist_noinst_DATA = \
 	$(test_modules) \
 	testrunner.py \
 	testValidation.py \
-	run_tests.sh
+	run_tests.sh \
+	cpu_info.out
 
 check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
