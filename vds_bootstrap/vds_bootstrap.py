@@ -889,7 +889,7 @@ obsolete options:
         firewallRulesFile = None
         installVirtualizationService = False
         installGlusterService = False
-        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:vg")
+        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:n:u:vg")
         for o,v in opts:
             if o == "-r":
                 rev_num = v
