@@ -262,21 +262,6 @@ class Image:
         newsize = int(newsize * 1.1)    # allocate %10 more for cow metadata
         return newsize
 
-    @classmethod
-    def subChainSizeCalc(cls, sdDom, imgUUID, chain, size):
-        """
-        Compute an estimate of the subchain size
-        using the sum of the actual size of the subchain's volumes
-        """
-        newsize = 0
-        for volUUID in chain:
-            vol = sdDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-            newsize += vol.getVolumeSize()
-        if newsize > size:
-            newsize = size
-        newsize = int(newsize * 1.1)    # allocate %10 more for cow metadata
-        return newsize
-
     def getChain(self, sdUUID, imgUUID, volUUID=None):
         """
         Return the chain of volumes of image as a sorted list
@@ -818,28 +803,6 @@ class Image:
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
 
-    def getSubChain(self, sdDom, imgUUID, startUUID, endUUID):
-        """
-        Check if startUUID..endUUID is a valid simple link list (and not a tree).
-        """
-        chain = [startUUID]
-        volclass = sdDom.getVolumeClass()
-        volUUID = startUUID
-        try:
-            while volUUID != endUUID:
-                childs = volclass.getAllChildrenList(self.repoPath, sdDom.sdUUID, imgUUID, volUUID)
-                # If a volume has more than 1 child, it is a tree.
-                if len(childs) != 1:
-                    raise se.ImageIsNotLegalChain("%s:%s..%s" % (imgUUID, startUUID, endUUID))
-                volUUID = childs[0]["volUUID"]
-                chain.append(volUUID)
-            return chain
-        except se.StorageException:
-            raise
-        except Exception, e:
-            self.log.error("Unexpected error", exc_info=True)
-            raise se.ImageIsNotLegalChain("%s" % (str(e)))
-
     def markIllegalSubChain(self, sdDom, imgUUID, chain):
         """
         Mark all volumes in the sub-chain as illegal
@@ -998,10 +961,10 @@ class Image:
         # Step 3: Rename successor to _remove_me__successor
         # Step 4: Rename successor_MERGE to successor
         # Step 5: Unsafely rebase successor's children on top of temporary volume
-        srcVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=srcVolParams['volUUID'])
+        srcVol = chain[-1]
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         # Find out successor's children list
-        chList = srcVol.getAllChildrenList(self.repoPath, sdDom.sdUUID, srcVolParams['imgUUID'], srcVol.volUUID)
+        chList = srcVolParams['childrenUUIDs']
         # Step 1: Create an empty volume named sucessor_MERGE with destination volume's parent parameters
         newUUID = srcVol.volUUID + "_MERGE"
         sdDom.createVolume(imgUUID=srcVolParams['imgUUID'],
@@ -1045,10 +1008,30 @@ class Image:
             ch.recheckIfLeaf()
 
         # Prepare chain for future erase
-        chain.remove(srcVolParams['volUUID'])
-        chain.append(tmpUUID)
+        rmChain = [vol.volUUID for vol in chain if srcVol.volUUID != srcVolParams['volUUID']]
+        rmChain.append(tmpUUID)
 
-        return chain
+        return rmChain
+
+    def subChainSizeCalc(self, ancestor, successor, vols):
+        """
+        Do not add additional calls to this function.
+
+        TODO:
+        Should be unified with chainSizeCalc,
+        but merge should be refactored,
+        but this file should probably removed.
+        """
+        chain = []
+        accumulatedChainSize = 0
+        endVolName = vols[ancestor].getParent() # TemplateVolName or None
+        currVolName = successor
+        while (currVolName != endVolName):
+            chain.insert(0, currVolName)
+            accumulatedChainSize += vols[currVolName].getVolumeSize()
+            currVolName = vols[currVolName].getParent()
+
+        return accumulatedChainSize, chain
 
     def merge(self, sdUUID, vmUUID, imgUUID, ancestor, successor, postZero):
         """Merge source volume to the destination volume.
@@ -1059,51 +1042,49 @@ class Image:
                       " imgUUID=%s ancestor=%s successor=%s postZero=%s",
                       sdUUID, vmUUID, imgUUID,
                       ancestor, successor, str(postZero))
-        chain = []
-        srcVol = dstVol = None
         sdDom = sdCache.produce(sdUUID)
-        volclass = sdDom.getVolumeClass()
+        allVols = sdDom.getAllVolumes()
+        volsImgs = sd.getVolsOfImage(allVols, imgUUID)
+        # Since image namespace should be locked is produce all the volumes is
+        # safe. Producing the (eventual) template is safe also.
+        # TODO: Split for block and file based volumes for efficiency sake.
+        vols = {}
+        for vName in volsImgs.iterkeys():
+            vols[vName] = sdDom.produceVolume(imgUUID, vName)
 
-        try:
-            srcVol = volclass(self.repoPath, sdUUID, imgUUID, successor)
-            srcVolParams = srcVol.getVolumeParams()
+        srcVol = vols[successor]
+        srcVolParams = srcVol.getVolumeParams()
+        srcVolParams['childrenUUIDs'] = []
+        for vName, vol in vols.iteritems():
+            if vol.getParent() == successor:
+                srcVolParams['childrenUUIDs'].append(vol.volUUID)
+        dstVol = vols[ancestor]
+        dstParentUUID = dstVol.getParent()
+        if dstParentUUID != sd.BLANK_UUID:
+            volParams = vols[dstParentUUID].getVolumeParams()
+        else:
+            volParams = dstVol.getVolumeParams()
 
-            dstVol = volclass(self.repoPath, sdUUID, imgUUID, ancestor)
-            if dstVol.isShared():
-                raise se.MergeSnapshotsError(ancestor)
-
-            dstParent = dstVol.getParentVolume()
-            if dstParent:
-                volParams = dstParent.getVolumeParams()
-            else:
-                volParams = dstVol.getVolumeParams()
-
-            chain = self.getSubChain(sdDom, imgUUID, ancestor, successor)
-            # Calculate size of subchain ancestor -> successor
-            newSize = self.subChainSizeCalc(sdDom, srcVolParams['imgUUID'], chain, volParams['size'])
-        except se.StorageException, e:
-            self.log.error("Unexpected error", exc_info=True)
-            raise
-        except Exception, e:
-            self.log.error(e, exc_info=True)
-            raise se.SourceImageActionError(imgUUID, sdUUID, str(e))
-
+        accSize, chain = self.subChainSizeCalc(ancestor, successor, vols)
+        imageApparentSize = volParams['size']
+        # allocate %10 more for cow metadata
+        reqSize = min(accSize, imageApparentSize) * 1.1
         try:
             # Start the actual merge image procedure
-            if dstParent:
+            if dstParentUUID != sd.BLANK_UUID:
                 # The ancestor isn't a base volume of the chain.
                 self.log.info("Internal volume merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                chainToRemove = self._internalVolumeMerge(sdDom, srcVolParams, volParams, newSize, chain)
+                chainToRemove = self._internalVolumeMerge(sdDom, srcVolParams, volParams, reqSize, chain)
             # The ancestor is actually a base volume of the chain.
             # We have 2 cases here:
             # Case 1: ancestor is a COW volume (use 'rebase' workaround)
             # Case 2: ancestor is a RAW volume (use 'convert + rebase')
             elif volParams['volFormat'] == volume.RAW_FORMAT:
                 self.log.info("merge with convert: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                chainToRemove = self._baseRawVolumeMerge(sdDom, srcVolParams, volParams, chain)
+                chainToRemove = self._baseRawVolumeMerge(sdDom, srcVolParams, volParams, [vols[vName] for vName in chain])
             else:
                 self.log.info("4 steps merge: src = %s dst = %s", srcVol.getVolumePath(), dstVol.getVolumePath())
-                chainToRemove = self._baseCowVolumeMerge(sdDom, srcVolParams, volParams, newSize, chain)
+                chainToRemove = self._baseCowVolumeMerge(sdDom, srcVolParams, volParams, reqSize, chain)
 
             # This is unrecoverable point, clear all recoveries
             vars.task.clearRecoveries()

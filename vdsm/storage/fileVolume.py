@@ -402,34 +402,6 @@ class FileVolume(volume.Volume):
             sanlock.init_resource(sdUUID, volUUID,
                                   [(leasePath, LEASE_FILEOFFSET)])
 
-    @classmethod
-    def getAllChildrenList(cls, repoPath, sdUUID, imgUUID, pvolUUID):
-        """
-        Fetch the list of children volumes (across the all images in domain)
-        """
-        volList = []
-        # FIXME!!! We cannot check hardlinks in 'backup' domain, because of possibility of overwriting
-        #  'fake' volumes that have hardlinks with 'legal' volumes with same uuid and without hardlinks
-        # First, check number of hardlinks
-     ## volPath = os.path.join(cls.storage_repository, spUUID, sdUUID, sd.DOMAIN_IMAGES, imgUUID, pvolUUID)
-     ## if os.path.exists(volPath):
-     ##     if os.stat(volPath).st_nlink == 1:
-     ##         return volList
-     ## else:
-     ##     cls.log.info("Volume %s does not exist", volPath)
-     ##     return volList
-        # scan whole domain
-        pattern = os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES, "*", "*.meta")
-        files = oop.getProcessPool(sdUUID).glob.glob(pattern)
-        sdDom = sdCache.produce(sdUUID)
-        for i in files:
-            volid = os.path.splitext(os.path.basename(i))[0]
-            imgUUID = os.path.basename(os.path.dirname(i))
-            if sdDom.produceVolume(imgUUID, volid).getParent() == pvolUUID:
-                volList.append({'imgUUID':imgUUID, 'volUUID':volid})
-
-        return volList
-
     def findImagesByVolume(self, legal=False):
         """
         Find the image(s) UUID by one of its volume UUID.

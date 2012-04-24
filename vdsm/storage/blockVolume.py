@@ -545,21 +545,6 @@ class BlockVolume(volume.Volume):
         lvs = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_IMAGE, imgUUID))
         return [lv.name for lv in lvs]
 
-    @classmethod
-    def getAllChildrenList(cls, repoPath, sdUUID, imgUUID, pvolUUID):
-        """
-        Fetch the list of children volumes (across the all images in domain)
-        """
-        chList = []
-
-        volumes = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_PARENT, pvolUUID))
-        for vol in volumes:
-            for tag in vol.tags:
-                if tag.startswith(TAG_PREFIX_IMAGE):
-                    chList.append({'imgUUID':tag[3:], 'volUUID':vol.name})
-
-        return chList
-
     def removeMetadata(self, metaid):
         """
         Just wipe meta.
