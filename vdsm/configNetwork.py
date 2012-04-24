@@ -87,7 +87,7 @@ def ifaceUsers(iface):
     _netinfo = NetInfo()
     users = set()
     for b, bdict in _netinfo.networks.iteritems():
-        if iface in bdict['ports']:
+        if bdict['bridged'] and iface in bdict['ports']:
             users.add(b)
     for b, bdict in _netinfo.bondings.iteritems():
         if iface in bdict['slaves']:
@@ -589,8 +589,10 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
                 netmask=netmask, gateway=gateway, bondingOptions=bondingOptions,
                 bridged=bridged, skipLibvirt=skipLibvirt)
 
-    logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s. bondingOptions=%s, mtu=%s, bridged=%s, options=%s"
-                 %(network, vlan, bonding, nics, bondingOptions, str(mtu), str(bridged), options))
+    logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
+                 " bondingOptions=%s, mtu=%s, bridged=%s, options=%s",
+                 network, vlan, bonding, nics, bondingOptions,
+                 mtu, bridged, options)
 
     if configWriter is None:
         configWriter = ConfigWriter()

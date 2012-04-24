@@ -255,7 +255,7 @@ def get():
                     'mtu': getMtu(netname), 'cfg': getIfaceCfg(netname) }
         else:
             d['networks'][netname] = { 'interface': nets[netname]['interface'] }
-        d['networks'][netname]['bridged'] = str(nets[netname]['bridged'])
+        d['networks'][netname]['bridged'] = nets[netname]['bridged']
     d['nics'] = dict([ (nic, {'speed': speed(nic),
                               'addr': ifaces[nic]['addr'],
                               'netmask': ifaces[nic]['netmask'],
@@ -324,11 +324,12 @@ class NetInfo(object):
         Note that only one bridge (or multiple vlans) should be connected to the same bonding.
         """
         for bridge, netdict in self.networks.iteritems():
-            for iface in netdict['ports']:
-                if iface == bonding:
-                    yield (bridge, None)
-                elif iface.startswith(bonding + '.'):
-                    yield (bridge, iface.split('.',1)[1])
+            if netdict['bridged']:
+                for iface in netdict['ports']:
+                    if iface == bonding:
+                        yield (bridge, None)
+                    elif iface.startswith(bonding + '.'):
+                        yield (bridge, iface.split('.',1)[1])
 
     def getVlansForNic(self, nic):
         for v, vdict in self.vlans.iteritems():
@@ -337,7 +338,7 @@ class NetInfo(object):
 
     def getNetworksForNic(self, nic):
         for bridge, netdict in self.networks.iteritems():
-            if nic in netdict['ports']:
+            if netdict['bridged'] and nic in netdict['ports']:
                 yield bridge
 
     def getBondingsForNic(self, nic):
