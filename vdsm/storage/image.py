@@ -35,7 +35,7 @@ import task
 from threadLocal import vars
 import resourceFactories
 import resourceManager as rm
-
+import outOfProcess as oop
 rmanager = rm.ResourceManager.getInstance()
 
 # Disk type
@@ -377,28 +377,33 @@ class Image:
 
     def __templateRelink(self, destDom, imgUUID, volUUID):
         """
-        Relink all hardlinks of the template 'volUUID' in all VMs based on it
+        Relink all hardlinks of the template 'volUUID' in all VMs based on it.
+
+        This function assumes that dom is backup dom and that template image is
+        used by other volumes.
         """
         # Avoid relink templates for non-NFS domains
         if destDom.getStorageType() not in [ sd.NFS_DOMAIN ]:
             self.log.debug("Doesn't relink templates non-NFS domain %s", destDom.sdUUID)
             return
 
-        vol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-        # Relink templates only
-        if not vol.isShared():
-            self.log.debug("Doesn't relink regular volume %s of image %s", volUUID, imgUUID)
+        allVols = destDom.getAllVolumes()
+        tImgs = allVols[volUUID].imgs
+        if len(tImgs) < 2:
+            self.log.debug("Volume %s is an unused template or a regular "
+                           "volume. Found  in images: %s allVols: %s", volUUID,
+                           tImgs, allVols)
             return
-        chList = vol.getAllChildrenList(self.repoPath, destDom.sdUUID, imgUUID, volUUID)
-        for ch in chList:
-            # Remove hardlink of this template
-            v = destDom.produceVolume(imgUUID=ch['imgUUID'], volUUID=volUUID)
-            v.delete(postZero=False, force=True)
-
-            # Now we should re-link deleted hardlink, if exists
-            newVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-            imageDir = self.getImageDir(destDom.sdUUID, ch['imgUUID'])
-            newVol.share(imageDir)
+        templateImage = tImgs[0]
+        relinkImgs = tuple(tImgs[1:])
+        for rImg in relinkImgs:
+            # This function assumes that all relevant images and template
+            # namespaces are locked.
+            tLink = os.path.join(self.repoPath, destDom.sdUUID, sd.DOMAIN_IMAGES, rImg, volUUID)
+            oop.getProcessPool(destDom.sdUUID).os.unlink(tLink)
+            oop.getProcessPool(destDom.sdUUID).os.link(os.path.join(
+                                self.repoPath, destDom.sdUUID, sd.DOMAIN_IMAGES,
+                                templateImage, volUUID), tLink)
 
     def createFakeTemplate(self, sdUUID, volParams):
         """
