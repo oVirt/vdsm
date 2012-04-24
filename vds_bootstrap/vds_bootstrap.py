@@ -877,7 +877,7 @@ options:
     -O <organizationName>
     -t <systemTime>
     -f <firewall_rules_file> -- override firewall rules.
-    -v - install virtualization service
+    -V - don't install virtualization service
     -g - install gluster service
 obsolete options:
     -r <rev_num>
@@ -887,9 +887,9 @@ obsolete options:
         orgName = 'Red Hat Inc.'
         systime = None
         firewallRulesFile = None
-        installVirtualizationService = False
+        installVirtualizationService = True
         installGlusterService = False
-        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:n:u:vg")
+        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:n:u:Vg")
         for o,v in opts:
             if o == "-r":
                 rev_num = v
@@ -897,8 +897,8 @@ obsolete options:
                 orgName = v
             if o == "-t":
                 systime = v
-            if o == "-v":
-                installVirtualizationService = True
+            if o == "-V":
+                installVirtualizationService = False
             if o == "-g":
                 installGlusterService = True
             elif o == '-f':
