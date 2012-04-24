@@ -90,7 +90,7 @@ class _SuperVdsm(object):
     @logDecorator
     def readMultipathConf(self):
         with open(MPATH_CONF) as f:
-            return f.read()
+            return [x.strip("\n") for x in f.readlines()]
 
     @logDecorator
     def getScsiSerial(self, *args, **kwargs):
