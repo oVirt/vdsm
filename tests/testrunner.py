@@ -176,17 +176,14 @@ class vdsm(ModuleType):
 def hackVdsmModule():
     sys.modules['vdsm'] = mod = vdsm()
 
-    import config
-    mod.config = config
-    sys.modules['vdsm.config'] = mod.config
+    for name in ('config', 'constants', 'utils', 'define', 'netinfo',
+                'SecureXMLRPCServer', 'libvirtconnection'):
+                    sub = __import__(name, globals(), locals(), [], -1)
+                    setattr(mod, name, sub)
+                    sys.modules['vdsm.%s' % name] = getattr(mod, name)
 
-    import constants
-    mod.constants = constants
-    sys.modules['vdsm.constants'] = mod.constants
-
-    import utils
-    mod.utils = utils
-    sys.modules['vdsm.utils'] = mod.utils
+    mod.vdscli = None
+    sys.modules['vdsm.vdscli'] = mod.vdscli
 
 if __name__ == '__main__':
     hackVdsmModule()
