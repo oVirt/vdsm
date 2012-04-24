@@ -23,7 +23,7 @@ import os
 import sys
 from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
                                      is_valid_port, PluginBase, log, network_up, \
-                                     password_check, augtool, is_console
+                                     password_check, augtool, is_console, system
 from ovirtnode.password import set_password
 
 from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox, \
@@ -55,7 +55,7 @@ management_port = 54321
 
 def write_vdsm_config(rhevm_host, rhevm_port):
     if not os.path.exists(VDSM_CONFIG):
-        os.system("touch " + VDSM_CONFIG)
+        system("touch " + VDSM_CONFIG)
     if os.path.getsize(VDSM_CONFIG) == 0:
         set_defaults()
         ovirt_store_config(VDSM_CONFIG)
@@ -63,16 +63,14 @@ def write_vdsm_config(rhevm_host, rhevm_port):
     else:
         log("Agent configuration files already exist.")
 
-    ret = os.system("ping -c 1 " + rhevm_host + " &> /dev/null")
-    if ret == 0:
+    if system("ping -c 1 " + rhevm_host):
         sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name="+rhevm_host+"/\" " + VDSM_REG_CONFIG
-        ret = os.system(sed_cmd)
-        if ret == 0:
+        if system(sed_cmd):
             log("The @ENGINENAME@'s address is set: %s\n" % rhevm_host)
         if rhevm_port != "":
             sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port="+str(rhevm_port)+"/\" " + VDSM_REG_CONFIG
-            os.system(sed_cmd)
-            log("The @ENGINENAME@'s port set: %s\n" % rhevm_port)
+            if system(sed_cmd):
+                log("The @ENGINENAME@'s port set: %s\n" % rhevm_port)
             fWriteConfig=1
     else:
         log("Either " + rhevm_host + " is an invalid address or the @ENGINENAME@ unresponsive.\n")
