@@ -24,9 +24,15 @@ import time
 
 import testValidation
 from testrunner import VdsmTestCase as TestCaseBase
+from nose.plugins.skip import SkipTest
 
 import utils
-import parted_utils as putils
+
+try:
+    import parted_utils as putils
+except Exception:
+    raise SkipTest("unable to import pyparted modules.")
+
 
 ONE_MB_IN_BYTES = 1048576
 FILE_SIZE_MB = 100
