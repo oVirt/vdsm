@@ -206,7 +206,9 @@ class HSM:
         :param sdUUID: the UUID of the storage domain you want to validate.
         :type sdUUID: UUID
         """
-        sdCache.produce(sdUUID=sdUUID).validate()
+        sdDom = sdCache.produce(sdUUID=sdUUID)
+        sdDom.validate()
+        return sdDom
 
     @classmethod
     def validateBackupDom(cls, sdUUID):
@@ -1209,7 +1211,7 @@ class HSM:
                  srcImgUUID, srcVolUUID)
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
-        self.validateSdUUID(sdUUID)
+        sdDom = self.validateSdUUID(sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
         # TODO: For backwards compatibility, we need to support accepting number of sectors as int type
@@ -1223,7 +1225,7 @@ class HSM:
         if srcVolUUID:
             misc.validateUUID(srcVolUUID, 'srcVolUUID')
         # Validate volume type and format
-        sdCache.produce(sdUUID).validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        sdDom.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
@@ -1242,14 +1244,14 @@ class HSM:
                 imgUUID, volumes, postZero, force)
         vars.task.setDefaultException(se.CannotDeleteVolume(argsStr))
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
-        self.validateSdUUID(sdUUID)
+        sdDom = self.validateSdUUID(sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         # Do not validate if forced.
         if not misc.parseBool(force):
             for volUUID in volumes:
-                sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).validateDelete()
+                sdDom.produceVolume(imgUUID, volUUID).validateDelete()
 
         self._spmSchedule(spUUID, "deleteVolume", pool.deleteVolume, sdUUID,
             imgUUID, volumes, misc.parseBool(postZero), misc.parseBool(force)
@@ -2214,11 +2216,10 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
-        self.validateSdUUID(sdUUID)
+        dom = self.validateSdUUID(sdUUID)
         #getSharedLock(connectionsResource...)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        dom = sdCache.produce(sdUUID=sdUUID)
         info = dom.getInfo()
         # This only occurred because someone
         # thought it would be clever to return pool
