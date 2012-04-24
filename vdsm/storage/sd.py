@@ -23,6 +23,7 @@ import logging
 import types
 import threading
 from glob import glob
+from collections import namedtuple
 import codecs
 
 import storage_exception as se
@@ -129,6 +130,7 @@ MASTER_FS_DIR = 'master'
 VMS_DIR = 'vms'
 TASKS_DIR = 'tasks'
 
+ImgsPar = namedtuple("ImgsPar", "imgs,parent")
 ISO_IMAGE_UUID = '11111111-1111-1111-1111-111111111111'
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 

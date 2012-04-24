@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from os.path import normpath
 import os
 import errno
 import logging
@@ -61,7 +60,7 @@ def getDomUuidFromMetafilePath(metafile):
     sdUUIDPos = 3
 
     metaList = metafile.split('/')
-    sdUUID = len(normpath(config.get('irs', 'repository')).split('/')) + sdUUIDPos
+    sdUUID = len(os.path.normpath(config.get('irs', 'repository')).split('/')) + sdUUIDPos
     return metaList[sdUUID]
 
 class FileMetadataRW(object):
@@ -248,6 +247,45 @@ class FileStorageDomain(sd.StorageDomain):
             if self.oop.os.path.isdir(i):
                 imgList.append(os.path.basename(i))
         return imgList
+
+    def getAllVolumes(self):
+        """
+        Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
+
+        Template self image is the 1st term in teplate volume entry images.
+        The parent can't be determined in file domain without reading the
+        metadata.
+        Setting parent = None for compatibility with block version.
+        """
+        volMetaPattern = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES, "*", "*.meta")
+        volMetaPaths = self.oop.glob.glob(volMetaPattern)
+        volumes = {}
+        for metaPath in volMetaPaths:
+            head, tail = os.path.split(metaPath)
+            volUUID, volExt = os.path.splitext(tail)
+            imgUUID = os.path.basename(head)
+            if volumes.has_key(volUUID):
+                # Templates have no parents
+                volumes[volUUID]['parent'] = sd.BLANK_UUID
+                # Template volumes are hard linked in every image directory
+                # which is derived from that template, therefore:
+                # 1. a template volume which is in use will appear at least
+                # twice (in the template image dir and in the derived image dir)
+                # 2. Any volume which appears more than once in the dir tree is
+                # by definition a template volume.
+                # 3. Any image which has more than 1 volume is not a template
+                # image. Therefore if imgUUID appears in more than one path then
+                # it is not a template.
+                if len(tuple(vPath for vPath in volMetaPaths
+                        if imgUUID in vPath)) > 1:
+                    # Add template additonal image
+                    volumes[volUUID]['imgs'].append(imgUUID)
+                else:
+                    #Insert at head the template self image
+                    volumes[volUUID]['imgs'].insert(0, imgUUID)
+            else:
+                volumes[volUUID] = {'imgs': [imgUUID], 'parent': None}
+        return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent'])) for k, v in volumes.iteritems())
 
     @classmethod
     def format(cls, sdUUID):

@@ -27,6 +27,7 @@ import re
 from StringIO import StringIO
 import time
 import functools
+from collections import namedtuple
 from operator import itemgetter
 
 from vdsm.config import config
@@ -55,6 +56,7 @@ MASTERLV = "master"
 SPECIAL_LVS = (sd.METADATA, sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX, MASTERLV)
 
 MASTERLV_SIZE = "1024" #In MiB = 2 ** 20 = 1024 ** 2 => 1GiB
+BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 
 log = logging.getLogger("Storage.BlockSD")
 
@@ -120,6 +122,55 @@ def lvmTagEncode(s):
 
 def lvmTagDecode(s):
     return LVM_ENC_ESCAPE.sub(lambda c: unichr(int(c.groups()[0])), s)
+
+
+def _getVolsTree(sdUUID):
+    lvs = lvm.getLV(sdUUID)
+    vols = {}
+    for lv in lvs:
+        image = ""
+        parent = ""
+        for tag in lv.tags:
+            if tag.startswith(blockVolume.TAG_PREFIX_IMAGE):
+                image = tag[len(blockVolume.TAG_PREFIX_IMAGE):]
+            elif tag.startswith(blockVolume.TAG_PREFIX_PARENT):
+                parent = tag[len(blockVolume.TAG_PREFIX_PARENT):]
+            if parent and image:
+                vols[lv.name] = BlockSDVol(lv.name, image, parent)
+                break
+        else:
+            if lv.name not in SPECIAL_LVS:
+                log.warning("Ignoring Volume %s that lacks minimal tag set"
+                                         "tags %s" % (lv.name, lv.tags))
+    return vols
+
+
+def getAllVolumes(sdUUID):
+    """
+    Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
+
+    imgUUIDs is a list of all images dependant on volUUID.
+    For template based volumes, the first image is the template's image. 
+    For other volumes, there is just a single imageUUID.
+    Template self image is the 1st term in template volume entry images.
+    """
+    vols = _getVolsTree(sdUUID)
+    res = {}
+    for vName in vols.iterkeys():
+        res[vName] = {'imgs': [], 'parent': None}
+
+    for vName, vImg, vPar in vols.itervalues():
+        res[vName]['parent'] = vPar
+        if vImg not in res[vName]['imgs']:
+            res[vName]['imgs'].insert(0, vImg)
+        if vPar != sd.BLANK_UUID and \
+            not vName.startswith(blockVolume.image.REMOVED_IMAGE_PREFIX) \
+            and vImg not in res[vPar]['imgs']:
+            res[vPar]['imgs'].append(vImg)
+
+    return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
+                    for k, v in res.iteritems())
+
 
 class VGTagMetadataRW(object):
     log = logging.getLogger("storage.Metadata.VGTagMetadataRW")
@@ -788,6 +839,8 @@ class BlockStorageDomain(sd.StorageDomain):
     def getAllImages(self):
         """
         Get list of all images
+
+        TODO: Remove and use getAllVolumes().
         """
         try:
             lvs = lvm.getLV(self.sdUUID)
@@ -804,6 +857,17 @@ class BlockStorageDomain(sd.StorageDomain):
         images = [ i[taglen:] for i in tags
                         if i.startswith(blockVolume.TAG_PREFIX_IMAGE) ]
         return images
+
+    def getAllVolumes(self):
+        """
+        Return all the images that depend on a volume.
+
+        TODO: rename to getAllVolumeImages.
+
+        Return dict {volUUID: ([imgUUID1, imgUUID2], parentUUID)]}.
+        """
+        return getAllVolumes(self.sdUUID)
+
 
     def activateVolumes(self, volUUIDs):
         """
