@@ -139,6 +139,18 @@ LEASE_BLOCKS = 2048
 
 UNICODE_MINIMAL_VERSION = 3
 
+def getVolsOfImage(allVols, imgUUID):
+    """ Filter allVols dict for volumes related to imgUUID.
+
+    Returns {volName: (([templateImge], imgUUID, [otherImg]), volPar)
+    For a template volume will be more than one image entry.
+
+    allVols: The getAllVols() return dict.
+    """
+
+    return dict((volName, vol) for volName, vol in allVols.iteritems()
+                if imgUUID in vol.imgs)
+
 def supportsUnicode(version):
     return version >= UNICODE_MINIMAL_VERSION
 
