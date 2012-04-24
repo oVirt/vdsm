@@ -375,34 +375,6 @@ class Image:
         # Do not deactivate the template yet (might be in use by an other vm)
         # TODO: reference counting to deactivate when unused
 
-    def validate(self, srcSdUUID, dstSdUUID, imgUUID, op=MOVE_OP):
-        """
-        Validate template on destination domain
-        """
-        # Find all volumes of source image
-        chain = self.getChain(srcSdUUID, imgUUID)
-        leafVol = chain[-1]
-        srcDom = sdCache.produce(srcSdUUID)
-        # Avoid move template's image if there is a VM based on it (except 'Backup' domain)
-        if op == MOVE_OP and leafVol.isShared() and not srcDom.isBackup():
-            chList = leafVol.getAllChildrenList(self.repoPath, srcSdUUID, imgUUID, leafVol.volUUID)
-            if chList:
-                raise se.MoveTemplateImageError(imgUUID)
-
-        # check if the chain is build above a template, or it is a standalone
-        pvol = chain[0].getParentVolume()
-        if pvol:    # this is a shared template based chain
-            if not pvol.isShared():
-                raise se.ImageIsNotLegalChain("Base image parent vol %s is not shared" % pvol.volUUID)
-            pimg = pvol.getImage()      # pimg == template image
-            try:
-                volclass = sdCache.produce(dstSdUUID).getVolumeClass()
-                # Validate that the destination template exists and accessible
-                volclass(self.repoPath, dstSdUUID, pimg, pvol.volUUID)
-            except se.StorageException, e:
-                self.log.error("Unexpected error", exc_info=True)
-                raise se.CouldNotValideTemplateOnTargetDomain("Template %s Destination domain %s: %s" % (pimg, dstSdUUID, str(e)))
-
     def __templateRelink(self, destDom, imgUUID, volUUID):
         """
         Relink all hardlinks of the template 'volUUID' in all VMs based on it

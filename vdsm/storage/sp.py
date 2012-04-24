@@ -1946,10 +1946,6 @@ class StoragePool(Securable):
         repoPath = os.path.join(self.storage_repository, self.spUUID)
         image.Image(repoPath).validateDelete(sdUUID, imgUUID)
 
-    def validateImage(self, srcDomUUID, dstDomUUID, imgUUID, op=image.MOVE_OP):
-        repoPath = os.path.join(self.storage_repository, self.spUUID)
-        image.Image(repoPath).validate(srcDomUUID, dstDomUUID, imgUUID, op)
-
     def validateVolumeChain(self, sdUUID, imgUUID):
         repoPath = os.path.join(self.storage_repository, self.spUUID)
         image.Image(repoPath).validateVolumeChain(sdUUID, imgUUID)

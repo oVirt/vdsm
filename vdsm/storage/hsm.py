@@ -1292,6 +1292,36 @@ class HSM:
             self._spmSchedule(spUUID, "deleteImage", lambda : True)
 
 
+    def validateImageMove(self, srcDom, dstDom, imgUUID):
+        """
+        Determines if the image move is legal.
+
+        Moving an image based on a template to a data domain is only allowed if
+        the template exists on the target domain.
+        Moving a template from a data domain is only allowed if there are no
+        images based on it in the source data domain.
+        """
+        srcAllVols = srcDom.getAllVolumes()
+        dstAllVols = dstDom.getAllVolumes()
+
+        # Filter volumes related to this image
+        srcVolsImgs = sd.getVolsOfImage(srcAllVols, imgUUID)
+        # Find the template
+        for volName, imgsPar in srcVolsImgs.iteritems():
+            if len(imgsPar.imgs) > 1:
+                # This is the template. Should be only one.
+                tName, tImgs = volName, imgsPar.imgs
+                # Template self image is the 1st entry
+                if imgUUID != tImgs[0] and tName not in dstAllVols.keys():
+                    self.log.error("img %s can't be moved to dom %s because "
+                    "template %s is absent on it", imgUUID, dstDom.sdUUID, tName)
+                    raise se.ImageDoesNotExistInSD(imgUUID, dstDom.sdUUID)
+                elif imgUUID == tImgs[0] and not srcDom.isBackup():
+                    raise se.MoveTemplateImageError(imgUUID)
+                break
+
+        return True
+
     @public
     def moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero=False, force=False):
         """
@@ -1304,13 +1334,10 @@ class HSM:
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException("srcDom", "must be different from dstDom: %s" % argsStr)
 
+        srcDom = self.validateSdUUID(srcDomUUID)
+        dstDom = self.validateSdUUID(dstDomUUID)
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
-        self.validateSdUUID(srcDomUUID)
-        self.validateSdUUID(dstDomUUID)
-        # Do not validate images in Backup domain
-        if not sdCache.produce(dstDomUUID).isBackup():
-            pool.validateImage(srcDomUUID, dstDomUUID, imgUUID, op)
-
+        self.validateImageMove(srcDom, dstDom, imgUUID)
         domains = [srcDomUUID, dstDomUUID]
         domains.sort()
 
@@ -1322,7 +1349,7 @@ class HSM:
                     misc.parseBool(force)
         )
 
-
+    @deprecated
     @public
     def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force=False):
         """
@@ -1335,16 +1362,13 @@ class HSM:
             raise se.InvalidParameterException("dstDomUUID", dstDomUUID)
 
         pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
-        self.validateSdUUID(srcDomUUID)
-        self.validateSdUUID(dstDomUUID)
+
+        srcDom = self.validateSdUUID(srcDomUUID)
+        dstDom = self.validateSdUUID(dstDomUUID)
         images = {}
         for (imgUUID, pZero) in imgDict.iteritems():
             images[imgUUID.strip()] = misc.parseBool(pZero)
-        # Do not validate images in Backup domain
-        if not sdCache.produce(dstDomUUID).isBackup():
-            for imgUUID in imgDict:
-                imgUUID = imgUUID.strip()
-                pool.validateImage(srcDomUUID, dstDomUUID, imgUUID)
+            self.validateImageMove(srcDom, dstDom, imgUUID)
 
         domains = sorted([srcDomUUID, dstDomUUID])
         for dom in domains:
