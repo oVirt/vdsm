@@ -33,7 +33,7 @@ BuildRequires: python-pep8
 BuildRequires: systemd-units
 %endif
 
-Requires: python which
+Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate >= 3.8.0
 Requires: xz
@@ -44,6 +44,7 @@ Requires: lvm2 >= 2.02.95
 Requires: sanlock >= 2.1, sanlock-python
 
 %if 0%{?rhel}
+Requires: python
 # Update the qemu-kvm requires when block_stream will be included
 Requires: qemu-kvm >= 2:0.12.1.2-2.227
 Requires: qemu-img >= 2:0.12.1.2-2.227
@@ -53,6 +54,8 @@ Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 %else
+# Subprocess and thread bug was found on python 2.7.2
+Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
 Requires: libvirt >= 0.9.10
