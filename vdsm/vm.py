@@ -401,6 +401,11 @@ class Vm(object):
 
         # Update indices for drives devices
         self.normalizeDrivesIndices(devices[DISK_DEVICES])
+
+        # Avoid overriding the saved balloon target value on recovery.
+        if 'recover' not in self.conf:
+            for dev in devices[BALLOON_DEVICES]:
+                dev['target'] = int(self.conf.get('memSize')) * 1024
         return devices
 
     def buildConfDevices(self):
@@ -1034,6 +1039,7 @@ class Vm(object):
         if realMemUsage != 0:
             memUsage = 100 - float(realMemUsage) / int(self.conf['memSize']) * 100
         stats['memUsage'] = utils.convertToStr(int(memUsage))
+        stats['balloonInfo'] = self._getBalloonInfo()
         return stats
 
     def isMigrating(self):

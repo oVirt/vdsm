@@ -4440,6 +4440,20 @@
           'majflt': 'uint'}}
 
 ##
+# @BalloonInfo:
+#
+# Guest memory balloon information.
+#
+# @balloon_max:  The maximum amount of memory available to the guest (in KiB)
+#
+# @balloon_cur:  The current amount of memory available to the guest (in KiB)
+#
+# Since: 4.10.0
+##
+{'type': 'BalloonInfo',
+ 'data': {'balloon_max': 'uint', 'balloon_cur': 'uint'}}
+
+##
 # @GuestMountInfo:
 #
 # Information about a mounted filesystem as reported by the guest agent.
@@ -4583,7 +4597,8 @@
           'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'uint',
           'username': 'str', 'session': 'GuestSessionState',
           'appsList': ['str'], 'guestIPs': 'str',
-          'memoryStats': 'GuestMemoryStats', 'disksUsage': ['GuestMountInfo'],
+          'memoryStats': 'GuestMemoryStats', 'balloonInfo': 'BalloonInfo',
+          'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo']}}
 
 ##
@@ -5103,6 +5118,18 @@
 ##
 {'command': {'class': 'VM', 'name': 'mergeStatus'},
  'returns': ['MergeStatus']}
+
+##
+# @VM.setBalloonTarget:
+#
+# Dynamically change the target amount of physical memory allocated to a guest.
+#
+# @target: The target of guest's physical memory size in kibibytes
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'setBalloonTarget'},
+ 'data': {'target': 'uint'}}
 
 ## Category: @Volume ###########################################################
 ##

@@ -114,6 +114,10 @@ errCode = {'noVM':         {'status':
             'mergeErr':     {'status':
                              {'code': 52,
                               'message': 'Merge failed'}},
+            'balloonErr':   {'status':
+                             {'code': 53,
+                              'message':
+                              'Balloon operation is not available'}},
             'momErr':       {'status':
                              {'code': 54,
                               'message': 'Failed to set mom policy'}},

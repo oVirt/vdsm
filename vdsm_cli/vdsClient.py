@@ -1607,6 +1607,12 @@ class service:
 
         return status['status']['code'], status['status']['message']
 
+    def setBalloonTarget(self, args):
+        vmId = args[0]
+        target = int(args[1])
+        response = self.s.setBalloonTarget(vmId, target)
+        return response['status']['code'], response['status']['message']
+
 if __name__ == '__main__':
     if _glusterEnabled:
         serv = ge.GlusterService()
@@ -2264,6 +2270,10 @@ if __name__ == '__main__':
         'snapshot':  (serv.snapshot,
                        ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
                        "Take a live snapshot"
+                      )),
+        'setBalloonTarget':  (serv.setBalloonTarget,
+                       ('<vmId> <target>',
+                       "Set VM's balloon target"
                       )),
     }
     if _glusterEnabled:

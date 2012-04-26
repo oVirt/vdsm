@@ -274,6 +274,10 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.mergeStatus()
 
+    def vmSetBalloonTarget(self, vmId, target):
+        vm = API.VM(vmId)
+        return vm.setBalloonTarget(target)
+
     def getCapabilities(self):
         api = API.Global()
         ret = api.getCapabilities()
@@ -733,6 +737,7 @@ class BindingXMLRPC(object):
                 (self.vmSnapshot, 'snapshot'),
                 (self.vmMerge, 'merge'),
                 (self.vmMergeStatus, 'mergeStatus'),
+                (self.vmSetBalloonTarget, 'setBalloonTarget'),
                 (self.vmReset, 'reset'),
                 (self.vmShutdown, 'shutdown'),
                 (self.vmSetTicket, 'setVmTicket'),

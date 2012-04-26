@@ -2213,6 +2213,46 @@ class LibvirtVm(vm.Vm):
         stats['hash'] = self._devXmlHash
         return stats
 
+    def _getBalloonInfo(self):
+        for dev in self.conf['devices']:
+            if dev['type'] == vm.BALLOON_DEVICES and \
+                                  dev['specParams']['model'] != 'none':
+                max_mem = int(self.conf.get('memSize')) * 1024
+                cur_mem = dev.get('target', max_mem)
+                return {'balloon_max': max_mem, 'balloon_cur': cur_mem}
+        return {}
+
+    def setBalloonTarget(self, target):
+
+        def reportError(key='balloonErr', msg=None):
+            self.log.error("Set new balloon target failed", exc_info=True)
+            if msg == None:
+                error = errCode[key]
+            else:
+                error = {'status': {'code': errCode[key]
+                         ['status']['code'], 'message': msg}}
+            return error
+
+        if self._dom == None:
+            return reportError()
+        try:
+            target = int(target)
+            self._dom.setMemory(target)
+        except ValueError:
+            return reportError(msg='an integer is required for target')
+        except libvirt.libvirtError, e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return reportError(key='noVM')
+            return reportError(msg=e.message)
+        else:
+            for dev in self.conf['devices']:
+                if dev['type'] == vm.BALLOON_DEVICES and \
+                                      dev['specParams']['model'] != 'none':
+                    dev['target'] = target
+            # persist the target value to make it consistent after recovery
+            self.saveState()
+            return {'status': doneCode}
+
     def _getUnderlyingDeviceAddress(self, devXml):
         """
         Obtain device's address from libvirt

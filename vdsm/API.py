@@ -610,6 +610,12 @@ class VM(APIBase):
             return errCode['noVM']
         return v.mergeStatus()
 
+    def setBalloonTarget(self, target):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.setBalloonTarget(target)
+
 
 class Volume(APIBase):
 
