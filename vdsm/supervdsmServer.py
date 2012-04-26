@@ -80,6 +80,7 @@ class _SuperVdsm(object):
     def getDevicePartedInfo(self, *args, **kwargs):
         return _getDevicePartedInfo(*args, **kwargs)
 
+    @logDecorator
     def getMdDeviceUuidMap(self, *args, **kwargs):
         return _getMdDeviceUuidMap(*args, **kwargs)
 
