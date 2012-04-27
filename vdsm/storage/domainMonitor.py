@@ -13,14 +13,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
 from threading import Thread, Event
 from time import time
 import logging
 import misc
+
 
 class DomainMonitorStatus(object):
     __slots__ = ("error", "lastCheck", "valid", "readDelay",
@@ -55,12 +57,15 @@ class DomainMonitorStatus(object):
         res.update(self)
         return res
 
+
 class DomainMonitor(object):
     log = logging.getLogger('Storage.DomainMonitor')
+
     def __init__(self, interval):
         self._domains = {}
         self._interval = interval
-        self.onDomainConnectivityStateChange = misc.Event("Storage.DomainMonitor.onDomainConnectivityStateChange")
+        self.onDomainConnectivityStateChange = misc.Event(
+            "Storage.DomainMonitor.onDomainConnectivityStateChange")
 
     @property
     def monitoredDomains(self):
@@ -70,14 +75,14 @@ class DomainMonitor(object):
         if domain.sdUUID in self._domains:
             return
 
-        st = DomainMonitorStatus()
-
+        status = DomainMonitorStatus()
         stopEvent = Event()
+        thread = Thread(target=self._monitorDomain,
+                        args=(domain, stopEvent, status))
 
-        thread = Thread(target=self._monitorDomain, args=(domain, stopEvent, st))
         thread.setDaemon(True)
         thread.start()
-        self._domains[domain.sdUUID] = (stopEvent, thread, st)
+        self._domains[domain.sdUUID] = (stopEvent, thread, status)
 
     def stopMonitoring(self, sdUUID):
         if sdUUID not in self._domains:
@@ -97,6 +102,7 @@ class DomainMonitor(object):
 
     def _monitorDomain(self, domain, stopEvent, status):
         nextStatus = DomainMonitorStatus()
+
         while not stopEvent.is_set():
             nextStatus.clear()
             try:
@@ -105,9 +111,12 @@ class DomainMonitor(object):
                 nextStatus.readDelay = domain.getReadDelay()
 
                 stats = domain.getStats()
-                nextStatus.diskUtilization = (stats["disktotal"], stats["diskfree"])
+                nextStatus.diskUtilization = (stats["disktotal"],
+                                              stats["diskfree"])
 
-                nextStatus.vgMdUtilization = (stats["mdasize"], stats["mdafree"])
+                nextStatus.vgMdUtilization = (stats["mdasize"],
+                                              stats["mdafree"])
+
                 nextStatus.vgMdHasEnoughFreeSpace = stats["mdavalid"]
                 nextStatus.vgMdFreeBelowThreashold = stats["mdathreshold"]
 
@@ -121,18 +130,18 @@ class DomainMonitor(object):
                 nextStatus.error = e
 
             nextStatus.lastCheck = time()
-
             nextStatus.valid = (nextStatus.error is None)
 
             if status.valid != nextStatus.valid:
                 self.log.debug("Domain `%s` changed its status to %s",
-                        domain.sdUUID,
-                        {True:"valid", False:"Invalid"}[nextStatus.valid])
+                    domain.sdUUID, "Valid" if nextStatus.valid else "Invalid")
+
                 try:
-                    self.onDomainConnectivityStateChange.emit(domain.sdUUID, nextStatus.valid)
+                    self.onDomainConnectivityStateChange.emit(domain.sdUUID,
+                                                              nextStatus.valid)
                 except:
-                    self.log.warn("Could not emit domain state change event", exc_info=True)
+                    self.log.warn("Could not emit domain state change event",
+                                  exc_info=True)
 
             status.update(nextStatus)
-
             stopEvent.wait(self._interval)
