@@ -63,7 +63,7 @@ class GuestAgent ():
         self.guestInfo = {
                 'username': user, 'memUsage': 0, 'guestIPs': ips,
                 'session': 'Unknown', 'appsList': [], 'disksUsage': [],
-                'netIfaces': []}
+                'netIfaces': [], 'memoryStats': {}}
         self._agentTimestamp = 0
         self._channelListener = channelListener
         if connect:
@@ -107,6 +107,16 @@ class GuestAgent ():
         if message == 'heartbeat':
             self.guestStatus = 'Running'
             self.guestInfo['memUsage'] = int(args['free-ram'])
+            # ovirt-guest-agent reports the following fields in 'memory-stat':
+            # 'mem_total', 'mem_free', 'mem_unused', 'swap_in', 'swap_out',
+            # 'pageflt' and 'majflt'
+            if 'memory-stat' in args:
+                for (k, v) in args['memory-stat'].iteritems():
+                    k = _filterXmlChars(k)
+                    # Convert the value to string since 64-bit integer is not
+                    # supported in XMLRPC
+                    v = _filterXmlChars(str(v))
+                    self.guestInfo['memoryStats'][k] = v
         elif message == 'host-name':
             self.guestInfo['guestName'] = _filterXmlChars(args['name'])
         elif message == 'os-version':
