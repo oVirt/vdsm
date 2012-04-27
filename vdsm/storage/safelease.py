@@ -18,10 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os.path
+import os
 from vdsm.config import config
 import misc
-import errno
 import subprocess
 import sanlock
 from contextlib import nested
@@ -81,7 +80,7 @@ class ClusterLock(object):
     def acquireHostId(self, hostId, async):
         pass
 
-    def releaseHostId(self, hostId, async):
+    def releaseHostId(self, hostId, async, unused):
         pass
 
     def hasHostId(self, hostId):
@@ -164,22 +163,31 @@ class SANLock(object):
                 sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
                                       async=async)
             except sanlock.SanlockException, e:
-                if e.errno != errno.EEXIST:
+                if e.errno == os.errno.EINPROGRESS:
+                    # if the request is not asynchronous wait for the ongoing
+                    # lockspace operation to complete
+                    if not async and not sanlock.inq_lockspace(
+                            self._sdUUID, hostId, self._idsPath, wait=True):
+                        raise se.AcquireHostIdFailure(self._sdUUID, e)
+                    # else silently continue, the host id has been acquired
+                    # or it's in the process of being acquired (async)
+                elif e.errno != os.errno.EEXIST:
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
 
             self.log.debug("Host id for domain %s successfully acquired "
                            "(id: %s)", self._sdUUID, hostId)
 
-    def releaseHostId(self, hostId, async):
+    def releaseHostId(self, hostId, async, unused):
         with self._lock:
             self.log.info("Releasing host id for domain %s (id: %s)",
                           self._sdUUID, hostId)
 
             try:
                 sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath,
-                                      async=async)
+                                      async=async, unused=unused)
             except sanlock.SanlockException, e:
-                raise se.ReleaseHostIdFailure(self._sdUUID, e)
+                if e.errno != os.errno.ENOENT:
+                    raise se.ReleaseHostIdFailure(self._sdUUID, e)
 
             self.log.debug("Host id for domain %s released successfully "
                            "(id: %s)", self._sdUUID, hostId)
@@ -215,7 +223,7 @@ class SANLock(object):
                                     [(self._leasesPath, SDM_LEASE_OFFSET)],
                                     slkfd=SANLock._sanlock_fd)
                 except sanlock.SanlockException, e:
-                    if e.errno != errno.EPIPE:
+                    if e.errno != os.errno.EPIPE:
                         raise se.AcquireLockFailure(self._sdUUID, e.errno,
                                         "Cannot acquire cluster lock", str(e))
                     SANLock._sanlock_fd = None

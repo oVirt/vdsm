@@ -25,10 +25,11 @@ import misc
 
 
 class DomainMonitorStatus(object):
-    __slots__ = ("error", "lastCheck", "valid", "readDelay",
-            "masterMounted", "masterValid", "diskUtilization",
-            "vgMdUtilization", "vgMdHasEnoughFreeSpace",
-            "vgMdFreeBelowThreashold")
+    __slots__ = (
+        "error", "lastCheck", "valid", "readDelay", "masterMounted",
+        "masterValid", "diskUtilization", "vgMdUtilization",
+        "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
+    )
 
     def __init__(self):
         self.clear()
@@ -41,6 +42,7 @@ class DomainMonitorStatus(object):
         self.diskUtilization = (None, None)
         self.masterMounted = False
         self.masterValid = False
+        self.hasHostId = False
         # FIXME : Exposing these breaks abstraction and is not
         #         needed. Keep exposing for BC. Remove and use
         #         warning mechanism.
@@ -71,14 +73,14 @@ class DomainMonitor(object):
     def monitoredDomains(self):
         return self._domains.keys()
 
-    def startMonitoring(self, domain):
+    def startMonitoring(self, domain, hostId):
         if domain.sdUUID in self._domains:
             return
 
         status = DomainMonitorStatus()
         stopEvent = Event()
         thread = Thread(target=self._monitorDomain,
-                        args=(domain, stopEvent, status))
+                        args=(domain, hostId, stopEvent, status))
 
         thread.setDaemon(True)
         thread.start()
@@ -90,6 +92,12 @@ class DomainMonitor(object):
 
         stopEvent, thread = self._domains[sdUUID][:2]
         stopEvent.set()
+        # The domain monitor issues events that might become raceful if
+        # stopMonitoring doesn't stop until the thread exits.
+        # Eg: when a domain is detached the domain monitor is stopped and
+        # the host id is released. If the monitor didn't actually exit it
+        # might respawn a new acquire host id.
+        thread.join()
         del self._domains[sdUUID]
 
     def getStatus(self, sdUUID):
@@ -100,7 +108,7 @@ class DomainMonitor(object):
         for sdUUID in self._domains.keys():
             self.stopMonitoring(sdUUID)
 
-    def _monitorDomain(self, domain, stopEvent, status):
+    def _monitorDomain(self, domain, hostId, stopEvent, status):
         nextStatus = DomainMonitorStatus()
 
         while not stopEvent.is_set():
@@ -124,6 +132,8 @@ class DomainMonitor(object):
                 nextStatus.masterValid = masterStats['valid']
                 nextStatus.masterMounted = masterStats['mount']
 
+                nextStatus.hasHostId = domain.hasHostId(hostId)
+
             except Exception, e:
                 self.log.error("Error while collecting domain `%s` monitoring "
                         "information", domain.sdUUID, exc_info=True)
@@ -143,5 +153,21 @@ class DomainMonitor(object):
                     self.log.warn("Could not emit domain state change event",
                                   exc_info=True)
 
+            if nextStatus.valid and nextStatus.hasHostId is False:
+                try:
+                    domain.acquireHostId(hostId, async=True)
+                except:
+                    self.log.debug("Unable to issue the acquire host id %s "
+                            "request for the domain %s", hostId, domain.sdUUID,
+                            exc_info=True)
+
             status.update(nextStatus)
             stopEvent.wait(self._interval)
+
+        self.log.debug("Monitorg for domain %s is stopping", domain.sdUUID)
+
+        try:
+            domain.releaseHostId(hostId, unused=True)
+        except:
+            self.log.debug("Unable to release the host id %s for the domain "
+                           "%s",  hostId, domain.sdUUID, exc_info=True)

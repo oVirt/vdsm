@@ -200,12 +200,6 @@ class StoragePool(Securable):
                     except KeyError:
                         pass
 
-    def _acquireHostId(self, sdUUID, isValid):
-        if isValid:
-            self.log.debug("Domain %s is now valid, acquiring host id %s",
-                           sdUUID, self.id)
-            sdCache.produce(sdUUID).acquireHostId(self.id)
-
     @unsecured
     def startSpm(self, prevID, prevLVER, scsiFencing, maxHostID, expectedDomVersion=None):
         """
@@ -249,9 +243,11 @@ class StoragePool(Securable):
             if int(oldlver) != int(prevLVER) or int(oldid) != int(prevID):
                 self.log.info("expected previd:%s lver:%s got request for previd:%s lver:%s" % (oldid, oldlver, prevID, prevLVER))
 
+            self.spmRole = SPM_CONTEND
 
             try:
-                self.spmRole = SPM_CONTEND
+                # Forcing to acquire the host id (if it's not acquired already)
+                self.masterDomain.acquireHostId(self.id)
                 self.masterDomain.acquireClusterLock(self.id)
             except:
                 self.spmRole = SPM_FREE
@@ -596,9 +592,10 @@ class StoragePool(Securable):
             raise
         finally:
             self._setUnsafe()
-            self._releaseTemporaryClusterLock(msdUUID)
 
-        self.stopMonitoringDomains()
+            self._releaseTemporaryClusterLock(msdUUID)
+            self.stopMonitoringDomains()
+
         return True
 
     @unsecured
@@ -641,14 +638,6 @@ class StoragePool(Securable):
         self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
         self.__createMailboxMonitor()
 
-        # Acquire lock on each domain
-        for sdUUID in self.getDomains(activeOnly=True):
-            try:
-                sdCache.produce(sdUUID).acquireHostId(self.id)
-            except:
-                self.log.error("Unable to acquire host id on sdUUID=`%s`",
-                               sdUUID, exc_info=True)
-
         return True
 
 
@@ -663,17 +652,10 @@ class StoragePool(Securable):
         """
         Disconnect a Host from specific storage pool.
 
-        Caller must acquire resource Storage.spUUID so that this method would never be called twice concurrently.
+        Caller must acquire resource Storage.spUUID so that this method would
+        never be called twice concurrently.
         """
         self.log.info("Disconnect from the storage pool %s", self.spUUID)
-
-        # Release lock on each domain
-        for sdUUID in self.getDomains(activeOnly=True):
-            try:
-                sdCache.produce(sdUUID).releaseHostId(self.id)
-            except:
-                self.log.info("Unable to release host id on sdUUID=`%s`",
-                              sdUUID, exc_info=True)
 
         self.id = None
         self.scsiKey = None
@@ -689,7 +671,6 @@ class StoragePool(Securable):
             fileUtils.cleanupdir(self.poolPath)
 
         self.stopMonitoringDomains()
-
         return True
 
 
@@ -859,6 +840,8 @@ class StoragePool(Securable):
             # @deprecated this is relevant only for domain version < 3
             if not newmsd.hasVolumeLeases():
                 newmsd.initSPMlease()
+            # Forcing to acquire the host id (if it's not acquired already)
+            newmsd.acquireHostId(self.id)
             newmsd.acquireClusterLock(self.id)
         except Exception:
             self.log.error("Unexpected error", exc_info=True)
@@ -954,11 +937,20 @@ class StoragePool(Securable):
     def forcedDetachSD(self, sdUUID):
         self.log.warn("Force detaching domain `%s`", sdUUID)
         domains = self.getDomains()
+
         if sdUUID not in domains:
             return True
+
         del domains[sdUUID]
+
         self.setMetaParam(PMDK_DOMAINS, domains)
         self._cleanupDomainLinks(sdUUID)
+
+        # If the domain that we are detaching is the master domain
+        # we attempt to stop the SPM before releasing the host id
+        if self.masterDomain.sdUUID == sdUUID:
+            self.stopSpm()
+
         self.updateMonitoringThreads()
         self.log.debug("Force detach for domain `%s` is done", sdUUID)
 
@@ -1020,7 +1012,6 @@ class StoragePool(Securable):
             dom.upgrade(self.getVersion())
 
         dom.activate()
-        dom.acquireHostId(self.id)
         # set domains also do rebuild
         domainStatuses[sdUUID] = sd.DOM_ACTIVE_STATUS
         self.setMetaParam(PMDK_DOMAINS, domainStatuses)
@@ -1074,8 +1065,6 @@ class StoragePool(Securable):
                     self.masterMigrate(sdUUID, newMsdUUID, masterVersion)
             elif dom.isBackup():
                 dom.unmountMaster()
-
-            dom.releaseHostId(self.id)
 
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
         self.setMetaParam(PMDK_DOMAINS, domList)
@@ -1506,17 +1495,23 @@ class StoragePool(Securable):
             if sdUUID not in activeDomains:
                 try:
                     self.domainMonitor.stopMonitoring(sdUUID)
-                    self.log.debug("sp `%s` stopped monitoring domain `%s`", self.spUUID, sdUUID)
+                    self.log.debug("Storage Pool `%s` stopped monitoring "
+                                   "domain `%s`", self.spUUID, sdUUID)
                 except se.StorageException:
-                    self.log.error("Unexpected error while trying to stop monitoring domain `%s`", sdUUID, exc_info=True)
+                    self.log.error("Unexpected error while trying to stop "
+                                   "monitoring domain `%s`", sdUUID,
+                                   exc_info=True)
 
         for sdUUID in activeDomains:
             if sdUUID not in monitoredDomains:
                 try:
-                    self.domainMonitor.startMonitoring(sdCache.produce(sdUUID))
-                    self.log.debug("sp `%s` started monitoring domain `%s`", self.spUUID, sdUUID)
+                    self.domainMonitor \
+                            .startMonitoring(sdCache.produce(sdUUID), self.id)
+                    self.log.debug("Storage Pool `%s` started monitoring "
+                                   "domain `%s`", self.spUUID, sdUUID)
                 except se.StorageException:
-                    self.log.error("Unexpected error while trying to monitor domain `%s`", sdUUID, exc_info=True)
+                    self.log.error("Unexpected error while trying to monitor "
+                                   "domain `%s`", sdUUID, exc_info=True)
 
     @unsecured
     def getDomains(self, activeOnly=False):
@@ -1896,11 +1891,11 @@ class StoragePool(Securable):
             if sdUUID != self.masterDomain.sdUUID:
                 self.detachSD(sdUUID)
 
-        # Forced detach master domain after stopping SPM
+        # Forced detach master domain
         self.forcedDetachSD(self.masterDomain.sdUUID)
         self.masterDomain.detach(self.spUUID)
 
-        self.stopSpm()
+        self.updateMonitoringThreads()
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
