@@ -448,6 +448,9 @@ class StorageDomain:
     def releaseHostId(self, hostId):
         self._clusterLock.releaseHostId(hostId)
 
+    def hasHostId(self, hostId):
+        return self._clusterLock.hasHostId(hostId)
+
     def hasVolumeLeases(self):
         return self.getVersion() in DOM_SANLOCK_VERS
 

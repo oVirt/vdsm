@@ -84,6 +84,9 @@ class ClusterLock(object):
     def releaseHostId(self, hostID):
         pass
 
+    def hasHostId(self, hostId):
+        return True
+
     def acquire(self, hostID):
         leaseTimeMs = self._leaseTimeSec * 1000
         ioOpTimeoutMs = self._ioOpTimeoutSec * 1000
@@ -135,9 +138,7 @@ class SANLock(object):
         self._sdUUID = sdUUID
         self._idsPath = idsPath
         self._leasesPath = leasesPath
-        self._hostId = None
         self._sanlockfd = None
-        self._lockAcquired = False
 
     def initLock(self):
         try:
@@ -156,10 +157,6 @@ class SANLock(object):
 
     def acquireHostId(self, hostId):
         with self._lock:
-            if self._hostId is not None:
-                raise se.AcquireHostIdFailure(self._sdUUID,
-                                              "Host id already acquired")
-
             self.log.info("Acquiring host id for domain %s (id: %s)",
                           self._sdUUID, hostId)
 
@@ -169,9 +166,8 @@ class SANLock(object):
                 if e.errno != errno.EEXIST:
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
 
-            self._hostId = hostId
             self.log.debug("Host id for domain %s successfully acquired "
-                           "(id: %s)", self._sdUUID, self._hostId)
+                           "(id: %s)", self._sdUUID, hostId)
 
     def releaseHostId(self, hostId):
         with self._lock:
@@ -183,9 +179,18 @@ class SANLock(object):
             except sanlock.SanlockException, e:
                 raise se.ReleaseHostIdFailure(self._sdUUID, e)
 
-            self._hostId = None
             self.log.debug("Host id for domain %s released successfully "
-                           "(id: %s)", self._sdUUID, self._hostId)
+                           "(id: %s)", self._sdUUID, hostId)
+
+    def hasHostId(self, hostId):
+        with self._lock:
+            try:
+                return sanlock.inq_lockspace(self._sdUUID,
+                                             hostId, self._idsPath)
+            except sanlock.SanlockException:
+                self.log.debug("Unable to inquire sanlock lockspace "
+                               "status, returning False", exc_info=True)
+                return False
 
     # The hostId parameter is maintained here only for compatibility with
     # ClusterLock. We could consider to remove it in the future but keeping it
@@ -216,14 +221,12 @@ class SANLock(object):
 
                 break
 
-            self._lockAcquired = True
             self.log.debug("Cluster lock for domain %s successfully acquired "
                            "(id: %s)", self._sdUUID, hostId)
 
     def release(self):
         with self._lock:
-            self.log.info("Releasing cluster lock for domain %s (id: %s)",
-                          self._sdUUID, self._hostId)
+            self.log.info("Releasing cluster lock for domain %s", self._sdUUID)
 
             try:
                 sanlock.release(self._sdUUID, SDM_LEASE_NAME,
@@ -233,6 +236,5 @@ class SANLock(object):
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
             self._sanlockfd = None
-            self._lockAcquired = False
-            self.log.debug("Cluster lock for domain %s successfully released "
-                           "(id: %s)", self._sdUUID, self._hostId)
+            self.log.debug("Cluster lock for domain %s successfully released",
+                           self._sdUUID)
