@@ -35,7 +35,6 @@ from StringIO import StringIO
 from weakref import proxy
 import contextlib
 import errno
-import gc
 import glob
 import io
 import logging
@@ -56,7 +55,6 @@ import weakref
 
 sys.path.append("../")
 from vdsm import constants
-from vdsm.config import config
 import storage_exception as se
 from vdsm.betterPopen import BetterPopen
 
@@ -198,8 +196,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     cmdline = repr(subprocess.list2cmdline(printable))
     execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
 
-    with disabledGcBlock:
-        p = BetterPopen(command, close_fds=True, cwd=cwd, env=env)
+    p = BetterPopen(command, close_fds=True, cwd=cwd, env=env)
     p = AsyncProc(p)
     if not sync:
         if data is not None:
@@ -1074,47 +1071,6 @@ def samplingmethod(func):
     def helper(*args, **kwargs):
         return sm(*args, **kwargs)
     return helper
-
-
-class _DisabledGcBlock(object):
-    _refCount = 0
-    _refLock = threading.Lock()
-    _lastCollect = 0
-    forceCollectInterval = config.getint("irs",
-            "gc_blocker_force_collect_interval")
-
-    def __enter__(self):
-        self.enter()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.exit()
-
-    def enter(self):
-        self._refLock.acquire()
-        try:
-            if gc.isenabled():
-                self._lastCollect = time.time()
-                gc.disable()
-
-            if (time.time() - self._lastCollect) > self.forceCollectInterval:
-                self._lastCollect = time.time()
-                gc.collect()
-
-            self._refCount += 1
-        finally:
-            self._refLock.release()
-
-    def exit(self):
-        self._refLock.acquire()
-        try:
-            self._refCount -= 1
-            if self._refCount == 0:
-                gc.enable()
-        finally:
-            self._refLock.release()
-
-disabledGcBlock = _DisabledGcBlock()
 
 
 def iteratePids():
