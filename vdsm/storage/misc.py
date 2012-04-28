@@ -188,11 +188,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     Executes an external command, optionally via sudo.
     """
     if sudo:
-        if isinstance(command, types.StringTypes):
-            command = " ".join([constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG,
-                command])
-        else:
-            command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG] + command
+        command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG] + command
 
     if not printable:
         printable = command
