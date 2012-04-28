@@ -177,7 +177,7 @@ def hackVdsmModule():
     sys.modules['vdsm'] = mod = vdsm()
 
     for name in ('config', 'constants', 'utils', 'define', 'netinfo',
-                'SecureXMLRPCServer', 'libvirtconnection'):
+                'SecureXMLRPCServer', 'libvirtconnection', 'betterPopen'):
                     sub = __import__(name, globals(), locals(), [], -1)
                     setattr(mod, name, sub)
                     sys.modules['vdsm.%s' % name] = getattr(mod, name)

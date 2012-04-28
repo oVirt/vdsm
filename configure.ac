@@ -77,6 +77,7 @@ AC_SUBST([vdsmhooksdir], ['${vdsmexecdir}/hooks'])
 AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
 AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pythondir}/vdsm'])
+AC_SUBST([betterpopendir], ['${vdsmpylibdir}/betterPopen'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 
 # VDSM registration default paths
@@ -200,6 +201,7 @@ AC_OUTPUT([
 	vdsm_hooks/vmdisk/Makefile
 	vdsm/Makefile
 	vdsm_reg/Makefile
+	vdsm/betterPopen/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/protect/Makefile

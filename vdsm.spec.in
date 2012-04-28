@@ -25,6 +25,7 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: python
+BuildRequires: python-devel
 BuildRequires: pyflakes
 BuildRequires: python-nose
 BuildRequires: python-pep8
@@ -115,7 +116,6 @@ Manager.
 
 %package python
 Summary:        VDSM python libraries
-BuildArch:      noarch
 
 %description python
 Shared libraries beween the various VDSM packages.
@@ -612,6 +612,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{python_sitelib}/%{vdsm_name}/utils.py*
 %{python_sitelib}/%{vdsm_name}/vdscli.py*
+%{python_sitelib}/%{vdsm_name}/betterPopen/__init__.py*
+%{python_sitelib}/%{vdsm_name}/betterPopen/createprocess.so
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*
 
 %files hook-vhostmd

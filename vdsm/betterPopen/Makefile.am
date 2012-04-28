@@ -18,35 +18,28 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-test_modules = \
-	main.py \
-	alignmentScanTests.py \
-	betterPopenTests.py \
-	betterThreadingTests.py \
-	capsTests.py \
-	fileUtilTests.py \
-	guestIFTests.py \
-	hooksTests.py \
-	lsblkTests.py \
-	md_utils_tests.py \
-	miscTests.py \
-	mountTests.py \
-	netinfoTests.py \
-	parted_utils_tests.py \
-	persistentDictTests.py \
-	processPoolTests.py \
-	resourceManagerTests.py
+all-local: createprocess.so
 
-dist_noinst_DATA = \
-	$(test_modules) \
-	cpu_info.out \
-	netmaskconversions \
-	run_tests.sh \
-	testrunner.py \
-	testValidation.py
+.PHONY: createprocess.so createprocess.so_copy createprocess.so_build
 
-check-local:
-	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
-	@echo '*** into your environment.  Do not submit untested code!    ***'
-	$(top_srcdir)/tests/run_tests.sh $(test_modules)
+createprocess_so_build: createprocess.c
+	$(PYTHON) setup.py clean build
+
+createprocess_so_copy: createprocess_so_build
+	cp build/*/createprocess.so .
+
+createprocess.so: createprocess_so_copy
+
+dist_betterpopen_PYTHON = \
+	__init__.py
+
+dist_betterpopen_DATA = \
+    createprocess.so
+
+EXTRA_DIST = \
+    createprocess.c \
+    setup.py
+
+CLEANFILES = \
+	createprocess.so
 

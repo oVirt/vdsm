@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = sos storage
+SUBDIRS = sos storage betterPopen
 
 include $(top_srcdir)/build-aux/Makefile.subs
 

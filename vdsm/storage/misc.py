@@ -58,6 +58,8 @@ sys.path.append("../")
 from vdsm import constants
 from vdsm.config import config
 import storage_exception as se
+from vdsm.betterPopen import BetterPopen
+
 
 IOUSER = "vdsm"
 DIRECTFLAG = "direct"
@@ -197,10 +199,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
 
     with disabledGcBlock:
-        p = subprocess.Popen(command, close_fds=True, cwd=cwd, env=env,
-                             stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = BetterPopen(command, close_fds=True, cwd=cwd, env=env)
     p = AsyncProc(p)
     if not sync:
         if data is not None:
@@ -215,7 +214,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
 
     execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
             {True: "SUCCESS", False: "FAILED"}[p.returncode == 0],
-        repr(err), p.returncode)
+            repr(err), p.returncode)
 
     if not raw:
         out = out.splitlines(False)
