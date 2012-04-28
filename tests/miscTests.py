@@ -41,26 +41,13 @@ SUDO_GROUP = "root"
 
 
 def ddWatchCopy(srcPath, dstPath, callback, dataLen):
-    try:
-        rc, out, err = misc.ddWatchCopy(srcPath, dstPath, callback, dataLen)
-    except TypeError:
-        #For backwards compatibility
-        rc, out, err = misc.ddWatchCopy(srcPath, dstPath, callback, None,
-                dataLen)
+    rc, out, err = misc.ddWatchCopy(srcPath, dstPath, callback, dataLen)
     return rc, out, err
 
 
-def watchCmd(cmd, stop, cwd=None, infile=None, outfile=None,
-        data=None, recoveryCallback=None):
-    try:
-        ret, out, err = misc.watchCmd(cmd, stop, cwd=cwd,
-                infile=infile, outfile=outfile, data=data,
-                recoveryCallback=recoveryCallback)
-    except TypeError:
-        #For backwards compatibility
-        ret, out, err = misc.watchCmd(cmd, stop, None, cwd=cwd,
-                infile=infile, outfile=outfile, data=data,
-                recoveryCallback=recoveryCallback)
+def watchCmd(cmd, stop, cwd=None, data=None, recoveryCallback=None):
+    ret, out, err = misc.watchCmd(cmd, stop, cwd=cwd, data=data,
+            recoveryCallback=recoveryCallback)
 
     return ret, out, err
 

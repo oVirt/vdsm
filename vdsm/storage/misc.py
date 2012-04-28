@@ -182,9 +182,8 @@ execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'),
 
 
 @logskip("Storage.Misc.excCmd")
-def execCmd(command, sudo=False, cwd=None, infile=None, outfile=None,
-            data=None, raw=False, logErr=True, printable=None,
-            env=None, sync=True):
+def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
+        printable=None, env=None, sync=True):
     """
     Executes an external command, optionally via sudo.
     """
@@ -201,17 +200,11 @@ def execCmd(command, sudo=False, cwd=None, infile=None, outfile=None,
     cmdline = repr(subprocess.list2cmdline(printable))
     execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
 
-    # FIXME: if infile == None and data:
-    if infile == None:
-        infile = subprocess.PIPE
-
-    if outfile == None:
-        outfile = subprocess.PIPE
-
     with disabledGcBlock:
-        p = subprocess.Popen(command, close_fds=True, cwd=cwd,
-                       stdin=infile, stdout=outfile, stderr=subprocess.PIPE,
-                       env=env)
+        p = subprocess.Popen(command, close_fds=True, cwd=cwd, env=env,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
     p = AsyncProc(p)
     if not sync:
         if data is not None:
@@ -259,13 +252,11 @@ def getProcCtime(pid):
     return str(ctime)
 
 
-def watchCmd(command, stop, cwd=None, infile=None, outfile=None,
-            data=None, recoveryCallback=None):
+def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None):
     """
     Executes an external command, optionally via sudo with stop abilities.
     """
-    proc = execCmd(command, sudo=False, cwd=cwd, infile=infile,
-            outfile=outfile, data=data, sync=False)
+    proc = execCmd(command, sudo=False, cwd=cwd, data=data, sync=False)
     if recoveryCallback:
         recoveryCallback(proc)
 
