@@ -73,6 +73,19 @@ def slowtest(f):
     return wrapper
 
 
+def brokentest(msg="Test failed but it is known to be broken"):
+    def wrap(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except:
+                raise SkipTest(msg)
+        return wrapper
+
+    return wrap
+
+
 def checkSudo(cmd):
     p = subprocess.Popen(['sudo', '-l', '-n'] + cmd,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
