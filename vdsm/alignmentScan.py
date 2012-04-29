@@ -59,11 +59,11 @@ def scanImage(image_path):
     out_list = []
     for line in out:
         line = line.split(None, 3)
-        part_name = line[0] # the device and partition name (eg. "/dev/sda1")
-        part_start = int(line[1]) # the start of the partition in bytes
-        part_alignment = line[2] # in bytes or Kbytes (eg. 512 or "4K")
-        scan_result = (line[3] == "ok") # True if aligned, otherwise False
-        scan_explanation = line[3] # optional free-text explanation
+        part_name = line[0]  # the device and partition name (eg. "/dev/sda1")
+        part_start = int(line[1])  # the start of the partition in bytes
+        part_alignment = line[2]  # in bytes or Kbytes (eg. 512 or "4K")
+        scan_result = (line[3] == "ok")  # True if aligned, otherwise False
+        scan_explanation = line[3]  # optional free-text explanation
         out_list.append(ScanOutput(part_name, part_start, part_alignment,
                                     scan_result, scan_explanation))
     return out_list
