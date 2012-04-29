@@ -24,12 +24,13 @@ import tempfile
 from nose.tools import eq_, raises, assert_not_equals
 from nose.plugins.skip import SkipTest
 from testrunner import VdsmTestCase as TestCaseBase
+from testValidation import slowtest
 from storage.misc import execCmd
 from alignmentScan import runScanArgs, scanImage, VirtAlignError
 
 
 def mkimage(imagepath, aligned=True):
-    cmd = ["/bin/dd", "if=/dev/zero", "of=%s" % imagepath, "bs=4K", "count=1K"]
+    cmd = ["/bin/dd", "if=/dev/zero", "of=%s" % imagepath, "bs=4K", "count=1M"]
     r, o, e = execCmd(cmd)
     assert r == 0
     cmd = ["/sbin/sfdisk", "-uS", "--force", imagepath]
@@ -64,6 +65,7 @@ class AlignmentScanTests(TestCaseBase):
         validate_virtalignscan_installed()
         scanImage("nonexistent-image-name")
 
+    @slowtest
     def test_nonaligned_image(self):
         validate_virtalignscan_installed()
         with tempfile.NamedTemporaryFile() as img:
@@ -73,6 +75,7 @@ class AlignmentScanTests(TestCaseBase):
             eq_(msg[0][3], False)
             eq_(msg[0][4], 'bad (alignment < 4K)')
 
+    @slowtest
     def test_aligned_image(self):
         validate_virtalignscan_installed()
         with tempfile.NamedTemporaryFile() as img:
