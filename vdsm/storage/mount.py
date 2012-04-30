@@ -121,7 +121,8 @@ class Mount(object):
 
 
     def _runcmd(self, cmd, timeout):
-        p = misc.execCmd(cmd, sudo=True, sync=False)
+        isRoot = os.geteuid() == 0
+        p = misc.execCmd(cmd, sudo=not isRoot, sync=False)
         if not p.wait(timeout):
             p.kill()
             raise OSError(errno.ETIMEDOUT, "%s operation timed out" % os.path.basename(cmd[0]))
