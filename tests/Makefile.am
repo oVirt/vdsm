@@ -28,6 +28,7 @@ test_modules = \
 	hooksTests.py \
 	md_utils_tests.py \
 	miscTests.py \
+	mountTests.py \
 	parted_utils_tests.py \
 	persistentDictTests.py \
 	processPoolTests.py \

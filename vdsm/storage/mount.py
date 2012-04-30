@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -22,6 +22,7 @@ import errno
 from os.path import normpath
 import re
 import os
+import stat
 
 from vdsm import constants
 import misc
@@ -37,28 +38,93 @@ MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "
 
 _RE_ESCAPE = re.compile(r"\\0\d\d")
 
-class MountError(RuntimeError): pass
+
+def _parseFstabLine(line):
+    (fs_spec, fs_file, fs_vfstype, fs_mntops,
+            fs_freq, fs_passno) = line.split()[:6]
+    fs_mntops = fs_mntops.split(",")
+    fs_freq = int(fs_freq)
+    fs_passno = int(fs_passno)
+    fs_spec = normpath(_parseFstabPath(fs_spec))
+    fs_file = normpath(_parseFstabPath(fs_file))
+    fs_mntops = [_parseFstabPath(item) for item in fs_mntops]
+
+    return MountRecord(fs_spec, fs_file, fs_vfstype, fs_mntops,
+            fs_freq, fs_passno)
+
+
+def _iterateMtab():
+    with open("/etc/mtab", "r") as f:
+        for line in f:
+            yield _parseFstabLine(line)
+
 
 def _parseFstabPath(path):
     return _RE_ESCAPE.sub(lambda s: chr(int(s.group()[1:], 8)), path)
 
-def _iterMountRecords():
+
+class MountError(RuntimeError):
+    pass
+
+
+def _resolveLoopDevice(path):
+    """
+    Loop devices appear as the loop device under /proc/mount instead of the
+    backing file. As the mount command does the resolution so must we.
+    """
+    if not path.startswith("/"):
+        return path
+
+    try:
+        st = os.stat(path)
+    except:
+        return path
+
+    if not stat.S_ISBLK(st.st_mode):
+        return path
+
+    minor = os.minor(st.st_rdev)
+    major = os.major(st.st_rdev)
+    loopdir = "/sys/dev/block/%d:%d/loop" % (major, minor)
+    if os.path.exists(loopdir):
+        with open(loopdir + "/backing_file", "r") as f:
+            # Remove trailing newline
+            return f.read()[:-1]
+
+    # Old kernels might not have the sysfs entry, this is a bit slower and does
+    # not work on hosts that do support the above method.
+    for rec in _iterateMtab():
+        loopOpt = "loop=%s" % path
+        for opt in rec.fs_mntops:
+            if opt != loopOpt:
+                continue
+
+            return rec.fs_spec
+
+    return path
+
+
+def _iterKnownMounts():
     with open("/proc/mounts", "r") as f:
         for line in f:
-            (fs_spec, fs_file, fs_vfstype, fs_mntops,
-                    fs_freq, fs_passno) = line.split()[:6]
-            fs_mntops = fs_mntops.split(",")
-            fs_freq = int(fs_freq)
-            fs_passno = int(fs_passno)
-            fs_spec = normpath(_parseFstabPath(fs_spec))
-            fs_file = normpath(_parseFstabPath(fs_file))
+            yield _parseFstabLine(line)
 
-            yield MountRecord(fs_spec, fs_file, fs_vfstype, fs_mntops,
-                    fs_freq, fs_passno)
+
+def _iterMountRecords():
+    for rec in _iterKnownMounts():
+        realSpec = _resolveLoopDevice(rec.fs_spec)
+        if rec.fs_spec == realSpec:
+            yield rec
+            continue
+
+        yield MountRecord(realSpec, rec.fs_file, rec.fs_vfstype,
+                rec.fs_mntops, rec.fs_freq, rec.fs_passno)
+
 
 def iterMounts():
     for record in _iterMountRecords():
         yield Mount(record.fs_spec, record.fs_file)
+
 
 def isMounted(target):
     """Checks if a target is mounted at least once"""
@@ -70,6 +136,7 @@ def isMounted(target):
             return False
         raise
 
+
 def getMountFromTarget(target):
     target = normpath(target)
     for rec in _iterMountRecords():
@@ -78,12 +145,15 @@ def getMountFromTarget(target):
 
     raise OSError(errno.ENOENT, 'Mount target %s not found' % target)
 
+
 def getMountFromDevice(device):
     device = normpath(device)
     for rec in _iterMountRecords():
         if rec.fs_spec == device:
             return Mount(rec.fs_spec, rec.fs_file)
+
     raise OSError(errno.ENOENT, 'device %s not mounted' % device)
+
 
 class Mount(object):
     def __init__(self, fs_spec, fs_file):
@@ -119,13 +189,13 @@ class Mount(object):
 
         return self._runcmd(cmd, timeout)
 
-
     def _runcmd(self, cmd, timeout):
         isRoot = os.geteuid() == 0
         p = misc.execCmd(cmd, sudo=not isRoot, sync=False)
         if not p.wait(timeout):
             p.kill()
-            raise OSError(errno.ETIMEDOUT, "%s operation timed out" % os.path.basename(cmd[0]))
+            raise OSError(errno.ETIMEDOUT,
+                    "%s operation timed out" % os.path.basename(cmd[0]))
 
         out, err = p.communicate()
         rc = p.returncode
@@ -166,4 +236,5 @@ class Mount(object):
                 (self.fs_spec, self.fs_file))
 
     def __repr__(self):
-        return "<Mount fs_spec='%s' fs_file='%s'>" % (self.fs_spec, self.fs_file)
+        return "<Mount fs_spec='%s' fs_file='%s'>" % \
+                (self.fs_spec, self.fs_file)

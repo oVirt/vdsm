@@ -45,6 +45,7 @@ PEP8_WHITELIST = \
 	vdsm/parted_utils.py \
 	vdsm/md_utils.py \
 	vdsm/storage/misc.py \
+	vdsm/storage/mount.py \
 	vdsm/storage/processPool.py \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py
