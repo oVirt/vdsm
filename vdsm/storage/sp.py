@@ -849,9 +849,16 @@ class StoragePool(Securable):
 
         # Acquire cluster lock on new master
         try:
-            # Reset SPM lock because of the host still SPM
-            # It will speedup new lock acquiring
-            newmsd.initSPMlease()
+            # If the new master domain is using safelease (version < 3) then
+            # we can speed up the cluster lock acquirement by resetting the
+            # SPM lease.
+            # XXX: With SANLock there is no need to speed up the process (the
+            # acquirement will take a short time anyway since we already hold
+            # the host id) and more importantly resetting the lease is going
+            # to interfere with the regular SANLock behavior.
+            # @deprecated this is relevant only for domain version < 3
+            if not newmsd.hasVolumeLeases():
+                newmsd.initSPMlease()
             newmsd.acquireClusterLock(self.id)
         except Exception:
             self.log.error("Unexpected error", exc_info=True)
@@ -916,17 +923,32 @@ class StoragePool(Securable):
             raise se.TooManyDomainsInStoragePoolError()
 
         dom = sdCache.produce(sdUUID)
-        dom.acquireClusterLock(self.id)
+        dom.acquireHostId(self.id)
+
         try:
-            #If you remove this condition, remove it from public_createStoragePool too.
-            if dom.isData() and (dom.getVersion() != self.masterDomain.getVersion()):
-                raise se.MixedSDVersionError(dom.sdUUID, dom.getVersion(), self.masterDomain.sdUUID, self.masterDomain.getVersion())
-            dom.attach(self.spUUID)
-            domains[sdUUID] = sd.DOM_ATTACHED_STATUS
-            self.setMetaParam(PMDK_DOMAINS, domains)
-            self._refreshDomainLinks(dom)
+            dom.acquireClusterLock(self.id)
+
+            try:
+                domVers = dom.getVersion()
+                mstVers = self.masterDomain.getVersion()
+
+                # If you remove this condition, remove it from
+                # public_createStoragePool too.
+                if dom.isData() and domVers != mstVers:
+                    raise se.MixedSDVersionError(dom.sdUUID, domVers,
+                                    self.masterDomain.sdUUID, mstVers)
+
+                dom.attach(self.spUUID)
+                domains[sdUUID] = sd.DOM_ATTACHED_STATUS
+                self.setMetaParam(PMDK_DOMAINS, domains)
+                self._refreshDomainLinks(dom)
+
+            finally:
+                dom.releaseClusterLock()
+
         finally:
-            dom.releaseClusterLock()
+            dom.releaseHostId(self.id)
+
         self.updateMonitoringThreads()
 
     def forcedDetachSD(self, sdUUID):
