@@ -39,5 +39,7 @@ dist_noinst_DATA = \
 	run_tests.sh
 
 check-local:
+	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
+	@echo '*** into your environment.  Do not submit untested code!    ***'
 	$(top_srcdir)/tests/run_tests.sh $(test_modules)
 
