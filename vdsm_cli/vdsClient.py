@@ -1378,10 +1378,51 @@ class service:
             key = "%sID" % key
         return key, value
 
+    def _parseNestedSpec(self, spec):
+        d = dict()
+
+        if spec[0] != '{':
+            raise Exception("_parseNestedSpec called with non nested spec: '%s'" % spec)
+
+        spec = spec[1:]
+        while True:
+            if not spec or not '}' in spec:
+                raise Exception("nested spec not terminated with '}' in '%s'" % spec)
+            if spec[0] == '}':
+                return d, spec[1:]
+
+            # Split into first name + the rest
+            if not ':' in spec:
+                raise Exception("missing name value separator ':' in '%s'" % spec)
+            name, spec = spec.split(":", 1)
+
+            # Determine the value
+            if spec[0] == '{':
+                val, spec = self._parseNestedSpec(spec)
+                d[name] = val
+            else:
+                # The value ends either with a ',' meaning it is followed by
+                # another name:value pair, or with a '}' ending the spec
+                i = 0
+                while spec[i] != ',' and spec[i] != '}':
+                    i = i + 1
+                val  = spec[:i]
+                spec = spec[i:]
+                d[name] = val
+
+            # If there is a comma behind the value remove it before continuing
+            if spec and spec[0] == ',':
+                spec = spec[1:]
+
     def _parseDriveSpec(self, spec):
         """
-        ',' means dict. (!)
+        '{' or ',' means dict. (!)
         """
+        if spec[0] == '{':
+            val, spec = self._parseNestedSpec(spec)
+            if spec:
+                raise Exception("Trailing garbage after spec: '%s'" % spec)
+            return val
         if ',' in spec:
             return dict(self._splitDriveSpecItems(item) for item in spec.split(',') if item)
         return spec
@@ -1540,6 +1581,7 @@ if __name__ == '__main__':
                         'o   keyboardLayout : language code of client keyboard',
                         'o   cpuType : emulated cpu (with optional flags)',
                         'o   emulatedMachine : passed as qemu\'s -M',
+                        'o   devices={name:val[, name:val, name:{name:val, name:val}]} : add a fully specified device',
                         )),
         'hotplugNic':  ( serv.hotplugNic,
                          ('<vmId> <nicspec>',
