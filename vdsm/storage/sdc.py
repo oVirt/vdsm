@@ -61,6 +61,8 @@ class StorageDomainCache:
         self.storageStale = False
 
     def _getDomainFromCache(self, sdUUID):
+        if self.storageStale == True:
+            return None
         try:
             return self.__weakCache[sdUUID]()
         except KeyError:
