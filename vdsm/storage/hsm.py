@@ -877,7 +877,8 @@ class HSM:
         :rtype: bool
 
         .. note::
-            if storage pool is not connected or dosn't exist the opration will exit silently.
+            if storage pool is not connected or doesn't exist the operation
+            will log and exit silently.
         """
         vars.task.setDefaultException(se.StoragePoolDisconnectionError("spUUID=%s, hostID=%s, scsiKey=%s" % (spUUID, hostID, scsiKey)))
         misc.validateN(hostID, 'hostID')
@@ -885,6 +886,8 @@ class HSM:
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
+            self.log.warning("disconnect sp: %s failed. Known pools %s",
+            spUUID, self.pools)
             return
 
         self.validateNotSPM(spUUID)
