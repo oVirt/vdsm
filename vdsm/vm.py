@@ -368,7 +368,8 @@ class Vm(object):
          for index, linuxName in ((0, 'hda'), (1, 'hdb'), (2, 'hdc'), (3, 'hdd')):
              path = self.conf.get(linuxName)
              if path:
-                 legacies.append({'path': path, 'iface': 'ide', 'index': index,
+                 legacies.append({'type': DISK_DEVICES, 'device': 'disk',
+                                  'path': path, 'iface': 'ide', 'index': index,
                                   'truesize': 0})
          return legacies
 
