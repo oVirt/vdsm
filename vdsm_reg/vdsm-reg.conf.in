@@ -14,7 +14,7 @@ vdc_host_port=8443
 #The registrtion uri
 vdc_reg_uri=/OvirtEngineWeb/register
 #Upgrade settings
-upgrade_iso_file=/data/updates/ovirt-node-image.iso
+upgrade_iso_file=@VDSMUPGRADEDIR@/ovirt-node-image.iso
 upgrade_mount_point=@VDSMRUNDIR@/image-update
 # registration ticket
 ticket=

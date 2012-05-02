@@ -78,13 +78,6 @@ mk_dom_backup() {
     /bin/chown vdsm.kvm ${DOM_METADATA_BACKUP_DIR} > /dev/null 2>&1
 }
 
-mk_upgrade_path() {
-    if ! [ -d "/data/updates" ]; then
-        /bin/mkdir -p /data/updates > /dev/null 2>&1
-        /bin/chmod 755 /data/updates > /dev/null 2>&1
-    fi
-}
-
 mk_core_path() {
     core_path=/var/log/core
     if ! [ -d $core_path ]; then
@@ -474,7 +467,6 @@ start() {
     @VDSMDIR@/vdsm-restore-net-config
     load_needed_modules
     mk_data_center
-    mk_upgrade_path
     mk_core_path
     mk_dom_backup
     mk_run_path

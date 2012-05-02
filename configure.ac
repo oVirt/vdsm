@@ -85,6 +85,7 @@ AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
 AC_SUBST([vdsmbootstrapdir], ['${datarootdir}/vdsm-bootstrap'])
 AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
 AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
+AC_SUBST([vdsmupgradedir], ['/data/updates'])
 
 # Network
 AC_SUBST([VDSMBRIDGE], ['ovirtmgmt'])

@@ -748,6 +748,8 @@ exit 0
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/vdsm-reg.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/logger.conf
+%ghost %dir /data
+%ghost %dir %attr(0775, root, root) /data/updates
 %if 0%{?rhel}
 %{_initrddir}/vdsm-reg
 %else

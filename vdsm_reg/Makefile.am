@@ -23,7 +23,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 ovirtsetupdir = $(pythondir)/ovirt_config_setup
 
 dist_vdsmreg_PYTHON = \
-	config.py \
 	createDaemon.py \
 	define.py \
 	register-to-engine.py
@@ -32,6 +31,7 @@ dist_ovirtsetup_PYTHON = \
 	engine.py
 
 nodist_vdsmreg_PYTHON = \
+	config.py \
 	deployUtil.py
 
 nodist_vdsmbootstrap_DATA = \
@@ -61,6 +61,7 @@ CLEANFILES = \
 	$(nodist_vdsmbootstrap_PYTHON)
 
 EXTRA_DIST = \
+	config.py.in \
 	deployUtil.py.in \
 	logger.conf \
 	vdsm-config \
@@ -81,7 +82,8 @@ install-data-local: \
 		install-data-logger \
 		install-data-ovirt \
 		install-data-logrotate
-	$(MKDIR_P)  $(DESTDIR)$(vdsmreglogdir)
+	$(MKDIR_P) $(DESTDIR)$(vdsmreglogdir)
+	$(MKDIR_P) $(DESTDIR)$(vdsmupgradedir)
 
 uninstall-local: \
 		uninstall-data-logger \

@@ -213,6 +213,17 @@ class Setup:
             else:
                 logging.warning("Node time failed to sync with @ENGINENAME@ server. This may cause problems !")
 
+def _createUpgradeDir(upgradeDir):
+    if not os.path.exists(upgradeDir):
+        try:
+            os.makedirs(upgradeDir)
+            os.chmod(upgradeDir, 0755)
+        except OSError, err:
+            if err.errno != errno.EEXIST:
+                log.error(
+                    "can not create vdsm upgrade dir: %s" % upgradeDir
+                )
+
 def run(confFile, daemonize):
     #print "entered run(conf='%s', daemonize='%s')"%(confFile,str(daemonize))
     import random
@@ -230,7 +241,8 @@ def run(confFile, daemonize):
             pidfile = config.get('vars','pidfile')
             sleepTime = float(config.get('vars','reg_req_interval'))
             sys.path.append(vdsmDir)
-
+            _createUpgradeDir(os.path.dirname(config.get('vars',
+                                                    'upgrade_iso_file')))
             if daemonize:
                 createDaemon.createDaemon()
             #set up logger
