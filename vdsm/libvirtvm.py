@@ -861,7 +861,8 @@ class ControllerDevice(LibvirtVmDevice):
         """
         Create domxml for controller device
         """
-        ctrl = self.createXmlElem('controller', self.device, ['address'])
+        ctrl = self.createXmlElem('controller', self.device,
+                                  ['index', 'model', 'master', 'address'])
         if self.device == 'virtio-serial':
             ctrl.setAttribute('index', '0')
             ctrl.setAttribute('ports', '16')
