@@ -496,7 +496,7 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
     if (vlan or bonding) and not nics:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'vlan/bonding definition requires nics. got: %r'%(nics,))
 
-     # Check bridge
+    # Check bridge
     if bridged:
         validateBridgeName(bridge)
         if bridge in _netinfo.networks:
@@ -504,6 +504,9 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
     elif not skipLibvirt:
         if bridge in _netinfo.getBridgelessNetworks():
             raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'network already exists')
+    else:
+        raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                'bridgeless network can not be added when skip libvirt')
 
     # vlan
     if vlan:
