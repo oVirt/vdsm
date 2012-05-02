@@ -1674,7 +1674,7 @@ if __name__ == '__main__':
                         )),
         'getDeviceList' : ( serv.getDeviceList,
                        ('[storageType]',
-                        'List of all block devices (optionally - mathing storageType).'
+                        'List of all block devices (optionally - matching storageType).'
                         )),
         'getDeviceInfo' : ( serv.getDeviceInfo,
                        ('<dev-guid>',
