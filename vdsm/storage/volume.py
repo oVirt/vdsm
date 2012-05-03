@@ -222,6 +222,7 @@ class Volume:
             wasleaf = True
             self.setInternal()
         try:
+            self.prepare(rw=False)
             dst_path = os.path.join(dst_image_dir, dst_volUUID)
             self.log.debug("Volume.clone: %s to %s" % (self.volumePath, dst_path))
             size = int(self.getMetaParam(SIZE))
@@ -231,10 +232,12 @@ class Volume:
             parent = os.path.join(os.path.basename(os.path.dirname(parent)),
                                                    os.path.basename(parent))
             createVolume(parent, parent_format, dst_path, size, volFormat, preallocate)
+            self.teardown(self.sdUUID, self.volUUID)
         except Exception, e:
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
+            self.teardown(self.sdUUID, self.volUUID)
             self.log.error("Volume.clone: can't clone: %s to %s" % (self.volumePath, dst_path))
             raise se.CannotCloneVolume(self.volumePath, dst_path, str(e))
 
@@ -437,10 +440,7 @@ class Volume:
     def setInternal(self):
         self.setMetaParam(VOLTYPE, type2name(INTERNAL_VOL))
         self.voltype = type2name(INTERNAL_VOL)
-        # We cannot set the volume permissions here (self.setrw) since this
-        # might be part of the live snapshot process. If the VM is running
-        # on the SPM it would lose the ability to write to the current
-        # volume.
+        self.setrw(rw=False)
         return self.voltype
 
     def getVolType(self):
@@ -750,28 +750,26 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
     # TODO: accept size only in bytes and convert before call to qemu-img
     cmd = [constants.EXT_QEMUIMG, "create", "-f", fmt2str(format)]
     cwd = None
-
     if format == COW_FORMAT and parent:
         # cmd += ["-b", parent, volume]
         # cwd = os.path.split(os.path.split(volume)[0])[0]
 
         # Temprary fix for qemu-img creation problem
-        cmd += ["-F", parent_format, "-b", os.path.join("..", parent)]
+        cmd += ["-F", parent_format, "-b", os.path.join("..", parent), volume]
         cwd = os.path.split(volume)[0]
+    else:
+        size = int(size)
+        if size < 1:
+            raise se.createVolumeSizeError()
 
-    size = int(size)
-    if size < 1:
-        raise se.createVolumeSizeError()
-
-    # qemu-img expects size to be in kilobytes by default,
-    # can also accept size in M or G with appropriate suffix
-    # +1 is so that odd numbers will round upwards.
-    cmd += [volume, "%uK" % ((size + 1) / 2)]
+        # qemu-img expects size to be in kilobytes by default,
+        # can also accept size in M or G with appropriate suffix
+        # +1 is so that odd numbers will round upwards.
+        cmd += [volume, "%uK" % ((size + 1) / 2)]
 
     (rc, out, err) = misc.execCmd(cmd, sudo=False, cwd=cwd)
     if rc:
         raise se.VolumeCreationError(out)
-
     return True
 
 
