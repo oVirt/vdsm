@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -54,26 +54,30 @@ SHARED_VOL = 6
 INTERNAL_VOL = 7
 LEAF_VOL = 8
 
-def validateArgTypes(args, conv, requireAllArgs = False):
+
+def validateArgTypes(args, conv, requireAllArgs=False):
     if len(args) > len(conv) or requireAllArgs and len(args) < len(conv):
         raise ValueError("Wrong number of arguments provided, "
-                        "expecting %d got %d" % (len(conv), len(args)))
+                         "expecting %d got %d" % (len(conv), len(args)))
 
     for i in range(len(args)):
         args[i] = conv[i](args[i])
 
+
 def fmt3(num):
-    for x in ['','KB','MB','GB','TB']:
+    for x in ['', 'KB', 'MB', 'GB', 'TB']:
         if num < 1024:
             return "%3.1f%s" % (num, x)
         num /= 1024
+
 
 def usage(cmd, full=True):
     print "Usage:  vdsClient [OPTIONS] <server> <command> [Command parameters]"
     print "\nOptions"
     print "-h\tDisplay this help"
     print "-m\tList supported methods and their params (Short help)"
-    print "-s [--truststore path]\tConnect to server with SSL.\n\tIf truststore path is not specified, use defaults."
+    print "-s [--truststore path]\tConnect to server with SSL."
+    print "\tIf truststore path is not specified, use defaults."
     print "\nCommands"
     verbs = cmd.keys()
     verbs.sort()
@@ -96,15 +100,18 @@ def printConf(conf):
         if element not in ('vmId', 'status'):
             print "\t%s = %s" % (element, conf[element])
 
+
 def printDict(dict):
     keys = dict.keys()
     keys.sort()
     for element in keys:
         print "\t%s = %s" % (element, dict[element])
 
+
 def printStats(list):
     for conf in list:
         printConf(conf)
+
 
 class service:
     def __init__(self):
@@ -112,7 +119,8 @@ class service:
         self.truststore = None
 
     def do_connect(self, server, port):
-        self.s = vdscli.connect(server + ':' + port, self.useSSL, self.truststore)
+        self.s = vdscli.connect(server + ':' + port,
+                                self.useSSL, self.truststore)
 
     def ExecAndExit(self, response, parameterName='none'):
         if response['status']['code'] != 0:
@@ -132,20 +140,20 @@ class service:
         sys.exit(response['status']['code'])
 
     def do_create(self, args):
-        params={}
+        params = {}
         confFile = open(args[0])
         for line in confFile.readlines():
             line = re.sub("\s+", '', line)
             line = re.sub("\#.*", '', line)
             if '=' in line:
-                param,value = line.split("=")
+                param, value = line.split("=")
                 params[param] = value
         drives = []
         devices = []
         if len(args) > 1:
             for line in args[1:]:
                 if '=' in line:
-                    param,value = line.split("=",1)
+                    param, value = line.split("=", 1)
                     if param == 'devices':
                         devices.append(self._parseDriveSpec(value))
                     elif param == 'drive':
@@ -153,7 +161,8 @@ class service:
                     elif param in ('cdrom', 'floppy'):
                         value = self._parseDriveSpec(value)
                     if param.startswith('custom_'):
-                        if not 'custom' in params: params['custom'] = {}
+                        if not 'custom' in params:
+                            params['custom'] = {}
                         params['custom'][param[7:]] = value
                     else:
                         params[param] = value
@@ -187,27 +196,27 @@ class service:
     def hotplugNic(self, args):
         nic = self._parseDriveSpec(args[1])
         nic['type'] = 'interface'
-        params={'vmId': args[0], 'nic': nic}
+        params = {'vmId': args[0], 'nic': nic}
         return self.ExecAndExit(self.s.hotplugNic(params))
 
     def hotunplugNic(self, args):
         nic = self._parseDriveSpec(args[1])
         nic['type'] = 'interface'
-        params={'vmId': args[0], 'nic': nic}
+        params = {'vmId': args[0], 'nic': nic}
         return self.ExecAndExit(self.s.hotunplugNic(params))
 
     def hotplugDisk(self, args):
         drive = self._parseDriveSpec(args[1])
         drive['type'] = 'disk'
         drive['device'] = 'disk'
-        params={'vmId': args[0], 'drive': drive}
+        params = {'vmId': args[0], 'drive': drive}
         return self.ExecAndExit(self.s.hotplugDisk(params))
 
     def hotunplugDisk(self, args):
         drive = self._parseDriveSpec(args[1])
         drive['type'] = 'disk'
         drive['device'] = 'disk'
-        params={'vmId': args[0], 'drive': drive}
+        params = {'vmId': args[0], 'drive': drive}
         return self.ExecAndExit(self.s.hotunplugDisk(params))
 
     def do_changeCD(self, args):
@@ -227,13 +236,13 @@ class service:
         def _vmsParser(vmsParam):
             vmsList = vmsParam.split(':')[1].strip()
             if vmsList:
-               vmsList = [vm.strip() for vm in vmsList.split(',')]
+                vmsList = [vm.strip() for vm in vmsList.split(',')]
             else:
-               raise ValueError('Empty VMs list.')
+                raise ValueError('Empty VMs list.')
             return vmsList
 
         vmListViews = ('table', 'long', 'ids')
-        view = 'long' #Default view
+        view = 'long'  # Default view
         vms = []
 
         if args:
@@ -242,7 +251,7 @@ class service:
             else:
                 view = args[0]
                 if len(args) > 1 and args[1].startswith('vms:'):
-                   vms = _vmsParser(args[1])
+                    vms = _vmsParser(args[1])
 
             if view not in vmListViews:
                 raise ValueError('Invalid argument "%s".' % view)
@@ -251,11 +260,12 @@ class service:
 
                 response = self.s.getAllVmStats()
                 if response['status']['code']:
-                    return response['status']['code'], response['status']['message']
+                    return (response['status']['code'],
+                            response['status']['message'])
 
                 for res in response['statsList']:
                     if not vms or res['vmId'] in vms:
-                        allStats[ res['vmId'] ] = res
+                        allStats[res['vmId']] = res
 
         response = self.s.list(True, vms)
         if response['status']['code']:
@@ -269,15 +279,15 @@ class service:
 
             elif view == 'table':
                 vmId = conf['vmId']
-                if vmId not in allStats: #Avoid race.
+                if vmId not in allStats:  # Avoid race.
                     continue
                 status = conf['status']
                 if allStats[vmId].get('monitorResponse') == '-1':
                     status += '*'
-                print "%-36s %6s  %-20s %-20s %-20s" % ( vmId,
-                    conf.get('pid', 'none'),
-                    conf.get('vmName', '<< NO NAME >>'),
-                    status, allStats[vmId].get('guestIPs', '') )
+                print ("%-36s %6s  %-20s %-20s %-20s" %
+                       (vmId, conf.get('pid', 'none'),
+                        conf.get('vmName', '<< NO NAME >>'),
+                        status, allStats[vmId].get('guestIPs', '')))
 
             elif view == 'ids':
                 print conf['vmId']
@@ -355,7 +365,7 @@ class service:
         params = {}
         if len(args) > 0:
             for line in args:
-                param,value = line.split("=")
+                param, value = line.split("=")
                 params[param] = value
         else:
             raise Exception("Not enough parameters")
@@ -363,12 +373,12 @@ class service:
         print response['status']['message']
         sys.exit(response['status']['code'])
 
-
     def do_mStat(self, args):
         vmId = args[0]
         response = self.s.migrateStatus(vmId)
         if not response['status']['code']:
-            print response['status']['message'] + ' ' + str(response['progress']) +'%'
+            print (response['status']['message'] +
+                   ' ' + str(response['progress']) + '%')
         else:
             print response['status']['message']
         sys.exit(response['status']['code'])
@@ -379,7 +389,6 @@ class service:
         print response['status']['message']
         sys.exit(response['status']['code'])
 
-
     def do_getCap(self, args):
         return self.ExecAndExit(self.s.getVdsCapabilities())
 
@@ -388,7 +397,7 @@ class service:
 
     def do_getVmStats(self, args):
         vmId = args[0]
-        if len(args) > 1 :
+        if len(args) > 1:
             return self.ExecAndExit(self.s.getVmStats(vmId), args[1])
         else:
             return self.ExecAndExit(self.s.getVmStats(vmId))
@@ -402,19 +411,19 @@ class service:
         print response['status']['message']
         sys.exit(response['status']['code'])
 
-    def desktopLock (self, args):
-        vmId=args[0]
+    def desktopLock(self, args):
+        vmId = args[0]
         response = self.s.desktopLock(vmId)
         print response['status']['message']
         sys.exit(response['status']['code'])
 
-    def desktopLogoff (self, args):
+    def desktopLogoff(self, args):
         vmId, force = tuple(args)
         response = self.s.desktopLogoff(vmId, force)
         print response['status']['message']
         sys.exit(response['status']['code'])
 
-    def sendHcCmd (self, args):
+    def sendHcCmd(self, args):
         vmId, message = tuple(args)
         response = self.s.sendHcCmdToDesktop(vmId, message)
         print response['status']['message']
@@ -504,7 +513,7 @@ class service:
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
         for element in info['info'].keys():
-           print "\t%s = %s" % (element, info['info'][element])
+            print "\t%s = %s" % (element, info['info'][element])
         return 0, ''
 
     def getStorageDomainStats(self, args):
@@ -519,7 +528,7 @@ class service:
         return 0, ''
 
     def getStorageDomainsList(self, args):
-        if len(args)>0:
+        if len(args) > 0:
             spUUID = args[0]
         else:
             spUUID = BLANK_UUID
@@ -667,7 +676,8 @@ class service:
             key, value = item.split('=')
             con[key] = value
         conList.append(con)
-        res = self.s.validateStorageServerConnection(serverType, spUUID, conList)
+        res = self.s.validateStorageServerConnection(serverType,
+                                                     spUUID, conList)
         if res['status']['code']:
             return res['status']['code'], res['status']['message']
         else:
@@ -710,7 +720,7 @@ class service:
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         for element in status['spm_st'].keys():
-           print "\t%s = %s" % (element, status['spm_st'][element])
+            print "\t%s = %s" % (element, status['spm_st'][element])
         return 0, ''
 
     def fenceSpmStorage(self, args):
@@ -721,7 +731,7 @@ class service:
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         for element in status['spm_st'].keys():
-           print "\t%s = %s" % (element, status['spm_st'][element])
+            print "\t%s = %s" % (element, status['spm_st'][element])
         return 0, ''
 
     def updateVM(self, args):
@@ -792,9 +802,13 @@ class service:
         mVer = int(args[5])
         pool = None
         if len(args) > 6:
-            pool = self.s.createStoragePool(poolType, spUUID, poolName, masterDom, domList, mVer, *args[6:])
+            pool = self.s.createStoragePool(poolType, spUUID,
+                                            poolName, masterDom,
+                                            domList, mVer, *args[6:])
         else:
-            pool = self.s.createStoragePool(poolType, spUUID, poolName, masterDom, domList, mVer)
+            pool = self.s.createStoragePool(poolType, spUUID,
+                                            poolName, masterDom,
+                                            domList, mVer)
         if pool['status']['code']:
             return pool['status']['code'], pool['status']['message']
         return 0, ''
@@ -812,15 +826,16 @@ class service:
         spUUID = args[0]
         ID = int(args[1])
         scsi_key = args[2]
-        if len(args)>3:
+        if len(args) > 3:
             master = args[3]
         else:
             master = BLANK_UUID
-        if len(args)>4:
+        if len(args) > 4:
             master_ver = int(args[4])
         else:
             master_ver = -1
-        pool = self.s.connectStoragePool(spUUID, ID, scsi_key, master, master_ver)
+        pool = self.s.connectStoragePool(spUUID, ID, scsi_key,
+                                         master, master_ver)
         if pool['status']['code']:
             return pool['status']['code'], pool['status']['message']
         return 0, ''
@@ -857,9 +872,9 @@ class service:
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
         for element in info['info'].keys():
-           print "\t%s = %s" % (element, info['info'][element])
+            print "\t%s = %s" % (element, info['info'][element])
         for element in info['dominfo'].keys():
-           print "\t%s = %s" % (element, info['dominfo'][element])
+            print "\t%s = %s" % (element, info['dominfo'][element])
         return 0, ''
 
     def createVolume(self, args):
@@ -874,16 +889,18 @@ class service:
         diskType = int(args[6])
         newVol = args[7]
         descr = args[8]
-        if len(args)>9:
+        if len(args) > 9:
             srcImgUUID = args[9]
         else:
             srcImgUUID = BLANK_UUID
-        if len(args)>10:
+        if len(args) > 10:
             srcVolUUID = args[10]
         else:
             srcVolUUID = BLANK_UUID
-        image = self.s.createVolume(sdUUID, spUUID, imgUUID, size, volFormat, preallocate,
-                                    diskType, newVol, descr, srcImgUUID, srcVolUUID)
+        image = self.s.createVolume(sdUUID, spUUID, imgUUID, size,
+                                    volFormat, preallocate,
+                                    diskType, newVol, descr,
+                                    srcImgUUID, srcVolUUID)
         if image['status']['code']:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
@@ -897,14 +914,14 @@ class service:
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
         for element in info['info'].keys():
-           print "\t%s = %s" % (element, info['info'][element])
+            print "\t%s = %s" % (element, info['info'][element])
         return 0, ''
 
     def getVolumePath(self, args):
         sdUUID = args[0]
         spUUID = args[1]
         imgUUID = args[2]
-        uuid=args[3]
+        uuid = args[3]
         info = self.s.getVolumePath(sdUUID, spUUID, imgUUID, uuid)
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
@@ -914,7 +931,7 @@ class service:
         sdUUID = args[0]
         spUUID = args[1]
         imgUUID = args[2]
-        uuid=args[3]
+        uuid = args[3]
         size = self.s.getVolumeSize(sdUUID, spUUID, imgUUID, uuid)
         if size['status']['code']:
             return size['status']['code'], size['status']['message']
@@ -933,7 +950,6 @@ class service:
             return status['status']['code'], status['status']['message']
         return 0, ''
 
-
     def uploadVolume(self, args):
         sdUUID = args[0]
         spUUID = args[1]
@@ -941,11 +957,11 @@ class service:
         volUUID = args[3]
         srcPath = args[4]
         size = args[5]
-        status = self.s.uploadVolume(sdUUID, spUUID, imgUUID, volUUID, srcPath, size, *args[6:])
+        status = self.s.uploadVolume(sdUUID, spUUID, imgUUID,
+                                     volUUID, srcPath, size, *args[6:])
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         return 0, ''
-
 
     def setVolumeDescription(self, args):
         sdUUID = args[0]
@@ -953,7 +969,8 @@ class service:
         imgUUID = args[2]
         volUUID = args[3]
         descr = args[4]
-        status = self.s.setVolumeDescription(sdUUID, spUUID, imgUUID, volUUID, descr)
+        status = self.s.setVolumeDescription(sdUUID, spUUID, imgUUID,
+                                             volUUID, descr)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         return 0, ''
@@ -963,8 +980,9 @@ class service:
         spUUID = args[1]
         imgUUID = args[2]
         volUUID = args[3]
-        legality=args[4]
-        image = self.s.setVolumeLegality(sdUUID, spUUID, imgUUID, volUUID, legality)
+        legality = args[4]
+        image = self.s.setVolumeLegality(sdUUID, spUUID, imgUUID,
+                                         volUUID, legality)
         return image['status']['code'], image['status']['message']
 
     def deleteVolume(self, args):
@@ -980,7 +998,8 @@ class service:
             force = args[5]
         else:
             force = 'False'
-        status = self.s.deleteVolume(sdUUID, spUUID, imgUUID, volUUID, postZero, force)
+        status = self.s.deleteVolume(sdUUID, spUUID, imgUUID,
+                                     volUUID, postZero, force)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         return 0, status['uuid']
@@ -1003,14 +1022,15 @@ class service:
         if not len(todelete):
             return 0, 'Nothing to delete'
         var = raw_input("Are you sure yes/no?[no] :")
-        if var=="yes":
-            print self.s.deleteVolume(sdUUID, spUUID, imgUUID, todelete, 'false')
+        if var == "yes":
+            print self.s.deleteVolume(sdUUID, spUUID, imgUUID,
+                                      todelete, 'false')
         return 0, ''
 
     def getVolumesList(self, args):
         sdUUID = args[0]
         spUUID = args[1]
-        if len(args)>2:
+        if len(args) > 2:
             images = [args[2]]
         else:
             imgs = self.s.getImagesList(sdUUID)
@@ -1127,7 +1147,7 @@ class service:
                 status["taskStatus"]["taskState"],
                 status["taskStatus"]["taskResult"],
                 status["taskStatus"]["message"])
-        print "%s" % status # TODO
+        print "%s" % status  # TODO
 
         return 0, ''
 
@@ -1135,7 +1155,7 @@ class service:
         status = self.s.getAllTasksStatuses()
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status # TODO
+        print status  # TODO
         return 0, ''
 
     def stopTask(self, args):
@@ -1143,7 +1163,7 @@ class service:
         status = self.s.stopTask(taskID)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status # TODO
+        print status  # TODO
         return 0, ''
 
     def clearTask(self, args):
@@ -1151,7 +1171,7 @@ class service:
         status = self.s.clearTask(taskID)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status # TODO
+        print status  # TODO
         return 0, ''
 
     def revertTask(self, args):
@@ -1159,7 +1179,7 @@ class service:
         status = self.s.revertTask(taskID)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status # TODO
+        print status  # TODO
         return 0, ''
 
     def getParent(self, args):
@@ -1206,7 +1226,8 @@ class service:
             force = args[7]
         else:
             force = 'False'
-        image = self.s.moveImage(spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero, force)
+        image = self.s.moveImage(spUUID, srcDomUUID, dstDomUUID,
+                                 imgUUID, vmUUID, op, postZero, force)
         if image['status']['code']:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
@@ -1225,7 +1246,8 @@ class service:
             force = args[5]
         else:
             force = 'False'
-        image = self.s.moveMultipleImages(spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
+        image = self.s.moveMultipleImages(spUUID, srcDomUUID, dstDomUUID,
+                                          imgDict, vmUUID, force)
         if image['status']['code']:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
@@ -1263,8 +1285,10 @@ class service:
             force = args[13]
         else:
             force = 'False'
-        image = self.s.copyImage(sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
-                                 descr, dstSdUUID, volType, volFormat, preallocate, postZero, force)
+        image = self.s.copyImage(sdUUID, spUUID, vmUUID, srcImgUUID,
+                                 srcVolUUID, dstImgUUID, dstVolUUID,
+                                 descr, dstSdUUID, volType, volFormat,
+                                 preallocate, postZero, force)
         if image['status']['code']:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
@@ -1274,13 +1298,14 @@ class service:
         spUUID = args[1]
         vmUUID = args[2]
         imgUUID = args[3]
-        ancestor=args[4]
-        successor=args[5]
+        ancestor = args[4]
+        successor = args[5]
         if len(args) > 6:
             postZero = args[6]
         else:
             postZero = 'False'
-        image = self.s.mergeSnapshots(sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor, postZero)
+        image = self.s.mergeSnapshots(sdUUID, spUUID, vmUUID, imgUUID,
+                                      ancestor, successor, postZero)
         if image['status']['code']:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
@@ -1382,18 +1407,21 @@ class service:
         d = dict()
 
         if spec[0] != '{':
-            raise Exception("_parseNestedSpec called with non nested spec: '%s'" % spec)
+            raise Exception("_parseNestedSpec called with "
+                            "non nested spec: '%s'" % spec)
 
         spec = spec[1:]
         while True:
             if not spec or not '}' in spec:
-                raise Exception("nested spec not terminated with '}' in '%s'" % spec)
+                raise Exception("nested spec not terminated "
+                                "with '}' in '%s'" % spec)
             if spec[0] == '}':
                 return d, spec[1:]
 
             # Split into first name + the rest
             if not ':' in spec:
-                raise Exception("missing name value separator ':' in '%s'" % spec)
+                raise Exception("missing name value separator "
+                                "':' in '%s'" % spec)
             name, spec = spec.split(":", 1)
 
             # Determine the value
@@ -1406,7 +1434,7 @@ class service:
                 i = 0
                 while spec[i] != ',' and spec[i] != '}':
                     i = i + 1
-                val  = spec[:i]
+                val = spec[:i]
                 spec = spec[i:]
                 d[name] = val
 
@@ -1424,7 +1452,8 @@ class service:
                 raise Exception("Trailing garbage after spec: '%s'" % spec)
             return val
         if ',' in spec:
-            return dict(self._splitDriveSpecItems(item) for item in spec.split(',') if item)
+            return dict(self._splitDriveSpecItems(item)
+                        for item in spec.split(',') if item)
         return spec
 
     def do_addNetwork(self, args):
@@ -1437,7 +1466,8 @@ class service:
         vlan = params.get('vlan', '')
         bond = params.get('bond', '')
         for k in ['bridge', 'vlan', 'bond', 'nics']:
-            if k in params: del params[k]
+            if k in params:
+                del params[k]
         status = self.s.addNetwork(bridge, vlan, bond, nics, params)
         return status['status']['code'], status['status']['message']
 
@@ -1452,7 +1482,8 @@ class service:
         vlan = params.get('vlan', '')
         bond = params.get('bond', '')
         for k in ['oldBridge', 'newBridge', 'vlan', 'bond', 'nics']:
-            if k in params: del params[k]
+            if k in params:
+                del params[k]
         status = self.s.editNetwork(oldBridge, newBridge, vlan, bond,
                                     nics, params)
         return status['status']['code'], status['status']['message']
@@ -1467,7 +1498,8 @@ class service:
         vlan = params.get('vlan', '')
         bond = params.get('bond', '')
         for k in ['bridge', 'vlan', 'bond', 'nics']:
-            if k in params: del params[k]
+            if k in params:
+                del params[k]
         status = self.s.delNetwork(bridge, vlan, bond, nics, params)
         return status['status']['code'], status['status']['message']
 
@@ -1476,7 +1508,7 @@ class service:
         return status['status']['code'], status['status']['message']
 
     def do_fenceNode(self, args):
-	addr, port, agent, user, passwd, action = args[:6]
+        addr, port, agent, user, passwd, action = args[:6]
         status = self.s.fenceNode(addr, port, agent, user, passwd, action,
                                   *args[6:])
         if action == 'status' and 'power' in status:
@@ -1488,9 +1520,10 @@ class service:
                 status = "OK"
                 if list["imagestatus"]:
                     status = "ERROR"
-                print "Image %s status %s: %s (%s)" % (imgUUID, status, list["message"], list["imagestatus"])
+                print ("Image %s status %s: %s (%s)" %
+                       (imgUUID, status, list["message"], list["imagestatus"]))
             if "badvols" in list:
-                for v,err in list["badvols"].iteritems():
+                for v, err in list["badvols"].iteritems():
                     print "\tVolume %s is bad: %s" % (v, err)
 
     def __domain_status(self, sdUUID, list):
@@ -1498,7 +1531,8 @@ class service:
                 status = "OK"
                 if list["domainstatus"]:
                     status = "ERROR"
-                print "Domain %s status %s: %s (%s)" % (sdUUID, status, list["message"], list["domainstatus"])
+                print ("Domain %s status %s: %s (%s)" %
+                       (sdUUID, status, list["message"], list["domainstatus"]))
             if "badimages" in list:
                 for i in list["badimages"]:
                     print "\tImage %s is bad" % (i)
@@ -1509,7 +1543,8 @@ class service:
                 status = "OK"
                 if list["poolstatus"]:
                     status = "ERROR"
-                print "Pool %s status %s: %s (%s)" % (spUUID, status, list["message"], list["poolstatus"])
+                print ("Pool %s status %s: %s (%s)" %
+                       (spUUID, status, list["message"], list["poolstatus"]))
             if "masterdomain":
                 print "\tMaster domain is %s" % list["masterdomain"]
             if "spmhost":
@@ -1545,45 +1580,78 @@ class service:
 if __name__ == '__main__':
     serv = service()
     commands = {
-        'create'  :  ( serv.do_create,
-                       ('<configFile> [parameter=value, parameter=value, ......]',
-                        'Creates new machine with the paremeters givven in the command line overriding the ones in the config file',
-                        'Example with config file: vdsClient someServer create myVmConfigFile',
-                        'Example with no file    : vdsClient someServer create /dev/null vmId=<uuid> memSize=256 imageFile=someImage display=<vnc|local|qxl|qxlnc>',
+        'create':  (serv.do_create,
+                       ('<configFile> [parameter=value, parameter=value, '
+                           '......]',
+                        'Creates new machine with the paremeters givven in the'
+                        ' command line overriding the ones in the config file',
+                        'Example with config file: vdsClient someServer create'
+                        ' myVmConfigFile',
+                        'Example with no file    : vdsClient someServer create'
+                        ' /dev/null vmId=<uuid> memSize=256 '
+                        'imageFile=someImage display=<vnc|local|qxl|qxlnc>',
                         'Parameters list: r=required, o=optional',
-                        'r   vmId=<uuid> : Unique identification for the created VM. Any additional operation on the VM must refer to this ID',
-                        'o   vmType=<qemu/kvm> : Virtual machine technology - if not givven kvm is default',
-                        'o   kvmEnable=<true/false> : run in KVM enabled mode or full emulation - default is according to the VDS capabilities',
-                        'r   memSize=<int> : Memory to allocate for this machine',
-                        'r   macAddr=<aa:bb:cc:dd:ee:ff> : MAC address of the machine',
-                        'r   display=<vnc|local|qxl|qxlnc> : send the machine display to vnc, local host, spice, or spice with no image compression',
-                        'o   drive=pool:poolID,domain:domainID,image:imageID,volume:volumeID[,boot:true,format:cow] : disk image by UUIDs',
-                        'o   (deprecated) hda/b/c/d=<path> : Disk drive images',
-                        'o   floppy=<image> : Mount the specified Image as floppy',
-                        'o   cdrom=<path> : ISO image file to be mounted as the powerup cdrom',
-                        'o   boot=<c/d/n> : boot device - drive C or cdrom or network',
-                        'o   sysprepInf=/path/to/file: Launch with the specified file as sysprep.inf in floppy',
-#                        'o   any parmeter=<any value> : parameter that is not familiar is passed as is to the VM',
-#                        '                               and displayed with all other parameter. They can be used for additional',
-#                        '                               information the user want to reserve with the machine'
-                        'o   acpiEnable : If present will remove the default -no-acpi switch',
-                        'o   tdf : If present will add the -rtc-td-hack switch',
-                        'o   irqChip : If false, add the -no-kvm-irqchip switch',
-                        'o   spiceSecureChannels : comma-separated list of spice channel that will be encrypted',
+                        'r   vmId=<uuid> : Unique identification for the '
+                        'created VM. Any additional operation on the VM must '
+                        'refer to this ID',
+                        'o   vmType=<qemu/kvm> : Virtual machine technology - '
+                        'if not givven kvm is default',
+                        'o   kvmEnable=<true/false> : run in KVM enabled mode '
+                        'or full emulation - default is according to the VDS '
+                        'capabilities',
+                        'r   memSize=<int> : Memory to allocate for this '
+                        'machine',
+                        'r   macAddr=<aa:bb:cc:dd:ee:ff> : MAC address of the '
+                        'machine',
+                        'r   display=<vnc|local|qxl|qxlnc> : send the machine '
+                        'display to vnc, local host, spice, or spice with no '
+                        'image compression',
+                        'o   drive=pool:poolID,domain:domainID,image:imageID,'
+                        'volume:volumeID[,boot:true,format:cow] : disk image '
+                        'by UUIDs',
+                        'o   (deprecated) hda/b/c/d=<path> : Disk drive '
+                        'images',
+                        'o   floppy=<image> : Mount the specified Image as '
+                        'floppy',
+                        'o   cdrom=<path> : ISO image file to be mounted as '
+                        'the powerup cdrom',
+                        'o   boot=<c/d/n> : boot device - drive C or cdrom or '
+                        'network',
+                        'o   sysprepInf=/path/to/file: Launch with the '
+                        'specified file as sysprep.inf in floppy',
+                        #'o   any parmeter=<any value> : parameter that is '
+                        #'not familiar is passed as is to the VM',
+                        #'                               and displayed with '
+                        #'all other parameter. They can be used for '
+                        #'additional',
+                        #'                               information the user '
+                        #'want to reserve with the machine'
+                        'o   acpiEnable : If present will remove the default '
+                        '-no-acpi switch',
+                        'o   tdf : If present will add the -rtc-td-hack '
+                        'switch',
+                        'o   irqChip : If false, add the -no-kvm-irqchip '
+                        'switch',
+                        'o   spiceSecureChannels : comma-separated list of '
+                        'spice channel that will be encrypted',
                         'o   spiceMonitors : number of emulated screen heads',
                         'o   soundDevice : emulated sound device',
                         'o   launchPaused : If "true", start qemu paused',
                         'o   vmName : human-readable name of new VM',
                         'o   tabletEnable : If "true", enable tablet input',
-                        'o   timeOffset : guest\'s start date, relative to host\'s time, in seconds',
+                        'o   timeOffset : guest\'s start date, relative to '
+                        'host\'s time, in seconds',
                         'o   smp : number of vcpus',
-                        'o   smpCoresPerSocket, smpThreadsPerCore : vcpu topology',
-                        'o   keyboardLayout : language code of client keyboard',
+                        'o   smpCoresPerSocket, smpThreadsPerCore : vcpu '
+                        'topology',
+                        'o   keyboardLayout : language code of client '
+                        'keyboard',
                         'o   cpuType : emulated cpu (with optional flags)',
                         'o   emulatedMachine : passed as qemu\'s -M',
-                        'o   devices={name:val[, name:val, name:{name:val, name:val}]} : add a fully specified device',
+                        'o   devices={name:val[, name:val, name:{name:val, '
+                        'name:val}]} : add a fully specified device',
                         )),
-        'hotplugNic':  ( serv.hotplugNic,
+        'hotplugNic':  (serv.hotplugNic,
                          ('<vmId> <nicspec>',
                           'Hotplug NIC to existing VM',
                           'nicspec parameters list: r=required, o=optional',
@@ -1591,9 +1659,10 @@ if __name__ == '__main__':
                           'r   network: network name',
                           'r   macAddr: mac address',
                           'r   nicModel: pv|rtl8139|e1000',
-                          'o   bootOrder: <int>  - global boot order across all bootable devices'
+                          'o   bootOrder: <int>  - global boot order across '
+                          'all bootable devices'
                           )),
-        'hotunplugNic':  ( serv.hotunplugNic,
+        'hotunplugNic':  (serv.hotunplugNic,
                          ('<vmId> <nicspec>',
                           'Hotunplug NIC from existing VM',
                           'nicspec parameters list: r=required, o=optional',
@@ -1601,476 +1670,561 @@ if __name__ == '__main__':
                           'r   network: network name',
                           'r   macAddr: mac address',
                           'r   nicModel: pv|rtl8139|e1000',
-                          'o   bootOrder: <int>  - global boot order across all bootable devices'
+                          'o   bootOrder: <int>  - global boot order across '
+                          'all bootable devices'
                           )),
-        'hotplugDisk':  ( serv.hotplugDisk,
+        'hotplugDisk':  (serv.hotplugDisk,
                          ('<vmId> <drivespec>',
                           'Hotplug disk to existing VM',
                           'drivespec parameters list: r=required, o=optional',
-                          'r   iface:<ide|virtio> - Unique identification of the existing VM.',
-                          'r   index:<int> - disk index unique per interface virtio|ide',
-                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|[GUID:guid]|[UUID:uuid]',
+                          'r   iface:<ide|virtio> - Unique identification of '
+                          'the existing VM.',
+                          'r   index:<int> - disk index unique per interface '
+                          'virtio|ide',
+                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|'
+                          '[GUID:guid]|[UUID:uuid]',
                           'r   format: cow|raw',
                           'r   readonly: True|False   - default is False',
                           'r   propagateErrors: off|on   - default is off',
-                          'o   bootOrder: <int>  - global boot order across all bootable devices',
+                          'o   bootOrder: <int>  - global boot order across '
+                          'all bootable devices',
                           'o   shared: True|False',
                           'o   optional: True|False'
                           )),
-        'hotunplugDisk':  ( serv.hotunplugDisk,
+        'hotunplugDisk':  (serv.hotunplugDisk,
                          ('<vmId> <drivespec >',
                           'Hotunplug disk from existing VM',
                           'drivespec parameters list: r=required, o=optional',
-                          'r   iface:<ide|virtio> - Unique identification of the existing VM.',
-                          'r   index:<int> - disk index unique per interface virtio|ide',
-                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|[GUID:guid]|[UUID:uuid]',
+                          'r   iface:<ide|virtio> - Unique identification of '
+                          'the existing VM.',
+                          'r   index:<int> - disk index unique per interface '
+                          'virtio|ide',
+                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|'
+                          '[GUID:guid]|[UUID:uuid]',
                           'r   format: cow|raw',
                           'r   readonly: True|False   - default is False',
                           'r   propagateErrors: off|on   - default is off',
-                          'o   bootOrder: <int>  - global boot order across all bootable devices',
+                          'o   bootOrder: <int>  - global boot order across '
+                          'all bootable devices',
                           'o   shared: True|False',
                           'o   optional: True|False'
                          )),
-        'changeCD':  ( serv.do_changeCD,
+        'changeCD':  (serv.do_changeCD,
                        ('<vmId> <fileName|drivespec>',
                         'Changes the iso image of the cdrom'
                        )),
-        'changeFloppy':  ( serv.do_changeFloppy,
+        'changeFloppy':  (serv.do_changeFloppy,
                        ('<vmId> <fileName|drivespec>',
                         'Changes the image of the floppy drive'
                        )),
-        'destroy' :  ( serv.do_destroy,
+        'destroy':  (serv.do_destroy,
                        ('<vmId>',
-                        'Stops the emulation and destroys the virtual machine. This is not a shutdown.'
+                        'Stops the emulation and destroys the virtual machine.'
+                        ' This is not a shutdown.'
                        )),
-        'shutdown' :  ( serv.do_shutdown,
+        'shutdown':  (serv.do_shutdown,
                        ('<vmId> <timeout> <message>',
-                        'Stops the emulation and graceful shutdown the virtual machine.'
+                        'Stops the emulation and graceful shutdown the virtual'
+                        ' machine.'
                        )),
-        'list'    :  ( serv.do_list,
+        'list':  (serv.do_list,
                        ('[view] [vms:vmId1,vmId2]',
-                        'Lists all available machines on the specified server.',
-                        "Optional vms list, should start with 'vms:' and follow with 'vmId1,vmId2,...'",
+                        'Lists all available machines on the specified '
+                        'server.',
+                        "Optional vms list, should start with 'vms:' and "
+                        "follow with 'vmId1,vmId2,...'",
                         'Optional views:',
-                        '    "long"   all available configuration info (Default).',
-                        '    "table"  table output with the fields: vmId, vmName, Status and IP.',
+                        '    "long"   all available configuration info '
+                        '(Default).',
+                        '    "table"  table output with the fields: vmId, '
+                        'vmName, Status and IP.',
                         '    "ids"    all vmIds.'
                        )),
-        'pause'   :  ( serv.do_pause,
+        'pause':  (serv.do_pause,
                        ('<vmId>',
-                        'Pauses the execution of the virtual machine without termination'
+                        'Pauses the execution of the virtual machine without '
+                        'termination'
                        )),
-        'continue':  ( serv.do_continue,
+        'continue':  (serv.do_continue,
                        ('<vmId>',
                         'Continues execution after of a paused machine'
                        )),
-        'reset'   :  ( serv.do_reset,
+        'reset':  (serv.do_reset,
                        ('<vmId>',
                         'Sends reset signal to the vm'
                        )),
-        'setVmTicket': ( serv.do_setVmTicket,
-                        ('<vmId> <password> <sec> [disconnect|keep|fail], [params={}]',
-                         'Set the password to the vm display for the next <sec> seconds.',
-                         'Optional argument instructs spice regarding currently-connected client.',
-                         'Optional additional parameters in dictionary format, name:value,name:value'
+        'setVmTicket': (serv.do_setVmTicket,
+                        ('<vmId> <password> <sec> [disconnect|keep|fail], '
+                            '[params={}]',
+                         'Set the password to the vm display for the next '
+                         '<sec> seconds.',
+                         'Optional argument instructs spice regarding '
+                         'currently-connected client.',
+                         'Optional additional parameters in dictionary format,'
+                         ' name:value,name:value'
                         )),
-        'migrate':   ( serv.do_migrate,
-                       ('vmId=<id> method=<offline|online> src=<host:[port]> dst=<host:[port]>',
-                        'Migrate a desktop from src machine to dst host using the specified ports'
+        'migrate':   (serv.do_migrate,
+                       ('vmId=<id> method=<offline|online> src=<host:[port]> '
+                           'dst=<host:[port]>',
+                        'Migrate a desktop from src machine to dst host using '
+                        'the specified ports'
                        )),
-        'migrateStatus': ( serv.do_mStat,
+        'migrateStatus': (serv.do_mStat,
                           ('<vmId>',
                           'Check the progress of current outgoing migration'
                           )),
-        'migrateCancel': ( serv.do_mCancel,
+        'migrateCancel': (serv.do_mCancel,
                            ('<vmId>',
                            '(not implemented) cancel machine migration'
                            )),
-        'sendkeys':  ( serv.do_sendkeys,
+        'sendkeys':  (serv.do_sendkeys,
                        ('<vmId> <key1> ...... <keyN>',
                         'Send the key sequence to the vm'
                        )),
-        'getVdsCapabilities': ( serv.do_getCap,
+        'getVdsCapabilities': (serv.do_getCap,
                        ('',
                         'Get Capabilities info of the VDS'
                        )),
-        'getVdsCaps': ( serv.do_getCap,
+        'getVdsCaps': (serv.do_getCap,
                        ('',
                         'Get Capabilities info of the VDS'
                        )),
-        'getVdsStats': ( serv.do_getVdsStats,
+        'getVdsStats': (serv.do_getVdsStats,
                        ('',
                         'Get Statistics info on the VDS'
                        )),
-        'getVmStats': ( serv.do_getVmStats,
+        'getVmStats': (serv.do_getVmStats,
                       ('<vmId>',
                         'Get Statistics info on the VM'
                        )),
-        'getAllVmStats': ( serv.do_getAllVmStats,
+        'getAllVmStats': (serv.do_getAllVmStats,
                       ('',
                         'Get Statistics info for all existing VMs'
                        )),
-        'getVGList' : ( serv.getVGList,
+        'getVGList': (serv.getVGList,
                        ('storageType',
                         'List of all VGs.'
                         )),
-        'getDeviceList' : ( serv.getDeviceList,
+        'getDeviceList': (serv.getDeviceList,
                        ('[storageType]',
-                        'List of all block devices (optionally - matching storageType).'
+                        'List of all block devices (optionally - matching '
+                        'storageType).'
                         )),
-        'getDeviceInfo' : ( serv.getDeviceInfo,
+        'getDeviceInfo': (serv.getDeviceInfo,
                        ('<dev-guid>',
                         'Get block storage device info.'
                         )),
-        'getDevicesVisibility' : ( serv.getDevicesVisibility,
+        'getDevicesVisibility': (serv.getDevicesVisibility,
                        ('<devlist>',
                         'Get visibility of each device listed'
                         )),
-        'getVGInfo' : ( serv.getVGInfo,
+        'getVGInfo': (serv.getVGInfo,
                        ('<vgUUID>',
                         'Get info of VG'
                         )),
-        'createVG' : ( serv.createVG,
+        'createVG': (serv.createVG,
                        ('<sdUUID> <devlist>',
-                        'Create a new VG from devices devlist (list of dev GUIDs)'
+                        'Create a new VG from devices devlist (list of dev '
+                        'GUIDs)'
                         )),
-        'removeVG' : ( serv.removeVG,
+        'removeVG': (serv.removeVG,
                        ('<vgUUID>',
                         'remove the VG identified by its UUID'
                         )),
-        'extendStorageDomain' : ( serv.extendStorageDomain,
+        'extendStorageDomain': (serv.extendStorageDomain,
                        ('<sdUUID> <spUUID> <devlist>',
-                        'Extend the Storage Domain by adding devices devlist (list of dev GUIDs)'
+                        'Extend the Storage Domain by adding devices devlist '
+                        '(list of dev GUIDs)'
                         )),
-        'discoverST' : ( serv.discoverST,
+        'discoverST': (serv.discoverST,
                        ('ip[:port] [username password]',
-                        'Discover the available iSCSI targetnames on a specified iSCSI portal'
+                        'Discover the available iSCSI targetnames on a '
+                        'specified iSCSI portal'
                         )),
-        'cleanupUnusedConnections' : ( serv.cleanupUnusedConnections,
+        'cleanupUnusedConnections': (serv.cleanupUnusedConnections,
                        ('',
                         'Clean up unused iSCSI storage connections'
                         )),
-        'connectStorageServer' : ( serv.connectStorageServer,
-                       ('<server type> <spUUID> <conList (id=...,connection=server:/export_path,portal=...,port=...,iqn=...,user=...,password=...[,initiatorName=...])>',
+        'connectStorageServer': (serv.connectStorageServer,
+                       ('<server type> <spUUID> <conList (id=...,'
+                           'connection=server:/export_path,portal=...,'
+                           'port=...,iqn=...,user=...,password=...'
+                           '[,initiatorName=...])>',
                         'Connect to a storage low level entity (server)'
                         )),
-        'validateStorageServerConnection' : ( serv.validateStorageServerConnection,
-                       ('<server type> <spUUID> <conList (id=...,connection=server:/export_path,portal=...,port=...,iqn=...,user=...,password=...[,initiatorName=...])>',
+        'validateStorageServerConnection': \
+                (serv.validateStorageServerConnection,
+                       ('<server type> <spUUID> <conList (id=...,'
+                           'connection=server:/export_path,portal=...,port=...'
+                           ',iqn=...,user=...,password=...'
+                           '[,initiatorName=...])>',
                         'Validate that we can connect to a storage server'
                         )),
-        'disconnectStorageServer' : ( serv.disconnectStorageServer,
-                       ('<server type> <spUUID> <conList (id=...,connection=server:/export_path,portal=...,port=...,iqn=...,user=...,password=...[,initiatorName=...])>',
+        'disconnectStorageServer': (serv.disconnectStorageServer,
+                       ('<server type> <spUUID> <conList (id=...,'
+                           'connection=server:/export_path,portal=...,port=...'
+                           ',iqn=...,user=...,password=...'
+                           '[,initiatorName=...])>',
                         'Disconnect from a storage low level entity (server)'
                         )),
-        'spmStart' : ( serv.spmStart,
-                       ('<spUUID> <prevID> <prevLVER> <recoveryMode> <scsiFencing> <maxHostID> <version>',
+        'spmStart': (serv.spmStart,
+                       ('<spUUID> <prevID> <prevLVER> <recoveryMode> '
+                           '<scsiFencing> <maxHostID> <version>',
                         'Start SPM functionality'
                         )),
-        'spmStop' : ( serv.spmStop,
+        'spmStop': (serv.spmStop,
                        ('<spUUID>',
                         'Stop SPM functionality'
                         )),
-        'getSpmStatus' : ( serv.getSpmStatus,
+        'getSpmStatus': (serv.getSpmStatus,
                        ('<spUUID>',
                         'Get SPM status'
                         )),
-        'acquireDomainLock' : ( serv.acquireDomainLock,
+        'acquireDomainLock': (serv.acquireDomainLock,
                        ('<spUUID> <sdUUID>',
                         'acquire storage domain lock'
                         )),
-        'releaseDomainLock' : ( serv.releaseDomainLock,
+        'releaseDomainLock': (serv.releaseDomainLock,
                        ('<spUUID> <sdUUID>',
                         'release storage domain lock'
                         )),
-        'fenceSpmStorage' : ( serv.fenceSpmStorage,
+        'fenceSpmStorage': (serv.fenceSpmStorage,
                        ('<spUUID> <prevID> <prevLVER> ',
                         'fence SPM storage state'
                         )),
-        'updateVM' : ( serv.updateVM,
-                       ("<spUUID> <vmList> ('vm'=vmUUID,'ovf'='...','imglist'='imgUUID1+imgUUID2+...') [sdUUID]",
+        'updateVM': (serv.updateVM,
+                       ("<spUUID> <vmList> ('vm'=vmUUID,'ovf'='...','"
+                           "imglist'='imgUUID1+imgUUID2+...') [sdUUID]",
                         'Update VM on pool or Backup domain'
                         )),
-        'upgradeStoragePool' : ( serv.upgradeStoragePool,
+        'upgradeStoragePool': (serv.upgradeStoragePool,
                        ("<spUUID> <targetVersion>",
-                        'Upgrade a pool to a new version (Requires a running SPM)'
+                        'Upgrade a pool to a new version (Requires a running '
+                        'SPM)'
                         )),
-        'removeVM' : ( serv.removeVM,
+        'removeVM': (serv.removeVM,
                        ("<spUUID> <vmUUID> [sdUUID]",
                         'Remove VM from pool or Backup domain'
                         )),
-        'reconstructMaster' : ( serv.reconstructMaster,
-                       ('<spUUID> <poolName> <masterDom> <domDict>({sdUUID1=status,sdUUID2=status,...}) <masterVersion>, [<lockPolicy> <lockRenewalIntervalSec> <leaseTimeSec> <ioOpTimeoutSec> <leaseRetries>]',
+        'reconstructMaster': (serv.reconstructMaster,
+                       ('<spUUID> <poolName> <masterDom> '
+                           '<domDict>({sdUUID1=status,sdUUID2=status,...}) '
+                           '<masterVersion>, [<lockPolicy> '
+                           '<lockRenewalIntervalSec> <leaseTimeSec> '
+                           '<ioOpTimeoutSec> <leaseRetries>]',
                         'Reconstruct master domain'
                         )),
-        'createStoragePool' : ( serv.createStoragePool,
-                       ('<storage type> <spUUID> <poolName> <masterDom> <domList>(sdUUID1,sdUUID2,...) <masterVersion>, [<lockPolicy> <lockRenewalIntervalSec> <leaseTimeSec> <ioOpTimeoutSec> <leaseRetries>]',
-                        'Create new storage pool with single/multiple image data domain'
+        'createStoragePool': (serv.createStoragePool,
+                       ('<storage type> <spUUID> <poolName> <masterDom> '
+                           '<domList>(sdUUID1,sdUUID2,...) <masterVersion>, '
+                           '[<lockPolicy> <lockRenewalIntervalSec> '
+                           '<leaseTimeSec> <ioOpTimeoutSec> <leaseRetries>]',
+                        'Create new storage pool with single/multiple image '
+                        'data domain'
                         )),
-        'destroyStoragePool' : ( serv.destroyStoragePool,
+        'destroyStoragePool': (serv.destroyStoragePool,
                        ('<spUUID> <id> <scsi-key>',
                         'Destroy storage pool'
                         )),
-        'connectStoragePool' : ( serv.connectStoragePool,
+        'connectStoragePool': (serv.connectStoragePool,
                        ('<spUUID> <id> <scsi-key> [masterUUID] [masterVer]',
                         'Connect a Host to specific storage pool'
                         )),
-        'disconnectStoragePool' : ( serv.disconnectStoragePool,
+        'disconnectStoragePool': (serv.disconnectStoragePool,
                        ('<spUUID> <id> <scsi-key>',
                         'Disconnect a Host from the specific storage pool'
                         )),
-        'refreshStoragePool' : ( serv.refreshStoragePool,
+        'refreshStoragePool': (serv.refreshStoragePool,
                        ('<spUUID> <masterDom> <masterVersion>',
                         'Refresh storage pool'
                         )),
-        'setStoragePoolDescription' : ( serv.setStoragePoolDescription,
+        'setStoragePoolDescription': (serv.setStoragePoolDescription,
                        ('<spUUID> <descr>',
                         'Set storage pool description'
                         )),
-        'getStoragePoolInfo' : ( serv.getStoragePoolInfo,
+        'getStoragePoolInfo': (serv.getStoragePoolInfo,
                        ('<spUUID>',
                         'Get storage pool info'
                         )),
-        'createStorageDomain' : ( serv.createStorageDomain,
-                       ('<storage type> <domain UUID> <domain name> <param> <domType> <version>',
+        'createStorageDomain': (serv.createStorageDomain,
+                       ('<storage type> <domain UUID> <domain name> <param> '
+                           '<domType> <version>',
                         'Creates new storage domain'
                         )),
-        'setStorageDomainDescription' : ( serv.setStorageDomainDescription,
+        'setStorageDomainDescription': (serv.setStorageDomainDescription,
                        ('<domain UUID> <descr>',
                         'Set storage domain description'
                         )),
-        'validateStorageDomain' : ( serv.validateStorageDomain,
+        'validateStorageDomain': (serv.validateStorageDomain,
                        ('<domain UUID>',
                         'Validate storage domain'
                         )),
-        'activateStorageDomain' : ( serv.activateStorageDomain,
+        'activateStorageDomain': (serv.activateStorageDomain,
                        ('<domain UUID> <pool UUID>',
-                        'Activate a storage domain that is already a member in a storage pool.'
+                        'Activate a storage domain that is already a member '
+                        'in a storage pool.'
                         )),
-        'deactivateStorageDomain' : ( serv.deactivateStorageDomain,
-                       ('<domain UUID> <pool UUID> <new master domain UUID> <masterVer>',
+        'deactivateStorageDomain': (serv.deactivateStorageDomain,
+                       ('<domain UUID> <pool UUID> <new master domain UUID> '
+                           '<masterVer>',
                         'Deactivate a storage domain. '
                         )),
-        'attachStorageDomain' : ( serv.attachStorageDomain,
+        'attachStorageDomain': (serv.attachStorageDomain,
                        ('<domain UUID> <pool UUID>',
                         'Attach a storage domain to a storage pool.'
                         )),
-        'detachStorageDomain' : ( serv.detachStorageDomain,
-                       ('<domain UUID> <pool UUID> <new master domain UUID> <masterVer>',
+        'detachStorageDomain': (serv.detachStorageDomain,
+                       ('<domain UUID> <pool UUID> <new master domain UUID> '
+                           '<masterVer>',
                         'Detach a storage domain from a storage pool.'
                         )),
-        'forcedDetachStorageDomain' : ( serv.forcedDetachStorageDomain,
+        'forcedDetachStorageDomain': (serv.forcedDetachStorageDomain,
                        ('<domain UUID> <pool UUID>',
                         'Forced detach a storage domain from a storage pool.'
                         )),
-        'formatStorageDomain' : ( serv.formatStorageDomain,
+        'formatStorageDomain': (serv.formatStorageDomain,
                        ('<domain UUID> [<autoDetach>]',
                         'Format detached storage domain.'
                         )),
-        'getStorageDomainInfo' : ( serv.getStorageDomainInfo,
+        'getStorageDomainInfo': (serv.getStorageDomainInfo,
                        ('<domain UUID>',
                         'Get storage domain info.'
                         )),
-        'getStorageDomainStats' : ( serv.getStorageDomainStats,
+        'getStorageDomainStats': (serv.getStorageDomainStats,
                        ('<domain UUID>',
                         'Get storage domain statistics.'
                         )),
-        'getStorageDomainsList' : ( serv.getStorageDomainsList,
+        'getStorageDomainsList': (serv.getStorageDomainsList,
                        ('<pool UUID>',
-                        'Get storage domains list of pool or all domains if pool omitted.'
+                        'Get storage domains list of pool or all domains if '
+                        'pool omitted.'
                         )),
-        'createVolume' : ( serv.createVolume,
-                       ('<sdUUID> <spUUID> <imgUUID> <size> <volFormat> <preallocate> <diskType> <newVolUUID> <descr> <srcImgUUID> <srcVolUUID>',
+        'createVolume': (serv.createVolume,
+                       ('<sdUUID> <spUUID> <imgUUID> <size> <volFormat> '
+                           '<preallocate> <diskType> <newVolUUID> <descr> '
+                           '<srcImgUUID> <srcVolUUID>',
                         'Creates new volume or snapshot'
                         )),
-        'extendVolume' : ( serv.extendVolume,
-                       ('<sdUUID> <spUUID> <imgUUID> <volUUID> <new disk size>',
+        'extendVolume': (serv.extendVolume,
+                       ('<sdUUID> <spUUID> <imgUUID> <volUUID> '
+                           '<new disk size>',
                         'Extend volume (SAN only)'
                         )),
-        'uploadVolume' : ( serv.uploadVolume,
-                        ('<sdUUID> <spUUID> <imgUUID> <volUUID> <srcPath> <size>',
+        'uploadVolume': (serv.uploadVolume,
+                        ('<sdUUID> <spUUID> <imgUUID> <volUUID> <srcPath> '
+                            '<size>',
                         'Upload volume file into existing volume'
                         )),
-        'getVolumePath' :  ( serv.getVolumePath,
+        'getVolumePath':  (serv.getVolumePath,
                       ('<sdUUID> <spUUID> <imgUUID> <volume uuid>',
                        'Returns the path to the requested uuid'
                        )),
-        'setVolumeDescription':   ( serv.setVolumeDescription,
+        'setVolumeDescription':   (serv.setVolumeDescription,
                        ('<sdUUID> <spUUID> <imgUUID> <volUUID> <Description>',
                         'Sets a new description to the volume'
                         )),
-        'setVolumeLegality':   ( serv.setVolumeLegality,
+        'setVolumeLegality':   (serv.setVolumeLegality,
                       ('<sdUUID> <spUUID> <imgUUID> <volUUID> <Legality>',
                        'Set volume legality (ILLEGAL/LEGAL).'
                        )),
-        'deleteVolume':( serv.deleteVolume,
-                       ('<sdUUID> <spUUID> <imgUUID> <volUUID>,...,<volUUID> <postZero> [<force>]',
+        'deleteVolume': (serv.deleteVolume,
+                       ('<sdUUID> <spUUID> <imgUUID> <volUUID>,...,<volUUID> '
+                           '<postZero> [<force>]',
                         'Deletes an volume if its a leaf. Else returns error'
                         )),
-        'deleteVolumeByDescr':( serv.deleteVolumeByDescr,
+        'deleteVolumeByDescr': (serv.deleteVolumeByDescr,
                        ('<part of description> <sdUUID> <spUUID> <imgUUID>',
-                        'Deletes list of volumes(only leafs) according to their description'
+                        'Deletes list of volumes(only leafs) according to '
+                        'their description'
                         )),
-        'getVolumeInfo': ( serv.getVolumeInfo,
+        'getVolumeInfo': (serv.getVolumeInfo,
                       ('<sdUUID> <spUUID> <imgUUID> <volUUID>',
                        'Returns all the volume details'
                        )),
-        'getParent'  : ( serv.getParent,
+        'getParent': (serv.getParent,
                          ('<sdUUID> <spUUID> <imgUUID> <Disk Image uuid>',
-                         'Returns the parent of the volume. Error if no parent exists'
+                         'Returns the parent of the volume. Error if no parent'
+                         ' exists'
                         )),
-        'getVolumesList': ( serv.getVolumesList,
+        'getVolumesList': (serv.getVolumesList,
                          ('<sdUUID> <spUUID> [imgUUID]',
-                          'Returns list of volumes of imgUUID or sdUUID if imgUUID absent'
+                          'Returns list of volumes of imgUUID or sdUUID if '
+                          'imgUUID absent'
                          )),
-        'getVolumeSize': ( serv.getVolumeSize,
+        'getVolumeSize': (serv.getVolumeSize,
                          ('<sdUUID> <spUUID> <imgUUID> <volUUID>',
-                          'Returns the apparent size and the true size of the volume (in bytes)'
+                          'Returns the apparent size and the true size of the '
+                          'volume (in bytes)'
                          )),
-        'getFileList': ( serv.getFileList,
+        'getFileList': (serv.getFileList,
                          ('<sdUUID> [pattern]',
                           'Returns files list from ISO domain'
                          )),
-        'getIsoList': ( serv.getIsoList,
+        'getIsoList': (serv.getIsoList,
                          ('<spUUID>',
                           'Returns list of all .iso images in ISO domain'
                          )),
-        'getFloppyList': ( serv.getFloppyList,
+        'getFloppyList': (serv.getFloppyList,
                          ('<spUUID>',
                           'Returns list of all .vfd images in ISO domain'
                          )),
-        'getImagesList': ( serv.getImagesList,
+        'getImagesList': (serv.getImagesList,
                          ('<sdUUID>',
                           'Get list of all images of specific domain'
                          )),
-        'getImageDomainsList': ( serv.getImageDomainsList,
+        'getImageDomainsList': (serv.getImageDomainsList,
                          ('<spUUID> <imgUUID> [datadomain=True]',
-                          'Get list of all data domains in the pool that contains imgUUID'
+                          'Get list of all data domains in the pool that '
+                          'contains imgUUID'
                          )),
-        'getConnectedStoragePoolsList': ( serv.getConnectedStoragePoolsList,
+        'getConnectedStoragePoolsList': (serv.getConnectedStoragePoolsList,
                          ('',
                           'Get storage pools list'
                          )),
-        'getTaskInfo': ( serv.getTaskInfo,
+        'getTaskInfo': (serv.getTaskInfo,
                          ('<TaskID>',
                          'get async task info'
                          )),
-        'getAllTasksInfo': ( serv.getAllTasksInfo,
+        'getAllTasksInfo': (serv.getAllTasksInfo,
                          ('',
                          'get info of all async tasks'
                          )),
-        'getTaskStatus': ( serv.getTaskStatus,
+        'getTaskStatus': (serv.getTaskStatus,
                          ('<TaskID>',
                          'get task status'
                          )),
-        'getAllTasksStatuses': ( serv.getAllTasksStatuses,
+        'getAllTasksStatuses': (serv.getAllTasksStatuses,
                          ('',
                          'list statuses of all async tasks'
                          )),
-        'stopTask': ( serv.stopTask,
+        'stopTask': (serv.stopTask,
                          ('<TaskID>',
                          'stop async task'
                          )),
-        'clearTask': ( serv.clearTask,
+        'clearTask': (serv.clearTask,
                          ('<TaskID>',
                          'clear async task'
                          )),
-        'revertTask': ( serv.revertTask,
+        'revertTask': (serv.revertTask,
                          ('<TaskID>',
                          'revert async task'
                          )),
-        'prepareForShutdown': ( serv.prepareForShutdown,
-                         ('',''
+        'prepareForShutdown': (serv.prepareForShutdown,
+                         ('', ''
                          )),
-        'setLogLevel': ( serv.do_setLogLevel,
-                         ('<level> [logName][,logName]...', 'set log verbosity level (10=DEBUG, 50=CRITICAL'
+        'setLogLevel': (serv.do_setLogLevel,
+                         ('<level> [logName][,logName]...', 'set log verbosity'
+                             ' level (10=DEBUG, 50=CRITICAL'
                          )),
-        'deleteImage': ( serv.deleteImage,
+        'deleteImage': (serv.deleteImage,
                        ('<sdUUID> <spUUID> <imgUUID> [<postZero>] [<force>]',
                        'Delete Image folder with all volumes.',
                        )),
-        'moveImage': ( serv.moveImage,
-                       ('<spUUID> <srcDomUUID> <dstDomUUID> <imgUUID> <vmUUID> <op = COPY_OP/MOVE_OP> [<postZero>] [ <force>]',
-                       'Move/Copy image between storage domains within same storage pool'
+        'moveImage': (serv.moveImage,
+                       ('<spUUID> <srcDomUUID> <dstDomUUID> <imgUUID> <vmUUID>'
+                           ' <op = COPY_OP/MOVE_OP> [<postZero>] [ <force>]',
+                       'Move/Copy image between storage domains within same '
+                       'storage pool'
                        )),
-        'moveMultiImage': ( serv.moveMultiImage,
-                       ('<spUUID> <srcDomUUID> <dstDomUUID> <imgList>({imgUUID=postzero,imgUUID=postzero,...}) <vmUUID> [<force>]',
-                       'Move multiple images between storage domains within same storage pool'
+        'moveMultiImage': (serv.moveMultiImage,
+                       ('<spUUID> <srcDomUUID> <dstDomUUID> '
+                           '<imgList>({imgUUID=postzero,imgUUID=postzero,...})'
+                           ' <vmUUID> [<force>]',
+                       'Move multiple images between storage domains within '
+                       'same storage pool'
                        )),
-        'copyImage': ( serv.copyImage,
-                       ('<sdUUID> <spUUID> <vmUUID> <srcImgUUID> <srcVolUUID> <dstImgUUID> <dstVolUUID> <dstDescr> <dstSdUUID> <volType> <volFormat> <preallocate> [<postZero>] [<force>]',
+        'copyImage': (serv.copyImage,
+                       ('<sdUUID> <spUUID> <vmUUID> <srcImgUUID> <srcVolUUID> '
+                           '<dstImgUUID> <dstVolUUID> <dstDescr> <dstSdUUID> '
+                           '<volType> <volFormat> <preallocate> [<postZero>] '
+                           '[<force>]',
                         'Create new template/volume from VM.',
-                        'Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)'
+                        'Do it by collapse and copy the whole chain '
+                        '(baseVolUUID->srcVolUUID)'
                        )),
-        'mergeSnapshots': ( serv.mergeSnapshots,
-                      ('<sdUUID> <spUUID> <vmUUID> <imgUUID> <Ancestor Image uuid> <Successor Image uuid> [<postZero>]',
+        'mergeSnapshots': (serv.mergeSnapshots,
+                      ('<sdUUID> <spUUID> <vmUUID> <imgUUID> <Ancestor Image '
+                          'uuid> <Successor Image uuid> [<postZero>]',
                        'Merge images from successor to ancestor.',
-                       'The result is a image named as successor image and contents the data of whole successor->ancestor chain'
+                       'The result is a image named as successor image and '
+                       'contents the data of whole successor->ancestor chain'
                        )),
-        'desktopLogin': ( serv.desktopLogin,
+        'desktopLogin': (serv.desktopLogin,
                       ('<vmId> <domain> <user> <password>',
                        'Login to vmId desktop using the supplied credentials'
                        )),
-        'desktopLogoff':( serv.desktopLogoff,
+        'desktopLogoff': (serv.desktopLogoff,
                        ('<vmId> <force>',
                          'Lock user session. force should be set to true/false'
                        )),
-        'desktopLock': ( serv.desktopLock,
+        'desktopLock': (serv.desktopLock,
                        ('<vmId>',
                          'Logoff current user'
                         )),
-        'sendHcCmd': ( serv.sendHcCmd,
+        'sendHcCmd': (serv.sendHcCmd,
                        ('<vmId> <message>',
-                         'Sends a message to a specific VM through Hypercall channel'
+                         'Sends a message to a specific VM through Hypercall '
+                         'channel'
                         )),
-        'hibernate': ( serv.hibernate,
+        'hibernate': (serv.hibernate,
                        ('<vmId>',
                          'Hibernates the desktop'
                         )),
-        'monitorCommand': ( serv.monitorCommand,
+        'monitorCommand': (serv.monitorCommand,
                        ('<vmId> <string>',
-                         'Send a string containing monitor command to the desktop'
+                         'Send a string containing monitor command to the '
+                         'desktop'
                         )),
-        'getVmsInfo': ( serv.do_getVmsInfo,
+        'getVmsInfo': (serv.do_getVmsInfo,
                       ('<Import path> <Import type> <VM type>',
                        'Return list of import candidates with their info'
                        )),
-        'getVmsList': ( serv.do_getVmsList,
+        'getVmsList': (serv.do_getVmsList,
                       ('<spUUID> [sdUUID]',
-                       'Get list of VMs from the pool or domain if sdUUID given. Run only from the SPM.'
+                       'Get list of VMs from the pool or domain if sdUUID '
+                       'given. Run only from the SPM.'
                        )),
-        'addNetwork':   ( serv.do_addNetwork,
-                       ('bridge=<bridge> [vlan=<number>] [bond=<bond>] nics=nic[,nic]',
+        'addNetwork':   (serv.do_addNetwork,
+                       ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
+                           'nics=nic[,nic]',
                         'Add a new network to this vds.'
                        )),
-        'delNetwork':   ( serv.do_delNetwork,
-                       ('bridge=<bridge> [vlan=<number>] [bond=<bond>] nics=nic[,nic]',
+        'delNetwork':   (serv.do_delNetwork,
+                       ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
+                           'nics=nic[,nic]',
                         'Remove a network (and parts thereof) from this vds.'
                        )),
-        'editNetwork':   ( serv.do_editNetwork,
-                       ('oldBridge=<bridge> newBridge=<bridge> [vlan=<number>] [bond=<bond>] nics=nic[,nic]',
+        'editNetwork':   (serv.do_editNetwork,
+                       ('oldBridge=<bridge> newBridge=<bridge> [vlan=<number>]'
+                           ' [bond=<bond>] nics=nic[,nic]',
                         'Replace a network with a new one.'
                        )),
-        'setSafeNetworkConfig':   ( serv.do_setSafeNetworkConfig,
+        'setSafeNetworkConfig':   (serv.do_setSafeNetworkConfig,
                        ('',
                         'declare current network configuration as "safe"'
                        )),
-        'fenceNode':   ( serv.do_fenceNode,
-                       ('<addr> <port> <agent> <user> <passwd> <action> [<secure> [<options>]] \n\t<action> is one of (status, on, off, reboot),\n\t<agent> is one of (rsa, ilo, ipmilan, drac5, etc)\n\t<secure> (true|false) may be passed to some agents',
+        'fenceNode':   (serv.do_fenceNode,
+                       ('<addr> <port> <agent> <user> <passwd> <action> '
+                           '[<secure> [<options>]] \n\t<action> is one of '
+                           '(status, on, off, reboot),\n\t<agent> is one of '
+                           '(rsa, ilo, ipmilan, drac5, etc)\n\t<secure> '
+                           '(true|false) may be passed to some agents',
                         'send a fencing command to a remote node'
                        )),
-        'repoStats':  ( serv.repoStats,
+        'repoStats':  (serv.repoStats,
                        ('',
                        "Get the the health status of the active domains"
                       )),
-        'snapshot':  ( serv.snapshot,
+        'snapshot':  (serv.snapshot,
                        ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
                        "Take a live snapshot"
                       )),
     }
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hms", ["help", "methods", "SSL", "truststore="])
+        opts, args = getopt.getopt(sys.argv[1:], "hms", ["help", "methods",
+                                                         "SSL", "truststore="])
 
-        for o,v in opts:
+        for o, v in opts:
             if o == "-h" or o == "--help":
                 usage(commands)
                 sys.exit(0)
@@ -2091,10 +2245,9 @@ if __name__ == '__main__':
     except SystemExit, status:
         sys.exit(status)
     except Exception, e:
-        print "ERROR - %s"%(e)
+        print "ERROR - %s" % (e)
         usage(commands)
         sys.exit(-1)
-
 
     try:
         serv.do_connect(server, serverPort)
@@ -2103,7 +2256,8 @@ if __name__ == '__main__':
         except:
             commandArgs = []
         code, message = commands[command][0](commandArgs)
-        if code != 0: code = 1
+        if code != 0:
+            code = 1
         print message
         sys.exit(code)
     except (TypeError, IndexError, ValueError), e:

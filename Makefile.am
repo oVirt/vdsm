@@ -51,7 +51,9 @@ PEP8_WHITELIST = \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
 	vdsm/rest/BindingREST.py \
-	vdsm/rest/Controller.py
+	vdsm/rest/Controller.py \
+	vdsm_cli/vdsClient.py \
+	vdsm_cli/vdscli.py.in
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)

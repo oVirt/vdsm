@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -28,6 +28,7 @@ d_useSSL = False
 d_tsPath = '@TRUSTSTORE@'
 d_addr = '0'
 d_port = '54321'
+
 
 def __guessDefaults():
     global d_useSSL, d_tsPath, d_addr, d_port
@@ -56,12 +57,13 @@ def __guessDefaults():
                 import _winreg
                 key_path = 'SOFTWARE\\RedHat\\RHEVM Service'
                 root = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, key_path)
-                val, v_type = _winreg.QueryValueEx(root,"Location")
+                val, v_type = _winreg.QueryValueEx(root, "Location")
                 retval = os.path.dirname(os.path.dirname(val))
                 return str(retval)
             d_tsPath = os.path.join(getRHEVMInstallPath(), "Service", "ca")
     except:
         pass
+
 
 def __getLocalVdsName(tsPath):
     p = subprocess.Popen(['openssl', 'x509', '-noout', '-subject', '-in',
@@ -74,6 +76,7 @@ def __getLocalVdsName(tsPath):
 
 __guessDefaults()
 
+
 def cannonizeAddrPort(addrport=None):
     if addrport is None or addrport == '0':
         return d_addr + ':' + d_port
@@ -82,11 +85,14 @@ def cannonizeAddrPort(addrport=None):
     else:
         return addrport + ':' + d_port
 
+
 def connect(addrport=None, useSSL=None, tsPath=None,
             TransportClass=SecureXMLRPCServer.VerifyingSafeTransport):
     addrport = cannonizeAddrPort(addrport)
-    if useSSL is None: useSSL = d_useSSL
-    if tsPath is None: tsPath = d_tsPath
+    if useSSL is None:
+        useSSL = d_useSSL
+    if tsPath is None:
+        tsPath = d_tsPath
     if useSSL:
         if os.name == 'nt':
             KEYFILE = tsPath + '\\keys\\rhevm.pem'
@@ -97,8 +103,8 @@ def connect(addrport=None, useSSL=None, tsPath=None,
             CERTFILE = tsPath + '/certs/vdsmcert.pem'
             CACERT = tsPath + '/certs/cacert.pem'
 
-        transport=TransportClass(key_file=KEYFILE,
-                        cert_file=CERTFILE, ca_certs=CACERT)
+        transport = TransportClass(key_file=KEYFILE,
+                                   cert_file=CERTFILE, ca_certs=CACERT)
         server = xmlrpclib.ServerProxy('https://%s' % addrport,
                                        transport=transport)
     else:
@@ -106,6 +112,7 @@ def connect(addrport=None, useSSL=None, tsPath=None,
     return server
 
 if __name__ == '__main__':
-    print 'connecting to %s:%s ssl %s ts %s' % (d_addr, d_port, d_useSSL, d_tsPath)
+    print 'connecting to %s:%s ssl %s ts %s' % (d_addr, d_port,
+                                                d_useSSL, d_tsPath)
     server = connect()
     print server.getVdsCapabilities()
