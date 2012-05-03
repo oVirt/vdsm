@@ -824,9 +824,6 @@ class _DomXML:
 
 
 class GeneralDevice(vm.Device):
-    def __init__(self, conf, log, **kwargs):
-        vm.Device.__init__(self, conf, log, **kwargs)
-
     def getXML(self):
         """
         Create domxml for general device
@@ -844,9 +841,6 @@ class GeneralDevice(vm.Device):
         return dev
 
 class ControllerDevice(vm.Device):
-    def __init__(self, conf, log, **kwargs):
-        vm.Device.__init__(self, conf, log, **kwargs)
-
     def getXML(self):
         """
         Create domxml for controller device
@@ -866,9 +860,6 @@ class ControllerDevice(vm.Device):
         return ctrl
 
 class VideoDevice(vm.Device):
-    def __init__(self, conf, log, **kwargs):
-        vm.Device.__init__(self, conf, log, **kwargs)
-
     def getXML(self):
         """
         Create domxml for video device
@@ -889,9 +880,6 @@ class VideoDevice(vm.Device):
         return video
 
 class SoundDevice(vm.Device):
-    def __init__(self, conf, log, **kwargs):
-        vm.Device.__init__(self, conf, log, **kwargs)
-
     def getXML(self):
         """
         Create domxml for sound device
@@ -1106,9 +1094,6 @@ class Drive(vm.Device):
         return diskelem
 
 class BalloonDevice(vm.Device):
-    def __init__(self, conf, log, **kwargs):
-        vm.Device.__init__(self, conf, log, **kwargs)
-
     def getXML(self):
         """
         Create domxml for a memory balloon device.
