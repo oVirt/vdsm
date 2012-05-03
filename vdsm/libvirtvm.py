@@ -823,79 +823,76 @@ class _DomXML:
         return self.doc.toprettyxml(encoding='utf-8')
 
 
-class GeneralDevice(vm.Device):
+class LibvirtVmDevice(vm.Device):
+    def createXmlElem(self, elemType, deviceType, attributes=[]):
+        """
+        Create domxml device element according to passed in params
+        """
+        doc = xml.dom.minidom.Document()
+        element = doc.createElement(elemType)
+
+        if deviceType:
+            element.setAttribute('type', deviceType)
+
+        for attrName in attributes:
+            if not hasattr(self, attrName):
+                continue
+
+            attr = getattr(self, attrName)
+            if isinstance(attr, dict):
+                child = doc.createElement(attrName)
+                for key, value in attr.iteritems():
+                    child.setAttribute(key, value)
+                element.appendChild(child)
+            else:
+                element.setAttribute(attrName, attr)
+
+        return element
+
+class GeneralDevice(LibvirtVmDevice):
     def getXML(self):
         """
         Create domxml for general device
         """
-        doc = xml.dom.minidom.Document()
-        dev = doc.createElement(self.type)
-        if self.device:
-            dev.setAttribute('type', self.device)
-        if hasattr(self, 'address'):
-            address = doc.createElement('address')
-            for key, value in self.address.iteritems():
-                address.setAttribute(key, value)
-            dev.appendChild(address)
+        return self.createXmlElem(self.type, self.device, ['address'])
 
-        return dev
-
-class ControllerDevice(vm.Device):
+class ControllerDevice(LibvirtVmDevice):
     def getXML(self):
         """
         Create domxml for controller device
         """
-        doc = xml.dom.minidom.Document()
-        ctrl = doc.createElement('controller')
-        ctrl.setAttribute('type', self.device)
+        ctrl = self.createXmlElem('controller', self.device, ['address'])
         if self.device == 'virtio-serial':
             ctrl.setAttribute('index', '0')
             ctrl.setAttribute('ports', '16')
-        if hasattr(self, 'address'):
-            address = doc.createElement('address')
-            for key, value in self.address.iteritems():
-                address.setAttribute(key, value)
-            ctrl.appendChild(address)
 
         return ctrl
 
-class VideoDevice(vm.Device):
+class VideoDevice(LibvirtVmDevice):
     def getXML(self):
         """
         Create domxml for video device
         """
         doc = xml.dom.minidom.Document()
-        video = doc.createElement('video')
+        video = self.createXmlElem('video', None, ['address'])
         m = doc.createElement('model')
         m.setAttribute('type', self.device)
         m.setAttribute('vram', self.specParams['vram'])
         m.setAttribute('heads', '1')
         video.appendChild(m)
-        if hasattr(self, 'address'):
-            address = doc.createElement('address')
-            for key, value in self.address.iteritems():
-                address.setAttribute(key, value)
-            video.appendChild(address)
 
         return video
 
-class SoundDevice(vm.Device):
+class SoundDevice(LibvirtVmDevice):
     def getXML(self):
         """
         Create domxml for sound device
         """
-        doc = xml.dom.minidom.Document()
-        sound = doc.createElement('sound')
+        sound = self.createXmlElem('sound', None, ['address'])
         sound.setAttribute('model', self.device)
-        if hasattr(self, 'address'):
-            address = doc.createElement('address')
-            for key, value in self.address.iteritems():
-                address.setAttribute(key, value)
-            sound.appendChild(address)
-
         return sound
 
-class NetworkInterfaceDevice(vm.Device):
+class NetworkInterfaceDevice(LibvirtVmDevice):
     def __init__(self, conf, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
         # set a nicModel attribute, so modify the kwarg list
@@ -903,7 +900,7 @@ class NetworkInterfaceDevice(vm.Device):
         for attr, value in kwargs.iteritems():
             if attr == 'nicModel' and value == 'pv':
                 kwargs[attr] = 'virtio'
-        vm.Device.__init__(self, conf, log, **kwargs)
+        LibvirtVmDevice.__init__(self, conf, log, **kwargs)
         self.sndbufParam = False
         self._customize()
 
@@ -943,8 +940,7 @@ class NetworkInterfaceDevice(vm.Device):
         </interface>
         """
         doc = xml.dom.minidom.Document()
-        iface = doc.createElement('interface')
-        iface.setAttribute('type', self.device)
+        iface = self.createXmlElem('interface', self.device, ['address'])
         m = doc.createElement('mac')
         m.setAttribute('address', self.macAddr)
         iface.appendChild(m)
@@ -958,11 +954,6 @@ class NetworkInterfaceDevice(vm.Device):
             bootOrder = doc.createElement('boot')
             bootOrder.setAttribute('order', self.bootOrder)
             iface.appendChild(bootOrder)
-        if hasattr(self, 'address'):
-            address = doc.createElement('address')
-            for key, value in self.address.iteritems():
-                address.setAttribute(key, value)
-            iface.appendChild(address)
         if self.driver:
             m = doc.createElement('driver')
             m.setAttribute('name', self.driver)
@@ -976,11 +967,11 @@ class NetworkInterfaceDevice(vm.Device):
 
         return iface
 
-class Drive(vm.Device):
+class Drive(LibvirtVmDevice):
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
-        vm.Device.__init__(self, conf, log, **kwargs)
+        LibvirtVmDevice.__init__(self, conf, log, **kwargs)
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))
         self.truesize = int(kwargs.get('truesize', '0'))
@@ -1032,18 +1023,18 @@ class Drive(vm.Device):
         </disk>
         """
         doc = xml.dom.minidom.Document()
-        diskelem = doc.createElement('disk')
-        device = getattr(self, 'device', 'disk')
-        diskelem.setAttribute('device', device)
+        self.device = getattr(self, 'device', 'disk')
         source = doc.createElement('source')
         if self.blockDev:
-            diskelem.setAttribute('type', 'block')
+            deviceType = 'block'
             source.setAttribute('dev', self.path)
         else:
-            diskelem.setAttribute('type', 'file')
+            deviceType = 'file'
             source.setAttribute('file', self.path)
-            if device == 'cdrom' or device == 'floppy':
+            if self.device == 'cdrom' or self.device == 'floppy':
                 source.setAttribute('startupPolicy', 'optional')
+        diskelem = self.createXmlElem('disk', deviceType,
+                                      ['device', 'address'])
         diskelem.setAttribute('snapshot', 'no')
         diskelem.appendChild(source)
         target = doc.createElement('target')
@@ -1062,12 +1053,7 @@ class Drive(vm.Device):
             bootOrder = doc.createElement('boot')
             bootOrder.setAttribute('order', self.bootOrder)
             diskelem.appendChild(bootOrder)
-        if hasattr(self, 'address'):
-            address = doc.createElement('address')
-            for key, value in self.address.iteritems():
-                address.setAttribute(key, value)
-            diskelem.appendChild(address)
-        if device == 'disk':
+        if self.device == 'disk':
             driver = doc.createElement('driver')
             driver.setAttribute('name', 'qemu')
             if self.blockDev:
@@ -1086,14 +1072,14 @@ class Drive(vm.Device):
             else:
                 driver.setAttribute('error_policy', 'stop')
             diskelem.appendChild(driver)
-        elif device == 'floppy':
+        elif self.device == 'floppy':
             if self.path and not utils.getUserPermissions(constants.QEMU_PROCESS_USER,
                                                           self.path)['write']:
                 diskelem.appendChild(doc.createElement('readonly'))
 
         return diskelem
 
-class BalloonDevice(vm.Device):
+class BalloonDevice(LibvirtVmDevice):
     def getXML(self):
         """
         Create domxml for a memory balloon device.
@@ -1102,14 +1088,8 @@ class BalloonDevice(vm.Device):
           <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
         </memballoon>
         """
-        doc = xml.dom.minidom.Document()
-        m = doc.createElement(self.device)
+        m = self.createXmlElem(self.device, None, ['address'])
         m.setAttribute('model', self.model)
-        if hasattr(self, 'address'):
-            address = doc.createElement('address')
-            for key, value in self.address.iteritems():
-                address.setAttribute(key, value)
-            m.appendChild(address)
         return m
 
 class LibvirtVm(vm.Vm):
