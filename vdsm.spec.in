@@ -461,7 +461,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 %{_datadir}/%{vdsm_name}/API.py*
-%{_datadir}/%{vdsm_name}/get-vm-pid
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
 %{_datadir}/%{vdsm_name}/libvirtev.py*

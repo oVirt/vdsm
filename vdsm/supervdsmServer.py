@@ -115,6 +115,11 @@ class _SuperVdsm(object):
         return _getPathsStatus()
 
     @logDecorator
+    def getVmPid(self, vmName):
+        pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
+        return open(pidFile).read()
+
+    @logDecorator
     def addNetwork(self, bridge, options):
         return configNetwork.addNetwork(bridge, **options)
 

@@ -1975,11 +1975,8 @@ class LibvirtVm(vm.Vm):
     def _getPid(self):
         pid = '0'
         try:
-            rc, out, err = utils.execCmd([constants.EXT_GET_VM_PID,
-                                          self.conf['vmName'].encode('utf-8')],
-                                         raw=True, sudo=True)
-            if rc == 0:
-                pid = out
+            vmName = self.conf['vmName'].encode('utf-8')
+            pid = supervdsm.getProxy().getVmPid(vmName)
         except:
             pass
         return pid
