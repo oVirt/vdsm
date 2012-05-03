@@ -1093,6 +1093,18 @@ class BalloonDevice(LibvirtVmDevice):
         m.setAttribute('model', self.model)
         return m
 
+class RedirDevice(LibvirtVmDevice):
+    def getXML(self):
+        """
+        Create domxml for a redir device.
+
+        <redirdev bus='usb' type='spicevmc'>
+          <address type='usb' bus='0' port='1'/>
+        </redirdev>
+        """
+        return self.createXmlElem('redirdev', self.device, ['bus', 'address'])
+
+
 class LibvirtVm(vm.Vm):
     MigrationSourceThreadClass = MigrationSourceThread
     def __init__(self, cif, params):
@@ -1289,7 +1301,8 @@ class LibvirtVm(vm.Vm):
                   vm.VIDEO_DEVICES: VideoDevice,
                   vm.CONTROLLER_DEVICES: ControllerDevice,
                   vm.GENERAL_DEVICES: GeneralDevice,
-                  vm.BALLOON_DEVICES: BalloonDevice}
+                  vm.BALLOON_DEVICES: BalloonDevice,
+                  vm.REDIR_DEVICES: RedirDevice}
 
         for devType, devClass in devMap.items():
             for dev in devices[devType]:

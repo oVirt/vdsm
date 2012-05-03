@@ -44,6 +44,7 @@ SOUND_DEVICES = 'sound'
 CONTROLLER_DEVICES = 'controller'
 GENERAL_DEVICES = 'general'
 BALLOON_DEVICES = 'balloon'
+REDIR_DEVICES = 'redir'
 
 """
 A module containing classes needed for VM communication.
@@ -313,7 +314,7 @@ class Vm(object):
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
                          CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
-                         BALLOON_DEVICES: []}
+                         BALLOON_DEVICES: [], REDIR_DEVICES: []}
 
     def _get_lastStatus(self):
         SHOW_PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -388,7 +389,7 @@ class Vm(object):
         devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                    SOUND_DEVICES: [], VIDEO_DEVICES: [],
                    CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
-                   BALLOON_DEVICES: []}
+                   BALLOON_DEVICES: [], REDIR_DEVICES: []}
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
@@ -420,6 +421,7 @@ class Vm(object):
             devices[CONTROLLER_DEVICES] = self.getConfController()
             devices[GENERAL_DEVICES] = []
             devices[BALLOON_DEVICES] = []
+            devices[REDIR_DEVICES] = []
         else:
             devices = self.getConfDevices()
 
