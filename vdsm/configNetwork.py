@@ -33,7 +33,7 @@ from vdsm import constants
 from vdsm import utils
 import neterrors as ne
 from vdsm import define
-from vdsm.netinfo import NetInfo, NET_CONF_DIR, NET_CONF_BACK_DIR, LIBVIRT_NET_PREFIX, networks
+from vdsm.netinfo import NetInfo, NET_CONF_DIR, NET_CONF_BACK_DIR, LIBVIRT_NET_PREFIX
 from vdsm import libvirtconnection
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
@@ -713,11 +713,11 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     validateBridgeName(network)
 
     if not utils.tobool(options.get('skipLibvirt', False)):
-        if network not in networks().keys():
+        if network not in _netinfo.networks:
             raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network %r: It doesn't exist" % network)
 
         nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
-        bridged = networks()[network]['bridged']
+        bridged = _netinfo.networks[network]['bridged']
     else:
         bridged = True
 
