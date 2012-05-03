@@ -2205,19 +2205,22 @@ class LibvirtVm(vm.Vm):
             .childNodes[0].getElementsByTagName('devices')[0] \
             .getElementsByTagName('memballoon')
         for x in balloonxml:
-            # Ignore balloo devices without address.
+            # Ignore balloon devices without address.
             if not x.getElementsByTagName('address'):
                 continue
 
             address = self._getUnderlyingDeviceAddress(x)
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
             for dev in self._devices[vm.BALLOON_DEVICES]:
                 if not hasattr(dev, 'address'):
                     dev.address = address
+                    dev.alias = alias
 
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.BALLOON_DEVICES) and not dev.get('address'):
                     dev['address'] = address
+                    dev['alias'] = alias
 
     def _getUnderlyingVideoDeviceInfo(self):
         """
