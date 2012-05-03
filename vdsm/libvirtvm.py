@@ -2073,7 +2073,8 @@ class LibvirtVm(vm.Vm):
                 else:
                     self.log.warn("VM %s is not running", self.conf['vmId'])
 
-            self.cif.ksmMonitor.adjust()
+            if not self.cif.mom:
+                self.cif.ksmMonitor.adjust()
             self._cleanup()
 
             self.cif.irs.inappropriateDevices(self.id)

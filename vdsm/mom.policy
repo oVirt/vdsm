@@ -1,0 +1,55 @@
+### KSM ########################################################################
+
+### Constants
+# The number of pages to add when increasing pages_to_scan
+(defvar ksm_pages_boost 300)
+
+# The number of pages to subtract when decreasing pages_to_scan
+(defvar ksm_pages_decay -50)
+
+# The min and max number of pages to scan per cycle when ksm is activated
+(defvar ksm_npages_min 64)
+(defvar ksm_npages_max 1250)
+
+# The number of ms to sleep between ksmd scans for a 16GB system.  Systems with
+# more memory will sleep less, while smaller systems will sleep more.
+(defvar ksm_sleep_ms_baseline 10)
+
+# A virtualization host tends to use most of its memory for running guests but
+# a certain amount is reserved for the host OS, non virtualization-related work,
+# and as a failsafe.  When free memory (including memory used for caches) drops
+# below this parcentage of total memory, the host is deemed under pressure. and
+# KSM will be started to try and free up some memory.
+(defvar ksm_free_percent 0.20)
+
+### Helper functions
+(def change_npages (delta)
+{
+    (defvar newval (+ Host.ksm_pages_to_scan delta))
+    (if (> newval ksm_npages_max) (set newval ksm_npages_max) 1)
+    (if (< newval ksm_npages_min) (set newval ksm_npages_min) 0)
+    (Host.Control "ksm_pages_to_scan" newval)
+})
+
+### Main Script
+# Methodology: Since running KSM does incur some overhead, try to run it only
+# when necessary.  If the amount of committed KSM shareable memory is high or if
+# free memory is low, enable KSM to try to increase free memory.  Large memory
+# machines should scan more often than small ones.  Likewise, machines under
+# memory pressure should scan more aggressively then more idle machines.
+
+(defvar ksm_pressure_threshold (* Host.mem_available ksm_free_percent))
+(defvar ksm_committed Host.ksm_shareable)
+
+(if (and (< (+ ksm_pressure_threshold ksm_committed) Host.mem_available)
+         (> (Host.StatAvg "mem_free") ksm_pressure_threshold))
+    (Host.Control "ksm_run" 0)
+    {        # else
+        (Host.Control "ksm_run" 1)
+        (Host.Control "ksm_sleep_millisecs"
+            (/ (* ksm_sleep_ms_baseline 16777216) Host.mem_available))
+       (if (< (Host.StatAvg "mem_free") ksm_pressure_threshold)
+            (change_npages ksm_pages_boost)
+           (change_npages ksm_pages_decay))
+    }
+)

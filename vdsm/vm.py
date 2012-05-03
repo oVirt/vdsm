@@ -565,7 +565,11 @@ class Vm(object):
             self.log.debug("_ongoingCreations acquired")
             try:
                 self._run()
-                if self.lastStatus != 'Down' and 'recover' not in self.conf:
+                if self.lastStatus != 'Down' and 'recover' not in self.conf \
+                        and not self.cif.mom:
+                    # If MOM is available, we needn't tell it to adjust KSM
+                    # behaviors on VM start/destroy, because the tuning can be
+                    # done automatically acccording its statistical data.
                     self.cif.ksmMonitor.adjust()
             except Exception:
                 if 'recover' not in self.conf:

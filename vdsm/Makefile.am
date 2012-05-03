@@ -43,6 +43,7 @@ dist_vdsm_PYTHON = \
 	lsblk.py \
 	md_utils.py \
 	mkimage.py \
+	momIF.py \
 	neterrors.py \
 	parted_utils.py \
 	pthread.py \
@@ -84,11 +85,12 @@ nodist_vdsm_SCRIPTS = \
 
 nodist_noinst_DATA = \
 	logger.conf \
-	vdsm-logrotate.conf \
+	mom.conf \
 	sudoers.vdsm \
+	vdsm-logrotate.conf \
 	vdsm.conf.sample \
-	vdsmd.init \
-	vdsm.rwtab
+	vdsm.rwtab \
+	vdsmd.init
 
 dist_vdsm_SCRIPTS = \
 	addNetwork \
@@ -121,6 +123,8 @@ EXTRA_DIST = \
 	limits.conf \
 	logger.conf.in \
 	mk_sysprep_floppy.in \
+	mom.conf.in \
+	mom.policy \
 	sudoers.vdsm.in \
 	vdsmd.8.in \
 	vdsmd.init.in \
@@ -150,11 +154,12 @@ install-data-hook:
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
-		install-data-logger \
-		install-data-rwtab \
-		install-data-logrotate \
-		install-data-sudoers \
 		install-data-libvirtpass \
+		install-data-logger \
+		install-data-logrotate \
+		install-data-mom \
+		install-data-rwtab \
+		install-data-sudoers \
 		install-data-sysctl
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
@@ -170,11 +175,12 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 uninstall-local: \
-		uninstall-data-logger \
-		uninstall-data-rwtab \
-		uninstall-data-logrotate \
-		uninstall-data-sudoers \
 		uninstall-data-libvirtpass \
+		uninstall-data-logger \
+		uninstall-data-logrotate \
+		uninstall-data-mom \
+		uninstall-data-rwtab \
+		uninstall-data-sudoers \
 		uninstall-data-sysctl
 
 install-data-logger:
@@ -215,6 +221,16 @@ uninstall-data-logrotate:
 	$(RM) $(DESTDIR)$(sysconfdir)/logrotate.d/vdsm
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
+
+install-data-mom:
+		$(INSTALL_DATA) mom.policy \
+			$(DESTDIR)$(vdsmconfdir)/mom.policy
+		$(INSTALL_DATA) mom.conf \
+			$(DESTDIR)$(vdsmconfdir)/mom.conf
+
+uninstall-data-mom:
+		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.policy
+		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.conf
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d

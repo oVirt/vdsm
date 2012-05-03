@@ -566,6 +566,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/vm.py*
 %{_datadir}/%{vdsm_name}/write-net-config
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
+%config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf
+%config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.policy
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm
@@ -647,16 +649,17 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_set_ticket
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vdsm_start
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
-%{_datadir}/%{vdsm_name}/configNetwork.py*
 %{_datadir}/%{vdsm_name}/addNetwork
+%{_datadir}/%{vdsm_name}/configNetwork.py*
 %{_datadir}/%{vdsm_name}/delNetwork
-%{_datadir}/%{vdsm_name}/respawn
-%{_datadir}/%{vdsm_name}/get-conf-item
-%{_datadir}/%{vdsm_name}/set-conf-item
-%{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
+%{_datadir}/%{vdsm_name}/get-conf-item
+%{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
 %{_datadir}/%{vdsm_name}/ksm.py*
+%{_datadir}/%{vdsm_name}/momIF.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
+%{_datadir}/%{vdsm_name}/respawn
+%{_datadir}/%{vdsm_name}/set-conf-item
 %{python_sitelib}/sos/plugins/vdsm.py*
 /lib/udev/rules.d/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf

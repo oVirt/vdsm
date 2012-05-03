@@ -29,6 +29,7 @@ from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 from vdsm.config import config
 import ksm
+from momIF import MomThread
 from vdsm import netinfo
 from vdsm.define import doneCode, errCode
 import libvirt
@@ -75,6 +76,7 @@ class clientIF:
         self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
         self._initIRS()
+        self.mom = None
         if _glusterEnabled:
             self.gluster = gapi.GlusterApi(self, log)
         else:
@@ -94,8 +96,8 @@ class clientIF:
             self.lastRemoteAccess = 0
             self._memLock = threading.Lock()
             self._enabled = True
-            self.ksmMonitor = ksm.KsmMonitorThread(self)
             self._netConfigDirty = False
+            self._prepareMOM()
             threading.Thread(target=self._recoverExistingVms,
                              name='clientIFinit').start()
             self.channelListener.settimeout(
@@ -108,6 +110,8 @@ class clientIF:
                            'shutting down storage dispatcher')
             if self.irs:
                 self.irs.prepareForShutdown()
+            if self.mom:
+                self.mom.stop()
             raise
         self._prepareBindings()
 
@@ -169,6 +173,15 @@ class clientIF:
                 self.log.warn('Unable to load the rest server module. '
                               'Please make sure it is installed.')
 
+    def _prepareMOM(self):
+        try:
+            momconf = config.get("mom", "conf")
+            self.mom = MomThread(momconf)
+        except:
+            self.log.error("MOM initialization failed and fall "
+                           "back to KsmMonitor", exc_info=True)
+            self.ksmMonitor = ksm.KsmMonitorThread(self)
+
     def _syncLibvirtNetworks(self):
         """
             function is mostly for upgrade from versions that did not
@@ -206,6 +219,8 @@ class clientIF:
             self._enabled = False
             self.channelListener.stop()
             self._hostStats.stop()
+            if self.mom:
+                self.mom.stop()
             if self.irs:
                 return self.irs.prepareForShutdown()
             else:

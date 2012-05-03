@@ -139,6 +139,13 @@ parameters = [
 
     ]),
 
+    # Section: [mom]
+    ('mom', [
+
+        ('conf', '@CONFDIR@/mom.conf', 'mom configuration file'),
+
+    ]),
+
     # Section: [irs]
     ('irs', [
 

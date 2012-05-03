@@ -1088,7 +1088,6 @@ class Global(APIBase):
         for var in decStats:
             stats[var] = utils.convertToStr(decStats[var])
         stats['memAvailable'] = self._memAvailable() / Mbytes
-        stats['memShared'] = self._memShared() / Mbytes
         stats['memCommitted'] = self._memCommitted() / Mbytes
         stats['swapTotal'], stats['swapFree'] = _readSwapTotalFree()
         stats['vmCount'], stats['vmActive'], stats['vmMigrating'] = \
@@ -1097,9 +1096,14 @@ class Global(APIBase):
              dummy, dummy, dummy) = time.gmtime(time.time())
         stats['dateTime'] = '%02d-%02d-%02dT%02d:%02d:%02d GMT' % (
                 tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec)
-        stats['ksmState'] = self._cif.ksmMonitor.state
-        stats['ksmPages'] = self._cif.ksmMonitor.pages
-        stats['ksmCpu'] = self._cif.ksmMonitor.cpuUsage
+        if self._cif.mom:
+            stats.update(self._cif.mom.getKsmStats())
+        else:
+            stats['ksmState'] = self._cif.ksmMonitor.state
+            stats['ksmPages'] = self._cif.ksmMonitor.pages
+            stats['ksmCpu'] = self._cif.ksmMonitor.cpuUsage
+            stats['memShared'] = self._memShared() / Mbytes
+
         stats['netConfigDirty'] = str(self._cif._netConfigDirty)
         stats['generationID'] = self._cif._generationID
         return {'status': doneCode, 'info': stats}

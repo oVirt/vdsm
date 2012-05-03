@@ -103,3 +103,16 @@ def stop():
     if running():
         utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'stop'], sudo=True)
         utils.execCmd([constants.EXT_SERVICE, 'ksm', 'stop'], sudo=True)
+
+
+def tune(params):
+    # For supervdsm
+    KSM_PARAMS = {'run': 3, 'sleep_millisecs': 0x100000000,
+                  'pages_to_scan': 0x100000000}
+    for (k, v) in params.iteritems():
+        if k not in KSM_PARAMS.iterkeys():
+            raise Exception('Invalid key in KSM parameter: %s=%s' % (k, v))
+        if int(v) < 0 or int(v) >= KSM_PARAMS[k]:
+            raise Exception('Invalid value in KSM parameter: %s=%s' % (k, v))
+        with open('/sys/kernel/mm/ksm/%s' % k, 'w') as f:
+            f.write(str(v))

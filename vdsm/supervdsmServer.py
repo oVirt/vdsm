@@ -50,6 +50,7 @@ import storage.misc
 import configNetwork
 from vdsm.config import config
 import tc
+import ksm
 import mkimage
 from storage.multipath import MPATH_CONF
 
@@ -230,6 +231,15 @@ class _SuperVdsm(object):
             except OSError:
                 fails.append(r)
         return fails
+
+    @logDecorator
+    def ksmTune(self, tuningParams):
+        '''
+        Set KSM tuning parameters for MOM, which runs without root privilege
+        when it's lauched by vdsm. So it needs supervdsm's assistance to tune
+        KSM's parameters.
+        '''
+        return ksm.tune(tuningParams)
 
     @logDecorator
     def setPortMirroring(self, networkName, ifaceName):
