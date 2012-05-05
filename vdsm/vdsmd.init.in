@@ -298,7 +298,7 @@ configure_libvirt()
     echo $"Configuring libvirt for vdsm..."
 
     # Set the default values for libvirt and qemu
-    set_if_default $lconf listen_addr \"0\"
+    set_if_default $lconf listen_addr \"0.0.0.0\"
     set_if_default $lconf unix_sock_group \"kvm\"
     set_if_default $lconf unix_sock_rw_perms \"0770\"
     set_if_default $lconf auth_unix_rw \"sasl\"
