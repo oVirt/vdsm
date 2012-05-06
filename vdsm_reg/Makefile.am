@@ -25,14 +25,14 @@ ovirtsetupdir = $(pythondir)/ovirt_config_setup
 dist_vdsmreg_PYTHON = \
 	config.py \
 	createDaemon.py \
-	define.py
+	define.py \
+	register-to-engine.py
 
 dist_ovirtsetup_PYTHON = \
 	engine.py
 
 nodist_vdsmreg_PYTHON = \
-	deployUtil.py \
-	register-to-engine.py
+	deployUtil.py
 
 nodist_vdsmbootstrap_DATA = \
         deployUtil.py
@@ -63,7 +63,6 @@ CLEANFILES = \
 EXTRA_DIST = \
 	deployUtil.py.in \
 	logger.conf \
-	register-to-engine.py \
 	vdsm-config \
 	vdsm-reg-cmdline \
 	vdsm-reg.conf.in \
