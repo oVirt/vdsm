@@ -14,9 +14,10 @@ import os
 import logging
 import logging.config
 from time import strftime
-import ConfigParser
+from config import config
 import deployUtil
 
+VDSM_REG_CONF_FILE = '/etc/vdsm-reg/vdsm-reg.conf'
 VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
 log_filename = '/var/log/vdsm-reg/vds_bootstrap_upgrade.'+strftime("%Y%m%d_%H%M%S")+'.log'
 
@@ -35,16 +36,8 @@ except:
                         filemode='w')
 
 def setMountPoint(config):
-    strFile = ""
-    try:
-        strFile = config.get('vars', 'upgrade_iso_file')
-    except:
-        strFile = '/data/updates/ovirt-node-image.iso'
-
-    try:
-        strMountPoint = config.get('vars', 'upgrade_mount_point')
-    except:
-        strMountPoint = '/var/vdsm/image-update'
+    strFile = config.get('vars', 'upgrade_iso_file')
+    strMountPoint = config.get('vars', 'upgrade_mount_point')
 
     try:
         fOK = True
@@ -97,10 +90,7 @@ def doUpgrade(config):
     ret = None
     fReturn = True
 
-    try:
-        strMountPoint = config.get('vars', 'upgrade_mount_point')
-    except:
-        strMountPoint = '/var/vdsm/image-update'
+    strMountPoint = config.get('vars', 'upgrade_mount_point')
 
     if os.path.exists("/usr/libexec/ovirt-config-boot"):
         out, err, ret = deployUtil._logExec(["/usr/libexec/ovirt-config-boot", strMountPoint])
@@ -125,10 +115,7 @@ def umount(config, shouldReport=True):
     ret = None
     fReturn = True
 
-    try:
-        strMountPoint = config.get('vars', 'upgrade_mount_point')
-    except:
-        strMountPoint = '/var/vdsm/image-update'
+    strMountPoint = config.get('vars', 'upgrade_mount_point')
 
     if os.path.exists(strMountPoint):
         out, err, ret = deployUtil._logExec(["/bin/umount", strMountPoint])
@@ -151,8 +138,7 @@ def main():
     fMounted = False
 
     try:
-        config = ConfigParser.ConfigParser()
-        config.read('/etc/vdsm-reg/vdsm-reg.conf')
+        config.read(VDSM_REG_CONF_FILE)
 
         #First, quietly try to clean any previous problems.
         umount(config, False)
