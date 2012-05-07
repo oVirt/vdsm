@@ -245,9 +245,9 @@ def get():
 
     return caps
 
-def _getIfaceByIP(addr):
+def _getIfaceByIP(addr, fileName='/proc/net/route'):
     remote = struct.unpack('I', socket.inet_aton(addr))[0]
-    for line in itertools.islice(file('/proc/net/route'), 1, None):
+    for line in itertools.islice(file(fileName), 1, None):
         iface, dest, gateway, flags, refcnt, use, metric, \
                 mask, mtu, window, irtt = line.split()
         dest = int(dest, 16)

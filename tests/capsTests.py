@@ -53,3 +53,17 @@ class TestCaps(TestCaseBase):
         self.assertEqual(c.mhz(), '2533.402')
         self.assertEqual(c.model(),
                         'Intel(R) Xeon(R) CPU           E5649  @ 2.53GHz')
+
+    def test_parseKeyVal(self):
+        lines = ["x=&2", "y& = 2", " z = 2 ", " s=3=&'5", " w=", "4&"]
+        expectedRes = [{'x': '&2', 'y&': '2', 'z': '2', 's': "3=&'5", 'w': ''},
+                        {'x=': '2', 'y': '= 2', 's=3=': "'5", '4': ''}]
+        sign = ["=", "&"]
+        for res, s in zip(expectedRes, sign):
+            self.assertEqual(res, caps._parseKeyVal(lines, s))
+
+    def test_getIfaceByIP(self):
+        expectedRes = ["wlan0", "virbr0"]
+        ip = ["10.201.129.37", "192.168.122.90"]
+        for res, i in zip(expectedRes, ip):
+            self.assertEqual(res, caps._getIfaceByIP(i, "route_info.out"))

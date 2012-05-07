@@ -41,12 +41,13 @@ test_modules = \
 	resourceManagerTests.py
 
 dist_noinst_DATA = \
-	run_tests_local.sh
+	run_tests_local.sh \
+	cpu_info.out \
+	route_info.out
 
 dist_vdsmtests_DATA = \
 	README \
-	netmaskconversions \
-	cpu_info.out
+	netmaskconversions
 
 dist_vdsmtests_PYTHON = \
 	$(test_modules) \
@@ -54,7 +55,9 @@ dist_vdsmtests_PYTHON = \
 	testValidation.py
 
 dist_vdsmtests_SCRIPTS = \
-	run_tests.sh
+	run_tests.sh \
+	testValidation.py \
+	cpu_info.out
 
 check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
