@@ -601,7 +601,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
     if mtu and vlan:
         prevmtu = configWriter.getMaxMtu(nics, mtu)
 
-    iface = bonding or nics[0]
+    nic = nics[0] if nics else None
+    iface = bonding or nic
 
     # take down nics that need to be changed
     vlanedIfaces = [v['iface'] for v in _netinfo.vlans.values()]
