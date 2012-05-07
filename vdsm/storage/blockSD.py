@@ -595,18 +595,12 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def getFreeMetadataSlot(self, slotSize):
         occupiedSlots = self._getOccupiedMetadataSlots()
-        blkSize = max(self.logBlkSize, self.phyBlkSize)
 
         # It might look weird skipping the sd metadata when it has been moved
         # to tags. But this is here because domain metadata and volume metadata
         # look the same. The domain might get confused and think it has lv
         # metadata if it finds something is written in that area.
-        # At the moment this check is trivial but it will be needed in the
-        # future when we'll support multiple block sizes.
-        if blkSize >= SD_METADATA_SIZE:
-            freeSlot = 1
-        else:
-            freeSlot = (SD_METADATA_SIZE + blkSize - 1) / blkSize
+        freeSlot = (SD_METADATA_SIZE + self.logBlkSize - 1) / self.logBlkSize
 
         for offset, size in occupiedSlots:
             if offset - freeSlot > slotSize:
