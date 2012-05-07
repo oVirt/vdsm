@@ -78,10 +78,10 @@ class ClusterLock(object):
     def getReservedId(self):
         return 1000
 
-    def acquireHostId(self, hostID):
+    def acquireHostId(self, hostId, async):
         pass
 
-    def releaseHostId(self, hostID):
+    def releaseHostId(self, hostId, async):
         pass
 
     def hasHostId(self, hostId):
@@ -155,13 +155,14 @@ class SANLock(object):
     def getReservedId(self):
         return MAX_HOST_ID
 
-    def acquireHostId(self, hostId):
+    def acquireHostId(self, hostId, async):
         with self._lock:
             self.log.info("Acquiring host id for domain %s (id: %s)",
                           self._sdUUID, hostId)
 
             try:
-                sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath)
+                sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
+                                      async=async)
             except sanlock.SanlockException, e:
                 if e.errno != errno.EEXIST:
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
@@ -169,13 +170,14 @@ class SANLock(object):
             self.log.debug("Host id for domain %s successfully acquired "
                            "(id: %s)", self._sdUUID, hostId)
 
-    def releaseHostId(self, hostId):
+    def releaseHostId(self, hostId, async):
         with self._lock:
             self.log.info("Releasing host id for domain %s (id: %s)",
                           self._sdUUID, hostId)
 
             try:
-                sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath)
+                sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath,
+                                      async=async)
             except sanlock.SanlockException, e:
                 raise se.ReleaseHostIdFailure(self._sdUUID, e)
 

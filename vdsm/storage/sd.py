@@ -442,11 +442,11 @@ class StorageDomain:
     def getReservedId(self):
         return self._clusterLock.getReservedId()
 
-    def acquireHostId(self, hostId):
-        self._clusterLock.acquireHostId(hostId)
+    def acquireHostId(self, hostId, async=False):
+        self._clusterLock.acquireHostId(hostId, async)
 
-    def releaseHostId(self, hostId):
-        self._clusterLock.releaseHostId(hostId)
+    def releaseHostId(self, hostId, async=False):
+        self._clusterLock.releaseHostId(hostId, async)
 
     def hasHostId(self, hostId):
         return self._clusterLock.hasHostId(hostId)

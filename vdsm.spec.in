@@ -33,7 +33,7 @@ BuildRequires: python-pep8
 # BuildRequires needed by the tests during the build
 BuildRequires: python-ethtool
 BuildRequires: libvirt-python
-BuildRequires: sanlock-python >= 2.1
+BuildRequires: sanlock-python >= 2.3
 
 %if !0%{?rhel}
 BuildRequires: systemd-units
@@ -47,7 +47,6 @@ Requires: ntp
 Requires: python-ethtool
 Requires: nfs-utils dmidecode
 Requires: lvm2 >= 2.02.95
-Requires: sanlock >= 2.1, sanlock-python
 
 %if 0%{?rhel}
 Requires: python
@@ -60,6 +59,7 @@ Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 Requires: kernel >= 2.6.32-265
+Requires: sanlock >= 2.3-2, sanlock-python
 %else
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
@@ -72,6 +72,7 @@ Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
 Requires: kernel >= 3.4
+Requires: sanlock >= 2.3, sanlock-python
 %endif
 
 Requires: psmisc >= 22.6-15
