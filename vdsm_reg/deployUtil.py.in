@@ -28,6 +28,7 @@ import sys
 import os
 import os.path
 import time
+import datetime
 import grp
 import pwd
 import shutil
@@ -1414,9 +1415,26 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
     logging.debug('getRemoteFile end.')
     return data
 
+def _nodeBackupCerts(certs):
+    dt = datetime.datetime.now()
+    backupTime = dt.strftime("%Y-%m-%d_%H%M%S")
+
+    for pemFile in certs:
+        certName = os.path.basename(pemFile)
+        dirName  = os.path.dirname(pemFile)
+
+        bkpCertName = dirName + "/bkp-" + backupTime + '_' + certName
+
+        shutil.copy2(pemFile, bkpCertName)
+        st = os.stat(pemFile)
+        os.chown(bkpCertName, st.st_uid, st.st_gid)
+        ovirtfunctions.ovirt_store_config(bkpCertName)
+
 def nodeCleanup():
     if isOvirt():
-        CACERT, _ = certPaths('')
+        CACERT, VDSMCERT = certPaths('')
+
+        _nodeBackupCerts([CACERT, VDSMCERT])
         if os.path.exists(CACERT):
             ovirtfunctions.ovirt_safe_delete_config(CACERT)
 
