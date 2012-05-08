@@ -601,8 +601,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/nfsSD.py*
 %{_datadir}/%{vdsm_name}/storage/outOfProcess.py*
 %{_datadir}/%{vdsm_name}/storage/persistentDict.py*
-%{_datadir}/%{vdsm_name}/storage/processPool.py*
 %{_datadir}/%{vdsm_name}/storage/resourceFactories.py*
+%{_datadir}/%{vdsm_name}/storage/remoteFileHandler.py*
 %{_datadir}/%{vdsm_name}/storage/resourceManager.py*
 %{_datadir}/%{vdsm_name}/storage/safelease.py*
 %{_datadir}/%{vdsm_name}/storage/sdc.py*

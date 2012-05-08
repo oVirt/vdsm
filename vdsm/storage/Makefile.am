@@ -45,7 +45,7 @@ dist_vdsmstorage_PYTHON = \
 	nfsSD.py \
 	outOfProcess.py \
 	persistentDict.py \
-	processPool.py \
+	remoteFileHandler.py \
 	resourceFactories.py \
 	resourceManager.py \
 	safelease.py \

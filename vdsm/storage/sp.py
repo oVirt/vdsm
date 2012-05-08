@@ -40,7 +40,7 @@ from vdsm.config import config
 from sdc import sdCache
 import storage_exception as se
 from persistentDict import DictValidator, unicodeEncoder, unicodeDecoder
-from processPool import Timeout
+from remoteFileHandler import Timeout
 from securable import Securable, unsecured
 import image
 from resourceFactories import IMAGE_NAMESPACE

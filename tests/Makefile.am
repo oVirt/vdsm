@@ -21,7 +21,6 @@
 SUBDIRS = functional
 
 test_modules = \
-	main.py \
 	alignmentScanTests.py \
 	betterPopenTests.py \
 	betterThreadingTests.py \
@@ -33,17 +32,20 @@ test_modules = \
 	guestIFTests.py \
 	hooksTests.py \
 	lsblkTests.py \
+	main.py \
 	md_utils_tests.py \
 	miscTests.py \
 	mountTests.py \
 	netinfoTests.py \
+	outOfProcessTests.py \
 	parted_utils_tests.py \
 	persistentDictTests.py \
-	processPoolTests.py \
 	resourceManagerTests.py \
 	restTests.py \
 	restData.py \
 	vdsClientTests.py
+	remoteFileHandlerTests.py \
+	resourceManagerTests.py
 
 dist_noinst_DATA = \
 	run_tests_local.sh \

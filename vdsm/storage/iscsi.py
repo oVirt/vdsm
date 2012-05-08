@@ -121,14 +121,14 @@ def addIscsiNode(iface, target, credentials=None):
     with _iscsiadmTransactionLock:
         iscsiadm.node_new(iface.name, portalStr, targetName)
         try:
-            iscsiadm.node_update(iface.name, portalStr, targetName, "node.startup", "manual")
-
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "node.session." + key
                     iscsiadm.node_update(iface.name, portalStr, targetName, key, value, hideValue=True)
 
             iscsiadm.node_login(iface.name, portalStr, targetName)
+
+            iscsiadm.node_update(iface.name, portalStr, targetName, "node.startup", "manual")
         except:
             removeIscsiNode(iface, target)
             raise
