@@ -50,7 +50,7 @@ Requires: python
 Requires: qemu-kvm >= 2:0.12.1.2-2.227
 Requires: qemu-img >= 2:0.12.1.2-2.227
 Requires: libvirt >= 0.9.10-20
-Requires: libvirt-python >= 0.9.10-20
+Requires: libvirt-python, libvirt-lock-sanlock
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
@@ -60,7 +60,7 @@ Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
 Requires: libvirt >= 0.9.10
-Requires: libvirt-python >= 0.9.10
+Requires: libvirt-python, libvirt-lock-sanlock
 Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14

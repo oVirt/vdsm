@@ -38,6 +38,7 @@ CONFLICTING_SERVICES="libvirt-guests"
 LCONF=/etc/libvirt/libvirtd.conf
 QCONF=/etc/libvirt/qemu.conf
 LDCONF=/etc/sysconfig/libvirtd
+QLCONF=/etc/libvirt/qemu-sanlock.conf
 
 is_coredump=`$GETCONFITEM $CONF_FILE vars core_dump_enable false | tr A-Z a-z`
 [ $is_coredump != true ] && is_coredump=false
@@ -265,11 +266,12 @@ validate_libvirt_certs()
 configure_libvirt()
 {
     local force_reconfigure="$1"
-    local BY_VDSM="# by vdsm"
+    local by_vdsm="# by vdsm"
+    local by_vdsm_vers="${by_vdsm}-4.9.6"
     local ts=/etc/pki/vdsm
 
     remove_vdsm_conf() {
-        sed -i --copy "/$BY_VDSM/d" "$1"
+        sed -i --copy "/$by_vdsm/d" "$@"
     }
 
     set_if_default() {
@@ -279,7 +281,7 @@ configure_libvirt()
         val="$3"
 
         /bin/grep -q "^\s*$key\s*=" "$cfile" || \
-          echo "$key=$val $BY_VDSM" >> "$cfile"
+          echo "$key=$val $by_vdsm_vers" >> "$cfile"
     }
 
     if isOvirt
@@ -295,12 +297,7 @@ configure_libvirt()
     lconf="$2"
     qconf="$3"
     ldconf="$4"
-
-    if [ "$force_reconfigure" == force ];then
-        remove_vdsm_conf $lconf
-        remove_vdsm_conf $qconf
-        remove_vdsm_conf $ldconf
-    fi
+    qlconf="$5"
 
     # do not configure ovirt nodes before registration
     if isOvirt
@@ -314,13 +311,18 @@ configure_libvirt()
     fi
 
     # do not reconfigure, return 0, so that vdsm start can continue.
-    if grep -q "$BY_VDSM" $lconf && grep -q "$BY_VDSM" $qconf
+    if [ "$force_reconfigure" != "force" ] &&
+       grep -q "$by_vdsm_vers" $lconf && grep -q "$by_vdsm_vers" $qconf && \
+       grep -q "$by_vdsm_vers" $ldconf && grep -q "$by_vdsm_vers" $qlconf
     then
         log_success_msg $"$prog: libvirt already configured for vdsm "
         return 0
     fi
 
     echo $"Configuring libvirt for vdsm..."
+
+    # Remove a previous configuration (if present)
+    remove_vdsm_conf $lconf $qconf $ldconf $qlconf
 
     # Set the default values for libvirt and qemu
     set_if_default $lconf listen_addr \"0.0.0.0\"
@@ -357,6 +359,11 @@ configure_libvirt()
         set_if_default $lconf listen_tls 0
     fi
 
+    # Configuring sanlock
+    set_if_default $qconf lock_manager \"sanlock\"
+    set_if_default $qlconf auto_disk_leases 0
+    set_if_default $qlconf require_lease_for_disks 0
+
     local lnetwork=/etc/libvirt/qemu/networks/autostart/default.xml
     rm -f $lnetwork
 
@@ -389,8 +396,10 @@ EOF
     # vdsm makes extensive use of nfs-exported images
     /usr/sbin/semanage  boolean -m -S targeted -F /dev/stdin  << _EOF
 virt_use_nfs=1
+virt_use_sanlock=1
 _EOF
     /usr/sbin/setsebool virt_use_nfs on
+    /usr/sbin/setsebool virt_use_sanlock on
 
     /sbin/initctl restart libvirtd 2>/dev/null || :
 }
@@ -425,11 +434,11 @@ reconfigure() {
     local args="$@"
     case $# in
         0)
-            args="force $LCONF $QCONF $LDCONF"
+            args="force $LCONF $QCONF $LDCONF $QLCONF"
             ;;
         1)
             # Use default paths
-            args="$args $LCONF $QCONF $LDCONF"
+            args="$args $LCONF $QCONF $LDCONF $QLCONF"
             ;;
     esac
     configure_libvirt $args
