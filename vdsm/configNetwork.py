@@ -639,13 +639,13 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
         # directly.
         ifup((bonding or nics[0]) + '.' + vlan)
     if bridged:
-        ifup(network)
-    if options.get('bootproto') == 'dhcp' and not utils.tobool(options.get('blockingdhcp')) \
-            and bridged:
-        # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
-        t = threading.Thread(target=ifup, name='ifup-waiting-on-dhcp', args=(network,))
-        t.daemon = True
-        t.start()
+        if options.get('bootproto') == 'dhcp' and not utils.tobool(options.get('blockingdhcp')):
+            # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
+            t = threading.Thread(target=ifup, name='ifup-waiting-on-dhcp', args=(network,))
+            t.daemon = True
+            t.start()
+        else:
+            ifup(network)
 
     # add libvirt network
     if not skipLibvirt:
