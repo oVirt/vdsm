@@ -26,6 +26,7 @@ test_modules = \
 	fileUtilTests.py \
 	guestIFTests.py \
 	hooksTests.py \
+	lsblkTests.py \
 	md_utils_tests.py \
 	miscTests.py \
 	mountTests.py \
