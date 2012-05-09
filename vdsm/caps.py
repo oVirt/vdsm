@@ -174,7 +174,7 @@ def osversion():
             d = _parseKeyVal( file('/etc/default/version') )
             version = d.get('VERSION', '')
             release = d.get('RELEASE', '')
-        if osname == OSName.DEBIAN:
+        elif osname == OSName.DEBIAN:
             version = linecache.getline('/etc/debian_version', 1).strip("\n")
             release = "" # Debian just has a version entry
         else:
