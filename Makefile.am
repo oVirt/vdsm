@@ -39,11 +39,12 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	tests \
+	vdsm-tool \
 	vdsm/API.py \
 	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \
-	vdsm/parted_utils.py \
 	vdsm/md_utils.py \
+	vdsm/parted_utils.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
 	vdsm/storage/processPool.py \
