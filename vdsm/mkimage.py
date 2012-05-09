@@ -57,6 +57,12 @@ def _commonCleanFs(dirname, media):
         shutil.rmtree(dirname)
 
 def _getFileName(vmId, files):
+    if not os.path.exists(_P_PAYLOAD_IMAGES):
+        try:
+            os.mkdir(_P_PAYLOAD_IMAGES)
+        except OSError, e:
+            if e.errno != os.errno.EEXIST:
+                raise
     content = ''.join(files.keys()) + ''.join(files.values())
     md5 = hashlib.md5(content).hexdigest()
     path = os.path.join(_P_PAYLOAD_IMAGES, "%s.%s.img" % (vmId, md5))
