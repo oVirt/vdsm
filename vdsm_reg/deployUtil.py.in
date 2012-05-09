@@ -1179,8 +1179,17 @@ def instCert(random_num, confFile):
 
         ts = _tsDir(confFile)
         VDSMKEY = ts + '/keys/vdsmkey.pem'
-        if not os.path.exists(ts + '/libvirt-spice'):
-            os.makedirs(ts + '/libvirt-spice')
+        SPICEPKIPATH = os.path.join(ts, 'libvirt-spice')
+
+        try:
+            os.makedirs(SPICEPKIPATH)
+        except OSError, e:
+            if e.errno != os.errno.EEXIST:
+                raise
+
+        os.chown(SPICEPKIPATH, 0, nGID)
+        os.chmod(SPICEPKIPATH, 0750)
+
         _linkOrPersist(CACERT, ts + '/libvirt-spice/ca-cert.pem')
         _linkOrPersist(VDSMCERT, ts + '/libvirt-spice/server-cert.pem')
         _linkOrPersist(VDSMKEY, ts + '/libvirt-spice/server-key.pem')
