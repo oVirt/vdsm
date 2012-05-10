@@ -34,3 +34,9 @@ class TestNetinfo(TestCaseBase):
                 continue
             bitmask, address = map(str.strip, line.split())
             self.assertEqual(netinfo.bitmask_to_address(int(bitmask)), address)
+
+    def testSpeedInvalidNic(self):
+        nicName = 'DUMMYNICDEVNAME'
+        self.assertTrue(nicName not in netinfo.nics())
+        s = netinfo.speed(nicName)
+        self.assertEqual(s, 0)
