@@ -39,7 +39,7 @@ propagate=0
 [handler_syslog]
 class=handlers.SysLogHandler
 formatter=sysform
-args=(('localhost', handlers.SYSLOG_UDP_PORT), handlers.SysLogHandler.LOG_USER)
+args=('/dev/log', handlers.SysLogHandler.LOG_USER)
 
 [handler_logfile]
 class=FileHandler
@@ -69,7 +69,7 @@ format: %(message)s
 format: %(threadName)s::%(levelname)s::%(asctime)s::%(module)s::%(lineno)d::%(name)s::(%(funcName)s) %(message)s
 
 [formatter_sysform]
-format= %(asctime)s %(levelname)s %(message)s
+format= vdsm %(name)s %(levelname)s %(message)s
 datefmt=
 
 
