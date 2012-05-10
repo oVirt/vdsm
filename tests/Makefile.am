@@ -38,10 +38,11 @@ test_modules = \
 
 dist_noinst_DATA = \
 	$(test_modules) \
-	testrunner.py \
-	testValidation.py \
+	cpu_info.out \
+	netmaskconversions \
 	run_tests.sh \
-	cpu_info.out
+	testrunner.py \
+	testValidation.py
 
 check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
