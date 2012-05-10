@@ -109,21 +109,17 @@ def operstate(dev):
     return file('/sys/class/net/%s/operstate' % dev).read().strip()
 
 def speed(dev):
+    # return the speed of devices that are capable of replying
     try:
-        try:
-            if not os.path.exists('/sys/class/net/%s/bonding' % dev):
-                s = int(file('/sys/class/net/%s/speed' % dev).read())
-                if s in (2**16 - 1, 2**32 - 1) or s < 0:
-                    return 0
-                else:
-                    return s
-        except IOError, e:
-            if e.errno == os.errno.EINVAL and (isbonding(dev) or
-                                               operstate(dev) != 'up'):
-                # this error is expected for bonding and devices that are down
-                pass
-            else:
-                raise
+        # nics() filters out OS devices (bonds, vlans, bridges)
+        # operstat() filters out down/disabled nics
+        if dev in nics() and operstate(dev) == 'up':
+            # the device may have been disabled/downed after checking
+            # so we validate the return value as sysfs may return
+            # special values to indicate the device is down/disabled
+            s = int(file('/sys/class/net/%s/speed' % dev).read())
+            if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
+                return s
     except:
         logging.error('cannot read %s speed', dev, exc_info=True)
     return 0
