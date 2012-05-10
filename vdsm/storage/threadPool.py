@@ -153,7 +153,7 @@ class ThreadPool:
         """ Clear the task queue and terminate all pooled threads,
         optionally allowing the tasks and threads to finish."""
 
-        # Mark the pool as joining to prevent any more task queueing
+        # Mark the pool as joining to prevent any more task queuing
         self.__isJoining = True
 
         # Wait for tasks to finish

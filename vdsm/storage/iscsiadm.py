@@ -86,7 +86,7 @@ def iface_delete(name):
     raise IscsiInterfaceDeletionError(name)
 
 def iface_list():
-    # FIXME: This can be done more effciently by iterating
+    # FIXME: This can be done more efficiently by iterating
     # /var/lib/iscsi/ifaces. Fix if ever a performance bottleneck.
     rc, out, err = _runCmd(["-m", "iface"])
     if rc == 0:

@@ -33,7 +33,7 @@ Return codes:
 0 - the hook ended successfully.
 1 - the hook failed, other hooks should be processed.
 2 - the hook failed, no further hooks should be processed.
->2 - reserverd
+>2 - reserved
 """
 
 import os

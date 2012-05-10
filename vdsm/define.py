@@ -24,7 +24,7 @@ errCode = { 'noVM':         {'status': {'code': 1, 'message': 'Virtual machine d
             'noVmType':     {'status': {'code': 5, 'message': 'Unsupported VM type'}},
             'down':         {'status': {'code': 6, 'message': 'Virtual machine is down'}},
             'copyerr':      {'status': {'code': 7, 'message': 'Copy failed'}},
-            'sparse':       {'status': {'code': 8, 'message': 'sparse creation faild'}},
+            'sparse':       {'status': {'code': 8, 'message': 'sparse creation failed'}},
             'createErr':    {'status': {'code': 9, 'message': 'Error creating the requested virtual machine'}},
             'noConPeer':    {'status': {'code':10, 'message': 'Could not connect to peer VDS'}},
             'MissParam':    {'status': {'code':11, 'message': 'Missing required parameter'}},

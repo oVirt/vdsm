@@ -154,7 +154,7 @@ def getVolsOfImage(allVols, imgUUID):
 def supportsUnicode(version):
     return version >= UNICODE_MINIMAL_VERSION
 
-# This method has strange semantics, it's only here to keep with the old behaviuor
+# This method has strange semantics, it's only here to keep with the old behavior
 # that someone might rely on.
 def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec, leaseRetries):
     if lockRenewalIntervalSec and leaseTimeSec and ioOpTimeoutSec and leaseRetries:

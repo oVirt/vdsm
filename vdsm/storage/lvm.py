@@ -661,7 +661,7 @@ def getVGsOfReachablePVs(pvNames):
     found = {} #{pvName, vgName}
     for line in out:
         try:
-            #Safe: volume group name containg spaces is invalid
+            #Safe: volume group name containing spaces is invalid
             vgName, pvName = line.strip().split()
         except ValueError:
             pvName = line.strip()
@@ -700,7 +700,7 @@ def _setVgAvailability(vgs, available):
         _lvminfo._invalidatelvs(vg)
     if rc != 0:
         #During deactivation, in vg.py (sic):
-        # we ignore error here becuase we don't care about this vg anymore
+        # we ignore error here because we don't care about this vg anymore
         if available == "n":
             log.info("deactivate vg %s failed: rc %s - %s %s (ignored)" % (vgs, rc, out, err))
         else:

@@ -149,7 +149,7 @@ class BlockVolume(volume.Volume):
        Create a new volume with given size or snapshot
             'size' - in sectors
             'volFormat' - volume format COW / RAW
-            'preallocate' - Prealocate / Sparse
+            'preallocate' - Preallocate / Sparse
             'diskType' - string that describes disk type System|Data|Shared|Swap|Temp
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
@@ -480,7 +480,7 @@ class BlockVolume(volume.Volume):
                         imgUUIDs.append(imgUUID)
                     break
 
-        # Check image legallity, if needed
+        # Check image legality, if needed
         if legal:
             for imgUUID in imgUUIDs[:]:
                 if not image.Image(self.repoPath).isLegal(self.sdUUID, imgUUID):

@@ -152,7 +152,7 @@ def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[],
         frame = sys.exc_info()[2].tb_frame.f_back.f_back
 
     result = "(unknown file)", 0, "(unknown function)"
-    # pop frames untill you find an unfiltered one
+    # pop frames until you find an unfiltered one
     while hasattr(frame, "f_code"):
         code = frame.f_code
         filename = os.path.normcase(code.co_filename)
@@ -726,7 +726,7 @@ def retry(func, expectedException=Exception, tries=None,
     implement it each time you need it.
 
     :param func: The callable to run.
-    :param expectedException: The exception you expect to recieve when the
+    :param expectedException: The exception you expect to receive when the
                               function fails.
     :param tries: The number of time to try. None\0,-1 means infinite.
     :param timeout: The time you want to spend waiting. This **WILL NOT** stop
@@ -1123,12 +1123,12 @@ def tmap(func, iterable):
         try:
             resultsDict[index] = f(arg)
         except Exception, e:
-            # We will throw the last error recieved
+            # We will throw the last error received
             # we can only throw one error, and the
             # last one is as good as any. This shouldn't
             # happen. Wrapped methods should not throw
             # exceptions, if this happens it's a bug
-            log.error("tmap cought an unexpected error", exc_info=True)
+            log.error("tmap caught an unexpected error", exc_info=True)
             error[0] = e
             resultsDict[index] = None
 

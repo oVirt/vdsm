@@ -168,7 +168,7 @@ class Request(object):
         self.reqID = str(uuid4())
         self._log = SimpleLogAdapter(self._log, {"ResName" : self.fullName, "ReqID" : self.reqID})
 
-        # Becuase findCaller is expensive. We make sure it wll be printed before
+        # Because findCaller is expensive. We make sure it wll be printed before
         # calculating it
         if logging.getLogger("ResourceManager.ResourceRef").isEnabledFor(logging.WARN):
             createdAt = misc.findCaller(ignoreSourceFiles=[__file__], logSkipName="ResourceManager")
@@ -293,7 +293,7 @@ class ResourceRef(object):
     def __del__(self):
         if self._isValid and self.autoRelease:
             def release(log, namespace, name):
-                log.warn("Resource referece was not properly released. Autoreleasing.")
+                log.warn("Resource reference was not properly released. Autoreleasing.")
                 # In Python, objects are refcounted and are deleted immediately when
                 # the last reference is freed. This means the __del__ method can be called
                 # inside of any context. The releaseResource method we use tries to acquire
@@ -511,7 +511,7 @@ class ResourceManager(object):
                     return RequestRef(request)
 
                 # TODO : Creating the object inside the namespace lock causes the entire namespace to lock
-                #        and might cause performace issuese. As this is no currently a problem I left it
+                #        and might cause performance issues. As this is no currently a problem I left it
                 #        as it is to keep the code simple. If there is a bottleneck in the resource
                 #        framework, its probably here.
                 try:
@@ -568,7 +568,7 @@ class ResourceManager(object):
                     self._log.debug("Resource '%s' has %d requests in queue. Handling top request.", fullName, len(resource.queue))
                     nextRequest = resource.queue.pop()
                     # We lock the request to simulate a transaction. We cannot grant the request before there is a resource switch.
-                    # and we can't do a resource switch before we can gurentee that the request will be granted.
+                    # and we can't do a resource switch before we can guarantee that the request will be granted.
                     with nextRequest.syncRoot:
                         if nextRequest.canceled():
                             self._log.debug("Request '%s' was canceled, Ignoring it.", nextRequest)
@@ -705,7 +705,7 @@ class Owner(object):
                     self.log.debug("%s: request for '%s' timed out after '%f' seconds", self, fullName, timeout)
                     raise se.ResourceTimeout()
                 except ValueError, ex:
-                    self.log.debug("%s: request for '%s' could not be proccessed (%s)", self, fullName, ex)
+                    self.log.debug("%s: request for '%s' could not be processed (%s)", self, fullName, ex)
                     raise se.InvalidResourceName()
                 except KeyError, ex:
                     self.log.debug("%s: resource '%s' does not exist", self, fullName)

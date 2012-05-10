@@ -224,7 +224,7 @@ class MigrationSourceThread(threading.Thread):
                 self._finishSuccessfully()
             except libvirt.libvirtError, e:
                 # TODO: yes its not nice searching in the error message,
-                # but this is the libvrirt solution
+                # but this is the libvirt solution
                 # this will be solved at bz #760149
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED and \
                         'canceled by client' in e.get_error_message():
@@ -253,7 +253,7 @@ VALID_STATES = ('Down', 'Migration Destination', 'Migration Source',
 
 class Vm(object):
     """
-    Used for abstracting cummunication between various parts of the
+    Used for abstracting communication between various parts of the
     system and Qemu.
 
     Runs Qemu in a subprocess and communicates with it, and monitors
@@ -398,7 +398,7 @@ class Vm(object):
                 self.log.warn("Unknown type found, device: '%s' found", dev)
                 devices[GENERAL_DEVICES].append(dev)
 
-        # Update indecies for drives devices
+        # Update indices for drives devices
         self.normalizeDrivesIndices(devices[DISK_DEVICES])
         return devices
 
@@ -524,7 +524,7 @@ class Vm(object):
             # Till the day that conf will not returned as a status anymore.
             drv['iface'] = drv.get('iface') or drv.get('if', 'ide')
 
-        # Update indecies for drives devices
+        # Update indices for drives devices
         self.normalizeDrivesIndices(confDrives)
 
         return confDrives

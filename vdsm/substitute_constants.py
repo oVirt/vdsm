@@ -30,7 +30,7 @@ def replacement(m):
 if len(sys.argv) <= 1:
     print """usage: %s filename...
 
-subsitute all @CONSTANT@s in filename.
+substitute all @CONSTANT@s in filename.
 """ % sys.argv[0]
 
 for fname in sys.argv[1:]:

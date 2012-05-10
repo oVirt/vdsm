@@ -117,7 +117,7 @@ class FileVolume(volume.Volume):
         Create a new volume with given size or snapshot
             'size' - in sectors
             'volFormat' - volume format COW / RAW
-            'preallocate' - Prealocate / Sparse
+            'preallocate' - Preallocate / Sparse
             'diskType' - string that describes disk type System|Data|Shared|Swap|Temp
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
@@ -420,7 +420,7 @@ class FileVolume(volume.Volume):
 
         imglist = [ os.path.basename(os.path.dirname(vol)) for vol in vollist ]
 
-        # Check image legallity, if needed
+        # Check image legality, if needed
         if legal:
             for img in imglist[:]:
                 if not image.Image(self.repoPath).isLegal(self.sdUUID, img):

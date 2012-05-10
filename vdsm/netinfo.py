@@ -161,7 +161,7 @@ def graph():
                     print '\t\t' + slave
 
 def getVlanBondingNic(bridge):
-    """Return the (vlan, bonding, nics) tupple that belogs to bridge."""
+    """Return the (vlan, bonding, nics) tupple that belongs to bridge."""
 
     if bridge not in bridges():
         raise ValueError, 'unknown bridge %s' % (bridge,)

@@ -151,7 +151,7 @@ class StoragePool(Securable):
 
     def _upgradePoolDomain(self, sdUUID, isValid):
         # This method is called everytime the onDomainConnectivityStateChange
-        # event is emited, this event is emited even when a domain goes INVALID
+        # event is emitted, this event is emitted even when a domain goes INVALID
         # if this happens there is nothing for us to do no matter what the
         # domain is
         if not isValid:
@@ -223,7 +223,7 @@ class StoragePool(Securable):
         .. note::
             if the SPM is already started the function will fail silently.
 
-        :raises: :exc:`storage_exception.OperationInProgress` if called during an allready running connection attempt.
+        :raises: :exc:`storage_exception.OperationInProgress` if called during an already running connection attempt.
                  (makes the fact that it fails silently does not matter very much).
         """
         with self.lock:
@@ -295,7 +295,7 @@ class StoragePool(Securable):
                 # will have to be created if there is an active block domain in the pool
                 # or once one is activated
 
-                #FIXME : Use a system wide grouping mechanizm
+                #FIXME : Use a system wide grouping mechanism
                 sanPool = self.masterDomain.getStorageType() in sd.BLOCK_DOMAIN_TYPES  # Check if pool is SAN or NAS
                 if sanPool and self.lvExtendPolicy == "ON":
                     self.spmMailer = storage_mailbox.SPM_MailMonitor(self, maxHostID)
@@ -881,7 +881,7 @@ class StoragePool(Securable):
             self.refresh(msdUUID, masterVersion)
 
             # From this point on there is a new master domain in the pool
-            # Now that we are beyond the criticial point we can clean up things
+            # Now that we are beyond the critical point we can clean up things
             curmsd.changeRole(sd.REGULAR_DOMAIN)
 
             # Clean up the old data from previous master fs
@@ -1071,7 +1071,7 @@ class StoragePool(Securable):
         else:
             if current == linkName:
                 return #Nothing to do
-        #Rebuid the link
+        #Rebuild the link
         tmp_link_name = os.path.join(self.storage_repository, str(uuid.uuid4()))
         os.symlink(src, tmp_link_name)     #make tmp_link
         os.rename(tmp_link_name, linkName)
@@ -1125,7 +1125,7 @@ class StoragePool(Securable):
             domUUIDs.remove(msdUUID)
 
         #TODO: Consider to remove this whole block. UGLY!
-        #We want to avoid lookups (vgs) of unknown block domains.
+        #We want to avoid looking up (vgs) of unknown block domains.
         #domUUIDs includes all the domains, file or block.
         block_mountpoint = os.path.join(sd.StorageDomain.storage_repository,
                 sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
@@ -1520,7 +1520,7 @@ class StoragePool(Securable):
          'imgUUID' - image UUID
         """
         # TODO: get rid of this verb and let management query each domain separately
-        #  the problem with current implementation is that when a domain is not accesible
+        #  the problem with current implementation is that when a domain is not accessible
         #  the error must be ignored and management can reach wrong conclusions.
         domainsdict = self.getDomains(activeOnly=True)
         domainslist = []
@@ -1545,7 +1545,7 @@ class StoragePool(Securable):
     @unsecured
     def isMember(self, sdUUID, checkActive=False):
         """
-        Check if domain is memeber in the pool.
+        Check if domain is member in the pool.
         """
         return sdUUID in self.getDomains(activeOnly=checkActive)
 
@@ -1647,7 +1647,7 @@ class StoragePool(Securable):
         """
         srcImageResourcesNamespace = sd.getNamespace(srcDomUUID, IMAGE_NAMESPACE)
         dstImageResourcesNamespace = sd.getNamespace(dstDomUUID, IMAGE_NAMESPACE)
-        # For MOVE_OP acqure exclusive lock
+        # For MOVE_OP acquire exclusive lock
         # For COPY_OP shared lock is enough
         if op == image.MOVE_OP:
             srcLock = rm.LockType.exclusive

@@ -517,7 +517,7 @@ class StorageDomainCreationError(StorageException):
 
 class StorageDomainFormatError(StorageException):
     code = 352
-    message = "Error formating a storage domain"
+    message = "Error formatting a storage domain"
 
 class StorageDomainNotInPool(StorageException):
     def __init__(self, spUUID, sdUUID):
@@ -716,7 +716,7 @@ class CurrentVersionTooAdvancedError(StorageException):
 class PoolUpgradeInProgress(StorageException):
     def __init__(self, spUUID):
         self.value = ""
-        self.message = "Upgrading a pool while an upgrade is in procces is unsupported (pool: `%s`)" % (spUUID,)
+        self.message = "Upgrading a pool while an upgrade is in process is unsupported (pool: `%s`)" % (spUUID,)
     code = 396
 
 class NoSpaceLeftOnDomain(StorageException):
@@ -1369,7 +1369,7 @@ class InvalidResourceName(GeneralException):
 
 class ResourceReferenceInvalid(GeneralException):
     code = 854
-    message = "Cannot perfrom operation. This resource has been released or expired."
+    message = "Cannot perform operation. This resource has been released or expired."
 
 class ResourceAcqusitionFailed(GeneralException):
     code = 855

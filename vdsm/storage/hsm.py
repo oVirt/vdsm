@@ -218,7 +218,7 @@ class HSM:
         :param sdUUID: the UUID of the storage domain you want to validate.
         :type sdUUID: UUID
 
-        If the domain doesn't exist an exeption will be thrown.
+        If the domain doesn't exist an exception will be thrown.
         If the domain isn't a backup domain a :exc:`storage_exception.StorageDomainTypeNotBackup` exception will be raised.
         """
         if not sdCache.produce(sdUUID=sdUUID).isBackup():
@@ -472,7 +472,7 @@ class HSM:
         :type recoveryMode: RecoveryEnum?
         :param scsiFencing: Do you want to fence the scsi.
         :type scsiFencing: bool
-        :param maxHostID: The maximun Host ID in the cluster.
+        :param maxHostID: The maximum Host ID in the cluster.
         :type maxHostID: int
         :param options: unused
 
@@ -488,7 +488,7 @@ class HSM:
             domVersion = int(domVersion)
             sd.validateDomainVersion(domVersion)
 
-        #This code is repeated twice for perfomance reasons
+        #This code is repeated twice for performance reasons
         #Avoid waiting for the lock for validate.
         self.getPool(spUUID)
         self.validateNotSPM(spUUID)
@@ -514,7 +514,7 @@ class HSM:
         :type spUUID: UUID
         :param options: ?
 
-        :raises: :exc:`storage_exception.TaskInProgress` if there are tasks runnning for this pool.
+        :raises: :exc:`storage_exception.TaskInProgress` if there are tasks running for this pool.
 
         """
         vars.task.setDefaultException(se.SpmStopError(spUUID))
@@ -655,7 +655,7 @@ class HSM:
         :param callbackFun: A function to run once the operation is done. ?
 
         .. note::
-            If the pool doesn't exist the function will fail sliently and the callback will never be called.
+            If the pool doesn't exist the function will fail silently and the callback will never be called.
 
         """
         newSize = misc.validateN(newSize, "newSize") / 2**20
@@ -726,7 +726,7 @@ class HSM:
         :type poolName: str
         :param masterDom: The UUID of the master storage domain that contains\will contain the pool's metadata.
         :type masterDom: UUID
-        :param domList: A list of allthe UUIDs of the storage domains managed by this storage pool.
+        :param domList: A list of all the UUIDs of the storage domains managed by this storage pool.
         :type domList: UUID list
         :param masterVersion: The master version of the storage pool meta data.
         :type masterVersion: uint
@@ -1127,7 +1127,7 @@ class HSM:
     def getVmsList(self, spUUID, sdUUID=None, options = None):
         """
         Gets a list of VMs from the pool.
-        If 'sdUUID' is given and it's a bakup domain the function will get the list of VMs from it
+        If 'sdUUID' is given and it's a backup domain the function will get the list of VMs from it
 
         :param spUUID: The UUID of the storage pool that you want to query.
         :type spUUID: UUID
@@ -1150,7 +1150,7 @@ class HSM:
         """
         Gets a list of VMs with their info from the pool.
 
-        * If 'sdUUID' is given and it's a bakup domain then get the list of VMs from it.
+        * If 'sdUUID' is given and it's a backup domain then get the list of VMs from it.
         * If 'vmList' is given get info for these VMs only.
 
         :param spUUID: The UUID of the storage pool that you want to query.
@@ -1180,7 +1180,7 @@ class HSM:
         :type spUUID: UUID
         :param sdUUID: The UUID of the backup domain that will contain the new volume.
         :type sdUUID: UUID
-        :param imgUUID: The UUID of image you want assosiated with that volume.
+        :param imgUUID: The UUID of image you want associated with that volume.
         :type imgUUID: UUID
         :param volUUID: The UUID that the new volume will have after upload.
         :type volUUID: UUID
@@ -1463,7 +1463,7 @@ class HSM:
         :param lockPolicy: ?
         :param lockRenewalIntervalSec: ?
         :param leaseTimeSec: ?
-        :param ioOpTimeoutSec: The timout of IO operations in seconds. ?
+        :param ioOpTimeoutSec: The timeout of IO operations in seconds. ?
         :type ioOpTimeoutSec: int
         :param leaseRetries: ?
         :param options: ?
@@ -1982,10 +1982,10 @@ class HSM:
         Disconnects from a storage low level entity (server).
 
         :param domType: The type of the connection expressed as the sometimes
-                        corosponding domains type
+                        corresponding domains type
         :param spUUID: deprecated, unused
         :param conList: A list of connections. Each connection being a dict
-                        with keys depnding ont the type
+                        with keys depending on the type
         :type conList: list
         :param options: unused
 
@@ -2202,7 +2202,7 @@ class HSM:
             # Allow format also for broken domain
         except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError, se.MiscFileReadException,
                 se.MiscBlockReadException, se.MiscBlockReadIncomplete), e:
-            self.log.warn("Domain %s has problem with metadata. Continue formating... (%s)", sdUUID, e)
+            self.log.warn("Domain %s has problem with metadata. Continue formatting... (%s)", sdUUID, e)
 
         self._recycle(sd)
 
@@ -2640,7 +2640,7 @@ class HSM:
         :type imgUUID: UUID
         :param volUUID: The UUID of the volume you want to prepare.
         :type volUUID: UUID
-        :param rw: Should the voulme be set as RW. ?
+        :param rw: Should the volume be set as RW. ?
         :type rw: bool
         :param options: ?
         """
@@ -2653,7 +2653,7 @@ class HSM:
         try:
             vol = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
             # NB We want to be sure that at this point HSM does not use stale LVM
-            # cache info, so we call refresh explicitely. We may want to remove
+            # cache info, so we call refresh explicitly. We may want to remove
             # this refresh later, when we come up with something better.
             vol.refreshVolume()
             vol.prepare(rw=rw)
@@ -2854,7 +2854,7 @@ class HSM:
         Release connection references.
 
         Releases the references, if a connection becomes orphaned as a result
-        of this action the connection will be disconnted. The connection might
+        of this action the connection will be disconnected. The connection might
         remain active if VDSM detects that it is still under use but will not
         be kept alive by VDSM anymore.
 

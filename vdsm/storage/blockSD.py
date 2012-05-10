@@ -60,7 +60,7 @@ BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 
 log = logging.getLogger("Storage.BlockSD")
 
-# FIXME: Make this calcuated from something logical
+# FIXME: Make this calculated from something logical
 RESERVED_METADATA_SIZE = 40 * (2 ** 20)
 RESERVED_MAILBOX_SIZE = MAILBOX_SIZE * safelease.MAX_HOST_ID
 METADATA_BASE_SIZE = 378
@@ -970,7 +970,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
             if state != "D":
                 # If the umount is not in d state there
-                # is a possiblity that the world might
+                # is a possibility that the world might
                 # be in flux and umount will get stuck
                 # in an unkillable state that is not D
                 # which I don't know about, perhaps a

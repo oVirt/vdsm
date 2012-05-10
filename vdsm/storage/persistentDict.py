@@ -182,7 +182,7 @@ class PersistentDict(object):
         self._metaRW = metaReaderWriter
         self._isValid = False
         self._inTransaction = False
-        self.log.debug("Created a persistant dict with %s backend", self._metaRW.__class__.__name__)
+        self.log.debug("Created a persistent dict with %s backend", self._metaRW.__class__.__name__)
 
 
     def get(self, key, default=None):

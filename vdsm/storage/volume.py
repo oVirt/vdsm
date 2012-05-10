@@ -244,7 +244,7 @@ class Volume:
     def share(self, dst_image_dir, hard=True):
         """
         Share this volume to dst_image_dir
-        'hard' - link type: file volumes should use hardlinks (default behaviour)
+        'hard' - link type: file volumes should use hardlinks (default behavior)
                             block volumes should use softlinks (explicitly hard=False)
         """
         self.log.debug("Volume.share)share  %s to %s hard %s" % (self.volUUID, dst_image_dir, hard))
@@ -754,7 +754,7 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
         # cmd += ["-b", parent, volume]
         # cwd = os.path.split(os.path.split(volume)[0])[0]
 
-        # Temprary fix for qemu-img creation problem
+        # Temporary fix for qemu-img creation problem
         cmd += ["-F", parent_format, "-b", os.path.join("..", parent), volume]
         cwd = os.path.split(volume)[0]
     else:

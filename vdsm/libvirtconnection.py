@@ -64,7 +64,7 @@ def __eventCallback(conn, dom, *args):
             path, type, status = args[:-1]
             v._onBlockJobEvent(path, type, status)
         else:
-            v.log.warning('unkown eventid %s args %s', eventid, args)
+            v.log.warning('unknown eventid %s args %s', eventid, args)
     except:
         cif.log.error("Error running VM callback", exc_info=True)
 

@@ -21,7 +21,7 @@
 '''
     Tasks: tasks object model some sort of VDSM task (storage task).
     A task object may be standalone (unmanaged task), but then it is limited and
-    cannot be automatically persisted or run (asyncronous jobs).
+    cannot be automatically persisted or run (asynchronous jobs).
     A managed task is managed by a TaskManager. Under the task manager a task may
     persist itself, run asynchronous jobs, run recovery procedures, etc.
     A task is successful if it finished its operations during the
@@ -30,7 +30,7 @@
     The task result is the prepare state result if no async jobs are scheduled,
     or the result of the last job run.
 
-    Jobs: jobs object model an asyncronous job that is run in a context of a
+    Jobs: jobs object model an asynchronous job that is run in a context of a
     thread belonging to a thread pool (and managed by the task manager). Currently
     a task may schedule any number of jobs that run sequentially by the same
     worker thread.
@@ -38,7 +38,7 @@
     Recovery: recovery objects model a recovery operation required to restore
     the system to a known coherent state. A task may register several recovery
     objects that are kept in a stack (the last recovery registered is run first - lifo).
-    Tasks that have "auto" recovery policy run the recovery procedue ("rollback"),
+    Tasks that have "auto" recovery policy run the recovery procedure ("rollback"),
     in any case of task failure/abort, and immediately after the task is
     recovered (loaded) from its persisted store.
 '''
@@ -934,7 +934,7 @@ class Task:
             self.lock.acquire()
             self.ref -= 1
             self.lock.release()
-            #If somthing horrible went wrong. Just fail the task.
+            #If something horrible went wrong. Just fail the task.
             if not self.state.isDone():
                 self.log.warn("Task exited in non terminal state. Setting tasks as failed.")
                 self._updateState(State.failed)
@@ -1033,7 +1033,7 @@ class Task:
 
     def pushRecovery(self, recovery):
         """
-        Add recovery "job" to the task. Recoveries are commited in FILO order.
+        Add recovery "job" to the task. Recoveries are committed in FILO order.
         Assumes that all required resources are acquired or registered.
         """
         if not isinstance(recovery, Recovery):
@@ -1178,7 +1178,7 @@ class Task:
 
 
     def commit(self, args = None):
-        self.log.debug("Commiting task: %s", self.id)
+        self.log.debug("committing task: %s", self.id)
         vars.task = self
         try:
             self._incref()

@@ -387,7 +387,7 @@ class ConfigWriter(object):
         :param mtu: mtu value
         :type mtu: integer
 
-        getMaxMtu retuen the highest value in a connection tree,
+        getMaxMtu return the highest value in a connection tree,
         it check if a vlan, bond that have a higher mtu value
         """
         for nic in nics:
@@ -992,7 +992,7 @@ def setupNetworks(networks={}, bondings={}, **options):
         Bondings are removed when they change state from 'used' to 'unused'.
 
         By default, if you edit a network that is attached to a bonding, it's not
-        necessary to re-specify the bonding (you need only to note the attachement
+        necessary to re-specify the bonding (you need only to note the attachment
         in the network's attributes). Similarly, if you edit a bonding, it's not
         necessary to specify its networks.
         However, if you specify the 'explicitBonding' option as true, the function

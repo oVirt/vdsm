@@ -45,7 +45,7 @@ class TaskManager:
 
     def _queueTask(self, task, method):
         try:
-            self.log.debug("queueing task: %s", task.id)
+            self.log.debug("queuing task: %s", task.id)
             self._tasks[task.id] = task
             if not self.tp.queueTask(task.id, method):
                 self.log.error("unable to queue task: %s", task.dumpTask())
@@ -75,7 +75,7 @@ class TaskManager:
 
 
     def prepareForShutdown(self):
-        """ Prepare to shutdown. Stop all threads and asyncronous tasks
+        """ Prepare to shutdown. Stop all threads and asynchronous tasks
         """
         self.log.debug("Request to stop all tasks")
 

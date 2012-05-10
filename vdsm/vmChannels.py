@@ -103,7 +103,7 @@ class Listener(threading.Thread):
             self.log.debug("Trying to connect fileno %d.", fileno)
             try:
                 if obj['connect_cb'](obj['opaque']):
-                    self.log.debug("Connect fileno %d was successed.", fileno)
+                    self.log.debug("Connect fileno %d was succeed.", fileno)
                     del self._unconnected[fileno]
                     self._channels[fileno] = obj
                     obj['read_time'] = time.time()

@@ -328,7 +328,7 @@ class FileStorageDomain(sd.StorageDomain):
         Format detached storage domain.
         This removes all data from the storage domain.
         """
-        cls.log.info("Formating domain %s", sdUUID)
+        cls.log.info("Formatting domain %s", sdUUID)
         try:
             domaindir = cls.findDomainPath(sdUUID)
         except (se.StorageDomainDoesNotExist):

@@ -104,6 +104,44 @@ class Image:
         """
         return os.path.join(self.repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID)
 
+    def preDeleteHandler(self, sdUUID, imgUUID):
+        """
+        Pre-delete handler for images on backup domain
+        """
+        # We should handle 2 opposite scenarios:
+        # 1. Remove template's image:  Create 'fake' template instead of deleted one
+        # 2. Remove regular image:  Remove parent-'fake' template if nobody need it already
+        try:
+            pvol = self.getTemplate(sdUUID=sdUUID, imgUUID=imgUUID)
+            # 1. If we required to delete template's image that have VMs
+            # based on it, we should create similar 'fake' template instead
+            if pvol:
+                pvolParams = pvol.getVolumeParams()
+                # Find out real imgUUID of parent volume
+                pimg = pvolParams['imgUUID']
+                # Check whether deleted image is a template itself
+                if imgUUID == pimg:
+                    imglist = pvol.findImagesByVolume()
+                    if len(imglist) > 1:
+                        return pvolParams
+
+            # 2. If we required to delete regular (non-template) image, we should also
+            # check its template (if exists) and in case that template is 'fake'
+            # and no VMs based on it, remove it too.
+            if pvol and pvol.isFake():
+                # At this point 'pvol' is a fake template and we should find out all its children
+                chList = pvol.getAllChildrenList(self.repoPath, sdUUID, pimg, pvol.volUUID)
+                # If 'pvol' has more than one child don't touch it, else remove it
+                if len(chList) <= 1:
+                    # Delete 'fake' parent image before deletion required image
+                    # will avoid situation which new image based on this 'fake' parent
+                    # can be created.
+                    self._delete(sdUUID=sdUUID, imgUUID=pimg, postZero=False, force=True)
+        except se.StorageException:
+            self.log.warning("Image %s in domain %s had problem during deletion process", imgUUID, sdUUID, exc_info=True)
+
+        return None
+
     def delete(self, sdUUID, imgUUID, postZero, force):
         """
         Delete whole image
@@ -901,7 +939,7 @@ class Image:
         # FIXME!!! In this case we need workaround to rebase successor
         # and transform it to be a base volume (without pointing to any backing volume).
         # Actually this case should be handled by 'qemu-img rebase' (RFE to kvm).
-        # At this point we can achive this result by 4 steps prosedure:
+        # At this point we can achieve this result by 4 steps procedure:
         # Step 1: create temporary empty volume similar to ancestor volume
         # Step 2: Rebase (safely) successor volume on top of this temporary volume
         # Step 3: Rebase (unsafely) successor volume on top of "" (empty string)

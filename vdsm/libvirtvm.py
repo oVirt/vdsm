@@ -462,7 +462,7 @@ class MigrationSourceThread(vm.MigrationSourceThread):
             self._vm._dom.abortJob()
         except libvirt.libvirtError, e:
             # TODO: yes its not nice searching in the error message,
-            # but this is the libvrirt solution
+            # but this is the libvirt solution
             # this will be solved at bz #760149
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED and \
                     'canceled by client' in e.get_error_message():
@@ -547,7 +547,7 @@ class _DomXML:
 
     def appendConsole(self):
         """
-        Add <console> elelemt to domain
+        Add <console> element to domain
 
         <console type='pty'>
            <target type='virtio' port='0'/>
@@ -1223,7 +1223,7 @@ class LibvirtVm(vm.Vm):
         self._getUnderlyingVideoDeviceInfo()
         self._getUnderlyingControllerDeviceInfo()
         self._getUnderlyingBalloonDeviceInfo()
-        # Obtain info of all uknown devices. Must be last!
+        # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
     def _domDependentInit(self):
@@ -1562,7 +1562,7 @@ class LibvirtVm(vm.Vm):
             except Exception, e:
                 # Improve description of exception
                 if not self._incomingMigrationFinished.isSet():
-                    newMsg = '%s - Timed out (did not recieve success event)' % (e.args[0] if len(e.args) else 'Migration Error')
+                    newMsg = '%s - Timed out (did not receive success event)' % (e.args[0] if len(e.args) else 'Migration Error')
                     e.args = (newMsg,) + e.args[1:]
                 raise
 
@@ -1751,7 +1751,7 @@ class LibvirtVm(vm.Vm):
                                      newDrives[vmDevName]["mirrorPath"])
             disks.appendChild(snapelem)
 
-        # If all the drives are the corrent ones, return success
+        # If all the drives are the current ones, return success
         if len(newDrives) == 0:
             self.log.debug("All the drives are already in use, success")
             return {'status': doneCode}
@@ -2276,7 +2276,7 @@ class LibvirtVm(vm.Vm):
                     .childNodes[0].getElementsByTagName('devices')[0] \
                     .getElementsByTagName('disk')
         # FIXME!  We need to gather as much info as possible from the libvirt.
-        # In the future we can return this real data to managment instead of
+        # In the future we can return this real data to management instead of
         # vm's conf
         for x in disksxml:
             sources = x.getElementsByTagName('source')

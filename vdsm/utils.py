@@ -198,7 +198,7 @@ class HostSample(BaseSample):
     """
     A sample of host-related statistics.
 
-    Contatins the sate of the host in the time of initailization.
+    Contains the sate of the host in the time of initialization.
     """
     MONITORED_PATHS = ['/tmp', '/var/log', '/var/log/core', constants.P_VDSM_RUN]
 
@@ -457,7 +457,7 @@ class StatsThread(threading.Thread):
 
     def get(self):
         """
-        Compile and return a dict containg the stats.
+        Compile and return a dict containing the stats.
 
         :returns: a dict that with the following keys:
 

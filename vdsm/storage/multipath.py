@@ -56,7 +56,7 @@ log = logging.getLogger("Storage.Multipath")
 
 def rescan():
     """
-    Forces multiupath daemon to rescan the list of available devices and
+    Forces multipath daemon to rescan the list of available devices and
     refresh the mapping table. New devices can be found under /dev/mapper
 
     Should only be called from hsm._rescanDevices()

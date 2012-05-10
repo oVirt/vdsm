@@ -98,7 +98,7 @@ class VM(object):
 
         :param vmId: uuid of specific VM.
         :type vmId: UUID
-        :param driveSpec: specfication of the new CD image. Either an
+        :param driveSpec: specification of the new CD image. Either an
                 image path or a `storage`-centric quartet.
         """
         v = self._cif.vmContainer.get(self._UUID)
@@ -112,7 +112,7 @@ class VM(object):
 
         :param vmId: uuid of specific VM.
         :type vmId: UUID
-        :param driveSpec: specfication of the new CD image. Either an
+        :param driveSpec: specification of the new CD image. Either an
                 image path or a `storage`-centric quartet.
         """
         v = self._cif.vmContainer.get(self._UUID)
@@ -431,8 +431,8 @@ class VM(object):
         Migrate a VM to a remote host.
 
         :param params: a dictionary containing:
-            *dst* - remote host or hibernation image filname
-            *dstparams* - hibernation image filname for vdsm parameters
+            *dst* - remote host or hibernation image filename
+            *dstparams* - hibernation image filename for vdsm parameters
             *mode* - ``remote``/``file``
             *method* - ``online``
             *downtime* - allowed down time during online migration

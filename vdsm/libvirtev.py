@@ -162,7 +162,7 @@ class virEventLoopPure:
 
     # This is the heart of the event loop, performing one single
     # iteration. It asks when the next timeout is due, and then
-    # calcuates the maximum amount of time it is able to sleep
+    # calculates the maximum amount of time it is able to sleep
     # for in poll() pending file handle events.
     #
     # It then goes into the poll() sleep.
@@ -171,9 +171,9 @@ class virEventLoopPure:
     # events which need to be dispatched to registered callbacks
     # It may also be time to fire some periodic timers.
     #
-    # Due to the coarse granularity of schedular timeslices, if
+    # Due to the coarse granularity of scheduler timeslices, if
     # we ask for a sleep of 500ms in order to satisfy a timer, we
-    # may return upto 1 schedular timeslice early. So even though
+    # may return upto 1 scheduler timeslice early. So even though
     # our sleep timeout was reached, the registered timer may not
     # technically be at its expiry point. This leads to us going
     # back around the loop with a crazy 5ms sleep. So when checking
@@ -216,7 +216,7 @@ class virEventLoopPure:
                 continue
 
             want = t.get_last_fired() + interval
-            # Deduct 20ms, since schedular timeslice
+            # Deduct 20ms, since scheduler timeslice
             # means we could be ever so slightly early
             if now >= (want-20):
                 self.debug("Dispatch timer %d now %s want %s" % (t.get_id(), str(now), str(want)))
@@ -240,7 +240,7 @@ class virEventLoopPure:
 
     # Registers a new file handle 'fd', monitoring  for 'events' (libvirt
     # event constants), firing the callback  cb() when an event occurs.
-    # Returns a unique integer identier for this handle, that should be
+    # Returns a unique integer identifier for this handle, that should be
     # used to later update/remove it
     def add_handle(self, fd, events, cb, opaque):
         handleID = self.nextHandleID + 1
