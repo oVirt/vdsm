@@ -24,6 +24,9 @@ from testrunner import VdsmTestCase as TestCaseBase
 
 import netinfo
 
+# speeds defined in ethtool
+ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
+
 
 class TestNetinfo(TestCaseBase):
 
@@ -40,3 +43,9 @@ class TestNetinfo(TestCaseBase):
         self.assertTrue(nicName not in netinfo.nics())
         s = netinfo.speed(nicName)
         self.assertEqual(s, 0)
+
+    def testSpeedInRange(self):
+        for d in netinfo.nics():
+            s = netinfo.speed(d)
+            self.assertFalse(s < 0)
+            self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
