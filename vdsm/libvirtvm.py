@@ -978,15 +978,23 @@ class Drive(LibvirtVmDevice):
         self.truesize = int(kwargs.get('truesize', '0'))
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
         self.name = self._makeName()
-        try:
-            self.blockDev = utils.isBlockDevice(self.path)
-        except OSError:
-            if self.device in ('cdrom', 'floppy'):
-                self.log.debug('removable device not found in %s', self.path)
-                self.blockDev = False
-            else:
-                raise
+
+        if self.device in ("cdrom", "floppy"):
+            self._blockDev = False
+        else:
+            self._blockDev = None
+
         self._customize()
+
+    @property
+    def blockDev(self):
+        if self._blockDev is None:
+            try:
+                self._blockDev = utils.isBlockDevice(self.path)
+            except:
+                self.log.debug("Unable to determine if the path '%s' is a "
+                               "block device", self.path, exc_info=True)
+        return self._blockDev
 
     def _customize(self):
         # Customize disk device
