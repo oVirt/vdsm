@@ -38,7 +38,6 @@ from vdsm import constants
 from vdsm import utils
 import configNetwork
 import caps
-from BindingXMLRPC import BindingXMLRPC
 from vmChannels import Listener
 import API
 import blkid
@@ -96,8 +95,8 @@ class clientIF:
             raise
         self._prepareBindings()
 
-    def _prepareBindings(self):
-        self.bindings = {}
+    def _loadBindingXMLRPC(self):
+        from BindingXMLRPC import BindingXMLRPC
         xmlrpc_params = {
             'ip': config.get('addresses', 'management_ip'),
             'port': config.get('addresses', 'management_port'),
@@ -107,6 +106,17 @@ class clientIF:
             'trust_store_path': config.get('vars', 'trust_store_path'),
             'default_bridge': config.get("vars", "default_bridge"), }
         self.bindings['xmlrpc'] = BindingXMLRPC(self, self.log, xmlrpc_params)
+
+
+    def _prepareBindings(self):
+        self.bindings = {}
+        if config.getboolean('vars', 'xmlrpc_enable'):
+            try:
+                self._loadBindingXMLRPC()
+            except ImportError:
+                self.log.error('Unable to load the xmlrpc server module. '
+                               'Please make sure it is installed.')
+
 
     def _syncLibvirtNetworks(self):
         """

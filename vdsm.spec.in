@@ -91,9 +91,20 @@ Summary:        VDSM command line interface
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-xmlrpc = %{version}-%{release}
 
 %description cli
 Call VDSM commands from the command line. Used for testing and debugging.
+
+%package xmlrpc
+Summary:        VDSM xmlrpc API
+BuildArch:      noarch
+
+Requires: %{name}-python = %{version}-%{release}
+
+%description xmlrpc
+An XMLRPC interface for interacting with vdsmd. Primary control interface for
+ovirt-engine and vdsClient.
 
 %package bootstrap
 Summary:        VDSM bootstrapping package
@@ -123,6 +134,7 @@ Shared libraries beween the various VDSM packages.
 %package debug-plugin
 Summary:        VDSM Debug Plugin
 Requires:       vdsm
+Requires:       %{name}-xmlrpc = %{version}-%{release}
 BuildArch:      noarch
 
 %description debug-plugin
@@ -459,7 +471,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
-%{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
@@ -717,6 +728,10 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
 %{_mandir}/man1/vdsClient.1*
+
+%files xmlrpc
+%defattr(-, root, root, -)
+%{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 
 %files bootstrap
 %defattr(-, root, root, -)
