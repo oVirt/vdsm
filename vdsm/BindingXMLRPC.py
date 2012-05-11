@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import SimpleXMLRPCServer
 from vdsm import SecureXMLRPCServer
 import logging
 import libvirt
+import threading
 
 import caps
 from vdsm import constants
@@ -61,21 +62,27 @@ class BindingXMLRPC(object):
         """
         Register xml-rpc functions and serve clients until stopped
         """
+        def threaded_start():
+            self._registerFunctions()
+            self.server.timeout = 1
+            self._enabled = True
 
-        self._registerFunctions()
-        self.server.timeout = 1
-        self._enabled = True
-
-        while self._enabled:
-            try:
-                self.server.handle_request()
-            except Exception, e:
-                if e[0] != EINTR:
-                    self.log.error("xml-rpc handler exception", exc_info=True)
+            while self._enabled:
+                try:
+                    self.server.handle_request()
+                except Exception, e:
+                    if e[0] != EINTR:
+                        self.log.error("xml-rpc handler exception",
+                                       exc_info=True)
+        self._thread = threading.Thread(target=threaded_start,
+                                        name='BindingXMLRPC')
+        self._thread.daemon = True
+        self._thread.start()
 
     def prepareForShutdown(self):
         self._enabled = False
         self.server.server_close()
+        self._thread.join()
 
     def getServerInfo(self):
         """

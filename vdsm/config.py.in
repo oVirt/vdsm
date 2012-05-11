@@ -126,6 +126,8 @@ parameters = [
 
         ('fake_kvm_support', 'false', None),
 
+        ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
+
     ]),
 
     # Section: [ksm]

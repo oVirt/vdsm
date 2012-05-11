@@ -152,7 +152,10 @@ class clientIF:
             self._shutdownSemaphore.release()
 
     def serve(self):
-        self.bindings['xmlrpc'].start()
+        for binding in self.bindings.values():
+            binding.start()
+        while self._enabled:
+            time.sleep(3)
 
     def _initIRS(self):
         self.irs = None
