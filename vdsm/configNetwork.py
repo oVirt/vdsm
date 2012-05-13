@@ -659,19 +659,24 @@ def createLibvirtNetwork(network, bridged=True, iface=None):
     else:
         netXml = '''<network><name>%s</name><forward mode='passthrough'>
                     <interface dev='%s'/></forward></network>''' % (escape(netName), escape(iface))
+    removeLibvirtNetwork(network, log=False)
     net = conn.networkDefineXML(netXml)
     net.create()
     net.setAutostart(1)
 
-def removeLibvirtNetwork(network):
+def removeLibvirtNetwork(network, log=True):
     netName = LIBVIRT_NET_PREFIX + network
     conn = libvirtconnection.get()
     try:
         net = conn.networkLookupByName(netName)
-        net.destroy()
-        net.undefine()
+        if net.isActive():
+            net.destroy()
+        if net.isPersistent():
+            net.undefine()
     except libvirt.libvirtError:
-        logging.debug('failed to remove libvirt network ' + netName, exec_info=True)
+        if log:
+            logging.debug('failed to remove libvirt network %s', netName,
+                          exec_info=True)
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
     brifs = os.listdir('/sys/class/net/%s/brif/' % bridge)
