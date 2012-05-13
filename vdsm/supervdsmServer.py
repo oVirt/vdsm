@@ -227,7 +227,7 @@ class _SuperVdsm(object):
         return fails
 
     @logDecorator
-    def setMirrorPromisc(self, networkName, ifaceName):
+    def setPortMirroring(self, networkName, ifaceName):
         '''
         Copy networkName traffic of a bridge to an interface
 
@@ -239,17 +239,17 @@ class _SuperVdsm(object):
 
         this commands mirror all 'networkName' traffic to 'ifaceName'
         '''
-        tc.setMirrorPromisc(networkName, ifaceName)
+        tc.setPortMirroring(networkName, ifaceName)
 
     @logDecorator
-    def unsetMirrorPromisc(self, networkName):
+    def unsetPortMirroring(self, networkName):
         '''
         Release captured  mirror networkName traffic from networkName bridge
 
         :param networkName: networkName to release the traffic capture
         :type networkName: string
         '''
-        tc.unsetMirrorPromisc(networkName)
+        tc.unsetPortMirroring(networkName)
 
     @logDecorator
     def mkFloppyFs(self, vmId, files):

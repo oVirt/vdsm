@@ -23,6 +23,7 @@ from subprocess import list2cmdline
 import storage.misc
 from vdsm.constants import EXT_TC, EXT_IFCONFIG
 
+ERR_DEV_NOEXIST = 2
 PROC_ERROR_MSG = 'error executing command "%s" error: %s'
 
 class TrafficControlException(Exception):
@@ -31,7 +32,7 @@ class TrafficControlException(Exception):
         self.message = message
         Exception.__init__(self, self.errCode, self.message)
 
-def setMirrorPromisc(network, target):
+def setPortMirroring(network, target):
     qdisc_add_ingress(network)
     add_filter(network, target, 'ffff:')
     qdisc_replace_parent(network)
@@ -39,7 +40,7 @@ def setMirrorPromisc(network, target):
     add_filter(network, target, devid)
     set_promisc(network, True)
 
-def unsetMirrorPromisc(network):
+def unsetPortMirroring(network):
     qdisc_del(network, 'root')
     qdisc_del(network, 'ingress')
     set_promisc(network, False)
@@ -72,8 +73,12 @@ def qdisc_get_devid(dev):
     return out.split(' ')[2]
 
 def qdisc_del(dev, queue):
-    command = [EXT_TC, 'qdisc', 'del', 'dev', dev, queue]
-    _process_request(command)
+    try:
+        command = [EXT_TC, 'qdisc', 'del', 'dev', dev, queue]
+        _process_request(command)
+    except TrafficControlException, e:
+        if e.errCode != ERR_DEV_NOEXIST:
+            raise
 
 def set_promisc(dev, on=True):
     promisc = 'promisc'

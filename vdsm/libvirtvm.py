@@ -1241,9 +1241,9 @@ class LibvirtVm(vm.Vm):
 
         #Currently there is no protection agains mirroring a network twice,
         for nic in self._devices[vm.NIC_DEVICES]:
-            if hasattr(nic, 'promisc'):
-                for network in nic.promisc:
-                    supervdsm.getProxy().setMirrorPromisc(network, nic)
+            if hasattr(nic, 'portMirroring'):
+                for network in nic.portMirroring:
+                    supervdsm.getProxy().setPortMirroring(network, nic.name)
 
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
@@ -2011,9 +2011,10 @@ class LibvirtVm(vm.Vm):
 
         #unsetting mirror network will clear both mirroring (on the same network).
         for nic in self._devices[vm.NIC_DEVICES]:
-            if hasattr(nic, 'promisc'):
-                for network in nic.promisc:
-                    supervdsm.getProxy().unsetMirrorPromisc(network)
+            if hasattr(nic, 'portMirroring'):
+                for network in nic.portMirroring:
+                    supervdsm.getProxy().unsetPortMirroring(network)
+
         # delete the payload devices
         for drive in self._devices[vm.DISK_DEVICES]:
             if hasattr(drive, 'specParams') and \
@@ -2070,6 +2071,7 @@ class LibvirtVm(vm.Vm):
 
     def destroy(self):
         self.log.debug('destroy Called')
+
         hooks.before_vm_destroy(self._lastXMLDesc, self.conf)
         self.destroyed = True
 
