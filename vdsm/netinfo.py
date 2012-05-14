@@ -102,6 +102,9 @@ def bridge_stp_state(bridge):
     else:
         return 'off'
 
+def isvirtio(dev):
+    return 'virtio' in os.readlink('/sys/class/net/%s/device' % dev)
+
 def isbonding(dev):
     return os.path.exists('/sys/class/net/%s/bonding' % dev)
 
@@ -113,7 +116,8 @@ def speed(dev):
     try:
         # nics() filters out OS devices (bonds, vlans, bridges)
         # operstat() filters out down/disabled nics
-        if dev in nics() and operstate(dev) == 'up':
+        # virtio is a valid device, but doesn't support speed
+        if dev in nics() and operstate(dev) == 'up' and not isvirtio(dev):
             # the device may have been disabled/downed after checking
             # so we validate the return value as sysfs may return
             # special values to indicate the device is down/disabled
