@@ -27,7 +27,7 @@
 
 static PyObject *createProcess(PyObject *self, PyObject *args);
 static PyMethodDef CreateProcessMethods[];
-static void closeFDs(void);
+static void closeFDs(int errnofd);
 
 /* Python boilerplate */
 static PyMethodDef
@@ -49,9 +49,25 @@ initcreateprocess(void)
         return;
 }
 
+static int
+setCloseOnExec(int fd) {
+    int flags;
+
+    flags = fcntl(fd, F_GETFD);
+    if (flags == -1) {
+      return -1;
+    }
+
+    if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
+      return -1;
+    }
+
+    return 0;
+}
+
 /* Closes all open FDs except for stdin, stdout and stderr */
 static void
-closeFDs(void) {
+closeFDs(int errnofd) {
     DIR *dp;
     int dfd;
     struct dirent *ep;
@@ -69,6 +85,10 @@ closeFDs(void) {
         }
 
         if (fdNum == dfd) {
+            continue;
+        }
+
+        if (fdNum == errnofd) {
             continue;
         }
 
@@ -143,6 +163,9 @@ createProcess(PyObject *self, PyObject *args)
     int in1fd[2] = {-1, -1};
     int in2fd[2] = {-1, -1};
 
+    int errnofd[2] = {-1, -1};
+    int childErrno = 0;
+
     PyObject* pyArgList;
     PyObject* pyEnvList;
     const char* cwd;
@@ -172,6 +195,11 @@ createProcess(PyObject *self, PyObject *args)
         }
     }
 
+    if(pipe(errnofd) < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto fail;
+    }
+
 try_fork:
     cpid = fork();
     if (cpid < 0) {
@@ -199,14 +227,19 @@ try_fork:
         close(in1fd[1]);
         close(in2fd[0]);
         close(in2fd[1]);
+        close(errnofd[0]);
+        if (setCloseOnExec(errnofd[1]) < 0) {
+            goto sendErrno;
+        }
 
         if (close_fds) {
-            closeFDs();
+            closeFDs(errnofd[1]);
         }
 
         if (cwd) {
-            /* this assignment is there to stop the compile warnings */
-            cpid = chdir(cwd);
+            if (chdir(cwd) < 0) {
+                goto sendErrno;
+            }
             setenv("PWD", cwd, 1);
         }
 exec:
@@ -221,9 +254,22 @@ exec:
         {
             goto exec;
         }
-        fprintf(stderr, "exec failed: %s", strerror(errno));
-        exit(errno);
+sendErrno:
+        if (write(errnofd[1], &errno, sizeof(int)) < 0) {
+            exit(errno);
+        }
+        exit(-1);
     }
+
+    close(errnofd[1]);
+    errnofd[1] = -1;
+    if (read(errnofd[0], &childErrno, sizeof(int)) == sizeof(int)) {
+        PyErr_SetString(PyExc_OSError, strerror(childErrno));
+        goto fail;
+    }
+
+    close(errnofd[0]);
+    errnofd[0] = -1;
 
     /* From this point errors shouldn't occur, if they do something is very
      * very very wrong */
@@ -243,6 +289,14 @@ fail:
 
     if (envp) {
         free(envp);
+    }
+
+    if (errnofd[0] >= 0) {
+        close(errnofd[0]);
+    }
+
+    if (errnofd[1] >= 0) {
+        close(errnofd[1]);
     }
 
     return NULL;
