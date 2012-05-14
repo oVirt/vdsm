@@ -99,6 +99,16 @@ closeFDs(int errnofd) {
     close(dfd);
 }
 
+static void
+freeStringArray(char** arr) {
+    char** item;
+    for (item = arr; *item != NULL; item++) {
+        PyMem_Free(*item);
+    }
+
+    free(arr);
+}
+
 /* Copies the strings from a python list to a null terminated array.
  * The strings are shallow copied and are owned by python.
  * Don't keep this array after the call.
@@ -108,7 +118,6 @@ closeFDs(int errnofd) {
  */
 static char**
 pyListToArray(PyObject* list, int checkIfEmpty) {
-    PyObject *item;
     int argn;
     int i;
     char** argv;
@@ -131,18 +140,20 @@ pyListToArray(PyObject* list, int checkIfEmpty) {
     }
 
     for (i = 0; i < argn; i++) {
-        item = PyList_GetItem(list, i);
-        if (!PyString_Check(item)) {
-            PyErr_SetString(PyExc_TypeError, "All items in list must be strings");
+        if (!PyArg_Parse(PyList_GetItem(list, i),
+                         "et;",
+                         Py_FileSystemDefaultEncoding,
+                         &argv[i])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "createProcess() arg 2 must contain only strings");
             goto fail;
         }
-        argv[i] = PyString_AsString(item);
     }
 
     return argv;
 
 fail:
-    free(argv);
+    freeStringArray(argv);
     return NULL;
 }
 
@@ -274,21 +285,21 @@ sendErrno:
     /* From this point errors shouldn't occur, if they do something is very
      * very very wrong */
 
-    free(argv);
+    freeStringArray(argv);
 
     if (envp) {
-        free(envp);
+        freeStringArray(envp);
     }
 
     return Py_BuildValue("(iiii)", cpid, outfd[1], in1fd[0], in2fd[0]);
 
 fail:
     if (argv) {
-        free(argv);
+        freeStringArray(argv);
     }
 
     if (envp) {
-        free(envp);
+        freeStringArray(envp);
     }
 
     if (errnofd[0] >= 0) {
