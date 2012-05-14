@@ -13,7 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA  02110-1301  USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -35,6 +36,7 @@ FC_HOST_MASK = "/sys/class/fc_host/host*"
 PORT_NAME = "port_name"
 NODE_NAME = "node_name"
 
+
 def getiSCSIInitiators():
     """
     Get iSCSI initiator name from the default location.
@@ -45,7 +47,7 @@ def getiSCSIInitiators():
         with file(ISCSI_INITIATOR_NAME) as f:
             for line in f:
                 if line.startswith(INITIATOR_NAME):
-                    hba = {'InitiatorName':line.split("=")[1].strip()}
+                    hba = {'InitiatorName': line.split("=")[1].strip()}
                     hbas.append(hba)
                     break
     except OSError:
@@ -67,7 +69,7 @@ def getModelDesc(fch, host):
             model_name = file(name_path).read().strip()
             model_desc = file(desc_path).read().strip()
         except IOError:
-            pass #retry
+            pass   # retry
 
     return (model_name, model_desc)
 
@@ -86,7 +88,7 @@ def getFCInitiators():
         # Get model name and description
         model = "%s - %s" % getModelDesc(fch, host)
         # Construct FC HBA descriptor
-        hbas.append({"wwpn":wwpn, "wwnn":wwnn, "model":model})
+        hbas.append({"wwpn": wwpn, "wwnn": wwnn, "model": model})
     return hbas
 
 
@@ -94,6 +96,6 @@ def HBAInventory():
     """
     Returns the inventory of the hosts HBAs and their parameters.
     """
-    inv = {'iSCSI':getiSCSIInitiators(), 'FC':getFCInitiators()}
+    inv = {'iSCSI': getiSCSIInitiators(), 'FC': getFCInitiators()}
 
     return inv
