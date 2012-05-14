@@ -18,7 +18,7 @@ SRIOV_CACHE_FILENAME = 'sriov.cache'
 sriov vdsm hook
 ===============
 hook is getting VF via its os nic names, i.e. sriov=eth5
-and get its pci address, dettach it from the os, create xml
+and get its pci address, detach it from the os, create xml
 representation of the device for libvirt domain and adding
 it to the guest xml.
 '''
@@ -57,7 +57,7 @@ def detachDevice(addr):
         sys.stderr.write('sriov: detaching pci device: %s\n' % addr)
         nodeDevice.dettach()
     else:
-        sys.stderr.write('sriov: cannot dettach device: %s\n' % addr)
+        sys.stderr.write('sriov: cannot detach device: %s\n' % addr)
 
 
 def createSriovElement(domxml, bus, slot, function):
@@ -93,7 +93,7 @@ def deviceExists(devName):
 
 def getPciAddress(devPath):
     '''
-    return pci address in format that libvirt excpect:
+    return pci address in format that libvirt expect:
     linux pci address 0000:1a:10.6
     libvirt expected 0000_1a_10_6
     '''

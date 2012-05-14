@@ -163,8 +163,8 @@ def run():
 
     sys.exit(not core.run(config=conf, testRunner=runner, argv=argv))
 
-# This is an ungly hack to pretend that we have the vdsm module installed.
-# Remove this when source is properly orgenized.
+# This is an ugly hack to pretend that we have the vdsm module installed.
+# Remove this when source is properly organized.
 from types import ModuleType
 
 

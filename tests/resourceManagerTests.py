@@ -460,7 +460,7 @@ class ResourceManagerTests(TestCaseBase):
 
     def testResourceAutorelease(self):
         manager = self.manager
-        self.log.info("Acquiaring resource", extra={'resource': "bob"})
+        self.log.info("Acquiring resource", extra={'resource': "bob"})
         res = manager.acquireResource("storage", "resource",
                 resourceManager.LockType.shared)
         resProxy = proxy(res)

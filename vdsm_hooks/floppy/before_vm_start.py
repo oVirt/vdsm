@@ -8,7 +8,7 @@ import traceback
 '''
 floppy vdsm hook
 ================
-adding floppy to livbirt domain entry:
+adding floppy to libvirt domain entry:
 
 syntax:
 floppy=/path/to/vfd

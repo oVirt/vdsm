@@ -24,7 +24,7 @@ def captureNetwork(networkName, ifaceName, mode):
             u32 match u8 0 0 action mirred egress mirror dev ifaceName
     $ tc qdisc replace dev networkName parent root prio
 
-    get the id and set it as the parent id of the next commad
+    get the id and set it as the parent id of the next command
     id=`tc qdisc show dev networkName | grep prio | awk '{print $3}'`
 
     # set the parent id

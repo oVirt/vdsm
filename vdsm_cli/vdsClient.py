@@ -183,7 +183,7 @@ class service:
             params['drives'] = drives
         if devices:
             params['devices'] = devices
-        ##Backward competability for vdsClient users
+        ##Backward compatibility for vdsClient users
         if 'vt' in params:
             params['kvmEnable'] = params['vt']
 

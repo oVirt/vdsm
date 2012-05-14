@@ -978,7 +978,7 @@ class DeferableContextTests(TestCaseBase):
 
     def testRaise(self):
         """
-        Test that raising an exception in a defered action does
+        Test that raising an exception in a deferred action does
         not block all subsequent actions from running
         """
         try:
