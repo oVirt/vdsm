@@ -207,6 +207,8 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm-tool/Makefile
+	vdsm/rest/Makefile
+	vdsm/rest/templates/Makefile
 ])
 AC_OUTPUT([tests/run_tests.sh], [chmod +x tests/run_tests.sh])
 

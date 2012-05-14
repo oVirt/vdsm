@@ -106,6 +106,16 @@ Requires: %{name}-python = %{version}-%{release}
 An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
+%package rest
+Summary:        VDSM REST API
+BuildArch:      noarch
+
+Requires: %{name}-python = %{version}-%{release}
+Requires: python-cherrypy python-cheetah
+
+%description rest
+A REST interface for interacting with vdsmd.
+
 %package bootstrap
 Summary:        VDSM bootstrapping package
 BuildArch:      noarch
@@ -732,6 +742,16 @@ exit 0
 %files xmlrpc
 %defattr(-, root, root, -)
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
+
+%files rest
+%defattr(-, root, root, -)
+%{_datadir}/%{vdsm_name}/rest/__init__.py*
+%{_datadir}/%{vdsm_name}/rest/BindingREST.py*
+%{_datadir}/%{vdsm_name}/rest/Dispatcher.py*
+%{_datadir}/%{vdsm_name}/rest/Controller.py*
+%{_datadir}/%{vdsm_name}/rest/templates/*.x
+%{_datadir}/%{vdsm_name}/rest/templates/api.xsd
+%{_datadir}/%{vdsm_name}/rest/templates/rsdl.xml
 
 %files bootstrap
 %defattr(-, root, root, -)

@@ -49,7 +49,9 @@ PEP8_WHITELIST = \
 	vdsm/storage/mount.py \
 	vdsm/storage/processPool.py \
 	vdsm/supervdsm.py \
-	vdsm/supervdsmServer.py
+	vdsm/supervdsmServer.py \
+	vdsm/rest/BindingREST.py \
+	vdsm/rest/Controller.py
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)

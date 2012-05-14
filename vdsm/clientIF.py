@@ -95,18 +95,37 @@ class clientIF:
             raise
         self._prepareBindings()
 
+    def _getServerIP(self, addr=None):
+        """Return the IP address we should listen on"""
+
+        if addr:
+            return addr
+        try:
+            addr = netinfo.getaddr(self.defaultBridge)
+        except:
+            pass
+        return addr
+
     def _loadBindingXMLRPC(self):
         from BindingXMLRPC import BindingXMLRPC
-        xmlrpc_params = {
-            'ip': config.get('addresses', 'management_ip'),
-            'port': config.get('addresses', 'management_port'),
-            'ssl': config.getboolean('vars', 'ssl'),
-            'vds_responsiveness_timeout':
-                config.getint('vars', 'vds_responsiveness_timeout'),
-            'trust_store_path': config.get('vars', 'trust_store_path'),
-            'default_bridge': config.get("vars", "default_bridge"), }
-        self.bindings['xmlrpc'] = BindingXMLRPC(self, self.log, xmlrpc_params)
+        ip = self._getServerIP(config.get('addresses', 'management_ip'))
+        xmlrpc_port = config.get('addresses', 'management_port')
+        use_ssl = config.getboolean('vars', 'ssl')
+        resp_timeout = config.getint('vars', 'vds_responsiveness_timeout')
+        truststore_path = config.get('vars', 'trust_store_path')
+        default_bridge = config.get("vars", "default_bridge")
+        self.bindings['xmlrpc'] = BindingXMLRPC(self, self.log, ip,
+                                                xmlrpc_port, use_ssl,
+                                                resp_timeout, truststore_path,
+                                                default_bridge)
 
+    def _loadBindingREST(self):
+        from rest.BindingREST import BindingREST
+        ip = self._getServerIP(config.get('addresses', 'management_ip'))
+        rest_port = config.getint('addresses', 'rest_port')
+        templatePath = "%s/rest/templates" % constants.P_VDSM
+        self.bindings['rest'] = BindingREST(self, self.log, ip, rest_port,
+                                            templatePath)
 
     def _prepareBindings(self):
         self.bindings = {}
@@ -115,6 +134,12 @@ class clientIF:
                 self._loadBindingXMLRPC()
             except ImportError:
                 self.log.error('Unable to load the xmlrpc server module. '
+                               'Please make sure it is installed.')
+        if config.getboolean('vars', 'rest_enable'):
+            try:
+                self._loadBindingREST()
+            except ImportError:
+                self.log.error('Unable to load the rest server module. '
                                'Please make sure it is installed.')
 
 

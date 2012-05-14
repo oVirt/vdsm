@@ -128,6 +128,8 @@ parameters = [
 
         ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
 
+        ('rest_enable', 'true', 'Enable the REST server'),
+
     ]),
 
     # Section: [ksm]
@@ -226,6 +228,10 @@ parameters = [
 
         ('management_port', '54321',
             'Port on which the vdsmd XMPRPC server listens to network '
+            'clients.'),
+
+        ('rest_port', '8088',
+            'Port on which the vdsmd REST server listens to network '
             'clients.'),
 
         ('management_ip', '', None),

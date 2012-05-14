@@ -28,34 +28,23 @@ import threading
 
 import caps
 from vdsm import constants
-from vdsm import netinfo
 from vdsm import utils
 from vdsm.define import doneCode, errCode
 import API
 
 class BindingXMLRPC(object):
-    def __init__(self, cif, log, params):
-        """
-        Initialize the XMLRPC Bindings.
-
-        params must contain the following configuration parameters:
-          'ip' : The IP address to listen on
-          'port': The port number to listen on
-          'ssl': Enable SSL?
-          'vds_responsiveness_timeout': Server responsiveness timeout
-          'trust_store_path': Location of the SSL certificates
-          'default_bridge': The default bridge interface (for detecting the IP)
-        """
-        self.log = log
+    def __init__(self, cif, log, ip, port, ssl, vds_resp_timeout,
+                 trust_store_path, default_bridge):
         self.cif = cif
-        self._enabled = False
+        self.log = log
+        self.serverIP = ip
+        self.serverPort = port
+        self.enableSSL = ssl
+        self.serverRespTimeout = vds_resp_timeout
+        self.trustStorePath = trust_store_path
+        self.defaultBridge = default_bridge
 
-        self.serverPort = params['port']
-        self.serverIP = self._getServerIP(params['ip'])
-        self.enableSSL = params['ssl']
-        self.serverRespTimeout = params['vds_responsiveness_timeout']
-        self.trustStorePath = params['trust_store_path']
-        self.defaultBridge = params['default_bridge']
+        self._enabled = False
         self.server = self._createXMLRPCServer()
 
     def start(self):
@@ -92,17 +81,6 @@ class BindingXMLRPC(object):
         return { 'management_ip': self.serverIP,
                  'lastClient': last,
                  'lastClientIface': caps._getIfaceByIP(last) }
-
-    def _getServerIP(self, addr=None):
-        """Return the IP address we should listen on"""
-
-        if addr:
-            return addr
-        try:
-            addr = netinfo.getaddr(self.defaultBridge)
-        except:
-            pass
-        return addr
 
     def _getKeyCertFilenames(self):
         """
