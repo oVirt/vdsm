@@ -66,6 +66,7 @@ class BetterPopen(Popen):
             os.close(p2cwrite)
             os.close(errread)
             os.close(c2pread)
+            raise
         finally:
             os.close(p2cread)
             os.close(errwrite)
