@@ -20,6 +20,7 @@ vdsm.spec
 vdsm/config.py
 vdsm/constants.py
 vdsm/dumpStorageTable.py
+vdsm/dsaversion.py
 vdsm/logger.conf
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
