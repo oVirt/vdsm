@@ -105,6 +105,12 @@ if test "x$PEP8" = "x"; then
   AC_MSG_ERROR([python-pep8 not found, please install it.])
 fi
 
+# Checking for python-devel
+AC_PATH_PROG([PYTHON_CONFIG], [python-config])
+if test "x$PYTHON_CONFIG" = "x"; then
+  AC_MSG_ERROR([python-devel not found, please install it.])
+fi
+
 # Checking for nosetests
 AC_PATH_PROG([NOSETESTS], [nosetests])
 if test "x$NOSETESTS" = "x"; then
