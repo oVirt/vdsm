@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,17 +23,17 @@ import ConfigParser
 
 config = ConfigParser.ConfigParser()
 config.add_section('vars')
-config.set('vars', 'reg_req_interval', '5')
-config.set('vars', 'vdsm_conf_file', '/etc/vdsm/vdsm.conf')
 config.set('vars', 'logger_conf', '/etc/vdsm-reg/logger.conf')
 config.set('vars', 'pidfile', '/var/run/vdsm-reg.pid')
+config.set('vars', 'reg_req_interval', '5')
 config.set('vars', 'test_socket_timeout', '10')
-config.set('vars', 'vdc_host_name', 'None')
-config.set('vars', 'vdc_host_ip', 'None')
-config.set('vars', 'vdc_host_port', '80')
-config.set('vars', 'vdc_reg_uri', '/SolidICE/VdsAutoRegistration.aspx')
-config.set('vars', 'vdc_reg_port', '54321')
-config.set('vars', 'upgrade_iso_file', '@VDSMUPGRADEDIR@/ovirt-node-image.iso')
-config.set('vars', 'vdsm_dir', '/usr/share/vdsm')
 config.set('vars', 'ticket', '')
+config.set('vars', 'upgrade_iso_file', '@VDSMUPGRADEDIR@/ovirt-node-image.iso')
 config.set('vars', 'upgrade_mount_point', '@VDSMRUNDIR@/image-update')
+config.set('vars', 'vdc_host_ip', 'None')
+config.set('vars', 'vdc_host_name', 'None')
+config.set('vars', 'vdc_host_port', '80')
+config.set('vars', 'vdc_reg_port', '54321')
+config.set('vars', 'vdc_reg_uri', '/SolidICE/VdsAutoRegistration.aspx')
+config.set('vars', 'vdsm_conf_file', '/etc/vdsm/vdsm.conf')
+config.set('vars', 'vdsm_dir', '@VDSMDIR@')
