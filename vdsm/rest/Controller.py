@@ -237,15 +237,19 @@ class Root(Resource):
         api = API.Global(self.ctx.cif)
         ret = api.getCapabilities()
         vdsOK(self.ctx, ret)
-        major, minor = ret['info']['software_version'].split('.')
+        vers = ret['info']['software_version'].split('.')
+        try:
+            build = vers[2]
+        except IndexError:
+            build = 0
         rev = ret['info']['software_revision']
         self.product_info = {
             'name': 'vdsm',
             'vendor': 'oVirt',
             'version': {
-                'major': major,
-                'minor': minor,
-                'build': 0,
+                'major': vers[0],
+                'minor': vers[1],
+                'build': build,
                 'revision': rev
             }
         }

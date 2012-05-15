@@ -210,7 +210,7 @@
           </xs:appinfo>
         </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="revision" type="xs:unsignedShort">
+    <xs:attribute name="revision" type="xs:string">
         <xs:annotation>
           <xs:appinfo>
             <jaxb:property generateIsSetMethod="false"/>
