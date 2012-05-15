@@ -19,8 +19,6 @@
 #
 
 import os
-import fnmatch
-import re
 
 import sd
 import fileSD
@@ -93,38 +91,6 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         fsd.initSPMlease()
 
         return fsd
-
-    def getFileList(self, pattern, caseSensitive):
-        """
-        Returns a list of all files in the domain filtered according to
-        extension.
-        """
-        basedir = self.getIsoDomainImagesDir()
-        filesList = self.oop.simpleWalk(basedir)
-
-        if pattern != '*':
-            if caseSensitive:
-                filesList = fnmatch.filter(filesList, pattern)
-            else:
-                regex = fnmatch.translate(pattern)
-                reobj = re.compile(regex, re.IGNORECASE)
-                filesList = [f for f in filesList if reobj.match(f)]
-
-        filesDict = {}
-        filePrefixLen = len(basedir) + 1
-        for entry in filesList:
-            st = self.oop.os.stat(entry)
-            stats = {'size': str(st.st_size), 'ctime': str(st.st_ctime)}
-
-            try:
-                self.oop.fileUtils.validateQemuReadable(entry)
-                stats['status'] = 0  # Status OK
-            except se.StorageServerAccessPermissionError:
-                stats['status'] = se.StorageServerAccessPermissionError.code
-
-            fileName = entry[filePrefixLen:]
-            filesDict[fileName] = stats
-        return filesDict
 
     def selftest(self):
         """
