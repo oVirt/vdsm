@@ -53,6 +53,7 @@ PEP8_WHITELIST = \
 	vdsm/gluster/hostname.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
+	vdsm/storage/nfsSD.py \
 	vdsm/storage/processPool.py \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
