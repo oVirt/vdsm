@@ -32,7 +32,6 @@ dist_vdsm_PYTHON = \
 	clientIF.py \
 	configNetwork.py \
 	debugPluginClient.py \
-	dsaversion.py \
 	guestIF.py \
 	hooking.py \
 	hooks.py \
@@ -74,6 +73,7 @@ nodist_vdsmexec_SCRIPTS = \
 	vdsm-gencerts.sh
 
 nodist_vdsm_PYTHON = \
+	dsaversion.py \
 	dumpStorageTable.py
 
 nodist_vdsm_SCRIPTS = \
@@ -116,6 +116,7 @@ EXTRA_DIST = \
 	config.py.in \
 	constants.py.in \
 	dumpStorageTable.py.in \
+	dsaversion.py.in \
 	libvirt_password \
 	limits.conf \
 	logger.conf.in \
