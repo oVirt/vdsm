@@ -122,9 +122,16 @@ def _getCompatibleCpuModels():
             return False
         xml = '<cpu match="minimum"><model>%s</model>' \
               '<vendor>%s</vendor></cpu>' % (model, vendor)
-        return c.compareCPU(xml, 0) in (
+        try:
+            return c.compareCPU(xml, 0) in (
                                 libvirt.VIR_CPU_COMPARE_SUPERSET,
                                 libvirt.VIR_CPU_COMPARE_IDENTICAL)
+        except libvirt.libvirtError, e:
+            # hack around libvirt BZ#795836
+            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                return False
+            raise
+
     return [ 'model_' + model for (model, vendor)
              in allModels if compatible(model, vendor) ]
 
