@@ -69,7 +69,7 @@ def fmt3(num):
         num /= 1024
 
 def usage(cmd, full=True):
-    print "Usage:  vdsClient <server> [OPTIONS] <command> [Command parameters]"
+    print "Usage:  vdsClient [OPTIONS] <server> <command> [Command parameters]"
     print "\nOptions"
     print "-h\tDisplay this help"
     print "-m\tList supported methods and their params (Short help)"
