@@ -44,42 +44,59 @@ _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 # service/daemon and in libvirtd (to be used with the quiesce flag).
 _QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
 
+
 class MERGESTATUS:
-    NOT_STARTED     = "Not Started"
-    IN_PROGRESS     = "In Progress"
-    FAILED          = "Failed"
-    COMPLETED       = "Completed"
-    UNKNOWN         = "Unknown"
+    NOT_STARTED = "Not Started"
+    IN_PROGRESS = "In Progress"
+    FAILED = "Failed"
+    COMPLETED = "Completed"
+    UNKNOWN = "Unknown"
     DRIVE_NOT_FOUND = "Drive Not Found"
-    BASE_NOT_FOUND  = "Base Not Found"
+    BASE_NOT_FOUND = "Base Not Found"
+
 
 class VmStatsThread(utils.AdvancedStatsThread):
-    MBPS_TO_BPS = 10**6 / 8
+    MBPS_TO_BPS = 10 ** 6 / 8
 
     def __init__(self, vm):
         utils.AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
         self._vm = vm
 
-        self.highWrite = utils.AdvancedStatsFunction(self._highWrite,
-                             config.getint('vars', 'vm_watermark_interval'))
-        self.updateVolumes = utils.AdvancedStatsFunction(self._updateVolumes,
-                             config.getint('irs', 'vol_size_sample_interval'))
+        self.highWrite = (
+                utils.AdvancedStatsFunction(
+                        self._highWrite,
+                        config.getint('vars', 'vm_watermark_interval')))
+        self.updateVolumes = (
+                utils.AdvancedStatsFunction(
+                        self._updateVolumes,
+                        config.getint('irs', 'vol_size_sample_interval')))
 
-        self.sampleCpu = utils.AdvancedStatsFunction(self._sampleCpu,
-                             config.getint('vars', 'vm_sample_cpu_interval'),
-                             config.getint('vars', 'vm_sample_cpu_window'))
-        self.sampleDisk = utils.AdvancedStatsFunction(self._sampleDisk,
-                             config.getint('vars', 'vm_sample_disk_interval'),
-                             config.getint('vars', 'vm_sample_disk_window'))
-        self.sampleDiskLatency = utils.AdvancedStatsFunction(self._sampleDiskLatency,
-                             config.getint('vars', 'vm_sample_disk_latency_interval'),
-                             config.getint('vars', 'vm_sample_disk_latency_window'))
-        self.sampleNet = utils.AdvancedStatsFunction(self._sampleNet,
-                             config.getint('vars', 'vm_sample_net_interval'),
-                             config.getint('vars', 'vm_sample_net_window'))
+        self.sampleCpu = (
+                utils.AdvancedStatsFunction(
+                        self._sampleCpu,
+                        config.getint('vars', 'vm_sample_cpu_interval'),
+                        config.getint('vars', 'vm_sample_cpu_window')))
+        self.sampleDisk = (
+                utils.AdvancedStatsFunction(
+                        self._sampleDisk,
+                        config.getint('vars', 'vm_sample_disk_interval'),
+                        config.getint('vars', 'vm_sample_disk_window')))
+        self.sampleDiskLatency = (
+                utils.AdvancedStatsFunction(
+                        self._sampleDiskLatency,
+                        config.getint('vars',
+                                      'vm_sample_disk_latency_interval'),
+                        config.getint('vars',
+                                      'vm_sample_disk_latency_window')))
+        self.sampleNet = (
+                utils.AdvancedStatsFunction(
+                        self._sampleNet,
+                        config.getint('vars', 'vm_sample_net_interval'),
+                        config.getint('vars', 'vm_sample_net_window')))
 
-        self.addStatsFunction(self.highWrite, self.updateVolumes, self.sampleCpu,
-                              self.sampleDisk, self.sampleDiskLatency, self.sampleNet)
+        self.addStatsFunction(
+            self.highWrite, self.updateVolumes, self.sampleCpu,
+            self.sampleDisk, self.sampleDiskLatency, self.sampleNet)
 
     def _highWrite(self):
         if not self._vm._volumesPrepared:
@@ -89,11 +106,12 @@ class VmStatsThread(utils.AdvancedStatsThread):
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             if vmDrive.blockDev and vmDrive.format == 'cow':
                 capacity, alloc, physical = \
-                                        self._vm._dom.blockInfo(vmDrive.path, 0)
+                    self._vm._dom.blockInfo(vmDrive.path, 0)
                 if physical - alloc < self._vm._MIN_DISK_REMAIN:
-                    self._log.info('%s/%s apparent: %s capacity: %s, alloc: %s phys: %s',
-                                  vmDrive.domainID, vmDrive.volumeID,
-                                  vmDrive.apparentsize, capacity, alloc, physical)
+                    self._log.info('%s/%s apparent: %s capacity: %s, '
+                                   'alloc: %s phys: %s', vmDrive.domainID,
+                                   vmDrive.volumeID, vmDrive.apparentsize,
+                                   capacity, alloc, physical)
                     self._vm._onHighWrite(vmDrive.name, alloc)
 
     def _updateVolumes(self):
@@ -103,15 +121,18 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             if vmDrive.device == 'disk' and vmDrive.isVdsmImage():
-                volSize = self._vm.cif.irs.getVolumeSize(vmDrive.domainID,
-                          vmDrive.poolID, vmDrive.imageID, vmDrive.volumeID)
+                volSize = (self._vm.cif.irs.
+                                getVolumeSize(vmDrive.domainID,
+                                              vmDrive.poolID,
+                                              vmDrive.imageID,
+                                              vmDrive.volumeID))
                 if volSize['status']['code'] == 0 and not vmDrive.needExtend:
                     vmDrive.truesize = int(volSize['truesize'])
                     vmDrive.apparentsize = int(volSize['apparentsize'])
 
     def _sampleCpu(self):
         state, maxMem, memory, nrVirtCpu, cpuTime = self._vm._dom.info()
-        return cpuTime / 1000**3
+        return cpuTime / 1000 ** 3
 
     def _sampleDisk(self):
         if not self._vm._volumesPrepared:
@@ -131,37 +152,47 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
         def _blockstatsParses(devList):
             # The json output looks like:
-            # {u'return': [{u'device': u'drive-ide0-0-0',
-            #               u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0, u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
-            #                          u'rd_bytes': 0, u'wr_total_time_ns': 0, u'flush_operations': 0, u'wr_operations': 0, u'wr_bytes':0},
-            #               u'parent': {u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0, u'wr_highest_offset': 0,
-            #                                      u'rd_total_time_ns': 0, u'rd_bytes': 0, u'wr_total_time_ns': 0, u'flush_operations': 0,
-            #                                      u'wr_operations': 0, u'wr_bytes': 0}
-            #                          }
-            #               },
-            #               {u'device': u'drive-ide0-1-0',
-            #                u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0, u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
-            #                           u'rd_bytes': 0, u'wr_total_time_ns': 0, u'flush_operations': 0, u'wr_operations': 0, u'wr_bytes': 0}
-            #               }],
+            # {u'return':
+            #   [{u'device': u'drive-ide0-0-0',
+            #     u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0,
+            #                u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
+            #                u'rd_bytes': 0, u'wr_total_time_ns': 0,
+            #                u'flush_operations': 0, u'wr_operations': 0,
+            #                u'wr_bytes':0},
+            #     u'parent': {
+            #       u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0,
+            #                  u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
+            #                  u'rd_bytes': 0, u'wr_total_time_ns': 0,
+            #                  u'flush_operations': 0, u'wr_operations': 0,
+            #                  u'wr_bytes': 0}}
+            #    },
+            #    {u'device': u'drive-ide0-1-0',
+            #     u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0,
+            #                u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
+            #                u'rd_bytes': 0, u'wr_total_time_ns': 0,
+            #                u'flush_operations': 0, u'wr_operations': 0,
+            #                u'wr_bytes': 0}}],
             #  u'id': u'libvirt-9'}
             stats = {}
             for item in devList['return']:
                 fullDevName = item['device']
                 alias = fullDevName[len('drive-'):].strip()
                 devStats = item['stats']
-                stats[alias] = {'rd_op':devStats['rd_operations'],
-                                'wr_op':devStats['wr_operations'],
-                                'flush_op':devStats['flush_operations'],
-                                'rd_total_time_ns':devStats['rd_total_time_ns'],
-                                'wr_total_time_ns':devStats['wr_total_time_ns'],
-                                'flush_total_time_ns':devStats['flush_total_time_ns']}
+                stats[alias] = {
+                    'rd_op': devStats['rd_operations'],
+                    'wr_op': devStats['wr_operations'],
+                    'flush_op': devStats['flush_operations'],
+                    'rd_total_time_ns': devStats['rd_total_time_ns'],
+                    'wr_total_time_ns': devStats['wr_total_time_ns'],
+                    'flush_total_time_ns': devStats['flush_total_time_ns']}
 
             return stats
 
         diskLatency = {}
-        cmd = json.dumps({ "execute" : "query-blockstats" })
-        res = libvirt_qemu.qemuMonitorCommand(self._vm._dom, cmd,
-                            libvirt_qemu.VIR_DOMAIN_QEMU_MONITOR_COMMAND_DEFAULT)
+        cmd = json.dumps({"execute": "query-blockstats"})
+        res = libvirt_qemu.qemuMonitorCommand(
+                          self._vm._dom, cmd,
+                          libvirt_qemu.VIR_DOMAIN_QEMU_MONITOR_COMMAND_DEFAULT)
         out = json.loads(res)
 
         stats = _blockstatsParses(out)
@@ -169,10 +200,11 @@ class VmStatsThread(utils.AdvancedStatsThread):
             try:
                 diskLatency[vmDrive.name] = stats[vmDrive.alias]
             except KeyError:
-                diskLatency[vmDrive.name] = {'rd_op':0, 'wr_op':0, 'flush_op':0,
-                                             'rd_total_time_ns':0,
-                                             'wr_total_time_ns':0,
-                                             'flush_total_time_ns':0}
+                diskLatency[vmDrive.name] = {'rd_op': 0, 'wr_op': 0,
+                                             'flush_op': 0,
+                                             'rd_total_time_ns': 0,
+                                             'wr_total_time_ns': 0,
+                                             'flush_total_time_ns': 0}
                 self._log.warn("Disk %s latency not available", vmDrive.name)
 
         return diskLatency
@@ -208,15 +240,17 @@ class VmStatsThread(utils.AdvancedStatsThread):
                        'state':     'unknown'}
 
             try:
-                ifStats['rxErrors']  = str(eInfo[nic.name][2])
+                ifStats['rxErrors'] = str(eInfo[nic.name][2])
                 ifStats['rxDropped'] = str(eInfo[nic.name][3])
-                ifStats['txErrors']  = str(eInfo[nic.name][6])
+                ifStats['txErrors'] = str(eInfo[nic.name][6])
                 ifStats['txDropped'] = str(eInfo[nic.name][7])
 
-                ifRxBytes = (100.0 * (eInfo[nic.name][0] - sInfo[nic.name][0])
-                             / sampleInterval / ifSpeed / self.MBPS_TO_BPS)
-                ifTxBytes = (100.0 * (eInfo[nic.name][4] - sInfo[nic.name][4])
-                             / sampleInterval / ifSpeed / self.MBPS_TO_BPS)
+                ifRxBytes = (100.0 *
+                             (eInfo[nic.name][0] - sInfo[nic.name][0]) /
+                             sampleInterval / ifSpeed / self.MBPS_TO_BPS)
+                ifTxBytes = (100.0 *
+                             (eInfo[nic.name][4] - sInfo[nic.name][4]) /
+                             sampleInterval / ifSpeed / self.MBPS_TO_BPS)
 
                 ifStats['rxRate'] = '%.1f' % ifRxBytes
                 ifStats['txRate'] = '%.1f' % ifTxBytes
@@ -236,10 +270,10 @@ class VmStatsThread(utils.AdvancedStatsThread):
                           'apparentsize': str(vmDrive.apparentsize),
                           'imageID':      vmDrive.imageID}
 
-                dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1])
-                                      / sampleInterval)
-                dStats['writeRate'] = ((eInfo[dName][3] - sInfo[dName][3])
-                                       / sampleInterval)
+                dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1]) /
+                                      sampleInterval)
+                dStats['writeRate'] = ((eInfo[dName][3] - sInfo[dName][3]) /
+                                       sampleInterval)
             except (AttributeError, KeyError, TypeError, ZeroDivisionError):
                 self._log.debug("Disk %s stats not available", dName)
 
@@ -249,15 +283,18 @@ class VmStatsThread(utils.AdvancedStatsThread):
         sInfo, eInfo, sampleInterval = self.sampleDiskLatency.getStats()
 
         def _avgLatencyCalc(sData, eData):
-            readLatency = 0 if not (eData['rd_op'] - sData['rd_op']) \
-                            else (eData['rd_total_time_ns'] - sData['rd_total_time_ns']) / \
-                                 (eData['rd_op'] - sData['rd_op'])
-            writeLatency = 0 if not (eData['wr_op'] - sData['wr_op']) \
-                            else (eData['wr_total_time_ns'] - sData['wr_total_time_ns']) / \
-                                 (eData['wr_op'] - sData['wr_op'])
-            flushLatency = 0 if not (eData['flush_op'] - sData['flush_op']) \
-                            else (eData['flush_total_time_ns'] - sData['flush_total_time_ns']) / \
-                                 (eData['flush_op'] - sData['flush_op'])
+            readLatency = (0 if not (eData['rd_op'] - sData['rd_op'])
+                             else (eData['rd_total_time_ns'] -
+                                   sData['rd_total_time_ns']) /
+                                  (eData['rd_op'] - sData['rd_op']))
+            writeLatency = (0 if not (eData['wr_op'] - sData['wr_op'])
+                              else (eData['wr_total_time_ns'] -
+                                    sData['wr_total_time_ns']) /
+                                   (eData['wr_op'] - sData['wr_op']))
+            flushLatency = (0 if not (eData['flush_op'] - sData['flush_op'])
+                              else (eData['flush_total_time_ns'] -
+                                    sData['flush_total_time_ns']) /
+                                   (eData['flush_op'] - sData['flush_op']))
 
             return str(readLatency), str(writeLatency), str(flushLatency)
 
@@ -267,8 +304,10 @@ class VmStatsThread(utils.AdvancedStatsThread):
                         'writeLatency': '0',
                         'flushLatency': '0'}
             try:
-                dLatency['readLatency'], dLatency['writeLatency'], \
-                dLatency['flushLatency'] = _avgLatencyCalc(sInfo[dName], eInfo[dName])
+                (dLatency['readLatency'],
+                 dLatency['writeLatency'],
+                 dLatency['flushLatency']) = _avgLatencyCalc(sInfo[dName],
+                                                             eInfo[dName])
             except (KeyError, TypeError):
                 self._log.debug("Disk %s latency not available", dName)
             else:
@@ -312,6 +351,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
         return True
 
+
 class MigrationDowntimeThread(threading.Thread):
     def __init__(self, vm, downtime, wait):
         super(MigrationDowntimeThread, self).__init__()
@@ -344,8 +384,10 @@ class MigrationDowntimeThread(threading.Thread):
         self._vm.log.debug('canceling migration downtime thread')
         self._stop.set()
 
+
 class MigrationMonitorThread(threading.Thread):
-    _MIGRATION_MONITOR_INTERVAL = config.getint('vars', 'migration_monitor_interval')   # seconds
+    _MIGRATION_MONITOR_INTERVAL = config.getint(
+        'vars', 'migration_monitor_interval')  # seconds
 
     def __init__(self, vm):
         super(MigrationMonitorThread, self).__init__()
@@ -361,19 +403,21 @@ class MigrationMonitorThread(threading.Thread):
 
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
-            jobType, timeElapsed, _,     \
-            dataTotal, dataProcessed, dataRemaining, \
-            memTotal, memProcessed, _,   \
-            fileTotal, fileProcessed, _ = self._vm._dom.jobInfo()
+            (jobType, timeElapsed, _,
+             dataTotal, dataProcessed, dataRemaining,
+             memTotal, memProcessed, _,
+             fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
 
-            if smallest_dataRemaining is None or smallest_dataRemaining > dataRemaining:
+            if (smallest_dataRemaining is None or
+                smallest_dataRemaining > dataRemaining):
                 smallest_dataRemaining = dataRemaining
                 lastProgressTime = time.time()
-            elif time.time() - lastProgressTime > config.getint('vars', 'migration_timeout'):
+            elif (time.time() - lastProgressTime >
+                  config.getint('vars', 'migration_timeout')):
                 # Migration is stuck, abort
                 self._vm.log.warn(
-                        'Migration is stuck: Hasn\'t progressed in %s seconds. Aborting.' % (time.time() - lastProgressTime)
-                    )
+                    'Migration is stuck: Hasn\'t progressed in %s seconds. '
+                    'Aborting.' % (time.time() - lastProgressTime))
                 self._vm._dom.abortJob()
                 self.stop()
                 break
@@ -381,18 +425,18 @@ class MigrationMonitorThread(threading.Thread):
             if jobType == 0:
                 continue
 
-            dataProgress = 100*dataProcessed / dataTotal if dataTotal else 0
-            memProgress = 100*memProcessed / memTotal if memTotal else 0
+            dataProgress = 100 * dataProcessed / dataTotal if dataTotal else 0
+            memProgress = 100 * memProcessed / memTotal if memTotal else 0
 
             self._vm.log.info(
-                    'Migration Progress: %s seconds elapsed, %s%% of data processed, %s%% of mem processed'
-                    % (timeElapsed/1000,dataProgress,memProgress)
-                )
-
+                    'Migration Progress: %s seconds elapsed, '
+                    '%s%% of data processed, %s%% of mem processed'
+                    % (timeElapsed / 1000, dataProgress, memProgress))
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
         self._stop.set()
+
 
 class MigrationSourceThread(vm.MigrationSourceThread):
 
@@ -417,11 +461,13 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                 self._vm._vmStats.cont()
                 raise
         else:
-            hooks.before_vm_migrate_source(self._vm._dom.XMLDesc(0), self._vm.conf)
+            hooks.before_vm_migrate_source(self._vm._dom.XMLDesc(0),
+                                           self._vm.conf)
             response = self.destServer.migrationCreate(self._machineParams)
             if response['status']['code']:
                 self.status = response
-                raise RuntimeError('migration destination error: ' + response['status']['message'])
+                raise RuntimeError('migration destination error: ' +
+                                   response['status']['message'])
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
@@ -438,8 +484,8 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                 monitorThread.start()
 
             try:
-                if 'qxl' in self._vm.conf['display'] and \
-                   self._vm.conf.get('clientIp'):
+                if ('qxl' in self._vm.conf['display'] and
+                    self._vm.conf.get('clientIp')):
                     SPICE_MIGRATION_HANDOVER_TIME = 120
                     self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
@@ -450,9 +496,10 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                 # side
                 self._preparingMigrationEvt = False
                 if not self._migrationCanceledEvt:
-                    self._vm._dom.migrateToURI2(duri, muri, None,
-                        libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER,
-                        None, maxBandwidth)
+                    self._vm._dom.migrateToURI2(
+                      duri, muri, None,
+                      libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER,
+                      None, maxBandwidth)
             finally:
                 t.cancel()
                 if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
@@ -468,7 +515,10 @@ class MigrationSourceThread(vm.MigrationSourceThread):
             if not self._preparingMigrationEvt:
                     raise
 
-class TimeoutError(libvirt.libvirtError): pass
+
+class TimeoutError(libvirt.libvirtError):
+    pass
+
 
 class NotifyingVirDomain:
     # virDomain wrapper that notifies vm when a method raises an exception with
@@ -482,6 +532,7 @@ class NotifyingVirDomain:
         attr = getattr(self._dom, name)
         if not callable(attr):
             return attr
+
         def f(*args, **kwargs):
             try:
                 ret = attr(*args, **kwargs)
@@ -598,7 +649,8 @@ class _DomXML:
         typeelem = self.doc.createElement('type')
         oselem.appendChild(typeelem)
         typeelem.setAttribute('arch', 'x86_64')
-        typeelem.setAttribute('machine', self.conf.get('emulatedMachine', 'pc'))
+        typeelem.setAttribute('machine',
+                              self.conf.get('emulatedMachine', 'pc'))
         typeelem.appendChild(self.doc.createTextNode('hvm'))
 
         qemu2libvirtBoot = {'a': 'fd', 'c': 'hd', 'd': 'cdrom', 'n': 'network'}
@@ -695,7 +747,8 @@ class _DomXML:
         m = self.doc.createElement('model')
         m.appendChild(self.doc.createTextNode(model))
         cpu.appendChild(m)
-        if 'smpCoresPerSocket' in self.conf or 'smpThreadsPerCore' in self.conf:
+        if ('smpCoresPerSocket' in self.conf or
+            'smpThreadsPerCore' in self.conf):
             topo = self.doc.createElement('topology')
             vcpus = int(self.conf.get('smp', '1'))
             cores = int(self.conf.get('smpCoresPerSocket', '1'))
@@ -784,7 +837,7 @@ class _DomXML:
                   passwdValidTo="2010-04-09T15:51:00"/>
         <channel type='spicevmc'>
            <target type='virtio' name='com.redhat.spice.0'/>
-         </channel>
+        </channel>
         """
         graphics = self.doc.createElement('graphics')
         if self.conf['display'] == 'vnc':
@@ -857,14 +910,18 @@ class LibvirtVmDevice(vm.Device):
 
         return element
 
+
 class GeneralDevice(LibvirtVmDevice):
+
     def getXML(self):
         """
         Create domxml for general device
         """
         return self.createXmlElem(self.type, self.device, ['address'])
 
+
 class ControllerDevice(LibvirtVmDevice):
+
     def getXML(self):
         """
         Create domxml for controller device
@@ -877,7 +934,9 @@ class ControllerDevice(LibvirtVmDevice):
 
         return ctrl
 
+
 class VideoDevice(LibvirtVmDevice):
+
     def getXML(self):
         """
         Create domxml for video device
@@ -892,7 +951,9 @@ class VideoDevice(LibvirtVmDevice):
 
         return video
 
+
 class SoundDevice(LibvirtVmDevice):
+
     def getXML(self):
         """
         Create domxml for sound device
@@ -901,7 +962,9 @@ class SoundDevice(LibvirtVmDevice):
         sound.setAttribute('model', self.device)
         return sound
 
+
 class NetworkInterfaceDevice(LibvirtVmDevice):
+
     def __init__(self, conf, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
         # set a nicModel attribute, so modify the kwarg list
@@ -981,7 +1044,9 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
 
         return iface
 
+
 class Drive(LibvirtVmDevice):
+
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
@@ -1064,7 +1129,7 @@ class Drive(LibvirtVmDevice):
         if self.iface:
             target.setAttribute('bus', self.iface)
         diskelem.appendChild(target)
-        if  hasattr(self, 'shared') and utils.tobool(self.shared):
+        if hasattr(self, 'shared') and utils.tobool(self.shared):
             shareable = doc.createElement('shareable')
             diskelem.appendChild(shareable)
         if hasattr(self, 'readonly') and utils.tobool(self.readonly):
@@ -1092,31 +1157,37 @@ class Drive(LibvirtVmDevice):
 
             driver.setAttribute('cache', self.cache)
 
-            if self.propagateErrors == 'on' or \
-                    utils.tobool(self.propagateErrors):
+            if (self.propagateErrors == 'on' or
+                utils.tobool(self.propagateErrors)):
                 driver.setAttribute('error_policy', 'enospace')
             else:
                 driver.setAttribute('error_policy', 'stop')
             diskelem.appendChild(driver)
         elif self.device == 'floppy':
-            if self.path and not utils.getUserPermissions(constants.QEMU_PROCESS_USER,
-                                                          self.path)['write']:
+            if (self.path and
+                not utils.getUserPermissions(
+                            constants.QEMU_PROCESS_USER,
+                            self.path)['write']):
                 diskelem.appendChild(doc.createElement('readonly'))
 
         return diskelem
 
+
 class BalloonDevice(LibvirtVmDevice):
+
     def getXML(self):
         """
         Create domxml for a memory balloon device.
 
         <memballoon model='virtio'>
-          <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x04'
+           function='0x0'/>
         </memballoon>
         """
         m = self.createXmlElem(self.device, None, ['address'])
         m.setAttribute('model', self.specParams['model'])
         return m
+
 
 class RedirDevice(LibvirtVmDevice):
     def getXML(self):
@@ -1132,6 +1203,7 @@ class RedirDevice(LibvirtVmDevice):
 
 class LibvirtVm(vm.Vm):
     MigrationSourceThreadClass = MigrationSourceThread
+
     def __init__(self, cif, params):
         self._dom = None
         vm.Vm.__init__(self, cif, params)
@@ -1139,18 +1211,18 @@ class LibvirtVm(vm.Vm):
         self._connection = libvirtconnection.get(cif)
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
-        self._guestSocketFile = constants.P_LIBVIRT_VMCHANNELS + \
-                                self.conf['vmName'].encode('utf-8') + \
-                                '.' + _VMCHANNEL_DEVICE_NAME
-        self._qemuguestSocketFile = constants.P_LIBVIRT_VMCHANNELS + \
-                                self.conf['vmName'].encode('utf-8') + \
-                                '.' + _QEMU_GA_DEVICE_NAME
+        self._guestSocketFile = (constants.P_LIBVIRT_VMCHANNELS +
+                                 self.conf['vmName'].encode('utf-8') +
+                                 '.' + _VMCHANNEL_DEVICE_NAME)
+        self._qemuguestSocketFile = (constants.P_LIBVIRT_VMCHANNELS +
+                                     self.conf['vmName'].encode('utf-8') +
+                                     '.' + _QEMU_GA_DEVICE_NAME)
         # TODO find a better idea how to calculate this constant only after
         # config is initialized
-        self._MIN_DISK_REMAIN = (100 -
-                      config.getint('irs', 'volume_utilization_percent')) \
-            * config.getint('irs', 'volume_utilization_chunk_mb') * 2**20 \
-            / 100
+        self._MIN_DISK_REMAIN = \
+            ((100 - config.getint('irs', 'volume_utilization_percent')) *
+             config.getint('irs', 'volume_utilization_chunk_mb') *
+             2 ** 20 / 100)
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
         self._devXmlHash = '0'
         self._released = False
@@ -1195,7 +1267,7 @@ class LibvirtVm(vm.Vm):
         domxml.appendSysinfo(
             osname=caps.OSName.RHEVH,
             osversion=osd.get('version', '') + '-' + osd.get('release', ''),
-            hostUUID=utils.getHostUUID() )
+            hostUUID=utils.getHostUUID())
 
         domxml.appendClock()
         domxml.appendFeatures()
@@ -1222,8 +1294,9 @@ class LibvirtVm(vm.Vm):
                 continue
 
             for volInfo in drive.volumeChain:
-                if ('leasePath' not in volInfo or 'leaseOffset' not in volInfo
-                        or volInfo['shared']):
+                if ('leasePath' not in volInfo or
+                    'leaseOffset' not in volInfo or
+                    volInfo['shared']):
                     continue
 
                 leaseElem = self._buildLease(
@@ -1244,7 +1317,8 @@ class LibvirtVm(vm.Vm):
         utils.rmFile(self._qemuguestSocketFile)
 
     def updateGuestCpuRunning(self):
-        self._guestCpuRunning = self._dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
+        self._guestCpuRunning = (self._dom.info()[0] ==
+                                 libvirt.VIR_DOMAIN_RUNNING)
 
     def _getUnderlyingVmDevicesInfo(self):
         """
@@ -1282,11 +1356,13 @@ class LibvirtVm(vm.Vm):
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
-        self.guestAgent = guestIF.GuestAgent(self._guestSocketFile,
-            self.cif.channelListener, self.log,
-            connect=utils.tobool(self.conf.get('vmchannel', 'true')))
+        self.guestAgent = guestIF.GuestAgent(
+                self._guestSocketFile,
+                self.cif.channelListener, self.log,
+                connect=utils.tobool(self.conf.get('vmchannel', 'true')))
 
-        self._guestCpuRunning = self._dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
+        self._guestCpuRunning = (self._dom.info()[0] ==
+                                 libvirt.VIR_DOMAIN_RUNNING)
         if self.lastStatus not in ('Migration Destination',
                                    'Restoring state'):
             self._initTimePauseCode = self._readPauseCode(0)
@@ -1319,9 +1395,9 @@ class LibvirtVm(vm.Vm):
 
             self.conf['devices'] = newDevices
             # We need to save conf here before we actually run VM.
-            # It's not enough to save conf only on status changes as we did before,
-            # because if vdsm will restarted between VM run and conf saving
-            # we will fail in inconsistent state during recovery.
+            # It's not enough to save conf only on status changes as we did
+            # before, because if vdsm will restarted between VM run and conf
+            # saving we will fail in inconsistent state during recovery.
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
             self.saveState()
@@ -1330,8 +1406,8 @@ class LibvirtVm(vm.Vm):
             # conf may be outdated if something happened during restart.
 
             # For BC we should to keep running VM run after vdsm upgrade.
-            # So, because this vm doesn't have normalize conf we need to build it
-            # in recovery flow
+            # So, because this vm doesn't have normalize conf we need to build
+            # it in recovery flow
             if not self.conf.get('devices'):
                 devices = self.buildConfDevices()
             else:
@@ -1348,7 +1424,8 @@ class LibvirtVm(vm.Vm):
 
         for devType, devClass in devMap.items():
             for dev in devices[devType]:
-                self._devices[devType].append(devClass(self.conf, self.log, **dev))
+                self._devices[devType].append(devClass(self.conf, self.log,
+                                                       **dev))
 
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
@@ -1395,11 +1472,11 @@ class LibvirtVm(vm.Vm):
 
     def hotplugNic(self, params):
         if self.isMigrating():
-           return errCode['migInProgress']
+            return errCode['migInProgress']
 
         nicParams = params.get('nic', {})
         nic = NetworkInterfaceDevice(self.conf, self.log, **nicParams)
-        nicXml =  nic.getXML().toprettyxml(encoding='utf-8')
+        nicXml = nic.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug NIC xml: %s" % (nicXml))
 
         try:
@@ -1408,8 +1485,8 @@ class LibvirtVm(vm.Vm):
             self.log.error("Hotplug failed", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            return {'status' : {'code': errCode['hotplugNic']['status']['code'],
-                                'message': e.message}}
+            return {'status': {'code': errCode['hotplugNic']['status']['code'],
+                               'message': e.message}}
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
             # we sent command to libvirt and before save conf. In this case
@@ -1420,11 +1497,12 @@ class LibvirtVm(vm.Vm):
             self.saveState()
             self._getUnderlyingNetworkInterfaceInfo()
 
-        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode,
+                'vmList': self.cif.vmContainer[params['vmId']].status()}
 
     def hotunplugNic(self, params):
         if self.isMigrating():
-           return errCode['migInProgress']
+            return errCode['migInProgress']
 
         nicParams = params.get('nic', {})
 
@@ -1439,9 +1517,11 @@ class LibvirtVm(vm.Vm):
             nicXml = nic.getXML().toprettyxml(encoding='utf-8')
             self.log.debug("Hotunplug NIC xml: %s", nicXml)
         else:
-            self.log.error("Hotunplug NIC failed - NIC not found: %s", nicParams)
-            return {'status' : {'code': errCode['hotunplugNic']['status']['code'],
-                                'message': "NIC not found"}}
+            self.log.error("Hotunplug NIC failed - NIC not found: %s",
+                           nicParams)
+            return {'status': {'code': errCode['hotunplugNic']
+                                              ['status']['code'],
+                               'message': "NIC not found"}}
 
         # Remove found NIC from vm's NICs list
         if nic:
@@ -1449,8 +1529,9 @@ class LibvirtVm(vm.Vm):
         # Find and remove NIC device from vm's conf
         nicDev = None
         for dev in self.conf['devices'][:]:
-            if dev['type'] == vm.NIC_DEVICES and \
-                        dev['macAddr'].lower() == nicParams['macAddr'].lower():
+            if (dev['type'] == vm.NIC_DEVICES and
+                dev['macAddr'].lower() == nicParams['macAddr'].lower()):
+
                 self.conf['devices'].remove(dev)
                 nicDev = dev
                 break
@@ -1469,14 +1550,16 @@ class LibvirtVm(vm.Vm):
             if nic:
                 self._devices[vm.NIC_DEVICES].append(nic)
             self.saveState()
-            return {'status' : {'code': errCode['hotunplugNic']['status']['code'],
-                                'message': e.message}}
+            return {
+                'status': {'code': errCode['hotunplugNic']['status']['code'],
+                           'message': e.message}}
 
-        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode,
+                'vmList': self.cif.vmContainer[params['vmId']].status()}
 
     def hotplugDisk(self, params):
         if self.isMigrating():
-           return errCode['migInProgress']
+            return errCode['migInProgress']
 
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
@@ -1486,7 +1569,7 @@ class LibvirtVm(vm.Vm):
 
         self.updateDriveIndex(diskParams)
         drive = Drive(self.conf, self.log, **diskParams)
-        driveXml =  drive.getXML().toprettyxml(encoding='utf-8')
+        driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug disk xml: %s" % (driveXml))
 
         try:
@@ -1496,8 +1579,9 @@ class LibvirtVm(vm.Vm):
             self.cif.teardownVolumePath(diskParams)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            return {'status' : {'code': errCode['hotplugDisk']['status']['code'],
-                                'message': e.message}}
+            return {'status': {'code': errCode['hotplugDisk']
+                                              ['status']['code'],
+                               'message': e.message}}
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
             # we sent command to libvirt and before save conf. In this case
@@ -1508,11 +1592,12 @@ class LibvirtVm(vm.Vm):
             self.saveState()
             self._getUnderlyingDriveInfo()
 
-        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode,
+                'vmList': self.cif.vmContainer[params['vmId']].status()}
 
     def hotunplugDisk(self, params):
         if self.isMigrating():
-           return errCode['migInProgress']
+            return errCode['migInProgress']
 
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
@@ -1528,9 +1613,11 @@ class LibvirtVm(vm.Vm):
             driveXml = drive.getXML().toprettyxml(encoding='utf-8')
             self.log.debug("Hotunplug disk xml: %s", driveXml)
         else:
-            self.log.error("Hotunplug disk failed - Disk not found: %s", diskParams)
-            return {'status' : {'code': errCode['hotunplugDisk']['status']['code'],
-                                'message': "Disk not found"}}
+            self.log.error("Hotunplug disk failed - Disk not found: %s",
+                           diskParams)
+            return {'status': {'code': errCode['hotunplugDisk']
+                                              ['status']['code'],
+                               'message': "Disk not found"}}
 
         # Remove found disk from vm's drives list
         if drive:
@@ -1538,8 +1625,8 @@ class LibvirtVm(vm.Vm):
         # Find and remove disk device from vm's conf
         diskDev = None
         for dev in self.conf['devices'][:]:
-            if dev['type'] == vm.DISK_DEVICES and \
-                                        dev['path'] == diskParams['path']:
+            if (dev['type'] == vm.DISK_DEVICES and
+                dev['path'] == diskParams['path']):
                 self.conf['devices'].remove(dev)
                 diskDev = dev
                 break
@@ -1558,12 +1645,14 @@ class LibvirtVm(vm.Vm):
             if drive:
                 self._devices[vm.DISK_DEVICES].append(drive)
             self.saveState()
-            return {'status' : {'code': errCode['hotunplugDisk']['status']['code'],
-                                'message': e.message}}
+            return {
+                'status': {'code': errCode['hotunplugDisk']['status']['code'],
+                           'message': e.message}}
         else:
             self._cleanup()
 
-        return {'status': doneCode, 'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode,
+                'vmList': self.cif.vmContainer[params['vmId']].status()}
 
     def _readPauseCode(self, timeout):
         self.log.warning('_readPauseCode unsupported by libvirt vm')
@@ -1596,7 +1685,10 @@ class LibvirtVm(vm.Vm):
             except Exception, e:
                 # Improve description of exception
                 if not self._incomingMigrationFinished.isSet():
-                    newMsg = '%s - Timed out (did not receive success event)' % (e.args[0] if len(e.args) else 'Migration Error')
+                    newMsg = ('%s - Timed out '
+                              '(did not receive success event)' %
+                              (e.args[0] if len(e.args) else
+                               'Migration Error'))
                     e.args = (newMsg,) + e.args[1:]
                 raise
 
@@ -1622,25 +1714,25 @@ class LibvirtVm(vm.Vm):
     def _findDriveByUUIDs(self, drive):
         """Find a drive given its definition"""
 
-        if drive.has_key("domainID"):
+        if "domainID" in drive:
             tgetDrv = (drive["domainID"], drive["imageID"],
                        drive["volumeID"])
 
             for device in self._devices[vm.DISK_DEVICES][:]:
                 if not hasattr(device, "domainID"):
                     continue
-                if ((device.domainID, device.imageID,
-                        device.volumeID) == tgetDrv):
+                if (device.domainID, device.imageID,
+                    device.volumeID) == tgetDrv:
                     return device
 
-        elif drive.has_key("GUID"):
+        elif "GUID" in drive:
             for device in self._devices[vm.DISK_DEVICES][:]:
                 if not hasattr(device, "GUID"):
                     continue
                 if device.GUID == drive["GUID"]:
                     return device
 
-        elif drive.has_key("UUID"):
+        elif "UUID" in drive:
             for device in self._devices[vm.DISK_DEVICES][:]:
                 if not hasattr(device, "UUID"):
                     continue
@@ -1670,7 +1762,7 @@ class LibvirtVm(vm.Vm):
         def _normSnapDriveParams(drive):
             """Normalize snapshot parameters"""
 
-            if drive.has_key("baseVolumeID"):
+            if "baseVolumeID" in drive:
                 baseDrv = {"device": "disk",
                            "domainID": drive["domainID"],
                            "imageID": drive["imageID"],
@@ -1678,18 +1770,18 @@ class LibvirtVm(vm.Vm):
                 tgetDrv = baseDrv.copy()
                 tgetDrv["volumeID"] = drive["volumeID"]
 
-            elif drive.has_key("baseGUID"):
+            elif "baseGUID" in drive:
                 baseDrv = {"GUID": drive["baseGUID"]}
                 tgetDrv = {"GUID": drive["GUID"]}
 
-            elif drive.has_key("baseUUID"):
+            elif "baseUUID" in drive:
                 baseDrv = {"UUID": drive["baseUUID"]}
                 tgetDrv = {"UUID": drive["UUID"]}
 
             else:
                 baseDrv, tgetDrv = (None, None)
 
-            if drive.has_key("mirrorDomainID"):
+            if "mirrorDomainID" in drive:
                 mirrorDrv = {"domainID": drive["mirrorDomainID"],
                              "imageID": drive["mirrorImageID"],
                              "volumeID": drive["mirrorVolumeID"]}
@@ -1724,7 +1816,7 @@ class LibvirtVm(vm.Vm):
             # Updating the VM configuration
             for device in self.conf["devices"][:]:
                 if (device['type'] == vm.DISK_DEVICES and
-                        device.get("name") == drive["name"]):
+                    device.get("name") == drive["name"]):
                     device.update(drive)
                     break
             else:
@@ -1738,7 +1830,7 @@ class LibvirtVm(vm.Vm):
         newDrives = {}
 
         if self.isMigrating():
-           return errCode['migInProgress']
+            return errCode['migInProgress']
 
         for drive in snapDrives:
             baseDrv, tgetDrv, mirrorDrv = _normSnapDriveParams(drive)
@@ -1765,12 +1857,11 @@ class LibvirtVm(vm.Vm):
 
             try:
                 newDrives[vmDevName]["path"] = \
-                            self.cif.prepareVolumePath(newDrives[vmDevName])
+                 self.cif.prepareVolumePath(newDrives[vmDevName])
 
                 if newDrives[vmDevName]["mirror"]:
                     newDrives[vmDevName]["mirrorPath"] = \
-                            self.cif.prepareVolumePath(
-                                             newDrives[vmDevName]["mirror"])
+                     self.cif.prepareVolumePath(newDrives[vmDevName]["mirror"])
                 else:
                     newDrives[vmDevName]["mirrorPath"] = ""
 
@@ -1826,7 +1917,8 @@ class LibvirtVm(vm.Vm):
                 return errCode['snapshotErr']
             else:
                 # Update the drive information
-                for drive in newDrives.values(): _updateDrive(drive)
+                for drive in newDrives.values():
+                    _updateDrive(drive)
             finally:
                 self._volumesPrepared = True
 
@@ -1867,7 +1959,7 @@ class LibvirtVm(vm.Vm):
                 jobInfo = None
 
             if not jobInfo:
-                 mergeStatus['status'] = MERGESTATUS.UNKNOWN
+                mergeStatus['status'] = MERGESTATUS.UNKNOWN
 
         self.saveState()
 
@@ -1916,11 +2008,10 @@ class LibvirtVm(vm.Vm):
         def _filterInternalInfo(mergeStatus):
             return dict(
                 (k, v) for k, v in mergeStatus.iteritems()
-                                if k not in ("path", "basePath")
-            )
+                                if k not in ("path", "basePath"))
 
-        mergeStatus = [ _filterInternalInfo(x)
-                        for x in self.conf.get('liveMerge', []) ]
+        mergeStatus = [_filterInternalInfo(x)
+                       for x in self.conf.get('liveMerge', [])]
 
         return {'status': doneCode, 'mergeStatus': mergeStatus}
 
@@ -1951,7 +2042,8 @@ class LibvirtVm(vm.Vm):
             path = self.cif.prepareVolumePath(drivespec)
         except vm.VolumeError, e:
             return {'status': {'code': errCode['imageErr']['status']['code'],
-              'message': errCode['imageErr']['status']['message'] % str(e)}}
+                               'message': errCode['imageErr']['status']
+                                                 ['message'] % str(e)}}
         diskelem = xml.dom.minidom.Element('disk')
         diskelem.setAttribute('type', 'file')
         diskelem.setAttribute('device', vmDev)
@@ -1963,13 +2055,15 @@ class LibvirtVm(vm.Vm):
         diskelem.appendChild(target)
 
         try:
-            self._dom.updateDeviceFlags(diskelem.toxml(),
-                                  libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
+            self._dom.updateDeviceFlags(
+                        diskelem.toxml(),
+                        libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
         except:
             self.log.debug("updateDeviceFlags failed", exc_info=True)
             self.cif.teardownVolumePath(drivespec)
             return {'status': {'code': errCode['changeDisk']['status']['code'],
-              'message': errCode['changeDisk']['status']['message']}}
+                               'message': errCode['changeDisk']['status']
+                                                 ['message']}}
         self.cif.teardownVolumePath(self.conf.get(vmDev))
         self.conf[vmDev] = path
         return {'status': doneCode, 'vmList': self.status()}
@@ -1995,13 +2089,13 @@ class LibvirtVm(vm.Vm):
                         self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)). \
                             childNodes[0].getElementsByTagName('graphics')[0]
         validto = max(time.strptime(graphics.getAttribute('passwdValidTo'),
-                                   '%Y-%m-%dT%H:%M:%S'),
+                                    '%Y-%m-%dT%H:%M:%S'),
                       time.gmtime(time.time() + newlife))
-        graphics.setAttribute('passwdValidTo',
-                time.strftime('%Y-%m-%dT%H:%M:%S', validto))
+        graphics.setAttribute(
+                  'passwdValidTo',
+                  time.strftime('%Y-%m-%dT%H:%M:%S', validto))
         graphics.setAttribute('connected', 'keep')
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
-
 
     def _onAbnormalStop(self, blockDevAlias, err):
         """
@@ -2010,7 +2104,8 @@ class LibvirtVm(vm.Vm):
         :param err: one of "eperm", "eio", "enospc" or "eother"
         Note the different API from that of Vm._onAbnormalStop
         """
-        self.log.info('abnormal vm stop device %s error %s', blockDevAlias, err)
+        self.log.info('abnormal vm stop device %s error %s',
+                      blockDevAlias, err)
         self.conf['pauseCode'] = err.upper()
         self._guestCpuRunning = False
         if err.upper() == 'ENOSPC':
@@ -2021,10 +2116,11 @@ class LibvirtVm(vm.Vm):
                     #'allocation' will give the qcow2 image size
                     #D. Berrange
                     capacity, alloc, physical = self._dom.blockInfo(d.path, 0)
-                    if  physical > (alloc + config.getint('irs',
-                                    'volume_utilization_chunk_mb')):
-                        self.log.warn('%s = %s/%s error %s phys: %s alloc: %s \
-                                      Ingnoring already managed event.',
+                    if (physical >
+                        (alloc + config.getint(
+                            'irs', 'volume_utilization_chunk_mb'))):
+                        self.log.warn('%s = %s/%s error %s phys: %s alloc: %s '
+                                      'Ingnoring already managed event.',
                                       blockDevAlias, d.domainID, d.volumeID,
                                       err, physical, alloc)
                         return
@@ -2071,7 +2167,8 @@ class LibvirtVm(vm.Vm):
         Stop VM and release all resources
         """
 
-        #unsetting mirror network will clear both mirroring (on the same network).
+        # unsetting mirror network will clear both mirroring
+        # (on the same network).
         for nic in self._devices[vm.NIC_DEVICES]:
             if hasattr(nic, 'portMirroring'):
                 for network in nic.portMirroring:
@@ -2079,9 +2176,9 @@ class LibvirtVm(vm.Vm):
 
         # delete the payload devices
         for drive in self._devices[vm.DISK_DEVICES]:
-            if hasattr(drive, 'specParams') and \
-                drive.specParams.has_key('vmPayload'):
-                    supervdsm.getProxy().removeFs(drive.path)
+            if (hasattr(drive, 'specParams') and
+                'vmPayload' in drive.specParams):
+                supervdsm.getProxy().removeFs(drive.path)
 
         with self._releaseLock:
             if self._released:
@@ -2096,11 +2193,13 @@ class LibvirtVm(vm.Vm):
                     self.guestAgent.stop()
                 if self._dom:
                     try:
-                        self._dom.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
+                        self._dom.destroyFlags(
+                                libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
                     except libvirt.libvirtError, e:
-                        if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
-                            self.log.warn("Failed to destroy VM '%s' gracefully",
-                                                            self.conf['vmId'])
+                        if (e.get_error_code() ==
+                            libvirt.VIR_ERR_OPERATION_FAILED):
+                            self.log.warn("Failed to destroy VM '%s' "
+                                          "gracefully", self.conf['vmId'])
                             time.sleep(30)
                             self._dom.destroy()
             except libvirt.libvirtError, e:
@@ -2128,9 +2227,10 @@ class LibvirtVm(vm.Vm):
         try:
             del self.cif.vmContainer[self.conf['vmId']]
             self.log.debug("Total desktops after destroy of %s is %d",
-                     self.conf['vmId'], len(self.cif.vmContainer))
+                           self.conf['vmId'], len(self.cif.vmContainer))
         except Exception:
-            self.log.error("Failed to delete VM %s", self.conf['vmId'], exc_info=True)
+            self.log.error("Failed to delete VM %s", self.conf['vmId'],
+                           exc_info=True)
 
     def destroy(self):
         self.log.debug('destroy Called')
@@ -2185,8 +2285,8 @@ class LibvirtVm(vm.Vm):
 
         for x in devsxml.childNodes:
             # Ignore empty nodes and devices without address
-            if x.nodeName == '#text' or \
-                not x.getElementsByTagName('address'):
+            if (x.nodeName == '#text' or
+                not x.getElementsByTagName('address')):
                 continue
 
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
@@ -2224,9 +2324,9 @@ class LibvirtVm(vm.Vm):
             # In case the controller has index and/or model, they
             # are compared. Currently relevant for USB controllers.
             for ctrl in self._devices[vm.CONTROLLER_DEVICES]:
-                if (ctrl.device == device) and \
-                      (not hasattr(ctrl, 'index') or ctrl.index == index) and \
-                      (not hasattr(ctrl, 'model') or ctrl.model == model):
+                if ((ctrl.device == device) and
+                    (not hasattr(ctrl, 'index') or ctrl.index == index) and
+                    (not hasattr(ctrl, 'model') or ctrl.model == model)):
                     ctrl.alias = alias
                     ctrl.address = address
             # Update vm's conf with address for known controller devices
@@ -2234,10 +2334,10 @@ class LibvirtVm(vm.Vm):
             # are compared. Currently relevant for USB controllers.
             knownDev = False
             for dev in self.conf['devices']:
-                if (dev['type'] == vm.CONTROLLER_DEVICES) and \
-                   (dev['device'] == device) and \
-                   (not dev.has_key('index') or dev['index'] == index) and \
-                   (not dev.has_key('model') or dev['model'] == model):
+                if ((dev['type'] == vm.CONTROLLER_DEVICES) and
+                    (dev['device'] == device) and
+                    (not 'index' in dev or dev['index'] == index) and
+                    (not 'model' in dev or dev['model'] == model)):
                     dev['address'] = address
                     dev['alias'] = alias
                     knownDev = True
@@ -2269,7 +2369,8 @@ class LibvirtVm(vm.Vm):
                     dev.alias = alias
 
             for dev in self.conf['devices']:
-                if (dev['type'] == vm.BALLOON_DEVICES) and not dev.get('address'):
+                if ((dev['type'] == vm.BALLOON_DEVICES) and
+                    not dev.get('address')):
                     dev['address'] = address
                     dev['alias'] = alias
 
@@ -2287,8 +2388,8 @@ class LibvirtVm(vm.Vm):
 
             # FIXME. We have an identification problem here.
             # Video card device has not unique identifier, except the alias
-            # (but backend not aware to device's aliases).
-            # So, for now we can only assign the address according to devices order.
+            # (but backend not aware to device's aliases). So, for now
+            # we can only assign the address according to devices order.
             for vc in self._devices[vm.VIDEO_DEVICES]:
                 if not hasattr(vc, 'address') or not hasattr(vc, 'alias'):
                     vc.alias = alias
@@ -2296,8 +2397,8 @@ class LibvirtVm(vm.Vm):
                     break
             # Update vm's conf with address
             for dev in self.conf['devices']:
-                if (dev['type'] == vm.VIDEO_DEVICES) and \
-                   (not dev.get('address') or not dev.get('alias')):
+                if ((dev['type'] == vm.VIDEO_DEVICES) and
+                    (not dev.get('address') or not dev.get('alias'))):
                     dev['address'] = address
                     dev['alias'] = alias
                     break
@@ -2316,8 +2417,8 @@ class LibvirtVm(vm.Vm):
 
             # FIXME. We have an identification problem here.
             # Sound device has not unique identifier, except the alias
-            # (but backend not aware to device's aliases).
-            # So, for now we can only assign the address according to devices order.
+            # (but backend not aware to device's aliases). So, for now
+            # we can only assign the address according to devices order.
             for sc in self._devices[vm.SOUND_DEVICES]:
                 if not hasattr(sc, 'address') or not hasattr(sc, 'alias'):
                     sc.alias = alias
@@ -2325,8 +2426,8 @@ class LibvirtVm(vm.Vm):
                     break
             # Update vm's conf with address
             for dev in self.conf['devices']:
-                if (dev['type'] == vm.SOUND_DEVICES) and \
-                   (not dev.get('address') or not dev.get('alias')):
+                if ((dev['type'] == vm.SOUND_DEVICES) and
+                    (not dev.get('address') or not dev.get('alias'))):
                     dev['address'] = address
                     dev['alias'] = alias
                     break
@@ -2344,8 +2445,8 @@ class LibvirtVm(vm.Vm):
         for x in disksxml:
             sources = x.getElementsByTagName('source')
             if sources:
-                devPath = sources[0].getAttribute('file') \
-                            or sources[0].getAttribute('dev')
+                devPath = (sources[0].getAttribute('file') or
+                           sources[0].getAttribute('dev'))
             else:
                 devPath = ''
 
@@ -2358,7 +2459,8 @@ class LibvirtVm(vm.Vm):
 
             devType = x.getAttribute('device')
             if devType == 'disk':
-                drv = x.getElementsByTagName('driver')[0].getAttribute('type') # raw/qcow2
+                # raw/qcow2
+                drv = x.getElementsByTagName('driver')[0].getAttribute('type')
             else:
                 drv = 'raw'
             # Get disk address
@@ -2434,7 +2536,8 @@ class LibvirtVm(vm.Vm):
             # Update vm's conf with address for known nic devices
             knownDev = False
             for dev in self.conf['devices']:
-                if dev['type'] == vm.NIC_DEVICES and dev['macAddr'].lower() == mac.lower():
+                if (dev['type'] == vm.NIC_DEVICES and
+                    dev['macAddr'].lower() == mac.lower()):
                     dev['address'] = address
                     dev['alias'] = alias
                     knownDev = True
@@ -2459,11 +2562,11 @@ class LibvirtVm(vm.Vm):
         self.log.debug('event %s detail %s opaque %s',
                        libvirtev.eventToString(event), detail, opaque)
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
-            if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and \
-                self.lastStatus == 'Migration Source':
+            if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
+                self.lastStatus == 'Migration Source'):
                 hooks.after_vm_migrate_source(self._lastXMLDesc, self.conf)
-            elif detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and \
-                self.lastStatus == 'Saving State':
+            elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
+                  self.lastStatus == 'Saving State'):
                 hooks.after_vm_hibernate(self._lastXMLDesc, self.conf)
             else:
                 if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN:
@@ -2477,8 +2580,8 @@ class LibvirtVm(vm.Vm):
             self._guestCpuRunning = True
             if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
                 hooks.after_vm_cont(self._dom.XMLDesc(0), self.conf)
-            elif detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED and\
-                self.lastStatus == 'Migration Destination':
+            elif (detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED and
+                  self.lastStatus == 'Migration Destination'):
                 self._incomingMigrationFinished.set()
 
     def waitForMigrationDestinationPrepare(self):
@@ -2486,7 +2589,8 @@ class LibvirtVm(vm.Vm):
         prepareTimeout = self._loadCorrectedTimeout(
                           config.getint('vars', 'migration_listener_timeout'),
                           doubler=5)
-        self.log.debug('migration destination: waiting %ss for path preparation', prepareTimeout)
+        self.log.debug('migration destination: waiting %ss '
+                       'for path preparation', prepareTimeout)
         self._pathsPreparedEvent.wait(prepareTimeout)
         if not self._pathsPreparedEvent.isSet():
             self.log.debug('Timeout while waiting for path preparation')
@@ -2495,17 +2599,19 @@ class LibvirtVm(vm.Vm):
         hooks.before_vm_migrate_destination(srcDomXML, self.conf)
         return True
 
+
 # A little unrelated hack to make xml.dom.minidom.Document.toprettyxml()
 # not wrap Text node with whitespace.
 # until http://bugs.python.org/issue4147 is accepted
 def __hacked_writexml(self, writer, indent="", addindent="", newl=""):
+
     # copied from xml.dom.minidom.Element.writexml and hacked not to wrap Text
     # nodes with whitespace.
 
     # indent = current indentation
     # addindent = indentation to add to higher levels
     # newl = newline string
-    writer.write(indent+"<" + self.tagName)
+    writer.write(indent + "<" + self.tagName)
 
     attrs = self._get_attributes()
     a_names = attrs.keys()
@@ -2518,17 +2624,18 @@ def __hacked_writexml(self, writer, indent="", addindent="", newl=""):
         writer.write("\"")
     if self.childNodes:
         # added special handling of Text nodes
-        if len(self.childNodes) == 1 and \
-           isinstance(self.childNodes[0], xml.dom.minidom.Text):
+        if (len(self.childNodes) == 1 and
+            isinstance(self.childNodes[0], xml.dom.minidom.Text)):
             writer.write(">")
             self.childNodes[0].writexml(writer)
-            writer.write("</%s>%s" % (self.tagName,newl))
+            writer.write("</%s>%s" % (self.tagName, newl))
         else:
-            writer.write(">%s"%(newl))
+            writer.write(">%s" % (newl))
             for node in self.childNodes:
-                node.writexml(writer,indent+addindent,addindent,newl)
-            writer.write("%s</%s>%s" % (indent,self.tagName,newl))
+                node.writexml(writer, indent + addindent, addindent, newl)
+            writer.write("%s</%s>%s" % (indent, self.tagName, newl))
     else:
-        writer.write("/>%s"%(newl))
-xml.dom.minidom.Element.writexml = __hacked_writexml
+        writer.write("/>%s" % (newl))
 
+
+xml.dom.minidom.Element.writexml = __hacked_writexml

@@ -58,6 +58,7 @@ PEP8_WHITELIST = \
 	vdsm/guestIF.py \
 	vdsm/hooks.py \
 	vdsm/libvirtev.py \
+	vdsm/libvirtvm.py \
 	vdsm/md_utils.py \
 	vdsm/momIF.py \
 	vdsm/parted_utils.py \
