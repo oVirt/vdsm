@@ -2149,18 +2149,30 @@ class LibvirtVm(vm.Vm):
                 continue
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             device = x.getAttribute('type')
+            # Get model and index. Relevant for USB controllers.
+            model = x.getAttribute('model')
+            index = x.getAttribute('index')
+
             # Get controller address
             address = self._getUnderlyingDeviceAddress(x)
 
+            # In case the controller has index and/or model, they
+            # are compared. Currently relevant for USB controllers.
             for ctrl in self._devices[vm.CONTROLLER_DEVICES]:
-                if ctrl.device == device:
+                if (ctrl.device == device) and \
+                      (not hasattr(ctrl, 'index') or ctrl.index == index) and \
+                      (not hasattr(ctrl, 'model') or ctrl.model == model):
                     ctrl.alias = alias
                     ctrl.address = address
             # Update vm's conf with address for known controller devices
+            # In case the controller has index and/or model, they
+            # are compared. Currently relevant for USB controllers.
             knownDev = False
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.CONTROLLER_DEVICES) and \
-                                            (dev['device'] == device):
+                   (dev['device'] == device) and \
+                   (not dev.has_key('index') or dev['index'] == index) and \
+                   (not dev.has_key('model') or dev['model'] == model):
                     dev['address'] = address
                     dev['alias'] = alias
                     knownDev = True
