@@ -233,6 +233,34 @@ test_already_running()
     return 1
 }
 
+# validate vdsmcert.pem against cacert.pem
+validate_libvirt_certs()
+{
+    echo "checking certs.."
+    local ID=`id -u vdsm`
+    local GID=`id -g vdsm`
+    local OPENSSL_CMD="/usr/bin/openssl"
+    local PATH_CERT="/etc/pki/vdsm/certs"
+
+    ret="$(${OPENSSL_CMD} verify -CAfile ${PATH_CERT}/cacert.pem \
+             ${PATH_CERT}/vdsmcert.pem)"
+    if [ ! "${ret}" == "${PATH_CERT}/vdsmcert.pem: OK" ]; then
+        for file in "${PATH_CERT}"/*; do
+            ret="$(${OPENSSL_CMD} verify -CAfile ${file} \
+                     ${PATH_CERT}/vdsmcert.pem)"
+            if [ "${ret}" == "${PATH_CERT}/vdsmcert.pem: OK" ]; then
+                /usr/sbin/unpersist "${PATH_CERT}"/cacert.pem 1> /dev/null
+                /bin/rm -f "${PATH_CERT}"/cacert.pem
+                /bin/cp "${file}" "${PATH_CERT}"/cacert.pem
+                /bin/chown "${ID}":"${GID}" "${PATH_CERT}"/cacert.pem
+                /bin/chmod 0600 "${PATH_CERT}"/cacert.pem
+                /usr/sbin/persist "${PATH_CERT}"/cacert.pem 1> /dev/null
+                break
+            fi
+        done
+    fi
+}
+
 # configure libvirt to vdsm's needs
 configure_libvirt()
 {
@@ -275,10 +303,14 @@ configure_libvirt()
     fi
 
     # do not configure ovirt nodes before registration
-    if isOvirt && [ ! -f /etc/pki/vdsm/certs/vdsmcert.pem ]
+    if isOvirt
     then
-        log_failure_msg "$prog: Missing certificates, $prog not registered "
-        return 6
+        if [ ! -f /etc/pki/vdsm/certs/vdsmcert.pem ]
+        then
+            log_failure_msg "$prog: Missing certificates, $prog not registered"
+            return 6
+        fi
+        validate_libvirt_certs
     fi
 
     # do not reconfigure, return 0, so that vdsm start can continue.
