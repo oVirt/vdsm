@@ -157,6 +157,8 @@ install-data-local: \
 		install-data-sudoers \
 		install-data-libvirtpass
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
+	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
+	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/mnt
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
