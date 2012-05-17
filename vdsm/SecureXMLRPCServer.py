@@ -26,8 +26,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-"""SecureXMLRPCServer.py - simple XML RPC server supporting SSL.
-"""
+"""SecureXMLRPCServer.py - simple XML RPC server supporting SSL."""
 
 import SimpleXMLRPCServer
 import xmlrpclib
@@ -38,6 +37,7 @@ import SocketServer
 
 SecureXMLRPCRequestHandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
 
+
 class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
     def __init__(self, addr,
                  requestHandler=SimpleXMLRPCServer.SimpleXMLRPCRequestHandler,
@@ -45,7 +45,9 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
                  bind_and_activate=True,
                  keyfile=None, certfile=None, ca_certs=None,
                  timeout=None):
-        """Initialize a SimpleXMLRPCServer instance but wrap its .socket member with ssl."""
+        """Initialize a SimpleXMLRPCServer instance but wrap
+        its self.socket member with ssl.
+        """
 
         SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, addr,
                  requestHandler,
@@ -65,7 +67,9 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
     def finish_request(self, request, client_address):
         request.do_handshake()
 
-        return SimpleXMLRPCServer.SimpleXMLRPCServer.finish_request(self, request,
+        return SimpleXMLRPCServer.SimpleXMLRPCServer.finish_request(
+                                                             self,
+                                                             request,
                                                              client_address)
 
     def handle_error(self, request, client_address):
@@ -74,7 +78,9 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
 
 
 class SecureThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
-                                 SecureXMLRPCServer): pass
+                                 SecureXMLRPCServer):
+    pass
+
 
 class VerifyingHTTPSConnection(httplib.HTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
@@ -97,6 +103,7 @@ class VerifyingHTTPSConnection(httplib.HTTPSConnection):
                                     ca_certs=self.ca_certs, server_side=False,
                                     cert_reqs=self.cert_reqs)
 
+
 class VerifyingSafeTransport(xmlrpclib.SafeTransport):
     def __init__(self, use_datetime=0, key_file=None, cert_file=None,
                  ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
@@ -109,9 +116,10 @@ class VerifyingSafeTransport(xmlrpclib.SafeTransport):
     def make_connection(self, host):
         """Return VerifyingHTTPS object that is aware of ca_certs, and will
         create VerifyingHTTPSConnection.
-        In Python 2.7, return VerifyingHTTPSConnection object"""
+        In Python 2.7, return VerifyingHTTPSConnection object
+        """
         chost, self._extra_headers, x509 = self.get_host_info(host)
-        if hasattr(xmlrpclib.SafeTransport, "single_request"): # Python 2.7
+        if hasattr(xmlrpclib.SafeTransport, "single_request"):   # Python 2.7
             return VerifyingHTTPSConnection(
                         chost, None, key_file=self.key_file, strict=None,
                         cert_file=self.cert_file, ca_certs=self.ca_certs,
@@ -128,14 +136,17 @@ class VerifyingHTTPS(httplib.HTTPS):
 
     def __init__(self, host='', port=None, key_file=None, cert_file=None,
                  strict=None, ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
-        """A ca_cert-aware HTTPS object, that creates a VerifyingHTTPSConnection"""
+        """A ca_cert-aware HTTPS object,
+        that creates a VerifyingHTTPSConnection
+        """
         # provide a default host, pass the X509 cert info
 
         # urf. compensate for bad input.
         if port == 0:
             port = None
         self._setup(self._connection_class(host, port, key_file,
-                                           cert_file, strict, ca_certs=ca_certs,
+                                           cert_file, strict,
+                                           ca_certs=ca_certs,
                                            cert_reqs=cert_reqs))
 
         # we never actually use these for anything, but we keep them
@@ -165,14 +176,17 @@ class __Test(object):
                 return 1
 
         server = SecureXMLRPCServer((self.host, self.port),
-                     keyfile=self.KEYFILE, certfile=self.CERTFILE, ca_certs=self.CACERT)
+                                    keyfile=self.KEYFILE,
+                                    certfile=self.CERTFILE,
+                                    ca_certs=self.CACERT)
         server.register_instance(xmlrpc_registers())
         print "Serving HTTPS on", self.host, "port", self.port
         server.serve_forever()
 
     def client(self):
-        vtransport=VerifyingSafeTransport(key_file=self.KEYFILE,
-                        cert_file=self.CERTFILE, ca_certs=self.CACERT)
+        vtransport = VerifyingSafeTransport(key_file=self.KEYFILE,
+                                            cert_file=self.CERTFILE,
+                                            ca_certs=self.CACERT)
         s = xmlrpclib.ServerProxy('https://%s:%s' % (self.host, self.port),
                                   transport=vtransport)
         print s.add(2, 3)
