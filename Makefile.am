@@ -55,6 +55,7 @@ PEP8_WHITELIST = \
 	vdsm/gluster/hostname.py \
 	vdsm/storage/blockVolume.py \
 	vdsm/storage/localFsSD.py \
+	vdsm/storage/devicemapper.py \
 	vdsm/storage/hba.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
