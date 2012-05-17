@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -57,9 +57,12 @@ VOL_TYPE = [PREALLOCATED_VOL, SPARSE_VOL]
 VOL_FORMAT = [COW_FORMAT, RAW_FORMAT]
 VOL_ROLE = [SHARED_VOL, INTERNAL_VOL, LEAF_VOL]
 
-VOLUME_TYPES = {UNKNOWN_VOL:'UNKNOWN', PREALLOCATED_VOL:'PREALLOCATED', SPARSE_VOL:'SPARSE',
-                UNKNOWN_FORMAT:'UNKNOWN', COW_FORMAT:'COW', RAW_FORMAT:'RAW',
-                SHARED_VOL:'SHARED', INTERNAL_VOL:'INTERNAL', LEAF_VOL:'LEAF'}
+VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
+                SPARSE_VOL: 'SPARSE',
+                UNKNOWN_FORMAT: 'UNKNOWN', COW_FORMAT: 'COW',
+                RAW_FORMAT: 'RAW',
+                SHARED_VOL: 'SHARED', INTERNAL_VOL: 'INTERNAL',
+                LEAF_VOL: 'LEAF'}
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -72,7 +75,7 @@ VOLTYPE = "VOLTYPE"
 PUUID = "PUUID"
 DOMAIN = "DOMAIN"
 CTIME = "CTIME"
-IMAGE  = "IMAGE"
+IMAGE = "IMAGE"
 DESCRIPTION = "DESCRIPTION"
 LEGALITY = "LEGALITY"
 MTIME = "MTIME"
@@ -83,16 +86,19 @@ FAKE_VOL = "FAKE"
 
 log = logging.getLogger('Storage.Volume')
 
-FMT2STR = {COW_FORMAT : 'qcow2', RAW_FORMAT : 'raw'}
+FMT2STR = {COW_FORMAT: 'qcow2', RAW_FORMAT: 'raw'}
+
 
 def fmt2str(format):
     return FMT2STR[format]
+
 
 def type2name(volType):
     try:
         return VOLUME_TYPES[volType]
     except IndexError:
         return None
+
 
 def name2type(name):
     for (k, v) in VOLUME_TYPES.iteritems():
@@ -150,60 +156,74 @@ class Volume:
             cls.log.error("pid=%s ctime=%s", pid, ctime, exc_info=True)
             raise
 
-
     @classmethod
-    def rebaseVolumeRollback(cls, taskObj, sdUUID, srcImg, srcVol, dstFormat, srcParent, unsafe):
+    def rebaseVolumeRollback(cls, taskObj, sdUUID, srcImg,
+                             srcVol, dstFormat, srcParent, unsafe):
         """
         Rebase volume rollback
         """
         cls.log.info("sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
                      sdUUID, srcImg, srcVol, dstFormat, srcParent)
 
-        imageResourcesNamespace = sd.getNamespace(sdUUID, resourceFactories.IMAGE_NAMESPACE)
-        with rmanager.acquireResource(imageResourcesNamespace, srcImg, rm.LockType.exclusive):
+        imageResourcesNamespace = sd.getNamespace(
+                                       sdUUID,
+                                       resourceFactories.IMAGE_NAMESPACE)
+        with rmanager.acquireResource(imageResourcesNamespace,
+                                      srcImg, rm.LockType.exclusive):
             try:
-                vol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcImg, volUUID=srcVol)
+                vol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcImg,
+                                                            volUUID=srcVol)
                 vol.prepare(rw=True, chainrw=True, setrw=True)
             except Exception:
-                cls.log.error("sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
-                               sdUUID, srcImg, srcVol, dstFormat, srcParent, exc_info=True)
+                cls.log.error(
+                    "sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
+                    sdUUID, srcImg, srcVol, dstFormat, srcParent,
+                    exc_info=True)
                 raise
 
             try:
-                (rc, out, err) = qemuRebase(vol.getVolumePath(), vol.getFormat(),
-                                            os.path.join('..', srcImg, srcParent),
-                                            int(dstFormat), misc.parseBool(unsafe),
-                                            vars.task.aborting, False)
+                (rc, out, err) = qemuRebase(
+                                      vol.getVolumePath(), vol.getFormat(),
+                                      os.path.join('..', srcImg, srcParent),
+                                      int(dstFormat), misc.parseBool(unsafe),
+                                      vars.task.aborting, False)
                 if rc:
                     raise se.MergeVolumeRollbackError(srcVol)
 
                 vol.setParent(srcParent)
                 vol.recheckIfLeaf()
             except Exception:
-                cls.log.error("sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
-                               sdUUID, srcImg, srcVol, dstFormat, srcParent, exc_info=True)
+                cls.log.error(
+                    "sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
+                    sdUUID, srcImg, srcVol, dstFormat, srcParent,
+                    exc_info=True)
                 raise
             finally:
                 vol.teardown(sdUUID, srcVol)
 
-
-    def rebase(self, backingVol, backingVolPath, backingFormat, unsafe, rollback):
+    def rebase(self, backingVol, backingVolPath,
+               backingFormat, unsafe, rollback):
         """
         Rebase volume on top of new backing volume
         """
         if rollback:
             pvol = self.getParentVolume()
             if not pvol:
-                self.log.warn("Can't rebase volume %s, parent missing", self.volUUID)
+                self.log.warn("Can't rebase volume %s, parent missing",
+                              self.volUUID)
                 return
 
             name = "Merge volume: " + self.volUUID
-            vars.task.pushRecovery(task.Recovery(name, "volume", "Volume", "rebaseVolumeRollback",
-                [self.sdUUID, self.getImage(), self.volUUID,
-                 str(pvol.getFormat()), pvol.volUUID, str(True)]))
+            vars.task.pushRecovery(
+                        task.Recovery(name, "volume", "Volume",
+                                      "rebaseVolumeRollback",
+                                      [self.sdUUID, self.getImage(),
+                                       self.volUUID, str(pvol.getFormat()),
+                                       pvol.volUUID, str(True)]))
 
-        (rc, out, err) = qemuRebase(self.getVolumePath(), self.getFormat(), backingVolPath,
-                                    backingFormat, unsafe, vars.task.aborting, rollback)
+        (rc, out, err) = qemuRebase(self.getVolumePath(), self.getFormat(),
+                                    backingVolPath, backingFormat, unsafe,
+                                    vars.task.aborting, rollback)
         if rc:
             raise se.MergeSnapshotsError(self.volUUID)
         self.setParent(backingVol)
@@ -216,38 +236,45 @@ class Volume:
         wasleaf = False
         dst_path = None
         taskName = "parent volume rollback: " + self.volUUID
-        vars.task.pushRecovery(task.Recovery(taskName, "volume", "Volume", "parentVolumeRollback",
-                                             [self.sdUUID, self.imgUUID, self.volUUID]))
+        vars.task.pushRecovery(
+                    task.Recovery(taskName, "volume", "Volume",
+                                  "parentVolumeRollback",
+                                  [self.sdUUID, self.imgUUID, self.volUUID]))
         if self.isLeaf():
             wasleaf = True
             self.setInternal()
         try:
             self.prepare(rw=False)
             dst_path = os.path.join(dst_image_dir, dst_volUUID)
-            self.log.debug("Volume.clone: %s to %s" % (self.volumePath, dst_path))
+            self.log.debug("Volume.clone: %s to %s" %
+                           (self.volumePath, dst_path))
             size = int(self.getMetaParam(SIZE))
             parent = self.getVolumePath()
             parent_format = fmt2str(self.getFormat())
             # We should use parent's relative path instead of full path
             parent = os.path.join(os.path.basename(os.path.dirname(parent)),
                                                    os.path.basename(parent))
-            createVolume(parent, parent_format, dst_path, size, volFormat, preallocate)
+            createVolume(parent, parent_format, dst_path,
+                         size, volFormat, preallocate)
             self.teardown(self.sdUUID, self.volUUID)
         except Exception, e:
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
             self.teardown(self.sdUUID, self.volUUID)
-            self.log.error("Volume.clone: can't clone: %s to %s" % (self.volumePath, dst_path))
+            self.log.error("Volume.clone: can't clone: %s to %s" %
+                           (self.volumePath, dst_path))
             raise se.CannotCloneVolume(self.volumePath, dst_path, str(e))
 
     def share(self, dst_image_dir, hard=True):
         """
         Share this volume to dst_image_dir
-        'hard' - link type: file volumes should use hardlinks (default behavior)
-                            block volumes should use softlinks (explicitly hard=False)
+        'hard' - link type:
+               file volumes should use hardlinks (default behaviour)
+               block volumes should use softlinks (explicitly hard=False)
         """
-        self.log.debug("Volume.share)share  %s to %s hard %s" % (self.volUUID, dst_image_dir, hard))
+        self.log.debug("Volume.share)share  %s to %s hard %s" %
+                       (self.volUUID, dst_image_dir, hard))
         if not self.isShared():
             raise se.VolumeNonShareable(self)
         if os.path.basename(dst_image_dir) == os.path.basename(self.imagePath):
@@ -256,8 +283,10 @@ class Volume:
             src = self.getDevPath()
             dst = os.path.join(dst_image_dir, self.volUUID)
             taskName = "share volume rollback: " + dst
-            vars.task.pushRecovery(task.Recovery(taskName, "volume", "Volume", "shareVolumeRollback",
-                                                 [dst]))
+            vars.task.pushRecovery(
+                        task.Recovery(taskName, "volume", "Volume",
+                                      "shareVolumeRollback",
+                                      [dst]))
             if os.path.lexists(dst):
                 os.unlink(dst)
             if hard:
@@ -273,7 +302,6 @@ class Volume:
         """
         pass
 
-
     @classmethod
     def getVSize(cls, sdUUID, imgUUID, volUUID, bs=512):
         """
@@ -281,7 +309,6 @@ class Volume:
         """
         mysd = sdCache.produce(sdUUID=sdUUID)
         return mysd.getVolumeClass().getVSize(mysd, imgUUID, volUUID, bs)
-
 
     @classmethod
     def getVTrueSize(cls, sdUUID, imgUUID, volUUID, bs=512):
@@ -291,20 +318,19 @@ class Volume:
         mysd = sdCache.produce(sdUUID=sdUUID)
         return mysd.getVolumeClass().getVTrueSize(mysd, imgUUID, volUUID, bs)
 
-
     @classmethod
     def parentVolumeRollback(cls, taskObj, sdUUID, pimgUUID, pvolUUID):
-        cls.log.info("parentVolumeRollback: sdUUID=%s pimgUUID=%s"\
+        cls.log.info("parentVolumeRollback: sdUUID=%s pimgUUID=%s"
                      " pvolUUID=%s" % (sdUUID, pimgUUID, pvolUUID))
         try:
             if pvolUUID != BLANK_UUID and pimgUUID != BLANK_UUID:
-                pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID, pvolUUID)
+                pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID,
+                                                             pvolUUID)
                 if not pvol.isShared() and not pvol.recheckIfLeaf():
                     pvol.setLeaf()
                 pvol.teardown(sdUUID, pvolUUID)
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
-
 
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
@@ -320,8 +346,8 @@ class Volume:
 
     @classmethod
     def startCreateVolumeRollback(cls, taskObj, sdUUID, imgUUID, volUUID):
-        cls.log.info("startCreateVolumeRollback: sdUUID=%s imgUUID=%s "\
-                        "volUUID=%s " % ( sdUUID, imgUUID, volUUID))
+        cls.log.info("startCreateVolumeRollback: sdUUID=%s imgUUID=%s "
+                     "volUUID=%s " % (sdUUID, imgUUID, volUUID))
         # This rollback doesn't actually do anything.
         # In general the createVolume rollbacks are a list of small rollbacks
         # that are replaced by the one major rollback at the end of the task.
@@ -329,14 +355,16 @@ class Volume:
         # in the list of createVolume rollbacks.
         # We need it in cases when createVolume is part of a composite task and
         # not a task by itself. In such cases when we will replace the list of
-        # small rollbacks with the major one, we want to be able remove only the relevant
-        # rollbacks from the rollback list.
+        # small rollbacks with the major one, we want to be able remove only
+        # the relevant rollbacks from the rollback list.
         pass
 
     @classmethod
-    def createVolumeRollback(cls, taskObj, repoPath, sdUUID, imgUUID, volUUID, imageDir):
-        cls.log.info("createVolumeRollback: repoPath=%s sdUUID=%s imgUUID=%s "\
-                        "volUUID=%s imageDir=%s" % (repoPath, sdUUID, imgUUID, volUUID, imageDir))
+    def createVolumeRollback(cls, taskObj, repoPath,
+                             sdUUID, imgUUID, volUUID, imageDir):
+        cls.log.info("createVolumeRollback: repoPath=%s sdUUID=%s imgUUID=%s "
+                     "volUUID=%s imageDir=%s" %
+                     (repoPath, sdUUID, imgUUID, volUUID, imageDir))
         vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
         # Avoid rollback if volume has children
         if len(vol.getChildrenList()):
@@ -370,7 +398,8 @@ class Volume:
         """
         try:
             if self.isShared():
-                raise se.CannotDeleteSharedVolume("img %s vol %s" % (self.imgUUID, self.volUUID))
+                raise se.CannotDeleteSharedVolume("img %s vol %s" %
+                                                  (self.imgUUID, self.volUUID))
             children = self.getChildrenList()
             if len(children) > 0:
                 raise se.VolumeImageHasChildren(self)
@@ -379,7 +408,8 @@ class Volume:
             # volume (One of metadata corruptions may be
             # previous volume deletion failure).
             # So, there is no reasons to avoid its deletion
-            self.log.warn("Volume %s metadata error (%s)", self.volUUID, str(e))
+            self.log.warn("Volume %s metadata error (%s)",
+                          self.volUUID, str(e))
 
     def extend(self, newsize):
         """
@@ -392,7 +422,7 @@ class Volume:
         Set Volume Description
             'descr' - volume description
         """
-        self.log.info("volUUID = %s descr = %s ", self.volUUID,descr)
+        self.log.info("volUUID = %s descr = %s ", self.volUUID, descr)
         self.setMetaParam(DESCRIPTION, descr)
 
     def getDescription(self):
@@ -513,12 +543,15 @@ class Volume:
             self.setMetaParam(VOLTYPE, self.voltype)
         return self.isLeaf()
 
-    def prepare(self, rw=True, justme=False, chainrw=False, setrw=False, force=False):
+    def prepare(self, rw=True, justme=False,
+                chainrw=False, setrw=False, force=False):
         """
-        Prepare volume for use by consumer. If justme is false, the entire COW chain is prepared.
+        Prepare volume for use by consumer.
+        If justme is false, the entire COW chain is prepared.
         Note: setrw arg may be used only by SPM flows.
         """
-        self.log.info("Volume: preparing volume %s/%s", self.sdUUID, self.volUUID)
+        self.log.info("Volume: preparing volume %s/%s",
+                      self.sdUUID, self.volUUID)
 
         if not force:
             # Cannot prepare ILLEGAL volume
@@ -531,7 +564,8 @@ class Volume:
                 else:
                     raise se.SharedVolumeNonWritable(self)
 
-            if not chainrw and rw and self.isInternal() and setrw and not self.recheckIfLeaf():
+            if (not chainrw and rw and self.isInternal() and setrw and
+                not self.recheckIfLeaf()):
                 raise se.InternalVolumeNonWritable(self)
 
         self.llPrepare(rw=rw, setrw=setrw)
@@ -543,7 +577,8 @@ class Volume:
                 return True
             pvol = self.getParentVolume()
             if pvol:
-                pvol.prepare(rw=chainrw, justme=False, chainrw=chainrw, setrw=setrw)
+                pvol.prepare(rw=chainrw, justme=False,
+                             chainrw=chainrw, setrw=setrw)
         except Exception, e:
             self.log.error("Unexpected error", exc_info=True)
             self.teardown(self.sdUUID, self.volUUID)
@@ -554,7 +589,8 @@ class Volume:
     @classmethod
     def teardown(cls, sdUUID, volUUID, justme=False):
         """
-        Teardown volume. If justme is false, the entire COW chain is teared down.
+        Teardown volume.
+        If justme is false, the entire COW chain is teared down.
         """
         pass
 
@@ -577,8 +613,9 @@ class Volume:
         return info
 
     @classmethod
-    def newMetadata(cls, metaid, sdUUID, imgUUID, puuid, size, format, type, voltype, disktype,
-                     desc = "", legality = ILLEGAL_VOL):
+    def newMetadata(cls, metaid, sdUUID, imgUUID, puuid, size,
+                    format, type, voltype, disktype,
+                    desc="", legality=ILLEGAL_VOL):
         meta = {}
         meta[FORMAT] = "%s" % format
         meta[TYPE] = "%s" % type
@@ -586,7 +623,7 @@ class Volume:
         meta[DISKTYPE] = "%s" % disktype
         meta[SIZE] = "%u" % int(size)
         meta[CTIME] = "%u" % int(time.time())
-        meta[sd.DMDK_POOLS] = ""    #obsolete
+        meta[sd.DMDK_POOLS] = ""    # obsolete
         meta[DOMAIN] = "%s" % sdUUID
         meta[IMAGE] = "%s" % imgUUID
         meta[DESCRIPTION] = str(desc)
@@ -625,7 +662,8 @@ class Volume:
 
         info['children'] = self.getChildrenList()
 
-        # If image was set to illegal, mark the status same (because of VDC constraints)
+        # If image was set to illegal, mark the status same
+        # (because of VDC constraints)
         if info.get('legality', None) == ILLEGAL_VOL or image_corrupted:
             info['status'] = ILLEGAL_VOL
         self.log.info("%s/%s/%s info is %s",
@@ -639,7 +677,8 @@ class Volume:
         vols = self.getImageVolumes(self.repoPath, self.sdUUID, self.imgUUID)
         children = []
         for v in vols:
-            if sdCache.produce(self.sdUUID).produceVolume(self.imgUUID, v).getParent() == self.volUUID:
+            if (sdCache.produce(self.sdUUID).
+                produceVolume(self.imgUUID, v).getParent() == self.volUUID):
                 children.append(v)
         return children
 
@@ -649,7 +688,8 @@ class Volume:
         """
         puuid = self.getParent()
         if puuid and puuid != BLANK_UUID:
-            return sdCache.produce(self.sdUUID).produceVolume(self.imgUUID, puuid)
+            return sdCache.produce(self.sdUUID).produceVolume(self.imgUUID,
+                                                              puuid)
         return None
 
     def getVolumePath(self):
@@ -679,7 +719,8 @@ class Volume:
             meta[str(key)] = str(value)
             self.setMetadata(meta)
         except Exception:
-            self.log.error("Volume.setMetaParam: %s: %s=%s" % (self.volUUID, key, value))
+            self.log.error("Volume.setMetaParam: %s: %s=%s" %
+                           (self.volUUID, key, value))
             raise
 
     def metaCache(self):
@@ -717,6 +758,7 @@ class Volume:
         volParams['legality'] = self.getLegality()
         return volParams
 
+
 def createVolume(parent, parent_format, volume, size, format, prealloc):
     """
      --- Create new volume.
@@ -736,7 +778,8 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
       Sparse/RAW = if snapshot create LVM snapshot
                 (in the future, use storage backend thin provisioning),
                 else create Normal LV <== Not supported
-      Prealloc/COW = build qcow2 image within a preallocated space - used only for COPY
+      Prealloc/COW = build qcow2 image within a preallocated space -
+                     used only for COPY
       Sparse/COW = QCOW2 over LV
 
     # File
@@ -775,17 +818,23 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
 
 def baseAsyncTasksRollback(proc):
     name = "Kill-" + str(proc.pid)
-    vars.task.pushRecovery(task.Recovery(name, "volume", "Volume", "killProcRollback",
-                                         [str(proc.pid), str(misc.getProcCtime(proc.pid))]))
+    vars.task.pushRecovery(
+                task.Recovery(name, "volume", "Volume", "killProcRollback",
+                              [str(proc.pid),
+                               str(misc.getProcCtime(proc.pid))]))
 
-def qemuRebase(src, srcFormat, backingFile, backingFormat, unsafe, stop, rollback):
+
+def qemuRebase(src, srcFormat, backingFile,
+               backingFormat, unsafe, stop, rollback):
     """
-    Rebase the 'src' volume on top of the new 'backingFile' with new 'backingFormat'
+    Rebase the 'src' volume on top of the new 'backingFile'
+    with new 'backingFormat'
     """
     backingFormat = fmt2str(backingFormat)
     srcFormat = fmt2str(srcFormat)
     cwd = os.path.dirname(src)
-    log.debug('(qemuRebase): REBASE %s (fmt=%s) on top of %s (%s) START' % (src, srcFormat, backingFile, backingFormat))
+    log.debug('(qemuRebase): REBASE %s (fmt=%s) on top of %s (%s) START' %
+              (src, srcFormat, backingFile, backingFormat))
 
     cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "rebase",
                                    "-t", "none", "-f", srcFormat,
@@ -810,18 +859,21 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
     """
     src_fmt = fmt2str(src_fmt)
     dst_fmt = fmt2str(dst_fmt)
-    log.debug('(qemuConvert): COPY %s (%s) to %s (%s) START' % (src, src_fmt, dst, dst_fmt))
+    log.debug('(qemuConvert): COPY %s (%s) to %s (%s) START' %
+              (src, src_fmt, dst, dst_fmt))
 
-    if src_fmt == "raw" and dst_fmt == "raw" and dstvolType == PREALLOCATED_VOL:
-        (rc, out, err) = misc.ddWatchCopy(src=src, dst=dst, stop=stop, size=size,
-                                          recoveryCallback=baseAsyncTasksRollback)
+    if (src_fmt == "raw" and dst_fmt == "raw" and
+        dstvolType == PREALLOCATED_VOL):
+        (rc, out, err) = misc.ddWatchCopy(
+                                 src=src, dst=dst,
+                                 stop=stop, size=size,
+                                 recoveryCallback=baseAsyncTasksRollback)
     else:
         cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert",
                                        "-t", "none", "-f", src_fmt, src,
-                                       "-O",dst_fmt, dst]
+                                       "-O", dst_fmt, dst]
         (rc, out, err) = misc.watchCmd(cmd, stop=stop,
                                        recoveryCallback=baseAsyncTasksRollback)
 
     log.debug('(qemuConvert): COPY %s to %s DONE' % (src, dst))
     return (rc, out, err)
-

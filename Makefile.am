@@ -59,6 +59,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/mount.py \
 	vdsm/storage/nfsSD.py \
 	vdsm/storage/processPool.py \
+	vdsm/storage/volume.py \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
 	vdsm/rest/BindingREST.py \
