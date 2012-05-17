@@ -90,6 +90,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/resourceFactories.py \
 	vdsm/storage/sd.py \
 	vdsm/storage/securable.py \
+	vdsm/storage/storage_exception.py \
 	vdsm/storage/task.py \
 	vdsm/storage/taskManager.py \
 	vdsm/storage/volume.py \
