@@ -31,10 +31,10 @@ class DirectFileTests(TestCaseBase):
         return {}
 
     def testRead(self):
-        data = """It is the four pillars of the male heterosexual psyche.
-        We like:  naked women, stockings, lesbians, and Sean Connery best
-        as James Bond, because that is what being a boy is."""
-        # (C) BBC - Coupling
+        data = """Vestibulum. Libero leo nostra, pede nunc eu. Pellentesque
+        platea lacus morbi nisl montes ve. Ac. A, consectetuer erat, justo eu.
+        Elementum et, phasellus fames et rutrum donec magnis eu bibendum. Arcu,
+        ante aliquam ipsum ut facilisis ad."""
         srcFd, srcPath = tempfile.mkstemp()
         f = os.fdopen(srcFd, "wb")
         f.write(data)
@@ -45,18 +45,22 @@ class DirectFileTests(TestCaseBase):
         os.unlink(srcPath)
 
     def testSeekRead(self):
-        data = """I want to spend the rest of my life with the woman at the end
-        of that table there, but that does not stop me wanting to see several
-        thousand more naked bottoms before I die, because that's what being a
-        bloke is. When man invented fire, he didn't say, "Hey, let's cook." He
-        said, "Great, now we can see naked bottoms in the dark."
-        As soon as Caxton invented the printing press, we were using it to make
-        pictures of, hey, naked bottoms!  We have turned the Internet into an
-        enormous international database of naked bottoms. So you see, the story
-        of male achievement through the ages, feeble though it may have been,
-        has been the story of our struggle to get a better look at your
-        bottoms."""
-        # (C) BBC - Coupling
+        data = """
+        Habitasse ipsum at fusce litora metus, placerat dui purus aenean ante,
+        ve. Pede hymenaeos ut primis cum, rhoncus, lectus, nunc. Vestibulum
+        curabitur vitae etiam magna auctor velit, mi tempus vivamus orci eros.
+        Pellentesque curabitur risus fermentum eget. Elementum curae, donec
+        nisl egestas ve, ut odio eu nunc elit felis primis id. Ridiculus metus
+        morbi nulla erat, amet nisi. Amet ligula nisi, id penatibus risus in.
+        Purus velit duis. Aenean eget, pellentesque eu rhoncus arcu et
+        consectetuer laoreet, augue nisi dictum lacinia urna. Fermentum
+        torquent. Ut interdum vivamus duis. Felis consequat nec pede. Orci
+        sollicitudin parturient orci felis. Enim, diam velit sapien
+        condimentum fames semper nibh. Integer at, egestas pede consectetuer
+        ac augue pharetra dolor non placerat quisque id cursus ultricies.
+        Ligula mi senectus sit. Habitasse. Integer sollicitudin dapibus cum
+        quam.
+        """
         self.assertTrue(len(data) > 512)
         srcFd, srcPath = tempfile.mkstemp()
         f = os.fdopen(srcFd, "wb")
@@ -69,10 +73,10 @@ class DirectFileTests(TestCaseBase):
         os.unlink(srcPath)
 
     def testWrite(self):
-        data = """You know, I have never understood the male obsession with
-        lesbianism, a whole area of sex with nothing for them to do.
-        Just answered my own question, haven't I?"""
-        # (C) BBC - Coupling
+        data = """In ut non platea egestas, quisque magnis nunc nostra ac etiam
+        suscipit nec integer sociosqu. Fermentum. Ante orci luctus, ipsum
+        ullamcorper enim arcu class neque inceptos class. Ut, sagittis
+        torquent, commodo facilisi."""
         srcFd, srcPath = tempfile.mkstemp()
         os.close(srcFd)
         with fileUtils.open_ex(srcPath, "dw") as f:
@@ -83,17 +87,26 @@ class DirectFileTests(TestCaseBase):
         os.unlink(srcPath)
 
     def testSmallWrites(self):
-        data = """Do you know what arses are? Arses are the human race's
-        favourite thing. We like them on each other, we like them on magazine
-        covers, we even like them on babies!  When it itches, we like to
-        scratch them, when its cold, we like to warm them, and who among us, in
-        a lonely moment hasn't reached back for a discreet fondle?  When God
-        gave us our arses he had to stick them round the back just so we
-        wouldn't sit and stare at them all day. Cause when God made the arse he
-        didn't say "Hey it's just your basic hinge, let's knock off early." He
-        said "Behold ye angels, I have created the arse. Throughout the ages to
-        come, men and women shall grab hold of these and shout my name!"""
-        # (C) BBC - Coupling
+        data = """
+        Aliquet habitasse tellus. Fringilla faucibus tortor parturient
+        consectetuer sodales, venenatis platea habitant. Hendrerit nostra nunc
+        odio. Primis porttitor consequat enim ridiculus. Taciti nascetur,
+        nibh, convallis sit, cum dis mi. Nonummy justo odio cursus, ac hac
+        curabitur nibh. Tellus. Montes, ut taciti orci ridiculus facilisis
+        nunc. Donec. Risus adipiscing habitant donec vehicula non vitae class,
+        porta vitae senectus. Nascetur felis laoreet integer, tortor ligula.
+        Pellentesque vestibulum cras nostra. Ut sollicitudin posuere, per
+        accumsan curabitur id, nisi fermentum vel, eget netus tristique per,
+        donec, curabitur senectus ut fusce. A. Mauris fringilla senectus et
+        eni facilisis magna inceptos eu, cursus habitant fringilla neque.
+        Nibh. Elit facilisis sed, elit, nostra ve torquent dictumst, aenean
+        sapien quam, habitasse in. Eu tempus aptent, diam, nisi risus
+        pharetra, ac, condimentum orci, consequat mollis. Cras lacus augue
+        ultrices proin fermentum nibh sed urna. Ve ipsum ultrices curae,
+        feugiat faucibus proin et elementum vivamus, lectus. Torquent. Tempus
+        facilisi. Cras suspendisse euismod consectetuer ornare nostra. Fusce
+        amet cum amet diam.
+        """
         self.assertTrue(len(data) > 512)
 
         srcFd, srcPath = tempfile.mkstemp()
@@ -107,24 +120,21 @@ class DirectFileTests(TestCaseBase):
         os.unlink(srcPath)
 
     def testUpdateRead(self):
-        data = """Cat: Hey hey hey, I've got you now,
-                       buddy! J, O, Z, X, Y, Q, K!
-                  Lister: That's not a word.
-                  Cat: It's a Cat word.
-                  Lister: Jozxyqk?
-                  Cat: That's not how you pronounce it!
-                  Lister: What does it mean?
-                  Cat: It's the sound you make when you get your sexual organs
-                       trapped in something.
-                  Lister: Is it in the dictionary?
-                  Cat: Well it could be, if you're reading in the nude and
-                       close the book too quick. Jozxyqk!!!
-                  -------------------------------------------------------------
-                  Cat: Forget Red - let's go all the way up to Brown Alert!
-                  Kryten: There's no such thing as a Brown Alert, sir.
-                  Cat: You won't be saying that in a minute! And don't say I
-                       didn't alert you!"""
-        # (C) BBC - Red Dwarf
+        data = """
+        Aliquet. Aliquam eni ac nullam iaculis cras ante, adipiscing. Enim
+        eget egestas pretium. Ultricies. Urna cubilia in, hac. Curabitur.
+        Nibh. Purus ridiculus natoque sed id. Feugiat lacus quam, arcu
+        maecenas nec egestas. Hendrerit duis nunc eget dis lacus porttitor per
+        sodales class diam condimentum quisque condimentum nisi ligula.
+        Dapibus blandit arcu nam non ac feugiat diam, dictumst. Ante eget
+        fames eu penatibus in, porta semper accumsan adipiscing tellus in
+        sagittis. Est parturient parturient mi fermentum commodo, per
+        fermentum. Quis duis velit at quam risus mi. Facilisi id fames.
+        Turpis, conubia rhoncus. Id. Elit eni tellus gravida, ut, erat morbi.
+        Euismod, enim a ante vestibulum nibh. Curae curae primis vulputate
+        adipiscing arcu ipsum suspendisse quam hymenaeos primis accumsan
+        vestibulum.
+        """
         self.assertTrue(len(data) > 512)
 
         srcFd, srcPath = tempfile.mkstemp()
