@@ -42,14 +42,14 @@ formatter=sysform
 args=('/dev/log', handlers.SysLogHandler.LOG_USER)
 
 [handler_logfile]
-class=FileHandler
+class=logging.handlers.WatchedFileHandler
 args=('@VDSMLOGDIR@/vdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG
 formatter=long
 
 [handler_metadata]
-class=FileHandler
+class=logging.handlers.WatchedFileHandler
 args=('@VDSMLOGDIR@/metadata.log',)
 level=WARNING
 formatter=long

@@ -1,7 +1,6 @@
 /var/log/vdsm/*.log {
     rotate 100
     missingok
-    copytruncate
     size 15M
     compress
     compresscmd /usr/bin/xz
