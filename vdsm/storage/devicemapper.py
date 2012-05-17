@@ -28,17 +28,15 @@ from supervdsm import getProxy
 from vdsm.constants import EXT_DMSETUP
 
 DMPATH_FORMAT = "/dev/mapper/%s"
-def getDmIdFromFile(path):
-    try:
-        devStat = os.stat(path)
-    except OSError:
-        raise OSError(errno.ENODEV, "Could not find dm device named `%s`" % path)
-
-    return "dm-%d" % os.minor(devStat.st_rdev)
 
 def getDmId(deviceMultipathName):
     devlinkPath = DMPATH_FORMAT % deviceMultipathName
-    return getDmIdFromFile(devlinkPath)
+    try:
+        devStat = os.stat(devlinkPath)
+    except OSError:
+        raise OSError(errno.ENODEV, "Could not find dm device named `%s`" % deviceMultipathName)
+
+    return "dm-%d" % os.minor(devStat.st_rdev)
 
 def findDev(major, minor):
     return os.path.basename(os.path.realpath('/sys/dev/block/%d:%d' % (major, minor)))
