@@ -56,6 +56,7 @@ PEP8_WHITELIST = \
 	vdsm/gluster/hostname.py \
 	vdsm/guestIF.py \
 	vdsm/hooks.py \
+	vdsm/libvirtev.py \
 	vdsm/md_utils.py \
 	vdsm/parted_utils.py \
 	vdsm/pthread.py \
