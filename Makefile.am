@@ -73,6 +73,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/localFsSD.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
+	vdsm/storage/multipath.py \
 	vdsm/storage/nfsSD.py \
 	vdsm/storage/outOfProcess.py \
 	vdsm/storage/persistentDict.py \

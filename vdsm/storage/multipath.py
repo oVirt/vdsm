@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -47,12 +47,15 @@ TOXIC_CHARS = '()*+?|^$.\\'
 
 MPATH_CONF = "/etc/multipath.conf"
 
-OLD_TAGS = [ "# RHAT REVISION 0.2", "# RHEV REVISION 0.3", "# RHEV REVISION 0.4", "# RHEV REVISION 0.5", "# RHEV REVISION 0.6" ]
+OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
+            "# RHEV REVISION 0.4", "# RHEV REVISION 0.5",
+            "# RHEV REVISION 0.6"]
 MPATH_CONF_TAG = "# RHEV REVISION 0.7"
 MPATH_CONF_PRIVATE_TAG = "# RHEV PRIVATE"
 MPATH_CONF_TEMPLATE = MPATH_CONF_TAG + constants.STRG_MPATH_CONF
 
 log = logging.getLogger("Storage.Multipath")
+
 
 def rescan():
     """
@@ -91,15 +94,17 @@ def isEnabled():
             pass
         if MPATH_CONF_PRIVATE_TAG in second:
             log.info("Manual override for multipath.conf detected - "
-                "preserving current configuration")
+                     "preserving current configuration")
             if MPATH_CONF_TAG not in first:
-                log.warning("This manual override for multipath.conf was based "
-                    "on downrevved template. You are strongly advised to "
-                    "contact your support representatives")
+                log.warning("This manual override for multipath.conf "
+                            "was based on downrevved template. "
+                            "You are strongly advised to "
+                            "contact your support representatives")
             return True
 
         if MPATH_CONF_TAG in first:
-            log.debug("Current revision of multipath.conf detected, preserving")
+            log.debug("Current revision of multipath.conf detected, "
+                      "preserving")
             return True
 
         for tag in OLD_TAGS:
@@ -110,13 +115,17 @@ def isEnabled():
     log.debug("multipath Defaulting to False")
     return False
 
+
 def setupMultipath():
     """
     Set up the multipath daemon configuration to the known and
     supported state. The original configuration, if any, is saved
     """
     if os.path.exists(MPATH_CONF):
-        misc.rotateFiles(os.path.dirname(MPATH_CONF), os.path.basename(MPATH_CONF), MAX_CONF_COPIES, cp=True, persist=True)
+        misc.rotateFiles(
+                os.path.dirname(MPATH_CONF),
+                os.path.basename(MPATH_CONF), MAX_CONF_COPIES,
+                cp=True, persist=True)
     with tempfile.NamedTemporaryFile() as f:
         f.write(MPATH_CONF_TEMPLATE)
         f.flush()
@@ -138,17 +147,22 @@ def setupMultipath():
         if rc != 0:
             raise se.MultipathRestartError()
 
+
 def deduceType(a, b):
     if a == b:
         return a
     else:
         return DEV_MIXED
 
+
 def getDeviceBlockSizes(dev):
     devName = os.path.basename(dev)
-    logical = int(file(os.path.join("/sys/block/", devName, "queue", "logical_block_size")).read())
-    physical = int(file(os.path.join("/sys/block/", devName, "queue", "physical_block_size")).read())
+    logical = int(file(os.path.join("/sys/block/", devName,
+                                    "queue", "logical_block_size")).read())
+    physical = int(file(os.path.join("/sys/block/", devName,
+                                     "queue", "physical_block_size")).read())
     return (logical, physical)
+
 
 def getDeviceSize(dev):
     devName = os.path.basename(dev)
@@ -156,13 +170,15 @@ def getDeviceSize(dev):
     size = bs * int(file(os.path.join("/sys/block/", devName, "size")).read())
     return size
 
+
 def getScsiSerial(physdev):
     blkdev = os.path.join("/dev", physdev)
-    cmd = [constants.EXT_SCSI_ID, "--page=0x80",
-                        "--whitelisted",
-                        "--export",
-                        "--replace-whitespace",
-                        "--device=" + blkdev]
+    cmd = [constants.EXT_SCSI_ID,
+           "--page=0x80",
+           "--whitelisted",
+           "--export",
+           "--replace-whitespace",
+           "--device=" + blkdev]
     (rc, out, err) = misc.execCmd(cmd, sudo=False)
     if rc == 0:
         for line in out:
@@ -173,17 +189,21 @@ def getScsiSerial(physdev):
 HBTL = namedtuple("HBTL", "host bus target lun")
 DeviceNumber = namedtuple("DeviceNumber", "Major Minor")
 
+
 def getVendor(physDev):
     with open("/sys/block/%s/device/vendor" % physDev, "r") as f:
         return f.read().strip()
+
 
 def getModel(physDev):
     with open("/sys/block/%s/device/model" % physDev, "r") as f:
         return f.read().strip()
 
+
 def getFwRev(physDev):
     with open("/sys/block/%s/device/rev" % physDev, "r") as f:
         return f.read().strip()
+
 
 def getHBTL(physdev):
     hbtl = os.listdir("/sys/block/%s/device/scsi_disk/" % physdev)
@@ -191,6 +211,7 @@ def getHBTL(physdev):
         log.warn("Found more the 1 HBTL, this shouldn't happen")
 
     return HBTL(*hbtl[0].split(":"))
+
 
 def pathListIter(filterGuids=None):
     filteringOn = filterGuids is not None
@@ -212,21 +233,20 @@ def pathListIter(filterGuids=None):
         devsFound += 1
 
         devInfo = {
-                "guid" : guid,
-                "dm" : dmId,
-                "capacity" : str(getDeviceSize(dmId)),
-                "serial" : svdsm.getScsiSerial(dmId),
-                "paths" : [],
-                "connections" : [],
-                "devtypes" : [],
-                "devtype" : "",
-                "vendor" : "",
-                "product" :"",
-                "fwrev" : "",
-                "logicalblocksize" : "",
-                "physicalblocksize" : "",
+                "guid": guid,
+                "dm": dmId,
+                "capacity": str(getDeviceSize(dmId)),
+                "serial": svdsm.getScsiSerial(dmId),
+                "paths": [],
+                "connections": [],
+                "devtypes": [],
+                "devtype": "",
+                "vendor": "",
+                "product": "",
+                "fwrev": "",
+                "logicalblocksize": "",
+                "physicalblocksize": "",
                 }
-
 
         for slave in devicemapper.getSlaves(dmId):
             if not devicemapper.isBlockDevice(slave):
@@ -237,27 +257,32 @@ def pathListIter(filterGuids=None):
                 try:
                     devInfo["vendor"] = getVendor(slave)
                 except Exception:
-                    log.warn("Problem getting vendor from device `%s`", slave, exc_info=True)
+                    log.warn("Problem getting vendor from device `%s`",
+                             slave, exc_info=True)
 
             if not devInfo["product"]:
                 try:
                     devInfo["product"] = getModel(slave)
                 except Exception:
-                    log.warn("Problem getting model name from device `%s`", slave, exc_info=True)
+                    log.warn("Problem getting model name from device `%s`",
+                             slave, exc_info=True)
 
             if not devInfo["fwrev"]:
                 try:
                     devInfo["fwrev"] = getFwRev(slave)
                 except Exception:
-                    log.warn("Problem getting fwrev from device `%s`", slave, exc_info=True)
+                    log.warn("Problem getting fwrev from device `%s`",
+                             slave, exc_info=True)
 
-            if not devInfo["logicalblocksize"] or not devInfo["physicalblocksize"]:
+            if (not devInfo["logicalblocksize"] or
+                not devInfo["physicalblocksize"]):
                 try:
                     logBlkSize, phyBlkSize = getDeviceBlockSizes(slave)
                     devInfo["logicalblocksize"] = str(logBlkSize)
                     devInfo["physicalblocksize"] = str(phyBlkSize)
                 except Exception:
-                    log.warn("Problem getting blocksize from device `%s`", slave, exc_info=True)
+                    log.warn("Problem getting blocksize from device `%s`",
+                             slave, exc_info=True)
 
             pathInfo = {}
             pathInfo["physdev"] = slave
@@ -265,7 +290,8 @@ def pathListIter(filterGuids=None):
             try:
                 pathInfo["hbtl"] = getHBTL(slave)
             except Exception:
-                log.warn("Problem getting hbtl from device `%s`", slave, exc_info=True)
+                log.warn("Problem getting hbtl from device `%s`",
+                         slave, exc_info=True)
 
             pathInfo["devnum"] = DeviceNumber(*devicemapper.getDevNum(slave))
 
@@ -286,7 +312,8 @@ def pathListIter(filterGuids=None):
                             "initiatorname": sess.iface.name
                             }
 
-                    # FIXME: When updating the API remember not to send back credential information
+                    # FIXME: When updating the API remember not to
+                    # send back credential information
                     if sess.credentials:
                         cred = sess.credentials
                         sessionInfo['username'] = cred.username
@@ -300,12 +327,14 @@ def pathListIter(filterGuids=None):
 
             if devInfo["devtype"] == "":
                 devInfo["devtype"] = pathInfo["type"]
-            elif devInfo["devtype"] != DEV_MIXED and devInfo["devtype"] != pathInfo["type"]:
+            elif (devInfo["devtype"] != DEV_MIXED and
+                  devInfo["devtype"] != pathInfo["type"]):
                 devInfo["devtype"] == DEV_MIXED
 
             devInfo["paths"].append(pathInfo)
 
         yield devInfo
+
 
 def pathinfo(guid):
     res = None
@@ -319,12 +348,17 @@ def pathinfo(guid):
         return "", "", "", "", [], []
 
     return (res["vendor"], res["product"], res["serial"],
-           res["devtype"], res["connections"], res["paths"])
+            res["devtype"], res["connections"], res["paths"])
 
-TOXIC_REGEX = re.compile(r"[%s]" % re.sub(r"[\-\\\]]", lambda m : "\\" + m.group(), TOXIC_CHARS))
+TOXIC_REGEX = re.compile(r"[%s]" % re.sub(r"[\-\\\]]",
+                         lambda m: "\\" + m.group(),
+                         TOXIC_CHARS))
+
+
 def getMPDevNamesIter():
     for _, name in getMPDevsIter():
         yield name
+
 
 def getMPDevsIter():
     """
@@ -355,10 +389,10 @@ def getMPDevsIter():
 
         yield dmInfoDir.split("/")[3], guid
 
+
 def devIsiSCSI(type):
     return type in [DEV_ISCSI, DEV_MIXED]
 
 
 def devIsFCP(type):
     return type in [DEV_FCP, DEV_MIXED]
-
