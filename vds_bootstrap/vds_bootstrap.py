@@ -53,9 +53,10 @@ import ConfigParser
 import socket
 import tempfile
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
 # set logging before deployUtil is first used
 rnum = str(random.randint(100,1000000))
-log_filename = '/tmp/vds_bootstrap.'+rnum+'.log'
+log_filename = SCRIPT_DIR + 'vds_bootstrap.' + rnum + '.log'
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',

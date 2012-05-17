@@ -39,6 +39,7 @@ import glob
 import imp
 from optparse import OptionParser
 from itertools import dropwhile, islice
+import tempfile
 
 try:
     from ovirtnode import ovirtfunctions
@@ -55,6 +56,7 @@ P_SBIN = '/sbin/'
 P_USR_BIN = '/usr/bin/'
 P_USR_SBIN = '/usr/sbin/'
 P_LIBEXEC = '/usr/libexec/'
+P_TMP = tempfile.gettempdir()
 
 # Executables
 EX_CAT = '@CAT_PATH@'
@@ -92,6 +94,22 @@ XML_QUOTES = {
     "\n":' ',
     "'":'~'
 }
+
+def isOvirt():
+    """
+        This function checks if current machine runs ovirt platform.
+    """
+    if os.path.exists('/etc/rhev-hypervisor-release'):
+        return True
+    elif not len(glob.glob('/etc/ovirt-node-*-release')) == 0:
+        return True
+    else:
+        return False
+
+if isOvirt():
+    _WORK_DIR = P_TMP
+else:
+    _WORK_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
 
 def _logExec(argv):
     """
@@ -176,31 +194,25 @@ def cleanAll(random_num):
     """
     fReturn = True
     try:
-        # build semi-random filenames
-        req_conffile = '/tmp/req_' + random_num + '.conf'
-        cert_reqfile = '/tmp/cert_' + random_num + '.req'
-        cert_pemfile = '/tmp/cert_' + random_num + '.pem'
-        ca_pemfile = '/tmp/CA_' + random_num + '.pem'
-        # remove unnecessary files
+        if not isOvirt():
+            vds_bstrap = _WORK_DIR + '/vds_bootstrap_' + random_num + '.py'
+            vds_bstrap_cmp = _WORK_DIR + '/vds_bootstrap_complete_' + random_num + '.py'
+            vds_bstrap_deployutil = _WORK_DIR + '/deployUtil.py'
+            os.unlink(vds_bstrap)
+            os.unlink(vds_bstrap_cmp)
+            os.unlink(vds_bstrap + 'c')
+            os.unlink(vds_bstrap_cmp + 'c')
+            os.unlink(vds_bstrap_deployutil)
+            os.unlink(vds_bstrap_deployutil + 'c')
+
+        req_conffile = _WORK_DIR + '/req_' + random_num + '.conf'
+        cert_reqfile = _WORK_DIR + '/cert_' + random_num + '.req'
+        cert_pemfile = _WORK_DIR + '/cert_' + random_num + '.pem'
+        ca_pemfile = _WORK_DIR + '/CA_' + random_num + '.pem'
         os.unlink(req_conffile)
         os.unlink(cert_reqfile)
         os.unlink(cert_pemfile)
         os.unlink(ca_pemfile)
-
-        if not isOvirt():
-            vds_bstrap = '/tmp/vds_bootstrap_' + random_num + '.py'
-            vds_bstrap_cmp = '/tmp/vds_bootstrap_complete_' + random_num + '.py'
-            vds_bstrap_pyc = '/tmp/vds_bootstrap_' + random_num + '.pyc'
-            vds_bstrap_cmp_pyc = '/tmp/vds_bootstrap_complete_' + random_num + '.pyc'
-            vds_bstrap_deployutil = '/tmp/deployUtil.py'
-            vds_bstrap_deployutil_pyc = '/tmp/deployUtil.pyc'
-            os.unlink(vds_bstrap)
-            os.unlink(vds_bstrap_cmp)
-            os.unlink(vds_bstrap_pyc)
-            os.unlink(vds_bstrap_cmp_pyc)
-            os.unlink(vds_bstrap_deployutil)
-            os.unlink(vds_bstrap_deployutil_pyc)
-
     except:
         pass
 
@@ -369,17 +381,6 @@ def preventDuplicate():
         logging.debug("Bridge " + MGT_BRIDGE_NAME + " not found, need to create it.")
 
     return fFound
-
-def isOvirt():
-    """
-        This function checks if current machine runs ovirt platform.
-    """
-    if os.path.exists('/etc/rhev-hypervisor-release'):
-        return True
-    elif not len(glob.glob('/etc/ovirt-node-*-release')) == 0:
-        return True
-    else:
-        return False
 
 def getOSVersion():
     """
@@ -1147,8 +1148,8 @@ def instCert(random_num, confFile):
     try:
         logging.debug("instCert: start. num=" + str(random_num))
         # build semi-random filenames
-        cert_pemfile = '/tmp/cert_' + random_num + '.pem'
-        ca_pemfile = '/tmp/CA_' + random_num + '.pem'
+        cert_pemfile = _WORK_DIR + '/cert_' + random_num + '.pem'
+        ca_pemfile = _WORK_DIR + '/CA_' + random_num + '.pem'
         gGroup = grp.getgrnam(VDSM_GROUP)
         nGID = gGroup.gr_gid
         uUserInfo = pwd.getpwnam(VDSM_USER)
@@ -1174,8 +1175,6 @@ def instCert(random_num, confFile):
             logging.debug("instCert: persist new certificates")
             ovirtfunctions.ovirt_store_config(VDSMCERT)
             ovirtfunctions.ovirt_store_config(CACERT)
-
-
 
         ts = _tsDir(confFile)
         VDSMKEY = ts + '/keys/vdsmkey.pem'
@@ -1239,8 +1238,8 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey, dhKey):
     CN = %s
     """ % (repr(orgName), subject)
 
-    req_conffile = '/tmp/req_' + random_num + '.conf'
-    cert_reqfile = '/tmp/cert_' + random_num + '.req'
+    req_conffile = _WORK_DIR + '/req_' + random_num + '.conf'
+    cert_reqfile = _WORK_DIR + '/cert_' + random_num + '.req'
     open(req_conffile, "w").write(template)
 
     if not os.path.exists(tsDir + "/keys"):

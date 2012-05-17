@@ -19,6 +19,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os
 import sys
 import getopt
 import logging
@@ -26,8 +27,9 @@ from time import strftime
 
 import deployUtil
 
-log_filename = '/tmp/vds_bootstrap_complete.' + strftime("%Y%m%d_%H%M%S") + \
-               '.log'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
+log_filename = SCRIPT_DIR + 'vds_bootstrap_complete.' + \
+                strftime("%Y%m%d_%H%M%S") + '.log'
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(module)s '
                            '%(lineno)d %(message)s',
