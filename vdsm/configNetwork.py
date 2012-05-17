@@ -321,9 +321,6 @@ class ConfigWriter(object):
     def removeBridge(self, bridge):
         self._backup(self.NET_CONF_PREF + bridge)
         self._removeFile(self.NET_CONF_PREF + bridge)
-        # the deleted bridge should never be up at this stage.
-        if bridge in NetInfo().networks:
-            raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'delNetwork: bridge %s still exists' % bridge)
 
     def _getConfigValue(self, conffile, entry):
         """
@@ -745,11 +742,13 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if configWriter is None:
         configWriter = ConfigWriter()
 
-    if not utils.tobool(options.get('skipLibvirt', False)):
-        removeLibvirtNetwork(network)
-
     if bridged:
         configWriter.setNewMtu(network)
+
+    removeLibvirtNetwork(network, log=False)
+    # the deleted bridge should never be up at this stage.
+    if network in NetInfo().networks:
+        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'delNetwork: bridge %s still exists' % network)
 
     if network and bridged:
         ifdown(network)
