@@ -49,6 +49,20 @@ initcreateprocess(void)
         return;
 }
 
+/* Just like close() but retries on interrupt */
+static int
+safeClose(int fd) {
+    int rv;
+
+retry:
+    rv = close(fd);
+    if ((rv < 0) && (errno == EINTR)) {
+        goto retry;
+    }
+
+    return rv;
+}
+
 static int
 setCloseOnExec(int fd) {
     int flags;
@@ -92,11 +106,11 @@ closeFDs(int errnofd) {
             continue;
         }
 
-        close(fdNum);
+        safeClose(fdNum);
     }
 
     closedir(dp);
-    close(dfd);
+    safeClose(dfd);
 }
 
 static void
@@ -224,21 +238,21 @@ try_fork:
     }
 
     if (!cpid) {
-        close(0);
-        close(1);
-        close(2);
+        safeClose(0);
+        safeClose(1);
+        safeClose(2);
 
         dup2(outfd[0], 0);
         dup2(in1fd[1], 1);
         dup2(in2fd[1], 2);
 
-        close(outfd[0]);
-        close(outfd[1]);
-        close(in1fd[0]);
-        close(in1fd[1]);
-        close(in2fd[0]);
-        close(in2fd[1]);
-        close(errnofd[0]);
+        safeClose(outfd[0]);
+        safeClose(outfd[1]);
+        safeClose(in1fd[0]);
+        safeClose(in1fd[1]);
+        safeClose(in2fd[0]);
+        safeClose(in2fd[1]);
+        safeClose(errnofd[0]);
         if (setCloseOnExec(errnofd[1]) < 0) {
             goto sendErrno;
         }
@@ -272,14 +286,14 @@ sendErrno:
         exit(-1);
     }
 
-    close(errnofd[1]);
+    safeClose(errnofd[1]);
     errnofd[1] = -1;
     if (read(errnofd[0], &childErrno, sizeof(int)) == sizeof(int)) {
         PyErr_SetString(PyExc_OSError, strerror(childErrno));
         goto fail;
     }
 
-    close(errnofd[0]);
+    safeClose(errnofd[0]);
     errnofd[0] = -1;
 
     /* From this point errors shouldn't occur, if they do something is very
@@ -303,11 +317,11 @@ fail:
     }
 
     if (errnofd[0] >= 0) {
-        close(errnofd[0]);
+        safeClose(errnofd[0]);
     }
 
     if (errnofd[1] >= 0) {
-        close(errnofd[1]);
+        safeClose(errnofd[1]);
     }
 
     return NULL;
