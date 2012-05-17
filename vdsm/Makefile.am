@@ -93,7 +93,6 @@ dist_vdsm_SCRIPTS = \
 	addNetwork \
 	delNetwork \
 	get-conf-item \
-	prepare-vmchannel \
 	respawn \
 	set-conf-item \
 	vdsm \

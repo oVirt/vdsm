@@ -22,8 +22,7 @@ import logging
 import time
 import socket
 import json
-from vdsm import utils
-from vdsm import constants
+import supervdsm
 
 __RESTRICTED_CHARS = set(range(8+1)).union(
     set(range(0xB,0xC+1))).union(
@@ -63,13 +62,16 @@ class GuestAgent ():
         self._agentTimestamp = 0
         self._channelListener = channelListener
         if connect:
-            self._prepare_socket()
-            self._channelListener.register(self._sock_fd, self._connect,
-                self._onChannelRead, self._onChannelTimeout, self)
+            try:
+                self._prepare_socket()
+            except:
+                self.log.error("Failed to prepare vmchannel", exc_info=True)
+            else:
+                self._channelListener.register(self._sock_fd, self._connect,
+                    self._onChannelRead, self._onChannelTimeout, self)
 
     def _prepare_socket(self):
-        utils.execCmd([constants.EXT_PREPARE_VMCHANNEL, self._socketName],
-            sudo=True)
+        supervdsm.getProxy().prepareVmChannel(self._socketName)
         self._sock.setblocking(0)
 
     @staticmethod

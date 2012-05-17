@@ -21,6 +21,7 @@ import logging
 import logging.config
 import sys
 import os
+import stat
 import errno
 import threading
 import re
@@ -38,7 +39,7 @@ from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, \
-        DISKIMAGE_USER, DISKIMAGE_GROUP
+        DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import storage.misc
 import configNetwork
@@ -118,6 +119,14 @@ class _SuperVdsm(object):
     def getVmPid(self, vmName):
         pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
         return open(pidFile).read()
+
+    @logDecorator
+    def prepareVmChannel(self, socketFile):
+        if socketFile.startswith(P_LIBVIRT_VMCHANNELS):
+            mode = os.stat(socketFile).st_mode | stat.S_IWGRP
+            os.chmod(socketFile, mode)
+        else:
+            raise Exception("Incorporate socketFile")
 
     @logDecorator
     def addNetwork(self, bridge, options):
