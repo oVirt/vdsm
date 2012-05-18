@@ -58,6 +58,7 @@ PEP8_WHITELIST = \
 	vdsm/hooks.py \
 	vdsm/md_utils.py \
 	vdsm/parted_utils.py \
+	vdsm/pthread.py \
 	vdsm/rest/BindingREST.py \
 	vdsm/rest/Controller.py \
 	vdsm/storage/blockVolume.py \

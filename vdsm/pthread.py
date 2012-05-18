@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -56,6 +56,7 @@ class timespec(C.Structure):
 
 class PthreadMutex(object):
     __slots__ = ("_mutex")
+
     def __init__(self, attr=None):
         self._mutex = MUTEX_T()
         res = _libpthread.pthread_mutex_init(self._mutex, attr)
@@ -83,6 +84,7 @@ class PthreadMutex(object):
 
 class PthreadCond(object):
     __slots__ = ("_lock", "_cond")
+
     def __init__(self, attr=None, mutex=None):
         self._cond = COND_T()
         self._lock = mutex
