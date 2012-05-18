@@ -76,8 +76,9 @@ INITIALIZED = "initialized"
 CAPACITY = "capacity"
 PATHLIST = "pathlist"
 
-logged = partial(logUtils.logcall, "dispatcher", "Run and protect: %s",
-        resPattern="Run and protect: %(name)s, Return response: %(result)s")
+logged = partial(
+    logUtils.logcall, "dispatcher", "Run and protect: %s",
+    resPattern="Run and protect: %(name)s, Return response: %(result)s")
 
 rmanager = rm.ResourceManager.getInstance()
 
@@ -85,6 +86,7 @@ rmanager = rm.ResourceManager.getInstance()
 SECTOR_SIZE = 512
 
 STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_RUN, "connections/")
+
 
 def public(f=None, **kwargs):
     if f is None:
@@ -94,12 +96,14 @@ def public(f=None, **kwargs):
 
     return dispatcher.exported(wraps(f)(publicFunctionLogger(f)))
 
+
 def loggableCon(con):
     conCopy = con.copy()
     for key in conCopy:
         if key.upper() == 'PASSWORD':
             conCopy[key] = '******'
     return conCopy
+
 
 def loggableConList(conList):
     cons = []
@@ -109,8 +113,10 @@ def loggableConList(conList):
 
     return cons
 
+
 def connectionListPrinter(conList):
     return repr(loggableConList(conList))
+
 
 def connectionPrinter(con):
     return repr(loggableCon(con))
@@ -125,7 +131,8 @@ CON_TYPE_ID_2_CON_TYPE = {
     # FCP domain shouldn't even be on the list but VDSM use to just
     # accept this type as iscsi so we are stuck with it
     sd.FCP_DOMAIN: 'iscsi',
-    sd.POSIXFS_DOMAIN: 'posixfs' }
+    sd.POSIXFS_DOMAIN: 'posixfs'}
+
 
 def _BCInitiatorNameResolve(ifaceName):
     if not ifaceName:
@@ -138,6 +145,7 @@ def _BCInitiatorNameResolve(ifaceName):
     iface = iscsi.IscsiInterface(ifaceName, initiatorName=ifaceName)
     iface.create()
     return iface
+
 
 def _connectionDict2ConnectionInfo(conTypeId, conDict):
     def getIntParam(optDict, key, default):
@@ -158,23 +166,22 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         if (conDict.get('protocol_version', None),
                 conDict.get('retrans', None),
                 conDict.get('timeout', None)) == (None, None, None):
-            conf_options = (config.get('irs', 'nfs_mount_options')
-                    .replace(' ', ''))
+            conf_options = config.get(
+                'irs', 'nfs_mount_options').replace(' ', '')
             if (frozenset(conf_options.split(',')) !=
                     frozenset(storageServer.NFSConnection.DEFAULT_OPTIONS)):
                 logging.warning("Using deprecated nfs_mount_options from"
-                        " vdsm.conf to mount %s: %s",
-                        conDict.get('connection', '(unknown)'), conf_options)
+                                " vdsm.conf to mount %s: %s",
+                                conDict.get('connection', '(unknown)'),
+                                conf_options)
                 return storageServer.PosixFsConnectionParameters(
-                        conDict.get('connection', None),
-                        'nfs',
-                        conf_options)
+                    conDict.get('connection', None), 'nfs', conf_options)
         return None
 
     typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
     if typeName == 'localfs':
         params = storageServer.LocaFsConnectionParameters(
-                conDict.get('connection', None))
+            conDict.get('connection', None))
     elif typeName == 'nfs':
         params = tryDeprecatedNfsParams(conDict)
         if params is not None:
@@ -187,25 +194,22 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
                 version = None
 
             params = storageServer.NfsConnectionParameters(
-                        conDict.get('connection', None),
-                        getIntParam(conDict, 'retrans', None),
-                        getIntParam(conDict, 'timeout', None),
-                        version
-                        )
+                conDict.get('connection', None),
+                getIntParam(conDict, 'retrans', None),
+                getIntParam(conDict, 'timeout', None),
+                version)
     elif typeName == 'posixfs':
         params = storageServer.PosixFsConnectionParameters(
-                conDict.get('connection', None),
-                conDict.get('vfs_type', None),
-                conDict.get('mnt_options', None))
+            conDict.get('connection', None),
+            conDict.get('vfs_type', None),
+            conDict.get('mnt_options', None))
     elif typeName == 'iscsi':
         portal = iscsi.IscsiPortal(
-                conDict.get('connection', None),
-                int(conDict.get('port', None)))
+            conDict.get('connection', None),
+            int(conDict.get('port', None)))
         tpgt = None
 
-        target = iscsi.IscsiTarget(portal,
-                tpgt,
-                conDict.get('iqn', None))
+        target = iscsi.IscsiTarget(portal, tpgt, conDict.get('iqn', None))
 
         iface = _BCInitiatorNameResolve(conDict.get('initiatorName', None))
 
@@ -220,6 +224,7 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         raise se.StorageServerActionError()
 
     return storageServer.ConnectionInfo(typeName, params)
+
 
 class HSM:
     """
@@ -255,7 +260,9 @@ class HSM:
         :type sdUUID: UUID
 
         If the domain doesn't exist an exception will be thrown.
-        If the domain isn't a backup domain a :exc:`storage_exception.StorageDomainTypeNotBackup` exception will be raised.
+        If the domain isn't a backup domain a
+        :exc:`storage_exception.StorageDomainTypeNotBackup` exception
+        will be raised.
         """
         if not sdCache.produce(sdUUID=sdUUID).isBackup():
             raise se.StorageDomainTypeNotBackup(sdUUID)
@@ -273,13 +280,15 @@ class HSM:
         :param sdUUID: The UUID to test.
         :type sdUUID: UUID
 
-        :raises: :exc:`storage_exception.StorageDomainAlreadyExists` exception if a domain with this UUID exists.
+        :raises: :exc:`storage_exception.StorageDomainAlreadyExists` exception
+        if a domain with this UUID exists.
         """
         try:
             sdCache.produce(sdUUID=sdUUID)
             raise se.StorageDomainAlreadyExists(sdUUID)
-        #If partial metadata exists the method will throw MetadataNotFound.
-        #Though correct the logical response in this context is StorageDomainNotEmpty.
+        # If partial metadata exists the method will throw MetadataNotFound.
+        # Though correct the logical response in this context
+        # is StorageDomainNotEmpty.
         except se.StorageDomainMetadataNotFound:
             raise se.StorageDomainNotEmpty()
         except se.StorageDomainDoesNotExist:
@@ -305,10 +314,12 @@ class HSM:
         """
         The HSM Constructor
 
-        :param defExcFunc: The function that will set the default exception for this thread
+        :param defExcFunc: The function that will set the default exception
+                           for this thread
         :type defExcFun: function
         """
-        rm.ResourceManager.getInstance().registerNamespace(STORAGE, rm.SimpleResourceFactory())
+        rm.ResourceManager.getInstance().registerNamespace(
+            STORAGE, rm.SimpleResourceFactory())
         self.storage_repository = config.get('irs', 'repository')
         self.sd_validate_timeout = config.getint('irs', 'sd_validate_timeout')
         self.taskMng = taskManager.TaskManager()
@@ -316,12 +327,15 @@ class HSM:
         self._cachedStats = {}
         self._statslock = threading.Lock()
 
-        mountBasePath = os.path.join(self.storage_repository, sd.DOMAIN_MNT_POINT)
+        mountBasePath = os.path.join(self.storage_repository,
+                                     sd.DOMAIN_MNT_POINT)
         fileUtils.createdir(mountBasePath)
         storageServer.MountConnection.setLocalPathBase(mountBasePath)
         storageServer.LocalDirectoryConnection.setLocalPathBase(mountBasePath)
-        self._connectionAliasRegistrar = storageServer.ConnectionAliasRegistrar(STORAGE_CONNECTION_DIR)
-        self._connectionMonitor = storageServer.ConnectionMonitor(self._connectionAliasRegistrar)
+        self._connectionAliasRegistrar = \
+            storageServer.ConnectionAliasRegistrar(STORAGE_CONNECTION_DIR)
+        self._connectionMonitor = \
+            storageServer.ConnectionMonitor(self._connectionAliasRegistrar)
         self._connectionMonitor.startMonitoring()
 
         sp.StoragePool.cleanupMasterMount()
@@ -354,7 +368,8 @@ class HSM:
             sdCache.refreshStorage()
 
             fileUtils.createdir(self.tasksDir)
-            # TBD: Should this be run in connectStoragePool? Should tasksDir exist under pool link as well (for hsm tasks)
+            # TBD: Should this be run in connectStoragePool? Should tasksDir
+            # exist under pool link as well (for hsm tasks)
             self.taskMng.loadDumpedTasks(self.tasksDir)
             self.taskMng.recoverDumpedTasks()
 
@@ -364,8 +379,10 @@ class HSM:
                 poolPath = os.path.join(self.storage_repository, spUUID)
                 try:
                     if os.path.exists(poolPath):
-                        self._connectStoragePool(spUUID, None, None, None, None)
-                        #TODO Once we support simultaneous connection to multiple pools, remove following line (break)
+                        self._connectStoragePool(spUUID, None,
+                                                 None, None, None)
+                        # TODO Once we support simultaneous connection to
+                        # multiple pools, remove following line (break)
                         break
                 except Exception:
                     self.log.error("Unexpected error", exc_info=True)
@@ -373,16 +390,19 @@ class HSM:
         threading.Thread(target=storageRefresh).start()
 
     def _hsmSchedule(self, name, func, *args):
-        self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task, name, func, *args)
+        self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task,
+                                 name, func, *args)
 
     def __validateLvmLockingType(self):
         """
         Check lvm locking type.
         """
         rc, out, err = misc.execCmd([constants.EXT_LVM, "dumpconfig",
-            "global/locking_type"], sudo=True)
+                                     "global/locking_type"],
+                                    sudo=True)
         if rc != 0:
-            self.log.error("Can't validate lvm locking_type. %d %s %s", rc, out, err)
+            self.log.error("Can't validate lvm locking_type. %d %s %s",
+                           rc, out, err)
             return False
 
         try:
@@ -396,7 +416,6 @@ class HSM:
             return False
 
         return True
-
 
     def __cleanStorageRepository(self):
         """
@@ -479,14 +498,13 @@ class HSM:
                     os.rmdir(directory)
             except Exception:
                 self.log.warn("Cold not delete directory "
-                               "'%s'", directory, exc_info=True)
+                              "'%s'", directory, exc_info=True)
 
         self.log.debug("Finished cleaning storage "
                        "repository at '%s'", self.storage_repository)
 
-
     @public
-    def getConnectedStoragePoolsList(self, options = None):
+    def getConnectedStoragePoolsList(self, options=None):
         """
         Get a list of all the connected storage pools.
 
@@ -498,12 +516,12 @@ class HSM:
         """
         vars.task.setDefaultException(se.StoragePoolActionError())
 
-        return dict(poollist = self.pools.keys())
-
+        return dict(poollist=self.pools.keys())
 
     @public
     def spmStart(self, spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
-            maxHostID=safelease.MAX_HOST_ID, domVersion=None, options = None):
+                 maxHostID=safelease.MAX_HOST_ID, domVersion=None,
+                 options=None):
         """
         Starts an SPM.
 
@@ -511,7 +529,8 @@ class HSM:
         :type spUUID: UUID
         :param prevID: The previous ID of the SPM that managed this pool.
         :type prevID: int
-        :param prevLVER: The previous version of the pool that was managed by the SPM.
+        :param prevLVER: The previous version of the pool that was managed by
+                         the SPM.
         :type prevLVER: int
         :param recoveryMode: The mode in which to recover the SPM.
         :type recoveryMode: RecoveryEnum?
@@ -525,8 +544,10 @@ class HSM:
         :rtype: UUID
         """
 
-        argsStr = "spUUID=%s, prevID=%s, prevLVER=%s, recoveryMode=%s, scsiFencing=%s, maxHostID=%s, domVersion=%s" % (
-                spUUID, prevID, prevLVER, recoveryMode, scsiFencing, maxHostID, domVersion)
+        argsStr = ("spUUID=%s, prevID=%s, prevLVER=%s, recoveryMode=%s, "
+                   "scsiFencing=%s, maxHostID=%s, domVersion=%s" %
+                   (spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
+                    maxHostID, domVersion))
         vars.task.setDefaultException(se.SpmStartError("%s" % (argsStr)))
 
         if domVersion is not None:
@@ -541,25 +562,28 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # We should actually just return true if we are SPM after lock,
-        # but seeing as it would break the API with RHEVM, it's easiest to fail.
+        # but seeing as it would break the API with Engine,
+        # it's easiest to fail.
         self.validateNotSPM(spUUID)
 
         vars.task.setTag("hsm")
         vars.task.setManager(self.taskMng)
         vars.task.setRecoveryPolicy("auto")
         vars.task.addJob(Job("spmStart", pool.startSpm, prevID, prevLVER,
-                scsiFencing, maxHostID, domVersion))
+                             scsiFencing, maxHostID, domVersion))
 
     @public
-    def spmStop(self, spUUID, options = None):
+    def spmStop(self, spUUID, options=None):
         """
         Stops the SPM functionality.
 
-        :param spUUID: The UUID of the storage pool you want to stop it manager.
+        :param spUUID: The UUID of the storage pool you want to
+                       stop it manager.
         :type spUUID: UUID
         :param options: ?
 
-        :raises: :exc:`storage_exception.TaskInProgress` if there are tasks running for this pool.
+        :raises: :exc:`storage_exception.TaskInProgress`
+                 if there are tasks running for this pool.
 
         """
         vars.task.setDefaultException(se.SpmStopError(spUUID))
@@ -569,11 +593,11 @@ class HSM:
         pool.stopSpm()
 
     @public
-    def getSpmStatus(self, spUUID, options = None):
+    def getSpmStatus(self, spUUID, options=None):
         pool = self.getPool(spUUID)
         try:
-            status = {'spmStatus':pool.spmRole, 'spmLver': pool.getSpmLver(),
-                        'spmId':pool.getSpmId()}
+            status = {'spmStatus': pool.spmRole, 'spmLver': pool.getSpmLver(),
+                      'spmId': pool.getSpmId()}
         except (se.LogicalVolumeRefreshError, IOError):
             # This happens when we cannot read the MD LV
             self.log.error("Can't read LV based metadata", exc_info=True)
@@ -588,7 +612,8 @@ class HSM:
         return dict(spm_st=status)
 
     @public
-    def extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size, isShuttingDown=None, options=None):
+    def extendVolume(self, sdUUID, spUUID, imgUUID, volumeUUID, size,
+                     isShuttingDown=None, options=None):
         """
         Extends an existing volume.
 
@@ -599,18 +624,22 @@ class HSM:
         :type sdUUID: UUID
         :param spUUID: The UUID of the storage pool that contains the volume.
         :type spUUID: UUID
-        :param imgUUID: The UUID of the new image that is contained on the volume.
+        :param imgUUID: The UUID of the new image that is contained
+                        on the volume.
         :type imgUUID: UUID
         :param volumeUUID: The UUID of the volume you want to extend.
         :type volumeUUID: UUID
-        :param size: Target volume size in MB (desired final size, not by how much to increase)
+        :param size: Target volume size in MB (desired final size, not by
+                     how much to increase)
         :type size: number (anything parsable by int(size))
         :param isShuttingDown: ?
         :type isShuttingDown: bool
         :param options: ?
         """
-        vars.task.setDefaultException(se.VolumeExtendingError("spUUID=%s, sdUUID=%s, volumeUUID=%s, size=%s" % (
-                                                        spUUID, sdUUID, volumeUUID, size)))
+        vars.task.setDefaultException(
+            se.VolumeExtendingError(
+                "spUUID=%s, sdUUID=%s, volumeUUID=%s, size=%s" %
+                (spUUID, sdUUID, volumeUUID, size)))
         self.validatePoolSD(spUUID, sdUUID)
         size = misc.validateN(size, "size")
         # ExtendVolume expects size in MB
@@ -620,7 +649,7 @@ class HSM:
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
     @public
-    def extendStorageDomain(self, sdUUID, spUUID, devlist, options = None):
+    def extendStorageDomain(self, sdUUID, spUUID, devlist, options=None):
         """
         Extends a VG. ?
 
@@ -635,7 +664,9 @@ class HSM:
         :type devlist: list of devices. ``[dev1, dev2]``. ?
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, devlist=%s" % (sdUUID, devlist)))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError(
+                "sdUUID=%s, devlist=%s" % (sdUUID, devlist)))
 
         self.validatePoolSD(spUUID, sdUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
@@ -644,23 +675,25 @@ class HSM:
         pool.extendSD(sdUUID, devlist)
 
     @public
-    def forcedDetachStorageDomain(self, sdUUID, spUUID, options = None):
+    def forcedDetachStorageDomain(self, sdUUID, spUUID, options=None):
         """Forced detach a storage domain from a storage pool.
            This removes the storage domain entry in the storage pool meta-data
            and leaves the storage domain in 'unattached' status.
-           This action can only be performed on regular (i.e. non master) domains
+           This action can only be performed on regular (i.e. non master)
+           domains.
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError(
+                "sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         if sdUUID == pool.masterDomain.sdUUID:
             raise se.CannotDetachMasterStorageDomain(sdUUID)
         pool.forcedDetachSD(sdUUID)
 
-
     @public
-    def detachStorageDomain(self, sdUUID, spUUID, msdUUID = None,
-                                  masterVersion = None, options = None):
+    def detachStorageDomain(self, sdUUID, spUUID, msdUUID=None,
+                            masterVersion=None, options=None):
         """
         Detaches a storage domain from a storage pool.
         This removes the storage domain entry in the storage pool meta-data
@@ -678,9 +711,9 @@ class HSM:
         :param options: ?
         """
         vars.task.setDefaultException(
-            se.StorageDomainActionError("sdUUID=%s, spUUID=%s, msdUUID=%s, "
-                "masterVersion=%s" % (sdUUID, spUUID, msdUUID, masterVersion))
-        )
+            se.StorageDomainActionError(
+                "sdUUID=%s, spUUID=%s, msdUUID=%s, masterVersion=%s" %
+                (sdUUID, spUUID, msdUUID, masterVersion)))
 
         self.validatePoolSD(spUUID, sdUUID)
 
@@ -694,17 +727,19 @@ class HSM:
         """
         Send an extended message?
 
-        :param spUUID: The UUID of the storage pool you want to send the message to.
+        :param spUUID: The UUID of the storage pool you want to
+                       send the message to.
         :type spUUID: UUID
         :param volDict: ?
         :param newSize: ?
         :param callbackFun: A function to run once the operation is done. ?
 
         .. note::
-            If the pool doesn't exist the function will fail silently and the callback will never be called.
+            If the pool doesn't exist the function will fail silently and the
+            callback will never be called.
 
         """
-        newSize = misc.validateN(newSize, "newSize") / 2**20
+        newSize = misc.validateN(newSize, "newSize") / 2 ** 20
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
@@ -716,10 +751,12 @@ class HSM:
     def _spmSchedule(self, spUUID, name, func, *args):
         self.validateSPM(spUUID)
         pool = self.getPool(spUUID)
-        self.taskMng.scheduleJob("spm", pool.tasksDir, vars.task, name, func, *args)
+        self.taskMng.scheduleJob("spm", pool.tasksDir, vars.task,
+                                 name, func, *args)
 
     @public
-    def refreshStoragePool(self, spUUID, msdUUID, masterVersion, options = None):
+    def refreshStoragePool(self, spUUID, msdUUID,
+                           masterVersion, options=None):
         """
         Refresh the Storage Pool info in HSM.
 
@@ -734,12 +771,15 @@ class HSM:
         :returns: True if everything went as planned.
         :rtype: bool
 
-        :raises: a :exc:`Storage_Exception.StoragePoolMaterNotFound` if the storage pool and the master storage domain don't exist or don't match.
+        :raises: a :exc:`Storage_Exception.StoragePoolMaterNotFound`
+                 if the storage pool and the master storage domain don't
+                 exist or don't match.
 
         """
         vars.task.setDefaultException(
-            se.StoragePoolActionError("spUUID=%s, msdUUID=%s, masterVersion=%s" % (
-                                spUUID, msdUUID, masterVersion)))
+            se.StoragePoolActionError(
+                "spUUID=%s, msdUUID=%s, masterVersion=%s" %
+                (spUUID, msdUUID, masterVersion)))
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         try:
@@ -752,9 +792,12 @@ class HSM:
         if pool.hsmMailer:
             pool.hsmMailer.flushMessages()
 
-
     @public
-    def createStoragePool(self, poolType, spUUID, poolName, masterDom, domList, masterVersion, lockPolicy=None, lockRenewalIntervalSec=None, leaseTimeSec=None, ioOpTimeoutSec=None, leaseRetries=None, options = None):
+    def createStoragePool(self, poolType, spUUID, poolName, masterDom,
+                          domList, masterVersion, lockPolicy=None,
+                          lockRenewalIntervalSec=None, leaseTimeSec=None,
+                          ioOpTimeoutSec=None, leaseRetries=None,
+                          options=None):
         """
         Create new storage pool with single/multiple image data domain.
         The command will create new storage pool meta-data attach each
@@ -770,16 +813,19 @@ class HSM:
         :type spUUID: UUID
         :param poolName: The human readable name of the new pool.
         :type poolName: str
-        :param masterDom: The UUID of the master storage domain that contains\will contain the pool's metadata.
+        :param masterDom: The UUID of the master storage domain that
+                          contains\will contain the pool's metadata.
         :type masterDom: UUID
-        :param domList: A list of all the UUIDs of the storage domains managed by this storage pool.
+        :param domList: A list of all the UUIDs of the storage domains managed
+                        by this storage pool.
         :type domList: UUID list
         :param masterVersion: The master version of the storage pool meta data.
         :type masterVersion: uint
         :param lockPolicy: ?
         :param lockRenewalIntervalSec: ?
         :param leaseTimeSec: ?
-        :param ioOpTimeoutSec: The default timeout for IO operations in seconds.?
+        :param ioOpTimeoutSec: The default timeout for IO operations
+                               in seconds.?
         :type ioOpTimroutSec: uint
         :param leaseRetries: ?
         :param options: ?
@@ -787,22 +833,20 @@ class HSM:
         :returns: The newly created storage pool object.
         :rtype: :class:`sp.StoragePool`
 
-        :raises: an :exc:`Storage_Exception.InvalidParameterException` if the master domain is not supplied in the domain list.
+        :raises: an :exc:`Storage_Exception.InvalidParameterException` if the
+                 master domain is not supplied in the domain list.
         """
         safeLease = sd.packLeaseParams(
-                               lockRenewalIntervalSec=lockRenewalIntervalSec,
-                               leaseTimeSec=leaseTimeSec,
-                               ioOpTimeoutSec=ioOpTimeoutSec,
-                               leaseRetries=leaseRetries)
+            lockRenewalIntervalSec=lockRenewalIntervalSec,
+            leaseTimeSec=leaseTimeSec,
+            ioOpTimeoutSec=ioOpTimeoutSec,
+            leaseRetries=leaseRetries)
         vars.task.setDefaultException(
-            se.StoragePoolCreationError("spUUID=%s, "
-                "poolName=%s, masterDom=%s, domList=%s, masterVersion=%s, "
-                "safelease params: (%s)" % (
-                    spUUID, poolName, masterDom, domList,
-                    masterVersion, safeLease
-                )
-            )
-        )
+            se.StoragePoolCreationError(
+                "spUUID=%s, poolName=%s, masterDom=%s, domList=%s, "
+                "masterVersion=%s, safelease params: (%s)" %
+                (spUUID, poolName, masterDom, domList, masterVersion,
+                 safeLease)))
         misc.validateUUID(spUUID, 'spUUID')
         if masterDom not in domList:
             raise se.InvalidParameterException("masterDom", str(masterDom))
@@ -813,7 +857,9 @@ class HSM:
         msd = sdCache.produce(sdUUID=masterDom)
         msdType = msd.getStorageType()
         msdVersion = msd.getVersion()
-        if msdType in sd.BLOCK_DOMAIN_TYPES and msdVersion in blockSD.VERS_METADATA_LV and len(domList) > sp.MAX_DOMAINS:
+        if (msdType in sd.BLOCK_DOMAIN_TYPES and
+                msdVersion in blockSD.VERS_METADATA_LV and
+                len(domList) > sp.MAX_DOMAINS):
             raise se.TooManyDomainsInStoragePoolError()
 
         for sdUUID in domList:
@@ -825,18 +871,23 @@ class HSM:
                 dom.validate()
             except:
                 raise se.StorageDomainAccessError(sdUUID)
-            #If you remove this condition, remove it from StoragePool.attachSD() too.
+            # If you remove this condition, remove it from
+            # StoragePool.attachSD() too.
             if dom.isData() and (dom.getVersion() > msdVersion):
-                raise se.MixedSDVersionError(dom.sdUUID, dom.getVersion(), msd.sdUUID, msdVersion)
+                raise se.MixedSDVersionError(dom.sdUUID, dom.getVersion(),
+                                             msd.sdUUID, msdVersion)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         for dom in sorted(domList):
             vars.task.getExclusiveLock(STORAGE, dom)
 
-        return sp.StoragePool(spUUID, self.taskMng).create(poolName, masterDom, domList, masterVersion, safeLease)
+        return sp.StoragePool(
+            spUUID, self.taskMng).create(poolName, masterDom, domList,
+                                         masterVersion, safeLease)
 
     @public
-    def connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID, masterVersion, options = None):
+    def connectStoragePool(self, spUUID, hostID, scsiKey,
+                           msdUUID, masterVersion, options=None):
         """
         Connect a Host to a specific storage pool.
 
@@ -854,15 +905,19 @@ class HSM:
         :returns: :keyword:`True` if connection was successful.
         :rtype: bool
 
-        :raises: :exc:`storage_exception.ConnotConnectMultiplePools` when storage pool is not connected to the system.
+        :raises: :exc:`storage_exception.ConnotConnectMultiplePools` when
+                 storage pool is not connected to the system.
         """
         vars.task.setDefaultException(
-            se.StoragePoolConnectionError("spUUID=%s, msdUUID=%s, masterVersion=%s, "
-                                          "hostID=%s, scsiKey=%s" % (spUUID, msdUUID,
-                                          masterVersion, hostID, scsiKey)))
-        return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID, masterVersion, options)
+            se.StoragePoolConnectionError(
+                "spUUID=%s, msdUUID=%s, masterVersion=%s, hostID=%s, "
+                "scsiKey=%s" % (spUUID, msdUUID, masterVersion,
+                                hostID, scsiKey)))
+        return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID,
+                                        masterVersion, options)
 
-    def _connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID, masterVersion, options=None):
+    def _connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID,
+                            masterVersion, options=None):
         misc.validateUUID(spUUID, 'spUUID')
 
         # TBD: To support multiple pool connection on single host,
@@ -873,30 +928,34 @@ class HSM:
         try:
             self.getPool(spUUID)
         except se.StoragePoolUnknown:
-            pass #pool not connected yet
+            pass  # pool not connected yet
         else:
             with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.shared):
                 pool = self.getPool(spUUID)
                 if not msdUUID or not masterVersion:
-                    hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
+                    hostID, scsiKey, msdUUID, masterVersion = \
+                        pool.getPoolParams()
                 misc.validateN(hostID, 'hostID')
                 #getMasterDomain is called because produce is required here
                 #since the master domain can be changed by the SPM if it is the
                 #refreshPool flow.
-                pool.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+                pool.getMasterDomain(msdUUID=msdUUID,
+                                     masterVersion=masterVersion)
                 return
 
         with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
             try:
                 pool = self.getPool(spUUID)
             except se.StoragePoolUnknown:
-                pass #pool not connected yet
+                pass  # pool not connected yet
             else:
                 if not msdUUID or not masterVersion:
-                    hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
+                    hostID, scsiKey, msdUUID, masterVersion = \
+                        pool.getPoolParams()
                 misc.validateN(hostID, 'hostID')
                 #Idem. See above.
-                pool.getMasterDomain(msdUUID=msdUUID, masterVersion=masterVersion)
+                pool.getMasterDomain(msdUUID=msdUUID,
+                                     masterVersion=masterVersion)
                 return
 
             pool = sp.StoragePool(spUUID, self.taskMng)
@@ -908,7 +967,8 @@ class HSM:
             return res
 
     @public
-    def disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False, options = None):
+    def disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False,
+                              options=None):
         """
         Disconnect a Host from a specific storage pool.
 
@@ -928,14 +988,17 @@ class HSM:
             if storage pool is not connected or doesn't exist the operation
             will log and exit silently.
         """
-        vars.task.setDefaultException(se.StoragePoolDisconnectionError("spUUID=%s, hostID=%s, scsiKey=%s" % (spUUID, hostID, scsiKey)))
+        vars.task.setDefaultException(
+            se.StoragePoolDisconnectionError(
+                "spUUID=%s, hostID=%s, scsiKey=%s" %
+                (spUUID, hostID, scsiKey)))
         misc.validateN(hostID, 'hostID')
         # already disconnected/or pool is just unknown - return OK
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
             self.log.warning("disconnect sp: %s failed. Known pools %s",
-            spUUID, self.pools)
+                             spUUID, self.pools)
             return
 
         self.validateNotSPM(spUUID)
@@ -946,15 +1009,13 @@ class HSM:
         pool = self.getPool(spUUID)
         return self._disconnectPool(pool, hostID, scsiKey, remove)
 
-
     def _disconnectPool(self, pool, hostID, scsiKey, remove):
         res = pool.disconnect()
         del self.pools[pool.spUUID]
         return res
 
-
     @public
-    def destroyStoragePool(self, spUUID, hostID, scsiKey, options = None):
+    def destroyStoragePool(self, spUUID, hostID, scsiKey, options=None):
         """
         Destroy a storage pool.
         The command will detach all inactive domains from the pool
@@ -967,7 +1028,10 @@ class HSM:
         :param scsiKey: ?
         :param options: ?
         """
-        vars.task.setDefaultException(se.StoragePoolDestroyingError("spUUID=%s, hostID=%s, scsiKey=%s" % (spUUID, hostID, scsiKey)))
+        vars.task.setDefaultException(
+            se.StoragePoolDestroyingError(
+                "spUUID=%s, hostID=%s, scsiKey=%s" %
+                (spUUID, hostID, scsiKey)))
         self.log.info("spUUID=%s", spUUID)
 
         pool = self.getPool(spUUID)
@@ -984,21 +1048,26 @@ class HSM:
         return self._disconnectPool(pool, hostID, scsiKey, remove=True)
 
     @public
-    def attachStorageDomain(self, sdUUID, spUUID, options = None):
+    def attachStorageDomain(self, sdUUID, spUUID, options=None):
         """
         Attach a storage domain to a storage pool.
-        This marks the storage domain as status 'attached' and link it to the storage pool
+        This marks the storage domain as status 'attached' and link it to the
+        storage pool
 
         .. note::
-            The target domain must be accessible in this point (storage connected)
+            The target domain must be accessible in this point
+            (storage connected)
 
         :param sdUUID: The UUID of the storage domain that you want to attach.
         :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that contains the storage domain being attached.
+        :param spUUID: The UUID of the storage pool that contains the storage
+                       domain being attached.
         :type spUUID: UUID
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError(
+                "sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
@@ -1006,19 +1075,23 @@ class HSM:
         pool.attachSD(sdUUID)
 
     @public
-    def deactivateStorageDomain(self, sdUUID, spUUID, msdUUID, masterVersion, options = None):
+    def deactivateStorageDomain(self, sdUUID, spUUID, msdUUID,
+                                masterVersion, options=None):
         """
         1. Deactivates a storage domain.
         2. Validates that the storage domain is owned by the storage pool.
         3. Disables access to that storage domain.
-        4. Changes storage domain status to 'Inactive' in the storage pool meta-data.
+        4. Changes storage domain status to 'Inactive' in the storage pool
+           meta-data.
 
         .. note::
             Disconnected storage domains are not monitored by the host.
 
-        :param sdUUID: The UUID of the storage domain that you want to deactivate.
+        :param sdUUID: The UUID of the storage domain that you want to
+                       deactivate.
         :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that contains the storage domain being deactivated.
+        :param spUUID: The UUID of the storage pool that contains the storage
+                       domain being deactivated.
         :type spUUID: UUID
         :param msdUUID: The UUID of the master domain.
         :type msdUUID: UUID
@@ -1040,47 +1113,54 @@ class HSM:
         pool.deactivateSD(sdUUID, msdUUID, masterVersion)
 
     @public
-    def activateStorageDomain(self, sdUUID, spUUID, options = None):
+    def activateStorageDomain(self, sdUUID, spUUID, options=None):
         """
         Activates a storage domain that is already a member in a storage pool.
 
-        :param sdUUID: The UUID of the storage domain that you want to activate.
+        :param sdUUID: The UUID of the storage domain that you want to
+                       activate.
         :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that contains the storage domain being activated.
+        :param spUUID: The UUID of the storage pool that contains the storage
+                       domain being activated.
         :type spUUID: UUID
         :param options: ?
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError(
+                "sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
         pool.activateSD(sdUUID)
 
-
     @public
-    def setStoragePoolDescription(self, spUUID, description, options = None):
+    def setStoragePoolDescription(self, spUUID, description, options=None):
         """
         Sets the storage pool's description.
 
-        :param spUUID: The UUID of the storage pool that you want to set it's description.
+        :param spUUID: The UUID of the storage pool that you want to set it's
+                       description.
         :type spUUID: UUID
         :param description: A human readable description of the storage pool.
         :type description: str
         :param options: ?
         """
-        vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s, descr=%s" % (spUUID, description)))
+        vars.task.setDefaultException(
+            se.StoragePoolActionError(
+                "spUUID=%s, descr=%s" % (spUUID, description)))
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         pool.setDescription(description)
 
-
     @public
-    def setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID, description, options = None):
+    def setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID,
+                             description, options=None):
         """
         Sets a Volume's Description
 
-        :param spUUID: The UUID of the storage pool that contains the volume being modified.
+        :param spUUID: The UUID of the storage pool that contains the volume
+                       being modified.
         :type spUUID: UUID
         :param sdUUID: The UUID of the storage domain that contains the volume.
         :type sdUUID: UUID
@@ -1095,14 +1175,16 @@ class HSM:
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
-        pool.setVolumeDescription(sdUUID,imgUUID, volUUID, description)
+        pool.setVolumeDescription(sdUUID, imgUUID, volUUID, description)
 
     @public
-    def setVolumeLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality, options = None):
+    def setVolumeLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality,
+                          options=None):
         """
         Sets a Volume's Legality
 
-        :param spUUID: The UUID of the storage pool that contains the volume being modified.
+        :param spUUID: The UUID of the storage pool that contains the volume
+                       being modified.
         :type spUUID: UUID
         :param sdUUID: The UUID of the storage domain that contains the volume.
         :type sdUUID: UUID
@@ -1121,19 +1203,22 @@ class HSM:
         pool.setVolumeLegality(sdUUID, imgUUID, volUUID, legality)
 
     @public
-    def updateVM(self, spUUID, vmList, sdUUID=None, options = None):
+    def updateVM(self, spUUID, vmList, sdUUID=None, options=None):
         """
         Updates a VM list in a storage pool or in a Backup domain.
         Creates the VMs if a domain with the specified UUID does not exist.
 
         .. note::
-            Should be called by VDC for every change of VM (add or remove snapshots, updates, ...)
+            Should be called by VDC for every change of VM (add or remove
+            snapshots, updates, ...)
 
-        :param spUUID: The UUID of the storage pool that contains the VMs being updated or created.
+        :param spUUID: The UUID of the storage pool that contains the VMs
+                       being updated or created.
         :type spUUID: UUID
         :param vmList: The list of VMs being updated.?
         :type vmList: list
-        :param sdUUID: The UUID of the backup domain you want to update or :keyword:`None` if you want something something. ?
+        :param sdUUID: The UUID of the backup domain you want to update or
+                       :keyword:`None` if you want something something. ?
         :type sdUUID: UUID
         :param options: ?
         """
@@ -1146,17 +1231,18 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
-
     @public
     def removeVM(self, spUUID, vmUUID, sdUUID=None, options=None):
         """
         Removes a VM list from a storage pool or from a Backup domain.
 
-        :param spUUID: The UUID of the storage pool that contains the VMs being removed.
+        :param spUUID: The UUID of the storage pool that contains the VMs
+                       being removed.
         :type spUUID: UUID
         :param vmUUID: The UUID of VM being removed.
         :type vmUUID: UUID
-        :param sdUUID: The UUID of the backup domain you want to update or :keyword:`None` if you want something something. ?
+        :param sdUUID: The UUID of the backup domain you want to update or
+                       :keyword:`None` if you want something something. ?
         :type sdUUID: UUID
         :param options: ?
         """
@@ -1170,14 +1256,16 @@ class HSM:
         pool.removeVM(vmUUID=vmUUID, sdUUID=sdUUID)
 
     @public
-    def getVmsList(self, spUUID, sdUUID=None, options = None):
+    def getVmsList(self, spUUID, sdUUID=None, options=None):
         """
         Gets a list of VMs from the pool.
-        If 'sdUUID' is given and it's a backup domain the function will get the list of VMs from it
+        If 'sdUUID' is given and it's a backup domain the function will get
+        the list of VMs from it
 
         :param spUUID: The UUID of the storage pool that you want to query.
         :type spUUID: UUID
-        :param sdUUID: The UUID of the backup domain that the you want to query or :keyword:`None`.
+        :param sdUUID: The UUID of the backup domain that the you want to
+                       query or :keyword:`None`.
         :type sdUUID: UUID
         :param options: ?
         """
@@ -1192,18 +1280,21 @@ class HSM:
         return dict(vmlist=vms)
 
     @public
-    def getVmsInfo(self, spUUID, sdUUID, vmList=None, options = None):
+    def getVmsInfo(self, spUUID, sdUUID, vmList=None, options=None):
         """
         Gets a list of VMs with their info from the pool.
 
-        * If 'sdUUID' is given and it's a backup domain then get the list of VMs from it.
+        * If 'sdUUID' is given and it's a backup domain then get the list of
+          VMs from it.
         * If 'vmList' is given get info for these VMs only.
 
         :param spUUID: The UUID of the storage pool that you want to query.
         :type spUUID: UUID
-        :param sdUUID: The UUID of the backup domain that the you want to query or :keyword:`None`.
+        :param sdUUID: The UUID of the backup domain that the you want to
+                       query or :keyword:`None`.
         :type sdUUID: UUID
-        :param vmList: A UUID list of the VMs you want info on or :keyword:`None` for all VMs in pool or backup domain.
+        :param vmList: A UUID list of the VMs you want info on or
+                       :keyword:`None` for all VMs in pool or backup domain.
         :param options: ?
         """
         pool = self.getPool(spUUID)
@@ -1218,13 +1309,16 @@ class HSM:
         return dict(vmlist=vms)
 
     @public
-    def uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size, method="rsync", options = None):
+    def uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size,
+                     method="rsync", options=None):
         """
         Uploads a volume to the server. (NFS only?)
 
-        :param spUUID: The UUID of the storage pool that will contain the new volume.
+        :param spUUID: The UUID of the storage pool that will contain the
+                       new volume.
         :type spUUID: UUID
-        :param sdUUID: The UUID of the backup domain that will contain the new volume.
+        :param sdUUID: The UUID of the backup domain that will contain the
+                       new volume.
         :type sdUUID: UUID
         :param imgUUID: The UUID of image you want associated with that volume.
         :type imgUUID: UUID
@@ -1232,39 +1326,45 @@ class HSM:
         :type volUUID: UUID
         :param size: The size of the volume being uploaded in ...?
         :type size: ?
-        :param method: The desired method of upload. Currently only *'wget'* and *'rsync'* are supported.
+        :param method: The desired method of upload. Currently only *'wget'*
+                       and *'rsync'* are supported.
         :type method: str
         :param options: ?
         """
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
-        pool.uploadVolume(sdUUID, imgUUID, volUUID, srcPath, size, method="rsync")
-
+        pool.uploadVolume(sdUUID, imgUUID, volUUID, srcPath, size,
+                          method="rsync")
 
     @public
-    def createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID):
+    def createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat,
+                     preallocate, diskType, volUUID, desc,
+                     srcImgUUID=volume.BLANK_UUID,
+                     srcVolUUID=volume.BLANK_UUID):
         """
         Create a new volume
             Function Type: SPM
             Parameters:
             Return Value:
         """
-        argsStr = "sdUUID=%s, spUUID=%s, imgUUID=%s, size=%s, volFormat=%s, " \
-                "preallocate=%s, diskType=%s, volUUID=%s, desc=%s, " \
-                "srcImgUUID=%s, srcVolUUID=%s" % (sdUUID, spUUID,
-                 imgUUID, size, volFormat, preallocate,
-                 diskType, volUUID, desc,
-                 srcImgUUID, srcVolUUID)
+        argsStr = ("sdUUID=%s, spUUID=%s, imgUUID=%s, size=%s, volFormat=%s, "
+                   "preallocate=%s, diskType=%s, volUUID=%s, desc=%s, "
+                   "srcImgUUID=%s, srcVolUUID=%s" %
+                   (sdUUID, spUUID, imgUUID, size, volFormat, preallocate,
+                   diskType, volUUID, desc,
+                   srcImgUUID, srcVolUUID))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
-        pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
+        # Validates that the pool is connected. WHY?
+        pool = self.getPool(spUUID)
         sdDom = self.validateSdUUID(sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
-        # TODO: For backwards compatibility, we need to support accepting number of sectors as int type
-        # Updated interface is accepting string type in bytes (ugly, get rid of this when possible)
+        # TODO: For backwards compatibility, we need to support accepting
+        # number of sectors as int type Updated interface is accepting string
+        # type in bytes (ugly, get rid of this when possible)
         if not isinstance(size, types.IntType):
             size = misc.validateN(size, "size")
-            size = (size + SECTOR_SIZE -1) / SECTOR_SIZE
+            size = (size + SECTOR_SIZE - 1) / SECTOR_SIZE
 
         if srcImgUUID:
             misc.validateUUID(srcImgUUID, 'srcImgUUID')
@@ -1275,21 +1375,21 @@ class HSM:
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
-            imgUUID, size, volFormat, preallocate, diskType, volUUID, desc,
-            srcImgUUID, srcVolUUID
-        )
-
+                          imgUUID, size, volFormat, preallocate, diskType,
+                          volUUID, desc, srcImgUUID, srcVolUUID)
 
     @public
-    def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False, force=False):
+    def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,
+                     force=False):
         """
         Delete a volume
         """
         argsStr = "sdUUID=%s, spUUID=%s, imgUUID=%s, volumes=%s, " \
-                "postZero=%s, force=%s" % (sdUUID, spUUID,
-                imgUUID, volumes, postZero, force)
+                  "postZero=%s, force=%s" % (sdUUID, spUUID, imgUUID, volumes,
+                                             postZero, force)
         vars.task.setDefaultException(se.CannotDeleteVolume(argsStr))
-        pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
+        # Validates that the pool is connected. WHY?
+        pool = self.getPool(spUUID)
         sdDom = self.validateSdUUID(sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
 
@@ -1300,19 +1400,19 @@ class HSM:
                 sdDom.produceVolume(imgUUID, volUUID).validateDelete()
 
         self._spmSchedule(spUUID, "deleteVolume", pool.deleteVolume, sdUUID,
-            imgUUID, volumes, misc.parseBool(postZero), misc.parseBool(force)
-        )
-
+                          imgUUID, volumes, misc.parseBool(postZero),
+                          misc.parseBool(force))
 
     @public
-    def deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False, force=False):
+    def deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False,
+                    force=False):
         """
         Delete Image folder with all volumes
 
         force parameter is deprecated and not evaluated.
         """
         #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
-        self.getPool(spUUID) #Validates that the pool is connected. WHY?
+        self.getPool(spUUID)  # Validates that the pool is connected. WHY?
         dom = self.validateSdUUID(sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, imgUUID)
@@ -1351,8 +1451,8 @@ class HSM:
             # This is a hack to keep the interface consistent
             # We currently have race conditions in delete image, to quickly fix
             # this we delete images in the "synchronous" state. This only works
-            # because rhev-m does not send two requests at a time. This hack is
-            # intended to quickly fix the integration issue with rhev-m. In 2.3
+            # because Engine does not send two requests at a time. This hack is
+            # intended to quickly fix the integration issue with Engine. In 2.3
             # we should use the new resource system to synchronize the process
             # an eliminate all race conditions
             if needFake:
@@ -1384,8 +1484,9 @@ class HSM:
                 tName, tImgs = volName, imgsPar.imgs
                 # Template self image is the 1st entry
                 if imgUUID != tImgs[0] and tName not in dstAllVols.keys():
-                    self.log.error("img %s can't be moved to dom %s because "
-                    "template %s is absent on it", imgUUID, dstDom.sdUUID, tName)
+                    self.log.error(
+                        "img %s can't be moved to dom %s because template "
+                        "%s is absent on it", imgUUID, dstDom.sdUUID, tName)
                     raise se.ImageDoesNotExistInSD(imgUUID, dstDom.sdUUID)
                 elif imgUUID == tImgs[0] and not srcDom.isBackup():
                     raise se.MoveTemplateImageError(imgUUID)
@@ -1394,20 +1495,24 @@ class HSM:
         return True
 
     @public
-    def moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero=False, force=False):
+    def moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID,
+                  op, postZero=False, force=False):
         """
         Move/Copy image between storage domains within same storage pool
         """
-        argsStr = "spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgUUID=%s, vmUUID=%s, op=%s, "\
-                  "force=%s, postZero=%s force=%s" % (spUUID, srcDomUUID, dstDomUUID,
-                        imgUUID, vmUUID, op, force, postZero, force)
+        argsStr = ("spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgUUID=%s, "
+                   "vmUUID=%s, op=%s, force=%s, postZero=%s force=%s" %
+                   (spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op,
+                    force, postZero, force))
         vars.task.setDefaultException(se.MoveImageError("%s" % argsStr))
         if srcDomUUID == dstDomUUID:
-            raise se.InvalidParameterException("srcDom", "must be different from dstDom: %s" % argsStr)
+            raise se.InvalidParameterException(
+                "srcDom", "must be different from dstDom: %s" % argsStr)
 
         srcDom = self.validateSdUUID(srcDomUUID)
         dstDom = self.validateSdUUID(dstDomUUID)
-        pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
+        # Validates that the pool is connected. WHY?
+        pool = self.getPool(spUUID)
         self.validateImageMove(srcDom, dstDom, imgUUID)
         domains = [srcDomUUID, dstDomUUID]
         domains.sort()
@@ -1415,10 +1520,10 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._spmSchedule(spUUID, "moveImage_%s" % imgUUID, pool.moveImage, srcDomUUID,
-                    dstDomUUID, imgUUID, vmUUID, op, misc.parseBool(postZero),
-                    misc.parseBool(force)
-        )
+        self._spmSchedule(
+            spUUID, "moveImage_%s" % imgUUID, pool.moveImage, srcDomUUID,
+            dstDomUUID, imgUUID, vmUUID, op, misc.parseBool(postZero),
+            misc.parseBool(force))
 
     @public
     def cloneImageStructure(self, spUUID, sdUUID, imgUUID, dstSdUUID):
@@ -1454,17 +1559,21 @@ class HSM:
 
     @deprecated
     @public
-    def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force=False):
+    def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict,
+                           vmUUID, force=False):
         """
         Move multiple images between storage domains within same storage pool
         """
-        argsStr = "spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgDict=%s, vmUUID=%s force=%s" % (spUUID,
-                                        srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
-        vars.task.setDefaultException(se.MultipleMoveImageError("%s" % argsStr))
+        argsStr = ("spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgDict=%s, "
+                   "vmUUID=%s force=%s" %
+                   (spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force))
+        vars.task.setDefaultException(
+            se.MultipleMoveImageError("%s" % argsStr))
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException("dstDomUUID", dstDomUUID)
 
-        pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
+        #Validates that the pool is connected. WHY?
+        pool = self.getPool(spUUID)
 
         srcDom = self.validateSdUUID(srcDomUUID)
         dstDom = self.validateSdUUID(dstDomUUID)
@@ -1477,25 +1586,27 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._spmSchedule(spUUID, "moveMultipleImages", pool.moveMultipleImages,
-                srcDomUUID, dstDomUUID, images, vmUUID, misc.parseBool(force)
-        )
-
+        self._spmSchedule(
+            spUUID, "moveMultipleImages", pool.moveMultipleImages,
+            srcDomUUID, dstDomUUID, images, vmUUID, misc.parseBool(force))
 
     @public
-    def copyImage(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
-                       description='', dstSdUUID=sd.BLANK_UUID, volType=volume.SHARED_VOL,
-                       volFormat=volume.UNKNOWN_VOL, preallocate=volume.UNKNOWN_VOL,
-                       postZero=False, force=False):
+    def copyImage(
+            self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
+            dstVolUUID, description='', dstSdUUID=sd.BLANK_UUID,
+            volType=volume.SHARED_VOL, volFormat=volume.UNKNOWN_VOL,
+            preallocate=volume.UNKNOWN_VOL, postZero=False, force=False):
         """
         Create new template/volume from VM.
         Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)
         """
-        argsStr = "sdUUID=%s, spUUID=%s, vmUUID=%s, srcImgUUID=%s, srcVolUUID=%s, dstImgUUID=%s, "\
-                   "dstVolUUID=%s, description=%s, dstSdUUID=%s, volType=%s, volFormat=%s, "\
-                   "preallocate=%s force=%s, postZero=%s" % (sdUUID, spUUID, vmUUID,
-                   srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID, description,
-                   dstSdUUID, volType, volFormat, preallocate, force, postZero)
+        argsStr = ("sdUUID=%s, spUUID=%s, vmUUID=%s, srcImgUUID=%s, "
+                   "srcVolUUID=%s, dstImgUUID=%s, dstVolUUID=%s, "
+                   "description=%s, dstSdUUID=%s, volType=%s, volFormat=%s, "
+                   "preallocate=%s force=%s, postZero=%s" %
+                   (sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID,
+                    dstImgUUID, dstVolUUID, description, dstSdUUID, volType,
+                    volFormat, preallocate, force, postZero))
         vars.task.setDefaultException(se.TemplateCreationError("%s" % argsStr))
         # Validate imgUUID in case of copy inside source domain itself
         if dstSdUUID in (sdUUID, sd.BLANK_UUID):
@@ -1504,14 +1615,16 @@ class HSM:
         pool = self.getPool(spUUID)
         self.validateSdUUID(sdUUID)
 
-        # Avoid VM copy if one of its volume (including template if exists) ILLEGAL/FAKE
+        # Avoid VM copy if one of its volume (including template if exists)
+        # ILLEGAL/FAKE
         pool.validateVolumeChain(sdUUID, srcImgUUID)
         # Validate volume type and format
         if dstSdUUID != sd.BLANK_UUID:
             dom = dstSdUUID
         else:
             dom = sdUUID
-        sdCache.produce(dom).validateCreateVolumeParams(volFormat, preallocate, volume.BLANK_UUID)
+        sdCache.produce(dom).validateCreateVolumeParams(
+            volFormat, preallocate, volume.BLANK_UUID)
 
         # If dstSdUUID defined, means we copy image to it
         domains = [sdUUID]
@@ -1523,29 +1636,29 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._spmSchedule(spUUID, "copyImage_%s" % dstImgUUID, pool.copyImage,
-            sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
-            dstVolUUID, description, dstSdUUID, volType, volFormat,
-            preallocate, misc.parseBool(postZero), misc.parseBool(force)
-        )
-
+        self._spmSchedule(
+            spUUID, "copyImage_%s" % dstImgUUID, pool.copyImage, sdUUID,
+            vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
+            description, dstSdUUID, volType, volFormat, preallocate,
+            misc.parseBool(postZero), misc.parseBool(force))
 
     @public
-    def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor, postZero=False):
+    def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor,
+                       successor, postZero=False):
         """
         Merge source volume to the destination volume.
         """
-        argsStr = "sdUUID=%s, spUUID=%s, vmUUID=%s, imgUUID=%s, ancestor=%s, successor=%s, "\
-                  "postZero=%s" % (sdUUID, spUUID, vmUUID, imgUUID,
-                                    ancestor, successor, postZero)
+        argsStr = ("sdUUID=%s, spUUID=%s, vmUUID=%s, imgUUID=%s, "
+                   "ancestor=%s, successor=%s, postZero=%s" %
+                   (sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor,
+                    postZero))
         vars.task.setDefaultException(se.MergeSnapshotsError("%s" % argsStr))
         pool = self.getPool(spUUID)
         self.validateSdUUID(sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
-        self._spmSchedule(spUUID, "mergeSnapshots", pool.mergeSnapshots, sdUUID,
-                    vmUUID, imgUUID, ancestor, successor, misc.parseBool(postZero)
-        )
-
+        self._spmSchedule(
+            spUUID, "mergeSnapshots", pool.mergeSnapshots, sdUUID, vmUUID,
+            imgUUID, ancestor, successor, misc.parseBool(postZero))
 
     @public
     def reconstructMaster(self, spUUID, poolName, masterDom, domDict,
@@ -1554,13 +1667,15 @@ class HSM:
                           ioOpTimeoutSec=None, leaseRetries=None, hostId=None,
                           options=None):
         """
-        Reconstruct Master Domains - rescue action: can be issued even when pool is not connected.
+        Reconstruct Master Domains - rescue action: can be issued even when
+        pool is not connected.
 
         :param spUUID: The UUID of the storage pool you want to reconstruct.
         :type spUUID: UUID
         :param masterDom: The new master domain UUID.
         :type masterDom: UUID
-        :param domDict: Dict. of domain and statuses ``{'sdUUID1':status1, 'sdUUID2':status2}``
+        :param domDict: Dict. of domain and statuses
+                        ``{'sdUUID1':status1, 'sdUUID2':status2}``
         :type domDict: dict
         :param masterVersion: The new version of master domain.
         :type masterVersion: int
@@ -1583,10 +1698,11 @@ class HSM:
             leaseRetries=leaseRetries
         )
 
-        vars.task.setDefaultException(se.ReconstructMasterError(
-            "spUUID=%s, masterDom=%s, masterVersion=%s, safelease "
-            "params: (%s)" % (spUUID, masterDom, masterVersion, safeLease))
-        )
+        vars.task.setDefaultException(
+            se.ReconstructMasterError(
+                "spUUID=%s, masterDom=%s, masterVersion=%s, safelease "
+                "params: (%s)" % (spUUID, masterDom, masterVersion,
+                                  safeLease)))
 
         self.log.info("spUUID=%s master=%s", spUUID, masterDom)
 
@@ -1614,7 +1730,6 @@ class HSM:
         return pool.reconstructMaster(hostId, poolName, masterDom, domDict,
                                       masterVersion, safeLease)
 
-
     def _logResp_getDeviceList(self, response):
         logableDevs = deepcopy(response)
         for dev in logableDevs['devList']:
@@ -1631,7 +1746,8 @@ class HSM:
         :type storageType: Some enum?
         :param options: ?
 
-        :returns: Dict containing a list of all the devices of the storage type specified.
+        :returns: Dict containing a list of all the devices of the storage
+                  type specified.
         :rtype: dict
         """
         vars.task.setDefaultException(se.BlockDeviceActionError())
@@ -1640,12 +1756,14 @@ class HSM:
 
     def _getDeviceList(self, storageType=None, guids=None):
         sdCache.refreshStorage()
-        typeFilter = lambda dev : True
+        typeFilter = lambda dev: True
         if storageType:
             if sd.storageType(storageType) == sd.type2name(sd.ISCSI_DOMAIN):
-                typeFilter = lambda dev : multipath.devIsiSCSI(dev.get("devtype"))
+                typeFilter = \
+                    lambda dev: multipath.devIsiSCSI(dev.get("devtype"))
             elif sd.storageType(storageType) == sd.type2name(sd.FCP_DOMAIN):
-                typeFilter = lambda dev : multipath.devIsFCP(dev.get("devtype"))
+                typeFilter = \
+                    lambda dev: multipath.devIsFCP(dev.get("devtype"))
 
         devices = []
         pvs = {}
@@ -1655,7 +1773,7 @@ class HSM:
                     pv = lvm.getPV(guid)
                 except se.StorageException:
                     self.log.warning("getPV failed for guid: %s", guid,
-                                        exc_info=True)
+                                     exc_info=True)
                 else:
                     if pv is None:
                         continue
@@ -1678,17 +1796,16 @@ class HSM:
                 vguuid = ""
 
             devInfo = {'GUID': dev.get("guid", ""), 'pvUUID': pvuuid,
-                    'vgUUID': vguuid, 'vendorID': dev.get("vendor", ""),
-                    'productID': dev.get("product", ""),
-                    'fwrev': dev.get("fwrev", ""),
-                    "serial" : dev.get("serial", ""),
-                    'capacity': dev.get("capacity", "0"),
-                    'devtype': dev.get("devtype", ""),
-                    'pathstatus': dev.get("paths", []),
-                    'pathlist': dev.get("connections", []),
-                    'logicalblocksize': dev.get("logicalblocksize", ""),
-                    'physicalblocksize': dev.get("physicalblocksize", "")
-                    }
+                       'vgUUID': vguuid, 'vendorID': dev.get("vendor", ""),
+                       'productID': dev.get("product", ""),
+                       'fwrev': dev.get("fwrev", ""),
+                       "serial": dev.get("serial", ""),
+                       'capacity': dev.get("capacity", "0"),
+                       'devtype': dev.get("devtype", ""),
+                       'pathstatus': dev.get("paths", []),
+                       'pathlist': dev.get("connections", []),
+                       'logicalblocksize': dev.get("logicalblocksize", ""),
+                       'physicalblocksize': dev.get("physicalblocksize", "")}
             for path in devInfo["pathstatus"]:
                 if 'hbtl' in path:
                     path["lun"] = path["hbtl"].lun
@@ -1698,8 +1815,8 @@ class HSM:
 
         # Look for devices that will probably fail if pvcreated.
         devNamesToPVTest = tuple(dev["GUID"] for dev in devices)
-        unusedDevs, usedDevs = lvm.testPVCreate(devNamesToPVTest,
-                                        metadataSize=blockSD.VG_METADATASIZE)
+        unusedDevs, usedDevs = lvm.testPVCreate(
+            devNamesToPVTest, metadataSize=blockSD.VG_METADATASIZE)
         # Assuming that unusables v unusables = None
         free = tuple(os.path.basename(d) for d in unusedDevs)
         used = tuple(os.path.basename(d) for d in usedDevs)
@@ -1711,7 +1828,7 @@ class HSM:
                 dev['status'] = "used"
             else:
                 raise KeyError("pvcreate response foresight is "
-                                   "can not be determined for %s", dev)
+                               "can not be determined for %s", dev)
 
         return devices
 
@@ -1727,22 +1844,25 @@ class HSM:
         :returns: Dict of all the info on the device.
         :rtype: dict
 
-        :raises: :exc:`storage_exception.DeviceNotFound` if a device with that GUID doesn't exist.
+        :raises: :exc:`storage_exception.DeviceNotFound` if a device with that
+                 GUID doesn't exist.
         """
-        vars.task.setDefaultException(se.BlockDeviceActionError("GUID: %s" % guid))
+        vars.task.setDefaultException(
+            se.BlockDeviceActionError("GUID: %s" % guid))
         #getSharedLock(connectionsResource...)
         try:
-            devInfo = self._getDeviceList(guids=[guid],
-                                includePartitioned=
-                                options.get('includePartitioned', False))[0]
+            devInfo = \
+                self._getDeviceList(
+                    guids=[guid],
+                    includePartitioned=options.get('includePartitioned',
+                                                   False))[0]
             for p in devInfo["pathstatus"]:
                 if p.get("state", "error") == "active":
-                    return {"info" : devInfo }
+                    return {"info": devInfo}
 
             raise se.DeviceNotFound(str(guid))
         except KeyError:
-           raise se.DeviceNotFound(str(guid))
-
+            raise se.DeviceNotFound(str(guid))
 
     @public
     def getDevicesVisibility(self, guids, options=None):
@@ -1759,7 +1879,8 @@ class HSM:
         """
         def _isVisible(guid):
             try:
-                res = os.stat('/dev/mapper/' + guid).st_mode & stat.S_IRUSR != 0
+                res = (os.stat('/dev/mapper/' + guid).st_mode &
+                       stat.S_IRUSR != 0)
             except:
                 res = False
             return res
@@ -1773,17 +1894,18 @@ class HSM:
                 scanned = True
                 visible = _isVisible(guid)
             visibility[guid] = visible
-        return {'visible' : visibility}
-
+        return {'visible': visibility}
 
     @public
-    def createVG(self, vgname, devlist, force=False, options = None):
+    def createVG(self, vgname, devlist, force=False, options=None):
         """
-        Creates a volume group with the name 'vgname' out of the devices in 'devlist'
+        Creates a volume group with the name 'vgname' out of the devices in
+        'devlist'
 
         :param vgname: The human readable name of the vg.
         :type vgname: str
-        :param devlist: A list of devices to be included in the VG. The devices must be unattached.
+        :param devlist: A list of devices to be included in the VG.
+                        The devices must be unattached.
         :type devlist: list
         :param options: ?
 
@@ -1792,7 +1914,8 @@ class HSM:
         """
         MINIMALVGSIZE = 10 * 1024 * constants.MEGAB
 
-        vars.task.setDefaultException(se.VolumeGroupCreateError(str(vgname), str(devlist)))
+        vars.task.setDefaultException(
+            se.VolumeGroupCreateError(str(vgname), str(devlist)))
         misc.validateUUID(vgname, 'vgname')
         #getSharedLock(connectionsResource...)
         knowndevs = set(multipath.getMPDevNamesIter())
@@ -1808,20 +1931,20 @@ class HSM:
 
         #Minimal size check
         if size < MINIMALVGSIZE:
-           raise se.VolumeGroupSizeError("VG size must be more than %s MiB" % str(MINIMALVGSIZE / constants.MEGAB))
+            raise se.VolumeGroupSizeError(
+                "VG size must be more than %s MiB" %
+                str(MINIMALVGSIZE / constants.MEGAB))
 
         lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                      metadataSize=blockSD.VG_METADATASIZE,
-                     force=(force == True) or
-                     (type(force) == type("") and
-                                            (force.capitalize() == "True")))
+                     force=(force is True) or (isinstance(force, str) and
+                                               (force.capitalize() == "True")))
 
         return dict(uuid=lvm.getVG(vgname).uuid)
 
-
     @deprecated
     @public
-    def removeVG(self, vgUUID, options = None):
+    def removeVG(self, vgUUID, options=None):
         """
         DEPRECATED: formatSD effectively removes the VG.
 
@@ -1838,15 +1961,15 @@ class HSM:
         except se.VolumeGroupDoesNotExist:
             pass
 
-
     @public
-    def getTaskStatus(self, taskID, spUUID=None, options = None):
+    def getTaskStatus(self, taskID, spUUID=None, options=None):
         """
         Gets the status of a task.
 
         :param taskID: The ID of the task you want the check.
         :type taskID: ID?
-        :param spUUID: the UUID of the storage pool that the task is operating on. ??
+        :param spUUID: the UUID of the storage pool that the task is
+                       operating on. ??
         :type spUUID: UUID (deprecated)
         :param options: ?
 
@@ -1857,13 +1980,13 @@ class HSM:
         taskStatus = self.taskMng.getTaskStatus(taskID=taskID)
         return dict(taskStatus=taskStatus)
 
-
     @public
-    def getAllTasksStatuses(self, spUUID=None, options = None):
+    def getAllTasksStatuses(self, spUUID=None, options=None):
         """
         Gets the status of all public tasks.
 
-        :param spUUID: The UUID of the storage pool that you want to check it's tasks.
+        :param spUUID: The UUID of the storage pool that you
+                       want to check it's tasks.
         :type spUUID: UUID (deprecated)
         :options: ?
         """
@@ -1871,9 +1994,8 @@ class HSM:
         allTasksStatus = self.taskMng.getAllTasksStatuses("spm")
         return dict(allTasksStatus=allTasksStatus)
 
-
     @public
-    def getTaskInfo(self, taskID, spUUID=None, options = None):
+    def getTaskInfo(self, taskID, spUUID=None, options=None):
         """
         Gets information about a Task.
 
@@ -1886,19 +2008,20 @@ class HSM:
         :returns: a dict with information about the task.
         :rtype: dict
 
-        :raises: :exc:`storage_exception.UnknownTask` if a task with the specified taskID doesn't exist.
+        :raises: :exc:`storage_exception.UnknownTask` if a task with the
+                 specified taskID doesn't exist.
         """
         #getSharedLock(tasksResource...)
         inf = self.taskMng.getTaskInfo(taskID=taskID)
         return dict(TaskInfo=inf)
 
-
     @public
-    def getAllTasksInfo(self, spUUID=None, options = None):
+    def getAllTasksInfo(self, spUUID=None, options=None):
         """
         Get the information of all the tasks in a storage pool.
 
-        :param spUUID: The UUID of the storage pool you that want to check it's tasks info.
+        :param spUUID: The UUID of the storage pool you that want to check
+                       it's tasks info.
         :type spUUID: UUID (deprecated)
         :param options: ?
 
@@ -1922,7 +2045,7 @@ class HSM:
         return dict(tasks=ret)
 
     @public
-    def stopTask(self, taskID, spUUID=None, options = None):
+    def stopTask(self, taskID, spUUID=None, options=None):
         """
         Stops a task.
 
@@ -1944,9 +2067,8 @@ class HSM:
         #getExclusiveLock(tasksResource...)
         return self.taskMng.stopTask(taskID=taskID, force=force)
 
-
     @public
-    def clearTask(self, taskID, spUUID=None, options = None):
+    def clearTask(self, taskID, spUUID=None, options=None):
         """
         Clears a task. ?
 
@@ -1962,9 +2084,8 @@ class HSM:
         #getExclusiveLock(tasksResource...)
         return self.taskMng.clearTask(taskID=taskID)
 
-
     @public
-    def revertTask(self, taskID, spUUID=None, options = None):
+    def revertTask(self, taskID, spUUID=None, options=None):
         """
         Revert a task.
 
@@ -1983,7 +2104,8 @@ class HSM:
     @public
     def getFileList(self, sdUUID, pattern='*', options=None):
         """
-        Returns a list of all files in the domain filtered according to extension.
+        Returns a list of all files in the domain filtered according to
+        extension.
 
         :param sdUUID: The UUID of the storage domain you want to query.
         :type sdUUID: UUID
@@ -2001,10 +2123,10 @@ class HSM:
         if not dom.isISO or dom.getStorageType() != sd.NFS_DOMAIN:
             raise se.GetFileListError(sdUUID)
         filesDict = dom.getFileList(pattern=pattern, caseSensitive=True)
-        return {'files':filesDict}
+        return {'files': filesDict}
 
     @public
-    def getIsoList(self, spUUID, extension='iso', options = None):
+    def getIsoList(self, spUUID, extension='iso', options=None):
         """
         Gets a list of all ISO/Floppy volumes in a storage pool.
 
@@ -2024,14 +2146,15 @@ class HSM:
             raise se.GetIsoListError(spUUID)
 
         # Get full iso files dictionary
-        isodict = isoDom.getFileList(pattern='*.' + extension, caseSensitive=False)
+        isodict = isoDom.getFileList(pattern='*.' + extension,
+                                     caseSensitive=False)
         # Get list of iso images with proper permissions only
-        isolist = [key for key,value in isodict.items() if isodict[key]['status'] == 0]
-        return {'isolist':isolist}
-
+        isolist = [key for key, value in isodict.items()
+                   if isodict[key]['status'] == 0]
+        return {'isolist': isolist}
 
     @public
-    def getFloppyList(self, spUUID, options = None):
+    def getFloppyList(self, spUUID, options=None):
         """
         Gets a list of all Floppy volumes if a storage pool.
 
@@ -2045,12 +2168,9 @@ class HSM:
         vars.task.setDefaultException(se.GetFloppyListError("%s" % spUUID))
         return self.getIsoList(spUUID=spUUID, extension='vfd')
 
-
-
-
     @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
-    def connectStorageServer(self, domType, spUUID, conList, options = None):
+    def connectStorageServer(self, domType, spUUID, conList, options=None):
         """
         Connects to a storage low level entity (server).
 
@@ -2062,11 +2182,15 @@ class HSM:
         :type conList: list
         :param options: unused
 
-        :returns: a list of statuses status will be 0 if connection was successful
+        :returns: a list of statuses status will be 0 if connection was
+                  successful
         :rtype: dict
         """
         cons = loggableConList(conList=conList)
-        vars.task.setDefaultException(se.StorageServerConnectionError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
+        vars.task.setDefaultException(
+            se.StorageServerConnectionError(
+                "domType=%s, spUUID=%s, conList=%s" %
+                (domType, spUUID, cons)))
 
         res = []
         for conDef in conList:
@@ -2077,7 +2201,8 @@ class HSM:
                 conObj.connect()
                 status = 0
             except Exception as err:
-                self.log.error("Could not connect to storageServer", exc_info=True)
+                self.log.error(
+                    "Could not connect to storageServer", exc_info=True)
                 status, _ = self._translateConnectionError(err)
 
             res.append({'id': conDef["id"], 'status': status})
@@ -2108,7 +2233,8 @@ class HSM:
 
     @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
-    def validateStorageServerConnection(self, domType, spUUID, conList, options = None):
+    def validateStorageServerConnection(self, domType, spUUID, conList,
+                                        options=None):
         """
         This call is useless and slow. It check different things in different
         levels for different storage types and does not guarantee a future
@@ -2119,13 +2245,13 @@ class HSM:
         """
         res = []
         for con in conList:
-            res.append({'id':con['id'], 'status': 0})
+            res.append({'id': con['id'], 'status': 0})
 
         return dict(statuslist=res)
 
     @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
-    def disconnectStorageServer(self, domType, spUUID, conList, options = None):
+    def disconnectStorageServer(self, domType, spUUID, conList, options=None):
         """
         Disconnects from a storage low level entity (server).
 
@@ -2137,11 +2263,15 @@ class HSM:
         :type conList: list
         :param options: unused
 
-        :returns: a list of statuses status will be 0 if disconnection was successful
+        :returns: a list of statuses status will be 0 if disconnection was
+                  successful
         :rtype: dict
         """
         cons = loggableConList(conList=conList)
-        vars.task.setDefaultException(se.StorageServerDisconnectionError("domType=%s, spUUID=%s, conList=%s" % (domType, spUUID, cons)))
+        vars.task.setDefaultException(
+            se.StorageServerDisconnectionError(
+                "domType=%s, spUUID=%s, conList=%s" %
+                (domType, spUUID, cons)))
 
         res = []
         for conDef in conList:
@@ -2151,7 +2281,8 @@ class HSM:
                 conObj.disconnect()
                 status = 0
             except Exception as err:
-                self.log.error("Could not disconnect from storageServer", exc_info=True)
+                self.log.error("Could not disconnect from storageServer",
+                               exc_info=True)
                 status, _ = self._translateConnectionError(err)
 
             res.append({'id': conDef["id"], 'status': status})
@@ -2201,10 +2332,11 @@ class HSM:
             conInfo = self._connectionAliasRegistrar.getConnectionInfo(conId)
             params = conInfo.params
             if conInfo.type == 'iscsi':
-                conInfoDict = {'target': {
-                                  'portal': misc.namedtuple2dict(params.target.portal),
-                                  'tpgt': params.target.tpgt,
-                                  'iqn': params.target.iqn},
+                conInfoDict = {'target':
+                               {'portal':
+                                   misc.namedtuple2dict(params.target.portal),
+                                'tpgt': params.target.tpgt,
+                                'iqn': params.target.iqn},
                                'iface': params.iface.name}
             else:
                 conInfoDict = misc.namedtuple2dict(params)
@@ -2216,17 +2348,14 @@ class HSM:
                  "lastError": errInfo,
                  "connectionInfo": {
                      "type": conInfo.type,
-                     "params": conInfoDict
-                     }
-                 }
+                     "params": conInfoDict}}
 
             res[conId] = r
 
         return dict(connectionslist=res)
 
-
     @public
-    def getStoragePoolInfo(self, spUUID, options = None):
+    def getStoragePoolInfo(self, spUUID, options=None):
         """
         Gets info about a storage pool.
 
@@ -2236,34 +2365,37 @@ class HSM:
 
         :returns: getPool(spUUID).getInfo
         """
-        vars.task.setDefaultException(se.StoragePoolActionError("spUUID=%s" % spUUID))
+        vars.task.setDefaultException(
+            se.StoragePoolActionError("spUUID=%s" % spUUID))
         vars.task.getSharedLock(STORAGE, spUUID)
         return self.getPool(spUUID).getInfo()
 
-
     @public
     def createStorageDomain(self, storageType, sdUUID, domainName,
-                                    typeSpecificArg, domClass,
-                                    domVersion=constants.SUPPORTED_DOMAIN_VERSIONS[0],
-                                    options=None):
+                            typeSpecificArg, domClass,
+                            domVersion=constants.SUPPORTED_DOMAIN_VERSIONS[0],
+                            options=None):
         """
         Creates a new storage domain.
 
-        :param storageType: The storage type of the new storage domain (eg. NFS).
+        :param storageType: The storage type of the new storage
+                            domain (eg. NFS).
         :type storageType: int (as defined in sd.py).
         :param sdUUID: The UUID of the new storage domain.
         :type sdUUID: UUID
         :param domainName: The human readable name of the new storage domain.
         :type domainName: str
-        :param typeSpecificArg: Arguments that are specific to the storage type.
+        :param typeSpecificArg: Arguments that are specific to the
+                                storage type.
         :type typeSpecificArg: dict
         :param domClass: The class of the new storage domain (eg. iso, data).
         :type domClass: int (as defined in sd.py)
         :param options: unused
         """
-        msg = ("storageType=%s, sdUUID=%s, domainName=%s, domClass=%s, "
-            "typeSpecificArg=%s domVersion=%s" % (storageType, sdUUID, domainName, domClass,
-            typeSpecificArg, domVersion))
+        msg = ("storageType=%s, sdUUID=%s, domainName=%s, "
+               "domClass=%s, typeSpecificArg=%s domVersion=%s" %
+               (storageType, sdUUID, domainName, domClass,
+                typeSpecificArg, domVersion))
         domVersion = int(domVersion)
         vars.task.setDefaultException(se.StorageDomainCreationError(msg))
         misc.validateUUID(sdUUID, 'sdUUID')
@@ -2277,21 +2409,23 @@ class HSM:
         #getSharedLock(connectionsResource...)
         #getExclusiveLock(sdUUID...)
         if storageType in sd.BLOCK_DOMAIN_TYPES:
-            newSD = blockSD.BlockStorageDomain.create(sdUUID, domainName,
-                    domClass, typeSpecificArg, storageType, domVersion)
+            newSD = blockSD.BlockStorageDomain.create(
+                sdUUID, domainName, domClass, typeSpecificArg, storageType,
+                domVersion)
         elif storageType in (sd.NFS_DOMAIN, sd.POSIXFS_DOMAIN):
-            newSD = nfsSD.NfsStorageDomain.create(sdUUID, domainName, domClass,
-                    typeSpecificArg, storageType, domVersion)
+            newSD = nfsSD.NfsStorageDomain.create(
+                sdUUID, domainName, domClass, typeSpecificArg, storageType,
+                domVersion)
         elif storageType == sd.LOCALFS_DOMAIN:
-            newSD = localFsSD.LocalFsStorageDomain.create(sdUUID, domainName,
-                    domClass, typeSpecificArg, storageType, domVersion)
+            newSD = localFsSD.LocalFsStorageDomain.create(
+                sdUUID, domainName, domClass, typeSpecificArg, storageType,
+                domVersion)
         else:
             raise se.StorageDomainTypeError(storageType)
         sdCache.manuallyAddDomain(newSD)
 
-
     @public
-    def validateStorageDomain(self, sdUUID, options = None):
+    def validateStorageDomain(self, sdUUID, options=None):
         """
         Validates that the storage domain is accessible.
 
@@ -2302,21 +2436,22 @@ class HSM:
         :returns: :keyword:`True` if storage domain is valid.
         :rtype: bool
         """
-        vars.task.setDefaultException(se.StorageDomainCreationError("sdUUID=%s" % sdUUID))
+        vars.task.setDefaultException(
+            se.StorageDomainCreationError("sdUUID=%s" % sdUUID))
         return sdCache.produce(sdUUID=sdUUID).validate()
-
 
     #TODO: Remove this  function when formatStorageDomain() is removed.
     def _recycle(self, dom):
         try:
             sdCache.manuallyRemoveDomain(dom.sdUUID)
         except KeyError:
-            self.log.warn("Storage domain %s doesn't exist in cache. Trying recycle leftovers ...", dom.sdUUID)
+            self.log.warn("Storage domain %s doesn't exist in cache. Trying "
+                          "recycle leftovers ...", dom.sdUUID)
 
         dom.format(dom.sdUUID)
 
     @public
-    def formatStorageDomain(self, sdUUID, autoDetach = False, options = None):
+    def formatStorageDomain(self, sdUUID, autoDetach=False, options=None):
         """
         Formats a detached storage domain.
 
@@ -2331,7 +2466,8 @@ class HSM:
         :returns: Nothing
         """
         multipath.rescan()
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         #getSharedLock(connectionsResource...)
 
         vars.task.getExclusiveLock(STORAGE, sdUUID)
@@ -2341,7 +2477,8 @@ class HSM:
             if sdUUID in domDict.keys():
                 raise se.CannotFormatStorageDomainInConnectedPool(sdUUID)
 
-        # For domains that attached to disconnected pool, format domain if 'autoDetach' flag set
+        # For domains that attached to disconnected pool, format domain if
+        # 'autoDetach' flag set
         sd = sdCache.produce(sdUUID=sdUUID)
         try:
             sd.invalidateMetadata()
@@ -2349,15 +2486,16 @@ class HSM:
             if not misc.parseBool(autoDetach) and sd.getPools():
                 raise se.CannotFormatAttachedStorageDomain(sdUUID)
             # Allow format also for broken domain
-        except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError, se.MiscFileReadException,
-                se.MiscBlockReadException, se.MiscBlockReadIncomplete), e:
-            self.log.warn("Domain %s has problem with metadata. Continue formatting... (%s)", sdUUID, e)
+        except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError,
+                se.MiscFileReadException, se.MiscBlockReadException,
+                se.MiscBlockReadIncomplete), e:
+            self.log.warn("Domain %s has problem with metadata. Continue "
+                          "formatting... (%s)", sdUUID, e)
 
         self._recycle(sd)
 
-
     @public
-    def setStorageDomainDescription(self, sdUUID, description, options = None):
+    def setStorageDomainDescription(self, sdUUID, description, options=None):
         """
         Sets a storage domain's description.
 
@@ -2370,25 +2508,28 @@ class HSM:
         if len(description) > sd.MAX_DOMAIN_DESCRIPTION_SIZE:
             raise se.StorageDomainDescriptionTooLongError()
 
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s, description=%s" % (sdUUID, description)))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError(
+                "sdUUID=%s, description=%s" % (sdUUID, description)))
         dom = sdCache.produce(sdUUID=sdUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         dom.setDescription(descr=description)
 
-
     @public
-    def getStorageDomainInfo(self, sdUUID, options = None):
+    def getStorageDomainInfo(self, sdUUID, options=None):
         """
         Gets the info of a storage domain.
 
-        :param sdUUID: The UUID of the storage domain you want to get info about.
+        :param sdUUID: The UUID of the storage domain you want to get
+                       info about.
         :type sdUUID: UUID
         :param options: ?
 
         :returns: a dict containing the information about the domain.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         dom = self.validateSdUUID(sdUUID)
         #getSharedLock(connectionsResource...)
 
@@ -2403,7 +2544,7 @@ class HSM:
         # These keys are not likely to change (also because of
         # BC) so it's not that horrible. In any case please
         # remove this when we can stop supporting this API.
-        info.update({'lver' : -1, 'spm_id' : -1, 'master_ver' : 0})
+        info.update({'lver': -1, 'spm_id': -1, 'master_ver': 0})
         if dom.getDomainRole() == sd.MASTER_DOMAIN:
             # make sure it's THE master
             try:
@@ -2418,41 +2559,45 @@ class HSM:
 
         return dict(info=info)
 
-
     @public
-    def getStorageDomainStats(self, sdUUID, options = None):
+    def getStorageDomainStats(self, sdUUID, options=None):
         """
         Gets a storage domain's statistics.
 
-        :param sdUUID: The UUID of the storage domain that you want to get it's statistics.
+        :param sdUUID: The UUID of the storage domain that you want to get
+                       it's statistics.
         :type sdUUID: UUID
         :param options: ?
 
         :returns: a dict containing the statistics information.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
         dom.refresh()
         stats = dom.getStats()
         return dict(stats=stats)
 
-
     @public
-    def getStorageDomainsList(self, spUUID = None, domainClass = None, storageType = None, remotePath = None, options = None):
+    def getStorageDomainsList(
+            self, spUUID=None, domainClass=None, storageType=None,
+            remotePath=None, options=None):
         """
         Returns a List of all or pool specific storage domains.
 
         :param spUUID: The UUID of the the the storage pool you want to list.
-                       If spUUID equals to :attr:`~volume.BLANK_UUID` all pools will be listed.
+                       If spUUID equals to :attr:`~volume.BLANK_UUID` all
+                       pools will be listed.
         :type spUUID: UUID
         :param options: ?
 
         :returns: a dict containing list of storage domains.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.StorageDomainActionError("spUUID: %s" % spUUID))
+        vars.task.setDefaultException(
+            se.StorageDomainActionError("spUUID: %s" % spUUID))
         sdCache.refreshStorage()
         if spUUID and spUUID != volume.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
@@ -2473,7 +2618,9 @@ class HSM:
                     domains.remove(sdUUID)
                     continue
                 # Filter domains according to 'remotePath'
-                if remotePath and fileUtils.transformPath(remotePath) != dom.getRemotePath():
+                if (remotePath and
+                    fileUtils.transformPath(remotePath) !=
+                        dom.getRemotePath()):
                     domains.remove(sdUUID)
                     continue
             except Exception:
@@ -2504,9 +2651,8 @@ class HSM:
         info["GUID"] = str(pv.guid)
         return info
 
-
     @public
-    def getVGList(self, storageType=None, options = None):
+    def getVGList(self, storageType=None, options=None):
         """
         Returns a list all VGs.
 
@@ -2547,7 +2693,7 @@ class HSM:
             vgInfo = {'name': vg.name, 'vgUUID': vg.uuid,
                       'vgsize': str(vg.size), 'vgfree': str(vg.free),
                       'type': "", 'attr': dict(vg.attr._asdict()),
-                      'state': vg.partial, "pvlist": [] }
+                      'state': vg.partial, "pvlist": []}
             vgInfos.append(vgInfo)
             vgGuids[vg.uuid] = i
 
@@ -2565,11 +2711,13 @@ class HSM:
             for pv in lvm.listPVNames(vgInfo['name']):
                 dev = pathDict.get(getGuid(pv))
                 if dev is None:
-                    self.log.warn("dev %s was not found %s", getGuid(pv), pathDict)
+                    self.log.warn("dev %s was not found %s",
+                                  getGuid(pv), pathDict)
                     continue
                 if vgType is None:
                     vgType = dev["devtype"]
-                elif vgType != multipath.DEV_MIXED and vgType != dev["devtype"]:
+                elif (vgType != multipath.DEV_MIXED and
+                      vgType != dev["devtype"]):
                     vgType = multipath.DEV_MIXED
 
                 pvInfo = lvm.getPV(pv)
@@ -2579,14 +2727,14 @@ class HSM:
                 vgType = sd.FCP_DOMAIN
             elif vgType == multipath.DEV_ISCSI:
                 vgType = sd.ISCSI_DOMAIN
-            else: #TODO: Allow for mixed vgs to be specified as such in the API
+            else:
+                # TODO: Allow for mixed vgs to be specified as such in the API
                 vgType = sd.ISCSI_DOMAIN
 
             vgInfo["type"] = vgType
 
-
     @public
-    def getVGInfo(self, vgUUID, options = None):
+    def getVGInfo(self, vgUUID, options=None):
         """
         Gets the info of a VG.
 
@@ -2605,7 +2753,7 @@ class HSM:
         return dict(info=self.__getVGsInfo([vgUUID])[0])
 
     @public(logger=logged(printers={'con': connectionPrinter}))
-    def discoverSendTargets(self, con, options = None):
+    def discoverSendTargets(self, con, options=None):
         """
         Discovers iSCSI targets.
 
@@ -2640,14 +2788,15 @@ class HSM:
         fullTargets = []
         partialTargets = []
         for target in targets:
-            fullTargets.append("%s:%d,%d %s" % (target.portal.hostname, target.portal.port, target.tpgt, target.iqn))
+            fullTargets.append("%s:%d,%d %s" %
+                               (target.portal.hostname, target.portal.port,
+                                target.tpgt, target.iqn))
             partialTargets.append(target.iqn)
 
         return dict(targets=partialTargets, fullTargets=fullTargets)
 
-
     @public
-    def cleanupUnusedConnections(self, options = None):
+    def cleanupUnusedConnections(self, options=None):
         """
         .. warning::
             This method is not yet implemented.
@@ -2657,11 +2806,11 @@ class HSM:
         # TODO: Implement
         pass
 
-
     @public
     def refreshVolume(self, sdUUID, spUUID, imgUUID, volUUID):
         """
-        Refresh low level volume after change in the shared storage initiated from another host
+        Refresh low level volume after change in the shared storage initiated
+        from another host
         :param sdUUID: The UUID of the storage domain that owns the volume.
         :type sdUUID: UUID
         :param spUUID: The UUID of the storage pool that owns the volume.
@@ -2673,11 +2822,12 @@ class HSM:
 
         :returns: Nothing ? Stuff not implemented
         """
-        return sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
-
+        return sdCache.produce(
+            sdUUID=sdUUID).produceVolume(
+                imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
 
     @public
-    def getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
+    def getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
         """
         Gets the size of a volume.
 
@@ -2695,13 +2845,14 @@ class HSM:
         :rtype: dict
         """
         # Return string because xmlrpc's "int" is very limited
-        apparentsize = str(volume.Volume.getVSize(sdUUID, imgUUID, volUUID, bs=1))
-        truesize = str(volume.Volume.getVTrueSize(sdUUID, imgUUID, volUUID, bs=1))
+        apparentsize = str(volume.Volume.getVSize(sdUUID, imgUUID,
+                                                  volUUID, bs=1))
+        truesize = str(volume.Volume.getVTrueSize(sdUUID, imgUUID,
+                                                  volUUID, bs=1))
         return dict(apparentsize=apparentsize, truesize=truesize)
 
-
     @public
-    def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
+    def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
         """
         Gets a volume's info.
 
@@ -2719,12 +2870,13 @@ class HSM:
         :rtype: dict
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
-        info = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getInfo()
+        info = sdCache.produce(
+            sdUUID=sdUUID).produceVolume(
+                imgUUID=imgUUID, volUUID=volUUID).getInfo()
         return dict(info=info)
 
-
     @public
-    def getVolumePath(self, sdUUID, spUUID, imgUUID, volUUID, options = None):
+    def getVolumePath(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
         """
         Gets the path to a volume.
 
@@ -2746,9 +2898,10 @@ class HSM:
         :rtype: dict
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
-        path = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).getVolumePath()
+        path = sdCache.produce(
+            sdUUID=sdUUID).produceVolume(
+                imgUUID=imgUUID, volUUID=volUUID).getVolumePath()
         return dict(path=path)
-
 
     @public
     def appropriateDevice(self, guid, thiefId):
@@ -2770,7 +2923,8 @@ class HSM:
             self.log.error("Failed to remove the following rules: %s", fails)
 
     @public
-    def prepareVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=True, options = None):
+    def prepareVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=True,
+                      options=None):
         """
         Prepares a volume (used in SAN).
         Activates LV and rebuilds 'images' subtree.
@@ -2796,24 +2950,27 @@ class HSM:
         lockType = rm.LockType.exclusive if rw else rm.LockType.shared
         timeout = config.getint('irs', 'prepare_image_timeout') / 1000.0
 
-        imgResource = rmanager.acquireResource(imageResourcesNamespace, imgUUID, lockType, timeout)
+        imgResource = rmanager.acquireResource(imageResourcesNamespace,
+                                               imgUUID, lockType, timeout)
         try:
-            vol = sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID)
-            # NB We want to be sure that at this point HSM does not use stale LVM
-            # cache info, so we call refresh explicitly. We may want to remove
-            # this refresh later, when we come up with something better.
+            vol = sdCache.produce(sdUUID=sdUUID).produceVolume(
+                imgUUID=imgUUID, volUUID=volUUID)
+            # NB We want to be sure that at this point HSM does not use stale
+            # LVM cache info, so we call refresh explicitly. We may want to
+            # remove this refresh later, when we come up with something better.
             vol.refreshVolume()
             vol.prepare(rw=rw)
 
             self._preparedVolumes[sdUUID + volUUID].append(imgResource)
         except:
-            self.log.error("Prepare volume %s in domain %s failed", volUUID, sdUUID, exc_info=True)
+            self.log.error("Prepare volume %s in domain %s failed",
+                           volUUID, sdUUID, exc_info=True)
             imgResource.release()
             raise
 
-
     @public
-    def teardownVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=False, options = None):
+    def teardownVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=False,
+                       options=None):
         """
         Tears down a volume (used in SAN).
         Deactivates LV.
@@ -2846,7 +3003,6 @@ class HSM:
             volclass.teardown(sdUUID=sdUUID, volUUID=volUUID)
         except Exception:
             self.log.warn("Problem tearing down volume", exc_info=True)
-
 
     @public
     def prepareImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
@@ -2907,16 +3063,20 @@ class HSM:
         img.teardown(sdUUID, imgUUID, volUUID)
 
     @public
-    def getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID, options = None):
+    def getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID,
+                       options=None):
         """
         Gets a list of all volumes.
 
-        :param spUUID: The UUID of the storage pool that manages the storage domain you want to query.
+        :param spUUID: The UUID of the storage pool that manages the storage
+                       domain you want to query.
         :type spUUID: UUID
         :param sdUUID: The UUID of the storage domain you want to query.
         :type sdUUID: UUID
-        :param imgUUID: The UUID of the an image you want to filter the results.
-                        if imgUUID equals :attr:`~volume.BLANK_UUID` no filtering will be done.
+        :param imgUUID: The UUID of the an image you want to filter the
+                        results.
+                        if imgUUID equals :attr:`~volume.BLANK_UUID` no
+                        filtering will be done.
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
@@ -2928,13 +3088,13 @@ class HSM:
         uuidlist = []
         repoPath = os.path.join(self.storage_repository, spUUID)
         for img in images:
-            uuidlist += dom.getVolumeClass().getImageVolumes(repoPath, sdUUID, img)
+            uuidlist += (dom.getVolumeClass().
+                         getImageVolumes(repoPath, sdUUID, img))
         self.log.info("List of volumes is %s", uuidlist)
         return dict(uuidlist=uuidlist)
 
-
     @public
-    def getImagesList(self, sdUUID, options = None):
+    def getImagesList(self, sdUUID, options=None):
         """
         Gets a list of all the images of specific domain.
 
@@ -2984,15 +3144,15 @@ class HSM:
             except KeyError:
                 status = se.StorageServerConnectionRefIdAlreadyInUse.code
             except Exception as e:
-                self.log.error("Could not acquire resource ref for '%s'", refId,
-                        exc_info=True)
+                self.log.error("Could not acquire resource ref for '%s'",
+                               refId, exc_info=True)
                 status, _ = self._translateConnectionError(e)
 
             try:
                 self._connectionMonitor.manage(refId)
             except Exception as e:
-                self.log.error("Could not acquire resource ref for '%s'", refId,
-                        exc_info=True)
+                self.log.error("Could not acquire resource ref for '%s'",
+                               refId, exc_info=True)
                 self._connectionAliasRegistrar.unregister(refId)
                 status, _ = self._translateConnectionError(e)
 
@@ -3006,9 +3166,9 @@ class HSM:
         Release connection references.
 
         Releases the references, if a connection becomes orphaned as a result
-        of this action the connection will be disconnected. The connection might
-        remain active if VDSM detects that it is still under use but will not
-        be kept alive by VDSM anymore.
+        of this action the connection will be disconnected. The connection
+        might remain active if VDSM detects that it is still under use but
+        will not be kept alive by VDSM anymore.
 
         :param refIDs: a list of strings, each string representing a refIDs.
 
@@ -3029,8 +3189,8 @@ class HSM:
             except KeyError:
                 status = se.StorageServerConnectionRefIdAlreadyInUse.code
             except Exception as e:
-                self.log.error("Could not release resource ref for '%s'", refID,
-                        exc_info=True)
+                self.log.error("Could not release resource ref for '%s'",
+                               refID, exc_info=True)
                 status, _ = self._translateConnectionError(e)
 
             res[refID] = status
@@ -3038,7 +3198,8 @@ class HSM:
         return {"results": res}
 
     @public
-    def getImageDomainsList(self, spUUID, imgUUID, datadomains=True, options = None):
+    def getImageDomainsList(self, spUUID, imgUUID, datadomains=True,
+                            options=None):
         """
         Gets a list of all domains in the pool that contains imgUUID.
 
@@ -3046,14 +3207,17 @@ class HSM:
         :type spUUID: UUID
         :param imgUUID: The UUID of the image you want to filter by.
         :type spUUID: UUID
-        :param datadomains: Should the search only be limited to only data domains.
+        :param datadomains: Should the search only be limited to only data
+                            domains.
         :type datadomains: bool
         :param options: ?
 
         :returns: a dict containing the list of domains found.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.GetStorageDomainListError("spUUID=%s imgUUID=%s" % (spUUID, imgUUID)))
+        vars.task.setDefaultException(
+            se.GetStorageDomainListError("spUUID=%s imgUUID=%s" %
+                                         (spUUID, imgUUID)))
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # Find out domain list from the pool metadata
@@ -3061,12 +3225,12 @@ class HSM:
         for sdUUID in domList:
             vars.task.getSharedLock(STORAGE, sdUUID)
 
-        domainslist = pool.getImageDomainsList(imgUUID=imgUUID, datadomains=datadomains)
+        domainslist = pool.getImageDomainsList(imgUUID=imgUUID,
+                                               datadomains=datadomains)
         return dict(domainslist=domainslist)
 
-
     @public
-    def prepareForShutdown(self, options = None):
+    def prepareForShutdown(self, options=None):
         """
         Prepares to shutdown host.
         Stops all tasks.
@@ -3076,7 +3240,8 @@ class HSM:
 
         :param options: ?
         """
-        # TODO: Implement!!!! TBD: required functionality (stop hsm tasks, stop spm tasks if spm etc.)
+        # TODO: Implement!!!! TBD: required functionality (stop hsm tasks,
+        #                          stop spm tasks if spm etc.)
         try:
             self._connectionMonitor.stopMonitoring()
             sp.StoragePool.cleanupMasterMount()
@@ -3097,13 +3262,13 @@ class HSM:
                     try:
                         pool.stopMonitoringDomains()
                     except Exception:
-                        self.log.warning("Failed to stop RepoStats thread", exc_info=True)
+                        self.log.warning("Failed to stop RepoStats thread",
+                                         exc_info=True)
                         continue
 
             self.taskMng.prepareForShutdown()
         except:
             pass
-
 
     @classmethod
     def __releaseLocks(cls):
@@ -3111,7 +3276,8 @@ class HSM:
         Releases all locks held by the machine.
         """
         # We are initializing the vdsm and should not be holding ANY lock
-        # so we make sure no locks are held by the machine (e.g. because of previous vdsm runs)
+        # so we make sure no locks are held by the machine (e.g. because of
+        # previous vdsm runs)
         # killall -INT will trigger lock release (proper shutdown)
         lockCmd = config.get('irs', 'lock_cmd')
         try:
@@ -3135,7 +3301,7 @@ class HSM:
         misc.killall(lockCmd, signal.SIGKILL, group=True)
 
     @public
-    def fenceSpmStorage(self, spUUID, lastOwner, lastLver, options = None):
+    def fenceSpmStorage(self, spUUID, lastOwner, lastLver, options=None):
         """
         Fences the SPM via the storage. ?
         Right now it just clears the owner and last ver fields.
@@ -3149,12 +3315,15 @@ class HSM:
         :returns: a dict containing the spms state?
         :rtype: dict
         """
-        vars.task.setDefaultException(se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" % (spUUID, lastOwner, lastLver)))
+        vars.task.setDefaultException(
+            se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" %
+                             (spUUID, lastOwner, lastLver)))
         pool = self.getPool(spUUID)
         pool.invalidateMetadata()
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool.forceFreeSpm()
-        st = {'spmStatus':pool.spmRole, 'spmLver': pool.getSpmLver(), 'spmId':pool.getSpmId()}
+        st = {'spmStatus': pool.spmRole, 'spmLver': pool.getSpmLver(),
+              'spmId': pool.getSpmId()}
         return dict(spm_st=st)
 
     @public
@@ -3162,10 +3331,10 @@ class HSM:
         targetDomVersion = int(targetDomVersion)
         pool = self.getPool(spUUID)
         pool._upgradePool(targetDomVersion)
-        return {"upgradeStatus" : "started"}
+        return {"upgradeStatus": "started"}
 
     @public
-    def repoStats(self, options = None):
+    def repoStats(self, options=None):
         """
         Collects a storage repository's information and stats.
 

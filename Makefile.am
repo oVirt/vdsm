@@ -85,6 +85,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/fileVolume.py \
 	vdsm/storage/fuser.py \
 	vdsm/storage/hba.py \
+	vdsm/storage/hsm.py \
 	vdsm/storage/imageRepository \
 	vdsm/storage/iscsiadm.py \
 	vdsm/storage/localFsSD.py \
