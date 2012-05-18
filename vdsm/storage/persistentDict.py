@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -34,17 +34,21 @@ from itertools import ifilter
 
 SHA_CKSUM_TAG = "_SHA_CKSUM"
 
+
 def _preprocessLine(line):
     if not isinstance(line, unicode):
         line = unicode(str(line), 'utf-8')
 
     return unicode.encode(line, 'ascii', 'xmlcharrefreplace')
 
+
 def unicodeEncoder(s):
     return s
 
+
 def unicodeDecoder(s):
     return s
+
 
 class DictValidator(object):
     def __init__(self, dictObj, validatorDict):
@@ -99,7 +103,8 @@ class DictValidator(object):
         del self._dict[key]
 
     def __iter__(self):
-        return ifilter(lambda k: k in self._validatorDict, self._dict.__iter__())
+        return ifilter(lambda k: k in self._validatorDict,
+                       self._dict.__iter__())
 
     def keys(self):
         return list(self.__iter__())
@@ -169,7 +174,8 @@ class PersistentDict(object):
                         self.flush(self._metadata)
                     self.log.debug("Finished transaction")
                 except:
-                    self.log.warn("Error in transaction, rolling back changes", exc_info=True)
+                    self.log.warn("Error in transaction, rolling back changes",
+                                  exc_info=True)
                     # TBD: Maybe check that the old MD is what I remember?
                     self.flush(backup)
                     raise
@@ -182,8 +188,8 @@ class PersistentDict(object):
         self._metaRW = metaReaderWriter
         self._isValid = False
         self._inTransaction = False
-        self.log.debug("Created a persistent dict with %s backend", self._metaRW.__class__.__name__)
-
+        self.log.debug("Created a persistent dict with %s backend",
+                       self._metaRW.__class__.__name__)
 
     def get(self, key, default=None):
         with self._accessWrapper():
@@ -223,7 +229,9 @@ class PersistentDict(object):
         with self._syncRoot:
             lines = self._metaRW.readlines()
 
-            self.log.debug("read lines (%s)=%s", self._metaRW.__class__.__name__, lines)
+            self.log.debug("read lines (%s)=%s",
+                           self._metaRW.__class__.__name__,
+                           lines)
             newMD = {}
             declaredChecksum = None
             for line in lines:
@@ -245,7 +253,8 @@ class PersistentDict(object):
                 # FIXME : This is ugly but necessary, What we need is a class
                 # method that creates the initial metadata. Then we can assume
                 # that empty metadata is always invalid.
-                self.log.warn("data has no embedded checksum - trust it as it is")
+                self.log.warn("data has no embedded checksum - "
+                              "trust it as it is")
                 self._isValid = True
                 self._metadata = newMD
                 return
@@ -260,9 +269,11 @@ class PersistentDict(object):
             computedChecksum = checksumCalculator.hexdigest()
 
             if declaredChecksum != computedChecksum:
-                self.log.warning("data seal is broken metadata declares `%s` should be `%s` (lines=%s)",
-                        declaredChecksum, computedChecksum, newMD)
-                raise se.MetaDataSealIsBroken(declaredChecksum, computedChecksum)
+                self.log.warning("data seal is broken metadata declares `%s` "
+                                 "should be `%s` (lines=%s)",
+                                 declaredChecksum, computedChecksum, newMD)
+                raise se.MetaDataSealIsBroken(declaredChecksum,
+                                              computedChecksum)
 
             self._isValid = True
             self._metadata = newMD
@@ -284,7 +295,8 @@ class PersistentDict(object):
             computedChecksum = checksumCalculator.hexdigest()
             lines.append("=".join([SHA_CKSUM_TAG, computedChecksum]))
 
-            self.log.debug("about to write lines (%s)=%s", self._metaRW.__class__.__name__, lines)
+            self.log.debug("about to write lines (%s)=%s",
+                           self._metaRW.__class__.__name__, lines)
             self._metaRW.writelines(lines)
 
             self._metadata = md
@@ -309,4 +321,3 @@ class PersistentDict(object):
     def clear(self):
         with self.transaction():
             self._metadata.clear()
-
