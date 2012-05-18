@@ -63,6 +63,7 @@ PEP8_WHITELIST = \
 	vdsm/rest/Controller.py \
 	vdsm/storage/blockVolume.py \
 	vdsm/storage/devicemapper.py \
+	vdsm/storage/fuser.py \
 	vdsm/storage/hba.py \
 	vdsm/storage/localFsSD.py \
 	vdsm/storage/misc.py \
