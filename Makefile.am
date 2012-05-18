@@ -67,6 +67,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/domainMonitor.py \
 	vdsm/storage/fuser.py \
 	vdsm/storage/hba.py \
+	vdsm/storage/iscsiadm.py \
 	vdsm/storage/localFsSD.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \

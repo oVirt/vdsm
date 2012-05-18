@@ -7,20 +7,61 @@ ISCSI_ERR_SESS_EXISTS = 15
 ISCSI_ERR_LOGIN_AUTH_FAILED = 24
 ISCSI_ERR_OBJECT_NOT_FOUND = 21
 
-class IscsiError(RuntimeError): pass
-class ReservedInterfaceNameError(IscsiError): pass
-class IscsiInterfaceError(IscsiError): pass
-class IsciInterfaceAlreadyExistsError(IscsiInterfaceError): pass
-class IsciInterfaceCreationError(IscsiInterfaceError): pass
-class IscsiInterfaceDoesNotExistError(IscsiInterfaceError): pass
-class IscsiInterfaceUpdateError(IscsiInterfaceError): pass
-class IscsiInterfaceDeletionError(IscsiInterfaceError): pass
-class IscsiDiscoverdbError(IscsiError): pass
-class IscsiInterfaceListingError(IscsiError): pass
-class IscsiAuthenticationError(IscsiError): pass
-class IscsiNodeError(IscsiError): pass
-class IscsiSessionNotFound(IscsiError): pass
-class IscsiSessionError(IscsiError): pass
+
+class IscsiError(RuntimeError):
+    pass
+
+
+class ReservedInterfaceNameError(IscsiError):
+    pass
+
+
+class IscsiInterfaceError(IscsiError):
+    pass
+
+
+class IsciInterfaceAlreadyExistsError(IscsiInterfaceError):
+    pass
+
+
+class IsciInterfaceCreationError(IscsiInterfaceError):
+    pass
+
+
+class IscsiInterfaceDoesNotExistError(IscsiInterfaceError):
+    pass
+
+
+class IscsiInterfaceUpdateError(IscsiInterfaceError):
+    pass
+
+
+class IscsiInterfaceDeletionError(IscsiInterfaceError):
+    pass
+
+
+class IscsiDiscoverdbError(IscsiError):
+    pass
+
+
+class IscsiInterfaceListingError(IscsiError):
+    pass
+
+
+class IscsiAuthenticationError(IscsiError):
+    pass
+
+
+class IscsiNodeError(IscsiError):
+    pass
+
+
+class IscsiSessionNotFound(IscsiError):
+    pass
+
+
+class IscsiSessionError(IscsiError):
+    pass
 
 _RESERVED_INTERFACES = ("default", "tcp", "iser")
 
@@ -28,6 +69,8 @@ _RESERVED_INTERFACES = ("default", "tcp", "iser")
 # This serializes all calls to iscsiadm.
 # Remove when iscsid is actually thread safe.
 _iscsiadmLock = Lock()
+
+
 def _runCmd(args, hideValue=False):
     # FIXME: I don't use supervdsm because this entire module has to just be
     # run as root and there is no such feature yet in supervdsm. When such
@@ -47,9 +90,11 @@ def _runCmd(args, hideValue=False):
 
         return misc.execCmd(cmd, printable=printCmd, sudo=True)
 
+
 def iface_exists(interfaceName):
     #FIXME: can be optimized by checking /var/lib/iscsi/ifaces
     return interfaceName in iface_list()
+
 
 def iface_new(name):
     if name in _RESERVED_INTERFACES:
@@ -64,9 +109,10 @@ def iface_new(name):
 
     raise IsciInterfaceCreationError(name, rc, out, err)
 
+
 def iface_update(name, key, value):
     rc, out, err = _runCmd(["-m", "iface", "-I", name, "-n", key, "-v", value,
-        "--op=update"])
+                            "--op=update"])
     if rc == 0:
         return
 
@@ -74,6 +120,7 @@ def iface_update(name, key, value):
         raise IscsiInterfaceDoesNotExistError(name)
 
     raise IscsiInterfaceUpdateError(name, rc, out, err)
+
 
 def iface_delete(name):
     rc, out, err = _runCmd(["-m", "iface", "-I", name, "--op=delete"])
@@ -85,6 +132,7 @@ def iface_delete(name):
 
     raise IscsiInterfaceDeletionError(name)
 
+
 def iface_list():
     # FIXME: This can be done more efficiently by iterating
     # /var/lib/iscsi/ifaces. Fix if ever a performance bottleneck.
@@ -93,6 +141,7 @@ def iface_list():
         return [line.split()[0] for line in out]
 
     raise IscsiInterfaceListingError(rc, out, err)
+
 
 def iface_info(name):
     # FIXME: This can be done more effciently by reading
@@ -114,21 +163,25 @@ def iface_info(name):
 
     raise IscsiInterfaceListingError(rc, out, err)
 
+
 def discoverydb_new(discoveryType, iface, portal):
     rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-        iface, "-p", portal, "--op=new"])
+                            iface, "-p", portal, "--op=new"])
     if rc == 0:
         return
-
 
     if not iface_exists(iface):
         raise IscsiInterfaceDoesNotExistError(iface)
 
     raise IscsiDiscoverdbError(rc, out, err)
 
-def discoverydb_update(discoveryType, iface, portal, key, value, hideValue=False):
+
+def discoverydb_update(discoveryType, iface, portal, key, value,
+                       hideValue=False):
     rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-        iface, "-p", portal, "-n", key, "-v", value, "--op=update"], hideValue)
+                            iface, "-p", portal, "-n", key, "-v", value,
+                            "--op=update"],
+                           hideValue)
     if rc == 0:
         return
 
@@ -136,10 +189,11 @@ def discoverydb_update(discoveryType, iface, portal, key, value, hideValue=False
         raise IscsiInterfaceDoesNotExistError(iface)
 
     raise IscsiDiscoverdbError(rc, out, err)
+
 
 def discoverydb_discover(discoveryType, iface, portal):
     rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-        iface, "-p", portal, "--discover"])
+                            iface, "-p", portal, "--discover"])
     if rc == 0:
         res = []
         for line in out:
@@ -158,9 +212,10 @@ def discoverydb_discover(discoveryType, iface, portal):
 
     raise IscsiDiscoverdbError(rc, out, err)
 
+
 def discoverydb_delete(discoveryType, iface, portal):
     rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-        iface, "-p", portal, "--op=delete"])
+                            iface, "-p", portal, "--op=delete"])
     if rc == 0:
         return
 
@@ -169,9 +224,10 @@ def discoverydb_delete(discoveryType, iface, portal):
 
     raise IscsiDiscoverdbError(rc, out, err)
 
+
 def node_new(iface, portal, targetName):
     rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-        portal, "--op=new"])
+                            portal, "--op=new"])
     if rc == 0:
         return
 
@@ -179,10 +235,12 @@ def node_new(iface, portal, targetName):
         raise IscsiInterfaceDoesNotExistError(iface)
 
     raise IscsiNodeError(rc, out, err)
+
 
 def node_update(iface, portal, targetName, key, value, hideValue=False):
     rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-        portal, "-n", key, "-v", value, "--op=update"], hideValue)
+                            portal, "-n", key, "-v", value, "--op=update"],
+                           hideValue)
     if rc == 0:
         return
 
@@ -190,10 +248,11 @@ def node_update(iface, portal, targetName, key, value, hideValue=False):
         raise IscsiInterfaceDoesNotExistError(iface)
 
     raise IscsiNodeError(rc, out, err)
+
 
 def node_delete(iface, portal, targetName):
     rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-        portal, "--op=delete"])
+                            portal, "--op=delete"])
     if rc == 0:
         return
 
@@ -202,9 +261,10 @@ def node_delete(iface, portal, targetName):
 
     raise IscsiNodeError(rc, out, err)
 
+
 def node_disconnect(iface, portal, targetName):
     rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-        portal, "-u"])
+                            portal, "-u"])
     if rc == 0:
         return
 
@@ -216,9 +276,10 @@ def node_disconnect(iface, portal, targetName):
 
     raise IscsiNodeError(rc, out, err)
 
+
 def node_login(iface, portal, targetName):
     rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-        portal, "-l"])
+                            portal, "-l"])
     if rc == 0:
         return
 
@@ -230,12 +291,14 @@ def node_login(iface, portal, targetName):
 
     raise IscsiNodeError(rc, out, err)
 
+
 def session_rescan():
     rc, out, err = _runCmd(["-m", "session", "-R"])
     if rc == 0:
         return
 
     raise IscsiSessionError(rc, out, err)
+
 
 def session_logout(sessionId):
     rc, out, err = _runCmd(["-m", "session", "-r", str(sessionId), "-u"])
