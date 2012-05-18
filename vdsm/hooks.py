@@ -14,7 +14,7 @@ import os.path
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -29,7 +29,10 @@ import hashlib
 
 from vdsm.constants import P_VDSM_HOOKS, P_VDSM
 
-class HookError(Exception): pass
+
+class HookError(Exception):
+    pass
+
 
 # dir path is relative to '/' for test purposes
 # otherwise path is relative to P_VDSM_HOOKS
@@ -38,8 +41,9 @@ def _scriptsPerDir(dir):
         path = dir
     else:
         path = P_VDSM_HOOKS + dir
-    return [ s for s in glob.glob(path + '/*')
-             if os.access(s, os.X_OK) ]
+    return [s for s in glob.glob(path + '/*')
+            if os.access(s, os.X_OK)]
+
 
 def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
     scripts = _scriptsPerDir(dir)
@@ -86,73 +90,97 @@ def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
         os.unlink(xmlname)
     return finalxml
 
+
 def before_vm_start(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_start', vmconf=vmconf)
 
+
 def after_vm_start(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_start', vmconf=vmconf, raiseError=False)
+    return _runHooksDir(domxml, 'after_vm_start',
+                        vmconf=vmconf, raiseError=False)
+
 
 def before_vm_cont(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_cont', vmconf=vmconf)
 
+
 def after_vm_cont(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_cont', vmconf=vmconf, raiseError=False)
+    return _runHooksDir(domxml, 'after_vm_cont',
+                        vmconf=vmconf, raiseError=False)
+
 
 def before_vm_pause(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_pause', vmconf=vmconf)
 
+
 def after_vm_pause(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_pause', vmconf=vmconf, raiseError=False)
+    return _runHooksDir(domxml, 'after_vm_pause',
+                        vmconf=vmconf, raiseError=False)
+
 
 def before_vm_migrate_source(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_migrate_source', vmconf=vmconf)
+
 
 def after_vm_migrate_source(domxml, vmconf={}):
     return _runHooksDir(domxml, 'after_vm_migrate_source', vmconf=vmconf,
                         raiseError=False)
 
+
 def before_vm_migrate_destination(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_migrate_destination', vmconf=vmconf)
+
 
 def after_vm_migrate_destination(domxml, vmconf={}):
     return _runHooksDir(domxml, 'after_vm_migrate_destination', vmconf=vmconf,
                         raiseError=False)
 
+
 def before_vm_hibernate(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_hibernate', vmconf=vmconf)
+
 
 def after_vm_hibernate(domxml, vmconf={}):
     return _runHooksDir(domxml, 'after_vm_hibernate', vmconf=vmconf,
                         raiseError=False)
 
+
 def before_vm_dehibernate(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_dehibernate', vmconf=vmconf)
+
 
 def after_vm_dehibernate(domxml, vmconf={}):
     return _runHooksDir(domxml, 'after_vm_hibernate', vmconf=vmconf,
                         raiseError=False)
 
+
 def before_vm_destroy(domxml, vmconf={}):
     return _runHooksDir(None, 'before_vm_destroy', vmconf=vmconf,
                         raiseError=False)
+
 
 def after_vm_destroy(domxml, vmconf={}):
     return _runHooksDir(domxml, 'after_vm_destroy', vmconf=vmconf,
                         raiseError=False)
 
+
 def before_vm_set_ticket(domxml, vmconf={}, params={}):
     return _runHooksDir(domxml, 'before_vm_set_ticket', vmconf=vmconf,
                         raiseError=False, params=params)
+
 
 def after_vm_set_ticket(domxml, vmconf={}, params={}):
     return _runHooksDir(domxml, 'after_vm_set_ticket', vmconf=vmconf,
                         raiseError=False, params=params)
 
+
 def before_vdsm_start():
     return _runHooksDir(None, 'before_vdsm_start', raiseError=False)
 
+
 def after_vdsm_stop():
     return _runHooksDir(None, 'after_vdsm_stop', raiseError=False)
+
 
 def _getScriptInfo(path):
     try:
@@ -162,9 +190,11 @@ def _getScriptInfo(path):
         md5 = ''
     return {'md5': md5}
 
+
 def _getHookInfo(dir):
-    return dict([ (os.path.basename(script), _getScriptInfo(script))
-                  for script in _scriptsPerDir(dir) ])
+    return dict([(os.path.basename(script), _getScriptInfo(script))
+                  for script in _scriptsPerDir(dir)])
+
 
 def installed():
     res = {}
@@ -176,6 +206,7 @@ def installed():
 
 if __name__ == '__main__':
     import sys
+
     def usage():
         print 'Usage: %s hook_name' % sys.argv[0]
         sys.exit(1)
