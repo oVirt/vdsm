@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -38,6 +38,7 @@ from threadLocal import vars
 LEASE_FILEEXT = ".lease"
 LEASE_FILEOFFSET = 0
 
+
 def getDomUuidFromVolumePath(volPath):
     # Volume path has pattern:
     #  /rhev/data-center/spUUID/sdUUID/images/imgUUID/volUUID
@@ -46,8 +47,10 @@ def getDomUuidFromVolumePath(volPath):
     sdUUIDPos = 3
 
     volList = volPath.split('/')
-    sdUUID = len(normpath(config.get('irs', 'repository')).split('/')) + sdUUIDPos
+    sdUUID = len(normpath(config.get('irs', 'repository')).split('/')) + \
+             sdUUIDPos
     return volList[sdUUID]
+
 
 def deleteMultipleVolumes(sdUUID, volumes, postZero):
     #Posix asserts that the blocks will be zeroed before reuse
@@ -97,12 +100,12 @@ class FileVolume(volume.Volume):
         'volFormat' - volume format RAW/QCOW2
         'preallocate' - sparse/preallocate
         """
-        volume.Volume.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        volume.Volume.validateCreateVolumeParams(volFormat, preallocate,
+                                                 srcVolUUID)
 
         # Snapshot should be COW volume
         if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
             raise se.IncorrectFormat(srcVolUUID)
-
 
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, volPath):
@@ -113,7 +116,8 @@ class FileVolume(volume.Volume):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
 
     @classmethod
-    def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+    def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
+               diskType, volUUID, desc, srcImgUUID, srcVolUUID):
         """
         Create a new volume with given size or snapshot
             'size' - in sectors
@@ -149,10 +153,14 @@ class FileVolume(volume.Volume):
                 raise se.createIllegalVolumeSnapshotError(pvol.volUUID)
 
         # Rollback sentinel, just to mark the start of the task
-        vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL, "fileVolume", "FileVolume", "startCreateVolumeRollback",
+        vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL,
+                                             "fileVolume", "FileVolume",
+                                             "startCreateVolumeRollback",
                                              [sdUUID, imgUUID, volUUID]))
         # create volume rollback
-        vars.task.pushRecovery(task.Recovery("halfbaked volume rollback", "fileVolume", "FileVolume", "halfbakedVolumeRollback",
+        vars.task.pushRecovery(task.Recovery("halfbaked volume rollback",
+                                             "fileVolume", "FileVolume",
+                                             "halfbakedVolumeRollback",
                                              [vol_path]))
         sizeBytes = int(size) * 512
         if preallocate == volume.PREALLOCATED_VOL:
@@ -169,39 +177,56 @@ class FileVolume(volume.Volume):
             # Sparse = Normal file
             oop.getProcessPool(sdUUID).createSparseFile(vol_path, sizeBytes)
 
-        cls.log.info("fileVolume: create: volUUID %s srcImg %s srvVol %s" % (volUUID, srcImgUUID, srcVolUUID))
+        cls.log.info("fileVolume: create: volUUID %s srcImg %s srvVol %s" %
+                     (volUUID, srcImgUUID, srcVolUUID))
         if not pvol:
-            cls.log.info("Request to create %s volume %s with size = %s sectors",
+            cls.log.info(
+                    "Request to create %s volume %s with size = %s sectors",
                      volume.type2name(volFormat), vol_path, size)
             if volFormat == volume.COW_FORMAT:
-                volume.createVolume(None, None, vol_path, size, volFormat, preallocate)
+                volume.createVolume(None, None, vol_path, size,
+                                    volFormat, preallocate)
         else:
             # Create hardlink to template and its meta file
             if imgUUID != srcImgUUID:
                 pvol.share(imageDir, hard=True)
-                # Make clone to link the new volume against the local shared volume
+
+                # Make clone to link the new volume against
+                # the local shared volume
                 pvol = FileVolume(repoPath, sdUUID, imgUUID, srcVolUUID)
             pvol.clone(imageDir, volUUID, volFormat, preallocate)
             size = pvol.getMetaParam(volume.SIZE)
 
         try:
-            vars.task.pushRecovery(task.Recovery("create file volume metadata rollback", "fileVolume", "FileVolume", "createVolumeMetadataRollback",
-                                                 [vol_path]))
+            vars.task.pushRecovery(task.Recovery(
+                                        "create file volume metadata rollback",
+                                        "fileVolume", "FileVolume",
+                                        "createVolumeMetadataRollback",
+                                        [vol_path]))
             # By definition volume is now a leaf
             cls.file_setrw(vol_path, rw=True)
             # Set metadata and mark volume as legal
-            cls.newMetadata(vol_path, sdUUID, imgUUID, srcVolUUID, size, volume.type2name(volFormat),
-                            volume.type2name(preallocate), voltype, diskType, desc, volume.LEGAL_VOL)
+            cls.newMetadata(vol_path, sdUUID, imgUUID, srcVolUUID, size,
+                            volume.type2name(volFormat),
+                            volume.type2name(preallocate), voltype, diskType,
+                            desc, volume.LEGAL_VOL)
             cls.newVolumeLease(sdUUID, volUUID, vol_path)
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumeMetadataWriteError(vol_path + ":" + str(e))
 
-        # Remove all previous rollbacks for 'halfbaked' volume and add rollback for 'real' volume creation
-        vars.task.replaceRecoveries(task.Recovery("create file volume rollback", "fileVolume", "FileVolume", "createVolumeRollback",
-                                             [repoPath, sdUUID, imgUUID, volUUID, imageDir]))
+        # Remove all previous rollbacks for 'halfbaked' volume and
+        # add rollback for 'real' volume creation
+        vars.task.replaceRecoveries(task.Recovery(
+                                        "create file volume rollback",
+                                        "fileVolume", "FileVolume",
+                                        "createVolumeRollback",
+                                        [repoPath,
+                                        sdUUID,
+                                        imgUUID,
+                                        volUUID,
+                                        imageDir]))
         return volUUID
-
 
     def delete(self, postZero, force):
         """
@@ -229,11 +254,13 @@ class FileVolume(volume.Volume):
             puuid = self.getParent()
             self.setParent(volume.BLANK_UUID)
             if puuid and puuid != volume.BLANK_UUID:
-                pvol = FileVolume(self.repoPath, self.sdUUID, self.imgUUID, puuid)
+                pvol = FileVolume(self.repoPath, self.sdUUID,
+                                  self.imgUUID, puuid)
                 pvol.recheckIfLeaf()
         except Exception, e:
             eFound = e
-            self.log.warning("cannot finalize parent volume %s", puuid, exc_info=True)
+            self.log.warning("cannot finalize parent volume %s",
+                             puuid, exc_info=True)
 
         try:
             self.oop.fileUtils.cleanupfiles([vol_path, lease_path])
@@ -247,7 +274,8 @@ class FileVolume(volume.Volume):
             return True
         except Exception, e:
             eFound = e
-            self.log.error("cannot remove volume's %s metadata", self.volUUID, exc_info=True)
+            self.log.error("cannot remove volume's %s metadata",
+                           self.volUUID, exc_info=True)
 
         raise eFound
 
@@ -263,9 +291,11 @@ class FileVolume(volume.Volume):
         """
         volume.Volume.share(self, dst_image_dir, hard=hard)
 
-        self.log.debug("share  meta of %s to %s hard %s" % (self.volUUID, dst_image_dir, hard))
+        self.log.debug("share  meta of %s to %s hard %s" %
+                       (self.volUUID, dst_image_dir, hard))
         src = self._getMetaVolumePath()
-        dst = self._getMetaVolumePath(os.path.join(dst_image_dir, self.volUUID))
+        dst = self._getMetaVolumePath(os.path.join(dst_image_dir,
+                                                   self.volUUID))
         if self.oop.fileUtils.pathExists(dst):
             self.oop.os.unlink(dst)
         if hard:
@@ -290,7 +320,7 @@ class FileVolume(volume.Volume):
             # NFS volumes.
             mode = self.oop.os.stat(path).st_mode
             usrmode = (mode & 0700) >> 3
-            grpmode =  mode & 0070
+            grpmode = mode & 0070
             if usrmode & grpmode != usrmode:
                 mode |= usrmode
                 self.oop.os.chmod(path, mode)
@@ -316,8 +346,7 @@ class FileVolume(volume.Volume):
         if self.oop.os.path.lexists(metaPath):
             self.oop.os.unlink(metaPath)
 
-
-    def getMetadata(self, vol_path = None, nocache=False):
+    def getMetadata(self, vol_path=None, nocache=False):
         """
         Get Meta data array of key,values lines
         """
@@ -358,12 +387,11 @@ class FileVolume(volume.Volume):
         sdUUID = getDomUuidFromVolumePath(vol_path)
         oop.getProcessPool(sdUUID).os.rename(meta + ".new", meta)
 
-
     @classmethod
     def createMetadata(cls, metaarr, vol_path):
         cls.__putMetadata(metaarr, vol_path)
 
-    def setMetadata(self, metaarr, vol_path = None, nocache=False):
+    def setMetadata(self, metaarr, vol_path=None, nocache=False):
         """
         Set the meta data hash as the new meta data of the Volume
         """
@@ -380,15 +408,19 @@ class FileVolume(volume.Volume):
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
         """
-        Fetch the list of the Volumes UUIDs, not including the shared base (template)
+        Fetch the list of the Volumes UUIDs,
+        not including the shared base (template)
         """
         # Get Volumes of an image
-        pattern = os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID, "*.meta")
+        pattern = os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES,
+                               imgUUID, "*.meta")
         files = oop.getProcessPool(sdUUID).glob.glob(pattern)
         volList = []
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
-            if sdCache.produce(sdUUID).produceVolume(imgUUID, volid).getImage() == imgUUID:
+            if (sdCache.produce(sdUUID).
+                        produceVolume(imgUUID, volid).
+                        getImage() == imgUUID):
                 volList.append(volid)
         return volList
 
@@ -410,7 +442,8 @@ class FileVolume(volume.Volume):
         Templated and shared disks volumes may result more then one image.
         """
         try:
-            pattern = os.path.join(self.repoPath, self.sdUUID, sd.DOMAIN_IMAGES, "*", self.volUUID)
+            pattern = os.path.join(self.repoPath, self.sdUUID,
+                                   sd.DOMAIN_IMAGES, "*", self.volUUID)
             vollist = self.oop.glob.glob(pattern)
             for vol in vollist[:]:
                 img = os.path.basename(os.path.dirname(vol))
@@ -420,7 +453,7 @@ class FileVolume(volume.Volume):
             self.log.info("Volume %s does not exists." % (self.volUUID))
             raise se.VolumeDoesNotExist("%s: %s:" % (self.volUUID, e))
 
-        imglist = [ os.path.basename(os.path.dirname(vol)) for vol in vollist ]
+        imglist = [os.path.basename(os.path.dirname(vol)) for vol in vollist]
 
         # Check image legality, if needed
         if legal:
@@ -469,7 +502,9 @@ class FileVolume(volume.Volume):
             sdUUID = getDomUuidFromVolumePath(oldPath)
             oop.getProcessPool(sdUUID).os.rename(oldPath, newPath)
         except Exception:
-            cls.log.error("Could not rollback volume rename (oldPath=%s newPath=%s)", oldPath, newPath, exc_info=True)
+            cls.log.error("Could not rollback "
+                          "volume rename (oldPath=%s newPath=%s)",
+                          oldPath, newPath, exc_info=True)
 
     def rename(self, newUUID, recovery=True):
         """
@@ -484,12 +519,16 @@ class FileVolume(volume.Volume):
 
         if recovery:
             name = "Rename volume rollback: " + volPath
-            vars.task.pushRecovery(task.Recovery(name, "fileVolume", "FileVolume", "renameVolumeRollback",
+            vars.task.pushRecovery(task.Recovery(name, "fileVolume",
+                                                 "FileVolume",
+                                                 "renameVolumeRollback",
                                                  [volPath, self.volumePath]))
         self.oop.os.rename(self.volumePath, volPath)
         if recovery:
             name = "Rename meta-volume rollback: " + metaPath
-            vars.task.pushRecovery(task.Recovery(name, "fileVolume", "FileVolume", "renameVolumeRollback",
+            vars.task.pushRecovery(task.Recovery(name, "fileVolume",
+                                                 "FileVolume",
+                                                 "renameVolumeRollback",
                                                  [metaPath, prevMetaPath]))
         self.oop.os.rename(prevMetaPath, metaPath)
         self.volUUID = newUUID
@@ -497,10 +536,12 @@ class FileVolume(volume.Volume):
 
     def validateImagePath(self):
         """
-        Validate that the image dir exists and valid. In the file volume repositories,
+        Validate that the image dir exists and valid.
+        In the file volume repositories,
         the image dir must exists after creation its first volume.
         """
-        imageDir = image.Image(self.repoPath).getImageDir(self.sdUUID, self.imgUUID)
+        imageDir = image.Image(self.repoPath).getImageDir(self.sdUUID,
+                                                          self.imgUUID)
         if not self.oop.os.path.isdir(imageDir):
             raise se.ImagePathError(imageDir)
         if not self.oop.os.access(imageDir, os.R_OK | os.W_OK | os.X_OK):
@@ -532,7 +573,8 @@ class FileVolume(volume.Volume):
     def validateVolumePath(self):
         """
         In file volume repositories,
-        the volume file and the volume md must exists after the image/volume is created.
+        the volume file and the volume md must exists after
+        the image/volume is created.
         """
         self.log.debug("validate path for %s" % self.volUUID)
         if not self.imagePath:
@@ -578,5 +620,3 @@ class FileVolume(volume.Volume):
             return self.getMetaParam(volume.MTIME)
         except se.MetaDataKeyNotFoundError:
             return self.oop.os.stat(volPath).st_mtime
-
-
