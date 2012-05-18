@@ -41,6 +41,7 @@ PEP8_WHITELIST = \
 	tests \
 	vdsm-tool \
 	vdsm/API.py \
+	vdsm/BindingXMLRPC.py \
 	vdsm/SecureXMLRPCServer.py \
 	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \

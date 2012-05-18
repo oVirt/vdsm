@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -85,9 +85,9 @@ class BindingXMLRPC(object):
         Return the IP address and last client information
         """
         last = self.server.lastClient
-        return { 'management_ip': self.serverIP,
-                 'lastClient': last,
-                 'lastClientIface': caps._getIfaceByIP(last) }
+        return {'management_ip': self.serverIP,
+                'lastClient': last,
+                'lastClientIface': caps._getIfaceByIP(last)}
 
     def _getKeyCertFilenames(self):
         """
@@ -105,7 +105,9 @@ class BindingXMLRPC(object):
         HTTP_HEADER_FLOWID = "FlowID"
 
         threadLocal = self.cif.threadLocal
+
         class LoggingMixIn:
+
             def log_request(self, code='-', size='-'):
                 """Track from where client connections are coming."""
                 self.server.lastClient = self.client_address[0]
@@ -128,8 +130,10 @@ class BindingXMLRPC(object):
             def setup(self):
                 threadLocal.client = self.client_address[0]
                 return basehandler.setup(self)
+
             def parse_request(self):
-                r = SecureXMLRPCServer.SecureXMLRPCRequestHandler.parse_request(self)
+                r = (SecureXMLRPCServer.SecureXMLRPCRequestHandler.
+                                                        parse_request(self))
                 threadLocal.flowID = self.headers.get(HTTP_HEADER_FLOWID)
                 return r
 
@@ -212,7 +216,8 @@ class BindingXMLRPC(object):
         vm = API.VM(self.cif, vmId)
         return vm.shutdown(delay, message)
 
-    def vmSetTicket(self, vmId, password, ttl, existingConnAction='disconnect', params = {}):
+    def vmSetTicket(self, vmId, password, ttl,
+                    existingConnAction='disconnect', params={}):
         vm = API.VM(self.cif, vmId)
         return vm.setTicket(password, ttl, existingConnAction, params)
 
@@ -391,7 +396,8 @@ class BindingXMLRPC(object):
         domain = API.StorageDomain(self.cif, sdUUID, spUUID)
         return domain.extend(devlist)
 
-    def domainFormat(self, sdUUID, autoDetach = False, options=None):
+    def domainFormat(self, sdUUID,
+                     autoDetach=False, options=None):
         domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
         return domain.format(autoDetach)
 
@@ -429,7 +435,8 @@ class BindingXMLRPC(object):
         domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
         return domain.validate()
 
-    def imageDelete(self, sdUUID, spUUID, imgUUID, postZero=False, force=False):
+    def imageDelete(self, sdUUID, spUUID,
+                    imgUUID, postZero=False, force=False):
         image = API.Image(self.cif, imgUUID, spUUID, sdUUID)
         return image.delete(postZero, force)
 
@@ -484,7 +491,8 @@ class BindingXMLRPC(object):
         pool = API.StoragePool(self.cif, spUUID)
         return pool.fence()
 
-    def poolGetBackedUpVmsInfo(self, spUUID, sdUUID, vmList=None, options=None):
+    def poolGetBackedUpVmsInfo(self, spUUID, sdUUID,
+                               vmList=None, options=None):
         pool = API.StoragePool(self.cif, spUUID)
         return pool.getBackedUpVmsInfo(sdUUID, vmList)
 
@@ -797,7 +805,8 @@ class BindingXMLRPC(object):
                 (self.poolSpmStart, 'spmStart'),
                 (self.poolSpmStop, 'spmStop'),
                 (self.poolUpgrade, 'upgradeStoragePool'),
-                (self.poolValidateStorageServerConnection, 'validateStorageServerConnection'),
+                (self.poolValidateStorageServerConnection,
+                 'validateStorageServerConnection'),
                 (self.poolUpdateVMs, 'updateVM'),
                 (self.poolRemoveVm, 'removeVM'),
                 (self.taskClear, 'clearTask'),
@@ -829,9 +838,13 @@ class BindingXMLRPC(object):
                 (self.devicesGetList, 'getDeviceList'),
                 (self.devicesGetVisibility, 'getDevicesVisibility'),
                 (self.deviceGetInfo, 'getDeviceInfo'),
-                (self.storageServerConnectionRefsAcquire, 'storageServer_ConnectionRefs_acquire'),
-                (self.storageServerConnectionRefsRelease, 'storageServer_ConnectionRefs_release'),
-                (self.storageServerConnectionRefsStatuses, 'storageServer_ConnectionRefs_statuses'),)
+                (self.storageServerConnectionRefsAcquire,
+                 'storageServer_ConnectionRefs_acquire'),
+                (self.storageServerConnectionRefsRelease,
+                 'storageServer_ConnectionRefs_release'),
+                (self.storageServerConnectionRefsStatuses,
+                 'storageServer_ConnectionRefs_statuses'),)
+
 
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
@@ -862,7 +875,8 @@ def wrapApiMethod(f):
                 res = errCode['recovery']
             else:
                 res = f(*args, **kwargs)
-            f.im_self.cif.log.log(logLevel, 'return %s with %s', f.__name__, res)
+            f.im_self.cif.log.log(logLevel, 'return %s with %s',
+                                  f.__name__, res)
             return res
         except libvirt.libvirtError, e:
             f.im_self.cif.log.error("libvirt error", exc_info=True)
