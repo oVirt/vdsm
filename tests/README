@@ -16,3 +16,11 @@ From within an installed directory:
 Individual files or test cases can be specified:
     ./run_tests.sh betterPopenTests.py
     ./run_tests.sh betterPopenTests.py:TestBetterPopen.testEcho
+
+
+Functional test suite:
+----------------------
+
+The functional test suite is designed to test a running vdsm instance.  To run
+the full suite of functional tests from within the installed directory:
+    ./run_tests.sh functional/*.py

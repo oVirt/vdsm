@@ -187,6 +187,7 @@ AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 AC_OUTPUT([
 	Makefile
 	tests/Makefile
+	tests/functional/Makefile
 	vds_bootstrap/Makefile
 	vdsm_cli/Makefile
 	vdsm_hooks/directlun/Makefile

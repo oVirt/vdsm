@@ -653,6 +653,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
 %{_datadir}/%{vdsm_name}/tests/netmaskconversions
+%{_datadir}/%{vdsm_name}/tests/functional/*.py*
 
 %files hook-vhostmd
 %defattr(-, root, root, -)

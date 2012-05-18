@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+SUBDIRS = functional
+
 test_modules = \
 	main.py \
 	alignmentScanTests.py \
