@@ -79,6 +79,7 @@ AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pythondir}/vdsm'])
 AC_SUBST([betterpopendir], ['${vdsmpylibdir}/betterPopen'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
+AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
 
 # VDSM registration default paths
 AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
@@ -216,5 +217,13 @@ AC_OUTPUT([
 	vdsm/rest/Makefile
 	vdsm/rest/templates/Makefile
 ])
-AC_OUTPUT([tests/run_tests.sh], [chmod +x tests/run_tests.sh])
+
+AC_OUTPUT([
+    tests/run_tests.sh
+    tests/run_tests_local.sh
+],[
+    chmod +x tests/run_tests.sh
+    chmod +x tests/run_tests_local.sh
+])
+
 

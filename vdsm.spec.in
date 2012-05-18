@@ -150,6 +150,14 @@ BuildArch:      noarch
 %description debug-plugin
 Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
 
+%package tests
+Summary:        VDSM Test Suite
+Requires:       vdsm = %{version}-%{release}
+BuildArch:      noarch
+
+%description tests
+A test suite for verifying the functionality of a running vdsm instance
+
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
 Requires:       vhostmd
@@ -637,6 +645,14 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/betterPopen/__init__.py*
 %{python_sitelib}/%{vdsm_name}/betterPopen/createprocess.so
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*
+
+%files tests
+%doc %{_datadir}/%{vdsm_name}/tests/README
+%defattr(-, root, root, -)
+%{_datadir}/%{vdsm_name}/tests/*.py*
+%{_datadir}/%{vdsm_name}/tests/run_tests.sh
+%{_datadir}/%{vdsm_name}/tests/cpu_info.out
+%{_datadir}/%{vdsm_name}/tests/netmaskconversions
 
 %files hook-vhostmd
 %defattr(-, root, root, -)

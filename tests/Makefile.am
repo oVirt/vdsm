@@ -38,15 +38,23 @@ test_modules = \
 	resourceManagerTests.py
 
 dist_noinst_DATA = \
-	$(test_modules) \
-	cpu_info.out \
+	run_tests_local.sh
+
+dist_vdsmtests_DATA = \
+	README \
 	netmaskconversions \
-	run_tests.sh \
+	cpu_info.out
+
+dist_vdsmtests_PYTHON = \
+	$(test_modules) \
 	testrunner.py \
 	testValidation.py
+
+dist_vdsmtests_SCRIPTS = \
+	run_tests.sh
 
 check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
 	@echo '*** into your environment.  Do not submit untested code!    ***'
-	$(top_srcdir)/tests/run_tests.sh $(test_modules)
+	$(top_srcdir)/tests/run_tests_local.sh $(test_modules)
 

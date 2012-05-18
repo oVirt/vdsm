@@ -1,0 +1,18 @@
+This test suite is built on the Nose framework.  For more information see:
+
+    http://readthedocs.org/docs/nose/en/latest/
+
+Running the test suite:
+-----------------------
+
+Running these tests is easy.
+
+From within the source directory you can execute all tests:
+    ./run_tests_local.sh *.py
+
+From within an installed directory:
+    ./run_tests.sh *.py
+
+Individual files or test cases can be specified:
+    ./run_tests.sh betterPopenTests.py
+    ./run_tests.sh betterPopenTests.py:TestBetterPopen.testEcho
