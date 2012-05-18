@@ -155,7 +155,14 @@ __SYSCONFIG_IPTABLES__ = '/etc/sysconfig/iptables'
 def _safeWrite(fname, s):
     "Write s into fname atomically"
 
-    t = tempfile.NamedTemporaryFile(delete=False)
+    # Python 2.4 (RHEL5 does not support delete= to NamedTemporaryFile
+    # we can use mkstemp() as an alternative for RHEL5 hosts)
+    if rhel6based:
+        t = tempfile.NamedTemporaryFile(delete=False)
+        tname = t.name
+    else:
+        tfd, tname = tempfile.mkstemp()
+        t = os.fdopen(tfd, "w")
     t.write(s)
     t.close()
 
@@ -164,7 +171,7 @@ def _safeWrite(fname, s):
     except:
         oldstat = None
 
-    shutil.move(t.name, fname)
+    shutil.move(tname, fname)
 
     try:
         if oldstat is not None:
