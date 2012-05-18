@@ -23,8 +23,11 @@ representation of the device for libvirt domain and adding
 it to the guest xml.
 '''
 
+
 def getDeviceDetails(addr):
-    ''' investigate device by its address and return [bus, slot, function] list '''
+    ''' investigate device by its address and return
+    [bus, slot, function] list
+    '''
 
     connection = libvirtconnection.get(None)
     nodeDevice = connection.nodeDeviceLookupByName(addr)
@@ -32,12 +35,18 @@ def getDeviceDetails(addr):
     devXml = minidom.parseString(nodeDevice.XMLDesc(0))
 
     bus = hex(int(devXml.getElementsByTagName('bus')[0].firstChild.nodeValue))
-    slot = hex(int(devXml.getElementsByTagName('slot')[0].firstChild.nodeValue))
-    function = hex(int(devXml.getElementsByTagName('function')[0].firstChild.nodeValue))
+    slot = hex(int(
+               devXml.getElementsByTagName('slot')[0]
+                     .firstChild.nodeValue))
+    function = hex(int(
+                   devXml.getElementsByTagName('function')[0]
+                         .firstChild.nodeValue))
 
-    sys.stderr.write('sriov: bus=%s slot=%s function=%s\n' % (bus, slot, function))
+    sys.stderr.write('sriov: bus=%s slot=%s function=%s\n' %
+                     (bus, slot, function))
 
     return (bus, slot, function)
+
 
 def detachDevice(addr):
     ''' detach device from host, enable attaching it to VM '''
@@ -49,6 +58,7 @@ def detachDevice(addr):
         nodeDevice.dettach()
     else:
         sys.stderr.write('sriov: cannot dettach device: %s\n' % addr)
+
 
 def createSriovElement(domxml, bus, slot, function):
     '''
@@ -76,8 +86,10 @@ def createSriovElement(domxml, bus, slot, function):
     source.appendChild(address)
     return hostdev
 
+
 def deviceExists(devName):
     return os.path.exists(SYS_NIC_PATH % devName)
+
 
 def getPciAddress(devPath):
     '''
@@ -89,6 +101,7 @@ def getPciAddress(devPath):
     tokens = p[1].split(':')
     return 'pci_%s_%s_%s' % (tokens[0], tokens[1], tokens[2].replace('.', '_'))
 
+
 def writeSriovCache(name, addr, devpath):
     if not os.path.exists(VDSM_VAR_HOOKS_DIR):
         os.makedirs(VDSM_VAR_HOOKS_DIR)
@@ -96,6 +109,7 @@ def writeSriovCache(name, addr, devpath):
     f = open(VDSM_VAR_HOOKS_DIR + '/' + SRIOV_CACHE_FILENAME, 'a')
     f.write(name + '=' + addr + '=' + devpath + '\n')
     f.close()
+
 
 def chown(devpath):
 
@@ -113,10 +127,11 @@ def chown(devpath):
             command = ['/bin/chown', owner, dev]
             retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
             if retcode != 0:
-                sys.stderr.write('sriov: error chown %s to %s, err = %s\n' % (dev, owner, err))
+                sys.stderr.write('sriov: error chown %s to %s, err = %s\n' %
+                                 (dev, owner, err))
                 sys.exit(2)
 
-if os.environ.has_key('sriov'):
+if 'sriov' in os.environ:
     try:
         nics = os.environ['sriov']
 
@@ -134,15 +149,18 @@ if os.environ.has_key('sriov'):
 
                 hostdev = createSriovElement(domxml, bus, slot, function)
 
-                sys.stderr.write('sriov: VF %s xml: %s\n' % (nic, hostdev.toxml()))
+                sys.stderr.write('sriov: VF %s xml: %s\n' %
+                                 (nic, hostdev.toxml()))
                 devices.appendChild(hostdev)
                 chown(devpath)
                 writeSriovCache(nic, addr, devpath)
             else:
-                sys.stderr.write('sriov: cannot find nic "%s", aborting\n' % nic)
+                sys.stderr.write('sriov: cannot find nic "%s", aborting\n' %
+                                 nic)
                 sys.exit(2)
 
         hooking.write_domxml(domxml)
     except:
-        sys.stderr.write('sriov: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('sriov: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)
