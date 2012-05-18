@@ -25,6 +25,7 @@ syntax:
     fileinject=/myfile:some file content\netc...
 '''
 
+
 def inject_file(filepath, content, drive, diskformat):
     try:
         g = guestfs.GuestFS()
@@ -41,39 +42,50 @@ def inject_file(filepath, content, drive, diskformat):
                 temp.file.flush()
 
                 if g.inspect_get_type == "windows":
-                    directory = g.case_sensitive_path(os.path.dirname(filepath))
-                    filepath = "%s/%s" % (directory, os.path.basename(filepath))
+                    directory = g.case_sensitive_path(os.path.dirname(
+                                                                filepath))
+                    filepath = "%s/%s" % (directory,
+                                          os.path.basename(filepath))
 
                 g.upload(temp.name, filepath)
 
                 # if no error we uploaded the file
-                sys.stderr.write('fileinject: file %s was uploaded successfully to VMs disk\n' % filepath)
+                sys.stderr.write('fileinject: file %s '
+                                 'was uploaded successfully to VMs disk\n' %
+                                 filepath)
                 return True
 
             except Exception as e1:
-                sys.stderr.write('fileinject: [error in inject_file uploading file]: %s\n' % e1.message)
+                sys.stderr.write('fileinject: '
+                                 '[error in inject_file uploading file]: '
+                                 '%s\n' % e1.message)
 
             g.umount(root)
             temp.close()
 
     except Exception as e:
-        sys.stderr.write('fileinject: [general error in inject_file]: %s\n' % e.message)
+        sys.stderr.write('fileinject: [general error in inject_file]: %s\n' %
+                         e.message)
 
     return False
 
-if os.environ.has_key('fileinject'):
+if 'fileinject' in os.environ:
     try:
         pos = os.environ['fileinject'].find(':')
 
         if pos < 0:
-            sys.stderr.write('fileinject: invalid syntax, expected file-name:file-content, no ":" separation found: %s pos: %d\n' % (os.environ['fileinject'], pos))
+            sys.stderr.write('fileinject: invalid syntax, '
+                             'expected file-name:file-content, '
+                             'no ":" separation found: %s pos: %d\n' %
+                             (os.environ['fileinject'], pos))
             sys.exit(2)
 
         filepath = os.environ['fileinject'][:pos]
-        content = os.environ['fileinject'][pos+1:]
+        content = os.environ['fileinject'][pos + 1:]
 
         if not filepath.startswith('/'):
-            sys.stderr.write("fileinject: filepath must start with '/', please refer to the README file\n")
+            sys.stderr.write("fileinject: filepath must start with '/', "
+                             "please refer to the README file\n")
             sys.exit(2)
 
         domxml = hooking.read_domxml()
@@ -83,19 +95,22 @@ if os.environ.has_key('fileinject'):
         diskformat = 'raw'
         rawcount = 0
         for disk in disks:
-            if disk.hasAttribute('device') and disk.attributes['device'].value == 'disk':
+            if (disk.hasAttribute('device') and
+                disk.attributes['device'].value == 'disk'):
                 sources = disk.getElementsByTagName('source')
                 if len(sources) > 0:
                     source = sources[0]
                     drivers = disk.getElementsByTagName('driver')
-                    if len(drivers) > 0 and drivers[0].hasAttribute('type') and drivers[0].attributes['type'].value == 'qcow2':
+                    if (len(drivers) > 0 and
+                        drivers[0].hasAttribute('type') and
+                        drivers[0].attributes['type'].value == 'qcow2'):
                         # we can only inject to 'raw' file format
                         continue
 
                     rawcount += 1
 
-                    # disk format can be raw or qcow2
-                    # http://libguestfs.org/guestfs.3.html#guestfs_add_drive_opts
+                  # disk format can be raw or qcow2
+                  # http://libguestfs.org/guestfs.3.html#guestfs_add_drive_opts
                     path = None
                     if source.hasAttribute('file'):
                         path = source.attributes['file'].value
@@ -103,14 +118,20 @@ if os.environ.has_key('fileinject'):
                         path = source.attributes['dev'].value
 
                     if not path is None:
-                        injected = inject_file(filepath, content, path, diskformat)
+                        injected = inject_file(filepath, content,
+                                               path, diskformat)
 
         if not injected:
             if rawcount == 0:
-                sys.stderr.write('fileinject: there is no "preallocated" (RAW format) disk in VM, cannot inject data\n')
+                sys.stderr.write('fileinject: there is no "preallocated" '
+                                 '(RAW format) disk in VM, '
+                                 'cannot inject data\n')
             else:
-                sys.stderr.write('fileinject: Cannot inject data, path not exists: %s\n' % os.path.dirname(filepath))
+                sys.stderr.write('fileinject: Cannot inject data, '
+                                 'path not exists: %s\n' %
+                                 os.path.dirname(filepath))
             sys.exit(2)
     except:
-        sys.stderr.write('fileinject: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('fileinject: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

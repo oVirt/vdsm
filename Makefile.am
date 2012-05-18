@@ -63,7 +63,8 @@ PEP8_WHITELIST = \
 	vdsm/rest/Controller.py \
 	vdsm_cli/vdsClientGluster.py \
 	vdsm_cli/vdsClient.py \
-	vdsm_cli/vdscli.py.in
+	vdsm_cli/vdscli.py.in \
+	vdsm_hooks/fileinject/before_vm_start.py
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)
