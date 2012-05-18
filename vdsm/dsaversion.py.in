@@ -30,7 +30,7 @@ version_info = {
     'version_name': version_name,
     'software_version': software_version,
     'software_revision': software_revision,
-    'supportedRHEVMs': ['3.0'],
+    'supportedRHEVMs': ['3.0', '3.1'],
     'supportedProtocols': ['2.2', '2.3'],
     'clusterLevels': ['3.0', '3.1'],
 }
