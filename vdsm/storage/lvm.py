@@ -184,7 +184,7 @@ def _attr2NamedTuple(sAttr, attrMask, label):
     Fields are named as in attrMask.
     """
     Attrs = namedtuple(label, attrMask)
-    values = tuple(sAttr) # tuple("wz--n-") = ('w', 'z', '-', '-', 'n', '-')
+    values = tuple(sAttr[:len(attrMask)])  # tuple("wz--n-") = ('w', 'z', '-', '-', 'n', '-')
     attrs = Attrs(*values)
     return attrs
 
