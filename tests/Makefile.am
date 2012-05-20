@@ -27,6 +27,7 @@ test_modules = \
 	betterThreadingTests.py \
 	capsTests.py \
 	fileUtilTests.py \
+	getAllVolumesTests.py \
 	gluster_cli_tests.py \
 	guestIFTests.py \
 	hooksTests.py \
@@ -43,7 +44,9 @@ test_modules = \
 dist_noinst_DATA = \
 	run_tests_local.sh \
 	cpu_info.out \
-	route_info.out
+	route_info.out \
+	glob_1c60971a-8647-44ac-ae33-6520887f8843.out \
+	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out
 
 dist_vdsmtests_DATA = \
 	README \

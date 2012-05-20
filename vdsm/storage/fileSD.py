@@ -287,7 +287,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
 
-        Template self image is the 1st term in teplate volume entry images.
+        Template self image is the 1st term in template volume entry images.
         The parent can't be determined in file domain without reading the
         metadata.
         Setting parent = None for compatibility with block version.
