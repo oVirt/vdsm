@@ -26,7 +26,7 @@ import testValidation
 from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
 
-import utils
+from vdsm import utils
 
 try:
     import parted_utils as putils

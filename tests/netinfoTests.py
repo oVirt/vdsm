@@ -22,7 +22,7 @@
 import os
 from testrunner import VdsmTestCase as TestCaseBase
 
-import netinfo
+from vdsm import netinfo
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
