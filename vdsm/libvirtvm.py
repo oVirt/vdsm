@@ -709,6 +709,18 @@ class _DomXML:
             topo.setAttribute('threads', str(threads))
             cpu.appendChild(topo)
 
+        #CPU-pinning support
+        # see http://www.ovirt.org/wiki/Features/Design/cpu-pinning
+        if 'cpuPinning' in self.conf:
+            cputune = self.doc.createElement('cputune')
+            cpuPinning = self.conf.get('cpuPinning')
+            for cpuPin in cpuPinning.keys():
+                vcpupin = self.doc.createElement('vcpupin')
+                vcpupin.setAttribute('vcpu', cpuPin)
+                vcpupin.setAttribute('cpuset', cpuPinning[cpuPin])
+                cputune.appendChild(vcpupin)
+            self.dom.appendChild(cputune)
+
         # This hack is for backward compatibility as the libvirt does not allow
         # 'qemu64' guest on intel hardware
         if model == 'qemu64' and not '+svm' in features:
