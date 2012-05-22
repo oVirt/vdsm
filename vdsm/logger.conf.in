@@ -37,6 +37,7 @@ qualname=irs.metadata
 propagate=0
 
 [handler_syslog]
+level=WARNING
 class=handlers.SysLogHandler
 formatter=sysform
 args=('/dev/log', handlers.SysLogHandler.LOG_USER)
