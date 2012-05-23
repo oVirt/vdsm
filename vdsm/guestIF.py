@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -24,11 +24,12 @@ import socket
 import json
 import supervdsm
 
-__RESTRICTED_CHARS = set(range(8+1)).union(
-    set(range(0xB,0xC+1))).union(
-    set(range(0xE,0x1F+1))).union(
-    set(range(0x7F,0x84+1))).union(
-    set(range(0x86,0x9F+1)))
+__RESTRICTED_CHARS = set(range(8 + 1)).union(
+    set(range(0xB, 0xC + 1))).union(
+    set(range(0xE, 0x1F + 1))).union(
+    set(range(0x7F, 0x84 + 1))).union(
+    set(range(0x86, 0x9F + 1)))
+
 
 def _filterXmlChars(u):
     """
@@ -40,10 +41,13 @@ def _filterXmlChars(u):
     """
 
     def maskRestricted(c):
-        if ord(c) in __RESTRICTED_CHARS: return '?'
-        else: return c
+        if ord(c) in __RESTRICTED_CHARS:
+            return '?'
+        else:
+            return c
 
     return ''.join(maskRestricted(c) for c in u)
+
 
 class GuestAgent ():
     def __init__(self, socketName, channelListener, log, user='Unknown',
@@ -56,9 +60,10 @@ class GuestAgent ():
         self._socketName = socketName
         self._stopped = True
         self.guestStatus = None
-        self.guestInfo = {'username': user, 'memUsage': 0, 'guestIPs': ips,
-                          'session': 'Unknown', 'appsList': [], 'disksUsage': [],
-                          'netIfaces': []}
+        self.guestInfo = {
+                'username': user, 'memUsage': 0, 'guestIPs': ips,
+                'session': 'Unknown', 'appsList': [], 'disksUsage': [],
+                'netIfaces': []}
         self._agentTimestamp = 0
         self._channelListener = channelListener
         if connect:
@@ -89,7 +94,7 @@ class GuestAgent ():
             self.log.debug("Connection attempt failed: %s", err)
         return ret
 
-    def _forward(self, cmd, args = {}):
+    def _forward(self, cmd, args={}):
         args['__name__'] = cmd
         message = (json.dumps(args) + '\n').encode('utf8')
         self._sock.send(message)
@@ -115,15 +120,19 @@ class GuestAgent ():
                 iface['inet'] = map(_filterXmlChars, iface['inet'])
                 iface['inet6'] = map(_filterXmlChars, iface['inet6'])
                 interfaces.append(iface)
-                # Provide the old information which includes only the IP addresses.
+                # Provide the old information which includes
+                # only the IP addresses.
                 old_ips += ' '.join(iface['inet']) + ' '
             self.guestInfo['netIfaces'] = interfaces
             self.guestInfo['guestIPs'] = old_ips.strip()
         elif message == 'applications':
-            self.guestInfo['appsList'] = map(_filterXmlChars, args['applications'])
+            self.guestInfo['appsList'] = map(_filterXmlChars,
+                                             args['applications'])
         elif message == 'active-user':
             currentUser = _filterXmlChars(args['name'])
-            if (currentUser != self.guestInfo['username']) and not (currentUser=='Unknown' and self.guestInfo['username']=='None'):
+            if ((currentUser != self.guestInfo['username']) and
+                not (currentUser == 'Unknown' and
+                     self.guestInfo['username'] == 'None')):
                 self.guestInfo['username'] = currentUser
                 self.guestInfo['lastLogin'] = time.time()
             self.log.debug(repr(self.guestInfo['username']))
@@ -161,13 +170,13 @@ class GuestAgent ():
         self._channelListener.unregister(self._sock_fd)
         self._sock.close()
 
-    def isResponsive (self):
+    def isResponsive(self):
         return time.time() - self._agentTimestamp < 120
 
-    def getStatus (self):
+    def getStatus(self):
         return self.guestStatus
 
-    def getGuestInfo (self):
+    def getGuestInfo(self):
         if self.isResponsive():
             return self.guestInfo
         else:
@@ -176,7 +185,7 @@ class GuestAgent ():
                  'appsList': self.guestInfo['appsList'],
                  'guestIPs': self.guestInfo['guestIPs']}
 
-    def onReboot (self):
+    def onReboot(self):
         self.guestStatus = 'RebootInProgress'
         self.guestInfo['lastUser'] = '' + self.guestInfo['username']
         self.guestInfo['username'] = 'Unknown'
@@ -189,34 +198,35 @@ class GuestAgent ():
         except:
             self.log.error("desktopLock failed", exc_info=True)
 
-    def desktopLogin (self, domain, user, password):
+    def desktopLogin(self, domain, user, password):
         try:
             self.log.debug("desktopLogin called")
             if domain != '':
                 username = user + '@' + domain
             else:
                 username = user
-            self._forward('login', { 'username' : username, "password" : password })
+            self._forward('login', {'username': username,
+                                    "password": password})
         except:
             self.log.error("desktopLogin failed", exc_info=True)
 
-    def desktopLogoff (self, force):
+    def desktopLogoff(self, force):
         try:
             self.log.debug("desktopLogoff called")
             self._forward('log-off')
         except:
             self.log.error("desktopLogoff failed", exc_info=True)
 
-    def desktopShutdown (self, timeout, msg):
+    def desktopShutdown(self, timeout, msg):
         try:
             self.log.debug("desktopShutdown called")
-            self._forward('shutdown', { 'timeout' : timeout, 'message' : msg })
+            self._forward('shutdown', {'timeout': timeout, 'message': msg})
         except:
             self.log.error("desktopShutdown failed", exc_info=True)
 
-    def sendHcCmdToDesktop (self, cmd):
+    def sendHcCmdToDesktop(self, cmd):
         try:
-            self.log.debug("sendHcCmdToDesktop('%s')"%(cmd))
+            self.log.debug("sendHcCmdToDesktop('%s')" % (cmd))
             self._forward(str(cmd))
         except:
             self.log.error("sendHcCmdToDesktop failed", exc_info=True)
@@ -232,7 +242,7 @@ class GuestAgent ():
     def _onChannelRead(self):
         try:
             while True:
-                self._buffer += self._sock.recv(2**16)
+                self._buffer += self._sock.recv(2 ** 16)
         except socket.error as err:
             if err.errno == 11:
                 # Nothing more to receive (Resource temporarily unavailable).

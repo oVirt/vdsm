@@ -47,6 +47,7 @@ PEP8_WHITELIST = \
 	vdsm/debugPluginClient.py \
 	vdsm/exception.py \
 	vdsm/define.py \
+	vdsm/guestIF.py \
 	vdsm/hooks.py \
 	vdsm/md_utils.py \
 	vdsm/parted_utils.py \
