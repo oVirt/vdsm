@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -48,13 +48,14 @@ try:
 except ImportError:
     _glusterEnabled = False
 
+
 class clientIF:
     """
     The client interface of vdsm.
 
     Exposes vdsm verbs as xml-rpc functions.
     """
-    def __init__ (self, log):
+    def __init__(self, log):
         """
         Initialize the (single) clientIF instance
 
@@ -79,8 +80,9 @@ class clientIF:
             self.vmContainer = {}
             ifids = netinfo.nics() + netinfo.bondings()
             ifrates = map(netinfo.speed, ifids)
-            self._hostStats = utils.HostStatsThread(cif=self, log=log, ifids=ifids,
-                                                ifrates=ifrates)
+            self._hostStats = utils.HostStatsThread(
+                                        cif=self, log=log, ifids=ifids,
+                                        ifrates=ifrates)
             self._hostStats.start()
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
                       caps.CpuInfo().cores())
@@ -93,12 +95,14 @@ class clientIF:
             self._netConfigDirty = False
             threading.Thread(target=self._recoverExistingVms,
                              name='clientIFinit').start()
-            self.channelListener.settimeout(config.getint('vars', 'guest_agent_timeout'))
+            self.channelListener.settimeout(
+                    config.getint('vars', 'guest_agent_timeout'))
             self.channelListener.start()
             self.threadLocal = threading.local()
             self.threadLocal.client = ''
         except:
-            self.log.error('failed to init clientIF, shutting down storage dispatcher')
+            self.log.error('failed to init clientIF, '
+                           'shutting down storage dispatcher')
             if self.irs:
                 self.irs.prepareForShutdown()
             raise
@@ -151,7 +155,6 @@ class clientIF:
                 self.log.warn('Unable to load the rest server module. '
                               'Please make sure it is installed.')
 
-
     def _syncLibvirtNetworks(self):
         """
             function is mostly for upgrade from versions that did not
@@ -162,7 +165,8 @@ class clientIF:
         bridges = netinfo.bridges()
         for bridge in bridges:
             if not bridge in nets:
-                configNetwork.createLibvirtNetwork(network=bridge, bridged=True)
+                configNetwork.createLibvirtNetwork(network=bridge,
+                                                   bridged=True)
         # remove bridged networks that their bridge not exists
         #TODO:
         # this should probably go into vdsm-restore-net script
@@ -220,8 +224,9 @@ class clientIF:
         if type(drive) is dict:
             # PDIV drive format
             if drive['device'] == 'disk' and vm.isVdsmImage(drive):
-                res = self.irs.prepareImage(drive['domainID'], drive['poolID'],
-                                            drive['imageID'], drive['volumeID'])
+                res = self.irs.prepareImage(
+                                drive['domainID'], drive['poolID'],
+                                drive['imageID'], drive['volumeID'])
 
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
@@ -230,7 +235,7 @@ class clientIF:
                 drive['volumeChain'] = res['chain']
 
             # GUID drive format
-            elif drive.has_key("GUID"):
+            elif "GUID" in drive:
                 volPath = os.path.join("/dev/mapper", drive["GUID"])
 
                 if not os.path.exists(volPath):
@@ -241,11 +246,10 @@ class clientIF:
                     raise vm.VolumeError(drive)
 
             # UUID drive format
-            elif drive.has_key("UUID"):
+            elif "UUID" in drive:
                 volPath = self._getUUIDSpecPath(drive["UUID"])
 
-            elif drive.has_key('specParams') and \
-                 drive['specParams'].has_key('vmPayload'):
+            elif 'specParams' in drive and 'vmPayload' in drive['specParams']:
                 '''
                 vmPayload is a key in specParams
                 'vmPayload': {'file': {'filename': 'content'}}
@@ -255,9 +259,10 @@ class clientIF:
                         if drive['device'] == 'cdrom':
                             volPath = supervdsm.getProxy().mkIsoFs(vmId, files)
                         elif drive['device'] == 'floppy':
-                            volPath = supervdsm.getProxy().mkFloppyFs(vmId, files)
+                            volPath = \
+                                   supervdsm.getProxy().mkFloppyFs(vmId, files)
 
-            elif drive.has_key("path"):
+            elif "path" in drive:
                 volPath = drive['path']
 
         # For BC sake: None as argument
@@ -294,14 +299,18 @@ class clientIF:
                 vmId = v.UUIDString()
                 if not self._recoverVm(vmId):
                     #RH qemu proc without recovery
-                    self.log.info('loose qemu process with id: %s found, killing it.', vmId)
+                    self.log.info('loose qemu process with id: '
+                                  '%s found, killing it.', vmId)
                     try:
                         v.destroy()
                     except libvirt.libvirtError:
-                        self.log.error('failed to kill loose qemu process with id: %s', vmId, exc_info=True)
+                        self.log.error('failed to kill loose qemu '
+                                       'process with id: %s',
+                                       vmId, exc_info=True)
 
-            while self._enabled and \
-                  'WaitForLaunch' in [v.lastStatus for v in self.vmContainer.values()]:
+            while (self._enabled and
+                  'WaitForLaunch' in [v.lastStatus for v in
+                                      self.vmContainer.values()]):
                 time.sleep(1)
             self._cleanOldFiles()
             self._recovery = False
@@ -319,9 +328,11 @@ class clientIF:
                 try:
                     # Do not prepare volumes when system goes down
                     if self._enabled:
-                        vmObj.preparePaths(vmObj.getConfDevices()[vm.DISK_DEVICES])
+                        vmObj.preparePaths(
+                                vmObj.getConfDevices()[vm.DISK_DEVICES])
                 except:
-                    self.log.error("Vm %s recovery failed", vmId, exc_info=True)
+                    self.log.error("Vm %s recovery failed",
+                                   vmId, exc_info=True)
         except:
             self.log.error("Vm's recovery failed", exc_info=True)
 
@@ -338,7 +349,7 @@ class clientIF:
             else:
                 raise
         except IndexError:
-            pass #no sysinfo in xml
+            pass  # no sysinfo in xml
         else:
             systype = sysinfo.getAttribute("type")
             if systype == "smbios":
@@ -393,11 +404,16 @@ class clientIF:
                 vmId, fileType = f.split(".", 1)
                 if fileType in ["guest.socket", "monitor.socket", "pid",
                                     "stdio.dump", "recovery"]:
-                    if vmId in self.vmContainer: continue
-                    if f == 'vdsmd.pid': continue
-                    if f == 'respawn.pid': continue
-                    if f == 'svdsm.pid': continue
-                    if f == 'svdsm.sock': continue
+                    if vmId in self.vmContainer:
+                        continue
+                    if f == 'vdsmd.pid':
+                        continue
+                    if f == 'respawn.pid':
+                        continue
+                    if f == 'svdsm.pid':
+                        continue
+                    if f == 'svdsm.sock':
+                        continue
                 else:
                     continue
                 self.log.debug("removing old file " + f)
