@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -44,10 +44,10 @@ import storage.hba
 
 # For debian systems we can use python-apt if available
 try:
-  import apt
-  python_apt = True
+    import apt
+    python_apt = True
 except ImportError:
-  python_apt = False
+    python_apt = False
 
 
 class OSName:
@@ -57,6 +57,7 @@ class OSName:
     FEDORA = 'Fedora'
     RHEVH = 'RHEV Hypervisor'
     DEBIAN = 'Debian'
+
 
 class CpuInfo(object):
     def __init__(self, cpuinfo='/proc/cpuinfo'):
@@ -78,7 +79,7 @@ class CpuInfo(object):
                     for p in self._info.values()))
 
     def sockets(self):
-        phys_ids = [ p.get('physical id', '0') for p in self._info.values() ]
+        phys_ids = [p.get('physical id', '0') for p in self._info.values()]
         return len(set(phys_ids))
 
     def flags(self):
@@ -89,6 +90,7 @@ class CpuInfo(object):
 
     def model(self):
         return self._info.itervalues().next()['model name']
+
 
 @utils.memoized
 def _getEmulatedMachines():
@@ -101,7 +103,9 @@ def _getEmulatedMachines():
 
     guestTag = guestTag[0]
 
-    return [ m.firstChild.toxml() for m in guestTag.getElementsByTagName('machine') ]
+    return [m.firstChild.toxml()
+            for m in guestTag.getElementsByTagName('machine')]
+
 
 def _getAllCpuModels():
     cpu_map = minidom.parseString(
@@ -127,6 +131,7 @@ def _getAllCpuModels():
 
     return allModels
 
+
 @utils.memoized
 def _getCompatibleCpuModels():
     c = libvirtconnection.get()
@@ -147,8 +152,9 @@ def _getCompatibleCpuModels():
                 return False
             raise
 
-    return [ 'model_' + model for (model, vendor)
-        in allModels.iteritems() if compatible(model, vendor) ]
+    return ['model_' + model for (model, vendor)
+            in allModels.iteritems() if compatible(model, vendor)]
+
 
 def _parseKeyVal(lines, delim='='):
     d = {}
@@ -160,13 +166,15 @@ def _parseKeyVal(lines, delim='='):
         d[k] = v
     return d
 
+
 def _getIscsiIniName():
     try:
         return _parseKeyVal(
-                    file('/etc/iscsi/initiatorname.iscsi') )['InitiatorName']
+                    file('/etc/iscsi/initiatorname.iscsi'))['InitiatorName']
     except:
         logging.error('reporting empty InitiatorName', exc_info=True)
     return ''
+
 
 def getos():
     if os.path.exists('/etc/rhev-hypervisor-release'):
@@ -182,7 +190,10 @@ def getos():
     else:
         return OSName.UNKNOWN
 
+
 __osversion = None
+
+
 def osversion():
     global __osversion
     if __osversion is not None:
@@ -193,12 +204,12 @@ def osversion():
     osname = getos()
     try:
         if osname == OSName.RHEVH:
-            d = _parseKeyVal( file('/etc/default/version') )
+            d = _parseKeyVal(file('/etc/default/version'))
             version = d.get('VERSION', '')
             release = d.get('RELEASE', '')
         elif osname == OSName.DEBIAN:
             version = linecache.getline('/etc/debian_version', 1).strip("\n")
-            release = "" # Debian just has a version entry
+            release = ""  # Debian just has a version entry
         else:
             p = subprocess.Popen([constants.EXT_RPM, '-qf', '--qf',
                 '%{VERSION} %{RELEASE}\n', '/etc/redhat-release'],
@@ -213,6 +224,7 @@ def osversion():
     __osversion = dict(release=release, version=version, name=osname)
     return __osversion
 
+
 def get():
     caps = {}
 
@@ -220,7 +232,7 @@ def get():
                 str(config.getboolean('vars', 'fake_kvm_support') or
                     os.path.exists('/dev/kvm')).lower()
 
-    cpuInfo =  CpuInfo()
+    cpuInfo = CpuInfo()
     caps['cpuCores'] = str(cpuInfo.cores())
     caps['cpuSockets'] = str(cpuInfo.sockets())
     caps['cpuSpeed'] = cpuInfo.mhz()
@@ -255,10 +267,11 @@ def get():
     caps['memSize'] = str(utils.readMemInfo()['MemTotal'] / 1024)
     caps['reservedMem'] = str(
             config.getint('vars', 'host_mem_reserve') +
-            config.getint('vars', 'extra_mem_reserve') )
+            config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
     return caps
+
 
 def _getIfaceByIP(addr, fileName='/proc/net/route'):
     remote = struct.unpack('I', socket.inet_aton(addr))[0]
@@ -269,7 +282,8 @@ def _getIfaceByIP(addr, fileName='/proc/net/route'):
         mask = int(mask, 16)
         if remote & mask == dest & mask:
             return iface
-    return '' # should never get here w/ default gw
+    return ''  # should never get here w/ default gw
+
 
 def _getKeyPackages():
     def kernelDict():
@@ -281,7 +295,7 @@ def _getKeyPackages():
             ver, rel = '0', '0'
         try:
             t = file('/proc/sys/kernel/version').read().split()[2:]
-            del t[4] # Delete timezone
+            del t[4]  # Delete timezone
             t = time.mktime(time.strptime(' '.join(t)))
         except:
             logging.error('kernel build time not found', exc_info=True)
@@ -299,7 +313,8 @@ def _getKeyPackages():
                 rc, out, err = utils.execCmd([constants.EXT_RPM, '-q', '--qf',
                       '%{NAME}\t%{VERSION}\t%{RELEASE}\t%{BUILDTIME}\n', pkg],
                       sudo=False)
-                if rc: continue
+                if rc:
+                    continue
                 line = out[-1]
                 n, v, r, t = line.split()
                 pkgs[pkg] = dict(version=v, release=r, buildtime=t)
@@ -307,9 +322,9 @@ def _getKeyPackages():
             logging.error('', exc_info=True)
 
     elif getos() == OSName.DEBIAN and python_apt == True:
-        KEY_PACKAGES = { 'qemu-kvm':'qemu-kvm', 'qemu-img':'qemu-utils',
-                         'vdsm':'vdsmd', 'spice-server':'libspice-server1',
-                         'libvirt':'libvirt0' }
+        KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm', 'qemu-img': 'qemu-utils',
+                        'vdsm': 'vdsmd', 'spice-server': 'libspice-server1',
+                        'libvirt': 'libvirt0'}
 
         cache = apt.Cache()
 
@@ -317,9 +332,9 @@ def _getKeyPackages():
             try:
                 deb_pkg = KEY_PACKAGES[pkg]
                 ver = cache[deb_pkg].installed.version
-                pkgs[pkg] = dict(version=ver, release="", buildtime="") # Debian just offers a version
+                # Debian just offers a version
+                pkgs[pkg] = dict(version=ver, release="", buildtime="")
             except:
                 logging.error('', exc_info=True)
 
     return pkgs
-

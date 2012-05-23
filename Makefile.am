@@ -44,6 +44,7 @@ PEP8_WHITELIST = \
 	vdsm/BindingXMLRPC.py \
 	vdsm/SecureXMLRPCServer.py \
 	vdsm/blkid.py \
+	vdsm/caps.py \
 	vdsm/debugPluginClient.py \
 	vdsm/define.py \
 	vdsm/exception.py \
