@@ -695,14 +695,29 @@ def assertBridgeClean(bridge, vlan, bonding, nics):
     if brifs:
         raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'bridge %s has interfaces %s connected' % (bridge, brifs))
 
-def showNetwork(bridge):
+def showNetwork(network):
     _netinfo = NetInfo()
-    if bridge not in _netinfo.networks:
-        print "Bridge %r doesn't exist" % bridge
+    if network not in _netinfo.networks:
+        print "Network %r doesn't exist" % network
         return
 
-    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(bridge)
-    print "Bridge %s: vlan=%s, bonding=%s, nics=%s" % (bridge, vlan, bonding, nics)
+    bridged = _netinfo.networks[network]['bridged']
+    print "Network %s(Bridged: %s):" % (network, bridged)
+
+    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
+
+    if bridged:
+        ipaddr = _netinfo.networks[network]['addr']
+        netmask = _netinfo.networks[network]['netmask']
+        gateway = _netinfo.networks[network]['gateway']
+        print "ipaddr=%s, netmask=%s, gateway=%s" % (ipaddr, netmask, gateway)
+    else:
+        iface = _netinfo.networks[network]['interface']
+        ipaddr = _netinfo.nics[iface]['addr']
+        netmask = _netinfo.nics[iface]['netmask']
+        print "ipaddr=%s, netmask=%s" % (ipaddr, netmask)
+
+    print "vlan=%s, bonding=%s, nics=%s" % (vlan, bonding, nics)
 
 def listNetworks():
     _netinfo = NetInfo()
