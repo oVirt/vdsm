@@ -20,6 +20,7 @@
 
 import urllib2
 import xml.etree.ElementTree as etree
+import json
 
 from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
@@ -66,6 +67,16 @@ class RestTest(RestTestBase):
         resp = request("/api?schema")
         self.assertEquals('{http://www.w3.org/2001/XMLSchema}schema',
                           etree.XML(resp).tag)
+
+    def testVersion(self):
+        import dsaversion as d
+        resp = json.loads(request("/api", 'json'))
+        verStr = "%s.%s.%s" % (resp['product_info']['version']['major'],
+                               resp['product_info']['version']['minor'],
+                               resp['product_info']['version']['build'])
+        self.assertEquals(d.software_version, verStr)
+        self.assertEquals(d.software_revision,
+                          str(resp['product_info']['version']['revision']))
 
     def test404(self):
         """
