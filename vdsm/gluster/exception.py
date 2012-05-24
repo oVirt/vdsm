@@ -40,10 +40,10 @@ class GlusterException(VdsmException):
     out = []
     err = []
 
-    def __init__(self, rc, out, err):
-        self.rc = rc or 0
-        self.out = out or []
-        self.err = err or []
+    def __init__(self, rc=0, out=[], err=[]):
+        self.rc = rc
+        self.out = out
+        self.err = err
 
     def __str__(self):
         return '%s\nerror: %s%s%sreturn code: %s' % \
@@ -79,8 +79,7 @@ class GlusterMissingArgumentException(GlusterGeneralException):
     message = "Missing argument"
 
     def __init__(self, *args):
-        GlusterGeneralException.__init__(self, 0, [], [])
-        self.message = 'Missing argument: %s' % args
+        self.message = 'Missing argument: %s' % (args,)
 
 
 # Volume

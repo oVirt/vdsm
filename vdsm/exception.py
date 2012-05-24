@@ -23,9 +23,9 @@ class VdsmException(Exception):
     code = 0
     message = "Vdsm Exception"
 
-    def __init__(self, code, message):
-        self.code = code or 0
-        self.message = message or 'Vdsm Exception'
+    def __init__(self, code=0, message='Vdsm Exception'):
+        self.code = code
+        self.message = message
 
     def __str__(self):
         return self.message
