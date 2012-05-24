@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -48,19 +48,27 @@ log = logging.getLogger('fileUtils')
 PAGESIZE = libc.getpagesize()
 CharPointer = ctypes.POINTER(ctypes.c_char)
 
-class TarCopyFailed(RuntimeError): pass
+
+class TarCopyFailed(RuntimeError):
+    pass
+
 
 def tarCopy(src, dst, exclude=[]):
     excludeArgs = ["--exclude=%s" % path for path in exclude]
 
-    tsrc = subprocess.Popen([constants.EXT_TAR, "cf", "-"] + excludeArgs + ["-C", src, "."], stdout=subprocess.PIPE)
-    tdst = subprocess.Popen([constants.EXT_TAR, "xf", "-", "-C", dst], stdin=tsrc.stdout, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    tsrc = subprocess.Popen([constants.EXT_TAR, "cf", "-"] +
+                            excludeArgs + ["-C", src, "."],
+                            stdout=subprocess.PIPE)
+    tdst = subprocess.Popen([constants.EXT_TAR, "xf", "-", "-C", dst],
+                            stdin=tsrc.stdout, stderr=subprocess.PIPE,
+                            stdout=subprocess.PIPE)
     tsrc.stdout.close()
     out, err = tdst.communicate()
     tsrc.wait()
 
     if tdst.returncode != 0 or tsrc.returncode != 0:
         raise TarCopyFailed(tsrc.returncode, tdst.returncode, out, err)
+
 
 def isStaleHandle(path):
     exists = os.path.exists(path)
@@ -79,11 +87,13 @@ def isStaleHandle(path):
 
     return False
 
+
 def transformPath(remotePath):
     """
     Transform remote path to new one for local mount
     """
-    return remotePath.replace('_','__').replace('/','_')
+    return remotePath.replace('_', '__').replace('/', '_')
+
 
 def validateAccess(targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
     """
@@ -91,6 +101,7 @@ def validateAccess(targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
     """
     if not os.access(targetPath, perms):
         raise se.StorageServerAccessPermissionError(targetPath)
+
 
 def validateQemuReadable(targetPath):
     """
@@ -102,6 +113,7 @@ def validateQemuReadable(targetPath):
     if not (st.st_gid in gids and st.st_mode & stat.S_IRGRP or
             st.st_mode & stat.S_IROTH):
         raise se.StorageServerAccessPermissionError(targetPath)
+
 
 def pathExists(filename, writable=False):
     check = os.R_OK
@@ -117,6 +129,7 @@ def pathExists(filename, writable=False):
 
     return os.access(filename, check)
 
+
 def cleanupfiles(filelist):
     """
     Removes the files in the list
@@ -125,11 +138,13 @@ def cleanupfiles(filelist):
         if os.path.lexists(item):
             os.remove(item)
 
+
 def cleanupdir(dirPath, ignoreErrors=True):
     """
     Recursively remove all the files and directories in the given directory
     """
     cleanupdir_errors = []
+
     def logit(func, path, exc_info):
         cleanupdir_errors.append('%s: %s' % (func.__name__, exc_info[1]))
 
@@ -137,6 +152,7 @@ def cleanupdir(dirPath, ignoreErrors=True):
 
     if not ignoreErrors and cleanupdir_errors:
         raise se.MiscDirCleanupFailure("%s %s" % (dirPath, cleanupdir_errors))
+
 
 def createdir(dirPath, mode=None):
     """
@@ -148,6 +164,7 @@ def createdir(dirPath, mode=None):
         else:
             os.makedirs(dirPath)
 
+
 def resolveUid(user):
     if isinstance(user, types.StringTypes):
         uid = pwd.getpwnam(user).pw_uid
@@ -155,12 +172,14 @@ def resolveUid(user):
         uid = int(user)
     return uid
 
+
 def resolveGid(group):
     if isinstance(group, types.StringTypes):
         gid = grp.getgrnam(group).gr_gid
     else:
         gid = int(group)
     return gid
+
 
 def chown(path, user=-1, group=-1):
     """
@@ -174,11 +193,13 @@ def chown(path, user=-1, group=-1):
     currentUid = stat.st_uid
     currentGid = stat.st_gid
 
-    if (uid == currentUid or user == -1) and (gid == currentGid or group == -1):
+    if ((uid == currentUid or user == -1) and
+        (gid == currentGid or group == -1)):
         return True
 
     os.chown(path, uid, gid)
     return True
+
 
 def open_ex(path, mode):
     # TODO: detect if on nfs to do this out of process
@@ -331,10 +352,10 @@ class DirectFile(object):
         if not self.closed:
             self.close()
 
+
 def fsyncPath(path):
     fd = os.open(path, os.O_RDONLY)
     try:
         os.fsync(fd)
     finally:
         os.close(fd)
-
