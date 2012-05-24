@@ -85,6 +85,7 @@ PEP8_WHITELIST = \
 	vdsm_cli/vdsClientGluster.py \
 	vdsm_cli/vdscli.py.in \
 	vdsm_hooks/fileinject/before_vm_start.py \
+	vdsm_hooks/promisc/after_vm_start.py \
 	vdsm_hooks/sriov/before_vm_start.py \
 	vdsm_reg/createDaemon.py \
 	vdsm_reg/define.py
