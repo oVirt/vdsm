@@ -56,6 +56,7 @@ PEP8_WHITELIST = \
 	vdsm/gluster \
 	vdsm/guestIF.py \
 	vdsm/hooks.py \
+	vdsm/kaxmlrpclib.py \
 	vdsm/libvirtev.py \
 	vdsm/libvirtvm.py \
 	vdsm/md_utils.py \

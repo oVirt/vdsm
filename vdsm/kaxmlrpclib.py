@@ -32,7 +32,8 @@ protocol (TcpkeepHTTP) that uses TcpkeepHTTPConnection when it
 needs to set up a connection.
 """
 
-import xmlrpclib, httplib
+import xmlrpclib
+import httplib
 import socket
 
 # It would have been nicer to make these server-specific and not module-wide
@@ -43,6 +44,7 @@ KEEPCNT = 6
 
 CONNECTTIMEOUT = 160
 
+
 def Server(url, *args, **kwargs):
     kwargs['transport'] = TcpkeepTransport()
     server = xmlrpclib.Server(url, *args, **kwargs)
@@ -50,13 +52,15 @@ def Server(url, *args, **kwargs):
 
 ServerProxy = Server
 
+
 class TcpkeepTransport(xmlrpclib.Transport):
 
     def make_connection(self, host):
-        if hasattr(xmlrpclib.Transport, "single_request"): # Python 2.7
+        if hasattr(xmlrpclib.Transport, "single_request"):  # Python 2.7
             return TcpkeepHTTPConnection(host)
         else:
             return TcpkeepHTTP(host)
+
 
 class TcpkeepHTTPConnection(httplib.HTTPConnection):
     def connect(self):
@@ -79,9 +83,9 @@ class TcpkeepHTTPConnection(httplib.HTTPConnection):
                     print "connect: (%s, %s)" % (self.host, self.port)
 
                 oldtimeout = self.sock.gettimeout()  # added
-                self.sock.settimeout(CONNECTTIMEOUT) # added
+                self.sock.settimeout(CONNECTTIMEOUT)  # added
                 self.sock.connect(sa)
-                self.sock.settimeout(oldtimeout)     # added
+                self.sock.settimeout(oldtimeout)   # added
             except socket.error, msg:
                 if self.debuglevel > 0:
                     print 'connect fail:', (self.host, self.port)
@@ -92,10 +96,13 @@ class TcpkeepHTTPConnection(httplib.HTTPConnection):
             break
         if not self.sock:
             raise socket.error, msg
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)       # added
-        self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, KEEPIDLE)   # added
-        self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, KEEPINTVL) # added
-        self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, KEEPCNT)     # added
+        #### beginning of added code
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, KEEPIDLE)
+        self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, KEEPINTVL)
+        self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, KEEPCNT)
+        #### end of added code
+
 
 class TcpkeepHTTP(httplib.HTTP):
     _connection_class = TcpkeepHTTPConnection
@@ -105,6 +112,7 @@ class TcpkeepHTTP(httplib.HTTP):
 from vdsm import SecureXMLRPCServer
 import ssl
 
+
 def SslServer(url, ctx, *args, **kwargs):
     kwargs['transport'] = TcpkeepSafeTransport(ctx)
     server = xmlrpclib.Server(url, *args, **kwargs)
@@ -112,11 +120,12 @@ def SslServer(url, ctx, *args, **kwargs):
 
 SslServerProxy = SslServer
 
+
 class TcpkeepSafeTransport(SecureXMLRPCServer.VerifyingSafeTransport):
 
     def make_connection(self, host):
         chost, self._extra_headers, x509 = self.get_host_info(host)
-        if hasattr(xmlrpclib.SafeTransport, "single_request"): # Python 2.7
+        if hasattr(xmlrpclib.SafeTransport, "single_request"):  # Python 2.7
             return TcpkeepHTTPSConnection(
                         chost, None, key_file=self.key_file, strict=None,
                         timeout=CONNECTTIMEOUT,
@@ -152,4 +161,3 @@ class TcpkeepHTTPSConnection(SecureXMLRPCServer.VerifyingHTTPSConnection):
 
 class TcpkeepHTTPS(SecureXMLRPCServer.VerifyingHTTPS):
     _connection_class = TcpkeepHTTPSConnection
-
