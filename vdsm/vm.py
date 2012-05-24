@@ -648,7 +648,7 @@ class Vm(object):
         """
         if load is None:
             load = len(self.cif.vmContainer)
-        return base * (20 + load) / 20
+        return base * (doubler + load) / doubler
 
     def saveState (self):
         if self.destroyed:
