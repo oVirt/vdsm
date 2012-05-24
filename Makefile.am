@@ -77,6 +77,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/processPool.py \
 	vdsm/storage/sd.py \
 	vdsm/storage/securable.py \
+	vdsm/storage/taskManager.py \
 	vdsm/storage/volume.py \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
