@@ -74,6 +74,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
 	vdsm/storage/nfsSD.py \
+	vdsm/storage/outOfProcess.py \
 	vdsm/storage/processPool.py \
 	vdsm/storage/sd.py \
 	vdsm/storage/securable.py \
