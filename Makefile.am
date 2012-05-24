@@ -85,7 +85,8 @@ PEP8_WHITELIST = \
 	vdsm_cli/vdscli.py.in \
 	vdsm_hooks/fileinject/before_vm_start.py \
 	vdsm_hooks/sriov/before_vm_start.py \
-	vdsm_reg/createDaemon.py
+	vdsm_reg/createDaemon.py \
+	vdsm_reg/define.py
 
 check-local:
 	$(PYFLAKES) $(SUBDIRS)
