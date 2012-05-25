@@ -405,7 +405,7 @@ class LocalDirectoryConnection(object):
     def connect(self):
         if not self.checkTarget():
             #TODO: Use proper exception
-            raise Exception("Could not like to directory. Path does not exist "
+            raise Exception("Could not link to directory. Path does not exist "
                     "or isn't a directory")
 
         if self.checkLink():
