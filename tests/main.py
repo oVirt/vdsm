@@ -68,7 +68,9 @@ class TestGlusterExceptions(unittest.TestCase):
                 continue
 
             self.assertFalse(obj.code in codes)
-            self.assertTrue(obj.code >= 5000)
+            # gluster exception range: 4100-4800
+            self.assertTrue(obj.code >= 4100)
+            self.assertTrue(obj.code <= 4800)
 
 
 if __name__ == '__main__':
