@@ -266,12 +266,17 @@ validate_libvirt_certs()
 configure_libvirt()
 {
     local force_reconfigure="$1"
-    local by_vdsm="# by vdsm"
-    local by_vdsm_vers="${by_vdsm}-4.9.6"
+    local by_vdsm="by vdsm"
+    local by_vdsm_vers="4.9.6"
+    local start_conf_section="## beginning of configuration section ${by_vdsm}"
+    local end_conf_section="## end of configuration section ${by_vdsm}"
     local ts=/etc/pki/vdsm
 
+    # Remove configuration created by vdsm (old "# by vdsm" and the new format)
+    # Argument: configuration file that will be inspected
     remove_vdsm_conf() {
-        sed -i --copy "/$by_vdsm/d" "$@"
+        sed -i --copy -e "/${start_conf_section}/,/${end_conf_section}/d" \
+            -e "/$by_vdsm/d" "$@"
     }
 
     set_if_default() {
@@ -281,7 +286,7 @@ configure_libvirt()
         val="$3"
 
         /bin/grep -q "^\s*$key\s*=" "$cfile" || \
-          echo "$key=$val $by_vdsm_vers" >> "$cfile"
+          echo "$key=$val" >> "$cfile"
     }
 
     if isOvirt
@@ -324,6 +329,12 @@ configure_libvirt()
     # Remove a previous configuration (if present)
     remove_vdsm_conf $lconf $qconf $ldconf $qlconf
 
+    # Write to all conf files the *initial* message of vdsm changes
+    for arg in "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"
+    do
+        echo "${start_conf_section}-${by_vdsm_vers}" >> "${arg}"
+    done
+
     # Set the default values for libvirt and qemu
     set_if_default $lconf listen_addr \"0.0.0.0\"
     set_if_default $lconf unix_sock_group \"kvm\"
@@ -363,6 +374,12 @@ configure_libvirt()
     set_if_default $qconf lock_manager \"sanlock\"
     set_if_default $qlconf auto_disk_leases 0
     set_if_default $qlconf require_lease_for_disks 0
+
+    # Write to all conf files the *end* message of vdsm changes
+    for arg in "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"
+    do
+        echo "${end_conf_section}-${by_vdsm_vers}" >> "${arg}"
+    done
 
     local lnetwork=/etc/libvirt/qemu/networks/autostart/default.xml
     rm -f $lnetwork
