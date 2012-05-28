@@ -30,6 +30,10 @@ BuildRequires: pyflakes
 BuildRequires: python-nose
 BuildRequires: python-pep8
 
+# BuildRequires needed by the tests during the build
+BuildRequires: python-ethtool
+BuildRequires: libvirt-python
+
 %if !0%{?rhel}
 BuildRequires: systemd-units
 %endif
