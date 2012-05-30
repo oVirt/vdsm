@@ -1352,6 +1352,12 @@ class service:
             return stats['status']['code'], stats['status']['message']
         return 0, ''
 
+    def do_setMOMPolicy(self, policyFile):
+        stats = self.s.setMOMPolicy(policyFile)
+        if stats['status']['code']:
+            return stats['status']['code'], stats['status']['message']
+        return 0, ''
+
     def do_getVmsInfo(self, args):
         spUUID = args[0]
         if len(args) >= 2:
@@ -2136,6 +2142,8 @@ if __name__ == '__main__':
                          ('<level> [logName][,logName]...', 'set log verbosity'
                              ' level (10=DEBUG, 50=CRITICAL'
                          )),
+        'setMOMPolicy': (serv.do_setMOMPolicy,
+                          ('<policyfile>', 'set MOM policy')),
         'deleteImage': (serv.deleteImage,
                        ('<sdUUID> <spUUID> <imgUUID> [<postZero>] [<force>]',
                        'Delete Image folder with all volumes.',

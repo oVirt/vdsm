@@ -1300,6 +1300,13 @@ class Global(APIBase):
     def getAllTasksStatuses(self):
         return self._irs.getAllTasksStatuses()
 
+    def setMOMPolicy(self, policy):
+        try:
+            self._cif.mom.setPolicy(policy)
+            return dict(status=doneCode)
+        except:
+            return errCode['momErr']
+
     # take a rough estimate on how much free mem is available for new vm
     # memTotal = memFree + memCached + mem_used_by_non_qemu + resident  .
     # simply returning (memFree + memCached) is not good enough, as the

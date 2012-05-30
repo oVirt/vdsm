@@ -114,6 +114,9 @@ errCode = {'noVM':         {'status':
             'mergeErr':     {'status':
                              {'code': 52,
                               'message': 'Merge failed'}},
+            'momErr':       {'status':
+                             {'code': 54,
+                              'message': 'Failed to set mom policy'}},
             'recovery':     {'status':
                              {'code': 99,
                               'message':

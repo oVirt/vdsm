@@ -47,6 +47,10 @@ class MomThread(threading.Thread):
         ret['ksmCpu'] = stats['ksmd_cpu_usage']
         return ret
 
+    def setPolicy(self, policyStr):
+        # mom.setPolicy will raise an exception on failure.
+        self._mom.setPolicy(policyStr)
+
     def stop(self):
         if self._mom is not None:
             self.log.info("Shutting down MOM")
