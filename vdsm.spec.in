@@ -315,6 +315,11 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 %build
 %configure %{?with_hooks:--enable-hooks}
 make
+# Setting software_version and software_revision in dsaversion.py
+baserelease=`echo "%{release}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
+baseversion=`echo "%{version}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
+sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
+       -e 's/^software_revision =.*/software_revision = "'"${baserelease}"'"/' vdsm/dsaversion.py
 
 %install
 rm -rf %{buildroot}

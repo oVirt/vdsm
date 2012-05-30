@@ -23,6 +23,8 @@ This module provides DSA software versioning information for
 python based components
 """
 version_name = "Snow Man"
+# FIXME: As soon as we can provide a long version/release to oVirt-Engine
+#        remove from vdsm.spec the sed to replace the below macros
 software_version = "@PACKAGE_VERSION@"
 software_revision = "@PACKAGE_RELEASE@"
 
