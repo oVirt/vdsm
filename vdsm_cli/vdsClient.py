@@ -155,6 +155,7 @@ class service:
                 params[param] = value
         drives = []
         devices = []
+        cpuPinning = {}
         if len(args) > 1:
             for line in args[1:]:
                 if '=' in line:
@@ -165,6 +166,8 @@ class service:
                         drives.append(self._parseDriveSpec(value))
                     elif param in ('cdrom', 'floppy'):
                         value = self._parseDriveSpec(value)
+                    elif param == 'cpuPinning':
+                        cpuPinning, rStr = self._parseNestedSpec(value)
                     if param.startswith('custom_'):
                         if not 'custom' in params:
                             params['custom'] = {}
@@ -173,6 +176,8 @@ class service:
                         params[param] = value
                 else:
                     params[line.strip()] = ''
+        if cpuPinning:
+            params['cpuPinning'] = cpuPinning
         if drives:
             params['drives'] = drives
         if devices:
@@ -1658,6 +1663,7 @@ if __name__ == '__main__':
                         'o   emulatedMachine : passed as qemu\'s -M',
                         'o   devices={name:val[, name:val, name:{name:val, '
                         'name:val}]} : add a fully specified device',
+                        'o   cpuPinning={vcpuid:val} cpu pinning'
                         )),
         'hotplugNic':  (serv.hotplugNic,
                          ('<vmId> <nicspec>',
