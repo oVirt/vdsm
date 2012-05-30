@@ -1098,7 +1098,7 @@ class BalloonDevice(LibvirtVmDevice):
         </memballoon>
         """
         m = self.createXmlElem(self.device, None, ['address'])
-        m.setAttribute('model', self.model)
+        m.setAttribute('model', self.specParams['model'])
         return m
 
 class RedirDevice(LibvirtVmDevice):
@@ -2197,17 +2197,14 @@ class LibvirtVm(vm.Vm):
             if not x.getElementsByTagName('address'):
                 continue
 
-            model = x.getAttribute('model')
             address = self._getUnderlyingDeviceAddress(x)
 
             for dev in self._devices[vm.BALLOON_DEVICES]:
                 if not hasattr(dev, 'address'):
-                    dev.model = model
                     dev.address = address
 
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.BALLOON_DEVICES) and not dev.get('address'):
-                    dev['model'] = model
                     dev['address'] = address
 
     def _getUnderlyingVideoDeviceInfo(self):
