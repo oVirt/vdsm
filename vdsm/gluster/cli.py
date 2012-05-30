@@ -140,7 +140,7 @@ def _parseVolumeInfo(out):
 
 
 @exportToSuperVdsm
-def volumeInfo():
+def volumeInfo(volumeName=None):
     """
     Returns:
         {VOLUMENAME: {'brickCount': BRICKCOUNT,
@@ -152,7 +152,10 @@ def volumeInfo():
                       'volumeStatus': STATUS,
                       'volumeType': TYPE}, ...}
     """
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["info"])
+    command = _getGlusterVolCmd() + ["info"]
+    if volumeName:
+        command.append(volumeName)
+    rc, out, err = _execGluster(command)
     if rc:
         raise ge.GlusterVolumesListFailedException(rc, out, err)
     else:

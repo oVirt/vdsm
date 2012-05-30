@@ -57,7 +57,7 @@ class GlusterApi(object):
         self.svdsmProxy = svdsm.getProxy()
 
     @exportAsVerb
-    def volumesList(self, options=None):
+    def volumesList(self, volumeName=None, options=None):
         """
         Returns:
             {'status' : {'code': CODE, 'message': MESSAGE},
@@ -70,7 +70,7 @@ class GlusterApi(object):
                                       'volumeStatus': STATUS,
                                       'volumeType': TYPE}, ...}}
         """
-        volumeInfoDict = self.svdsmProxy.glusterVolumeInfo()
+        volumeInfoDict = self.svdsmProxy.glusterVolumeInfo(volumeName)
         for name, info in volumeInfoDict.iteritems():
             info["volumeType"] = info["volumeType"].replace("-", "_")
             if info["volumeStatus"] == "STARTED":

@@ -44,7 +44,10 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumesList(self, args):
-        status = self.s.glusterVolumesList()
+        if args:
+            status = self.s.glusterVolumesList(args[0])
+        else:
+            status = self.s.glusterVolumesList()
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -208,8 +211,8 @@ def getGlusterCmdDict(serv):
               )),
         'glusterVolumesList':
             (serv.do_glusterVolumesList,
-             ('',
-              'list gluster volumes'
+             ('[volume_name]',
+              'if volume_name is given, list only given volume, else all'
               )),
         'glusterVolumeStart':
             (serv.do_glusterVolumeStart,
