@@ -29,6 +29,11 @@ import vdsm.tool
 tool_modules = []
 tool_command = {}
 
+ERROR_SAME_COMMAND = """\
+Warning: the command '%s' in module '%s' is being ignored because a command \
+with the same name has already been registered by module '%s'.\
+"""
+
 
 def load_modules():
     """
@@ -70,7 +75,12 @@ def load_modules():
 
             cmd_name = cmd._vdsm_tool["name"]
 
-            tool_command[cmd_name] = cmd
+            if cmd_name in tool_command:
+                print textwrap.fill(ERROR_SAME_COMMAND %
+                            (cmd_name, mod_name,
+                             tool_command[cmd_name]["module"].__name__))
+                continue
+            tool_command[cmd_name] = {"module": module, "command": cmd}
             mod_cmds.append((cmd_name, cmd.__doc__))
 
         tool_modules.append((mod_name, mod_cmds))
@@ -110,7 +120,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-    except getopt.GetoptError, err:
+    except getopt.GetoptError:
         usage_and_exit(1)
 
     if len(args) < 1:
@@ -121,7 +131,7 @@ def main():
     if cmd not in tool_command.keys():
         usage_and_exit(1)
 
-    tool_command[cmd](*args[1:])
+    tool_command[cmd]["command"](*args[1:])
 
 if __name__ == "__main__":
     main()
