@@ -749,10 +749,8 @@ class BlockStorageDomain(sd.StorageDomain):
         Validate that the storage domain metadata
         """
         self.log.info("sdUUID=%s", self.sdUUID)
-        self.selftest()
-
+        lvm.chkVG(self.sdUUID)
         self.invalidateMetadata()
-
         self.getMetadata()
 
     def invalidate(self):
