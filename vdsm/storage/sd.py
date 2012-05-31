@@ -407,11 +407,6 @@ class StorageDomain:
         except KeyError:
             return []
 
-    def selftest(self):
-        """
-        Run internal self test
-        """
-
     def upgrade(self, targetVersion):
         """
         Upgrade the domain to more advance version

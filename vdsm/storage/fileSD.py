@@ -253,13 +253,12 @@ class FileStorageDomain(sd.StorageDomain):
             return leasePath, fileVolume.LEASE_FILEOFFSET
         return None, None
 
-    def validate(self, useCache=False):
+    def validate(self):
         """
         Validate that the storage domain is accessible.
         """
         self.log.info("sdUUID=%s", self.sdUUID)
-        if not useCache:
-            self.invalidateMetadata()
+        self.invalidateMetadata()
         self.getMetadata()
 
     def validateMasterMount(self):

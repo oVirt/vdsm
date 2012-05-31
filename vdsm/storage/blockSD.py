@@ -744,15 +744,14 @@ class BlockStorageDomain(sd.StorageDomain):
         elif lvm.getVG(self.sdUUID).partial != lvm.VG_OK:
             raise se.StorageDomainAccessError(self.sdUUID)
 
-    def validate(self, useCache=False):
+    def validate(self):
         """
         Validate that the storage domain metadata
         """
         self.log.info("sdUUID=%s", self.sdUUID)
         self.selftest()
 
-        if not useCache:
-            self.invalidateMetadata()
+        self.invalidateMetadata()
 
         self.getMetadata()
 
