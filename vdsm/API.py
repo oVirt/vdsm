@@ -1330,21 +1330,11 @@ class Global(object):
         return freeOrCached + resident - memCommitted - \
                 config.getint('vars', 'host_mem_reserve') * Mbytes
 
-    # take a rough estimate on how much memory is shared between VMs
     def _memShared(self):
         """
         Return an approximation of memory shared by VMs thanks to KSM.
         """
-        shared = 0
-        for v in self._cif.vmContainer.values():
-            if v.conf['pid'] == '0':
-                continue
-            try:
-                statmfile = file('/proc/' + v.conf['pid'] + '/statm')
-                shared += int(statmfile.read().split()[2]) * PAGE_SIZE_BYTES
-            except:
-                pass
-        return shared
+        return (self._cif.ksmMonitor.memsharing() * PAGE_SIZE_BYTES)
 
     def _memCommitted(self):
         """

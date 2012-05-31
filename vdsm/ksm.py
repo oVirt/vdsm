@@ -74,6 +74,12 @@ class KsmMonitorThread(threading.Thread):
             self._lock.release()
         return self.state
 
+    def memsharing(self):
+        try:
+            return (int(file('/sys/kernel/mm/ksm/pages_sharing').read()))
+        except:
+            return 0
+
 def running():
     try:
         state = int(file('/sys/kernel/mm/ksm/run').read()) & 1 == 1
