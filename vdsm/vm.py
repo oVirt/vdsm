@@ -434,7 +434,7 @@ class Vm(object):
         # to all guests, we need to specifically request not to add it.
         if len(devices[BALLOON_DEVICES]) == 0:
             devices[BALLOON_DEVICES].append({'type': BALLOON_DEVICES,
-                'device': 'memballoon', 'model': 'none'})
+                'device': 'memballoon', 'specParams': {'model': 'none'}})
 
         return devices
 
