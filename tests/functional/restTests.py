@@ -71,12 +71,22 @@ class RestTest(RestTestBase):
     def testVersion(self):
         import dsaversion as d
         resp = json.loads(request("/api", 'json'))
+        revisionStr = str(resp['product_info']['version']['revision'])
         verStr = "%s.%s.%s" % (resp['product_info']['version']['major'],
                                resp['product_info']['version']['minor'],
                                resp['product_info']['version']['build'])
+
+        # FIXME: oVirt Engine cannot handle release/version with more
+        # then 2 digits. To workaround, we add a sed command into
+        # vdsm.spec to make version/release a short string in
+        # dsaversion.py. As soon oVirt Engine can handle version/release
+        # with more then 2 digits, remove the sed from spec file and also
+        # the below split.
+        major, minor, build = verStr.split(".")
+        verStr = major + "." + minor
+
         self.assertEquals(d.software_version, verStr)
-        self.assertEquals(d.software_revision,
-                          str(resp['product_info']['version']['revision']))
+        self.assertEquals(d.software_revision, revisionStr)
 
     def test404(self):
         """
