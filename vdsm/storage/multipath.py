@@ -117,15 +117,13 @@ def setupMultipath():
     """
     if os.path.exists(MPATH_CONF):
         misc.rotateFiles(os.path.dirname(MPATH_CONF), os.path.basename(MPATH_CONF), MAX_CONF_COPIES, cp=True, persist=True)
-    f = tempfile.NamedTemporaryFile()
-    f.write(MPATH_CONF_TEMPLATE)
-    f.flush()
-    cmd = [constants.EXT_CP, f.name, MPATH_CONF]
-    rc = misc.execCmd(cmd, sudo=True)[0]
-    if rc != 0:
-        raise se.MultipathSetupError()
-    # f close removes file - must be after copy
-    f.close()
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(MPATH_CONF_TEMPLATE)
+        f.flush()
+        cmd = [constants.EXT_CP, f.name, MPATH_CONF]
+        rc = misc.execCmd(cmd, sudo=True)[0]
+        if rc != 0:
+            raise se.MultipathSetupError()
     misc.persistFile(MPATH_CONF)
 
     # Flush all unused multipath device maps
