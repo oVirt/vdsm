@@ -445,7 +445,9 @@ class ConfigWriter(object):
                 self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
 
 def isBridgeNameValid(bridgeName):
-    return bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and len(set(bridgeName) & set(ILLEGAL_BRIDGE_CHARS)) == 0
+    return bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and \
+           len(set(bridgeName) & set(ILLEGAL_BRIDGE_CHARS)) == 0 and \
+           not bridgeName.startswith('-')
 
 def validateBridgeName(bridgeName):
     if not isBridgeNameValid(bridgeName):
