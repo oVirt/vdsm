@@ -39,7 +39,7 @@ from vdsm import libvirtconnection
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
 MAX_VLAN_ID = 4094
 MAX_BRIDGE_NAME_LEN = 15
-ILLEGAL_BRIDGE_CHARS = ':. \t'
+ILLEGAL_BRIDGE_CHARS = frozenset(':. \t')
 NETPREFIX = 'vdsm-'
 
 class ConfigNetworkError(Exception):
@@ -446,7 +446,7 @@ class ConfigWriter(object):
 
 def isBridgeNameValid(bridgeName):
     return bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and \
-           len(set(bridgeName) & set(ILLEGAL_BRIDGE_CHARS)) == 0 and \
+           len(set(bridgeName) & ILLEGAL_BRIDGE_CHARS) == 0 and \
            not bridgeName.startswith('-')
 
 def validateBridgeName(bridgeName):
