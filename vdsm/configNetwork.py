@@ -1010,26 +1010,23 @@ def setupNetworks(networks={}, bondings={}, **options):
         networksAdded = []
         #bondingNetworks = {}   # Reminder TODO
 
-        logger.info("Setting up network")
-        logger.debug("Setting up network according to configuration: networks:%r, bondings:%r, options:%r" % (networks, bondings, options))
+        logger.debug("Setting up network according to configuration: "
+                     "networks:%r, bondings:%r, options:%r" % (networks,
+                     bondings, options))
 
         force = options.get('force', False)
         if not utils.tobool(force):
             logging.debug("Validating configuration")
-            _validateNetworkSetup(dict(networks), dict(bondings), explicitBonding=options.get('explicitBonding', False))
+            _validateNetworkSetup(dict(networks), dict(bondings),
+                                  explicitBonding=options.get('explicitBonding',
+                                                              False))
 
         logger.debug("Applying...")
         try:
-            delnetworks = {}
-            for network, networkAttrs in networks.iteritems():
+            # Remove networks with 'remove' attribute
+            for network, networkAttrs in networks.items():
                 if 'remove' in networkAttrs:
-                    delnetworks[network] = networkAttrs
-
-            for network, networkAttrs in delnetworks.iteritems():
-                if networkAttrs.pop('remove', False):
-                    assert not networkAttrs
-
-                    logger.debug('Removing network %r'%network)
+                    logger.debug("Removing network %r" % network)
                     delNetwork(network, configWriter=configWriter, force=force)
                     del networks[network]
 
@@ -1041,12 +1038,13 @@ def setupNetworks(networks={}, bondings={}, **options):
                 d = dict(networkAttrs)
                 if 'bonding' in d:
                     d['nics'] = bondings[d['bonding']]['nics']
-                    d['bondingOptions'] = bondings[d['bonding']].get('options', None)
+                    d['bondingOptions'] = bondings[d['bonding']].get('options',
+                                                                     None)
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force
 
-                logger.debug('Adding network %r'%network)
+                logger.debug("Adding network %r" % network)
                 addNetwork(network, configWriter=configWriter, **d)
 
             if utils.tobool(options.get('connectivityCheck', True)):
