@@ -343,6 +343,50 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- volumes -->
+  <xs:element name="volume" type="Volume"/>
+  <xs:element name="volumes" type="Volumes"/>
+
+  <xs:complexType name="Volume">
+    <xs:complexContent>
+      <xs:extension base="BaseResource">
+        <xs:sequence>
+          <xs:element name="voltype" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="type" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="disktype" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="format" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="path" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="apparentsize" type="xs:int" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="truesize" type="xs:int" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="capacity" type="xs:int" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="ctime" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="mtime" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="legality" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="parent" type="Volume" minOccurs="0" maxOccurs="1" />
+          <xs:element name="children">
+            <xs:element ref="volume" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:element>
+          <xs:element name="link" type="Link" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Volumes">
+    <xs:complexContent>
+    <xs:extension base="BaseResources">
+      <xs:sequence>
+          <xs:annotation>
+            <xs:appinfo>
+              <jaxb:property name="Volumes" />
+            </xs:appinfo>
+          </xs:annotation>
+          <xs:element ref="volume" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <!-- images -->
   <xs:element name="image" type="Image"/>
   <xs:element name="images" type="Images"/>

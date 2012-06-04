@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import json
+from uuid import uuid4
 import cherrypy
 from Cheetah.Template import Template
 import xml.etree.ElementTree as etree
@@ -303,6 +304,155 @@ class StorageConnectionRefs(Collection):
         return obj_list
 
 
+class Volume(Resource):
+    BLOCK_SIZE = 512  # Does vdsm support other block sizes?
+    FORMATS = {
+        'raw': API.Volume.Formats.RAW,
+        'cow': API.Volume.Formats.COW}
+    TYPES = {
+        'preallocated': API.Volume.Types.PREALLOCATED,
+        'sparse': API.Volume.Types.SPARSE}
+    ROLES = {
+        'shared': API.Volume.Roles.SHARED,
+        'leaf': API.Volume.Roles.LEAF}
+    DISKTYPES = {
+        'unknown': API.Image.DiskTypes.UNKNOWN,
+        'system': API.Image.DiskTypes.SYSTEM,
+        'data': API.Image.DiskTypes.DATA,
+        'shared': API.Image.DiskTypes.SHARED,
+        'swap': API.Image.DiskTypes.SWAP,
+        'temp': API.Image.DiskTypes.TEMP}
+
+    def __init__(self, ctx, uuid, sdUUID, spUUID, imgUUID=None):
+        Resource.__init__(self, ctx)
+        self.uuid = uuid
+        self.sdUUID = sdUUID
+        self.spUUID = spUUID
+        self.imgUUID = imgUUID
+        self.obj = API.Volume(self.ctx.cif, uuid, self.spUUID, self.sdUUID,
+                               self.imgUUID)
+        self.info = {}
+        self.template = 'volume'
+
+    def _find_img(self):
+        if self.imgUUID is not None:
+            return
+        sd = API.StorageDomain(self.ctx.cif, self.sdUUID, self.spUUID)
+        ret = sd.getImages()
+        vdsOK(self.ctx, ret)
+        for imgUUID in ret['imageslist']:
+            img = API.Image(self.ctx.cif, imgUUID, self.spUUID, self.sdUUID)
+            ret = img.getVolumes()
+            vdsOK(self.ctx, ret)
+            if self.uuid in ret['uuidlist']:
+                self.imgUUID = imgUUID
+                self.obj._imgUUID = self.imgUUID
+                return
+        raise Exception("Unable to find image for volume:%s" % self.uuid)
+
+    def lookup(self):
+        # Try to find the imgUUID if it was not specified
+        self._find_img()
+
+        ret = self.obj.getInfo()
+        vdsOK(self.ctx, ret)
+        self.info = ret['info']
+
+        ret = self.obj.getPath()
+        vdsOK(self.ctx, ret)
+        self.info['path'] = ret['path']
+
+    def new(self, params):
+        # XXX: Add support for child volumes (might be able to infer volType)
+        try:
+            self.uuid = params['id']
+            self.obj._UUID = self.uuid
+
+            self.info = {}
+            for i in ('format', 'disktype', 'capacity', 'type', 'description'):
+                if i in params:
+                    self.info[i] = params[i]
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+
+        if self.imgUUID is None:
+            imgUUID = API.Image.BLANK_UUID
+        else:
+            imgUUID = self.imgUUID
+
+        size = int(self.info['capacity']) / self.BLOCK_SIZE
+        fmt = Volume.FORMATS.get(self.info['format'].lower(),
+                                 API.Volume.Formats.UNKNOWN)
+        prealloc = Volume.TYPES.get(self.info['type'].lower(),
+                                    API.Volume.Types.UNKNOWN)
+        diskType = Volume.DISKTYPES.get(self.info['disktype'].lower(),
+                                        API.Image.DiskTypes.UNKNOWN)
+
+        ret = self.obj.create(size, fmt, prealloc, diskType,
+                    self.info['description'], imgUUID, API.Volume.BLANK_UUID)
+        return ret
+
+    def delete(self, *args):
+        params = parse_request()
+        postZero = bool(params.get('postZero', False))
+        force = bool(params.get('force', False))
+        self._find_img()
+        ret = self.obj.delete(postZero, force)
+        return Response(self.ctx, ret).render()
+
+
+class Volumes(Collection):
+    def __init__(self, ctx, imgUUID, sdUUID, spUUID):
+        Collection.__init__(self, ctx)
+        self.imgUUID = imgUUID
+        self.sdUUID = sdUUID
+        self.spUUID = spUUID
+        self._img = API.Image(self.ctx.cif, imgUUID, spUUID, sdUUID)
+        self._sd = API.StorageDomain(self.ctx.cif, sdUUID, spUUID)
+        self.template = 'volumes'
+
+    def create(self, *args):
+        params = parse_request()
+
+        # The Volumes Controller will only have a imgUUID if it is the child
+        # of an Image Controller.  When we are attached to a StorageDomain
+        # the semantics of 'create' are to create a new Image so we generate
+        # a new imgUUID.
+        if self.imgUUID is not None:
+            imgUUID = self.imgUUID
+        else:
+            imgUUID = str(uuid4())
+        volume = Volume(self.ctx, None, self.sdUUID, self.spUUID, imgUUID)
+        ret = volume.new(params)
+        return Response(self.ctx, ret).render()
+
+    def _get_resources(self, uuid=None):
+        # The volumes collection can be attached to a Storage Domain or to an
+        # Image.  We must be careful to return only those volumes which are
+        # relevant for the parent resource.
+        if self.imgUUID is not None:
+            ret = self._img.getVolumes()
+            self.href = "/api/storagedomains/%s/images/%s/volumes" % \
+                         (self.sdUUID, self.imgUUID)
+        else:
+            ret = self._sd.getVolumes()
+            self.href = "/api/storagedomains/%s/volumes" % self.sdUUID
+        vdsOK(self.ctx, ret)
+
+        uuid_list = []
+        if uuid is None:
+            uuid_list = ret['uuidlist']
+        else:
+            if uuid in ret['uuidlist']:
+                uuid_list = [uuid]
+
+        obj_list = []
+        for uuid in uuid_list:
+            obj_list.append(Volume(self.ctx, uuid, self.sdUUID, self.spUUID,
+                                   self.imgUUID))
+        return obj_list
+
+
 class Image(Resource):
     def __init__(self, ctx, uuid, sdUUID, spUUID):
         Resource.__init__(self, ctx)
@@ -310,6 +460,10 @@ class Image(Resource):
         self.sdUUID = sdUUID
         self.spUUID = spUUID
         self.obj = API.Image(self.ctx.cif, self.uuid, spUUID, sdUUID)
+        self._links = {
+            'volumes': lambda: Volumes(self.ctx, self.uuid, self.sdUUID,
+                                       self.spUUID)
+        }
         self.template = 'image'
 
     def lookup(self):
@@ -371,6 +525,7 @@ class StorageDomain(Resource):
         self.stats = {}
         self._links = {
             'images': lambda: Images(self.ctx, self.uuid, self.spUUID),
+            'volumes': lambda: Volumes(self.ctx, None, self.uuid, self.spUUID)
         }
         self._lookup()  # See NOTE below
         self.template = 'storagedomain'

@@ -24,5 +24,9 @@ dist_vdsmresttemplate_DATA = \
 	storagedomain.xml.x \
 	storagedomains.json.x \
 	storagedomains.xml.x \
+	volume.json.x \
+	volume.xml.x \
+	volumes.json.x \
+	volumes.xml.x \
 	api.xsd \
 	rsdl.xml
