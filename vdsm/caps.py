@@ -103,20 +103,35 @@ def _getEmulatedMachines():
 
     return [ m.firstChild.toxml() for m in guestTag.getElementsByTagName('machine') ]
 
+def _getAllCpuModels():
+    cpu_map = minidom.parseString(
+        file('/usr/share/libvirt/cpu_map.xml').read())
+
+    allModels = dict()
+    for m in cpu_map.getElementsByTagName('arch')[0].childNodes:
+        if m.nodeName != 'model':
+            continue
+        element = m.getElementsByTagName('vendor')
+        if element:
+            vendor = element[0].getAttribute('name')
+        else:
+            # If current model doesn't have a vendor, check if it has a model
+            # that it is based on. The models in the cpu_map.xml file are
+            # sorted in a way that the base model is always defined before.
+            element = m.getElementsByTagName('model')
+            if element:
+                vendor = allModels.get(element[0].getAttribute('name'), None)
+            else:
+                vendor = None
+        allModels[m.getAttribute('name')] = vendor
+
+    return allModels
+
 @utils.memoized
 def _getCompatibleCpuModels():
     c = libvirtconnection.get()
-    cpu_map = minidom.parseString(
-                    file('/usr/share/libvirt/cpu_map.xml').read())
-    def vendor(modelElem):
-        vs = modelElem.getElementsByTagName('vendor')
-        if vs:
-            return vs[0].getAttribute('name')
-        else:
-            return None
-    allModels = [ (m.getAttribute('name'), vendor(m)) for m
-          in cpu_map.getElementsByTagName('arch')[0].childNodes
-          if m.nodeName == 'model' ]
+    allModels = _getAllCpuModels()
+
     def compatible(model, vendor):
         if not vendor:
             return False
@@ -133,7 +148,7 @@ def _getCompatibleCpuModels():
             raise
 
     return [ 'model_' + model for (model, vendor)
-             in allModels if compatible(model, vendor) ]
+        in allModels.iteritems() if compatible(model, vendor) ]
 
 def _parseKeyVal(lines, delim='='):
     d = {}
