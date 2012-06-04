@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,13 +22,34 @@ import threading
 import functools
 
 import libvirt
-
-import libvirtev
 from vdsm import constants, utils
 
+
+class EventLoop:
+    def __init__(self):
+        self.run = True
+        libvirt.virEventRegisterDefaultImpl()
+        self.__thread = threading.Thread(target=self.__run,
+                                         name="libvirtEventLoop")
+        self.__thread.setDaemon(True)
+        self.__thread.start()
+
+    def __run(self):
+        while self.run:
+            libvirt.virEventRunDefaultImpl()
+
+    def stop(self, wait=True):
+        self.run = False
+        if wait:
+            self.__thread.join()
+
 # Make sure to never reload this module, or you would lose events
-# TODO: make this internal to libvirtev, and make the thread stoppable
-libvirtev.virEventLoopPureStart()
+__event_loop = EventLoop()
+
+
+def stop_event_loop():
+    global __event_loop
+    __event_loop.stop()
 
 
 def __eventCallback(conn, dom, *args):
@@ -38,8 +59,8 @@ def __eventCallback(conn, dom, *args):
         v = cif.vmContainer.get(vmid)
 
         if not v:
-            cif.log.debug('unknown vm %s eventid %s args %s', vmid, eventid,
-                          args)
+            cif.log.debug('unknown vm %s eventid %s args %s',
+                          vmid, eventid, args)
             return
 
         if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
@@ -95,9 +116,10 @@ def get(cif=None):
                             setattr(ret, name, wrapMethod(method))
                 return ret
             except libvirt.libvirtError, e:
-                if (e.get_error_domain() in (libvirt.VIR_FROM_REMOTE,
-                                             libvirt.VIR_FROM_RPC) and
-                        e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR):
+                edom = e.get_error_domain()
+                ecode = e.get_error_code()
+                EDOMAINS = (libvirt.VIR_FROM_REMOTE, libvirt.VIR_FROM_RPC)
+                if edom in EDOMAINS and ecode == libvirt.VIR_ERR_SYSTEM_ERROR:
                     cif.log.error('connection to libvirt broken. '
                                   'taking vdsm down.')
                     cif.prepareForShutdown()
@@ -139,5 +161,10 @@ def get(cif=None):
                     method = getattr(conn, name)
                     if callable(method) and name[0] != '_':
                         setattr(conn, name, wrapMethod(method))
+            # In case we're running into troubles with keeping the connections
+            # alive we should place here:
+            # conn.setKeepAlive(interval=5, count=3)
+            # However the values need to be considered wisely to not affect
+            # hosts which are hosting a lot of virtual machines
 
         return conn

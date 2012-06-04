@@ -29,7 +29,7 @@ from vdsm.define import ERROR, doneCode, errCode
 from vdsm import utils
 from vdsm import constants
 import guestIF
-from vdsm import libvirtconnection, libvirtev
+from vdsm import libvirtconnection
 from vdsm.config import config
 import hooks
 import caps
@@ -50,6 +50,22 @@ class MERGESTATUS:
     UNKNOWN = "Unknown"
     DRIVE_NOT_FOUND = "Drive Not Found"
     BASE_NOT_FOUND = "Base Not Found"
+
+
+# These strings are representing libvirt virDomainEventType values
+# http://libvirt.org/html/libvirt-libvirt.html#virDomainEventType
+_EVENT_STRINGS = ("Defined",
+                  "Undefined",
+                  "Started",
+                  "Suspended",
+                  "Resumed",
+                  "Stopped",
+                  "Shutdown",
+                  "PM-Suspended")
+
+
+def eventToString(event):
+    return _EVENT_STRINGS[event]
 
 
 class VmStatsThread(utils.AdvancedStatsThread):
@@ -2837,7 +2853,7 @@ class LibvirtVm(vm.Vm):
 
     def _onLibvirtLifecycleEvent(self, event, detail, opaque):
         self.log.debug('event %s detail %s opaque %s',
-                       libvirtev.eventToString(event), detail, opaque)
+                       eventToString(event), detail, opaque)
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
             if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
                 self.lastStatus == 'Migration Source'):

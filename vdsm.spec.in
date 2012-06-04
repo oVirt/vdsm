@@ -770,7 +770,6 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/define.py*
 %{python_sitearch}/%{vdsm_name}/exception.py*
 %{python_sitearch}/%{vdsm_name}/libvirtconnection.py*
-%{python_sitearch}/%{vdsm_name}/libvirtev.py*
 %{python_sitearch}/%{vdsm_name}/netinfo.py*
 %{python_sitearch}/%{vdsm_name}/qemuImg.py*
 %{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*

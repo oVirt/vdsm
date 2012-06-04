@@ -59,7 +59,6 @@ dist_vdsmpylib_PYTHON = \
 	define.py \
 	exception.py \
 	libvirtconnection.py \
-	libvirtev.py \
 	netinfo.py \
 	qemuImg.py \
 	SecureXMLRPCServer.py \
