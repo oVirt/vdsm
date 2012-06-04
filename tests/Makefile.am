@@ -40,6 +40,7 @@ test_modules = \
 	netinfoTests.py \
 	outOfProcessTests.py \
 	parted_utils_tests.py \
+	permutationTests.py \
 	persistentDictTests.py \
 	restTests.py \
 	restData.py \

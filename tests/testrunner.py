@@ -21,12 +21,58 @@ import logging
 import sys
 import os
 import unittest
+from functools import wraps
 
 from nose import config
 from nose import core
 from nose import result
 
 from testValidation import SlowTestsPlugin
+
+PERMUTATION_ATTR = "_permutations_"
+
+
+def _getPermutation(f, args):
+    @wraps(f)
+    def wrapper(self):
+        return f(self, *args)
+
+    return wrapper
+
+
+def _getFuncArgStr(f, args):
+    # [1:] Skips self
+    argNames = f.func_code.co_varnames[1:]
+    return ", ".join("%s=%r" % arg for arg in zip(argNames, args))
+
+
+def expandPermutations(cls):
+    for attr in dir(cls):
+        f = getattr(cls, attr)
+        if not hasattr(f, PERMUTATION_ATTR):
+            continue
+
+        perm = getattr(f, PERMUTATION_ATTR)
+        for args in perm:
+            argStr = _getFuncArgStr(f, args)
+
+            permName = "%s(%s)" % (f.func_name, argStr)
+            wrapper = _getPermutation(f, args)
+            wrapper.func_name = permName
+
+            setattr(cls, permName, wrapper)
+
+        delattr(cls, f.func_name)
+
+    return cls
+
+
+def permutations(perms):
+    def wrap(func):
+        setattr(func, PERMUTATION_ATTR, perms)
+        return func
+
+    return wrap
 
 
 class TermColor(object):
