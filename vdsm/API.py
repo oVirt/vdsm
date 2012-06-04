@@ -35,6 +35,7 @@ import storage.misc
 import storage.safelease
 import storage.volume
 import storage.sd
+import storage.image
 import libvirtvm
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
@@ -702,6 +703,14 @@ class Volume(object):
 
 class Image(object):
     BLANK_UUID = storage.volume.BLANK_UUID
+
+    class DiskTypes:
+        UNKNOWN = storage.image.UNKNOWN_DISK_TYPE
+        SYSTEM = storage.image.SYSTEM_DISK_TYPE
+        DATA = storage.image.DATA_DISK_TYPE
+        SHARED = storage.image.SHARED_DISK_TYPE
+        SWAP = storage.image.SWAP_DISK_TYPE
+        TEMP = storage.image.TEMP_DISK_TYPE
 
     def __init__(self, cif, UUID, spUUID, sdUUID):
         self._irs = cif.irs

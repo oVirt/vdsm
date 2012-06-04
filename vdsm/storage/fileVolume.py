@@ -118,7 +118,7 @@ class FileVolume(volume.Volume):
             'size' - in sectors
             'volFormat' - volume format COW / RAW
             'preallocate' - Preallocate / Sparse
-            'diskType' - string that describes disk type System|Data|Shared|Swap|Temp
+            'diskType' - enum (API.Image.DiskTypes)
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
         """
