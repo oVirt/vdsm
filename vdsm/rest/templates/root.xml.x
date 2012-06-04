@@ -7,4 +7,5 @@
   </product_info>
   <link href="/api/storageconnectionrefs" rel="storageconnectionrefs"/>
   <link href="/api/storagedomains" rel="storagedomains"/>
+  <link href="/api/tasks" rel="tasks"/>
 </api>

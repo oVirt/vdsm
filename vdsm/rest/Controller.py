@@ -642,6 +642,60 @@ class StorageDomains(Collection):
         return obj_list
 
 
+class Task(Resource):
+    def __init__(self, ctx, uuid, props):
+        Resource.__init__(self, ctx)
+        self.uuid = uuid
+        self.props = props
+        self.obj = API.Task(self.ctx.cif, self.uuid)
+        self.template = 'task'
+
+    def lookup(self):
+        pass
+
+    def delete(self):
+        ret = self.obj.clear()
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def revert(self):
+        validate_method(('POST',))
+        ret = self.obj.revert()
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def stop(self):
+        validate_method(('POST',))
+        ret = self.obj.stop()
+        return Response(self.ctx, ret).render()
+
+
+class Tasks(Collection):
+    def __init__(self, ctx):
+        Collection.__init__(self, ctx)
+        self.obj = API.Global(self.ctx.cif)
+        self.template = 'tasks'
+
+    def _get_resources(self, uuid=None):
+        status_ret = self.obj.getAllTasksStatuses()
+        vdsOK(self.ctx, status_ret)
+        info_ret = self.obj.getAllTasksInfo()
+        vdsOK(self.ctx, info_ret)
+        tasks = info_ret['allTasksInfo'].keys()
+        uuid_list = []
+        if uuid is not None:
+            if uuid in tasks:
+                uuid_list.append(uuid)
+        else:
+            uuid_list = tasks
+        obj_list = []
+        for uuid in uuid_list:
+            props = {'taskInfo': info_ret['allTasksInfo'][uuid],
+                     'taskStatus': status_ret['allTasksStatus'][uuid]}
+            obj_list.append(Task(self.ctx, uuid, props))
+        return obj_list
+
+
 class Root(Resource):
     def __init__(self, cif, log, templatePath):
         ctx = ContextManager(cif, log, templatePath)
@@ -649,6 +703,7 @@ class Root(Resource):
         self._links = {
             'storageconnectionrefs': lambda: StorageConnectionRefs(self.ctx),
             'storagedomains': lambda: StorageDomains(self.ctx),
+            'tasks': lambda: Tasks(self.ctx),
         }
         self.template = 'root'
 

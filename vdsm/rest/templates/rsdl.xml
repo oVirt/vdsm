@@ -276,5 +276,66 @@
                 <type>Response</type>
             </response>
         </link>
+        <link href="/api/tasks" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>Tasks</type>
+            </response>
+        </link>
+        <link href="/api/tasks/{task:id}" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>Task</type>
+            </response>
+        </link>
+        <link href="/api/tasks/{task:id}" rel="delete">
+            <request>
+                <http_method>DELETE</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/tasks/{task:id}/revert" rel="revert">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>Action</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/tasks/{task:id}/stop" rel="stop">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>Action</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
     </links>
 </rsdl>

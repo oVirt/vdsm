@@ -455,6 +455,40 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- tasks -->
+  <xs:element name="task" type="Task"/>
+  <xs:element name="tasks" type="Tasks"/>
+
+  <xs:complexType name="Task">
+    <xs:complexContent>
+      <xs:extension base="BaseResource">
+        <xs:sequence>
+          <xs:element name="verb" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="message" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="code" type="xs:int" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="result" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="state" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="link" type="Link" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Tasks">
+    <xs:complexContent>
+    <xs:extension base="BaseResources">
+      <xs:sequence>
+          <xs:annotation>
+            <xs:appinfo>
+              <jaxb:property name="Tasks" />
+            </xs:appinfo>
+          </xs:annotation>
+          <xs:element ref="task" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
 <!-- RSDL -->
 
   <xs:element name="url" type="Url"/>
