@@ -183,11 +183,20 @@ class Resource(object):
         self.ctx = ctx
         self._links = {}
 
-    @cherrypy.expose
-    def index(self):
-        validate_method(('GET',))
+    def get(self):
         self.lookup()
         return render_template(self.ctx, self.template, {'resource': self})
+
+    def delete(self):
+        raise cherrypy.HTTPError(405)
+
+    @cherrypy.expose
+    def index(self):
+        method = validate_method(('GET', 'DELETE'))
+        if method == 'GET':
+            return self.get()
+        elif method == 'DELETE':
+            return self.delete()
 
     def __call__(self):
         pass
@@ -200,14 +209,23 @@ class Collection(object):
     def __init__(self, ctx):
         self.ctx = ctx
 
-    @cherrypy.expose
-    def index(self):
-        validate_method(('GET',))
+    def get(self):
         resources = self._get_resources()
         for obj in resources:
             obj.lookup()
         return render_template(self.ctx, self.template,
                                {'collection': self, 'resources': resources})
+
+    def create(self, *args):
+        raise cherrypy.HTTPError(405)
+
+    @cherrypy.expose
+    def index(self, *args):
+        method = validate_method(('GET', 'POST'))
+        if method == 'GET':
+            return self.get()
+        elif method == 'POST':
+            return self.create(*args)
 
     def __call__(self):
         pass
