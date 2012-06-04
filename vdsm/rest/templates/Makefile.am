@@ -16,5 +16,9 @@ dist_vdsmresttemplate_DATA = \
 	storageconnectionref.xml.x \
 	storageconnectionrefs.json.x \
 	storageconnectionrefs.xml.x \
+	storagedomain.json.x \
+	storagedomain.xml.x \
+	storagedomains.json.x \
+	storagedomains.xml.x \
 	api.xsd \
 	rsdl.xml

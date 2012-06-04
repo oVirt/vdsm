@@ -12,5 +12,8 @@
   "links": [ {
     "rel": "storageconnectionrefs",
     "href": "/api/storageconnectionrefs"
+  }, {
+    "rel": "storagedomains",
+    "href": "/api/storagedomains"
   } ]
 }

@@ -303,12 +303,147 @@ class StorageConnectionRefs(Collection):
         return obj_list
 
 
+class StorageDomain(Resource):
+    CLASSES = {'data': API.StorageDomain.Classes.DATA,
+               'iso': API.StorageDomain.Classes.ISO,
+               'backup': API.StorageDomain.Classes.BACKUP}
+    TYPES = {'unknown': API.StorageDomain.Types.UNKNOWN,
+             'nfs': API.StorageDomain.Types.NFS,
+             'fcp': API.StorageDomain.Types.FCP,
+             'iscsi': API.StorageDomain.Types.ISCSI,
+             'localfs': API.StorageDomain.Types.LOCALFS,
+             'cifs': API.StorageDomain.Types.CIFS,
+             'sharedfs': API.StorageDomain.Types.SHAREDFS}
+
+    def __init__(self, ctx, uuid=None):
+        Resource.__init__(self, ctx)
+        self.uuid = uuid
+        self.obj = API.StorageDomain(self.ctx.cif, self.uuid)
+        self.spUUID = None
+        self.info = {}
+        self.stats = {}
+        self._lookup()  # See NOTE below
+        self.template = 'storagedomain'
+
+    # NOTE: This function is called _lookup because it has special semantics.
+    # For StorageDomains, the spUUID must be populated for use with every call
+    # (including links to the images and volumes sub-collections).  Because of
+    # this requirement, we always call _lookup in the constructor when the
+    # object has a valid uuid.  Since the info is populated here, the normal
+    # lookup() call is a no-op for this object.
+    def _lookup(self):
+        if self.uuid is None:
+            return
+        ret = self.obj.getInfo()
+        vdsOK(self.ctx, ret)
+        self.info = ret['info']
+        if len(ret['info']['pool']) > 0:
+            self.spUUID = ret['info']['pool'][0]
+            # Since we constructed obj with spUUID=None, set it to the correct
+            # value now that we know it.
+            self.obj._spUUID = self.spUUID
+
+    def lookup(self):
+        pass
+
+    def new(self, params):
+        try:
+            self.uuid = params['id']
+            self.obj._UUID = self.uuid
+            self.info['version'] = params.get('version', 0)
+            self.info['name'] = params['name']
+            self.info['remotePath'] = params['remotePath']
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+
+        domClass = params.get('class', 'data').lower()
+        self.info['class'] = StorageDomain.CLASSES.get(domClass)
+        domType = params.get('type', 'unknown').lower()
+        self.info['type'] = StorageDomain.TYPES.get(domType)
+
+        ret = self.obj.create(self.info['type'], self.info['remotePath'],
+                               self.info['name'], self.info['class'])
+        return ret
+
+    def delete(self, *args):
+        params = parse_request()
+        autoDetach = params.get('autoDetach', False)
+        ret = self.obj.format(autoDetach)
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def attach(self, *args):
+        validate_method(('POST',))
+        params = parse_request()
+        try:
+            pool = params['storagepool']
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+        ret = self.obj.attach(pool)
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def detach(self, *args):
+        validate_method(('POST',))
+        params = parse_request()
+        masterSD = params.get('master_uuid', API.StorageDomain.BLANK_UUID)
+        masterVer = params.get('master_ver', self.info['master_ver'])
+        force = bool(params.get('force', False))
+
+        ret = self.obj.detach(masterSD, masterVer, force)
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def activate(self, *args):
+        validate_method(('POST',))
+        ret = self.obj.activate()
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def deactivate(self, *args):
+        validate_method(('POST',))
+        params = parse_request()
+        masterSD = params.get('master_uuid', API.StorageDomain.BLANK_UUID)
+        masterVer = params.get('master_ver', self.info['master_ver'])
+
+        ret = self.obj.deactivate(masterSD, masterVer)
+        return Response(self.ctx, ret).render()
+
+
+class StorageDomains(Collection):
+    def __init__(self, ctx):
+        Collection.__init__(self, ctx)
+        self.obj = API.Global(self.ctx.cif)
+        self.template = 'storagedomains'
+
+    def create(self, *args):
+        params = parse_request()
+        domain = StorageDomain(self.ctx)
+        ret = domain.new(params)
+        return Response(self.ctx, ret).render()
+
+    def _get_resources(self, uuid=None):
+        ret = self.obj.getStorageDomains()
+        vdsOK(self.ctx, ret)
+        uuid_list = []
+        if uuid is None:
+            uuid_list = ret['domlist']
+        else:
+            if uuid in ret['domlist']:
+                uuid_list = [uuid]
+        obj_list = []
+        for uuid in uuid_list:
+            obj_list.append(StorageDomain(self.ctx, uuid))
+        return obj_list
+
+
 class Root(Resource):
     def __init__(self, cif, log, templatePath):
         ctx = ContextManager(cif, log, templatePath)
         Resource.__init__(self, ctx)
         self._links = {
             'storageconnectionrefs': lambda: StorageConnectionRefs(self.ctx),
+            'storagedomains': lambda: StorageDomains(self.ctx),
         }
         self.template = 'root'
 

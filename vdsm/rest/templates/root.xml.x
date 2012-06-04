@@ -6,4 +6,5 @@
     <version major="$resource.product_info['version']['major']" minor="$resource.product_info['version']['minor']" build="$resource.product_info['version']['build']" revision="$resource.product_info['version']['revision']"/>
   </product_info>
   <link href="/api/storageconnectionrefs" rel="storageconnectionrefs"/>
+  <link href="/api/storagedomains" rel="storagedomains"/>
 </api>

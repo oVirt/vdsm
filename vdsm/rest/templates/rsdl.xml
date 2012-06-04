@@ -51,5 +51,125 @@
                 <type>Response</type>
             </response>
         </link>
+        <link href="/api/storagedomains" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>StorageDomains</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains" rel="add">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>StorageDomain</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains/{storagedomain:id}" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>StorageDomain</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains/{storagedomain:id}" rel="delete">
+            <request>
+                <http_method>DELETE</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>Action</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains/{storagedomain:id}/attach" rel="attach">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>Action</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains/{storagedomain:id}/detach" rel="detach">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>Action</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains/{storagedomain:id}/activate" rel="activate">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>Action</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains/{storagedomain:id}/deactivate" rel="deactivate">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>Action</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
     </links>
 </rsdl>

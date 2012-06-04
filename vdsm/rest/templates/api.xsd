@@ -343,6 +343,45 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- storagedomains -->
+  <xs:element name="storagedomain" type="StorageDomain"/>
+  <xs:element name="storagedomains" type="StorageDomains"/>
+
+  <xs:complexType name="StorageDomains">
+    <xs:complexContent>
+    <xs:extension base="BaseResources">
+      <xs:sequence>
+          <xs:annotation>
+            <xs:appinfo>
+              <jaxb:property name="StorageDomains" />
+            </xs:appinfo>
+          </xs:annotation>
+          <xs:element ref="storagedomain" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="StorageDomain">
+    <xs:complexContent>
+      <xs:extension base="BaseResource">
+        <xs:sequence>
+          <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1" />
+          <xs:element name="type" type="xs:string" minOccurs="1" maxOccurs="1" />
+          <xs:element name="class" type="xs:string" minOccurs="1" maxOccurs="1" />
+          <xs:element name="role" type="xs:string" minOccurs="1" maxOccurs="1" />
+          <xs:element name="remotePath" type="xs:string" minOccurs="1" maxOccurs="1" />
+          <xs:element name="version" type="xs:int" minOccurs="1" maxOccurs="1" />
+          <xs:element name="master_ver" type="xs:int" minOccurs="1" maxOccurs="1" />
+          <xs:element name="lver" type="xs:int" minOccurs="1" maxOccurs="1" />
+          <xs:element name="spm_id" type="xs:int" minOccurs="1" maxOccurs="1" />
+          <xs:element ref="storagepool" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="link" type="Link" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
 <!-- RSDL -->
 
   <xs:element name="url" type="Url"/>
