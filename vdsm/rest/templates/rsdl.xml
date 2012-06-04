@@ -171,5 +171,23 @@
                 <type>Response</type>
             </response>
         </link>
+        <link href="/api/storagedomains/{storagedomain:id}/images" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>Images</type>
+            </response>
+        </link>
+        <link href="/api/storagedomains/{storagedomain:id}/images/{image:id}" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>Image</type>
+            </response>
+        </link>
     </links>
 </rsdl>

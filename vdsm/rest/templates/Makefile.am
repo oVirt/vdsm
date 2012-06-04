@@ -8,6 +8,10 @@
 
 vdsmresttemplatedir = $(vdsmdir)/rest/templates
 dist_vdsmresttemplate_DATA = \
+	image.json.x \
+	image.xml.x \
+	images.json.x \
+	images.xml.x \
 	response.json.x \
 	response.xml.x \
 	root.json.x \

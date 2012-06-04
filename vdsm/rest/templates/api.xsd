@@ -343,6 +343,35 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- images -->
+  <xs:element name="image" type="Image"/>
+  <xs:element name="images" type="Images"/>
+
+  <xs:complexType name="Image">
+    <xs:complexContent>
+      <xs:extension base="BaseResource">
+        <xs:sequence>
+          <xs:element name="link" type="Link" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Images">
+    <xs:complexContent>
+    <xs:extension base="BaseResources">
+      <xs:sequence>
+          <xs:annotation>
+            <xs:appinfo>
+              <jaxb:property name="Images" />
+            </xs:appinfo>
+          </xs:annotation>
+          <xs:element ref="image" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <!-- storagedomains -->
   <xs:element name="storagedomain" type="StorageDomain"/>
   <xs:element name="storagedomains" type="StorageDomains"/>

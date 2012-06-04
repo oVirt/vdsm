@@ -303,6 +303,53 @@ class StorageConnectionRefs(Collection):
         return obj_list
 
 
+class Image(Resource):
+    def __init__(self, ctx, uuid, sdUUID, spUUID):
+        Resource.__init__(self, ctx)
+        self.uuid = uuid
+        self.sdUUID = sdUUID
+        self.spUUID = spUUID
+        self.obj = API.Image(self.ctx.cif, self.uuid, spUUID, sdUUID)
+        self.template = 'image'
+
+    def lookup(self):
+        pass
+
+    def delete(self, *args):
+        params = parse_request()
+        postZero = bool(params.get('postZero', False))
+        force = bool(params.get('force', False))
+
+        if 'volumes' in params:
+            ret = self.obj.deleteVolumes(params['volumes'], postZero, force)
+        else:
+            ret = self.obj.delete(postZero, force)
+        return Response(self.ctx, ret).render()
+
+
+class Images(Collection):
+    def __init__(self, ctx, sdUUID, spUUID):
+        Collection.__init__(self, ctx)
+        self.sdUUID = sdUUID
+        self.spUUID = spUUID
+        self.obj = API.StorageDomain(self.ctx.cif, self.sdUUID, self.spUUID)
+        self.template = 'images'
+
+    def _get_resources(self, uuid=None):
+        ret = self.obj.getImages()
+        vdsOK(self.ctx, ret)
+        uuid_list = []
+        if uuid is None:
+            uuid_list = ret['imageslist']
+        else:
+            if uuid in ret['imageslist']:
+                uuid_list = [uuid]
+        obj_list = []
+        for uuid in uuid_list:
+            obj_list.append(Image(self.ctx, uuid, self.sdUUID, self.spUUID))
+        return obj_list
+
+
 class StorageDomain(Resource):
     CLASSES = {'data': API.StorageDomain.Classes.DATA,
                'iso': API.StorageDomain.Classes.ISO,
@@ -322,6 +369,9 @@ class StorageDomain(Resource):
         self.spUUID = None
         self.info = {}
         self.stats = {}
+        self._links = {
+            'images': lambda: Images(self.ctx, self.uuid, self.spUUID),
+        }
         self._lookup()  # See NOTE below
         self.template = 'storagedomain'
 
