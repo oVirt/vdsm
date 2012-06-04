@@ -1145,7 +1145,6 @@ class Global(object):
     def setupNetworks(self, networks={}, bondings={}, options={}):
         """Add a new network to this vds, replacing an old one."""
 
-        self._translateOptionsToNew(options)
         if not self._cif._networkSemaphore.acquire(blocking=False):
             self.log.warn('concurrent network verb already executing')
             return errCode['unavail']
