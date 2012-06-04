@@ -7,5 +7,49 @@
         <description>oVirt API entities schema.</description>
     </schema>
     <links>
+        <link href="/api/storageconnectionrefs" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>StorageConnectionRefs</type>
+            </response>
+        </link>
+        <link href="/api/storageconnectionrefs" rel="add">
+            <request>
+                <http_method>POST</http_method>
+                <headers>
+                    <header>
+                        <name>Content-Type</name>
+                        <value>application/xml|json</value>
+                    </header>
+                </headers>
+                <body>
+                    <type>StorageConnectionRef</type>
+                </body>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
+        <link href="/api/storageconnectionrefs/{storageconnectionref:id}" rel="get">
+            <request>
+                <http_method>GET</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>StorageConnectionRef</type>
+            </response>
+        </link>
+        <link href="/api/storageconnectionrefs/{storageconnectionref:id}" rel="delete">
+            <request>
+                <http_method>DELETE</http_method>
+                <body/>
+            </request>
+            <response>
+                <type>Response</type>
+            </response>
+        </link>
     </links>
 </rsdl>

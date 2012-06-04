@@ -245,10 +245,71 @@ class Collection(object):
             return None
 
 
+class StorageConnectionRef(Resource):
+    def __init__(self, ctx, uuid=None, info={}):
+        Resource.__init__(self, ctx)
+        self.obj = API.ConnectionRefs(self.ctx.cif)
+        self.uuid = uuid
+        self.info = info
+        self.template = 'storageconnectionref'
+
+    def lookup(self):
+        pass
+
+    def new(self, params):
+        try:
+            self.uuid = params['id']
+            connType = params['type']
+            connParams = params['parameters']
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+        connArg = {self.uuid: {'type': connType, 'params': connParams}}
+        ret = self.obj.acquire(connArg)
+        code = ret.get('results', {}).get(self.uuid, '-1')
+        if code != 0:
+            ret['status']['code'] = code
+            ret['status']['message'] = "Unable to acquire storage connection"
+        return ret
+
+    def delete(self, *args):
+        ret = self.obj.release([self.uuid])
+        return Response(self.ctx, ret).render()
+
+
+class StorageConnectionRefs(Collection):
+    def __init__(self, ctx):
+        Collection.__init__(self, ctx)
+        self.obj = API.ConnectionRefs(self.ctx.cif)
+        self.template = 'storageconnectionrefs'
+
+    def create(self, *args):
+        params = parse_request()
+        conn = StorageConnectionRef(self.ctx)
+        ret = conn.new(params)
+        return Response(self.ctx, ret).render()
+
+    def _get_resources(self, uuid=None):
+        ret = self.obj.statuses()
+        vdsOK(self.ctx, ret)
+        infos = ret['connectionslist']
+        obj_list = []
+        if uuid is not None:
+            if uuid in infos:
+                obj_list.append(StorageConnectionRef(self.ctx, uuid,
+                                                     infos[uuid]))
+        else:
+            for uuid, info in infos.items():
+                obj_list.append(StorageConnectionRef(self.ctx, uuid, info))
+        return obj_list
+
+
 class Root(Resource):
     def __init__(self, cif, log, templatePath):
         ctx = ContextManager(cif, log, templatePath)
         Resource.__init__(self, ctx)
+        self._links = {
+            'storageconnectionrefs': lambda: StorageConnectionRefs(self.ctx),
+        }
         self.template = 'root'
 
     def lookup(self):

@@ -288,6 +288,61 @@
     </xs:sequence>
   </xs:complexType>
 
+  <!-- storageconnectionrefs -->
+  <xs:element name="storageconnectionref" type="StorageConnectionRef"/>
+  <xs:element name="storageconnectionrefs" type="StorageConnectionRefs"/>
+
+  <xs:complexType name="StorageConnectionRefs">
+    <xs:complexContent>
+    <xs:extension base="BaseResources">
+      <xs:sequence>
+          <xs:annotation>
+            <xs:appinfo>
+              <jaxb:property name="StorageConnectionRef" />
+            </xs:appinfo>
+          </xs:annotation>
+          <xs:element ref="storageconnectionref" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="StorageConnectionRefParams">
+    <xs:sequence>
+      <xs:element name="path" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="target" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="iface" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="credentials" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="spec" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="vfsType" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="options" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="export" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="retrans" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="timeout" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="version" type="xs:string" minOccurs="0" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StorageConnectionRef">
+    <xs:complexContent>
+      <xs:extension base="BaseResource">
+        <xs:sequence>
+          <xs:element name="type" type="xs:string" minOccurs="0" maxOccurs="1" />
+          <xs:element name="parameters" type="StorageConnectionRefParams" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="lastError" minOccurs="1" maxOccurs="1">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="code" type="xs:int" minOccurs="1" maxOccurs="1" />
+                <xs:element name="message" type="xs:string" minOccurs="1" maxOccurs="1" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="connected" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
 <!-- RSDL -->
 
   <xs:element name="url" type="Url"/>

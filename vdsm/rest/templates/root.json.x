@@ -9,5 +9,8 @@
     "name": "$resource.product_info['name']",
     "vendor": "$resource.product_info['vendor']"
   },
-  "links": []
+  "links": [ {
+    "rel": "storageconnectionrefs",
+    "href": "/api/storageconnectionrefs"
+  } ]
 }
