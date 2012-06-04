@@ -181,6 +181,7 @@ class Response(object):
 class Resource(object):
     def __init__(self, ctx):
         self.ctx = ctx
+        self._links = {}
 
     @cherrypy.expose
     def index(self):
@@ -191,11 +192,8 @@ class Resource(object):
     def __call__(self):
         pass
 
-    def _handle_link(self, link):
-        return None
-
     def _dispatch_lookup(self, link):
-        return self._handle_link(link)
+        return self._links.get(link, lambda: None)()
 
 
 class Collection(object):
