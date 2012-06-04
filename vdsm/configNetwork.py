@@ -86,9 +86,11 @@ def ifaceUsers(iface):
     "Returns a list of entities using the interface"
     _netinfo = NetInfo()
     users = set()
-    for b, bdict in _netinfo.networks.iteritems():
-        if bdict['bridged'] and iface in bdict['ports']:
-            users.add(b)
+    for n, ndict in _netinfo.networks.iteritems():
+        if ndict['bridged'] and iface in ndict['ports']:
+            users.add(n)
+        elif not ndict['bridged'] and iface == ndict['interface']:
+            users.add(n)
     for b, bdict in _netinfo.bondings.iteritems():
         if iface in bdict['slaves']:
             users.add(b)
