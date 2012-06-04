@@ -736,22 +736,25 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 
     if not utils.tobool(options.get('skipLibvirt', False)):
         if network not in _netinfo.networks:
-            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network %r: It doesn't exist" % network)
+            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
+                    "Cannot delete network %r: It doesn't exist" % network)
 
         nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
         bridged = _netinfo.networks[network]['bridged']
     else:
         bridged = True
 
-    logging.info("Removing network %s with vlan=%s, bonding=%s, nics=%s. options=%s"%(network, vlan, bonding, nics, options))
+    logging.info("Removing network %s with vlan=%s, bonding=%s, nics=%s,"
+                 "options=%s" % (network, vlan, bonding, nics, options))
 
     if not utils.tobool(force):
         if bonding:
             validateBondingName(bonding)
             if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
-                raise ConfigNetworkError(ne.ERR_BAD_NIC, 'delNetwork: %s are not all nics enslaved to %s' % (nics, bonding))
+                raise ConfigNetworkError(ne.ERR_BAD_NIC,
+                        "delNetwork: %s are not all nics enslaved to %s" % \
+                        (nics, bonding))
         if vlan:
-            #assertVlan(vlan)
             validateVlanId(vlan)
         if bridged:
             assertBridgeClean(network, vlan, bonding, nics)
@@ -763,30 +766,34 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         configWriter.setNewMtu(network)
 
     removeLibvirtNetwork(network, log=False)
-    # the deleted bridge should never be up at this stage.
+    # We need to gather NetInfo again to refresh networks info from libvirt.
+    # The deleted bridge should never be up at this stage.
     if network in NetInfo().networks:
-        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'delNetwork: bridge %s still exists' % network)
+        raise ConfigNetworkError(ne.ERR_USED_BRIDGE,
+                "delNetwork: bridge %s still exists" % network)
 
     if network and bridged:
         ifdown(network)
         subprocess.call([constants.EXT_BRCTL, 'delbr', network])
         configWriter.removeBridge(network)
+
     if vlan:
         vlandev = (bonding or nics[0]) + '.' + vlan
         ifdown(vlandev)
-        subprocess.call([constants.EXT_VCONFIG, 'rem', vlandev], stderr=subprocess.PIPE)
+        subprocess.call([constants.EXT_VCONFIG, 'rem', vlandev],
+                        stderr=subprocess.PIPE)
         configWriter.removeVlan(vlan, bonding or nics[0])
+
     if bonding:
         if not bridged or not bondingOtherUsers(network, vlan, bonding):
             ifdown(bonding)
-        if not bridged or not bondingOtherUsers(network, vlan, bonding):
             configWriter.removeBonding(bonding)
+
     for nic in nics:
-        if not bridged or not nicOtherUsers(network, vlan, bonding, nic):
+        nicUsers = nicOtherUsers(network, vlan, bonding, nic)
+        if not nicUsers:
             ifdown(nic)
-        if bridged and nicOtherUsers(network, vlan, bonding, nic):
-            continue
-        configWriter.removeNic(nic)
+            configWriter.removeNic(nic)
 
 def clientSeen(timeout):
     start = time.time()
