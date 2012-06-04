@@ -116,6 +116,8 @@ def parse_request():
             node[element.tag] = children_to_dict(map(xml_to_dict, children))
         return node
 
+    if 'Content-Length' not in cherrypy.request.headers:
+        return {}
     rawbody = cherrypy.request.body.read()
     if mime_in_header('Content-Type', 'application/xml'):
         try:
