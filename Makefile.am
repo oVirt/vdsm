@@ -94,9 +94,14 @@ PEP8_WHITELIST = \
 	vdsm_reg/createDaemon.py \
 	vdsm_reg/define.py
 
+PEP8_BLACKLIST = \
+	restData.py
+
 check-local:
-	find . -path './.git' -prune -type f -o -name '*.py' -o -name '*.py.in' | xargs $(PYFLAKES)
-	$(PEP8) --filename '*.py,*.py.in' $(PEP8_WHITELIST)
+	find . -path './.git' -prune -type f -o \
+		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES)
+	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' \
+		$(PEP8_WHITELIST)
 
 all-local: \
 	vdsm.spec

@@ -41,6 +41,8 @@ test_modules = \
 	persistentDictTests.py \
 	processPoolTests.py \
 	resourceManagerTests.py \
+	restTests.py \
+	restData.py \
 	vdsClientTests.py
 
 dist_noinst_DATA = \
