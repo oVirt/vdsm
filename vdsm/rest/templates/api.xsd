@@ -455,6 +455,64 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <!-- storagepools -->
+  <xs:comlexType name="DomainSummary">
+    <xs:complexContent>
+      <xs:attribute name="id" type="xs:string"/>
+      <xs:attribute name="href" type="xs:string"/>
+      <xs:sequence>
+        <xs:element name="diskfree" type="xs:int"/>
+        <xs:element name="disktotal" type="xs:int"/>
+        <xs:element name="status" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexContent>
+  </xs:comlexType>
+
+  <xs:complexType name="DomainsSummary">
+    <xs:complexContent>
+      <xs:sequence>
+        <xs:element name="link" type="DomainSummary" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="storagepool" type="StoragePool"/>
+  <xs:element name="storagepools" type="StoragePools"/>
+
+  <xs:complexType name="StoragePool">
+    <xs:complexContent>
+      <xs:extension base="BaseResource">
+        <xs:sequence>
+          <xs:element name="pool_status" type="xs:string" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="isoprefix" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="master_uuid" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="version" type="xs:int" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="spm_id" type="xs:int" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="type" type="xs:string" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="master_ver" type="xs:int" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="lver" type="xs:int" minOccurs="0" maxOccurs="1"/>
+          <xs:element name="domains" type="DomainsSummary"/>
+          <xs:element name="link" type="Link" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="StoragePools">
+    <xs:complexContent>
+    <xs:extension base="BaseResources">
+      <xs:sequence>
+          <xs:annotation>
+            <xs:appinfo>
+              <jaxb:property name="StoragePools" />
+            </xs:appinfo>
+          </xs:annotation>
+          <xs:element ref="storagepool" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <!-- tasks -->
   <xs:element name="task" type="Task"/>
   <xs:element name="tasks" type="Tasks"/>

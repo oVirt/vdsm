@@ -24,6 +24,10 @@ dist_vdsmresttemplate_DATA = \
 	storagedomain.xml.x \
 	storagedomains.json.x \
 	storagedomains.xml.x \
+	storagepool.json.x \
+	storagepool.xml.x \
+	storagepools.json.x \
+	storagepools.xml.x \
 	task.json.x \
 	task.xml.x \
 	tasks.json.x \

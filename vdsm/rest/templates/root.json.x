@@ -16,6 +16,9 @@
     "rel": "storagedomains",
     "href": "/api/storagedomains"
   }, {
+    "rel": "storagepools",
+    "href": "/api/storagepools"
+  }, {
     "rel": "tasks",
     "href": "/api/tasks"
   } ]

@@ -642,6 +642,139 @@ class StorageDomains(Collection):
         return obj_list
 
 
+class StoragePool(Resource):
+    def __init__(self, ctx, uuid=None):
+        Resource.__init__(self, ctx)
+        self.obj = API.StoragePool(self.ctx.cif, uuid)
+        self.uuid = uuid
+        self.template = 'storagepool'
+
+    def lookup(self):
+        self.info = {}
+        self.dominfo = {}
+
+        ret = self.obj.getInfo()
+        vdsOK(self.ctx, ret)
+        self.info.update(ret['info'])
+        for sdUUID, dominfo in ret['dominfo'].items():
+            self.dominfo[sdUUID] = dominfo
+
+    def new(self, params):
+        try:
+            self.uuid = params['id']
+            self.obj._UUID = self.uuid
+
+            ret = self.obj.create(params['name'], params['master_uuid'],
+                            params['master_ver'], [params['master_uuid']],
+                            None, None, None, None)
+            return ret
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+
+    def _spmStatus(self):
+        ret = self.conn.vdsm.getSpmStatus(self.obj._UUID)
+        vdsOK(self.ctx, ret)
+        status = {}
+        for k in ('spmId', 'spmStatus', 'spmLver'):
+            status[k] = ret['spm_st'][k]
+        return status
+
+    def delete(self, *args):
+        params = parse_request()
+        try:
+            hostID = self.ctx.hostID
+            key = params['key']
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+        ret = self.obj.destroy(hostID, key)
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def connect(self, *args):
+        validate_method(('POST',))
+        params = parse_request()
+        try:
+            hostID = self.ctx.hostID
+            key = params['key']
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+        ret = self.obj.connect(hostID, key,
+                    self.info['master_uuid'], self.info['master_ver'])
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def disconnect(self, *args):
+        validate_method(('POST',))
+        params = parse_request()
+        try:
+            hostID = self.ctx.hostID
+            key = params['key']
+            remove = params.get('remove', False)
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+        ret = self.obj.disconnect(hostID, key, remove)
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def spmstart(self, *args):
+        validate_method(('POST',))
+        params = parse_request()
+        prevId = int(params.get('prevId', -1))
+        prevLver = int(params.get('prevLver', -1))
+        scsiFencing = int(params.get('scsiFencing', 0))
+        ret = self.obj.spmStart(prevId, prevLver, scsiFencing)
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def spmstop(self, *args):
+        validate_method(('POST',))
+        ret = self.obj.spmStop()
+        return Response(self.ctx, ret).render()
+
+
+class StoragePools(Collection):
+    def __init__(self, ctx):
+        Collection.__init__(self, ctx)
+        self.obj = API.Global(self.ctx.cif)
+        self.template = 'storagepools'
+
+    def create(self, *args):
+        params = parse_request()
+        pool = StoragePool(self.ctx)
+        ret = pool.new(params)
+        return Response(self.ctx, ret).render()
+
+    @cherrypy.expose
+    def connect(self, *args):
+        validate_method(('POST',))
+        params = parse_request()
+        try:
+            uuid = params['uuid']
+            master_uuid = params['master_uuid']
+            master_ver = params['master_ver']
+            key = params['key']
+            hostID = self.ctx.hostID
+        except KeyError:
+            raise cherrypy.HTTPError(400, "A required parameter is missing")
+        pool = API.StoragePool(self.ctx.cif, uuid)
+        ret = pool.connect(hostID, key, master_uuid, master_ver)
+        return Response(self.ctx, ret).render()
+
+    def _get_resources(self, uuid=None):
+        ret = self.obj.getConnectedStoragePools()
+        vdsOK(self.ctx, ret)
+        uuid_list = []
+        if uuid is None:
+            uuid_list = ret['poollist']
+        else:
+            if uuid in ret['poollist']:
+                uuid_list = [uuid]
+        obj_list = []
+        for uuid in uuid_list:
+            obj_list.append(StoragePool(self.ctx, uuid))
+        return obj_list
+
+
 class Task(Resource):
     def __init__(self, ctx, uuid, props):
         Resource.__init__(self, ctx)
@@ -703,6 +836,7 @@ class Root(Resource):
         self._links = {
             'storageconnectionrefs': lambda: StorageConnectionRefs(self.ctx),
             'storagedomains': lambda: StorageDomains(self.ctx),
+            'storagepools': lambda: StoragePools(self.ctx),
             'tasks': lambda: Tasks(self.ctx),
         }
         self.template = 'root'
