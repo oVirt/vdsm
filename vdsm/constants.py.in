@@ -33,6 +33,11 @@ METADATA_USER = '@METADATAUSER@'
 METADATA_GROUP = '@METADATAGROUP@'
 QEMU_PROCESS_USER = '@QEMUUSER@'
 
+#
+# The username of SASL authenticating for libvirt connection
+#
+SASL_USERNAME = "vdsm@rhevh"
+
 # This is the domain version translation list
 # DO NOT CHANGE OLD VALUES ONLY APPEND
 DOMAIN_VERSIONS = (0, 2, 3)
@@ -57,6 +62,7 @@ P_VDSM_LIB = '@VDSMLIBDIR@/'
 P_VDSM_RUN = '@VDSMRUNDIR@/'
 P_VDSM_CONF = '@CONFDIR@/'
 P_VDSM_KEYS = '/etc/pki/vdsm/keys/'
+P_VDSM_LIBVIRT_PASSWD = P_VDSM_KEYS + 'libvirt_password'
 
 P_VDSM_CLIENT_LOG = '@VDSMRUNDIR@/client.log'
 P_VDSM_LOG = '@VDSMLOGDIR@'

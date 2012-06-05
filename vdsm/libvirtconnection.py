@@ -100,10 +100,9 @@ def get(cif=None):
     def req(credentials, user_data):
         for cred in credentials:
             if cred[0] == libvirt.VIR_CRED_AUTHNAME:
-                cred[4] = 'vdsm@rhevh'
+                cred[4] = constants.SASL_USERNAME
             elif cred[0] == libvirt.VIR_CRED_PASSPHRASE:
-                cred[4] = file(constants.P_VDSM_KEYS +
-                               'libvirt_password').readline().rstrip("\n")
+                cred[4] = file(constants.P_VDSM_LIBVIRT_PASSWD).readline().rstrip("\n")
         return 0
 
     auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE], req, None]
