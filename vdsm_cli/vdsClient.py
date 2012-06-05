@@ -1663,7 +1663,10 @@ if __name__ == '__main__':
                         'o   emulatedMachine : passed as qemu\'s -M',
                         'o   devices={name:val[, name:val, name:{name:val, '
                         'name:val}]} : add a fully specified device',
-                        'o   cpuPinning={vcpuid:val} cpu pinning'
+                        'o   cpuPinning={vcpuid:pinning} cpu pinning in '
+                        'libvirt-like format. see '
+                        'http://libvirt.org/formatdomain.html'
+                         '#elementsCPUTuning'
                         )),
         'hotplugNic':  (serv.hotplugNic,
                          ('<vmId> <nicspec>',
