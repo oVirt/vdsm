@@ -622,10 +622,13 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
     # nics must be activated in the same order of boot time to expose the correct
     # MAC address.
     for nic in nicSort(nics):
-        configWriter.addNic(nic, bonding=bonding, bridge=brName, mtu=max(prevmtu, mtu))
+        configWriter.addNic(nic, bonding=bonding, bridge=brName,
+                             mtu=max(prevmtu, mtu))
         ifup(nic)
     if bonding:
-        configWriter.addBonding(bonding, bridge=brName, bondingOptions=bondingOptions, mtu=mtu)
+        configWriter.addBonding(bonding, bridge=brName,
+                                 bondingOptions=bondingOptions,
+                                 mtu=max(prevmtu, mtu))
         ifup(bonding)
 
     if vlan:
