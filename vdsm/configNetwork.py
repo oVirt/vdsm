@@ -613,32 +613,27 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
                 ifdown(nic)
 
     if bridged:
-        configWriter.addBridge(network, ipaddr=ipaddr, netmask=netmask, mtu=mtu,
-                gateway=gateway, **options)
+        configWriter.addBridge(network, ipaddr=ipaddr, netmask=netmask,
+                                mtu=mtu, gateway=gateway, **options)
         ifdown(network)
 
-    # since we have vlan device, it is connected to the bridge. other
-    # interfaces should be connected to the bridge through vlan, and not directly.
-    brName = network if bridged and not vlan else None
+    brName = network if bridged else None
 
     # nics must be activated in the same order of boot time to expose the correct
     # MAC address.
     for nic in nicSort(nics):
-        if not bonding and bridged:
-            configWriter.addNic(nic, bridge=brName, mtu=max(prevmtu, mtu))
+        configWriter.addNic(nic, bonding=bonding, bridge=brName, mtu=max(prevmtu, mtu))
         ifup(nic)
     if bonding:
         configWriter.addBonding(bonding, bridge=brName, bondingOptions=bondingOptions, mtu=mtu)
-        for nic in nics:
-            configWriter.addNic(nic, bonding=bonding, mtu=max(prevmtu, mtu))
         ifup(bonding)
+
     if vlan:
         iface += '.' + vlan
-        configWriter.addVlan(vlan, bonding or nics[0], network=network if bridged else None, mtu=mtu, bridged=bridged)
-        # since we have vlan device, it is connected to the network. other
-        # interfaces should be connected to the network through vlan, and not
-        # directly.
+        configWriter.addVlan(vlan, bonding or nics[0], network=brName,
+                             mtu=mtu, bridged=bridged)
         ifup((bonding or nics[0]) + '.' + vlan)
+
     if bridged:
         if options.get('bootproto') == 'dhcp' and not utils.tobool(options.get('blockingdhcp')):
             # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
