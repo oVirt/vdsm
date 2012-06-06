@@ -29,6 +29,7 @@ import glob
 from collections import namedtuple
 import misc
 from functools import partial
+from storage_exception import InvalidParameterException
 
 import mount
 import iscsi
@@ -95,6 +96,12 @@ def dict2conInfo(d):
     conType = d['type']
     params = _TYPE_NT_MAPPING[conType](d.get('params', {}))
     return ConnectionInfo(conType, params)
+
+def _addIntegerOption(options, key, value):
+    try:
+        options.append("%s=%d" % (key, int(value)))
+    except ValueError:
+        raise InvalidParameterException(key, value)
 
 class ExampleConnection(object):
     """Do not inherit from this object it is just to show and document the
@@ -238,10 +245,10 @@ class NFSConnection(object):
         self._timeout = timeout
         self._version = version
         self._retrans = retrans
-        options.append("timeo=%d" % timeout)
-        options.append("retrans=%d" % retrans)
+        _addIntegerOption(options, "timeo", timeout)
+        _addIntegerOption(options, "retrans", retrans)
         if version:
-            options.append("vers=%d" % version)
+            _addIntegerOption(options, "vers", version)
 
         self._mountCon = MountConnection(export, "nfs", ",".join(options))
 
