@@ -146,36 +146,37 @@ class service:
 
     def do_create(self, args):
         params = {}
+        drives = []
+        devices = []
+        cpuPinning = {}
+        confLines = []
         confFile = open(args[0])
         for line in confFile.readlines():
             line = re.sub("\s+", '', line)
             line = re.sub("\#.*", '', line)
-            if '=' in line:
-                param, value = line.split("=")
-                params[param] = value
-        drives = []
-        devices = []
-        cpuPinning = {}
+            if line:
+                confLines.append(line)
         if len(args) > 1:
-            for line in args[1:]:
-                if '=' in line:
-                    param, value = line.split("=", 1)
-                    if param == 'devices':
-                        devices.append(self._parseDriveSpec(value))
-                    elif param == 'drive':
-                        drives.append(self._parseDriveSpec(value))
-                    elif param in ('cdrom', 'floppy'):
-                        value = self._parseDriveSpec(value)
-                    elif param == 'cpuPinning':
-                        cpuPinning, rStr = self._parseNestedSpec(value)
-                    if param.startswith('custom_'):
-                        if not 'custom' in params:
-                            params['custom'] = {}
-                        params['custom'][param[7:]] = value
-                    else:
-                        params[param] = value
+            confLines.extend(args[1:])
+        for line in confLines:
+            if '=' in line:
+                param, value = line.split("=", 1)
+                if param == 'devices':
+                    devices.append(self._parseDriveSpec(value))
+                elif param == 'drive':
+                    drives.append(self._parseDriveSpec(value))
+                elif param == 'cpuPinning':
+                    cpuPinning, rStr = self._parseNestedSpec(value)
+                elif param.startswith('custom_'):
+                    if not 'custom' in params:
+                        params['custom'] = {}
+                    params['custom'][param[7:]] = value
                 else:
-                    params[line.strip()] = ''
+                    if param in ('cdrom', 'floppy'):
+                        value = self._parseDriveSpec(value)
+                    params[param] = value
+            else:
+                params[line.strip()] = ''
         if cpuPinning:
             params['cpuPinning'] = cpuPinning
         if drives:

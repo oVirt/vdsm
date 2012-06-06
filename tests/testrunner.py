@@ -178,13 +178,10 @@ def hackVdsmModule():
 
     for name in ('config', 'constants', 'utils', 'define', 'netinfo',
                  'SecureXMLRPCServer', 'libvirtconnection', 'betterPopen',
-                 'exception'):
+                 'exception', 'vdscli'):
                     sub = __import__(name, globals(), locals(), [], -1)
                     setattr(mod, name, sub)
                     sys.modules['vdsm.%s' % name] = getattr(mod, name)
-
-    mod.vdscli = None
-    sys.modules['vdsm.vdscli'] = mod.vdscli
 
 
 def findRemove(listR, value):

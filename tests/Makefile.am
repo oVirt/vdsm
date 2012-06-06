@@ -40,7 +40,8 @@ test_modules = \
 	parted_utils_tests.py \
 	persistentDictTests.py \
 	processPoolTests.py \
-	resourceManagerTests.py
+	resourceManagerTests.py \
+	vdsClientTests.py
 
 dist_noinst_DATA = \
 	run_tests_local.sh \
