@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -40,7 +40,7 @@ import fileUtils
 
 TAG_PREFIX_MD = "MD_"
 TAG_PREFIX_MDNUMBLKS = "MS_"
-TAG_PREFIX_IMAGE =  "IU_"
+TAG_PREFIX_IMAGE = "IU_"
 TAG_PREFIX_PARENT = "PU_"
 VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_IMAGE,
@@ -59,10 +59,12 @@ RESERVED_LEASES = 100
 
 rmanager = rm.ResourceManager.getInstance()
 
+
 def _getDeviceSize(devPath):
     with open(devPath, "rb") as f:
         f.seek(0, 2)
         return f.tell()
+
 
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -72,19 +74,18 @@ class BlockVolume(volume.Volume):
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.metaoff = None
         volume.Volume.__init__(self, repoPath, sdUUID, imgUUID, volUUID)
-        self.lvmActivationNamespace = sd.getNamespace(self.sdUUID, LVM_ACTIVATION_NAMESPACE)
+        self.lvmActivationNamespace = sd.getNamespace(self.sdUUID,
+                                                      LVM_ACTIVATION_NAMESPACE)
 
     def validate(self):
         try:
             lvm.getLV(self.sdUUID, self.volUUID)
         except se.LogicalVolumeDoesNotExistError:
-            raise se.VolumeDoesNotExist(self.volUUID) #Fix me
+            raise se.VolumeDoesNotExist(self.volUUID)  # Fix me
         volume.Volume.validate(self)
-
 
     def refreshVolume(self):
         lvm.refreshLV(self.sdUUID, self.volUUID)
-
 
     @classmethod
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
@@ -95,26 +96,28 @@ class BlockVolume(volume.Volume):
             # way
             pass
         except Exception:
-            cls.log.warn("Could not get size for vol %s/%s using optimized methods",
-                    sdobj.sdUUID, volUUID, exc_info=True)
+            cls.log.warn("Could not get size for vol %s/%s "
+                         "using optimized methods",
+                          sdobj.sdUUID, volUUID, exc_info=True)
 
         return int(int(lvm.getLV(sdobj.sdUUID, volUUID).size) / bs)
 
     getVTrueSize = getVSize
 
-
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, sdUUID, volUUID, volPath):
-        cls.log.info("sdUUID=%s volUUID=%s volPath=%s" % (sdUUID, volUUID, volPath))
+        cls.log.info("sdUUID=%s volUUID=%s volPath=%s" %
+                      (sdUUID, volUUID, volPath))
 
         try:
-            #Fix me: assert resource lock.
+            # Fix me: assert resource lock.
             lvm.getLV(sdUUID, volUUID)
             lvm.removeLVs(sdUUID, volUUID)
         except se.LogicalVolumeDoesNotExistError, e:
-            pass #It's OK: inexistent LV, don't try to remove.
+            pass  # It's OK: inexistent LV, don't try to remove.
         except se.CannotRemoveLogicalVolume, e:
-            cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID, volUUID, str(e))
+            cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID,
+                             volUUID, str(e))
 
         if os.path.lexists(volPath):
             os.unlink(volPath)
@@ -127,7 +130,8 @@ class BlockVolume(volume.Volume):
         'volFormat' - volume format RAW/QCOW2
         'preallocate' - sparse/preallocate
         """
-        volume.Volume.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        volume.Volume.validateCreateVolumeParams(volFormat, preallocate,
+                                                 srcVolUUID)
 
         # Sparse-Raw not supported for block volumes
         if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
@@ -139,18 +143,21 @@ class BlockVolume(volume.Volume):
 
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, sdUUID, offs):
-        cls.log.info("createVolumeMetadataRollback: sdUUID=%s offs=%s" % (sdUUID, offs))
+        cls.log.info("createVolumeMetadataRollback: sdUUID=%s offs=%s" %
+                      (sdUUID, offs))
         metaid = [sdUUID, int(offs)]
-        cls.__putMetadata({ "NONE": "#" * (sd.METASIZE-10) }, metaid)
+        cls.__putMetadata({"NONE": "#" * (sd.METASIZE - 10)}, metaid)
 
     @classmethod
-    def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+    def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
+               diskType, volUUID, desc, srcImgUUID, srcVolUUID):
         """
        Create a new volume with given size or snapshot
             'size' - in sectors
             'volFormat' - volume format COW / RAW
             'preallocate' - Preallocate / Sparse
-            'diskType' - string that describes disk type System|Data|Shared|Swap|Temp
+            'diskType' - string that describes disk type
+                         System|Data|Shared|Swap|Temp
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
         """
@@ -167,7 +174,7 @@ class BlockVolume(volume.Volume):
         try:
             lvm.getLV(sdUUID, volUUID)
         except se.LogicalVolumeDoesNotExistError:
-            pass #OK, this is a new volume
+            pass  # OK, this is a new volume
         else:
             raise se.VolumeAlreadyExists(volUUID)
 
@@ -197,22 +204,31 @@ class BlockVolume(volume.Volume):
             raise
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeCannotGetParent("blockVolume can't get parent %s for volume %s: %s" % (srcVolUUID, volUUID, str(e)))
+            raise se.VolumeCannotGetParent("blockVolume can't get parent %s "
+                                           "for volume %s: %s" %
+                                            (srcVolUUID, volUUID, str(e)))
 
         try:
             cls.log.info("blockVolume: creating LV: volUUID %s" % (volUUID))
             if preallocate == volume.SPARSE_VOL:
-                volsize = "%s" % config.get("irs", "volume_utilization_chunk_mb")
+                volsize = "%s" % config.get("irs",
+                                            "volume_utilization_chunk_mb")
             else:
                 # should stay %d and size should be int(size)
                 volsize = "%s" % (size / 2 / 1024)
 
             # Rollback sentinel, just to mark the start of the task
-            vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL, "blockVolume", "BlockVolume", "startCreateVolumeRollback",
-                                                 [sdUUID, imgUUID, volUUID]))
+            vars.task.pushRecovery(task.Recovery(task.ROLLBACK_SENTINEL,
+                                   "blockVolume", "BlockVolume",
+                                   "startCreateVolumeRollback",
+                                   [sdUUID, imgUUID, volUUID]))
+
             # create volume rollback
-            vars.task.pushRecovery(task.Recovery("halfbaked volume rollback", "blockVolume", "BlockVolume", "halfbakedVolumeRollback",
-                                                 [sdUUID, volUUID, vol_path]))
+            vars.task.pushRecovery(task.Recovery("halfbaked volume rollback",
+                                   "blockVolume", "BlockVolume",
+                                   "halfbakedVolumeRollback",
+                                   [sdUUID, volUUID, vol_path]))
+
             lvm.createLV(sdUUID, volUUID, volsize, activate=True)
             if os.path.exists(vol_path):
                 os.unlink(vol_path)
@@ -222,21 +238,31 @@ class BlockVolume(volume.Volume):
             raise
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeCreationError("blockVolume create/link lv %s failed: %s" % (volUUID, str(e)))
+            raise se.VolumeCreationError("blockVolume create/link lv %s "
+                                         "failed: %s" % (volUUID, str(e)))
 
         # By definition volume is now a leaf and should be writeable.
-        # Default permission for lvcreate is read and write. No need to set permission.
+        # Default permission for lvcreate is read and write.
+        # No need to set permission.
 
         try:
-            cls.log.info("blockVolume: create: volUUID %s srcImg %s srvVol %s" % (volUUID, srcImgUUID, srcVolUUID))
+            cls.log.info("blockVolume: create: volUUID %s srcImg %s srvVol %s"
+                         % (volUUID, srcImgUUID, srcVolUUID))
             if not pvol:
-                cls.log.info("Request to create %s volume %s with size = %s sectors", volume.type2name(volFormat), vol_path, size)
+                cls.log.info("Request to create %s volume %s with size = %s "
+                             "sectors", volume.type2name(volFormat), vol_path,
+                              size)
+
                 # Create 'raw' volume via qemu-img actually redundant
                 if volFormat == volume.COW_FORMAT:
-                    volume.createVolume(None, None, vol_path, size, volFormat, preallocate)
+                    volume.createVolume(None, None, vol_path, size, volFormat,
+                                        preallocate)
             else:
                 ## Create hardlink to template and its meta file
-                cls.log.info("Request to create snapshot %s/%s of volume %s/%s", imgUUID, volUUID, srcImgUUID, srcVolUUID)
+                cls.log.info("Request to create snapshot %s/%s of volume"
+                             " %s/%s", imgUUID, volUUID, srcImgUUID,
+                              srcVolUUID)
+
                 pvol.clone(imageDir, volUUID, volFormat, preallocate)
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
@@ -246,13 +272,17 @@ class BlockVolume(volume.Volume):
             with cls._tagCreateLock:
                 offs = mysd.mapMetaOffset(volUUID, VOLUME_MDNUMBLKS)
                 lvm.addLVTags(sdUUID, volUUID, ("%s%s" % (TAG_PREFIX_MD, offs),
-                                                "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
-                                                "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)))
+                              "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
+                              "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)))
 
-            vars.task.pushRecovery(task.Recovery("create block volume metadata rollback", "blockVolume", "BlockVolume", "createVolumeMetadataRollback",
-                                                 [sdUUID, str(offs)]))
+            vars.task.pushRecovery(task.Recovery("create block volume metadata"
+                                   " rollback", "blockVolume", "BlockVolume",
+                                   "createVolumeMetadataRollback",
+                                   [sdUUID, str(offs)]))
+
             # Set metadata and mark volume as legal.
-            # FIXME: In next version we should remove imgUUID and srcVolUUID, as they are saved on lvm tags
+            # FIXME: In next version we should remove imgUUID and srcVolUUID,
+            #        as they are saved on lvm tags
             cls.newMetadata([sdUUID, offs], sdUUID, imgUUID, srcVolUUID,
                             size, volume.type2name(volFormat),
                             volume.type2name(preallocate), voltype,
@@ -263,18 +293,24 @@ class BlockVolume(volume.Volume):
             raise
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeMetadataWriteError("tag target volume %s failed: %s" % (volUUID, str(e)))
+            raise se.VolumeMetadataWriteError("tag target volume %s failed: %s"
+                                               % (volUUID, str(e)))
 
         try:
             lvm.deactivateLVs(sdUUID, volUUID)
         except Exception:
-            cls.log.warn("Cannot deactivate new created volume %s/%s", sdUUID, volUUID, exc_info=True)
+            cls.log.warn("Cannot deactivate new created volume %s/%s", sdUUID,
+                          volUUID, exc_info=True)
 
-        # Remove all previous rollbacks for 'halfbaked' volume and add rollback for 'real' volume creation
-        vars.task.replaceRecoveries(task.Recovery("create block volume rollback", "blockVolume", "BlockVolume", "createVolumeRollback",
-                                             [repoPath, sdUUID, imgUUID, volUUID, imageDir]))
+        # Remove all previous rollbacks for 'halfbaked' volume and add rollback
+        # for 'real' volume creation
+        vars.task.replaceRecoveries(task.Recovery("create block volume "
+                                    "rollback", "blockVolume", "BlockVolume",
+                                    "createVolumeRollback",
+                                    [repoPath, sdUUID, imgUUID, volUUID,
+                                     imageDir]))
+
         return volUUID
-
 
     def delete(self, postZero, force):
         """ Delete volume
@@ -295,10 +331,11 @@ class BlockVolume(volume.Volume):
         self.setLegality(volume.ILLEGAL_VOL)
 
         if postZero:
-            self.prepare(justme=True, rw=True, chainrw=force, setrw=True, force=True)
+            self.prepare(justme=True, rw=True, chainrw=force, setrw=True,
+                         force=True)
             try:
-                misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting, int(size),
-                                 recoveryCallback=volume.baseAsyncTasksRollback)
+                misc.ddWatchCopy("/dev/zero", vol_path, vars.task.aborting,
+                     int(size), recoveryCallback=volume.baseAsyncTasksRollback)
             except se.ActionStopped, e:
                 raise e
             except Exception, e:
@@ -316,31 +353,35 @@ class BlockVolume(volume.Volume):
             puuid = self.getParent()
             self.setParent(volume.BLANK_UUID)
             if puuid and puuid != volume.BLANK_UUID:
-                pvol = BlockVolume(self.repoPath, self.sdUUID, self.imgUUID, puuid)
+                pvol = BlockVolume(self.repoPath, self.sdUUID, self.imgUUID,
+                                   puuid)
                 pvol.recheckIfLeaf()
         except Exception, e:
             eFound = e
-            self.log.warning("cannot finalize parent volume %s", puuid, exc_info=True)
+            self.log.warning("cannot finalize parent volume %s", puuid,
+                              exc_info=True)
 
         try:
             try:
                 lvm.removeLVs(self.sdUUID, self.volUUID)
             except se.CannotRemoveLogicalVolume:
-                # At this point LV is already marked as illegal, we will try to cleanup whatever we can...
+                # At this point LV is already marked as illegal, we will
+                # try to cleanup whatever we can...
                 pass
 
             self.removeMetadata([self.sdUUID, offs])
         except Exception, e:
             eFound = e
-            self.log.error("cannot remove volume %s/%s", self.sdUUID, self.volUUID, exc_info=True)
+            self.log.error("cannot remove volume %s/%s", self.sdUUID,
+                            self.volUUID, exc_info=True)
 
         try:
             os.unlink(vol_path)
             return True
         except Exception, e:
             eFound = e
-            self.log.error("cannot delete volume's %s/%s link path: %s", self.sdUUID, self.volUUID,
-                            vol_path, exc_info=True)
+            self.log.error("cannot delete volume's %s/%s link path: %s",
+                            self.sdUUID, self.volUUID, vol_path, exc_info=True)
 
         raise eFound
 
@@ -348,8 +389,9 @@ class BlockVolume(volume.Volume):
         """Extend a logical volume
             'newSize' - new size in blocks
         """
-        self.log.info("Request to extend LV %s of image %s in VG %s with size = %s",
-                      self.volUUID, self.imgUUID, self.sdUUID, newSize)
+        self.log.info("Request to extend LV %s of image %s in VG %s with "
+                      "size = %s", self.volUUID, self.imgUUID, self.sdUUID,
+                       newSize)
         # we should return: Success/Failure
         # Backend APIs:
         sizemb = (newSize + 2047) / 2048
@@ -358,10 +400,13 @@ class BlockVolume(volume.Volume):
     @classmethod
     def renameVolumeRollback(cls, taskObj, sdUUID, oldUUID, newUUID):
         try:
-            cls.log.info("renameVolumeRollback: sdUUID=%s oldUUID=%s newUUID=%s", sdUUID, oldUUID, newUUID)
+            cls.log.info("renameVolumeRollback: sdUUID=%s oldUUID=%s "
+                         "newUUID=%s", sdUUID, oldUUID, newUUID)
             lvm.renameLV(sdUUID, oldUUID, newUUID)
         except Exception:
-            cls.log.error("Failure in renameVolumeRollback: sdUUID=%s oldUUID=%s newUUID=%s", sdUUID, oldUUID, newUUID, exc_info=True)
+            cls.log.error("Failure in renameVolumeRollback: sdUUID=%s "
+                          "oldUUID=%s newUUID=%s", sdUUID, oldUUID, newUUID,
+                           exc_info=True)
 
     def rename(self, newUUID, recovery=True):
         """
@@ -376,8 +421,10 @@ class BlockVolume(volume.Volume):
 
         if recovery:
             name = "Rename volume rollback: " + newUUID
-            vars.task.pushRecovery(task.Recovery(name, "blockVolume", "BlockVolume", "renameVolumeRollback",
-                                                 [self.sdUUID, newUUID, self.volUUID]))
+            vars.task.pushRecovery(task.Recovery(name, "blockVolume",
+                                   "BlockVolume", "renameVolumeRollback",
+                                   [self.sdUUID, newUUID, self.volUUID]))
+
         lvm.renameLV(self.sdUUID, self.volUUID, newUUID)
         self.volUUID = newUUID
         self.volumePath = os.path.join(self.imagePath, newUUID)
@@ -407,7 +454,8 @@ class BlockVolume(volume.Volume):
         if setrw:
             self.setrw(rw=rw)
         access = rm.LockType.exclusive if rw else rm.LockType.shared
-        activation = rmanager.acquireResource(self.lvmActivationNamespace, self.volUUID, access)
+        activation = rmanager.acquireResource(self.lvmActivationNamespace,
+                                              self.volUUID, access)
         activation.autoRelease = False
 
     @classmethod
@@ -417,8 +465,10 @@ class BlockVolume(volume.Volume):
         Volume deactivation occurs as part of resource releasing.
         If justme is false, the entire COW chain should be torn down.
         """
-        cls.log.info("Tearing down volume %s/%s justme %s" % (sdUUID, volUUID, justme))
-        lvmActivationNamespace = sd.getNamespace(sdUUID, LVM_ACTIVATION_NAMESPACE)
+        cls.log.info("Tearing down volume %s/%s justme %s"
+                      % (sdUUID, volUUID, justme))
+        lvmActivationNamespace = sd.getNamespace(sdUUID,
+                                                 LVM_ACTIVATION_NAMESPACE)
         rmanager.releaseResource(lvmActivationNamespace, volUUID)
         if not justme:
             try:
@@ -428,7 +478,8 @@ class BlockVolume(volume.Volume):
                 # we will failure to get the parent volume.
                 # We can live with it and still succeed in volume's teardown.
                 pvolUUID = volume.BLANK_UUID
-                cls.log.warn("Failure to get parent of volume %s/%s (%s)" % (sdUUID, volUUID, e))
+                cls.log.warn("Failure to get parent of volume %s/%s (%s)"
+                              % (sdUUID, volUUID, e))
 
             if pvolUUID != volume.BLANK_UUID:
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
@@ -437,7 +488,8 @@ class BlockVolume(volume.Volume):
         """
         Block SD supports lazy image dir creation
         """
-        imageDir = image.Image(self.repoPath).getImageDir(self.sdUUID, self.imgUUID)
+        imageDir = image.Image(self.repoPath).getImageDir(self.sdUUID,
+                                                          self.imgUUID)
         if not os.path.isdir(imageDir):
             try:
                 os.mkdir(imageDir, 0755)
@@ -448,7 +500,8 @@ class BlockVolume(volume.Volume):
 
     def validateVolumePath(self):
         """
-        Block SD supports lazy volume link creation. Note that the volume can be still inactive.
+        Block SD supports lazy volume link creation. Note that the volume can
+        be still inactive.
         An explicit prepare is required to validate that the volume is active.
         """
         if not self.imagePath:
@@ -464,7 +517,7 @@ class BlockVolume(volume.Volume):
         Templated and shared disks volumes may result more then one image.
         """
         lvs = lvm.getLV(self.sdUUID)
-        imgUUIDs = [self.imgUUID] #Add volume image
+        imgUUIDs = [self.imgUUID]  # Add volume image
         for lv in lvs:
             imgUUID = ""
             parent = ""
@@ -473,7 +526,7 @@ class BlockVolume(volume.Volume):
                     imgUUID = tag[len(TAG_PREFIX_IMAGE):]
                 elif tag.startswith(TAG_PREFIX_PARENT):
                     if tag[len(TAG_PREFIX_PARENT):] != self.volUUID:
-                        break #Not a child
+                        break  # Not a child
                     parent = tag[len(TAG_PREFIX_PARENT):]
                 if parent and image:
                     if imgUUID not in imgUUIDs:
@@ -483,7 +536,8 @@ class BlockVolume(volume.Volume):
         # Check image legality, if needed
         if legal:
             for imgUUID in imgUUIDs[:]:
-                if not image.Image(self.repoPath).isLegal(self.sdUUID, imgUUID):
+                if not image.Image(self.repoPath).isLegal(self.sdUUID,
+                                                          imgUUID):
                     imgUUIDs.remove(imgUUID)
 
         return imgUUIDs
@@ -526,7 +580,8 @@ class BlockVolume(volume.Volume):
         Set parent volume UUID
         """
         self.changeVolumeTag(TAG_PREFIX_PARENT, puuid)
-        #FIXME In next version we should remove PUUID, as it is saved on lvm tags
+        # FIXME In next version we should remove PUUID, as it is saved on lvm
+        # tags
         self.setMetaParam(volume.PUUID, puuid)
 
     def setImage(self, imgUUID):
@@ -534,13 +589,15 @@ class BlockVolume(volume.Volume):
         Set image UUID
         """
         self.changeVolumeTag(TAG_PREFIX_IMAGE, imgUUID)
-        #FIXME In next version we should remove imgUUID, as it is saved on lvm tags
+        # FIXME In next version we should remove imgUUID, as it is saved on lvm
+        # tags
         self.setMetaParam(volume.IMAGE, imgUUID)
 
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
         """
-        Fetch the list of the Volumes UUIDs, not including the shared base (template)
+        Fetch the list of the Volumes UUIDs, not including the shared base
+        (template)
         """
         lvs = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_IMAGE, imgUUID))
         return [lv.name for lv in lvs]
@@ -550,7 +607,7 @@ class BlockVolume(volume.Volume):
         Just wipe meta.
         """
         try:
-            self.__putMetadata({ "NONE": "#" * (sd.METASIZE-10) }, metaid)
+            self.__putMetadata({"NONE": "#" * (sd.METASIZE - 10)}, metaid)
         except Exception, e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError(str(metaid) + str(e))
@@ -559,7 +616,8 @@ class BlockVolume(volume.Volume):
     def __putMetadata(cls, meta, metaid):
         vgname = metaid[0]
         offs = metaid[1]
-        lines = ["%s=%s\n" % (key.strip(), str(value).strip()) for key, value in meta.iteritems()]
+        lines = ["%s=%s\n" % (key.strip(), str(value).strip())
+                 for key, value in meta.iteritems()]
         lines.append("EOF\n")
         metavol = lvm.lvPath(vgname, sd.METADATA)
         with fileUtils.DirectFile(metavol, "r+d") as f:
@@ -585,7 +643,8 @@ class BlockVolume(volume.Volume):
             if t.startswith(TAG_PREFIX_MD):
                 return int(t[3:])
         self.log.error("missing offset tag on volume %s", self.volUUID)
-        raise se.VolumeMetadataReadError("missing offset tag on volume %s" % self.volUUID)
+        raise se.VolumeMetadataReadError("missing offset tag on volume %s"
+                                          % self.volUUID)
 
     def getMetadata(self, metaid=None, nocache=False):
         """
@@ -673,6 +732,7 @@ def _getVolumeTag(sdUUID, volUUID, tagPrefix):
 
     raise se.MissingTagOnLogicalVolume(volUUID, tagPrefix)
 
+
 def _postZero(sdUUID, volumes):
     # Assumed that there is no any thread that can deactivate these LVs
     # on this host or change the rw permission on this or any other host.
@@ -692,12 +752,13 @@ def _postZero(sdUUID, volumes):
             # wipe out the whole volume
             try:
                 misc.ddWatchCopy("/dev/zero", lvm.lvPath(sdUUID, lv.name),
-                                 vars.task.aborting, int(lv.size),
-                                 recoveryCallback=volume.baseAsyncTasksRollback)
+                                vars.task.aborting, int(lv.size),
+                                recoveryCallback=volume.baseAsyncTasksRollback)
             except se.ActionStopped, e:
                 raise e
             except Exception, e:
                 raise se.VolumesZeroingError(lv.name)
+
 
 def deleteMultipleVolumes(sdUUID, volumes, postZero):
     "Delete multiple volumes (LVs) in the same domain (VG)."""
@@ -705,4 +766,3 @@ def deleteMultipleVolumes(sdUUID, volumes, postZero):
         _postZero(sdUUID, volumes)
     lvNames = [vol.volUUID for vol in volumes]
     lvm.removeLVs(sdUUID, lvNames)
-
