@@ -50,7 +50,7 @@ except ImportError:
 P_BIN = '/bin/'
 P_ETC_INITD = '/etc/init.d/'
 P_LIB_SYSTEMD = '/lib/systemd/systemd-'
-P_ROOT_SSH = '/root/.ssh'
+P_ROOT_SSH = pwd.getpwnam('root').pw_dir + '/.ssh'
 P_ROOT_AUTH_KEYS = P_ROOT_SSH + '/authorized_keys'
 P_SBIN = '/sbin/'
 P_USR_BIN = '/usr/bin/'
