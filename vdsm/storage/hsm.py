@@ -3022,47 +3022,10 @@ class HSM:
         :returns: result
         """
         result = {}
+
         for p in self.pools.values():
-            # Find the master domains
-            try:
-                master = p.masterDomain
-            except se.StorageException:
-                self.log.error("Unexpected error", exc_info=True)
-                master = None
-            # Get the stats results
             repo_stats = p.getRepoStats()
 
-            # Master requires extra post processing, since
-            # this is the only place where it makes sense that we are
-            # connected to the pool yet the master domain is not available,
-            # seeing as the purpose of this method is to monitor
-            # domains' health.
-            # There are situations in the life cycle of Storage Pool when
-            # its master domain is inactive (i.e. attached, but not active),
-            # while the pool itself is connected. In that case there would
-            # be no stats collected for it, so just skip extra validation.
-            # NB This is not a shallow copy !
-            master_stats = repo_stats.get(master.sdUUID)
-            if master and master_stats:
-
-                # Master validation makes sense for SPM only
-                # So we should analyze the 'getRepoStats' return value
-                if p.getSpmRole() == sp.SPM_ACQUIRED:
-                    # The SPM case
-                    valid = (master_stats['masterValidate']['mount'] and
-                        master_stats['masterValidate']['valid'])
-                else:
-                    # The HSM case
-                    valid = not (master_stats['masterValidate']['mount'] and
-                        isinstance(master, blockSD.BlockStorageDomain))
-
-                if not valid:
-                    self.log.warning("repoStats detected invalid master:%s %s",
-                        master.sdUUID, master_stats)
-                    if int(master_stats['result']['code']) == 0:
-                        master_stats['result']['code'] = se.StorageDomainMasterError.code
-
-            # Copy the 'result' out
             for d in repo_stats:
                 result[d] = repo_stats[d]['result']
 
