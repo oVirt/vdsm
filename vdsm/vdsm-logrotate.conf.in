@@ -7,7 +7,7 @@
     uncompresscmd /usr/bin/unxz
     compressext .xz
 }
-/var/log/core/*.dump {
+@VDSMCOREDUMPDIR@/*.dump {
     rotate 1
     missingok
     size 0

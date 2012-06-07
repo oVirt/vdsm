@@ -7,7 +7,7 @@ if [ $EXITVALUE != 0 ]; then
     /usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
 fi
 
-/usr/bin/find /var/log/core -type f -name '*xz' -mtime +7 -exec /bin/rm -f '{}' \;
+/usr/bin/find @VDSMCOREDUMPDIR@ -type f -name '*xz' -mtime +7 -exec /bin/rm -f '{}' \;
 EXITVALUE=$?
 if [ $EXITVALUE != 0 ]; then
     /usr/bin/logger -t logrotate "ALERT clean old core files exited abnormally with [$EXITVALUE]"

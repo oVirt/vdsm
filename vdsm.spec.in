@@ -342,9 +342,9 @@ install -Dm 0644 vdsm/limits.conf \
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
 install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
 
-# This is not commonplace, but we want /var/log/core to be a world-writable
+# This is not commonplace, but we want @VDSMCOREDUMPDIR@ to be a world-writable
 # dropbox for core dumps
-install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
+install -dDm 1777 %{buildroot}/@VDSMCOREDUMPDIR@
 %else
 # Install the configuration sample
 install -Dm 0644 vdsm/vdsm.conf.sample \
