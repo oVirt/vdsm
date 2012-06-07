@@ -20,8 +20,24 @@
 
 import sos.plugintools
 import subprocess
-import ConfigParser
 import os
+
+
+def _importVdsmPylibModule(modName):
+    import imp
+    import os.path
+    from distutils.sysconfig import get_python_lib
+    modFile, modPath, modDesc = imp.find_module(modName,
+            [os.path.join(get_python_lib(True), "vdsm")])
+    mod = imp.load_module(modName, modFile, modPath, modDesc)
+    return mod
+
+
+# This is hack for import vdsm.config module. because this plugin's name was
+# same with vdsm module, so it can not import vdsm.config directly. And we
+# keep plugin's name for compatibility.
+config = _importVdsmPylibModule('config').config
+
 
 class vdsm(sos.plugintools.PluginBase):
     """VDSM server related information
@@ -73,8 +89,6 @@ class vdsm(sos.plugintools.PluginBase):
         self.collectExtOutput("/usr/bin/iostat")
         self.collectExtOutput("/sbin/iscsiadm -m node")
         self.collectExtOutput("/sbin/iscsiadm -m session")
-        config = ConfigParser.ConfigParser()
-        config.read('/etc/vdsm/vdsm.conf')
         sslopt = ['', '-s '][config.getboolean('vars', 'ssl')]
         vdsclient = "/usr/bin/vdsClient " + sslopt + "0 "
         self.collectExtOutput(vdsclient + "getVdsCapabilities")
