@@ -21,4 +21,5 @@ dist_bin_SCRIPTS = \
 	vdsm-tool
 
 dist_vdsmtool_DATA = \
-	__init__.py
+	__init__.py \
+	passwd.py

@@ -375,11 +375,8 @@ rm -rf %{buildroot}
 /usr/sbin/usermod -a -G %{qemu_group},%{vdsm_group} %{snlk_user}
 
 %post
-# update the vdsm "secret" password for libvirt
-if [ -f /etc/pki/vdsm/keys/libvirt_password ]; then
-    /usr/sbin/saslpasswd2 -p -a libvirt vdsm@rhevh < \
-        /etc/pki/vdsm/keys/libvirt_password
-fi
+# set the vdsm "secret" password for libvirt
+%{_bindir}/vdsm-tool set-saslpasswd
 
 # generate the vdsm certificates (if missing)
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
@@ -651,6 +648,7 @@ exit 0
 %if !0%{?rhel}
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %endif
+<<<<<<< HEAD
 %{python_sitearch}/%{vdsm_name}/__init__.py*
 %{python_sitearch}/%{vdsm_name}/config.py*
 %{python_sitearch}/%{vdsm_name}/constants.py*
@@ -665,6 +663,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/betterPopen/__init__.py*
 %{python_sitearch}/%{vdsm_name}/betterPopen/createprocess.so
 %{python_sitearch}/%{vdsm_name}/tool/__init__.py*
+%{python_sitelib}/%{vdsm_name}/tool/passwd.py*
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
