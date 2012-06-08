@@ -18,28 +18,26 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-all-local: createprocess.so
-
-.PHONY: createprocess.so createprocess.so_copy createprocess.so_build
-
-createprocess_so_build: createprocess.c
-	$(PYTHON) setup.py clean build
-
-createprocess_so_copy: createprocess_so_build
-	cp build/*/createprocess.so .
-
-createprocess.so: createprocess_so_copy
+betterpopendir = $(vdsmpylibdir)/betterPopen
 
 dist_betterpopen_PYTHON = \
 	__init__.py
 
-dist_betterpopen_DATA = \
-    createprocess.so
+createprocess.so:
+	(cd $(srcdir); $(PYTHON) setup.py build \
+		--build-temp $(abs_builddir) --build-lib $(abs_builddir))
+
+all-local: createprocess.so
+
+install-data-local:
+	$(MKDIR_P) $(DESTDIR)$(betterpopendir)
+	$(INSTALL_PROGRAM) createprocess.so \
+		$(DESTDIR)$(betterpopendir)/createprocess.so
 
 EXTRA_DIST = \
-    createprocess.c \
-    setup.py
+	createprocess.c \
+	setup.py
 
 CLEANFILES = \
+	createprocess.o \
 	createprocess.so
-

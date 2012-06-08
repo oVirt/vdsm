@@ -651,20 +651,20 @@ exit 0
 %if !0%{?rhel}
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %endif
-%{python_sitelib}/%{vdsm_name}/__init__.py*
-%{python_sitelib}/%{vdsm_name}/config.py*
-%{python_sitelib}/%{vdsm_name}/constants.py*
-%{python_sitelib}/%{vdsm_name}/define.py*
-%{python_sitelib}/%{vdsm_name}/exception.py*
-%{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
-%{python_sitelib}/%{vdsm_name}/netinfo.py*
-%{python_sitelib}/%{vdsm_name}/qemuImg.py*
-%{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
-%{python_sitelib}/%{vdsm_name}/utils.py*
-%{python_sitelib}/%{vdsm_name}/vdscli.py*
-%{python_sitelib}/%{vdsm_name}/betterPopen/__init__.py*
-%{python_sitelib}/%{vdsm_name}/betterPopen/createprocess.so
-%{python_sitelib}/%{vdsm_name}/tool/__init__.py*
+%{python_sitearch}/%{vdsm_name}/__init__.py*
+%{python_sitearch}/%{vdsm_name}/config.py*
+%{python_sitearch}/%{vdsm_name}/constants.py*
+%{python_sitearch}/%{vdsm_name}/define.py*
+%{python_sitearch}/%{vdsm_name}/exception.py*
+%{python_sitearch}/%{vdsm_name}/libvirtconnection.py*
+%{python_sitearch}/%{vdsm_name}/netinfo.py*
+%{python_sitearch}/%{vdsm_name}/qemuImg.py*
+%{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*
+%{python_sitearch}/%{vdsm_name}/utils.py*
+%{python_sitearch}/%{vdsm_name}/vdscli.py*
+%{python_sitearch}/%{vdsm_name}/betterPopen/__init__.py*
+%{python_sitearch}/%{vdsm_name}/betterPopen/createprocess.so
+%{python_sitearch}/%{vdsm_name}/tool/__init__.py*
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
