@@ -103,6 +103,10 @@ def connect(addrport=None, useSSL=None, tsPath=None,
             CERTFILE = tsPath + '/certs/vdsmcert.pem'
             CACERT = tsPath + '/certs/cacert.pem'
 
+        for f in (KEYFILE, CERTFILE, CACERT):
+            if not os.access(f, os.R_OK):
+                raise Exception("No permission to read file: %s" % f)
+
         transport = TransportClass(key_file=KEYFILE,
                                    cert_file=CERTFILE, ca_certs=CACERT)
         server = xmlrpclib.ServerProxy('https://%s' % addrport,
