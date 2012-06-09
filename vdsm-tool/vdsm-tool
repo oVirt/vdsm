@@ -35,6 +35,15 @@ with the same name has already been registered by module '%s'.\
 """
 
 
+def _listPathModules(path):
+    modules = set()
+    for f in os.listdir(path):
+        base, ext = os.path.splitext(f)
+        if ext in ('.py', '.pyc', '.pyo'):
+            modules.add(base)
+    return sorted(modules)
+
+
 def load_modules():
     """
     Dynamically load the modules present in the tool package.
@@ -57,12 +66,9 @@ def load_modules():
 
     mod_path = os.path.dirname(vdsm.tool.__file__)
 
-    for mod_file in os.listdir(mod_path):
-        if (mod_file.startswith("_")
-            or not mod_file.endswith(".py")):
-                continue
-
-        mod_name = mod_file[:-3]
+    for mod_name in _listPathModules(mod_path):
+        if mod_name.startswith("_"):
+            continue
 
         mod_fobj, mod_absp, mod_desc = imp.find_module(mod_name, [mod_path])
         module = imp.load_module(mod_name, mod_fobj, mod_absp, mod_desc)
