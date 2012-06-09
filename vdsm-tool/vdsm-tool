@@ -43,8 +43,8 @@ def load_modules():
     and the commands present in the package. The commands to be exposed in
     the command line must be decorated with:
 
-        from vdsm.tool import vdsm_tool_expose
-        @vdsm_tool_expose(command_name)
+        from vdsm.tool import expose
+        @expose(command_name)
 
     Two global structures are maintained:
 

@@ -18,7 +18,7 @@
 #
 
 
-class vdsm_tool_expose(object):
+class expose(object):
     def __init__(self, name):
         self.name = name
 

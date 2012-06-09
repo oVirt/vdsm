@@ -20,10 +20,10 @@
 import errno
 import subprocess
 from vdsm import constants
-from vdsm.tool import vdsm_tool_expose
+from vdsm.tool import expose
 
 
-@vdsm_tool_expose("set-saslpasswd")
+@expose("set-saslpasswd")
 def set_saslpasswd():
     """
     Set vdsm password for libvirt connection
