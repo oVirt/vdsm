@@ -1085,12 +1085,15 @@ def setupNetworks(networks={}, bondings={}, **options):
 
                 d = dict(networkAttrs)
                 if 'bonding' in d:
-                    d['nics'] = bondings[d['bonding']]['nics']
-                    d['bondingOptions'] = bondings[d['bonding']].get('options',
-                                                                     None)
-                    # Don't remove bondX from the bonding list here,
-                    # because it may be in use for other networks
-                    handledBonds.add(d['bonding'])
+                    # we may not receive any information
+                    # about the bonding device if it is unchanged
+                    if bondings:
+                        d['nics'] = bondings[d['bonding']]['nics']
+                        d['bondingOptions'] = bondings[d['bonding']].get('options',
+                                                                         None)
+                        # Don't remove bondX from the bonding list here,
+                        # because it may be in use for other networks
+                        handledBonds.add(d['bonding'])
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force
