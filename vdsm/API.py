@@ -239,10 +239,11 @@ class VM(object):
                 self._cif.vmContainer[vmParams['vmId']] = \
                         VmClass(self._cif, vmParams)
             finally:
+                container_len = len(self._cif.vmContainer)
                 self._cif.vmContainerLock.release()
             self._cif.vmContainer[vmParams['vmId']].run()
             self.log.debug("Total desktops after creation of %s is %d" %
-                           (vmParams['vmId'], len(self._cif.vmContainer)))
+                           (vmParams['vmId'], container_len))
             return {'status': doneCode,
                     'vmList': self._cif.vmContainer[vmParams['vmId']].status()}
         except OSError, e:
