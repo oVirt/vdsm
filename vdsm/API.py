@@ -1073,6 +1073,7 @@ class Global(object):
         Report host capabilities.
         """
         c = caps.get()
+        c['netConfigDirty'] = str(self._cif._netConfigDirty)
 
         return {'status': doneCode, 'info': c}
 
