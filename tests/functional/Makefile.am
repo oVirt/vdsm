@@ -21,5 +21,6 @@
 vdsmfunctestsdir = ${vdsmtestsdir}/functional
 
 dist_vdsmfunctests_PYTHON = \
-	restTests.py
+	restTests.py \
+	sosPluginTests.py
 
