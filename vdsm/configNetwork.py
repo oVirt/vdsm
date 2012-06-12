@@ -629,10 +629,10 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
         ifup(bonding)
 
     if vlan:
-        iface += '.' + vlan
-        configWriter.addVlan(vlan, bonding or nics[0], network=brName,
+        configWriter.addVlan(vlan, iface, network=brName,
                              mtu=mtu, bridged=bridged)
-        ifup((bonding or nics[0]) + '.' + vlan)
+        iface += '.' + vlan
+        ifup(iface)
 
     if bridged:
         if options.get('bootproto') == 'dhcp' and not utils.tobool(options.get('blockingdhcp')):
