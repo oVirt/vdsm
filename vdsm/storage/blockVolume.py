@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os.path
+import os
 import uuid
 import threading
 import sanlock
@@ -93,15 +93,13 @@ class BlockVolume(volume.Volume):
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
         try:
             return _getDeviceSize(lvm.lvPath(sdobj.sdUUID, volUUID)) / bs
-        except OSError:
-            # This is OK, the volume might not be active. Try the traditional
-            # way
-            pass
-        except Exception:
-            cls.log.warn("Could not get size for vol %s/%s "
-                         "using optimized methods",
-                          sdobj.sdUUID, volUUID, exc_info=True)
+        except Exception, e:
+            # The volume might not be active, skip logging.
+            if not (isinstance(e, IOError) and e.errno == os.errno.ENOENT):
+                cls.log.warn("Could not get size for vol %s/%s using "
+                    "optimized methods", sdobj.sdUUID, volUUID, exc_info=True)
 
+        # Fallback to the traditional way.
         return int(int(lvm.getLV(sdobj.sdUUID, volUUID).size) / bs)
 
     getVTrueSize = getVSize
