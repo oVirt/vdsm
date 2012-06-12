@@ -1063,7 +1063,7 @@ class Drive(LibvirtVmDevice):
         if self.iface:
             target.setAttribute('bus', self.iface)
         diskelem.appendChild(target)
-        if utils.tobool(self.readonly):
+        if hasattr(self, 'readonly') and utils.tobool(self.readonly):
             readonly = doc.createElement('readonly')
             diskelem.appendChild(readonly)
         if hasattr(self, 'serial'):
