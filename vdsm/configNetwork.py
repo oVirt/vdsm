@@ -617,16 +617,19 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
                                 mtu=mtu, gateway=gateway, **options)
         ifdown(network)
 
+    # For VLAN we should attach bridge only to the VLAN device
+    # rather than to underlying NICs or bond
     brName = network if bridged else None
+    bridgeForNic = None if vlan else brName
 
-    # nics must be activated in the same order of boot time to expose the correct
-    # MAC address.
+    # NICs must be activated in the same order of boot time
+    # to expose the correct MAC address.
     for nic in nicSort(nics):
-        configWriter.addNic(nic, bonding=bonding, bridge=brName,
+        configWriter.addNic(nic, bonding=bonding, bridge=bridgeForNic,
                              mtu=max(prevmtu, mtu))
         ifup(nic)
     if bonding:
-        configWriter.addBonding(bonding, bridge=brName,
+        configWriter.addBonding(bonding, bridge=bridgeForNic,
                                  bondingOptions=bondingOptions,
                                  mtu=max(prevmtu, mtu))
         ifup(bonding)
