@@ -894,7 +894,7 @@ def makeBridge(vdcName, vdsmDir):
     #Delete existing bridge in oVirt
     if fReturn and fIsOvirt:
         try:
-            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_DEL), mgtBridge, vlan, bonding, nic] + ['skipLibvirt=True'])
+            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_DEL), mgtBridge, vlan, bonding, nic])
             if ret:
                 if ret == 17: #ERR_BAD_BRIDGE
                     logging.debug("makeBridge Ignoring error of del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
@@ -909,8 +909,7 @@ def makeBridge(vdcName, vdsmDir):
     if fReturn:
         try:
             lstBridgeOptions.append('blockingdhcp=true')
-            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_ADD) , MGT_BRIDGE_NAME, vlan, bonding, nic] + lstBridgeOptions
-                    + ['skipLibvirt=True'])
+            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_ADD) , MGT_BRIDGE_NAME, vlan, bonding, nic] + lstBridgeOptions)
             if ret:
                 fReturn = False
                 logging.debug("makeBridge Failed to add " + MGT_BRIDGE_NAME + " bridge out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
