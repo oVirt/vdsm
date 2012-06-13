@@ -130,7 +130,6 @@ EXTRA_DIST = \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf.in \
-	vdsm-modprobe.conf \
 	vdsm-restore-net-config.in \
 	vdsm.rwtab.in \
 	vdsm-store-net-config.in
@@ -153,7 +152,6 @@ install-data-local: \
 		install-data-logger \
 		install-data-rwtab \
 		install-data-logrotate \
-		install-data-modprobe \
 		install-data-sudoers \
 		install-data-libvirtpass
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
@@ -173,7 +171,6 @@ uninstall-local: \
 		uninstall-data-logger \
 		uninstall-data-rwtab \
 		uninstall-data-logrotate \
-		uninstall-data-modprobe \
 		uninstall-data-sudoers \
 		uninstall-data-libvirtpass
 
@@ -215,14 +212,6 @@ uninstall-data-logrotate:
 	$(RM) $(DESTDIR)$(sysconfdir)/logrotate.d/vdsm
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
-
-install-data-modprobe:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/modprobe.d
-	$(INSTALL_DATA) $(srcdir)/vdsm-modprobe.conf \
-		$(DESTDIR)$(sysconfdir)/modprobe.d/vdsm.conf
-
-uninstall-data-modprobe:
-	$(RM) $(DESTDIR)$(sysconfdir)/modprobe.d/vdsm.conf
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
