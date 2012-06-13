@@ -339,6 +339,10 @@ class NetInfo(object):
             if nic in bdict['slaves']:
                 yield b
 
+    def getNicsForBonding(self, bond):
+        bondAttrs = self.bondings[bond]
+        return bondAttrs['slaves']
+
     def getBondingForNic(self, nic):
         bondings = list(self.getBondingsForNic(nic))
         if bondings:
