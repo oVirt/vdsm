@@ -1069,20 +1069,18 @@ def setupNetworks(networks={}, bondings={}, **options):
 
         logger.debug("Applying...")
         try:
-            # Remove networks with 'remove' attribute
-            for network, networkAttrs in networks.items():
-                if 'remove' in networkAttrs:
-                    logger.debug("Removing network %r" % network)
-                    delNetwork(network, configWriter=configWriter, force=force)
-                    del networks[network]
-
-            handledBonds = set()
+            # Remove edited networks and networks with 'remove' attribute
             for network, networkAttrs in networks.items():
                 if network in _netinfo.networks:
+                    logger.debug("Removing network %r" % network)
                     delNetwork(network, configWriter=configWriter, force=force)
+                    if 'remove' in networkAttrs:
+                        del networks[network]
                 else:
                     networksAdded.append(network)
 
+            handledBonds = set()
+            for network, networkAttrs in networks.iteritems():
                 d = dict(networkAttrs)
                 if 'bonding' in d:
                     # we may not receive any information
