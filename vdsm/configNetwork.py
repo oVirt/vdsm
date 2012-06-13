@@ -238,8 +238,7 @@ class ConfigWriter(object):
         s += 'NM_CONTROLLED=no\n'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
                      'force', 'blockingdhcp',
-                     'connectivityCheck', 'connectivityTimeout',
-                     'skipLibvirt']
+                     'connectivityCheck', 'connectivityTimeout']
         for k in set(kwargs.keys()).difference(set(BLACKLIST)):
             if re.match('^[a-zA-Z_]\w*$', k):
                 s += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
@@ -493,7 +492,7 @@ def validateVlanId(vlan):
 
 
 def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask, gateway,
-        bondingOptions, bridged=True, skipLibvirt=False):
+        bondingOptions, bridged=True):
     if (vlan or bonding) and not nics:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'vlan/bonding definition requires nics. got: %r'%(nics,))
 
@@ -502,12 +501,9 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask
         validateBridgeName(bridge)
         if bridge in _netinfo.networks:
             raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'Bridge already exists')
-    elif not skipLibvirt:
+
         if bridge in _netinfo.getBridgelessNetworks():
             raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'network already exists')
-    else:
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                'bridgeless network can not be added when skip libvirt')
 
     # vlan
     if vlan:
@@ -576,7 +572,6 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
                gateway=None, force=False, configWriter=None, bondingOptions=None, bridged=True, **options):
     nics = nics or ()
     _netinfo = NetInfo()
-    skipLibvirt = utils.tobool(options.get('skipLibvirt', False))
     bridged = utils.tobool(bridged)
 
     if mtu:
@@ -588,7 +583,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
         _addNetworkValidation(_netinfo, bridge=network if bridged else None,
                 vlan=vlan, bonding=bonding, nics=nics, ipaddr=ipaddr,
                 netmask=netmask, gateway=gateway, bondingOptions=bondingOptions,
-                bridged=bridged, skipLibvirt=skipLibvirt)
+                bridged=bridged)
 
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
                  " bondingOptions=%s, mtu=%s, bridged=%s, options=%s",
@@ -650,8 +645,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
             ifup(network)
 
     # add libvirt network
-    if not skipLibvirt:
-        createLibvirtNetwork(network, bridged, iface)
+    createLibvirtNetwork(network, bridged, iface)
 
 def createLibvirtNetwork(network, bridged=True, iface=None):
     conn = libvirtconnection.get()
@@ -737,15 +731,12 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 
     validateBridgeName(network)
 
-    if not utils.tobool(options.get('skipLibvirt', False)):
-        if network not in _netinfo.networks:
-            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
-                    "Cannot delete network %r: It doesn't exist" % network)
+    if network not in _netinfo.networks:
+        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
+                "Cannot delete network %r: It doesn't exist" % network)
 
-        nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
-        bridged = _netinfo.networks[network]['bridged']
-    else:
-        bridged = True
+    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
+    bridged = _netinfo.networks[network]['bridged']
 
     logging.info("Removing network %s with vlan=%s, bonding=%s, nics=%s,"
                  "options=%s" % (network, vlan, bonding, nics, options))
