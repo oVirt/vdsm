@@ -958,6 +958,52 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
                             "Setup attached more than one network to bonding %s, some of which aren't vlans"%(bonding))
 
 
+def _editBondings(bondings, configWriter):
+    """ Add/Edit bond interface """
+    logger = logging.getLogger("_editBondings")
+
+    _netinfo = NetInfo()
+
+    for bond, bondAttrs in bondings.iteritems():
+        logger.debug("Creating/Editing bond %s with attributes %s",
+                        bond, bondAttrs)
+        if bond in _netinfo.bondings:
+            ifdown(bond)
+            # Take down all bond's NICs.
+            for nic in _netinfo.getNicsForBonding(bond):
+                ifdown(nic)
+                configWriter.removeNic(nic)
+
+        # NICs must be activated in the same order of boot time
+        # to expose the correct MAC address.
+        for nic in nicSort(bondAttrs['nics']):
+            configWriter.addNic(nic, bonding=bond)
+            ifup(nic)
+
+        configWriter.addBonding(bond,
+                                bondingOptions=bondAttrs.get('options', None))
+        ifup(bond)
+
+def _removeBondings(bondings, configWriter):
+    """ Add/Edit bond interface """
+    logger = logging.getLogger("_removeBondings")
+
+    _netinfo = NetInfo()
+
+    for bond, bondAttrs in bondings.items():
+        if 'remove' in bondAttrs:
+            nics = _netinfo.getNicsForBonding(bond)
+            logger.debug("Removing bond %r with nics = %s", bond, nics)
+            ifdown(bond)
+            configWriter.removeBonding(bond)
+
+            for nic in nics:
+                ifdown(nic)
+                configWriter.removeNic(nic)
+
+            del bondings[bond]
+
+
 def setupNetworks(networks={}, bondings={}, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -1009,7 +1055,6 @@ def setupNetworks(networks={}, bondings={}, **options):
         _netinfo = NetInfo()
         configWriter = ConfigWriter()
         networksAdded = []
-        #bondingNetworks = {}   # Reminder TODO
 
         logger.debug("Setting up network according to configuration: "
                      "networks:%r, bondings:%r, options:%r" % (networks,
@@ -1031,22 +1076,39 @@ def setupNetworks(networks={}, bondings={}, **options):
                     delNetwork(network, configWriter=configWriter, force=force)
                     del networks[network]
 
+            handledBonds = set()
             for network, networkAttrs in networks.items():
                 if network in _netinfo.networks:
                     delNetwork(network, configWriter=configWriter, force=force)
                 else:
                     networksAdded.append(network)
+
                 d = dict(networkAttrs)
                 if 'bonding' in d:
                     d['nics'] = bondings[d['bonding']]['nics']
                     d['bondingOptions'] = bondings[d['bonding']].get('options',
                                                                      None)
+                    # Don't remove bondX from the bonding list here,
+                    # because it may be in use for other networks
+                    handledBonds.add(d['bonding'])
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force
 
                 logger.debug("Adding network %r" % network)
                 addNetwork(network, configWriter=configWriter, **d)
+
+            # Do not handle a bonding device twice.
+            # We already handled it before during addNetwork.
+            for bond in handledBonds:
+                del bondings[bond]
+
+            # We are now left with bondings whose network was not mentioned
+            # Remove bonds with 'remove' attribute
+            _removeBondings(bondings, configWriter)
+
+            # Check whether bonds should be resized
+            _editBondings(bondings, configWriter)
 
             if utils.tobool(options.get('connectivityCheck', True)):
                 logger.debug('Checking connectivity...')
