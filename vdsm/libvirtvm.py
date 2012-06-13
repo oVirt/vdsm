@@ -1088,7 +1088,8 @@ class Drive(LibvirtVmDevice):
 
             driver.setAttribute('cache', self.cache)
 
-            if self.propagateErrors == 'on':
+            if self.propagateErrors == 'on' or \
+                    utils.tobool(self.propagateErrors):
                 driver.setAttribute('error_policy', 'enospace')
             else:
                 driver.setAttribute('error_policy', 'stop')
