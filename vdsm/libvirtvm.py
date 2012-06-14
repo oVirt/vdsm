@@ -39,6 +39,7 @@ from vdsm import netinfo
 import supervdsm
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
+_QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
 
 class MERGESTATUS:
     NOT_STARTED     = "Not Started"
@@ -733,7 +734,7 @@ class _DomXML:
             cpu.appendChild(f)
         self.dom.appendChild(cpu)
 
-    def _appendAgentDevice(self, path):
+    def _appendAgentDevice(self, path, name):
         """
           <channel type='unix'>
              <target type='virtio' name='org.linux-kvm.port.0'/>
@@ -744,7 +745,7 @@ class _DomXML:
         channel.setAttribute('type', 'unix')
         target = xml.dom.minidom.Element('target')
         target.setAttribute('type', 'virtio')
-        target.setAttribute('name', _VMCHANNEL_DEVICE_NAME)
+        target.setAttribute('name', name)
         source = xml.dom.minidom.Element('source')
         source.setAttribute('mode', 'bind')
         source.setAttribute('path', path)
@@ -1133,6 +1134,9 @@ class LibvirtVm(vm.Vm):
         self._guestSocketFile = constants.P_LIBVIRT_VMCHANNELS + \
                                 self.conf['vmName'].encode('utf-8') + \
                                 '.' + _VMCHANNEL_DEVICE_NAME
+        self._qemuguestSocketFile = constants.P_LIBVIRT_VMCHANNELS + \
+                                self.conf['vmName'].encode('utf-8') + \
+                                '.' + _QEMU_GA_DEVICE_NAME
         # TODO find a better idea how to calculate this constant only after
         # config is initialized
         self._MIN_DISK_REMAIN = (100 -
@@ -1189,7 +1193,13 @@ class LibvirtVm(vm.Vm):
         domxml.appendFeatures()
         domxml.appendCpu()
         if utils.tobool(self.conf.get('vmchannel', 'true')):
-            domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'))
+            domxml._appendAgentDevice(
+                        self._guestSocketFile.decode('utf-8'),
+                        _VMCHANNEL_DEVICE_NAME)
+        if utils.tobool(self.conf.get('qgaEnable', 'true')):
+            domxml._appendAgentDevice(
+                        self._qemuguestSocketFile.decode('utf-8'),
+                        _QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
         domxml.appendGraphics()
         domxml.appendConsole()
@@ -1220,6 +1230,10 @@ class LibvirtVm(vm.Vm):
         self._vmStats = VmStatsThread(self)
         self._vmStats.start()
         self._guestEventTime = self._startTime
+
+    def _cleanup(self):
+        vm.Vm._cleanup(self)
+        utils.rmFile(self._qemuguestSocketFile)
 
     def updateGuestCpuRunning(self):
         self._guestCpuRunning = self._dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
