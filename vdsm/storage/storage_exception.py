@@ -276,6 +276,10 @@ class VolumeWasNotPreparedBeforeTeardown(StorageException):
     code = 230
     message = "Volume was not prepared before being torn down"
 
+class IncorrectType(StorageException):
+    code = 231
+    message = "Incorrect Volume Preallocate Type"
+
 #################################################
 #  Images Exceptions
 #################################################

@@ -391,7 +391,7 @@ class Volume:
             raise se.IncorrectFormat(type2name(volFormat))
 
         if preallocate not in VOL_TYPE:
-            raise se.IncorrectFormat(type2name(preallocate))
+            raise se.IncorrectType(type2name(preallocate))
 
     def validateDelete(self):
         """
