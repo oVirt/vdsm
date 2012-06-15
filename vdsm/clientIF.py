@@ -148,8 +148,8 @@ class clientIF:
             try:
                 self._loadBindingREST()
             except ImportError:
-                self.log.error('Unable to load the rest server module. '
-                               'Please make sure it is installed.')
+                self.log.warn('Unable to load the rest server module. '
+                              'Please make sure it is installed.')
 
 
     def _syncLibvirtNetworks(self):
