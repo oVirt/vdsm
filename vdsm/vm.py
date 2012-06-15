@@ -856,7 +856,7 @@ class Vm(object):
                 agent_timeout = int(timeout) + config.getint('vars', 'sys_shutdown_timeout')
                 timer = threading.Timer(agent_timeout, self._timedShutdown)
                 timer.start()
-            elif self.conf['acpiEnable'].lower() == "true":
+            elif utils.tobool(self.conf.get('acpiEnable', 'true')):
                 self._guestEventTime = now
                 self._guestEvent = 'Powering down'
                 self._acpiShutdown()
@@ -874,7 +874,7 @@ class Vm(object):
         try:
             if self.lastStatus == 'Down':
                 return
-            if self.conf['acpiEnable'].lower() != "true":
+            if not utils.tobool(self.conf.get('acpiEnable', 'true')):
                 self.destroy()
             else:
                 self._acpiShutdown()
