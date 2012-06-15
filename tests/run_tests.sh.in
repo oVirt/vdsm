@@ -1,3 +1,4 @@
 #!/bin/sh
 prefix="@prefix@"
-LC_ALL=C PYTHONPATH="@pythondir@/vdsm:@datarootdir@/vdsm" @PYTHON@ @top_srcdir@/tests/testrunner.py $@
+exec_prefix="@exec_prefix@"
+LC_ALL=C PYTHONPATH="@pyexecdir@/vdsm:@datarootdir@/vdsm" @PYTHON@ @top_srcdir@/tests/testrunner.py $@
