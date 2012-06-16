@@ -132,7 +132,7 @@ class InterfaceSample:
                 if s != '':
                     logging.warning("Could not parse statistics (%s) from %s",
                             f, s, exc_info=True)
-                logging.debug('bad %s: (%s)' % (f, s))
+                logging.debug('bad %s: (%s)', f, s)
                 if not tries:
                     raise
 

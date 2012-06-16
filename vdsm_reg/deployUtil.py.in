@@ -593,7 +593,7 @@ def addSSHKey(path, strKey):
             if key != '\n' and not key.endswith("== ovirt-engine") or key.startswith("#"):
                 resKeys.append(key)
     except IOError:
-        logging.debug("Failed to read %s" % path)
+        logging.debug("Failed to read %s", path)
     resKeys.append('\n' + strKey)
 
     if isOvirt():
@@ -1344,7 +1344,7 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
         conn.request("GET", fileName)
         response = conn.getresponse()
     except:
-        logging.debug("%s failed in HTTPS. Retrying using HTTP." % fileName,
+        logging.debug("%s failed in HTTPS. Retrying using HTTP.", fileName,
                 exc_info=True)
         strPort = ":"
         if port is None:
@@ -1357,12 +1357,12 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
             conn.request("GET", fileName)
             response = conn.getresponse()
         except:
-            logging.error("Failed to fetch %s using http." % fileName,
+            logging.error("Failed to fetch %s using http.", fileName,
                     exc_info=True)
             fOK = False
     else:
-        logging.debug("%s status: %s reason: %s" % \
-                (fileName, str(response.status), response.reason))
+        logging.debug("%s status: %s reason: %s",
+                      fileName, str(response.status), response.reason)
 
     if response == None or response.status != 200:
         status = ""
@@ -1370,14 +1370,14 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
             status = str(response.status)
         if conn != None: conn.close()
         fOK = False
-        logging.error("Failed to fetch %s status %s" % (fileName, status))
+        logging.error("Failed to fetch %s status %s", fileName, status)
 
     if fOK:
         try:
             try:
                 data = str(response.read())
             except:
-                logging.error("Failed to read %s" % fileName, exc_info=True)
+                logging.error("Failed to read %s", fileName, exc_info=True)
         finally:
             if conn != None: conn.close()
 
@@ -1433,11 +1433,11 @@ def generateFingerPrint(path):
         try:
             fp = filter(lambda l: 'Fingerprint' in l, out.split())[0].split('=')[1]
         except Exception:
-            logging.error("Failed generating finger print for %s" % path,
+            logging.error("Failed generating finger print for %s", path,
                     exc_info=True)
     else:
-        logging.error("Command %s failed with return value %d" % \
-                (' '.join(cmd), rc))
+        logging.error("Command %s failed with return value %d",
+                      ' '.join(cmd), rc)
 
     return fp
 

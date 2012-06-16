@@ -172,7 +172,7 @@ class ConfigWriter(object):
         if confFile not in self._backups:
             try:
                 self._backups[confFile] = open(confFile).read()
-                logging.debug("Backed up %s" % confFile)
+                logging.debug("Backed up %s", confFile)
             except IOError:
                 pass
 
@@ -198,7 +198,7 @@ class ConfigWriter(object):
     def _persistentBackup(cls, filename):
         if os.path.exists('/usr/libexec/ovirt-functions'):
             subprocess.call([constants.EXT_SH, '/usr/libexec/ovirt-functions', 'unmount_config', filename])
-            logging.debug("unmounted %s using ovirt" % filename)
+            logging.debug("unmounted %s using ovirt", filename)
 
         (dummy, basename) = os.path.split(filename)
         backup = os.path.join(NET_CONF_BACK_DIR, basename)
@@ -218,7 +218,7 @@ class ConfigWriter(object):
         else:
             open(backup, 'w').write(cls.DELETED_HEADER + '\n')
         os.chown(backup, vdsm_uid, 0)
-        logging.debug("Persistently backed up %s (until next 'set safe config')" % filename)
+        logging.debug("Persistently backed up %s (until next 'set safe config')", filename)
 
     def addBridge(self, name, ipaddr=None, netmask=None, mtu=None,
             gateway=None, bootproto=None, delay='0', onboot='yes', **kwargs):
@@ -244,7 +244,7 @@ class ConfigWriter(object):
             if re.match('^[a-zA-Z_]\w*$', k):
                 s += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
             else:
-                logging.debug('ignoring variable %s' % k)
+                logging.debug('ignoring variable %s', k)
         conffile = self.NET_CONF_PREF + name
         self._backup(conffile)
         open(conffile, 'w').write(s)
