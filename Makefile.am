@@ -45,21 +45,23 @@ PEP8_WHITELIST = \
 	vdsm/SecureXMLRPCServer.py \
 	vdsm/blkid.py \
 	vdsm/debugPluginClient.py \
-	vdsm/exception.py \
 	vdsm/define.py \
-	vdsm/guestIF.py \
-	vdsm/hooks.py \
-	vdsm/md_utils.py \
-	vdsm/parted_utils.py \
+	vdsm/exception.py \
 	vdsm/gluster/__init__.py \
 	vdsm/gluster/api.py \
 	vdsm/gluster/cli.py \
 	vdsm/gluster/exception.py \
 	vdsm/gluster/hostname.py \
+	vdsm/guestIF.py \
+	vdsm/hooks.py \
+	vdsm/md_utils.py \
+	vdsm/parted_utils.py \
+	vdsm/rest/BindingREST.py \
+	vdsm/rest/Controller.py \
 	vdsm/storage/blockVolume.py \
-	vdsm/storage/localFsSD.py \
 	vdsm/storage/devicemapper.py \
 	vdsm/storage/hba.py \
+	vdsm/storage/localFsSD.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
 	vdsm/storage/nfsSD.py \
@@ -67,10 +69,8 @@ PEP8_WHITELIST = \
 	vdsm/storage/volume.py \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
-	vdsm/rest/BindingREST.py \
-	vdsm/rest/Controller.py \
-	vdsm_cli/vdsClientGluster.py \
 	vdsm_cli/vdsClient.py \
+	vdsm_cli/vdsClientGluster.py \
 	vdsm_cli/vdscli.py.in \
 	vdsm_hooks/fileinject/before_vm_start.py \
 	vdsm_hooks/sriov/before_vm_start.py
