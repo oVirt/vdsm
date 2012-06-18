@@ -225,7 +225,7 @@ class Deploy:
         rc = True
 
         try:
-            rc = deployUtil.yumSearch(VDSM_NAME)
+            rc = bool(deployUtil.yumListPackages(VDSM_NAME))
         except:
             rc = False
             logging.error("checkRegistration: Error searching for VDSM package!",
