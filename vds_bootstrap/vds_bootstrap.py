@@ -80,13 +80,13 @@ fedorabased = deployUtil.versionCompare(deployUtil.getOSVersion(), "16") >= 0
 
 if rhel6based:
     VDSM_NAME = "vdsm"
-    VDSM_MIN_VER = VDSM_NAME + "-4.9"
+    VDSM_MIN_VER = "4.9"
     KERNEL_VER = "2.6.32-.*.el6"
     KERNEL_MIN_VER = 150
     MINIMAL_SUPPORTED_PLATFORM = "6.0"
 else:
     VDSM_NAME = "vdsm22"
-    VDSM_MIN_VER = VDSM_NAME + "-4.5"
+    VDSM_MIN_VER = "4.5"
     KERNEL_VER = "2.6.18-.*.el5"
     KERNEL_MIN_VER = 159
     MINIMAL_SUPPORTED_PLATFORM = "5.5"
@@ -250,7 +250,7 @@ class Deploy:
         rc = True
 
         try:
-            rc = deployUtil.yumSearchVersion(VDSM_NAME, VDSM_MIN_VER, True)
+            rc = deployUtil.yumSearchVersion(VDSM_NAME, VDSM_MIN_VER)
         except:
             rc = False
             logging.error("checkMajorVersion: Error searching for VDSM version!",
