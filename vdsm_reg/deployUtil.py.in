@@ -398,10 +398,20 @@ def getOSVersion():
         logging.error('failed to parse os release from `%s`.', s, exc_info=True)
         return "Unknown OS"
 
-def getKernelVersion():
-    """Return current kernel version adn release."""
+def getKernelVR():
+    """Return current kernel version and release."""
 
-    return os.uname()[2]
+    components = os.uname()[2].split('-', 1)
+    if len(components) == 2:
+        return components
+    else:
+        return components[0], '0'
+
+def compareVR(vr1, vr2):
+    import rpmUtils.miscutils
+
+    return rpmUtils.miscutils.compareEVR((0, vr1[0], vr1[1]),
+                                         (0, vr2[0], vr2[1]))
 
 def updateKernelArgs(arg):
     """

@@ -48,7 +48,6 @@ import shutil
 import logging
 import logging.config
 import random
-import re
 import ConfigParser
 import socket
 import tempfile
@@ -81,14 +80,12 @@ fedorabased = deployUtil.versionCompare(deployUtil.getOSVersion(), "16") >= 0
 if rhel6based:
     VDSM_NAME = "vdsm"
     VDSM_MIN_VER = "4.9"
-    KERNEL_VER = "2.6.32-.*.el6"
-    KERNEL_MIN_VER = 150
+    KERNEL_MIN_VR = ("2.6.32", "150")
     MINIMAL_SUPPORTED_PLATFORM = "6.0"
 else:
     VDSM_NAME = "vdsm22"
     VDSM_MIN_VER = "4.5"
-    KERNEL_VER = "2.6.18-.*.el5"
-    KERNEL_MIN_VER = 159
+    KERNEL_MIN_VR = ("2.6.18", "159")
     MINIMAL_SUPPORTED_PLATFORM = "5.5"
 
 # Required packages
@@ -300,7 +297,6 @@ class Deploy:
         """
             Check the compatibility of OS and kernel
         """
-        kernel_ver = None
         os_status = "FAIL"
         kernel_status = "FAIL"
         os_message = "Unsupported platform version"
@@ -329,34 +325,21 @@ class Deploy:
             os_status = "OK"
 
         if self.rc:
-            res = deployUtil.getKernelVersion()
-            try:
-                kernel_ver = res.split()[0]
-                if re.match(KERNEL_VER, kernel_ver):
-                    kernel_ver = int(kernel_ver.split('-')[1].split('.')[0])
-                else:
-                    kernel_ver = 0
-            except:
-                kernel_ver = 0
-
-            if fedorabased:
+            kernel_vr = deployUtil.getKernelVR()
+            if deployUtil.compareVR(kernel_vr, KERNEL_MIN_VR) >= 0:
                 kernel_status = "OK"
-                kernel_message = "Skipped kernel version check"
-            elif kernel_ver >= KERNEL_MIN_VER:
-                kernel_status = "OK"
-                kernel_message = "Supported kernel version: " + str(kernel_ver)
+                kernel_message = "Supported kernel version: " + str(kernel_vr)
             else:
                 kernel_status = "FAIL"
                 kernel_message = (
-                    "Unsupported kernel version: " + str(kernel_ver) +
-                    ". Minimal supported version: " + str(KERNEL_MIN_VER)
+                    "Unsupported kernel version: " + str(kernel_vr) +
+                    ". Minimal supported version: " + str(KERNEL_MIN_VR)
                 )
                 self.rc = False
 
         if os_name is not None:
             self._xmlOutput('OS', os_status, "type", os_name, os_message)
-        if kernel_ver is not None:
-            self._xmlOutput('KERNEL', kernel_status, "version", kernel_ver, kernel_message)
+        self._xmlOutput('KERNEL', kernel_status, "version", '-'.join(kernel_vr), kernel_message)
 
         return self.rc
 
