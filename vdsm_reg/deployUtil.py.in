@@ -1028,18 +1028,16 @@ def installAndVerify(pckgType, pckgName, action, args=None):
 
     return fReturn, msg
 
-def yumFind(pkgName):
+def yumListPackages(pkgName):
     """
         Returns a list of available packages exists in yum's db.
     """
     import yum
-    lReturn = None
 
     my = yum.YumBase()
     my.preconf.debuglevel = 0 # Remove yum noise
-    lReturn = my.pkgSack.searchNevra(name=pkgName)
+    return my.pkgSack.searchNevra(name=pkgName)
 
-    return lReturn
 
 def yumSearch(pkgName):
     """
@@ -1047,8 +1045,8 @@ def yumSearch(pkgName):
     """
     fReturn = False
 
-    pkgs = yumFind(pkgName)
-    if pkgs and len(pkgs)>0:
+    pkgs = yumListPackages(pkgName)
+    if pkgs:
         fReturn = True
         logging.debug("yumSearch: found " + str(pkgName) + " entries: " + str(pkgs))
     else:
@@ -1063,8 +1061,8 @@ def yumSearchVersion(pkgName, ver, startWith=True):
     """
     fReturn = False
 
-    pkgs = yumFind(pkgName)
-    if pkgs and len(pkgs)>0:
+    pkgs = yumListPackages(pkgName)
+    if pkgs:
         for item in pkgs:
             if startWith:
                 if str(item).startswith(ver):
