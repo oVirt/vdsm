@@ -72,7 +72,6 @@ EX_RPM = '@RPM_PATH@'
 EX_SED = '@SED_PATH@'
 EX_SERVICE = '@SERVICE_PATH@'
 EX_SYSTEMCTL = '@SYSTEMCTL_PATH@'
-EX_UNAME = '@UNAME_PATH@'
 EX_YUM = '@YUM_PATH@'
 
 # Other constants
@@ -400,15 +399,9 @@ def getOSVersion():
         return "Unknown OS"
 
 def getKernelVersion():
-    """
-        Return current kernel release.
-    """
-    strReturn = '0'
-    out, err, rc = _logExec([EX_UNAME, "-r"])
-    if not rc:
-        strReturn = out
+    """Return current kernel version adn release."""
 
-    return strReturn
+    return os.uname()[2]
 
 def updateKernelArgs(arg):
     """
