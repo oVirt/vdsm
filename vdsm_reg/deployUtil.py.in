@@ -1038,22 +1038,6 @@ def yumListPackages(pkgName):
     my.preconf.debuglevel = 0 # Remove yum noise
     return my.pkgSack.searchNevra(name=pkgName)
 
-
-def yumSearch(pkgName):
-    """
-        Returns True is package exists in yum's db.
-    """
-    fReturn = False
-
-    pkgs = yumListPackages(pkgName)
-    if pkgs:
-        fReturn = True
-        logging.debug("yumSearch: found " + str(pkgName) + " entries: " + str(pkgs))
-    else:
-        logging.debug("yumSearch: package " + str(pkgName) + " not found!")
-
-    return fReturn
-
 def yumSearchVersion(pkgName, ver, startWith=True):
     """
         Returns True is package exists in yum's db with the given version.
