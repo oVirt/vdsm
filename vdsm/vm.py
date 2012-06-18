@@ -997,6 +997,8 @@ class Vm(object):
                                    'Try Forced Shutdown.'}}
         except:
             self.log.error("Shutdown failed", exc_info=True)
+            return {'status': {'code': errCode['exist']['status']['code'],
+                    'message': 'Failed to shutdown VM. Try Forced Shutdown.'}}
         return {'status': {'code': doneCode['code'],
                 'message': 'Machine shut down'}}
 
