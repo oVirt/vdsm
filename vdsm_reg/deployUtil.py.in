@@ -1038,32 +1038,15 @@ def yumListPackages(pkgName):
     my.preconf.debuglevel = 0 # Remove yum noise
     return my.pkgSack.searchNevra(name=pkgName)
 
-def yumSearchVersion(pkgName, ver, startWith=True):
-    """
-        Returns True is package exists in yum's db with the given version.
-        Note: yum internal code has verEQ and verGT. We should use it ASAP.
-    """
-    fReturn = False
+def yumSearchVersion(pkgName, ver):
+    "Return True if package exists in yum's db with the given version or higer"
+    import rpmUtils.miscutils
 
-    pkgs = yumListPackages(pkgName)
-    if pkgs:
-        for item in pkgs:
-            if startWith:
-                if str(item).startswith(ver):
-                    fReturn = True
-                    logging.debug("yumSearchVersion: pkg " + str(item) + " starts with: " + ver)
-                else:
-                    logging.debug("yumSearchVersion: pkg " + str(item) + " does not start with: " + ver)
-            else:
-                if str(item) == ver:
-                    fReturn = True
-                    logging.debug("yumSearchVersion: pkg " + str(item) + " matches: " + ver)
-                else:
-                    logging.debug("yumSearchVersion: pkg " + str(item) + " does not match: " + ver)
+    for pkg in yumListPackages(pkgName):
+        if rpmUtils.miscutils.compareVerOnly(pkg.ver, ver) >= 0:
+            return True
     else:
-        logging.debug("yumSearchVersion: package " + str(pkgName) + " not found!")
-
-    return fReturn
+        return False
 
 #############################################################################################################
 # Host PKI functions.
