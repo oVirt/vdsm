@@ -289,7 +289,7 @@ class Vm(object):
         self._nice = ''
         self._migrationSourceThread = self.MigrationSourceThreadClass(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
-        self._guestSocektFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
+        self._guestSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
                                 '.guest.socket'
         self._incomingMigrationFinished = threading.Event()
         self.id = self.conf['vmId']
@@ -902,7 +902,7 @@ class Vm(object):
         except:
             pass
 
-        utils.rmFile(self._guestSocektFile)
+        utils.rmFile(self._guestSocketFile)
         utils.rmFile(self._recoveryFile)
 
     def setDownStatus (self, code, reason):

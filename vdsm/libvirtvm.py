@@ -1127,7 +1127,7 @@ class LibvirtVm(vm.Vm):
         self._connection = libvirtconnection.get(cif)
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
-        self._guestSocektFile = constants.P_LIBVIRT_VMCHANNELS + \
+        self._guestSocketFile = constants.P_LIBVIRT_VMCHANNELS + \
                                 self.conf['vmName'].encode('utf-8') + \
                                 '.' + _VMCHANNEL_DEVICE_NAME
         # TODO find a better idea how to calculate this constant only after
@@ -1186,7 +1186,7 @@ class LibvirtVm(vm.Vm):
         domxml.appendFeatures()
         domxml.appendCpu()
         if utils.tobool(self.conf.get('vmchannel', 'true')):
-            domxml._appendAgentDevice(self._guestSocektFile.decode('utf-8'))
+            domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'))
         domxml.appendInput()
         domxml.appendGraphics()
         domxml.appendConsole()
@@ -1257,7 +1257,7 @@ class LibvirtVm(vm.Vm):
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
-        self.guestAgent = guestIF.GuestAgent(self._guestSocektFile,
+        self.guestAgent = guestIF.GuestAgent(self._guestSocketFile,
             self.cif.channelListener, self.log,
             connect=utils.tobool(self.conf.get('vmchannel', 'true')))
 
