@@ -72,6 +72,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/hba.py \
 	vdsm/storage/iscsiadm.py \
 	vdsm/storage/localFsSD.py \
+	vdsm/storage/lvm.py \
 	vdsm/storage/misc.py \
 	vdsm/storage/mount.py \
 	vdsm/storage/multipath.py \
