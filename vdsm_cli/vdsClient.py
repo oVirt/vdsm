@@ -610,7 +610,8 @@ class service:
     def createVG(self, args):
         sdUUID = args[0]
         devList = args[1].split(',')
-        dom = self.s.createVG(sdUUID, devList)
+        force = args[2].capitalize() == "True" if len(args) > 2 else False
+        dom = self.s.createVG(sdUUID, devList, force)
         if dom['status']['code']:
             return dom['status']['code'], dom['status']['message']
         return 0, dom['uuid']
@@ -1841,7 +1842,7 @@ if __name__ == '__main__':
                         'Get info of VG'
                         )),
         'createVG': (serv.createVG,
-                       ('<sdUUID> <devlist>',
+                       ('<sdUUID> <devlist> [force]',
                         'Create a new VG from devices devlist (list of dev '
                         'GUIDs)'
                         )),

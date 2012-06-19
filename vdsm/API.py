@@ -739,8 +739,8 @@ class LVMVolumeGroup(APIBase):
         APIBase.__init__(self)
         self._UUID = UUID
 
-    def create(self, name, devlist):
-        return self._irs.createVG(name, devlist)
+    def create(self, name, devlist, force=False):
+        return self._irs.createVG(name, devlist, force)
 
     def getInfo(self):
         if self._UUID is not None:

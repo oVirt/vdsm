@@ -1514,12 +1514,10 @@ class HSM:
         :rtype: dict
         """
         vars.task.setDefaultException(se.BlockDeviceActionError())
-        devices = self._getDeviceList(storageType,
-                includePartitioned=options.get('includePartitioned', False))
+        devices = self._getDeviceList(storageType)
         return dict(devList=devices)
 
-    def _getDeviceList(self, storageType=None, guids=None,
-            includePartitioned=False):
+    def _getDeviceList(self, storageType=None, guids=None):
         sdCache.refreshStorage()
         typeFilter = lambda dev : True
         if storageType:
@@ -1534,56 +1532,65 @@ class HSM:
             for guid in guids:
                 try:
                     pv = lvm.getPV(guid)
+                except se.StorageException:
+                    self.log.warning("getPV failed for guid: %s", guid,
+                                        exc_info=True)
+                else:
                     if pv is None:
                         continue
                     pvs[os.path.basename(pv.name)] = pv
-                except:
-                    pass
         else:
             for pv in lvm.getAllPVs():
                 pvs[os.path.basename(pv.name)] = pv
 
         # FIXME: pathListIter() should not return empty records
         for dev in multipath.pathListIter(guids):
-            try:
-                if not typeFilter(dev):
-                    continue
+            if not typeFilter(dev):
+                continue
 
-                partitioned = devicemapper.isPartitioned(dev['guid'])
-                # Stop hiding partitioned devices for ovirt-Engines that can
-                # handle them.
-                if not includePartitioned and partitioned:
-                    self.log.warning("Ignoring partitioned device %s", dev)
-                    continue
-
+            pv = pvs.get(dev.get('guid', ""))
+            if pv is not None:
+                pvuuid = pv.uuid
+                vguuid = pv.vg_uuid
+            else:
                 pvuuid = ""
                 vguuid = ""
 
-                pv = pvs.get(dev.get('guid', ""))
-                if pv is not None:
-                    pvuuid = pv.uuid
-                    vguuid = pv.vg_uuid
-
-                devInfo = {'GUID': dev.get("guid", ""), 'pvUUID': pvuuid,
-                        'vgUUID': vguuid, 'vendorID': dev.get("vendor", ""),
-                        'productID': dev.get("product", ""),
-                        'fwrev': dev.get("fwrev", ""),
-                        "serial" : dev.get("serial", ""),
-                        'capacity': dev.get("capacity", "0"),
-                        'devtype': dev.get("devtype", ""),
-                        'pathstatus': dev.get("paths", []),
-                        'pathlist': dev.get("connections", []),
-                        'logicalblocksize': dev.get("logicalblocksize", ""),
-                        'physicalblocksize': dev.get("physicalblocksize", ""),
-                        'partitioned': partitioned}
-                for path in devInfo["pathstatus"]:
+            devInfo = {'GUID': dev.get("guid", ""), 'pvUUID': pvuuid,
+                    'vgUUID': vguuid, 'vendorID': dev.get("vendor", ""),
+                    'productID': dev.get("product", ""),
+                    'fwrev': dev.get("fwrev", ""),
+                    "serial" : dev.get("serial", ""),
+                    'capacity': dev.get("capacity", "0"),
+                    'devtype': dev.get("devtype", ""),
+                    'pathstatus': dev.get("paths", []),
+                    'pathlist': dev.get("connections", []),
+                    'logicalblocksize': dev.get("logicalblocksize", ""),
+                    'physicalblocksize': dev.get("physicalblocksize", "")
+                    }
+            for path in devInfo["pathstatus"]:
+                if path.has_key("hbtl"):
                     path["lun"] = path["hbtl"].lun
                     del path["hbtl"]
-                    del path["devnum"]
-                devices.append(devInfo)
-            except se.InvalidPhysDev:
-                pass
+                del path["devnum"]
+            devices.append(devInfo)
 
+        # Look for devices that will probably fail if pvcreated.
+        devNamesToPVTest = tuple(dev["GUID"] for dev in devices)
+        unusedDevs, usedDevs = lvm.testPVCreate(devNamesToPVTest,
+                                        metadataSize=blockSD.VG_METADATASIZE)
+        # Assuming that unusables v unusables = None
+        free = tuple(os.path.basename(d) for d in unusedDevs)
+        used = tuple(os.path.basename(d) for d in usedDevs)
+        for dev in devices:
+            guid = dev['GUID']
+            if guid in free:
+                dev['status'] = "free"
+            elif guid in used:
+                dev['status'] = "used"
+            else:
+                raise KeyError("pvcreate response foresight is "
+                                   "can not be determined for %s", dev)
 
         return devices
 
@@ -1640,7 +1647,7 @@ class HSM:
 
 
     @public
-    def createVG(self, vgname, devlist, options = None):
+    def createVG(self, vgname, devlist, force=False, options = None):
         """
         Creates a volume group with the name 'vgname' out of the devices in 'devlist'
 
@@ -1674,7 +1681,10 @@ class HSM:
            raise se.VolumeGroupSizeError("VG size must be more than %s MiB" % str(MINIMALVGSIZE / constants.MEGAB))
 
         lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
-                     metadataSize=blockSD.VG_METADATASIZE)
+                     metadataSize=blockSD.VG_METADATASIZE,
+                     force=(force == True) or \
+                     (type(force) == type("") and \
+                                            (force.capitalize() == "True")))
 
         return dict(uuid=lvm.getVG(vgname).uuid)
 

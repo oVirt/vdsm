@@ -27,6 +27,7 @@ Incapsulates the actual LVM mechanics.
 import errno
 
 import os
+import re
 import pwd
 import grp
 import logging
@@ -76,6 +77,8 @@ LVM_NOBACKUP = ("--autobackup", "n")
 LVM_FLAGS = ("--noheadings", "--units", "b", "--nosuffix", "--separator", SEPARATOR)
 
 PV_PREFIX = "/dev/mapper"
+#Assuming there are no spaces in the PV name
+re_pvName = re.compile(PV_PREFIX + '[^\s\"]+', re.MULTILINE)
 
 #operations lock
 LVM_OP_INVALIDATE = "lvm invalidate operation"
@@ -610,67 +613,55 @@ def _fqpvname(pv):
         pv = os.path.join(PV_PREFIX, pv)
     return pv
 
-def _initpvs(devices, metadataSize):
-    devices = _normalizeargs(devices)
-    # Size for pvcreate should be with units k|m|g
+def _createpv(devices, metadataSize, options=tuple()):
+    """
+    Size for pvcreate should be with units k|m|g
+    pvcreate on a dev that is already a PV but not in a VG returns rc = 0.
+    The device is re-created with the new parameters.
+    """
     metadatasize = str(metadataSize) + 'm'
-    cmd = ["pvcreate", "--metadatasize", metadatasize, "--metadatacopies", "2",
-           "--metadataignore", "y"]
+    cmd = ["pvcreate"]
+    if options:
+        cmd.extend(options)
+    cmd.extend(("--metadatasize", metadatasize, "--metadatacopies", "2",
+           "--metadataignore", "y"))
     cmd.extend(devices)
-
-    #pvcreate on a dev that is already a PV but not in a VG returns rc = 0.
-    #The device is created with the new parameters.
     rc, out, err = _lvminfo.cmd(cmd)
-    if rc != 0:
-        # This could have failed because a VG was removed on another host.
-        #Let us check with lvm
-        found, notFound = getVGsOfReachablePVs(devices)
-        #If returned not found devices or any device is in a VG
-        if notFound or any(found.itervalues()):
-            raise se.PhysDevInitializationError("found: %s notFound: %s" %
-                                                (found, notFound))
-        #All devices are free and reachable, calling the ghostbusters!
+    return rc, out, err
+
+def _initpvs(devices, metadataSize, force=False):
+
+    def _initpvs_removeHolders():
+        """Remove holders for all devices."""
         for device in devices:
             try:
-                devicemapper.removeMappingsHoldingDevice(os.path.basename(device))
+                devicemapper.removeMappingsHoldingDevice(
+                                                    os.path.basename(device))
             except OSError, e:
                 if e.errno == errno.ENODEV:
-                    raise se.PhysDevInitializationError("%s: %s" % (device, str(e)))
+                    raise se.PhysDevInitializationError("%s: %s" %
+                                                            (device, str(e)))
                 else:
                     raise
-        #Retry pvcreate
-        rc, out, err = _lvminfo.cmd(cmd)
-        if rc != 0:
-            raise se.PhysDevInitializationError(device)
 
+    if force == True:
+        options = ("-y", "-ff")
+        _initpvs_removeHolders()
+    else:
+        options = tuple()
+
+    rc, out, err = _createpv(devices, metadataSize, options)
     _lvminfo._invalidatepvs(devices)
+    if rc != 0:
+        log.error("pvcreate failed with rc=%s", rc)
+        log.error("%s, %s", out, err)
+        raise se.PhysDevInitializationError(str(devices))
+
+    return (set(devices), set(), rc, out, err)
+
 
 def getLvDmName(vgName, lvName):
     return "%s-%s" % (vgName.replace("-", "--"), lvName)
-
-def getVGsOfReachablePVs(pvNames):
-    """
-    Return a (found, notFound) tuple.
-    found: {pvName: vgName} of reachable PVs.
-    notFound: (PvName, ...) for unreachable PVs.
-    """
-    pvNames = _normalizeargs(pvNames)
-    cmd = ["pvs", "-o", "vg_name,pv_name", "--noheading"]
-    cmd.extend(pvNames)
-    rc, out, err = _lvminfo.cmd(cmd)
-    found = {} #{pvName, vgName}
-    for line in out:
-        try:
-            #Safe: volume group name containing spaces is invalid
-            vgName, pvName = line.strip().split()
-        except ValueError:
-            pvName = line.strip()
-            found[pvName] = None #Free PV
-        else:
-            found[pvName] = vgName
-    notFound = tuple(pvName for pvName in pvNames if pvName not in found.iterkeys())
-
-    return found, notFound
 
 def removeVgMapping(vgName):
     """
@@ -738,6 +729,29 @@ def getPV(pv):
 def getAllPVs():
     return _lvminfo.getAllPvs()
 
+def testPVCreate(devices, metadataSize):
+    """
+    Only tests the pv creation.
+
+    Should not affect the cache state.
+
+    Receives guids iterable.
+    Returns (un)pvables, (un)succeed guids.
+    """
+    devs = tuple("%s/%s" % (PV_PREFIX, dev) for dev in devices)
+
+    options = ("--test",)
+    rc, out, err = _createpv(devs, metadataSize, options)
+    if rc == 0:
+        unusedDevs = set(devices)
+        usedDevs = set()
+    else:
+        unusedDevs = set(re_pvName.findall("\n".join(out)))
+        usedDevs = set(devs) - set(unusedDevs)
+        log.debug("rc: %s, out: %s, err: %s, unusedDevs: %s, usedDevs: %s",
+            rc, out, err, unusedDevs, usedDevs)
+
+    return unusedDevs, usedDevs
 
 def getVG(vgName):
     vg = _lvminfo.getVg(vgName)   #returns single VG namedtuple
@@ -781,11 +795,12 @@ def getLV(vgName, lvName=None):
 # Public Volume Group interface
 #
 
-def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m"):
+def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
+                force=False):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs)
 
-    _initpvs(pvs, metadataSize)
+    _initpvs(pvs, metadataSize, force)
     #Activate the 1st PV metadata areas
     cmd = ["pvchange", "--metadataignore", "n"]
     cmd.append(pvs[0])

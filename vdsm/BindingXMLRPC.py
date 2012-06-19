@@ -668,9 +668,9 @@ class BindingXMLRPC(object):
             con['port'], con['user'], con['password'])
         return iscsiConn.discoverSendTargets()
 
-    def vgCreate(self, name, devlist):
-        vg = API.LVMVolumeGroup()
-        return vg.create(name, devlist)
+    def vgCreate(self, name, devlist, force=False):
+        vg = API.LVMVolumeGroup(self.cif)
+        return vg.create(name, devlist, force)
 
     def vgGetInfo(self, vgUUID, options=None):
         vg = API.LVMVolumeGroup(vgUUID)

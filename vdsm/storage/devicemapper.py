@@ -118,24 +118,6 @@ def isDmDevice(devName):
     return os.path.exists("/sys/block/%s/dm" % devName)
 
 
-def isPartitioned(devName):
-    dmName = resolveDevName(devName)
-    #Sometimes partitions are not managed by device mapper
-    possiblePartPath = os.path.join("/sys/block/", devName, devName + "1")
-    if os.path.exists(possiblePartPath):
-            return True
-
-    if not isVirtualDevice(devName) or not isDmDevice(devName):
-        return False
-
-    mpathName = getDevName(dmName)
-    for holder in getHolders(dmName):
-        if resolveDevName(holder).startswith(mpathName):
-            return True
-
-    return False
-
-
 def getAllSlaves():
     deps = {}
     for name in getAllMappedDevices():
