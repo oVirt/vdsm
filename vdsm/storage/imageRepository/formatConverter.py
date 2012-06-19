@@ -37,23 +37,43 @@ def __convertDomainMetadataToTags(domain, targetVersion):
 
     # We use _dict to bypass the validators in order to copy all metadata
     metadata = oldMetadata._dict.copy()
-    metadata[sd.DMDK_VERSION] = targetVersion
+    metadata[sd.DMDK_VERSION] = str(targetVersion)  # Must be a string
+
+    log.debug("Converting domain %s to tag based metadata", domain.sdUUID)
     newMetadata._dict.update(metadata)
 
     try:
-        domain._metadata = newMetadata
+        # If we can't clear the old metadata we don't have any clue on what
+        # actually happened. We prepare the convertError exception to raise
+        # later on if we discover that the upgrade didn't take place.
         oldMetadata._dict.clear()
-    except:
-        log.error("Cannot covert the domain %s metadata to tags for "
-                  "version %s", domain.sdUUID, targetVersion, exc_info=True)
+    except Exception, convertError:
+        log.error("Could not clear the old metadata", exc_info=True)
+    else:
+        # We don't have any valuable information to add here
+        convertError = RuntimeError("Unknown metadata conversion error")
+
+    # If this fails, there's nothing we can do, let's bubble the exception
+    chkMetadata = blockSD.selectMetadata(domain.sdUUID)
+
+    if chkMetadata[sd.DMDK_VERSION] == int(targetVersion):
+        # Switching to the newMetadata (successful upgrade), the oldMetadata
+        # was cleared after all.
+        domain._metadata = chkMetadata
+        log.debug("Conversion of domain %s to tag based metadata completed, "
+                  "target version = %s", domain.sdUUID, targetVersion)
+    else:
+        # The upgrade failed, cleaning up the new metadata
+        log.error("Could not convert domain %s to tag based metadata, "
+                  "target version = %s", domain.sdUUID, targetVersion)
         newMetadata._dict.clear()
-        domain._metadata = oldMetadata
-        raise
+        # Raising the oldMetadata_dict.clear() exception or the default one
+        raise convertError
 
 
 def v2DomainConverter(repoPath, hostId, domain, isMsd):
     log = logging.getLogger('Storage.v2DomainConverter')
-    targetVersion = "2"
+    targetVersion = 2
 
     if domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
         log.debug("Trying to upgrade domain %s to tag based metadata "
@@ -158,13 +178,13 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                     log.debug("Unable to teardown the image: %s", imgUUID,
                               exc_info=True)
 
-        targetVersion = "3"
+        targetVersion = 3
         currentVersion = domain.getVersion()
         log.debug("Finalizing the storage domain upgrade from version %s to "
                   "version %s for domain %s", currentVersion, targetVersion,
                   domain.sdUUID)
 
-        if (currentVersion == "0"
+        if (currentVersion not in blockSD.VERS_METADATA_TAG
                         and domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES):
             __convertDomainMetadataToTags(domain, targetVersion)
         else:

@@ -1022,9 +1022,14 @@ class StoragePool(Securable):
         if targetFormat is None:
             targetFormat = self.getFormat()
 
-        self._formatConverter.convert(repoPath, self.id, domain.getRealDomain(),
-                                      isMsd, targetFormat)
-        sdCache.manuallyRemoveDomain(sdUUID)
+        try:
+            self._formatConverter.convert(repoPath, self.id,
+                                domain.getRealDomain(), isMsd, targetFormat)
+        finally:
+            # For safety we remove the domain from the cache also if the
+            # conversion supposedly failed.
+            sdCache.manuallyRemoveDomain(sdUUID)
+            sdCache.produce(sdUUID)
 
     @unsecured
     def getFormat(self):
