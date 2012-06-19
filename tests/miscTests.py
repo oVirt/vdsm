@@ -448,7 +448,8 @@ class DdWatchCopy(TestCaseBase):
         Test that stop really stops the copying process.
         """
         try:
-            ddWatchCopy("/dev/zero", "/dev/null", lambda: True, 100)
+            with tempfile.NamedTemporaryFile() as f:
+                ddWatchCopy("/dev/zero", f.name, lambda: True, 100)
         except misc.se.ActionStopped:
             self.log.info("Looks like stopped!")
         else:
@@ -626,9 +627,10 @@ class ValidateDDBytes(TestCaseBase):
         Test that it works when given valid and correct input.
         """
         count = 802
-        cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=/dev/null',
+        with tempfile.NamedTemporaryFile() as f:
+            cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
                 'count=%d' % count]
-        rc, out, err = misc.execCmd(cmd, sudo=False)
+            rc, out, err = misc.execCmd(cmd, sudo=False)
 
         self.assertTrue(misc.validateDDBytes(err, count))
 
@@ -637,9 +639,10 @@ class ValidateDDBytes(TestCaseBase):
         Test that is work when given valid but incorrect input.
         """
         count = 802
-        cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=/dev/null',
+        with tempfile.NamedTemporaryFile() as f:
+            cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
                 'count=%d' % count]
-        rc, out, err = misc.execCmd(cmd, sudo=False)
+            rc, out, err = misc.execCmd(cmd, sudo=False)
 
         self.assertFalse(misc.validateDDBytes(err, count + 1))
 
