@@ -950,7 +950,7 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
                             "Setup attached more than one network to nic %s, some of which aren't vlans"%(nic))
 
     for bonding, bondingAttrs in bondings.iteritems():
-        networks = bondingAttrs['_networks']
+        networks = bondingAttrs.get('_networks', {})
         if len(networks) > 1:
             for network, networkAttrs in networks.iteritems():
                 if not networkAttrs.get('vlan', None):
