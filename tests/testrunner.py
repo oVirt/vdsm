@@ -186,6 +186,21 @@ def hackVdsmModule():
     mod.vdscli = None
     sys.modules['vdsm.vdscli'] = mod.vdscli
 
+
+def findRemove(listR, value):
+    """used to test if a value exist, if it is, return true and remove it."""
+    try:
+        listR.remove(value)
+        return True
+    except ValueError:
+        return False
+
+
 if __name__ == '__main__':
-    hackVdsmModule()
+    if "--help" in sys.argv:
+        print("testrunner options:\n"
+                "--local-modules   use vdsm modules from source tree, "
+                "instead of installed ones.\n")
+    if findRemove(sys.argv, "--local-modules"):
+        hackVdsmModule()
     run()
