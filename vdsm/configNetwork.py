@@ -238,7 +238,8 @@ class ConfigWriter(object):
         s += 'NM_CONTROLLED=no\n'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
                      'force', 'blockingdhcp',
-                     'connectivityCheck', 'connectivityTimeout']
+                     'connectivityCheck', 'connectivityTimeout',
+                     'implicitBonding']
         for k in set(kwargs.keys()).difference(set(BLACKLIST)):
             if re.match('^[a-zA-Z_]\w*$', k):
                 s += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
@@ -491,10 +492,17 @@ def validateVlanId(vlan):
         raise ConfigNetworkError(ne.ERR_BAD_VLAN, 'vlan id must be a number')
 
 
-def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr, netmask, gateway,
-        bondingOptions, bridged=True):
-    if (vlan or bonding) and not nics:
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'vlan/bonding definition requires nics. got: %r'%(nics,))
+def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
+                          netmask, gateway, bondingOptions, bridged=True,
+                          implicitBonding=False):
+    # The (relatively) new setupNetwork verb allows to specify a network on
+    # top of an existing bonding device. The nics of this bonds are taken
+    # implictly from current host configuration
+    if bonding and implicitBonding:
+        pass
+    elif (vlan or bonding) and not nics:
+        raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                'vlan/bonding definition requires nics. got: %r' % (nics,))
 
     # Check bridge
     if bridged:
@@ -583,7 +591,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
         _addNetworkValidation(_netinfo, bridge=network if bridged else None,
                 vlan=vlan, bonding=bonding, nics=nics, ipaddr=ipaddr,
                 netmask=netmask, gateway=gateway, bondingOptions=bondingOptions,
-                bridged=bridged)
+                bridged=bridged, **options)
 
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
                  " bondingOptions=%s, mtu=%s, bridged=%s, options=%s",
@@ -1097,7 +1105,8 @@ def setupNetworks(networks={}, bondings={}, **options):
                 d['force'] = force
 
                 logger.debug("Adding network %r" % network)
-                addNetwork(network, configWriter=configWriter, **d)
+                addNetwork(network, configWriter=configWriter,
+                           implicitBonding=True, **d)
 
             # Do not handle a bonding device twice.
             # We already handled it before during addNetwork.
