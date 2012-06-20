@@ -1002,7 +1002,7 @@ class Image:
         srcVol = chain[-1]
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         # Find out successor's children list
-        chList = srcVolParams['childrenUUIDs']
+        chList = srcVolParams['children']
         # Step 1: Create an empty volume named sucessor_MERGE with destination volume's parent parameters
         newUUID = srcVol.volUUID + "_MERGE"
         sdDom.createVolume(imgUUID=srcVolParams['imgUUID'],
@@ -1035,11 +1035,10 @@ class Image:
 
         # Step 5: Rebase children 'unsafely' on top of new volume
         #   qemu-img rebase -u -b tmpBackingFile -F backingFormat -f srcFormat src
-        for v in chList:
-            ch = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=v['volUUID'])
+        for ch in chList:
             ch.prepare(rw=True, chainrw=True, setrw=True, force=True)
+            backingVolPath = os.path.join('..', srcVolParams['imgUUID'], srcVolParams['volUUID'])
             try:
-                backingVolPath = os.path.join('..', srcVolParams['imgUUID'], srcVolParams['volUUID'])
                 ch.rebase(srcVolParams['volUUID'], backingVolPath, volParams['volFormat'], unsafe=True, rollback=True)
             finally:
                 ch.teardown(sdUUID=ch.sdUUID, volUUID=ch.volUUID)
@@ -1092,10 +1091,10 @@ class Image:
 
         srcVol = vols[successor]
         srcVolParams = srcVol.getVolumeParams()
-        srcVolParams['childrenUUIDs'] = []
+        srcVolParams['children'] = []
         for vName, vol in vols.iteritems():
             if vol.getParent() == successor:
-                srcVolParams['childrenUUIDs'].append(vol.volUUID)
+                srcVolParams['children'].append(vol)
         dstVol = vols[ancestor]
         dstParentUUID = dstVol.getParent()
         if dstParentUUID != sd.BLANK_UUID:
