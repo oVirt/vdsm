@@ -1208,11 +1208,15 @@ class LibvirtVm(vm.Vm):
             if not hasattr(drive, 'volumeChain'):
                 continue
 
-            for lease in drive.volumeChain:
-                if 'leasePath' not in lease or 'leaseOffset' not in lease:
+            for volInfo in drive.volumeChain:
+                if ('leasePath' not in volInfo or 'leaseOffset' not in volInfo
+                        or volInfo['shared']):
                     continue
-                leaseElem = self._buildLease(drive.domainID, lease['volumeID'],
-                                     lease['leasePath'], lease['leaseOffset'])
+
+                leaseElem = self._buildLease(
+                    drive.domainID, volInfo['volumeID'], volInfo['leasePath'],
+                    volInfo['leaseOffset'])
+
                 domxml._devices.appendChild(leaseElem)
 
         return domxml.toxml()

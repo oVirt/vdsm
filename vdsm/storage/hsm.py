@@ -2731,7 +2731,9 @@ class HSM:
 
         for vol in imgVolumes:
             volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
-                       'volumeID': vol.volUUID, 'path': vol.getVolumePath()}
+                       'volumeID': vol.volUUID, 'path': vol.getVolumePath(),
+                       'shared': (vol.getVolType() ==
+                                        volume.type2name(volume.SHARED_VOL))}
 
             leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
                                                         vol.volUUID)
