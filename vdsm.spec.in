@@ -500,7 +500,7 @@ exit 0
 /lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
 %endif
-%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
+%dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
