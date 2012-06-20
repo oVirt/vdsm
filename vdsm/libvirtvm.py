@@ -19,12 +19,10 @@
 #
 
 import libvirt
-import libvirt_qemu
 import xml.dom.minidom
 from xml.dom.minidom import parseString as _domParseStr
 import time
 import threading
-import json
 
 import vm
 from vdsm.define import ERROR, doneCode, errCode
@@ -149,64 +147,14 @@ class VmStatsThread(utils.AdvancedStatsThread):
         if not self._vm._volumesPrepared:
             # Avoid queries from storage during recovery process
             return
-
-        def _blockstatsParses(devList):
-            # The json output looks like:
-            # {u'return':
-            #   [{u'device': u'drive-ide0-0-0',
-            #     u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0,
-            #                u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
-            #                u'rd_bytes': 0, u'wr_total_time_ns': 0,
-            #                u'flush_operations': 0, u'wr_operations': 0,
-            #                u'wr_bytes':0},
-            #     u'parent': {
-            #       u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0,
-            #                  u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
-            #                  u'rd_bytes': 0, u'wr_total_time_ns': 0,
-            #                  u'flush_operations': 0, u'wr_operations': 0,
-            #                  u'wr_bytes': 0}}
-            #    },
-            #    {u'device': u'drive-ide0-1-0',
-            #     u'stats': {u'rd_operations': 0, u'flush_total_time_ns': 0,
-            #                u'wr_highest_offset': 0, u'rd_total_time_ns': 0,
-            #                u'rd_bytes': 0, u'wr_total_time_ns': 0,
-            #                u'flush_operations': 0, u'wr_operations': 0,
-            #                u'wr_bytes': 0}}],
-            #  u'id': u'libvirt-9'}
-            stats = {}
-            for item in devList['return']:
-                fullDevName = item['device']
-                alias = fullDevName[len('drive-'):].strip()
-                devStats = item['stats']
-                stats[alias] = {
-                    'rd_op': devStats['rd_operations'],
-                    'wr_op': devStats['wr_operations'],
-                    'flush_op': devStats['flush_operations'],
-                    'rd_total_time_ns': devStats['rd_total_time_ns'],
-                    'wr_total_time_ns': devStats['wr_total_time_ns'],
-                    'flush_total_time_ns': devStats['flush_total_time_ns']}
-
-            return stats
-
+        #{'wr_total_times': 0L, 'rd_operations': 9638L,
+        # 'flush_total_times': 0L,'rd_total_times': 7622718001L,
+        # 'rd_bytes': 85172430L, 'flush_operations': 0L,
+        # 'wr_operations': 0L, 'wr_bytes': 0L}
         diskLatency = {}
-        cmd = json.dumps({"execute": "query-blockstats"})
-        res = libvirt_qemu.qemuMonitorCommand(
-                          self._vm._dom, cmd,
-                          libvirt_qemu.VIR_DOMAIN_QEMU_MONITOR_COMMAND_DEFAULT)
-        out = json.loads(res)
-
-        stats = _blockstatsParses(out)
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
-            try:
-                diskLatency[vmDrive.name] = stats[vmDrive.alias]
-            except KeyError:
-                diskLatency[vmDrive.name] = {'rd_op': 0, 'wr_op': 0,
-                                             'flush_op': 0,
-                                             'rd_total_time_ns': 0,
-                                             'wr_total_time_ns': 0,
-                                             'flush_total_time_ns': 0}
-                self._log.warn("Disk %s latency not available", vmDrive.name)
-
+            diskLatency[vmDrive.name] = self._vm._dom.blockStatsFlags(
+                vmDrive.name, flags=libvirt.VIR_TYPED_PARAM_STRING_OKAY)
         return diskLatency
 
     def _sampleNet(self):
@@ -283,19 +231,24 @@ class VmStatsThread(utils.AdvancedStatsThread):
         sInfo, eInfo, sampleInterval = self.sampleDiskLatency.getStats()
 
         def _avgLatencyCalc(sData, eData):
-            readLatency = (0 if not (eData['rd_op'] - sData['rd_op'])
-                             else (eData['rd_total_time_ns'] -
-                                   sData['rd_total_time_ns']) /
-                                  (eData['rd_op'] - sData['rd_op']))
-            writeLatency = (0 if not (eData['wr_op'] - sData['wr_op'])
-                              else (eData['wr_total_time_ns'] -
-                                    sData['wr_total_time_ns']) /
-                                   (eData['wr_op'] - sData['wr_op']))
-            flushLatency = (0 if not (eData['flush_op'] - sData['flush_op'])
-                              else (eData['flush_total_time_ns'] -
-                                    sData['flush_total_time_ns']) /
-                                   (eData['flush_op'] - sData['flush_op']))
-
+            readLatency = (0 if not (eData['rd_operations'] -
+                                     sData['rd_operations'])
+                            else (eData['rd_total_times'] -
+                                  sData['rd_total_times']) /
+                                 (eData['rd_operations'] -
+                                  sData['rd_operations']))
+            writeLatency = (0 if not (eData['wr_operations'] -
+                                      sData['wr_operations'])
+                            else (eData['wr_total_times'] -
+                                  sData['wr_total_times']) /
+                                 (eData['wr_operations'] -
+                                  sData['wr_operations']))
+            flushLatency = (0 if not (eData['flush_operations'] -
+                                      sData['flush_operations'])
+                            else (eData['flush_total_times'] -
+                                  sData['flush_total_times']) /
+                                 (eData['flush_operations'] -
+                                  sData['flush_operations']))
             return str(readLatency), str(writeLatency), str(flushLatency)
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
