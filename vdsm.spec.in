@@ -33,6 +33,7 @@ BuildRequires: python-pep8
 # BuildRequires needed by the tests during the build
 BuildRequires: python-ethtool
 BuildRequires: libvirt-python
+BuildRequires: sanlock-python >= 2.1
 
 %if !0%{?rhel}
 BuildRequires: systemd-units
