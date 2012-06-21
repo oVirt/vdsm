@@ -28,6 +28,7 @@ import threading
 import logging
 
 from vdsm import utils
+from clientIF import clientIF
 import configNetwork
 from vdsm import netinfo
 from vdsm import constants
@@ -36,7 +37,6 @@ import storage.safelease
 import storage.volume
 import storage.sd
 import storage.image
-import libvirtvm
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
@@ -224,28 +224,10 @@ class VM(object):
                 vmParams['nicModel'] = config.get('vars', 'nic_model')
             vmParams['displayIp'] = self._getNetworkIp(vmParams.get(
                                                         'displayNetwork'))
-            self._cif.vmContainerLock.acquire()
-            self.log.info("vmContainerLock acquired by vm %s",
-                          vmParams['vmId'])
-            try:
-                if 'recover' not in vmParams:
-                    if vmParams['vmId'] in self._cif.vmContainer:
-                        self.log.warning('vm %s already exists' %
-                                         vmParams['vmId'])
-                        return errCode['exist']
-                vmParams['displayPort'] = '-1'   # selected by libvirt
-                vmParams['displaySecurePort'] = '-1'
-                VmClass = libvirtvm.LibvirtVm
-                self._cif.vmContainer[vmParams['vmId']] = \
-                        VmClass(self._cif, vmParams)
-            finally:
-                container_len = len(self._cif.vmContainer)
-                self._cif.vmContainerLock.release()
-            self._cif.vmContainer[vmParams['vmId']].run()
-            self.log.debug("Total desktops after creation of %s is %d" %
-                           (vmParams['vmId'], container_len))
-            return {'status': doneCode,
-                    'vmList': self._cif.vmContainer[vmParams['vmId']].status()}
+            vmParams['displayPort'] = '-1'   # selected by libvirt
+            vmParams['displaySecurePort'] = '-1'
+            return self._cif.createVm(vmParams)
+
         except OSError, e:
             self.log.debug("OS Error creating VM", exc_info=True)
             return {'status': {'code': errCode['createErr']['status']['code'],

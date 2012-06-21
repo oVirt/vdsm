@@ -39,7 +39,7 @@ from vdsm import utils
 import configNetwork
 import caps
 from vmChannels import Listener
-import API
+from libvirtvm import LibvirtVm
 import blkid
 import supervdsm
 try:
@@ -291,6 +291,26 @@ class clientIF:
 
         return res['status']['code']
 
+    def createVm(self, vmParams):
+        self.vmContainerLock.acquire()
+        self.log.info("vmContainerLock acquired by vm %s",
+                          vmParams['vmId'])
+        try:
+            if 'recover' not in vmParams:
+                if vmParams['vmId'] in self.vmContainer:
+                    self.log.warning('vm %s already exists' %
+                                     vmParams['vmId'])
+                    return errCode['exist']
+            vm = LibvirtVm(self, vmParams)
+            self.vmContainer[vmParams['vmId']] = vm
+        finally:
+            container_len = len(self.vmContainer)
+            self.vmContainerLock.release()
+        vm.run()
+        self.log.debug("Total desktops after creation of %s is %d" %
+                       (vmParams['vmId'], container_len))
+        return {'status': doneCode, 'vmList': vm.status()}
+
     def _recoverExistingVms(self):
         try:
             vdsmVms = self.getVDSMVms()
@@ -392,7 +412,7 @@ class clientIF:
             pt = float(params.pop('startTime', now))
             params['elapsedTimeOffset'] = now - pt
             self.log.debug("Trying to recover " + params['vmId'])
-            if not API.VM(self, vmid).create(params)['status']['code']:
+            if not self.createVm(params)['status']['code']:
                 return recoveryFile
         except:
             self.log.debug("Error recovering VM", exc_info=True)
