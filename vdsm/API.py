@@ -49,10 +49,18 @@ USER_SHUTDOWN_MESSAGE = 'System going down'
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 
-class ConnectionRefs(object):
+class APIBase(object):
 
-    def __init__(self, cif):
-        self._irs = cif.irs
+    def __init__(self):
+        self._cif = clientIF.getInstance()
+        self._irs = self._cif.irs
+        self.log = self._cif.log
+
+
+class ConnectionRefs(APIBase):
+
+    def __init__(self):
+        APIBase.__init__(self)
 
     def acquire(self, conRefArgs):
         return self._irs.storageServer_ConnectionRefs_acquire(conRefArgs)
@@ -64,10 +72,10 @@ class ConnectionRefs(object):
         return self._irs.storageServer_ConnectionRefs_statuses()
 
 
-class Task(object):
+class Task(APIBase):
 
-    def __init__(self, cif, UUID):
-        self._irs = cif.irs
+    def __init__(self, UUID):
+        APIBase.__init__(self)
         self._UUID = UUID
 
     def clear(self):
@@ -86,11 +94,10 @@ class Task(object):
         return self._irs.stopTask(self._UUID)
 
 
-class VM(object):
+class VM(APIBase):
 
-    def __init__(self, cif, UUID):
-        self._cif = cif
-        self.log = cif.log
+    def __init__(self, UUID):
+        APIBase.__init__(self)
         self._UUID = UUID
 
     def changeCD(self, driveSpec):
@@ -604,7 +611,7 @@ class VM(object):
         return v.mergeStatus()
 
 
-class Volume(object):
+class Volume(APIBase):
 
     class Types:
         UNKNOWN = storage.volume.UNKNOWN_VOL
@@ -622,8 +629,8 @@ class Volume(object):
 
     BLANK_UUID = storage.volume.BLANK_UUID
 
-    def __init__(self, cif, UUID, spUUID, sdUUID, imgUUID):
-        self._irs = cif.irs
+    def __init__(self, UUID, spUUID, sdUUID, imgUUID):
+        APIBase.__init__(self)
         self._UUID = UUID
         self._spUUID = spUUID
         self._sdUUID = sdUUID
@@ -684,7 +691,7 @@ class Volume(object):
                 self._imgUUID, self._UUID)
 
 
-class Image(object):
+class Image(APIBase):
     BLANK_UUID = storage.volume.BLANK_UUID
 
     class DiskTypes:
@@ -695,8 +702,8 @@ class Image(object):
         SWAP = storage.image.SWAP_DISK_TYPE
         TEMP = storage.image.TEMP_DISK_TYPE
 
-    def __init__(self, cif, UUID, spUUID, sdUUID):
-        self._irs = cif.irs
+    def __init__(self, UUID, spUUID, sdUUID):
+        APIBase.__init__(self)
         self._UUID = UUID
         self._spUUID = spUUID
         self._sdUUID = sdUUID
@@ -726,10 +733,10 @@ class Image(object):
                 dstSdUUID, self._UUID, vmUUID, operation, postZero, force)
 
 
-class LVMVolumeGroup(object):
+class LVMVolumeGroup(APIBase):
 
-    def __init__(self, cif, UUID=None):
-        self._irs = cif.irs
+    def __init__(self, UUID=None):
+        APIBase.__init__(self)
         self._UUID = UUID
 
     def create(self, name, devlist):
@@ -750,10 +757,10 @@ class LVMVolumeGroup(object):
             return None
 
 
-class ISCSIConnection(object):
+class ISCSIConnection(APIBase):
 
-    def __init__(self, cif, host, port, user="", password=""):
-        self._irs = cif.irs
+    def __init__(self, host, port, user="", password=""):
+        APIBase.__init__(self)
         self._host = host
         self._port = port
         self._user = user
@@ -765,7 +772,7 @@ class ISCSIConnection(object):
         return self._irs.discoverSendTargets(params)
 
 
-class StorageDomain(object):
+class StorageDomain(APIBase):
 
     class Types:
         UNKNOWN = storage.sd.UNKNOWN_DOMAIN
@@ -783,8 +790,8 @@ class StorageDomain(object):
 
     BLANK_UUID = storage.sd.BLANK_UUID
 
-    def __init__(self, cif, UUID, spUUID=None):
-        self._irs = cif.irs
+    def __init__(self, UUID, spUUID=None):
+        APIBase.__init__(self)
         self._UUID = UUID
         self._spUUID = spUUID
 
@@ -848,10 +855,10 @@ class StorageDomain(object):
         return self._irs.validateStorageDomain(self._UUID)
 
 
-class StoragePool(object):
+class StoragePool(APIBase):
 
-    def __init__(self, cif, UUID):
-        self._irs = cif.irs
+    def __init__(self, UUID):
+        APIBase.__init__(self)
         self._UUID = UUID
 
     def connect(self, hostID, scsiKey, masterSdUUID, masterVersion):
@@ -964,12 +971,10 @@ class StoragePool(object):
         return self._irs.removeVM(self._UUID, vmUUID, sdUUID)
 
 
-class Global(object):
+class Global(APIBase):
 
-    def __init__(self, cif):
-        self._cif = cif
-        self._irs = cif.irs
-        self.log = cif.log
+    def __init__(self):
+        APIBase.__init__(self)
 
     # General Host functions
     def fenceNode(self, addr, port, agent, username, password, action,

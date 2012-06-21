@@ -55,6 +55,9 @@ class clientIF:
 
     Exposes vdsm verbs as xml-rpc functions.
     """
+    _instance = None
+    _instanceLock = threading.Lock()
+
     def __init__(self, log):
         """
         Initialize the (single) clientIF instance
@@ -107,6 +110,17 @@ class clientIF:
                 self.irs.prepareForShutdown()
             raise
         self._prepareBindings()
+
+    @classmethod
+    def getInstance(cls, log=None):
+        if cls._instance == None:
+            if log == None:
+                raise Exception("Logging facility is required to create \
+                                the single clientIF instance")
+        with cls._instanceLock:
+            if cls._instance == None:
+                cls._instance = clientIF(log)
+        return cls._instance
 
     def _getServerIP(self, addr=None):
         """Return the IP address we should listen on"""

@@ -189,102 +189,102 @@ class BindingXMLRPC(object):
     # Callable methods:
     #
     def vmDestroy(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.destroy()
 
     def vmCreate(self, vmParams):
-        vm = API.VM(self.cif, vmParams['vmId'])
+        vm = API.VM(vmParams['vmId'])
         return vm.create(vmParams)
 
     def getVMList(self, fullStatus=False, vmList=[]):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getVMList(fullStatus, vmList)
 
     def vmPause(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.pause()
 
     def vmCont(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.cont()
 
     def vmReset(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.reset()
 
     def vmShutdown(self, vmId, delay=None, message=None):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.shutdown(delay, message)
 
     def vmSetTicket(self, vmId, password, ttl,
                     existingConnAction='disconnect', params={}):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.setTicket(password, ttl, existingConnAction, params)
 
     def vmChangeCD(self, vmId, driveSpec):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.changeCD(driveSpec)
 
     def vmChangeFloppy(self, vmId, driveSpec):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.changeFloppy(driveSpec)
 
     def vmSendKeys(self, vmId, keySequence):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.sendKeys(keySequence)
 
     def vmMigrate(self, params):
-        vm = API.VM(self.cif, params['vmId'])
+        vm = API.VM(params['vmId'])
         return vm.migrate(params)
 
     def vmGetMigrationStatus(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.getMigrationStatus()
 
     def vmMigrationCancel(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.migrateCancel()
 
     def vmHotplugDisk(self, params):
-        vm = API.VM(self.cif, params['vmId'])
+        vm = API.VM(params['vmId'])
         return vm.hotplugDisk(params)
 
     def vmHotunplugDisk(self, params):
-        vm = API.VM(self.cif, params['vmId'])
+        vm = API.VM(params['vmId'])
         return vm.hotunplugDisk(params)
 
     def vmHotplugNic(self, params):
-        vm = API.VM(self.cif, params['vmId'])
+        vm = API.VM(params['vmId'])
         return vm.hotplugNic(params)
 
     def vmHotunplugNic(self, params):
-        vm = API.VM(self.cif, params['vmId'])
+        vm = API.VM(params['vmId'])
         return vm.hotunplugNic(params)
 
     def vmSnapshot(self, vmId, snapDrives):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.snapshot(snapDrives)
 
     def vmMerge(self, vmId, mergeDrives):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.merge(mergeDrives)
 
     def vmMergeStatus(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.mergeStatus()
 
     def getCapabilities(self):
-        api = API.Global(self.cif)
+        api = API.Global()
         ret = api.getCapabilities()
         ret['info'].update(self.getServerInfo())
         return ret
 
     def getStats(self):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getStats()
 
     def vmGetStats(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.getStats()
 
     def getAllVmStats(self):
@@ -300,234 +300,234 @@ class BindingXMLRPC(object):
         return {'status': doneCode, 'statsList': statsList}
 
     def vmMigrationCreate(self, params):
-        vm = API.VM(self.cif, params['vmId'])
+        vm = API.VM(params['vmId'])
         return vm.migrationCreate(params)
 
     def vmDesktopLogin(self, vmId, domain, user, password):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.desktopLogin(domain, user, password)
 
     def vmDesktopLogoff(self, vmId, force):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.desktopLogoff(force)
 
     def vmDesktopLock(self, vmId):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.desktopLock()
 
     def vmDesktopSendHcCommand(self, vmId, message):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.desktopSendHcCommand(message)
 
     def vmHibernate(self, vmId, hiberVolHandle=None):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.hibernate(hiberVolHandle)
 
     def vmMonitorCommand(self, vmId, cmd):
-        vm = API.VM(self.cif, vmId)
+        vm = API.VM(vmId)
         return vm.monitorCommand(cmd)
 
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.addNetwork(bridge, vlan, bond, nics, options)
 
     def delNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.delNetwork(bridge, vlan, bond, nics, options)
 
     def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
                     nics=None, options={}):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.editNetwork(oldBridge, newBridge, vlan, bond, nics,
                 options)
 
     def setupNetworks(self, networks={}, bondings={}, options={}):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.setupNetworks(networks, bondings, options)
 
     def ping(self):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.ping()
 
     def setSafeNetworkConfig(self):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.setSafeNetworkConfig()
 
     def fenceNode(self, addr, port, agent, username, password, action,
                   secure=False, options=''):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.fenceNode(addr, port, agent, username, password,
                 action, secure)
 
     def setLogLevel(self, level):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.setLogLevel(level)
 
     def domainActivate(self, sdUUID, spUUID, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.activate()
 
     def domainAttach(self, sdUUID, spUUID, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.attach(spUUID)
 
     def domainCreate(self, storageType, sdUUID, domainName,
                      typeSpecificArg, domClass,
                      domVersion=None, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.create(storageType, typeSpecificArg, domainName,
                              domClass, domVersion)
 
     def domainDeactivate(self, sdUUID, spUUID, msdUUID, masterVersion,
                          options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.deactivate(msdUUID, masterVersion)
 
     def domainDetach(self, sdUUID, spUUID, msdUUID, masterVersion,
                      options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.detach(msdUUID, masterVersion, force=False)
 
     def domainDetachForced(self, sdUUID, spUUID, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.detach(None, None, force=True)
 
     def domainExtend(self, sdUUID, spUUID, devlist, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.extend(devlist)
 
     def domainFormat(self, sdUUID,
                      autoDetach=False, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.format(autoDetach)
 
     def domainGetFileList(self, sdUUID, pattern='*', options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.getFileList(pattern)
 
     def domainGetImages(self, sdUUID, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.getImages()
 
     def domainGetInfo(self, sdUUID, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.getInfo()
 
     def domainGetStats(self, sdUUID, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.getStats()
 
     def domainGetVolumes(self, sdUUID, spUUID,
                          imgUUID=API.Image.BLANK_UUID):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.getVolumes(imgUUID)
 
     def domainSetDescription(self, sdUUID, description, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.setDescription(description)
 
     def domainUploadVolume(self, sdUUID, spUUID, imgUUID, volUUID,
                            srcPath, size, method="rsync", options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID, spUUID)
         return domain.uploadVolume(imgUUID, volUUID, srcPath, size, method)
 
     def domainValidate(self, sdUUID, options=None):
-        domain = API.StorageDomain(self.cif, sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID, spUUID=None)
         return domain.validate()
 
     def imageDelete(self, sdUUID, spUUID,
                     imgUUID, postZero=False, force=False):
-        image = API.Image(self.cif, imgUUID, spUUID, sdUUID)
+        image = API.Image(imgUUID, spUUID, sdUUID)
         return image.delete(postZero, force)
 
     def imageDeleteVolumes(self, sdUUID, spUUID, imgUUID, volumes,
                            postZero=False, force=False):
-        image = API.Image(self.cif, imgUUID, spUUID, sdUUID)
+        image = API.Image(imgUUID, spUUID, sdUUID)
         return image.deleteVolumes(volumes, postZero, force)
 
     def imageMergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID,
                             ancestor, successor, postZero=False):
-        image = API.Image(self.cif, imgUUID, spUUID, sdUUID)
+        image = API.Image(imgUUID, spUUID, sdUUID)
         return image.mergeSnapshots(ancestor, successor, postZero)
 
     def imageMove(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID,
                   op, postZero=False, force=False):
-        image = API.Image(self.cif, imgUUID, spUUID, srcDomUUID)
+        image = API.Image(imgUUID, spUUID, srcDomUUID)
         return image.move(dstDomUUID, op, postZero, force)
 
     def poolConnect(self, spUUID, hostID, scsiKey, msdUUID, masterVersion,
                     options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.connect(hostID, scsiKey, msdUUID, masterVersion)
 
     def poolConnectStorageServer(self, domType, spUUID, conList, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.connectStorageServer(domType, conList)
 
     def poolCreate(self, poolType, spUUID, poolName, masterDom, domList,
                    masterVersion, lockPolicy=None, lockRenewalIntervalSec=None,
                    leaseTimeSec=None, ioOpTimeoutSec=None,
                    leaseRetries=None, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.create(poolName, masterDom, masterVersion, domList,
                lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
                leaseRetries)
 
     def poolDestroy(self, spUUID, hostID, scsiKey, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.destroy(hostID, scsiKey)
 
     def poolDisconnect(self, spUUID, hostID, scsiKey, remove=False,
                        options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.disconnect(hostID, scsiKey, remove)
 
     def poolDisconnectStorageServer(self, domType, spUUID, conList,
                                     options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.disconnectStorageServer(domType, conList)
 
     def poolFenceSPMStorage(self, spUUID, lastOwner, lastLver, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.fence()
 
     def poolGetBackedUpVmsInfo(self, spUUID, sdUUID,
                                vmList=None, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getBackedUpVmsInfo(sdUUID, vmList)
 
     def poolGetBackedUpVmsList(self, spUUID, sdUUID=None, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getBackedUpVmsList(sdUUID)
 
     def poolGetFloppyList(self, spUUID, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getFloppyList()
 
     def poolGetDomainsContainingImage(self, spUUID, imgUUID, datadomains=True,
                                       options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getDomainsContainingImage(imgUUID, datadomains)
 
     def poolGetIsoList(self, spUUID, extension='iso', options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getIsoList(extension)
 
     def poolGetSpmStatus(self, spUUID, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getSpmStatus()
 
     def poolGetStorageConnections(self, spUUID, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getStorageConnections()
 
     def poolGetInfo(self, spUUID, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.getInfo()
 
     def poolMoveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict,
                                vmUUID, force=False):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.moveMultipleImages(srcDomUUID, dstDomUUID, imgDict, force)
 
     def poolReconstructMaster(self, spUUID, poolName, masterDom, domDict,
@@ -535,45 +535,45 @@ class BindingXMLRPC(object):
                               lockRenewalIntervalSec=None, leaseTimeSec=None,
                               ioOpTimeoutSec=None, leaseRetries=None,
                               options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.reconstructMaster(poolName, masterDom, masterVersion,
             domDict, lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
             leaseRetries)
 
     def poolRefresh(self, spUUID, msdUUID, masterVersion, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.refresh(msdUUID, masterVersion)
 
     def poolSetDescription(self, spUUID, description, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.setDescription(description)
 
     def poolSpmStart(self, spUUID, prevID, prevLVER, recoveryMode,
                      scsiFencing, maxHostID=None,
                      domVersion=None, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.spmStart(prevID, prevLVER, scsiFencing,
                              maxHostID, domVersion)
 
     def poolSpmStop(self, spUUID, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.spmStop()
 
     def poolUpgrade(self, spUUID, targetDomVersion):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.upgrade(targetDomVersion)
 
     def poolValidateStorageServerConnection(self, domType, spUUID, conList,
                                             options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.validateStorageServerConnection(domType, conList)
 
     def poolUpdateVMs(self, spUUID, vmList, sdUUID=None, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.updateVMs(vmList, sdUUID)
 
     def poolRemoveVm(self, spUUID, vmUUID, sdUUID=None, options=None):
-        pool = API.StoragePool(self.cif, spUUID)
+        pool = API.StoragePool(spUUID)
         return pool.removeVM(vmUUID, sdUUID)
 
     def volumeCopy(self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID,
@@ -583,7 +583,7 @@ class BindingXMLRPC(object):
                    volFormat=API.Volume.Formats.UNKNOWN,
                    preallocate=API.Volume.Types.UNKNOWN, postZero=False,
                    force=False):
-        volume = API.Volume(self.cif, srcVolUUID, spUUID, sdUUID, srcImgUUID)
+        volume = API.Volume(srcVolUUID, spUUID, sdUUID, srcImgUUID)
         return volume.copy(dstSdUUID, dstImgUUID, dstVolUUID,
             description, volType, volFormat, preallocate, postZero,
             force)
@@ -592,132 +592,132 @@ class BindingXMLRPC(object):
                      preallocate, diskType, volUUID, desc,
                      srcImgUUID=API.Image.BLANK_UUID,
                      srcVolUUID=API.Volume.BLANK_UUID):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.create(size, volFormat, preallocate, diskType,
                 desc, srcImgUUID, srcVolUUID)
 
     def volumeExtend(self, sdUUID, spUUID, imgUUID, volUUID, size,
                      isShuttingDown=None):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.extend(size, isShuttingDown)
 
     def volumeGetInfo(self, sdUUID, spUUID, imgUUID, volUUID):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.getInfo()
 
     def volumeGetPath(self, sdUUID, spUUID, imgUUID, volUUID):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.getPath()
 
     def volumeGetSize(self, sdUUID, spUUID, imgUUID, volUUID):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.getSize()
 
     def volumePrepare(self, sdUUID, spUUID, imgUUID, volUUID, rw=True):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.prepare(rw)
 
     def volumeRefresh(self, sdUUID, spUUID, imgUUID, volUUID):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.refresh()
 
     def volumeSetDescription(self, sdUUID, spUUID, imgUUID, volUUID,
                              description):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.setDescription(description)
 
     def volumeSetLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.setLegality(legality)
 
     def volumeTearDown(self, sdUUID, spUUID, imgUUID, volUUID):
-        volume = API.Volume(self.cif, volUUID, spUUID, sdUUID, imgUUID)
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.tearDown()
 
     def taskClear(self, taskId):
-        task = API.Task(self.cif, taskId)
+        task = API.Task(taskId)
         return task.clear()
 
     def taskGetInfo(self, taskId):
-        task = API.Task(self.cif, taskId)
+        task = API.Task(taskId)
         return task.getInfo()
 
     def taskGetStatus(self, taskId):
-        task = API.Task(self.cif, taskId)
+        task = API.Task(taskId)
         return task.getStatus()
 
     def taskRevert(self, taskId):
-        task = API.Task(self.cif, taskId)
+        task = API.Task(taskId)
         return task.revert()
 
     def taskStop(self, taskId):
-        task = API.Task(self.cif, taskId)
+        task = API.Task(taskId)
         return task.stop()
 
     # Global storage methods
     def tasksGetAllInfo(self):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getAllTasksInfo()
 
     def tasksGetAllStatuses(self):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getAllTasksStatuses()
 
     def iscsiDiscoverSendTargets(self, con, options=None):
-        iscsiConn = API.ISCSIConnection(self.cif, con['connection'],
+        iscsiConn = API.ISCSIConnection(con['connection'],
             con['port'], con['user'], con['password'])
         return iscsiConn.discoverSendTargets()
 
     def vgCreate(self, name, devlist):
-        vg = API.LVMVolumeGroup(self.cif)
+        vg = API.LVMVolumeGroup()
         return vg.create(name, devlist)
 
     def vgGetInfo(self, vgUUID, options=None):
-        vg = API.LVMVolumeGroup(self.cif, vgUUID)
+        vg = API.LVMVolumeGroup(vgUUID)
         return vg.getInfo()
 
     def vgRemove(self, vgUUID, options=None):
-        vg = API.LVMVolumeGroup(self.cif, vgUUID)
+        vg = API.LVMVolumeGroup(vgUUID)
         return vg.remove()
 
     def domainsGetList(self, spUUID=None, domainClass=None, storageType=None,
                        remotePath=None, options=None):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getStorageDomains(spUUID, domainClass, storageType,
                                      remotePath)
 
     def poolsGetConnectedList(self, options=None):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getConnectedStoragePools()
 
     def storageRepoGetStats(self, options=None):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getStorageRepoStats()
 
     def vgsGetList(self, storageType=None, options=None):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getLVMVolumeGroups(storageType)
 
     def devicesGetList(self, storageType=None, options=None):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getDeviceList(storageType)
 
     def devicesGetVisibility(self, guids, options=None):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getDevicesVisibility(guids)
 
     def deviceGetInfo(self, guid, options=None):
-        api = API.Global(self.cif)
+        api = API.Global()
         return api.getDeviceInfo(guid)
 
     def storageServerConnectionRefsAcquire(self, conRefArgs):
-        return API.ConnectionRefs(self.cif).acquire(conRefArgs)
+        return API.ConnectionRefs().acquire(conRefArgs)
 
     def storageServerConnectionRefsRelease(self, refIDs):
-        return API.ConnectionRefs(self.cif).release(refIDs)
+        return API.ConnectionRefs().release(refIDs)
 
     def storageServerConnectionRefsStatuses(self):
-        return API.ConnectionRefs(self.cif).statuses()
+        return API.ConnectionRefs().statuses()
 
     def getGlobalMethods(self):
         return ((self.vmDestroy, 'destroy'),
