@@ -278,9 +278,23 @@ class Deploy:
                 self.vt_svm = "OK"
                 self.message = "Server supports virtualization"
             else:
-                self.vt_svm = "FAIL"
-                self.message = "Server does not support virtualization"
-                self.rc = False
+                # We can't use the regular vdsm.config module here because
+                # vdsm-python might not be installed yet.
+                config = ConfigParser.ConfigParser()
+                config.read(VDSM_CONF)
+
+                try:
+                    fake_kvm = config.getboolean('vars', 'fake_kvm_support')
+                except:
+                    fake_kvm = False
+
+                if fake_kvm:
+                    self.vt_svm = "OK"
+                    self.message = "Server uses the fake kvm virtualization"
+                else:
+                    self.vt_svm = "FAIL"
+                    self.message = "Server does not support virtualization"
+                    self.rc = False
 
             if "GenuineIntel" == deployUtil.cpuVendorID():
                 self.res = "Intel"
@@ -577,6 +591,10 @@ class Deploy:
             lines.append ("[vars]\n") #Adding ts for the coming scirpts.
             lines.append ("trust_store_path = " + config.get('vars', 'trust_store_path') + "\n")
             lines.append ("ssl = " + config.get('vars', 'ssl') + "\n")
+
+            if config.getboolean('vars', 'fake_kvm_support'):
+                lines.append ("fake_kvm_support = true\n")
+
             lines.append ("\n")
 
             lines.append ("[addresses]\n") #Adding mgt port for the coming scirpts.
