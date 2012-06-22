@@ -85,9 +85,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/volume.py \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
-	vdsm_cli/vdsClient.py \
-	vdsm_cli/vdsClientGluster.py \
-	vdsm_cli/vdscli.py.in \
+	vdsm_cli \
 	vdsm_hooks/fileinject/before_vm_start.py \
 	vdsm_hooks/promisc/after_vm_start.py \
 	vdsm_hooks/sriov/before_vm_start.py \
@@ -95,8 +93,8 @@ PEP8_WHITELIST = \
 	vdsm_reg/define.py
 
 check-local:
-	$(PYFLAKES) $(SUBDIRS)
-	$(PEP8) $(PEP8_WHITELIST)
+	find . -name '*.py' -o -name '*.py.in' | xargs $(PYFLAKES)
+	$(PEP8) --filename '*.py,*.py.in' $(PEP8_WHITELIST)
 
 all-local: \
 	vdsm.spec

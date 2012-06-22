@@ -113,8 +113,7 @@ class Nfs(object):
                                 " nfs server!" % (target, EXPORTS)
 
         elif "does not exist" in errorMsg:
-            if not os.path.isdir(pathName):
-                print "return = %s error msg = %s" % (ret, errorMsg)
+            print "return = %s error msg = %s" % (ret, errorMsg)
         else:
             print "NFS server down?"
             print "return = %s error msg = %s" % (ret, errorMsg)
