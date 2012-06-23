@@ -1,4 +1,4 @@
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -673,7 +673,7 @@ def removeLibvirtNetwork(network, log=True):
     except libvirt.libvirtError:
         if log:
             logging.debug('failed to remove libvirt network %s', netName,
-                          exec_info=True)
+                          exc_info=True)
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
     brifs = os.listdir('/sys/class/net/%s/brif/' % bridge)
