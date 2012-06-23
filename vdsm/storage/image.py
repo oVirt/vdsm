@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -676,7 +676,7 @@ class Image:
                 raise
             except Exception, e:
                 self.__cleanupMultimove(sdUUID=dstSdUUID, imgList=cleanup_candidates, postZero=postZero)
-                self.log.error(e, exec_info=True)
+                self.log.error(e, exc_info=True)
                 raise se.CopyImageError("image=%s, src domain=%s, dst domain=%s: msg %s" % (imgUUID, srcSdUUID, dstSdUUID, str(e)))
 
             cleanup_candidates.append(imgUUID)
