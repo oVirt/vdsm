@@ -2,8 +2,9 @@
 
 import os
 import sys
-from vdsm import utils
 import traceback
+
+import hooking
 from vdsm import libvirtconnection
 
 SYS_NIC_PATH = '/sys/class/net/%s'
@@ -24,7 +25,7 @@ def returnDeviceToHost(addr, devpath):
         if f.startswith('resource') or f == 'rom' or f == 'reset':
             dev = os.path.join(devpath, f)
             command = ['/bin/chown', owner, dev]
-            retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+            retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
             if retcode != 0:
                 sys.stderr.write('sriov after_vm_destroy: error chown %s to %s, err = %s\n' % (dev, owner, err))
                 sys.exit(2)

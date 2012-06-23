@@ -6,7 +6,6 @@ import grp
 import pwd
 import traceback
 
-from vdsm import utils
 import hooking
 
 DEV_MAPPER_PATH = "/dev/mapper"
@@ -71,7 +70,7 @@ def createDirectory(dirpath):
 
     # we don't use os.mkdir/chown because we need sudo
     command = ['/bin/mkdir', '-p', dirpath]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('directlun: error mkdir %s, err = %s\n' % (dirpath, err))
         sys.exit(2)
@@ -88,7 +87,7 @@ def cloneDeviceNode(srcpath, devpath):
 
     # we don't use os.remove/mknod/chmod/chown because we need sudo
     command = ['/bin/rm', '-f', devpath]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('directlun: error rm -f %s, err = %s\n' % (devpath, err))
         sys.exit(2)
@@ -97,14 +96,14 @@ def cloneDeviceNode(srcpath, devpath):
     major = os.major(stat.st_rdev)
     minor = os.minor(stat.st_rdev)
     command = ['/bin/mknod', devpath, 'b', str(major), str(minor)]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('directlun: error mknod %s, err = %s\n' % (devpath, err))
         sys.exit(2)
 
     mode = '660'
     command = ['/bin/chmod', mode, devpath]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('directlun: error chmod %s to %s, err = %s\n' % (devpath, mode, err))
         sys.exit(2)
@@ -115,7 +114,7 @@ def cloneDeviceNode(srcpath, devpath):
     uid = user.pw_uid
     owner = str(uid) + ':' + str(gid)
     command = ['/bin/chown', owner, devpath]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('directlun: error chown %s to %s, err = %s\n' % (devpath, owner, err))
         sys.exit(2)

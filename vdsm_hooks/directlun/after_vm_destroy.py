@@ -4,7 +4,6 @@ import os
 import sys
 import traceback
 
-from vdsm import utils
 import hooking
 
 '''
@@ -18,7 +17,7 @@ def removeDeviceNode(devpath):
 
     # we don't use os.unlink because we need sudo
     command = ['/bin/rm', '-f', devpath]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('directlun after_vm_destroy: error rm -f %s, err = %s\n' % (devpath, err))
         sys.exit(2)

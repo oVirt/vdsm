@@ -3,8 +3,9 @@
 import os
 import re
 import sys
-from vdsm import utils
 import traceback
+
+import hooking
 
 '''
 after_vm_destroy:
@@ -45,7 +46,7 @@ def chown(vendorid, productid):
     # remove the 0x from the vendor and product id
     devid = vendorid[2:] + ':' + productid[2:]
     command = ['lsusb', '-d', devid]
-    retcode, out, err = utils.execCmd(command, sudo=False, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=False, raw=True)
     if retcode != 0:
         sys.stderr.write('hostusb: cannot find usb device: %s\n' % devid)
         sys.exit(2)
@@ -60,7 +61,7 @@ def chown(vendorid, productid):
     # we don't use os.chown because we need sudo
     owner = str(uid) + ':' + str(gid)
     command = ['/bin/chown', owner, devpath]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('hostusb after_vm_destroy: error chown %s to %s, err = %s\n' % (devpath, owner, err))
         sys.exit(2)

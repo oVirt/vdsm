@@ -2,9 +2,9 @@
 
 import os
 import sys
-from vdsm import utils
-import hooking
 import traceback
+
+import hooking
 
 '''
 hugepages vdsm hook
@@ -42,7 +42,7 @@ def addSysHugepages(pages):
     totalPages = pages + currPages
     # command: sysctl vm.nr_hugepages=256
     command = ['sysctl', 'vm.nr_hugepages=%d' % totalPages]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('hugepages: error in command: %s, err = %s\n' % (' '.join(command), err))
         sys.exit(2)
@@ -61,7 +61,7 @@ def freeSysHugepages(pages):
     if pages > 0:
         # command: sysctl vm.nr_hugepages=0
         command = ['sysctl', 'vm.nr_hugepages=%d' % (currPages - pages)]
-        retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+        retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
         if retcode != 0:
             sys.stderr.write('hugepages: error in command: %s, err = %s\n' % (' '.join(command), err))
             sys.exit(2)

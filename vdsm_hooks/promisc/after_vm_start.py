@@ -2,9 +2,9 @@
 
 import os
 import sys
-from vdsm import utils
-import hooking
 import traceback
+
+import hooking
 
 MODE_MIRROR = 'mirror'
 MODE_INLINE = 'redirect'
@@ -37,7 +37,7 @@ def captureNetwork(networkName, ifaceName, mode):
     '''
 
     command = ['/sbin/tc', 'qdisc', 'add', 'dev', networkName, 'ingress']
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
         sys.exit(2)
@@ -45,19 +45,19 @@ def captureNetwork(networkName, ifaceName, mode):
     command = ['/sbin/tc', 'filter', 'add', 'dev', networkName, 'parent', 'ffff:', 'protocol',
                'ip', 'u32', 'match', 'u8', '0', '0', 'action', 'mirred', 'egress', mode,
                'dev', ifaceName]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
         sys.exit(2)
 
     command = ['/sbin/tc', 'qdisc', 'replace', 'dev', networkName, 'parent', 'root', 'prio']
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
         sys.exit(2)
 
     command = ['/sbin/tc', 'qdisc', 'show', 'dev', networkName]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
         sys.exit(2)
@@ -68,14 +68,14 @@ def captureNetwork(networkName, ifaceName, mode):
 
     command = ['/sbin/tc', 'filter', 'add', 'dev', networkName, 'parent', devId, 'protocol',
                'ip', 'u32', 'match', 'u8', '0', '0', 'action', 'mirred', 'egress', mode, 'dev', ifaceName]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
         sys.exit(2)
 
     # add promisc mode to the bridge
     command = ['/sbin/ifconfig', networkName, 'promisc']
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
         sys.exit(2)

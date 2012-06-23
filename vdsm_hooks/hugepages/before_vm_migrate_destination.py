@@ -3,7 +3,8 @@
 import os
 import sys
 import traceback
-from vdsm import utils
+
+import hooking
 
 NUMBER_OF_HUGETPAGES = '/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages'
 
@@ -15,7 +16,7 @@ def addSysHugepages(pages):
     totalPages = pages + currPages
     # command: sysctl vm.nr_hugepages=256
     command = ['sysctl', 'vm.nr_hugepages=%d' % totalPages]
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('hugepages before_vm_migraton_destination: error in command: %s, err = %s\n' % (' '.join(command), err))
         sys.exit(2)
@@ -34,7 +35,7 @@ def freeSysHugepages(pages):
     if pages > 0:
         # command: sysctl vm.nr_hugepages=0
         command = ['sysctl', 'vm.nr_hugepages=%d' % (currPages - pages)]
-        retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+        retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
         if retcode != 0:
             sys.stderr.write('hugepages before_vm_migraton_destination: error in command: %s, err = %s\n' % (' '.join(command), err))
             sys.exit(2)

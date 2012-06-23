@@ -39,6 +39,9 @@ Return codes:
 import os
 from xml.dom import minidom
 
+from storage.misc import execCmd
+execCmd  # make pyflakes happy
+
 def tobool(s):
     """Convert the argument into a boolean"""
     try:

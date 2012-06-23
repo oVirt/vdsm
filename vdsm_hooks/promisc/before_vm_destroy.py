@@ -2,8 +2,9 @@
 
 import os
 import sys
-from vdsm import utils
 import traceback
+
+import hooking
 
 def removeMirrorNetwork(networkName):
     '''
@@ -14,18 +15,18 @@ def removeMirrorNetwork(networkName):
     '''
 
     command = ['/sbin/tc', 'qdisc', 'del', 'dev', networkName, 'root']
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
 
     command = ['/sbin/tc', 'qdisc', 'del', 'dev', networkName, 'ingress']
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
 
     # remove promisc mode flag from the bridge
     command = ['/sbin/ifconfig', networkName, '-promisc']
-    retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
 

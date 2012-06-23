@@ -4,11 +4,11 @@ import os
 import sys
 import grp
 import pwd
-from vdsm import utils
-import hooking
-from vdsm import libvirtconnection
 import traceback
 from xml.dom import minidom
+
+import hooking
+from vdsm import libvirtconnection
 
 SYS_NIC_PATH = '/sys/class/net/%s'
 VDSM_VAR_HOOKS_DIR = '/var/run/vdsm/hooks'
@@ -125,7 +125,7 @@ def chown(devpath):
             # we don't use os.chown because we need sudo
             owner = str(uid) + ':' + str(gid)
             command = ['/bin/chown', owner, dev]
-            retcode, out, err = utils.execCmd(command, sudo=True, raw=True)
+            retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
             if retcode != 0:
                 sys.stderr.write('sriov: error chown %s to %s, err = %s\n' %
                                  (dev, owner, err))
