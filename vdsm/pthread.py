@@ -66,8 +66,9 @@ class PthreadMutex(object):
     def __del__(self):
         try:
             _libpthread.pthread_mutex_destroy(self._mutex)
-        except AttributeError, e:
-            print e
+        except AttributeError:
+            if _libpthread is not None:
+                raise
 
     def mutex(self):
         return self._mutex
@@ -96,8 +97,9 @@ class PthreadCond(object):
     def __del__(self):
         try:
             _libpthread.pthread_cond_destroy(self._cond)
-        except AttributeError, e:
-            print e
+        except AttributeError:
+            if _libpthread is not None:
+                raise
 
     def signal(self):
         return _libpthread.pthread_cond_signal(self._cond)
