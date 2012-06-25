@@ -1042,9 +1042,6 @@ class StoragePool(Securable):
 
         try:
             dom = sdCache.produce(sdUUID)
-            # Check that dom is really reachable and not a cached value
-            dom.validate(False)
-
         except (se.StorageException, AttributeError, Timeout):
             # AttributeError: Unreloadable blockSD
             # Timeout: NFS unreachable domain
@@ -1065,8 +1062,21 @@ class StoragePool(Securable):
                     return
                 else:
                     self.masterMigrate(sdUUID, newMsdUUID, masterVersion)
-            elif dom.isBackup():
-                dom.unmountMaster()
+            else:
+                masterDir = os.path.join(dom.domaindir, sd.MASTER_FS_DIR)
+                try:
+                    m = mount.getMountFromTarget(masterDir)
+                except OSError, e:
+                    if e.errno == errno.ENOENT:
+                        pass # Master is not mounted
+                    else:
+                        raise
+                else:
+                    try:
+                        m.umount()
+                    except mount.MountError:
+                        self.log.error("Can't umount masterDir %s for domain "
+                                       "%s", masterDir, dom)
 
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
         self.setMetaParam(PMDK_DOMAINS, domList)

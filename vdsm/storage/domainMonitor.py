@@ -156,7 +156,7 @@ class DomainMonitor(object):
 
             # An ISO domain can be shared by multiple pools
             if (not isIsoDomain
-                        and nextStatus.valid and nextStatus.hasHostId is False):
+                    and nextStatus.valid and nextStatus.hasHostId is False):
                 try:
                     domain.acquireHostId(hostId, async=True)
                 except:
