@@ -734,7 +734,7 @@ def listNetworks():
     print "Bondings:", _netinfo.bondings.keys()
 
 def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
-               configWriter=None, **options):
+               configWriter=None, implicitBonding=True, **options):
     _netinfo = NetInfo()
 
     validateBridgeName(network)
@@ -786,16 +786,19 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                         stderr=subprocess.PIPE)
         configWriter.removeVlan(vlan, bonding or nics[0])
 
-    if bonding:
-        if not bridged or not bondingOtherUsers(network, vlan, bonding):
-            ifdown(bonding)
-            configWriter.removeBonding(bonding)
+    # The (relatively) new setupNetwork verb allows to remove a network
+    # defined on top of an bonding device without break the bond itself.
+    if implicitBonding:
+        if bonding:
+            if not bridged or not bondingOtherUsers(network, vlan, bonding):
+                ifdown(bonding)
+                configWriter.removeBonding(bonding)
 
-    for nic in nics:
-        nicUsers = nicOtherUsers(network, vlan, bonding, nic)
-        if not nicUsers:
-            ifdown(nic)
-            configWriter.removeNic(nic)
+        for nic in nics:
+            nicUsers = nicOtherUsers(network, vlan, bonding, nic)
+            if not nicUsers:
+                ifdown(nic)
+                configWriter.removeNic(nic)
 
 def clientSeen(timeout):
     start = time.time()
@@ -1081,7 +1084,8 @@ def setupNetworks(networks={}, bondings={}, **options):
             for network, networkAttrs in networks.items():
                 if network in _netinfo.networks:
                     logger.debug("Removing network %r" % network)
-                    delNetwork(network, configWriter=configWriter, force=force)
+                    delNetwork(network, configWriter=configWriter, force=force,
+                               implicitBonding=False)
                     if 'remove' in networkAttrs:
                         del networks[network]
                 else:
