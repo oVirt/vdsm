@@ -21,7 +21,6 @@
 
 import configNetwork
 from testrunner import VdsmTestCase as TestCaseBase
-from vdsm import netinfo
 
 
 class TestconfigNetwork(TestCaseBase):
