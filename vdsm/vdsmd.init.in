@@ -267,6 +267,12 @@ configure_libvirt()
 {
     local force_reconfigure="$1"
     local by_vdsm="by vdsm"
+    # The PACKAGE_VERSION macro is not used here because we do not want to
+    # update the libvirt configure file every time we change vdsm package
+    # version. In fact the configure generated here is almost unrelated to the
+    # package version, so anything meaningful can be used here. Since a hard
+    # coded version string has been already used, for compatibility we will
+    # continue to use this string.
     local by_vdsm_vers="4.9.6"
     local start_conf_section="## beginning of configuration section ${by_vdsm}"
     local end_conf_section="## end of configuration section ${by_vdsm}"
