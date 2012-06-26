@@ -1065,7 +1065,13 @@ def setupNetworks(networks={}, bondings={}, **options):
     try:
         _netinfo = NetInfo()
         configWriter = ConfigWriter()
-        networksAdded = []
+        networksAdded = set()
+        # keep set netsWithNewBonds to be able remove
+        # a new added network if connectivity check fail.
+        # If a new network needs to be created on top of existing bond,
+        # we will need to keep the bond on rollback flow,
+        # else we will break the new created bond.
+        netsWithNewBonds = set()
 
         logger.debug("Setting up network according to configuration: "
                      "networks:%r, bondings:%r, options:%r" % (networks,
@@ -1089,7 +1095,7 @@ def setupNetworks(networks={}, bondings={}, **options):
                     if 'remove' in networkAttrs:
                         del networks[network]
                 else:
-                    networksAdded.append(network)
+                    networksAdded.add(network)
 
             handledBonds = set()
             for network, networkAttrs in networks.iteritems():
@@ -1104,6 +1110,9 @@ def setupNetworks(networks={}, bondings={}, **options):
                         # Don't remove bondX from the bonding list here,
                         # because it may be in use for other networks
                         handledBonds.add(d['bonding'])
+                        # we create a new bond
+                        if network in networksAdded:
+                            netsWithNewBonds.add(network)
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force
@@ -1130,7 +1139,8 @@ def setupNetworks(networks={}, bondings={}, **options):
                                       CONNECTIVITY_TIMEOUT_DEFAULT))):
                     logger.info('Connectivity check failed, rolling back')
                     for network in networksAdded:
-                        delNetwork(network, force=True)
+                        delNetwork(network, force=True,
+                                   implicitBonding=network in netsWithNewBonds)
                     raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                              'connectivity check failed')
         except:
