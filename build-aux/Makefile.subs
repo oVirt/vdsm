@@ -29,7 +29,6 @@ PATHSUBST = sed \
 	-e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g" \
 	-e "s,[@]POOLSDIR[@],$(vdsmpoolsdir),g" \
 	-e "s,[@]TRUSTSTORE[@],$(vdsmtsdir),g" \
-	-e "s,[@]VDSMCOREDUMPDIR[@],$(vdsmcoredumpdir),g" \
 	-e "s,[@]VDSMDIR[@],$(vdsmdir),g" \
 	-e "s,[@]VDSMLIBDIR[@],$(vdsmlibdir),g" \
 	-e "s,[@]VDSMLOGDIR[@],$(vdsmlogdir),g" \

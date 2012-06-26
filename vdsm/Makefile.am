@@ -82,9 +82,6 @@ nodist_vdsm_SCRIPTS = \
 	vdsm-restore-net-config \
 	vdsm-store-net-config
 
-nodist_noinst_SCRIPTS = \
-	vdsm-logrotate
-
 nodist_noinst_DATA = \
 	logger.conf \
 	vdsm-logrotate.conf \
@@ -108,7 +105,6 @@ nodist_man8_MANS = \
 CLEANFILES = \
 	config.log \
 	$(nodist_vdsm_SCRIPTS) \
-	$(nodist_noinst_SCRIPTS) \
 	$(nodist_vdsmlib_PYTHON) \
 	$(nodist_noinst_DATA) \
 	$(nodist_vdsmexec_SCRIPTS) \
@@ -132,7 +128,7 @@ EXTRA_DIST = \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-logrotate \
-	vdsm-logrotate.in \
+	vdsm-logrotate \
 	vdsm-logrotate.conf.in \
 	vdsm-modprobe.conf \
 	vdsm-restore-net-config.in \
