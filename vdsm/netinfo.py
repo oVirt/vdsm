@@ -239,17 +239,22 @@ def get():
     d['networks'] = {}
     nets = networks()
     for netname in nets.iterkeys():
-        d['networks'][netname] = {}
         if nets[netname]['bridged']:
-            d['networks'][netname] = { 'ports': ports(netname),
-                    'stp': bridge_stp_state(netname),
-                    'addr': getaddr(netname),
-                    'netmask': getnetmask(netname),
-                    'gateway': routes.get(netname, '0.0.0.0'),
-                    'mtu': getMtu(netname), 'cfg': getIfaceCfg(netname) }
+            devname = netname
+            d['networks'][netname] = { 'ports': ports(devname),
+                    'stp': bridge_stp_state(devname),
+                    'cfg': getIfaceCfg(devname), }
         else:
-            d['networks'][netname] = { 'interface': nets[netname]['interface'] }
-        d['networks'][netname]['bridged'] = nets[netname]['bridged']
+            devname = nets[netname]['interface']
+            d['networks'][netname] = {}
+
+        d['networks'][netname].update({
+                    'bridged': nets[netname]['bridged'],
+                    'addr': getaddr(devname),
+                    'netmask': getnetmask(devname),
+                    'gateway': routes.get(devname, '0.0.0.0'),
+                    'mtu': getMtu(devname), })
+
     d['nics'] = dict([ (nic, {'speed': speed(nic),
                               'addr': getaddr(nic),
                               'netmask': getnetmask(nic),
