@@ -1085,7 +1085,7 @@ def setupNetworks(networks={}, bondings={}, **options):
                 if 'bonding' in d:
                     # we may not receive any information
                     # about the bonding device if it is unchanged
-                    if bondings:
+                    if bondings.get(d['bonding']):
                         d['nics'] = bondings[d['bonding']]['nics']
                         d['bondingOptions'] = bondings[d['bonding']].get('options',
                                                                          None)
