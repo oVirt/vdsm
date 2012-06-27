@@ -130,7 +130,7 @@ def speed(dev):
     return 0
 
 def getaddr(dev):
-    dev_info_list = ethtool.get_interfaces_info(dev)
+    dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
     addr = dev_info_list[0].ipv4_address
     if addr is None:
         addr = ''
@@ -141,7 +141,7 @@ def bitmask_to_address(bitmask):
     return ".".join(map(lambda x: str(binary>>(x<<3) & 0xff), [3, 2, 1, 0]))
 
 def getnetmask(dev):
-    dev_info_list = ethtool.get_interfaces_info(dev)
+    dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
     netmask = dev_info_list[0].ipv4_netmask
     if netmask == 0:
         return ''
