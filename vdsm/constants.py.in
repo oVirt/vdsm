@@ -50,7 +50,7 @@ SUPPORTED_DOMAIN_VERSIONS = DOMAIN_VERSIONS
 
 UUID_GLOB_PATTERN = '*-*-*-*-*'
 
-MEGAB = 2 ** 20 # = 1024 ** 2 = 1 MiB
+MEGAB = 2 ** 20  # = 1024 ** 2 = 1 MiB
 
 #
 # Path definitions
@@ -124,10 +124,10 @@ EXT_REBOOT = '@REBOOT_PATH@'
 EXT_RPM = '@RPM_PATH@'
 EXT_RSYNC = '@RSYNC_PATH@'
 
-EXT_SCSI_ID = '@SCSI_ID_PATH@' #TBD !
+EXT_SCSI_ID = '@SCSI_ID_PATH@'  # TBD !
 EXT_SERVICE = '@SERVICE_PATH@'
 EXT_SETSID = '@SETSID_PATH@'
-EXT_SH = '/bin/sh' # The shell path is invariable
+EXT_SH = '/bin/sh'  # The shell path is invariable
 EXT_SHOWMOUNT = '@SHOWMOUNT_PATH@'
 EXT_SU = '@SU_PATH@'
 EXT_SUDO = '@SUDO_PATH@'
@@ -167,4 +167,3 @@ defaults {
     max_fds                 4096
 }
 """
-
