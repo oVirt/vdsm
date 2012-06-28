@@ -132,7 +132,8 @@ EXTRA_DIST = \
 	vdsm-logrotate.conf.in \
 	vdsm-restore-net-config.in \
 	vdsm.rwtab.in \
-	vdsm-store-net-config.in
+	vdsm-store-net-config.in \
+	vdsm-sysctl.conf
 
 vdsm.conf.sample: Makefile config.py
 	@echo "  CONFIG $@"; python $(builddir)/config.py > $@
@@ -153,7 +154,8 @@ install-data-local: \
 		install-data-rwtab \
 		install-data-logrotate \
 		install-data-sudoers \
-		install-data-libvirtpass
+		install-data-libvirtpass \
+		install-data-sysctl
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/mnt
@@ -172,7 +174,8 @@ uninstall-local: \
 		uninstall-data-rwtab \
 		uninstall-data-logrotate \
 		uninstall-data-sudoers \
-		uninstall-data-libvirtpass
+		uninstall-data-libvirtpass \
+		uninstall-data-sysctl
 
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
@@ -220,3 +223,10 @@ install-data-sudoers:
 
 uninstall-data-sudoers:
 	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
+
+install-data-sysctl:
+	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sysctl.d
+	$(INSTALL_DATA) $(srcdir)/vdsm-sysctl.conf \
+		$(DESTDIR)$(sysconfdir)/sysctl.d/vdsm
+uninstall-data-sysctl:
+	$(RM) $(DESTDIR)$(sysconfdir)/sysctl.d/vdsm

@@ -427,29 +427,6 @@ _EOF
     /sbin/initctl restart libvirtd 2>/dev/null || :
 }
 
-configure_sysctl()
-{
-    local VDSM_SYSCTL_BGN VDSM_SYSCTL_END VDSM_SYSCTL_VER
-    VDSM_SYSCTL_BGN="# VDSM section begin"
-    VDSM_SYSCTL_END="# VDSM section end"
-    VDSM_SYSCTL_VER="$VDSM_SYSCTL_BGN (v.1)"
-    grep -q "$VDSM_SYSCTL_VER" /etc/sysctl.conf
-    if [ $? -ne 0 ]; then
-        echo $"Configuring sysctl for vdsm..."
-        sed -e "/vm.dirty_ratio/d" \
-            -e "/vm.dirty_background_ratio/d" \
-            -e "/$VDSM_SYSCTL_BGN/,/$VDSM_SYSCTL_END/d" \
-            /etc/sysctl.conf > /etc/sysctl.conf.vdsm
-        cat >> /etc/sysctl.conf.vdsm <<EOF
-$VDSM_SYSCTL_VER
-vm.dirty_ratio = 5
-vm.dirty_background_ratio = 2
-$VDSM_SYSCTL_END
-EOF
-        mv -f /etc/sysctl.conf.vdsm /etc/sysctl.conf
-        sysctl -q -p /etc/sysctl.conf
-    fi
-}
 
 RETVAL=0
 
@@ -465,7 +442,6 @@ reconfigure() {
             ;;
     esac
     configure_libvirt $args
-    configure_sysctl $args
 }
 
 stop_libvirtd_sysv() {
