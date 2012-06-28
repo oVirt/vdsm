@@ -46,7 +46,8 @@ EXTRA_DIST = \
 
 all-local: \
 	$(nodist_bin_SCRIPTS) \
-	$(nodist_vdsm_PYTHON)
+	$(nodist_vdsm_PYTHON) \
+	$(nodist_vdsmpylib_PYTHON)
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/bash_completion.d
