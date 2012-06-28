@@ -90,7 +90,7 @@ else:
 
 # Required packages
 REQ_PACK = ('SDL.x86_64','bridge-utils.x86_64','mesa-libGLU.x86_64',
-            'openssl.x86_64','m2crypto.x86_64','rsync.x86_64')
+            'openssl.x86_64', 'rsync.x86_64')
 
 if rhel6based:
     DEVEL_PACK = ()
