@@ -23,5 +23,7 @@ vdsmfunctestsdir = ${vdsmtestsdir}/functional
 dist_vdsmfunctests_PYTHON = \
 	momTests.py \
 	restTests.py \
-	sosPluginTests.py
+	sosPluginTests.py \
+	xmlrpcTests.py \
+	$(NULL)
 
