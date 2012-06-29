@@ -180,6 +180,10 @@ def _safeWrite(fname, s):
     except OSError:
         logging.debug('trying to maintain file permissions', exc_info=True)
 
+def _constantTSC():
+    return all(' constant_tsc ' in line
+               for line in file('/proc/cpuinfo')
+               if line.startswith('flags\t'))
 
 class Deploy:
     """
@@ -366,7 +370,7 @@ class Deploy:
         self.rc = True
 
         args = ['elevator=deadline']
-        if rhel6based:
+        if rhel6based and not _constantTSC():
             args += ['processor.max_cstate=1']
 
         for arg in args:
