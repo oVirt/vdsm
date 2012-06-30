@@ -19,8 +19,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import sys, re
+import sys
+import re
+
 from vdsm import constants
+
 
 def replacement(m):
     s = m.group()

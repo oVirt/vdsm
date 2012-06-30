@@ -21,6 +21,7 @@
 from vdsm import utils
 from vdsm import constants
 
+
 class LsBlkException(Exception):
     def __init__(self, rc):
         self.rc = rc

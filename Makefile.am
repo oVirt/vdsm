@@ -57,10 +57,13 @@ PEP8_WHITELIST = \
 	vdsm/guestIF.py \
 	vdsm/hooks.py \
 	vdsm/kaxmlrpclib.py \
+	vdsm/ksm.py \
 	vdsm/libvirtev.py \
 	vdsm/libvirtvm.py \
+	vdsm/lsblk.py \
 	vdsm/md_utils.py \
 	vdsm/momIF.py \
+	vdsm/neterrors.py \
 	vdsm/netinfo.py \
 	vdsm/parted_utils.py \
 	vdsm/rest/BindingREST.py \
@@ -94,6 +97,7 @@ PEP8_WHITELIST = \
 	vdsm/supervdsmServer.py \
 	vdsm/tc.py \
 	vdsm/vdsm \
+	vdsm/vdsmDebugPlugin.py \
 	vdsm_cli \
 	vdsm_hooks/fileinject \
 	vdsm_hooks/promisc/after_vm_start.py \

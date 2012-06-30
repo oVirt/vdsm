@@ -26,11 +26,15 @@ from multiprocessing.managers import BaseManager
 ADDRESS = "/var/run/vdsm/debugplugin.sock"
 log = logging.getLogger("DebugInterpreter")
 
-class DebugInterpreterManager(BaseManager): pass
+
+class DebugInterpreterManager(BaseManager):
+    pass
+
 
 class DebugInterpreter(object):
     def execute(self, code):
         exec(code)
+
 
 def __turnOnDebugPlugin():
     log.warn("Starting Debug Interpreter. Tread lightly!")
@@ -39,7 +43,7 @@ def __turnOnDebugPlugin():
             os.unlink(ADDRESS)
         manager = DebugInterpreterManager(address=ADDRESS, authkey="KEY")
         interpreter = DebugInterpreter()
-        manager.register('interpreter', callable=lambda:interpreter)
+        manager.register('interpreter', callable=lambda: interpreter)
         server = manager.get_server()
         servThread = threading.Thread(target=server.serve_forever)
         servThread.setDaemon(True)
@@ -48,4 +52,3 @@ def __turnOnDebugPlugin():
         log.error("Could not start debug plugin", exc_info=True)
 
 __turnOnDebugPlugin()
-

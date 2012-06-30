@@ -18,15 +18,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import threading, time
+import threading
+import time
 import os
+
 from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 
+
 class KsmMonitorThread(threading.Thread):
     def __init__(self, cif):
-        threading.Thread.__init__(self, name = 'KsmMonitor')
+        threading.Thread.__init__(self, name='KsmMonitor')
         self.setDaemon(True)
         self._cif = cif
         self.state, self.pages = False, 0
@@ -42,11 +45,11 @@ class KsmMonitorThread(threading.Thread):
             else:
                 self._cif.log.error('failed to find ksmd thread')
         else:
-           self._cif.log.info('ksm monitor thread disabled, not starting')
+            self._cif.log.info('ksm monitor thread disabled, not starting')
         self.cpuUsage = 0
 
     def _getKsmdJiffies(self):
-        return sum(map(int, file('/proc/%s/stat' % self._pid) \
+        return sum(map(int, file('/proc/%s/stat' % self._pid)
                                     .read().split()[13:15]))
 
     def run(self):
@@ -58,7 +61,7 @@ class KsmMonitorThread(threading.Thread):
             while True:
                 time.sleep(KSM_MONITOR_INTERVAL)
                 jiff1 = self._getKsmdJiffies()
-                self.cpuUsage = (jiff1 - jiff0) % 2**32 * 100 / \
+                self.cpuUsage = (jiff1 - jiff0) % 2 ** 32 * 100 / \
                                 os.sysconf('SC_CLK_TCK') / KSM_MONITOR_INTERVAL
                 jiff0 = jiff1
         except:
@@ -68,12 +71,16 @@ class KsmMonitorThread(threading.Thread):
         return running(), npages()
 
     def adjust(self):
-        """adjust ksm state according to configuration and current memory stress
-        return whether ksm is running"""
+        """Adjust ksm's vigor
+
+        Recalculate how hard should ksm work, according to configuration and
+        current memory stress.
+        Return whether ksm is running"""
 
         self._lock.acquire()
         try:
-            utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'retune'], sudo=True)
+            utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'retune'],
+                          sudo=True)
             self.state, self.pages = self.readState()
         finally:
             self._lock.release()
@@ -85,12 +92,14 @@ class KsmMonitorThread(threading.Thread):
         except:
             return 0
 
+
 def running():
     try:
         state = int(file('/sys/kernel/mm/ksm/run').read()) & 1 == 1
         return state
     except:
         return False
+
 
 def npages():
     try:
@@ -99,9 +108,11 @@ def npages():
     except:
         return 0
 
+
 def start():
     utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'start'], sudo=True)
     utils.execCmd([constants.EXT_SERVICE, 'ksm', 'start'], sudo=True)
+
 
 def tune(params):
     # For supervdsm
