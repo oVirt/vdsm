@@ -176,10 +176,13 @@ VDSM hook to use vhostmd per VM according to Virtualization Manager requests.
 %package hook-faqemu
 Summary:        Fake qemu process for VDSM quality assurance
 BuildArch:      noarch
+Requires:       vdsm
 
 %description hook-faqemu
 VDSM hook used for testing VDSM with multiple fake virtual machines without
 running real guests.
+To enable this hook on your host, set vars.fake_kvm_support=True in your
+/etc/vdsm/vdsm.conf before adding the host to ovirt-Engine.
 
 %package hook-directlun
 Summary:        Direct LUN support for VDSM
