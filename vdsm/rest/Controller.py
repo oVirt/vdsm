@@ -249,7 +249,7 @@ class Collection(object):
 class StorageConnectionRef(Resource):
     def __init__(self, ctx, uuid=None, info={}):
         Resource.__init__(self, ctx)
-        self.obj = API.ConnectionRefs(self.ctx.cif)
+        self.obj = API.ConnectionRefs()
         self.uuid = uuid
         self.info = info
         self.template = 'storageconnectionref'
@@ -280,7 +280,7 @@ class StorageConnectionRef(Resource):
 class StorageConnectionRefs(Collection):
     def __init__(self, ctx):
         Collection.__init__(self, ctx)
-        self.obj = API.ConnectionRefs(self.ctx.cif)
+        self.obj = API.ConnectionRefs()
         self.template = 'storageconnectionrefs'
 
     def create(self, *args):
@@ -329,7 +329,7 @@ class Volume(Resource):
         self.sdUUID = sdUUID
         self.spUUID = spUUID
         self.imgUUID = imgUUID
-        self.obj = API.Volume(self.ctx.cif, uuid, self.spUUID, self.sdUUID,
+        self.obj = API.Volume(uuid, self.spUUID, self.sdUUID,
                                self.imgUUID)
         self.info = {}
         self.template = 'volume'
@@ -337,11 +337,11 @@ class Volume(Resource):
     def _find_img(self):
         if self.imgUUID is not None:
             return
-        sd = API.StorageDomain(self.ctx.cif, self.sdUUID, self.spUUID)
+        sd = API.StorageDomain(self.sdUUID, self.spUUID)
         ret = sd.getImages()
         vdsOK(self.ctx, ret)
         for imgUUID in ret['imageslist']:
-            img = API.Image(self.ctx.cif, imgUUID, self.spUUID, self.sdUUID)
+            img = API.Image(imgUUID, self.spUUID, self.sdUUID)
             ret = img.getVolumes()
             vdsOK(self.ctx, ret)
             if self.uuid in ret['uuidlist']:
@@ -407,8 +407,8 @@ class Volumes(Collection):
         self.imgUUID = imgUUID
         self.sdUUID = sdUUID
         self.spUUID = spUUID
-        self._img = API.Image(self.ctx.cif, imgUUID, spUUID, sdUUID)
-        self._sd = API.StorageDomain(self.ctx.cif, sdUUID, spUUID)
+        self._img = API.Image(imgUUID, spUUID, sdUUID)
+        self._sd = API.StorageDomain(sdUUID, spUUID)
         self.template = 'volumes'
 
     def create(self, *args):
@@ -459,7 +459,7 @@ class Image(Resource):
         self.uuid = uuid
         self.sdUUID = sdUUID
         self.spUUID = spUUID
-        self.obj = API.Image(self.ctx.cif, self.uuid, spUUID, sdUUID)
+        self.obj = API.Image(self.uuid, spUUID, sdUUID)
         self._links = {
             'volumes': lambda: Volumes(self.ctx, self.uuid, self.sdUUID,
                                        self.spUUID)
@@ -486,7 +486,7 @@ class Images(Collection):
         Collection.__init__(self, ctx)
         self.sdUUID = sdUUID
         self.spUUID = spUUID
-        self.obj = API.StorageDomain(self.ctx.cif, self.sdUUID, self.spUUID)
+        self.obj = API.StorageDomain(self.sdUUID, self.spUUID)
         self.template = 'images'
 
     def _get_resources(self, uuid=None):
@@ -519,7 +519,7 @@ class StorageDomain(Resource):
     def __init__(self, ctx, uuid=None):
         Resource.__init__(self, ctx)
         self.uuid = uuid
-        self.obj = API.StorageDomain(self.ctx.cif, self.uuid)
+        self.obj = API.StorageDomain(self.uuid)
         self.spUUID = None
         self.info = {}
         self.stats = {}
@@ -618,7 +618,7 @@ class StorageDomain(Resource):
 class StorageDomains(Collection):
     def __init__(self, ctx):
         Collection.__init__(self, ctx)
-        self.obj = API.Global(self.ctx.cif)
+        self.obj = API.Global()
         self.template = 'storagedomains'
 
     def create(self, *args):
@@ -645,7 +645,7 @@ class StorageDomains(Collection):
 class StoragePool(Resource):
     def __init__(self, ctx, uuid=None):
         Resource.__init__(self, ctx)
-        self.obj = API.StoragePool(self.ctx.cif, uuid)
+        self.obj = API.StoragePool(uuid)
         self.uuid = uuid
         self.template = 'storagepool'
 
@@ -735,7 +735,7 @@ class StoragePool(Resource):
 class StoragePools(Collection):
     def __init__(self, ctx):
         Collection.__init__(self, ctx)
-        self.obj = API.Global(self.ctx.cif)
+        self.obj = API.Global()
         self.template = 'storagepools'
 
     def create(self, *args):
@@ -756,7 +756,7 @@ class StoragePools(Collection):
             hostID = self.ctx.hostID
         except KeyError:
             raise cherrypy.HTTPError(400, "A required parameter is missing")
-        pool = API.StoragePool(self.ctx.cif, uuid)
+        pool = API.StoragePool(uuid)
         ret = pool.connect(hostID, key, master_uuid, master_ver)
         return Response(self.ctx, ret).render()
 
@@ -780,7 +780,7 @@ class Task(Resource):
         Resource.__init__(self, ctx)
         self.uuid = uuid
         self.props = props
-        self.obj = API.Task(self.ctx.cif, self.uuid)
+        self.obj = API.Task(self.uuid)
         self.template = 'task'
 
     def lookup(self):
@@ -806,7 +806,7 @@ class Task(Resource):
 class Tasks(Collection):
     def __init__(self, ctx):
         Collection.__init__(self, ctx)
-        self.obj = API.Global(self.ctx.cif)
+        self.obj = API.Global()
         self.template = 'tasks'
 
     def _get_resources(self, uuid=None):
@@ -842,7 +842,7 @@ class Root(Resource):
         self.template = 'root'
 
     def lookup(self):
-        api = API.Global(self.ctx.cif)
+        api = API.Global()
         ret = api.getCapabilities()
         vdsOK(self.ctx, ret)
         vers = ret['info']['software_version'].split('.')
