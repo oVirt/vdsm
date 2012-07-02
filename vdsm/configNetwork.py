@@ -1107,6 +1107,9 @@ def setupNetworks(networks={}, bondings={}, **options):
                 else:
                     networksAdded.add(network)
 
+            # Remove bonds with 'remove' attribute
+            _removeBondings(bondings, configWriter)
+
             handledBonds = set()
             for network, networkAttrs in networks.iteritems():
                 d = dict(networkAttrs)
@@ -1137,9 +1140,6 @@ def setupNetworks(networks={}, bondings={}, **options):
                 del bondings[bond]
 
             # We are now left with bondings whose network was not mentioned
-            # Remove bonds with 'remove' attribute
-            _removeBondings(bondings, configWriter)
-
             # Check whether bonds should be resized
             _editBondings(bondings, configWriter)
 
