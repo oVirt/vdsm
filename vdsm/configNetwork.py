@@ -541,7 +541,7 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
         if nic not in _netinfo.nics:
             raise ConfigNetworkError(ne.ERR_BAD_NIC, "unknown nic: %r"%nic)
 
-        bridgesForNic = list(_netinfo.getNetworksForNic(nic))
+        bridgesForNic = list(_netinfo.getBridgedNetworksForNic(nic))
         if bridgesForNic:
             assert len(bridgesForNic) == 1
             raise ConfigNetworkError(ne.ERR_USED_NIC, "nic %r is already bound to network %r"%(nic, bridgesForNic[0]))
@@ -911,7 +911,7 @@ def _validateNetworkSetup(networks={}, bondings={}):
     for bonding, bondingAttrs in bondings.iteritems():
         if bondingAttrs.get('remove', False):
             continue
-        connectedNetworks = _netinfo.getNetworksForNic(bonding)
+        connectedNetworks = _netinfo.getBridgedNetworksForNic(bonding)
 
         for network in connectedNetworks:
             if network not in networks:

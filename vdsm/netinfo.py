@@ -25,6 +25,7 @@ import shlex
 import logging
 from fnmatch import fnmatch
 from xml.dom import minidom
+from itertools import chain
 
 import libvirtconnection
 
@@ -330,6 +331,18 @@ class NetInfo(object):
                 yield v
 
     def getNetworksForNic(self, nic):
+        """ Return all networks attached to nic/bond """
+        return chain(self.getBridgelessNetworksForNic(nic),
+                     self.getBridgedNetworksForNic(nic))
+
+    def getBridgelessNetworksForNic(self, nic):
+        """ Return all bridgeless networks attached to nic/bond """
+        for network, netdict in self.networks.iteritems():
+            if not netdict['bridged'] and nic == netdict['interface']:
+                yield network
+
+    def getBridgedNetworksForNic(self, nic):
+        """ Return all bridged networks attached to nic/bond """
         for bridge, netdict in self.networks.iteritems():
             if netdict['bridged'] and nic in netdict['ports']:
                 yield bridge
