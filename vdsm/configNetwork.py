@@ -824,7 +824,7 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None, **opti
             configWriter.restoreAtomicBackup()
             return define.errCode['noConPeer']['status']['code']
 
-def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
+def _validateNetworkSetup(networks={}, bondings={}):
     _netinfo = NetInfo()
 
     # Step 1: Initial validation (validate names, existence of params, etc.)
@@ -887,7 +887,6 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
 
 
     # Step 2: Make sure we have complete information about the Setup, more validation
-    # (if explicitBonding==False we complete the missing information ourselves, else we raise an exception)
     nics = defaultdict(lambda: {'networks':{}, 'bonding':None})
     for network, networkAttrs in networks.iteritems():
         if networkAttrs.get('remove', False):
@@ -898,10 +897,6 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
 
             bonding = networkAttrs['bonding']
             if bonding not in bondings:
-                if explicitBonding:
-                    raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Network %s requires unspecified bonding %s"%(
-                                             network, bonding))
-
                 # fill in bonding info
                 bondings[bonding] =  {'nics':_netinfo.bondings[bonding]['slaves']}
 
@@ -920,9 +915,6 @@ def _validateNetworkSetup(networks={}, bondings={}, explicitBonding=False):
 
         for network in connectedNetworks:
             if network not in networks:
-                if explicitBonding:
-                    raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Bonding %s is associated with unspecified network %s"%(
-                                             bonding, network))
                 # fill in network info
                 _, vlan, bonding2 = _netinfo.getNicsVlanAndBondingForNetwork(network)
                 assert bonding == bonding2
@@ -1020,7 +1012,7 @@ def setupNetworks(networks={}, bondings={}, **options):
 
     Params:
         networks - dict of key=network, value=attributes
-                   where 'attributes' is a dict with the following optional items:
+                 where 'attributes' is a dict with the following optional items:
                         vlan=<id>
                         bonding="<name>" | nic="<name>"
                         (bonding and nics are mutually exclusive)
@@ -1035,7 +1027,7 @@ def setupNetworks(networks={}, bondings={}, **options):
                         remove=True (other attributes can't be specified)
 
         bondings - dict of key=bonding, value=attributes
-                   where 'attributes' is a dict with the following optional items:
+                 where 'attributes' is a dict with the following optional items:
                         nics=["<nic1>" , "<nic2>", ...]
                         options="<bonding-options>"
                         -- OR --
@@ -1045,20 +1037,12 @@ def setupNetworks(networks={}, bondings={}, **options):
                         force=0|1
                         connectivityCheck=0|1
                         connectivityTimeout=<int>
-                        explicitBonding=0|1
-
 
     Notes:
-        Bondings are removed when they change state from 'used' to 'unused'.
-
-        By default, if you edit a network that is attached to a bonding, it's not
-        necessary to re-specify the bonding (you need only to note the attachment
-        in the network's attributes). Similarly, if you edit a bonding, it's not
-        necessary to specify its networks.
-        However, if you specify the 'explicitBonding' option as true, the function
-        will expect you to specify all networks that are attached to a specified
-        bonding, and vice-versa, the bonding attached to a specified network.
-
+        When you edit a network that is attached to a bonding, it's not
+        necessary to re-specify the bonding (you need only to note
+        the attachment in the network's attributes). Similarly, if you edit
+        a bonding, it's not necessary to specify its networks.
     """
     logger = logging.getLogger("setupNetworks")
 
@@ -1080,9 +1064,7 @@ def setupNetworks(networks={}, bondings={}, **options):
         force = options.get('force', False)
         if not utils.tobool(force):
             logging.debug("Validating configuration")
-            _validateNetworkSetup(dict(networks), dict(bondings),
-                                  explicitBonding=options.get('explicitBonding',
-                                                              False))
+            _validateNetworkSetup(dict(networks), dict(bondings))
 
         logger.debug("Applying...")
         try:
