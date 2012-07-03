@@ -988,7 +988,7 @@ def _editBondings(bondings, configWriter):
         ifup(bond)
 
 def _removeBondings(bondings, configWriter):
-    """ Add/Edit bond interface """
+    """ Remove bond interface """
     logger = logging.getLogger("_removeBondings")
 
     _netinfo = NetInfo()
@@ -1082,7 +1082,9 @@ def setupNetworks(networks={}, bondings={}, **options):
             # Remove bonds with 'remove' attribute
             _removeBondings(bondings, configWriter)
 
-            handledBonds = set()
+            # Check whether bonds should be resized
+            _editBondings(bondings, configWriter)
+
             for network, networkAttrs in networks.iteritems():
                 d = dict(networkAttrs)
                 if 'bonding' in d:
@@ -1092,9 +1094,6 @@ def setupNetworks(networks={}, bondings={}, **options):
                         d['nics'] = bondings[d['bonding']]['nics']
                         d['bondingOptions'] = bondings[d['bonding']].get('options',
                                                                          None)
-                        # Don't remove bondX from the bonding list here,
-                        # because it may be in use for other networks
-                        handledBonds.add(d['bonding'])
                         # we create a new bond
                         if network in networksAdded:
                             netsWithNewBonds.add(network)
@@ -1105,15 +1104,6 @@ def setupNetworks(networks={}, bondings={}, **options):
                 logger.debug("Adding network %r" % network)
                 addNetwork(network, configWriter=configWriter,
                            implicitBonding=True, **d)
-
-            # Do not handle a bonding device twice.
-            # We already handled it before during addNetwork.
-            for bond in handledBonds:
-                del bondings[bond]
-
-            # We are now left with bondings whose network was not mentioned
-            # Check whether bonds should be resized
-            _editBondings(bondings, configWriter)
 
             if utils.tobool(options.get('connectivityCheck', True)):
                 logger.debug('Checking connectivity...')
