@@ -494,7 +494,7 @@ def validateVlanId(vlan):
 
 def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
                           netmask, gateway, bondingOptions, bridged=True,
-                          implicitBonding=False):
+                          implicitBonding=False, **options):
     # The (relatively) new setupNetwork verb allows to specify a network on
     # top of an existing bonding device. The nics of this bonds are taken
     # implictly from current host configuration
