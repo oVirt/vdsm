@@ -1602,8 +1602,6 @@ class StoragePool(Securable):
 
         :param sdUUID: The UUID of the storage domain in which the image resides.
         :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool in which the image resides.
-        :type spUUID: UUID
         :param vmUUID: The UUID of the virtual machine you want to copy from.
         :type vmUUID: UUID
         :param srcImageUUID: The UUID of the source image you want to copy from.
