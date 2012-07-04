@@ -1,5 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
+# Copyright 2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,3 +40,52 @@ class TestconfigNetwork(TestCaseBase):
         for i in invalidBrName:
             res = configNetwork.isBridgeNameValid(i)
             self.assertEqual(0, res)
+
+
+class ConfigWriterTests(TestCaseBase):
+    def testAtomicRestore(self):
+        import tempfile
+        import subprocess
+        import shutil
+        import os
+
+        # a rather ugly stubbing
+        configNetwork.NET_CONF_DIR = tempfile.mkdtemp()
+        configNetwork.ConfigWriter.NET_CONF_PREF = \
+                configNetwork.NET_CONF_DIR + 'ifcfg-'
+        subprocess.Popen = lambda x: None
+
+        def fullname(basename):
+            return os.path.join(configNetwork.NET_CONF_DIR, basename)
+
+        INITIAL_CONTENT = '123-testing'
+        SOME_GARBAGE = '456'
+
+        files = (('ifcfg-eth0', INITIAL_CONTENT, True),
+                 ('ifcfg-eth1', None, True),
+                 ('ifcfg-eth2', None, False),
+                )
+
+        for bn, content, _ in files:
+            if content is not None:
+                file(fullname(bn), 'w').write(content)
+
+        cw = configNetwork.ConfigWriter()
+
+        for bn, _, _ in files:
+            cw._atomicBackup(fullname(bn))
+
+        for bn, _, makeDirty in files:
+            if makeDirty:
+                file(fullname(bn), 'w').write(SOME_GARBAGE)
+
+        cw.restoreAtomicBackup()
+
+        for bn, content, _ in files:
+            if content is None:
+                self.assertFalse(os.path.exists(fullname(bn)))
+            else:
+                restoredContent = file(fullname(bn)).read()
+                self.assertEqual(content, restoredContent)
+
+        shutil.rmtree(configNetwork.NET_CONF_DIR)
