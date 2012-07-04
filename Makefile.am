@@ -93,7 +93,7 @@ PEP8_WHITELIST = \
 	vdsm_reg/define.py
 
 check-local:
-	find . -name '*.py' -o -name '*.py.in' | xargs $(PYFLAKES)
+	find . -path './.git' -prune -type f -o -name '*.py' -o -name '*.py.in' | xargs $(PYFLAKES)
 	$(PEP8) --filename '*.py,*.py.in' $(PEP8_WHITELIST)
 
 all-local: \
