@@ -1766,7 +1766,7 @@ class StoragePool(Securable):
             if templateImage != imgUUID:
                 # Removing an image based on a template
                 img.delete(sdUUID=sdUUID, imgUUID=imgUUID, postZero=postZero, force=force)
-                if numOfDependentImgs == 1 and dom.produceVolume(imgUUID, tName).isFake():
+                if numOfDependentImgs == 1 and dom.produceVolume(templateImage, tName).isFake():
                     # Remove the fake template since last consumer was removed
                     img.delete(sdUUID=sdUUID, imgUUID=templateImage, postZero=False, force=True)
 
