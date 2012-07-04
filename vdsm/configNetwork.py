@@ -173,16 +173,22 @@ class ConfigWriter(object):
             try:
                 self._backups[filename] = open(filename).read()
                 logging.debug("Backed up %s", filename)
-            except IOError:
-                pass
+            except IOError, e:
+                if e.errno == os.errno.ENOENT:
+                    self._backups[filename] = None
+                else:
+                    raise
 
     def restoreAtomicBackup(self):
         logging.info("Rolling back configuration (restoring atomic backup)")
         if not self._backups:
             return
         for confFile, content in self._backups.iteritems():
-            open(confFile, 'w').write(content)
-            logging.debug('Restored %s', confFile)
+            if content is None:
+                utils.rmFile(confFile)
+            else:
+                open(confFile, 'w').write(content)
+            logging.info('Restored %s', confFile)
         subprocess.Popen(['/etc/init.d/network', 'start'])
 
     @staticmethod
