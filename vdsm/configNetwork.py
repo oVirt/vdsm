@@ -168,11 +168,11 @@ class ConfigWriter(object):
 
     def _atomicBackup(self, filename):
         """Backs up configuration to memory, for a later rollback in case of error."""
-        confFile = os.path.join(NET_CONF_DIR, filename)
-        if confFile not in self._backups:
+
+        if filename not in self._backups:
             try:
-                self._backups[confFile] = open(confFile).read()
-                logging.debug("Backed up %s", confFile)
+                self._backups[filename] = open(filename).read()
+                logging.debug("Backed up %s", filename)
             except IOError:
                 pass
 
