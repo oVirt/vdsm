@@ -416,14 +416,6 @@ EOF
 
     ovirt_store_config "$lconf" "$qconf" "$ldconf" "$llogr"
 
-    # vdsm makes extensive use of nfs-exported images
-    /usr/sbin/semanage  boolean -m -S targeted -F /dev/stdin  << _EOF
-virt_use_nfs=1
-virt_use_sanlock=1
-_EOF
-    /usr/sbin/setsebool virt_use_nfs on
-    /usr/sbin/setsebool virt_use_sanlock on
-
     /sbin/initctl restart libvirtd 2>/dev/null || :
 }
 

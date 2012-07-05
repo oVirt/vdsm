@@ -81,6 +81,7 @@ Requires: sos
 Requires: tree
 Requires: dosfstools
 Requires: policycoreutils-python
+Requires(pre,preun): policycoreutils-python
 Requires: libselinux-python
 Requires: %{name}-python = %{version}-%{release}
 Requires: selinux-policy-targeted >= 3.7.19-80.el6
@@ -380,6 +381,23 @@ rm -rf %{buildroot}
 /usr/sbin/usermod -a -G %{qemu_group},%{snlk_group} %{vdsm_user}
 /usr/sbin/usermod -a -G %{qemu_group},%{vdsm_group} %{snlk_user}
 
+# vdsm makes extensive use of nfs-exported images
+# The next lines will collect the default selinux behaviour for the booleans
+virtNFS=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_nfs | cut -d ',' -f 2)
+virtSANLOCK=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_sanlock | cut -d ',' -f 2)
+
+if [[ "${virtNFS}" == *off* || "${virtSANLOCK}" == *off* ]]; then
+    /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
+virt_use_nfs=1
+virt_use_sanlock=1
+_EOF
+fi
+
+if /usr/sbin/selinuxenabled; then
+    /usr/sbin/setsebool virt_use_nfs on
+    /usr/sbin/setsebool virt_use_sanlock on
+fi
+
 %post
 # set the vdsm "secret" password for libvirt
 %{_bindir}/vdsm-tool set-saslpasswd
@@ -427,10 +445,12 @@ then
 
     /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
 virt_use_nfs=0
+virt_use_sanlock=0
 _EOF
 
-    if selinuxenabled; then
+    if /usr/sbin/selinuxenabled; then
         /usr/sbin/setsebool virt_use_nfs off
+        /usr/sbin/setsebool virt_use_sanlock off
     fi
 
     /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@rhevh
