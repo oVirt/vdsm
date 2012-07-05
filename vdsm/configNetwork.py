@@ -988,6 +988,11 @@ def _editBondings(bondings, configWriter):
     for bond, bondAttrs in bondings.iteritems():
         logger.debug("Creating/Editing bond %s with attributes %s",
                         bond, bondAttrs)
+
+        brNets = list(_netinfo.getBridgedNetworksForNic(bond))
+        # Only one bridged-non-VLANed network allowed on same nic/bond
+        bridge = brNets[0] if brNets else None
+
         if bond in _netinfo.bondings:
             ifdown(bond)
             # Take down all bond's NICs.
@@ -1001,7 +1006,7 @@ def _editBondings(bondings, configWriter):
             configWriter.addNic(nic, bonding=bond)
             ifup(nic)
 
-        configWriter.addBonding(bond,
+        configWriter.addBonding(bond, bridge=bridge,
                                 bondingOptions=bondAttrs.get('options', None))
         ifup(bond)
 
