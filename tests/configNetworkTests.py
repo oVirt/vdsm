@@ -49,12 +49,6 @@ class ConfigWriterTests(TestCaseBase):
         import shutil
         import os
 
-        # a rather ugly stubbing
-        configNetwork.NET_CONF_DIR = tempfile.mkdtemp()
-        configNetwork.ConfigWriter.NET_CONF_PREF = \
-                configNetwork.NET_CONF_DIR + 'ifcfg-'
-        subprocess.Popen = lambda x: None
-
         def fullname(basename):
             return os.path.join(configNetwork.NET_CONF_DIR, basename)
 
@@ -66,26 +60,40 @@ class ConfigWriterTests(TestCaseBase):
                  ('ifcfg-eth2', None, False),
                 )
 
-        for bn, content, _ in files:
-            if content is not None:
-                file(fullname(bn), 'w').write(content)
+        # a rather ugly stubbing
+        oldvals = (configNetwork.NET_CONF_DIR,
+                configNetwork.ConfigWriter.NET_CONF_PREF,
+                subprocess.Popen)
+        configNetwork.NET_CONF_DIR = tempfile.mkdtemp()
+        configNetwork.ConfigWriter.NET_CONF_PREF = \
+                configNetwork.NET_CONF_DIR + 'ifcfg-'
+        subprocess.Popen = lambda x: None
 
-        cw = configNetwork.ConfigWriter()
+        try:
+            for bn, content, _ in files:
+                if content is not None:
+                    file(fullname(bn), 'w').write(content)
 
-        for bn, _, _ in files:
-            cw._atomicBackup(fullname(bn))
+            cw = configNetwork.ConfigWriter()
 
-        for bn, _, makeDirty in files:
-            if makeDirty:
-                file(fullname(bn), 'w').write(SOME_GARBAGE)
+            for bn, _, _ in files:
+                cw._atomicBackup(fullname(bn))
 
-        cw.restoreAtomicBackup()
+            for bn, _, makeDirty in files:
+                if makeDirty:
+                    file(fullname(bn), 'w').write(SOME_GARBAGE)
 
-        for bn, content, _ in files:
-            if content is None:
-                self.assertFalse(os.path.exists(fullname(bn)))
-            else:
-                restoredContent = file(fullname(bn)).read()
-                self.assertEqual(content, restoredContent)
+            cw.restoreAtomicBackup()
 
-        shutil.rmtree(configNetwork.NET_CONF_DIR)
+            for bn, content, _ in files:
+                if content is None:
+                    self.assertFalse(os.path.exists(fullname(bn)))
+                else:
+                    restoredContent = file(fullname(bn)).read()
+                    self.assertEqual(content, restoredContent)
+
+            shutil.rmtree(configNetwork.NET_CONF_DIR)
+        finally:
+            (configNetwork.NET_CONF_DIR,
+                configNetwork.ConfigWriter.NET_CONF_PREF,
+                subprocess.Popen) = oldvals
