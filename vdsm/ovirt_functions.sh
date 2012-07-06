@@ -9,9 +9,11 @@
 #
 
 function isOvirt() {
+    for f in /etc/ovirt-node-*-release; do
+        [ -f "$f" ] && return 0
+    done
+
     if [ -f /etc/rhev-hypervisor-release ]; then
-        return 0
-    elif [ -f /etc/ovirt-node-*-release ]; then
         return 0
     else
         return 1
