@@ -20,6 +20,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os
+import subprocess
+import tempfile
+import shutil
+
 import configNetwork
 from testrunner import VdsmTestCase as TestCaseBase
 
@@ -43,57 +48,57 @@ class TestconfigNetwork(TestCaseBase):
 
 
 class ConfigWriterTests(TestCaseBase):
+    INITIAL_CONTENT = '123-testing'
+    SOME_GARBAGE = '456'
+
+    def __init__(self, *args, **kwargs):
+        TestCaseBase.__init__(self, *args, **kwargs)
+        self._tempdir = tempfile.mkdtemp()
+        self._files = ((os.path.join(self._tempdir, bn), init, makeDirty) for
+                       bn, init, makeDirty in
+                       (('ifcfg-eth0', self.INITIAL_CONTENT, True),
+                        ('ifcfg-eth1', None, True),
+                        ('ifcfg-eth2', None, False),
+                        ('ifcfg-eth3', self.INITIAL_CONTENT, False),
+                       ))
+
+    def __del__(self):
+        shutil.rmtree(self._tempdir)
+        TestCaseBase.__del__(self)
+
+    def _createFiles(self):
+        for fn, content, _ in self._files:
+            if content is not None:
+                file(fn, 'w').write(content)
+
+    def _makeFilesDirty(self):
+        for fn, _, makeDirty in self._files:
+            if makeDirty:
+                file(fn, 'w').write(self.SOME_GARBAGE)
+
+    def _assertFilesRestored(self):
+        for fn, content, _ in self._files:
+            if content is None:
+                self.assertFalse(os.path.exists(fn))
+            else:
+                restoredContent = file(fn).read()
+                self.assertEqual(content, restoredContent)
+
     def testAtomicRestore(self):
-        import tempfile
-        import subprocess
-        import shutil
-        import os
-
-        def fullname(basename):
-            return os.path.join(configNetwork.NET_CONF_DIR, basename)
-
-        INITIAL_CONTENT = '123-testing'
-        SOME_GARBAGE = '456'
-
-        files = (('ifcfg-eth0', INITIAL_CONTENT, True),
-                 ('ifcfg-eth1', None, True),
-                 ('ifcfg-eth2', None, False),
-                )
-
         # a rather ugly stubbing
-        oldvals = (configNetwork.NET_CONF_DIR,
-                configNetwork.ConfigWriter.NET_CONF_PREF,
-                subprocess.Popen)
-        configNetwork.NET_CONF_DIR = tempfile.mkdtemp()
-        configNetwork.ConfigWriter.NET_CONF_PREF = \
-                configNetwork.NET_CONF_DIR + 'ifcfg-'
+        oldvals = subprocess.Popen
         subprocess.Popen = lambda x: None
 
         try:
-            for bn, content, _ in files:
-                if content is not None:
-                    file(fullname(bn), 'w').write(content)
-
             cw = configNetwork.ConfigWriter()
+            self._createFiles()
 
-            for bn, _, _ in files:
-                cw._atomicBackup(fullname(bn))
+            for fn, _, _ in self._files:
+                cw._atomicBackup(fn)
 
-            for bn, _, makeDirty in files:
-                if makeDirty:
-                    file(fullname(bn), 'w').write(SOME_GARBAGE)
+            self._makeFilesDirty()
 
             cw.restoreAtomicBackup()
-
-            for bn, content, _ in files:
-                if content is None:
-                    self.assertFalse(os.path.exists(fullname(bn)))
-                else:
-                    restoredContent = file(fullname(bn)).read()
-                    self.assertEqual(content, restoredContent)
-
-            shutil.rmtree(configNetwork.NET_CONF_DIR)
+            self._assertFilesRestored()
         finally:
-            (configNetwork.NET_CONF_DIR,
-                configNetwork.ConfigWriter.NET_CONF_PREF,
-                subprocess.Popen) = oldvals
+            subprocess.Popen = oldvals
