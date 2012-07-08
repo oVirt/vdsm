@@ -106,7 +106,7 @@ class vdsm(sos.plugintools.PluginBase):
         for line in out.splitlines()[1:-1]:
             pool = line.strip()
             self.collectExtOutput(vdsclient + "getSpmStatus " + pool)
-        self.collectExtOutput('/bin/su vdsm -s /usr/bin/python @VDSMDIR@/dumpStorageTable.pyc')
+        self.collectExtOutput('/bin/su vdsm -s @PYTHON@ @VDSMDIR@/dumpStorageTable.pyc')
 
     def _addVdsmRunDir(self):
         """Add everything under /var/run/vdsm except possibly confidential

@@ -136,7 +136,7 @@ EXTRA_DIST = \
 	vdsm-sysctl.conf
 
 vdsm.conf.sample: Makefile config.py
-	@echo "  CONFIG $@"; python $(builddir)/config.py > $@
+	@echo "  CONFIG $@"; $(PYTHON) $(builddir)/config.py > $@
 
 all-local: \
 	$(nodist_vdsm_PYTHON) \
