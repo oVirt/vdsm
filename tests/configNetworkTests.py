@@ -102,3 +102,29 @@ class ConfigWriterTests(TestCaseBase):
             self._assertFilesRestored()
         finally:
             subprocess.Popen = oldvals
+
+    def testPersistentBackup(self):
+        # a rather ugly stubbing
+        oldvals = (configNetwork.NET_CONF_BACK_DIR,
+                   os.chown)
+        os.chown = lambda *x: 0
+        configNetwork.NET_CONF_BACK_DIR = os.path.join(self._tempdir,
+                                                       'netback')
+
+        try:
+            cw = configNetwork.ConfigWriter()
+            self._createFiles()
+
+            for fn, _, _ in self._files:
+                cw._persistentBackup(fn)
+
+            self._makeFilesDirty()
+
+            subprocess.call(['/bin/bash', '../vdsm/vdsm-restore-net-config',
+                             '--skip-net-restart'],
+                    env={'NET_CONF_BACK_DIR': configNetwork.NET_CONF_BACK_DIR,
+                         'NET_CONF_DIR': self._tempdir})
+
+            self._assertFilesRestored()
+        finally:
+            configNetwork.NET_CONF_BACK_DIR, os.chown = oldvals

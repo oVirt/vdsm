@@ -1,15 +1,16 @@
 #!/bin/bash
 #
 # vdsm-restore-net-config: restore network configuration files to their
-# declared-safe state.
+# declared-safe state, and restart network service if needed.
+# Use --skip-net-restart to avoid network restart (e.g. during unit tests)
 #
-# this should NOT be used in ovirt, where configuration persistence is handled
-# otherwise.
+# this should NOT be used in ovirt-node, where configuration persistence is
+# handled otherwise.
 
 [ -f /etc/rhev-hypervisor-release ] && exit 0
 
-NET_CONF_DIR='/etc/sysconfig/network-scripts/'
-NET_CONF_BACK_DIR=@VDSMLIBDIR@/netconfback
+NET_CONF_DIR=${NET_CONF_DIR:-/etc/sysconfig/network-scripts/}
+NET_CONF_BACK_DIR=${NET_CONF_BACK_DIR:-@VDSMLIBDIR@/netconfback}
 DELETE_HEADER='# original file did not exist'
 
 for f in "$NET_CONF_BACK_DIR"/*;
@@ -23,7 +24,7 @@ do
     else
         tomove[${#tomove[@]}]="$f"
     fi
-    should_restart=yes
+    [ "$1" != --skip-net-restart ] && should_restart=yes
 done
 
 if [ "$should_restart" == yes ];
