@@ -343,8 +343,7 @@ class RestTest(RestTestBase):
           "/api/storagepools/connect",
           "/api/storagepools/5aa27616-131e-4dda-b22d-8734805013ca/connect",
           "/api/storagepools/5aa27616-131e-4dda-b22d-8734805013ca/disconnect",
-          "/api/vms",
-          "/api/vms/c977d7f4-a6b3-4868-9a7b-8b947c3d98a0/ticket"]
+        ]
         delete_uri_list = [
           "/api/storagepools/5aa27616-131e-4dda-b22d-8734805013ca",
         ]

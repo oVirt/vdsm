@@ -22,7 +22,6 @@ testRootIndex_response_xml = """
   <link href="/api/storageconnectionrefs" rel="storageconnectionrefs"/>
   <link href="/api/storagedomains" rel="storagedomains"/>
   <link href="/api/storagepools" rel="storagepools"/>
-  <link href="/api/vms" rel="vms"/>
   <link href="/api/tasks" rel="tasks"/>
 </api>
 """
@@ -48,9 +47,6 @@ testRootIndex_response_json = """
   }, {
     "rel": "storagepools",
     "href": "/api/storagepools"
-  }, {
-    "rel": "vms",
-    "href": "/api/vms"
   }, {
     "rel": "tasks",
     "href": "/api/tasks"
