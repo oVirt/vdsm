@@ -1270,9 +1270,10 @@ class DomainLockDoesNotExist(StorageException):
     code = 658
     message = "Cannot release lock, resource not found"
 
-class CannotRetrieveSpmStatus(StorageException):
-    code = 659
-    message = "Cannot retrieve SPM status, master domain probably unavailable"
+# Removed Exception. Commented for code number reference.
+# class CannotRetrieveSpmStatus(StorageException):
+#     code = 659
+#     message = "Cannot retrieve SPM status, master domain probably unavailable"
 
 class ReleaseLockFailure(StorageException):
     code = 660
@@ -1323,9 +1324,10 @@ class MetaDataMappingError(MetaDataGeneralError):
     code = 754
     message = "Meta Data mapping failed"
 
-class MetaDataParamError(MetaDataGeneralError):
-    code = 755
-    message = "Meta Data parameter invalid"
+# Removed Exception. Commented for code number reference.
+# class MetaDataParamError(MetaDataGeneralError):
+#     code = 755
+#     message = "Meta Data parameter invalid"
 
 class MetadataOverflowError(MetaDataGeneralError):
     code = 756
