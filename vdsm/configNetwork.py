@@ -327,6 +327,8 @@ class ConfigWriter(object):
         self._removeFile(self.NET_CONF_PREF + bonding)
 
     def removeBridge(self, bridge):
+        ifdown(bridge)
+        subprocess.call([constants.EXT_BRCTL, 'delbr', bridge])
         self._backup(self.NET_CONF_PREF + bridge)
         self._removeFile(self.NET_CONF_PREF + bridge)
 
@@ -781,8 +783,6 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                 "delNetwork: bridge %s still exists" % network)
 
     if network and bridged:
-        ifdown(network)
-        subprocess.call([constants.EXT_BRCTL, 'delbr', network])
         configWriter.removeBridge(network)
 
     if vlan:
