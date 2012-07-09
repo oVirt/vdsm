@@ -125,16 +125,12 @@ class StoragePool(Securable):
         self._upgradeCallback = partial(StoragePool._upgradePoolDomain, proxy(self))
 
     @unsecured
-    def getSpmRole(self):
-        return self.spmRole
-
-    @unsecured
     def getSpmLver(self):
         return self.getMetaParam(PMDK_LVER)
 
     @unsecured
     def getSpmStatus(self):
-        return self.getSpmRole(), self.getSpmLver(), self.getSpmId()
+        return self.spmRole, self.getSpmLver(), self.getSpmId()
 
 
     def __del__(self):
@@ -356,7 +352,7 @@ class StoragePool(Securable):
 
     def stopSpm(self, force=False):
         with self.lock:
-            if not force and self.getSpmRole() == SPM_FREE:
+            if not force and self.spmRole == SPM_FREE:
                 return True
 
             self._shutDownUpgrade()

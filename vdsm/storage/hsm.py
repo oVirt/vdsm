@@ -248,12 +248,12 @@ class HSM:
 
     def validateSPM(self, spUUID):
         pool = self.getPool(spUUID)
-        if pool.getSpmRole() != sp.SPM_ACQUIRED:
+        if pool.spmRole != sp.SPM_ACQUIRED:
             raise se.SpmStatusError(spUUID)
 
     def validateNotSPM(self, spUUID):
         pool = self.getPool(spUUID)
-        if pool.getSpmRole() != sp.SPM_FREE:
+        if pool.spmRole != sp.SPM_FREE:
             raise se.IsSpm(spUUID)
 
     @classmethod
@@ -524,7 +524,8 @@ class HSM:
     def getSpmStatus(self, spUUID, options = None):
         pool = self.getPool(spUUID)
         try:
-            status = {'spmStatus':pool.getSpmRole(), 'spmLver': pool.getSpmLver(), 'spmId':pool.getSpmId()}
+            status = {'spmStatus':pool.spmRole, 'spmLver': pool.getSpmLver(),
+                        'spmId':pool.getSpmId()}
         except (se.LogicalVolumeRefreshError, IOError):
             # This happens when we cannot read the MD LV
             self.log.error("Can't read LV based metadata", exc_info=True)
@@ -3012,7 +3013,7 @@ class HSM:
         pool.invalidateMetadata()
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool.forceFreeSpm()
-        st = {'spmStatus':pool.getSpmRole(), 'spmLver': pool.getSpmLver(), 'spmId':pool.getSpmId()}
+        st = {'spmStatus':pool.spmRole, 'spmLver': pool.getSpmLver(), 'spmId':pool.getSpmId()}
         return dict(spm_st=st)
 
     @public
