@@ -525,15 +525,16 @@ class HSM:
         pool = self.getPool(spUUID)
         try:
             status = {'spmStatus':pool.getSpmRole(), 'spmLver': pool.getSpmLver(), 'spmId':pool.getSpmId()}
-        except se.LogicalVolumeRefreshError:
+        except (se.LogicalVolumeRefreshError, IOError):
             # This happens when we cannot read the MD LV
-            raise se.CannotRetrieveSpmStatus()
-        except se.StorageException:
-            self.log.error("Unexpected error", exc_info=True)
-            raise
-        except Exception:
-            self.log.error("Unexpected error", exc_info=True)
-            raise se.MetaDataParamError("Version or spm id invalid")
+            self.log.error("Can't read LV based metadata", exc_info=True)
+            raise se.StorageDomainMasterError("Can't read LV based metadata")
+        except se.StorageException, e:
+            self.log.error("MD read error: %s", str(e), exc_info=True)
+            raise se.StorageDomainMasterError("MD read error")
+        except (KeyError, ValueError):
+            self.log.error("Non existent or invalid MD key", exc_info=True)
+            raise se.StorageDomainMasterError("Version or spm id invalid")
 
         return dict(spm_st=status)
 
