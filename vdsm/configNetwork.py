@@ -433,7 +433,8 @@ class ConfigWriter(object):
             return
 
         if bonding:
-            _, vlans = _netinfo.getNetworksAndVlansForBonding(bonding)
+            # FIXME! Check whether we need to care of bridgeless too
+            _, vlans = _netinfo.getBridgedNetworksAndVlansForIface(bonding)
             delvlan = bonding + '.' + delvlan
         else:
             vlans = _netinfo.getVlansForNic(nics[0])
@@ -584,7 +585,8 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
 
     # Bonding
     if bonding:
-        bonding_ifaces = _netinfo.getNetworksAndVlansForBonding(bonding)
+        # FIXME! Check whether we need to care of bridgeless too
+        bonding_ifaces = _netinfo.getBridgedNetworksAndVlansForIface(bonding)
         if vlan:    # Make sure all connected interfaces (if any) are vlans
             for (bonding_bridge, bonding_vlan) in bonding_ifaces:
                 if bonding_vlan is None:
@@ -594,7 +596,6 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
             bonding_ifaces = list(bonding_ifaces)
             if len(bonding_ifaces):
                 raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'bonding %r already has members: %r'%(bonding,bonding_ifaces))
-
 
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, mtu=None,
                gateway=None, force=False, configWriter=None, bondingOptions=None, bridged=True, **options):

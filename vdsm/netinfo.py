@@ -317,18 +317,29 @@ class NetInfo(object):
         self.nics = _netinfo['nics']
         self.bondings = _netinfo['bondings']
 
-    def getNetworksAndVlansForBonding(self, bonding):
-        """Returns tuples of (bridge, vlan) connected to bonding
+    def getNetworksAndVlansForIface(self, iface):
+        """ Returns tuples of (bridge/network, vlan) connected to  nic/bond """
+        return chain(self.getBridgedNetworksAndVlansForIface(iface),
+                     self.getBridgelessNetworksAndVlansForIface(iface))
 
-        Note that only one bridge (or multiple vlans) should be connected to the same bonding.
-        """
-        for bridge, netdict in self.networks.iteritems():
+    def getBridgedNetworksAndVlansForIface(self, iface):
+        """ Returns tuples of (bridge, vlan) connected to nic/bond """
+        for network, netdict in self.networks.iteritems():
             if netdict['bridged']:
-                for iface in netdict['ports']:
-                    if iface == bonding:
-                        yield (bridge, None)
-                    elif iface.startswith(bonding + '.'):
-                        yield (bridge, iface.split('.',1)[1])
+                for interface in netdict['ports']:
+                    if iface == interface:
+                        yield (network, None)
+                    elif interface.startswith(iface + '.'):
+                        yield (network, interface.split('.',1)[1])
+
+    def getBridgelessNetworksAndVlansForIface(self, iface):
+        """ Returns tuples of (network, vlan) connected to nic/bond """
+        for network, netdict in self.networks.iteritems():
+            if not netdict['bridged']:
+                if iface == netdict['interface']:
+                    yield (network, None)
+                elif netdict['interface'].startswith(iface + '.'):
+                    yield (network, netdict['interface'].split('.',1)[1])
 
     def getVlansForNic(self, nic):
         for v, vdict in self.vlans.iteritems():
