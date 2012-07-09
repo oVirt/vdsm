@@ -318,9 +318,13 @@ class ConfigWriter(object):
         except IOError:
             pass
 
-    def removeVlan(self, vlanId, iface):
-        self._backup(self.NET_CONF_PREF + iface + '.' + vlanId)
-        self._removeFile(self.NET_CONF_PREF + iface + '.' + vlanId)
+    def removeVlan(self, vlan, iface):
+        vlandev = iface + '.' + vlan
+        ifdown(vlandev)
+        subprocess.call([constants.EXT_VCONFIG, 'rem', vlandev],
+                        stderr=subprocess.PIPE)
+        self._backup(self.NET_CONF_PREF + iface + '.' + vlan)
+        self._removeFile(self.NET_CONF_PREF + iface + '.' + vlan)
 
     def removeBonding(self, bonding):
         self._backup(self.NET_CONF_PREF + bonding)
@@ -786,10 +790,6 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         configWriter.removeBridge(network)
 
     if vlan:
-        vlandev = (bonding or nics[0]) + '.' + vlan
-        ifdown(vlandev)
-        subprocess.call([constants.EXT_VCONFIG, 'rem', vlandev],
-                        stderr=subprocess.PIPE)
         configWriter.removeVlan(vlan, bonding or nics[0])
 
     # The (relatively) new setupNetwork verb allows to remove a network
