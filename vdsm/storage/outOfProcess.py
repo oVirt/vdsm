@@ -46,10 +46,8 @@ def getProcessPool(clientName):
             return _pools[clientName]
 
 
-
 def getGlobalProcPool():
     return getProcessPool("Global")
-
 
 
 class _ModuleWrapper(types.ModuleType):
