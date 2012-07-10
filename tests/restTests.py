@@ -19,9 +19,16 @@
 #
 
 import logging
-import cherrypy
 import httplib
 import xml.etree.ElementTree as etree
+
+try:
+    import cherrypy
+except ImportError:
+    from nose.plugins.skip import SkipTest
+    raise SkipTest('cherrypy module missing. This test is non-compulsory '
+                   'until we have python-cherrypy in el6.')
+
 from testrunner import VdsmTestCase as TestCaseBase
 
 import restData
