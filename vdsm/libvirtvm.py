@@ -35,7 +35,7 @@ from vdsm import libvirtconnection
 from vdsm.config import config
 import hooks
 import caps
-import configNetwork
+import netinfo
 import supervdsm
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
@@ -818,7 +818,7 @@ class _DomXML:
         if self.conf.get('displayNetwork'):
             listen = self.doc.createElement('listen')
             listen.setAttribute('type', 'network')
-            listen.setAttribute('network', configNetwork.NETPREFIX +
+            listen.setAttribute('network', netinfo.LIBVIRT_NET_PREFIX +
                 self.conf.get('displayNetwork'))
             graphics.appendChild(listen)
         else:
