@@ -446,7 +446,7 @@ class ConfigWriter(object):
 
         if newmtu != currmtu:
             if bonding:
-                slaves = NetInfo.slaves(bonding)
+                slaves = netinfo.NetInfo.slaves(bonding)
                 for slave in slaves:
                     cf = self.NET_CONF_PREF + slave
                     self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
