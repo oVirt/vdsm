@@ -781,7 +781,7 @@ class StorageDomain(APIBase):
         ISCSI = storage.sd.ISCSI_DOMAIN
         LOCALFS = storage.sd.LOCALFS_DOMAIN
         CIFS = storage.sd.CIFS_DOMAIN
-        SHAREDFS = storage.sd.SHAREDFS_DOMAIN
+        POSIXFS = storage.sd.POSIXFS_DOMAIN
 
     class Classes:
         DATA = storage.sd.DATA_DOMAIN

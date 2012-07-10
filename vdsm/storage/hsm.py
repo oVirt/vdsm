@@ -124,7 +124,7 @@ CON_TYPE_ID_2_CON_TYPE = {
     # FCP domain shouldn't even be on the list but VDSM use to just
     # accept this type as iscsi so we are stuck with it
     sd.FCP_DOMAIN: 'iscsi',
-    sd.SHAREDFS_DOMAIN: 'posixfs' }
+    sd.POSIXFS_DOMAIN: 'posixfs' }
 
 def _BCInitiatorNameResolve(ifaceName):
     if not ifaceName:
@@ -2138,7 +2138,7 @@ class HSM:
         if storageType in sd.BLOCK_DOMAIN_TYPES:
             newSD = blockSD.BlockStorageDomain.create(sdUUID, domainName,
                     domClass, typeSpecificArg, storageType, domVersion)
-        elif storageType in (sd.NFS_DOMAIN, sd.SHAREDFS_DOMAIN):
+        elif storageType in (sd.NFS_DOMAIN, sd.POSIXFS_DOMAIN):
             newSD = nfsSD.NfsStorageDomain.create(sdUUID, domainName, domClass,
                     typeSpecificArg, storageType, domVersion)
         elif storageType == sd.LOCALFS_DOMAIN:

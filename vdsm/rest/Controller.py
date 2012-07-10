@@ -514,7 +514,7 @@ class StorageDomain(Resource):
              'iscsi': API.StorageDomain.Types.ISCSI,
              'localfs': API.StorageDomain.Types.LOCALFS,
              'cifs': API.StorageDomain.Types.CIFS,
-             'sharedfs': API.StorageDomain.Types.SHAREDFS}
+             'posixfs': API.StorageDomain.Types.POSIXFS}
 
     def __init__(self, ctx, uuid=None):
         Resource.__init__(self, ctx)
