@@ -517,10 +517,6 @@ class BindingXMLRPC(object):
         pool = API.StoragePool(spUUID)
         return pool.getSpmStatus()
 
-    def poolGetStorageConnections(self, spUUID, options=None):
-        pool = API.StoragePool(spUUID)
-        return pool.getStorageConnections()
-
     def poolGetInfo(self, spUUID, options=None):
         pool = API.StoragePool(spUUID)
         return pool.getInfo()
@@ -796,7 +792,6 @@ class BindingXMLRPC(object):
                 (self.poolGetDomainsContainingImage, 'getImageDomainsList'),
                 (self.poolGetIsoList, 'getIsoList'),
                 (self.poolGetSpmStatus, 'getSpmStatus'),
-                (self.poolGetStorageConnections, 'getStorageConnectionsList'),
                 (self.poolGetInfo, 'getStoragePoolInfo'),
                 (self.poolMoveMultipleImages, 'moveMultipleImages'),
                 (self.poolReconstructMaster, 'reconstructMaster'),

@@ -915,9 +915,6 @@ class StoragePool(APIBase):
     def getSpmStatus(self):
         return self._irs.getSpmStatus(self._UUID)
 
-    def getStorageConnections(self):
-        return self._irs.getStorageConnectionsList(self._UUID)
-
     def getInfo(self):
         return self._irs.getStoragePoolInfo(self._UUID)
 
