@@ -26,6 +26,8 @@ import tempfile
 import shutil
 
 import configNetwork
+import netinfo
+
 from testrunner import VdsmTestCase as TestCaseBase
 
 
@@ -105,11 +107,10 @@ class ConfigWriterTests(TestCaseBase):
 
     def testPersistentBackup(self):
         # a rather ugly stubbing
-        oldvals = (configNetwork.NET_CONF_BACK_DIR,
+        oldvals = (netinfo.NET_CONF_BACK_DIR,
                    os.chown)
         os.chown = lambda *x: 0
-        configNetwork.NET_CONF_BACK_DIR = os.path.join(self._tempdir,
-                                                       'netback')
+        netinfo.NET_CONF_BACK_DIR = os.path.join(self._tempdir, 'netback')
 
         try:
             cw = configNetwork.ConfigWriter()
@@ -122,9 +123,9 @@ class ConfigWriterTests(TestCaseBase):
 
             subprocess.call(['/bin/bash', '../vdsm/vdsm-restore-net-config',
                              '--skip-net-restart'],
-                    env={'NET_CONF_BACK_DIR': configNetwork.NET_CONF_BACK_DIR,
+                    env={'NET_CONF_BACK_DIR': netinfo.NET_CONF_BACK_DIR,
                          'NET_CONF_DIR': self._tempdir})
 
             self._assertFilesRestored()
         finally:
-            configNetwork.NET_CONF_BACK_DIR, os.chown = oldvals
+            netinfo.NET_CONF_BACK_DIR, os.chown = oldvals
