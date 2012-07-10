@@ -66,7 +66,6 @@ class ConfigWriterTests(TestCaseBase):
 
     def __del__(self):
         shutil.rmtree(self._tempdir)
-        TestCaseBase.__del__(self)
 
     def _createFiles(self):
         for fn, content, _ in self._files:
