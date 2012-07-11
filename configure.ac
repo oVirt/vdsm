@@ -175,7 +175,7 @@ AC_PATH_PROG([TUNE2FS_PATH], [tune2fs], [/sbin/tune2fs])
 AC_PATH_PROG([UDEVADM_PATH], [udevadm], [/sbin/udevadm])
 AC_PATH_PROG([UMOUNT_PATH], [umount], [/bin/umount])
 AC_PATH_PROG([UNPERSIST_PATH], [unpersist], [/usr/sbin/unpersist])
-AC_PATH_PROG([VCONFIG_PATH], [vconfig], [/sbin/vconfig])
+AC_PATH_PROG([IPROUTE_PATH], [ip], [/sbin/ip])
 AC_PATH_PROG([WGET_PATH], [wget], [/usr/bin/wget])
 AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 

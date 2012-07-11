@@ -44,6 +44,7 @@ Requires: sudo >= 1.7.3
 Requires: logrotate >= 3.8.0
 Requires: xz
 Requires: ntp
+Requires: iproute
 Requires: python-ethtool
 Requires: nfs-utils dmidecode
 Requires: lvm2 >= 2.02.95

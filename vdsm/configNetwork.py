@@ -442,7 +442,7 @@ class ConfigWriter(object):
     def removeVlan(self, vlan, iface):
         vlandev = iface + '.' + vlan
         ifdown(vlandev)
-        subprocess.call([constants.EXT_VCONFIG, 'rem', vlandev],
+        subprocess.call([constants.EXT_IPROUTE, 'link', 'del', vlandev],
                         stderr=subprocess.PIPE)
         self._backup(self.NET_CONF_PREF + iface + '.' + vlan)
         self._removeFile(self.NET_CONF_PREF + iface + '.' + vlan)
