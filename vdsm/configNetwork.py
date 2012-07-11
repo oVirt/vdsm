@@ -751,9 +751,22 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 
     validateBridgeName(network)
 
+    if configWriter is None:
+        configWriter = ConfigWriter()
+
     if network not in _netinfo.networks:
-        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
-                "Cannot delete network %r: It doesn't exist" % network)
+        logging.info("Network %r: doesn't exist in libvirt database", network)
+        if network in netinfo.bridges():
+            configWriter.removeBridge(network)
+        else:
+            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
+                    "Cannot delete network %r: It doesn't exist "
+                    "in the system" % network)
+
+        if vlan:
+            configWriter.removeVlan(vlan, bonding or nics[0])
+
+        return
 
     nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
     bridged = _netinfo.networks[network]['bridged']
@@ -772,9 +785,6 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
             validateVlanId(vlan)
         if bridged:
             assertBridgeClean(network, vlan, bonding, nics)
-
-    if configWriter is None:
-        configWriter = ConfigWriter()
 
     if bridged:
         configWriter.setNewMtu(network)
