@@ -246,7 +246,7 @@ def get():
                     'cfg': getIfaceCfg(devname), }
         else:
             devname = nets[netname]['interface']
-            d['networks'][netname] = {}
+            d['networks'][netname] = {'interface': devname}
 
         d['networks'][netname].update({
                     'bridged': nets[netname]['bridged'],
