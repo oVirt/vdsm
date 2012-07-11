@@ -460,16 +460,8 @@ class MigrationSourceThread(vm.MigrationSourceThread):
         try:
             self._migrationCanceledEvt = True
             self._vm._dom.abortJob()
-        except libvirt.libvirtError, e:
-            # TODO: yes its not nice searching in the error message,
-            # but this is the libvirt solution
-            # this will be solved at bz #760149
-            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED and \
-                    'canceled by client' in e.get_error_message():
-                    # this is exception that libvirt raise when calling
-                    # abortJob()
-                    raise
-            elif not self._preparingMigrationEvt:
+        except libvirt.libvirtError:
+            if not self._preparingMigrationEvt:
                     raise
 
 class TimeoutError(libvirt.libvirtError): pass

@@ -223,11 +223,7 @@ class MigrationSourceThread(threading.Thread):
                     self._startUnderlyingMigration()
                 self._finishSuccessfully()
             except libvirt.libvirtError, e:
-                # TODO: yes its not nice searching in the error message,
-                # but this is the libvirt solution
-                # this will be solved at bz #760149
-                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED and \
-                        'canceled by client' in e.get_error_message():
+                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                     self.status = {'status': {'code': errCode['migCancelErr'],
                         'message': 'Migration canceled'}}
                 raise
