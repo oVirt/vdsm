@@ -2733,16 +2733,19 @@ class HSM:
 
         for vol in imgVolumes:
             volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
-                       'volumeID': vol.volUUID, 'path': vol.getVolumePath(),
-                       'shared': (vol.getVolType() ==
-                                        volume.type2name(volume.SHARED_VOL))}
+                       'volumeID': vol.volUUID, 'path': vol.getVolumePath()}
 
-            leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
-                                                        vol.volUUID)
+            if config.getboolean('irs', 'use_volume_leases'):
+                leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
+                                                            vol.volUUID)
 
-            if leasePath and leaseOffset is not None:
-                volInfo.update({'leasePath': leasePath,
-                                'leaseOffset':  leaseOffset})
+                if leasePath and leaseOffset is not None:
+                    volInfo.update({
+                        'leasePath': leasePath,
+                        'leaseOffset': leaseOffset,
+                        'shared': (vol.getVolType() ==
+                                   volume.type2name(volume.SHARED_VOL)),
+                    })
 
             chain.append(volInfo)
 

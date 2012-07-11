@@ -221,6 +221,8 @@ parameters = [
             'Comma seperated ifaces to connect with. '
             'i.e. iser,default' ),
 
+        ('use_volume_leases', 'false',
+            'Whether to use the volume leases or not.'),
     ]),
 
     # Section: [addresses]
