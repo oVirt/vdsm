@@ -68,4 +68,4 @@ EXTRA_DIST = \
 	12-vdsm-lvm.rules
 
 check-local:
-	python $(srcdir)/storage_exception.py
+	PYTHONDONTWRITEBYTECODE=1 python $(srcdir)/storage_exception.py
