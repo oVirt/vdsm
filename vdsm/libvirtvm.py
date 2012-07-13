@@ -35,7 +35,7 @@ from vdsm import libvirtconnection
 from vdsm.config import config
 import hooks
 import caps
-import netinfo
+from vdsm import netinfo
 import supervdsm
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'

@@ -26,7 +26,7 @@ import tempfile
 import shutil
 
 import configNetwork
-import netinfo
+from vdsm import netinfo
 
 from testrunner import VdsmTestCase as TestCaseBase
 
