@@ -671,17 +671,18 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
     brName = network if bridged else None
     bridgeForNic = None if vlan else brName
 
+    if bonding:
+        configWriter.addBonding(bonding, bridge=bridgeForNic,
+                                 bondingOptions=bondingOptions,
+                                 mtu=max(prevmtu, mtu))
+        ifup(bonding)
+
     # NICs must be activated in the same order of boot time
     # to expose the correct MAC address.
     for nic in nicSort(nics):
         configWriter.addNic(nic, bonding=bonding, bridge=bridgeForNic,
                              mtu=max(prevmtu, mtu))
         ifup(nic)
-    if bonding:
-        configWriter.addBonding(bonding, bridge=bridgeForNic,
-                                 bondingOptions=bondingOptions,
-                                 mtu=max(prevmtu, mtu))
-        ifup(bonding)
 
     if vlan:
         configWriter.addVlan(vlan, iface, network=brName,
@@ -1032,15 +1033,15 @@ def _editBondings(bondings, configWriter):
                 ifdown(nic)
                 configWriter.removeNic(nic)
 
+        configWriter.addBonding(bond, bridge=bridge,
+                                bondingOptions=bondAttrs.get('options', None))
+        ifup(bond)
+
         # NICs must be activated in the same order of boot time
         # to expose the correct MAC address.
         for nic in nicSort(bondAttrs['nics']):
             configWriter.addNic(nic, bonding=bond)
             ifup(nic)
-
-        configWriter.addBonding(bond, bridge=bridge,
-                                bondingOptions=bondAttrs.get('options', None))
-        ifup(bond)
 
 def _removeBondings(bondings, configWriter):
     """ Remove bond interface """
