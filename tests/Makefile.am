@@ -42,6 +42,7 @@ test_modules = \
 	persistentDictTests.py \
 	restTests.py \
 	restData.py \
+	tcTests.py \
 	vdsClientTests.py
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py
