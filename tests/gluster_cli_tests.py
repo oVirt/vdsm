@@ -18,11 +18,23 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from nose.plugins.skip import SkipTest
 from testrunner import VdsmTestCase as TestCaseBase
-from gluster import cli as gcli
+
+# If the test is run under the installed vdsm, vdsm-cluster may not be always
+# installed, so just ignore the exception.
+# In the individual test, setUp() will skip test if  gluster is not imported
+try:
+    from gluster import cli as gcli
+except ImportError:
+    pass
 
 
 class GlusterCliTests(TestCaseBase):
+    def setUp(self):
+        if not "gcli" in globals().keys():
+            raise SkipTest("vdsm-gluster not found")
+
     def _parseVolumeInfo_empty_test(self):
         out = ['No volumes present']
         self.assertFalse(gcli._parseVolumeInfo(out))

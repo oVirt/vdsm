@@ -20,12 +20,21 @@
 
 import types
 import unittest
+from nose.plugins.skip import SkipTest
 from storage import storage_exception
 from storage import securable
-from gluster import exception as gluster_exception
+from testrunner import VdsmTestCase as TestCaseBase
+
+# If the test is run under the installed vdsm, vdsm-cluster may not be always
+# installed, so just ignore the exception.
+# In the individual test, setUp() will skip test if  gluster is not imported
+try:
+    from gluster import exception as gluster_exception
+except ImportError:
+    pass
 
 
-class TestSecurable(unittest.TestCase):
+class TestSecurable(TestCaseBase):
     class MySecureClass(securable.Securable):
         pass
 
@@ -37,7 +46,7 @@ class TestSecurable(unittest.TestCase):
         self.assertTrue(objA._isSafe())
 
 
-class TestStorageExceptions(unittest.TestCase):
+class TestStorageExceptions(TestCaseBase):
     def test_collisions(self):
         codes = {}
 
@@ -54,7 +63,11 @@ class TestStorageExceptions(unittest.TestCase):
             self.assertTrue(obj.code < 5000)
 
 
-class TestGlusterExceptions(unittest.TestCase):
+class TestGlusterExceptions(TestCaseBase):
+    def setUp(self):
+        if not "gluster_exception" in globals().keys():
+            raise SkipTest("vdsm-gluster not found")
+
     def test_collisions(self):
         codes = {}
 
