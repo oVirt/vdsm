@@ -516,6 +516,7 @@ class Vm(object):
             drv['format'] = drv.get('format') or 'raw'
             drv['propagateErrors'] = drv.get('propagateErrors') or 'off'
             drv['readonly'] = False
+            drv['shared'] = False
             # FIXME: For BC we have now two identical keys: iface = if
             # Till the day that conf will not returned as a status anymore.
             drv['iface'] = drv.get('iface') or drv.get('if', 'ide')

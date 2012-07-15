@@ -1055,6 +1055,9 @@ class Drive(LibvirtVmDevice):
         if self.iface:
             target.setAttribute('bus', self.iface)
         diskelem.appendChild(target)
+        if  utils.tobool(self.shared):
+            shareable = doc.createElement('shareable')
+            diskelem.appendChild(shareable)
         if hasattr(self, 'readonly') and utils.tobool(self.readonly):
             readonly = doc.createElement('readonly')
             diskelem.appendChild(readonly)
