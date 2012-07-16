@@ -503,6 +503,45 @@ def validateVlanId(vlan):
     except ValueError:
         raise ConfigNetworkError(ne.ERR_BAD_VLAN, 'vlan id must be a number')
 
+def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
+    """
+    Verify network compatibility with other networks on iface (bond/nic).
+
+    Only following combinations allowed:
+        - single non-VLANed bridged network
+        - multiple VLANed networks (bridged/bridgeless) with only one
+          non-VLANed bridgeless network
+    """
+    def _validateNoDirectNet(ifaces):
+        # validate that none of the ifaces
+        # is a non-VLANed network over our iface
+        for (iface_net, iface_vlan) in ifaces:
+            if iface_vlan is None:
+                raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                            "interface %r already member of network %r" % \
+                            (iface, iface_net))
+
+    ifaces_bridgeless = tuple(ni.getBridgelessNetworksAndVlansForIface(iface))
+    ifaces_bridged = tuple(ni.getBridgedNetworksAndVlansForIface(iface))
+
+    # If non-VLANed bridged network exists
+    # we can't add nothing else
+    _validateNoDirectNet(ifaces_bridged)
+
+    # Multiple VLANed networks (bridged/bridgeless) with only one
+    # non-VLANed bridgeless network permited
+    if not vlan:
+        # Want to add non-VLANed bridgeless network,
+        # check whether interface already has such network.
+        # Only one non-VLANed bridgeless network permited
+        if not bridged:
+            _validateNoDirectNet(ifaces_bridgeless)
+        # Want to add non-VLANed bridged network,
+        # check whether interface is empty
+        elif ifaces_bridged or ifaces_bridgeless:
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                        "interface %r already has networks" % \
+                        (iface))
 
 def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
                           netmask, gateway, bondingOptions, bridged=True,
@@ -529,18 +568,6 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
     if vlan:
         validateVlanId(vlan)
 
-    # Check bonding
-    if bonding:
-        validateBondingName(bonding)
-        if bondingOptions:
-            validateBondingOptions(bonding, bondingOptions)
-    elif bondingOptions:
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                    "Bonding options specified without bonding")
-    elif len(nics) > 1:
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                    "Multiple nics require a bonding device")
-
     # Check ip, netmask, gateway
     if ipaddr:
         if not netmask:
@@ -555,17 +582,24 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
             raise ConfigNetworkError(ne.ERR_BAD_ADDR,
                         "Specified netmask or gateway but not ip")
 
+    # Check bonding
+    if bonding:
+        validateBondingName(bonding)
+        if bondingOptions:
+            validateBondingOptions(bonding, bondingOptions)
+
+        _validateInterNetworkCompatibility(_netinfo, vlan, bonding, bridged)
+    elif bondingOptions:
+        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
+                    "Bonding options specified without bonding")
+    elif len(nics) > 1:
+        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
+                    "Multiple nics require a bonding device")
+
     # Check nics
     for nic in nics:
         if nic not in _netinfo.nics:
             raise ConfigNetworkError(ne.ERR_BAD_NIC, "unknown nic: %r" % nic)
-
-        # Check whether nic is already bound to network
-        networksForNic = list(_netinfo.getNetworksForNic(nic))
-        if networksForNic:
-            raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                "nic %r is already bound to network %r" % \
-                                (nic, networksForNic))
 
         # Make sure nics don't have a different bonding
         # still relevant if bonding is None
@@ -577,25 +611,18 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
 
         # Make sure nics don't used by vlans if bond requested
         if bonding:
-            vlansForNic = list(_netinfo.getVlansForNic(nic))
-            if len(vlansForNic):
+            vlansForNic = tuple(_netinfo.getVlansForNic(nic))
+            if vlansForNic:
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
                                     "nic %s already used by vlans %s" % \
-                                    (nics, vlansForNic))
-
-    # Bonding
-    if bonding:
-        # FIXME! Check whether we need to care of bridgeless too
-        bonding_ifaces = _netinfo.getBridgedNetworksAndVlansForIface(bonding)
-        if vlan:    # Make sure all connected interfaces (if any) are vlans
-            for (bonding_bridge, bonding_vlan) in bonding_ifaces:
-                if bonding_vlan is None:
-                    raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'bonding %r is already member of network %r'%(
-                                             bonding, bonding_bridge ))
+                                    (nic, vlansForNic))
+            networksForNic = tuple(_netinfo.getNetworksForNic(nic))
+            if networksForNic:
+                raise ConfigNetworkError(ne.ERR_USED_NIC,
+                                    "nic %s already used by networks %s" % \
+                                    (nic, networksForNic))
         else:
-            bonding_ifaces = list(bonding_ifaces)
-            if len(bonding_ifaces):
-                raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'bonding %r already has members: %r'%(bonding,bonding_ifaces))
+            _validateInterNetworkCompatibility(_netinfo, vlan, nic, bridged)
 
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, mtu=None,
                gateway=None, force=False, configWriter=None, bondingOptions=None, bridged=True, **options):
