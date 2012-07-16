@@ -1,0 +1,5437 @@
+#
+# Copyright (C) 2012 Adam Litke, IBM Corporation
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+#
+# VDSM API Schema
+#
+
+## Category: @Global ###########################################################
+##
+# @Global.init:
+#
+# Initialize a Global API object.
+#
+# Since: 4.10.0
+# XXX: Extension: object constructors
+##
+{'init': 'Global'}
+
+##
+# @UUID:
+#
+# A universally unique identifier in RFC 4122 format.
+#     eg. "407cb255-34be-432c-be7c-eb43b8de82be"
+#
+# Since: 4.10.0
+# XXX: Extension: 'str' data type
+##
+{'alias': 'UUID', 'data': 'str'}
+
+##
+# @NetworkOptions:
+#
+# Detailed network configuration options.
+#
+# @ipaddr:          #optional Assign this static IP address to the interface
+#
+# @netmask:         #optional The netmask of this subnet
+#
+# @gateway:         #optional IP address of the network gateway
+#
+# @bootproto:       #optional Interface autoconfiguration protocol (typically
+#                   'dhcp' or 'static')
+#
+# @delay:           #optional The time to wait before starting the interface
+#
+# @onboot:          #optional Start the interface automatically during boot
+#
+# @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
+#
+# @skipLibvirt:     #optional Do not use libvirt to gather network information
+#
+# Since: 4.10.0
+##
+{'type': 'NetworkOptions',
+ 'data': {'*ipaddr', 'str', '*netmask': 'str', '*gateway': 'str',
+          '*bootproto': 'str', '*delay': 'IntStr', '*onboot': 'str',
+          '*bondingOptions', 'str', 'skipLibvirt': 'bool'}}
+
+##
+# @Global.addNetwork:
+#
+# Add a new network to this host.
+#
+# @bridge:   The name of the bridge device
+#
+# @vlan:     #optional The name of a VLAN to create on the device
+#
+# @bond:     #optional The name of a bond device to create from @nics
+#
+# @nics:     #optional A list of network device names
+#
+# @options:  #optional A @NetworkOptions structure
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'addNetwork'},
+ 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
+          '*options': 'NetworkOptions'}}
+
+##
+# @Global.delNetwork:
+#
+# Remove a network from this host.
+#
+# @bridge:   The name of the bridge device
+#
+# @vlan:     #optional The name of an associated vlan to remove
+#
+# @bond:     #optional The name of an associated bond device to remove
+#
+# @nics:     #optional A list of associated network devices to remove
+#
+# @options:  #optional A @NetworkOptions structure
+#
+# Since: 4.10.0
+##
+
+{'command': {'class': 'Global', 'name': 'delNetwork'},
+ 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
+          '*options': 'NetworkOptions'}}
+
+##
+# @Global.editNetwork:
+#
+# Add a new network to the host by replacing it with a new one.
+#
+# @oldBridge:   The name of the old bridge device to remove
+#
+# @newBridge:   The name of the new bridge device to create
+#
+# @vlan:        #optional The name of a VLAN to create on the new network
+#
+# @bond:        #optional The name of a bond device to create from @nics
+#
+# @nics:        #optional A list of network device names
+#
+# @options:     #optional A @NetworkOptions structure
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'editNetwork'},
+ 'data': {'oldBridge': 'str', 'newBridge': 'str', '*vlan': 'str',
+          '*bond': 'str', '*nics': ['str'], '*options': 'NetworkOptions'}}
+
+##
+# @SetupNetworkNetAttributes:
+#
+# Configuration attributes for a single host network.
+#
+# @vlan:       #optional The name of an associated vlan
+#
+# @bonding:    #optional If the network is bonded, the name of the bond device
+#
+# @nic:        #optional If the network is not bonded, an array containing a
+#              single network device name
+#
+# @ipaddr:     #optional Assign this static IP address to the network
+#
+# @netmask:    #optional Assign this netmask to the network
+#
+# @gateway:    #optional Assign this gateway to the network
+#
+# @bootproto:  #optional Interface autoconfiguration protocol (typically 'dhcp'
+#              or 'static')
+#
+# @delay:      #optional The time to wait before starting the network device
+#
+# @onboot:     #optional Start the network device automatically during boot
+#
+# @remove:     #optional If True, remove existing network only
+#
+# Since: 4.10.0
+##
+{'type': 'SetupNetworkNetAttributes',
+ 'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
+          '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
+          '*delay': 'IntStr', '*onboot': 'BoolYesNo', 'remove': 'bool'}}
+
+##
+# @SetupNetworkBondAttributes:
+#
+# Configuration attributes for a single bonded network interface device.
+#
+# @nics:     An array of network device names to include in the bond
+#
+# @options:  #optional A string of space-separated <option>=<value> pairs
+#
+# @remove:   #optional If True, remove existing bond only
+#
+# Since: 4.10.0
+##
+{'type': 'SetupNetworkBondAttributes',
+ 'data': {'nics': ['str'], '*options': 'str', '*remove': 'bool'}}
+
+##
+# @SetupNetworkOptions:
+#
+# Additional options for setupNetworks.
+#
+# @force:                #optional If True, skip validation of the configuration
+#
+# @connectivityCheck:    #optional After reconfiguration, check for network
+#                        connectivity and roll back if necessary
+#
+# @connectivityTimeout:  #optional The amount of time to wait before failing
+#                        the connectivity check in seconds
+#
+# Since: 4.10.0
+##
+{'type': 'SetupNetworkOptions',
+ 'data': {'*force': 'int', '*connectivityCheck': 'int',
+          '*connectivityTimeout': 'int'}}
+
+##
+# @SetupNetworkNetConfig:
+#
+# A mapping of network bridge configuration attributes indexed by bridge name.
+#
+# Since: 4.10.0
+##
+{'map': 'SetupNetworkNetConfig',
+ 'key': 'str', 'value': 'SetupNetworkNetAttributes'}
+
+##
+# @SetupNetworkBondConfig:
+#
+# A mapping of bond device configuration attributes indexed by bond name.
+#
+# Since: 4.10.0
+##
+{'map': 'SetupNetworkBondConfig',
+ 'key': 'str', 'value': 'SetupNetworkBondAttributes'}
+
+##
+# @Global.setupNetworks:
+#
+# Reconfigure host networking by adding, removing, and editing multiple bridge
+# and bond devices in a single call.
+#
+# @networks:  Configuration information for the network bridges
+#
+# @bondings:  Configuration information for the bond devices
+#
+# @options:   Additional options to control configuration behavior
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'setupNetworks'},
+ 'data': {'networks': 'SetupNetworkNetConfig',
+          'bondings': 'SetupNetworkBondConfig',
+          'options': 'SetupNetworkOptions'}}
+
+##
+# @FenceNodeAction:
+#
+# Specifies the type of fencing operation to perform.
+#
+# @status:  Just fetch the current power status
+#
+# @on:      Turn on the remote host
+#
+# @off:     Shut down the remote host
+#
+# @reboot:  Reboot the remote host
+#
+# Since: 4.10.0
+##
+{'enum': 'FenceNodeAction', 'data': ['status', 'on', 'off', 'reboot']}
+
+##
+# @FenceNodePowerStatus:
+#
+# Indicates the power state of a remote host.
+#
+# @on:       The remote host is powered on
+#
+# @off:      The remote host is powered off
+#
+# @unknown:  The power status is not known
+#
+# Since: 4.10.0
+##
+{'enum': 'FenceNodePowerStatus', 'data': ['on', 'off', 'unknown']}
+
+##
+# @Global.fenceNode:
+#
+# Send a fencing command to a remote host.
+#
+# @addr:      The IP address of the remote fence agent
+#
+# @port:      The port number of the remote fence agent
+#
+# @agent:     The type of agent being connected to
+#             (For example: rsa, ilo, drac5, ipmilan, etc)
+#
+# @username:  The username used to login to the remote fence agent
+#
+# @password:  The password for @username
+#
+# @action:    The type of fencing operation to perform (from @FenceNodeAction)
+#
+# @secure:    Enable SSL communication
+#
+# @options:   Additional agent-specific parameters in space-separated
+#             <var>=<val> pairs
+#
+# Returns:
+# @power:  #optional The new power status of the remote node
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'fenceNode'},
+ 'data': {'addr': 'str', 'port': 'int', 'agent': 'str', 'username': 'str',
+          'password': 'str', 'action': 'FenceNodeAction', '*secure': 'bool',
+          '*options': 'str'},
+ 'returns': {'*power': 'FenceNodePowerStatus'}}
+
+##
+# @TaskInfo:
+#
+# Extra information about a task.
+#
+# @id:    The @UUID of the task
+#
+# @verb:  The underlying operation to be performed by the task
+#
+# Since: 4.10.0
+##
+{'type': 'TaskInfo', 'data': {'id': 'UUID', 'verb': 'str'}}
+
+##
+# @TasksInfo:
+#
+# A mapping of Task information indexed by Task UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'TasksInfo',
+ 'key': 'UUID', 'value': 'TaskInfo'}
+
+##
+# @Global.getAllTasksInfo:
+#
+# Get extra information about all tasks.
+#
+# Returns:
+# @allTasksInfo:  A mapping of Task information
+#
+# Since: 4.10.0
+#
+# Notes: Currently this API only returns tasks that are tagged with 'spm'.
+##
+{'command': {'class': 'Global', 'name': 'getAllTasksInfo'},
+ 'returns': {'allTasksInfo': 'TasksInfo'}}
+
+##
+# @TaskState:
+#
+# An enumeration of possible task states.
+#
+# @unknown:   The state of the task is not known
+#
+# @init:      The task is initializing
+#
+# @running:   The task is currently executing
+#
+# @finished:  The task has finished executing
+#
+# @aborting:  The task has been interrupted by a user has encountered an error
+#
+# @cleaning:  The task has failed and recovery actions are underway
+#
+# Since: 4.10.0
+##
+{'enum': 'TaskState',
+ 'data': ['unknown', 'init', 'running', 'finished', 'aborting', 'cleaning']}
+
+##
+# @TaskResult:
+#
+# An enumeration of the possible final task results.
+#
+# @success:       The task was successful
+#
+# @cleanSuccess:  The task failed but was successfully recovered
+#
+# @cleanFailure:  The task failed and recovery also failed
+#
+# Since: 4.10.0
+##
+{'enum': 'TaskResult', 'data': ['success', 'cleanSuccess', 'cleanFailure']}
+
+##
+# @TaskStatus:
+#
+# A collection of status information about a task.
+#
+# @taskID:      The task @UUID
+#
+# @taskState:   Current task state (@TaskState)
+#
+# @taskResult:  Final task result (@TaskResult)
+#
+# @message:     Detailed error message from the underlying task verb
+#
+# @code:        Return code from the underlying task verb
+#
+# Since: 4.10.0
+##
+{'type': 'TaskStatus',
+ 'data': {'taskID': 'UUID', 'taskState': 'TaskState',
+          'taskResult': 'TaskResult', 'message': 'str', 'code': 'int'}}
+
+##
+# @TasksStatus:
+#
+# A mapping of Task statuses indexed by Task UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'TasksStatus',
+ 'key': 'UUID', 'value': 'TaskStatus'}
+
+##
+# @Global.getAllTasksStatuses:
+#
+# Get status information for all tasks.
+#
+# Returns:
+# @allTasksStatus:  A mapping of Task statuses
+#
+# Since: 4.10.0
+#
+# Notes: Currently this API only returns tasks that are tagged with 'spm'.
+##
+{'command': {'class': 'Global', 'name': 'getAllTasksStatuses'},
+ 'returns': {'allTasksStatus': 'TasksStatus'}}
+
+##
+# @BoolStr:
+#
+# A string that can be interpreted as a boolean value.
+#
+# @True:   True
+#
+# @False:  False
+#
+# Since: 4.10.0
+##
+{'enum': 'BoolStr', 'data': ['True', 'False']}
+
+##
+# @BoolStrLower:
+#
+# A string that can be interpreted as a boolean value.  This value conforms to
+# JSON and XML which require lowercase names.
+#
+# @true:   True
+#
+# @false:  False
+#
+# Since: 4.10.0
+##
+{'enum': 'BoolStrLower', 'data': ['true', 'false']}
+
+##
+# @BoolOnOff:
+#
+# A string that can be interpreted as a boolean value.
+#
+# @on:   True
+#
+# @off:  False
+#
+# Since: 4.10.0
+##
+{'enum': 'BoolOnOff', 'data': ['on', 'off']}
+
+##
+# @IntStr:
+#
+# A string that can be converted into an integer.
+#
+# Since: 4.10.0
+##
+{'alias': 'IntStr', 'data': 'str'}
+
+##
+# @FloatStr:
+#
+# A string that can be converted into an float.
+#
+# Since: 4.10.0
+##
+{'alias': 'FloatStr', 'data': 'str'}
+
+##
+# @HexStr:
+#
+# A string in hexidecimal format.
+#
+# Since: 4.10.0
+##
+{'alias': 'HexStr', 'data': 'str'}
+
+##
+# @StringMap:
+#
+# A mapping between arbitrary strings.
+#
+# Since: 4.10.0
+##
+{'map': 'StringMap',
+ 'key': 'str', 'value': 'str'}
+
+##
+# @NetInfoBridgedNetwork:
+#
+# Information about a VDSM bridged network.
+#
+# @ports:    A list of nic device names that are bridged
+#
+# @stp:      Spanning Tree Protocol status for the bridge device
+#
+# @addr:     The IP address assigned to the bridge device
+#
+# @netmask:  The netmask of the defined subnet
+#
+# @gateway:  The IP address of the subnet's gateway
+#
+# @mtu:      The Maximum Transmission Unit size for the bridge device
+#
+# @cfg:      A map containing network interface parameters from ifcfg-* files.
+#            It is indexed by parameter name and stores the parameter value.
+#
+# @bridged:  Always True to distinguish this type from @NetInfoBridgelessNetwork
+#
+# Since: 4.10.0
+# XXX: Add types for IP Address?
+##
+{'type': 'NetInfoBridgedNetwork',
+ 'data': {'ports': ['str'], 'stp': 'BoolOnOff', 'addr': 'str',
+          'netmask': 'str', 'gateway': 'str', 'mtu': 'IntStr',
+          'cfg': 'StringMap', 'bridged': 'bool'}}
+
+##
+# @NetInfoBridgelessNetwork:
+#
+# Information about a VDSM bridgeless network.
+#
+# @interface:  The network device name associated with the network
+#
+# @bridged:    Always False to distinguish this type from @NetInfoBridgedNetwork
+#
+# Since: 4.10.0
+##
+{'type': 'NetInfoBridgelessNetwork',
+ 'data': {'interface': 'str', 'bridged': 'bool'}}
+
+##
+# @NetInfoNetwork:
+#
+# A discriminated record to store information about a VDSM network.
+#
+# Since: 4.10.0
+##
+{'union': 'NetInfoNetwork',
+ 'data': ['NetInfoBridgedNetwork', 'NetInfoBridgelessNetwork']}
+
+##
+# @NetInfoNic:
+#
+# Information about a network interface card.
+#
+# @speed:       The reported speed of the nic
+#
+# @addr:        The IP address assigned to the nic
+#
+# @netmask:     The netmask of the defined subnet
+#
+# @hwaddr:      The Media Access Control address being used by the nic
+#
+# @mtu:         The Maximum Transmission Unit size for the nic
+#
+# @permhwaddr:  #optional For bonded nics: the real MAC address which will be
+#               used if the card is freed from the bond.
+#
+# Since: 4.10.0
+##
+{'type': 'NetInfoNic',
+ 'data': {'speed': 'int', 'addr': 'str', 'netmask': 'str', 'hwaddr': 'str',
+          'mtu': 'IntStr', '*permhwaddr': 'str'}}
+
+##
+# @NetInfoBond:
+#
+# Information about a ethernet bond device
+#
+# @slaves:   A list of devices that are enslaved to the bond device
+#
+# @addr:     The IP address assigned to the bond
+#
+# @netmask:  The netmask of the defined subnet
+#
+# @hwaddr:   The Media Access Control address being used by the bond device
+#
+# @cfg:      Raw device configuration parameters (@NetInfoIfaceCfg)
+#
+# @mtu:      The Maximum Transmission Unit size for the nic
+#
+# Since: 4.10.0
+##
+{'type': 'NetInfoBond',
+ 'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str', 'hwaddr': 'str',
+          'cfg': 'NetInfoIfaceCfg', 'mtu': 'IntStr'}}
+
+##
+# @NetInfoVlan:
+#
+# Information about a Virtual Local Area Network
+#
+# @iface:    The network device associated with the vlan
+#
+# @addr:     The IP address assigned to the vlan device
+#
+# @netmask:  The netmask of the defined subnet
+#
+# @mtu:      The Maximum Transmission Unit size for the vlan
+#
+# Since: 4.10.0
+##
+{'type': 'NetInfoVlan',
+ 'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str', 'mtu': 'IntStr'}}
+
+##
+# @HookScriptInfo:
+#
+# Information about one script within a hook.
+#
+# @md5:  The md5 sum of the script
+#
+# Since: 4.10.0
+##
+{'type': 'HookScriptInfo', 'data': {'md5': 'str'}}
+
+##
+# @OSName:
+#
+# An enumeration of recognized operating system names.
+#
+# @unknown:          The operating system could not be detected
+#
+# @oVirt Node:       oVirt Node standalone hypervisor
+#
+# @RHEL:             Red Hat Enterprise Linux
+#
+# @Fedora:           Fedora Linux
+#
+# @RHEV Hypervisor:  Red Hat Enterprise Virtualization Hypervisor
+#
+# @Debian:           A Debian-based distribution (including Ubuntu)
+#
+# Since: 4.10.0
+# XXX: Extension: Spaces in enum values
+##
+{'enum': 'OSName',
+ 'data': ['unknown', 'oVirt Node', 'RHEL', 'Fedora', 'RHEV Hypervisor',
+          'Debian']}
+
+##
+# @OsVersion:
+#
+# Host operating system version information.
+#
+# @release:  The release number for this @version
+#
+# @version:  The OS version (eg. 17 for Fedora 17)
+#
+# @name:     The name of the OS
+#
+# Since: 4.10.0
+##
+{'type': 'OsVersion',
+ 'data': {'release': 'str', 'version': 'str', 'name': 'OSName'}}
+
+##
+# @SoftwarePackage:
+#
+# An enumeration of aliases for important software components.
+#
+# @kernel:        The Linux kernel
+#
+# @qemu-kvm:      Qemu virtual machine emulator
+#
+# @qemu-img:      Qemu VM disk image manipulation utility
+#
+# @vdsm:          Virtual Desktop and Server Manager (this software)
+#
+# @spice-server:  The server for SPICE protocol
+#
+# @libvirt:       Low level virtualization API
+#
+# Since: 4.10.0
+##
+{'enum': 'SoftwarePackage',
+ 'data': ['kernel', 'qemu-kvm', 'qemu-img', 'vdsm', 'spice-server', 'libvirt']}
+
+##
+# @SoftwarePackageInfo:
+#
+# Information about an installed piece of software.
+#
+# @version:    The software version
+#
+# @release:    The release number for this @version
+#
+# @buildtime:  The time and date the software was built
+#
+# Since: 4.10.0
+##
+{'type': 'SoftwarePackageInfo',
+ 'data': {'version': 'str', 'release': 'str', 'buildtime': 'str'}}
+
+##
+# @IscsiHba:
+#
+# Information about an iSCSI host bus adapter.
+#
+# @InitiatorName:  iSCSI initiator
+#
+# Since: 4.10.0
+##
+{'type': 'IscsiHba', 'data': {'InitiatorName', 'str'}}
+
+##
+# @FcHba:
+#
+# Information about a FibreChannel host bus adapter.
+#
+# @wwpn:   World-wide port name
+#
+# @wwnn:   World-wide node name
+#
+# @model:  Model of installed FibreChannel card
+#
+# Since: 4.10.0
+##
+{'type': 'FcHba', 'data': {'wwpn': 'str', 'wwnn': 'str', 'model': 'str'}}
+
+##
+# @HbaInventory:
+#
+# Information about all available host bus adapters.
+#
+# @iSCSI:  List of iSCSI HBAs
+#
+# @FC:     List of FibreChannel HBAs
+#
+# Since: 4.10.0
+##
+{'type': 'HbaInventory',
+ 'data': {'iSCSI': ['IscsiHba'], 'FC': ['FcHba']}}
+
+##
+# @VmType:
+#
+# Enumeration of supported virtual machine types.
+#
+# @kvm:  VM runs on Linux Kernel Virtual Machine
+#
+# Since: 4.10.0
+##
+{'enum': 'VmType', 'data': ['kvm']}
+
+##
+# @NetInfoNetworkMap:
+#
+# A mapping of vdsm Network information indexed by network name.
+#
+# Since: 4.10.0
+##
+{'map': 'NetInfoNetworkMap',
+ 'key': 'str', 'value': 'NetInfoNetwork'}
+
+##
+# @NetInfoNicMap:
+#
+# A mapping of NIC information indexed by device name.
+#
+# Since: 4.10.0
+##
+{'map': 'NetInfoNicMap',
+ 'key': 'str', 'value': 'NetInfoNic'}
+
+##
+# @NetInfoBondMap:
+#
+# A mapping of bond information indexed by device name.
+#
+# Since: 4.10.0
+##
+{'map': 'NetInfoBondMap',
+ 'key': 'str', 'value': 'NetInfoBond'}
+
+##
+# @NetInfoVlanMap:
+#
+# A mapping of vlan information indexed by vlan tag.
+#
+# Since: 4.10.0
+##
+{'map': 'NetInfoVlanMap',
+ 'key': 'str', 'value': 'NetInfoVlan'}
+
+##
+# @HookScriptInfoMap:
+#
+# A mapping of hook script information indexed by script name.
+#
+# Since: 4.10.0
+##
+{'map': 'HookScriptInfoMap',
+ 'key': 'str', 'value': 'HookScriptInfo'}
+
+##
+# @SoftwarePackageInfoMap:
+#
+# A mapping of information indexed by software package name.
+#
+# Since: 4.10.0
+##
+{'map': 'SoftwarePackageInfoMap',
+ 'key': 'SoftwarePackage', 'value': 'SoftwarePackageInfo'}
+
+##
+# @VdsmCapabilities:
+#
+# Host information and capabilities.
+#
+# @kvmEnabled:          KVM is enabled on the host
+#
+# @cpuCores:            The number of CPU cores present
+#
+# @cpuSockets:          The numbet of CPU sockets
+#
+# @cpuSpeed:            The speed of each CPU (in MHz)
+#
+# @cpuModel:            The CPU model
+#
+# @cpuFlags:            CPU feature flags (a comma-separated string)
+#
+# @version_name:        The name given to this version of VDSM
+#
+# @software_version:    VDSM version (x.y.z)
+#
+# @software_revision:   Extra VDSM version information
+#
+# @supportedRHEVMs:     A list of supported ovirt-engine versions
+#
+# @supportedProtocols:  A list of supported xmlrpc protocol versions
+#
+# @clusterLevels:       A list of supported cluster versions
+#
+# @networks:            Information about configured VDSM networks
+#
+# @nics:                Information about the network cards on the host
+#
+# @bondings:            Information about configured bonding devices
+#
+# @vlans:               Information about configured vlans
+#
+# @hooks:               #optional Information about installed hooks
+#
+# @operatingSystem:     Operating system version information
+#
+# @uuid:                A unique host ID
+#
+# @packages2:           Version information of important software packages
+#
+# @emulatedMachines:    A list of supported emulated machines
+#
+# @ISCSIInitiatorName:  The iSCSI initiator name for this host
+#
+# @HBAInventory:        Information about available host bus adapters
+#
+# @vmTypes:             A list of supported virtual machine types
+#
+# @memSize:             The amount of total memory installed in the host
+#
+# @reservedMem:         The amount of memory reserved for hypervisor overhead
+#
+# @guestOverhead:       The amount of memory reserved for per-guest overhead
+#
+# Since: 4.10.0
+#
+# Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
+#        the current API truncates @software_version to 'x.y'.
+##
+{'type': 'VdsmCapabilities',
+ 'data': {'kvmEnabled': 'BoolStrLower', 'cpuCores': 'IntStr',
+          'cpuSockets': 'IntStr', 'cpuSpeed': 'FloatStr', 'cpuModel': 'str',
+          'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
+          'software_revision': 'str', 'supportedRHEVMs': ['str'],
+          'supportedProtocols': ['str'], 'clusterLevels': ['str'],
+          'networks': 'NetInfoNetworkMap',
+          'nics': 'NetInfoNicMap', 'bondings': 'NetInfoBondMap',
+          'vlans': 'NetInfoVlanMap', '*hooks': 'HookScriptInfoMap',
+          'operatingSystem': 'OsVersion', 'uuid': 'str',
+          'packages2': 'SoftwarePackageInfoMap',
+          'emulatedMachines': ['str'], 'ISCSIInitiatorName': 'str',
+          'HBAInventory': 'HbaInventory', 'vmTypes': ['VmType'],
+          'memSize': 'IntStr', 'reservedMem': 'IntStr',
+          'guestOverhead': 'IntStr'}}
+
+##
+# @Global.getCapabilities:
+#
+# Get host capabilities.
+#
+# Returns:
+# @info:            Host capabilities information
+# @netConfigDirty:  Indicates if there are uncommitted changes to the network
+#                   configuration
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getCapabilities'},
+ 'returns': {'info': 'VdsmCapabilities', 'netConfigDirty': 'BoolStr'}}
+
+##
+# @Global.getConnectedStoragePools:
+#
+# Get a list of all Storage Pools that are connected to this host.
+#
+# Returns:
+# @poollist:  A list of Storage Pool UUIDs
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getConnectedStoragePools'},
+ 'returns': {'poollist': ['UUID']}}
+
+##
+# @BlockDeviceType:
+#
+# Enumeration of possible block device types.
+#
+# @iSCSI:  The device is pure iSCSI
+#
+# @FCP:    The device is purely FibreChannel
+#
+# @MIXED:  The device consists of a mix of iSCSI and FibreChannel paths
+#
+# Since: 4.10.0
+##
+{'enum': 'BlockDeviceType', 'data': ['iSCSI', 'FCP', 'MIXED']}
+
+##
+# @BlockDevicePathState:
+#
+# Enumeration of possible states for a block device path.
+#
+# @active:  The path is active
+#
+# @failed:  The path has failed
+#
+# Since: 4.10.0
+##
+{'enum': 'BlockDevicePathState', 'data': ['active', 'failed']}
+
+##
+# @BlockDevicePathInfo:
+#
+# Information about a single block device path.
+#
+# @physdev:  The physical device name
+#
+# @state:    The current state of this path
+#
+# @lun:      The SCSI Logical Unit Number associated with this path
+#
+# @type:     The type of path (@BlockDeviceType)
+#
+# Since: 4.10.0
+##
+{'type': 'BlockDevicePathInfo',
+ 'data': {'physdev': 'str', 'state': 'BlockDevicePathState',
+          'lun': 'IntStr', 'type': 'BlockDeviceType'}}
+
+##
+# @IscsiSessionInfo:
+#
+# Information about a single, active iSCSI session.
+#
+# @connection:     The hostname of the iSCSI target
+#
+# @port:           The port number of the iSCSI target
+#
+# @iqn:            The ISCSI Qualified Name
+#
+# @portal:         The Target Portal Group Tag
+#
+# @initiatorname:  iSCSI initiator
+#
+# @username:       #optional A login name on the iSCSI target
+#
+# @password:       #optional The password corresponding to @username
+#
+# Since: 4.10.0
+##
+{'type': 'IscsiSessionInfo',
+ 'data': {'connection': 'str', 'port': 'str', 'iqn': 'str', 'portal': 'str',
+          'initiatorname': 'str', '*username': 'str', '*password': 'str'}}
+
+##
+# @BlockDeviceInfo:
+#
+# Block device information.
+#
+# @GUID:               The globally unique identifier of the block device
+#
+# @pvUUID:             The LVM physical volume associated with this device
+#
+# @vendorID:           A string identifying the device manufacturer
+#
+# @productID:          A string identifying the device model
+#
+# @fwrev:              Firmware version information
+#
+# @serial:             The device serial number (if available)
+#
+# @capacity:           The device logical size (in bytes)
+#
+# @devtype:            The type of storage device (@BlockDeviceType)
+#
+# @pathstatus:         Multipath information
+#
+# @pathlist:           iSCSI session information
+#
+# @logicalblocksize:   The logical block size of the device (in bytes)
+#
+# @physicalblocksize:  The physical block size of the device (in bytes)
+#
+# @partitioned:        Reports whether the device has been split into partitions
+#
+# Since: 4.10.0
+#
+# Notes:  The value of @serial may be dependent on the current host so this
+#         field should not be used to compare devices if the hosts are
+#         different.
+#
+#         If @partitioned is True, the device is not usable by Vdsm.  If the
+#         device has a partition table but no partitions, @partitioned is False.
+##
+{'type': 'BlockDeviceInfo',
+ 'data': {'GUID': 'UUID', 'pvUUID': 'UUID', 'vendorID': 'str',
+          'productID': 'str', 'fwrev': 'str', 'serial': 'str',
+          'capacity': 'IntStr', 'devtype': 'BlockDeviceType',
+          'pathstatus': ['BlockDevicePathInfo'],
+          'pathlist': ['IscsiSessionInfo'], 'logicalblocksize': 'IntStr',
+          'physicalblocksize': 'IntStr', 'partitioned': 'Bool'}}
+
+##
+# @Global.getDeviceInfo:
+#
+# Get information about a block device.
+#
+# @guid:  The globally unique identifier of the block device
+#
+# Returns:
+# @info:  Block device information
+#
+# Since: 4.10.0
+# XXX: Possibly missing 'options' parameter
+##
+{'command': {'class': 'Global', 'name': 'getDeviceInfo'},
+ 'data': {'guid': 'UUID'},
+ 'returns': {'info': 'BlockDeviceInfo'}}
+
+##
+# @Global.getDeviceList:
+#
+# Get information about all block devices.
+#
+# @storageType:  #optional Only return devices of this type
+#
+# Returns:
+# @devList:  An array of @BlockDeviceInfo
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getDeviceList'},
+ 'data': {'*storageType': 'BlockDeviceType'},
+ 'returns': {'devList': ['BlockDeviceInfo']}}
+
+##
+# @DeviceVisibilityMap:
+#
+# A mapping of boolean values indexed by block device GUID.
+#
+# Since: 4.10.0
+##
+{'map': 'DeviceVisibilityMap',
+ 'key': 'UUID', 'value': 'Bool'}
+
+##
+# @Global.getDevicesVisibility:
+#
+# Check if the host has access to block storage devices.
+#
+# @guidList:  A list of block device GUIDs
+#
+# Returns:
+# @visibility:  Accessibility for each device
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getDevicesVisibility'},
+ 'data': {'guidList': ['UUID']},
+ 'returns': {'visibility': 'DeviceVisibilityMap'}}
+
+##
+# @VolumeGroupState:
+#
+# An enumeration of possible Volume Group states.
+#
+# @OK:       All Physical Volumes are online
+#
+# @PARTIAL:  One or more Physical Volumes are not available
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeGroupState', 'data': ['OK', 'PARTIAL']}
+
+##
+# @VolumeGroupAttributePermission:
+#
+# An enumeration of possible values for the permission attribute.
+#
+# @w:  The Volume Group is writable
+#
+# @r:  The Volume Group is read-only
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeGroupAttributePermission', 'data': ['w', 'r']}
+
+##
+# @VolumeGroupAttributeResizeable:
+#
+# An enumeration of possible values for the resizeable attribute.
+#
+# @-:  The Volume Group is not resizeable
+#
+# @z:  The Volume Group is resizeable
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeGroupAttributeResizeable', 'data': ['-', 'z']}
+
+##
+# @VolumeGroupAttributeExported:
+#
+# An enumeration of possible values for the exported attribute.
+#
+# @-:  The Volume Group has not been exported
+#
+# @x:  The Volume Group has been exported
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeGroupAttributeExported', 'data': ['-', 'x']}
+
+##
+# @VolumeGroupAttributePartial:
+#
+# An enumeration of possible values for the partial status attribute.
+#
+# @-:  The Volume Group can access all of its Physical Volumes
+#
+# @p:  The Volume Group cannot access some Physical Volumes
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeGroupAttributePartial', 'data': ['-', 'p']}
+
+##
+# @VolumeGroupAttributeAllocation:
+#
+# An enumeration of possible values for the allocation policy attribute.
+#
+# @c:  Indicates a contiguous allocation policy
+#
+# @n:  Indicates a normal allocation policy
+#
+# @i:  Indicates that the allocation policy is inherited
+#
+# @l:  Indicates a cling allocation policy
+#
+# @a:  Indicates an anywhere allocation policy
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeGroupAttributeAllocation', 'data': ['c', 'n', 'i', 'l', 'a']}
+
+##
+# @VolumeGroupAttributeClustered:
+#
+# An enumeration of possible values for the clustered attribute.
+#
+# @-:  Indicates that clustered locking is disabled
+#
+# @c:  Indicates that clustered locking is enabled
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeGroupAttributeClustered', 'data': ['-', 'c']}
+
+##
+# @VolumeGroupAttributes:
+#
+# A collection of Volume Group attributes.
+#
+# @permission:  Is the Volume Group read-only or writable
+#
+# @resizeable:  Can the Volume Group be resized?
+#
+# @exported:    Has the Volume Group been exported?
+#
+# @partial:     Are all Physical Volumes available?
+#
+# @allocation:  What is the allocation policy?
+#
+# @clustered:   Is clustered locking enabled?
+#
+# Since: 4.10.0
+##
+{'type': 'VolumeGroupAttributes',
+ 'data': {'permission': 'VolumeGroupAttributePermission',
+          'resizeable': 'VolumeGroupAttributeResizeable',
+          'exported': 'VolumeGroupAttributeExported',
+          'partial': 'VolumeGroupAttributePartial',
+          'allocation': 'VolumeGroupAttributeAllocation',
+          'clustered': 'VolumeGroupAttributeClustered'}}
+
+##
+# @VolumeGroupInfo:
+#
+# Information about a Volume Group.
+#
+# @name:    The Volume Group name
+#
+# @vgUUID:  The uuid of the Volume Group
+#
+# @vgsize:  The total capacity (in bytes)
+#
+# @vgfree:  The amount of currently unassigned capacity (in bytes)
+#
+# @type:    The storage type of this Volume Group's Physical Volumes
+#
+# @attr:    Additional attributes
+#
+# @state:   The state of this Volume Group's underlying storage
+#
+# Since: 4.10.0
+##
+{'type': 'VolumeGroupInfo',
+ 'data': {'name': 'str', 'vgUUID': 'UUID', 'vgsize': 'IntStr',
+          'vgfree': 'IntStr', 'type': 'BlockDeviceType',
+          'attr': 'VolumeGroupAttributes', 'state': 'VolumeGroupState'}}
+
+##
+# @Global.getLVMVolumeGroups:
+#
+# Get information about Volume Groups in this host.
+#
+# @storageType:  #optional Limit results to Volume Groups of a specific storage
+#                type
+#
+# Returns:
+# @vglist:  A list of @VolumeGroupInfo items
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getLVMVolumeGroups'},
+ 'data': {'*storageType': 'BlockDeviceType'},
+ 'returns': {'vglist': ['VolumeGroupInfo']}}
+
+##
+# @NetworkInterfaceState:
+#
+# An enumeration of possible network interface states.
+#
+# @up:    The interface is active
+#
+# @down:  The interface is not active
+#
+# Since: 4.10.0
+##
+{'enum': 'NetworkInterfaceState', 'data': ['up', 'down']}
+
+##
+# @NetworkInterfaceStats:
+#
+# Statistics about a single network interface.
+#
+# @name:       The network device name
+#
+# @speed:      The interface speed (in Megabits/s)
+#
+# @rxDropped:  The number of incoming packets that have been dropped
+#
+# @txDropped:  The number of outgoing packets that have been dropped
+#
+# @rxErrors:   The number of incoming packets that have contained errors
+#
+# @txErrors:   The number of outgoing packets that have contained errors
+#
+# @state:      Indicates whether the interface is currently active
+#
+# @rxRate:     The rate of incoming packets (as a percentage of @speed)
+#
+# @txRate:     The rate of outgoing packets (as a percentage of @speed)
+#
+# @macAddr:    The hardware address
+#
+# Since: 4.10.0
+##
+{'type': 'NetworkInterfaceStats',
+ 'data': {'name': 'str', 'speed': 'IntStr', 'rxDropped': 'IntStr',
+          'txDropped': 'IntStr', 'rxErrors': 'IntStr', 'txErrors': 'IntStr',
+          'state': 'NetworkInterfaceState', 'rxRate': 'FloatStr',
+          'txRate': 'FloatStr', 'macAddr': 'str'}}
+
+##
+# @StorageDomainVitals:
+#
+# Regularly collected Storage Domain vital statistics.
+#
+# @code:       Storage Domain status code
+#
+# @delay:      The amount of time it takes to read a small amount of data from
+#              the storage.
+#
+# @lastCheck:  Elapsed time since the Storage Domain was last checked
+#
+# @valid:      Indicates if the Storage Domain is functioning properly
+#
+# Since: 4.10.0
+# XXX: Add an enum for return codes and their meanings
+##
+{'type': 'StorageDomainVitals',
+ 'data': {'code': 'IntStr', 'delay': 'FLoatStr', 'lastCheck': 'FloatStr',
+          'valid': 'BoolStr'}}
+
+##
+# @PathStats:
+#
+# Statistics about a host filesystem path.
+#
+# @free:  The amount of free space remaining (in MB)
+#
+# Since: 4.10.0
+##
+{'type': 'PathStats', 'data': {'free': 'IntStr'}}
+
+##
+# @THPStates:
+#
+# An enumeration of possible states for the Transparent Huge Pages feature.
+#
+# @always:   All memory regions will be scanned
+#
+# @madvise:  Only memory regions indicated by a call to madvise will be scanned
+#
+# @never:    No memory regions will be scanned
+#
+# Since: 4.10.0
+##
+{'enum': 'THPStates', 'data': ['always', 'madvise', 'never']}
+
+##
+# @NetworkInterfaceStatsMap:
+#
+# A mapping of interface stats indexed by device name.
+#
+# Since: 4.10.0
+##
+{'map': 'NetworkInterfaceStatsMap',
+ 'key': 'str', 'value': 'NetworkInterfaceStats'}
+
+##
+# @StorageDomainVitalsMap:
+#
+# A mapping of Storage Domain vital statistics indexed by Storage Domain UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'StorageDomainVitalsMap',
+ 'key': 'UUID', 'value': 'StorageDomainVitals'}
+
+##
+# @PathStatsMap:
+#
+# A mapping of filesystem statistics indexed by mount point.
+#
+# Since: 4.10.0
+##
+{'map': 'PathStatsMap',
+ 'key': 'str', 'value': 'PathStats'}
+
+##
+# @HostStats:
+#
+# Statistics about this host.
+#
+# @cpuUser:         Ratio of CPU time spent in userspace
+#
+# @cpuSys:          Ratio of CPU time spent in kernel
+#
+# @cpuIdle:         Ratio of CPU time spent idle
+#
+# @rxRate:          Incoming packet rate (as a percentage of total capacity)
+#
+# @txRate:          Outgoing packet rate (as a percentage of total capacity)
+#
+# @statsAge:        Seconds elapsed since the stats were last sampled
+#
+# @network:         Per-interface network statistics
+#
+# @rxDropped:       The number of incoming packets dropped
+#
+# @txDropped:       The number of outgoing packets dropped
+#
+# @cpuSysVdsmd:     Ratio of CPU time spent in kernel by vdsm
+#
+# @cpuUserVdsmd:    Ratio of CPU time spent in userspace by vdsm
+#
+# @storageDomains:  Storage Domain vital statistics
+#
+# @elapsedTime:     The number of seconds that vdsm has been running
+#
+# @memUsed:         The percentage of memory used (not including caches)
+#
+# @anonHugePages:   The amount of anonymous memory in huge pages (in MB)
+#
+# @cpuLoad:         The 5 minute CPU load average
+#
+# @diskStats:       Statistics about paths on the host filesystem
+#
+# @thpState:        Current mode of the Transparent Huge Pages feature
+#
+# @memAvailable:    Amount of memory available to run virtual machines (bytes)
+#
+# @memShared:       Approximate amount of memory that is shared by VMs due to
+#                   the KSM feature (in bytes)
+#
+# @memCommitted:    Amount of memory committed to running VMs (in MB)
+#
+# @swapTotal:       The total amount of swap space (in MB)
+#
+# @swapFree:        The amount of free swap space remaining (in MB)
+#
+# @vmCount:         The number of VMs present on this host
+#
+# @vmActive:        The number of VMs active on this host
+#
+# @vmMigrating:     The number of VMs migrating away from this host
+#
+# @dateTime:        The current date and time according to this host
+#
+# @ksmState:        Indicates if KSM is enabled or disabled
+#
+# @ksmPages:        The number of memory pages KSM will scan at each interval
+#
+# @ksmCpu:          The amount of CPU being used by the KSM thread
+#
+# @netConfigDirty:  Indicates if there are uncommitted changes to the network
+#                   configuration
+#
+# @generationID:    A @UUID that is refreshed each time vdsm starts
+#
+# Since: 4.10.0
+##
+{'type': 'HostStats',
+ 'data': {'cpuUser': 'FloatStr', 'cpuSys': 'FloatStr', 'cpuIdle': 'FloatStr',
+           'rxRate': 'FloatStr', 'txRate': 'FloatStr', 'statsAge': 'IntStr',
+           'network': 'NetworkInterfaceStatsMap',
+           'rxDropped': 'IntStr', 'txDropped': 'IntStr',
+           'cpuSysVdsmd': 'FloatStr', 'cpuUserVdsmd': 'FloatStr',
+           'storageDomains': 'StorageDomainVitalsMap',
+           'elapsedTime': 'IntStr', 'memUsed': 'IntStr',
+           'anonHugePages': 'IntStr', 'cpuLoad': 'FloatStr',
+           'diskStats': 'PathStatsMap', 'thpState': 'THPStates'},
+           'memAvailable': 'int', 'memShared': 'int', 'memCommitted': 'int',
+           'swapTotal': 'int', 'swapFree': 'int','vmCount': 'int',
+           'vmActive': 'int', 'vmMigrating': 'int', 'dateTime': 'str',
+           'ksmState': 'bool', 'ksmPages': 'int', 'ksmCpu': 'float',
+           'netConfigDirty': 'BoolStr', 'generationID': 'UUID'}
+
+##
+# @Global.getStats:
+#
+# Get host statistics.
+#
+# Returns:
+# @info:  The set of host statistics
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getStats'},
+ 'returns': {'info': 'HostStats'}}
+
+##
+# @StorageDomainClass:
+#
+# An enumeration of Storage Domain classes.
+#
+# @Unknown:  The class is not known
+# @Data:     The Storage Domain is used for virtual machine disk images
+# @Iso:      The Storage Domain is used for storing ISO images
+# @Backup:   The Storage Domain is used for import and export of disk images
+#
+# Since: 4.10.0
+# XXX: Need to specify explicit values for the enum
+##
+{'enum': 'StorageDomainClass', 'data': ['Unknown', 'Data', 'Iso', 'Backup']}
+
+##
+# @StorageDomainType:
+#
+# An enumeration of Storage Domain types.
+#
+# @UNKNOWN:   The type is not known
+#
+# @NFS:       The Storage Domain uses Network File System based storage
+#
+# @FCP:       The Storage Domain uses FibreChannel based storage
+#
+# @ISCSI:     The Storage Domain uses iSCSI based storage
+#
+# @LOCALFS:   The Storage Domain uses storage on the local file system
+#
+# @CIFS:      The Storage Domain uses CIFS/SMB based storage
+#
+# @SHAREDFS:  The Storage Domain uses storage from a Linux VFS file system
+#
+# Since: 4.10.0
+# XXX: Need to specify explicit values for the enum
+##
+{'enum': 'StorageDomainType',
+ 'data': ['UNKNOWN', 'NFS', 'FCP', 'ISCSI', 'LOCALFS', 'CIFS', 'SHAREDFS']}
+
+##
+# @Global.getStorageDomains:
+#
+# Get a list of known Storage Domain UUIDs.
+#
+# @spUUID:       #optional Limit to Domains belonging to this Storage Pool
+#
+# @domainClass:  #optional Limit to Domains of this @StorageDomainClass
+#
+# @storageType:  #optional Limit to Domains of this @StorageDomainType
+#
+# @remotePath:   #optional Limit to Domains having this remotePath
+#
+# Returns:
+# @domlist:  A list of known Storage Domains
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getStorageDomains'},
+ 'data': {'*spUUID': 'UUID', '*domainClass': 'StorageDomainClass',
+          '*storageType': 'StorageDomainType', '*remotePath': 'str'},
+ 'returns': {'domlist': ['UUID']}}
+
+##
+# @Global.getStorageRepoStats:
+#
+# Get statistics and liveness of currently attached Storage Domains.
+#
+# Returns:
+# @XXX:  A dictionary of @StorageDomainStats indexed by Storage Domain @UUID
+#
+# Since: 4.10.0
+# XXX: The return value is in the same dictionary as the command status!
+##
+{'command': {'class': 'Global', 'name': 'getStorageRepoStats'},
+ 'returns': {'XXX': 'StorageDomainStatsMap'}}
+
+##
+# @VmStatus:
+#
+# An enumeration of possible virtual machine statuses.
+#
+# @Down:                   The VM is powered off
+#
+# @Migration Destination:  The VM is migrating to this host
+#
+# @Migration Source:       The VM is migrating away from this host
+#
+# @Paused:                 The VM is paused
+#
+# @Powering down:          A shutdown command has been sent to the VM
+#
+# @RebootInProgress:       The VM is currently rebooting
+#
+# @Restoring state:        The VM is waking from hibernation
+#
+# @Saving State:           The VM is preparing for hibernation
+#
+# @Up:                     The VM is running
+#
+# @WaitForLaunch:          The VM is being created
+#
+# Since: 4.10.0
+##
+{'enum': 'VmStatus',
+ 'data': ['Down', 'Migration Destination', 'Migration Source', 'Paused',
+          'Powering down', 'RebootInProgress', 'Restoring state',
+          'Saving State', 'Up', 'WaitForLaunch']}
+
+##
+# @VmDisplayType:
+#
+# An enumeration of VM display modes.
+#
+# @vnc:  Graphical VM interaction is available via the VNC protocol
+#
+# @qxl:  Graphical VM interaction is available via SPICE
+#
+# Since: 4.10.0
+##
+{'enum': 'VmDisplayType', 'data': ['vnc', 'qxl']}
+
+##
+# @VmDeviceType:
+#
+# An enumeration of VM device types.
+#
+# @disk:        A hard disk, floppy, or cdrom device
+#
+# @interface:   A network interface
+#
+# @video:       A video card
+#
+# @sound:       A sound card or PC speaker
+#
+# @controller:  An internal controller that usually provides a bus
+#
+# @balloon:     A memory balloon device
+#
+# @channel:     A host-guest communication channel
+#
+# Since: 4.10.0
+##
+{'enum': 'VmDeviceType',
+ 'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
+          'channel']}
+
+##
+# @VmDiskDeviceType:
+#
+# An enumeration of VM disk device types.
+#
+# @disk:    A hard disk drive
+#
+# @cdrom:   A CD-ROM drive (always readonly)
+#
+# @floppy:  A floppy disk drive
+#
+# Since: 4.10.0
+##
+{'enum': 'VmDiskDeviceType', 'data': ['disk', 'cdrom', 'floppy']}
+
+##
+# @VmDiskDeviceInterface:
+#
+# An enumeration of VM disk device interfaces.
+#
+# @ide:     The device is connected via an emulated IDE bus
+#
+# @virtio:  The device uses a virtio para-virtualized interconnect
+#
+# @fdc:     The device is connected to an emulated floppy disk controller
+#
+# Since: 4.10.0
+##
+{'enum': 'VmDiskDeviceInterface', 'data': ['ide', 'virtio', 'fdc']}
+
+##
+# @VmDiskDeviceFormat:
+#
+# An enumeration of VM disk device formats.
+#
+# @raw:  Raw data is written directly to backing storage
+#
+# @cow:  Data is written using the Qemu qcow format
+#
+# Since: 4.10.0
+##
+{'enum': 'VmDiskDeviceFormat', 'data': ['raw', 'cow']}
+
+# PCI
+# IDE
+# virtio-serial
+##
+# @VmDeviceAddressType:
+#
+# An enumeration of VM device address types.
+#
+# @pci:            The address describes a location on an PCI bus
+#
+# @drive:          The address describes a location on an IDE bus
+#
+# @virtio-serial:  Describes a location on a virtio-serial controller
+#
+# Since: 4.10.0
+##
+{'enum': 'VmDeviceAddressType', 'data': ['pci', 'drive', 'virtio-serial']}
+
+##
+# @VmDevicePciAddress:
+#
+# Device address for a PCI device.
+#
+# @type:      The device type (always @pci)
+#
+# @slot:      The slot number on the PCI bus
+#
+# @bus:       The PCI bus number
+#
+# @domain:    The PCI domain
+#
+# @function:  Function number on the PCI card that implements the device
+#
+# Since: 4.10.0
+##
+{'type': 'VmDevicePciAddress',
+ 'data': {'type': 'VmDeviceAddressType', 'slot': 'HexStr', 'bus': 'HexStr',
+          'domain': 'HexStr', 'function': 'HexStr'}}
+
+##
+# @VmDeviceIdeAddress:
+#
+# Device address for an IDE device.
+#
+# @type:        The device type (always @drive)
+#
+# @controller:  The IDE controller number
+#
+# @bus:         The IDE bus number
+#
+# @unit:        The unit number on the IDE bus
+#
+# Since: 4.10.0
+##
+{'type': 'VmDeviceIdeAddress',
+ 'data': {'type': 'VmDeviceAddressType', 'controller': 'IntStr',
+          'bus': 'IntStr', 'unit': 'IntStr'}}
+
+##
+# @VmDeviceVirtioSerialAddress:
+#
+# Device address for a virtio-serial port.
+#
+# @type:        The device type (always @virtio-serial)
+#
+# @controller:  The virtio-serial controller number
+#
+# @bus:         The virtio-serial bus number
+#
+# @port:        The port number on the virtio-serial bus
+#
+# Since: 4.10.0
+##
+{'type': 'VmDeviceVirtioSerialAddress',
+ 'data': {'type': 'VmDeviceAddressType', 'controller': 'IntStr',
+          'bus': 'IntStr', 'port': 'IntStr'}}
+
+##
+# @VmDeviceAddress:
+#
+# A discriminated record of device address information.
+#
+# Since: 4.10.0
+##
+{'union': 'VmDeviceAddress',
+ 'data': ['VmDevicePciAddress', 'VmDeviceIdeAddress',
+          'VmDeviceVirtioSerialAddress']}
+
+##
+# @VmDiskDeviceSpecParams:
+#
+# Extra parameters for VM disk devices.
+#
+# @path:  #optional The filesystem path to the disk image
+#
+# Since: 4.10.0
+##
+{'type': 'VmDiskDeviceSpecParams', 'data': {'*path': 'str'}}
+
+##
+# @VmDiskDeviceVolumeChainEntry:
+#
+# Identifies one volume in a VM disk device volume chain.
+#
+# @domainID:  The UUID of the storage domain that contains the volume
+#
+# @imageID:   The UUID of the image that contains the volume
+#
+# @path:      The filesystem path to the volume
+#
+# @volumeID:  The UUID of the volume itself
+#
+# Since: 4.10.0
+##
+{'type': 'VmDiskDeviceVolumeChainEntry',
+ 'data': {'domainID': 'UUID', 'imageID': 'UUID', 'path': 'str',
+          'volumeID': 'UUID'}}
+
+##
+# @VmDiskDevice:
+#
+# Properties of a VM disk device.
+#
+# @type:             The device type (always @disk)
+#
+# @device:           The disk device type (eg. @cdrom or @disk)
+#
+# @iface:            #optional Indicates the device connection method exposed to
+#                    the guest
+#
+# @path:             #optional The filesystem path to the drive's volume
+#
+# @readonly:         Indicates if writes are prohibited for the device
+#
+# @bootOrder:        #optional If specified, this device is part of the boot
+#                    sequence at the specified position
+#
+# @domainID:         #optional The UUID of the underlying Storage Domain object
+#
+# @poolID:           #optional The UUID of the underlying Storage Pool object
+#
+# @imageID:          #optional The UUID of the underlying Image object
+#
+# @volumeID:         #optional The UUID of the underlying Volume object
+#
+# @format:           The format used to store data on the backing storage
+#
+# @propagateErrors:  If enabled, disk I/O errors will be reported to vdsm for
+#                    possible resolution (eg. allocating more space)
+#
+# @address:          Device hardware address
+#
+# @alias:            Alias used to identify this device in commands
+#
+# @deviceId:         A unique ID for this device
+#
+# @specParams:       #optional Additional device parameters
+#
+# @apparentsize:     The size of the disk (in bytes)
+#
+# @index:            The drive index
+#
+# @name:             A user-friendly device name for display only
+#
+# @needExtend:       Indicates whether an underlying block device needs to be
+#                    expanded to accomodate growing disk allocation
+#
+# @optional:         States if the VM may start if the disk is not present
+#
+# @reqsize:          The most recently requested drive size (in bytes)
+#
+# @shared:           Indicates if this disk is intended to be shared by
+#                    multiple virtual machines
+#
+# @truesize:         The amount of underlying storage allocated (in bytes)
+#
+# @volumeChain:      The sequence of Volume objects needed to construct the disk
+#
+# @baseVolumeID:     #optional When used as a parameter to @VM.merge, indicates
+#                    the Volume that should become the new base volume
+#
+# Since: 4.10.0
+##
+{'type': 'VmDiskDevice',
+ 'data': {'type': 'VmDeviceType', 'device': 'VmDiskDeviceType',
+          '*iface': 'VmDiskDeviceInterface', '*path': 'str',
+          'readonly': 'BoolStr', '*bootOrder': 'IntStr', '*domainID': 'UUID',
+          '*poolID': 'UUID', '*imageID': 'UUID', '*volumeID': 'UUID',
+          'format': 'VmDiskDeviceFormat', 'propagateErrors': 'BoolOnOff',
+          'address': 'VmDeviceAddress', 'alias': 'str',
+          'deviceId': 'UUID', '*specParams': 'VmDiskDeviceSpecParams',
+          'apparentsize': 'IntStr', 'index': 'int', 'name': 'str',
+          'needExtend': 'bool', 'optional': 'BoolStrLower',
+          'reqsize': 'IntStr', 'shared': 'BoolStrLower', 'truesize': 'IntStr',
+          'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
+          '*baseVolumeID': 'UUID'}}
+
+##
+# @VmInterfaceDeviceType:
+#
+# An enumeration of VM network device types.
+#
+# @bridge:  The device is connected via a host bridge device
+#
+# Since: 4.10.0
+##
+{'enum': 'VmInterfaceDeviceType', 'data': ['bridge']}
+
+##
+# @VmInterfaceDeviceModel:
+#
+# An enumeration of VM network device models.
+#
+# @pv:        Alias for @virtio
+#
+# @virtio:    Paravirtual network interface
+#
+# @ne2k_pci:  Emulated Realtek(R) PCI NIC
+#
+# @i82551:    Emulated Intel(R) 82551ER NIC
+#
+# @i82557b:   Emulated Intel i82557B NIC
+#
+# @i82559er:  Emulated Intel i82559ER NIC
+#
+# @rtl8139:   Emulated rtl8139 NIC
+#
+# @e1000:     Emulated Intel(R) Gigabit Ethernet NIC
+#
+# @pcnet:     Emulated AMD(R) PC-Net II NIC
+#
+# Since: 4.10.0
+##
+{'enum': 'VmInterfaceDeviceModel',
+ 'data': ['pv', 'virtio', 'ne2k_pci', 'i82551', 'i82557b', 'i82559er',
+          'rtl8139', 'e1000', 'pcnet']}
+
+##
+# @VmInterfaceDeviceSpecParams:
+#
+# Additional VM interface device parameters.
+#
+# Since: 4.10.0
+##
+{'type': 'VmInterfaceDeviceSpecParams', 'data': {}}
+
+##
+# @VmInterfaceDevice:
+#
+# Properties of a VM network interface device.
+#
+# @type:        The device type (always @interface)
+#
+# @device:      The host network device type used to create the connection
+#
+# @nicModel:    The type of device that is exposed to the VM operating system
+#
+# @macAddr:     The unique ethernet hardware address of the device
+#
+# @network:     The name of the attached host bridge device
+#
+# @bootOrder:   #optional If specified, this device is part of the boot sequence
+#               at the specified position
+#
+# @address:     Device hardware address
+#
+# @alias:       Alias used to identify this device in commands
+#
+# @deviceId:    A unique ID for this device
+#
+# @specParams:  #optional Additional device parameters
+#
+# Since: 4.10.0
+##
+{'type': 'VmInterfaceDevice',
+ 'data': {'type': 'VmDeviceType', 'device': 'VmInterfaceDeviceType',
+          'nicModel': 'VmInterfaceDeviceModel', 'macAddr': 'str',
+          'network': 'str', '*bootOrder': 'IntStr',
+          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
+          '*specParams': 'VmInterfaceDeviceSpecParams'}}
+
+##
+# @VmVideoDeviceType:
+#
+# An enumeration of VM video device types.
+#
+# @cirrus:  An emulated Cirrus Logic GD5446 video card
+#
+# @std:     An emulated standard VESA 2.0 VBE video card
+#
+# @vmware:  A paravirtualized VGA video device from VMWare(R)
+#
+# @qxl:     A paravirtualized video device meant for use with SPICE
+#
+# @none:    No video device is emulated
+#
+# Since: 4.10.0
+##
+{'enum': 'VmVideoDeviceType',
+ 'data': ['cirrus', 'std', 'vmware', 'qxl', 'none']}
+
+##
+# @VmVideoDeviceSpecParams:
+#
+# Additional parameters for VM video devices.
+#
+# @vram:  #optional Specify the amount of video RAM available to the device
+#         in KB.  Currently relevant for @qxl devices only
+#
+# Since: 4.10.0
+##
+{'type': 'VmVideoDeviceSpecParams', 'data': {'*vram': 'IntStr'}}
+
+##
+# @VmVideoDevice:
+#
+# Properties of a VM video device.
+#
+# @type:        The device type (always @video)
+#
+# @device:      The type of video device exposed to the VM operating system
+#
+# @address:     Device hardware address
+#
+# @alias:       Alias used to identify this device in commands
+#
+# @deviceId:    A unique ID for this device
+#
+# @specParams:  #optional Additional device parameters
+#
+# Since: 4.10.0
+##
+{'type': 'VmVideoDevice',
+ 'data': {'type': 'VmDeviceType', 'device': 'VmVideoDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
+          '*specParams': 'VmVideoDeviceSpecParams'}}
+
+##
+# @VmSoundDeviceType:
+#
+# An enumeration of VM sound device types.
+#
+# @ac97:    An emulated Intel 82801AA AC97 Audio card
+#
+# @pcspk:   An emulated PC speaker
+#
+# @sb16:    An emulated Creative Labs Sound Blaster 16 card
+#
+# @es1370:  An emulated ENSONIQ AudioPCI ES1370 card
+#
+# @hda:     An emulated Intel High-Definition Audio card
+#
+# @ich6:    An emulated Intel ICH6 card
+#
+# Since: 4.10.0
+##
+{'enum': 'VmSoundDeviceType',
+ 'data': ['ac97', 'pcspk', 'sb16', 'es1370', 'hda', 'ich6']}
+
+##
+# @VmSoundDeviceSpecParams:
+#
+# Additional parameters for VM sound devices.
+#
+# Since: 4.10.0
+##
+{'type': 'VmSoundDeviceSpecParams', 'data': {}}
+
+##
+# @VmSoundDevice:
+#
+# Properties of a VM sound device.
+#
+# @type:        The device type (always @sound)
+#
+# @device:      The type of sound hardware exposed to the VM operating system
+#
+# @address:     Device hardware address
+#
+# @alias:       Alias used to identify this device in commands
+#
+# @deviceId:    A unique ID for this device
+#
+# @specParams:  #optional Additional device parameters
+#
+# Since: 4.10.0
+##
+{'type': 'VmSoundDevice',
+ 'data': {'type': 'VmDeviceType', 'device': 'VmSoundDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
+          '*specParams': 'VmSoundDeviceSpecParams'}}
+
+##
+# @VmControllerDeviceType:
+#
+# An enumeration of VM controller device types.
+#
+# @ide:            An IDE controller
+#
+# @fdc:            A floppy disk controller
+#
+# @scsi:           A SCSI controller
+#
+# @sata:           A Serial ATA controller
+#
+# @usb:            A USB controller
+#
+# @ccid:           A ccid (smart card) controller
+#
+# @virtio-serial:  A virtio-serial controller
+#
+# Since: 4.10.0
+##
+{'enum': 'VmControllerDeviceType',
+ 'data': ['ide', 'fdc', 'scsi', 'sata', 'usb', 'ccid', 'virtio-serial']}
+
+##
+# @VmControllerDevice:
+#
+# Properties of a VM controller device.
+#
+# @type:      The device type (always @controller)
+#
+# @device:    The specific type of controller device
+#
+# @address:   Device hardware address
+#
+# @alias:     Alias used to identify this device in commands
+#
+# @deviceId:  A unique ID for this device
+#
+# Since: 4.10.0
+##
+{'type': 'VmControllerDevice',
+ 'data': {'type': 'VmDeviceType', 'device': 'VmControllerDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
+
+##
+# @VmBalloonDeviceType:
+#
+# An enumeration of VM balloon device types.
+#
+# @memballoon:  A memory balloon
+#
+# Since: 4.10.0
+##
+{'enum': 'VmBalloonDeviceType', 'data': ['memballoon']}
+
+##
+# @VmBalloonDeviceModel:
+#
+# An enumeration of VM balloon device models.
+#
+# @none:    Indicates that no device is present
+#
+# @virtio:  A balloon implemented using the virtio specification
+#
+# Since: 4.10.0
+##
+{'enum': 'VmBalloonDeviceModel', 'data': ['none', 'virtio']}
+
+##
+# @VmBalloonDeviceSpecParams:
+#
+# Additional parameters for VM balloon devices.
+#
+# @model:  The balloon device model in use
+#
+# Since: 4.10.0
+##
+{'type': 'VmBalloonDeviceSpecParams',
+ 'data': {'model': 'VmBalloonDeviceModel'}}
+
+##
+# @VmBalloonDevice:
+#
+# Properties of a VM balloon device.
+#
+# @type:        The device type (always @balloon)
+#
+# @device:      The the type of balloon device
+#
+# @address:     Device hardware address
+#
+# @alias:       Alias used to identify this device in commands
+#
+# @specParams:  #optional Additional device parameters
+#
+# @deviceId:    A unique ID for this device
+#
+# Since: 4.10.0
+##
+{'type': 'VmBalloonDevice',
+ 'data': {'type': 'VmDeviceType', 'device': 'VmBalloonDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str',
+          '*specParams': 'VmBalloonDeviceSpecParams', 'deviceId': 'UUID'}}
+
+##
+# @VmChannelDeviceType:
+#
+# An enumeration of VM channel device types.
+#
+# @unix:           The host end of the channel is a unix socket
+#
+# @spicevmc:       This channel is used for SPICE communication
+#
+# @virtio-serial:  This channel supports a virtio-serial connection
+#
+# Since: 4.10.0
+##
+{'enum': 'VmChannelDeviceType', 'data': ['unix', 'spicevmc']}
+
+##
+# @VmChannelDevice:
+#
+# Properties of a VM channel device.
+#
+# @type:      The device type (always @channel)
+#
+# @device:    The specific type of channel device
+#
+# @address:   Device hardware address
+#
+# @alias:     Alias used to identify this device in commands
+#
+# @deviceId:  A unique ID for this device
+#
+# Since: 4.10.0
+##
+{'type': 'VmChannelDevice',
+ 'data': {'type': 'VmDeviceType', 'device': 'VmChannelDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
+
+##
+# @VmDevice:
+#
+# A discriminated record containing VM device properties.
+#
+# Since: 4.10.0
+##
+{'union': 'VmDevice',
+ 'data': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
+          'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
+          'VmChannelDevice']}
+
+##
+# @VmShortStatus:
+#
+# Abbreviated virtual machine status.
+#
+# @vmId:    The UUID of the VM
+#
+# @status:  The current status of the VM
+#
+# Since: 4.10.0
+##
+{'type': 'VmShortStatus',
+ 'data': {'vmId': 'UUID', 'status': 'VMStatus'}}
+
+##
+# @VmFullStatus:
+#
+# Full virtual machine status and properties.
+#
+# @acpiEnable:            Indicates if ACPI is enabled inside the VM
+#
+# @clientIp:              The IP address of the client connected to the display
+#
+# @cpuType:               The type of CPU being emulated
+#
+# @custom:                A dictionary of custom, free-form properties
+#
+# @devices:               An array of VM devices present
+#
+# @display:               The type of display
+#
+# @displayIp:             The IP address to use for accessing the VM display
+#
+# @displayPort:           The port in use for unencrypted display data
+#
+# @displaySecurePort:     The port in use for encrypted display data
+#
+# @emulatedMachine:       The specific machine specification being emulated
+#
+# @keyboardLayout:        The keyboard layout string (eg. 'en-us')
+#
+# @kvmEnable:             Indicates if KVM hardware acceleration is enabled
+#
+# @memSize:               The amount of memory assigned to the VM in MB
+#
+# @nicModel:              A comma-separated list of NIC models in use by the VM
+#
+# @nice:                  The host scheduling priority
+#
+# @pauseCode:             Indicates the reason a VM has been paused
+#
+# @pid:                   The process ID of the underlying qemu process
+#
+# @smp:                   The number of CPUs presented to the VM
+#
+# @smpCoresPerSocket:     #optional Indicates the number of CPU cores per socket
+#
+# @smpThreadsPerCore:     #optional Indicates the number of CPU threads per core
+#
+# @status:                The current VM status
+#
+# @timeOffset:            The time difference from host to the VM in seconds
+#
+# @transparentHugePages:  Indicates if the Transparent Huge Pages feature is
+#                         enabled for this virtual machine
+#
+# @vmId:                  The VM UUID
+#
+# @vmName:                The VM name
+#
+# @vmType:                The type of VM
+#
+# Since: 4.10.0
+##
+{'type': 'VmFullStatus',
+ 'data': {'acpiEnable': 'BoolStrLower', 'clientIp': 'str', 'cpuType': 'str',
+          'custom': 'StringMap', 'devices': ['VmDevice'],
+          'display': 'VmDisplayType', 'displayIp': 'str',
+          'displayPort': 'IntStr', 'displaySecurePort': 'IntStr',
+          'emulatedMachine': 'str', 'keyboardLayout': 'str',
+          'kvmEnable': 'BoolStrLower', 'memSize': 'IntStr',
+          'nicModel': 'str', 'nice': 'IntStr', 'pauseCode': 'str',
+          'pid': 'IntStr', 'smp': 'IntStr', '*smpCoresPerSocket': 'IntStr',
+          '*smpThreadsPerCore': 'IntStr', 'status': 'VMStatus',
+          'timeOffset': 'IntStr', 'transparentHugePages': 'BoolStrLower',
+          'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType'}}
+
+##
+# @VmDefinition:
+#
+# A discriminated record containing virtual machine status information.
+#
+# Since: 4.10.0
+##
+{'union': 'VmDefinition', 'data': ['VmFullDefinition', 'VmShortDefinition']}
+
+##
+# @Global.getVMList:
+#
+# Get information about the current virtual machines.
+#
+# @fullStatus:  #optional Set to request complete VM information
+#
+# @vmList:      #optional Filter the results by a list of UUIDs
+#
+# Returns:
+# @vmList:  A list of VM definitions
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'getVMList'},
+ 'data': {'*fullStatus': 'bool', '*vmList': ['UUID']},
+ 'returns': {'vmList': ['VmDefinition']}}
+
+##
+# @Global.ping:
+#
+# Test connectivity to vdsm.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'ping'}}
+
+##
+# @LoggingLevel:
+#
+# An enumeration of logging verbosity levels.
+#
+# @DEBUG:     Log everything (including debugging messages)
+#
+# @INFO:      Log informational messages and anything more severe
+#
+# @WARNING:   Log warning messages and anything more severe
+#
+# @ERROR:     Log error messages and anything more severe
+#
+# @CRITICAL:  Log only critical messages
+#
+# Since: 4.10.0
+# XXX: These need to map to specific integers
+##
+{'enum': 'LoggingLevel',
+ 'data': ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']}
+
+##
+# @Global.setLogLevel:
+#
+# Set the vdsm logging verbosity level.
+#
+# @level:  The new verosity level desired
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'setLogLevel'},
+ 'data': {'level': 'LoggingLevel'}}
+
+##
+# @Global.setSafeNetworkConfig:
+#
+# Mark the current network configuration good and persist any changes.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Global', 'name': 'setSafeNetworkConfig'}}
+
+
+## Category: @ConnectionRefs ##################################################
+##
+# @ConnectionRefs.init:
+#
+# Initialize a ConnectionRefs API object.
+#
+# Since: 4.10.0
+# XXX: Extension: object constructors
+##
+{'init': 'ConnectionRefs'}
+
+##
+# @IscsiPortal:
+#
+# A host/port pair that identifies an ISCSI target.
+#
+# @host:  A fully-qualified domain name (FQDN) or IP address
+#
+# @port:  #optional A port number
+#
+# Since: 4.10.0
+##
+{'type': 'IscsiPortal', 'data': {'host': 'str', '*port': 'int'}}
+
+##
+# @IscsiCredentialsLogin:
+#
+# Login credentials for an ISCI target.
+#
+# @username:  The username used for authentication to an ISCI target
+# @password:  The password associated with the given username
+#
+# Since: 4.10.0
+##
+{'type': 'IscsiCredentialsLogin',
+ 'data': {'username': 'str', 'password': 'str'}}
+
+##
+# @IscsiCredentialsType:
+#
+# An enumeration of ISCSI login credentials types.
+#
+# @chap:  Challenge-Handshake Authentication Protocol
+#
+# Since: 4.10.0
+##
+{'enum': 'IscsiCredentialsType', 'data': ['chap']}
+
+##
+# @IscsiCredentials:
+#
+# This structure stores ISCSI credentials.
+#
+# @type:    #optional The type of authentication to be used
+#
+# @params:  Type-specific authentication credentials
+#
+# Since: 4.10.0
+# XXX: params should probably be an enum to permit future extension.
+##
+{'type': 'IscsiCredentials',
+ 'data': {'*type': 'IscsiCredentialsType', 'params': 'IscsiCredentialsLogin'}}
+
+##
+# @IscsiConnectionParameters:
+#
+# Parameters for initiating a new ISCSI connection.
+#
+# @portal:       An @IscsiPortal to identify the requested target
+#
+# @iqn:          The ISCSI Qualified Name
+#
+# @tpgt:         #optional The Target Portal Group Tag to use
+#
+# @iface:        #optional The ISCSI interface name
+#
+# @credentials:  #optional An @IscsiCredentials containing the required
+#                authentication information
+#
+# Since: 4.10.0
+##
+{'type': 'IscsiConnectionParameters',
+ 'data': {'portal': 'IscsiPortal', 'iqn': 'str', '*tpgt': 'int',
+          '*iface': 'str', '*credentials': 'IscsiCredentials'}}
+
+##
+# @PosixFsConnectionParameters:
+#
+# Parameters for initiating a new POSIX FS connection.
+#
+# @spec:     A string identifying the location of the target filesystem
+#
+# @vfstype:  The Linux VFS filesystem type
+#
+# @options:   #optional A comma-separated list of mount options
+#
+# Since: 4.10.0
+##
+{'type': 'PosixFsConnectionParameters',
+ 'data': {'spec': 'str', 'vfstype': 'str', '*options': 'str'}}
+
+##
+# @NfsConnectionParameters:
+#
+# Parameters for initiating a new NFS connection.
+#
+# @export:   The remote target in <host>:<path> format
+#
+# @retrans:  #optional The number of retry attempts for failing operations
+#
+# @timeout:  #optional The time to wait before retrying a request (specified in
+#            tenths of one second).
+#
+# @version:  #optional Set the NFS protocol version
+#
+# Since: 4.10.0
+##
+{'type': 'NfsConnectionParameters',
+ 'data': {'export': 'str', '*retrans': 'int', '*timeout': 'int',
+          '*version': 'int'}}
+
+##
+# @LocalFsConnectionParameters:
+#
+# Parameters for initiating a connection to local storage.
+#
+# @path:  The local filesystem path
+#
+# Since: 4.10.0
+##
+{'type': 'LocalFsConnectionParameters', 'data': {'path': 'str'}}
+
+##
+# @ConnectionRefParameters:
+#
+# A discriminated record of parameters used to establish a ConnectionRef.
+#
+# Since: 4.10.0
+##
+{'union': 'ConnectionRefParameters',
+ 'data': ['IscsiConnectionParameters', 'PosixFsConnectionParameters',
+          'NfsConnectionParameters', 'LocalFsConnectionParameters']}
+
+##
+# @ConnectionRefType:
+#
+# An enumeration of @ConnectionRef types.
+#
+# @iscsi:    Storage exported by a remote ISCSI target
+#
+# @posixfs:  Storage available through use of the 'mount' command
+#
+# @nfs:      Storage exported by a remote NFS server
+#
+# @localfs:  Storage available in the host's local file hierarchy
+#
+# Since: 4.10.0
+##
+{'enum': 'ConnectionRefType',
+ 'data': ['iscsi', 'posixfs', 'nfs', 'localfs']}
+
+##
+# @ConnectionRefArgs:
+#
+# Structure to store @ConnectionRef arguments.
+#
+# @type:    The type of connection (one of @ConnectionRefType)
+#
+# @params:  An @ConnectionRefParameters structure appropriate for @type
+#
+# Since: 4.10.0
+##
+{'type': 'ConnectionRefArgs',
+ 'data': {'type': 'ConnectionRefType', 'params': 'ConnectionRefParameters'}}
+
+##
+# @ConnectionError:
+#
+# A tuple containing @ConnectionRef error information.
+#
+# @0:  The error code
+#
+# @1:  The error message
+#
+# Since: 4.10.0
+# XXX: Extension: tuple data type
+# XXX: Define error code enum
+##
+{'type': 'ConnectionError', 'data': {'0': 'int', '1': 'str'}}
+
+##
+# @ConnectionRef:
+#
+# Contains the details of a registered storage connection.
+#
+# @connected:       Indicates whether the storage is connected
+#
+# @lastError:       The most recent error information (@ConnectionError)
+#
+# @connectionInfo:  Type-specific connection details (@ConnectionRefParameters)
+#
+# Since: 4.10.0
+##
+{'type': 'ConnectionRef',
+ 'data': {'connected': 'bool', 'lastError': 'ConnectionError',
+          'connectionInfo': 'ConnectionRefParameters'}}
+
+##
+# @ConnectionRefArgsMap:
+#
+# A mapping of connection arguments indexed by ConnectionRef UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'ConnectionRefArgsMap',
+ 'key': 'UUID', 'value': 'ConnectionRefArgs'}
+
+##
+# @ConnectionRefArgsStatusMap:
+#
+# A mapping of status codes indexed by ConnectionRef UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'ConnectionRefArgsStatusMap',
+ 'key': 'UUID', 'value': 'int'}
+
+##
+# @ConnectionRefs.acquire:
+#
+# Acquire one or more new storage connection references.
+#
+# @conRefArgs:  Connection parameters
+#
+# Returns:
+# @results:  A dictionary of status codes indexed by the same @UUID values in
+#            @conRefArgs.
+#
+# Since: 4.10.0
+# XXX: Extension: map data type ['key type', 'val type']
+##
+{'command': {'class': 'ConnectionRefs', 'name': 'acquire'},
+ 'data': {'conRefArgs': 'ConnectionRefArgsMap'},
+ 'returns': {'results': 'ConnectionRefArgsStatusMap'}}
+
+##
+# @ConnectionRefs.release:
+#
+# Release one or more storage connection references.
+#
+# @refIDs:  A list of @UUID values
+#
+# Returns:
+# @results:  A dictionary of status codes indexed by the same @UUID values that
+#            were passed in @0.
+#
+# Since: 4.10.0
+# XXX: Extension: list data type
+##
+{'command': {'class': 'ConnectionRefs', 'name': 'release'},
+ 'data': {'refIDs': ['UUID']},
+ 'returns': {'results':  'ConnectionRefArgsStatusMap'}}
+
+##
+# @ConnectionRefMap:
+#
+# A mapping of ConnectionRef information indexed by UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'ConnectionRefMap',
+ 'key': 'UUID', 'value': 'ConnectionRef'}
+
+##
+# @ConnectionRefs.statuses:
+#
+# Get information about all registered storage connection references.
+#
+# Returns:
+# @connectionslist:  A dictionary of @ConnectionRef objects indexed by @UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'ConnectionRefs', 'name': 'statuses'},
+ 'returns': {'connectionslist': 'ConnectionRefMap'}}
+
+## Category: @ISCSIConnection ##################################################
+##
+# @ISCSIConnection.init:
+#
+# Initialize a ISCSIConnection API object.
+#
+# @host:      A fully-qualified domain name (FQDN) or IP address
+#
+# @port:      A port number
+#
+# @user:      #optional The username used for authentication to an ISCI target
+#
+# @password:  #optional The password associated with the given username
+#
+# Since: 4.10.0
+##
+{'init': 'ISCSIConnection',
+ 'data': {'host': 'str', 'port': 'int', '*user': 'str', '*password': 'str'}}
+
+##
+# @ISCSIConnection.discoverSendTargets:
+#
+# Discover available targets for this @ISCSIConnection.
+#
+# Returns:
+# @targets:      A list of discovered target iqns
+#
+# @fullTargets:  A list of discovered targets in the form:
+#                '<host>:<port>,<tpgt> <iqn>'
+#
+# Since: 4.10.0
+# XXX: The fullTargets strings should be broken out into their respective parts
+# XXX: The return values are in the same dictionary as the command status!
+##
+{'command': {'class': 'ISCSIConnection', 'name': 'discoverSendTargets'},
+ 'returns': {'targets': ['str'], 'fullTargets': ['str']}}
+
+## Category: @Image ############################################################
+##
+# @Image.init:
+#
+# Initialize an Image API object.
+#
+# @UUID:    The UUID of the Image
+#
+# @spUUID:  The UUID of the Storage Pool associated with the Image
+#
+# @sdUUID:  The UUID of the Storage Domain associated with the Image
+#
+# Since: 4.10.0
+##
+{'init': 'Image',
+ 'data': {'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID'}}
+
+##
+# @Image.delete:
+#
+# Delete the Image and all of its Volumes.
+#
+# @postZero:  If True, overwrite Volume data with zeroes after deletion
+#
+# @force:     Force the operation and do not perform any validation
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Image', 'name': 'delete'},
+ 'data': {'postZero': 'bool', 'force': 'bool'},
+ 'returns': {'*uuid': 'UUID'}}
+
+##
+# @Image.deleteVolumes:
+#
+# Delete one or more Volumes associated with this image.
+#
+# @volumeList:  A list of Volume UUIDs
+#
+# @postZero:    If True, overwrite Volume data with zeroes after deletion
+#
+# @force:       Force the operation and do not perform any validation
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Image', 'name': 'deleteVolumes'},
+ 'data': {'volumeList': ['UUID'], '*postZero': 'bool', '*force': 'bool'},
+ 'returns': {'*uuid': 'UUID'}}
+
+##
+# @Image.getVolumes:
+#
+# Get a list of Volumes associated with this Image.
+#
+# Returns:
+# @uuidlist:  A list of Image UUIDs
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Image', 'name': 'getVolumes'},
+ 'returns': {'uuidlist': ['UUID']}}
+
+##
+# @Image.mergeSnapshots:
+#
+# Merge snapshot @successor into @ancestor.
+#
+# @ancestor:   A Volume UUID representing the parent snapshot
+#
+# @successor:  A Volume UUID representing the child snapshot
+#
+# @postZero:   If True, overwrite @successor with zeroes after conversion
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Image', 'name': 'mergeSnapshots'},
+ 'data': {'ancestor': 'UUID', 'successor': 'UUID', 'postZero': 'bool'},
+ 'returns': {'*uuid': 'UUID'}}
+
+##
+# @ImageMoveOperation:
+#
+# An enumeration of Image move operations.
+#
+# @UNKNOWN:  This operation is invalid
+#
+# @COPY:     The Image is copied to the destination
+#
+# @MOVE:     The Image is copied to the destination and removed from the source
+#
+# Since: 4.10.0
+##
+{'enum': 'ImageMoveOperation', 'data': ['UNKNOWN', 'COPY', 'MOVE']}
+
+##
+# @Image.move:
+#
+# Move or copy an image to another Storage Domain within the same Storage Pool.
+#
+# @dstSdUUID:  The destination Storage Domain UUID
+#
+# @operation:  The operation to perform
+#
+# @postZero:   If True, overwrite Volume data with zeroes after deletion
+#
+# @force:      Force the operation and do not perform any validation
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Image', 'name': 'move'},
+ 'data': {'dstSdUUID': 'UUID', 'operation': 'ImageMoveOperation',
+          'postZero': 'bool', 'force': 'bool'},
+ 'returns': {'*uuid': 'UUID'}}
+
+## Category: @LVMVolumeGroup ###################################################
+##
+# @LVMVolumeGroup.init:
+#
+# Initialize an LVMVolumeGroup API object.
+#
+# @UUID:  #optional Associate this object with an existing LVM Volume Group
+#
+# Since: 4.10.0
+##
+{'init': 'LVMVolumeGroup', 'data': {}}
+
+##
+# @LVMVolumeGroup.create:
+#
+# Create a new Volume Group.
+#
+# @name:     The new Volume Group UUID
+#
+# @devlist:  An array of device names to include in the Volume Group
+#
+# @force:    #optional Force the operation and do not perform any validation
+#
+# Returns:
+# @uuid:  The uuid of the created Volume Group
+#
+# Since: 4.10.0
+#
+# Notes:  @name must match the UUID of any Storage Domain to be created on this
+#         Volume Group.
+##
+{'command': {'class': 'LVMVolumeGroup', 'name': 'create'},
+ 'data': {'name': 'UUID', 'devlist': ['str'], '*force': 'bool'},
+ 'returns': {'uuid': 'UUID'}}
+
+##
+# @LVMVolumeGroup.getInfo:
+#
+# Get information about a Volume Group.
+#
+# Returns:
+# @info:  Volume Group information
+# Since: 4.10.0
+##
+{'command': {'class': 'LVMVolumeGroup', 'name': 'getInfo'},
+ 'returns': {'info': 'VolumeGroupInfo'}}
+
+##
+# @LVMVolumeGroup.remove:
+#
+# Remove this Volume Group.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'LVMVolumeGroup', 'name': 'remove'}}
+
+## Category: @StorageDomain ####################################################
+##
+# @StorageDomain.init:
+#
+# Initialize a StorageDomain API object.
+#
+# @UUID:    Associate this object with a new or existing Storage Domain
+#
+# @spUUID:  #optional The Storage Pool UUID if this Storage Domain is attached
+#
+# Since: 4.10.0
+##
+{'init': 'StorageDomain', 'data': {'UUID': 'UUID', '*spUUID': 'UUID'}}
+
+##
+# @StorageDomain.activate:
+#
+# Activate an attached but inactive Storage Domain.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'activate'}}
+
+##
+# @StorageDomain.attach:
+#
+# Attach a Storage Domain to a Storage Pool.
+#
+# @spUUID:  The Storage Pool to which the Storage Domain should be attached
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'attach'},
+ 'data': {'spUUID': 'UUID'}}
+
+##
+# @StorageDomainCreateArgumentsBlock:
+#
+# Creation argument for Block-based Storage Domains.
+#
+# @vgUUID:  The UUID of a Volume Group to use as backing storage
+#
+# Since: 4.10.0
+##
+{'type': 'StorageDomainCreateArgumentsBlock',
+ 'data': {'vgUUID': 'UUID'}}
+
+##
+# @StorageDomainCreateArgumentsLocal:
+#
+# Creation argument for local filesystem Storage Domains.
+#
+# @remotePath:  A path on the local filesystem
+#
+# Since: 4.10.0
+##
+{'type': 'StorageDomainCreateArgumentsLocal',
+ 'data': {'remotePath': 'str'}}
+
+##
+# @StorageDomainCreateArgumentsNfs:
+#
+# Creation argument for NFS-based Storage Domains.
+#
+# @remotePath:  An export path in the form: <host>:<path>
+#
+# Since: 4.10.0
+##
+{'type': 'StorageDomainCreateArgumentsNfs',
+ 'data': {'remotePath': 'str'}}
+
+##
+# @StorageDomainCreateArguments:
+#
+# A discriminated record of Storage Domain creation parameters.
+#
+# Since: 4.10.0
+# XXX: Union is not a dict
+##
+{'union': 'StorageDomainCreateArguments',
+ 'data': ['StorageDomainCreateArgumentsBlock',
+          'StorageDomainCreateArgumentsLocal',
+          'StorageDomainCreateArgumentsNfs']}
+
+##
+# @StorageDomain.create:
+#
+# Create a new Storage Domain.
+#
+# @type:         The type of backing storage used by the Storage Domain
+#
+# @typeArgs:     Type specific backing storage specifier
+#
+# @name:         A human-readable name
+#
+# @domainClass:  The Storage Domain Class
+#
+# @version:      #optional The Storage Domain version that should be used
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'create'},
+ 'data': {'type': 'StorageDomainType',
+          'typeArgs': 'StorageDomainCreateArguments', 'name': 'str',
+          'domainClass': 'StorageDomainClass', '*version': 'int'}}
+
+##
+# @StorageDomain.deactivate:
+#
+# Deactivate an active, attached Storage Domain.
+#
+# @masterSdUUID:   The UUID of a Storage Domain that should become master after
+#                  this domain has been deactivated.  If this domain was not the
+#                  master domain, then the current master's UUID may be used.
+#
+# @masterVersion:  The Storage Domain version of the new master domain
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'deactivate'},
+ 'data': {'masterSdUUID': 'UUID', 'masterVersion': 'int'}}
+
+##
+# @StorageDomain.detach:
+#
+# Detach an inactive Storage Domain from its Storage Pool.
+#
+# @masterSdUUID:   The UUID of a Storage Domain that should become master after
+#                  this domain has been deactivated.  If this domain was not the
+#                  master domain, then the current master's UUID may be used.
+#
+# @masterVersion:  The Storage Domain version of the new master domain
+#
+# @force:          Force operation -- do not perform validation
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'detach'},
+ 'data': {'masterSdUUID': 'UUID', 'masterVersion': 'int', 'force': 'bool'}}
+
+##
+# @StorageDomain.extend:
+#
+# Extend a block-based Storage Domain onto more block devices.
+#
+# @devlist:  An array of block device names to add to the domain
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'extend'},
+ 'data': {'devlist': ['str']}}
+
+##
+# @StorageDomain.format:
+#
+# Format a storage domain and erase all of its data.
+#
+# @autoDetach:  Detach the Storage Domain before formatting.  Useful when
+#               formatting the master domain.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'format'},
+ 'data': {'autoDetach': 'bool'}}
+
+##
+# @StorageDomainFileStats:
+#
+# Information about files contained within a Storage Domain.
+#
+# @size:    Size of the file in bytes
+#
+# @ctime:   Time the file was last changed in seconds since the epoch
+#
+# @status:  Indicates if the file is accessible
+#
+# Since: 4.10.0
+##
+{'type': 'StorageDomainFileStats',
+ 'data': {'size': 'IntStr', 'ctime': 'IntStr', 'status': 'int'}}
+
+##
+# @StorageDomainFileStatsMap:
+#
+# A mapping of Storage Domain file statistics indexed by filename.
+#
+# Since: 4.10.0
+##
+{'map': 'StorageDomainFileStatsMap',
+ 'key': 'str', 'value': 'StorageDomainFileStats'}
+
+##
+# @StorageDomain.getFileList:
+#
+# Get a list of files in an ISO domain.
+#
+# @pattern:  Filter results by this glob pattern
+#
+# Returns:
+# @files:  A dictionary of file information indexed by file name
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'getFileList'},
+ 'data': {'pattern': 'str'},
+ 'returns': {'files': 'StorageDomainFileStatsMap'}}
+
+##
+# @StorageDomain.getImages:
+#
+# Get a list of Images associated with this Storage Domain.
+#
+# Returns:
+# @imageslist:  An array of Image UUIDs
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'getImages'},
+ 'returns': {'imageslist': ['UUID']}}
+
+##
+# @StorageDomainRole:
+#
+# An enumeration of possible Storage Domain roles.
+#
+# @Master:   The Storage Domain contains Storage Pool metadata
+#
+# @Regular:  The Storage Domain is not a Master domain
+#
+# Since: 4.10.0
+##
+{'enum': 'StorageDomainRole', 'data': ['Master', 'Regular']}
+
+##
+# @StorageDomainInfo:
+#
+# Information about a Storage Domain.
+#
+# @uuid:        The Storage Domain UUID
+#
+# @type:        The type of backing storage used by this domain
+#
+# @class:       The Storage Domain class
+#
+# @name:        The human-readable name for this Storage Domain
+#
+# @role:        The Storage Domain role
+#
+# @pool:        The Storage Pool associated with this Storage Domain
+#
+# @version:     The version of this Storage Domain
+#
+# @lver:        The lock version of the associated Storage Pool
+#
+# @spm_id:      Contains the Host ID of the Storage Pool Manager
+#
+# @master_ver:  The version of the master Storage Domain
+#
+# Since: 4.10.0
+##
+{'type': 'StorageDomainInfo',
+ 'data': {'uuid': 'UUID', 'type': 'StorageDomainType',
+          'class': 'StorageDomainClass', 'name': 'str',
+          'role': 'StorageDomainRole', 'pool': ['UUID'], 'version': 'IntStr',
+          'lver': 'int', 'spm_id': 'int', 'master_ver': 'int'}}
+
+##
+# @StorageDomain.getInfo:
+#
+# Get information about a Storage Domain.
+#
+# Returns:
+# @info:  Storage domain information
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'getInfo'},
+ 'returns': {'info': 'StorageDomainInfo'}}
+
+##
+# @StorageDomainStats:
+#
+# Storage Domain statistics.
+#
+# @disktotal:     The amount of total storage space in bytes
+#
+# @diskfree:      The amount of free storage space in bytes
+#
+# @mdasize:       The size of the metadata area in bytes
+#
+# @mdafree:       The amount of free space in the metadata area in bytes
+#
+# @mdavalid:      Indicates if the metadata area is large enough
+#
+# @mdathreshold:  Indicates if the metadata has exceeded its size threshold
+#
+# Since: 4.10.0
+##
+{'type': 'StorageDomainStats',
+ 'data': {'disktotal': 'int', 'diskfree': 'int', 'mdasize': 'int',
+          'mdafree': 'int', 'mdavalid': 'bool', 'mdathreshold': 'bool'}}
+
+##
+# @StorageDomain.getStats:
+#
+# Get Storage Domain statistics.
+#
+# Returns:
+# @stats:  Storage Domain statistics
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'getStats'},
+ 'returns': {'stats': 'StorageDomainStats'}}
+
+##
+# @StorageDomain.getVolumes:
+#
+# Get a list of Volumes contained within a Storage Domain.
+#
+# @imgUUID:  Limit results to Volumes associated with a single Image
+#
+# Returns:
+# @uuidlist:  A list of Volume UUIDs
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'getVolumes'},
+ 'data': {'imgUUID': 'UUID'},
+ 'returns': {'uuidlist': ['UUID']}}
+
+##
+# @StorageDomain.setDescription:
+#
+# Set the Storage Domain description.
+#
+# @description:  A human-readable description
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'setDescription'},
+ 'data': {'description': 'str'}}
+
+##
+# @UploadVolumeMethod:
+#
+# An enumeration of uploadVolume methods.
+#
+# @wget:   Fetch data using the wget command
+#
+# @rsync:  Fetch data using the rsync command
+#
+# Since: 4.10.0
+##
+{'enum': 'UploadVolumeMethod', 'data': ['wget', 'rsync']}
+
+##
+# @StorageDomain.uploadVolume:
+#
+# Upload a Volume into a Storage Domain from a remote location.
+#
+# @imgUUID:  The UUID of the image that is associated with the Volume
+#
+# @volUUID:  The UUID of an existing Volume where the data will be uploaded
+#
+# @srcPath:  The remote location of the Volume data.  Must be in a format that
+#            can be understood by the command indicated in @method.
+#
+# @size:     The size of the volume data in blocks
+#
+# @method:   The method (command) to use to upload the data
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'uploadVolume'},
+ 'data': {'imgUUID': 'UUID', 'volUUID': 'UUID', 'srcPath': 'str',
+          'size': 'int', 'method': 'UploadVolumeMethod'}}
+
+##
+# @StorageDomain.validate:
+#
+# Check that the Storage Domain is accessible.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'validate'}}
+
+## Category: @StoragePool ######################################################
+##
+# @StoragePool.init:
+#
+# Initialize a StoragePool API object.
+#
+# @UUID:  Associate this object with a new or existing Storage Pool
+#
+# Since: 4.10.0
+##
+{'init': 'StoragePool', 'data': {'UUID': 'UUID'}}
+
+##
+# @StoragePool.connect:
+#
+# Connect to an existing Storage Pool.
+#
+# @hostID:         A host ID number unique across all hosts in the same cluster
+#
+# @scsiKey:        A key that will be used to validate other API calls related
+#                  to this Storage Pool
+#
+# @masterSdUUID:   The UUID of a Storage Domain to use as the master domain
+#
+# @masterVersion:  The Storage Domain version of the master domain
+#
+# Since: 4.10.0
+#
+# Notes:  Only one Storage pool may be connected at a time
+##
+{'command': {'class': 'StoragePool', 'name': 'connect'},
+ 'data': {'hostID': 'int', 'scsiKey': 'str', 'masterSdUUID': 'UUID',
+          'masterVersion': 'int'}}
+
+##
+# @ConnectStorageServerStatus:
+#
+# Status of a single storage server connection attempt.
+#
+# @id:      Connection UUID
+#
+# @status:  Status code
+#
+# Since: 4.10.0
+##
+{'type': 'ConnectStorageServerStatus',
+ 'data': {'id': 'UUID', 'status': 'int'}}
+
+##
+# @StoragePool.connectStorageServer:
+#
+# Establish a connection to backing storage.
+#
+# @domainType:        The type of storage to connect
+#
+# @connectionParams:  An array of connection information
+#
+# Returns:
+# @statuslist:  The status of each connection attempt
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'connectStorageServer'},
+ 'data': {'domainType': 'StorageDomainType',
+          'connectionParams': ['ConnectionRefParameters']},
+ 'returns': {'statuslist': ['ConnectStorageServerStatus']}}
+
+##
+# @StoragePool.create:
+#
+# Create a new Storage Pool.
+#
+# @name:                    A human-readable name for the Storage Pool
+#
+# @masterSdUUID:            The UUID of the Storage Domain that will be used as
+#                           the master domain
+#
+# @masterVersion:           The Storage Domain version of the master domain
+#
+# @domainList:              A list of Storage Domain UUIDs that should be
+#                           attached to the Storage Pool
+#
+# @lockRenewalIntervalSec:  The number of seconds to wait before renewing lease
+#                           (Should be less than @leaseTimeSec).  0 selects the
+#                           default value.
+#
+# @leaseTimeSec:            The maximum number of seconds that the leaseholder
+#                           may retain the lease without renewing it.  0 selects
+#                           the default value.
+#
+# @ioOpTimeoutSec:          The maximum number of seconds that an I/O operation
+#                           may take to complete.  0 selects the default value.
+#
+# @leaseRetries:            The number of times to attempt lease renewal before
+#                           failure.  0 selects the default value.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'create'},
+ 'data': {'name': 'str', 'masterSdUUID': 'UUID', 'masterVersion': 'int',
+          'domainList': ['UUID'], 'lockRenewalIntervalSec': 'int',
+          'leaseTimeSec': 'int', 'ioOpTimeoutSec': 'int',
+          'leaseRetries': 'int'}}
+
+##
+# @StoragePool.destroy:
+#
+# Destroy a Storage Pool.
+#
+# @hostID:   A host ID number unique across all hosts in the same cluster
+#
+# @scsiKey:  The key that was passed into @StoragePool.connect
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'destroy'},
+ 'data': {'hostID': 'int', 'scsiKey': 'str'}}
+
+##
+# @StoragePool.disconnect:
+#
+# Disconnect and optionally remove a Storage Pool.
+#
+# @hostID:   A host ID number unique across all hosts in the same cluster
+#
+# @scsiKey:  The key that was passed into @StoragePool.connect
+#
+# @remove:   If True, remove the Storage Pool after it is disconnected
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'disconnect'},
+ 'data': {'hostID': 'int', 'scsiKey': 'str', 'remove': 'bool'}}
+
+##
+# @StoragePool.disconnectStorageServer:
+#
+# Remove backing storage connections.
+#
+# @domainType:        The type of backing storage
+#
+# @connectionParams:  An array of connection information
+#
+# Returns:
+# @statuslist:  The status of each connection attempt
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'disconnectStorageServer'},
+ 'data': {'domainType': 'StorageDomainType',
+          'connectionParams': ['ConnectionRefParameters']},
+ 'returns': {'statuslist': ['ConnectStorageServerStatus']}}
+
+##
+# @SpmRole:
+#
+# An enumeration of Storage Pool Manager roles that are valid for a host.
+#
+# @SPM:      The host has the SPM role
+#
+# @Contend:  The host is contending for the SPM role
+#
+# @Free:     The host does not have the SPM role
+#
+# Since: 4.10.0
+##
+
+{'enum': 'SpmRole', 'data': ['SPM', 'Contend', 'Free']}
+
+##
+# @SpmStatus:
+#
+# Storage Pool Manager status information.
+#
+# @spmStatus:  The SPM role for this host
+#
+# @spmLver:    The lock version of the Storage Pool
+#
+# @spmId:      The Host ID of the Storage Pool Manager
+#
+# Since: 4.10.0
+##
+{'type': 'SpmStatus',
+ 'data': {'spmStatus': 'SpmRole', 'spmLver': 'int', 'spmId': 'int'}}
+
+##
+# @StoragePool.fence:
+#
+# Fence the SPM host via the storage.
+#
+# Returns:
+# @spm_st:  SPM status information for the Storage Pool
+# Since: 4.10.0
+#
+# Notes:  Deprecated
+##
+{'command': {'class': 'StoragePool', 'name': 'fence'},
+ 'returns': {'spm_st': 'SpmStatus'}}
+
+##
+# @OVFMap:
+#
+# A mapping of OVF data indexed by VM UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'OVFMap',
+ 'key': 'UUID', 'value': 'str'}
+
+##
+# @StoragePool.getBackedUpVmsInfo:
+#
+# Get information about backed-up virtual machines from a Backup Storage Domain.
+#
+# @sdUUID:  The UUID of the Backup Storage Domain to check
+#
+# @vmList:  Limit results to a list of VM UUIDs
+#
+# Returns:
+# @vmlist:  A dictionary of OVF information indexed by VM UUID
+#
+# Since: 4.10.0
+#
+# Notes:  Vdsm does not create the OVF data but assumes that ovirt-engine has
+#         previously injected it into the Backup Storage Domain.
+##
+{'command': {'class': 'StoragePool', 'name': 'getBackedUpVmsInfo'},
+ 'data': {'sdUUID': 'UUID', 'vmList': ['UUID']},
+ 'returns': {'vmlist': 'OVFMap'}}
+
+##
+# @StoragePool.getBackedUpVmsList:
+#
+# Get a list of backed up virtual machines from a Backup Storage Domain.
+#
+# @sdUUID:  The UUID of the Backup Storage Domain to check
+#
+# Returns:
+# @vmlist:  A list of VM UUIDs
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'getBackedUpVmsList'},
+ 'data': {'sdUUID': 'UUID'},
+ 'returns': {'vmlist': ['UUID']}}
+
+##
+# @StoragePool.getFloppyList:
+#
+# Get a list of all floppy disk images associated with a Storage Pool.
+#
+# Returns:
+# @isolist:  A list of floppy disk file names
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'getFloppyList'},
+ 'returns': {'isolist': ['str']}}
+
+##
+# @StoragePool.getDomainsContainingImage:
+#
+# Get a list of Storage Domains that contain an Image.
+#
+# @imgUUID:          The UUID of the Image to search for
+#
+# @onlyDataDomains:  #optional Only include Data Storage Domains
+#
+# Returns:
+# @domainslist:  A list of Storage Domain UUIDs that contain the Image
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'getDomainsContainingImage'},
+ 'data': {'imgUUID': 'UUID', '*onlyDataDomains': 'bool'},
+ 'returns': {'domainslist': ['UUID']}}
+
+##
+# @StoragePool.getIsoList:
+#
+# Get a list of all ISO images associated with a Storage Pool.
+#
+# @filenameExtension:  #optional Specify an alternate file extension (the
+#                      default extension used is 'iso')
+#
+# Returns:
+# @isolist:  A list of available files
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'getIsoList'},
+ 'data': {'*filenameExtension': 'str'},
+ 'returns': {'isolist': ['str']}}
+
+##
+# @StoragePool.getSpmStatus:
+#
+# Get the status of the Storage Pool Manager role.
+#
+# Returns:
+# @spm_st:  SPM status information
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'getSpmStatus'},
+ 'returns': {'spm_st': 'SpmStatus'}}
+
+##
+# @StoragePoolStatus:
+#
+# An enumeration of Storage Pool statuses.
+#
+# @uninitialized:  The Storage Pool has not been initialized
+#
+# @connected:      Vdsm is connected to the Storage Pool
+#
+# Since: 4.10.0
+##
+{'enum': 'StoragePoolStatus', 'data': ['uninitialized', 'connected']}
+
+##
+# @StoragePoolInfo:
+#
+# Information about a Storage Pool.
+#
+# @type:         The type of storage managed by this Storage Pool
+#
+# @name:         The Storage Pool name
+#
+# @domains:      All associated Storage Domains (the string has the following
+#                format:  '<uuid>:<status>,<uuid>:<status>...'
+#
+# @master_uuid:  The UUID of the Storage Domain serving as the master domain
+#
+# @master_ver:   The Storage Domain version of the master domain
+#
+# @lver:         The Storage Pool lock version
+#
+# @spm_id:       The Host ID of the host that is acting Storage Pool Manager
+#
+# @isoprefix:    The filesystem path from where ISO images may be referenced
+#
+# @pool_status:  The current status of the Storage Pool
+#
+# @version:      The Storage Pool version
+#
+# Since: 4.10.0
+##
+{'type': 'StoragePoolInfo',
+ 'data': {'type': 'StorageDomainType', 'name': 'str', 'domains': 'str',
+          'master_uuid': 'UUID', 'master_ver': 'int', 'lver': 'int',
+          'spm_id': 'int', 'isoprefix': 'str',
+          'pool_status': 'StoragePoolStatus', 'version': 'int'}}
+
+##
+# @StoragePoolDomainAlert:
+#
+# Alert information for a Storage Domain attached to this Storage Pool.
+#
+# @code:     The alert code
+#
+# @message:  A detailed alert string
+#
+# Since: 4.10.0
+##
+{'type': 'StoragePoolDomainAlert',
+ 'data': {'code': 'int', 'message': 'str'}}
+
+##
+# @StorageDomainStatus:
+#
+# An enumeration of Storage Domain statuses.
+#
+# @Unknown:     The status of the Storage Domain is not known
+#
+# @Attached:    The domain is attached to a Storage Pool but is deactivated
+#
+# @Unattached:  The domain is not attached to a Storage Pool
+#
+# @Active:      The domain is attached to a Storage Pool and is activated
+#
+# Since: 4.10.0
+##
+{'enum': 'StorageDomainStatus',
+ 'data': ['Unknown', 'Attached', 'Unattached', 'Active']}
+
+##
+# @StoragePoolDomainInfo:
+#
+# Information about a Storage Domain that is attached to a Storage Pool.
+#
+# @disktotal:  The total amount of disk space in the Storage Domain in bytes
+#
+# @diskfree:   The remaining free disk space in bytes
+#
+# @alerts:     A list of alerts for this Storage Domain
+#
+# @status:     Current Storage Domain status
+#
+# Since: 4.10.0
+##
+{'type': 'StoragePoolDomainInfo',
+ 'data': {'disktotal': '', 'diskfree': '',
+          'alerts': ['StoragePoolDomainAlert'],
+          'status': 'StorageDomainStatus'}}
+
+##
+# @StoragePoolDomainInfoMap:
+#
+# A mapping of active Storage Domain information indexed by Storage Domain UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'StoragePoolDomainInfoMap',
+ 'key': 'UUID', 'value': 'StoragePoolDomainInfo'}
+
+##
+# @StoragePool.getInfo:
+#
+# Get information about a Storage Pool and its Active Storage Domains.
+#
+# Returns:
+# @info:     Storage Pool information
+#
+# @dominfo:  Information about active Storage Domains
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'getInfo'},
+ 'returns': {'info': 'StoragePoolInfo',
+             'dominfo': 'StoragePoolDomainInfoMap'}}
+
+##
+# @ImagePostZeroMap:
+#
+# A mapping of postZero selectors indexed by Image UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'ImagePostZeroMap',
+ 'key': 'UUID', 'value': 'bool'}
+
+##
+# @StoragePool.moveMultipleImages:
+#
+# Move images from one Storage Domain to another within the same Storage Pool.
+#
+# @srcSdUUID:  The source Storage Domain
+#
+# @dstSdUUID:  The destination Storage Domain
+#
+# @imgDict:    A mapping keyed by Image UUID where the values indicate if the
+#              source Image should be zeroed after the data has been moved
+#
+# @force:      Move Images even if it would overwrite data on the destination
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'moveMultipleImages'},
+ 'data': {'srcSdUUID': 'UUID', 'dstSdUUID': 'UUID',
+          'imgDict': 'ImagePostZeroMap', 'force': 'bool'}}
+
+##
+# @StorageDomainStatusMap:
+#
+# A mapping of Storage Domain statuses indexed by Storage Domain UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'StorageDomainStatusMap',
+ 'key': 'UUID', 'value': 'StorageDomainStatus'}
+
+##
+# @StoragePool.reconstructMaster:
+#
+# Recover a Storage Pool by reconstructing its Storage Domains.
+#
+# @name:                    A human-readable name for the Storage Pool
+#
+# @masterSdUUID:            The UUID of the Storage Domain that will be used as
+#                           the master domain
+#
+# @masterVersion:           The Storage Domain version of the master domain
+#
+# @domainDict:              Storage Domain statuses to be restored
+#
+# @lockRenewalIntervalSec:  The number of seconds to wait before renewing lease
+#                           (Should be less than @leaseTimeSec).  0 selects the
+#                           default value.
+#
+# @leaseTimeSec:            The maximum number of seconds that the leaseholder
+#                           may retain the lease without renewing it.  0 selects
+#                           the default value.
+#
+# @ioOpTimeoutSec:          The maximum number of seconds that an I/O operation
+#                           may take to complete.  0 selects the default value.
+#
+# @leaseRetries:            The number of times to attempt lease renewal before
+#                           failure.  0 selects the default value.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'reconstructMaster'},
+ 'data': {'name': 'str', 'masterSdUUID': 'UUID', 'masterVersion': 'int',
+          'domainDict': 'StorageDomainStatusMap',
+          'lockRenewalIntervalSec': 'int', 'leaseTimeSec': 'int',
+          'ioOpTimeoutSec': 'int', 'leaseRetries': 'int'}}}
+
+##
+# @StoragePool.refresh:
+#
+# Refresh Storage Pool information.
+#
+# @masterSdUUID:   The UUID of the master Storage Domain
+#
+# @masterVersion:  The Storage Domain version of the master domain
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'refresh'},
+ 'data': {'masterSdUUID': 'UUID', 'masterVersion': 'int'}}
+
+##
+# @StoragePool.setDescription:
+#
+# Set the Storage Pool description
+#
+# @description:  A human-readable string describing the Storage Pool
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'setDescription'},
+ 'data': {'description': 'str'}}
+
+##
+# @StoragePool.spmStart:
+#
+# Instruct this host to acquire the Storage Pool Manager role for this pool.
+#
+# @prevID:             Deprecated.  The Host ID of the previous SPM
+#
+# @prevLver:           Deprecated.  The lver of the previous SPM
+#
+# @enableScsiFencing:  This parameter is not used
+#
+# @maxHostID:          The maximum number of hosts that could be in the cluster
+#
+# @domVersion:         The expected Storage Domain version of the master domain
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'spmStart'},
+ 'data': {'prevID': 'int', 'prevLver': 'int', 'enableScsiFencing': 'bool',
+          '*maxHostID': 'int', '*domVersion': 'int'},
+ 'returns': {'*uuid': 'UUID'}}
+
+##
+# @StoragePool.spmStop:
+#
+# Instruct this host to release the Storage Pool Manager role for this pool.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'spmStop'}}
+
+##
+# @StoragePoolUpgradeStatus:
+#
+# An enumeration of Storage Pool upgrade job statuses.
+#
+# @started:  The upgrade process has started
+#
+# Since: 4.10.0
+##
+{'enum': 'StoragePoolUpgradeStatus', 'data': ['started']}
+
+##
+# @StoragePool.upgrade:
+#
+# Upgrade all Storage Domains in this Storage Pool to a new version.
+#
+# @targetDomVersion:  The version to upgrade to
+#
+# Returns:
+# @upgradeStatus:  The status of the upgrade operation
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'upgrade'},
+ 'data': {'targetDomVersion': 'int'},
+ 'returns': {'upgradeStatus': 'StoragePoolUpgradeStatus'}}
+
+##
+# @StorageServerConnectionValidateParams:
+#
+# Validation parameters for a connection to backing storage.
+#
+# @id:  A UUID to identify this set of parameters in the return value
+#
+# Since: 4.10.0
+#
+# Notes:  Deprecated since 4.10.0
+##
+{'type': 'StorageServerConnectionValidateParams',
+ 'data': {'id': 'UUID'}}
+
+##
+# @StorageServerConnectionValidateStatus:
+#
+# indicates validity of backing storage connection parameters.
+#
+# @id:      A UUID to identify this set of parameters
+#
+# @status:  Code indicating the validity of the parameters
+#
+# Since: 4.10.0
+#
+# Notes:  Deprecated since 4.10.0
+##
+{'type': 'StorageServerConnectionValidateStatus',
+ 'data': {'id': 'UUID', 'status': 'int'}}
+
+##
+# @StoragePool.validateStorageServerConnection:
+#
+# Validate storage server connection parameters.
+#
+# @domainType:        The type of backing storage being validated
+#
+# @connectionParams:  A list of connection parameter dictionaries
+#
+# Returns:
+# @statuslist:  A list of connection parameter statuses
+#
+# Since: 4.10.0
+#
+# Notes:  Deprecated since 4.10.0.  Returns 0 for all connections.
+##
+{'command': {'class': 'StoragePool', 'name': 'validateStorageServerConnection'},
+ 'data': {'domainType': 'StorageDomainType',
+          'connectionParams': ['StorageServerConnectionValidateParams']},
+ 'returns': {'statuslist': ['StorageServerConnectionValidateStatus']}}
+
+
+##
+# @UpdateVmDefinition:
+#
+# Virtual machine definition data suitable for saving to a Storage Domain.
+#
+# @vm:       The VM UUID
+#
+# @ovf:      The VM definition in OVF format
+#
+# @imglist:  The Images this VM depends on (a comma-separated string of UUIDs)
+#
+# Since: 4.10.0
+##
+{'type': 'UpdateVmDefinition',
+ 'data': {'vm': 'UUID', 'ovf': 'str', 'imglist': 'str'}}
+
+##
+# @StoragePool.updateVMs:
+#
+# Store virtual machine OVF files on a Storage Domain in the Storage Pool.
+#
+# @vmList:  A list of virtual machine definitions to store
+#
+# @sdUUID:  The Storage Domain to use for storing the VM definitions
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'updateVMs'},
+ 'data': {'vmList': ['UpdateVmDefinition'], 'sdUUID': 'UUID'}}
+
+##
+# @StoragePool.removeVM:
+#
+# Remove a previously saved virtual machine definition.
+#
+# @vmUUID:  Remove the saved definition of the VM with this UUID
+#
+# @sdUUID:  The Storage Domain where the VM is stored
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'StoragePool', 'name': 'removeVM'},
+ 'data': {'vmUUID': 'UUID', 'sdUUID': 'UUID'}}
+
+## Category: @Task #############################################################
+##
+# @Task.init:
+#
+# Initialize a Task API object.
+#
+# @UUID:  Associate this object with an existing Task
+#
+# Since: 4.10.0
+##
+{'init': 'Task', 'data': {'UUID': 'UUID'}}
+
+##
+# @Task.clear:
+#
+# Discard information about a finished Task.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Task', 'name': 'clear'}}
+
+##
+# @Task.getInfo:
+#
+# Get information about a Task.
+#
+# Returns:
+# @TaskInfo:  General Task information
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Task', 'name': 'getInfo'},
+ 'returns': {'TaskInfo': 'TaskInfo'}}
+
+##
+# @Task.getStatus:
+#
+# Get Task status information.
+#
+# Returns:
+# @taskStatus:  Status infomation
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Task', 'name': 'getStatus'},
+ 'returns': {'taskStatus': 'TaskStatus'}}
+
+##
+# @Task.revert:
+#
+# Rollback a Task to restore the previous system state.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Task', 'name': 'revert'}}
+
+##
+# @Task.stop:
+#
+# Stop a currently running Task.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Task', 'name': 'stop'}}
+
+## Category: @VM ###############################################################
+##
+# @VM.init:
+#
+# Initialize a VM API object.
+#
+# @UUID:  Associate this object with an existing VM
+#
+# Since: 4.10.0
+##
+{'init': 'VM', 'data': {'UUID': 'UUID'}}
+
+##
+# @DriveSpecVolume:
+#
+# A drive specification that refers to a Volume managed by Vdsm.
+#
+# @device:    The disk device type (should be @disk)
+#
+# @domainID:  The Storage Domain containing the Volume
+#
+# @poolID:    The Storage Pool containing the Volume
+#
+# @imageID:   The Image associated with the Volume
+#
+# @volumeID:  The UUID of the target Volume
+#
+# Since: 4.10.0
+##
+{'type', 'DriveSpecVolume',
+ 'data': {'device': 'VmDiskDeviceType', 'domainID': 'UUID', 'poolID': 'UUID',
+          'imageID': 'UUID', 'volumeID': 'UUID'}}
+
+##
+# @DriveSpecGUID:
+#
+# A drive specification using a device mapper GUID.
+#
+# @GUID:  The devmapper device GUID
+#
+# Since: 4.10.0
+##
+{'type', 'DriveSpecGUID', 'data': {'GUID': 'str'}}
+
+##
+# @DriveSpecUUID:
+#
+# A drive specification using a blkid UUID.
+#
+# @UUID:  The device blkid
+#
+# Since: 4.10.0
+##
+{'type', 'DriveSpecUUID', 'data': {'UUID': 'UUID'}}
+
+##
+# @DriveVmPayload:
+#
+# Directly specified data to be inserted into a VM.
+#
+# @file:  A dictionary of file contents indexed by filename
+#
+# Since: 4.10.0
+##
+{'type': 'DriveVmPayload', 'data': {'file': 'StrMap'}}
+
+##
+# @DrivePayload:
+#
+# The detailed specification of the image contents
+#
+# @vmPayload:  Specifies data to be inserted into the VM Disk
+#
+# Since: 4.10.0
+##
+{'type': 'DrivePayload', 'data': {'vmPayload': 'DriveVmPayload'}}
+
+##
+# @DriveSpecPayload:
+#
+# A drive specification that describes the exact image contents.
+#
+# @device:      The type of disk device being created
+#
+# @specParams:  Additional drive parameters (including the payload information)
+#
+# Since: 4.10.0
+##
+{'type', 'DriveSpecPayload',
+ 'data': {'device': 'VmDiskDeviceType', 'specParams': 'DrivePayload'}}
+
+##
+# @DriveSpecPath:
+#
+# A drive specification using a filesystem path to an image file.
+#
+# @path:  The full filesystem path to the image file
+#
+# Since: 4.10.0
+##
+{'type', 'DriveSpecPath', 'data': {'path': 'str'}}
+
+##
+# @DriveSpec:
+#
+# A discriminated record containing a VM drive specification
+#
+# Since: 4.10.0
+##
+{'union': 'DriveSpec',
+ 'data': ['DriveSpecVolume', 'DriveSpecGUID', 'DriveSpecUUID',
+          'DriveSpecPayload', 'DriveSpecPath']}
+
+##
+# @VM.changeCD:
+#
+# Change the CD in the VM's CD-ROM device.
+#
+# @driveSpec:  The specification of the new CD
+#
+# Returns:
+# @vmList:  The VM definition, as updated
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'changeCD'},
+ 'data': {'driveSpec': 'DriveSpec'},
+ 'returns': {'vmList': 'VmFullDefinition'}}
+
+##
+# @VM.changeFloppy:
+#
+# Change the disk in the VM's floppy device.
+#
+# @driveSpec:  The specification of the new floppy disk
+#
+# Returns:
+# @vmList:  The VM definition, as updated
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'changeFloppy'},
+ 'data': {'driveSpec': 'DriveSpec'},
+ 'returns': {'vmList': 'VmFullDefinition'}}
+
+##
+# @VM.cont:
+#
+# Resume a paused VM.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'cont'}}
+
+##
+# @VM.create:
+#
+# Create a new virtual machine.
+#
+# @vmParams:  The VM definition
+#
+# Returns:
+# @vmList:  The VM definition, as created
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'create'},
+ 'data': {'vmParams': 'VmFullDefinition'},
+ 'returns': {'vmList': 'VmFullDefinition'}}
+
+##
+# @VM.desktopLock:
+#
+# Lock the active user session in the guest operating system.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'desktopLock'}}
+
+##
+# @VM.desktopLogin:
+#
+# Log a user into the guest operating system.
+#
+# @domain:    The Active Directory domain (if applicable)
+#
+# @username:  The username to use
+#
+# @password:  The password corresponding to @username
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'desktopLogin'},
+ 'data': {'domain': 'str', 'username': 'str', 'password': 'str'}}
+
+##
+# @VM.desktopLogoff:
+#
+# Logoff the active user of the guest operating system.
+#
+# @force:  Force the operation (unused)
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'desktopLogoff'},
+ 'data': {'force': 'bool'}}
+
+##
+# @VM.desktopSendHcCommand:
+#
+# Send an arbitrary command to the guest agent.
+#
+# @message:  The message to send
+#
+# Since: 4.10.0
+#
+# Notes: Deprecated since 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'desktopSendHcCommand'},
+ 'data': {'message': 'str'}}
+
+##
+# @VM.destroy:
+#
+# Forcibly stop a running VM.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'destroy'}}
+
+##
+# @VM.getMigrationStatus:
+#
+# Report status of a currently outgoing migration.
+#
+# Returns:
+# @code:     A status code
+# @message:  A status message
+#
+# Since: 4.10.0
+#
+# Notes: Migration status is returned as the command status ('code' and
+#        'message')
+##
+{'command': {'class': 'VM', 'name': 'getMigrationStatus'},
+ 'returns': {'code': 'int', 'message': 'str'}}
+
+##
+# @VmExitCode:
+#
+# An enumeration of final VM exit status codes.
+#
+# @NORMAL:  The VM has exited gracefully
+#
+# @ERROR:   The VM has terminated with errors
+#
+# Since: 4.10.0
+##
+{'enum': 'VmExitCode', 'data': ['NORMAL', 'ERROR']}
+
+##
+# @ExitedVmStats:
+#
+# Statistics about a VM that no longer running.
+#
+# @exitCode:     Code indicating whether the VM exit was normal or in error
+#
+# @status:       The current VM status
+#
+# @exitMessage:  Detailed reason for the virtual machine exit
+#
+# @timeOffset:   #optional The time difference from host to the VM in seconds
+#
+# Since: 4.10.0
+##
+{'type': 'ExitedVmStats',
+ 'data': {'exitCode': 'VmExitCode', 'status': 'VmStatus', 'exitMessage': 'str',
+          '*timeOffset': 'int'}}
+
+##
+# @VmDiskStats:
+#
+# Statistics about a virtual machine disk device.
+#
+# @truesize:      The amount of underlying storage allocated (in bytes)
+#
+# @apparentsize:  The size of the disk (in bytes)
+#
+# @imageID:       The UUID of the Image associated with this disk
+#
+# @readRate:      The read activity in bytes per second
+#
+# @writeRate:     The write activity in bytes per second
+#
+# @readLatency:   The latency of read operations in nanoseconds
+#
+# @writeLatency:  The latency of write operations in nanoseconds
+#
+# @flushLatency:  The latency of flush operations in nanoseconds
+#
+# Since: 4.10.0
+##
+{'type': 'VmDiskStats',
+ 'data': {'truesize': 'IntStr', 'apparentsize': 'IntStr', 'imageID': 'UUID',
+          'readRate': 'IntStr', 'writeRate': 'IntStr',
+          'readLatency': 'IntStr', 'writeLatency': 'IntStr',
+          'flushLatency': 'IntStr'}}
+
+##
+# @VmBootMode:
+#
+# An enumeration of VM boot modes.
+#
+# @a:  Boot from the first floppy device
+#
+# @c:  Boot from the first hard disk
+#
+# @d:  Boot from the first cdrom device
+#
+# @n:  Boot from the network
+#
+# Since: 4.10.0
+##
+{'enum': 'VmBootMode', 'data': ['a', 'c', 'd', 'n']}
+
+##
+# @GuestMemoryStats:
+#
+# Memory statistics as reported by the guest agent.
+#
+# @mem_total:   The total amount of memory available to the OS (in KB)
+#
+# @mem_unused:  The amount of memory that is completely unused (in KB)
+#
+# @mem_free:    The amount of memory available for allocation in KB (includes
+#               easily reclaimable memory)
+#
+# @swap_in:     The number of memory pages swapped in since the last collection
+#
+# @swap_out:    The number of memory pages swapped out since the last collection
+#
+# @pageflt:     The number of page faults since the last collection
+#
+# @majflt:      The number of major page faults since the last collection
+#
+# Since: 4.10.0
+##
+{'type': 'GuestMemoryStats',
+ 'data': {'mem_total': 'IntStr', 'mem_unused': 'IntStr', 'mem_free': 'IntStr',
+          'swap_in': 'IntStr', 'swap_out': 'IntStr', 'pageflt': 'IntStr',
+          'majflt': 'IntStr'}}
+
+##
+# @GuestMountInfo:
+#
+# Information about a mounted filesystem as reported by the guest agent.
+#
+# @path:   The filesystem mount point
+#
+# @fs:     The filesystem type
+#
+# @total:  The total amount of space on the filesystem in bytes
+#
+# @used:   The amount of free space on the filesystem in bytes
+#
+# Since: 4.10.0
+##
+{'type': 'GuestMountInfo',
+ 'data': {'path': 'str', 'fs': 'str', 'total': 'IntStr', 'used': 'IntStr'}}
+
+##
+# @GuestNetworkDeviceInfo:
+#
+# Information about a VM network device as reported by the guest agent.
+#
+# @name:   The network device name
+#
+# @hw:     The MAC address
+#
+# @inet:   The IPv4 address
+#
+# @inet6:  The IPv6 address
+#
+# Since: 4.10.0
+##
+{'type': 'GuestNetworkDeviceInfo',
+ 'data': {'name': 'str', 'hw': 'str', 'inet': 'str', 'inet6': 'str'}}
+
+##
+# @GuestSessionState:
+#
+# An enumeration of user session states.
+#
+# @Unknown:       The session state is not known
+#
+# @UserLoggedOn:  A user has logged in
+#
+# @Locked:        The display is locked
+#
+# @Active:        The display has been unlocked
+#
+# @LoggedOff:     A user has logged off
+#
+# Since: 4.10.0
+##
+{'enum': 'GuestSessionState',
+ 'data': ['Unknown', 'UserLoggedOn', 'Locked', 'Active', 'LoggedOff']}
+
+##
+# @VmDiskStatsMap:
+#
+# A mapping of VM disk statistics indexed by device name.
+#
+# Since: 4.10.0
+##
+{'map': 'VmDiskStatsMap',
+ 'key': 'str', 'value': 'VmDiskStats'}
+
+##
+# @RunningVmStats:
+#
+# Statistics for a running virtual machine.
+#
+# @displayPort:        The port in use for unencrypted display data
+#
+# @displaySecurePort:  The port in use for encrypted display data
+#
+# @displayType:        The type of display in use
+#
+# @displayIp:          The IP address to use for accessing the VM display
+#
+# @pid:                The process ID of the underlying qemu process
+#
+# @vmType:             The type of VM
+#
+# @kvmEnable:          Indicates if KVM hardware acceleration is enabled
+#
+# @network:            Network bandwidth/utilization statistics
+#
+# @disks:              Disk bandwidth/utilization statistics
+#
+# @monitorResponse:    Indicates if the qemu monitor is responsive
+#
+# @nice:               The host scheduling priority
+#
+# @elapsedTime:        The number of seconds that the VM has been running
+#
+# @cdrom: #optional    The path to an ISO image used in the VM's CD-ROM device
+#
+# @boot: #optional     An alias for the type of device used to boot the VM
+#
+# @statsAge:           The age of these statistics in seconds
+#
+# @cpuSys:             Ratio of CPU time spent in kernel by the qemu process
+#
+# @cpuUser:            Ratio of CPU time spent in userspace by the qemu process
+#
+# @cpuIdle:            Ratio of CPU time spent idle by the qemu process
+#
+# @acpiEnable:         Indicates if ACPI is enabled inside the VM
+#
+# @timeOffset:         The time difference from host to the VM in seconds
+#
+# @clientIp:           The IP address of the client connected to the display
+#
+# @pauseCode:          Indicates the reason a VM has been paused
+#
+# @memUsage:           The percent of memory in use by the guest
+#
+# @username:           The username associated with the current session
+#
+# @session:            The current state of user interaction with the VM
+#
+# @appsList:           A list of installed applications with their versions
+#
+# @guestIPs:           A space separated string of assigned IPv4 addresses
+#
+# @memoryStats:        Memory statistics as reported by the guest agent
+#
+# @disksUsage:         Info about mounted filesystems as reported by the agent
+#
+# @netIfaces:          Network device address info as reported by the agent
+#
+# Since: 4.10.0
+##
+{'type': 'RunningVmStats',
+ 'data': {'displayPort': 'IntStr', 'displaySecurePort': 'IntStr',
+          'displayType': 'VmDisplayType', 'displayIp': 'str', 'pid': 'IntStr',
+          'vmType': 'VmType', 'kvmEnable': 'BoolStrLower',
+          'network': 'NetworkInterfaceStatsMap',
+          'disks': 'VmDiskStatsMap', 'monitorResponse': 'IntStr',
+          'nice': 'IntStr', 'elapsedTime': 'IntStr', '*cdrom': 'str',
+          '*boot': 'VmBootMode','statsAge': 'FloatStr', 'cpuSys': 'FloatStr',
+          'cpuUser': 'FloatStr', 'cpuIdle': 'FloatStr',
+          'acpiEnable': 'BoolStrLower', 'timeOffset': 'IntStr',
+          'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'IntStr',
+          'username': 'str', 'session': 'GuestSessionState',
+          'appsList': ['str'], 'guestIPs': 'str',
+          'memoryStats': 'GuestMemoryStats', 'disksUsage': ['GuestMountInfo'],
+          'netIfaces': ['GuestNetworkDeviceInfo']}}
+
+##
+# @VmStats:
+#
+# A discriminated record containing virtual machine statistics.
+#
+# @ExitedVmStats:   Statistica for a VM that has exited
+#
+# @RunningVmStats:  Statistics for a running VM
+#
+# Since: 4.10.0
+##
+{'union': 'VmStats', 'data': ['ExitedVmStats', 'RunningVmStats']}
+
+##
+# @VM.getStats:
+#
+# Get statistics about a running virtual machine.
+#
+# Returns:
+# @statsList:  An array containing a single VmStats record
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'getStats'},
+ 'returns': {'statsList': ['VmStats']}}
+
+##
+# @HibernationVolumeHandle:
+#
+# Indicates where VM hibernation state and metadata should be stored.
+# The format is:
+# <domainUUID>,<poolUUID>,<stateImageUUID>,<stateVolumeUUID>,<metaImageUUID>,<metaVolumeUUID>
+#
+# Since: 4.10.0
+##
+{'alias': 'HibernationVolumeHandle', 'data': 'str'}}
+
+##
+# @VM.hibernate:
+#
+# Save the live state of the VM to disk and stop it.
+#
+# @hibernationVolHandle:  Volumes to use for storing VM state and metadata
+#
+# Since: 4.10.0
+#
+# Notes: This is a host-initiated hibernation and does not make use of any
+# guest operating system suspend to disk functionality.
+##
+{'command': {'class': 'VM', 'name': 'hibernate'},
+ 'data': {'hibernationVolHandle': 'HibernationVolumeHandle'}}
+
+##
+# @HotplugNicParams:
+#
+# Parameters for @VM.hotplugNic.
+#
+# @vmId:  The UUID of the VM to modify
+#
+# @nic:   The network device specification
+#
+# Since: 4.10.0
+##
+{'type': 'HotplugNicParams',
+ 'data': {'vmId': 'UUID', 'nic': 'VmInterfaceDevice'}}
+
+##
+# @VM.hotplugNic:
+#
+# Add a new network device to a running VM.
+#
+# @params:  The VM UUID and device information
+#
+# Returns:
+# @vmList:  The VM definition, as updated
+#
+# Since: 4.10.0
+#
+# Notes:
+# XXX: Split 'params' into direct parameters
+##
+{'command': {'class': 'VM', 'name': 'hotplugNic'},
+ 'data': {'params': 'HotplugNicParams'},
+ 'returns': {'vmList': 'VmFullDefinition'}}
+
+##
+# @VM.hotunplugNic:
+#
+# Remove a network device from a running VM.
+#
+# @params:  The VM UUID and device information
+#
+# Returns:
+# @vmList:  The VM definition, as updated
+#
+# Since: 4.10.0
+#
+# Notes:
+# XXX: Split 'params' into direct parameters
+##
+{'command': {'class': 'VM', 'name': 'hotunplugNic'},
+ 'data': {'params': 'HotplugNicParams'},
+ 'returns': {'vmList': 'VmFullDefinition'}}
+
+##
+# @HotplugDiskParams:
+#
+# Parameters for @VM.hotplugDisk.
+#
+# @vmId:  The UUID of the VM to modify
+#
+# @drive:   The disk device specification
+#
+# Since: 4.10.0
+##
+
+{'type': 'HotplugDiskParams',
+ 'data': {'vmId': 'UUID', 'drive': 'VmDiskDevice'}}
+
+##
+# @VM.hotplugDisk:
+#
+# Add a new disk device to a running VM.
+#
+# @params:  The VM UUID and device information
+#
+# Returns:
+# @vmList:  The VM definition, as updated
+#
+# Since: 4.10.0
+#
+# Notes:
+# XXX: Split 'params' into direct parameters
+##
+{'command': {'class': 'VM', 'name': 'hotplugDisk'},
+ 'data': {'params': 'HotplugDiskParams'},
+ 'returns': {'vmList': 'VmFullDefinition'}}
+
+##
+# @VM.hotunplugDisk:
+#
+# Remove a disk device from a running VM.
+#
+# @params:  The VM UUID and device information
+#
+# Returns:
+# @vmList:  The VM definition, as updated
+#
+# Since: 4.10.0
+#
+# Notes:
+# XXX: Split 'params' into direct parameters
+##
+{'command': {'class': 'VM', 'name': 'hotunplugDisk'},
+ 'data': {'params': 'HotplugDiskParams'},
+ 'returns': {'vmList': 'VmFullDefinition'}}
+
+##
+# @MigrateMode:
+#
+# An enumeration of VM migration modes.
+#
+# @remote:  Migrate to a remote host
+#
+# @file:    Save the VM state to storage
+#
+# Since: 4.10.0
+##
+{'enum': 'MigrateMode', 'data': ['remote', 'file']}
+##
+# @MigrateMethod:
+#
+# An enumeration of VM migration methods.
+#
+# @online:  Migrate while the VM continues to run
+#
+# Since: 4.10.0
+##
+{'enum': 'MigrateMethod', 'data': ['online']}
+
+##
+# @MigrateParams:
+#
+# Parameters for @VM.migrate.
+#
+# @vmId:       The UUID of the virtual machine to migrate
+#
+# @dst:        The destination host in <host>[:<port>] format.  The port is
+#              optional and should usually be omitted.
+#
+# @dstparams:  Used only by the hibernate API.  Ignored for @remote migration
+#
+# @mode:       The migration mode.  Callers of this API should use @remote.  For
+#              @file migration use @VM.hibernate.
+#
+# @method:
+#
+# Since: 4.10.0
+##
+{'type': 'MigrateParams',
+ 'data': {'vmId': 'UUID', 'dst': 'str', 'dstparams': 'str',
+          '*mode': 'MigrateMode', '*method': 'MigrateMethod'}}
+
+##
+# @VM.migrate:
+#
+# Migrate a VM to a remote host.
+#
+# @params:  Migration parameters
+#
+# Since: 4.10.0
+#
+# Notes:
+# This function allows you to migrate to a file but this mode should be
+# selected by using the hibernate command.
+# XXX: Split 'params' into direct parameters
+##
+{'command': {'class': 'VM', 'name': 'migrate'},
+ 'data': {'params': 'MigrateParams'}}
+
+##
+# @VM.migrateCancel:
+#
+# Cancel a currently outgoing migration process.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'migrateCancel'}}
+
+##
+# @VM.migrationCreate:
+#
+# Start a migrating VM on a destination host.
+#
+# @params:  The VM definition
+#
+# Returns:
+# @migrationPort:  This value is always 0
+#
+# @params:         The definition of the created virtual machine
+#
+# Since: 4.10.0
+#
+# Notes: This API is used internally by @VM.migrate and is not intended to be
+# called directly.
+##
+{'command': {'class': 'VM', 'name': 'migrationCreate'},
+ 'data': {'params': 'VmFullDefinition'},
+ 'returns': {'migrationPort': 'int', 'params': 'VmFullDefinition'}}
+
+##
+# @VM.monitorCommand:
+#
+# Send a command to the qemu monitor.
+#
+# @command:  The command string
+#
+# Since: 4.10.0
+#
+# Notes:  This function is not implemented.
+##
+{'command': {'class': 'VM', 'name': 'monitorCommand'},
+ 'data': {'command': 'str'}}
+
+##
+# @VM.pause:
+#
+# Pause the CPUs of a running VM.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'pause'}}
+
+##
+# @VM.reset:
+#
+# Reset a virtual machine.
+#
+# Since: 4.10.0
+#
+# Notes:  This function is not implemented.
+##
+{'command': {'class': 'VM', 'name': 'reset'}}
+
+##
+# @VM.sendKeys:
+#
+# Send a string of keys to a guest's keyboard.
+#
+# @keySequence:  A sequence of keystrokes to send
+#
+# Since: 4.10.0
+#
+# Notes:  This function is not implemented.
+##
+{'command': {'class': 'VM', 'name': 'sendKeys'},
+ 'data': {'keySequence': 'str'}}
+
+##
+# @VmTicketConflictAction:
+#
+# An enumeration of consequences if another user is connected to a display.
+#
+# @disconnect:  Disconnect the current user
+#
+# @keep:        Change the password but keep the current user connected
+#
+# @fail:        Fail the operation and do not change the password
+#
+# Since: 4.10.0
+##
+{'enum': 'VmTicketConflictAction', 'data': ['disconnect', 'keep', 'fail']}
+
+##
+# @VM.setTicket:
+#
+# Set the password to be used to connect to a VM display.
+#
+# @password:            The desired connection password
+#
+# @ttl:                 The number of seconds before the password expires
+#
+# @existingConnAction:  Indicate what to do with any existing connections
+#
+# @params:              Arbitrary key:val pairs that will be passed to hooks
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'setTicket'},
+ 'data': {'password': 'str', 'ttl': 'int',
+          'existingConnAction': 'VmTicketConflictAction',
+          'params': 'StrMap'}}
+
+##
+# @VM.shutdown:
+#
+# Request a graceful shutdown of a VM.
+#
+# @delay:    #optional Wait a number of seconds before shutting down
+#
+# @message:  #optional Message to display to VM users before shutting down
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'shutdown'},
+ 'data': {'delay': 'int', 'message': 'str'}}
+
+##
+# @SnapshotVolumeDriveInfo:
+#
+# Snapshot information for a Volume-based VM disk.
+#
+# @domainID:       The Storage Domain associated with the VM disk
+#
+# @imageID:         The Image associated with the VM disk
+#
+# @baseVolumeID:    The Volume associated with the VM disk
+#
+# @volumeID:        The Volume in which to create the snapshot
+#
+# @mirrorDomainID:  #optional  The Storage Domain to use for snapshot mirroring
+#
+# @mirrorImageID:   #optional  The Image to use for snapshot mirroring
+#
+# @mirrorVolumeID:  #optional  The Volume to use for snapshot mirroring
+#
+# Since: 4.10.0
+##
+{'type': 'SnapshotVolumeDriveInfo',
+ 'data': {'domainID': 'UUID', 'imageID': 'UUID', 'baseVolumeID': 'UUID',
+          'volumeID': 'UUID', '*mirrorDomainID': 'UUID',
+          '*mirrorImageID': 'UUID', '*mirrorVolumeID': 'UUID'}}
+
+##
+# @SnapshotGUIDDriveInfo:
+#
+# Snapshot information for a VM disk that is identified by a devmapper GUID.
+#
+# @baseGUID:        The devmapper device GUID associated with the VM disk
+#
+# @GUID:            The devmapper device GUID in which to create the snapshot
+#
+# @mirrorDomainID:  #optional  The Storage Domain to use for snapshot mirroring
+#
+# @mirrorImageID:   #optional  The Image to use for snapshot mirroring
+#
+# @mirrorVolumeID:  #optional  The Volume to use for snapshot mirroring
+#
+# Since: 4.10.0
+##
+{'type': 'SnapshotGUIDDriveInfo',
+ 'data': {'baseGUID': 'UUID', 'GUID': 'UUID', '*mirrorDomainID': 'UUID',
+          '*mirrorImageID': 'UUID', '*mirrorVolumeID': 'UUID'}}
+
+##
+# @SnapshotUUIDDriveInfo:
+#
+# Snapshot information for a VM disk that is identified by a block device UUID.
+#
+# @baseUUID:  The block device ID associated with the VM disk
+#
+# @UUID:      The block device ID in which to create the snapshot
+#
+# @mirrorDomainID:  #optional  The Storage Domain to use for snapshot mirroring
+#
+# @mirrorImageID:   #optional  The Image to use for snapshot mirroring
+#
+# @mirrorVolumeID:  #optional  The Volume to use for snapshot mirroring
+#
+# Since: 4.10.0
+##
+{'type': 'SnapshotUUIDDriveInfo',
+ 'data': {'baseUUID': 'UUID', 'UUID': 'UUID', '*mirrorDomainID': 'UUID',
+          '*mirrorImageID': 'UUID', '*mirrorVolumeID': 'UUID'}}
+
+##
+# @SnapshotDriveInfo:
+#
+# A discriminated record of snapshot information for a VM disk.
+#
+# Since: 4.10.0
+##
+{'union': 'SnapshotDriveInfo',
+ 'data': ['SnapshotVolumeDriveInfo', 'SnapshotGUIDDriveInfo',
+          'SnapshotUUIDDriveInfo']}
+
+##
+# @VM.snapshot:
+#
+# Create a live snapshot of a VM's disks.
+#
+# @snapDrives:  A list of disk snapshot creation instructions
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'snapshot'},
+ 'data': {'snapDrives': ['SnapshotDriveInfo']}}
+
+##
+# @VM.merge:
+#
+# Merge VM disk snapshots.
+#
+# @mergeDrives:  A list of drives on which to perform merge operations.  Each
+#                entry must have @baseVolumeID set to indicate the new desired
+#                base volume.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'merge'},
+ 'data': {'mergeDrives': ['VmDiskDevice']}}
+
+##
+# @MergeStatusCode:
+#
+# An enumeration of possible merge statuses.
+#
+# @Not Started:      The merge operation has not yet started
+#
+# @In Progress:      The operation is ongoing
+#
+# @Failed:           The merge operation failed
+#
+# @Completed:        The merge operation is finished
+#
+# @Unknown:          The status cannot be determined
+#
+# @Drive Not Found:  The specified drive could not be found
+#
+# @Base Not Found:   The indicated base volume is not in the volume chain
+#
+# Since: 4.10.0
+##
+{'enum': 'MergeStatusCode',
+ 'data': ['Not Started', 'In Progress', 'Failed', 'Completed', 'Unknown',
+          'Drive Not Found', 'Base Not Found']}
+
+##
+# @MergeStatus:
+#
+# Status of a merge operation on a single disk.
+#
+# @disk:    The name of the disk
+#
+# @status:  The current status of the operation
+#
+# Since: 4.10.0
+#
+# Notes:
+# XXX: This structure actually contains all of the VMDiskDevice info as well and that should be removed
+##
+{'type': 'MergeStatus',
+ 'data': {'disk': 'str', 'status': 'MergeStatusCode'}}
+
+##
+# @VM.mergeStatus:
+#
+# Check the status of an ongoing snapshot merge operation.
+#
+# Returns:
+# @mergeStatus:  Status information for each VM disk
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'mergeStatus'},
+ 'returns': {'mergeStatus': ['MergeStatus']}}
+
+## Category: @Volume ###########################################################
+##
+# @Volume.init:
+#
+# Initialize a Volume API object.
+#
+# @UUID:     The UUID of the Volume
+#
+# @spUUID:   The Storage Pool associated with @UUID
+#
+# @sdUUID:   The Storage Domain associated with @UUID
+#
+# @imgUUID:  The Image associated with @UUID
+#
+# Since: 4.10.0
+##
+{'init': 'Volume',
+ 'data': {'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID',
+          'imgUUID': 'UUID'}}
+
+##
+# @VolumeRole:
+#
+# An enumeration of Volume Roles.
+#
+# @SHARED:    The Volume is a shared template
+#
+# @INTERNAL:  The Volume is being used internally by vdsm
+#
+# @LEAF:      The Volume is a writable leaf
+#
+# Since: 4.10.0
+#
+# XXX: Enum values are: 6, 7, 8
+##
+{'enum': 'VolumeRole', 'data': ['SHARED', 'INTERNAL', 'LEAF']}
+
+##
+# @VolumeFormat:
+#
+# An enumeration of Volume data formats.
+#
+# @COW:  The Volume uses the Qemu Qcow image format
+#
+# @RAW:  The Volume writes raw data directly to the backing image
+#
+# Since: 4.10.0
+#
+# XXX: Values are: 4, 5
+##
+{'enum': 'VolumeFormat', 'data': ['COW', 'RAW']}
+
+##
+# @VolumeAllocation:
+#
+# An enumeration of Volume allocation modes.
+#
+# @PREALLOCATED:  All necessary storage is allocated at Volume creation time
+#
+# @SPARSE:        Storage is allocated as needed
+#
+# Since: 4.10.0
+#
+# XXX: Values are: 1, 2
+##
+{'enum': 'VolumeAllocation', 'data': ['PREALLOCATED', 'SPARSE']}
+
+##
+# @Volume.copy:
+#
+# Duplicate a volume to produce a new template image.
+#
+# @dstSdUUID:    The UUID of the destination Storage Domain
+#
+# @dstImgUUID:   The UUID of the destination Image
+#
+# @dstVolUUID:   The UUID of the destination Volume
+#
+# @desc:         Set the destination Volume description
+#
+# @volType:      (Unused) The role of the destination Volume
+#
+# @volFormat:    The data format to use for the destination Volume
+#
+# @preallocate:  The Volume allocation mode
+#
+# @postZero:     If @force is set and @dstVolUUID exists, zero the destination
+#                Volume before copying new data
+#
+# @force:        If @dstVolUUID already exists, overwrite it
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+#
+# Notes:  If the source Volume has ancestors they will be collapsed in the
+#         destination to form a standalone template Volume.
+# XXX: The @volType parameter is not used
+##
+{'command': {'class': 'Volume', 'name': 'copy'},
+ 'data': {'dstSdUUID': 'UUID', 'dstImgUUID': 'UUID', 'dstVolUUID': 'UUID',
+          'desc': 'str', 'volType': 'VolumeRole', 'volFormat': 'VolumeFormat',
+          'preallocate': 'VolumeAllocation', 'postZero': 'bool',
+          'force': 'bool'},
+ 'returns': {'*uuid': 'UUID'}}
+
+##
+# @DiskType:
+#
+# An enumeration of disk usage types.
+#
+# @UNKNOWN:  The type is not specified
+#
+# @SYSTEM:   The disk contains the operating system
+#
+# @DATA:     The disk is for data
+#
+# @SHARED:   The disk is shared among multiple VMs
+#
+# @SWAP:     The disk is used for swap space
+#
+# @TEMP:     The disk is used for temporary storage space
+#
+# Since: 4.10.0
+##
+{'enum': 'DiskType',
+ 'data': ['UNKNOWN', 'SYSTEM', 'DATA', 'SHARED', 'SWAP', 'TEMP']}
+
+##
+# @Volume.create:
+#
+# Create a new Volume.
+#
+# @size:         The Volume size in sectors
+#
+# @volFormat:    The data format to use for the destination Volume
+#
+# @preallocate:  The Volume allocation mode
+#
+# @diskType:     An advisory disk usage type
+#
+# @desc:         The Volume description
+#
+# @srcImgUUID:   If specified, create a snapshot from this Image
+#
+# @srcVolUUID:   If specified, create a snapshot from this Volume
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'create'},
+ 'data': {'size': 'int', 'volFormat': 'VolumeFormat',
+          'preallocate': 'VolumeAllocation', 'diskType': '',
+          'desc': 'str', 'srcImgUUID': 'UUID', 'srcVolUUID': 'UUID'},
+ 'returns': {'*uuid': 'UUID'}}
+
+##
+# @Volume.delete:
+#
+# Delete a Volume.
+#
+# @postZero:  Zero Volume data before deletion
+#
+# @force:     Remove even if @VolumeRole is SHARED or INTERNAL
+#
+# Returns:
+# @uuid:  A task UUID
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'delete'},
+ 'data': {'postZero': 'bool', 'force': 'bool'},
+ 'returns': {'*uuid': 'UUID'}}
+
+##
+# @Volume.extend:
+#
+# Increase the size of a Volume.
+#
+# @size:            The new desired size (in sectors)
+#
+# @isShuttingDown:  (Unused)
+#
+# Since: 4.10.0
+#
+# Notes:  Valid for block-based Volumes only
+##
+{'command': {'class': 'Volume', 'name': 'extend'},
+ 'data': {'size': 'int', 'isShuttingDown': 'bool'}}
+
+##
+# @VolumeLegality:
+#
+# An enumeration of Volume Legality indicators.
+#
+# @ILLEGAL:  The Volume should no longer be used (because it is being deleted)
+#
+# @LEGAL:    The Volume is legal
+#
+# @FAKE:     The Volume is a fake template on a backup domain
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeLegality', 'data': ['ILLEGAL', 'LEGAL', 'FAKE']}
+
+##
+# @VolumeStatus:
+#
+# An enumeration of Volume statuses.
+#
+# @OK:       There are no problems with the Volume or metadata
+#
+# @INVALID:  The Volume and metadata are not valid
+#
+# @ILLEGAL:  The Volume is not legal
+#
+# Since: 4.10.0
+##
+{'enum': 'VolumeStatus', 'data': ['OK', 'INVALID', 'ILLEGAL']}
+
+##
+# @VolumeInfo:
+#
+# Information about a Volume.
+#
+# @uuid:          The Volume UUID
+#
+# @type:          The Volume allocation policy
+#
+# @format:        The format used to write data to the Volume
+#
+# @disktype:      An advisory code indicating the Volume's planned usage
+#
+# @voltype:       The Volume role
+#
+# @capacity:      The size of the Volume (in bytes)
+#
+# @parent:        The direct ancestor of this Volume if it exists
+#
+# @description:   A human-readable description of the Volume
+#
+# @pool:          The Storage Pool associated with the Volume
+#
+# @domain:        The Storage Domain associated with the Volume
+#
+# @image:         The Image associated with the Volume
+#
+# @ctime:         The Volume creation time in seconds since the epoch
+#
+# @mtime:         The Volume modification time in seconds since the epoch
+#
+# @legality:      Indicates whether the volume is legal to use
+#
+# @apparentsize:  The size of the Volume (in bytes)
+#
+# @truesize:      The amount of underlying storage allocated (in bytes)
+#
+# @status:        Indicates whether the Volume and metadata are valid
+#
+# @children:      A list of decendent Volumes that depend on this Volume
+#
+# Since: 4.10.0
+##
+{'type': 'VolumeInfo',
+ 'data': {'uuid': 'UUID', 'type': 'VolumeAllocation', 'format': 'VolumeFormat',
+          'disktype': 'DiskType', 'voltype': 'VolumeRole',
+          'capacity': 'IntStr', 'parent': 'UUID', 'description': 'str',
+          'pool': 'UUID', 'domain': 'UUID', 'image': 'UUID', 'ctime': 'int',
+          'mtime': 'IntStr', 'legality': 'VolumeLegality',
+          'apparentsize': 'IntStr', 'truesize': 'IntStr',
+          'status': 'VolumeStatus', 'children': ['UUID']}}
+
+##
+# @Volume.getInfo:
+#
+# Get information about a Volume.
+#
+# Returns:
+# @info:  Volume information
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'getInfo'},
+ 'returns': {'info': 'VolumeInfo'}}
+
+##
+# @Volume.getPath:
+#
+# Get the path to the Volume in the host's storage repository.
+#
+# Returns:
+# @path:  The Volume's storage repository path
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'getPath'},
+ 'returns': {'path': 'str'}}
+
+##
+# @Volume.getSize:
+#
+# Get Volume size information.
+#
+# Returns:
+# @apparentsize:  The size of the Volume (in bytes)
+#
+# @truesize:      The amount of underlying storage allocated (in bytes)
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'getSize'},
+ 'returns': {'apparentsize': 'IntStr', 'truesize': 'IntStr'}}
+
+##
+# @Volume.prepare:
+#
+# Make a Volume accessible.
+#
+# @rw:  If True, the Volume should be made writeable, otherwise read-only
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'prepare'},
+ 'data': {'rw': 'bool'}}
+
+##
+# @Volume.refresh:
+#
+# Refresh Volume to synchronize changes made by a remote host.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'refresh'}}
+
+##
+# @Volume.setDescription:
+#
+# Set the Volume description field.
+#
+# @description:  A human-readable Volume description
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'setDescription'},
+ 'data': {'description': 'str'}}
+
+##
+# @Volume.setLegality:
+#
+# Set the legality of a Volume.
+#
+# @legality:  The new Volume legality
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'setLegality'},
+ 'data': {'legality': 'VolumeLegality'}}
+
+##
+# @Volume.tearDown:
+#
+# Deactivate the Volume and release resources.
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Volume', 'name': 'tearDown'}}
