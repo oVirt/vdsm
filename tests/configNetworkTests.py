@@ -56,8 +56,8 @@ class ConfigWriterTests(TestCaseBase):
     def __init__(self, *args, **kwargs):
         TestCaseBase.__init__(self, *args, **kwargs)
         self._tempdir = tempfile.mkdtemp()
-        self._files = tuple((os.path.join(self._tempdir, bn), init, makeDirty) for
-                       bn, init, makeDirty in
+        self._files = tuple((os.path.join(self._tempdir, bn), init, makeDirty)
+                       for bn, init, makeDirty in
                        (('ifcfg-eth0', self.INITIAL_CONTENT, True),
                         ('ifcfg-eth1', None, True),
                         ('ifcfg-eth2', None, False),
