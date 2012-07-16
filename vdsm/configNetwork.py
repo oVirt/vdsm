@@ -524,44 +524,63 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
         if bridge in _netinfo.getBridgelessNetworks():
             raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'network already exists')
 
-    # vlan
+    # Check vlan
     if vlan:
         validateVlanId(vlan)
 
+    # Check bonding
     if bonding:
         validateBondingName(bonding)
         if bondingOptions:
             validateBondingOptions(bonding, bondingOptions)
     elif bondingOptions:
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Bonding options specified without bonding')
+        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
+                    "Bonding options specified without bonding")
+    elif len(nics) > 1:
+        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
+                    "Multiple nics require a bonding device")
 
     # Check ip, netmask, gateway
     if ipaddr:
         if not netmask:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Must specify netmask to configure ip for network")
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR,
+                        "Must specify netmask to configure ip for network")
         validateIpAddress(ipaddr)
         validateNetmask(netmask)
         if gateway:
             validateGateway(gateway)
     else:
         if netmask or gateway:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Specified netmask or gateway but not ip")
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR,
+                        "Specified netmask or gateway but not ip")
 
     # Check nics
     for nic in nics:
         if nic not in _netinfo.nics:
-            raise ConfigNetworkError(ne.ERR_BAD_NIC, "unknown nic: %r"%nic)
+            raise ConfigNetworkError(ne.ERR_BAD_NIC, "unknown nic: %r" % nic)
 
-        bridgesForNic = list(_netinfo.getBridgedNetworksForNic(nic))
-        if bridgesForNic:
-            assert len(bridgesForNic) == 1
-            raise ConfigNetworkError(ne.ERR_USED_NIC, "nic %r is already bound to network %r"%(nic, bridgesForNic[0]))
+        # Check whether nic is already bound to network
+        networksForNic = list(_netinfo.getNetworksForNic(nic))
+        if networksForNic:
+            raise ConfigNetworkError(ne.ERR_USED_NIC,
+                                "nic %r is already bound to network %r" % \
+                                (nic, networksForNic))
 
-    if bonding and not vlan:
-        for nic in nics:
+        # Make sure nics don't have a different bonding
+        # still relevant if bonding is None
+        bondingForNics = _netinfo.getBondingForNic(nic)
+        if bondingForNics and bondingForNics != bonding:
+            raise ConfigNetworkError(ne.ERR_USED_NIC,
+                                "nic %s already enslaved to %s" % \
+                                (nic, bondingForNics))
+
+        # Make sure nics don't used by vlans if bond requested
+        if bonding:
             vlansForNic = list(_netinfo.getVlansForNic(nic))
             if len(vlansForNic):
-                raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already used by vlans %s' % ( nics, vlansForNic))
+                raise ConfigNetworkError(ne.ERR_USED_NIC,
+                                    "nic %s already used by vlans %s" % \
+                                    (nics, vlansForNic))
 
     # Bonding
     if bonding:
@@ -576,16 +595,6 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
             if len(bonding_ifaces):
                 raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'bonding %r already has members: %r'%(bonding,bonding_ifaces))
 
-    else:
-        if len(nics) > 1:
-            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'multiple nics require a bonding device')
-
-    # Make sure nics don't have a different bonding
-    # still relevant if bonding is None
-    for nic in nics:
-        bondingForNics = _netinfo.getBondingForNic(nic)
-        if bondingForNics and bondingForNics != bonding:
-            raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already enslaved to %s' % (nic, bondingForNics))
 
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, mtu=None,
                gateway=None, force=False, configWriter=None, bondingOptions=None, bridged=True, **options):
