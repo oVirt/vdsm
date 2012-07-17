@@ -20,25 +20,27 @@
 
 '''
     Tasks: tasks object model some sort of VDSM task (storage task).
-    A task object may be standalone (unmanaged task), but then it is limited and
-    cannot be automatically persisted or run (asynchronous jobs).
-    A managed task is managed by a TaskManager. Under the task manager a task may
-    persist itself, run asynchronous jobs, run recovery procedures, etc.
+    A task object may be standalone (unmanaged task), but then it is limited
+    and cannot be automatically persisted or run (asynchronous jobs).
+    A managed task is managed by a TaskManager. Under the task manager a task
+    may persist itself, run asynchronous jobs, run recovery procedures, etc.
     A task is successful if it finished its operations during the
-    prepare state (i.e. it did not schedule any async jobs), or all its scheduled
-    jobs complete without error.
+    prepare state (i.e. it did not schedule any async jobs), or all its
+    scheduled jobs complete without error.
     The task result is the prepare state result if no async jobs are scheduled,
     or the result of the last job run.
 
     Jobs: jobs object model an asynchronous job that is run in a context of a
-    thread belonging to a thread pool (and managed by the task manager). Currently
-    a task may schedule any number of jobs that run sequentially by the same
-    worker thread.
+    thread belonging to a thread pool (and managed by the task manager).
+    Currently a task may schedule any number of jobs that run sequentially by
+    the same worker thread.
 
     Recovery: recovery objects model a recovery operation required to restore
     the system to a known coherent state. A task may register several recovery
-    objects that are kept in a stack (the last recovery registered is run first - lifo).
-    Tasks that have "auto" recovery policy run the recovery procedure ("rollback"),
+    objects that are kept in a stack (the last recovery registered is run
+    first - lifo).
+    Tasks that have "auto" recovery policy run the recovery procedure
+    ("rollback"),
     in any case of task failure/abort, and immediately after the task is
     recovered (loaded) from its persisted store.
 '''
@@ -76,6 +78,7 @@ TASK_METADATA_VERSION = 1
 
 ROLLBACK_SENTINEL = "rollback sentinel"
 
+
 class State:
     unknown = "unknown"
     init = "init"
@@ -93,7 +96,8 @@ class State:
     recovered = "recovered"
     failed = "failed"
 
-    # For backward compatibility, inner states can be translated to previously supported
+    # For backward compatibility, inner states can be translated to
+    # previously supported
     # format of state and result
     DEPRECATED_STATE = {
         unknown: "unknown",
@@ -141,8 +145,8 @@ class State:
         queued: [acquiring, running],
         running: [queued],
         finished: [running, preparing],
-        aborting: [ preparing, blocked, acquiring, queued, running ],
-        waitrecover: [ aborting ],
+        aborting: [preparing, blocked, acquiring, queued, running],
+        waitrecover: [aborting],
         racquiring: [aborting, finished, racquiring, waitrecover],
         recovering: [racquiring],
         raborting: [racquiring, recovering, waitrecover],
@@ -152,8 +156,7 @@ class State:
     _done = [finished, recovered, failed]
     _recovering = [racquiring, recovering]
 
-
-    def __init__(self, state = None):
+    def __init__(self, state=None):
         try:
             if not state:
                 self.state = self.unknown
@@ -162,10 +165,8 @@ class State:
         except:
             self.state = self.unknown
 
-
     def value(self):
         return self.state
-
 
     def isDone(self):
         return self.state in self._done
@@ -173,37 +174,31 @@ class State:
     def isRecovering(self):
         return self.state in self._recovering
 
-
     def canAbort(self):
         return self.state in self._moveto[self.aborting]
 
     def canAbortRecovery(self):
         return self.state in self._moveto[self.raborting]
 
-
     def canAbortRecover(self):
         return self.state in self._moveto[self.raborting]
 
-
     def __str__(self):
         return self.state
-
 
     def moveto(self, state, force=False):
         if state not in self._moveto:
             raise ValueError("not a valid target state: %s" % state)
         if not force and self.state not in self._moveto[state]:
-            raise se.TaskStateTransitionError("from %s to %s" % (self.state, state))
+            raise se.TaskStateTransitionError("from %s to %s" %
+                                              (self.state, state))
         self.state = state
-
 
     def __eq__(self, state):
         return self.state == state
 
-
     def __ne__(self, state):
         return self.state != state
-
 
 
 class EnumType(object):
@@ -212,10 +207,8 @@ class EnumType(object):
             raise ValueError("%s not a valid type for %s" % (enum, repr(self)))
         self.value = enum
 
-
     def __str__(self):
         return str(self.value)
-
 
     def __eq__(self, x):
         if type(x) == str:
@@ -224,10 +217,8 @@ class EnumType(object):
             return x.value == self.value
         return False
 
-
     def __ne__(self, x):
         return not self.__eq__(x)
-
 
 
 class TaskPersistType(EnumType):
@@ -236,19 +227,16 @@ class TaskPersistType(EnumType):
     auto = "auto"
 
 
-
 class TaskCleanType(EnumType):
     none = "none"
     manual = "manual"
     auto = "auto"
 
 
-
 class TaskRecoveryType(EnumType):
     none = "none"
     manual = "manual"
     auto = "auto"
-
 
 
 class ParamList:
@@ -261,19 +249,19 @@ class ParamList:
         if type(params) == list:
             for i in params:
                 if not isinstance(i, types.StringTypes):
-                    raise ValueError("ParamsList: param item %s not a string (%s)" % (i, type(i)))
+                    raise ValueError("ParamsList: param item %s not a string"
+                                     " (%s)" % (i, type(i)))
                 if sep in i:
                     raise ValueError("ParamsList: sep %s in %s" % (sep, i))
             self.params = params
         elif isinstance(params, types.StringTypes):
-            self.params = [ s.strip() for s in params.split(sep) ]
+            self.params = [s.strip() for s in params.split(sep)]
         else:
-            raise ValueError("ParamList: params type not supported (%s)" % type(params))
-
+            raise ValueError("ParamList: params type not supported (%s)" %
+                             type(params))
 
     def getList(self):
         return self.params[:]
-
 
     def __str__(self):
         s = ""
@@ -283,7 +271,6 @@ class ParamList:
         if s:
             s = s[:-1]
         return s
-
 
 
 class Job:
@@ -301,12 +288,11 @@ class Job:
         self.callback = None    # callback to call before running the job
         self.task = None
 
-
     def setCallback(self, callback):
         if not callable(callback):
-            raise ValueError("Task.Job: callback %s is not callable" % repr(callback))
+            raise ValueError("Task.Job: callback %s is not callable" %
+                             repr(callback))
         self.callback = callback
-
 
     def setOwnerTask(self, task):
         self.task = proxy(task)
@@ -314,23 +300,26 @@ class Job:
     def run(self):
         if not self.task:
             raise se.InvalidJob("Job %s: no parent task" % self)
-        self.task.log.debug("Job.run: running %s callback %r", self, self.callback)
+        self.task.log.debug("Job.run: running %s callback %r",
+                            self, self.callback)
         if self.callback:
             self.callback(self)
         return self.cmd(*self.argslist, **self.argsdict)
-
 
     def __str__(self):
         return "%s: %s" % (self.name, self.runcmd)
 
 
-
 class Recovery:
     '''
-    A recovery object is used to register a recovery function to the recovery process.
-    The recovery functions are kept in a stack so they are carried out in FILO order.
-    The recovery function itself must be a static/class binded method of a visible class.
-    The recovery function must accept a recovery object as the first parameter - fn(recovery, ...)
+    A recovery object is used to register a recovery function to
+    the recovery process.
+    The recovery functions are kept in a stack so they are carried out
+    in FILO order.
+    The recovery function itself must be a static/class binded method of
+    a visible class.
+    The recovery function must accept a recovery object as the first
+    parameter - fn(recovery, ...)
     All other parameters if any must be strings.
     '''
     fields = {
@@ -354,23 +343,21 @@ class Recovery:
         self.callback = None
         self.task = None
 
-
     def validateName(self, name):
         vname = name.replace("_", "")
         if not vname.isalnum():
             raise TypeError("Parameter %s must be a plain str" % name)
 
-
     def setCallback(self, callback):
         if not callable(callback):
-            raise ValueError("Task.Recovery: callback %s is not callable" % repr(callback))
-        self.task.log.debug("Recovery.run: running %s callback %r", self, self.callback)
+            raise ValueError("Task.Recovery: callback %s is not callable" %
+                             repr(callback))
+        self.task.log.debug("Recovery.run: running %s callback %r",
+                            self, self.callback)
         self.callback = callback
-
 
     def setOwnerTask(self, task):
         self.task = proxy(task)
-
 
     def run(self):
         if not self.task:
@@ -380,15 +367,19 @@ class Recovery:
         if self.callback:
             self.callback(self)
         # instantiate an object of class "self.object" (bad name)
-        module = __import__('storage.' + self.moduleName, locals(), globals(), [self.moduleName])
+        module = __import__('storage.' + self.moduleName,
+                            locals(), globals(),
+                            [self.moduleName])
         classObj = getattr(module, self.object)
         function = getattr(classObj, self.function)
         argslist = self.params.getList()
         return function(self.task, *argslist)
 
-
     def __str__(self):
-        return "%s: %s->%s(%s)" % (self.name, self.object, self.function, self.params)
+        return "%s: %s->%s(%s)" % (self.name,
+                                   self.object,
+                                   self.function,
+                                   self.params)
 
 
 class TaskResult(object):
@@ -403,21 +394,21 @@ class TaskResult(object):
         self.message = message
         self.result = result
 
-
     def toDict(self):
-        return dict(message=self.message, code=str(self.code), result=self.result)
-
+        return dict(message=self.message,
+                    code=str(self.code),
+                    result=self.result)
 
     def __str__(self):
-        return "Task result: %s - %s: %s" % (self.code, self.message, self.result)
-
+        return "Task result: %s - %s: %s" % (self.code,
+                                             self.message,
+                                             self.result)
 
 
 class TaskPriority(EnumType):
     low = "low"
     medium = "medium"
     high = "high"
-
 
 
 class Task:
@@ -440,7 +431,9 @@ class Task:
 
     log = logging.getLogger('TaskManager.Task')
 
-    def __init__(self, id, name="", tag="", recovery=TaskRecoveryType.none, priority=TaskPriority.low):
+    def __init__(self, id, name="", tag="",
+                 recovery=TaskRecoveryType.none,
+                 priority=TaskPriority.low):
         """
         id - Unique ID
         name - human readable name
@@ -481,7 +474,6 @@ class Task:
 
         self.log = SimpleLogAdapter(self.log, {"Task": self.id})
 
-
     def __del__(self):
         def finalize(log, owner, taskDir):
             log.warn("Task was autocleaned")
@@ -491,29 +483,26 @@ class Task:
 
         if not self.state.isDone():
             taskDir = None
-            if self.cleanPolicy == TaskCleanType.auto and self.store is not None:
+            if (self.cleanPolicy == TaskCleanType.auto and
+                self.store is not None):
                 taskDir = os.path.join(self.store, self.id)
-            threading.Thread(target=finalize, args=(self.log, self.resOwner, taskDir)).start()
-
+            threading.Thread(target=finalize,
+                             args=(self.log, self.resOwner, taskDir)).start()
 
     def _done(self):
         self.resOwner.releaseAll()
         if self.cleanPolicy == TaskCleanType.auto:
             self.clean()
 
-
     def __state_preparing(self, fromState):
         pass
-
 
     def __state_blocked(self, fromState):
         pass
 
-
     def __state_acquiring(self, fromState):
         if self.resOwner.requestsGranted():
             self._updateState(State.queued)
-
 
     def __state_queued(self, fromState):
         try:
@@ -522,14 +511,11 @@ class Task:
             self._setError(e)
             self.stop()
 
-
     def __state_running(self, fromState):
         self._runJobs()
 
-
     def __state_finished(self, fromState):
         self._done()
-
 
     def __state_aborting(self, fromState):
         if self.ref > 1:
@@ -542,38 +528,31 @@ class Task:
         else:
             self._updateState(State.waitrecover)
 
-
     def __state_waitrecover(self, fromState):
         pass
-
 
     def __state_racquiring(self, fromState):
         if self.resOwner.requestsGranted():
             self._updateState(State.recovering)
 
-
     def __state_recovering(self, fromState):
         self._recover()
-
 
     def __state_raborting(self, fromState):
         if self.ref == 1:
             self._updateState(State.failed)
         else:
-            self.log.warn("State was change to 'raborting' when ref was not 1.")
-
+            self.log.warn("State was change to 'raborting' "
+                          "when ref was not 1.")
 
     def __state_recovered(self, fromState):
         self._done()
 
-
     def __state_failed(self, fromState):
         self._done()
 
-
     def __state_cleaning(self, fromState):
         pass
-
 
     def _updateState(self, state, force=False):
         fromState = self.state
@@ -585,32 +564,32 @@ class Task:
                 state = State.raborting
         self._aborting = False
         if requestedState == state:
-            self.log.debug("moving from state %s -> state %s", fromState, state)
+            self.log.debug("moving from state %s -> state %s",
+                           fromState, state)
         else:
-            self.log.debug("moving from state %s -> state %s instead of %s", fromState, state, requestedState)
+            self.log.debug("moving from state %s -> state %s instead of %s",
+                           fromState, state, requestedState)
 
         self.state.moveto(state, force)
         if self.persistPolicy == TaskPersistType.auto:
             try:
                 self.persist()
             except Exception:
-                self.log.warning("Task._updateState: failed persisting task %s", self.id, exc_info=True)
+                self.log.warning("Task._updateState: failed persisting task"
+                                 " %s", self.id, exc_info=True)
 
         fn = getattr(self, "_Task__state_%s" % state)
         fn(fromState)
-
 
     def _updateResult(self, code, message, result):
         self.result.result = result
         self.result.code = code
         self.result.message = message
 
-
     @classmethod
     def validateID(cls, taskID):
         if not taskID or "." in taskID:
             raise se.InvalidParameterException("taskID", taskID)
-
 
     @classmethod
     def _loadMetaFile(cls, filename, obj, fields):
@@ -622,13 +601,15 @@ class Task:
                     continue
                 parts = line.split(KEY_SEPERATOR)
                 if len(parts) != 2:
-                    cls.log.warning("Task._loadMetaFile: %s - ignoring line '%s'", filename, line)
+                    cls.log.warning("Task._loadMetaFile: %s - ignoring line"
+                                    " '%s'", filename, line)
                     continue
 
                 field = parts[0].strip()
                 value = parts[1].strip()
                 if field not in fields:
-                    cls.log.warning("Task._loadMetaFile: %s - ignoring field %s in line '%s'", filename, field, line)
+                    cls.log.warning("Task._loadMetaFile: %s - ignoring field"
+                                    " %s in line '%s'", filename, field, line)
                     continue
 
                 ftype = fields[field]
@@ -637,7 +618,6 @@ class Task:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.TaskMetaDataLoadError(filename)
 
-
     @classmethod
     def _dump(cls, obj, fields):
         lines = []
@@ -645,92 +625,91 @@ class Task:
             try:
                 value = unicode(getattr(obj, field))
                 if KEY_SEPERATOR in field or KEY_SEPERATOR in value:
-                    raise ValueError("field and value cannot include %s character" % KEY_SEPERATOR)
+                    raise ValueError("field and value cannot include %s "
+                                     "character" % KEY_SEPERATOR)
                 lines.append("%s %s %s" % (field, KEY_SEPERATOR, value))
             except Exception:
-                cls.log.warning("Task._dump: object %s skipping field %s" % (obj, field), exc_info=True)
+                cls.log.warning("Task._dump: object %s skipping field %s" %
+                                (obj, field), exc_info=True)
         return lines
-
 
     @classmethod
     def _saveMetaFile(cls, filename, obj, fields):
         try:
-            getProcPool().writeLines(filename, [ l.encode('utf8') + "\n" for l in cls._dump(obj, fields) ])
+            getProcPool().writeLines(filename,
+                                     [l.encode('utf8') + "\n"
+                                      for l in cls._dump(obj, fields)])
         except Exception:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.TaskMetaDataSaveError(filename)
-
 
     def _loadTaskMetaFile(self, taskDir):
         taskFile = os.path.join(taskDir, self.id + TASK_EXT)
         self._loadMetaFile(taskFile, self, Task.fields)
 
-
     def _saveTaskMetaFile(self, taskDir):
         taskFile = os.path.join(taskDir, self.id + TASK_EXT)
         self._saveMetaFile(taskFile, self, Task.fields)
-
 
     def _loadJobMetaFile(self, taskDir, n):
         taskFile = os.path.join(taskDir, self.id + JOB_EXT + NUM_SEP + str(n))
         self._loadMetaFile(taskFile, self.jobs[n], Job.fields)
 
-
     def _saveJobMetaFile(self, taskDir, n):
         taskFile = os.path.join(taskDir, self.id + JOB_EXT + NUM_SEP + str(n))
         self._saveMetaFile(taskFile, self.jobs[n], Job.fields)
 
-
     def _loadRecoveryMetaFile(self, taskDir, n):
-        taskFile = os.path.join(taskDir, self.id + RECOVER_EXT + NUM_SEP + str(n))
+        taskFile = os.path.join(taskDir,
+                                self.id + RECOVER_EXT + NUM_SEP + str(n))
         self._loadMetaFile(taskFile, self.recoveries[n], Recovery.fields)
 
-
     def _saveRecoveryMetaFile(self, taskDir, n):
-        taskFile = os.path.join(taskDir, self.id + RECOVER_EXT + NUM_SEP + str(n))
+        taskFile = os.path.join(taskDir,
+                                self.id + RECOVER_EXT + NUM_SEP + str(n))
         self._saveMetaFile(taskFile, self.recoveries[n], Recovery.fields)
-
 
     def _loadTaskResultMetaFile(self, taskDir):
         taskFile = os.path.join(taskDir, self.id + RESULT_EXT)
         self._loadMetaFile(taskFile, self.result, TaskResult.fields)
 
-
     def _saveTaskResultMetaFile(self, taskDir):
         taskFile = os.path.join(taskDir, self.id + RESULT_EXT)
         self._saveMetaFile(taskFile, self.result, TaskResult.fields)
 
-
     def _getResourcesKeyList(self, taskDir):
         keys = []
-        for path in  getProcPool().glob.glob(os.path.join(taskDir, "*" + RESOURCE_EXT)):
+        for path in getProcPool().glob.glob(os.path.join(taskDir,
+                                                         "*" + RESOURCE_EXT)):
             filename = os.path.basename(path)
             keys.append(filename[:filename.rfind(RESOURCE_EXT)])
         return keys
 
-
     def _load(self, storPath, ext=""):
         self.log.debug("%s: load from %s, ext '%s'", self, storPath, ext)
         if self.state != State.init:
-            raise se.TaskMetaDataLoadError("task %s - can't load self: not in init state" % self)
+            raise se.TaskMetaDataLoadError("task %s - can't load self: "
+                                           "not in init state" % self)
         taskDir = os.path.join(storPath, str(self.id) + str(ext))
         if not getProcPool().os.path.exists(taskDir):
             raise se.TaskDirError("load: no such task dir '%s'" % taskDir)
         oldid = self.id
         self._loadTaskMetaFile(taskDir)
         if self.id != oldid:
-            raise se.TaskMetaDataLoadError("task %s: loaded file do not match id (%s != %s)" % (self, self.id, oldid))
+            raise se.TaskMetaDataLoadError("task %s: loaded file do not match"
+                                           " id (%s != %s)" %
+                                           (self, self.id, oldid))
         if self.state == State.finished:
             self._loadTaskResultMetaFile(taskDir)
-        for jn in range (self.njobs):
+        for jn in range(self.njobs):
             self.jobs.append(Job("load", None))
             self._loadJobMetaFile(taskDir, jn)
             self.jobs[jn].setOwnerTask(self)
-        for rn in range (self.nrecoveries):
-            self.recoveries.append(Recovery("load", "load", "load", "load", ""))
+        for rn in range(self.nrecoveries):
+            self.recoveries.append(Recovery("load", "load",
+                                            "load", "load", ""))
             self._loadRecoveryMetaFile(taskDir, rn)
             self.recoveries[rn].setOwnerTask(self)
-
 
     def _save(self, storPath):
         origTaskDir = os.path.join(storPath, self.id)
@@ -747,9 +726,9 @@ class Task:
             self._saveTaskMetaFile(taskDir)
             if self.state == State.finished:
                 self._saveTaskResultMetaFile(taskDir)
-            for jn in range (self.njobs):
+            for jn in range(self.njobs):
                 self._saveJobMetaFile(taskDir, jn)
-            for rn in range (self.nrecoveries):
+            for rn in range(self.nrecoveries):
                 self._saveRecoveryMetaFile(taskDir, rn)
         except Exception, e:
             self.log.error("Unexpected error", exc_info=True)
@@ -765,11 +744,9 @@ class Task:
         getProcPool().fileUtils.cleanupdir(origTaskDir + BACKUP_EXT)
         getProcPool().fileUtils.fsyncPath(origTaskDir)
 
-
     def _clean(self, storPath):
         taskDir = os.path.join(storPath, self.id)
         getProcPool().fileUtils.cleanupdir(taskDir)
-
 
     def _recoverDone(self):
         # protect agains races with stop/abort
@@ -784,11 +761,11 @@ class Task:
             except se.TaskStateTransitionError:
                 self.log.error("Unexpected error", exc_info=True)
 
-
     def _recover(self):
         self.log.debug("_recover")
         if not self.state == State.recovering:
-            raise se.TaskStateError("%s: _recover in state %s" % (self, self.state))
+            raise se.TaskStateError("%s: _recover in state %s" %
+                                    (self, self.state))
         try:
             while self.state == State.recovering:
                 rec = self.popRecovery()
@@ -797,16 +774,15 @@ class Task:
                     break
                 self._run(rec.run)
         except Exception, e:
-            self.log.warning("task %s: recovery failed: %s", self, e, exc_info=True)
+            self.log.warning("task %s: recovery failed: %s",
+                             self, e, exc_info=True)
             # protect agains races with stop/abort
             try:
                 if self.state == State.recovering:
                     self._updateState(State.raborting)
-            except se.TaskStateTransitionError, e:
+            except se.TaskStateTransitionError:
                 pass
         self._recoverDone()
-
-
 
     def resourceAcquired(self, namespace, resource, locktype):
         # Callback from resourceManager.Owner. May be called by another thread.
@@ -814,7 +790,8 @@ class Task:
         try:
             self.callbackLock.acquire()
             try:
-                self.log.debug("_resourcesAcquired: %s.%s (%s)", namespace, resource, locktype)
+                self.log.debug("_resourcesAcquired: %s.%s (%s)",
+                               namespace, resource, locktype)
                 if self.state == State.preparing:
                     return
                 if self.state == State.acquiring:
@@ -823,23 +800,27 @@ class Task:
                     self._updateState(State.racquiring)
                 elif self.state == State.blocked:
                     self._updateState(State.preparing)
-                elif self.state == State.aborting or self.state == State.raborting:
-                    self.log.debug("resource %s.%s acquired while in state %s", namespace, resource, self.state)
+                elif (self.state == State.aborting or
+                      self.state == State.raborting):
+                    self.log.debug("resource %s.%s acquired while in state %s",
+                                   namespace, resource, self.state)
                 else:
-                    raise se.TaskStateError("acquire is not allowed in state %s" % self.state)
+                    raise se.TaskStateError("acquire is not allowed in state"
+                                            " %s" % self.state)
             finally:
                 self.callbackLock.release()
         finally:
             self._decref()
-
 
     def resourceRegistered(self, namespace, resource, locktype):
         self._incref()
         try:
             self.callbackLock.acquire()
             try:
-                # Callback from resourceManager.Owner. May be called by another thread.
-                self.log.debug("_resourcesAcquired: %s.%s (%s)", namespace, resource, locktype)
+                # Callback from resourceManager.Owner. May be called
+                # by another thread.
+                self.log.debug("_resourcesAcquired: %s.%s (%s)",
+                               namespace, resource, locktype)
                 # Protect against races with stop/abort
                 if self.state == State.preparing:
                     self._updateState(State.blocked)
@@ -848,11 +829,9 @@ class Task:
         finally:
             self._decref()
 
-
-    def _setError(self, e = se.TaskAborted("Unknown error encountered")):
+    def _setError(self, e=se.TaskAborted("Unknown error encountered")):
         self.log.error("Unexpected error", exc_info=True)
         self.error = e
-
 
     def _run(self, fn, *args, **kargs):
         code = 100
@@ -869,10 +848,10 @@ class Task:
         except:
             self._setError()
 
-        self.log.debug("Task._run: %s %s %s failed - stopping task", self, args, kargs)
+        self.log.debug("Task._run: %s %s %s failed - stopping task",
+                       self, args, kargs)
         self.stop()
         raise se.TaskAborted(message, code)
-
 
     def _runJobs(self):
         result = ""
@@ -884,7 +863,8 @@ class Task:
             if self.aborting():
                 raise se.TaskAborted("shutting down")
             if not self.state == State.running:
-                raise se.TaskStateError("%s: can't run Jobs in state %s" % (self, self.state))
+                raise se.TaskStateError("%s: can't run Jobs in state %s" %
+                                        (self, self.state))
             # for now: result is the last job result, jobs are run sequentially
             for j in self.jobs:
                 if self.aborting():
@@ -908,7 +888,6 @@ class Task:
                 raise
         self._updateResult(code, message, "")
 
-
     def _doAbort(self, force=False):
         self.log.debug("Task._doAbort: force %s" % force)
         self.lock.acquire()
@@ -920,8 +899,10 @@ class Task:
         self.lock.release()
         try:
             try:
-                if not self.state.canAbort() and (force and not self.state.canAbortRecover()):
-                    self.log.warning("Task._doAbort %s: ignoring - at state %s", self, self.state)
+                if (not self.state.canAbort() and
+                    (force and not self.state.canAbortRecover())):
+                    self.log.warning("Task._doAbort %s: ignoring - "
+                                     "at state %s", self, self.state)
                     return
                 self.resOwner.cancelAll()
                 if self.state.canAbort():
@@ -936,9 +917,9 @@ class Task:
             self.lock.release()
             #If something horrible went wrong. Just fail the task.
             if not self.state.isDone():
-                self.log.warn("Task exited in non terminal state. Setting tasks as failed.")
+                self.log.warn("Task exited in non terminal state. "
+                              "Setting tasks as failed.")
                 self._updateState(State.failed)
-
 
     def _doRecover(self):
         self.lock.acquire()
@@ -955,7 +936,6 @@ class Task:
             self.ref -= 1
             self.lock.release()
 
-
     def _incref(self, force=False):
         self.lock.acquire()
         try:
@@ -968,7 +948,6 @@ class Task:
         finally:
             self.lock.release()
 
-
     def _decref(self, force=False):
         self.lock.acquire()
         self.ref -= 1
@@ -980,10 +959,9 @@ class Task:
             self._doAbort(force)
         return ref
 
-
-    ###############################################################################################
-    # Public Interface                                                                            #
-    ###############################################################################################
+    ##########################################################################
+    # Public Interface                                                       #
+    ##########################################################################
 
     def setDefaultException(self, exceptionObj):
         # defaultException must have response method
@@ -991,27 +969,27 @@ class Task:
             raise se.InvalidDefaultExceptionException(unicode(exceptionObj))
         self.defaultException = exceptionObj
 
-
     def setTag(self, tag):
         if KEY_SEPERATOR in tag:
             raise ValueError("tag cannot include %s character" % KEY_SEPERATOR)
         self.tag = unicode(tag)
 
-
     def isDone(self):
         return self.state.isDone()
 
-
     def addJob(self, job):
         """
-        Add async job to the task. Assumes all resources are acquired or registered.
+        Add async job to the task. Assumes all resources are acquired
+        or registered.
         """
         if not self.mng:
             raise se.UnmanagedTask(unicode(self))
         if not isinstance(job, Job):
-            raise TypeError("Job param %s(%s) must be Job object" % (repr(job), type(job)))
+            raise TypeError("Job param %s(%s) must be Job object" %
+                            (repr(job), type(job)))
         if self.state != State.preparing:
-            raise Exception("Task.addJob: can't add job in non preparing state (%s)" % self.state)
+            raise Exception("Task.addJob: can't add job in non preparing state"
+                            " (%s)" % self.state)
         if not job.name:
             raise ValueError("Task.addJob: name is required")
         name = job.name
@@ -1022,7 +1000,6 @@ class Task:
         self.jobs.append(job)
         self.njobs = len(self.jobs)
 
-
     def clean(self):
         if not self.store:
             return
@@ -1030,47 +1007,45 @@ class Task:
             raise se.TaskStateError("can't clean in state %s" % self.state)
         self._clean(self.store)
 
-
     def pushRecovery(self, recovery):
         """
         Add recovery "job" to the task. Recoveries are committed in FILO order.
         Assumes that all required resources are acquired or registered.
         """
         if not isinstance(recovery, Recovery):
-            raise TypeError("recovery param %s(%s) must be Recovery object" % (repr(recovery), type(recovery)))
+            raise TypeError("recovery param %s(%s) must be Recovery object" %
+                            (repr(recovery), type(recovery)))
         if not recovery.name:
             raise ValueError("pushRecovery: name is required")
         name = recovery.name
         for r in self.recoveries:
             if name == r.name:
-                raise ValueError("pushRecovery: name '%s' must be unique" % (name))
+                raise ValueError("pushRecovery: name '%s' must be unique" %
+                                 (name))
         recovery.setOwnerTask(self)
         self.recoveries.append(recovery)
         self.persist()
 
-
     def replaceRecoveries(self, recovery):
         if not isinstance(recovery, Recovery):
-            raise TypeError("recovery param %s(%s) must be Recovery object" % (repr(recovery), type(recovery)))
+            raise TypeError("recovery param %s(%s) must be Recovery object" %
+                            (repr(recovery), type(recovery)))
         if not recovery.name:
             raise ValueError("replaceRecoveries: name is required")
         recovery.setOwnerTask(self)
-        rec = Recovery('stubName','stubMod','stubObj','stubFunc',[])
+        rec = Recovery('stubName', 'stubMod', 'stubObj', 'stubFunc', [])
         while (rec and (rec.name != ROLLBACK_SENTINEL)):
             rec = self.popRecovery()
         self.recoveries.append(recovery)
         self.persist()
 
-
     def popRecovery(self):
         if self.recoveries:
             return self.recoveries.pop()
 
-
     def clearRecoveries(self):
         self.recoveries = []
         self.persist()
-
 
     def setManager(self, manager):
         # If need be, refactor out to "validateManager" method
@@ -1078,12 +1053,12 @@ class Task:
             raise se.InvalidTaskMng(unicode(manager))
         self.mng = manager
 
-
     def setCleanPolicy(self, clean):
         self.cleanPolicy = TaskCleanType(clean)
 
-
-    def setPersistence(self, store, persistPolicy = TaskPersistType.auto, cleanPolicy = TaskCleanType.auto):
+    def setPersistence(self, store,
+                       persistPolicy=TaskPersistType.auto,
+                       cleanPolicy=TaskCleanType.auto):
         self.persistPolicy = TaskPersistType(persistPolicy)
         self.store = store
         self.setCleanPolicy(cleanPolicy)
@@ -1094,14 +1069,14 @@ class Task:
             getProcPool().fileUtils.createdir(taskDir)
         except Exception, e:
             self.log.error("Unexpected error", exc_info=True)
-            raise se.TaskPersistError("%s: cannot access/create taskdir %s: %s" % (self, taskDir, e))
-        if self.persistPolicy == TaskPersistType.auto and self.state != State.init:
+            raise se.TaskPersistError("%s: cannot access/create taskdir"
+                                      " %s: %s" % (self, taskDir, e))
+        if (self.persistPolicy == TaskPersistType.auto and
+            self.state != State.init):
             self.persist()
-
 
     def setRecoveryPolicy(self, clean):
         self.recoveryPolicy = TaskRecoveryType(clean)
-
 
     def rollback(self):
         self.log.debug('(rollback): enter')
@@ -1113,7 +1088,6 @@ class Task:
         self._doRecover()
         self.log.debug('(rollback): exit')
 
-
     def persist(self):
         if self.persistPolicy == TaskPersistType.none:
             return
@@ -1123,22 +1097,24 @@ class Task:
             raise se.TaskStateError("can't persist in state %s" % self.state)
         self._save(self.store)
 
-
     @classmethod
     def loadTask(cls, store, taskid):
         t = Task(taskid)
         if getProcPool().os.path.exists(os.path.join(store, taskid)):
             ext = ""
-        # TBD: is this the correct order (temp < backup) + should temp be considered at all?
-        elif getProcPool().os.path.exists(os.path.join(store, taskid + TEMP_EXT)):
+        # TBD: is this the correct order (temp < backup) + should temp
+        # be considered at all?
+        elif getProcPool().os.path.exists(os.path.join(store,
+                                                       taskid + TEMP_EXT)):
             ext = TEMP_EXT
-        elif getProcPool().os.path.exists(os.path.join(store, taskid + BACKUP_EXT)):
+        elif getProcPool().os.path.exists(os.path.join(store,
+                                                       taskid + BACKUP_EXT)):
             ext = BACKUP_EXT
         else:
-            raise se.TaskDirError("loadTask: no such task dir '%s/%s'" % (store, taskid))
+            raise se.TaskDirError("loadTask: no such task dir '%s/%s'" %
+                                  (store, taskid))
         t._load(store, ext)
         return t
-
 
     def prepare(self, func, *args, **kwargs):
         message = self.error
@@ -1150,6 +1126,7 @@ class Task:
         try:
             self._updateState(State.preparing)
             result = None
+            code = 0
             try:
                 if func:
                     result = self._run(func, *args, **kwargs)
@@ -1160,11 +1137,13 @@ class Task:
 
             if self.aborting():
                 self.log.debug("Prepare: aborted: %s", message)
-                self._updateResult(code, "Task prepare failed: %s" % (message,), "")
+                self._updateResult(code, "Task prepare failed: %s" %
+                                   (message,), "")
                 raise self.error
 
             if self.jobs:
-                self.log.debug("Prepare: %s jobs exist, move to acquiring", self.njobs)
+                self.log.debug("Prepare: %s jobs exist, move to acquiring",
+                               self.njobs)
                 self._updateState(State.acquiring)
                 self.log.debug("returning")
                 return dict(uuid=str(self.id))
@@ -1176,8 +1155,7 @@ class Task:
         finally:
             self._decref()
 
-
-    def commit(self, args = None):
+    def commit(self, args=None):
         self.log.debug("committing task: %s", self.id)
         vars.task = self
         try:
@@ -1190,20 +1168,24 @@ class Task:
         finally:
             self._decref()
 
-
     def aborting(self):
-        return self._aborting or self.state == State.aborting or self.state == State.raborting
-
+        return (self._aborting or
+                self.state == State.aborting or
+                self.state == State.raborting)
 
     def stop(self, force=False):
         self.log.debug("stopping in state %s (force %s)", self.state, force)
         self._incref(force)
         try:
             if self.state.isDone():
-                self.log.debug("Task already stopped (%s), ignoring", self.state)
+                self.log.debug("Task already stopped (%s), ignoring",
+                               self.state)
                 return
-            elif self.state.isRecovering() and not force and (self.cleanPolicy == TaskCleanType.auto):
-                self.log.debug("Task (%s) in recovery and force is false, ignoring", self.state)
+            elif (self.state.isRecovering() and
+                  not force and
+                  (self.cleanPolicy == TaskCleanType.auto)):
+                self.log.debug("Task (%s) in recovery and force is false, "
+                               "ignoring", self.state)
                 return
 
             self._aborting = True
@@ -1211,10 +1193,10 @@ class Task:
         finally:
             self._decref(force)
 
-
-    def recover(self, args = None):
+    def recover(self, args=None):
         ''' Do not call this function while the task is actually running. this
-            method should only be used to recover tasks state after (vdsmd) restart.
+            method should only be used to recover tasks state after
+            (vdsmd) restart.
         '''
         self.log.debug('(recover): recovering: state %s', self.state)
         vars.task = self
@@ -1234,7 +1216,8 @@ class Task:
             elif self.state == State.waitrecover:
                 pass
             # if we started the recovery - restart it
-            elif self.state == State.racquiring or self.state == State.recovering:
+            elif (self.state == State.racquiring or
+                  self.state == State.recovering):
                 self._updateState(State.racquiring, force=True)
             # else we were during failed recovery - abort it
             else:
@@ -1243,14 +1226,11 @@ class Task:
             self._decref(force=True)
         self.log.debug('(recover): recovered: state %s', self.state)
 
-
     def getState(self):
         return str(self.state)
 
-
     def getInfo(self):
         return dict(id=self.id, verb=self.name)
-
 
     def deprecated_getStatus(self):
         oReturn = {}
@@ -1261,26 +1241,22 @@ class Task:
         oReturn["message"] = self.result.message
         return oReturn
 
-
     def getStatus(self):
         oReturn = {}
-        oReturn["state"] = {'code': self.result.code, 'message': self.result.message}
+        oReturn["state"] = {'code': self.result.code,
+                            'message': self.result.message}
         oReturn["task"] = {'id': self.id, 'state': str(self.state)}
         oReturn["result"] = self.result.result
         return oReturn
 
-
     def getID(self):
         return self.id
-
 
     def getTags(self):
         return self.tag
 
-
     def __str__(self):
         return str(self.id)
-
 
     # FIXME : Use StringIO and enumerate()
     def dumpTask(self):
@@ -1295,13 +1271,25 @@ class Task:
             i += 1
         return s
 
+    @misc.logskip("ResourceManager")
+    def getExclusiveLock(
+                self,
+                namespace,
+                resName,
+                timeout=config.getint('irs',
+                                      'task_resource_default_timeout')):
+        self.resOwner.acquire(namespace,
+                              resName,
+                              resourceManager.LockType.exclusive,
+                              timeout)
 
     @misc.logskip("ResourceManager")
-    def getExclusiveLock(self, namespace, resName, timeout=config.getint('irs', 'task_resource_default_timeout')):
-        self.resOwner.acquire(namespace, resName, resourceManager.LockType.exclusive, timeout)
-
-
-    @misc.logskip("ResourceManager")
-    def getSharedLock(self, namespace, resName, timeout=config.getint('irs', 'task_resource_default_timeout')):
-        self.resOwner.acquire(namespace, resName, resourceManager.LockType.shared, timeout)
-
+    def getSharedLock(self,
+                      namespace,
+                      resName,
+                      timeout=config.getint('irs',
+                                            'task_resource_default_timeout')):
+        self.resOwner.acquire(namespace,
+                              resName,
+                              resourceManager.LockType.shared,
+                              timeout)
