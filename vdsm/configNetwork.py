@@ -178,6 +178,13 @@ class ConfigWriter(object):
                 else:
                     raise
 
+    def writeConfFile(self, fileName, configuration):
+        '''Backs up the previous contents of the file referenced by fileName
+        writes the new configuration and sets the specified access mode.'''
+        self._backup(fileName)
+        open(fileName, 'w').write(configuration)
+        os.chmod(fileName, 0664)
+
     def restoreAtomicBackup(self):
         logging.info("Rolling back configuration (restoring atomic backup)")
         if not self._backups:
@@ -229,16 +236,18 @@ class ConfigWriter(object):
             gateway=None, bootproto=None, delay='0', onboot='yes', **kwargs):
         "Based on addNetwork"
 
-        s = """DEVICE=%s\nTYPE=Bridge\nONBOOT=%s\n""" % (pipes.quote(name), pipes.quote(onboot))
+        s = 'DEVICE=%s\nTYPE=Bridge\nONBOOT=%s\n' % (pipes.quote(name),
+                                                     pipes.quote(onboot))
         if ipaddr:
-            s = s + 'IPADDR=%s\nNETMASK=%s\n' % (pipes.quote(ipaddr), pipes.quote(netmask))
+            s += 'IPADDR=%s\nNETMASK=%s\n' % (pipes.quote(ipaddr),
+                                              pipes.quote(netmask))
             if gateway:
-                s = s + 'GATEWAY=%s\n' % pipes.quote(gateway)
+                s += 'GATEWAY=%s\n' % pipes.quote(gateway)
         else:
             if bootproto:
-                s = s + 'BOOTPROTO=%s\n' % pipes.quote(bootproto)
+                s += 'BOOTPROTO=%s\n' % pipes.quote(bootproto)
         if mtu:
-            s = s + 'MTU=%d\n' % mtu
+            s += 'MTU=%d\n' % mtu
         s += 'DELAY=%s\n' % pipes.quote(delay)
         s += 'NM_CONTROLLED=no\n'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
@@ -250,61 +259,54 @@ class ConfigWriter(object):
                 s += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
             else:
                 logging.debug('ignoring variable %s', k)
-        conffile = self.NET_CONF_PREF + name
-        self._backup(conffile)
-        open(conffile, 'w').write(s)
-        os.chmod(conffile, 0664)
+
+        self.writeConfFile(self.NET_CONF_PREF + name, s)
 
     def addVlan(self, vlanId, iface, network, mtu=None, bridged=True):
         "Based on addNetwork"
-        conffile = self.NET_CONF_PREF + iface + '.' + vlanId
-        self._backup(conffile)
-        content = """DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\nNM_CONTROLLED=no\n"""
+        content = 'DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\n'\
+                  'NM_CONTROLLED=no\n' % (pipes.quote(iface), vlanId)
         if mtu:
             content = content + 'MTU=%d\n' % mtu
         if bridged:
             content = content + 'BRIDGE=%s\n' % pipes.quote(network)
-        open(conffile, 'w').write(content % (pipes.quote(iface), vlanId))
-        os.chmod(conffile, 0664)
+
+        self.writeConfFile(self.NET_CONF_PREF + iface + '.' + vlanId, content)
 
     def addBonding(self, bonding, bridge=None, bondingOptions=None, mtu=None):
         "Based on addNetwork"
-        conffile = self.NET_CONF_PREF + bonding
-        self._backup(conffile)
-        with open(conffile, 'w') as f:
-            f.write("""DEVICE=%s\nONBOOT=yes\nBOOTPROTO=none\n""" % (bonding))
-            if bridge:
-                f.write('BRIDGE=%s\n' % pipes.quote(bridge))
-            if not bondingOptions:
-                bondingOptions = 'mode=802.3ad miimon=150'
-            f.write('BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or ''))
-            f.write('NM_CONTROLLED=no\n')
-            if mtu:
-                f.write('MTU=%d\n' % mtu)
-        os.chmod(conffile, 0664)
+        content = 'DEVICE=%s\nONBOOT=yes\nBOOTPROTO=none\n' % (bonding)
+        if bridge:
+            content += 'BRIDGE=%s\n' % pipes.quote(bridge)
+        if not bondingOptions:
+            bondingOptions = 'mode=802.3ad miimon=150'
+        content += 'BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or '')
+        content += 'NM_CONTROLLED=no\n'
+        if mtu:
+            content += 'MTU=%d\n' % mtu
+
+        self.writeConfFile(self.NET_CONF_PREF + bonding, content)
+
         # create the bonding device to avoid initscripts noise
         if bonding not in open('/sys/class/net/bonding_masters').read().split():
             open('/sys/class/net/bonding_masters', 'w').write('+%s\n' % bonding)
 
     def addNic(self, nic, bonding=None, bridge=None, mtu=None):
         "Based on addNetwork"
-        conffile = self.NET_CONF_PREF + nic
-        self._backup(conffile)
         _netinfo = netinfo.NetInfo()
         hwaddr = _netinfo.nics[nic].get('permhwaddr') or \
                  _netinfo.nics[nic]['hwaddr']
-        with open(conffile, 'w') as f:
-            f.write('DEVICE=%s\nONBOOT=yes\nBOOTPROTO=none\nHWADDR=%s\n' % (pipes.quote(nic),
-                    pipes.quote(hwaddr)))
-            if bridge:
-                f.write('BRIDGE=%s\n' % pipes.quote(bridge))
-            if bonding:
-                f.write('MASTER=%s\n' % pipes.quote(bonding))
-                f.write('SLAVE=yes\n')
-            f.write('NM_CONTROLLED=no\n')
-            if mtu:
-                f.write('MTU=%d\n' % mtu)
-        os.chmod(conffile, 0664)
+        content = 'DEVICE=%s\nONBOOT=yes\nBOOTPROTO=none\nHWADDR=%s\n' % (
+                pipes.quote(nic), pipes.quote(hwaddr))
+        if bridge:
+            content += 'BRIDGE=%s\n' % pipes.quote(bridge)
+        if bonding:
+            content += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(bonding)
+        content += 'NM_CONTROLLED=no\n'
+        if mtu:
+            content += 'MTU=%d\n' % mtu
+
+        self.writeConfFile(self.NET_CONF_PREF + nic, content)
 
     def removeNic(self, nic):
         cf = self.NET_CONF_PREF + nic
