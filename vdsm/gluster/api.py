@@ -204,6 +204,13 @@ class GlusterApi(object):
                                                       replicaCount)
 
     @exportAsVerb
+    def volumeStatus(self, volumeName, brick=None, statusOption=None,
+                     options=None):
+        return {'volumeStatus':
+                    self.svdsmProxy.glusterVolumeStatus(volumeName, brick,
+                                                        statusOption)}
+
+    @exportAsVerb
     def hostAdd(self, hostName, options=None):
         self.svdsmProxy.glusterPeerProbe(hostName)
 

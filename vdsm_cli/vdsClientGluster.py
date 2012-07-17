@@ -194,6 +194,15 @@ class GlusterService(service):
         status = self.s.glusterVolumeRemoveBrickForce(args[0], args[1:])
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeStatus(self, args):
+        volumeName = args[0]
+        params = self._eqSplit(args[1:])
+        brick = params.get('brick', '')
+        option = params.get('option', '')
+        status = self.s.glusterVolumeStatus(volumeName, brick, option)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
     def do_glusterHostsList(self, args):
         status = self.s.glusterHostsList()
         pp.pprint(status)
@@ -349,6 +358,17 @@ def getGlusterCmdDict(serv):
               '<volume_name> is existing volume name\n\t<brick> is '
               'existing brick',
               'force volume remove bricks'
+              )),
+        'glusterVolumeStatus':
+            (serv.do_glusterVolumeStatus,
+             ('<volume_name> [brick=<existing_brick>] '
+              '[option={detail | clients | mem}]\n\t'
+              '<volume_name> is existing volume name\n\t'
+              'detail option gives brick detailed status\n\t'
+              'clients option gives clients status\n\t'
+              'mem option gives memory status\n\t',
+              'get volume status of given volume with its all brick or '
+              'specified brick'
               )),
         'glusterHostsList':
             (serv.do_glusterHostsList,

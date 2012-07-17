@@ -323,6 +323,11 @@ class GlusterVolumeRemoveBrickForceFailedException(GlusterVolumeException):
     message = "Volume remove brick force failed"
 
 
+class GlusterVolumeStatusFailedException(GlusterVolumeException):
+    code = 4157
+    message = "Volume status failed"
+
+
 # Host
 class GlusterHostException(GlusterException):
     code = 4400

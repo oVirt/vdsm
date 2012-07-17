@@ -92,6 +92,213 @@ def _getLocalIpAddress():
     return ''
 
 
+def _getGlusterHostName():
+    try:
+        return getHostNameFqdn()
+    except HostNameException:
+        return ''
+
+
+def _getGlusterUuid():
+    try:
+        with open('/var/lib/glusterd/glusterd.info') as f:
+            return dict(map(lambda x: x.strip().split('=', 1),
+                            f)).get('UUID', '')
+    except IOError:
+        return ''
+
+
+def _parseVolumeStatus(tree):
+    status = {'name': tree.find('volStatus/volName').text,
+              'bricks': [],
+              'nfs': [],
+              'shd': []}
+    hostname = _getLocalIpAddress() or _getGlusterHostName()
+    for el in tree.findall('volStatus/node'):
+        value = {}
+
+        for ch in el.getchildren():
+            value[ch.tag] = ch.text or ''
+
+        if value['path'] == 'localhost':
+            value['path'] = hostname
+
+        if value['status'] == '1':
+            value['status'] = 'ONLINE'
+        else:
+            value['status'] = 'OFFLINE'
+
+        if value['hostname'] == 'NFS Server':
+            status['nfs'].append({'hostname': value['path'],
+                                  'port': value['port'],
+                                  'status': value['status'],
+                                  'pid': value['pid']})
+        elif value['hostname'] == 'Self-heal Daemon':
+            status['shd'].append({'hostname': value['path'],
+                                  'status': value['status'],
+                                  'pid': value['pid']})
+        else:
+            status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
+                                                         value['path']),
+                                     'port': value['port'],
+                                     'status': value['status'],
+                                     'pid': value['pid']})
+    return status
+
+
+def _parseVolumeStatusDetail(tree):
+    status = {'name': tree.find('volStatus/volName').text,
+              'bricks': []}
+    for el in tree.findall('volStatus/node'):
+        value = {}
+
+        for ch in el.getchildren():
+            value[ch.tag] = ch.text or ''
+
+        sizeTotal = int(value['sizeTotal'])
+        value['sizeTotal'] = sizeTotal / (1024.0 * 1024.0)
+        sizeFree = int(value['sizeFree'])
+        value['sizeFree'] = sizeFree / (1024.0 * 1024.0)
+        status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
+                                                     value['path']),
+                                 'sizeTotal': '%.3f' % (value['sizeTotal'],),
+                                 'sizeFree': '%.3f' % (value['sizeFree'],),
+                                 'device': value['device'],
+                                 'blockSize': value['blockSize'],
+                                 'mntOptions': value['mntOptions'],
+                                 'fsName': value['fsName']})
+    return status
+
+
+def _parseVolumeStatusClients(tree):
+    status = {'name': tree.find('volStatus/volName').text,
+              'bricks': []}
+    for el in tree.findall('volStatus/node'):
+        hostname = el.find('hostname').text
+        path = el.find('path').text
+
+        clientsStatus = []
+        for c in el.findall('clientsStatus/client'):
+            clientValue = {}
+            for ch in c.getchildren():
+                clientValue[ch.tag] = ch.text or ''
+            clientsStatus.append({'hostname': clientValue['hostname'],
+                                  'bytesRead': clientValue['bytesRead'],
+                                  'bytesWrite': clientValue['bytesWrite']})
+
+        status['bricks'].append({'brick': '%s:%s' % (hostname, path),
+                                 'clientsStatus': clientsStatus})
+    return status
+
+
+def _parseVolumeStatusMem(tree):
+    status = {'name': tree.find('volStatus/volName').text,
+              'bricks': []}
+    for el in tree.findall('volStatus/node'):
+        brick = {'brick': '%s:%s' % (el.find('hostname').text,
+                                     el.find('path').text),
+                 'mallinfo': {},
+                 'mempool': []}
+
+        for ch in el.find('memStatus/mallinfo').getchildren():
+            brick['mallinfo'][ch.tag] = ch.text or ''
+
+        for c in el.findall('memStatus/mempool/pool'):
+            mempool = {}
+            for ch in c.getchildren():
+                mempool[ch.tag] = ch.text or ''
+            brick['mempool'].append(mempool)
+
+        status['bricks'].append(brick)
+    return status
+
+
+@exportToSuperVdsm
+def volumeStatus(volumeName, brick=None, option=None):
+    """
+    Get volume status
+
+    Arguments:
+       * VolumeName
+       * brick
+       * option = 'detail' or 'clients' or 'mem' or None
+    Returns:
+       When option=None,
+         {'name': NAME,
+          'bricks': [{'brick': BRICK,
+                      'port': PORT,
+                      'status': STATUS,
+                      'pid': PID}, ...],
+          'nfs': [{'hostname': HOST,
+                   'port': PORT,
+                   'status': STATUS,
+                   'pid': PID}, ...],
+          'shd: [{'hostname': HOST,
+                  'status': STATUS,
+                  'pid': PID}, ...]}
+
+      When option='detail',
+         {'name': NAME,
+          'bricks': [{'brick': BRICK,
+                      'sizeTotal': SIZE,
+                      'sizeFree': FREESIZE,
+                      'device': DEVICE,
+                      'blockSize': BLOCKSIZE,
+                      'mntOptions': MOUNTOPTIONS,
+                      'fsName': FSTYPE}, ...]}
+
+       When option='clients':
+         {'name': NAME,
+          'bricks': [{'brick': BRICK,
+                      'clientsStatus': [{'hostname': HOST,
+                                         'bytesRead': BYTESREAD,
+                                         'bytesWrite': BYTESWRITE}, ...]},
+                    ...]}
+
+       When option='mem':
+         {'name': NAME,
+          'bricks': [{'brick': BRICK,
+                      'mallinfo': {'arena': int,
+                                   'fordblks': int,
+                                   'fsmblks': int,
+                                   'hblkhd': int,
+                                   'hblks': int,
+                                   'keepcost': int,
+                                   'ordblks': int,
+                                   'smblks': int,
+                                   'uordblks': int,
+                                   'usmblks': int},
+                      'mempool': [{'allocCount': int,
+                                   'coldCount': int,
+                                   'hotCount': int,
+                                   'maxAlloc': int,
+                                   'maxStdAlloc': int,
+                                   'name': NAME,
+                                   'padddedSizeOf': int,
+                                   'poolMisses': int},...]}, ...]}
+    """
+    command = _getGlusterVolCmd() + ["status", volumeName]
+    if brick:
+        command.append(brick)
+    if option:
+        command.append(option)
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeStatusFailedException(rc=e.rc, err=e.err)
+    try:
+        if option == 'detail':
+            return _parseVolumeStatusDetail(xmltree)
+        elif option == 'clients':
+            return _parseVolumeStatusClients(xmltree)
+        elif option == 'mem':
+            return _parseVolumeStatusMem(xmltree)
+        else:
+            return _parseVolumeStatus(xmltree)
+    except (etree.ParseError, AttributeError, ValueError):
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
 def _parseVolumeInfo(out):
     if not out[0].strip():
         del out[0]
@@ -504,22 +711,6 @@ def peerDetach(hostName, force=False):
         raise ge.GlusterHostRemoveFailedException(rc, out, err)
     else:
         return True
-
-
-def _getGlusterHostName():
-    try:
-        return getHostNameFqdn()
-    except HostNameException:
-        return ''
-
-
-def _getGlusterUuid():
-    try:
-        with open('/var/lib/glusterd/glusterd.info') as f:
-            return dict(map(lambda x: x.strip().split('=', 1),
-                            f)).get('UUID', '')
-    except IOError:
-        return ''
 
 
 def _parsePeerStatus(tree, gHostName, gUuid, gStatus):
