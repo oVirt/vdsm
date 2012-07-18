@@ -82,7 +82,7 @@ def write_vdsm_config(rhevm_host, rhevm_port):
             log("vdsm-reg.conf Saved\n")
             return True
 
-def get_rhevm_config():
+def getEngineConfig():
     vdsm_config = open(VDSM_REG_CONFIG)
     config = {}
     config["vdc_host_port"] = VDC_HOST_PORT
@@ -153,7 +153,7 @@ class Plugin(PluginBase):
                 field.setFlags(FLAG_DISABLED, FLAGS_SET)
 
         try:
-            rhevm_server = get_rhevm_config()
+            rhevm_server = getEngineConfig()
             rhevm_server,rhevm_port = rhevm_server.split(":")
             if rhevm_server.startswith("None"):
                 self.rhevm_server.set("")
