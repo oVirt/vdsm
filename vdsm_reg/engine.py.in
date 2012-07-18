@@ -115,19 +115,19 @@ class Plugin(PluginBase):
             self.ncs.screen.setColor(customColorset(1), "black", "magenta")
             heading.setColors(customColorset(1))
         elements.setField(heading, 0, 0, anchorLeft = 1)
-        rhevm_grid = Grid(2,2)
-        rhevm_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
-        self.rhevm_server = Entry(25, "")
-        self.rhevm_server.setCallback(self.validEngineServerCallback)
-        rhevm_grid.setField(Label("Management Server Port:"), 0, 1, anchorLeft = 1)
-        self.rhevm_server_port = Entry(6, "", scroll = 0)
-        self.rhevm_server_port.setCallback(self.validEngineServerPortCallback)
-        rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
-        rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 0))
-        elements.setField(rhevm_grid, 0, 1, anchorLeft = 1, padding = (0,0,0,0))
+        engine_grid = Grid(2,2)
+        engine_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
+        self.engine_server = Entry(25, "")
+        self.engine_server.setCallback(self.validEngineServerCallback)
+        engine_grid.setField(Label("Management Server Port:"), 0, 1, anchorLeft = 1)
+        self.engine_server_port = Entry(6, "", scroll = 0)
+        self.engine_server_port.setCallback(self.validEngineServerPortCallback)
+        engine_grid.setField(self.engine_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
+        engine_grid.setField(self.engine_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 0))
+        elements.setField(engine_grid, 0, 1, anchorLeft = 1, padding = (0,0,0,0))
         elements.setField(Label(""), 0, 2, anchorLeft = 1)
-        self.verify_rhevm_cert = Checkbox("Connect to @ENGINENAME@ and Validate Certificate", isOn=True)
-        elements.setField(self.verify_rhevm_cert, 0, 3, anchorLeft = 1, padding = (0,0,0,0))
+        self.verify_engine_cert = Checkbox("Connect to @ENGINENAME@ and Validate Certificate", isOn=True)
+        elements.setField(self.verify_engine_cert, 0, 3, anchorLeft = 1, padding = (0,0,0,0))
         elements.setField(Label(""), 0, 4, anchorLeft = 1)
 
         elements.setField(Label("Optional password for adding node through @ENGINENAME@ UI"), 0, 5, anchorLeft = 1)
@@ -146,20 +146,20 @@ class Plugin(PluginBase):
         elements.setField(pw_elements, 0, 6, anchorLeft=1)
         elements.setField(self.pw_msg, 0, 7, padding = (0,0,0,0))
 
-        inputFields = [self.rhevm_server, self.rhevm_server_port, self.verify_rhevm_cert,
+        inputFields = [self.engine_server, self.engine_server_port, self.verify_engine_cert,
                        self.root_password_1, self.root_password_2]
         if not is_network_up:
             for field in inputFields:
                 field.setFlags(FLAG_DISABLED, FLAGS_SET)
 
         try:
-            rhevm_server = getEngineConfig()
-            rhevm_server,rhevm_port = rhevm_server.split(":")
-            if rhevm_server.startswith("None"):
-                self.rhevm_server.set("")
+            engine_server = getEngineConfig()
+            engine_server,engine_port = engine_server.split(":")
+            if engine_server.startswith("None"):
+                self.engine_server.set("")
             else:
-                self.rhevm_server.set(rhevm_server)
-            self.rhevm_server_port.set(rhevm_port)
+                self.engine_server.set(engine_server)
+            self.engine_server_port.set(engine_port)
 
         except:
             pass
@@ -179,10 +179,10 @@ class Plugin(PluginBase):
             augtool("set", "/files/etc/ssh/sshd_config/PasswordAuthentication", "yes")
             dn = file('/dev/null', 'w+')
             subprocess.Popen(['/sbin/service', 'sshd', 'restart'], stdout=dn, stderr=dn)
-        if len(self.rhevm_server.value()) > 0:
+        if len(self.engine_server.value()) > 0:
             deployUtil.nodeCleanup()
-            if self.verify_rhevm_cert.selected():
-                if deployUtil.getRhevmCert(self.rhevm_server.value(),  self.rhevm_server_port.value()):
+            if self.verify_engine_cert.selected():
+                if deployUtil.getRhevmCert(self.engine_server.value(),  self.engine_server_port.value()):
                     path, dontCare = deployUtil.certPaths('')
                     fp = deployUtil.generateFingerPrint(path)
                     approval = ButtonChoiceWindow(self.ncs.screen,
@@ -199,7 +199,7 @@ class Plugin(PluginBase):
                     self.ncs.reset_screen_colors()
             # Stopping vdsm-reg may fail but its ok - its in the case when the menus are run after installation
             deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg', 'stop'])
-            if write_vdsm_config(self.rhevm_server.value(), self.rhevm_server_port.value()):
+            if write_vdsm_config(self.engine_server.value(), self.engine_server_port.value()):
                 deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg',
                     'start'])
                 ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@ Configuration", "@ENGINENAME@ Configuration Successfully Updated", buttons = ['Ok'])
@@ -211,7 +211,7 @@ class Plugin(PluginBase):
                 return False
 
     def validEngineServerCallback(self):
-        if not is_valid_host_or_ip(self.rhevm_server.value()):
+        if not is_valid_host_or_ip(self.engine_server.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
             ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid @ENGINENAME@ Hostname or Address", buttons = ['Ok'])
@@ -219,7 +219,7 @@ class Plugin(PluginBase):
 
 
     def validEngineServerPortCallback(self):
-        if not is_valid_port(self.rhevm_server_port.value()):
+        if not is_valid_port(self.engine_server_port.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
             ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid @ENGINENAME@ Server Port", buttons = ['Ok'])
