@@ -110,6 +110,7 @@ class DomainMonitor(object):
 
     def _monitorDomain(self, domain, hostId, stopEvent, status):
         nextStatus = DomainMonitorStatus()
+        isIsoDomain = domain.isISO()
 
         while not stopEvent.is_set():
             nextStatus.clear()
@@ -153,7 +154,9 @@ class DomainMonitor(object):
                     self.log.warn("Could not emit domain state change event",
                                   exc_info=True)
 
-            if nextStatus.valid and nextStatus.hasHostId is False:
+            # An ISO domain can be shared by multiple pools
+            if (not isIsoDomain
+                        and nextStatus.valid and nextStatus.hasHostId is False):
                 try:
                     domain.acquireHostId(hostId, async=True)
                 except:

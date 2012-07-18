@@ -978,7 +978,8 @@ class StoragePool(Securable):
         detachingISO = dom.isISO()
 
         if detachingISO:
-            #An ISO domain can be shared by many pools
+            # An ISO domain can be shared by multiple pools
+            dom.acquireHostId(self.id)
             dom.acquireClusterLock(self.id)
 
         try:
@@ -987,6 +988,7 @@ class StoragePool(Securable):
         finally:
             if detachingISO:
                 dom.releaseClusterLock()
+                dom.releaseHostId(self.id)
 
         # Remove domain from pool metadata
         self.forcedDetachSD(sdUUID)
