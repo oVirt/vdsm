@@ -53,7 +53,7 @@ management_port = 54321
     vdsm_config_file.write(vdsm_config)
     vdsm_config_file.close()
 
-def write_vdsm_config(rhevm_host, rhevm_port):
+def write_vdsm_config(engineHost, enginePort):
     if not os.path.exists(VDSM_CONFIG):
         system("touch " + VDSM_CONFIG)
     if os.path.getsize(VDSM_CONFIG) == 0:
@@ -63,17 +63,17 @@ def write_vdsm_config(rhevm_host, rhevm_port):
     else:
         log("Agent configuration files already exist.")
 
-    if system("ping -c 1 " + rhevm_host):
-        sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name="+rhevm_host+"/\" " + VDSM_REG_CONFIG
+    if system("ping -c 1 " + engineHost):
+        sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name=" + engineHost + "/\" " + VDSM_REG_CONFIG
         if system(sed_cmd):
-            log("The @ENGINENAME@'s address is set: %s\n" % rhevm_host)
-        if rhevm_port != "":
-            sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port="+str(rhevm_port)+"/\" " + VDSM_REG_CONFIG
+            log("The @ENGINENAME@'s address is set: %s\n" % engineHost)
+        if enginePort != "":
+            sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port=" + str(enginePort) + "/\" " + VDSM_REG_CONFIG
             if system(sed_cmd):
-                log("The @ENGINENAME@'s port set: %s\n" % rhevm_port)
+                log("The @ENGINENAME@'s port set: %s\n" % enginePort)
             fWriteConfig=1
     else:
-        log("Either " + rhevm_host + " is an invalid address or the @ENGINENAME@ unresponsive.\n")
+        log("Either " + engineHost + " is an invalid address or the @ENGINENAME@ unresponsive.\n")
         return False
 
     if fWriteConfig == 1:
