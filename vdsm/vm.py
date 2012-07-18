@@ -306,6 +306,7 @@ class Vm(object):
 
         self._usedIndices = {} #{'ide': [], 'virtio' = []}
         self._volumesPrepared = False
+        self._vmCreationEvent = threading.Event()
         self._pathsPreparedEvent = threading.Event()
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
@@ -565,6 +566,7 @@ class Vm(object):
             self.memCommit()
             self._ongoingCreations.acquire()
             self.log.debug("_ongoingCreations acquired")
+            self._vmCreationEvent.set()
             try:
                 self._run()
                 if self.lastStatus != 'Down' and 'recover' not in self.conf \

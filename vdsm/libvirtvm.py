@@ -2586,6 +2586,10 @@ class LibvirtVm(vm.Vm):
 
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""
+        # Wait for the VM to start its creation. There is no reason to start
+        # the timed waiting for path preparation before the work has started.
+        self.log.debug('migration destination: waiting for VM creation')
+        self._vmCreationEvent.wait()
         prepareTimeout = self._loadCorrectedTimeout(
                           config.getint('vars', 'migration_listener_timeout'),
                           doubler=5)
