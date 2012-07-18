@@ -1598,7 +1598,7 @@ if __name__ == '__main__':
         'create':  (serv.do_create,
                        ('<configFile> [parameter=value, parameter=value, '
                            '......]',
-                        'Creates new machine with the paremeters givven in the'
+                        'Creates new machine with the paremeters given in the'
                         ' command line overriding the ones in the config file',
                         'Example with config file: vdsClient someServer create'
                         ' myVmConfigFile',
@@ -1610,7 +1610,7 @@ if __name__ == '__main__':
                         'created VM. Any additional operation on the VM must '
                         'refer to this ID',
                         'o   vmType=<qemu/kvm> : Virtual machine technology - '
-                        'if not givven kvm is default',
+                        'if not given kvm is default',
                         'o   kvmEnable=<true/false> : run in KVM enabled mode '
                         'or full emulation - default is according to the VDS '
                         'capabilities',
