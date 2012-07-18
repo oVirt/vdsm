@@ -543,7 +543,7 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
                         "interface %r already has networks" % \
                         (iface))
 
-def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
+def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
                           netmask, gateway, bondingOptions, bridged=True,
                           implicitBonding=False, **options):
     # The (relatively) new setupNetwork verb allows to specify a network on
@@ -557,12 +557,10 @@ def _addNetworkValidation(_netinfo, bridge, vlan, bonding, nics, ipaddr,
 
     # Check bridge
     if bridged:
-        validateBridgeName(bridge)
-        if bridge in _netinfo.networks:
-            raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'Bridge already exists')
+        validateBridgeName(network)
 
-        if bridge in _netinfo.getBridgelessNetworks():
-            raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'network already exists')
+    if network in _netinfo.networks:
+        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'Network already exists')
 
     # Check vlan
     if vlan:
@@ -635,8 +633,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
 
     # Validation
     if not utils.tobool(force):
-        logging.debug('validating bridge...')
-        _addNetworkValidation(_netinfo, bridge=network if bridged else None,
+        logging.debug('validating network...')
+        _addNetworkValidation(_netinfo, network=network,
                 vlan=vlan, bonding=bonding, nics=nics, ipaddr=ipaddr,
                 netmask=netmask, gateway=gateway, bondingOptions=bondingOptions,
                 bridged=bridged, **options)
