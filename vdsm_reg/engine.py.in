@@ -118,10 +118,10 @@ class Plugin(PluginBase):
         rhevm_grid = Grid(2,2)
         rhevm_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
         self.rhevm_server = Entry(25, "")
-        self.rhevm_server.setCallback(self.valid_rhevm_server_callback)
+        self.rhevm_server.setCallback(self.validEngineServerCallback)
         rhevm_grid.setField(Label("Management Server Port:"), 0, 1, anchorLeft = 1)
         self.rhevm_server_port = Entry(6, "", scroll = 0)
-        self.rhevm_server_port.setCallback(self.valid_rhevm_server_port_callback)
+        self.rhevm_server_port.setCallback(self.validEngineServerPortCallback)
         rhevm_grid.setField(self.rhevm_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
         rhevm_grid.setField(self.rhevm_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 0))
         elements.setField(rhevm_grid, 0, 1, anchorLeft = 1, padding = (0,0,0,0))
@@ -210,7 +210,7 @@ class Plugin(PluginBase):
                 self.ncs.reset_screen_colors()
                 return False
 
-    def valid_rhevm_server_callback(self):
+    def validEngineServerCallback(self):
         if not is_valid_host_or_ip(self.rhevm_server.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
@@ -218,7 +218,7 @@ class Plugin(PluginBase):
             self.ncs.reset_screen_colors()
 
 
-    def valid_rhevm_server_port_callback(self):
+    def validEngineServerPortCallback(self):
         if not is_valid_port(self.rhevm_server_port.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
