@@ -1263,7 +1263,10 @@ class StoragePool(Securable):
 
             vmPath = os.path.join(vms, vmUUID)
             if fileUtils.pathExists(vmPath):
-                fileUtils.cleanupdir(vmPath, ignoreErrors = False)
+                try:
+                    fileUtils.cleanupdir(vmPath, ignoreErrors = False)
+                except RuntimeError as e:
+                    raise se.MiscDirCleanupFailure(str(e))
 
             try:
                 os.mkdir(vmPath)

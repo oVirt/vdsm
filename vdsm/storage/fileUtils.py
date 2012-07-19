@@ -35,7 +35,6 @@ import subprocess
 import shutil
 from vdsm import constants
 import logging
-import storage_exception as se
 from vdsm.config import config
 import errno
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
@@ -100,7 +99,7 @@ def validateAccess(targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
     Validate the RWX access to a given path
     """
     if not os.access(targetPath, perms):
-        raise se.StorageServerAccessPermissionError(targetPath)
+        raise OSError(errno.EACCES, os.strerror(errno.EACCES))
 
 
 def validateQemuReadable(targetPath):
@@ -112,7 +111,7 @@ def validateQemuReadable(targetPath):
     st = os.stat(targetPath)
     if not (st.st_gid in gids and st.st_mode & stat.S_IRGRP or
             st.st_mode & stat.S_IROTH):
-        raise se.StorageServerAccessPermissionError(targetPath)
+        raise OSError(errno.EACCES, os.strerror(errno.EACCES))
 
 
 def pathExists(filename, writable=False):
@@ -162,7 +161,7 @@ def cleanupdir(dirPath, ignoreErrors=True):
     shutil.rmtree(dirPath, onerror=logit)
 
     if not ignoreErrors and cleanupdir_errors:
-        raise se.MiscDirCleanupFailure("%s %s" % (dirPath, cleanupdir_errors))
+        raise RuntimeError("%s %s" % (dirPath, cleanupdir_errors))
 
 
 def createdir(dirPath, mode=None):

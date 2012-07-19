@@ -191,7 +191,10 @@ class FileStorageDomain(sd.StorageDomain):
             try:
                 self.oop.fileUtils.validateQemuReadable(entry)
                 stats['status'] = 0  # Status OK
-            except se.StorageServerAccessPermissionError:
+            except OSError as e:
+                if e.errno != errno.EACCES:
+                    raise
+
                 stats['status'] = se.StorageServerAccessPermissionError.code
 
             fileName = entry[filePrefixLen:]
@@ -333,7 +336,11 @@ class FileStorageDomain(sd.StorageDomain):
         except (se.StorageDomainDoesNotExist):
             pass
         else:
-            oop.getProcessPool(sdUUID).fileUtils.cleanupdir(domaindir, ignoreErrors = False)
+            try:
+                oop.getProcessPool(sdUUID).fileUtils.cleanupdir(domaindir, ignoreErrors = False)
+            except RuntimeError as e:
+                raise se.MiscDirCleanupFailure(str(e))
+
         return True
 
     def getRemotePath(self):

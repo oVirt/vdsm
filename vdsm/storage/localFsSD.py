@@ -20,6 +20,7 @@
 
 import os
 from glob import glob
+import errno
 
 import sd
 import fileSD
@@ -36,7 +37,13 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         if os.path.abspath(typeSpecificArg) != typeSpecificArg:
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
 
-        fileSD.validateDirAccess(domPath)
+        try:
+            fileSD.validateDirAccess(domPath)
+        except OSError as e:
+            if e.errno == errno.EACCES:
+                raise se.StorageServerAccessPermissionError(domPath)
+
+            raise
 
         sd.validateDomainVersion(version)
 

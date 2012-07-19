@@ -19,6 +19,7 @@
 #
 
 import os
+import errno
 
 import sd
 import fileSD
@@ -43,7 +44,13 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         if not mount.isMounted(domPath):
             raise se.StorageDomainFSNotMounted(domPath)
 
-        fileSD.validateDirAccess(domPath)
+        try:
+            fileSD.validateDirAccess(domPath)
+        except OSError as e:
+            if e.errno == errno.EACCES:
+                raise se.StorageServerAccessPermissionError(domPath)
+
+            raise
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)
