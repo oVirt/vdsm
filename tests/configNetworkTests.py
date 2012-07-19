@@ -24,11 +24,13 @@ import os
 import subprocess
 import tempfile
 import shutil
+import pwd
 
 import configNetwork
 from vdsm import netinfo
 
 from testrunner import VdsmTestCase as TestCaseBase
+from nose.plugins.skip import SkipTest
 
 
 class TestconfigNetwork(TestCaseBase):
@@ -105,6 +107,12 @@ class ConfigWriterTests(TestCaseBase):
             subprocess.Popen = oldvals
 
     def testPersistentBackup(self):
+        #after vdsm package is installed, the 'vdsm' account will be created
+        #if no 'vdsm' account, we should skip this test
+        if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
+            raise SkipTest("'vdsm' is not in user account database, "
+                           "install vdsm package to create the vdsm user")
+
         # a rather ugly stubbing
         oldvals = (netinfo.NET_CONF_BACK_DIR,
                    os.chown)
