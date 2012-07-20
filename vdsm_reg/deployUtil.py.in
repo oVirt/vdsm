@@ -1046,7 +1046,8 @@ def yumSearchVersion(pkgName, ver):
     import rpmUtils.miscutils
 
     for pkg in yumListPackages(pkgName):
-        if rpmUtils.miscutils.compareVerOnly(pkg.ver, ver) >= 0:
+        if rpmUtils.miscutils.compareEVR(('', pkg.ver, ''),
+                                         ('', ver, '')) >= 0:
             return True
     else:
         return False
