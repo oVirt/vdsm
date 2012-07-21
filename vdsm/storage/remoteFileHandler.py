@@ -181,6 +181,8 @@ class CrabRPCProxy(object):
 
             length = unpack(LENGTH_STRUCT_FMT, rawLength)[0]
             rawResponse = self._recvAll(length, timeout)
+        except Timeout:
+            raise
         except:
             # If for some reason the connection drops\gets out of sync we treat
             # it as a timeout so we only have one error path
@@ -282,7 +284,7 @@ class RemoteFileHandlerPool(object):
                             handler.process.pid, exc_info=True)
 
                 self.handlers[i] = None
-                raise Timeout("Operation stuck on remote handler")
+                raise
 
             finally:
                 isOccupied.release()
