@@ -9,8 +9,8 @@ pidfile=/var/run/vdsm-reg.pid
 logger_conf=/etc/vdsm-reg/logger.conf
 #The hostname of the vdc, should be verified each boot (look for DNS SRV record)
 vdc_host_name=None
-#The port of the RHEV Manager. Allows http or https connections.
-vdc_host_port=8443
+#The port of the @ENGINENAME@. Allows http or https connections.
+vdc_host_port=443
 #The registrtion uri
 vdc_reg_uri=/OvirtEngineWeb/register
 #Upgrade settings

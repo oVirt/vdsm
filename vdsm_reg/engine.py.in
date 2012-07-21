@@ -35,10 +35,13 @@ import deployUtil
 
 sys.path.append('/usr/share/vdsm')
 from vdsm import constants
+import httplib
+import socket
 
 VDSM_CONFIG = "/etc/vdsm/vdsm.conf"
 VDSM_REG_CONFIG = "/etc/vdsm-reg/vdsm-reg.conf"
-VDC_HOST_PORT = 8443
+VDC_HOST_PORT = 443
+TIMEOUT_FIND_HOST_SEC = 5
 
 fWriteConfig = 0
 def set_defaults():
@@ -52,6 +55,51 @@ management_port = 54321
 """
     vdsm_config_file.write(vdsm_config)
     vdsm_config_file.close()
+
+"""
+Until the version 3.0, oVirt Engine provided port 8443/8080 to oVirt Node
+download cert and others files. Since 3.1 the default port changed to 443/80.
+This function, will return the compatible port in case the VDSM
+cannot communicate with oVirt Engine.
+
+:param portNumber: port which doesn't communicate with oVirt Engine
+:returns: compatible port number (or None if there is no compatible port)
+          and if it's SSL port or not (bool)
+"""
+def compatiblePort(portNumber):
+
+    compatPort = {
+        '443': ('8443', True),
+        '8443': ('443', True),
+        '80': ('8080', False),
+        '8080': ('80', False)
+    }
+
+    return compatPort.get(portNumber, (None, False))
+
+"""
+This function will try a http connection to a host with determined
+port, ssl and timeout.
+
+:param host: Host to be tested
+:param port: Which port httplib should use for the test connection
+:param ssl: if it's ssl port or not (bool)
+:param timeout: timeout for the operation, if not speficied the default
+                will be socket._GLOBAL_DEFAULT_TIMEOUT
+:returns True or False
+"""
+def isHostReachable(host, port=None, ssl=True, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+    if ssl:
+        Connection = httplib.HTTPSConnection
+    else:
+        Connection = httplib.HTTPConnection
+
+    try:
+        conn = Connection(host, port=port, timeout=timeout)
+        conn.request('HEAD', '/')
+        return True
+    except socket.error:
+        return False
 
 def write_vdsm_config(engineHost, enginePort):
     if not os.path.exists(VDSM_CONFIG):
@@ -171,9 +219,15 @@ class Plugin(PluginBase):
         return
 
     def action(self):
+        # To manage the engine_server_port value, use enginePort var to avoid
+        # TUI putting the port value in the screen when you are just changing
+        # the value and not asking to draw/print it.
+        enginePort = self.engine_server_port.value()
         if is_console():
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
+
+        compatPort, sslPort = compatiblePort(enginePort)
         if self.root_password_1.value() != "" and self.root_password_2.value() != "" and self.root_password_1.value() == self.root_password_2.value():
             set_password(self.root_password_1.value(), "root")
             augtool("set", "/files/etc/ssh/sshd_config/PasswordAuthentication", "yes")
@@ -181,8 +235,39 @@ class Plugin(PluginBase):
             subprocess.Popen(['/sbin/service', 'sshd', 'restart'], stdout=dn, stderr=dn)
         if len(self.engine_server.value()) > 0:
             deployUtil.nodeCleanup()
+            if not isHostReachable(host=self.engine_server.value(),
+                    port=enginePort, ssl=sslPort, timeout=TIMEOUT_FIND_HOST_SEC):
+                if compatPort is None:
+                    # Try one more time with SSL=False
+                    if not isHostReachable(host=self.engine_server.value(),
+                            port=enginePort, ssl=False, timeout=TIMEOUT_FIND_HOST_SEC):
+                        msgConn = "Can't connect to oVirt Engine in the specific" \
+                        " port %s" % enginePort
+
+                        ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
+                                msgConn, buttons = ['Ok'])
+                        return False
+                else:
+                    msgConn = "Can't connect to oVirt Engine port %s," \
+                        " trying compatible port %s" % \
+                        (enginePort, compatPort)
+
+                    ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
+                        msgConn, buttons = ['Ok'])
+
+                    if not isHostReachable(host=self.engine_server.value(),
+                            port=compatPort, ssl=sslPort, timeout=TIMEOUT_FIND_HOST_SEC):
+                        msgConn = "Can't connect to oVirt Engine using" \
+                            " compatible port %s" % compatPort
+                        ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
+                            msgConn, buttons = ['Ok'])
+                        return False
+                    else:
+                        # compatible port found
+                        enginePort = compatPort
+
             if self.verify_engine_cert.selected():
-                if deployUtil.getRhevmCert(self.engine_server.value(),  self.engine_server_port.value()):
+                if deployUtil.getRhevmCert(self.engine_server.value(), enginePort):
                     path, dontCare = deployUtil.certPaths('')
                     fp = deployUtil.generateFingerPrint(path)
                     approval = ButtonChoiceWindow(self.ncs.screen,
@@ -199,16 +284,18 @@ class Plugin(PluginBase):
                     self.ncs.reset_screen_colors()
             # Stopping vdsm-reg may fail but its ok - its in the case when the menus are run after installation
             deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg', 'stop'])
-            if write_vdsm_config(self.engine_server.value(), self.engine_server_port.value()):
+            if write_vdsm_config(self.engine_server.value(), enginePort):
                 deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg',
                     'start'])
                 ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@ Configuration", "@ENGINENAME@ Configuration Successfully Updated", buttons = ['Ok'])
                 self.ncs.reset_screen_colors()
-                return True
+                retWriteConf = True
             else:
                 ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@ Configuration", "@ENGINENAME@ Configuration Failed", buttons = ['Ok'])
                 self.ncs.reset_screen_colors()
-                return False
+                retWriteConf = False
+
+            return retWriteConf
 
     def validEngineServerCallback(self):
         if not is_valid_host_or_ip(self.engine_server.value()):
