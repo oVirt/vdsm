@@ -40,7 +40,6 @@ test_modules = \
 	outOfProcessTests.py \
 	parted_utils_tests.py \
 	persistentDictTests.py \
-	resourceManagerTests.py \
 	restTests.py \
 	restData.py \
 	vdsClientTests.py
