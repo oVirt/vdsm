@@ -1504,7 +1504,10 @@ class HSM:
                     self.log.error(
                         "img %s can't be moved to dom %s because template "
                         "%s is absent on it", imgUUID, dstDom.sdUUID, tName)
-                    raise se.ImageDoesNotExistInSD(imgUUID, dstDom.sdUUID)
+                    e = se.ImageDoesNotExistInSD(imgUUID, dstDom.sdUUID)
+                    e.absentTemplateUUID = tName
+                    e.absentTemplateImageUUID = tImgs[0]
+                    raise e
                 elif imgUUID == tImgs[0] and not srcDom.isBackup():
                     raise se.MoveTemplateImageError(imgUUID)
                 break
@@ -1530,7 +1533,20 @@ class HSM:
         dstDom = self.validateSdUUID(dstDomUUID)
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
-        self.validateImageMove(srcDom, dstDom, imgUUID)
+        try:
+            self.validateImageMove(srcDom, dstDom, imgUUID)
+        except se.ImageDoesNotExistInSD, e:
+            if not dstDom.isBackup():
+                raise
+            else:
+                # Create an ad-hoc fake template only on a backup SD
+                tName = e.absentTemplateUUID
+                tImgUUID = e.absentTemplateImageUUID
+                tParams = srcDom.produceVolume(tImgUUID,
+                                               tName).getVolumeParams()
+                image.Image(os.path.join(self.storage_repository, spUUID)
+                            ).createFakeTemplate(dstDom.sdUUID, tParams)
+
         domains = [srcDomUUID, dstDomUUID]
         domains.sort()
 
@@ -1597,7 +1613,19 @@ class HSM:
         images = {}
         for (imgUUID, pZero) in imgDict.iteritems():
             images[imgUUID.strip()] = misc.parseBool(pZero)
-            self.validateImageMove(srcDom, dstDom, imgUUID)
+            try:
+                self.validateImageMove(srcDom, dstDom, imgUUID)
+            except se.ImageDoesNotExistInSD, e:
+                if not dstDom.isBackup():
+                    raise
+                else:
+                    # Create an ad-hoc fake template only on a backup SD
+                    tName = e.absentTemplateUUID
+                    tImgUUID = e.absentTemplateImageUUID
+                    tParams = srcDom.produceVolume(tImgUUID,
+                                                   tName).getVolumeParams()
+                    image.Image(os.path.join(self.storage_repository, spUUID)
+                                ).createFakeTemplate(dstDom.sdUUID, tParams)
 
         domains = sorted([srcDomUUID, dstDomUUID])
         for dom in domains:
