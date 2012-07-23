@@ -91,6 +91,7 @@ PEP8_WHITELIST = \
 	vdsm_hooks/fileinject/before_vm_start.py \
 	vdsm_hooks/promisc/after_vm_start.py \
 	vdsm_hooks/scratchpad/after_vm_destroy.py \
+	vdsm_hooks/scratchpad/before_vm_migrate_source.py \
 	vdsm_hooks/sriov/before_vm_start.py \
 	vdsm_reg/createDaemon.py \
 	vdsm_reg/define.py
