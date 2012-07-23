@@ -534,11 +534,11 @@ class BindingXMLRPC(object):
                               masterVersion, lockPolicy=None,
                               lockRenewalIntervalSec=None, leaseTimeSec=None,
                               ioOpTimeoutSec=None, leaseRetries=None,
-                              options=None):
+                              hostId=None, options=None):
         pool = API.StoragePool(spUUID)
-        return pool.reconstructMaster(poolName, masterDom, masterVersion,
-            domDict, lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
-            leaseRetries)
+        return pool.reconstructMaster(hostId, poolName, masterDom,
+            masterVersion, domDict, lockRenewalIntervalSec, leaseTimeSec,
+            ioOpTimeoutSec, leaseRetries)
 
     def poolRefresh(self, spUUID, msdUUID, masterVersion, options=None):
         pool = API.StoragePool(spUUID)

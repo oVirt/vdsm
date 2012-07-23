@@ -797,7 +797,7 @@ class service:
         mVer = int(args[4])
         if len(args) > 5:
             st = self.s.reconstructMaster(spUUID, poolName, masterDom, domDict,
-                                          mVer, *args[5:])
+                                          mVer, *map(int, args[5:]))
         else:
             st = self.s.reconstructMaster(spUUID, poolName, masterDom, domDict,
                                           mVer)

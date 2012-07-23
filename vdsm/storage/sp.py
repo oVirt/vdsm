@@ -720,37 +720,50 @@ class StoragePool(Securable):
             PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS}})
 
     @unsecured
-    def reconstructMaster(self, poolName, msdUUID, domDict, masterVersion, safeLease):
-        self.log.info("spUUID=%s poolName=%s"
-                      " master_sd=%s domDict=%s masterVersion=%s "
-                      "leaseparams=(%s)",
-                      self.spUUID, poolName, msdUUID, domDict, masterVersion,
-                      str(safeLease))
+    def reconstructMaster(self, hostId, poolName, msdUUID, domDict,
+                          masterVersion, safeLease):
+        self.log.info("spUUID=%s hostId=%s poolName=%s msdUUID=%s domDict=%s "
+                      "masterVersion=%s leaseparams=(%s)", self.spUUID, hostId,
+                      poolName, msdUUID, domDict, masterVersion, str(safeLease))
 
         if msdUUID not in domDict:
             raise se.InvalidParameterException("masterDomain", msdUUID)
 
-        self._acquireTemporaryClusterLock(msdUUID, safeLease)
+        futureMaster = sdCache.produce(msdUUID)
+
+        # @deprecated, domain version < 3
+        # For backward compatibility we must support a reconstructMaster
+        # that doesn't specify an hostId.
+        if not hostId:
+            self._acquireTemporaryClusterLock(msdUUID, safeLease)
+            temporaryLock = True
+        else:
+            # Forcing to acquire the host id (if it's not acquired already).
+            futureMaster.acquireHostId(hostId)
+            futureMaster.acquireClusterLock(hostId)
+
+            # The host id must be set for createMaster(...).
+            self.id = hostId
+            temporaryLock = False
 
         try:
-            futureMaster = sdCache.produce(msdUUID)
-            try:
-                self.createMaster(poolName, futureMaster, masterVersion, safeLease)
-                self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
+            self.createMaster(poolName, futureMaster, masterVersion,
+                              safeLease)
 
-                # TBD: Run full attachSD?
-                domains = self.getDomains()
-                for sdUUID in domDict:
-                    domains[sdUUID] = domDict[sdUUID].capitalize()
-                # Add domain to domain list in pool metadata
-                self.setMetaParam(PMDK_DOMAINS, domains, __securityOverride=True)
-                self.log.info("Set storage pool domains: %s", domains)
-            finally:
-                # We need stop all domain monitoring threads that were started
-                # during reconstructMaster
-                self.stopMonitoringDomains()
+            for sdUUID in domDict:
+                domDict[sdUUID] = domDict[sdUUID].capitalize()
+
+            # Add domain to domain list in pool metadata.
+            self.log.info("Set storage pool domains: %s", domDict)
+            self._getPoolMD(futureMaster).update({PMDK_DOMAINS: domDict})
+
+            self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
         finally:
-            self._releaseTemporaryClusterLock(msdUUID)
+            if temporaryLock:
+                self._releaseTemporaryClusterLock(msdUUID)
+                self.stopMonitoringDomains()
+            else:
+                futureMaster.releaseClusterLock()
 
     @unsecured
     def copyPoolMD(self, prevMd, newMD):

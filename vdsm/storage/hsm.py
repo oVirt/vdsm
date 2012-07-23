@@ -1445,9 +1445,10 @@ class HSM:
 
     @public
     def reconstructMaster(self, spUUID, poolName, masterDom, domDict,
-                                 masterVersion, lockPolicy=None,
-                                 lockRenewalIntervalSec=None, leaseTimeSec=None,
-                                 ioOpTimeoutSec=None, leaseRetries=None, options = None):
+                          masterVersion, lockPolicy=None,
+                          lockRenewalIntervalSec=None, leaseTimeSec=None,
+                          ioOpTimeoutSec=None, leaseRetries=None, hostId=None,
+                          options=None):
         """
         Reconstruct Master Domains - rescue action: can be issued even when pool is not connected.
 
@@ -1465,18 +1466,26 @@ class HSM:
         :param ioOpTimeoutSec: The timeout of IO operations in seconds. ?
         :type ioOpTimeoutSec: int
         :param leaseRetries: ?
+        :param hostId: The host id to be used during the reconstruct process.
         :param options: ?
 
         :returns: Nothing ? pool.reconstructMaster return nothing
         :rtype: ?
         """
         safeLease = sd.packLeaseParams(
-                               lockRenewalIntervalSec=lockRenewalIntervalSec,
-                               leaseTimeSec=leaseTimeSec,
-                               ioOpTimeoutSec=ioOpTimeoutSec,
-                               leaseRetries=leaseRetries)
-        vars.task.setDefaultException(se.ReconstructMasterError("spUUID=%s, masterDom=%s, masterVersion=%s, safelease params: (%s)" % (spUUID, masterDom, masterVersion, safeLease)))
+            lockRenewalIntervalSec=lockRenewalIntervalSec,
+            leaseTimeSec=leaseTimeSec,
+            ioOpTimeoutSec=ioOpTimeoutSec,
+            leaseRetries=leaseRetries
+        )
+
+        vars.task.setDefaultException(se.ReconstructMasterError(
+            "spUUID=%s, masterDom=%s, masterVersion=%s, safelease "
+            "params: (%s)" % (spUUID, masterDom, masterVersion, safeLease))
+        )
+
         self.log.info("spUUID=%s master=%s", spUUID, masterDom)
+
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
@@ -1486,6 +1495,7 @@ class HSM:
 
         self.validateSdUUID(masterDom)
         vars.task.getExclusiveLock(STORAGE, spUUID)
+
         for d, status in domDict.iteritems():
             misc.validateUUID(d)
             try:
@@ -1493,7 +1503,8 @@ class HSM:
             except:
                 domDict[d] = sd.validateSDDeprecatedStatus(status)
 
-        return pool.reconstructMaster(poolName, masterDom, domDict, masterVersion, safeLease)
+        return pool.reconstructMaster(hostId, poolName, masterDom, domDict,
+                                      masterVersion, safeLease)
 
 
     def _logResp_getDeviceList(self, response):

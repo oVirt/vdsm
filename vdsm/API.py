@@ -927,14 +927,14 @@ class StoragePool(APIBase):
         return self._irs.moveMultipleImages(self._UUID, srcSdUUID,
                 dstSdUUID, imgDict, vmUUID, force)
 
-    def reconstructMaster(self, name, masterSdUUID, masterVersion,
-                          domainDict, lockRenewalIntervalSec,
-                          leaseTimeSec, ioOpTimeoutSec, leaseRetries):
+    def reconstructMaster(self, hostId, name, masterSdUUID, masterVersion,
+                          domainDict, lockRenewalIntervalSec, leaseTimeSec,
+                          ioOpTimeoutSec, leaseRetries):
         lockPolicy = None   # Not used
         return self._irs.reconstructMaster(self._UUID, name,
                 masterSdUUID, domainDict, masterVersion, lockPolicy,
                 lockRenewalIntervalSec, leaseTimeSec,
-                ioOpTimeoutSec, leaseRetries)
+                ioOpTimeoutSec, leaseRetries, hostId)
 
     def refresh(self, masterSdUUID, masterVersion):
         return self._irs.refreshStoragePool(self._UUID,
