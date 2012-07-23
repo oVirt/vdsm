@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-if os.environ.has_key('scratchpad'):
+if 'scratchpad' in os.environ:
     try:
         disks = os.environ['scratchpad']
 
@@ -13,8 +13,9 @@ if os.environ.has_key('scratchpad'):
             if os.path.exists(arr[1]):
                 os.remove(arr[1])
             else:
-                sys.stderr.write('scratchpad after_vm_destroy: cannot find image file %s\n' % arr[1])
-
+                sys.stderr.write('scratchpad after_vm_destroy: '
+                                 'cannot find image file %s\n' % arr[1])
     except:
-        sys.stderr.write('scratchpad after_vm_destroy: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('scratchpad after_vm_destroy: '
+                         '[unexpected error]: %s\n' % traceback.format_exc())
         sys.exit(2)
