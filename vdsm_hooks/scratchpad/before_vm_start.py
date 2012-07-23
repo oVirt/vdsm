@@ -19,23 +19,26 @@ syntax:
     ie:
     scratchpad=20G,/tmp/myimg
 
-    size: Optional suffixes "k" or "K" (kilobyte, 1024) "M" (megabyte, 1024k) and
-          "G" (gigabyte, 1024M) and T (terabyte, 1024G) are supported.  "b" is ignored (default)
+    size: Optional suffixes "k" or "K" (kilobyte, 1024)
+          "M" (megabyte, 1024k) and "G" (gigabyte, 1024M) and
+          T (terabyte, 1024G) are supported.  "b" is ignored (default)
 
     note: more then one disk can be added:
     scratchpad=20G,/tmp/disk1,1T,/tmp/disk2
 '''
 
 
-'''
-    Create image file
-'''
 def create_image(path, size):
+    '''
+    Create image file
+    '''
     command = ['/usr/bin/qemu-img', 'create', '-f', 'raw', path, size]
     retcode, out, err = hooking.execCmd(command, sudo=False, raw=True)
     if retcode != 0:
-        sys.stderr.write('scratchpad: error running command %s, err = %s\n' % (' '.join(command), err))
+        sys.stderr.write('scratchpad: error running command %s, err = %s\n' %
+                         (' '.join(command), err))
         sys.exit(2)
+
 
 def indexToDiskName(i):
     s = ''
@@ -46,14 +49,16 @@ def indexToDiskName(i):
             break
     return 'hd' + (s or 'a')
 
-'''
-Create libvirt xml node
-<disk device="disk" type="file">
-    <source file="[path to image]"/>
-    <driver cache="writeback" error_policy="stop" type="raw"/>
-</disk>
-'''
+
 def add_disk(domxml, path):
+    '''
+    Create libvirt xml node
+    <disk device="disk" type="file">
+        <source file="[path to image]"/>
+        <driver cache="writeback" error_policy="stop" type="raw"/>
+    </disk>
+    '''
+
     disk = domxml.createElement('disk')
     disk.setAttribute('device', 'disk')
     disk.setAttribute('type', 'file')
@@ -85,7 +90,7 @@ def add_disk(domxml, path):
     devices = domxml.getElementsByTagName('devices')[0]
     devices.appendChild(disk)
 
-if os.environ.has_key('scratchpad'):
+if 'scratchpad' in os.environ:
     try:
         disks = os.environ['scratchpad']
 
@@ -96,7 +101,8 @@ if os.environ.has_key('scratchpad'):
             arr = disk.split(',')
             # check right # of parameters supplied
             if len(arr) < 2:
-                sys.stderr.write('scratchpad: disk input error, must be size,path - provided: %s\n' % disk)
+                sys.stderr.write('scratchpad: disk input error, must be '
+                                 'size,path - provided: %s\n' % disk)
                 sys.exit(2)
 
             # get single disk parameters
@@ -104,15 +110,18 @@ if os.environ.has_key('scratchpad'):
             path = arr[1]
 
             if size_re.match(size) is None:
-                sys.stderr.write('scratchpad: wrong size input %s, please refer to the README file\n' % size)
+                sys.stderr.write('scratchpad: wrong size input %s, please '
+                                 'refer to the README file\n' % size)
                 sys.exit(2)
 
             if not path.startswith('/'):
-                sys.stderr.write('scratchpad: path %s must be absolute (must start with /)\n' % path)
+                sys.stderr.write('scratchpad: path %s must be absolute '
+                                 '(must start with /)\n' % path)
                 sys.exit(2)
 
             if os.path.exists(path):
-                sys.stderr.write('scratchpad: specified path exists, please move the file %s first\n' % path)
+                sys.stderr.write('scratchpad: specified path exists, '
+                                 'please move the file %s first\n' % path)
                 sys.exit(2)
 
             create_image(path, size)
@@ -121,5 +130,6 @@ if os.environ.has_key('scratchpad'):
         hooking.write_domxml(domxml)
 
     except:
-        sys.stderr.write('scratchpad: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('scratchpad: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)
