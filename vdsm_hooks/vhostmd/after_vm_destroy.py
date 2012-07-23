@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -28,8 +28,8 @@ s = vdscli.connect()
 
 res = s.list(True)
 if res['status']['code'] == 0:
-    if not [ v for v in res['vmList']
-             if v.get('vmId') != os.environ.get('vmId') and
-                hooking.tobool(v.get('custom', {}).get('sap_agent', False)) ]:
+    if not [v for v in res['vmList']
+            if v.get('vmId') != os.environ.get('vmId') and
+               hooking.tobool(v.get('custom', {}).get('sap_agent', False))]:
         subprocess.call(['/usr/bin/sudo', '-n', '/sbin/service', 'vhostmd',
                          'stop'])
