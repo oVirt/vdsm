@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -39,7 +39,7 @@ if hooking.tobool(os.environ.get('sap_agent', False)):
     diskelem.appendChild(source)
 
     target = domxml.createElement('target')
-    target.setAttribute('dev', 'vdzz') # FIXME do not use a static location
+    target.setAttribute('dev', 'vdzz')  # FIXME do not use a static location
     target.setAttribute('bus', 'virtio')
     diskelem.appendChild(target)
 
