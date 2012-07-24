@@ -673,6 +673,16 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
     brName = network if bridged else None
     bridgeForNic = None if vlan else brName
 
+    # We want to create config files (ifcfg-*) in top-down order
+    # (bridge->vlan->bond->nic) to be able to handle IP/NETMASK
+    # correctly for bridgeless networks
+    if vlan:
+        configWriter.addVlan(vlan, iface, network=brName,
+                             mtu=mtu, bridged=bridged)
+        iface += '.' + vlan
+        # don't ifup VLAN interface here, it should be done last,
+        # after the bond and nic up
+
     if bonding:
         configWriter.addBonding(bonding, bridge=bridgeForNic,
                                  bondingOptions=bondingOptions,
@@ -686,10 +696,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
                              mtu=max(prevmtu, mtu))
         ifup(nic)
 
+    # Now we can ifup VLAN interface, because bond and nic already up
     if vlan:
-        configWriter.addVlan(vlan, iface, network=brName,
-                             mtu=mtu, bridged=bridged)
-        iface += '.' + vlan
         ifup(iface)
 
     if bridged:
