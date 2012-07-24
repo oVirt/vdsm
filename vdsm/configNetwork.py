@@ -232,81 +232,89 @@ class ConfigWriter(object):
         os.chown(backup, vdsm_uid, 0)
         logging.debug("Persistently backed up %s (until next 'set safe config')", filename)
 
-    def addBridge(self, name, ipaddr=None, netmask=None, mtu=None,
-            gateway=None, bootproto=None, delay='0', onboot='yes', **kwargs):
-        "Based on addNetwork"
-
-        s = 'DEVICE=%s\nTYPE=Bridge\nONBOOT=%s\n' % (pipes.quote(name),
-                                                     pipes.quote(onboot))
+    def _createConfFile(self, conf, name, ipaddr=None, netmask=None,
+                gateway=None, bootproto=None, mtu=None, onboot='yes', **kwargs):
+        """ Create ifcfg-* file with proper fields per device """
+        cfg = """DEVICE=%s\nONBOOT=%s\n""" % (pipes.quote(name),
+                                              pipes.quote(onboot))
+        cfg += conf
         if ipaddr:
-            s += 'IPADDR=%s\nNETMASK=%s\n' % (pipes.quote(ipaddr),
-                                              pipes.quote(netmask))
+            cfg = cfg + 'IPADDR=%s\nNETMASK=%s\n' % (pipes.quote(ipaddr),
+                                                     pipes.quote(netmask))
             if gateway:
-                s += 'GATEWAY=%s\n' % pipes.quote(gateway)
+                cfg = cfg + 'GATEWAY=%s\n' % pipes.quote(gateway)
+            # According to manual the BOOTPROTO=none should be set
+            # for static IP
+            cfg = cfg + 'BOOTPROTO=none\n'
         else:
             if bootproto:
-                s += 'BOOTPROTO=%s\n' % pipes.quote(bootproto)
+                cfg = cfg + 'BOOTPROTO=%s\n' % pipes.quote(bootproto)
         if mtu:
-            s += 'MTU=%d\n' % mtu
-        s += 'DELAY=%s\n' % pipes.quote(delay)
-        s += 'NM_CONTROLLED=no\n'
+            cfg = cfg + 'MTU=%d\n' % mtu
+        cfg += 'NM_CONTROLLED=no\n'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
                      'force', 'blockingdhcp',
                      'connectivityCheck', 'connectivityTimeout',
                      'implicitBonding']
         for k in set(kwargs.keys()).difference(set(BLACKLIST)):
             if re.match('^[a-zA-Z_]\w*$', k):
-                s += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
+                cfg += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
             else:
                 logging.debug('ignoring variable %s', k)
 
-        self.writeConfFile(self.NET_CONF_PREF + name, s)
+        self.writeConfFile(self.NET_CONF_PREF + name, cfg)
 
-    def addVlan(self, vlanId, iface, network, mtu=None, bridged=True):
-        "Based on addNetwork"
-        content = 'DEVICE=%s.%s\nONBOOT=yes\nVLAN=yes\nBOOTPROTO=none\n'\
-                  'NM_CONTROLLED=no\n' % (pipes.quote(iface), vlanId)
-        if mtu:
-            content = content + 'MTU=%d\n' % mtu
+    def addBridge(self, name, ipaddr=None, netmask=None, mtu=None,
+            gateway=None, bootproto=None, delay='0', onboot='yes', **kwargs):
+        """ Create ifcfg-* file with proper fields for bridge """
+        conf = 'TYPE=Bridge\nDELAY=%s\n' % pipes.quote(delay)
+        self._createConfFile(conf, name, ipaddr, netmask, gateway,
+                                           bootproto, mtu, onboot, **kwargs)
+
+    def addVlan(self, vlanId, iface, network, mtu=None, bridged=True,
+                ipaddr=None, netmask=None, gateway=None, bootproto=None,
+                onboot='yes', **kwargs):
+        """ Create ifcfg-* file with proper fields for VLAN """
+        name = '%s.%s' % (pipes.quote(iface), vlanId)
+        conf = 'VLAN=yes\n'
         if bridged:
-            content = content + 'BRIDGE=%s\n' % pipes.quote(network)
+            conf += 'BRIDGE=%s\n' % pipes.quote(network)
 
-        self.writeConfFile(self.NET_CONF_PREF + iface + '.' + vlanId, content)
+        self._createConfFile(conf, name, ipaddr, netmask, gateway,
+                             bootproto, mtu, onboot, **kwargs)
 
-    def addBonding(self, bonding, bridge=None, bondingOptions=None, mtu=None):
-        "Based on addNetwork"
-        content = 'DEVICE=%s\nONBOOT=yes\nBOOTPROTO=none\n' % (bonding)
-        if bridge:
-            content += 'BRIDGE=%s\n' % pipes.quote(bridge)
+    def addBonding(self, bonding, bridge=None, bondingOptions=None, mtu=None,
+                   ipaddr=None, netmask=None, gateway=None, bootproto=None,
+                   onboot='yes', **kwargs):
+        """ Create ifcfg-* file with proper fields for bond """
         if not bondingOptions:
             bondingOptions = 'mode=802.3ad miimon=150'
-        content += 'BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or '')
-        content += 'NM_CONTROLLED=no\n'
-        if mtu:
-            content += 'MTU=%d\n' % mtu
 
-        self.writeConfFile(self.NET_CONF_PREF + bonding, content)
+        conf = 'BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or '')
+        if bridge:
+            conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
+        self._createConfFile(conf, bonding, ipaddr, netmask, gateway,
+                             bootproto, mtu, onboot, **kwargs)
 
         # create the bonding device to avoid initscripts noise
         if bonding not in open('/sys/class/net/bonding_masters').read().split():
             open('/sys/class/net/bonding_masters', 'w').write('+%s\n' % bonding)
 
-    def addNic(self, nic, bonding=None, bridge=None, mtu=None):
-        "Based on addNetwork"
+    def addNic(self, nic, bonding=None, bridge=None, mtu=None,
+               ipaddr=None, netmask=None, gateway=None, bootproto=None,
+               onboot='yes', **kwargs):
+        """ Create ifcfg-* file with proper fields for NIC """
         _netinfo = netinfo.NetInfo()
         hwaddr = _netinfo.nics[nic].get('permhwaddr') or \
                  _netinfo.nics[nic]['hwaddr']
-        content = 'DEVICE=%s\nONBOOT=yes\nBOOTPROTO=none\nHWADDR=%s\n' % (
-                pipes.quote(nic), pipes.quote(hwaddr))
-        if bridge:
-            content += 'BRIDGE=%s\n' % pipes.quote(bridge)
-        if bonding:
-            content += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(bonding)
-        content += 'NM_CONTROLLED=no\n'
-        if mtu:
-            content += 'MTU=%d\n' % mtu
 
-        self.writeConfFile(self.NET_CONF_PREF + nic, content)
+        conf = 'HWADDR=%s\n' % pipes.quote(hwaddr)
+        if bridge:
+            conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
+        if bonding:
+            conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(bonding)
+        self._createConfFile(conf, nic, ipaddr, netmask, gateway,
+                             bootproto, mtu, onboot, **kwargs)
 
     def removeNic(self, nic):
         cf = self.NET_CONF_PREF + nic
@@ -314,7 +322,7 @@ class ConfigWriter(object):
         try:
             hwlines = [ line for line in open(cf).readlines()
                         if line.startswith('HWADDR=') ]
-            l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n', 'BOOTPROTO=none\n'] + hwlines
+            l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n'] + hwlines
             open(cf, 'w').writelines(l)
         except IOError:
             pass
@@ -624,8 +632,9 @@ def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
         else:
             _validateInterNetworkCompatibility(_netinfo, vlan, nic, bridged)
 
-def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask=None, mtu=None,
-               gateway=None, force=False, configWriter=None, bondingOptions=None, bridged=True, **options):
+def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
+               netmask=None, mtu=None, gateway=None, force=False,
+               configWriter=None, bondingOptions=None, bridged=True, **options):
     nics = nics or ()
     _netinfo = netinfo.NetInfo()
     bridged = utils.tobool(bridged)
@@ -667,6 +676,12 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
         configWriter.addBridge(network, ipaddr=ipaddr, netmask=netmask,
                                 mtu=mtu, gateway=gateway, **options)
         ifdown(network)
+        # We need to define (if requested) ip, mask & gateway on ifcfg-*
+        # only on most top device according to following order:
+        # bridge -> vlan -> bond -> nic
+        # For lower level devices we should ignore it.
+        # reset ip, netmask, gateway for lower level devices
+        ipaddr = netmask = gateway = None
 
     # For VLAN we should attach bridge only to the VLAN device
     # rather than to underlying NICs or bond
@@ -677,23 +692,33 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
     # (bridge->vlan->bond->nic) to be able to handle IP/NETMASK
     # correctly for bridgeless networks
     if vlan:
-        configWriter.addVlan(vlan, iface, network=brName,
-                             mtu=mtu, bridged=bridged)
-        iface += '.' + vlan
         # don't ifup VLAN interface here, it should be done last,
         # after the bond and nic up
+        configWriter.addVlan(vlan, iface, network=brName,
+                             mtu=mtu, bridged=bridged,
+                             ipaddr=ipaddr, netmask=netmask,
+                             gateway=gateway, **options)
+        iface += '.' + vlan
+        # reset ip, netmask, gateway for lower level devices
+        ipaddr = netmask = gateway = None
 
     if bonding:
         configWriter.addBonding(bonding, bridge=bridgeForNic,
                                  bondingOptions=bondingOptions,
-                                 mtu=max(prevmtu, mtu))
+                                 mtu=max(prevmtu, mtu),
+                                 ipaddr=ipaddr, netmask=netmask,
+                                 gateway=gateway, **options)
         ifup(bonding)
+        # reset ip, netmask, gateway for lower level devices
+        ipaddr = netmask = gateway = None
 
     # NICs must be activated in the same order of boot time
     # to expose the correct MAC address.
     for nic in nicSort(nics):
         configWriter.addNic(nic, bonding=bonding, bridge=bridgeForNic,
-                             mtu=max(prevmtu, mtu))
+                             mtu=max(prevmtu, mtu),
+                             ipaddr=ipaddr, netmask=netmask,
+                             gateway=gateway, **options)
         ifup(nic)
 
     # Now we can ifup VLAN interface, because bond and nic already up
@@ -701,9 +726,12 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None, netmask
         ifup(iface)
 
     if bridged:
-        if options.get('bootproto') == 'dhcp' and not utils.tobool(options.get('blockingdhcp')):
-            # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
-            t = threading.Thread(target=ifup, name='ifup-waiting-on-dhcp', args=(network,))
+        if options.get('bootproto') == 'dhcp' and \
+           not utils.tobool(options.get('blockingdhcp')):
+            # wait for dhcp in another thread,
+            # so vdsm won't get stuck (BZ#498940)
+            t = threading.Thread(target=ifup, name='ifup-waiting-on-dhcp',
+                                 args=(network,))
             t.daemon = True
             t.start()
         else:
@@ -847,19 +875,34 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if vlan:
         configWriter.removeVlan(vlan, bonding or nics[0])
 
+    # When removing bridgeless non-VLANed network
+    # we need to remove IP/NETMASK from the cfg file
+    name = None
+    if not bridged and not vlan:
+        name = bonding if bonding else nics[0]
+        # Just edit the bond/nic cfg file
+        cf = configWriter.NET_CONF_PREF + name
+        for key in ('IPADDR', 'NETMASK', 'GATEWAY', 'BOOTPROTO'):
+            configWriter._updateConfigValue(cf, key, '', True)
+
     # The (relatively) new setupNetwork verb allows to remove a network
     # defined on top of an bonding device without break the bond itself.
     if implicitBonding:
-        if bonding:
-            if not bridged or not bondingOtherUsers(network, vlan, bonding):
-                ifdown(bonding)
-                configWriter.removeBonding(bonding)
+        if bonding and not bondingOtherUsers(network, vlan, bonding):
+            ifdown(bonding)
+            configWriter.removeBonding(bonding)
+            name = None if bonding == name else name
 
         for nic in nics:
-            nicUsers = nicOtherUsers(network, vlan, bonding, nic)
-            if not nicUsers:
+            if not nicOtherUsers(network, vlan, bonding, nic):
                 ifdown(nic)
                 configWriter.removeNic(nic)
+                name = None if nic == name else name
+
+    # Now we can restart changed interface
+    if name:
+        ifdown(name)
+        ifup(name)
 
 def clientSeen(timeout):
     start = time.time()
