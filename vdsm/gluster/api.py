@@ -216,7 +216,8 @@ class GlusterApi(object):
         """
         Returns:
             {'status': {'code': CODE, 'message': MESSAGE},
-             'hosts' : [[HOSTNAME, UUID], ...]}
+             'hosts' : [{'hostname': HOSTNAME, 'uuid': UUID,
+                         'status': STATE}, ...]}
         """
         return {'hosts': self.svdsmProxy.glusterPeerStatus()}
 

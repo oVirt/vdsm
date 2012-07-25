@@ -83,9 +83,9 @@ class GlusterCliTests(TestCaseBase):
                                   '711d2887-3222-46d8-801a-7e3f646bdd4d',
                                   gcli.HostStatus.CONNECTED)
         self.assertEquals(hostList,
-                          [['fedora-16-test',
-                            '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                            gcli.HostStatus.CONNECTED]])
+                          [{'hostname': 'fedora-16-test',
+                            'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
+                            'status': gcli.HostStatus.CONNECTED}])
 
     def _parsePeerStatus_test(self):
         out = ['Number of Peers: 1',
@@ -101,22 +101,16 @@ class GlusterCliTests(TestCaseBase):
             gcli._parsePeerStatus(out, 'fedora-16-test',
                                   '711d2887-3222-46d8-801a-7e3f646bdd4d',
                                   gcli.HostStatus.CONNECTED)
-        for h in hostList:
-            if h[0] == 'fedora-16-test':
-                self.assertEquals(h, ['fedora-16-test',
-                                      '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                                      gcli.HostStatus.CONNECTED])
-            elif h[0] == '192.168.2.21':
-                self.assertEquals(h, ['192.168.2.21',
-                                      '610f466c-781a-4e04-8f67-8eba9a201867',
-                                      gcli.HostStatus.CONNECTED])
-            elif h[0] == 'FC16-1':
-                self.assertEquals(h, ['FC16-1',
-                                      '12345678-781a-aaaa-bbbb-8eba9a201867',
-                                      gcli.HostStatus.DISCONNECTED])
-            else:
-                self.assertTrue(h[0] in ['fedora-16-test', '192.168.2.21',
-                                         'FC16-1'])
+        self.assertEquals(hostList,
+                          [{'hostname': 'fedora-16-test',
+                            'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
+                            'status': gcli.HostStatus.CONNECTED},
+                           {'hostname': '192.168.2.21',
+                            'uuid': '610f466c-781a-4e04-8f67-8eba9a201867',
+                            'status': gcli.HostStatus.CONNECTED},
+                           {'hostname': 'FC16-1',
+                            'uuid': '12345678-781a-aaaa-bbbb-8eba9a201867',
+                            'status': gcli.HostStatus.DISCONNECTED}])
 
     def test_parsePeerStatus(self):
         self._parsePeerStatus_empty_test()

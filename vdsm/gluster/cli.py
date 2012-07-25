@@ -503,7 +503,7 @@ def _parsePeerStatus(out, gHostName, gUuid, gStatus):
     if out[-1].strip():
         out += [""]
 
-    hostList = [[gHostName, gUuid, gStatus]]
+    hostList = [{'hostname': gHostName, 'uuid': gUuid, 'status': gStatus}]
     if out[0].strip().upper() == "NO PEERS PRESENT":
         return hostList
     hostName = uuid = status = None
@@ -511,7 +511,8 @@ def _parsePeerStatus(out, gHostName, gUuid, gStatus):
         line = line.strip()
         if not line:
             if hostName != None and uuid != None and status != None:
-                hostList.append([hostName, uuid, status])
+                hostList.append({'hostname': hostName, 'uuid': uuid,
+                                 'status': status})
                 hostName = uuid = status = None
         tokens = line.split(":", 1)
         key = tokens[0].strip().upper()
@@ -534,7 +535,7 @@ def _parsePeerStatus(out, gHostName, gUuid, gStatus):
 def peerStatus():
     """
     Returns:
-        [[HOSTNAME, UUID, STATE]...]
+        [{'hostname': HOSTNAME, 'uuid': UUID, 'status': STATE}, ...]
     """
     rc, out, err = _execGluster(_getGlusterPeerCmd() + ["status"])
     if rc:
