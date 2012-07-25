@@ -22,6 +22,7 @@ from threading import Thread, Event
 from time import time
 import logging
 import misc
+from vdsm.config import config
 from sdc import sdCache
 
 
