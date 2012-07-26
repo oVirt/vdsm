@@ -246,20 +246,33 @@ def get():
                     'cfg': getIfaceCfg(devname), }
         else:
             devname = nets[netname]['interface']
-            d['networks'][netname] = {'interface': devname}
+            d['networks'][netname] = {}
 
         d['networks'][netname].update({
+                    'interface': devname,
                     'bridged': nets[netname]['bridged'],
                     'addr': getaddr(devname),
                     'netmask': getnetmask(devname),
                     'gateway': routes.get(devname, '0.0.0.0'),
                     'mtu': getMtu(devname), })
 
+    d['bridges'] = dict([(bridge, {
+                              'ports': ports(bridge),
+                              'stp': bridge_stp_state(bridge),
+                              'addr': getaddr(bridge),
+                              'netmask': getnetmask(bridge),
+                              'mtu': getMtu(bridge),
+                              'cfg': getIfaceCfg(bridge),
+                              })
+                         for bridge in bridges()])
+
     d['nics'] = dict([ (nic, {'speed': speed(nic),
                               'addr': getaddr(nic),
                               'netmask': getnetmask(nic),
                               'hwaddr': gethwaddr(nic),
-                              'mtu': getMtu(nic)})
+                              'mtu': getMtu(nic),
+                              'cfg': getIfaceCfg(nic),
+                              })
                         for nic in nics() ])
     paddr = permAddr()
     for nic, nd in d['nics'].iteritems():
@@ -275,7 +288,9 @@ def get():
     d['vlans'] = dict([ (vlan, {'iface': vlan.split('.')[0],
                                 'addr': getaddr(vlan),
                                 'netmask': getnetmask(vlan),
-                                'mtu': getMtu(vlan)})
+                                'mtu': getMtu(vlan),
+                                'cfg': getIfaceCfg(vlan),
+                                })
                         for vlan in vlans() ])
     return d
 
