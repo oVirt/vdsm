@@ -357,8 +357,10 @@ class BlockStorageDomain(sd.StorageDomain):
         """ Create new storage domain
             'sdUUID' - Storage Domain UUID
             'domainName' - storage domain name
-            'vgUUID' - volume group UUID
             'domClass' - Data/Iso
+            'vgUUID' - volume group UUID
+            'storageType' - NFS_DOMAIN, LOCALFS_DOMAIN, &etc.
+            'version' - DOMAIN_VERSIONS
         """
         cls.log.info("sdUUID=%s domainName=%s domClass=%s vgUUID=%s "
             "storageType=%s version=%s", sdUUID, domainName, domClass, vgUUID,

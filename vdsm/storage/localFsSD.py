@@ -59,8 +59,10 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         Create new storage domain.
             'sdUUID' - Storage Domain UUID
             'domainName' - storage domain name ("iso" or "data domain name")
-            'remotePath' - /data2
             'domClass' - Data/Iso
+            'remotePath' - /data2
+            'storageType' - NFS_DOMAIN, LOCALFS_DOMAIN, &etc.
+            'version' - DOMAIN_VERSIONS
         """
         cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
             "domClass=%s", sdUUID, domainName, remotePath, domClass)
