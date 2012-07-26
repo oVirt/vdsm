@@ -69,6 +69,7 @@ def _getFileName(vmId, files):
     return path
 
 def mkFloppyFs(vmId, files):
+    floppy = dirname = None
     try:
         floppy = _getFileName(vmId, files)
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
@@ -90,6 +91,7 @@ def mkFloppyFs(vmId, files):
     return floppy
 
 def mkIsoFs(vmId, files):
+    dirname = isopath = None
     try:
         dirname = tempfile.mkdtemp()
         _decodeFilesIntoDir(files, dirname)
