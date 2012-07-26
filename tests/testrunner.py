@@ -178,7 +178,7 @@ def hackVdsmModule():
 
     for name in ('config', 'constants', 'utils', 'define', 'netinfo',
                  'SecureXMLRPCServer', 'libvirtconnection', 'betterPopen',
-                 'exception', 'vdscli'):
+                 'exception', 'vdscli', 'qemuImg'):
                     sub = __import__(name, globals(), locals(), [], -1)
                     setattr(mod, name, sub)
                     sys.modules['vdsm.%s' % name] = getattr(mod, name)
