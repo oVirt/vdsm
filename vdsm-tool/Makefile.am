@@ -17,9 +17,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+include $(top_srcdir)/build-aux/Makefile.subs
+
 dist_bin_SCRIPTS = \
 	vdsm-tool
 
+EXTRA_DIST = \
+	validate_ovirt_certs.py.in
+
 dist_vdsmtool_DATA = \
 	__init__.py \
-	passwd.py
+	passwd.py \
+	validate_ovirt_certs.py

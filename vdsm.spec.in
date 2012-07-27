@@ -707,6 +707,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/betterPopen/createprocess.so
 %{python_sitearch}/%{vdsm_name}/tool/__init__.py*
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
+%{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
