@@ -23,7 +23,6 @@ import pipes
 import pwd
 import time
 import logging
-from collections import defaultdict
 import threading
 from xml.sax.saxutils import escape
 
@@ -936,47 +935,10 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None, **opti
 def _validateNetworkSetup(networks={}, bondings={}):
     _netinfo = netinfo.NetInfo()
 
-    # Step 1: Initial validation (validate names, existence of params, etc.)
     for network, networkAttrs in networks.iteritems():
-        validateBridgeName(network)
-
         if networkAttrs.get('remove', False):
             if set(networkAttrs) - set(['remove']):
                 raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Cannot specify any attribute when removing")
-            if network not in _netinfo.networks:
-                raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, 'Cannot remove bridge %s: Doesn\'t exist' % network)
-            continue
-
-        vlan = networkAttrs.get('vlan', None)
-        ipaddr = networkAttrs.get('ipaddr', None)
-        netmask = networkAttrs.get('netmask', None)
-        gateway = networkAttrs.get('gateway', None)
-        if vlan:
-            validateVlanId(vlan)
-
-        # Check ip, netmask, gateway
-        if ipaddr:
-            if not netmask:
-                raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Must specify netmask to configure ip for bridge")
-            validateIpAddress(ipaddr)
-            validateNetmask(netmask)
-            if gateway:
-                validateGateway(gateway)
-        else:
-            if netmask or gateway:
-                raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Specified netmask or gateway but not ip")
-
-        # check nic or bonding
-        nic = networkAttrs.get('nic', None)
-        bonding = networkAttrs.get('bonding', None)
-
-        if nic and bonding:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Don't specify both nic and bonding")
-        if not nic and not bonding:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Must specify either nic or bonding")
-
-        if nic and nic not in _netinfo.nics:
-            raise ConfigNetworkError(ne.ERR_BAD_NIC, "unknown nic: %r"%nic)
 
     for bonding, bondingAttrs in bondings.iteritems():
         validateBondingName(bonding)
@@ -993,81 +955,6 @@ def _validateNetworkSetup(networks={}, bondings={}):
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Must specify nics for bonding")
         if not set(nics).issubset(set(_netinfo.nics)):
             raise ConfigNetworkError(ne.ERR_BAD_NIC, "Unknown nics in: %r"%list(nics))
-
-
-    # Step 2: Make sure we have complete information about the Setup, more validation
-    nics = defaultdict(lambda: {'networks':{}, 'bonding':None})
-    for network, networkAttrs in networks.iteritems():
-        if networkAttrs.get('remove', False):
-            continue
-
-        if 'bonding' in networkAttrs:
-            assert 'nic' not in networkAttrs
-
-            bonding = networkAttrs['bonding']
-            if bonding not in bondings:
-                # fill in bonding info
-                bondings[bonding] =  {'nics':_netinfo.bondings[bonding]['slaves']}
-
-            if '_networks' not in bondings[bonding]:
-                bondings[bonding]['_networks'] = {}
-            bondings[bonding]['_networks'][network] = networkAttrs
-        else:
-            assert 'nic' in networkAttrs
-
-            nics[networkAttrs['nic']]['networks'][network] = networkAttrs
-
-    for bonding, bondingAttrs in bondings.iteritems():
-        if bondingAttrs.get('remove', False):
-            continue
-        connectedNetworks = _netinfo.getBridgedNetworksForIface(bonding)
-
-        for network in connectedNetworks:
-            if network not in networks:
-                # fill in network info
-                _, vlan, bonding2 = _netinfo.getNicsVlanAndBondingForNetwork(network)
-                assert bonding == bonding2
-                networks[network] = {'bonding': bonding, 'vlan':vlan}
-
-        for nic in bondingAttrs['nics']:
-            if nics[nic]['bonding']:
-                raise ConfigNetworkError(ne.ERR_BAD_BONDING, "Nic %s is attached to two different bondings in setup: %s, %s"%(
-                                         nic, bonding, nics[nic]['bonding']))
-            nics[nic]['bonding'] = bonding
-
-    # At this point the state may be contradictory.
-
-    # Step 3: Apply removals (We're not iterating because we change the dictionary size)
-    queue = []
-    for network, networkAttrs in networks.items():
-        if networkAttrs.get('remove', False):
-            del networks[network]
-        else:
-            queue.append(('network', network, networkAttrs))
-    for bonding, bondingAttrs in bondings.items():
-        if bondingAttrs.get('remove', False):
-            del bondings[bonding]
-        else:
-            queue.append(('bonding', bonding, bondingAttrs))
-
-    # Step 4: Verify Setup
-    for nic, nicAttrs in nics.iteritems():
-        networks = nicAttrs['networks']
-        if networks and nicAttrs['bonding']:
-            raise ConfigNetworkError(ne.ERR_USED_NIC, "Setup attached both network and bonding to nic %s"%(nic))
-        if len(networks) > 1:
-            for network, networkAttrs in networks.iteritems():
-                if not networkAttrs.get('vlan', None):
-                    raise ConfigNetworkError(ne.ERR_USED_NIC,
-                            "Setup attached more than one network to nic %s, some of which aren't vlans"%(nic))
-
-    for bonding, bondingAttrs in bondings.iteritems():
-        networks = bondingAttrs.get('_networks', {})
-        if len(networks) > 1:
-            for network, networkAttrs in networks.iteritems():
-                if not networkAttrs.get('vlan', None):
-                    raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                            "Setup attached more than one network to bonding %s, some of which aren't vlans"%(bonding))
 
 
 def _editBondings(bondings, configWriter):
