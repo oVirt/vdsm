@@ -346,21 +346,21 @@ class NetInfo(object):
             if nic == vdict['iface']:
                 yield v
 
-    def getNetworksForNic(self, nic):
+    def getNetworksForIface(self, iface):
         """ Return all networks attached to nic/bond """
-        return chain(self.getBridgelessNetworksForNic(nic),
-                     self.getBridgedNetworksForNic(nic))
+        return chain(self.getBridgelessNetworksForIface(iface),
+                     self.getBridgedNetworksForIface(iface))
 
-    def getBridgelessNetworksForNic(self, nic):
+    def getBridgelessNetworksForIface(self, iface):
         """ Return all bridgeless networks attached to nic/bond """
         for network, netdict in self.networks.iteritems():
-            if not netdict['bridged'] and nic == netdict['interface']:
+            if not netdict['bridged'] and iface == netdict['interface']:
                 yield network
 
-    def getBridgedNetworksForNic(self, nic):
+    def getBridgedNetworksForIface(self, iface):
         """ Return all bridged networks attached to nic/bond """
         for bridge, netdict in self.networks.iteritems():
-            if netdict['bridged'] and nic in netdict['ports']:
+            if netdict['bridged'] and iface in netdict['ports']:
                 yield bridge
 
     def getBondingsForNic(self, nic):

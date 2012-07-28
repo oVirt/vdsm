@@ -616,7 +616,7 @@ def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
                                     "nic %s already used by vlans %s" % \
                                     (nic, vlansForNic))
-            networksForNic = tuple(_netinfo.getNetworksForNic(nic))
+            networksForNic = tuple(_netinfo.getNetworksForIface(nic))
             if networksForNic:
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
                                     "nic %s already used by networks %s" % \
@@ -972,7 +972,7 @@ def _validateNetworkSetup(networks={}, bondings={}):
     for bonding, bondingAttrs in bondings.iteritems():
         if bondingAttrs.get('remove', False):
             continue
-        connectedNetworks = _netinfo.getBridgedNetworksForNic(bonding)
+        connectedNetworks = _netinfo.getBridgedNetworksForIface(bonding)
 
         for network in connectedNetworks:
             if network not in networks:
@@ -1032,7 +1032,7 @@ def _editBondings(bondings, configWriter):
         logger.debug("Creating/Editing bond %s with attributes %s",
                         bond, bondAttrs)
 
-        brNets = list(_netinfo.getBridgedNetworksForNic(bond))
+        brNets = list(_netinfo.getBridgedNetworksForIface(bond))
         # Only one bridged-non-VLANed network allowed on same nic/bond
         bridge = brNets[0] if brNets else None
 
