@@ -39,41 +39,99 @@ class GlusterCliTests(TestCaseBase):
             raise SkipTest("vdsm-gluster not found")
 
     def _parseVolumeInfo_empty_test(self):
-        out = ['No volumes present']
-        self.assertFalse(gcli._parseVolumeInfo(out))
+        out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <volInfo/>
+</cliOutput>
+"""
+        tree = etree.fromstring(out)
+        self.assertFalse(gcli._parseVolumeInfo(tree))
 
     def _parseVolumeInfo_test(self):
-        out = [' ',
-               'Volume Name: music',
-               'Type: Distribute',
-               'Volume ID: 1e7d2638-fb77-4325-94fd-3242650a013c',
-               'Status: Stopped',
-               'Number of Bricks: 2',
-               'Transport-type: tcp',
-               'Bricks:',
-               'Brick1: 192.168.122.167:/tmp/music-b1',
-               'Brick2: 192.168.122.167:/tmp/music-b2',
-               'Options Reconfigured:',
-               'auth.allow: *']
-        volumeInfo = gcli._parseVolumeInfo(out)
-        for volumeName in volumeInfo:
-            if volumeName == 'music':
-                self.assertEquals(volumeInfo['music']['volumeName'],
-                                  volumeName)
-                self.assertEquals(volumeInfo['music']['uuid'],
-                                  '1e7d2638-fb77-4325-94fd-3242650a013c')
-                self.assertEquals(volumeInfo['music']['volumeType'],
-                                  'DISTRIBUTE')
-                self.assertEquals(volumeInfo['music']['volumeStatus'],
-                                  'STOPPED')
-                self.assertEquals(volumeInfo['music']['transportType'],
-                                  ['TCP'])
-                self.assertEquals(volumeInfo['music']['bricks'],
-                                  ['192.168.122.167:/tmp/music-b1',
-                                   '192.168.122.167:/tmp/music-b2'])
-                self.assertEquals(volumeInfo['music']['brickCount'], '2')
-                self.assertEquals(volumeInfo['music']['options'],
-                                  {'auth.allow': '*'})
+        out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <volInfo>
+    <volumes>
+      <volume>
+        <name>music</name>
+        <id>b3114c71-741b-4c6f-a39e-80384c4ea3cf</id>
+        <status>1</status>
+        <statusStr>Started</statusStr>
+        <brickCount>2</brickCount>
+        <distCount>2</distCount>
+        <stripeCount>1</stripeCount>
+        <replicaCount>2</replicaCount>
+        <type>2</type>
+        <typeStr>Replicate</typeStr>
+        <transport>0</transport>
+        <bricks>
+          <brick>192.168.122.2:/tmp/music-b1</brick>
+          <brick>192.168.122.2:/tmp/music-b2</brick>
+        </bricks>
+        <optCount>1</optCount>
+        <options>
+          <option>
+            <name>auth.allow</name>
+            <value>*</value>
+          </option>
+        </options>
+      </volume>
+      <volume>
+        <name>test1</name>
+        <id>b444ed94-f346-4cda-bd55-0282f21d22db</id>
+        <status>2</status>
+        <statusStr>Stopped</statusStr>
+        <brickCount>1</brickCount>
+        <distCount>1</distCount>
+        <stripeCount>1</stripeCount>
+        <replicaCount>1</replicaCount>
+        <type>0</type>
+        <typeStr>Distribute</typeStr>
+        <transport>1</transport>
+        <bricks>
+          <brick>192.168.122.2:/tmp/test1-b1</brick>
+        </bricks>
+        <optCount>0</optCount>
+        <options/>
+      </volume>
+      <count>2</count>
+    </volumes>
+  </volInfo>
+</cliOutput>
+"""
+        tree = etree.fromstring(out)
+        oVolumeInfo = \
+            {'music': {'brickCount': '2',
+                       'bricks': ['192.168.122.2:/tmp/music-b1',
+                                  '192.168.122.2:/tmp/music-b2'],
+                       'distCount': '2',
+                       'options': {'auth.allow': '*'},
+                       'replicaCount': '2',
+                       'stripeCount': '1',
+                       'transportType': [gcli.TransportType.TCP],
+                       'uuid': 'b3114c71-741b-4c6f-a39e-80384c4ea3cf',
+                       'volumeName': 'music',
+                       'volumeStatus': gcli.VolumeStatus.ONLINE,
+                       'volumeType': 'REPLICATE'},
+             'test1': {'brickCount': '1',
+                       'bricks': ['192.168.122.2:/tmp/test1-b1'],
+                       'distCount': '1',
+                       'options': {},
+                       'replicaCount': '1',
+                       'stripeCount': '1',
+                       'transportType': [gcli.TransportType.RDMA],
+                       'uuid': 'b444ed94-f346-4cda-bd55-0282f21d22db',
+                       'volumeName': 'test1',
+                       'volumeStatus': gcli.VolumeStatus.OFFLINE,
+                       'volumeType': 'DISTRIBUTE'}}
+        volumeInfo = gcli._parseVolumeInfo(tree)
+        self.assertEquals(volumeInfo, oVolumeInfo)
 
     def test_parseVolumeInfo(self):
         self._parseVolumeInfo_empty_test()
@@ -250,25 +308,24 @@ class GlusterCliTests(TestCaseBase):
   </volStatus>
 </cliOutput>"""
         tree = etree.fromstring(out)
+        oStatus = \
+            {'bricks': [{'blockSize': '4096',
+                         'brick': '192.168.122.2:/tmp/music-b1',
+                         'device': '/dev/vda1',
+                         'fsName': 'ext4',
+                         'mntOptions': 'rw,seclabel,relatime,data=ordered',
+                         'sizeFree': '4271.328',
+                         'sizeTotal': '7982.934'},
+                        {'blockSize': '4096',
+                         'brick': '192.168.122.2:/tmp/music-b2',
+                         'device': '/dev/vda1',
+                         'fsName': 'ext4',
+                         'mntOptions': 'rw,seclabel,relatime,data=ordered',
+                         'sizeFree': '4271.328',
+                         'sizeTotal': '7982.934'}],
+             'name': 'music'}
         status = gcli._parseVolumeStatusDetail(tree)
-        self.assertEquals(status,
-                          {'bricks': [{'blockSize': '4096',
-                                       'brick': '192.168.122.2:/tmp/music-b1',
-                                       'device': '/dev/vda1',
-                                       'fsName': 'ext4',
-                                       'mntOptions':
-                                           'rw,seclabel,relatime,data=ordered',
-                                       'sizeFree': '4271.328',
-                                       'sizeTotal': '7982.934'},
-                                      {'blockSize': '4096',
-                                       'brick': '192.168.122.2:/tmp/music-b2',
-                                       'device': '/dev/vda1',
-                                       'fsName': 'ext4',
-                                       'mntOptions':
-                                           'rw,seclabel,relatime,data=ordered',
-                                       'sizeFree': '4271.328',
-                                       'sizeTotal': '7982.934'}],
-                           'name': 'music'})
+        self.assertEquals(status, oStatus)
 
     def _parseVolumeStatusClients_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -326,23 +383,21 @@ class GlusterCliTests(TestCaseBase):
         status = gcli._parseVolumeStatusClients(tree)
         self.assertEquals(status.keys(), ['bricks', 'name'])
         self.assertEquals(status['name'], 'music')
-        self.assertEquals(status['bricks'],
-                          [{'brick': '192.168.122.2:/tmp/music-b1',
-                            'clientsStatus':
-                                [{'bytesRead': '1172',
-                                  'bytesWrite': '792',
-                                  'hostname': '192.168.122.2:1021'},
-                                 {'bytesRead': '10076',
-                                  'bytesWrite': '12152',
-                                  'hostname': '192.168.122.2:1011'}]},
-                           {'brick': '192.168.122.2:/tmp/music-b2',
-                            'clientsStatus':
-                                [{'bytesRead': '1172',
-                                  'bytesWrite': '792',
-                                  'hostname': '192.168.122.2:1020'},
-                                 {'bytesRead': '10864',
-                                  'bytesWrite': '12816',
-                                  'hostname': '192.168.122.2:1010'}]}])
+        oBricks = [{'brick': '192.168.122.2:/tmp/music-b1',
+                    'clientsStatus': [{'bytesRead': '1172',
+                                       'bytesWrite': '792',
+                                       'hostname': '192.168.122.2:1021'},
+                                      {'bytesRead': '10076',
+                                       'bytesWrite': '12152',
+                                       'hostname': '192.168.122.2:1011'}]},
+                   {'brick': '192.168.122.2:/tmp/music-b2',
+                    'clientsStatus': [{'bytesRead': '1172',
+                                       'bytesWrite': '792',
+                                       'hostname': '192.168.122.2:1020'},
+                                      {'bytesRead': '10864',
+                                       'bytesWrite': '12816',
+                                       'hostname': '192.168.122.2:1010'}]}]
+        self.assertEquals(status['bricks'], oBricks)
 
     def _parseVolumeStatusMem_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -967,7 +1022,7 @@ class GlusterCliTests(TestCaseBase):
                                       'name': 'glusterfs:call_frame_t',
                                       'padddedSizeOf': '172',
                                       'poolMisses': '0'}]}],
-                   'name': 'music'}
+             'name': 'music'}
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusMem(tree)
         self.assertEquals(status, ostatus)

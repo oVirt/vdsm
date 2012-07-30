@@ -44,35 +44,50 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumesList(self, args):
-        if args:
-            status = self.s.glusterVolumesList(args[0])
-        else:
-            status = self.s.glusterVolumesList()
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumesList(volumeName)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeStart(self, args):
-        status = self.s.glusterVolumeStart(args[0])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeStart(volumeName, force)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeStop(self, args):
-        status = self.s.glusterVolumeStop(args[0])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeStop(volumeName, force)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeBrickAdd(self, args):
-        params = self._eqSplit(args[1:])
+        params = self._eqSplit(args)
         try:
             brickList = params['bricks'].split(',')
         except:
             raise ValueError
+        volumeName = params.get('volumeName', '')
         replicaCount = params.get('replica', '')
         stripeCount = params.get('stripe', '')
-        status = self.s.glusterVolumeBrickAdd(args[0], brickList,
+
+        status = self.s.glusterVolumeBrickAdd(volumeName, brickList,
                                               replicaCount, stripeCount)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeSet(self, args):
-        status = self.s.glusterVolumeSet(args[0], args[1], args[2])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        option = params.get('option', '')
+        value = params.get('value', '')
+
+        status = self.s.glusterVolumeSet(volumeName, option, value)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeSetOptionsList(self, args):
@@ -81,11 +96,19 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeReset(self, args):
-        status = self.s.glusterVolumeReset(args[0])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        option = params.get('option', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeReset(volumeName, option, force)
         return status['status']['code'], status['status']['message']
 
     def do_glusterHostAdd(self, args):
-        status = self.s.glusterHostAdd(args[0])
+        params = self._eqSplit(args)
+        hostName = params.get('hostName', '')
+
+        status = self.s.glusterHostAdd(hostName)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRebalanceStart(self, args):
@@ -110,11 +133,18 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeDelete(self, args):
-        status = self.s.glusterVolumeDelete(args[0])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeDelete(volumeName)
         return status['status']['code'], status['status']['message']
 
     def do_glusterHostRemove(self, args):
-        status = self.s.glusterHostRemove(args[0])
+        params = self._eqSplit(args)
+        hostName = params.get('hostName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterHostRemove(hostName, force)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeReplaceBrickStart(self, args):
@@ -191,7 +221,17 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRemoveBrickForce(self, args):
-        status = self.s.glusterVolumeRemoveBrickForce(args[0], args[1:])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        try:
+            brickList = params['bricks'].split(',')
+        except:
+            raise ValueError
+        replicaCount = params.get('replica', '')
+
+        status = self.s.glusterVolumeRemoveBrickForce(volumeName,
+                                                      brickList,
+                                                      replicaCount)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeStatus(self, args):
@@ -221,40 +261,47 @@ def getGlusterCmdDict(serv):
     return {
         'glusterVolumeCreate':
             (serv.do_glusterVolumeCreate,
-             ('volumeName=<volume_name> [replica=<count>] [stripe=<count>] '
-              '[transport=<ethernet|infiniband>] bricks=brick[,brick] '
-              '... \n\t<volume_name> is name of new volume',
+             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
+              '[replica=<count>] [stripe=<count>] [transport={tcp|rdma}]\n\t'
+              '<volume_name> is name of new volume',
+              '<brick[,brick, ...]> is brick(s) which will be used to '
+              'create volume',
               'create gluster volume'
               )),
         'glusterVolumesList':
             (serv.do_glusterVolumesList,
-             ('[volume_name]',
-              'if volume_name is given, list only given volume, else all'
+             ('[volumeName=<volume_name>]\n\t'
+              '<volume_name> is existing volume name',
+              'list all or given gluster volume details'
               )),
         'glusterVolumeStart':
             (serv.do_glusterVolumeStart,
-             ('<volume_name>\n\t<volume_name> is existing volume name',
+             ('volumeName=<volume_name> [force={yes|no}]\n\t'
+              '<volume_name> is existing volume name',
               'start gluster volume'
               )),
         'glusterVolumeStop':
             (serv.do_glusterVolumeStop,
-             ('<volume_name>\n\t<volume_name> is existing volume name',
+             ('volumeName=<volume_name> [force={yes|no}]\n\t'
+              '<volume_name> is existing volume name',
               'stop gluster volume'
               )),
         'glusterVolumeBrickAdd':
             (serv.do_glusterVolumeBrickAdd,
-             ('<volume_name> [replica=<count>] [stripe=<count>] '
-              'bricks=brick[,brick] ... \n\t<volume_name> is '
-              'existing volume name\n\t<new-brick> is brick which '
-              'will be added to the volume',
+             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
+              '[replica=<count>] [stripe=<count>]\n\t'
+              '<volume_name> is existing volume name\n\t'
+              '<brick[,brick, ...]> is new brick(s) which will be added to '
+              'the volume',
               'add bricks to gluster volume'
               )),
         'glusterVolumeSet':
             (serv.do_glusterVolumeSet,
-             ('<volume_name> <key> <value>\n\t<volume_name> is existing '
-              'volume name\n\t<key> is volume option\n\t<value> is '
-              'option value',
-              'set value to key of gluster volume'
+             ('volumeName=<volume_name> option=<option> value=<value>\n\t'
+              '<volume_name> is existing volume name\n\t'
+              '<option> is volume option\n\t'
+              '<value> is value to volume option',
+              'set gluster volume option'
               )),
         'glusterVolumeSetOptionsList':
             (serv.do_glusterVolumeSetOptionsList,
@@ -263,13 +310,15 @@ def getGlusterCmdDict(serv):
               )),
         'glusterVolumeReset':
             (serv.do_glusterVolumeReset,
-             ('<volume_name>\n\t<volume_name> is existing volume name',
-              'reset gluster volume'
+             ('volumeName=<volume_name> [option=<option>] [force={yes|no}]\n\t'
+              '<volume_name> is existing volume name',
+              'reset gluster volume or volume option'
               )),
         'glusterHostAdd':
             (serv.do_glusterHostAdd,
-             ('<host>\n\t<host> is hostname or ip address of new server',
-              'add new server to gluster storage cluster'
+             ('hostName=<host>\n\t'
+              '<host> is hostname or ip address of new server',
+              'add new server to gluster cluster'
               )),
         'glusterVolumeRebalanceStart':
             (serv.do_glusterVolumeRebalanceStart,
@@ -294,8 +343,10 @@ def getGlusterCmdDict(serv):
               )),
         'glusterHostRemove':
             (serv.do_glusterHostRemove,
-             ('<host>\n\t<host> is hostname or ip address of existing server',
-              'remove existing server form gluster storage cluster'
+             ('hostName=<host> [force={yes|no}]\n\t'
+              '<host> is hostname or ip address of a server in '
+              'gluster cluster',
+              'remove server from gluster cluster'
               )),
         'glusterVolumeReplaceBrickStart':
             (serv.do_glusterVolumeReplaceBrickStart,
@@ -362,9 +413,10 @@ def getGlusterCmdDict(serv):
               )),
         'glusterVolumeRemoveBrickForce':
             (serv.do_glusterVolumeRemoveBrickForce,
-             ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
-              '<volume_name> is existing volume name\n\t<brick> is '
-              'existing brick',
+             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
+              '[replica=<count>]\n\t'
+              '<volume_name> is existing volume name\n\t'
+              '<brick[,brick, ...]> is existing brick(s)',
               'force volume remove bricks'
               )),
         'glusterVolumeStatus':

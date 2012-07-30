@@ -63,7 +63,7 @@ class GlusterException(VdsmException):
 
     def response(self):
         return {'status': {'code': self.code, 'message': str(self),
-                            'rc': self.rc, 'out': self.out, 'err': self.err}}
+                           'rc': self.rc, 'out': self.out, 'err': self.err}}
 
 
 # General

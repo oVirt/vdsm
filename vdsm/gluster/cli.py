@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import re
 import xml.etree.cElementTree as etree
 from functools import wraps
 
@@ -30,7 +29,6 @@ from hostname import getHostNameFqdn, HostNameException
 _glusterCommandPath = utils.CommandPath("gluster",
                                         "/usr/sbin/gluster",
                                         )
-_brickCountRegEx = re.compile('(\d+) x (\d+) = (\d+)')
 
 
 def _getGlusterVolCmd():
@@ -62,6 +60,16 @@ class HostStatus:
     CONNECTED = 'CONNECTED'
     DISCONNECTED = 'DISCONNECTED'
     UNKNOWN = 'UNKNOWN'
+
+
+class VolumeStatus:
+    ONLINE = 'ONLINE'
+    OFFLINE = 'OFFLINE'
+
+
+class TransportType:
+    TCP = 'TCP'
+    RDMA = 'RDMA'
 
 
 def _execGluster(cmd):
@@ -299,76 +307,47 @@ def volumeStatus(volumeName, brick=None, option=None):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-def _parseVolumeInfo(out):
-    if not out[0].strip():
-        del out[0]
-    if out[-1].strip():
-        out += [""]
-
-    if out[0].strip().upper() == "NO VOLUMES PRESENT":
-        return {}
-
-    volumeInfoDict = {}
-    volumeInfo = {}
-    volumeName = None
-    brickList = []
-    volumeOptions = {}
-    for line in out:
-        line = line.strip()
-        if not line:
-            if volumeName and volumeInfo:
-                volumeInfo["bricks"] = brickList
-                volumeInfo["options"] = volumeOptions
-                volumeInfoDict[volumeName] = volumeInfo
-                volumeInfo = {}
-                volumeName = None
-                brickList = []
-                volumeOptions = {}
-            continue
-
-        tokens = line.split(":", 1)
-        key = tokens[0].strip().upper()
-        if key == "BRICKS":
-            continue
-        elif key == "OPTIONS RECONFIGURED":
-            continue
-        elif key == "VOLUME NAME":
-            volumeName = tokens[1].strip()
-            volumeInfo["volumeName"] = volumeName
-        elif key == "VOLUME ID":
-            volumeInfo["uuid"] = tokens[1].strip()
-        elif key == "TYPE":
-            volumeInfo["volumeType"] = tokens[1].strip().upper()
-        elif key == "STATUS":
-            volumeInfo["volumeStatus"] = tokens[1].strip().upper()
-        elif key == "TRANSPORT-TYPE":
-            volumeInfo["transportType"] = tokens[1].strip().upper().split(',')
-        elif key.startswith("BRICK"):
-            brickList.append(tokens[1].strip())
-        elif key == "NUMBER OF BRICKS":
-            volumeInfo["brickCount"] = tokens[1].strip()
+def _parseVolumeInfo(tree):
+    """
+        {VOLUMENAME: {'brickCount': BRICKCOUNT,
+                      'bricks': [BRICK1, BRICK2, ...],
+                      'options': {OPTION: VALUE, ...},
+                      'transportType': [TCP,RDMA, ...],
+                      'uuid': UUID,
+                      'volumeName': NAME,
+                      'volumeStatus': STATUS,
+                      'volumeType': TYPE}, ...}
+    """
+    volumes = {}
+    for el in tree.findall('volInfo/volumes/volume'):
+        value = {}
+        value['volumeName'] = el.find('name').text
+        value['uuid'] = el.find('id').text
+        value['volumeType'] = el.find('typeStr').text.upper().replace('-', '_')
+        status = el.find('statusStr').text.upper()
+        if status == 'STARTED':
+            value["volumeStatus"] = VolumeStatus.ONLINE
         else:
-            volumeOptions[tokens[0].strip()] = tokens[1].strip()
-
-    for volumeName, volumeInfo in volumeInfoDict.iteritems():
-        if volumeInfo["volumeType"] == "REPLICATE":
-            volumeInfo["replicaCount"] = volumeInfo["brickCount"]
-        elif volumeInfo["volumeType"] == "STRIPE":
-            volumeInfo["stripeCount"] = volumeInfo["brickCount"]
-        elif volumeInfo["volumeType"] == "DISTRIBUTED-REPLICATE":
-            m = _brickCountRegEx.match(volumeInfo["brickCount"])
-            if m:
-                volumeInfo["replicaCount"] = m.groups()[1]
-            else:
-                volumeInfo["replicaCount"] = ""
-
-        elif volumeInfo["volumeType"] == "DISTRIBUTED-STRIPE":
-            m = _brickCountRegEx.match(volumeInfo["brickCount"])
-            if m:
-                volumeInfo["stripeCount"] = m.groups()[1]
-            else:
-                volumeInfo["stripeCount"] = ""
-    return volumeInfoDict
+            value["volumeStatus"] = VolumeStatus.OFFLINE
+        value['brickCount'] = el.find('brickCount').text
+        value['distCount'] = el.find('distCount').text
+        value['stripeCount'] = el.find('stripeCount').text
+        value['replicaCount'] = el.find('replicaCount').text
+        transportType = el.find('transport').text
+        if transportType == '0':
+            value['transportType'] = [TransportType.TCP]
+        elif transportType == '1':
+            value['transportType'] = [TransportType.RDMA]
+        else:
+            value['transportType'] = [TransportType.TCP, TransportType.RDMA]
+        value['bricks'] = []
+        value['options'] = {}
+        for b in el.findall('bricks/brick'):
+            value['bricks'].append(b.text)
+        for o in el.findall('options/option'):
+            value['options'][o.find('name').text] = o.find('value').text
+        volumes[value['volumeName']] = value
+    return volumes
 
 
 @exportToSuperVdsm
@@ -387,11 +366,14 @@ def volumeInfo(volumeName=None):
     command = _getGlusterVolCmd() + ["info"]
     if volumeName:
         command.append(volumeName)
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumesListFailedException(rc, out, err)
-    else:
-        return _parseVolumeInfo(out)
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumesListFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parseVolumeInfo(xmltree)
+    except (etree.ParseError, AttributeError, ValueError):
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @exportToSuperVdsm
@@ -405,12 +387,14 @@ def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
     if transportList:
         command += ["transport", ','.join(transportList)]
     command += brickList
-
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeCreateFailedException(rc, out, err)
-    else:
-        return True
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeCreateFailedException(rc=e.rc, err=e.err)
+    try:
+        return {'uuid': xmltree.find('volCreate/volume/id').text}
+    except (etree.ParseError, AttributeError, ValueError):
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @exportToSuperVdsm
@@ -430,30 +414,31 @@ def volumeStop(volumeName, force=False):
     command = _getGlusterVolCmd() + ["stop", volumeName]
     if force:
         command.append('force')
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeStopFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeStopFailedException(rc=e.rc, err=e.err)
 
 
 @exportToSuperVdsm
 def volumeDelete(volumeName):
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["delete", volumeName])
-    if rc:
-        raise ge.GlusterVolumeDeleteFailedException(rc, out, err)
-    else:
+    command = _getGlusterVolCmd() + ["delete", volumeName]
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeDeleteFailedException(rc=e.rc, err=e.err)
 
 
 @exportToSuperVdsm
 def volumeSet(volumeName, option, value):
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["set", volumeName,
-                                                       option, value])
-    if rc:
-        raise ge.GlusterVolumeSetFailedException(rc, out, err)
-    else:
+    command = _getGlusterVolCmd() + ["set", volumeName, option, value]
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeSetFailedException(rc=e.rc, err=e.err)
 
 
 def _parseVolumeSetHelpXml(out):
@@ -483,11 +468,11 @@ def volumeReset(volumeName, option='', force=False):
         command.append(option)
     if force:
         command.append('force')
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeResetFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeResetFailedException(rc=e.rc, err=e.err)
 
 
 @exportToSuperVdsm
@@ -499,12 +484,11 @@ def volumeAddBrick(volumeName, brickList,
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
     command += brickList
-
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeBrickAddFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeBrickAddFailedException(rc=e.rc, err=e.err)
 
 
 @exportToSuperVdsm
@@ -694,11 +678,12 @@ def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
 
 @exportToSuperVdsm
 def peerProbe(hostName):
-    rc, out, err = _execGluster(_getGlusterPeerCmd() + ["probe", hostName])
-    if rc:
-        raise ge.GlusterHostAddFailedException(rc, out, err)
-    else:
+    command = _getGlusterPeerCmd() + ["probe", hostName]
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterHostAddFailedException(rc=e.rc, err=e.err)
 
 
 @exportToSuperVdsm
@@ -706,11 +691,11 @@ def peerDetach(hostName, force=False):
     command = _getGlusterPeerCmd() + ["detach", hostName]
     if force:
         command.append('force')
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterHostRemoveFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterHostRemoveFailedException(rc=e.rc, err=e.err)
 
 
 def _parsePeerStatus(tree, gHostName, gUuid, gStatus):

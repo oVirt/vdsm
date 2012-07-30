@@ -40,11 +40,6 @@ def exportAsVerb(func):
     return wrapper
 
 
-class VolumeStatus():
-    ONLINE = 'ONLINE'
-    OFFLINE = 'OFFLINE'
-
-
 class GlusterApi(object):
     """
     The gluster interface of vdsm.
@@ -58,35 +53,14 @@ class GlusterApi(object):
 
     @exportAsVerb
     def volumesList(self, volumeName=None, options=None):
-        """
-        Returns:
-            {'status' : {'code': CODE, 'message': MESSAGE},
-             'volumes': {VOLUMENAME: {'brickCount': BRICKCOUNT,
-                                      'bricks': [BRICK1, BRICK2, ...],
-                                      'options': {OPTION: VALUE, ...},
-                                      'transportType': [TCP, RDMA, ...],
-                                      'uuid': UUID,
-                                      'volumeName': NAME,
-                                      'volumeStatus': STATUS,
-                                      'volumeType': TYPE}, ...}}
-        """
-        volumeInfoDict = self.svdsmProxy.glusterVolumeInfo(volumeName)
-        for name, info in volumeInfoDict.iteritems():
-            info["volumeType"] = info["volumeType"].replace("-", "_")
-            if info["volumeStatus"] == "STARTED":
-                info["volumeStatus"] = VolumeStatus.ONLINE
-            else:
-                info["volumeStatus"] = VolumeStatus.OFFLINE
-        return {'volumes': volumeInfoDict}
+        return {'volumes': self.svdsmProxy.glusterVolumeInfo(volumeName)}
 
     @exportAsVerb
     def volumeCreate(self, volumeName, brickList, replicaCount=0,
                      stripeCount=0, transportList=[], options=None):
-        self.svdsmProxy.glusterVolumeCreate(volumeName, brickList,
-                                            replicaCount, stripeCount,
-                                            transportList)
-        volumeList = self.svdsmProxy.glusterVolumeInfo()
-        return {'uuid': volumeList[volumeName]['uuid']}
+        return self.svdsmProxy.glusterVolumeCreate(volumeName, brickList,
+                                                   replicaCount, stripeCount,
+                                                   transportList)
 
     @exportAsVerb
     def volumeStart(self, volumeName, force=False, options=None):
@@ -187,7 +161,8 @@ class GlusterApi(object):
     def volumeRemoveBrickStatus(self, volumeName, brickList,
                                 replicaCount=0, options=None):
         message = self.svdsmProxy.glusterVolumeRemoveBrickStatus(volumeName,
-                                               brickList, replicaCount)
+                                                                 brickList,
+                                                                 replicaCount)
         return {'message': message}
 
     @exportAsVerb
@@ -206,9 +181,9 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeStatus(self, volumeName, brick=None, statusOption=None,
                      options=None):
-        return {'volumeStatus':
-                    self.svdsmProxy.glusterVolumeStatus(volumeName, brick,
-                                                        statusOption)}
+        status = self.svdsmProxy.glusterVolumeStatus(volumeName, brick,
+                                                     statusOption)
+        return {'volumeStatus': status}
 
     @exportAsVerb
     def hostAdd(self, hostName, options=None):
