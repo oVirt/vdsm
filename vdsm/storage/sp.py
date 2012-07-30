@@ -292,10 +292,11 @@ class StoragePool(Securable):
                 # or once one is activated
 
                 #FIXME : Use a system wide grouping mechanism
-                sanPool = self.masterDomain.getStorageType() in sd.BLOCK_DOMAIN_TYPES  # Check if pool is SAN or NAS
-                if sanPool and self.lvExtendPolicy == "ON":
+                if self.masterDomain.requiresMailbox and self.lvExtendPolicy == "ON":
                     self.spmMailer = storage_mailbox.SPM_MailMonitor(self, maxHostID)
                     self.spmMailer.registerMessageType('xtnd', partial(storage_mailbox.SPM_Extend_Message.processRequest, self))
+                    self.log.debug("SPM mailbox ready for pool %s on master "
+                                   "domain %s", self.spUUID, self.masterDomain.sdUUID)
                 else:
                     self.spmMailer = None
 
@@ -421,12 +422,13 @@ class StoragePool(Securable):
 
     @unsecured
     def __createMailboxMonitor(self):
-        # Currently mailbox is not needed for non block device sd's
         if self.hsmMailer:
             return
 
-        if isinstance(self.masterDomain, blockSD.BlockStorageDomain) and self.lvExtendPolicy == "ON":
+        if self.masterDomain.requiresMailbox and self.lvExtendPolicy == "ON":
             self.hsmMailer = storage_mailbox.HSM_Mailbox(self.id, self.spUUID)
+            self.log.debug("HSM mailbox ready for pool %s on master "
+                           "domain %s", self.spUUID, self.masterDomain.sdUUID)
 
     @unsecured
     def __cleanupDomains(self, domlist, msdUUID, masterVersion):

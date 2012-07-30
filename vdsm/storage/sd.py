@@ -318,6 +318,10 @@ class StorageDomain:
             threading.Thread(target=self.stat.stop).start()
 
     @property
+    def requiresMailbox(self):
+        return False
+
+    @property
     def oop(self):
         return oop.getProcessPool(self.sdUUID)
 
