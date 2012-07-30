@@ -35,6 +35,7 @@ test_modules = \
 	main.py \
 	md_utils_tests.py \
 	miscTests.py \
+	mkimageTests.py \
 	mountTests.py \
 	netinfoTests.py \
 	outOfProcessTests.py \
@@ -43,7 +44,7 @@ test_modules = \
 	restTests.py \
 	restData.py \
 	tcTests.py \
-	vdsClientTests.py
+	vdsClientTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py
 
