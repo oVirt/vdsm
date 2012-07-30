@@ -904,6 +904,8 @@ def makeBridge(vdcName, vdsmDir):
                 else:
                     fReturn = False
                     logging.debug("makeBridge Failed to del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+            else:
+                ovirtfunctions.ovirt_safe_delete_config(IFACE_CONFIG + mgtBridge)
         except:
             fReturn = False
             logging.debug("makeBridge Failed to del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
