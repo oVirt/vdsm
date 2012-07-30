@@ -9,7 +9,7 @@
 #
 
 import os, sys, getopt, signal
-import getpass, grp
+import getpass, pwd, grp
 import threading
 import logging
 from logging import config as lconfig
@@ -91,11 +91,15 @@ def parse_args():
         sys.exit(1)
 
 def __assertVdsmUser():
-    user = getpass.getuser()
-    assert user == 'vdsm', "VDSM failed to start: running user is not " \
-                           "'vdsm', trying to run from user %s" % user
-    assert 'vdsm' in grp.getgrnam("kvm").gr_mem, "VDSM failed to start: " \
-                                                "vdsm user is not in KVM group"
+    username = getpass.getuser()
+    assert username == constants.VDSM_USER, (
+        "VDSM failed to start: running user is not %s, trying "
+        "to run from user %s" % (constants.VDSM_USER, username)
+    )
+    group = grp.getgrnam(constants.VDSM_GROUP)
+    assert ((constants.VDSM_USER in group.gr_mem
+             or pwd.getpwnam(constants.VDSM_USER).pw_gid == group.gr_gid),
+                "VDSM failed to start: vdsm user is not in KVM group")
 
 if __name__ == '__main__':
     __assertVdsmUser()
