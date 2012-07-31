@@ -79,113 +79,141 @@ class DomainMonitor(object):
         if domain.sdUUID in self._domains:
             return
 
-        status = DomainMonitorStatus()
-        stopEvent = Event()
-        thread = Thread(target=self._monitorDomain,
-                        args=(domain, hostId, stopEvent, status))
-
-        thread.setDaemon(True)
-        thread.start()
-        self._domains[domain.sdUUID] = (stopEvent, thread, status)
+        self._domains[domain.sdUUID] = DomainMonitorThread(
+                                        domain, hostId, self._interval)
+        self._domains[domain.sdUUID].start()
 
     def stopMonitoring(self, sdUUID):
-        if sdUUID not in self._domains:
-            return
-
-        stopEvent, thread = self._domains[sdUUID][:2]
-        stopEvent.set()
         # The domain monitor issues events that might become raceful if
         # stopMonitoring doesn't stop until the thread exits.
         # Eg: when a domain is detached the domain monitor is stopped and
         # the host id is released. If the monitor didn't actually exit it
         # might respawn a new acquire host id.
-        thread.join()
+        try:
+            self._domains[sdUUID].stop()
+        except KeyError:
+            return
+
         del self._domains[sdUUID]
 
     def getStatus(self, sdUUID):
-        status = self._domains[sdUUID][-1]
-        return status.copy()
+        return self._domains[sdUUID].getStatus()
 
     def close(self):
         for sdUUID in self._domains.keys():
             self.stopMonitoring(sdUUID)
 
-    def _monitorDomain(self, domain, hostId, stopEvent, status):
-        nextStatus = DomainMonitorStatus()
-        isIsoDomain = domain.isISO()
-        lastRefresh = time()
-        refreshTime = config.getint("irs", "repo_stats_cache_refresh_timeout")
 
-        while not stopEvent.is_set():
-            nextStatus.clear()
+class DomainMonitorThread(object):
+    log = logging.getLogger('Storage.DomainMonitorThread')
 
-            # Refreshing the domain object in order to pick up changes as,
-            # for example, the domain upgrade.
-            if time() - lastRefresh > refreshTime:
-                self.log.debug("Refreshing domain %s", domain.sdUUID)
-                sdCache.manuallyRemoveDomain(domain.sdUUID)
-                lastRefresh = time()
+    def __init__(self, domain, hostId, interval):
+        self.thread = Thread(target=self._monitorLoop)
+        self.thread.setDaemon(True)
 
+        self.stopEvent = Event()
+        self.domain = domain
+        self.hostId = hostId
+        self.interval = interval
+        self.status = DomainMonitorStatus()
+        self.nextStatus = DomainMonitorStatus()
+        self.isIsoDomain = domain.isISO()
+        self.lastRefresh = time()
+        self.refreshTime = \
+                    config.getint("irs", "repo_stats_cache_refresh_timeout")
+
+    def start(self):
+        self.thread.start()
+
+    def stop(self, wait=True):
+        self.stopEvent.set()
+        if wait:
+            self.thread.join()
+
+    def getStatus(self):
+        return self.status.copy()
+
+    def _monitorLoop(self):
+        self.log.debug("Starting domain monitor for %s", self.domain.sdUUID)
+
+        while not self.stopEvent.is_set():
             try:
-                domain.selftest()
+                self._monitorDomain()
+            except:
+                self.log.error("The domain monitor for %s failed unexpectedly",
+                               self.domain.sdUUID, exc_info=True)
+            self.stopEvent.wait(self.interval)
 
-                nextStatus.readDelay = domain.getReadDelay()
-
-                stats = domain.getStats()
-                nextStatus.diskUtilization = (stats["disktotal"],
-                                              stats["diskfree"])
-
-                nextStatus.vgMdUtilization = (stats["mdasize"],
-                                              stats["mdafree"])
-
-                nextStatus.vgMdHasEnoughFreeSpace = stats["mdavalid"]
-                nextStatus.vgMdFreeBelowThreashold = stats["mdathreshold"]
-
-                masterStats = domain.validateMaster()
-                nextStatus.masterValid = masterStats['valid']
-                nextStatus.masterMounted = masterStats['mount']
-
-                nextStatus.hasHostId = domain.hasHostId(hostId)
-
-            except Exception, e:
-                self.log.error("Error while collecting domain `%s` monitoring "
-                        "information", domain.sdUUID, exc_info=True)
-                nextStatus.error = e
-
-            nextStatus.lastCheck = time()
-            nextStatus.valid = (nextStatus.error is None)
-
-            if status.valid != nextStatus.valid:
-                self.log.debug("Domain `%s` changed its status to %s",
-                    domain.sdUUID, "Valid" if nextStatus.valid else "Invalid")
-
-                try:
-                    self.onDomainConnectivityStateChange.emit(domain.sdUUID,
-                                                              nextStatus.valid)
-                except:
-                    self.log.warn("Could not emit domain state change event",
-                                  exc_info=True)
-
-            # An ISO domain can be shared by multiple pools
-            if (not isIsoDomain
-                    and nextStatus.valid and nextStatus.hasHostId is False):
-                try:
-                    domain.acquireHostId(hostId, async=True)
-                except:
-                    self.log.debug("Unable to issue the acquire host id %s "
-                            "request for the domain %s", hostId, domain.sdUUID,
-                            exc_info=True)
-
-            status.update(nextStatus)
-            stopEvent.wait(self._interval)
-
-        self.log.debug("Monitorg for domain %s is stopping", domain.sdUUID)
+        self.log.debug("Stopping domain monitor for %s", self.domain.sdUUID)
 
         # If this is an ISO domain we didn't acquire the host id and releasing
         # it is superfluous.
-        if not isIsoDomain:
+        if not self.isIsoDomain:
             try:
-                domain.releaseHostId(hostId, unused=True)
+                self.domain.releaseHostId(self.hostId, unused=True)
             except:
-                self.log.debug("Unable to release the host id %s for the "
-                           "domain %s",  hostId, domain.sdUUID, exc_info=True)
+                self.log.debug("Unable to release the host id %s for domain "
+                       "%s", self.hostId, self.domain.sdUUID, exc_info=True)
+
+    def _monitorDomain(self):
+        self.nextStatus.clear()
+
+        # Refreshing the domain object in order to pick up changes as,
+        # for example, the domain upgrade.
+        if time() - self.lastRefresh > self.refreshTime:
+            self.log.debug("Refreshing domain %s", self.domain.sdUUID)
+            sdCache.manuallyRemoveDomain(self.domain.sdUUID)
+            self.lastRefresh = time()
+
+        try:
+            self.domain.selftest()
+
+            self.nextStatus.readDelay = self.domain.getReadDelay()
+
+            stats = self.domain.getStats()
+            self.nextStatus.diskUtilization = (stats["disktotal"],
+                                          stats["diskfree"])
+
+            self.nextStatus.vgMdUtilization = (stats["mdasize"],
+                                          stats["mdafree"])
+
+            self.nextStatus.vgMdHasEnoughFreeSpace = stats["mdavalid"]
+            self.nextStatus.vgMdFreeBelowThreashold = stats["mdathreshold"]
+
+            masterStats = self.domain.validateMaster()
+            self.nextStatus.masterValid = masterStats['valid']
+            self.nextStatus.masterMounted = masterStats['mount']
+
+            self.nextStatus.hasHostId = self.domain.hasHostId(self.hostId)
+
+        except Exception, e:
+            self.log.error("Error while collecting domain %s monitoring "
+                           "information", self.domain.sdUUID, exc_info=True)
+            self.nextStatus.error = e
+
+        self.nextStatus.lastCheck = time()
+        self.nextStatus.valid = (self.nextStatus.error is None)
+
+        if self.status.valid != self.nextStatus.valid:
+            self.log.debug("Domain %s changed its status to %s",
+                           self.domain.sdUUID,
+                           "Valid" if self.nextStatus.valid else "Invalid")
+
+            try:
+                self.onDomainConnectivityStateChange.emit(
+                                    self.domain.sdUUID, self.nextStatus.valid)
+            except:
+                self.log.warn("Could not emit domain state change event",
+                              exc_info=True)
+
+        # An ISO domain can be shared by multiple pools
+        if (not self.isIsoDomain and self.nextStatus.valid
+                and self.nextStatus.hasHostId is False):
+            try:
+                self.domain.acquireHostId(self.hostId, async=True)
+            except:
+                self.log.debug("Unable to issue the acquire host id %s "
+                    "request for domain %s", self.hostId, self.domain.sdUUID,
+                    exc_info=True)
+
+        self.status.update(self.nextStatus)
