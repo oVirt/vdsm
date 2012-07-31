@@ -295,6 +295,9 @@ class clientIF:
             elif "path" in drive:
                 volPath = drive['path']
 
+            else:
+                raise vm.VolumeError(drive)
+
         # For BC sake: None as argument
         elif not drive:
             volPath = drive
