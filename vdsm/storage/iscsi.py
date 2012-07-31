@@ -27,10 +27,12 @@ import glob
 import logging
 import re
 import errno
+import time
 from collections import namedtuple
 
 from vdsm import constants
 import misc
+from vdsm.config import config
 import devicemapper
 from threading import RLock
 
@@ -349,13 +351,41 @@ def rescan():
 
 @misc.samplingmethod
 def forceIScsiScan():
-    for host in glob.glob(SCAN_PATTERN):
-        try:
-            with open(host, "w") as f:
-                f.write("- - -")
-        except Exception:
-            # Ignore exception, there is nothing intelligent we can do about it
-            log.warning("Failed to rescan host %s", host, exc_info=True)
+    processes = []
+    minTimeout = config.getint('irs', 'scsi_rescan_minimal_timeout')
+    maxTimeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
+    for hba in glob.glob(SCAN_PATTERN):
+        cmd = [constants.EXT_DD, 'of=' + hba]
+        p = misc.execCmd(cmd, sudo=False, sync=False)
+        p.stdin.write("- - -")
+        p.stdin.flush()
+        p.stdin.close()
+        processes.append((hba, p))
+    if (minTimeout > maxTimeout or minTimeout < 0):
+        minTimeout = 2
+        maxTimeout = 30
+        log.warning("One of the following configuration arguments has an ",
+                    "illegal value: scsi_rescan_minimal_timeout or ",
+                    "scsi_rescan_maximal_timeout. Set to %s and %s seconds ",
+                    "respectively.", minTimeout, maxTimeout)
+    log.debug("Performing SCSI scan, this will take up to %s seconds",
+                maxTimeout)
+    time.sleep(minTimeout)
+    for i in xrange(maxTimeout - minTimeout):
+        for p in processes[:]:
+            (hba, proc) = p
+            if proc.wait(0):
+                if proc.returncode != 0:
+                    log.warning('returncode for: %s is: %s', hba,
+                               proc.returncode)
+                processes.remove(p)
+        if not processes:
+            break
+        else:
+            time.sleep(1)
+    else:
+        log.warning("Still waiting for scsi scan of hbas: %s",
+                    tuple(hba for p in processes))
 
 def devIsiSCSI(dev):
     hostdir = os.path.realpath(os.path.join("/sys/block", dev, "device/../../.."))

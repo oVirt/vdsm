@@ -176,6 +176,12 @@ parameters = [
             'Storage domain validate timeout, the maximum number of seconds '
             'to wait until all the domains will be validated.'),
 
+        ('scsi_rescan_minimal_timeout', '2',
+            'The minimum number of seconds to wait for scsi scan to return.'),
+
+        ('scsi_rescan_maximal_timeout', '30',
+            'The maximal number of seconds to wait for scsi scan to return.'),
+
         ('sd_health_check_delay', '10',
             'Storage domain health check delay, the amount of seconds to '
             'wait between two successive run of the domain health check.'),
