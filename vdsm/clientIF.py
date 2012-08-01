@@ -289,18 +289,33 @@ class clientIF:
             elif "UUID" in drive:
                 volPath = self._getUUIDSpecPath(drive["UUID"])
 
-            elif 'specParams' in drive and 'vmPayload' in drive['specParams']:
+            # leave path == '' for empty cdrom and floppy drives ...
+            elif drive['device'] in ('cdrom', 'floppy') and \
+                    'specParams' in drive and \
+                    'path' in drive['specParams'] and \
+                    drive['specParams']['path'] == '':
+                        volPath = ''
+
+            # ... or load the drive from vmPayload:
+            elif drive['device'] in ('cdrom', 'floppy') and \
+                    'specParams' in drive and \
+                    'vmPayload' in drive['specParams']:
                 '''
                 vmPayload is a key in specParams
                 'vmPayload': {'file': {'filename': 'content'}}
                 '''
-                for key, files in drive['specParams']['vmPayload'].iteritems():
-                    if key == 'file':
-                        if drive['device'] == 'cdrom':
-                            volPath = supervdsm.getProxy().mkIsoFs(vmId, files)
-                        elif drive['device'] == 'floppy':
-                            volPath = \
-                                supervdsm.getProxy().mkFloppyFs(vmId, files)
+                mkFsNames = {'cdrom': 'mkIsoFs', 'floppy': 'mkFloppyFs'}
+                try:
+                    mkFsFunction = getattr(supervdsm.getProxy(),
+                                           mkFsNames[drive['device']])
+                except AttributeError:
+                    raise vm.VolumeError("Unsupported 'device': %s in "
+                                         "drive: %" % (drive['device'], drive))
+                else:
+                    # the only reason for adding this variable is that
+                    # you can not write this without breaking PEP8
+                    file_name = drive['specParams']['vmPayload']['file']
+                    volPath = mkFsFunction(vmId, file_name)
 
             elif "path" in drive:
                 volPath = drive['path']
