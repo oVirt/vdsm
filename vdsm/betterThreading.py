@@ -59,6 +59,11 @@ class Lock(pthread.PthreadMutex):
         self.unlock()
 
 
+class RLock(Lock):
+    def __init__(self):
+        pthread.PthreadMutex.__init__(self, recursive=True)
+
+
 class Condition(object):
     """
     Condition class mimics Python native threading.Condition() API
@@ -104,3 +109,4 @@ import threading
 
 threading.Condition = Condition
 threading.Lock = Lock
+threading.RLock = RLock

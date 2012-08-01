@@ -39,9 +39,13 @@ LIBPTHREAD = "libpthread.so.0"
 
 SIZEOF_MUTEX_T = 40
 SIZEOF_COND_T = 48
+SIZEOF_MUTEXATTR_T = 4
+
+PTHREAD_MUTEX_RECURSIVE = 1
 
 MUTEX_T = C.c_char * SIZEOF_MUTEX_T
 COND_T = C.c_char * SIZEOF_COND_T
+MUTEXATTR_T = C.c_char * SIZEOF_MUTEXATTR_T
 
 # This work well for Linux, but will fail on other OSes, where pthread library
 # may have other name. So this module is not cross-platform.
@@ -54,12 +58,26 @@ class timespec(C.Structure):
                 ("tv_nsec", C.c_long)]
 
 
+class mutexattr_t(C.Union):
+    _fields_ = [("__size", MUTEXATTR_T),
+                ("__align", C.c_int)]
+
+
 class PthreadMutex(object):
     __slots__ = ("_mutex")
 
-    def __init__(self, attr=None):
+    def __init__(self, recursive=False):
         self._mutex = MUTEX_T()
+
+        if recursive:
+            attr = C.byref(mutexattr_t())
+            _libpthread.pthread_mutexattr_settype(
+                        attr, C.c_int(PTHREAD_MUTEX_RECURSIVE))
+        else:
+            attr = None
+
         res = _libpthread.pthread_mutex_init(self._mutex, attr)
+
         if res:
             raise OSError(res, os.strerror(res))
 
@@ -86,10 +104,10 @@ class PthreadMutex(object):
 class PthreadCond(object):
     __slots__ = ("_lock", "_cond")
 
-    def __init__(self, attr=None, mutex=None):
+    def __init__(self, mutex=None):
         self._cond = COND_T()
         self._lock = mutex
-        res = _libpthread.pthread_cond_init(self._cond, attr)
+        res = _libpthread.pthread_cond_init(self._cond, None)
 
         if res:
             raise OSError(res, os.strerror(res))

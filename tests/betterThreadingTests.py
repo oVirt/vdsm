@@ -34,20 +34,35 @@ def getTweakedEvent():
 
 
 class LockTests(TestCaseBase):
-    def testAcquire(self):
-        lock = betterThreading.Lock()
-        self.assertTrue(lock.acquire)
+    def _testAcquire(self, lock):
+        self.assertTrue(lock.acquire())
 
-    def testRelease(self):
-        lock = betterThreading.Lock()
+    def _testRelease(self, lock):
         lock.acquire()
         lock.release()
         self.assertTrue(lock.acquire(False))
+
+    def testAcquireLock(self):
+        self._testAcquire(betterThreading.Lock())
+
+    def testAcquireRLock(self):
+        self._testAcquire(betterThreading.RLock())
+
+    def testReleaseLock(self):
+        self._testRelease(betterThreading.Lock())
+
+    def testReleaseRLock(self):
+        self._testRelease(betterThreading.RLock())
 
     def testAcquireNonblocking(self):
         lock = betterThreading.Lock()
         lock.acquire()
         self.assertFalse(lock.acquire(False))
+
+    def testAcquireRecursive(self):
+        lock = betterThreading.RLock()
+        self.assertTrue(lock.acquire())
+        self.assertTrue(lock.acquire(False))
 
 
 class Flag(object):
@@ -155,6 +170,24 @@ class ConditionTests(TestCaseBase):
         Exercise Condition.wait() with 0.3s timeout (fraction of a second)
         """
         self.testBaseTest(lock=betterThreading.Lock(), timeout=0.3)
+
+    def testNotifyWithUserProvidedRLock(self):
+        """
+        Exercise Condition.notify()
+        """
+        self.testBaseTest(lock=betterThreading.RLock())
+
+    def testWaitIntegerTimeoutWithUserProvidedRLock(self):
+        """
+        Exercise Condition.wait() with 1s timeout
+        """
+        self.testBaseTest(lock=betterThreading.RLock(), timeout=1)
+
+    def testWaitFloatTimeoutWithUserProvidedRLock(self):
+        """
+        Exercise Condition.wait() with 0.3s timeout (fraction of a second)
+        """
+        self.testBaseTest(lock=betterThreading.RLock(), timeout=0.3)
 
 
 class EventTests(TestCaseBase):
