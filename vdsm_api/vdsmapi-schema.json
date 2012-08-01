@@ -171,7 +171,7 @@
 {'type': 'SetupNetworkNetAttributes',
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
-          '*delay': 'IntStr', '*onboot': 'bool', 'remove': 'bool'}}
+          '*delay': 'uint', '*onboot': 'bool', 'remove': 'bool'}}
 
 ##
 # @SetupNetworkBondAttributes:
@@ -435,15 +435,6 @@
  'returns': {'allTasksStatus': 'TasksStatus'}}
 
 ##
-# @IntStr:
-#
-# A string that can be converted into an integer.
-#
-# Since: 4.10.0
-##
-{'alias': 'IntStr', 'data': 'str'}
-
-##
 # @FloatStr:
 #
 # A string that can be converted into an float.
@@ -490,7 +481,7 @@
 ##
 {'type': 'NetInfoBridgedNetwork',
  'data': {'ports': ['str'], 'stp': 'bool', 'addr': 'str',
-          'netmask': 'str', 'gateway': 'str', 'mtu': 'IntStr',
+          'netmask': 'str', 'gateway': 'str', 'mtu': 'uint',
           'cfg': 'StringMap', 'bridged': 'bool'}}
 
 ##
@@ -539,7 +530,7 @@
 ##
 {'type': 'NetInfoNic',
  'data': {'speed': 'int', 'addr': 'str', 'netmask': 'str', 'hwaddr': 'str',
-          'mtu': 'IntStr', '*permhwaddr': 'str'}}
+          'mtu': 'uint', '*permhwaddr': 'str'}}
 
 ##
 # @NetInfoBond:
@@ -562,7 +553,7 @@
 ##
 {'type': 'NetInfoBond',
  'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str', 'hwaddr': 'str',
-          'cfg': 'NetInfoIfaceCfg', 'mtu': 'IntStr'}}
+          'cfg': 'NetInfoIfaceCfg', 'mtu': 'uint'}}
 
 ##
 # @NetInfoVlan:
@@ -580,7 +571,7 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoVlan',
- 'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str', 'mtu': 'IntStr'}}
+ 'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str', 'mtu': 'uint'}}
 
 ##
 # @HookScriptInfo:
@@ -847,8 +838,8 @@
 #        the current API truncates @software_version to 'x.y'.
 ##
 {'type': 'VdsmCapabilities',
- 'data': {'kvmEnabled': 'bool', 'cpuCores': 'IntStr',
-          'cpuSockets': 'IntStr', 'cpuSpeed': 'FloatStr', 'cpuModel': 'str',
+ 'data': {'kvmEnabled': 'bool', 'cpuCores': 'uint',
+          'cpuSockets': 'uint', 'cpuSpeed': 'FloatStr', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedRHEVMs': ['str'],
           'supportedProtocols': ['str'], 'clusterLevels': ['str'],
@@ -859,8 +850,8 @@
           'packages2': 'SoftwarePackageInfoMap',
           'emulatedMachines': ['str'], 'ISCSIInitiatorName': 'str',
           'HBAInventory': 'HbaInventory', 'vmTypes': ['VmType'],
-          'memSize': 'IntStr', 'reservedMem': 'IntStr',
-          'guestOverhead': 'IntStr'}}
+          'memSize': 'uint', 'reservedMem': 'uint',
+          'guestOverhead': 'uint'}}
 
 ##
 # @Global.getCapabilities:
@@ -935,7 +926,7 @@
 ##
 {'type': 'BlockDevicePathInfo',
  'data': {'physdev': 'str', 'state': 'BlockDevicePathState',
-          'lun': 'IntStr', 'type': 'BlockDeviceType'}}
+          'lun': 'uint', 'type': 'BlockDeviceType'}}
 
 ##
 # @IscsiSessionInfo:
@@ -1005,10 +996,10 @@
 {'type': 'BlockDeviceInfo',
  'data': {'GUID': 'UUID', 'pvUUID': 'UUID', 'vendorID': 'str',
           'productID': 'str', 'fwrev': 'str', 'serial': 'str',
-          'capacity': 'IntStr', 'devtype': 'BlockDeviceType',
+          'capacity': 'uint', 'devtype': 'BlockDeviceType',
           'pathstatus': ['BlockDevicePathInfo'],
-          'pathlist': ['IscsiSessionInfo'], 'logicalblocksize': 'IntStr',
-          'physicalblocksize': 'IntStr', 'partitioned': 'bool'}}
+          'pathlist': ['IscsiSessionInfo'], 'logicalblocksize': 'uint',
+          'physicalblocksize': 'uint', 'partitioned': 'bool'}}
 
 ##
 # @Global.getDeviceInfo:
@@ -1215,8 +1206,8 @@
 # Since: 4.10.0
 ##
 {'type': 'VolumeGroupInfo',
- 'data': {'name': 'str', 'vgUUID': 'UUID', 'vgsize': 'IntStr',
-          'vgfree': 'IntStr', 'type': 'BlockDeviceType',
+ 'data': {'name': 'str', 'vgUUID': 'UUID', 'vgsize': 'uint',
+          'vgfree': 'uint', 'type': 'BlockDeviceType',
           'attr': 'VolumeGroupAttributes', 'state': 'VolumeGroupState'}}
 
 ##
@@ -1277,8 +1268,8 @@
 # Since: 4.10.0
 ##
 {'type': 'NetworkInterfaceStats',
- 'data': {'name': 'str', 'speed': 'IntStr', 'rxDropped': 'IntStr',
-          'txDropped': 'IntStr', 'rxErrors': 'IntStr', 'txErrors': 'IntStr',
+ 'data': {'name': 'str', 'speed': 'uint', 'rxDropped': 'uint',
+          'txDropped': 'uint', 'rxErrors': 'uint', 'txErrors': 'uint',
           'state': 'NetworkInterfaceState', 'rxRate': 'FloatStr',
           'txRate': 'FloatStr', 'macAddr': 'str'}}
 
@@ -1300,7 +1291,7 @@
 # XXX: Add an enum for return codes and their meanings
 ##
 {'type': 'StorageDomainVitals',
- 'data': {'code': 'IntStr', 'delay': 'FLoatStr', 'lastCheck': 'FloatStr',
+ 'data': {'code': 'int', 'delay': 'FLoatStr', 'lastCheck': 'FloatStr',
           'valid': 'bool'}}
 
 ##
@@ -1312,7 +1303,7 @@
 #
 # Since: 4.10.0
 ##
-{'type': 'PathStats', 'data': {'free': 'IntStr'}}
+{'type': 'PathStats', 'data': {'free': 'uint'}}
 
 ##
 # @THPStates:
@@ -1434,13 +1425,13 @@
 ##
 {'type': 'HostStats',
  'data': {'cpuUser': 'FloatStr', 'cpuSys': 'FloatStr', 'cpuIdle': 'FloatStr',
-           'rxRate': 'FloatStr', 'txRate': 'FloatStr', 'statsAge': 'IntStr',
+           'rxRate': 'FloatStr', 'txRate': 'FloatStr', 'statsAge': 'uint',
            'network': 'NetworkInterfaceStatsMap',
-           'rxDropped': 'IntStr', 'txDropped': 'IntStr',
+           'rxDropped': 'uint', 'txDropped': 'uint',
            'cpuSysVdsmd': 'FloatStr', 'cpuUserVdsmd': 'FloatStr',
            'storageDomains': 'StorageDomainVitalsMap',
-           'elapsedTime': 'IntStr', 'memUsed': 'IntStr',
-           'anonHugePages': 'IntStr', 'cpuLoad': 'FloatStr',
+           'elapsedTime': 'uint', 'memUsed': 'uint',
+           'anonHugePages': 'uint', 'cpuLoad': 'FloatStr',
            'diskStats': 'PathStatsMap', 'thpState': 'THPStates'},
            'memAvailable': 'int', 'memShared': 'int', 'memCommitted': 'int',
            'swapTotal': 'int', 'swapFree': 'int','vmCount': 'int',
@@ -1706,8 +1697,8 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDeviceIdeAddress',
- 'data': {'type': 'VmDeviceAddressType', 'controller': 'IntStr',
-          'bus': 'IntStr', 'unit': 'IntStr'}}
+ 'data': {'type': 'VmDeviceAddressType', 'controller': 'uint',
+          'bus': 'uint', 'unit': 'uint'}}
 
 ##
 # @VmDeviceVirtioSerialAddress:
@@ -1725,8 +1716,8 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDeviceVirtioSerialAddress',
- 'data': {'type': 'VmDeviceAddressType', 'controller': 'IntStr',
-          'bus': 'IntStr', 'port': 'IntStr'}}
+ 'data': {'type': 'VmDeviceAddressType', 'controller': 'uint',
+          'bus': 'uint', 'port': 'uint'}}
 
 ##
 # @VmDeviceAddress:
@@ -1837,14 +1828,14 @@
 {'type': 'VmDiskDevice',
  'data': {'type': 'VmDeviceType', 'device': 'VmDiskDeviceType',
           '*iface': 'VmDiskDeviceInterface', '*path': 'str',
-          'readonly': 'bool', '*bootOrder': 'IntStr', '*domainID': 'UUID',
+          'readonly': 'bool', '*bootOrder': 'uint', '*domainID': 'UUID',
           '*poolID': 'UUID', '*imageID': 'UUID', '*volumeID': 'UUID',
           'format': 'VmDiskDeviceFormat', 'propagateErrors': 'bool',
           'address': 'VmDeviceAddress', 'alias': 'str',
           'deviceId': 'UUID', '*specParams': 'VmDiskDeviceSpecParams',
-          'apparentsize': 'IntStr', 'index': 'int', 'name': 'str',
+          'apparentsize': 'uint', 'index': 'int', 'name': 'str',
           'needExtend': 'bool', 'optional': 'bool',
-          'reqsize': 'IntStr', 'shared': 'bool', 'truesize': 'IntStr',
+          'reqsize': 'uint', 'shared': 'bool', 'truesize': 'uint',
           'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
           '*baseVolumeID': 'UUID'}}
 
@@ -1928,7 +1919,7 @@
 {'type': 'VmInterfaceDevice',
  'data': {'type': 'VmDeviceType', 'device': 'VmInterfaceDeviceType',
           'nicModel': 'VmInterfaceDeviceModel', 'macAddr': 'str',
-          'network': 'str', '*bootOrder': 'IntStr',
+          'network': 'str', '*bootOrder': 'uint',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
           '*specParams': 'VmInterfaceDeviceSpecParams'}}
 
@@ -1962,7 +1953,7 @@
 #
 # Since: 4.10.0
 ##
-{'type': 'VmVideoDeviceSpecParams', 'data': {'*vram': 'IntStr'}}
+{'type': 'VmVideoDeviceSpecParams', 'data': {'*vram': 'uint'}}
 
 ##
 # @VmVideoDevice:
@@ -2274,13 +2265,13 @@
  'data': {'acpiEnable': 'bool', 'clientIp': 'str', 'cpuType': 'str',
           'custom': 'StringMap', 'devices': ['VmDevice'],
           'display': 'VmDisplayType', 'displayIp': 'str',
-          'displayPort': 'IntStr', 'displaySecurePort': 'IntStr',
+          'displayPort': 'uint', 'displaySecurePort': 'uint',
           'emulatedMachine': 'str', 'keyboardLayout': 'str',
-          'kvmEnable': 'bool', 'memSize': 'IntStr',
-          'nicModel': 'str', 'nice': 'IntStr', 'pauseCode': 'str',
-          'pid': 'IntStr', 'smp': 'IntStr', '*smpCoresPerSocket': 'IntStr',
-          '*smpThreadsPerCore': 'IntStr', 'status': 'VMStatus',
-          'timeOffset': 'IntStr', 'transparentHugePages': 'bool',
+          'kvmEnable': 'bool', 'memSize': 'uint',
+          'nicModel': 'str', 'nice': 'int', 'pauseCode': 'str',
+          'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
+          '*smpThreadsPerCore': 'uint', 'status': 'VMStatus',
+          'timeOffset': 'uint', 'transparentHugePages': 'bool',
           'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType'}}
 
 ##
@@ -3046,7 +3037,7 @@
 # Since: 4.10.0
 ##
 {'type': 'StorageDomainFileStats',
- 'data': {'size': 'IntStr', 'ctime': 'IntStr', 'status': 'int'}}
+ 'data': {'size': 'uint', 'ctime': 'uint', 'status': 'int'}}
 
 ##
 # @StorageDomainFileStatsMap:
@@ -3130,7 +3121,7 @@
 {'type': 'StorageDomainInfo',
  'data': {'uuid': 'UUID', 'type': 'StorageDomainType',
           'class': 'StorageDomainClass', 'name': 'str',
-          'role': 'StorageDomainRole', 'pool': ['UUID'], 'version': 'IntStr',
+          'role': 'StorageDomainRole', 'pool': ['UUID'], 'version': 'int',
           'lver': 'int', 'spm_id': 'int', 'master_ver': 'int'}}
 
 ##
@@ -4313,10 +4304,10 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDiskStats',
- 'data': {'truesize': 'IntStr', 'apparentsize': 'IntStr', 'imageID': 'UUID',
-          'readRate': 'IntStr', 'writeRate': 'IntStr',
-          'readLatency': 'IntStr', 'writeLatency': 'IntStr',
-          'flushLatency': 'IntStr'}}
+ 'data': {'truesize': 'uint', 'apparentsize': 'uint', 'imageID': 'UUID',
+          'readRate': 'uint', 'writeRate': 'uint',
+          'readLatency': 'uint', 'writeLatency': 'uint',
+          'flushLatency': 'uint'}}
 
 ##
 # @VmBootMode:
@@ -4358,9 +4349,9 @@
 # Since: 4.10.0
 ##
 {'type': 'GuestMemoryStats',
- 'data': {'mem_total': 'IntStr', 'mem_unused': 'IntStr', 'mem_free': 'IntStr',
-          'swap_in': 'IntStr', 'swap_out': 'IntStr', 'pageflt': 'IntStr',
-          'majflt': 'IntStr'}}
+ 'data': {'mem_total': 'uint', 'mem_unused': 'uint', 'mem_free': 'uint',
+          'swap_in': 'uint', 'swap_out': 'uint', 'pageflt': 'uint',
+          'majflt': 'uint'}}
 
 ##
 # @GuestMountInfo:
@@ -4378,7 +4369,7 @@
 # Since: 4.10.0
 ##
 {'type': 'GuestMountInfo',
- 'data': {'path': 'str', 'fs': 'str', 'total': 'IntStr', 'used': 'IntStr'}}
+ 'data': {'path': 'str', 'fs': 'str', 'total': 'uint', 'used': 'uint'}}
 
 ##
 # @GuestNetworkDeviceInfo:
@@ -4496,16 +4487,16 @@
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
- 'data': {'displayPort': 'IntStr', 'displaySecurePort': 'IntStr',
-          'displayType': 'VmDisplayType', 'displayIp': 'str', 'pid': 'IntStr',
+ 'data': {'displayPort': 'uint', 'displaySecurePort': 'uint',
+          'displayType': 'VmDisplayType', 'displayIp': 'str', 'pid': 'uint',
           'vmType': 'VmType', 'kvmEnable': 'bool',
           'network': 'NetworkInterfaceStatsMap',
-          'disks': 'VmDiskStatsMap', 'monitorResponse': 'IntStr',
-          'nice': 'IntStr', 'elapsedTime': 'IntStr', '*cdrom': 'str',
+          'disks': 'VmDiskStatsMap', 'monitorResponse': 'int',
+          'nice': 'int', 'elapsedTime': 'uint', '*cdrom': 'str',
           '*boot': 'VmBootMode','statsAge': 'FloatStr', 'cpuSys': 'FloatStr',
           'cpuUser': 'FloatStr', 'cpuIdle': 'FloatStr',
-          'acpiEnable': 'bool', 'timeOffset': 'IntStr',
-          'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'IntStr',
+          'acpiEnable': 'bool', 'timeOffset': 'uint',
+          'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'uint',
           'username': 'str', 'session': 'GuestSessionState',
           'appsList': ['str'], 'guestIPs': 'str',
           'memoryStats': 'GuestMemoryStats', 'disksUsage': ['GuestMountInfo'],
@@ -5287,10 +5278,10 @@
 {'type': 'VolumeInfo',
  'data': {'uuid': 'UUID', 'type': 'VolumeAllocation', 'format': 'VolumeFormat',
           'disktype': 'DiskType', 'voltype': 'VolumeRole',
-          'capacity': 'IntStr', 'parent': 'UUID', 'description': 'str',
+          'capacity': 'uint', 'parent': 'UUID', 'description': 'str',
           'pool': 'UUID', 'domain': 'UUID', 'image': 'UUID', 'ctime': 'int',
-          'mtime': 'IntStr', 'legality': 'VolumeLegality',
-          'apparentsize': 'IntStr', 'truesize': 'IntStr',
+          'mtime': 'uint', 'legality': 'VolumeLegality',
+          'apparentsize': 'uint', 'truesize': 'uint',
           'status': 'VolumeStatus', 'children': ['UUID']}}
 
 ##
@@ -5332,7 +5323,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Volume', 'name': 'getSize'},
- 'returns': {'apparentsize': 'IntStr', 'truesize': 'IntStr'}}
+ 'returns': {'apparentsize': 'uint', 'truesize': 'uint'}}
 
 ##
 # @Volume.prepare:
