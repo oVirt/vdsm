@@ -702,24 +702,30 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         # reset ip, netmask, gateway for lower level devices
         ipaddr = netmask = gateway = None
 
+    # First we need to prepare all conf files
     if bonding:
         configWriter.addBonding(bonding, bridge=bridgeForNic,
                                  bondingOptions=bondingOptions,
                                  mtu=max(prevmtu, mtu),
                                  ipaddr=ipaddr, netmask=netmask,
                                  gateway=gateway, **options)
-        ifup(bonding)
         # reset ip, netmask, gateway for lower level devices
         ipaddr = netmask = gateway = None
 
-    # NICs must be activated in the same order of boot time
-    # to expose the correct MAC address.
-    for nic in nicSort(nics):
+    for nic in nics:
         configWriter.addNic(nic, bonding=bonding,
                              bridge=bridgeForNic if not bonding else None,
                              mtu=max(prevmtu, mtu),
                              ipaddr=ipaddr, netmask=netmask,
                              gateway=gateway, **options)
+
+    # Now we can run ifup for all interfaces
+    if bonding:
+        ifup(bonding)
+
+    # NICs must be activated in the same order of boot time
+    # to expose the correct MAC address.
+    for nic in nicSort(nics):
         ifup(nic)
 
     # Now we can ifup VLAN interface, because bond and nic already up
@@ -1087,14 +1093,24 @@ def _editBondings(bondings, configWriter):
                 ifdown(nic)
                 configWriter.removeNic(nic)
 
+        # Note! In case we have bridge up and connected to the bond
+        # we will get error in log:
+        #   (ifdown) bridge XXX is still up; can't delete it
+        # But, we prefer this behaviour instead of taking bridge down
+        # Anyway, we will not be able to take it down with connected VMs
+
+        # First we need to prepare all conf files
         configWriter.addBonding(bond, bridge=bridge,
                                 bondingOptions=bondAttrs.get('options', None))
-        ifup(bond)
 
+        for nic in bondAttrs['nics']:
+            configWriter.addNic(nic, bonding=bond)
+
+        # Now we can run ifup for all interfaces
+        ifup(bond)
         # NICs must be activated in the same order of boot time
         # to expose the correct MAC address.
         for nic in nicSort(bondAttrs['nics']):
-            configWriter.addNic(nic, bonding=bond)
             ifup(nic)
 
 def _removeBondings(bondings, configWriter):
