@@ -111,18 +111,14 @@ def write_vdsm_config(engineHost, enginePort):
     else:
         log("Agent configuration files already exist.")
 
-    if system("ping -c 1 " + engineHost):
-        sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name=" + engineHost + "/\" " + VDSM_REG_CONFIG
+    sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name=" + engineHost + "/\" " + VDSM_REG_CONFIG
+    if system(sed_cmd):
+        log("The @ENGINENAME@'s address is set: %s\n" % engineHost)
+    if enginePort != "":
+        sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port=" + str(enginePort) + "/\" " + VDSM_REG_CONFIG
         if system(sed_cmd):
-            log("The @ENGINENAME@'s address is set: %s\n" % engineHost)
-        if enginePort != "":
-            sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port=" + str(enginePort) + "/\" " + VDSM_REG_CONFIG
-            if system(sed_cmd):
-                log("The @ENGINENAME@'s port set: %s\n" % enginePort)
-            fWriteConfig=1
-    else:
-        log("Either " + engineHost + " is an invalid address or the @ENGINENAME@ unresponsive.\n")
-        return False
+            log("The @ENGINENAME@'s port set: %s\n" % enginePort)
+        fWriteConfig=1
 
     if fWriteConfig == 1:
         log("Saving vdsm-reg.conf\n")
