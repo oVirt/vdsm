@@ -176,8 +176,8 @@ class TestconfigNetwork(TestCaseBase):
 
     def _fakeNetworks(self):
         return {
-                'fakebridgenet': {'bridge': 'fakebridge', 'bridged': True},
-                'fakenet': {'interface': 'fakeint', 'bridged': False},
+                'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
+                'fakenet': {'iface': 'fakeint', 'bridged': False},
                }
 
     def _addNetworkWithExc(self, parameters, errCode):
@@ -193,10 +193,10 @@ class TestconfigNetwork(TestCaseBase):
 
         _netinfo = {
                 'networks': {
-                    'fakent': {'interface': 'fakeint', 'bridged': False},
-                    'fakebrnet': {'bridge': 'fakebr', 'bridged': True, 'ports':
+                    'fakent': {'iface': 'fakeint', 'bridged': False},
+                    'fakebrnet': {'iface': 'fakebr', 'bridged': True, 'ports':
                         ['eth0', 'eth1']},
-                    'fakebrnet1': {'bridge': 'fakebr1', 'bridged': True,
+                    'fakebrnet1': {'iface': 'fakebr1', 'bridged': True,
                         'ports': ['bond00']}
                     },
                 'vlans': {
