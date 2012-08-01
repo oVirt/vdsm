@@ -453,15 +453,6 @@
 {'alias': 'FloatStr', 'data': 'str'}
 
 ##
-# @HexStr:
-#
-# A string in hexidecimal format.
-#
-# Since: 4.10.0
-##
-{'alias': 'HexStr', 'data': 'str'}
-
-##
 # @StringMap:
 #
 # A mapping between arbitrary strings.
@@ -1696,8 +1687,8 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDevicePciAddress',
- 'data': {'type': 'VmDeviceAddressType', 'slot': 'HexStr', 'bus': 'HexStr',
-          'domain': 'HexStr', 'function': 'HexStr'}}
+ 'data': {'type': 'VmDeviceAddressType', 'slot': 'uint', 'bus': 'uint',
+          'domain': 'uint', 'function': 'uint'}}
 
 ##
 # @VmDeviceIdeAddress:
