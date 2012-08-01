@@ -435,15 +435,6 @@
  'returns': {'allTasksStatus': 'TasksStatus'}}
 
 ##
-# @FloatStr:
-#
-# A string that can be converted into an float.
-#
-# Since: 4.10.0
-##
-{'alias': 'FloatStr', 'data': 'str'}
-
-##
 # @StringMap:
 #
 # A mapping between arbitrary strings.
@@ -839,7 +830,7 @@
 ##
 {'type': 'VdsmCapabilities',
  'data': {'kvmEnabled': 'bool', 'cpuCores': 'uint',
-          'cpuSockets': 'uint', 'cpuSpeed': 'FloatStr', 'cpuModel': 'str',
+          'cpuSockets': 'uint', 'cpuSpeed': 'float', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedRHEVMs': ['str'],
           'supportedProtocols': ['str'], 'clusterLevels': ['str'],
@@ -1270,8 +1261,8 @@
 {'type': 'NetworkInterfaceStats',
  'data': {'name': 'str', 'speed': 'uint', 'rxDropped': 'uint',
           'txDropped': 'uint', 'rxErrors': 'uint', 'txErrors': 'uint',
-          'state': 'NetworkInterfaceState', 'rxRate': 'FloatStr',
-          'txRate': 'FloatStr', 'macAddr': 'str'}}
+          'state': 'NetworkInterfaceState', 'rxRate': 'float',
+          'txRate': 'float', 'macAddr': 'str'}}
 
 ##
 # @StorageDomainVitals:
@@ -1291,7 +1282,7 @@
 # XXX: Add an enum for return codes and their meanings
 ##
 {'type': 'StorageDomainVitals',
- 'data': {'code': 'int', 'delay': 'FLoatStr', 'lastCheck': 'FloatStr',
+ 'data': {'code': 'int', 'delay': 'float', 'lastCheck': 'float',
           'valid': 'bool'}}
 
 ##
@@ -1424,14 +1415,14 @@
 # Since: 4.10.0
 ##
 {'type': 'HostStats',
- 'data': {'cpuUser': 'FloatStr', 'cpuSys': 'FloatStr', 'cpuIdle': 'FloatStr',
-           'rxRate': 'FloatStr', 'txRate': 'FloatStr', 'statsAge': 'uint',
+ 'data': {'cpuUser': 'float', 'cpuSys': 'float', 'cpuIdle': 'float',
+           'rxRate': 'float', 'txRate': 'float', 'statsAge': 'uint',
            'network': 'NetworkInterfaceStatsMap',
            'rxDropped': 'uint', 'txDropped': 'uint',
-           'cpuSysVdsmd': 'FloatStr', 'cpuUserVdsmd': 'FloatStr',
+           'cpuSysVdsmd': 'float', 'cpuUserVdsmd': 'float',
            'storageDomains': 'StorageDomainVitalsMap',
            'elapsedTime': 'uint', 'memUsed': 'uint',
-           'anonHugePages': 'uint', 'cpuLoad': 'FloatStr',
+           'anonHugePages': 'uint', 'cpuLoad': 'float',
            'diskStats': 'PathStatsMap', 'thpState': 'THPStates'},
            'memAvailable': 'int', 'memShared': 'int', 'memCommitted': 'int',
            'swapTotal': 'int', 'swapFree': 'int','vmCount': 'int',
@@ -4493,8 +4484,8 @@
           'network': 'NetworkInterfaceStatsMap',
           'disks': 'VmDiskStatsMap', 'monitorResponse': 'int',
           'nice': 'int', 'elapsedTime': 'uint', '*cdrom': 'str',
-          '*boot': 'VmBootMode','statsAge': 'FloatStr', 'cpuSys': 'FloatStr',
-          'cpuUser': 'FloatStr', 'cpuIdle': 'FloatStr',
+          '*boot': 'VmBootMode','statsAge': 'float', 'cpuSys': 'float',
+          'cpuUser': 'float', 'cpuIdle': 'float',
           'acpiEnable': 'bool', 'timeOffset': 'uint',
           'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'uint',
           'username': 'str', 'session': 'GuestSessionState',
