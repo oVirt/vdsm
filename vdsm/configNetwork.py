@@ -1194,18 +1194,28 @@ def setupNetworks(networks={}, bondings={}, **options):
             # Check whether bonds should be resized
             _editBondings(bondings, configWriter)
 
+            # We need to use the newest host info
+            _ni = netinfo.NetInfo()
             for network, networkAttrs in networks.iteritems():
                 d = dict(networkAttrs)
                 if 'bonding' in d:
                     # we may not receive any information
                     # about the bonding device if it is unchanged
+                    # In this case check whether this bond exists
+                    # on host and take its parameters
                     if bondings.get(d['bonding']):
                         d['nics'] = bondings[d['bonding']]['nics']
-                        d['bondingOptions'] = bondings[d['bonding']].get('options',
-                                                                         None)
+                        d['bondingOptions'] = \
+                           bondings[d['bonding']].get('options', None)
                         # we create a new bond
                         if network in networksAdded:
                             netsWithNewBonds.add(network)
+                    elif d['bonding'] in _ni.bondings:
+                        logger.debug("Updating bond %r info", d['bonding'])
+                        d['nics'] = _ni.bondings[d['bonding']]['slaves']
+                        d['bondingOptions'] = \
+                           _ni.bondings[d['bonding']]['cfg'].get('BONDING_OPTS',
+                                                                 None)
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force
