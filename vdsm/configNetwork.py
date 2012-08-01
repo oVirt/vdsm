@@ -715,7 +715,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     # NICs must be activated in the same order of boot time
     # to expose the correct MAC address.
     for nic in nicSort(nics):
-        configWriter.addNic(nic, bonding=bonding, bridge=bridgeForNic,
+        configWriter.addNic(nic, bonding=bonding,
+                             bridge=bridgeForNic if not bonding else None,
                              mtu=max(prevmtu, mtu),
                              ipaddr=ipaddr, netmask=netmask,
                              gateway=gateway, **options)
