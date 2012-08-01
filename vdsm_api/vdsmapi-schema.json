@@ -171,7 +171,7 @@
 {'type': 'SetupNetworkNetAttributes',
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
-          '*delay': 'IntStr', '*onboot': 'BoolYesNo', 'remove': 'bool'}}
+          '*delay': 'IntStr', '*onboot': 'bool', 'remove': 'bool'}}
 
 ##
 # @SetupNetworkBondAttributes:
@@ -435,46 +435,6 @@
  'returns': {'allTasksStatus': 'TasksStatus'}}
 
 ##
-# @BoolStr:
-#
-# A string that can be interpreted as a boolean value.
-#
-# @True:   True
-#
-# @False:  False
-#
-# Since: 4.10.0
-##
-{'enum': 'BoolStr', 'data': ['True', 'False']}
-
-##
-# @BoolStrLower:
-#
-# A string that can be interpreted as a boolean value.  This value conforms to
-# JSON and XML which require lowercase names.
-#
-# @true:   True
-#
-# @false:  False
-#
-# Since: 4.10.0
-##
-{'enum': 'BoolStrLower', 'data': ['true', 'false']}
-
-##
-# @BoolOnOff:
-#
-# A string that can be interpreted as a boolean value.
-#
-# @on:   True
-#
-# @off:  False
-#
-# Since: 4.10.0
-##
-{'enum': 'BoolOnOff', 'data': ['on', 'off']}
-
-##
 # @IntStr:
 #
 # A string that can be converted into an integer.
@@ -518,7 +478,8 @@
 #
 # @ports:    A list of nic device names that are bridged
 #
-# @stp:      Spanning Tree Protocol status for the bridge device
+# @stp:      Whether Spanning Tree Protocol status for the bridge device
+#            should be turned on
 #
 # @addr:     The IP address assigned to the bridge device
 #
@@ -537,7 +498,7 @@
 # XXX: Add types for IP Address?
 ##
 {'type': 'NetInfoBridgedNetwork',
- 'data': {'ports': ['str'], 'stp': 'BoolOnOff', 'addr': 'str',
+ 'data': {'ports': ['str'], 'stp': 'bool', 'addr': 'str',
           'netmask': 'str', 'gateway': 'str', 'mtu': 'IntStr',
           'cfg': 'StringMap', 'bridged': 'bool'}}
 
@@ -895,7 +856,7 @@
 #        the current API truncates @software_version to 'x.y'.
 ##
 {'type': 'VdsmCapabilities',
- 'data': {'kvmEnabled': 'BoolStrLower', 'cpuCores': 'IntStr',
+ 'data': {'kvmEnabled': 'bool', 'cpuCores': 'IntStr',
           'cpuSockets': 'IntStr', 'cpuSpeed': 'FloatStr', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedRHEVMs': ['str'],
@@ -923,7 +884,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Global', 'name': 'getCapabilities'},
- 'returns': {'info': 'VdsmCapabilities', 'netConfigDirty': 'BoolStr'}}
+ 'returns': {'info': 'VdsmCapabilities', 'netConfigDirty': 'bool'}}
 
 ##
 # @Global.getConnectedStoragePools:
@@ -1056,7 +1017,7 @@
           'capacity': 'IntStr', 'devtype': 'BlockDeviceType',
           'pathstatus': ['BlockDevicePathInfo'],
           'pathlist': ['IscsiSessionInfo'], 'logicalblocksize': 'IntStr',
-          'physicalblocksize': 'IntStr', 'partitioned': 'Bool'}}
+          'physicalblocksize': 'IntStr', 'partitioned': 'bool'}}
 
 ##
 # @Global.getDeviceInfo:
@@ -1099,7 +1060,7 @@
 # Since: 4.10.0
 ##
 {'map': 'DeviceVisibilityMap',
- 'key': 'UUID', 'value': 'Bool'}
+ 'key': 'UUID', 'value': 'bool'}
 
 ##
 # @Global.getDevicesVisibility:
@@ -1349,7 +1310,7 @@
 ##
 {'type': 'StorageDomainVitals',
  'data': {'code': 'IntStr', 'delay': 'FLoatStr', 'lastCheck': 'FloatStr',
-          'valid': 'BoolStr'}}
+          'valid': 'bool'}}
 
 ##
 # @PathStats:
@@ -1494,7 +1455,7 @@
            'swapTotal': 'int', 'swapFree': 'int','vmCount': 'int',
            'vmActive': 'int', 'vmMigrating': 'int', 'dateTime': 'str',
            'ksmState': 'bool', 'ksmPages': 'int', 'ksmCpu': 'float',
-           'netConfigDirty': 'BoolStr', 'generationID': 'UUID'}
+           'netConfigDirty': 'bool', 'generationID': 'UUID'}
 
 ##
 # @Global.getStats:
@@ -1885,14 +1846,14 @@
 {'type': 'VmDiskDevice',
  'data': {'type': 'VmDeviceType', 'device': 'VmDiskDeviceType',
           '*iface': 'VmDiskDeviceInterface', '*path': 'str',
-          'readonly': 'BoolStr', '*bootOrder': 'IntStr', '*domainID': 'UUID',
+          'readonly': 'bool', '*bootOrder': 'IntStr', '*domainID': 'UUID',
           '*poolID': 'UUID', '*imageID': 'UUID', '*volumeID': 'UUID',
-          'format': 'VmDiskDeviceFormat', 'propagateErrors': 'BoolOnOff',
+          'format': 'VmDiskDeviceFormat', 'propagateErrors': 'bool',
           'address': 'VmDeviceAddress', 'alias': 'str',
           'deviceId': 'UUID', '*specParams': 'VmDiskDeviceSpecParams',
           'apparentsize': 'IntStr', 'index': 'int', 'name': 'str',
-          'needExtend': 'bool', 'optional': 'BoolStrLower',
-          'reqsize': 'IntStr', 'shared': 'BoolStrLower', 'truesize': 'IntStr',
+          'needExtend': 'bool', 'optional': 'bool',
+          'reqsize': 'IntStr', 'shared': 'bool', 'truesize': 'IntStr',
           'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
           '*baseVolumeID': 'UUID'}}
 
@@ -2319,16 +2280,16 @@
 # Since: 4.10.0
 ##
 {'type': 'VmFullStatus',
- 'data': {'acpiEnable': 'BoolStrLower', 'clientIp': 'str', 'cpuType': 'str',
+ 'data': {'acpiEnable': 'bool', 'clientIp': 'str', 'cpuType': 'str',
           'custom': 'StringMap', 'devices': ['VmDevice'],
           'display': 'VmDisplayType', 'displayIp': 'str',
           'displayPort': 'IntStr', 'displaySecurePort': 'IntStr',
           'emulatedMachine': 'str', 'keyboardLayout': 'str',
-          'kvmEnable': 'BoolStrLower', 'memSize': 'IntStr',
+          'kvmEnable': 'bool', 'memSize': 'IntStr',
           'nicModel': 'str', 'nice': 'IntStr', 'pauseCode': 'str',
           'pid': 'IntStr', 'smp': 'IntStr', '*smpCoresPerSocket': 'IntStr',
           '*smpThreadsPerCore': 'IntStr', 'status': 'VMStatus',
-          'timeOffset': 'IntStr', 'transparentHugePages': 'BoolStrLower',
+          'timeOffset': 'IntStr', 'transparentHugePages': 'bool',
           'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType'}}
 
 ##
@@ -4546,13 +4507,13 @@
 {'type': 'RunningVmStats',
  'data': {'displayPort': 'IntStr', 'displaySecurePort': 'IntStr',
           'displayType': 'VmDisplayType', 'displayIp': 'str', 'pid': 'IntStr',
-          'vmType': 'VmType', 'kvmEnable': 'BoolStrLower',
+          'vmType': 'VmType', 'kvmEnable': 'bool',
           'network': 'NetworkInterfaceStatsMap',
           'disks': 'VmDiskStatsMap', 'monitorResponse': 'IntStr',
           'nice': 'IntStr', 'elapsedTime': 'IntStr', '*cdrom': 'str',
           '*boot': 'VmBootMode','statsAge': 'FloatStr', 'cpuSys': 'FloatStr',
           'cpuUser': 'FloatStr', 'cpuIdle': 'FloatStr',
-          'acpiEnable': 'BoolStrLower', 'timeOffset': 'IntStr',
+          'acpiEnable': 'bool', 'timeOffset': 'IntStr',
           'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'IntStr',
           'username': 'str', 'session': 'GuestSessionState',
           'appsList': ['str'], 'guestIPs': 'str',
