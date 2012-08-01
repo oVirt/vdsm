@@ -88,7 +88,7 @@ def ifaceUsers(iface):
     for n, ndict in _netinfo.networks.iteritems():
         if ndict['bridged'] and iface in ndict['ports']:
             users.add(n)
-        elif not ndict['bridged'] and iface == ndict['interface']:
+        elif not ndict['bridged'] and iface == ndict['iface']:
             users.add(n)
     for b, bdict in _netinfo.bondings.iteritems():
         if iface in bdict['slaves']:
@@ -804,7 +804,7 @@ def showNetwork(network):
         gateway = _netinfo.networks[network]['gateway']
         print "ipaddr=%s, netmask=%s, gateway=%s" % (ipaddr, netmask, gateway)
     else:
-        iface = _netinfo.networks[network]['interface']
+        iface = _netinfo.networks[network]['iface']
         ipaddr = _netinfo.nics[iface]['addr']
         netmask = _netinfo.nics[iface]['netmask']
         print "ipaddr=%s, netmask=%s" % (ipaddr, netmask)

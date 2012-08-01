@@ -65,7 +65,7 @@ def networks():
     :returns: dict of networkname={properties}
     :rtype: dict of dict
             { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True },
-              'red': { 'interface': 'red', 'bridged': False } }
+              'red': { 'iface': 'red', 'bridged': False } }
     """
     nets = {}
     conn = libvirtconnection.get()
@@ -78,7 +78,7 @@ def networks():
             xml = minidom.parseString(net.XMLDesc(0))
             interfaces = xml.getElementsByTagName('interface')
             if len(interfaces) > 0:
-                nets[netname]['interface'] = interfaces[0].getAttribute('dev')
+                nets[netname]['iface'] = interfaces[0].getAttribute('dev')
                 nets[netname]['bridged'] = False
             else:
                 nets[netname]['bridge'] = xml.getElementsByTagName('bridge')[0].getAttribute('name')
@@ -245,11 +245,16 @@ def get():
                     'stp': bridge_stp_state(devname),
                     'cfg': getIfaceCfg(devname), }
         else:
-            devname = nets[netname]['interface']
+            devname = nets[netname]['iface']
             d['networks'][netname] = {}
 
+            # ovirt-engine-3.1 expects to see "interface" iff the network is
+            # bridgeless. Please remove this line when that Engine version is no
+            # longer supported
+            d['networks'][netname]['interface'] = devname
+
         d['networks'][netname].update({
-                    'interface': devname,
+                    'iface': devname,
                     'bridged': nets[netname]['bridged'],
                     'addr': getaddr(devname),
                     'netmask': getnetmask(devname),
@@ -351,10 +356,10 @@ class NetInfo(object):
         """ Returns tuples of (network, vlan) connected to nic/bond """
         for network, netdict in self.networks.iteritems():
             if not netdict['bridged']:
-                if iface == netdict['interface']:
+                if iface == netdict['iface']:
                     yield (network, None)
-                elif netdict['interface'].startswith(iface + '.'):
-                    yield (network, netdict['interface'].split('.',1)[1])
+                elif netdict['iface'].startswith(iface + '.'):
+                    yield (network, netdict['iface'].split('.',1)[1])
 
     def getVlansForNic(self, nic):
         for v, vdict in self.vlans.iteritems():
@@ -369,7 +374,7 @@ class NetInfo(object):
     def getBridgelessNetworksForIface(self, iface):
         """ Return all bridgeless networks attached to nic/bond """
         for network, netdict in self.networks.iteritems():
-            if not netdict['bridged'] and iface == netdict['interface']:
+            if not netdict['bridged'] and iface == netdict['iface']:
                 yield network
 
     def getBridgedNetworksForIface(self, iface):
@@ -403,7 +408,7 @@ class NetInfo(object):
             ports =  self.networks[network]['ports']
         else:
             ports = []
-            interface = self.networks[network]['interface']
+            interface = self.networks[network]['iface']
             ports.append(interface)
 
         for port in ports:
