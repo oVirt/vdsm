@@ -73,6 +73,7 @@ Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
 Requires: kernel >= 3.4
 Requires: sanlock >= 2.4-2, sanlock-python
+Requires: sed >= 4.2.1-10
 %endif
 
 Requires: psmisc >= 22.6-15
