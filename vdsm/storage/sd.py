@@ -22,7 +22,6 @@ import os
 import logging
 import types
 import threading
-from glob import glob
 from collections import namedtuple
 import codecs
 
@@ -542,7 +541,7 @@ class StorageDomain:
         vmsPath = self.getVMsDir()
         # find out VMs list
         VM_PATTERN = os.path.join(vmsPath, constants.UUID_GLOB_PATTERN)
-        vms = glob(VM_PATTERN)
+        vms = self.oop.glob.glob(VM_PATTERN)
         vmList = [os.path.basename(i) for i in vms]
         self.log.info("vmList=%s", str(vmList))
 
