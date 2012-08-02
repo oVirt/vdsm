@@ -3020,7 +3020,18 @@ class LibvirtVm(vm.Vm):
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             self._guestCpuRunning = False
             if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED:
-                hooks.after_vm_pause(self._dom.XMLDesc(0), self.conf)
+                # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
+                # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
+                # when migration completes, see qemuMigrationFinish function).
+                # In this case self._dom is None because the function
+                # _waitForIncomingMigrationFinish didn't update it yet.
+                try:
+                    domxml = self._dom.XMLDesc(0)
+                except AttributeError:
+                    pass
+                else:
+                    hooks.after_vm_pause(domxml, self.conf)
+
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
             self._guestCpuRunning = True
             if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
