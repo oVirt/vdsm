@@ -523,20 +523,21 @@ class _DomXML:
 
         self.doc.appendChild(self.dom)
 
-        self.dom.appendChild(self.doc.createElement('name')) \
-           .appendChild(self.doc.createTextNode(self.conf['vmName']))
-        self.dom.appendChild(self.doc.createElement('uuid')) \
-           .appendChild(self.doc.createTextNode(self.conf['vmId']))
+        self.appendChildWithText('name', self.conf['vmName'])
+        self.appendChildWithText('uuid', self.conf['vmId'])
         memSizeKB = str(int(self.conf.get('memSize', '256')) * 1024)
-        self.dom.appendChild(self.doc.createElement('memory')) \
-           .appendChild(self.doc.createTextNode(memSizeKB))
-        self.dom.appendChild(self.doc.createElement('currentMemory')) \
-           .appendChild(self.doc.createTextNode(memSizeKB))
-        self.dom.appendChild(self.doc.createElement('vcpu')) \
-           .appendChild(self.doc.createTextNode(self.conf['smp']))
+        self.appendChildWithText('memory', memSizeKB)
+        self.appendChildWithText('currentMemory', memSizeKB)
+        self.appendChildWithText('vcpu', self.conf['smp'])
 
         self._devices = self.doc.createElement('devices')
         self.dom.appendChild(self._devices)
+
+    def appendChildWithText(self, childName, text):
+        childNode = self.doc.createElement(childName)
+        textNode = self.doc.createTextNode(text)
+        childNode.appendChild(textNode)
+        self.dom.appendChild(childNode)
 
     def appendConsole(self):
         """
@@ -670,8 +671,7 @@ class _DomXML:
         <features/>
         """
         if utils.tobool(self.conf.get('acpiEnable', 'true')):
-            self.dom.appendChild(self.doc.createElement('features')) \
-               .appendChild(self.doc.createElement('acpi'))
+            self.appendChildWithText('features', 'acpi')
 
     def appendCpu(self):
         """
