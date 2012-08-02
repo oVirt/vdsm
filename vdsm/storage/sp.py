@@ -1690,7 +1690,7 @@ class StoragePool(Securable):
 
     def moveImage(self, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero, force):
         """
-        Moves or Copys an image between storage domains within same storage pool.
+        Moves or Copies an image between storage domains within the same storage pool.
 
         :param spUUID: The storage pool where the operation will take place.
         :type spUUID: UUID
