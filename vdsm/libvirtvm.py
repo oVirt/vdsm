@@ -21,6 +21,7 @@
 import libvirt
 import libvirt_qemu
 import xml.dom.minidom
+from xml.dom.minidom import parseString as _domParseStr
 import time
 import threading
 import json
@@ -1967,8 +1968,8 @@ class LibvirtVm(vm.Vm):
         return {'status': doneCode, 'vmList': self.status()}
 
     def setTicket(self, otp, seconds, connAct, params):
-        graphics = xml.dom.minidom.parseString(self._dom.XMLDesc(0)) \
-                          .childNodes[0].getElementsByTagName('graphics')[0]
+        graphics = _domParseStr(self._dom.XMLDesc(0)).childNodes[0]. \
+                                           getElementsByTagName('graphics')[0]
         graphics.setAttribute('passwd', otp)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
@@ -1983,9 +1984,9 @@ class LibvirtVm(vm.Vm):
 
     def _reviveTicket(self, newlife):
         """Revive an existing ticket, if it has expired or about to expire"""
-        graphics = xml.dom.minidom.parseString(
-                      self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)) \
-                      .childNodes[0].getElementsByTagName('graphics')[0]
+        graphics = _domParseStr(
+                        self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)). \
+                            childNodes[0].getElementsByTagName('graphics')[0]
         validto = max(time.strptime(graphics.getAttribute('passwdValidTo'),
                                    '%Y-%m-%dT%H:%M:%S'),
                       time.gmtime(time.time() + newlife))
@@ -2039,8 +2040,8 @@ class LibvirtVm(vm.Vm):
 
     def _getUnderlyingVmInfo(self):
         self._lastXMLDesc = self._dom.XMLDesc(0)
-        devxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                    .childNodes[0].getElementsByTagName('devices')[0]
+        devxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                 getElementsByTagName('devices')[0]
         self._devXmlHash = str(hash(devxml.toxml()))
 
         return self._lastXMLDesc
@@ -2172,8 +2173,8 @@ class LibvirtVm(vm.Vm):
                     return True
             return False
 
-        devsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                    .childNodes[0].getElementsByTagName('devices')[0]
+        devsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                 getElementsByTagName('devices')[0]
 
         for x in devsxml.childNodes:
             # Ignore empty nodes and devices without address
@@ -2197,9 +2198,9 @@ class LibvirtVm(vm.Vm):
         """
         Obtain controller devices info from libvirt.
         """
-        ctrlsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                    .childNodes[0].getElementsByTagName('devices')[0] \
-                    .getElementsByTagName('controller')
+        ctrlsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                getElementsByTagName('devices')[0]. \
+                                getElementsByTagName('controller')
         for x in ctrlsxml:
             # Ignore controller devices without address
             if not x.getElementsByTagName('address'):
@@ -2244,9 +2245,9 @@ class LibvirtVm(vm.Vm):
         """
         Obtain balloon device info from libvirt.
         """
-        balloonxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-            .childNodes[0].getElementsByTagName('devices')[0] \
-            .getElementsByTagName('memballoon')
+        balloonxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                 getElementsByTagName('devices')[0]. \
+                                 getElementsByTagName('memballoon')
         for x in balloonxml:
             # Ignore balloon devices without address.
             if not x.getElementsByTagName('address'):
@@ -2269,9 +2270,9 @@ class LibvirtVm(vm.Vm):
         """
         Obtain video devices info from libvirt.
         """
-        videosxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                    .childNodes[0].getElementsByTagName('devices')[0] \
-                    .getElementsByTagName('video')
+        videosxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                    getElementsByTagName('devices')[0]. \
+                                    getElementsByTagName('video')
         for x in videosxml:
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get video card address
@@ -2298,9 +2299,9 @@ class LibvirtVm(vm.Vm):
         """
         Obtain sound devices info from libvirt.
         """
-        soundsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                    .childNodes[0].getElementsByTagName('devices')[0] \
-                    .getElementsByTagName('sound')
+        soundsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                    getElementsByTagName('devices')[0]. \
+                                    getElementsByTagName('sound')
         for x in soundsxml:
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get sound card address
@@ -2327,9 +2328,9 @@ class LibvirtVm(vm.Vm):
         """
         Obtain block devices info from libvirt.
         """
-        disksxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                    .childNodes[0].getElementsByTagName('devices')[0] \
-                    .getElementsByTagName('disk')
+        disksxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                getElementsByTagName('devices')[0]. \
+                                getElementsByTagName('disk')
         # FIXME!  We need to gather as much info as possible from the libvirt.
         # In the future we can return this real data to management instead of
         # vm's conf
@@ -2392,8 +2393,8 @@ class LibvirtVm(vm.Vm):
         """
         Obtain display port info from libvirt.
         """
-        graphics = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                          .childNodes[0].getElementsByTagName('graphics')[0]
+        graphics = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                 getElementsByTagName('graphics')[0]
         port = graphics.getAttribute('port')
         if port:
             self.conf['displayPort'] = port
@@ -2406,9 +2407,9 @@ class LibvirtVm(vm.Vm):
         Obtain network interface info from libvirt.
         """
         # TODO use xpath instead of parseString (here and elsewhere)
-        ifsxml = xml.dom.minidom.parseString(self._lastXMLDesc) \
-                    .childNodes[0].getElementsByTagName('devices')[0] \
-                    .getElementsByTagName('interface')
+        ifsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                getElementsByTagName('devices')[0]. \
+                                getElementsByTagName('interface')
         for x in ifsxml:
             devType = x.getAttribute('type')
             name = x.getElementsByTagName('target')[0].getAttribute('dev')
