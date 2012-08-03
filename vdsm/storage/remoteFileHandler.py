@@ -273,7 +273,7 @@ class RemoteFileHandlerPool(object):
                     self.handlers[i] = None
                     handler.stop()
                 except:
-                    self._log("Could not signal stuck handler (PID:%d)",
+                    self._log.error("Could not signal stuck handler (PID:%d)",
                             handler.process.pid, exc_info=True)
 
                 self.handlers[i] = None
