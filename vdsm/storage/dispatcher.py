@@ -103,7 +103,7 @@ class Dispatcher:
                     self.log.error("StorageDispatcher: init - multiple public functions with same name: %s" % funcName)
                     continue
                 # Create a new entry in instance's "dict" that will mask the original method
-                self.__dict__[funcName] = Protect(funcObj, funcName).run
+                setattr(self, funcName, Protect(funcObj, funcName).run)
 
 
     def _methodHelp(self, method):
