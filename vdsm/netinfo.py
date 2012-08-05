@@ -34,6 +34,7 @@ from config import config
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
+NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'

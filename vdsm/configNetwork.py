@@ -148,6 +148,45 @@ class ConfigWriter(object):
     def __init__(self):
         self._backups = {}
 
+    @staticmethod
+    def _removeFile(filename):
+        """Remove file, umounting ovirt config files if needed."""
+
+        mounts = open('/proc/mounts').read()
+        if ' /config ext3' in mounts and ' %s ext3' % filename in mounts:
+            subprocess.call([constants.EXT_UMOUNT, '-n', filename])
+        utils.rmFile(filename)
+
+    def createLibvirtNetwork(self, network, bridged=True, iface=None):
+        conn = libvirtconnection.get()
+        netName = netinfo.LIBVIRT_NET_PREFIX + network
+        if bridged:
+            netXml = '''<network><name>%s</name><forward mode='bridge'/>
+                        <bridge name='%s'/></network>''' % (escape(netName),
+                                                            escape(network))
+        else:
+            netXml = '''<network><name>%s</name><forward mode='passthrough'>
+                        <interface dev='%s'/></forward></network>''' % \
+                                            (escape(netName), escape(iface))
+        self.removeLibvirtNetwork(network, log=False)
+        net = conn.networkDefineXML(netXml)
+        net.create()
+        net.setAutostart(1)
+
+    def removeLibvirtNetwork(self, network, log=True):
+        netName = netinfo.LIBVIRT_NET_PREFIX + network
+        conn = libvirtconnection.get()
+        try:
+            net = conn.networkLookupByName(netName)
+            if net.isActive():
+                net.destroy()
+            if net.isPersistent():
+                net.undefine()
+        except libvirt.libvirtError:
+            if log:
+                logging.debug('failed to remove libvirt network %s', netName,
+                              exc_info=True)
+
     def _backup(self, filename):
         self._atomicBackup(filename)
         self._persistentBackup(filename)
@@ -165,13 +204,6 @@ class ConfigWriter(object):
                 else:
                     raise
 
-    def writeConfFile(self, fileName, configuration):
-        '''Backs up the previous contents of the file referenced by fileName
-        writes the new configuration and sets the specified access mode.'''
-        self._backup(fileName)
-        open(fileName, 'w').write(configuration)
-        os.chmod(fileName, 0664)
-
     def restoreAtomicBackup(self):
         logging.info("Rolling back configuration (restoring atomic backup)")
         if not self._backups:
@@ -183,15 +215,6 @@ class ConfigWriter(object):
                 open(confFile, 'w').write(content)
             logging.info('Restored %s', confFile)
         subprocess.Popen(['/etc/init.d/network', 'start'])
-
-    @staticmethod
-    def _removeFile(filename):
-        """Remove file, umounting ovirt config files if needed."""
-
-        mounts = open('/proc/mounts').read()
-        if ' /config ext3' in mounts and ' %s ext3' % filename in mounts:
-            subprocess.call([constants.EXT_UMOUNT, '-n', filename])
-        utils.rmFile(filename)
 
     @classmethod
     def _persistentBackup(cls, filename):
@@ -218,6 +241,13 @@ class ConfigWriter(object):
             open(backup, 'w').write(cls.DELETED_HEADER + '\n')
         os.chown(backup, vdsm_uid, 0)
         logging.debug("Persistently backed up %s (until next 'set safe config')", filename)
+
+    def writeConfFile(self, fileName, configuration):
+        '''Backs up the previous contents of the file referenced by fileName
+        writes the new configuration and sets the specified access mode.'''
+        self._backup(fileName)
+        open(fileName, 'w').write(configuration)
+        os.chmod(fileName, 0664)
 
     def _createConfFile(self, conf, name, ipaddr=None, netmask=None,
                 gateway=None, bootproto=None, mtu=None, onboot='yes', **kwargs):
@@ -744,35 +774,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
             ifup(network)
 
     # add libvirt network
-    createLibvirtNetwork(network, bridged, iface)
-
-def createLibvirtNetwork(network, bridged=True, iface=None):
-    conn = libvirtconnection.get()
-    netName = netinfo.LIBVIRT_NET_PREFIX + network
-    if bridged:
-        netXml = '''<network><name>%s</name><forward mode='bridge'/>
-                    <bridge name='%s'/></network>''' % (escape(netName), escape(network))
-    else:
-        netXml = '''<network><name>%s</name><forward mode='passthrough'>
-                    <interface dev='%s'/></forward></network>''' % (escape(netName), escape(iface))
-    removeLibvirtNetwork(network, log=False)
-    net = conn.networkDefineXML(netXml)
-    net.create()
-    net.setAutostart(1)
-
-def removeLibvirtNetwork(network, log=True):
-    netName = netinfo.LIBVIRT_NET_PREFIX + network
-    conn = libvirtconnection.get()
-    try:
-        net = conn.networkLookupByName(netName)
-        if net.isActive():
-            net.destroy()
-        if net.isPersistent():
-            net.undefine()
-    except libvirt.libvirtError:
-        if log:
-            logging.debug('failed to remove libvirt network %s', netName,
-                          exc_info=True)
+    configWriter.createLibvirtNetwork(network, bridged, iface)
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
     brifs = os.listdir('/sys/class/net/%s/brif/' % bridge)
@@ -866,7 +868,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if bridged:
         configWriter.setNewMtu(network)
 
-    removeLibvirtNetwork(network, log=False)
+    configWriter.removeLibvirtNetwork(network, log=False)
     # We need to gather NetInfo again to refresh networks info from libvirt.
     # The deleted bridge should never be up at this stage.
     if network in netinfo.NetInfo().networks:
