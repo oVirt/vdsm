@@ -18,7 +18,6 @@
 #
 
 import sys, subprocess, os, re, traceback
-import shutil
 import pipes
 import pwd
 import time
@@ -147,6 +146,7 @@ class ConfigWriter(object):
 
     def __init__(self):
         self._backups = {}
+        self._networksBackups = {}
 
     @staticmethod
     def _removeFile(filename):
@@ -169,6 +169,7 @@ class ConfigWriter(object):
                         <interface dev='%s'/></forward></network>''' % \
                                             (escape(netName), escape(iface))
         self.removeLibvirtNetwork(network, log=False)
+        self._networkBackup(network)
         net = conn.networkDefineXML(netXml)
         net.create()
         net.setAutostart(1)
@@ -176,6 +177,7 @@ class ConfigWriter(object):
     def removeLibvirtNetwork(self, network, log=True):
         netName = netinfo.LIBVIRT_NET_PREFIX + network
         conn = libvirtconnection.get()
+        self._networkBackup(network)
         try:
             net = conn.networkLookupByName(netName)
             if net.isActive():
@@ -186,6 +188,60 @@ class ConfigWriter(object):
             if log:
                 logging.debug('failed to remove libvirt network %s', netName,
                               exc_info=True)
+
+    @classmethod
+    def getLibvirtNetwork(cls, network):
+        netName = netinfo.LIBVIRT_NET_PREFIX + network
+        conn = libvirtconnection.get()
+        try:
+            net = conn.networkLookupByName(netName)
+            return net.XMLDesc(0)
+        except libvirt.libvirtError, e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
+                return
+
+            raise
+
+    @classmethod
+    def writeBackupFile(cls, dirName, fileName, content):
+        backup = os.path.join(dirName, fileName)
+        if os.path.exists(backup):
+            # original copy already backed up
+            return
+
+        vdsm_uid = pwd.getpwnam('vdsm').pw_uid
+
+        # make directory (if it doesn't exist) and assign it to vdsm
+        if not os.path.exists(dirName):
+            os.makedirs(dirName)
+        os.chown(dirName, vdsm_uid, 0)
+
+        open(backup, 'w').write(content)
+        os.chown(backup, vdsm_uid, 0)
+        logging.debug("Persistently backed up %s "
+                      "(until next 'set safe config')", backup)
+
+    def _networkBackup(self, network):
+        self._atomicNetworkBackup(network)
+        self._persistentNetworkBackup(network)
+
+    def _atomicNetworkBackup(self, network):
+        """ In-memory backup libvirt networks """
+        if network not in self._networksBackups:
+            self._networksBackups[network] = self.getLibvirtNetwork(network)
+            logging.debug("Backed up %s", network)
+
+    @classmethod
+    def _persistentNetworkBackup(cls, network):
+        """ Persistently backup libvirt networks """
+        content = cls.getLibvirtNetwork(network)
+        if not content:
+            # For non-exists networks use predefined header
+            content = cls.DELETED_HEADER + '\n'
+        logging.debug("backing up network %s: %s", network, content)
+
+        cls.writeBackupFile(netinfo.NET_LOGICALNET_CONF_BACK_DIR,
+                             network, content)
 
     def _backup(self, filename):
         self._atomicBackup(filename)
@@ -218,29 +274,21 @@ class ConfigWriter(object):
 
     @classmethod
     def _persistentBackup(cls, filename):
+        """ Persistently backup ifcfg-* config files """
         if os.path.exists('/usr/libexec/ovirt-functions'):
-            subprocess.call([constants.EXT_SH, '/usr/libexec/ovirt-functions', 'unmount_config', filename])
+            subprocess.call([constants.EXT_SH, '/usr/libexec/ovirt-functions',
+                             'unmount_config', filename])
             logging.debug("unmounted %s using ovirt", filename)
 
         (dummy, basename) = os.path.split(filename)
-        backup = os.path.join(netinfo.NET_CONF_BACK_DIR, basename)
-        if os.path.exists(backup):
-            # original copy already backed up
-            return
-
-        vdsm_uid = pwd.getpwnam('vdsm').pw_uid
-
-        # make directory (if it doesn't exist) and assign it to vdsm
-        if not os.path.exists(netinfo.NET_CONF_BACK_DIR):
-            os.mkdir(netinfo.NET_CONF_BACK_DIR)
-        os.chown(netinfo.NET_CONF_BACK_DIR, vdsm_uid, 0)
-
         if os.path.exists(filename):
-            shutil.copy2(filename, backup)
+            content = open(filename).read()
         else:
-            open(backup, 'w').write(cls.DELETED_HEADER + '\n')
-        os.chown(backup, vdsm_uid, 0)
-        logging.debug("Persistently backed up %s (until next 'set safe config')", filename)
+            # For non-exists ifcfg-* file use predefined header
+            content = cls.DELETED_HEADER + '\n'
+        logging.debug("backing up %s: %s", basename, content)
+
+        cls.writeBackupFile(netinfo.NET_CONF_BACK_DIR, basename, content)
 
     def writeConfFile(self, fileName, configuration):
         '''Backs up the previous contents of the file referenced by fileName
