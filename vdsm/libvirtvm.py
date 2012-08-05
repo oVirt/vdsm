@@ -1686,7 +1686,7 @@ class LibvirtVm(vm.Vm):
                              "imageID": drive["mirrorImageID"],
                              "volumeID": drive["mirrorVolumeID"]}
             else:
-                mirrorDrv = None
+                mirrorDrv = ""
 
             return baseDrv, tgetDrv, mirrorDrv
 
@@ -1764,7 +1764,7 @@ class LibvirtVm(vm.Vm):
                             self.cif.prepareVolumePath(
                                              newDrives[vmDevName]["mirror"])
                 else:
-                    newDrives[vmDevName]["mirrorPath"] = None
+                    newDrives[vmDevName]["mirrorPath"] = ""
 
             except Exception:
                 _rollbackDrives(newDrives)
