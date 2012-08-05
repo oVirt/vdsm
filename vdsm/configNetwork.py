@@ -168,26 +168,21 @@ class ConfigWriter(object):
             netXml = '''<network><name>%s</name><forward mode='passthrough'>
                         <interface dev='%s'/></forward></network>''' % \
                                             (escape(netName), escape(iface))
-        self.removeLibvirtNetwork(network, log=False)
         self._networkBackup(network)
         net = conn.networkDefineXML(netXml)
         net.create()
         net.setAutostart(1)
 
-    def removeLibvirtNetwork(self, network, log=True):
+    def removeLibvirtNetwork(self, network):
         netName = netinfo.LIBVIRT_NET_PREFIX + network
         conn = libvirtconnection.get()
         self._networkBackup(network)
-        try:
-            net = conn.networkLookupByName(netName)
-            if net.isActive():
-                net.destroy()
-            if net.isPersistent():
-                net.undefine()
-        except libvirt.libvirtError:
-            if log:
-                logging.debug('failed to remove libvirt network %s', netName,
-                              exc_info=True)
+
+        net = conn.networkLookupByName(netName)
+        if net.isActive():
+            net.destroy()
+        if net.isPersistent():
+            net.undefine()
 
     @classmethod
     def getLibvirtNetwork(cls, network):
@@ -916,7 +911,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if bridged:
         configWriter.setNewMtu(network)
 
-    configWriter.removeLibvirtNetwork(network, log=False)
+    configWriter.removeLibvirtNetwork(network)
     # We need to gather NetInfo again to refresh networks info from libvirt.
     # The deleted bridge should never be up at this stage.
     if network in netinfo.NetInfo().networks:
