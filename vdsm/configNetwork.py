@@ -157,8 +157,13 @@ class ConfigWriter(object):
             subprocess.call([constants.EXT_UMOUNT, '-n', filename])
         utils.rmFile(filename)
 
-    def createLibvirtNetwork(self, network, bridged=True, iface=None):
+    def _createNetwork(self, netXml):
         conn = libvirtconnection.get()
+        net = conn.networkDefineXML(netXml)
+        net.create()
+        net.setAutostart(1)
+
+    def createLibvirtNetwork(self, network, bridged=True, iface=None):
         netName = netinfo.LIBVIRT_NET_PREFIX + network
         if bridged:
             netXml = '''<network><name>%s</name><forward mode='bridge'/>
@@ -169,20 +174,21 @@ class ConfigWriter(object):
                         <interface dev='%s'/></forward></network>''' % \
                                             (escape(netName), escape(iface))
         self._networkBackup(network)
-        net = conn.networkDefineXML(netXml)
-        net.create()
-        net.setAutostart(1)
+        self._createNetwork(netXml)
 
-    def removeLibvirtNetwork(self, network):
+    def _removeNetwork(self, network):
         netName = netinfo.LIBVIRT_NET_PREFIX + network
         conn = libvirtconnection.get()
-        self._networkBackup(network)
 
         net = conn.networkLookupByName(netName)
         if net.isActive():
             net.destroy()
         if net.isPersistent():
             net.undefine()
+
+    def removeLibvirtNetwork(self, network):
+        self._networkBackup(network)
+        self._removeNetwork(network)
 
     @classmethod
     def getLibvirtNetwork(cls, network):
@@ -237,6 +243,16 @@ class ConfigWriter(object):
 
         cls.writeBackupFile(netinfo.NET_LOGICALNET_CONF_BACK_DIR,
                              network, content)
+
+    def restoreAtomicNetworkBackup(self):
+        logging.info("Rolling back logical networks configuration "
+                     "(restoring atomic logical networks backup)")
+        for network, content in self._networksBackups.iteritems():
+            if content is None:
+                self._removeNetwork(network)
+            else:
+                self._createNetwork(content)
+            logging.info('Restored %s', network)
 
     def _backup(self, filename):
         self._atomicBackup(filename)
@@ -969,11 +985,13 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None, **opti
         delNetwork(oldBridge, configWriter=configWriter, **options)
         addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics, configWriter=configWriter, **options)
     except:
+        configWriter.restoreAtomicNetworkBackup()
         configWriter.restoreAtomicBackup()
         raise
     if utils.tobool(options.get('connectivityCheck', False)):
         if not clientSeen(int(options.get('connectivityTimeout', CONNECTIVITY_TIMEOUT_DEFAULT))):
             delNetwork(newBridge, force=True)
+            configWriter.restoreAtomicNetworkBackup()
             configWriter.restoreAtomicBackup()
             return define.errCode['noConPeer']['status']['code']
 
@@ -1182,6 +1200,7 @@ def setupNetworks(networks={}, bondings={}, **options):
                     raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                              'connectivity check failed')
         except:
+            configWriter.restoreAtomicNetworkBackup()
             configWriter.restoreAtomicBackup()
             raise
 
