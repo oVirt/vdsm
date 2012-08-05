@@ -829,8 +829,6 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                configWriter=None, implicitBonding=True, **options):
     _netinfo = netinfo.NetInfo()
 
-    validateBridgeName(network)
-
     if configWriter is None:
         configWriter = ConfigWriter()
 
