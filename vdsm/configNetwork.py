@@ -46,18 +46,6 @@ class ConfigNetworkError(Exception):
         self.message = message
         Exception.__init__(self, self.errCode, self.message)
 
-
-def ipcalc(checkopt, s):
-    "Validate an ip address (or netmask) using ipcalc"
-    if not isinstance(s, basestring):
-        return 0
-    p = subprocess.Popen([constants.EXT_IPCALC, '-c', checkopt, s],
-            close_fds=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
-    if err:
-        logging.warn(err)
-    return not p.returncode
-
 def ifdown(iface):
     "Bring down an interface"
     p = subprocess.Popen([constants.EXT_IFDOWN, iface], stdout=subprocess.PIPE,
@@ -476,16 +464,28 @@ def validateBridgeName(bridgeName):
     if not isBridgeNameValid(bridgeName):
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Bridge name isn't valid: %r"%bridgeName)
 
+def _validateIpAddress(address):
+    try:
+        parts = address.split(".")
+        if len(parts) != 4:
+            return False
+        for item in parts:
+            if not 0 <= int(item) <= 255:
+                return False
+    except ValueError:
+        return False
+    return True
+
 def validateIpAddress(ipAddr):
-    if not ipcalc('-4', ipAddr):
+    if not _validateIpAddress(ipAddr):
         raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad IP address: %r"%ipAddr)
 
 def validateNetmask(netmask):
-    if not ipcalc('-m', netmask):
+    if not _validateIpAddress(netmask):
         raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad netmask: %r"%netmask)
 
 def validateGateway(gateway):
-    if not ipcalc('-4', gateway):
+    if not _validateIpAddress(gateway):
         raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad gateway: %r"%gateway)
 
 def validateBondingName(bonding):
