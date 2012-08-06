@@ -371,7 +371,7 @@
 # Since: 4.10.0
 ##
 {'enum': 'TaskState',
- 'data': ['unknown', 'init', 'running', 'finished', 'aborting', 'cleaning']}
+ 'data': ['unknown', 'running', 'finished', 'aborting', 'cleaning']}
 
 ##
 # @TaskResult:
