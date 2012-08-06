@@ -24,6 +24,7 @@ import time
 import logging
 import threading
 from xml.sax.saxutils import escape
+import glob
 
 import libvirt
 
@@ -300,6 +301,30 @@ class ConfigWriter(object):
         logging.debug("backing up %s: %s", basename, content)
 
         cls.writeBackupFile(netinfo.NET_CONF_BACK_DIR, basename, content)
+
+    def _loadBackupFiles(self, loadDir, restoreDir=None):
+        for fpath in glob.iglob(loadDir + '/*'):
+            if not os.path.isfile(fpath):
+                continue
+
+            content = open(fpath).read()
+            if content.startswith(self.DELETED_HEADER):
+                content = None
+
+            basename = os.path.basename(fpath)
+            if restoreDir:
+                self._backups[os.path.join(restoreDir, basename)] = content
+            else:
+                self._networksBackups[basename] = content
+
+            logging.info('Loaded %s', fpath)
+
+    def loadBackups(self):
+        """ Load persistent backups into memory """
+        # Load logical networks
+        self._loadBackupFiles(netinfo.NET_LOGICALNET_CONF_BACK_DIR)
+        # Load config files
+        self._loadBackupFiles(netinfo.NET_CONF_BACK_DIR, netinfo.NET_CONF_DIR)
 
     def writeConfFile(self, fileName, configuration):
         '''Backs up the previous contents of the file referenced by fileName
