@@ -782,8 +782,8 @@ class CleanUpDir(TestCaseBase):
         fileUtils.cleanupdir(baseDir, ignoreErrors=True)
         self.assertTrue(os.path.lexists(baseDir))
 
-        self.assertRaises(misc.se.MiscDirCleanupFailure, fileUtils.cleanupdir,
-                baseDir, False)
+        self.assertRaises(RuntimeError, fileUtils.cleanupdir,
+                          baseDir, False)
         self.assertTrue(os.path.lexists(baseDir))
 
 
