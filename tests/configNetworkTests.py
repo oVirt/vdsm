@@ -140,13 +140,13 @@ class TestconfigNetwork(TestCaseBase):
 
     @memoized
     def _bondingModuleOptions(self):
-        p = subprocess.Popen(['modinfo', 'bonding'],
+        p = subprocess.Popen(['/sbin/modinfo', 'bonding'],
                              close_fds=True, stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
 
         if err:
-            return False
+            raise SkipTest("bonding kernel module could not be found.")
 
         return frozenset(re.findall(r'(\w+):', line)[1] for line in
                          out.split('\n') if line.startswith('parm:'))
