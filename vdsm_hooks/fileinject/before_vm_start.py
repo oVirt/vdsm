@@ -5,7 +5,7 @@ import sys
 import hooking
 import traceback
 import guestfs
-import tempfile
+
 
 '''
 fileinject vdsm hook
@@ -27,47 +27,30 @@ syntax:
 
 
 def inject_file(filepath, content, drive, diskformat):
+    injected = False
+    gfs = guestfs.GuestFS()
     try:
-        g = guestfs.GuestFS()
-        g.add_drive_opts(drive, format=diskformat)
-        g.launch()
-
-        roots = g.inspect_os()
-
-        for root in roots:
-            temp = tempfile.NamedTemporaryFile()
-            g.mount_options("", root, "/")
+        gfs.add_drive_opts(drive, format=diskformat)
+    except RuntimeError as e:
+        sys.stderr.write('fileinject: [error in inject_file]: %s\n' % e)
+    else:
+        gfs.launch()
+        for root in gfs.inspect_os():
+            if gfs.inspect_get_type(root) == "windows":
+                filepath = os.path.join(
+                    gfs.case_sensitive_path(os.path.dirname(filepath)),
+                    os.path.basename(filepath))
+            gfs.mount_options("", root, "/")
             try:
-                temp.file.write(content)
-                temp.file.flush()
+                gfs.write(filepath, content)
+            except RuntimeError as e:
+                sys.stderr.write('fileinject: [upload failed]: %s\n' % e)
+            else:
+                injected = True
+            finally:
+                gfs.umount(root)
 
-                if g.inspect_get_type == "windows":
-                    directory = g.case_sensitive_path(os.path.dirname(
-                                                                filepath))
-                    filepath = "%s/%s" % (directory,
-                                          os.path.basename(filepath))
-
-                g.upload(temp.name, filepath)
-
-                # if no error we uploaded the file
-                sys.stderr.write('fileinject: file %s '
-                                 'was uploaded successfully to VMs disk\n' %
-                                 filepath)
-                return True
-
-            except Exception as e1:
-                sys.stderr.write('fileinject: '
-                                 '[error in inject_file uploading file]: '
-                                 '%s\n' % e1.message)
-
-            g.umount(root)
-            temp.close()
-
-    except Exception as e:
-        sys.stderr.write('fileinject: [general error in inject_file]: %s\n' %
-                         e.message)
-
-    return False
+    return injected
 
 if 'fileinject' in os.environ:
     try:
