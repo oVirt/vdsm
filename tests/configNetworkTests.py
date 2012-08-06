@@ -36,6 +36,9 @@ from vdsm.utils import memoized
 from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
 
+from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatchScope
+
 
 class TestconfigNetwork(TestCaseBase):
     @contextmanager
@@ -157,24 +160,21 @@ class TestconfigNetwork(TestCaseBase):
     def testValidateBondingOptions(self):
         # Monkey patch os.path.exists to let validateBondingOptions logic be
         # tested when a bonding device is not present.
-        oldExists = os.path.exists
-        os.path.exists = self._bondingOptExists
+        with MonkeyPatchScope([
+            (os.path, 'exists', self._bondingOptExists)
+        ]):
+            opts = 'mode=802.3ad miimon=150'
+            badOpts = 'foo=bar badopt=one'
 
-        opts = 'mode=802.3ad miimon=150'
-        badOpts = 'foo=bar badopt=one'
+            with self.assertRaises(configNetwork.ConfigNetworkError) as cne:
+                configNetwork.validateBondingOptions('bond0', badOpts)
+            self.assertEqual(cne.exception.errCode,
+                             configNetwork.ne.ERR_BAD_BONDING)
 
-        with self.assertRaises(configNetwork.ConfigNetworkError) as cne:
-            configNetwork.validateBondingOptions('bond0', badOpts)
-        self.assertEqual(cne.exception.errCode,
-                         configNetwork.ne.ERR_BAD_BONDING)
+            self.assertEqual(configNetwork.validateBondingOptions('bond0',
+                             opts), None)
 
-        self.assertEqual(configNetwork.validateBondingOptions('bond0', opts),
-                         None)
-
-        # Restitute the stdlib's os.path.exists
-        os.path.exists = oldExists
-
-    def _fakeNetworks(self):
+    def _fakeNetworks():
         return {
                 'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
                 'fakenet': {'iface': 'fakeint', 'bridged': False},
@@ -186,11 +186,9 @@ class TestconfigNetwork(TestCaseBase):
         cne = cneContext.exception
         self.assertEqual(cne.errCode, errCode)
 
+    # Monkey patch the real network detection from the netinfo module.
+    @MonkeyPatch(netinfo, 'networks', _fakeNetworks)
     def testAddNetworkValidation(self):
-        # Monkey patch the real network detection from the netinfo module.
-        oldValue = netinfo.networks
-        netinfo.networks = self._fakeNetworks
-
         _netinfo = {
                 'networks': {
                     'fakent': {'iface': 'fakeint', 'bridged': False},
@@ -275,9 +273,6 @@ class TestconfigNetwork(TestCaseBase):
                                  ipaddr, netmask, gw, bondingOptions),
                                 configNetwork.ne.ERR_USED_NIC)
 
-        # Restitute the real network detection of the netinfo module.
-        netinfo.networks = oldValue
-
 
 class ConfigWriterTests(TestCaseBase):
     INITIAL_CONTENT = '123-testing'
@@ -315,39 +310,32 @@ class ConfigWriterTests(TestCaseBase):
                 restoredContent = file(fn).read()
                 self.assertEqual(content, restoredContent)
 
+    @MonkeyPatch(subprocess, 'Popen', lambda x: None)
     def testAtomicRestore(self):
-        # a rather ugly stubbing
-        oldvals = subprocess.Popen
-        subprocess.Popen = lambda x: None
+        cw = configNetwork.ConfigWriter()
+        self._createFiles()
 
-        try:
-            cw = configNetwork.ConfigWriter()
-            self._createFiles()
+        for fn, _, _ in self._files:
+            cw._atomicBackup(fn)
 
-            for fn, _, _ in self._files:
-                cw._atomicBackup(fn)
+        self._makeFilesDirty()
 
-            self._makeFilesDirty()
+        cw.restoreAtomicBackup()
+        self._assertFilesRestored()
 
-            cw.restoreAtomicBackup()
-            self._assertFilesRestored()
-        finally:
-            subprocess.Popen = oldvals
-
+    @MonkeyPatch(os, 'chown', lambda *x: 0)
     def testPersistentBackup(self):
-        #after vdsm package is installed, the 'vdsm' account will be created
-        #if no 'vdsm' account, we should skip this test
-        if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
-            raise SkipTest("'vdsm' is not in user account database, "
-                           "install vdsm package to create the vdsm user")
 
-        # a rather ugly stubbing
-        oldvals = (netinfo.NET_CONF_BACK_DIR,
-                   os.chown)
-        os.chown = lambda *x: 0
-        netinfo.NET_CONF_BACK_DIR = os.path.join(self._tempdir, 'netback')
+        with MonkeyPatchScope([
+            (netinfo, 'NET_CONF_BACK_DIR',
+            os.path.join(self._tempdir, 'netback'))
+        ]):
+            #after vdsm package is installed, the 'vdsm' account will be
+            #created if no 'vdsm' account, we should skip this test
+            if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
+                raise SkipTest("'vdsm' is not in user account database, "
+                               "install vdsm package to create the vdsm user")
 
-        try:
             cw = configNetwork.ConfigWriter()
             self._createFiles()
 
@@ -362,5 +350,3 @@ class ConfigWriterTests(TestCaseBase):
                          'NET_CONF_DIR': self._tempdir})
 
             self._assertFilesRestored()
-        finally:
-            netinfo.NET_CONF_BACK_DIR, os.chown = oldvals

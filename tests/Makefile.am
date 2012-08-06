@@ -61,6 +61,7 @@ dist_vdsmtests_DATA = \
 
 dist_vdsmtests_PYTHON = \
 	$(test_modules) \
+	monkeypatch.py \
 	testrunner.py \
 	testValidation.py
 
