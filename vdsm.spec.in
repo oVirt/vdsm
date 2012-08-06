@@ -261,6 +261,16 @@ BuildArch:      noarch
 VDSM promiscuous mode let user define a VM interface that will capture
 all network traffic.
 
+%package hook-qemucmdline
+Summary:        QEMU cmdline hook for VDSM
+BuildArch:      noarch
+Requires:       vdsm
+
+%description hook-qemucmdline
+Provides support for injecting QEMU cmdline via VDSM hook.
+It exploits libvirt's qemu:commandline facility available in the
+qemu xml namespace.
+
 %package hook-qos
 Summary:        QoS network in/out traffic support for VDSM
 BuildArch:      noarch
@@ -727,6 +737,11 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
+
+%files hook-qemucmdline
+%defattr(-, root, root, -)
+%doc COPYING
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qemucmdline
 
 %if 0%{?with_hooks}
 %files hook-directlun
