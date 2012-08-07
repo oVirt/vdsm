@@ -25,6 +25,7 @@ import logging
 import threading
 from xml.sax.saxutils import escape
 import glob
+import shutil
 
 import libvirt
 
@@ -325,6 +326,16 @@ class ConfigWriter(object):
         self._loadBackupFiles(netinfo.NET_LOGICALNET_CONF_BACK_DIR)
         # Load config files
         self._loadBackupFiles(netinfo.NET_CONF_BACK_DIR, netinfo.NET_CONF_DIR)
+
+    def restoreBackups(self):
+        """ Restore network backups """
+        self.restoreAtomicNetworkBackup()
+        self.restoreAtomicBackup()
+
+    @classmethod
+    def clearBackups(cls):
+        """ Clear backup files """
+        shutil.rmtree(netinfo.NET_CONF_BACK_DIR, ignore_errors=True)
 
     def writeConfFile(self, fileName, configuration):
         '''Backs up the previous contents of the file referenced by fileName
@@ -1010,14 +1021,12 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None, **opti
         delNetwork(oldBridge, configWriter=configWriter, **options)
         addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics, configWriter=configWriter, **options)
     except:
-        configWriter.restoreAtomicNetworkBackup()
-        configWriter.restoreAtomicBackup()
+        configWriter.restoreBackups()
         raise
     if utils.tobool(options.get('connectivityCheck', False)):
         if not clientSeen(int(options.get('connectivityTimeout', CONNECTIVITY_TIMEOUT_DEFAULT))):
             delNetwork(newBridge, force=True)
-            configWriter.restoreAtomicNetworkBackup()
-            configWriter.restoreAtomicBackup()
+            configWriter.restoreBackups()
             return define.errCode['noConPeer']['status']['code']
 
 def _validateNetworkSetup(networks={}, bondings={}):
@@ -1225,8 +1234,7 @@ def setupNetworks(networks={}, bondings={}, **options):
                     raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                              'connectivity check failed')
         except:
-            configWriter.restoreAtomicNetworkBackup()
-            configWriter.restoreAtomicBackup()
+            configWriter.restoreBackups()
             raise
 
     except Exception, e:
