@@ -364,7 +364,7 @@ class VM(APIBase):
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
-            self.log.warning("vm %s doesn't exists", self._UUID)
+            self.log.warning("vm %s doesn't exist", self._UUID)
             return errCode['noVM']
 
         return curVm.hotplugNic(params)
@@ -380,7 +380,7 @@ class VM(APIBase):
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
-            self.log.warning("vm %s doesn't exists", self._UUID)
+            self.log.warning("vm %s doesn't exist", self._UUID)
             return errCode['noVM']
 
         return curVm.hotunplugNic(params)
@@ -396,7 +396,7 @@ class VM(APIBase):
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
-            self.log.warning("vm %s doesn't exists", self._UUID)
+            self.log.warning("vm %s doesn't exist", self._UUID)
             return errCode['noVM']
 
         return curVm.hotplugDisk(params)
@@ -412,7 +412,7 @@ class VM(APIBase):
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
-            self.log.warning("vm %s doesn't exists", self._UUID)
+            self.log.warning("vm %s doesn't exist", self._UUID)
             return errCode['noVM']
 
         return curVm.hotunplugDisk(params)

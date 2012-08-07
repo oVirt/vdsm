@@ -565,7 +565,7 @@ class StorageDomain:
 
         for vm in vmList:
             vm_path = os.path.join(vmsPath, vm)
-            # If VM doesn't exists, ignore it silently
+            # If VM doesn't exist, ignore it silently
             if not os.path.exists(vm_path):
                 continue
             ovfPath = os.path.join(vm_path, vm + '.ovf')

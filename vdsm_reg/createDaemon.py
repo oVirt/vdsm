@@ -145,7 +145,7 @@ def createDaemon():
     # of methods to accomplish this task.  Three are listed below.
     #
     # Try the system configuration variable, SC_OPEN_MAX, to obtain the maximum
-    # number of open file descriptors to close.  If it doesn't exists, use
+    # number of open file descriptors to close.  If it doesn't exist, use
     # the default value (configurable).
     #
     # try:

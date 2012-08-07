@@ -57,7 +57,7 @@ def getSysfsPath(devName):
                          "Parameter is not a devname `%s`" % devName)
 
     if not os.path.exists(sysfsPath):
-        raise OSError(errno.ENOENT, "device `%s` doesn't exists" % devName)
+        raise OSError(errno.ENOENT, "device `%s` doesn't exist" % devName)
 
     return sysfsPath
 
