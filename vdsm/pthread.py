@@ -71,6 +71,7 @@ class PthreadMutex(object):
 
         if recursive:
             attr = C.byref(mutexattr_t())
+            _libpthread.pthread_mutexattr_init(attr)
             _libpthread.pthread_mutexattr_settype(
                         attr, C.c_int(PTHREAD_MUTEX_RECURSIVE))
         else:
