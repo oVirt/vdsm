@@ -527,6 +527,8 @@ class Vm(object):
         return confDrives
 
     def updateDriveIndex(self, drv):
+        if not drv['iface'] in self._usedIndices:
+            self._usedIndices[drv['iface']] = []
         drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
         self._usedIndices[drv['iface']].append(int(drv['index']))
 
