@@ -80,7 +80,6 @@ nodist_vdsm_PYTHON = \
 
 nodist_vdsm_SCRIPTS = \
 	mk_sysprep_floppy \
-	vdsm-restore-net-config \
 	vdsm-store-net-config
 
 nodist_noinst_DATA = \
@@ -99,6 +98,7 @@ dist_vdsm_SCRIPTS = \
 	respawn \
 	set-conf-item \
 	vdsm \
+	vdsm-restore-net-config \
 	write-net-config
 
 nodist_man8_MANS = \
@@ -134,7 +134,6 @@ EXTRA_DIST = \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf.in \
-	vdsm-restore-net-config.in \
 	vdsm.rwtab.in \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf
