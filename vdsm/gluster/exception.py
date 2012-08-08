@@ -82,6 +82,21 @@ class GlusterMissingArgumentException(GlusterGeneralException):
         self.message = 'Missing argument: %s' % (args,)
 
 
+class GlusterCmdExecFailedException(GlusterGeneralException):
+    code = 4105
+    message = "Command execution failed"
+
+
+class GlusterXmlErrorException(GlusterGeneralException):
+    code = 4106
+    message = "XML error"
+
+
+class GlusterCmdFailedException(GlusterGeneralException):
+    code = 4107
+    message = "Command failed"
+
+
 # Volume
 class GlusterVolumeException(GlusterException):
     code = 4111

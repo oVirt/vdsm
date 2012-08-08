@@ -67,6 +67,23 @@ def _execGluster(cmd):
     return utils.execCmd(cmd)
 
 
+def _execGlusterXml(cmd):
+    cmd.append('--xml')
+    rc, out, err = utils.execCmd(cmd)
+    if rc != 0:
+        raise ge.GlusterCmdExecFailedException(rc, out, err)
+    try:
+        tree = etree.fromstring('\n'.join(out))
+        rv = int(tree.find('opRet').text)
+        msg = tree.find('opErrstr').text
+    except (etree.ParseError, AttributeError, ValueError):
+        raise ge.GlusterXmlErrorException(err=out)
+    if rv == 0:
+        return tree
+    else:
+        raise ge.GlusterCmdFailedException(rc=rv, err=[msg])
+
+
 def _parseVolumeInfo(out):
     if not out[0].strip():
         del out[0]
