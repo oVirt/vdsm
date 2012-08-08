@@ -2026,7 +2026,7 @@ class LibvirtVm(vm.Vm):
                     self._lvExtend(d.name)
 
     def _acpiShutdown(self):
-        self._dom.shutdown()
+        self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
 
     def _getPid(self):
         pid = '0'
