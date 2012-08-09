@@ -253,10 +253,19 @@ class ConfigWriter(object):
         logging.info("Rolling back logical networks configuration "
                      "(restoring atomic logical networks backup)")
         for network, content in self._networksBackups.iteritems():
-            if content is None:
+            # Networks with content None should be removed.
+            # Networks with real content should be recreated.
+            # To avoid libvirt errors during recreation we need
+            # to remove the old network first
+            try:
                 self._removeNetwork(network)
-            else:
+            except libvirt.libvirtError, e:
+                if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
+                    pass
+
+            if content:
                 self._createNetwork(content)
+
             logging.info('Restored %s', network)
 
     def _backup(self, filename):
