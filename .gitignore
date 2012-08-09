@@ -39,6 +39,7 @@ vdsm/vdsm.conf.sample
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
 vdsm/vdsmd.init
+vdsm-tool/validate_ovirt_certs.py
 vdsm_cli/vdsClient
 vdsm_cli/vdscli.py
 vdsm_hooks/persist-vdsm-hooks
