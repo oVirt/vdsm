@@ -859,13 +859,10 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
 
 
 def removeVG(vgName):
-    # Get the list of potentially affected PVs
-    pvs = [pv.name for pv in _lvminfo.getAllPvs() if pv.vg_name == vgName]
-    # Remove the vg from the cache
-    _lvminfo._vgs.pop(vgName, None)
-    # and now destroy it
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd)
+    pvs = tuple(pv for pv in _lvminfo._pvs.iterkeys()
+                if not isinstance(pv, Stub) and pv.vg_name == vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
     # if vg remove failed, something must be wrong with devices and we want
     # cache updated as well
@@ -874,6 +871,9 @@ def removeVG(vgName):
     if rc != 0:
         _lvminfo._invalidatevgs(vgName)
         raise se.VolumeGroupRemoveError("VG %s remove failed." % vgName)
+    else:
+        # Remove the vg from the cache
+        _lvminfo._vgs.pop(vgName, None)
 
 
 def removeVGbyUUID(vgUUID):
