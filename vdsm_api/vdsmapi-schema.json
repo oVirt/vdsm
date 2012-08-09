@@ -70,7 +70,7 @@
 ##
 {'type': 'NetworkOptions',
  'data': {'*ipaddr', 'str', '*netmask': 'str', '*gateway': 'str',
-          '*bootproto': 'str', '*delay': 'IntStr', '*onboot': 'str',
+          '*bootproto': 'str', '*delay': 'uint', '*onboot': 'str',
           '*bondingOptions', 'str', 'skipLibvirt': 'bool'}}
 
 ##
