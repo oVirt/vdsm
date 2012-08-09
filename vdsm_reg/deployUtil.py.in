@@ -66,6 +66,7 @@ EX_ECHO = '@ECHO_PATH@'
 EX_GRUBBY = '@GRUBBY_PATH@'
 EX_HWCLOCK = '@HWCLOCK_PATH@'
 EX_IFCONFIG = '@IFCONFIG_PATH@'
+EX_NTPQ = '@NTPQ_PATH@'
 EX_OPENSSL = '@OPENSSL_PATH@'
 EX_REBOOT = '@REBOOT_PATH@'
 EX_RPM = '@RPM_PATH@'
@@ -662,24 +663,28 @@ def setHostTime(VDCTime):
     import time
     fReturn = True
 
-    try:
-        ttp = time.strptime(VDCTime, '%Y-%m-%dT%H:%M:%S')
-    except ValueError, e:
-        logging.debug("setHostTime: Failed to parse @ENGINENAME@ time. message= " + str(e))
-        fReturn = False
-
-    if fReturn:
-        out, err, rc = _logExec([EX_HWCLOCK, "--set", "--utc",
-            time.strftime('--date=%Y-%m-%d %H:%M:%S UTC', ttp)])
-        if rc:
-            logging.debug("setHostTime: Failed to set hwclock time. out=" + out + "\nerr=" + str(err) + "\nrc=" + str(rc))
+    out, err, rc = _logExec([EX_NTPQ, "-c", "rv"])
+    if 'clock_sync' in out:
+        logging.debug("setHostTime: Time is synchronised to NTP server.")
+    else:
+        try:
+            ttp = time.strptime(VDCTime, '%Y-%m-%dT%H:%M:%S')
+        except ValueError, e:
+            logging.debug("setHostTime: Failed to parse @ENGINENAME@ time. message= " + str(e))
             fReturn = False
 
-    if fReturn:
-          out, err, rc = _logExec([EX_HWCLOCK, "-s"])
-          if rc:
-            logging.debug("setHostTime: Failed to sync hwclock time to host. out=" + out + "\nerr=" + str(err) + "\nrc=" + str(rc))
-            fReturn = False
+        if fReturn:
+            out, err, rc = _logExec([EX_HWCLOCK, "--set", "--utc",
+                time.strftime('--date=%Y-%m-%d %H:%M:%S UTC', ttp)])
+            if rc:
+                logging.debug("setHostTime: Failed to set hwclock time. out=" + out + "\nerr=" + str(err) + "\nrc=" + str(rc))
+                fReturn = False
+
+        if fReturn:
+            out, err, rc = _logExec([EX_HWCLOCK, "-s"])
+            if rc:
+                logging.debug("setHostTime: Failed to sync hwclock time to host. out=" + out + "\nerr=" + str(err) + "\nrc=" + str(rc))
+                fReturn = False
 
     logging.debug('setHostTime end. Return:' + str(fReturn))
     return fReturn
