@@ -2524,15 +2524,13 @@
 #
 # A tuple containing @ConnectionRef error information.
 #
-# @0:  The error code
+# @code:     The error code
 #
-# @1:  The error message
+# @message:  The error message
 #
 # Since: 4.10.0
-# XXX: Extension: tuple data type
-# XXX: Define error code enum
 ##
-{'type': 'ConnectionError', 'data': {'0': 'int', '1': 'str'}}
+{'type': 'ConnectionError', 'data': {'code': 'int', 'message': 'str'}}
 
 ##
 # @ConnectionRef:
