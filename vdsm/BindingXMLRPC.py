@@ -357,7 +357,7 @@ class BindingXMLRPC(object):
                   secure=False, options=''):
         api = API.Global()
         return api.fenceNode(addr, port, agent, username, password,
-                action, secure)
+                action, secure, options)
 
     def setLogLevel(self, level):
         api = API.Global()
