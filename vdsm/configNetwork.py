@@ -165,7 +165,8 @@ class ConfigWriter(object):
         net.create()
         net.setAutostart(1)
 
-    def createLibvirtNetwork(self, network, bridged=True, iface=None):
+    def createLibvirtNetwork(self, network, bridged=True, iface=None,
+                             skipBackup=False):
         netName = netinfo.LIBVIRT_NET_PREFIX + network
         if bridged:
             netXml = '''<network><name>%s</name><forward mode='bridge'/>
@@ -175,7 +176,8 @@ class ConfigWriter(object):
             netXml = '''<network><name>%s</name><forward mode='passthrough'>
                         <interface dev='%s'/></forward></network>''' % \
                                             (escape(netName), escape(iface))
-        self._networkBackup(network)
+        if not skipBackup:
+            self._networkBackup(network)
         self._createNetwork(netXml)
 
     def _removeNetwork(self, network):
@@ -188,8 +190,9 @@ class ConfigWriter(object):
         if net.isPersistent():
             net.undefine()
 
-    def removeLibvirtNetwork(self, network):
-        self._networkBackup(network)
+    def removeLibvirtNetwork(self, network, skipBackup=False):
+        if not skipBackup:
+            self._networkBackup(network)
         self._removeNetwork(network)
 
     @classmethod

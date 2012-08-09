@@ -194,13 +194,14 @@ class clientIF:
         for bridge in bridges:
             if not bridge in nets:
                 configWriter.createLibvirtNetwork(network=bridge,
-                                                  bridged=True)
+                                                  bridged=True,
+                                                  skipBackup=True)
         # remove bridged networks that their bridge not exists
         #TODO:
         # this should probably go into vdsm-restore-net script
         for network in nets:
             if nets[network]['bridged'] and network not in bridges:
-                configWriter.removeLibvirtNetwork(network)
+                configWriter.removeLibvirtNetwork(network, skipBackup=True)
 
     def prepareForShutdown(self):
         """
