@@ -536,7 +536,7 @@
 #
 # @hwaddr:   The Media Access Control address being used by the bond device
 #
-# @cfg:      Raw device configuration parameters (@NetInfoIfaceCfg)
+# @cfg:      Raw device configuration parameters
 #
 # @mtu:      The Maximum Transmission Unit size for the nic
 #
@@ -544,7 +544,7 @@
 ##
 {'type': 'NetInfoBond',
  'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str', 'hwaddr': 'str',
-          'cfg': 'NetInfoIfaceCfg', 'mtu': 'uint'}}
+          'cfg': 'StringMap', 'mtu': 'uint'}}
 
 ##
 # @NetInfoVlan:
@@ -2190,7 +2190,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmShortStatus',
- 'data': {'vmId': 'UUID', 'status': 'VMStatus'}}
+ 'data': {'vmId': 'UUID', 'status': 'VmStatus'}}
 
 ##
 # @VmFullStatus:
@@ -2261,7 +2261,7 @@
           'kvmEnable': 'bool', 'memSize': 'uint',
           'nicModel': 'str', 'nice': 'int', 'pauseCode': 'str',
           'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
-          '*smpThreadsPerCore': 'uint', 'status': 'VMStatus',
+          '*smpThreadsPerCore': 'uint', 'status': 'VmStatus',
           'timeOffset': 'uint', 'transparentHugePages': 'bool',
           'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType'}}
 
@@ -4056,7 +4056,7 @@
 #
 # Since: 4.10.0
 ##
-{'type': 'DriveVmPayload', 'data': {'file': 'StrMap'}}
+{'type': 'DriveVmPayload', 'data': {'file': 'StringMap'}}
 
 ##
 # @DrivePayload:
@@ -4824,7 +4824,7 @@
 {'command': {'class': 'VM', 'name': 'setTicket'},
  'data': {'password': 'str', 'ttl': 'int',
           'existingConnAction': 'VmTicketConflictAction',
-          'params': 'StrMap'}}
+          'params': 'StringMap'}}
 
 ##
 # @VM.shutdown:
