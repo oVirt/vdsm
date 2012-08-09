@@ -2268,11 +2268,11 @@
 ##
 # @VmDefinition:
 #
-# A discriminated record containing virtual machine status information.
+# A VmDefinition uses the same format as a VmFullStatus.
 #
 # Since: 4.10.0
 ##
-{'union': 'VmDefinition', 'data': ['VmFullDefinition', 'VmShortDefinition']}
+{'alias': 'VmDefinition', 'data': 'VmFullStatus'}
 
 ##
 # @Global.getVMList:
@@ -4119,7 +4119,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'changeCD'},
  'data': {'driveSpec': 'DriveSpec'},
- 'returns': {'vmList': 'VmFullDefinition'}}
+ 'returns': {'vmList': 'VmDefinition'}}
 
 ##
 # @VM.changeFloppy:
@@ -4135,7 +4135,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'changeFloppy'},
  'data': {'driveSpec': 'DriveSpec'},
- 'returns': {'vmList': 'VmFullDefinition'}}
+ 'returns': {'vmList': 'VmDefinition'}}
 
 ##
 # @VM.cont:
@@ -4159,8 +4159,8 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'create'},
- 'data': {'vmParams': 'VmFullDefinition'},
- 'returns': {'vmList': 'VmFullDefinition'}}
+ 'data': {'vmParams': 'VmDefinition'},
+ 'returns': {'vmList': 'VmDefinition'}}
 
 ##
 # @VM.desktopLock:
@@ -4576,7 +4576,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'hotplugNic'},
  'data': {'params': 'HotplugNicParams'},
- 'returns': {'vmList': 'VmFullDefinition'}}
+ 'returns': {'vmList': 'VmDefinition'}}
 
 ##
 # @VM.hotunplugNic:
@@ -4595,7 +4595,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'hotunplugNic'},
  'data': {'params': 'HotplugNicParams'},
- 'returns': {'vmList': 'VmFullDefinition'}}
+ 'returns': {'vmList': 'VmDefinition'}}
 
 ##
 # @HotplugDiskParams:
@@ -4629,7 +4629,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'hotplugDisk'},
  'data': {'params': 'HotplugDiskParams'},
- 'returns': {'vmList': 'VmFullDefinition'}}
+ 'returns': {'vmList': 'VmDefinition'}}
 
 ##
 # @VM.hotunplugDisk:
@@ -4648,7 +4648,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'hotunplugDisk'},
  'data': {'params': 'HotplugDiskParams'},
- 'returns': {'vmList': 'VmFullDefinition'}}
+ 'returns': {'vmList': 'VmDefinition'}}
 
 ##
 # @MigrateMode:
@@ -4740,8 +4740,8 @@
 # called directly.
 ##
 {'command': {'class': 'VM', 'name': 'migrationCreate'},
- 'data': {'params': 'VmFullDefinition'},
- 'returns': {'migrationPort': 'int', 'params': 'VmFullDefinition'}}
+ 'data': {'params': 'VmDefinition'},
+ 'returns': {'migrationPort': 'int', 'params': 'VmDefinition'}}
 
 ##
 # @VM.monitorCommand:
