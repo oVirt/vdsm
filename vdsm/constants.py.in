@@ -36,7 +36,7 @@ QEMU_PROCESS_USER = '@QEMUUSER@'
 #
 # The username of SASL authenticating for libvirt connection
 #
-SASL_USERNAME = "vdsm@rhevh"
+SASL_USERNAME = "vdsm@ovirt"
 
 # This is the domain version translation list
 # DO NOT CHANGE OLD VALUES ONLY APPEND

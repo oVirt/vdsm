@@ -456,7 +456,7 @@ _EOF
         /usr/sbin/setsebool virt_use_sanlock off
     fi
 
-    /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@rhevh
+    /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@ovirt
 
     if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
         /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
