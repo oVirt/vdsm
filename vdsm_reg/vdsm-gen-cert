@@ -49,7 +49,6 @@ class CSR:
         self.tsDir = tsDir
         self.VDSMKEY = tsDir + "/keys/vdsmkey.pem"
         self.VDSMCERT = tsDir + "/certs/vdsm-" + sub + "-cert.pem"
-        self.DHKEY = tsDir + '/keys/dh.pem'
 
     def xmlOutput(self):
         print "<BSTRAP component='Encryption setup' status='OK'/>"
@@ -58,7 +57,7 @@ class CSR:
 
     def runTest(self):
         deployUtil.pkiCleanup(self.VDSMKEY, self.VDSMCERT)
-        deployUtil.createCSR(self.orgName, self.subject, self.random_num, self.tsDir, self.VDSMKEY, self.DHKEY)
+        deployUtil.createCSR(self.orgName, self.subject, self.random_num, self.tsDir, self.VDSMKEY)
         self.xmlOutput()
 
 def main():

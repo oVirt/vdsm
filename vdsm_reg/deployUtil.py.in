@@ -1193,7 +1193,7 @@ def getSSLSocket(sock, certPath=None):
         ssl = socket.ssl(sock)
         return httplib.FakeSocket(sock, ssl)
 
-def createCSR(orgName, subject, random_num, tsDir, vdsmKey, dhKey):
+def createCSR(orgName, subject, random_num, tsDir, vdsmKey):
     template = """
     RANDFILE               = ~/.rnd
     [ req ]
@@ -1234,15 +1234,9 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey, dhKey):
     os.chown (vdsmKey, nUID, nGID)
     os.chmod (vdsmKey, 0440)
 
-    # openssl dhparam -out dh1024.pem 1024
-    _logExec([EX_OPENSSL, "dhparam", "-out", dhKey, str(DEF_KEY_LEN)])
-    os.chown (dhKey, nUID, nGID)
-    os.chmod (dhKey, 0440)
-
     if isOvirt():
         # save the certificates
         ovirtfunctions.ovirt_store_config(vdsmKey)
-        ovirtfunctions.ovirt_store_config(dhKey)
 
 def _cpuid(func):
     f = file('/dev/cpu/0/cpuid')

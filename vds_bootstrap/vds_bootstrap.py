@@ -847,10 +847,9 @@ class Deploy:
 
         vdsmKey = tsDir + '/keys/vdsmkey.pem'
         vdsmCert = tsDir + '/certs/vdsmcert.pem'
-        dhKey = tsDir + '/keys/dh.pem'
 
         deployUtil.pkiCleanup(vdsmKey, vdsmCert)
-        deployUtil.createCSR(orgName, subject, random_num, tsDir, vdsmKey, dhKey)
+        deployUtil.createCSR(orgName, subject, random_num, tsDir, vdsmKey)
         self._xmlOutput('Encryption setup', 'OK', None, None, "Ended successfully")
 # End of deploy class.
 
