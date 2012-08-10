@@ -56,6 +56,8 @@ class Timeout(RuntimeError):
 
 
 class CrabRPCServer(object):
+    log = logging.getLogger("Storage.CrabRPCServer")
+
     def __init__(self, myRead, myWrite):
         self.rfile = os.fdopen(myRead, "r")
         self.wfile = os.fdopen(myWrite, "wa")
@@ -95,7 +97,7 @@ class CrabRPCServer(object):
                 self.wfile.write(resp)
                 self.wfile.flush()
             except:
-                self._log.warn("Could not complete operation", exc_info=True)
+                self.log.warn("Could not complete operation", exc_info=True)
                 return
 
     def callRegisteredFunction(self, name, args, kwargs):
@@ -243,7 +245,7 @@ class PoolHandler(object):
 
 
 class RemoteFileHandlerPool(object):
-    _log = logging.getLogger("Storage.RemoteFileHandler")
+    log = logging.getLogger("Storage.RemoteFileHandler")
 
     def __init__(self, numOfHandlers):
         self._numOfHandlers = numOfHandlers
@@ -273,7 +275,7 @@ class RemoteFileHandlerPool(object):
                     self.handlers[i] = None
                     handler.stop()
                 except:
-                    self._log.error("Could not signal stuck handler (PID:%d)",
+                    self.log.error("Could not signal stuck handler (PID:%d)",
                             handler.process.pid, exc_info=True)
 
                 self.handlers[i] = None
