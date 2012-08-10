@@ -194,25 +194,21 @@ def cleanAll(random_num):
     """
     fReturn = True
     try:
-        if not isOvirt():
-            vds_bstrap = _WORK_DIR + '/vds_bootstrap_' + random_num + '.py'
-            vds_bstrap_cmp = _WORK_DIR + '/vds_bootstrap_complete_' + random_num + '.py'
-            vds_bstrap_deployutil = _WORK_DIR + '/deployUtil.py'
-            os.unlink(vds_bstrap)
-            os.unlink(vds_bstrap_cmp)
-            os.unlink(vds_bstrap + 'c')
-            os.unlink(vds_bstrap_cmp + 'c')
-            os.unlink(vds_bstrap_deployutil)
-            os.unlink(vds_bstrap_deployutil + 'c')
+        for f in (
+            '/vds_bootstrap_%s.py' % random_num,
+            '/vds_bootstrap_complete_%s.py' % random_num,
+            '/deployUtil.py'
+        ):
+            os.unlink(_WORK_DIR + f)
+            os.unlink(_WORK_DIR + f + "c")
 
-        req_conffile = _WORK_DIR + '/req_' + random_num + '.conf'
-        cert_reqfile = _WORK_DIR + '/cert_' + random_num + '.req'
-        cert_pemfile = _WORK_DIR + '/cert_' + random_num + '.pem'
-        ca_pemfile = _WORK_DIR + '/CA_' + random_num + '.pem'
-        os.unlink(req_conffile)
-        os.unlink(cert_reqfile)
-        os.unlink(cert_pemfile)
-        os.unlink(ca_pemfile)
+        for f in (
+            '/req_%s.conf' % random_num,
+            '/cert_%s.req' % random_num,
+            '/cert_%s.pem' % random_num,
+            '/CA_%s.pem' % random_num
+        ):
+            os.unlink(_WORK_DIR + f)
     except:
         pass
 
