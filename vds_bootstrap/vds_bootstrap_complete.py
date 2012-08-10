@@ -65,14 +65,16 @@ def Reboot(act=1):
     logging.debug("Reboot: ended.")
 
 def main():
-    """Usage: vds_bootstrap_complete.py  [-c vds_config_str] [-V] [-g] <random_num> [reboot]"""
+    """Usage: vds_bootstrap_complete.py  [-c vds_config_str] [-v <ver>] [-V] [-g] <random_num> [reboot]"""
     try:
         vds_config_str = None
         #FIXME: these flags are added for near future use
         installVirtualizationService = True
         installGlusterService = False
-        opts, args = getopt.getopt(sys.argv[1:], "c:Vg")
+        opts, args = getopt.getopt(sys.argv[1:], "v:c:Vg")
         for o,v in opts:
+            if o == "-v":
+                deployUtil.setBootstrapInterfaceVersion(int(v))
             if o == "-c":
                 # it should looks like: 'ssl=true;ksm_nice=5;images=/images/irsd'
                 # without white spaces in it.

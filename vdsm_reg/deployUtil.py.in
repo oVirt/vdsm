@@ -94,6 +94,12 @@ XML_QUOTES = {
     "'":'~'
 }
 
+#
+# Script interface to use, required for
+# multi-engine version support.
+#
+bootstrap_interface_version = 1
+
 def isOvirt():
     """
         This function checks if current machine runs ovirt platform.
@@ -1488,6 +1494,13 @@ def main():
         return 0
     print 'Missing arguments'
     return -1
+
+def getBootstrapInterfaceVersion():
+    return bootstrap_interface_version
+
+def setBootstrapInterfaceVersion(v):
+    global bootstrap_interface_version
+    bootstrap_interface_version = v
 
 if __name__ == '__main__':
     sys.exit(main())

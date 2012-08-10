@@ -930,6 +930,7 @@ def main():
 Usage: vds_bootstrap.py [options] <url> <subject> <random_num>
 
 options:
+    -v <bootstrap inteface version> - default 1
     -O <organizationName>
     -t <systemTime>
     -f <firewall_rules_file> -- override firewall rules.
@@ -945,8 +946,10 @@ obsolete options:
         firewallRulesFile = None
         installVirtualizationService = True
         installGlusterService = False
-        opts, args = getopt.getopt(sys.argv[1:], "r:O:t:f:n:u:Vg")
+        opts, args = getopt.getopt(sys.argv[1:], "v:r:O:t:f:n:u:Vg")
         for o,v in opts:
+            if o == "-v":
+                deployUtil.setBootstrapInterfaceVersion(int(v))
             if o == "-r":
                 rev_num = v
             if o == "-O":
