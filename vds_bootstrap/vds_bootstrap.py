@@ -47,29 +47,24 @@ import os.path
 import shutil
 import logging
 import logging.config
-import random
 import ConfigParser
 import socket
 import tempfile
+from time import strftime
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
-# set logging before deployUtil is first used
-rnum = str(random.randint(100,1000000))
-log_filename = SCRIPT_DIR + 'vds_bootstrap.' + rnum + '.log'
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S',
-                    filename=log_filename,
-                    filemode='w')
+import deployUtil
 
 try:
-    import deployUtil
-except:
-    message = "Error trying to deploy library."
-    print ("<BSTRAP component='INIT' status='FAIL' message='%s'/>" % message)
-    logging.debug("<BSTRAP component='INIT' status='FAIL' message='%s'/>", message)
-    logging.error(message, exc_info=True)
-    exit(-1)
+    LOGDIR=os.environ["OVIRT_LOGDIR"]
+except KeyError:
+    LOGDIR=tempfile.gettempdir()
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)-8s %(module)s '
+                           '%(lineno)d %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='%s/vdsm-bootstrap-%s-%s.log' %
+                             (LOGDIR, "phase1", strftime("%Y%m%d%H%M%S")),
+                    filemode='w')
 
 rhel6based = deployUtil.versionCompare(deployUtil.getOSVersion(), "6.0") >= 0
 
@@ -138,8 +133,6 @@ else:
 
 VDSM_CONF = '/etc/vdsm/vdsm.conf'
 VDSM_DIR = "/usr/share/vdsm/"
-
-DTV_REPO='/tmp/dtv.'+rnum+'.repo'
 
 # Adding VDSM_DIR to the current python path
 try:

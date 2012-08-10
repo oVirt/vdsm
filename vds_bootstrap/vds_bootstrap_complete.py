@@ -23,20 +23,24 @@ import os
 import sys
 import getopt
 import logging
+import tempfile
 from time import strftime
 
 import deployUtil
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
-log_filename = SCRIPT_DIR + 'vds_bootstrap_complete.' + \
-                strftime("%Y%m%d_%H%M%S") + '.log'
+VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
+
+try:
+    LOGDIR=os.environ["OVIRT_LOGDIR"]
+except KeyError:
+    LOGDIR=tempfile.gettempdir()
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(module)s '
                            '%(lineno)d %(message)s',
-                    filename=log_filename,
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='%s/vdsm-bootstrap-%s-%s.log' %
+                             (LOGDIR, "phase2", strftime("%Y%m%d%H%M%S")),
                     filemode='w')
-
-VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
 
 def Reboot(act=1):
     """
