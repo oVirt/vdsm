@@ -262,7 +262,8 @@ class FileStorageDomain(sd.StorageDomain):
         """
         self.log.info("sdUUID=%s", self.sdUUID)
         self.invalidateMetadata()
-        self.getMetadata()
+        if not len(self.getMetadata()):
+            raise se.StorageDomainAccessError(self.sdUUID)
 
     def validateMasterMount(self):
          return self.oop.fileUtils.pathExists(self.getMasterDir())

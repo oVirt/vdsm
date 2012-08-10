@@ -722,7 +722,8 @@ class BlockStorageDomain(sd.StorageDomain):
         self.log.info("sdUUID=%s", self.sdUUID)
         lvm.chkVG(self.sdUUID)
         self.invalidateMetadata()
-        self.getMetadata()
+        if not len(self.getMetadata()):
+            raise se.StorageDomainAccessError(self.sdUUID)
 
     def invalidate(self):
         """
