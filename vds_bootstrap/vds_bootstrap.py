@@ -729,7 +729,7 @@ class Deploy:
         self._xmlOutput('SetNetworking', self.status, None, None, self.message)
         return self.rc
 
-    def setSSHAccess(self, url):
+    def setSSHAccess(self, url, engine_ssh_key):
         """
             Sets ssh access for this host from the managment server.
         """
@@ -737,18 +737,27 @@ class Deploy:
         self.status = "OK"
         self.rc = True
         strKey = None
-        vdcAddress = None
-        vdcPort = None
 
-        vdcAddress, vdcPort = deployUtil.getAddress(url)
-        if vdcAddress is not None:
-            strKey = deployUtil.getAuthKeysFile(vdcAddress, vdcPort)
-            if strKey is None:
+        # TODO remove legacy
+        if deployUtil.getBootstrapInterfaceVersion() == 1 and engine_ssh_key == None:
+            vdcAddress = None
+            vdcPort = None
+
+            vdcAddress, vdcPort = deployUtil.getAddress(url)
+            if vdcAddress is not None:
+                strKey = deployUtil.getAuthKeysFile(vdcAddress, vdcPort)
+                if strKey is None:
+                    self.rc = False
+                    self.message = "Failed to retrieve server SSH key."
+            else:
+                self.message = "Failed to extract server address."
                 self.rc = False
-                self.message = "Failed to retrieve server SSH key."
         else:
-            self.message = "Failed to extract server address."
-            self.rc = False
+            try:
+                strKey = file(engine_ssh_key).read()
+            except Exception, e:
+                self.message = "Failed to read SSH key file " + str(e)
+                self.rc = False
 
         if self.rc:
             if not deployUtil.handleSSHKey(strKey):
@@ -847,7 +856,7 @@ class Deploy:
 # End of deploy class.
 
 def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
-        firewallRulesFile, installVirtualizationService, installGlusterService):
+        firewallRulesFile, engine_ssh_key, installVirtualizationService, installGlusterService):
     """ --- Check VDS Compatibility.
     """
     logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s', installVirtualizationService = '%s', installGlusterService = '%s')"%(subject, random_num, rev_num, installVirtualizationService, installGlusterService))
@@ -903,7 +912,7 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
         logging.error('setNetworking test failed')
         return False
 
-    if not oDeploy.setSSHAccess(iurl):
+    if not oDeploy.setSSHAccess(iurl, engine_ssh_key):
         logging.error('setSSHAccess test failed')
         return False
 
@@ -944,9 +953,10 @@ obsolete options:
         orgName = 'Red Hat Inc.'
         systime = None
         firewallRulesFile = None
+        engine_ssh_key = None
         installVirtualizationService = True
         installGlusterService = False
-        opts, args = getopt.getopt(sys.argv[1:], "v:r:O:t:f:n:u:Vg")
+        opts, args = getopt.getopt(sys.argv[1:], "v:r:O:t:f:S:n:u:Vg")
         for o,v in opts:
             if o == "-v":
                 deployUtil.setBootstrapInterfaceVersion(int(v))
@@ -963,6 +973,8 @@ obsolete options:
             elif o == '-f':
                 firewallRulesFile = v
                 NEEDED_SERVICES.append('iptables')
+            elif o == '-S':
+                engine_ssh_key = v
 
         url = args[0]
         subject = args[1]
@@ -977,7 +989,7 @@ obsolete options:
     logging.debug('**** Start VDS Validation ****')
     try:
         ret = VdsValidation(url, subject, random_num, rev_num,
-                            orgName, systime, firewallRulesFile, installVirtualizationService, installGlusterService)
+                            orgName, systime, firewallRulesFile, engine_ssh_key, installVirtualizationService, installGlusterService)
     except:
         logging.error("VDS validation failed", exc_info=True)
         logging.error(main.__doc__)

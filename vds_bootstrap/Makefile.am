@@ -18,6 +18,37 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+include $(top_srcdir)/build-aux/Makefile.subs
+
+CLEANFILES = \
+	deployUtil.py.in \
+	deployUtil.py
+
+#
+# NOTE:
+# We keep old version to allow
+# old engine to use upgraded package
+#
+
+# BEGIN-VERSION-1
 dist_vdsmbootstrap_SCRIPTS = \
 	vds_bootstrap_complete.py \
 	vds_bootstrap.py
+
+nodist_vdsmbootstrap_SCRIPTS = \
+	deployUtil.py
+# END-VERSION-1
+
+# BEGIN-VERSION-2
+interface2dir=$(vdsmbootstrapdir)/interface-2
+dist_interface2_SCRIPTS = \
+	vds_bootstrap_complete.py \
+	vds_bootstrap.py \
+	setup
+
+nodist_interface2_SCRIPTS = \
+	deployUtil.py
+# END-VERSION-2
+
+deployUtil.py.in:	$(top_srcdir)/vdsm_reg/deployUtil.py.in
+	ln -s $(top_srcdir)/vdsm_reg/deployUtil.py.in

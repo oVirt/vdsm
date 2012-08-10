@@ -1,0 +1,371 @@
+#!/usr/bin/python
+#
+# Copyright 2008-2012 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import sys, getopt
+import os
+import subprocess
+import logging, logging.config
+import traceback
+import string
+import re
+import tempfile
+from time import strftime
+
+SUPPORTED_PLATFORMS = [ "RedHatEnterpriseServer", "Fedora" ]
+HYPERVISOR_PLATFORMS = [ "RedHatEnterpriseVirtualizationHypervisor", "RedHatEnterpriseHypervisor", "oVirtNodeHypervisor" ]
+HYPERVISOR_RELEASE_FILE = '/etc/rhev-hypervisor-release'
+REDHAT_RELEASE_FILE = '/etc/redhat-release'
+vdsm_reg_conf_file = '/etc/vdsm-reg/vdsm-reg.conf'
+
+try:
+    LOGDIR=os.environ["OVIRT_LOGDIR"]
+except KeyError:
+    LOGDIR=tempfile.gettempdir()
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)-8s %(module)s '
+                           '%(lineno)d %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='%s/vdsm-bootstrap-%s-%s.log' %
+                             (LOGDIR, "setup", strftime("%Y%m%d%H%M%S")),
+                    filemode='w')
+
+def printNlog(s):
+    print s
+    logging.debug(s)
+
+def releaseFileExists():
+    """ -- According to lsb_release:
+           Read first line from HYPERVISOR_RELEASE_FILE, then try REDHAT_RELEASE_FILE and then return it.
+    """
+    if os.path.exists(HYPERVISOR_RELEASE_FILE):
+        return True, HYPERVISOR_RELEASE_FILE
+    elif os.path.exists(REDHAT_RELEASE_FILE):
+        return True, REDHAT_RELEASE_FILE
+    else:
+        return False, HYPERVISOR_RELEASE_FILE + ", " + REDHAT_RELEASE_FILE
+
+def get_id_line():
+    line = ''
+    RELEASE_FILE = None
+
+    try:
+        fileExists, releaseFile =  releaseFileExists()
+        RELEASE_FILE = releaseFile
+        if (fileExists):
+            release = open(releaseFile, "r")
+            line = release.readline()
+            line = line.replace ("\n", "")
+            release.close
+            logging.debug("get_id_line: read line %s.", line)
+        else:
+            line = None
+            message = "Failed to find the release file(s): " + releaseFile
+            logging.error(message)
+    except:
+        line = None
+        message = "Failed to read release file: " + str(RELEASE_FILE)
+        logging.error(message + "\n" + traceback.format_exc())
+
+    return line
+
+def lsb_release():
+    """ -- According to lsb_release:
+         1. Remove 'Linux'
+         2. Remove release data
+         3. For short format, remove spaces.
+    """
+    res = get_id_line()
+    logging.debug("lsb_release: input line %s.", res)
+
+    if res is not None:
+        res = re.sub(r' [Ll][Ii][Nn][Uu][Xx]', '', res)
+        res = re.sub(r'relea.*', '', res)
+        res = re.sub(r' ', '', res)
+
+    logging.debug("lsb_release: return: %s.", res)
+    return res
+
+def testPlatform():
+    ''' testPlatform evaluates the platform version and returns
+        0 - platform is eligible for installation
+        1 - platform is ovirt-node
+        2 - platform is not eligible for installation
+    '''
+    fReturn = 0
+    st = "OK"
+    message = "Test platform succeeded"
+    component = "INSTALLER"
+
+    try:
+        res = lsb_release()
+        if res is None:
+            fReturn = 2
+            message = 'Unable to calculate platform ID'
+            logging.error(message)
+            st = "FAIL"
+        elif res in HYPERVISOR_PLATFORMS:
+            fReturn = 1
+            component = "RHEV_INSTALL"
+            message = "oVirt Node DETECTED"
+            logging.debug(message)
+            st = "OK"
+        elif res not in SUPPORTED_PLATFORMS:
+            fReturn = 2
+            message = "Unsupported platform: %s" % res
+            logging.error(message)
+            st = "FAIL"
+    except:
+        fReturn = 2
+        message = "Failed to test platform compatibility"
+        logging.error(message + "\n" + traceback.format_exc())
+        st = "FAIL"
+
+    printNlog("<BSTRAP component='%s' status='%s' message='%s'/>" % (component,st, message))
+    sys.stdout.flush()
+
+    return fReturn
+
+def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_config_str, url_rpm, vds_server, random_num, script, vds_complete, firewall_rules_file, engine_ssh_key, rebootAfterInstallation, installVirtualizationService, installGlusterService):
+    """ -- Run VDS bootstrap scripts
+    """
+    try:
+        if os.path.exists(script):
+            execfn = [script]
+            execfn += ["-v", str(bootstrap_interface_version)]
+            if not installVirtualizationService:
+                execfn += ["-V"]
+            if installGlusterService:
+                execfn += ["-g"]
+            if not vds_complete:
+                if remote_nfs:
+                    execfn += ["-m", remote_nfs]
+                if orgName:
+                    execfn += ["-O", orgName]
+                if systime:
+                    execfn += ["-t", systime]
+                if firewall_rules_file:
+                    execfn += ["-f", firewall_rules_file]
+                if engine_ssh_key:
+                    execfn += ["-S", engine_ssh_key]
+                execfn += [url_rpm, vds_server, random_num]
+            else:
+                if vds_config_str:
+                    execfn += ["-c", vds_config_str, random_num]
+                else:
+                    execfn += [random_num]
+                execfn.append(str(int(rebootAfterInstallation)))
+            logging.debug("trying to run %s script cmd = '%s'",script, string.join(execfn, " "))
+            subprocess.Popen(execfn).communicate()
+        else:
+            logging.debug("script %s doen not exist",script)
+    except:
+        logging.error(traceback.format_exc())
+
+def process_ovirt_platform(url_bs, engine_port, random_num, systime, engine_ssh_key):
+
+    """ update vdsm-reg.conf and restart vdsm-reg service """
+    import time
+    import calendar
+
+    return_value = False
+    ticket = None
+
+    try:
+        time_struct = time.strptime(systime, '%Y-%m-%dT%H:%M:%S')
+        ticket = calendar.timegm(time_struct)
+    except ValueError, ex:
+        logging.debug("setHostTime: Failed to parse ENGINE time. message= " + str(ex))
+        return 1
+
+    if ticket is not None:
+        return_value = update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket)
+
+    return return_value
+
+def update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket):
+    from urlparse import urlparse
+
+    try:
+        import deployUtil
+    except:
+        printNlog("<BSTRAP component='INIT' status='FAIL' message='Error trying to deploy library.'/>")
+        logging.error(traceback.format_exc())
+        return False
+
+    return_value = False
+    if not os.path.exists(vdsm_reg_conf_file):
+        message = "Error trying to configure registration service."
+        printNlog("<BSTRAP component='UPDATE_VDSM_REG_CONF' status='FAIL' message='%s'/>" % (message) )
+        logging.debug("file %s does not exist", vdsm_reg_conf_file)
+    else:
+        vdc_url = urlparse(url_bs)
+        if engine_port is None:
+            if vdc_url.port is not None:
+                engine_port = str(vdc_url.port)
+
+        if engine_port is not None:
+            deployUtil._updateFileLine(vdsm_reg_conf_file, "vdc_host_port", str(engine_port), True)
+
+        deployUtil._updateFileLine(vdsm_reg_conf_file, "vdc_host_name", str(vdc_url.hostname), True)
+        deployUtil._updateFileLine(vdsm_reg_conf_file, "ticket", str(ticket), True)
+        deployUtil.ovirtfunctions.ovirt_store_config(vdsm_reg_conf_file)
+
+        if handle_ssh_key(vdc_url.hostname, str(engine_port), engine_ssh_key):
+            out, err, return_code = deployUtil.setService('vdsm-reg', 'restart')
+        else:
+            return_code = None
+
+        if not return_code:
+            return_value = True
+    return return_value
+
+def handle_ssh_key(host, port, engine_ssh_key):
+    import deployUtil
+
+    ssh_result = False
+    strKey = None
+
+    try:
+        strKey = file(engine_ssh_key).read()
+    except:
+        logging.error(traceback.format_exc())
+
+    if strKey is not None:
+        ssh_result = deployUtil.handleSSHKey(strKey)
+
+    if ssh_result:
+        printNlog("<BSTRAP component='RHEV_INSTALL' status='OK' message='RHEV-H ACCESSIBLE'/>")
+    else:
+        printNlog("<BSTRAP component='RHEV_INSTALL' status='FAIL' message='Host failed to download management server public-key.'/>")
+
+    return ssh_result
+
+def main():
+    """Usage: vds_installer.py  [-c vds_config_str] [-v ver] [-m remote_nfs] [-r rev_num] [-O organizationName] [-t YYYY-MM-DDTHH:mm:SS_system_time] [-S engine-ssh-key] [-p engine_port] [-V] [-g] <url_bs> <url_rpm> <vds_server> <random_num> <vds_complete>
+                    url_bs - components url
+                    url_rpm - rpm download url
+                    random_num - random number for temp. file names generation
+                    vds_server - vds server for CSR usage
+                    vds_complete - to run first vds_bootstrap script = false
+                                   to run second vds_bootstrap_complete script = true
+                    -v - interface version, default=2
+                    -V - don't install virutalization components on the host
+    """
+    try:
+        bootstrap_interface_version = 2
+        remote_nfs = None
+        rev_num = None
+        vds_config_str = None
+        orgName = None
+        systime = None
+        engine_port = None
+        firewall_rules_file = None
+        engine_ssh_key = None
+        rebootAfterInstallation = False
+        installVirtualizationService = True
+        installGlusterService = False
+        opts, args = getopt.getopt(sys.argv[1:], "c:m:r:O:t:p:bf:S:gVv:")
+        for o,v in opts:
+            if o == "-v":
+                bootstrap_interface_version = int(v)
+            if o == "-c":
+                vds_config_str = v
+            if o == "-m":
+                remote_nfs = v
+            if o == "-r":
+                rev_num = v
+            if o == "-O":
+                orgName = v
+            if o == "-t":
+                systime = v
+            if o == "-p":
+                engine_port = v
+            if o == "-f":
+                firewall_rules_file = v
+            if o == "-S":
+                engine_ssh_key = v
+            if o == "-b":
+                rebootAfterInstallation = True
+            if o == "-V":
+                installVirtualizationService = False
+            if o == "-g":
+                installGlusterService = True
+
+        url_bs = args[0]
+        url_rpm = args[1]
+        vds_server = args[2]
+        random_num = args[3]
+        vds_complete = args[4]
+
+        if bootstrap_interface_version != 2:
+            printNlog("bootstrap interface %s is unsupported" %
+                      bootstrap_interface_version)
+            return False
+
+        if vds_complete.lower() == 'true':
+            vds_complete = True
+        elif vds_complete.lower() == 'false':
+            vds_complete = False
+        else:
+            printNlog(main.__doc__)
+            return False
+    except:
+        printNlog(main.__doc__)
+        return False
+    try:
+        logging.debug('**** Start VDS Installation ****')
+        res = testPlatform()
+
+        if res == 0:
+            if not vds_complete:
+                vds_script = './vds_bootstrap.py'
+            else:
+                vds_script = './vds_bootstrap_complete.py'
+
+            runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_config_str, url_rpm, vds_server, random_num, vds_script, vds_complete, firewall_rules_file, engine_ssh_key, rebootAfterInstallation, installVirtualizationService, installGlusterService)
+            if firewall_rules_file is not None:
+                try:
+                    os.unlink(firewall_rules_file)
+                except:
+                    logging.warn("Failed to delete firewall conf file: %s" , firewall_rules_file)
+        elif res == 1:
+            ret_value = process_ovirt_platform(url_bs, engine_port, random_num, systime, engine_ssh_key)
+            if ret_value is False:
+                printNlog("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
+            return ret_value
+        elif res == 2:
+            logging.error("Failed platform test.")
+            return False
+
+    except:
+        logging.error(traceback.format_exc())
+        return False
+    return True
+
+if __name__ == "__main__":
+    # make sure nobody can access our files
+    os.umask(0077)
+
+    # working directory is script location
+    os.chdir(os.path.dirname(sys.argv[0]))
+
+    # execute
+    sys.exit(not main()) # exit=0 is success

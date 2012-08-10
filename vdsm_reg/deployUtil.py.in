@@ -199,19 +199,25 @@ def cleanAll(random_num):
     """ Remove temp files.
     """
 
-    for f in (
-        '/vds_bootstrap_%s.py' % random_num,
-        '/vds_bootstrap_complete_%s.py' % random_num,
-        '/deployUtil.py'
-    ):
-        _removeNoError(_WORK_DIR + f)
-        _removeNoError(_WORK_DIR + f + "c")
+    #
+    # Old vds_installer.py did not cleanup after
+    # running
+    #
+    if bootstrap_interface_version == 1:
+        for f in (
+            '/vds_bootstrap_%s.py' % random_num,
+            '/vds_bootstrap_complete_%s.py' % random_num,
+            '/deployUtil.py'
+        ):
+            _removeNoError(_WORK_DIR + f)
+            _removeNoError(_WORK_DIR + f + "c")
 
     for f in (
         '/req_%s.conf' % random_num,
         '/cert_%s.req' % random_num,
         '/cert_%s.pem' % random_num,
-        '/CA_%s.pem' % random_num
+        '/CA_%s.pem' % random_num,
+        '/ovirt-id_rsa_%s' % random_num
     ):
         _removeNoError(_WORK_DIR + f)
 

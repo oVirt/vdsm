@@ -855,9 +855,7 @@ exit 0
 %files bootstrap
 %defattr(-, root, root, -)
 %doc COPYING
-%{_datadir}/%{vdsm_bootstrap}/vds_bootstrap.py*
-%{_datadir}/%{vdsm_bootstrap}/deployUtil.py*
-%{_datadir}/%{vdsm_bootstrap}/vds_bootstrap_complete.py*
+%{_datadir}/%{vdsm_bootstrap}
 
 %files reg
 %defattr(-, root, root, -)
