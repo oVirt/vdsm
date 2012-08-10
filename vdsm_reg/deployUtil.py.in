@@ -39,7 +39,6 @@ import glob
 import imp
 from optparse import OptionParser
 from itertools import dropwhile, islice
-import tempfile
 
 try:
     from ovirtnode import ovirtfunctions
@@ -56,7 +55,7 @@ P_SBIN = '/sbin/'
 P_USR_BIN = '/usr/bin/'
 P_USR_SBIN = '/usr/sbin/'
 P_LIBEXEC = '/usr/libexec/'
-P_TMP = tempfile.gettempdir()
+_WORK_DIR = "/tmp"    # hardcoded as server use it as-is
 
 # Executables
 EX_CAT = '@CAT_PATH@'
@@ -105,11 +104,6 @@ def isOvirt():
         return True
     else:
         return False
-
-if isOvirt():
-    _WORK_DIR = P_TMP
-else:
-    _WORK_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
 
 def _logExec(argv):
     """
