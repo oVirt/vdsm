@@ -504,13 +504,9 @@ class ConfigWriter(object):
             entries.append('\n' + entry + '=' + value)
 
         self._backup(conffile)
-        try:
-            with open(conffile, 'w') as f:
-                f.writelines(entries)
-                f.close()
-        except:
-            self.restoreAtomicBackup()
-            raise
+        with open(conffile, 'w') as f:
+            f.writelines(entries)
+            f.close()
 
     def getMaxMtu(self, nics, mtu):
         """
