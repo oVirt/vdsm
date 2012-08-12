@@ -121,9 +121,10 @@ test_conflicting_conf() {
     then
         return 0
     else
-        echo "conflicting vdsm and libvirt tls configuration."
-        echo "vdsm.conf with ssl=False requires libvirt with:"
-        echo "listen_tcp=1, auth_tcp=\"none\" and spice_tls=0."
+        echo "conflicting vdsm and libvirt-qemu tls configuration."
+        echo "vdsm.conf with ssl=False requires the following changed: "
+        echo "libvirtd.conf: listen_tcp=1, auth_tcp=\"none\", "
+        echo "qemu.conf: spice_tls=0."
         return 1
     fi
 }
