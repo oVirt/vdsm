@@ -78,6 +78,9 @@ class CpuInfo(object):
         return len(set((p.get('core id', '0'), p.get('physical id', '0'))
                     for p in self._info.values()))
 
+    def threads(self):
+        return len(self._info)
+
     def sockets(self):
         phys_ids = [p.get('physical id', '0') for p in self._info.values()]
         return len(set(phys_ids))
@@ -233,7 +236,11 @@ def get():
                     os.path.exists('/dev/kvm')).lower()
 
     cpuInfo = CpuInfo()
-    caps['cpuCores'] = str(cpuInfo.cores())
+    if config.getboolean('vars', 'report_host_threads_as_cores'):
+        caps['cpuCores'] = str(cpuInfo.threads())
+    else:
+        caps['cpuCores'] = str(cpuInfo.cores())
+
     caps['cpuSockets'] = str(cpuInfo.sockets())
     caps['cpuSpeed'] = cpuInfo.mhz()
     if config.getboolean('vars', 'fake_kvm_support'):
