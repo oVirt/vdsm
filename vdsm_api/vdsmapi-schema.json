@@ -308,7 +308,7 @@
 #             <var>=<val> pairs
 #
 # Returns:
-# @power:  #optional The new power status of the remote node
+# The new power status of the remote node
 #
 # Since: 4.10.0
 ##
@@ -316,7 +316,7 @@
  'data': {'addr': 'str', 'port': 'int', 'agent': 'str', 'username': 'str',
           'password': 'str', 'action': 'FenceNodeAction', '*secure': 'bool',
           '*options': 'str'},
- 'returns': {'*power': 'FenceNodePowerStatus'}}
+ 'returns': 'FenceNodePowerStatus'}
 
 ##
 # @TaskInfo:
@@ -347,14 +347,14 @@
 # Get extra information about all tasks.
 #
 # Returns:
-# @allTasksInfo:  A mapping of Task information
+# A mapping of Task information
 #
 # Since: 4.10.0
 #
 # Notes: Currently this API only returns tasks that are tagged with 'spm'.
 ##
 {'command': {'class': 'Host', 'name': 'getAllTasksInfo'},
- 'returns': {'allTasksInfo': 'TasksInfo'}}
+ 'returns': 'TasksInfo'}
 
 ##
 # @TaskState:
@@ -430,14 +430,14 @@
 # Get status information for all tasks.
 #
 # Returns:
-# @allTasksStatus:  A mapping of Task statuses
+# A mapping of Task statuses
 #
 # Since: 4.10.0
 #
 # Notes: Currently this API only returns tasks that are tagged with 'spm'.
 ##
 {'command': {'class': 'Host', 'name': 'getAllTasksStatuses'},
- 'returns': {'allTasksStatus': 'TasksStatus'}}
+ 'returns': 'TasksStatus'}
 
 ##
 # @Host.setMOMPolicy:
@@ -451,9 +451,9 @@
  'data': {'policy': 'str'}}
 
 ##
-# @TasksStatus:
+# @TaskDetails:
 #
-# A collection of status information about a task.
+# A collection of information about a task.
 #
 # @id:       The task @UUID
 #
@@ -471,13 +471,13 @@
 #
 # Since: 4.10.0
 ##
-{'type': 'TaskStatus',
+{'type': 'TaskDetails',
  'data': {'id': 'UUID', 'verb': 'str', 'state': 'TaskState',
           'code': 'int', 'message': 'str', 'taskResult': 'TaskResult',
           'tag': 'str'}}
 
 ##
-# @TaskDetails:
+# @TasksDetails:
 #
 # A mapping of Task details indexed by Task UUID.
 #
@@ -500,7 +500,7 @@
 #        @Host.getAllTasksInfo
 ##
 {'command': {'class': 'Host', 'name': 'getAllTasks'},
- 'returns': {'tasks': 'TasksDetails'}}
+ 'returns': 'TasksDetails'}
 
 
 ##
@@ -892,6 +892,9 @@
 #
 # @guestOverhead:       The amount of memory reserved for per-guest overhead
 #
+# @netConfigDirty:      Indicates if there are uncommitted changes to the
+#                       network configuration
+#
 # Since: 4.10.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -911,7 +914,7 @@
           'emulatedMachines': ['str'], 'ISCSIInitiatorName': 'str',
           'HBAInventory': 'HbaInventory', 'vmTypes': ['VmType'],
           'memSize': 'uint', 'reservedMem': 'uint',
-          'guestOverhead': 'uint'}}
+          'guestOverhead': 'uint', 'netConfigDirty': 'bool'}}
 
 ##
 # @Host.getCapabilities:
@@ -919,14 +922,12 @@
 # Get host capabilities.
 #
 # Returns:
-# @info:            Host capabilities information
-# @netConfigDirty:  Indicates if there are uncommitted changes to the network
-#                   configuration
+# Host capabilities information
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getCapabilities'},
- 'returns': {'info': 'VdsmCapabilities', 'netConfigDirty': 'bool'}}
+ 'returns': 'VdsmCapabilities'}
 
 ##
 # @Host.getConnectedStoragePools:
@@ -934,12 +935,12 @@
 # Get a list of all Storage Pools that are connected to this host.
 #
 # Returns:
-# @poollist:  A list of Storage Pool UUIDs
+# A list of Storage Pool UUIDs
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getConnectedStoragePools'},
- 'returns': {'poollist': ['UUID']}}
+ 'returns': ['UUID']}
 
 ##
 # @BlockDeviceType:
@@ -1069,14 +1070,14 @@
 # @guid:  The globally unique identifier of the block device
 #
 # Returns:
-# @info:  Block device information
+# Block device information
 #
 # Since: 4.10.0
 # XXX: Possibly missing 'options' parameter
 ##
 {'command': {'class': 'Host', 'name': 'getDeviceInfo'},
  'data': {'guid': 'UUID'},
- 'returns': {'info': 'BlockDeviceInfo'}}
+ 'returns': 'BlockDeviceInfo'}
 
 ##
 # @Host.getDeviceList:
@@ -1086,13 +1087,13 @@
 # @storageType:  #optional Only return devices of this type
 #
 # Returns:
-# @devList:  An array of @BlockDeviceInfo
+# An array of @BlockDeviceInfo
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getDeviceList'},
  'data': {'*storageType': 'BlockDeviceType'},
- 'returns': {'devList': ['BlockDeviceInfo']}}
+ 'returns': ['BlockDeviceInfo']}
 
 ##
 # @DeviceVisibilityMap:
@@ -1112,13 +1113,13 @@
 # @guidList:  A list of block device GUIDs
 #
 # Returns:
-# @visibility:  Accessibility for each device
+# Accessibility for each device
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getDevicesVisibility'},
  'data': {'guidList': ['UUID']},
- 'returns': {'visibility': 'DeviceVisibilityMap'}}
+ 'returns': 'DeviceVisibilityMap'}
 
 ##
 # @VolumeGroupState:
@@ -1279,13 +1280,13 @@
 #                type
 #
 # Returns:
-# @vglist:  A list of @VolumeGroupInfo items
+# A list of @VolumeGroupInfo items
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getLVMVolumeGroups'},
  'data': {'*storageType': 'BlockDeviceType'},
- 'returns': {'vglist': ['VolumeGroupInfo']}}
+ 'returns': ['VolumeGroupInfo']}
 
 ##
 # @NetworkInterfaceState:
@@ -1505,12 +1506,12 @@
 # Get host statistics.
 #
 # Returns:
-# @info:  The set of host statistics
+# The host statistics
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getStats'},
- 'returns': {'info': 'HostStats'}}
+ 'returns': 'HostStats'}
 
 ##
 # @StorageDomainImageClass:
@@ -1567,14 +1568,14 @@
 # @remotePath:   #optional Limit to Domains having this remotePath
 #
 # Returns:
-# @domlist:  A list of known Storage Domains
+# A list of known Storage Domains
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getStorageDomains'},
  'data': {'*spUUID': 'UUID', '*domainClass': 'StorageDomainImageClass',
           '*storageType': 'StorageDomainType', '*remotePath': 'str'},
- 'returns': {'domlist': ['UUID']}}
+ 'returns': ['UUID']}
 
 ##
 # @StorageDomainStatsMap:
@@ -1591,13 +1592,12 @@
 # Get statistics and liveness of currently attached Storage Domains.
 #
 # Returns:
-# @XXX:  Statistics for all storage domains
+# Statistics for all storage domains
 #
 # Since: 4.10.0
-# XXX: The return value is in the same dictionary as the command status!
 ##
 {'command': {'class': 'Host', 'name': 'getStorageRepoStats'},
- 'returns': {'XXX': 'StorageDomainStatsMap'}}
+ 'returns': 'StorageDomainStatsMap'}
 
 ##
 # @VmStatus:
@@ -2363,13 +2363,13 @@
 # @vmList:      #optional Filter the results by a list of UUIDs
 #
 # Returns:
-# @vmList:  A list of VM definitions
+# A list of VM definitions
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getVMList'},
  'data': {'*fullStatus': 'bool', '*vmList': ['UUID']},
- 'returns': {'vmList': ['VmDefinition']}}
+ 'returns': ['VmDefinition']}
 
 ##
 # @Host.ping:
@@ -2658,15 +2658,13 @@
 # @conRefArgs:  Connection parameters
 #
 # Returns:
-# @results:  A dictionary of status codes indexed by the same @UUID values in
-#            @conRefArgs.
+# A dictionary of status codes indexed by the same @UUID values in @conRefArgs.
 #
 # Since: 4.10.0
-# XXX: Extension: map data type ['key type', 'val type']
 ##
 {'command': {'class': 'ConnectionRefs', 'name': 'acquire'},
  'data': {'conRefArgs': 'ConnectionRefArgsMap'},
- 'returns': {'results': 'ConnectionRefArgsStatusMap'}}
+ 'returns': 'ConnectionRefArgsStatusMap'}
 
 ##
 # @ConnectionRefs.release:
@@ -2676,15 +2674,13 @@
 # @refIDs:  A list of @UUID values
 #
 # Returns:
-# @results:  A dictionary of status codes indexed by the same @UUID values that
-#            were passed in @0.
+# A dictionary of status codes indexed by ConnectionRef UUID
 #
 # Since: 4.10.0
-# XXX: Extension: list data type
 ##
 {'command': {'class': 'ConnectionRefs', 'name': 'release'},
  'data': {'refIDs': ['UUID']},
- 'returns': {'results':  'ConnectionRefArgsStatusMap'}}
+ 'returns': 'ConnectionRefArgsStatusMap'}
 
 ##
 # @ConnectionRefMap:
@@ -2702,12 +2698,12 @@
 # Get information about all registered storage connection references.
 #
 # Returns:
-# @connectionslist:  A dictionary of @ConnectionRef objects indexed by @UUID
+# A dictionary of @ConnectionRef objects indexed by @UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'ConnectionRefs', 'name': 'statuses'},
- 'returns': {'connectionslist': 'ConnectionRefMap'}}
+ 'returns': 'ConnectionRefMap'}
 
 ## Category: @ISCSIConnection ##################################################
 ##
@@ -2737,17 +2733,12 @@
 # Discover available targets for this @ISCSIConnection.
 #
 # Returns:
-# @targets:      A list of discovered target iqns
-#
-# @fullTargets:  A list of discovered targets in the form:
-#                '<host>:<port>,<tpgt> <iqn>'
+# A list of discovered targets in the form: '<host>:<port>,<tpgt> <iqn>'
 #
 # Since: 4.10.0
-# XXX: The fullTargets strings should be broken out into their respective parts
-# XXX: The return values are in the same dictionary as the command status!
 ##
 {'command': {'class': 'ISCSIConnection', 'name': 'discoverSendTargets'},
- 'returns': {'targets': ['str'], 'fullTargets': ['str']}}
+ 'returns': ['str']}
 
 ## Category: @Image ############################################################
 ##
@@ -2778,13 +2769,13 @@
 # @force:     Force the operation and do not perform any validation
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'delete'},
  'data': {'postZero': 'bool', 'force': 'bool'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @Image.deleteVolumes:
@@ -2798,13 +2789,13 @@
 # @force:       Force the operation and do not perform any validation
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'deleteVolumes'},
  'data': {'volumeList': ['UUID'], '*postZero': 'bool', '*force': 'bool'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @Image.getVolumes:
@@ -2812,12 +2803,12 @@
 # Get a list of Volumes associated with this Image.
 #
 # Returns:
-# @uuidlist:  A list of Image UUIDs
+# A list of Image UUIDs
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'getVolumes'},
- 'returns': {'uuidlist': ['UUID']}}
+ 'returns': ['UUID']}
 
 ##
 # @Image.mergeSnapshots:
@@ -2831,13 +2822,13 @@
 # @postZero:   If True, overwrite @successor with zeroes after conversion
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'mergeSnapshots'},
  'data': {'ancestor': 'UUID', 'successor': 'UUID', 'postZero': 'bool'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @ImageMoveOperation:
@@ -2868,14 +2859,14 @@
 # @force:      Force the operation and do not perform any validation
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'move'},
  'data': {'dstSdUUID': 'UUID', 'operation': 'ImageMoveOperation',
           'postZero': 'bool', 'force': 'bool'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ## Category: @LVMVolumeGroup ###################################################
 ##
@@ -2903,7 +2894,7 @@
 # @force:    #optional Force the operation and do not perform any validation
 #
 # Returns:
-# @uuid:  The uuid of the created Volume Group
+# The uuid of the created Volume Group
 #
 # Since: 4.10.0
 #
@@ -2912,7 +2903,7 @@
 ##
 {'command': {'class': 'LVMVolumeGroup', 'name': 'create'},
  'data': {'name': 'UUID', 'devlist': ['str'], '*force': 'bool'},
- 'returns': {'uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @LVMVolumeGroup.getInfo:
@@ -2920,11 +2911,12 @@
 # Get information about a Volume Group.
 #
 # Returns:
-# @info:  Volume Group information
+# Volume Group information
+#
 # Since: 4.10.0
 ##
 {'command': {'class': 'LVMVolumeGroup', 'name': 'getInfo'},
- 'returns': {'info': 'VolumeGroupInfo'}}
+ 'returns': 'VolumeGroupInfo'}
 
 ##
 # @LVMVolumeGroup.remove:
@@ -3137,13 +3129,13 @@
 # @pattern:  Filter results by this glob pattern
 #
 # Returns:
-# @files:  A dictionary of file information indexed by file name
+# A dictionary of file information indexed by file name
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getFileList'},
  'data': {'pattern': 'str'},
- 'returns': {'files': 'StorageDomainFileStatsMap'}}
+ 'returns': 'StorageDomainFileStatsMap'}
 
 ##
 # @StorageDomain.getImages:
@@ -3151,12 +3143,12 @@
 # Get a list of Images associated with this Storage Domain.
 #
 # Returns:
-# @imageslist:  An array of Image UUIDs
+# An array of Image UUIDs
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getImages'},
- 'returns': {'imageslist': ['UUID']}}
+ 'returns': ['UUID']}
 
 ##
 # @StorageDomainRole:
@@ -3210,12 +3202,12 @@
 # Get information about a Storage Domain.
 #
 # Returns:
-# @info:  Storage domain information
+# Storage domain information
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getInfo'},
- 'returns': {'info': 'StorageDomainInfo'}}
+ 'returns': 'StorageDomainInfo'}
 
 ##
 # @StorageDomainStats:
@@ -3246,12 +3238,12 @@
 # Get Storage Domain statistics.
 #
 # Returns:
-# @stats:  Storage Domain statistics
+# Storage Domain statistics
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getStats'},
- 'returns': {'stats': 'StorageDomainStats'}}
+ 'returns': 'StorageDomainStats'}
 
 ##
 # @StorageDomain.getVolumes:
@@ -3261,13 +3253,13 @@
 # @imgUUID:  Limit results to Volumes associated with a single Image
 #
 # Returns:
-# @uuidlist:  A list of Volume UUIDs
+# A list of Volume UUIDs
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getVolumes'},
  'data': {'imgUUID': 'UUID'},
- 'returns': {'uuidlist': ['UUID']}}
+ 'returns': ['UUID']}
 
 ##
 # @StorageDomain.setDescription:
@@ -3385,14 +3377,14 @@
 # @connectionParams:  An array of connection information
 #
 # Returns:
-# @statuslist:  The status of each connection attempt
+# The status of each connection attempt
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'connectStorageServer'},
  'data': {'domainType': 'StorageDomainType',
           'connectionParams': ['ConnectionRefParameters']},
- 'returns': {'statuslist': ['ConnectStorageServerStatus']}}
+ 'returns': ['ConnectStorageServerStatus']}
 
 ##
 # @StoragePool.create:
@@ -3471,14 +3463,14 @@
 # @connectionParams:  An array of connection information
 #
 # Returns:
-# @statuslist:  The status of each connection attempt
+# The status of each connection attempt
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'disconnectStorageServer'},
  'data': {'domainType': 'StorageDomainType',
           'connectionParams': ['ConnectionRefParameters']},
- 'returns': {'statuslist': ['ConnectStorageServerStatus']}}
+ 'returns': ['ConnectStorageServerStatus']}
 
 ##
 # @SpmRole:
@@ -3518,13 +3510,14 @@
 # Fence the SPM host via the storage.
 #
 # Returns:
-# @spm_st:  SPM status information for the Storage Pool
+# SPM status information for the Storage Pool
+#
 # Since: 4.10.0
 #
 # Notes:  Deprecated
 ##
 {'command': {'class': 'StoragePool', 'name': 'fence'},
- 'returns': {'spm_st': 'SpmStatus'}}
+ 'returns': 'SpmStatus'}
 
 ##
 # @OVFMap:
@@ -3546,7 +3539,7 @@
 # @vmList:  Limit results to a list of VM UUIDs
 #
 # Returns:
-# @vmlist:  A dictionary of OVF information indexed by VM UUID
+# A dictionary of OVF information indexed by VM UUID
 #
 # Since: 4.10.0
 #
@@ -3555,7 +3548,7 @@
 ##
 {'command': {'class': 'StoragePool', 'name': 'getBackedUpVmsInfo'},
  'data': {'sdUUID': 'UUID', 'vmList': ['UUID']},
- 'returns': {'vmlist': 'OVFMap'}}
+ 'returns': 'OVFMap'}
 
 ##
 # @StoragePool.getBackedUpVmsList:
@@ -3565,13 +3558,13 @@
 # @sdUUID:  The UUID of the Backup Storage Domain to check
 #
 # Returns:
-# @vmlist:  A list of VM UUIDs
+# A list of VM UUIDs
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getBackedUpVmsList'},
  'data': {'sdUUID': 'UUID'},
- 'returns': {'vmlist': ['UUID']}}
+ 'returns': ['UUID']}
 
 ##
 # @StoragePool.getFloppyList:
@@ -3579,12 +3572,12 @@
 # Get a list of all floppy disk images associated with a Storage Pool.
 #
 # Returns:
-# @isolist:  A list of floppy disk file names
+# A list of floppy disk file names
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getFloppyList'},
- 'returns': {'isolist': ['str']}}
+ 'returns': ['str']}
 
 ##
 # @StoragePool.getDomainsContainingImage:
@@ -3596,13 +3589,13 @@
 # @onlyDataDomains:  #optional Only include Data Storage Domains
 #
 # Returns:
-# @domainslist:  A list of Storage Domain UUIDs that contain the Image
+# A list of Storage Domain UUIDs that contain the Image
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getDomainsContainingImage'},
  'data': {'imgUUID': 'UUID', '*onlyDataDomains': 'bool'},
- 'returns': {'domainslist': ['UUID']}}
+ 'returns': ['UUID']}
 
 ##
 # @StoragePool.getIsoList:
@@ -3613,13 +3606,13 @@
 #                      default extension used is 'iso')
 #
 # Returns:
-# @isolist:  A list of available files
+# A list of available files
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getIsoList'},
  'data': {'*filenameExtension': 'str'},
- 'returns': {'isolist': ['str']}}
+ 'returns': ['str']}
 
 ##
 # @StoragePool.getSpmStatus:
@@ -3627,12 +3620,12 @@
 # Get the status of the Storage Pool Manager role.
 #
 # Returns:
-# @spm_st:  SPM status information
+# SPM status information
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getSpmStatus'},
- 'returns': {'spm_st': 'SpmStatus'}}
+ 'returns': 'SpmStatus'}
 
 ##
 # @StoragePoolStatus:
@@ -3729,7 +3722,7 @@
 # Since: 4.10.0
 ##
 {'type': 'StoragePoolDomainInfo',
- 'data': {'disktotal': '', 'diskfree': '',
+ 'data': {'disktotal': 'int', 'diskfree': 'int',
           'alerts': ['StoragePoolDomainAlert'],
           'status': 'StorageDomainStatus'}}
 
@@ -3744,20 +3737,29 @@
  'key': 'UUID', 'value': 'StoragePoolDomainInfo'}
 
 ##
+# @StoragePoolFullInfo:
+#
+# Storage Pool and Storage Domain information.
+#
+# @info:     Storage Pool information
+#
+# @dominfo:  Information about active Storage Domains
+##
+{'type': 'StoragePoolFullInfo',
+ 'data': {'info': 'StoragePoolInfo', 'dominfo': 'StoragePoolDomainInfoMap'}}
+
+##
 # @StoragePool.getInfo:
 #
 # Get information about a Storage Pool and its Active Storage Domains.
 #
 # Returns:
-# @info:     Storage Pool information
-#
-# @dominfo:  Information about active Storage Domains
+# Storage Pool and active Storage Domain information
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getInfo'},
- 'returns': {'info': 'StoragePoolInfo',
-             'dominfo': 'StoragePoolDomainInfoMap'}}
+ 'returns': 'StoragePoolFullInfo'}
 
 ##
 # @ImagePostZeroMap:
@@ -3877,14 +3879,14 @@
 # @domVersion:         The expected Storage Domain version of the master domain
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'spmStart'},
  'data': {'prevID': 'int', 'prevLver': 'int', 'enableScsiFencing': 'bool',
           '*maxHostID': 'int', '*domVersion': 'int'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @StoragePool.spmStop:
@@ -3914,13 +3916,13 @@
 # @targetDomVersion:  The version to upgrade to
 #
 # Returns:
-# @upgradeStatus:  The status of the upgrade operation
+# The status of the upgrade operation
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'upgrade'},
  'data': {'targetDomVersion': 'int'},
- 'returns': {'upgradeStatus': 'StoragePoolUpgradeStatus'}}
+ 'returns': 'StoragePoolUpgradeStatus'}
 
 ##
 # @StorageServerConnectionValidateParams:
@@ -3962,7 +3964,7 @@
 # @connectionParams:  A list of connection parameter dictionaries
 #
 # Returns:
-# @statuslist:  A list of connection parameter statuses
+# A list of connection parameter statuses
 #
 # Since: 4.10.0
 #
@@ -3971,7 +3973,7 @@
 {'command': {'class': 'StoragePool', 'name': 'validateStorageServerConnection'},
  'data': {'domainType': 'StorageDomainType',
           'connectionParams': ['StorageServerConnectionValidateParams']},
- 'returns': {'statuslist': ['StorageServerConnectionValidateStatus']}}
+ 'returns': ['StorageServerConnectionValidateStatus']}
 
 
 ##
@@ -4047,12 +4049,12 @@
 # Get information about a Task.
 #
 # Returns:
-# @TaskInfo:  General Task information
+# General Task information
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Task', 'name': 'getInfo'},
- 'returns': {'TaskInfo': 'TaskInfo'}}
+ 'returns': 'TaskInfo'}
 
 ##
 # @Task.getStatus:
@@ -4060,12 +4062,12 @@
 # Get Task status information.
 #
 # Returns:
-# @taskStatus:  Status infomation
+# Status infomation
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Task', 'name': 'getStatus'},
- 'returns': {'taskStatus': 'TaskStatus'}}
+ 'returns': 'TaskStatus'}
 
 ##
 # @Task.revert:
@@ -4208,13 +4210,13 @@
 # @driveSpec:  The specification of the new CD
 #
 # Returns:
-# @vmList:  The VM definition, as updated
+# The VM definition, as updated
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'changeCD'},
  'data': {'driveSpec': 'DriveSpec'},
- 'returns': {'vmList': 'VmDefinition'}}
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.changeFloppy:
@@ -4224,13 +4226,13 @@
 # @driveSpec:  The specification of the new floppy disk
 #
 # Returns:
-# @vmList:  The VM definition, as updated
+# The VM definition, as updated
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'changeFloppy'},
  'data': {'driveSpec': 'DriveSpec'},
- 'returns': {'vmList': 'VmDefinition'}}
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.cont:
@@ -4249,13 +4251,13 @@
 # @vmParams:  The VM definition
 #
 # Returns:
-# @vmList:  The VM definition, as created
+# The VM definition, as created
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'create'},
  'data': {'vmParams': 'VmDefinition'},
- 'returns': {'vmList': 'VmDefinition'}}
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.desktopLock:
@@ -4322,17 +4324,12 @@
 #
 # Report status of a currently outgoing migration.
 #
-# Returns:
-# @code:     A status code
-# @message:  A status message
-#
 # Since: 4.10.0
 #
 # Notes: Migration status is returned as the command status ('code' and
 #        'message')
 ##
-{'command': {'class': 'VM', 'name': 'getMigrationStatus'},
- 'returns': {'code': 'int', 'message': 'str'}}
+{'command': {'class': 'VM', 'name': 'getMigrationStatus'}}
 
 ##
 # @VmExitCode:
@@ -4607,12 +4604,12 @@
 # Get statistics about a running virtual machine.
 #
 # Returns:
-# @statsList:  An array containing a single VmStats record
+# An array containing a single VmStats record
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'getStats'},
- 'returns': {'statsList': ['VmStats']}}
+ 'returns': ['VmStats']}
 
 ##
 # @HibernationVolumeHandle:
@@ -4662,7 +4659,7 @@
 # @params:  The VM UUID and device information
 #
 # Returns:
-# @vmList:  The VM definition, as updated
+# The VM definition, as updated
 #
 # Since: 4.10.0
 #
@@ -4671,7 +4668,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'hotplugNic'},
  'data': {'params': 'HotplugNicParams'},
- 'returns': {'vmList': 'VmDefinition'}}
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.hotunplugNic:
@@ -4681,7 +4678,7 @@
 # @params:  The VM UUID and device information
 #
 # Returns:
-# @vmList:  The VM definition, as updated
+# The VM definition, as updated
 #
 # Since: 4.10.0
 #
@@ -4690,7 +4687,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'hotunplugNic'},
  'data': {'params': 'HotplugNicParams'},
- 'returns': {'vmList': 'VmDefinition'}}
+ 'returns': 'VmDefinition'}
 
 ##
 # @HotplugDiskParams:
@@ -4715,7 +4712,7 @@
 # @params:  The VM UUID and device information
 #
 # Returns:
-# @vmList:  The VM definition, as updated
+# The VM definition, as updated
 #
 # Since: 4.10.0
 #
@@ -4724,7 +4721,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'hotplugDisk'},
  'data': {'params': 'HotplugDiskParams'},
- 'returns': {'vmList': 'VmDefinition'}}
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.hotunplugDisk:
@@ -4734,16 +4731,15 @@
 # @params:  The VM UUID and device information
 #
 # Returns:
-# @vmList:  The VM definition, as updated
+# The VM definition, as updated
 #
 # Since: 4.10.0
 #
 # Notes:
-# XXX: Split 'params' into direct parameters
 ##
 {'command': {'class': 'VM', 'name': 'hotunplugDisk'},
  'data': {'params': 'HotplugDiskParams'},
- 'returns': {'vmList': 'VmDefinition'}}
+ 'returns': 'VmDefinition'}
 
 ##
 # @MigrateMode:
@@ -4818,6 +4814,18 @@
 {'command': {'class': 'VM', 'name': 'migrateCancel'}}
 
 ##
+# @MigrationCreateState:
+#
+# Reports the state of a VM creation on the destination host.
+#
+# @migrationPort:  The port used for migration (currently always 0)
+#
+# @params:         The VM status
+##
+{'type': 'MigrationCreateState',
+ 'data': {'migrationPort': 'int', 'params': 'VmFullStatus'}}
+
+##
 # @VM.migrationCreate:
 #
 # Start a migrating VM on a destination host.
@@ -4825,9 +4833,7 @@
 # @params:  The VM definition
 #
 # Returns:
-# @migrationPort:  This value is always 0
-#
-# @params:         The definition of the created virtual machine
+# Migration creation state
 #
 # Since: 4.10.0
 #
@@ -4836,7 +4842,7 @@
 ##
 {'command': {'class': 'VM', 'name': 'migrationCreate'},
  'data': {'params': 'VmDefinition'},
- 'returns': {'migrationPort': 'int', 'params': 'VmDefinition'}}
+ 'returns': 'MigrationCreateState'}
 
 ##
 # @VM.monitorCommand:
@@ -5088,12 +5094,12 @@
 # Check the status of an ongoing snapshot merge operation.
 #
 # Returns:
-# @mergeStatus:  Status information for each VM disk
+# Status information for each VM disk
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'mergeStatus'},
- 'returns': {'mergeStatus': ['MergeStatus']}}
+ 'returns': ['MergeStatus']}
 
 ## Category: @Volume ###########################################################
 ##
@@ -5189,7 +5195,7 @@
 # @force:        If @dstVolUUID already exists, overwrite it
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 #
@@ -5202,7 +5208,7 @@
           'desc': 'str', 'volType': 'VolumeRole', 'volFormat': 'VolumeFormat',
           'preallocate': 'VolumeAllocation', 'postZero': 'bool',
           'force': 'bool'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @DiskType:
@@ -5246,15 +5252,15 @@
 # @srcVolUUID:   If specified, create a snapshot from this Volume
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Volume', 'name': 'create'},
  'data': {'size': 'int', 'volFormat': 'VolumeFormat',
-          'preallocate': 'VolumeAllocation', 'diskType': '',
+          'preallocate': 'VolumeAllocation', 'diskType': 'DiskType',
           'desc': 'str', 'srcImgUUID': 'UUID', 'srcVolUUID': 'UUID'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @Volume.delete:
@@ -5266,13 +5272,13 @@
 # @force:     Remove even if @VolumeRole is SHARED or INTERNAL
 #
 # Returns:
-# @uuid:  A task UUID
+# A task UUID
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Volume', 'name': 'delete'},
  'data': {'postZero': 'bool', 'force': 'bool'},
- 'returns': {'*uuid': 'UUID'}}
+ 'returns': 'UUID'}
 
 ##
 # @Volume.extend:
@@ -5378,12 +5384,12 @@
 # Get information about a Volume.
 #
 # Returns:
-# @info:  Volume information
+# Volume information
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Volume', 'name': 'getInfo'},
- 'returns': {'info': 'VolumeInfo'}}
+ 'returns': 'VolumeInfo'}
 
 ##
 # @Volume.getPath:
@@ -5391,12 +5397,26 @@
 # Get the path to the Volume in the host's storage repository.
 #
 # Returns:
-# @path:  The Volume's storage repository path
+# The Volume's storage repository path
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Volume', 'name': 'getPath'},
- 'returns': {'path': 'str'}}
+ 'returns': 'str'}
+
+##
+# @VolumeSizeInfo:
+#
+# Volume size information:
+#
+# @apparentsize:  The size of the Volume (in bytes)
+#
+# @truesize:      The amount of underlying storage allocated (in bytes)
+#
+# Since: 4.10.0
+##
+{'type': 'VolumeSizeInfo',
+ 'data': {'apparentsize': 'uint', 'truesize': 'uint'}}
 
 ##
 # @Volume.getSize:
@@ -5404,14 +5424,12 @@
 # Get Volume size information.
 #
 # Returns:
-# @apparentsize:  The size of the Volume (in bytes)
-#
-# @truesize:      The amount of underlying storage allocated (in bytes)
+# Volume size information
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Volume', 'name': 'getSize'},
- 'returns': {'apparentsize': 'uint', 'truesize': 'uint'}}
+ 'returns': 'VolumeSizeInfo'}
 
 ##
 # @Volume.prepare:
