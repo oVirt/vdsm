@@ -905,19 +905,19 @@
 #
 # Information about a single block device path.
 #
-# @physdev:  The physical device name
+# @physdev:     The physical device name
 #
-# @state:    The current state of this path
+# @state:       The current state of this path
 #
-# @lun:      The SCSI Logical Unit Number associated with this path
+# @lun:         The SCSI Logical Unit Number associated with this path
 #
-# @type:     The type of path (@BlockDeviceType)
+# @deviceType:  The type of path (@BlockDeviceType)
 #
 # Since: 4.10.0
 ##
 {'type': 'BlockDevicePathInfo',
  'data': {'physdev': 'str', 'state': 'BlockDevicePathState',
-          'lun': 'uint', 'type': 'BlockDeviceType'}}
+          'lun': 'uint', 'deviceType': 'BlockDeviceType'}}
 
 ##
 # @IscsiSessionInfo:
@@ -1180,25 +1180,25 @@
 #
 # Information about a Volume Group.
 #
-# @name:    The Volume Group name
+# @name:        The Volume Group name
 #
-# @vgUUID:  The uuid of the Volume Group
+# @vgUUID:      The uuid of the Volume Group
 #
-# @vgsize:  The total capacity (in bytes)
+# @vgsize:      The total capacity (in bytes)
 #
-# @vgfree:  The amount of currently unassigned capacity (in bytes)
+# @vgfree:      The amount of currently unassigned capacity (in bytes)
 #
-# @type:    The storage type of this Volume Group's Physical Volumes
+# @deviceType:  The storage type of this Volume Group's Physical Volumes
 #
-# @attr:    Additional attributes
+# @attr:        Additional attributes
 #
-# @state:   The state of this Volume Group's underlying storage
+# @state:       The state of this Volume Group's underlying storage
 #
 # Since: 4.10.0
 ##
 {'type': 'VolumeGroupInfo',
  'data': {'name': 'str', 'vgUUID': 'UUID', 'vgsize': 'uint',
-          'vgfree': 'uint', 'type': 'BlockDeviceType',
+          'vgfree': 'uint', 'deviceType': 'BlockDeviceType',
           'attr': 'VolumeGroupAttributes', 'state': 'VolumeGroupState'}}
 
 ##
@@ -1444,7 +1444,7 @@
  'returns': {'info': 'HostStats'}}
 
 ##
-# @StorageDomainClass:
+# @StorageDomainImageClass:
 #
 # An enumeration of Storage Domain classes.
 #
@@ -1456,7 +1456,8 @@
 # Since: 4.10.0
 # XXX: Need to specify explicit values for the enum
 ##
-{'enum': 'StorageDomainClass', 'data': ['Unknown', 'Data', 'Iso', 'Backup']}
+{'enum': 'StorageDomainImageClass',
+ 'data': ['Unknown', 'Data', 'Iso', 'Backup']}
 
 ##
 # @StorageDomainType:
@@ -1490,7 +1491,7 @@
 #
 # @spUUID:       #optional Limit to Domains belonging to this Storage Pool
 #
-# @domainClass:  #optional Limit to Domains of this @StorageDomainClass
+# @domainClass:  #optional Limit to Domains of this @StorageDomainImageClass
 #
 # @storageType:  #optional Limit to Domains of this @StorageDomainType
 #
@@ -1502,7 +1503,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Global', 'name': 'getStorageDomains'},
- 'data': {'*spUUID': 'UUID', '*domainClass': 'StorageDomainClass',
+ 'data': {'*spUUID': 'UUID', '*domainClass': 'StorageDomainImageClass',
           '*storageType': 'StorageDomainType', '*remotePath': 'str'},
  'returns': {'domlist': ['UUID']}}
 
@@ -1656,20 +1657,20 @@
 #
 # Device address for a PCI device.
 #
-# @type:      The device type (always @pci)
+# @addressType:  The device address type (always @pci)
 #
-# @slot:      The slot number on the PCI bus
+# @slot:         The slot number on the PCI bus
 #
-# @bus:       The PCI bus number
+# @bus:          The PCI bus number
 #
-# @domain:    The PCI domain
+# @domain:       The PCI domain
 #
-# @function:  Function number on the PCI card that implements the device
+# @function:     Function number on the PCI card that implements the device
 #
 # Since: 4.10.0
 ##
 {'type': 'VmDevicePciAddress',
- 'data': {'type': 'VmDeviceAddressType', 'slot': 'uint', 'bus': 'uint',
+ 'data': {'addressType': 'VmDeviceAddressType', 'slot': 'uint', 'bus': 'uint',
           'domain': 'uint', 'function': 'uint'}}
 
 ##
@@ -1677,18 +1678,18 @@
 #
 # Device address for an IDE device.
 #
-# @type:        The device type (always @drive)
+# @addressType:  The device address type (always @drive)
 #
-# @controller:  The IDE controller number
+# @controller:   The IDE controller number
 #
-# @bus:         The IDE bus number
+# @bus:          The IDE bus number
 #
-# @unit:        The unit number on the IDE bus
+# @unit:         The unit number on the IDE bus
 #
 # Since: 4.10.0
 ##
 {'type': 'VmDeviceIdeAddress',
- 'data': {'type': 'VmDeviceAddressType', 'controller': 'uint',
+ 'data': {'addressType': 'VmDeviceAddressType', 'controller': 'uint',
           'bus': 'uint', 'unit': 'uint'}}
 
 ##
@@ -1696,18 +1697,18 @@
 #
 # Device address for a virtio-serial port.
 #
-# @type:        The device type (always @virtio-serial)
+# @addressType:  The device address type (always @virtio-serial)
 #
-# @controller:  The virtio-serial controller number
+# @controller:   The virtio-serial controller number
 #
-# @bus:         The virtio-serial bus number
+# @bus:          The virtio-serial bus number
 #
-# @port:        The port number on the virtio-serial bus
+# @port:         The port number on the virtio-serial bus
 #
 # Since: 4.10.0
 ##
 {'type': 'VmDeviceVirtioSerialAddress',
- 'data': {'type': 'VmDeviceAddressType', 'controller': 'uint',
+ 'data': {'addressType': 'VmDeviceAddressType', 'controller': 'uint',
           'bus': 'uint', 'port': 'uint'}}
 
 ##
@@ -1756,7 +1757,7 @@
 #
 # Properties of a VM disk device.
 #
-# @type:             The device type (always @disk)
+# @deviceType:       The device type (always @disk)
 #
 # @device:           The disk device type (eg. @cdrom or @disk)
 #
@@ -1817,7 +1818,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDiskDevice',
- 'data': {'type': 'VmDeviceType', 'device': 'VmDiskDeviceType',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmDiskDeviceType',
           '*iface': 'VmDiskDeviceInterface', '*path': 'str',
           'readonly': 'bool', '*bootOrder': 'uint', '*domainID': 'UUID',
           '*poolID': 'UUID', '*imageID': 'UUID', '*volumeID': 'UUID',
@@ -1884,7 +1885,7 @@
 #
 # Properties of a VM network interface device.
 #
-# @type:        The device type (always @interface)
+# @deviceType:  The device type (always @interface)
 #
 # @device:      The host network device type used to create the connection
 #
@@ -1908,7 +1909,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmInterfaceDevice',
- 'data': {'type': 'VmDeviceType', 'device': 'VmInterfaceDeviceType',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmInterfaceDeviceType',
           'nicModel': 'VmInterfaceDeviceModel', 'macAddr': 'str',
           'network': 'str', '*bootOrder': 'uint',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
@@ -1951,7 +1952,7 @@
 #
 # Properties of a VM video device.
 #
-# @type:        The device type (always @video)
+# @deviceType:  The device type (always @video)
 #
 # @device:      The type of video device exposed to the VM operating system
 #
@@ -1966,7 +1967,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmVideoDevice',
- 'data': {'type': 'VmDeviceType', 'device': 'VmVideoDeviceType',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmVideoDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
           '*specParams': 'VmVideoDeviceSpecParams'}}
 
@@ -2006,7 +2007,7 @@
 #
 # Properties of a VM sound device.
 #
-# @type:        The device type (always @sound)
+# @deviceType:  The device type (always @sound)
 #
 # @device:      The type of sound hardware exposed to the VM operating system
 #
@@ -2021,7 +2022,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmSoundDevice',
- 'data': {'type': 'VmDeviceType', 'device': 'VmSoundDeviceType',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmSoundDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
           '*specParams': 'VmSoundDeviceSpecParams'}}
 
@@ -2054,20 +2055,20 @@
 #
 # Properties of a VM controller device.
 #
-# @type:      The device type (always @controller)
+# @deviceType:  The device type (always @controller)
 #
-# @device:    The specific type of controller device
+# @device:      The specific type of controller device
 #
-# @address:   Device hardware address
+# @address:     Device hardware address
 #
-# @alias:     Alias used to identify this device in commands
+# @alias:       Alias used to identify this device in commands
 #
-# @deviceId:  A unique ID for this device
+# @deviceId:    A unique ID for this device
 #
 # Since: 4.10.0
 ##
 {'type': 'VmControllerDevice',
- 'data': {'type': 'VmDeviceType', 'device': 'VmControllerDeviceType',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmControllerDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
 
 ##
@@ -2111,7 +2112,7 @@
 #
 # Properties of a VM balloon device.
 #
-# @type:        The device type (always @balloon)
+# @deviceType:  The device type (always @balloon)
 #
 # @device:      The the type of balloon device
 #
@@ -2126,7 +2127,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmBalloonDevice',
- 'data': {'type': 'VmDeviceType', 'device': 'VmBalloonDeviceType',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmBalloonDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str',
           '*specParams': 'VmBalloonDeviceSpecParams', 'deviceId': 'UUID'}}
 
@@ -2150,20 +2151,20 @@
 #
 # Properties of a VM channel device.
 #
-# @type:      The device type (always @channel)
+# @deviceType:  The device type (always @channel)
 #
-# @device:    The specific type of channel device
+# @device:      The specific type of channel device
 #
-# @address:   Device hardware address
+# @address:     Device hardware address
 #
-# @alias:     Alias used to identify this device in commands
+# @alias:       Alias used to identify this device in commands
 #
-# @deviceId:  A unique ID for this device
+# @deviceId:    A unique ID for this device
 #
 # Since: 4.10.0
 ##
 {'type': 'VmChannelDevice',
- 'data': {'type': 'VmDeviceType', 'device': 'VmChannelDeviceType',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmChannelDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
 
 ##
@@ -2397,15 +2398,16 @@
 #
 # This structure stores ISCSI credentials.
 #
-# @type:    #optional The type of authentication to be used
+# @authType:  #optional The type of authentication to be used
 #
-# @params:  Type-specific authentication credentials
+# @params:    Type-specific authentication credentials
 #
 # Since: 4.10.0
 # XXX: params should probably be an enum to permit future extension.
 ##
 {'type': 'IscsiCredentials',
- 'data': {'*type': 'IscsiCredentialsType', 'params': 'IscsiCredentialsLogin'}}
+ 'data': {'*authType': 'IscsiCredentialsType',
+          'params': 'IscsiCredentialsLogin'}}
 
 ##
 # @IscsiConnectionParameters:
@@ -2510,14 +2512,14 @@
 #
 # Structure to store @ConnectionRef arguments.
 #
-# @type:    The type of connection (one of @ConnectionRefType)
+# @connType:  The type of connection (one of @ConnectionRefType)
 #
-# @params:  An @ConnectionRefParameters structure appropriate for @type
+# @params:    An @ConnectionRefParameters structure appropriate for @connType
 #
 # Since: 4.10.0
 ##
 {'type': 'ConnectionRefArgs',
- 'data': {'type': 'ConnectionRefType', 'params': 'ConnectionRefParameters'}}
+ 'data': {'connType': 'ConnectionRefType', 'params': 'ConnectionRefParameters'}}
 
 ##
 # @ConnectionError:
@@ -2936,7 +2938,7 @@
 #
 # Create a new Storage Domain.
 #
-# @type:         The type of backing storage used by the Storage Domain
+# @domainType:   The type of backing storage used by the Storage Domain
 #
 # @typeArgs:     Type specific backing storage specifier
 #
@@ -2949,9 +2951,9 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'create'},
- 'data': {'type': 'StorageDomainType',
+ 'data': {'domainType': 'StorageDomainType',
           'typeArgs': 'StorageDomainCreateArguments', 'name': 'str',
-          'domainClass': 'StorageDomainClass', '*version': 'int'}}
+          'domainClass': 'StorageDomainImageClass', '*version': 'int'}}
 
 ##
 # @StorageDomain.deactivate:
@@ -3087,7 +3089,7 @@
 #
 # @uuid:        The Storage Domain UUID
 #
-# @type:        The type of backing storage used by this domain
+# @domainType:  The type of backing storage used by this domain
 #
 # @class:       The Storage Domain class
 #
@@ -3108,8 +3110,8 @@
 # Since: 4.10.0
 ##
 {'type': 'StorageDomainInfo',
- 'data': {'uuid': 'UUID', 'type': 'StorageDomainType',
-          'class': 'StorageDomainClass', 'name': 'str',
+ 'data': {'uuid': 'UUID', 'domainType': 'StorageDomainType',
+          'class': 'StorageDomainImageClass', 'name': 'str',
           'role': 'StorageDomainRole', 'pool': ['UUID'], 'version': 'int',
           'lver': 'int', 'spm_id': 'int', 'master_ver': 'int'}}
 
@@ -3559,7 +3561,7 @@
 #
 # Information about a Storage Pool.
 #
-# @type:         The type of storage managed by this Storage Pool
+# @domainType:   The type of storage managed by this Storage Pool
 #
 # @name:         The Storage Pool name
 #
@@ -3583,7 +3585,7 @@
 # Since: 4.10.0
 ##
 {'type': 'StoragePoolInfo',
- 'data': {'type': 'StorageDomainType', 'name': 'str', 'domains': 'str',
+ 'data': {'domainType': 'StorageDomainType', 'name': 'str', 'domains': 'str',
           'master_uuid': 'UUID', 'master_ver': 'int', 'lver': 'int',
           'spm_id': 'int', 'isoprefix': 'str',
           'pool_status': 'StoragePoolStatus', 'version': 'int'}}
@@ -5228,7 +5230,7 @@
 #
 # @uuid:          The Volume UUID
 #
-# @type:          The Volume allocation policy
+# @allocType:     The Volume allocation policy
 #
 # @format:        The format used to write data to the Volume
 #
@@ -5265,13 +5267,13 @@
 # Since: 4.10.0
 ##
 {'type': 'VolumeInfo',
- 'data': {'uuid': 'UUID', 'type': 'VolumeAllocation', 'format': 'VolumeFormat',
-          'disktype': 'DiskType', 'voltype': 'VolumeRole',
-          'capacity': 'uint', 'parent': 'UUID', 'description': 'str',
-          'pool': 'UUID', 'domain': 'UUID', 'image': 'UUID', 'ctime': 'int',
-          'mtime': 'uint', 'legality': 'VolumeLegality',
-          'apparentsize': 'uint', 'truesize': 'uint',
-          'status': 'VolumeStatus', 'children': ['UUID']}}
+ 'data': {'uuid': 'UUID', 'allocType': 'VolumeAllocation',
+          'format': 'VolumeFormat', 'disktype': 'DiskType',
+          'voltype': 'VolumeRole', 'capacity': 'uint', 'parent': 'UUID',
+          'description': 'str', 'pool': 'UUID', 'domain': 'UUID',
+          'image': 'UUID', 'ctime': 'int', 'mtime': 'uint',
+          'legality': 'VolumeLegality', 'apparentsize': 'uint',
+          'truesize': 'uint', 'status': 'VolumeStatus', 'children': ['UUID']}}
 
 ##
 # @Volume.getInfo:
