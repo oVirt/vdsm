@@ -1797,8 +1797,10 @@ class LibvirtVm(vm.Vm):
         self._volumesPrepared = False
 
         snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
-                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT |
-                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)
+                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT)
+
+        if utils.tobool(self.conf.get('qgaEnable', 'true')):
+            snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
 
         while True:
             try:
