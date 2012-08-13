@@ -19,6 +19,7 @@
 #
 
 import os
+import errno
 import glob
 import ethtool
 import shlex
@@ -242,9 +243,20 @@ def get():
     for netname in nets.iterkeys():
         if nets[netname]['bridged']:
             devname = netname
-            d['networks'][netname] = { 'ports': ports(devname),
-                    'stp': bridge_stp_state(devname),
-                    'cfg': getIfaceCfg(devname), }
+            try:
+                d['networks'][netname] = { 'ports': ports(devname),
+                        'stp': bridge_stp_state(devname),
+                        'cfg': getIfaceCfg(devname), }
+            except OSError, e:
+                # If the bridge reported by libvirt does not exist anymore, do
+                # not report it, as this already assures that the bridge is not
+                # added d['networks']
+                if e.errno == errno.ENOENT:
+                    logging.info('Obtaining info for net %s.', devname,
+                                 exc_info=True)
+                    continue
+                else:
+                    raise
         else:
             devname = nets[netname]['iface']
             d['networks'][netname] = {}

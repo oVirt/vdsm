@@ -23,6 +23,7 @@ import os
 from testrunner import VdsmTestCase as TestCaseBase
 
 from vdsm import netinfo
+from monkeypatch import MonkeyPatch
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -56,3 +57,10 @@ class TestNetinfo(TestCaseBase):
               "192.0.0.1", "255.255.255.255"]
         for n, addr in zip(num, ip):
             self.assertEqual(addr, netinfo.intToAddress(n))
+
+    @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
+    def testGetNonExistantBridgeInfo(self):
+        # Getting info of non existing bridge should not raise an exception,
+        # just log a traceback. If it raises an exception the test will fail as
+        # it should.
+        netinfo.get()
