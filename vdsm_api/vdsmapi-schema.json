@@ -24,14 +24,21 @@
 
 ## Category: @Host #############################################################
 ##
-# @Host.init:
+# @Host:
 #
-# Initialize a global host-level API object.
+# The host-level API object.
+#
+# @hostname:   The hostname or IP address to connect to
+#
+# @port:       The port number to connect to
+#
+# @sync_mode:  If True, fetch responses synchronously, otherwise responses must
+#              be asynchronously read.
 #
 # Since: 4.10.0
-# XXX: Extension: object constructors
 ##
-{'init': 'Host'}
+{'class': 'Host',
+ 'data': {'hostname': 'str', 'port': 'uint', 'sync_mode': 'bool'}}
 
 ##
 # @UUID:
@@ -2409,14 +2416,15 @@
 
 ## Category: @ConnectionRefs ##################################################
 ##
-# @ConnectionRefs.init:
+# @ConnectionRefs:
 #
-# Initialize a ConnectionRefs API object.
+# ConnectionRefs API object.
+#
+# @conn:  A connected base API object
 #
 # Since: 4.10.0
-# XXX: Extension: object constructors
 ##
-{'init': 'ConnectionRefs'}
+{'class': 'ConnectionRefs', 'data': {'conn': 'Host'}}
 
 ##
 # @IscsiPortal:
@@ -2694,9 +2702,11 @@
 
 ## Category: @ISCSIConnection ##################################################
 ##
-# @ISCSIConnection.init:
+# @ISCSIConnection:
 #
-# Initialize a ISCSIConnection API object.
+# ISCSIConnection API object.
+#
+# @conn:      A connected base API object
 #
 # @host:      A fully-qualified domain name (FQDN) or IP address
 #
@@ -2708,8 +2718,9 @@
 #
 # Since: 4.10.0
 ##
-{'init': 'ISCSIConnection',
- 'data': {'host': 'str', 'port': 'int', '*user': 'str', '*password': 'str'}}
+{'class': 'ISCSIConnection',
+ 'data': {'conn': 'Host', 'host': 'str', 'port': 'int', '*user': 'str',
+          '*password': 'str'}}
 
 ##
 # @ISCSIConnection.discoverSendTargets:
@@ -2731,9 +2742,11 @@
 
 ## Category: @Image ############################################################
 ##
-# @Image.init:
+# @Image:
 #
-# Initialize an Image API object.
+# Image API object.
+#
+# @conn:    A connected base API object
 #
 # @UUID:    The UUID of the Image
 #
@@ -2743,8 +2756,8 @@
 #
 # Since: 4.10.0
 ##
-{'init': 'Image',
- 'data': {'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID'}}
+{'class': 'Image',
+ 'data': {'conn': 'Host', 'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID'}}
 
 ##
 # @Image.delete:
@@ -2857,15 +2870,17 @@
 
 ## Category: @LVMVolumeGroup ###################################################
 ##
-# @LVMVolumeGroup.init:
+# @LVMVolumeGroup:
 #
-# Initialize an LVMVolumeGroup API object.
+# LVMVolumeGroup API object.
+#
+# @conn:  A connected base API object
 #
 # @UUID:  #optional Associate this object with an existing LVM Volume Group
 #
 # Since: 4.10.0
 ##
-{'init': 'LVMVolumeGroup', 'data': {}}
+{'class': 'LVMVolumeGroup', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
 
 ##
 # @LVMVolumeGroup.create:
@@ -2913,9 +2928,11 @@
 
 ## Category: @StorageDomain ####################################################
 ##
-# @StorageDomain.init:
+# @StorageDomain:
 #
-# Initialize a StorageDomain API object.
+# StorageDomain API object.
+#
+# @conn:    A connected base API object
 #
 # @UUID:    Associate this object with a new or existing Storage Domain
 #
@@ -2923,7 +2940,8 @@
 #
 # Since: 4.10.0
 ##
-{'init': 'StorageDomain', 'data': {'UUID': 'UUID', '*spUUID': 'UUID'}}
+{'class': 'StorageDomain',
+ 'data': {'conn': 'Host', 'UUID': 'UUID', '*spUUID': 'UUID'}}
 
 ##
 # @StorageDomain.activate:
@@ -3300,15 +3318,17 @@
 
 ## Category: @StoragePool ######################################################
 ##
-# @StoragePool.init:
+# @StoragePool:
 #
-# Initialize a StoragePool API object.
+# StoragePool API object.
+#
+# @conn:  A connected base API object
 #
 # @UUID:  Associate this object with a new or existing Storage Pool
 #
 # Since: 4.10.0
 ##
-{'init': 'StoragePool', 'data': {'UUID': 'UUID'}}
+{'class': 'StoragePool', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
 
 ##
 # @StoragePool.connect:
@@ -3991,15 +4011,17 @@
 
 ## Category: @Task #############################################################
 ##
-# @Task.init:
+# @Task:
 #
-# Initialize a Task API object.
+# Task API object.
+#
+# @conn:  A connected base API object
 #
 # @UUID:  Associate this object with an existing Task
 #
 # Since: 4.10.0
 ##
-{'init': 'Task', 'data': {'UUID': 'UUID'}}
+{'class': 'Task', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
 
 ##
 # @Task.clear:
@@ -4056,15 +4078,17 @@
 
 ## Category: @VM ###############################################################
 ##
-# @VM.init:
+# @VM:
 #
-# Initialize a VM API object.
+# VM API object.
+#
+# @conn:  A connected base API object
 #
 # @UUID:  Associate this object with an existing VM
 #
 # Since: 4.10.0
 ##
-{'init': 'VM', 'data': {'UUID': 'UUID'}}
+{'class': 'VM', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
 
 ##
 # @DriveSpecVolume:
@@ -5064,9 +5088,11 @@
 
 ## Category: @Volume ###########################################################
 ##
-# @Volume.init:
+# @Volume:
 #
-# Initialize a Volume API object.
+# Volume API object.
+#
+# @conn:     A connected base API object
 #
 # @UUID:     The UUID of the Volume
 #
@@ -5078,8 +5104,8 @@
 #
 # Since: 4.10.0
 ##
-{'init': 'Volume',
- 'data': {'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID',
+{'class': 'Volume',
+ 'data': {'conn': 'Host', 'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID',
           'imgUUID': 'UUID'}}
 
 ##
