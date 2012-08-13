@@ -278,15 +278,12 @@ class ConfigWriter(object):
 
     def restoreAtomicBackup(self):
         logging.info("Rolling back configuration (restoring atomic backup)")
-        if not self._backups:
-            return
         for confFile, content in self._backups.iteritems():
             if content is None:
                 utils.rmFile(confFile)
             else:
                 open(confFile, 'w').write(content)
             logging.info('Restored %s', confFile)
-        subprocess.Popen(['/etc/init.d/network', 'start'])
 
     @classmethod
     def _persistentBackup(cls, filename):
@@ -332,8 +329,19 @@ class ConfigWriter(object):
 
     def restoreBackups(self):
         """ Restore network backups """
+        if not self._backups and not self._networksBackups:
+            return
+
+        subprocess.Popen(['/etc/init.d/network', 'stop'],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE).communicate()
+
         self.restoreAtomicNetworkBackup()
         self.restoreAtomicBackup()
+
+        subprocess.Popen(['/etc/init.d/network', 'start'],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE).communicate()
 
     @classmethod
     def clearBackups(cls):
