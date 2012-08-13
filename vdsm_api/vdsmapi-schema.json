@@ -1577,12 +1577,21 @@
  'returns': {'domlist': ['UUID']}}
 
 ##
+# @StorageDomainStatsMap:
+#
+# A map of StorageDomainStats indexed by Storage Domain UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'StorageDomainStatsMap', 'key': 'UUID', 'value': 'StorageDomainStats'}
+
+##
 # @Host.getStorageRepoStats:
 #
 # Get statistics and liveness of currently attached Storage Domains.
 #
 # Returns:
-# @XXX:  A dictionary of @StorageDomainStats indexed by Storage Domain @UUID
+# @XXX:  Statistics for all storage domains
 #
 # Since: 4.10.0
 # XXX: The return value is in the same dictionary as the command status!
