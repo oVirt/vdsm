@@ -945,6 +945,7 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
             <mac address="aa:bb:dd:dd:aa:bb"/>
             <model type="virtio"/>
             <source bridge="engine"/>
+            [<filterref filter='filter name'/>]
             [<tune><sndbuf>0</sndbuf></tune>]
         </interface>
         """
@@ -959,6 +960,10 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
         m = doc.createElement('source')
         m.setAttribute('bridge', self.network)
         iface.appendChild(m)
+        if hasattr(self, 'filter'):
+            m = doc.createElement('filterref')
+            m.setAttribute('filter', self.filter)
+            iface.appendChild(m)
         if hasattr(self, 'bootOrder'):
             bootOrder = doc.createElement('boot')
             bootOrder.setAttribute('order', self.bootOrder)
