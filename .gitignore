@@ -3,6 +3,8 @@
 *.swp
 *.tmp
 *~
+.project
+.pydevproject
 .deps/
 INSTALL
 Makefile
