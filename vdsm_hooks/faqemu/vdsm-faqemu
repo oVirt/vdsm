@@ -19,4 +19,8 @@ if not "-no-kvm" in sys.argv:
     qemu_argv += [ "-no-kvm" ]
 
 qemu_argv += filter(lambda x: x != "-enable-kvm", sys.argv[1:])
+# libvirt 0.9.10+ checks for the presence of /dev/kvm to provide
+# better error messages, but this breaks this hook, fake it out
+if not os.path.exists('/dev/kvm'):
+    open('/dev/kvm', 'w+').close()
 os.execv(qemu_bin, qemu_argv)
