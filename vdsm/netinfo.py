@@ -377,7 +377,7 @@ class NetInfo(object):
     def getVlansForNic(self, nic):
         for v, vdict in self.vlans.iteritems():
             if nic == vdict['iface']:
-                yield v
+                yield v.split('.', 1)[1]
 
     def getNetworksForIface(self, iface):
         """ Return all networks attached to nic/bond """

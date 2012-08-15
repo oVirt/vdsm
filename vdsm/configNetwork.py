@@ -571,24 +571,24 @@ class ConfigWriter(object):
             return
 
         if bonding:
-            # FIXME! Check whether we need to care of bridgeless too
-            _, vlans = _netinfo.getBridgedNetworksAndVlansForIface(bonding)
-            delvlan = bonding + '.' + delvlan
+            iface_bridged = _netinfo.getBridgedNetworksAndVlansForIface(bonding)
+            vlans = [v for (_, v) in iface_bridged]
+            iface = bonding
         else:
             vlans = _netinfo.getVlansForNic(nics[0])
-            delvlan = nics[0] + '.' + delvlan
+            iface = nics[0]
 
         newmtu = None
         for vlan in vlans:
             if vlan == delvlan:
                 continue
-            cf = self.NET_CONF_PREF + vlan
+            cf = self.NET_CONF_PREF + iface + '.' + vlan
             mtu = self._getConfigValue(cf, 'MTU')
             newmtu = max(newmtu, mtu)
 
         if newmtu != currmtu:
             if bonding:
-                slaves = netinfo.NetInfo.slaves(bonding)
+                slaves = netinfo.slaves(bonding)
                 for slave in slaves:
                     cf = self.NET_CONF_PREF + slave
                     self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
