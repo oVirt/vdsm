@@ -166,7 +166,10 @@ class StorageDomainCache:
 
     def manuallyRemoveDomain(self, sdUUID):
         with self._syncroot:
-            del self.__domainCache[sdUUID]
+            try:
+                del self.__domainCache[sdUUID]
+            except KeyError:
+                pass
 
 
 storage_repository = config.get('irs', 'repository')

@@ -1557,8 +1557,7 @@ class StoragePool(Securable):
         for sdUUID in activeDomains:
             if sdUUID not in monitoredDomains:
                 try:
-                    self.domainMonitor \
-                            .startMonitoring(sdCache.produce(sdUUID), self.id)
+                    self.domainMonitor.startMonitoring(sdUUID, self.id)
                     self.log.debug("Storage Pool `%s` started monitoring "
                                    "domain `%s`", self.spUUID, sdUUID)
                 except se.StorageException:

@@ -75,13 +75,14 @@ class DomainMonitor(object):
     def monitoredDomains(self):
         return self._domains.keys()
 
-    def startMonitoring(self, domain, hostId):
-        if domain.sdUUID in self._domains:
+    def startMonitoring(self, sdUUID, hostId):
+        if sdUUID in self._domains:
             return
 
-        self._domains[domain.sdUUID] = DomainMonitorThread(
-                                        domain, hostId, self._interval)
-        self._domains[domain.sdUUID].start()
+        domainThread = DomainMonitorThread(sdUUID, hostId, self._interval)
+        domainThread.start()
+        # The domain should be added only after it succesfully started
+        self._domains[sdUUID] = domainThread
 
     def stopMonitoring(self, sdUUID):
         # The domain monitor issues events that might become raceful if
@@ -107,17 +108,18 @@ class DomainMonitor(object):
 class DomainMonitorThread(object):
     log = logging.getLogger('Storage.DomainMonitorThread')
 
-    def __init__(self, domain, hostId, interval):
+    def __init__(self, sdUUID, hostId, interval):
         self.thread = Thread(target=self._monitorLoop)
         self.thread.setDaemon(True)
 
         self.stopEvent = Event()
-        self.domain = domain
+        self.domain = None
+        self.sdUUID = sdUUID
         self.hostId = hostId
         self.interval = interval
         self.status = DomainMonitorStatus()
         self.nextStatus = DomainMonitorStatus()
-        self.isIsoDomain = domain.isISO()
+        self.isIsoDomain = None
         self.lastRefresh = time()
         self.refreshTime = \
                     config.getint("irs", "repo_stats_cache_refresh_timeout")
@@ -129,22 +131,23 @@ class DomainMonitorThread(object):
         self.stopEvent.set()
         if wait:
             self.thread.join()
+        self.domain = None
 
     def getStatus(self):
         return self.status.copy()
 
     def _monitorLoop(self):
-        self.log.debug("Starting domain monitor for %s", self.domain.sdUUID)
+        self.log.debug("Starting domain monitor for %s", self.sdUUID)
 
         while not self.stopEvent.is_set():
             try:
                 self._monitorDomain()
             except:
                 self.log.error("The domain monitor for %s failed unexpectedly",
-                               self.domain.sdUUID, exc_info=True)
+                               self.sdUUID, exc_info=True)
             self.stopEvent.wait(self.interval)
 
-        self.log.debug("Stopping domain monitor for %s", self.domain.sdUUID)
+        self.log.debug("Stopping domain monitor for %s", self.sdUUID)
 
         # If this is an ISO domain we didn't acquire the host id and releasing
         # it is superfluous.
@@ -153,16 +156,27 @@ class DomainMonitorThread(object):
                 self.domain.releaseHostId(self.hostId, unused=True)
             except:
                 self.log.debug("Unable to release the host id %s for domain "
-                       "%s", self.hostId, self.domain.sdUUID, exc_info=True)
+                               "%s", self.hostId, self.sdUUID, exc_info=True)
 
     def _monitorDomain(self):
         self.nextStatus.clear()
 
-        # Refreshing the domain object in order to pick up changes as,
-        # for example, the domain upgrade.
+        # We should produce the domain inside the monitoring loop because
+        # it might take some time and we don't want to slow down the thread
+        # start (and anything else that relies on that as for example
+        # updateMonitoringThreads). It also needs to be inside the loop
+        # since it might fail and we want keep trying until we succeed or
+        # the domain is deactivated.
+        if not self.domain:
+            self.domain = sdCache.produce(self.sdUUID)
+        if not self.isIsoDomain:
+            self.isIsoDomain = self.domain.isISO()
+
         if time() - self.lastRefresh > self.refreshTime:
-            self.log.debug("Refreshing domain %s", self.domain.sdUUID)
-            sdCache.manuallyRemoveDomain(self.domain.sdUUID)
+            # Refreshing the domain object in order to pick up changes as,
+            # for example, the domain upgrade.
+            self.log.debug("Refreshing domain %s", self.sdUUID)
+            sdCache.manuallyRemoveDomain(self.sdUUID)
             self.lastRefresh = time()
 
         try:
@@ -188,20 +202,19 @@ class DomainMonitorThread(object):
 
         except Exception, e:
             self.log.error("Error while collecting domain %s monitoring "
-                           "information", self.domain.sdUUID, exc_info=True)
+                           "information", self.sdUUID, exc_info=True)
             self.nextStatus.error = e
 
         self.nextStatus.lastCheck = time()
         self.nextStatus.valid = (self.nextStatus.error is None)
 
         if self.status.valid != self.nextStatus.valid:
-            self.log.debug("Domain %s changed its status to %s",
-                           self.domain.sdUUID,
+            self.log.debug("Domain %s changed its status to %s", self.sdUUID,
                            "Valid" if self.nextStatus.valid else "Invalid")
 
             try:
                 self.onDomainConnectivityStateChange.emit(
-                                    self.domain.sdUUID, self.nextStatus.valid)
+                                        self.sdUUID, self.nextStatus.valid)
             except:
                 self.log.warn("Could not emit domain state change event",
                               exc_info=True)
@@ -213,7 +226,7 @@ class DomainMonitorThread(object):
                 self.domain.acquireHostId(self.hostId, async=True)
             except:
                 self.log.debug("Unable to issue the acquire host id %s "
-                    "request for domain %s", self.hostId, self.domain.sdUUID,
+                    "request for domain %s", self.hostId, self.sdUUID,
                     exc_info=True)
 
         self.status.update(self.nextStatus)
