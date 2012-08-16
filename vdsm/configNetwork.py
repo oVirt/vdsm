@@ -425,6 +425,18 @@ class ConfigWriter(object):
         conf = 'BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or '')
         if bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
+
+        if ifaceUsers(bonding):
+            confParams = netinfo.getIfaceCfg(bonding)
+            if not ipaddr:
+                ipaddr = confParams.get('IPADDR', None)
+                netmask = confParams.get('NETMASK', None)
+                gateway = confParams.get('GATEWAY', None)
+            if not mtu:
+                mtu = confParams.get('MTU', None)
+                if mtu:
+                    mtu = int(mtu)
+
         self._createConfFile(conf, bonding, ipaddr, netmask, gateway,
                              bootproto, mtu, onboot, **kwargs)
 
@@ -445,6 +457,18 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
         if bonding:
             conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(bonding)
+
+        if ifaceUsers(nic):
+            confParams = netinfo.getIfaceCfg(nic)
+            if not ipaddr:
+                ipaddr = confParams.get('IPADDR', None)
+                netmask = confParams.get('NETMASK', None)
+                gateway = confParams.get('GATEWAY', None)
+            if not mtu:
+                mtu = confParams.get('MTU', None)
+                if mtu:
+                    mtu = int(mtu)
+
         self._createConfFile(conf, nic, ipaddr, netmask, gateway,
                              bootproto, mtu, onboot, **kwargs)
 
