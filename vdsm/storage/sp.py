@@ -67,6 +67,8 @@ rmanager = rm.ResourceManager.getInstance()
 SPM_ACQUIRED = 'SPM'
 SPM_CONTEND = 'Contend'
 SPM_FREE = 'Free'
+SPM_ID_FREE = -1
+LVER_INVALID = -1
 
 def domainListEncoder(domDict):
     domains = ','.join([ '%s:%s' % (k, v) for k, v in domDict.iteritems()])
@@ -117,7 +119,7 @@ class StoragePool(Securable):
         self._setUnsafe()
         self.spUUID = str(spUUID)
         self.poolPath = os.path.join(self.storage_repository, self.spUUID)
-        self.id = None
+        self.id = SPM_ID_FREE
         self.scsiKey = None
         self.taskMng = taskManager
         self._poolFile = os.path.join(self._poolsTmpDir, self.spUUID)
@@ -145,7 +147,7 @@ class StoragePool(Securable):
     def forceFreeSpm(self):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
         # TODO: SCSI Fence the 'lastOwner'
-        self.setMetaParams({PMDK_SPM_ID: -1, PMDK_LVER: -1},
+        self.setMetaParams({PMDK_SPM_ID: SPM_ID_FREE, PMDK_LVER: LVER_INVALID},
                            __securityOverride=True)
         self.spmRole = SPM_FREE
 
@@ -381,7 +383,8 @@ class StoragePool(Securable):
 
             if not stopFailed:
                 try:
-                    self.setMetaParam(PMDK_SPM_ID, -1, __securityOverride=True)
+                    self.setMetaParam(PMDK_SPM_ID, SPM_ID_FREE,
+                                      __securityOverride=True)
                 except:
                     pass # The system can handle this inconsistency
 
@@ -511,7 +514,7 @@ class StoragePool(Securable):
                 msd.releaseHostId(self.id)
                 raise
         except:
-            self.id = None
+            self.id = SPM_ID_FREE
             raise
 
     @unsecured
@@ -521,7 +524,7 @@ class StoragePool(Securable):
             msd.releaseClusterLock()
         finally:
             msd.releaseHostId(self.id)
-        self.id = None
+        self.id = SPM_ID_FREE
 
     @unsecured
     def create(self, poolName, msdUUID, domList, masterVersion, safeLease):
@@ -659,7 +662,7 @@ class StoragePool(Securable):
         """
         self.log.info("Disconnect from the storage pool %s", self.spUUID)
 
-        self.id = None
+        self.id = SPM_ID_FREE
         self.scsiKey = None
         if os.path.exists(self._poolFile):
             os.unlink(self._poolFile)
@@ -715,8 +718,8 @@ class StoragePool(Securable):
                 raise se.UnicodeArgumentException()
 
             futurePoolMD.update({
-            PMDK_SPM_ID: -1,
-            PMDK_LVER: -1,
+            PMDK_SPM_ID: SPM_ID_FREE,
+            PMDK_LVER: LVER_INVALID,
             PMDK_MASTER_VER: masterVersion,
             PMDK_POOL_DESCRIPTION: poolName,
             PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS}})
@@ -1390,8 +1393,9 @@ class StoragePool(Securable):
         if not self.spUUID:
             raise se.StoragePoolInternalError
 
-        info = {'type': '', 'name': '', 'domains': '', 'master_uuid': '', 'master_ver': 0,
-                'lver': -1, 'spm_id': -1, 'isoprefix': '', 'pool_status': 'uninitialized', 'version': -1}
+        info = {'type': '', 'name': '', 'domains': '', 'master_uuid': '',
+                'master_ver': 0, 'lver': LVER_INVALID, 'spm_id': SPM_ID_FREE,
+                'isoprefix': '', 'pool_status': 'uninitialized', 'version': -1}
         list_and_stats = {}
 
         msdUUID = self.masterDomain.sdUUID

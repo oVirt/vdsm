@@ -1490,6 +1490,10 @@ class HSM:
             raise se.StoragePoolConnected(spUUID)
 
         self.validateSdUUID(masterDom)
+
+        if hostId is not None:
+            misc.validateN(hostId, 'hostId')
+
         vars.task.getExclusiveLock(STORAGE, spUUID)
 
         for d, status in domDict.iteritems():
