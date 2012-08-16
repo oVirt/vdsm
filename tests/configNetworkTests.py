@@ -196,13 +196,22 @@ class TestconfigNetwork(TestCaseBase):
                     'fakebrnet': {'iface': 'fakebr', 'bridged': True, 'ports':
                         ['eth0', 'eth1']},
                     'fakebrnet1': {'iface': 'fakebr1', 'bridged': True,
-                        'ports': ['bond00']}
+                        'ports': ['bond00']},
+                    'fakebrnet2': {'iface': 'fakebr2', 'bridged': True,
+                        'ports': ['eth7.1']},
+                    'fakebrnet3': {'iface': 'eth8', 'bridged': False}
                     },
                 'vlans': {
-                    'fakevlan': {
+                    'eth3.2': {
                         'iface': 'eth3',
                         'addr': '10.10.10.10',
                         'netmask': '255.255.0.0',
+                        'mtu': 1500
+                        },
+                    'eth7.1': {
+                        'iface': 'eth7',
+                        'addr': '192.168.100.1',
+                        'netmask': '255.255.255.0',
                         'mtu': 1500
                         }
                     },
@@ -273,6 +282,30 @@ class TestconfigNetwork(TestCaseBase):
         self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth6'],
                                  ipaddr, netmask, gw, bondingOptions),
                                 configNetwork.ne.ERR_USED_NIC)
+
+        # Test for adding a new VLANed bridged network
+        # when a non-VLANed bridged network exists
+        self._addNetworkWithExc((netinfoIns, 'test', '2', 'bond00', nics,
+                                 ipaddr, netmask, gw, bondingOptions),
+                                configNetwork.ne.ERR_BAD_PARAMS)
+
+        # Test for adding a new VLANed bridgeless network
+        # when a non-VLANed bridged network exists
+        self._addNetworkWithExc((netinfoIns, 'test', '2', 'bond00', nics,
+                                 ipaddr, netmask, gw, bondingOptions, False),
+                                configNetwork.ne.ERR_BAD_PARAMS)
+
+        # Test for adding a new VLANed bridged network
+        # when the interface is in use by any type of networks
+        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth7'],
+                                 ipaddr, netmask, gw, bondingOptions),
+                                configNetwork.ne.ERR_BAD_PARAMS)
+
+        # Test for adding a new non-VLANed bridgeless network
+        # when a non-VLANed bridgeless network exists
+        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth8'],
+                                 ipaddr, netmask, gw, bondingOptions, False),
+                                configNetwork.ne.ERR_BAD_PARAMS)
 
 
 class ConfigWriterTests(TestCaseBase):
