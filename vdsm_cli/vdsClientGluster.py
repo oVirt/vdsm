@@ -208,6 +208,10 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeProfileStart(self, args):
+        status = self.s.glusterVolumeProfileStart(args[0])
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return {
@@ -374,5 +378,10 @@ def getGlusterCmdDict(serv):
             (serv.do_glusterHostsList,
              ('',
               'list host info'
+              )),
+        'glusterVolumeProfileStart':
+            (serv.do_glusterVolumeProfileStart,
+             ('<volume_name>\n\t<volume_name> is existing volume name',
+              'start gluster volume profile'
               )),
         }

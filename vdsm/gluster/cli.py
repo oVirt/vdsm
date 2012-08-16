@@ -749,3 +749,13 @@ def peerStatus():
                                 _getGlusterUuid(), HostStatus.CONNECTED)
     except (etree.ParseError, AttributeError, ValueError):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+@exportToSuperVdsm
+def volumeProfileStart(volumeName):
+    command = _getGlusterVolCmd() + ["profile", volumeName, "start"]
+    try:
+        _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeProfileStartFailedException(rc=e.rc, err=e.err)
+    return True

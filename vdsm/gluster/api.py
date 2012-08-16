@@ -228,6 +228,10 @@ class GlusterApi(object):
         """
         return {'hosts': self.svdsmProxy.glusterPeerStatus()}
 
+    @exportAsVerb
+    def volumeProfileStart(self, volumeName, options=None):
+        self.svdsmProxy.glusterVolumeProfileStart(volumeName)
+
 
 def getGlusterMethods(gluster):
     l = []
