@@ -84,6 +84,7 @@ Requires: sos
 Requires: tree
 Requires: dosfstools
 Requires: policycoreutils-python
+Requires: genisoimage
 Requires(pre,preun): policycoreutils-python
 Requires: libselinux-python
 Requires: %{name}-python = %{version}-%{release}
