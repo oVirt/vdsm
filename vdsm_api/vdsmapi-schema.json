@@ -64,14 +64,12 @@
 #
 # @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
 #
-# @skipLibvirt:     #optional Do not use libvirt to gather network information
-#
 # Since: 4.10.0
 ##
 {'type': 'NetworkOptions',
  'data': {'*ipaddr', 'str', '*netmask': 'str', '*gateway': 'str',
           '*bootproto': 'str', '*delay': 'uint', '*onboot': 'str',
-          '*bondingOptions', 'str', 'skipLibvirt': 'bool'}}
+          '*bondingOptions', 'str'}}
 
 ##
 # @Global.addNetwork:
