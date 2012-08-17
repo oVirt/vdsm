@@ -92,7 +92,7 @@ if rhel6based:
     VDS_PACK = ('qemu-kvm', 'qemu-kvm-tools', VDSM_NAME, VDSM_NAME+'-cli',
                 'libjpeg', 'spice-server', 'pixman',
                 'seabios', 'qemu-img', 'fence-agents',
-                'libselinux-python')
+                'libselinux-python', 'sanlock', 'sanlock-python')
     # Gluster packages
     GLUSTER_PACK = ('vdsm-gluster', 'glusterfs-server', 'glusterfs-rdma',
                     'glusterfs-geo-replication')
