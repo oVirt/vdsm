@@ -20,7 +20,7 @@
 
 # Autoconf initialization
 AC_INIT([vdsm],
-        [m4_esyscmd([build-aux/version.sh])],
+        [m4_esyscmd([build-aux/pkg-version --version])],
         [vdsm-devel@lists.fedorahosted.org])
 AC_CONFIG_AUX_DIR([build-aux])
 
@@ -28,7 +28,7 @@ m4_include([m4/ax_python_module.m4])
 
 # Package release
 AC_SUBST([PACKAGE_RELEASE],
-         [m4_esyscmd([build-aux/release.sh])])
+         [m4_esyscmd([build-aux/pkg-version --release])])
 
 # Testing for version and release
 AS_IF([test "x$PACKAGE_VERSION" = x],

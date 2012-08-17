@@ -25,6 +25,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 # This is an *exception*, we ship also vdsm.spec so it's possible to build the
 # rpm from the tarball.
 EXTRA_DIST = \
+	build-aux/pkg-version \
 	vdsm.spec \
 	vdsm.spec.in
 
@@ -124,15 +125,23 @@ rpm: dist
 	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
 				$(WITH_HOOKS) $(DIST_ARCHIVES)
 
-dist-hook: gen-ChangeLog
+dist-hook: gen-VERSION gen-ChangeLog
+.PHONY: gen-VERSION gen-ChangeLog
 
 # Generate the ChangeLog file and insert it into the directory
 # we're about to use to create a tarball.
-.PHONY: gen-ChangeLog
 gen-ChangeLog:
 	if test -d .git; then					\
 	  $(top_srcdir)/build-aux/gitlog-to-changelog		\
 	    > $(distdir)/cl-t;					\
 	  rm -f $(distdir)/ChangeLog;				\
 	  mv $(distdir)/cl-t $(distdir)/ChangeLog;		\
+	fi
+
+gen-VERSION:
+	if test -d .git; then					\
+	  $(top_srcdir)/build-aux/pkg-version --full		\
+	    > $(distdir)/ve-t;					\
+	  rm -f $(distdir)/VERSION;				\
+	  mv $(distdir)/ve-t $(distdir)/VERSION;		\
 	fi
