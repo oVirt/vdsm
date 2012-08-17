@@ -117,13 +117,13 @@ class clientIF:
 
     @classmethod
     def getInstance(cls, log=None):
-        if cls._instance == None:
-            if log == None:
-                raise Exception("Logging facility is required to create \
-                                the single clientIF instance")
         with cls._instanceLock:
             if cls._instance == None:
-                cls._instance = clientIF(log)
+                if log == None:
+                    raise Exception("Logging facility is required to create "
+                                    "the single clientIF instance")
+                else:
+                    cls._instance = clientIF(log)
         return cls._instance
 
     def _getServerIP(self, addr=None):
