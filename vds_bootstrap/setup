@@ -173,11 +173,16 @@ def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_
                     execfn += [random_num]
                 execfn.append(str(int(rebootAfterInstallation)))
             logging.debug("trying to run %s script cmd = '%s'",script, string.join(execfn, " "))
-            subprocess.Popen(execfn).communicate()
+            proc = subprocess.Popen(execfn)
+            proc.communicate()
+            if proc.returncode == 0:
+                return True
         else:
             logging.debug("script %s doen not exist",script)
     except:
         logging.error(traceback.format_exc())
+
+    return False
 
 def process_ovirt_platform(url_bs, engine_port, random_num, systime, engine_ssh_key):
 
@@ -340,7 +345,24 @@ def main():
             else:
                 vds_script = './vds_bootstrap_complete.py'
 
-            runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_config_str, url_rpm, vds_server, random_num, vds_script, vds_complete, firewall_rules_file, engine_ssh_key, rebootAfterInstallation, installVirtualizationService, installGlusterService)
+            if not runInstaller(
+                    bootstrap_interface_version,
+                    remote_nfs,
+                    orgName,
+                    systime,
+                    vds_config_str,
+                    url_rpm,
+                    vds_server,
+                    random_num,
+                    vds_script,
+                    vds_complete,
+                    firewall_rules_file,
+                    engine_ssh_key,
+                    rebootAfterInstallation,
+                    installVirtualizationService,
+                    installGlusterService):
+                return False
+
             if firewall_rules_file is not None:
                 try:
                     os.unlink(firewall_rules_file)

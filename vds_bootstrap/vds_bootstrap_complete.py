@@ -88,7 +88,7 @@ def main():
         rnum = args[0]
     except:
         print main.__doc__
-        return 0
+        return False
     try:
         arg = int(args[1])
     except:
@@ -119,5 +119,7 @@ def main():
         print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
         sys.stdout.flush()
 
+    return res
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(not main())

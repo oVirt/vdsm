@@ -984,7 +984,7 @@ obsolete options:
         #    rev_num = REVISION
     except:
         print main.__doc__
-        return 0
+        return False
 
     logging.debug('**** Start VDS Validation ****')
     try:
@@ -995,7 +995,7 @@ obsolete options:
         logging.error(main.__doc__)
         logging.debug("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
         print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
-        return 0
+        return False
     else:
         message = ("<BSTRAP component='RHEV_INSTALL' status=")
         if ret:
@@ -1008,6 +1008,7 @@ obsolete options:
 
     logging.debug('**** End VDS Validation ****')
     sys.stdout.flush()
+    return ret
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(not main())
