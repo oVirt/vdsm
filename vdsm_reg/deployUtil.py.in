@@ -189,33 +189,36 @@ def setCoreDumpPath():
     logging.debug("setCoreDumpPath end:" + str(fReturn))
     return fReturn
 
+def _removeNoError(file):
+    try:
+        os.remove(file)
+    except OSError:
+        pass
+
 def cleanAll(random_num):
     """ Remove temp files.
     """
-    fReturn = True
-    try:
-        for f in (
-            '/vds_bootstrap_%s.py' % random_num,
-            '/vds_bootstrap_complete_%s.py' % random_num,
-            '/deployUtil.py'
-        ):
-            os.unlink(_WORK_DIR + f)
-            os.unlink(_WORK_DIR + f + "c")
 
-        for f in (
-            '/req_%s.conf' % random_num,
-            '/cert_%s.req' % random_num,
-            '/cert_%s.pem' % random_num,
-            '/CA_%s.pem' % random_num
-        ):
-            os.unlink(_WORK_DIR + f)
-    except:
-        pass
+    for f in (
+        '/vds_bootstrap_%s.py' % random_num,
+        '/vds_bootstrap_complete_%s.py' % random_num,
+        '/deployUtil.py'
+    ):
+        _removeNoError(_WORK_DIR + f)
+        _removeNoError(_WORK_DIR + f + "c")
+
+    for f in (
+        '/req_%s.conf' % random_num,
+        '/cert_%s.req' % random_num,
+        '/cert_%s.pem' % random_num,
+        '/CA_%s.pem' % random_num
+    ):
+        _removeNoError(_WORK_DIR + f)
 
     print "<BSTRAP component='cleanAll' status='OK'/>"
-    logging.debug("cleanAll end:" + str(fReturn))
+    logging.debug("cleanAll end")
 
-    return fReturn
+    return True
 
 def setVdsConf(configStr, confFile):
     """
