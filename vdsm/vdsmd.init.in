@@ -490,6 +490,14 @@ start() {
        return $ret_val
     fi
 
+    @VDSMDIR@/nwfilter.py > /dev/null 2>&1
+    ret_val=$?
+    if [ $ret_val -ne 0 ]
+    then
+        log_failure_msg "$prog: Failed to define network filters on libvirt"
+        return $ret_val
+    fi
+
     @VDSMDIR@/vdsm-restore-net-config
     load_needed_modules
     mk_data_center

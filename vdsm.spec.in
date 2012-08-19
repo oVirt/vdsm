@@ -577,6 +577,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vm.py*
 %{_datadir}/%{vdsm_name}/write-net-config
+%attr (755,vdsm,kvm) %{_datadir}/%{vdsm_name}/nwfilter.py*
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.policy

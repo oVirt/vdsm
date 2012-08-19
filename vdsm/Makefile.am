@@ -45,6 +45,7 @@ dist_vdsm_PYTHON = \
 	mkimage.py \
 	momIF.py \
 	neterrors.py \
+	nwfilter.py \
 	parted_utils.py \
 	pthread.py \
 	supervdsm.py \
@@ -52,7 +53,8 @@ dist_vdsm_PYTHON = \
 	tc.py \
 	vdsmDebugPlugin.py \
 	vmChannels.py \
-	vm.py
+	vm.py \
+	$(NULL)
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
