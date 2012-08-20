@@ -1498,8 +1498,7 @@ class LibvirtVm(vm.Vm):
             self.saveState()
             self._getUnderlyingNetworkInterfaceInfo()
 
-        return {'status': doneCode,
-                'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode, 'vmList': self.status()}
 
     def hotunplugNic(self, params):
         if self.isMigrating():
@@ -1555,8 +1554,7 @@ class LibvirtVm(vm.Vm):
                 'status': {'code': errCode['hotunplugNic']['status']['code'],
                            'message': e.message}}
 
-        return {'status': doneCode,
-                'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode, 'vmList': self.status()}
 
     def hotplugDisk(self, params):
         if self.isMigrating():
@@ -1593,8 +1591,7 @@ class LibvirtVm(vm.Vm):
             self.saveState()
             self._getUnderlyingDriveInfo()
 
-        return {'status': doneCode,
-                'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode, 'vmList': self.status()}
 
     def hotunplugDisk(self, params):
         if self.isMigrating():
@@ -1652,8 +1649,7 @@ class LibvirtVm(vm.Vm):
         else:
             self._cleanup()
 
-        return {'status': doneCode,
-                'vmList': self.cif.vmContainer[params['vmId']].status()}
+        return {'status': doneCode, 'vmList': self.status()}
 
     def _readPauseCode(self, timeout):
         self.log.warning('_readPauseCode unsupported by libvirt vm')
