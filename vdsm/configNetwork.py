@@ -569,7 +569,8 @@ class ConfigWriter(object):
             cf = self.NET_CONF_PREF + nic
             mtuval = self._getConfigValue(cf, 'MTU')
             if not mtuval is None:
-                if int(mtuval) > mtu:
+                mtuval = int(mtuval)
+                if mtuval > mtu:
                     mtu = mtuval
         return mtu
 
@@ -587,7 +588,9 @@ class ConfigWriter(object):
         _netinfo = netinfo.NetInfo()
         cf = self.NET_CONF_PREF + bridge
         currmtu = self._getConfigValue(cf, 'MTU')
-        if currmtu is None:
+        if currmtu:
+            currmtu = int(currmtu)
+        else:
             return
 
         nics, delvlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(bridge)
@@ -608,19 +611,22 @@ class ConfigWriter(object):
                 continue
             cf = self.NET_CONF_PREF + iface + '.' + vlan
             mtu = self._getConfigValue(cf, 'MTU')
+            if mtu:
+                mtu = int(mtu)
             newmtu = max(newmtu, mtu)
 
         if newmtu != currmtu:
             if bonding:
                 cf = self.NET_CONF_PREF + bonding
-                self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
+                self._updateConfigValue(cf, 'MTU', str(newmtu), newmtu is None)
                 slaves = netinfo.slaves(bonding)
                 for slave in slaves:
                     cf = self.NET_CONF_PREF + slave
-                    self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
+                    self._updateConfigValue(cf, 'MTU', str(newmtu),
+                                            newmtu is None)
             else:
                 cf = self.NET_CONF_PREF + nics[0]
-                self._updateConfigValue(cf, 'MTU', newmtu, newmtu is None)
+                self._updateConfigValue(cf, 'MTU', str(newmtu), newmtu is None)
 
 def isBridgeNameValid(bridgeName):
     return bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and \
