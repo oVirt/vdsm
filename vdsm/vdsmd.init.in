@@ -420,6 +420,24 @@ stop_libvirtd_sysv() {
     fi
 }
 
+await_libvirt_start_workaround() {
+    # Libvirt reports its service status as responsive despite
+    # its socket is not yet ready. Once issue fixed on libvirt,
+    # this workaround should be removed.
+
+    for i in {1..50}
+    do
+        if pgrep libvirtd > /dev/null 2>&1;
+        then
+            return 0
+        fi
+        sleep 0.2
+    done
+
+    log_failure_msg "$prog: failed to connect to libvirt"
+    return 1
+}
+
 start_libvirtd() {
     local packaged target
     local startout
@@ -442,6 +460,7 @@ start_libvirtd() {
     startout=`/sbin/initctl start libvirtd 2>&1`
     if [[ "$?" -eq 0 || "$startout" =~ .*already\ running.* ]];
     then
+        await_libvirt_start_workaround
         return 0
     else
         echo "$startout" >&2
