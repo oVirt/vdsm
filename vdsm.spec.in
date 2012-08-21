@@ -91,6 +91,7 @@ Requires: %{name}-python = %{version}-%{release}
 Requires: selinux-policy-targeted >= 3.7.19-80.el6
 Requires: pyparted
 Requires(post): /usr/sbin/saslpasswd2
+Requires(post): /bin/hostname
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
