@@ -451,7 +451,7 @@ start_libvirtd() {
               /bin/grep libvirtd.upstart | /usr/bin/tail -1`
     target=/etc/init/libvirtd.conf
 
-    if ! diff -q "$packaged" "$target" >/dev/null;
+    if [[ -f "$packaged" ]] && ! diff -q "$packaged" "$target" >/dev/null;
     then
         /bin/cp -p "$packaged" "$target" || return 1
         /sbin/initctl reload-configuration
