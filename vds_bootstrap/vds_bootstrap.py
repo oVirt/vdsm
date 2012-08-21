@@ -868,6 +868,11 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
 
     oDeploy = Deploy()
 
+    if systime:
+        if not oDeploy.setSystemTime(systime):
+            logging.error('setSystemTime failed')
+            return False
+
     if not oDeploy.checkRegistration():
         logging.error('checkRegistration test failed')
         return False
@@ -919,11 +924,6 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
     if firewallRulesFile:
         if not oDeploy.overrideFirewall(firewallRulesFile):
             logging.error('Failed to set default firewall')
-            return False
-
-    if systime:
-        if not oDeploy.setSystemTime(systime):
-            logging.error('setSystemTime failed')
             return False
 
     if not oDeploy.verifyServices():
