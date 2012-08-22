@@ -16,6 +16,7 @@ import logging.config
 from time import strftime
 from config import config
 import deployUtil
+from ovirtnode.install import Install
 
 VDSM_REG_CONF_FILE = '/etc/vdsm-reg/vdsm-reg.conf'
 VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
@@ -85,27 +86,18 @@ def setMountPoint(config):
     return fOK
 
 def doUpgrade(config):
-    out = None
-    err = None
-    ret = None
     fReturn = True
 
-    strMountPoint = config.get('vars', 'upgrade_mount_point')
-
-    if os.path.exists("/usr/libexec/ovirt-config-boot"):
-        out, err, ret = deployUtil._logExec(["/usr/libexec/ovirt-config-boot", strMountPoint])
-    else:
-        err = "Can not find /usr/libexec/ovirt-config-boot !"
-
-    if ret == None or ret != 0:
-        msg = "<BSTRAP component='doUpgrade' status='FAIL' message='" + deployUtil.escapeXML(str(err)) + "'/>"
-        print (msg)
-        logging.error(msg)
-        fReturn = False
-    else:
+    install = Install()
+    if install.ovirt_boot_setup():
         msg = "<BSTRAP component='doUpgrade' status='OK' message='Upgrade Succeeded. Rebooting'/>"
         print (msg)
         logging.debug(msg)
+    else:
+        msg = "<BSTRAP component='doUpgrade' status='FAIL' message='Upgrade Failed!'/>"
+        print (msg)
+        logging.error(msg)
+        fReturn = False
 
     return fReturn
 
