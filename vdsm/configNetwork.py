@@ -1275,7 +1275,12 @@ def usage():
 
 
 def _parseKwargs(args):
-    return dict(arg.split('=', 1) for arg in args)
+    import API
+
+    kwargs = dict(arg.split('=', 1) for arg in args)
+    API.Global.translateNetOptionsToNew(kwargs)
+
+    return kwargs
 
 def main():
     if len(sys.argv) <= 1:

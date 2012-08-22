@@ -1166,7 +1166,7 @@ class Global(APIBase):
         vlan(number) and bond are optional - pass the empty string to discard
         them.  """
 
-        self._translateOptionsToNew(options)
+        self.translateNetOptionsToNew(options)
         if not self._cif._networkSemaphore.acquire(blocking=False):
             self.log.warn('concurrent network verb already executing')
             return errCode['unavail']
@@ -1190,7 +1190,7 @@ class Global(APIBase):
 
     def delNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
         """Delete a network from this vds."""
-        self._translateOptionsToNew(options)
+        self.translateNetOptionsToNew(options)
 
         try:
             if not self._cif._networkSemaphore.acquire(blocking=False):
@@ -1236,7 +1236,7 @@ class Global(APIBase):
                     nics=None, options={}):
         """Add a new network to this vds, replacing an old one."""
 
-        self._translateOptionsToNew(options)
+        self.translateNetOptionsToNew(options)
         if not self._cif._networkSemaphore.acquire(blocking=False):
             self.log.warn('concurrent network verb already executing')
             return errCode['unavail']
@@ -1364,7 +1364,8 @@ class Global(APIBase):
                 self.log.error(vmId + ': Lost connection to VM')
         return count, active, migrating
 
-    def _translateOptionsToNew(self, options):
+    @staticmethod
+    def translateNetOptionsToNew(options):
         _translationMap = {
             'IPADDR': 'ipaddr',
             'NETMASK': 'netmask',
@@ -1376,6 +1377,6 @@ class Global(APIBase):
         }
         for k, v in options.items():
             if k in _translationMap:
-                self.log.warn("options %s is deprecated. Use %s instead" %
+                logging.warn("options %s is deprecated. Use %s instead" %
                               (k, _translationMap[k]))
                 options[_translationMap[k]] = options.pop(k)
