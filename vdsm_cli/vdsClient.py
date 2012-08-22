@@ -1170,6 +1170,19 @@ class service:
         print status  # TODO
         return 0, ''
 
+    def getAllTasks(self, args):
+        keys = []
+        if len(args) > 0:
+            keys = [x.strip() for x in args[0].split(',')]
+        status = self.s.getAllTasks(keys)
+        if status['status']['code']:
+            return status['status']['code'], status['status']['message']
+        for t, inf in status['tasks'].iteritems():
+            print t, ':'
+            for k, v in inf.iteritems():
+                print '\t', k, '=', v
+        return 0, ''
+
     def stopTask(self, args):
         taskID = args[0]
         status = self.s.stopTask(taskID)
@@ -2122,6 +2135,10 @@ if __name__ == '__main__':
         'getAllTasksStatuses': (serv.getAllTasksStatuses,
                          ('',
                          'list statuses of all async tasks'
+                         )),
+        'getAllTasks': (serv.getAllTasks,
+                         ('[tags=\'\']',
+                         'get status and information for all async tasks'
                          )),
         'stopTask': (serv.stopTask,
                          ('<TaskID>',

@@ -663,6 +663,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getAllTasksStatuses()
 
+    def tasksGetAll(self, options=None):
+        api = API.Global()
+        return api.getAllTasks()
+
     def iscsiDiscoverSendTargets(self, con, options=None):
         iscsiConn = API.ISCSIConnection(con['connection'],
             con['port'], con['user'], con['password'])
@@ -827,6 +831,7 @@ class BindingXMLRPC(object):
                 (self.volumeTearDown, 'teardownVolume'),
                 (self.tasksGetAllInfo, 'getAllTasksInfo'),
                 (self.tasksGetAllStatuses, 'getAllTasksStatuses'),
+                (self.tasksGetAll, 'getAllTasks'),
                 (self.iscsiDiscoverSendTargets, 'discoverSendTargets'),
                 (self.vgCreate, 'createVG'),
                 (self.vgGetInfo, 'getVGInfo'),

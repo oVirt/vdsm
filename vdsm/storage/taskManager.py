@@ -113,15 +113,19 @@ class TaskManager:
         self.log.debug("Return: %s", subRes)
         return subRes
 
-    def getAllTasks(self, tag=None):
+    def getAllTasks(self):
         """
         Return Tasks for all public tasks.
         """
         self.log.debug("Entry.")
         subRes = {}
         for taskID, task in self._tasks.items():
-            if not tag or tag in task.getTags():
-                subRes[taskID] = task
+            try:
+                subRes[taskID] = task.getDetails()
+            except se.UnknownTask:
+                # Return info for existing tasks only.
+                self.log.warn("Unknown task %s. Maybe task was already "
+                                "cleared.", taskID)
         self.log.debug("Return: %s", subRes)
         return subRes
 

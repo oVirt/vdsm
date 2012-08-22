@@ -1300,6 +1300,9 @@ class Global(APIBase):
     def getAllTasksStatuses(self):
         return self._irs.getAllTasksStatuses()
 
+    def getAllTasks(self):
+        return self._irs.getAllTasks()
+
     def setMOMPolicy(self, policy):
         try:
             self._cif.mom.setPolicy(policy)

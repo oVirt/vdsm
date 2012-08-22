@@ -444,6 +444,59 @@
  'data': {'policy': 'str'}}
 
 ##
+# @TasksStatus:
+#
+# A collection of status information about a task.
+#
+# @id:       The task @UUID
+#
+# @verb:     The underlying operation to be performed by the task
+#
+# @state:    Current task state (@TaskState)
+#
+# @code:     Return code from the underlying task verb
+#
+# @message:  Detailed error message from the underlying task verb
+#
+# @result:   Final task result (@TaskResult)
+#
+# @tag:     The tag assigned to the task
+#
+# Since: 4.10.0
+##
+{'type': 'TaskStatus',
+ 'data': {'id': 'UUID', 'verb': 'str', 'state': 'TaskState',
+          'code': 'int', 'message': 'str', 'taskResult': 'TaskResult',
+          'tag': 'str'}}
+
+##
+# @TaskDetails:
+#
+# A mapping of Task details indexed by Task UUID.
+#
+# Since: 4.10.0
+##
+{'map': 'TasksDetails',
+ 'key': 'UUID', 'value': 'TaskDetails'}
+
+##
+# @Global.getAllTasks:
+#
+# Get all information about all tasks.
+#
+# Returns:
+# @tasks:  A mapping of task information
+#
+# Since: 4.10.0
+#
+# Notes: This API corrects the issues noted in @Global.getAllTasksStatuses and
+#        @Global.getAllTasksInfo
+##
+{'command': {'class': 'Global', 'name': 'getAllTasks'},
+ 'returns': {'tasks': 'TasksDetails'}}
+
+
+##
 # @StringMap:
 #
 # A mapping between arbitrary strings.

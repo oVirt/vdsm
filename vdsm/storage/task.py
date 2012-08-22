@@ -1249,6 +1249,17 @@ class Task:
         oReturn["result"] = self.result.result
         return oReturn
 
+    def getDetails(self):
+        return {
+            "id": self.id,
+            "verb": self.name,
+            "state": str(self.state),
+            "code": self.result.code,
+            "message": self.result.message,
+            "result": self.result.result,
+            "tag": self.tag
+        }
+
     def getID(self):
         return self.id
 

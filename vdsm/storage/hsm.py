@@ -1792,6 +1792,16 @@ class HSM:
         allTasksInfo = self.taskMng.getAllTasksInfo("spm")
         return dict(allTasksInfo=allTasksInfo)
 
+    @public
+    def getAllTasks(self):
+        """
+        Get the information for all tasks in the system.
+
+        :returns: A dict of all tasks' information.
+        :rtype: dict
+        """
+        ret = self.taskMng.getAllTasks()
+        return dict(tasks=ret)
 
     @public
     def stopTask(self, taskID, spUUID=None, options = None):
