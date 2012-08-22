@@ -29,9 +29,10 @@ import glob
 from collections import namedtuple
 import misc
 from functools import partial
-from storage_exception import InvalidParameterException
+import storage_exception as se
 
 import mount
+import fileSD
 import iscsi
 from sync import asyncmethod, AsyncCallStub
 
@@ -101,7 +102,7 @@ def _addIntegerOption(options, key, value):
     try:
         options.append("%s=%d" % (key, int(value)))
     except ValueError:
-        raise InvalidParameterException(key, value)
+        raise se.InvalidParameterException(key, value)
 
 class ExampleConnection(object):
     """Do not inherit from this object it is just to show and document the
@@ -139,6 +140,7 @@ class ExampleConnection(object):
         """All connection objects mush be hashable so they can be used as keys of dictionaries"""
 
 class MountConnection(object):
+    log = logging.getLogger("StorageServer.MountConnection")
     localPathBase = "/tmp"
 
     @property
@@ -177,6 +179,15 @@ class MountConnection(object):
                 raise
 
         self._mount.mount(self.options, self._vfsType)
+
+        try:
+            fileSD.validateDirAccess(self.getMountObj().getRecord().fs_file)
+        except se.StorageServerAccessPermissionError:
+            try:
+                self.disconnect()
+            except OSError:
+                self.log.warn("Error while disconnecting after access problem", exc_info=True)
+            raise
 
     def isConnected(self):
         return self._mount.isMounted()
@@ -397,7 +408,7 @@ class LocalDirectoryConnection(object):
         return os.path.join(self.localPathBase, self._path.replace("_", "__").replace("/", "_"))
 
     def checkTarget(self):
-        return os.path.exists(self._path) and os.path.isdir(self._path)
+        return os.path.isdir(self._path) and fileSD.validateDirAccess(self._path)
 
     def checkLink(self):
         lnPath = self._getLocalPath()

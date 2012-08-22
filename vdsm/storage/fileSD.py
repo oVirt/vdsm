@@ -48,11 +48,17 @@ FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
 getProcPool = oop.getGlobalProcPool
 
 def validateDirAccess(dirPath):
-    getProcPool().fileUtils.validateAccess(dirPath)
-    supervdsm.getProxy().validateAccess(constants.QEMU_PROCESS_USER,
-            (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
-            (os.R_OK | os.X_OK))
+    try:
+        getProcPool().fileUtils.validateAccess(dirPath)
+        supervdsm.getProxy().validateAccess(constants.QEMU_PROCESS_USER,
+                (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
+                (os.R_OK | os.X_OK))
+    except OSError as e:
+        if e.errno == errno.EACCES:
+            raise se.StorageServerAccessPermissionError(dirPath)
+        raise
 
+    return True
 
 def getDomUuidFromMetafilePath(metafile):
     # Metafile path has pattern:

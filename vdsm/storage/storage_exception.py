@@ -915,7 +915,7 @@ class StorageServerAccessPermissionError(StorageException):
     message = "Permission settings on the specified path do not allow"\
               " access to the storage. Verify permission settings"\
               " on the specified storage path."
-    def __init__(self, targetPath=''):
+    def __init__(self, targetPath):
         self.value = "path = %s" % targetPath
 
 class MountTypeError(StorageException):
