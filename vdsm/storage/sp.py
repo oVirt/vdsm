@@ -935,7 +935,7 @@ class StoragePool(Securable):
 
                 # If you remove this condition, remove it from
                 # public_createStoragePool too.
-                if dom.isData() and domVers != mstVers:
+                if dom.isData() and domVers > mstVers:
                     raise se.MixedSDVersionError(dom.sdUUID, domVers,
                                     self.masterDomain.sdUUID, mstVers)
 
