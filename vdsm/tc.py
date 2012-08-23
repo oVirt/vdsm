@@ -19,6 +19,7 @@
 #
 
 from subprocess import list2cmdline
+from collections import namedtuple
 
 import storage.misc
 from vdsm.constants import EXT_TC, EXT_IFCONFIG
@@ -86,3 +87,39 @@ def set_promisc(dev, on=True):
         promisc = '-promisc'
     command = [EXT_IFCONFIG, dev, promisc]
     _process_request(command)
+
+
+Filter = namedtuple('Filter', 'prio handle actions')
+MirredAction = namedtuple('MirredAction', 'target')
+
+
+def filters(dev, parent, out=None):
+    """
+    Return a (very) limitted information about tc filters on dev
+
+    Function returns a generator of Filter objects.
+    """
+
+    if out is None:
+        out = _process_request([EXT_TC, 'filter', 'show', 'dev', dev,
+                               'parent', parent])
+
+    HEADER = 'filter protocol ip pref '
+    prio = handle = None
+    actions = []
+    prevline = ' '
+    for line in out.splitlines() + [HEADER + 'X']:
+        if line.startswith(HEADER):
+            if prevline == ' ' and prio and handle and actions:
+                yield Filter(prio, handle, actions)
+                prio = handle = None
+                actions = []
+            else:
+                elems = line.split()
+                if len(elems) > 7:
+                    prio = elems[4]
+                    handle = elems[7]
+        elif line.startswith('\taction order '):
+            elems = line.split()
+            if elems[3] == 'mirred' and elems[4] == '(Egress':
+                actions.append(MirredAction(elems[-2][:-1]))

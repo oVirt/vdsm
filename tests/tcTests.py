@@ -195,6 +195,21 @@ class TestQdisc(TestCaseBase):
                 self._bridge.devName + "A", 'ingress')
 
 
+class TestFilters(TestCaseBase):
+    def test_filters(self):
+        out = file('tc_filter_show.out').read()
+        PARSED_FILTERS = (
+                tc.Filter(prio='49149', handle='803::800',
+                    actions=[tc.MirredAction(target='tap1')]),
+                tc.Filter(prio='49150', handle='802::800',
+                    actions=[tc.MirredAction(target='tap2')]),
+                tc.Filter(prio='49152', handle='800::800',
+                    actions=[tc.MirredAction(target='target'),
+                             tc.MirredAction(target='target2')]))
+        self.assertEqual(tuple(tc.filters('bridge', 'parent', out=out)),
+                         PARSED_FILTERS)
+
+
 class TestPortMirror(TestCaseBase):
 
     """

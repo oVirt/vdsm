@@ -1,0 +1,24 @@
+filter protocol ip pref 49149 u32 
+filter protocol ip pref 49149 u32 fh 803: ht divisor 1 
+filter protocol ip pref 49149 u32 fh 803::800 order 2048 key ht 803 bkt 0 terminal flowid ??? 
+  match 00000000/00000000 at 0
+	action order 1: mirred (Egress Mirror to device tap1) pipe
+ 	index 18 ref 1 bind 1
+ 
+filter protocol ip pref 49150 u32 
+filter protocol ip pref 49150 u32 fh 802: ht divisor 1 
+filter protocol ip pref 49150 u32 fh 802::800 order 2048 key ht 802 bkt 0 terminal flowid ??? 
+  match 00000000/00000000 at 0
+	action order 33: mirred (Egress Mirror to device tap2) pipe
+ 	index 17 ref 1 bind 1
+ 
+filter protocol ip pref 49152 u32 
+filter protocol ip pref 49152 u32 fh 800: ht divisor 1 
+filter protocol ip pref 49152 u32 fh 800::800 order 2048 key ht 800 bkt 0 terminal flowid ??? 
+  match 00000000/00000000 at 0
+	action order 1: mirred (Egress Mirror to device target) pipe
+ 	index 60 ref 1 bind 1
+ 
+	action order 2: mirred (Egress Mirror to device target2) pipe
+ 	index 61 ref 1 bind 1
+ 
