@@ -1498,6 +1498,10 @@ class LibvirtVm(vm.Vm):
             self.saveState()
             self._getUnderlyingNetworkInterfaceInfo()
 
+        if hasattr(nic, 'portMirroring'):
+            for network in nic.portMirroring:
+                supervdsm.getProxy().setPortMirroring(network, nic.name)
+
         return {'status': doneCode, 'vmList': self.status()}
 
     def hotunplugNic(self, params):
@@ -1514,6 +1518,10 @@ class LibvirtVm(vm.Vm):
                 break
 
         if nic:
+            if hasattr(nic, 'portMirroring'):
+                for network in nic.portMirroring:
+                    supervdsm.getProxy().unsetPortMirroring(network, nic.name)
+
             nicXml = nic.getXML().toprettyxml(encoding='utf-8')
             self.log.debug("Hotunplug NIC xml: %s", nicXml)
         else:
