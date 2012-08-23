@@ -18,20 +18,20 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from subprocess import list2cmdline
 from collections import namedtuple
 
 import storage.misc
 from vdsm.constants import EXT_TC, EXT_IFCONFIG
 
 ERR_DEV_NOEXIST = 2
-PROC_ERROR_MSG = 'error executing command "%s" error: %s'
+
 
 class TrafficControlException(Exception):
-    def __init__(self, errCode, message):
+    def __init__(self, errCode, message, command):
         self.errCode = errCode
         self.message = message
-        Exception.__init__(self, self.errCode, self.message)
+        self.command = command
+        Exception.__init__(self, self.errCode, self.message, self.command)
 
 def setPortMirroring(network, target):
     qdisc_add_ingress(network)
@@ -49,8 +49,7 @@ def unsetPortMirroring(network):
 def _process_request(command):
     retcode, out, err = storage.misc.execCmd(command, raw=True, sudo=False)
     if retcode != 0:
-        msg = PROC_ERROR_MSG % (list2cmdline(command), err)
-        raise TrafficControlException(retcode, msg)
+        raise TrafficControlException(retcode, err, command)
     return out
 
 def qdisc_add_ingress(dev):
