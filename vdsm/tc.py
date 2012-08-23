@@ -27,6 +27,7 @@ ERR_DEV_NOEXIST = 2
 
 QDISC_INGRESS = 'ffff:'
 
+
 class TrafficControlException(Exception):
     def __init__(self, errCode, message, command):
         self.errCode = errCode
@@ -120,12 +121,14 @@ def qdisc_replace_prio(dev):
                'parent', 'root', 'prio']
     _process_request(command)
 
+
 def qdisc_get_devid(dev):
     "Return qdisc_id of the first qdisc associated with dev"
 
     command = [EXT_TC, 'qdisc', 'show', 'dev', dev]
     out = _process_request(command)
     return out.split(' ')[2]
+
 
 def qdisc_del(dev, queue):
     try:
@@ -134,6 +137,7 @@ def qdisc_del(dev, queue):
     except TrafficControlException, e:
         if e.errCode != ERR_DEV_NOEXIST:
             raise
+
 
 def set_promisc(dev, on=True):
     promisc = 'promisc'
