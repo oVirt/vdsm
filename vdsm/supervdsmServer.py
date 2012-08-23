@@ -257,14 +257,16 @@ class _SuperVdsm(object):
         tc.setPortMirroring(networkName, ifaceName)
 
     @logDecorator
-    def unsetPortMirroring(self, networkName):
+    def unsetPortMirroring(self, networkName, target):
         '''
-        Release captured  mirror networkName traffic from networkName bridge
+        Release captured mirror networkName traffic from networkName bridge
 
         :param networkName: networkName to release the traffic capture
         :type networkName: string
+        :param target: target device to release
+        :type target: string
         '''
-        tc.unsetPortMirroring(networkName)
+        tc.unsetPortMirroring(networkName, target)
 
     @logDecorator
     def mkFloppyFs(self, vmId, files):

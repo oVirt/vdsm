@@ -269,6 +269,6 @@ class TestPortMirror(TestCaseBase):
         self.assertTrue(self._sendPing(), " Bridge received no mirrored ping"
                 "requests.")
 
-        tc.unsetPortMirroring(self._bridge0.devName)
+        tc.unsetPortMirroring(self._bridge0.devName, self._bridge1.devName)
         self.assertFalse(self._sendPing(), " Bridge received mirrored ping"
                 "requests, but mirroring is unset.")

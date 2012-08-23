@@ -2172,7 +2172,7 @@ class LibvirtVm(vm.Vm):
         for nic in self._devices[vm.NIC_DEVICES]:
             if hasattr(nic, 'portMirroring'):
                 for network in nic.portMirroring:
-                    supervdsm.getProxy().unsetPortMirroring(network)
+                    supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
         # delete the payload devices
         for drive in self._devices[vm.DISK_DEVICES]:

@@ -25,6 +25,7 @@ from vdsm.constants import EXT_TC, EXT_IFCONFIG
 
 ERR_DEV_NOEXIST = 2
 
+QDISC_INGRESS = 'ffff:'
 
 class TrafficControlException(Exception):
     def __init__(self, errCode, message, command):
@@ -33,18 +34,50 @@ class TrafficControlException(Exception):
         self.command = command
         Exception.__init__(self, self.errCode, self.message, self.command)
 
+
+def _addTarget(network, parent, target):
+    fs = list(filters(network, parent))
+    if fs:
+        filt = fs[0]
+    else:
+        filt = Filter(prio=None, handle=None, actions=[])
+    filt.actions.append(MirredAction(target))
+    filter_replace(network, parent, filt)
+
+
+def _delTarget(network, parent, target):
+    filt = list(filters(network, parent))[0]
+    filt.actions.remove(MirredAction(target))
+    if filt.actions:
+        filter_replace(network, parent, filt)
+    else:
+        filter_del(network, target, parent, filt.prio)
+    return filt.actions
+
+
 def setPortMirroring(network, target):
     qdisc_replace_ingress(network)
-    add_filter(network, target, 'ffff:')
+    _addTarget(network, QDISC_INGRESS, target)
+
     qdisc_replace_prio(network)
-    devid = qdisc_get_devid(network)
-    add_filter(network, target, devid)
+    qdisc_id = qdisc_get_devid(network)
+    _addTarget(network, qdisc_id, target)
+
     set_promisc(network, True)
 
-def unsetPortMirroring(network):
-    qdisc_del(network, 'root')
-    qdisc_del(network, 'ingress')
-    set_promisc(network, False)
+
+def unsetPortMirroring(network, target):
+    # TODO handle the case where we have partial definitions on device due to
+    # vdsm crash
+    acts = _delTarget(network, QDISC_INGRESS, target)
+    qdisc_id = qdisc_get_devid(network)
+    acts += _delTarget(network, qdisc_id, target)
+
+    if not acts:
+        qdisc_del(network, 'root')
+        qdisc_del(network, 'ingress')
+        set_promisc(network, False)
+
 
 def _process_request(command):
     retcode, out, err = storage.misc.execCmd(command, raw=True, sudo=False)
@@ -64,10 +97,21 @@ def qdisc_replace_ingress(dev):
             raise
 
 
-def add_filter(dev, target, parentId='ffff:'):
-    command = [EXT_TC, 'filter', 'add', 'dev', dev, 'parent',
-               parentId, 'protocol', 'ip', 'u32', 'match', 'u8', '0', '0',
-               'action', 'mirred', 'egress', 'mirror', 'dev', target]
+def filter_del(dev, target, parent, prio):
+    command = [EXT_TC, 'filter', 'del', 'dev', dev, 'parent', parent,
+               'prio', prio]
+    _process_request(command)
+
+
+def filter_replace(dev, parent, filt):
+    command = [EXT_TC, 'filter', 'replace', 'dev', dev, 'parent', parent]
+    if filt.prio:
+        command.extend(['prio', filt.prio])
+        command.extend(['handle', filt.handle])
+    command.extend(['protocol', 'ip', 'u32', 'match', 'u8', '0', '0'])
+    for a in filt.actions:
+        command.extend(['action', 'mirred', 'egress', 'mirror',
+                        'dev', a.target])
     _process_request(command)
 
 
@@ -77,6 +121,8 @@ def qdisc_replace_prio(dev):
     _process_request(command)
 
 def qdisc_get_devid(dev):
+    "Return qdisc_id of the first qdisc associated with dev"
+
     command = [EXT_TC, 'qdisc', 'show', 'dev', dev]
     out = _process_request(command)
     return out.split(' ')[2]
