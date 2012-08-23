@@ -68,6 +68,7 @@ dist_vdsmtests_PYTHON = \
 dist_vdsmtests_SCRIPTS = \
 	run_tests.sh \
 	testValidation.py \
+	tc_filter_show.out \
 	cpu_info.out
 
 check-local:
