@@ -43,12 +43,12 @@ EXT_IP = "/sbin/ip"
 
 
 class _Interface():
-    def __init__(self):
-        self.devName = self._generateRandomBridgeName()
+    def __init__(self, prefix='vdsmtest-'):
+        self.devName = self._generateRandomName(prefix)
 
-    def _generateRandomBridgeName(self):
+    def _generateRandomName(self, prefix):
         char_set = string.ascii_letters + string.digits
-        return 'vdsmtest-' + ''.join(random.sample(char_set, 5))
+        return prefix + ''.join(random.sample(char_set, 5))
 
     def _ifUp(self):
         check_call([EXT_IP, "link", "set", self.devName, "up"])
@@ -233,24 +233,31 @@ class TestPortMirror(TestCaseBase):
 
     _tap0 = _Tap()
     _tap1 = _Tap()
-    _bridge0 = _Bridge()
-    _bridge1 = _Bridge()
+    _tap2 = _Tap()
+    _bridge0 = _Bridge('src-')
+    _bridge1 = _Bridge('target-')
+    _bridge2 = _Bridge('target2-')
 
     @ValidateRunningAsRoot
     def setUp(self):
         _checkDependencies()
         self._tap0.addDevice()
         self._tap1.addDevice()
+        self._tap2.addDevice()
         self._bridge0.addDevice()
         self._bridge1.addDevice()
+        self._bridge2.addDevice()
         self._bridge0.addIf(self._tap0.devName)
         self._bridge1.addIf(self._tap1.devName)
+        self._bridge2.addIf(self._tap2.devName)
 
     def tearDown(self):
         self._tap0.delDevice()
         self._tap1.delDevice()
+        self._tap2.delDevice()
         self._bridge0.delDevice()
         self._bridge1.delDevice()
+        self._bridge2.delDevice()
 
     def _sendPing(self):
         self._tap1.startListener(self._ICMP)
@@ -266,9 +273,15 @@ class TestPortMirror(TestCaseBase):
 
     def testMirroring(self):
         tc.setPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        self.assertTrue(self._sendPing(), " Bridge received no mirrored ping"
+        self.assertTrue(self._sendPing(), " Bridge received no mirrored ping "
                 "requests.")
 
         tc.unsetPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        self.assertFalse(self._sendPing(), " Bridge received mirrored ping"
+        self.assertFalse(self._sendPing(), " Bridge received mirrored ping "
                 "requests, but mirroring is unset.")
+
+    def testMirroringWithDistraction(self):
+        "setting another mirror action should not obstract the first one"
+        tc.setPortMirroring(self._bridge0.devName, self._bridge2.devName)
+        self.testMirroring()
+        tc.unsetPortMirroring(self._bridge0.devName, self._bridge2.devName)
