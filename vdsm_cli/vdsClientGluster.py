@@ -250,45 +250,60 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeProfileStart(self, args):
-        status = self.s.glusterVolumeProfileStart(args[0])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeProfileStart(volumeName)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeProfileStop(self, args):
-        status = self.s.glusterVolumeProfileStop(args[0])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeProfileStop(volumeName)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeProfileInfo(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        nfs = (params.get('nfs', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeProfileInfo(volumeName, nfs)
+        pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
 
 def getGlusterCmdDict(serv):
-    return {
-        'glusterVolumeCreate':
-            (serv.do_glusterVolumeCreate,
-             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
-              '[replica=<count>] [stripe=<count>] [transport={tcp|rdma}]\n\t'
-              '<volume_name> is name of new volume',
-              '<brick[,brick, ...]> is brick(s) which will be used to '
-              'create volume',
-              'create gluster volume'
-              )),
-        'glusterVolumesList':
-            (serv.do_glusterVolumesList,
+    return \
+        {'glusterVolumeCreate': (
+            serv.do_glusterVolumeCreate,
+            ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
+             '[replica=<count>] [stripe=<count>] [transport={tcp|rdma}]\n\t'
+             '<volume_name> is name of new volume',
+             '<brick[,brick, ...]> is brick(s) which will be used to '
+             'create volume',
+             'create gluster volume'
+             )),
+         'glusterVolumesList': (
+             serv.do_glusterVolumesList,
              ('[volumeName=<volume_name>]\n\t'
               '<volume_name> is existing volume name',
               'list all or given gluster volume details'
               )),
-        'glusterVolumeStart':
-            (serv.do_glusterVolumeStart,
+         'glusterVolumeStart': (
+             serv.do_glusterVolumeStart,
              ('volumeName=<volume_name> [force={yes|no}]\n\t'
               '<volume_name> is existing volume name',
               'start gluster volume'
               )),
-        'glusterVolumeStop':
-            (serv.do_glusterVolumeStop,
+         'glusterVolumeStop': (
+             serv.do_glusterVolumeStop,
              ('volumeName=<volume_name> [force={yes|no}]\n\t'
               '<volume_name> is existing volume name',
               'stop gluster volume'
               )),
-        'glusterVolumeBrickAdd':
-            (serv.do_glusterVolumeBrickAdd,
+         'glusterVolumeBrickAdd': (
+             serv.do_glusterVolumeBrickAdd,
              ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
               '[replica=<count>] [stripe=<count>]\n\t'
               '<volume_name> is existing volume name\n\t'
@@ -296,132 +311,132 @@ def getGlusterCmdDict(serv):
               'the volume',
               'add bricks to gluster volume'
               )),
-        'glusterVolumeSet':
-            (serv.do_glusterVolumeSet,
+         'glusterVolumeSet': (
+             serv.do_glusterVolumeSet,
              ('volumeName=<volume_name> option=<option> value=<value>\n\t'
               '<volume_name> is existing volume name\n\t'
               '<option> is volume option\n\t'
               '<value> is value to volume option',
               'set gluster volume option'
               )),
-        'glusterVolumeSetOptionsList':
-            (serv.do_glusterVolumeSetOptionsList,
+         'glusterVolumeSetOptionsList': (
+             serv.do_glusterVolumeSetOptionsList,
              ('',
               'list gluster volume set options'
               )),
-        'glusterVolumeReset':
-            (serv.do_glusterVolumeReset,
+         'glusterVolumeReset': (
+             serv.do_glusterVolumeReset,
              ('volumeName=<volume_name> [option=<option>] [force={yes|no}]\n\t'
               '<volume_name> is existing volume name',
               'reset gluster volume or volume option'
               )),
-        'glusterHostAdd':
-            (serv.do_glusterHostAdd,
+         'glusterHostAdd': (
+             serv.do_glusterHostAdd,
              ('hostName=<host>\n\t'
               '<host> is hostname or ip address of new server',
               'add new server to gluster cluster'
               )),
-        'glusterVolumeRebalanceStart':
-            (serv.do_glusterVolumeRebalanceStart,
+         'glusterVolumeRebalanceStart': (
+             serv.do_glusterVolumeRebalanceStart,
              ('<volume_name>\n\t<volume_name> is existing volume name',
               'start volume rebalance'
               )),
-        'glusterVolumeRebalanceStop':
-            (serv.do_glusterVolumeRebalanceStop,
+         'glusterVolumeRebalanceStop': (
+             serv.do_glusterVolumeRebalanceStop,
              ('<volume_name>\n\t<volume_name> is existing volume name',
               'stop volume rebalance'
               )),
-        'glusterVolumeRebalanceStatus':
-            (serv.do_glusterVolumeRebalanceStatus,
+         'glusterVolumeRebalanceStatus': (
+             serv.do_glusterVolumeRebalanceStatus,
              ('<volume_name>\n\t<volume_name> is existing volume name',
               'get volume rebalance status'
               )),
-        'glusterVolumeDelete':
-            (serv.do_glusterVolumeDelete,
+         'glusterVolumeDelete': (
+             serv.do_glusterVolumeDelete,
              ('volumeName=<volume_name> \n\t<volume_name> is existing '
               'volume name',
               'delete gluster volume'
               )),
-        'glusterHostRemove':
-            (serv.do_glusterHostRemove,
+         'glusterHostRemove': (
+             serv.do_glusterHostRemove,
              ('hostName=<host> [force={yes|no}]\n\t'
               '<host> is hostname or ip address of a server in '
               'gluster cluster',
               'remove server from gluster cluster'
               )),
-        'glusterVolumeReplaceBrickStart':
-            (serv.do_glusterVolumeReplaceBrickStart,
+         'glusterVolumeReplaceBrickStart': (
+             serv.do_glusterVolumeReplaceBrickStart,
              ('<volume_name> <existing_brick> <new_brick> \n\t<volume_name> '
               'is existing volume name\n\t<brick> is existing brick\n\t'
               '<new_brick> is new brick',
               'start volume replace brick'
               )),
-        'glusterVolumeReplaceBrickAbort':
-            (serv.do_glusterVolumeReplaceBrickAbort,
+         'glusterVolumeReplaceBrickAbort': (
+             serv.do_glusterVolumeReplaceBrickAbort,
              ('<volume_name> <existing_brick> <new_brick> \n\t<volume_name> '
               'is existing volume name\n\t<brick> is existing brick\n\t'
               '<new_brick> is new brick',
               'abort volume replace brick'
               )),
-        'glusterVolumeReplaceBrickPause':
-            (serv.do_glusterVolumeReplaceBrickPause,
+         'glusterVolumeReplaceBrickPause': (
+             serv.do_glusterVolumeReplaceBrickPause,
              ('<volume_name> <existing_brick> <new_brick> \n\t<volume_name> '
               'is existing volume name\n\t<brick> is existing brick\n\t'
               '<new_brick> is new brick',
               'pause volume replace brick'
               )),
-        'glusterVolumeReplaceBrickStatus':
-            (serv.do_glusterVolumeReplaceBrickStatus,
+         'glusterVolumeReplaceBrickStatus': (
+             serv.do_glusterVolumeReplaceBrickStatus,
              ('<volume_name> <existing_brick> <new_brick> \n\t<volume_name> '
               'is existing volume name\n\t<brick> is existing brick\n\t'
               '<new_brick> is new brick',
               'get volume replace brick status'
               )),
-        'glusterVolumeReplaceBrickCommit':
-            (serv.do_glusterVolumeReplaceBrickCommit,
+         'glusterVolumeReplaceBrickCommit': (
+             serv.do_glusterVolumeReplaceBrickCommit,
              ('<volume_name> <existing_brick> <new_brick> \n\t<volume_name> '
               'is existing volume name\n\t<brick> is existing brick\n\t'
               '<new_brick> is new brick',
               'commit volume replace brick'
               )),
-        'glusterVolumeRemoveBrickStart':
-            (serv.do_glusterVolumeRemoveBrickStart,
+         'glusterVolumeRemoveBrickStart': (
+             serv.do_glusterVolumeRemoveBrickStart,
              ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
               '<volume_name> is existing volume name\n\t<brick> is '
               'existing brick',
               'start volume remove bricks'
               )),
-        'glusterVolumeRemoveBrickStop':
-            (serv.do_glusterVolumeRemoveBrickStop,
+         'glusterVolumeRemoveBrickStop': (
+             serv.do_glusterVolumeRemoveBrickStop,
              ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
               '<volume_name> is existing volume name\n\t<brick> is '
               'existing brick',
               'stop volume remove bricks'
               )),
-        'glusterVolumeRemoveBrickStatus':
-            (serv.do_glusterVolumeRemoveBrickStatus,
+         'glusterVolumeRemoveBrickStatus': (
+             serv.do_glusterVolumeRemoveBrickStatus,
              ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
               '<volume_name> is existing volume name\n\t<brick> is '
               'existing brick',
               'get volume remove bricks status'
               )),
-        'glusterVolumeRemoveBrickCommit':
-            (serv.do_glusterVolumeRemoveBrickCommit,
+         'glusterVolumeRemoveBrickCommit': (
+             serv.do_glusterVolumeRemoveBrickCommit,
              ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
               '<volume_name> is existing volume name\n\t<brick> is '
               'existing brick',
               'commit volume remove bricks'
               )),
-        'glusterVolumeRemoveBrickForce':
-            (serv.do_glusterVolumeRemoveBrickForce,
+         'glusterVolumeRemoveBrickForce': (
+             serv.do_glusterVolumeRemoveBrickForce,
              ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
               '[replica=<count>]\n\t'
               '<volume_name> is existing volume name\n\t'
               '<brick[,brick, ...]> is existing brick(s)',
               'force volume remove bricks'
               )),
-        'glusterVolumeStatus':
-            (serv.do_glusterVolumeStatus,
+         'glusterVolumeStatus': (
+             serv.do_glusterVolumeStatus,
              ('volumeName=<volume_name> [brick=<existing_brick>] '
               '[option={detail | clients | mem}]\n\t'
               '<volume_name> is existing volume name\n\t'
@@ -431,19 +446,26 @@ def getGlusterCmdDict(serv):
               'get volume status of given volume with its all brick or '
               'specified brick'
               )),
-        'glusterHostsList':
-            (serv.do_glusterHostsList,
+         'glusterHostsList': (
+             serv.do_glusterHostsList,
              ('',
               'list host info'
               )),
-        'glusterVolumeProfileStart':
-            (serv.do_glusterVolumeProfileStart,
-             ('<volume_name>\n\t<volume_name> is existing volume name',
+         'glusterVolumeProfileStart': (
+             serv.do_glusterVolumeProfileStart,
+             ('volumeName=<volume_name>\n\t'
+              '<volume_name> is existing volume name',
               'start gluster volume profile'
               )),
-        'glusterVolumeProfileStop':
-            (serv.do_glusterVolumeProfileStop,
-             ('<volume_name>\n\t<volume_name> is existing volume name',
+         'glusterVolumeProfileStop': (
+             serv.do_glusterVolumeProfileStop,
+             ('volumeName=<volume_name>\n\t'
+              '<volume_name> is existing volume name',
               'stop gluster volume profile'
               )),
-        }
+         'glusterVolumeProfileInfo': (
+             serv.do_glusterVolumeProfileInfo,
+             ('volumeName=<volume_name> [nfs={yes|no}]\n\t'
+              '<volume_name> is existing volume name',
+              'get gluster volume profile info'
+              )), }

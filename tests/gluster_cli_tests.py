@@ -21,14 +21,15 @@
 from nose.plugins.skip import SkipTest
 from testrunner import VdsmTestCase as TestCaseBase
 
-# If the test is run under the installed vdsm, vdsm-cluster may not be always
+# If the test is run under the installed vdsm, vdsm-gluster may not be always
 # installed, so just ignore the exception.
-# In the individual test, setUp() will skip test if  gluster is not imported
+# In the individual test, setUp() will skip test if gluster is not imported
 try:
     from gluster import cli as gcli
 except ImportError:
     pass
 import xml.etree.cElementTree as etree
+import glusterTestData
 
 
 class GlusterCliTests(TestCaseBase):
@@ -1048,3 +1049,21 @@ class GlusterCliTests(TestCaseBase):
         self._parseVolumeStatusDetail_test()
         self._parseVolumeStatusClients_test()
         self._parseVolumeStatusMem_test()
+
+    def _parseVolumeProfileInfo_test(self):
+        with open("glusterVolumeProfileInfo.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        status = gcli._parseVolumeProfileInfo(tree, False)
+        self.assertEquals(status, glusterTestData.PROFILE_INFO)
+
+    def _parseVolumeProfileInfoNfs_test(self):
+        with open("glusterVolumeProfileInfoNfs.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        status = gcli._parseVolumeProfileInfo(tree, True)
+        self.assertEquals(status, glusterTestData.PROFILE_INFO_NFS)
+
+    def test_parseVolumeProfileInfo(self):
+        self._parseVolumeProfileInfo_test()
+        self._parseVolumeProfileInfoNfs_test()

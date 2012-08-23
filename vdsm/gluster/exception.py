@@ -346,6 +346,11 @@ class GlusterVolumeProfileStopFailedException(GlusterVolumeException):
     message = "Volume profile stop failed"
 
 
+class GlusterVolumeProfileInfoFailedException(GlusterVolumeException):
+    code = 4160
+    message = "Volume profile info failed"
+
+
 # Host
 class GlusterHostException(GlusterException):
     code = 4400

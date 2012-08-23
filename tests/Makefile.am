@@ -28,6 +28,7 @@ test_modules = \
 	configNetworkTests.py \
 	fileUtilTests.py \
 	getAllVolumesTests.py \
+	glusterTestData.py \
 	gluster_cli_tests.py \
 	guestIFTests.py \
 	hooksTests.py \
@@ -62,6 +63,8 @@ dist_vdsmtests_DATA = \
 	cpu_info.out \
 	caps_libvirt.out \
 	glob_1c60971a-8647-44ac-ae33-6520887f8843.out \
+	glusterVolumeProfileInfo.xml \
+	glusterVolumeProfileInfoNfs.xml \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	netmaskconversions \
 	route_info.out \

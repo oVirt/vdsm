@@ -350,6 +350,61 @@ def _parseVolumeInfo(tree):
     return volumes
 
 
+def _parseVolumeProfileInfo(tree, nfs):
+    bricks = []
+    if nfs:
+        brickKey = 'nfs'
+        bricksKey = 'nfsServers'
+    else:
+        brickKey = 'brick'
+        bricksKey = 'bricks'
+    for brick in tree.findall('volProfile/brick'):
+        fopCumulative = []
+        blkCumulative = []
+        fopInterval = []
+        blkInterval = []
+        brickName = brick.find('brickName').text
+        if brickName == 'localhost':
+            brickName = _getLocalIpAddress() or _getGlusterHostName()
+        for block in brick.findall('cumulativeStats/blockStats/block'):
+            blkCumulative.append({'size': block.find('size').text,
+                                  'read': block.find('reads').text,
+                                  'write': block.find('writes').text})
+        for fop in brick.findall('cumulativeStats/fopStats/fop'):
+            fopCumulative.append({'name': fop.find('name').text,
+                                  'hits': fop.find('hits').text,
+                                  'latencyAvg': fop.find('avgLatency').text,
+                                  'latencyMin': fop.find('minLatency').text,
+                                  'latencyMax': fop.find('maxLatency').text})
+        for block in brick.findall('intervalStats/blockStats/block'):
+            blkInterval.append({'size': block.find('size').text,
+                                'read': block.find('reads').text,
+                                'write': block.find('writes').text})
+        for fop in brick.findall('intervalStats/fopStats/fop'):
+            fopInterval.append({'name': fop.find('name').text,
+                                'hits': fop.find('hits').text,
+                                'latencyAvg': fop.find('avgLatency').text,
+                                'latencyMin': fop.find('minLatency').text,
+                                'latencyMax': fop.find('maxLatency').text})
+        bricks.append(
+            {brickKey: brickName,
+             'cumulativeStats': {
+                 'blockStats': blkCumulative,
+                 'fopStats': fopCumulative,
+                 'duration': brick.find('cumulativeStats/duration').text,
+                 'totalRead': brick.find('cumulativeStats/totalRead').text,
+                 'totalWrite': brick.find('cumulativeStats/totalWrite').text},
+             'intervalStats': {
+                 'blockStats': blkInterval,
+                 'fopStats': fopInterval,
+                 'duration': brick.find('intervalStats/duration').text,
+                 'totalRead': brick.find('intervalStats/totalRead').text,
+                 'totalWrite': brick.find('intervalStats/totalWrite').text}})
+    status = {'volumeName': tree.find("volProfile/volname").text,
+              bricksKey: bricks}
+    return status
+
+
 @exportToSuperVdsm
 def volumeInfo(volumeName=None):
     """
@@ -754,3 +809,74 @@ def volumeProfileStop(volumeName):
     except ge.GlusterCmdFailedException, e:
         raise ge.GlusterVolumeProfileStopFailedException(rc=e.rc, err=e.err)
     return True
+
+
+@exportToSuperVdsm
+def volumeProfileInfo(volumeName, nfs=False):
+    """
+    Returns:
+    When nfs=True:
+    {'volumeName': VOLUME-NAME,
+     'nfsServers': [
+         {'nfs': SERVER-NAME,
+          'cumulativeStats': {'blockStats': [{'size': int,
+                                              'read': int,
+                                              'write': int}, ...],
+                              'fopStats': [{'name': FOP-NAME,
+                                            'hits': int,
+                                            'latencyAvg': float,
+                                            'latencyMin': float,
+                                            'latencyMax': float}, ...],
+                              'duration': int,
+                              'totalRead': int,
+                              'totalWrite': int},
+          'intervalStats': {'blockStats': [{'size': int,
+                                            'read': int,
+                                            'write': int}, ...],
+                            'fopStats': [{'name': FOP-NAME,
+                                          'hits': int,
+                                          'latencyAvg': float,
+                                          'latencyMin': float,
+                                          'latencyMax': float}, ...],
+                            'duration': int,
+                            'totalRead': int,
+                            'totalWrite': int}}, ...]}
+
+    When nfs=False:
+    {'volumeName': VOLUME-NAME,
+     'bricks': [
+         {'brick': BRICK-NAME,
+          'cumulativeStats': {'blockStats': [{'size': int,
+                                              'read': int,
+                                              'write': int}, ...],
+                              'fopStats': [{'name': FOP-NAME,
+                                            'hits': int,
+                                            'latencyAvg': float,
+                                            'latencyMin': float,
+                                            'latencyMax': float}, ...],
+                              'duration': int,
+                              'totalRead': int,
+                              'totalWrite': int},
+          'intervalStats': {'blockStats': [{'size': int,
+                                            'read': int,
+                                            'write': int}, ...],
+                            'fopStats': [{'name': FOP-NAME,
+                                          'hits': int,
+                                          'latencyAvg': float,
+                                          'latencyMin': float,
+                                          'latencyMax': float}, ...],
+                            'duration': int,
+                            'totalRead': int,
+                            'totalWrite': int}}, ...]}
+    """
+    command = _getGlusterVolCmd() + ["profile", volumeName, "info"]
+    if nfs:
+        command += ["nfs"]
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeProfileInfoFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parseVolumeProfileInfo(xmltree, nfs)
+    except (etree.ParseError, AttributeError, ValueError):
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])

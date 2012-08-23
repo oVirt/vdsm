@@ -827,6 +827,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/route_info.out
 %{_datadir}/%{vdsm_name}/tests/tc_filter_show.out
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
 
 %files hook-vhostmd
