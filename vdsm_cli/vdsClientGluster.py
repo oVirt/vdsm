@@ -212,6 +212,10 @@ class GlusterService(service):
         status = self.s.glusterVolumeProfileStart(args[0])
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeProfileStop(self, args):
+        status = self.s.glusterVolumeProfileStop(args[0])
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return {
@@ -383,5 +387,10 @@ def getGlusterCmdDict(serv):
             (serv.do_glusterVolumeProfileStart,
              ('<volume_name>\n\t<volume_name> is existing volume name',
               'start gluster volume profile'
+              )),
+        'glusterVolumeProfileStop':
+            (serv.do_glusterVolumeProfileStop,
+             ('<volume_name>\n\t<volume_name> is existing volume name',
+              'stop gluster volume profile'
               )),
         }

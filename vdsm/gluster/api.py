@@ -232,6 +232,10 @@ class GlusterApi(object):
     def volumeProfileStart(self, volumeName, options=None):
         self.svdsmProxy.glusterVolumeProfileStart(volumeName)
 
+    @exportAsVerb
+    def volumeProfileStop(self, volumeName, options=None):
+        self.svdsmProxy.glusterVolumeProfileStop(volumeName)
+
 
 def getGlusterMethods(gluster):
     l = []

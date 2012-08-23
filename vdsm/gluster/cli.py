@@ -759,3 +759,13 @@ def volumeProfileStart(volumeName):
     except ge.GlusterCmdFailedException, e:
         raise ge.GlusterVolumeProfileStartFailedException(rc=e.rc, err=e.err)
     return True
+
+
+@exportToSuperVdsm
+def volumeProfileStop(volumeName):
+    command = _getGlusterVolCmd() + ["profile", volumeName, "stop"]
+    try:
+        _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeProfileStopFailedException(rc=e.rc, err=e.err)
+    return True
