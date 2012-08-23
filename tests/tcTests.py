@@ -176,9 +176,9 @@ class TestQdisc(TestCaseBase):
         self._addIngress()
         self.assertTrue("ffff:" in tc.qdisc_get_devid(self._bridge.devName))
 
-    def testReplaceParent(self):
+    def testReplacePrio(self):
         self._addIngress()
-        tc.qdisc_replace_parent(self._bridge.devName)
+        tc.qdisc_replace_prio(self._bridge.devName)
         self.assertTrue("root" in self._showQdisc())
 
     def testTogglePromisc(self):

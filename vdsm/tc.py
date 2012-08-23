@@ -36,7 +36,7 @@ class TrafficControlException(Exception):
 def setPortMirroring(network, target):
     qdisc_replace_ingress(network)
     add_filter(network, target, 'ffff:')
-    qdisc_replace_parent(network)
+    qdisc_replace_prio(network)
     devid = qdisc_get_devid(network)
     add_filter(network, target, devid)
     set_promisc(network, True)
@@ -70,7 +70,8 @@ def add_filter(dev, target, parentId='ffff:'):
                'action', 'mirred', 'egress', 'mirror', 'dev', target]
     _process_request(command)
 
-def qdisc_replace_parent(dev):
+
+def qdisc_replace_prio(dev):
     command = [EXT_TC, 'qdisc', 'replace', 'dev', dev,
                'parent', 'root', 'prio']
     _process_request(command)
