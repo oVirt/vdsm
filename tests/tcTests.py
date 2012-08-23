@@ -162,7 +162,7 @@ class TestQdisc(TestCaseBase):
         return popen.stdout.read()
 
     def _addIngress(self):
-        tc.qdisc_add_ingress(self._bridge.devName)
+        tc.qdisc_replace_ingress(self._bridge.devName)
         self.assertTrue("qdisc ingress" in self._showQdisc(),
                 "Could not add an ingress qdisc to the device.")
 

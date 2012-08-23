@@ -34,7 +34,7 @@ class TrafficControlException(Exception):
         Exception.__init__(self, self.errCode, self.message, self.command)
 
 def setPortMirroring(network, target):
-    qdisc_add_ingress(network)
+    qdisc_replace_ingress(network)
     add_filter(network, target, 'ffff:')
     qdisc_replace_parent(network)
     devid = qdisc_get_devid(network)
@@ -52,9 +52,17 @@ def _process_request(command):
         raise TrafficControlException(retcode, err, command)
     return out
 
-def qdisc_add_ingress(dev):
+
+def qdisc_replace_ingress(dev):
     command = [EXT_TC, 'qdisc', 'add', 'dev', dev, 'ingress']
-    _process_request(command)
+    try:
+        _process_request(command)
+    except TrafficControlException as e:
+        if e.message == 'RTNETLINK answers: File exists\n':
+            pass
+        else:
+            raise
+
 
 def add_filter(dev, target, parentId='ffff:'):
     command = [EXT_TC, 'filter', 'add', 'dev', dev, 'parent',
