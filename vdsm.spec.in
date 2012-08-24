@@ -283,6 +283,7 @@ Allow adding floppy to VM
 %package hook-hostusb
 Summary:        Allow attaching USB device from host
 BuildArch:      noarch
+Requires:       usbutils
 
 %description hook-hostusb
 Hook is getting vendor and product id of USB device
