@@ -24,7 +24,6 @@ for keeping storage related data that is expensive to harvest, but needed often
 """
 import logging
 import threading
-import weakref
 from vdsm.config import config
 
 import multipath
@@ -37,15 +36,17 @@ DEFAULT_REFRESH_INTERVAL = 300
 
 
 class DomainProxy(object):
-    """Keeps domain references valid even when underlying domain object changes
-    (due to format conversion for example"""
+    """
+    Keeps domain references valid even when underlying domain object changes
+    (due to format conversion for example).
+    """
+
     def __init__(self, cache, sdUUID):
         self._sdUUID = sdUUID
         self._cache = cache
 
     def __getattr__(self, attrName):
-        dom = self.getRealDomain()
-        return getattr(dom, attrName)
+        return getattr(self.getRealDomain(), attrName)
 
     def getRealDomain(self):
         return self._cache._realProduce(self._sdUUID)
@@ -54,75 +55,79 @@ class DomainProxy(object):
 class StorageDomainCache:
     """
     Storage Domain List keeps track of all the storage domains accessible by
-    the current system.  """
+    the current system.
+    """
 
     log = logging.getLogger('Storage.StorageDomainCache')
 
+    STORAGE_UPDATED = 0
+    STORAGE_STALE = 1
+    STORAGE_REFRESHING = 2
+
     def __init__(self, storage_repo):
-        self._syncroot = threading.RLock()
-        self.__proxyCache = {}
+        self._syncroot = threading.Condition()
         self.__domainCache = {}
+        self.__inProgress = set()
+        self.__staleStatus = self.STORAGE_STALE
         self.storage_repo = storage_repo
-        self.storageStale = True
 
     def invalidateStorage(self):
-        self.storageStale = True
-        lvm.invalidateCache()
+        with self._syncroot:
+            self.__staleStatus = self.STORAGE_STALE
 
     @misc.samplingmethod
     def refreshStorage(self):
+        self.__staleStatus = self.STORAGE_REFRESHING
+
         multipath.rescan()
         lvm.invalidateCache()
-        self.storageStale = False
 
-    def _getDomainFromCache(self, sdUUID):
-        if self.storageStale == True:
-            return None
-        try:
-            return self.__proxyCache[sdUUID]()
-        except KeyError:
-            return None
-
-    def _cleanStaleWeakrefs(self):
-        for sdUUID, ref in self.__proxyCache.items():
-            if ref() is None:
-                del self.__proxyCache[sdUUID]
+        # If a new invalidateStorage request came in after the refresh
+        # started then we cannot flag the storages as updated (force a
+        # new rescan later).
+        with self._syncroot:
+            if self.__staleStatus == self.STORAGE_REFRESHING:
+                self.__staleStatus = self.STORAGE_UPDATED
 
     def produce(self, sdUUID):
-        dom = self._getDomainFromCache(sdUUID)
-        if dom:
-            return dom
-
-        with self._syncroot:
-            dom = self._getDomainFromCache(sdUUID)
-            if dom:
-                return dom
-
-            if self.storageStale:
-                self.refreshStorage()
-
-            self._cleanStaleWeakrefs()
-
-            dom = DomainProxy(self, sdUUID)
-            # This is needed to preserve the semantic where if the domain was
-            # absent from the cache and the domain cannot be found the
-            # operation would fail
-            dom.getRealDomain()
-            self.__proxyCache[sdUUID] = weakref.ref(dom)
-            return dom
+        domain = DomainProxy(self, sdUUID)
+        # This is needed to preserve the semantic where if the domain
+        # was absent from the cache and the domain cannot be found the
+        # operation would fail.
+        domain.getRealDomain()
+        return domain
 
     def _realProduce(self, sdUUID):
         with self._syncroot:
-            try:
-                return self.__domainCache[sdUUID]
-            except KeyError:
-                pass
+            while True:
+                domain = self.__domainCache.get(sdUUID)
 
-            # _findDomain will raise StorageDomainDoesNotExist if sdUUID is not
-            # found in storage.
-            dom = self._findDomain(sdUUID)
-            self.__domainCache[sdUUID] = dom
-            return dom
+                if domain is not None:
+                    return domain
+
+                if sdUUID not in self.__inProgress:
+                    self.__inProgress.add(sdUUID)
+                    break
+
+                self._syncroot.wait()
+
+        try:
+            # If multiple calls reach this point and the storage is not
+            # updated the refreshStorage() sampling method is called
+            # serializing (and eventually grouping) the requests.
+            if self.__staleStatus != self.STORAGE_UPDATED:
+                self.refreshStorage()
+
+            domain = self._findDomain(sdUUID)
+
+            with self._syncroot:
+                self.__domainCache[sdUUID] = domain
+                return domain
+
+        finally:
+            with self._syncroot:
+                self.__inProgress.remove(sdUUID)
+                self._syncroot.notifyAll()
 
     def _findDomain(self, sdUUID):
         import blockSD
@@ -157,12 +162,13 @@ class StorageDomainCache:
         return uuids
 
     def refresh(self):
-        self.invalidateStorage()
-        self.__domainCache.clear()
-
-    def manuallyAddDomain(self, dom):
         with self._syncroot:
-            self.__domainCache[dom.sdUUID] = dom
+            lvm.invalidateCache()
+            self.__domainCache.clear()
+
+    def manuallyAddDomain(self, domain):
+        with self._syncroot:
+            self.__domainCache[domain.sdUUID] = domain
 
     def manuallyRemoveDomain(self, sdUUID):
         with self._syncroot:
