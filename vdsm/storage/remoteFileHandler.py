@@ -79,26 +79,29 @@ class CrabRPCServer(object):
     def serve_forever(self):
         while True:
             try:
-                rawLength = self.rfile.read(LENGTH_STRUCT_LENGTH)
-                length = unpack(LENGTH_STRUCT_FMT, rawLength)[0]
-                pickledCall = self.rfile.read(length)
-                if len(pickledCall) < length:
-                    raise Exception("Pipe broke")
-
-                name, args, kwargs = pickle.loads(pickledCall)
-                err = res = None
-                try:
-                    res = self.callRegisteredFunction(name, args, kwargs)
-                except Exception, ex:
-                    err = ex
-
-                resp = pickle.dumps((res, err))
-                self.wfile.write(pack(LENGTH_STRUCT_FMT, len(resp)))
-                self.wfile.write(resp)
-                self.wfile.flush()
+                self.serve_once()
             except:
                 self.log.warn("Could not complete operation", exc_info=True)
                 return
+
+    def serve_once(self):
+        rawLength = self.rfile.read(LENGTH_STRUCT_LENGTH)
+        length = unpack(LENGTH_STRUCT_FMT, rawLength)[0]
+        pickledCall = self.rfile.read(length)
+        if len(pickledCall) < length:
+            raise Exception("Pipe broke")
+
+        name, args, kwargs = pickle.loads(pickledCall)
+        err = res = None
+        try:
+            res = self.callRegisteredFunction(name, args, kwargs)
+        except Exception, ex:
+            err = ex
+
+        resp = pickle.dumps((res, err))
+        self.wfile.write(pack(LENGTH_STRUCT_FMT, len(resp)))
+        self.wfile.write(resp)
+        self.wfile.flush()
 
     def callRegisteredFunction(self, name, args, kwargs):
         if "." not in name:
