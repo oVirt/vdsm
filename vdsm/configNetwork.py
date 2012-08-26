@@ -838,7 +838,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         configWriter = ConfigWriter()
 
     prevmtu = None
-    if mtu and vlan:
+    if mtu:
         prevmtu = configWriter.getMaxMtu(nics, mtu)
 
     nic = nics[0] if nics else None
