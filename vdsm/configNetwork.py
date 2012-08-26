@@ -28,6 +28,7 @@ import glob
 import shutil
 
 import libvirt
+import selinux
 
 from vdsm import constants
 from vdsm import utils
@@ -370,6 +371,11 @@ class ConfigWriter(object):
         self._backup(fileName)
         open(fileName, 'w').write(configuration)
         os.chmod(fileName, 0664)
+        try:
+            selinux.restorecon(fileName)
+        except:
+            logging.debug('ignoring restorecon error in case SElinux is '
+                          'disabled', exc_info=True)
 
     def _createConfFile(self, conf, name, ipaddr=None, netmask=None,
                 gateway=None, bootproto=None, mtu=None, onboot='yes', **kwargs):
