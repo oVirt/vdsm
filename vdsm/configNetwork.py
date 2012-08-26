@@ -1123,7 +1123,14 @@ def _editBondings(bondings, configWriter):
         # Only one bridged-non-VLANed network allowed on same nic/bond
         bridge = brNets[0] if brNets else None
 
+        mtu = None
         if bond in _netinfo.bondings:
+            # Save MTU for future set on NICs
+            confParams = netinfo.getIfaceCfg(bond)
+            mtu = confParams.get('MTU', None)
+            if mtu:
+                mtu = int(mtu)
+
             ifdown(bond)
             # Take down all bond's NICs.
             for nic in _netinfo.getNicsForBonding(bond):
@@ -1137,11 +1144,11 @@ def _editBondings(bondings, configWriter):
         # Anyway, we will not be able to take it down with connected VMs
 
         # First we need to prepare all conf files
-        configWriter.addBonding(bond, bridge=bridge,
+        configWriter.addBonding(bond, bridge=bridge, mtu=mtu,
                                 bondingOptions=bondAttrs.get('options', None))
 
         for nic in bondAttrs['nics']:
-            configWriter.addNic(nic, bonding=bond)
+            configWriter.addNic(nic, bonding=bond, mtu=mtu)
 
         # Now we can run ifup for all interfaces
         ifup(bond)
