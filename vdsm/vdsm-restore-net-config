@@ -36,9 +36,7 @@ def main():
         pass
 
     configWriter = configNetwork.ConfigWriter()
-    configWriter.loadBackups()
-    configWriter.restoreBackups()
-    configWriter.clearBackups()
+    configWriter.restorePersistentBackup()
 
 
 if __name__ == '__main__':

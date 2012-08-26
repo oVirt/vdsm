@@ -312,6 +312,13 @@ class ConfigWriter(object):
 
         cls.writeBackupFile(netinfo.NET_CONF_BACK_DIR, basename, content)
 
+    def restorePersistentBackup(self):
+        """Restore network config to last known 'safe' state"""
+
+        self.loadBackups()
+        self.restoreBackups()
+        self.clearBackups()
+
     def _loadBackupFiles(self, loadDir, restoreDir=None):
         for fpath in glob.iglob(loadDir + '/*'):
             if not os.path.isfile(fpath):

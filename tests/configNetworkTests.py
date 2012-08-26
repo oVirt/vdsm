@@ -34,7 +34,6 @@ from vdsm import netinfo
 from vdsm.utils import memoized
 
 from testrunner import VdsmTestCase as TestCaseBase
-from testValidation import brokentest
 from nose.plugins.skip import SkipTest
 
 from monkeypatch import MonkeyPatch
@@ -357,14 +356,13 @@ class ConfigWriterTests(TestCaseBase):
         cw.restoreAtomicBackup()
         self._assertFilesRestored()
 
-    @brokentest('Fixing this test requires more monkeypatching '
-                'than I can handle')
     @MonkeyPatch(os, 'chown', lambda *x: 0)
     def testPersistentBackup(self):
 
         with MonkeyPatchScope([
             (netinfo, 'NET_CONF_BACK_DIR',
-            os.path.join(self._tempdir, 'netback'))
+             os.path.join(self._tempdir, 'netback')),
+            (netinfo, 'NET_CONF_DIR', self._tempdir),
         ]):
             #after vdsm package is installed, the 'vdsm' account will be
             #created if no 'vdsm' account, we should skip this test
@@ -380,9 +378,7 @@ class ConfigWriterTests(TestCaseBase):
 
             self._makeFilesDirty()
 
-            subprocess.call(['../vdsm/vdsm-restore-net-config',
-                             '--skip-net-restart'],
-                    env={'NET_CONF_BACK_DIR': netinfo.NET_CONF_BACK_DIR,
-                         'NET_CONF_DIR': self._tempdir})
+            cw = configNetwork.ConfigWriter()
+            cw.restorePersistentBackup()
 
             self._assertFilesRestored()
