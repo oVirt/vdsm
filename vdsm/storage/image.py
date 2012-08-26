@@ -1020,6 +1020,8 @@ class Image:
             srcVolParams['volFormat'], volParams['volFormat'], vars.task.aborting,
             size=volParams['apparentsize'], dstvolType=newVol.getType())
         if rc:
+            self.log.error("qemu-img convert failed: rc=%s, out=%s, err=%s",
+                            rc, out, err)
             raise se.MergeSnapshotsError(newUUID)
 
         newVol.teardown(sdUUID=newVol.sdUUID, volUUID=newVol.volUUID)
