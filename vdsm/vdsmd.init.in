@@ -32,6 +32,7 @@ RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
 CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
+QEMU_DUMP_PATH="/var/log/core"
 NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock"
 CONFLICTING_SERVICES="libvirt-guests"
 
@@ -224,7 +225,7 @@ configure_libvirt()
     # package version, so anything meaningful can be used here. Since a hard
     # coded version string has been already used, for compatibility we will
     # continue to use this string.
-    local by_vdsm_vers="4.9.10"
+    local by_vdsm_vers="4.9.11"
     local start_conf_section="## beginning of configuration section ${by_vdsm}"
     local end_conf_section="## end of configuration section ${by_vdsm}"
     local ts=/etc/pki/vdsm
@@ -339,6 +340,9 @@ configure_libvirt()
     set_if_default $qconf lock_manager \"sanlock\"
     set_if_default $qlconf auto_disk_leases 0
     set_if_default $qlconf require_lease_for_disks 0
+
+    # Configuring auto dump path
+    set_if_default $qconf auto_dump_path \"$QEMU_DUMP_PATH\"
 
     # Write to all conf files the *end* message of vdsm changes
     for arg in "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"

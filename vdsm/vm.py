@@ -45,6 +45,7 @@ CONTROLLER_DEVICES = 'controller'
 GENERAL_DEVICES = 'general'
 BALLOON_DEVICES = 'balloon'
 REDIR_DEVICES = 'redir'
+WATCHDOG_DEVICES = 'watchdog'
 
 """
 A module containing classes needed for VM communication.
@@ -361,7 +362,8 @@ class Vm(object):
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
                          CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
-                         BALLOON_DEVICES: [], REDIR_DEVICES: []}
+                         BALLOON_DEVICES: [], REDIR_DEVICES: [],
+                         WATCHDOG_DEVICES: [],}
 
     def _get_lastStatus(self):
         PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -443,7 +445,8 @@ class Vm(object):
         devices = {DISK_DEVICES: [], NIC_DEVICES: [],
                    SOUND_DEVICES: [], VIDEO_DEVICES: [],
                    CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
-                   BALLOON_DEVICES: [], REDIR_DEVICES: []}
+                   BALLOON_DEVICES: [], REDIR_DEVICES: [],
+                   WATCHDOG_DEVICES: []}
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
@@ -480,9 +483,21 @@ class Vm(object):
             devices[CONTROLLER_DEVICES] = self.getConfController()
             devices[GENERAL_DEVICES] = []
             devices[BALLOON_DEVICES] = []
+            devices[WATCHDOG_DEVICES] = []
             devices[REDIR_DEVICES] = []
         else:
             devices = self.getConfDevices()
+
+        # libvirt only support one watchdog device
+        if len(devices[WATCHDOG_DEVICES]) > 1:
+            raise ValueError("only a single watchdog device is supported")
+        if len(devices[WATCHDOG_DEVICES]) == 1:
+            if not 'specParams' in devices[WATCHDOG_DEVICES][0]:
+                devices[WATCHDOG_DEVICES][0]['specParams'] = {}
+            if not 'model' in devices[WATCHDOG_DEVICES][0]['specParams']:
+                devices[WATCHDOG_DEVICES][0]['specParams']['model'] = 'i6300esb'
+            if not 'action' in devices[WATCHDOG_DEVICES][0]['specParams']:
+                devices[WATCHDOG_DEVICES][0]['specParams']['action'] = 'none'
 
         # Normalize vdsm images
         for drv in devices[DISK_DEVICES]:

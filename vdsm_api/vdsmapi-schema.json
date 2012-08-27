@@ -2206,6 +2206,90 @@
           '*specParams': 'VmBalloonDeviceSpecParams', 'deviceId': 'UUID'}}
 
 ##
+# @VmWatchdogDeviceType:
+#
+# An enumeration of VM watchdog device types.
+#
+# @watchdog: Device type watchdog
+#
+# Since: 4.10.1
+##
+{'enum': 'VmWatchdogDeviceType', 'data': ['watchdog']}
+
+##
+# @VmWatchdogDeviceModel:
+#
+# An enumeration of VM watchdog device models.
+#
+# @i6300esb:   the recommended device, emulating a PCI Intel 6300ESB
+#
+# @IB700:      emulating an ISA iBase IB700 as watchdog
+#
+# Since: 4.10.1
+##
+{'enum': 'VmWatchdogDeviceModel', 'data': ['i6300esb', 'IB700']}
+
+##
+# @VmWatchdogDeviceAction:
+#
+# An enumeration of VM watchdog device actions.
+#
+# @reset:      default, forcefully reset the guest
+#
+# @shutdown:   gracefully shutdown the guest (not recommended)
+#
+# @poweroff:   forcefully power off the guest
+#
+# @pause:      pause the guest
+#
+# @none:       do nothing
+#
+# @dump:       automatically dump the guest
+#
+# Since: 4.10.1
+##
+{'enum': 'VmWatchdogDeviceAction',
+ 'data': ['reset', 'shutdown', 'poweroff', 'pause', 'none', 'dump']}
+
+##
+# @VmWatchdogDeviceSpecParams:
+#
+# Additional parameters for VM watchdog devices.
+#
+# @model:   The watchdog device model in use
+#
+# @action:  The watchdog timeout action
+#
+# Since: 4.10.1
+##
+{'type': 'VmWatchdogDeviceSpecParams',
+ 'data': {'model': 'VmWatchdogDeviceModel', 'action': 'VmWatchdogDeviceAction'}}
+
+##
+# @VmWatchdogDevice:
+#
+# Properties of a VM watchdog device.
+#
+# @deviceType:  The device type (always @watchdog)
+#
+# @device:      The the type of watchdog device
+#
+# @address:     Device hardware address, only 'i6300esb' need address
+#
+# @alias:       Alias used to identify this device in commands
+#
+# @specParams:  #optional Additional device parameters
+#
+# @deviceId:    A unique ID for this device
+#
+# Since: 4.10.1
+##
+{'type': 'VmWatchdogDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmWatchdogDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str',
+          '*specParams': 'VmWatchdogDeviceSpecParams', 'deviceId': 'UUID'}}
+
+##
 # @VmChannelDeviceType:
 #
 # An enumeration of VM channel device types.
@@ -2254,7 +2338,7 @@
  'data': {'deviceType': 'VmDeviceType',},
  'union': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
           'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
-          'VmChannelDevice']}
+          'VmChannelDevice', 'VmWatchdogDevice']}
 
 ##
 # @VmShortStatus:

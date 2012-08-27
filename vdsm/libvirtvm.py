@@ -1167,6 +1167,22 @@ class BalloonDevice(LibvirtVmDevice):
         return m
 
 
+class WatchdogDevice(LibvirtVmDevice):
+    def getXML(self):
+        """
+        Create domxml for a watchdog device.
+
+        <watchdog model='i6300esb' action='reset'>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x05'
+           function='0x0'/>
+        </watchdog>
+        """
+        m = self.createXmlElem(self.type, None, ['address'])
+        m.setAttribute('model', self.specParams['model'])
+        m.setAttribute('action', self.specParams['action'])
+        return m
+
+
 class RedirDevice(LibvirtVmDevice):
     def getXML(self):
         """
@@ -1309,6 +1325,7 @@ class LibvirtVm(vm.Vm):
         self._getUnderlyingVideoDeviceInfo()
         self._getUnderlyingControllerDeviceInfo()
         self._getUnderlyingBalloonDeviceInfo()
+        self._getUnderlyingWatchdogDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
@@ -1398,6 +1415,7 @@ class LibvirtVm(vm.Vm):
                   vm.CONTROLLER_DEVICES: ControllerDevice,
                   vm.GENERAL_DEVICES: GeneralDevice,
                   vm.BALLOON_DEVICES: BalloonDevice,
+                  vm.WATCHDOG_DEVICES: WatchdogDevice,
                   vm.REDIR_DEVICES: RedirDevice}
 
         for devType, devClass in devMap.items():
@@ -2191,6 +2209,26 @@ class LibvirtVm(vm.Vm):
 
         return {'status': doneCode}
 
+    def _onWatchdogEvent(self, action):
+        def actionToString(action):
+            # the following action strings come from the comments of
+            # virDomainEventWatchdogAction in include/libvirt/libvirt.h
+            # of libvirt source.
+            actionStrings = ("No action, watchdog ignored",
+                             "Guest CPUs are paused",
+                             "Guest CPUs are reset",
+                             "Guest is forcibly powered off",
+                             "Guest is requested to gracefully shutdown",
+                             "No action, a debug message logged")
+            try:
+                return actionStrings[action]
+            except IndexError:
+                return "Received unknown watchdog action(%s)" % action
+
+        self.log.debug("Watchdog event comes from guest %s. "
+                       "Action: %s", self.conf['vmName'],
+                       actionToString(action))
+
     def changeCD(self, drivespec):
         return self._changeBlockDev('cdrom', 'hdc', drivespec)
 
@@ -2575,6 +2613,31 @@ class LibvirtVm(vm.Vm):
                     not dev.get('address')):
                     dev['address'] = address
                     dev['alias'] = alias
+
+    def _getUnderlyingWatchdogDeviceInfo(self):
+        """
+        Obtain watchdog device info from libvirt.
+        """
+        watchdogxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+                                   getElementsByTagName('devices')[0]. \
+                                   getElementsByTagName('watchdog')
+        for x in watchdogxml:
+
+            # PCI watchdog has "address" different from ISA watchdog
+            if x.getElementsByTagName('address'):
+                address = self._getUnderlyingDeviceAddress(x)
+                alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+
+                for wd in self._devices[vm.WATCHDOG_DEVICES]:
+                    if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
+                        wd.address = address
+                        wd.alias = alias
+
+                for dev in self.conf['devices']:
+                    if ((dev['type'] == vm.WATCHDOG_DEVICES) and
+                        (not dev.get('address') or not dev.get('alias'))):
+                        dev['address'] = address
+                        dev['alias'] = alias
 
     def _getUnderlyingVideoDeviceInfo(self):
         """

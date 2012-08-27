@@ -236,6 +236,13 @@ class TestLibvirtvm(TestCaseBase):
         balloon = libvirtvm.BalloonDevice(self.conf, self.log, **dev)
         self.assertXML(balloon.getXML(), balloonXML)
 
+    def testWatchdogXML(self):
+        watchdogXML = '<watchdog action="none" model="i6300esb"/>'
+        dev = {'device': 'watchdog', 'type': 'watchdog',
+               'specParams': {'model': 'i6300esb', 'action': 'none'}}
+        watchdog = libvirtvm.WatchdogDevice(self.conf, self.log, **dev)
+        self.assertXML(watchdog.getXML(), watchdogXML)
+
     def testSoundXML(self):
         soundXML = '<sound model="ac97"/>'
         dev = {'device': 'ac97'}

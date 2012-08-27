@@ -64,6 +64,9 @@ def __eventCallback(conn, dom, *args):
         elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB:
             path, type, status = args[:-1]
             v._onBlockJobEvent(path, type, status)
+        elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
+            action, = args[:-1]
+            v._onWatchdogEvent(action)
         else:
             v.log.warning('unknown eventid %s args %s', eventid, args)
     except:
@@ -121,7 +124,8 @@ def get(cif=None):
                            libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
                            libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
                            libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS,
-                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB):
+                           libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB,
+                           libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG):
                     conn.domainEventRegisterAny(None, ev,
                                                 __eventCallback, (cif, ev))
                 for name in dir(libvirt.virConnect):
