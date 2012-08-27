@@ -47,10 +47,12 @@ FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
 
 getProcPool = oop.getGlobalProcPool
 
+
 def validateDirAccess(dirPath):
     try:
         getProcPool().fileUtils.validateAccess(dirPath)
-        supervdsm.getProxy().validateAccess(constants.QEMU_PROCESS_USER,
+        supervdsm.getProxy().validateAccess(
+                constants.QEMU_PROCESS_USER,
                 (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
                 (os.R_OK | os.X_OK))
     except OSError as e:
@@ -60,6 +62,7 @@ def validateDirAccess(dirPath):
 
     return True
 
+
 def getDomUuidFromMetafilePath(metafile):
     # Metafile path has pattern:
     #  /rhev/data-center/mnt/export-path/sdUUID/dom_md/metadata
@@ -68,8 +71,11 @@ def getDomUuidFromMetafilePath(metafile):
     sdUUIDPos = 3
 
     metaList = metafile.split('/')
-    sdUUID = len(os.path.normpath(config.get('irs', 'repository')).split('/')) + sdUUIDPos
+    sdUUID = len(
+        os.path.normpath(config.get('irs',
+                                    'repository')).split('/')) + sdUUIDPos
     return metaList[sdUUID]
+
 
 class FileMetadataRW(object):
     """
@@ -103,7 +109,10 @@ class FileMetadataRW(object):
             self._oop.writeLines(tmpFilePath, metadata)
         self._oop.os.rename(tmpFilePath, self._metafile)
 
-FileSDMetadata = lambda metafile: DictValidator(PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
+
+FileSDMetadata = lambda metafile: DictValidator(
+    PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
+
 
 class FileStorageDomain(sd.StorageDomain):
     def __init__(self, domainPath):
@@ -113,7 +122,8 @@ class FileStorageDomain(sd.StorageDomain):
         self.log.debug("Reading domain in path %s", domainPath)
         self.mountpoint = os.path.dirname(domainPath)
         self.remotePath = os.path.basename(self.mountpoint)
-        self.metafile = os.path.join(domainPath, sd.DOMAIN_META_DATA, sd.METADATA)
+        self.metafile = os.path.join(domainPath, sd.DOMAIN_META_DATA,
+                                     sd.METADATA)
 
         metadata = FileSDMetadata(self.metafile)
         sdUUID = metadata[sd.DMDK_SDUUID]
@@ -126,7 +136,8 @@ class FileStorageDomain(sd.StorageDomain):
         self._registerResourceNamespaces()
 
     @classmethod
-    def _prepareMetadata(cls, domPath, sdUUID, domainName, domClass, remotePath, storageType, version):
+    def _prepareMetadata(cls, domPath, sdUUID, domainName, domClass,
+                         remotePath, storageType, version):
         """
         Prepare all domain's special volumes and metadata
         """
@@ -152,20 +163,24 @@ class FileStorageDomain(sd.StorageDomain):
         #         Do we really need to keep the EXPORT_PATH?
         #         no one uses it
         md.update({
-                sd.DMDK_VERSION : version,
-                sd.DMDK_SDUUID : sdUUID,
-                sd.DMDK_TYPE : storageType,
-                sd.DMDK_CLASS : domClass,
-                sd.DMDK_DESCRIPTION : domainName,
-                sd.DMDK_ROLE : sd.REGULAR_DOMAIN,
-                sd.DMDK_POOLS : [],
-                sd.DMDK_LOCK_POLICY : '',
-                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_LEASE_TIME_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_IO_OP_TIMEOUT_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
-                sd.DMDK_LEASE_RETRIES : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
-                REMOTE_PATH : remotePath
-                })
+                sd.DMDK_VERSION: version,
+                sd.DMDK_SDUUID: sdUUID,
+                sd.DMDK_TYPE: storageType,
+                sd.DMDK_CLASS: domClass,
+                sd.DMDK_DESCRIPTION: domainName,
+                sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
+                sd.DMDK_POOLS: [],
+                sd.DMDK_LOCK_POLICY: '',
+                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
+                    sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+                sd.DMDK_LEASE_TIME_SEC: sd.DEFAULT_LEASE_PARAMS[
+                    sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+                sd.DMDK_IO_OP_TIMEOUT_SEC:
+                    sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
+                sd.DMDK_LEASE_RETRIES:
+                    sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
+                REMOTE_PATH: remotePath
+                  })
 
     def getReadDelay(self):
         t = time.time()
@@ -207,7 +222,6 @@ class FileStorageDomain(sd.StorageDomain):
             filesDict[fileName] = stats
         return filesDict
 
-
     def produceVolume(self, imgUUID, volUUID):
         """
         Produce a type specific volume object
@@ -215,13 +229,11 @@ class FileStorageDomain(sd.StorageDomain):
         repoPath = self._getRepoPath()
         return fileVolume.FileVolume(repoPath, self.sdUUID, imgUUID, volUUID)
 
-
     def getVolumeClass(self):
         """
         Return a type specific volume generator object
         """
         return fileVolume.FileVolume
-
 
     def volumeExists(self, imgPath, volUUID):
         """
@@ -229,7 +241,6 @@ class FileStorageDomain(sd.StorageDomain):
         """
         volPath = os.path.join(imgPath, volUUID)
         return self.oop.fileUtils.pathExists(volPath)
-
 
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
@@ -239,15 +250,17 @@ class FileStorageDomain(sd.StorageDomain):
             'volFormat' - volume format RAW/QCOW2
             'preallocate' - sparse/preallocate
         """
-        fileVolume.FileVolume.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        fileVolume.FileVolume.validateCreateVolumeParams(
+                volFormat, preallocate, srcVolUUID)
 
-
-    def createVolume(self, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+    def createVolume(self, imgUUID, size, volFormat, preallocate,
+                     diskType, volUUID, desc, srcImgUUID, srcVolUUID):
         """
         Create a new volume
         """
         repoPath = self._getRepoPath()
-        return fileVolume.FileVolume.create(repoPath, self.sdUUID,
+        return fileVolume.FileVolume.create(
+                            repoPath, self.sdUUID,
                             imgUUID, size, volFormat, preallocate, diskType,
                             volUUID, desc, srcImgUUID, srcVolUUID)
 
@@ -272,7 +285,7 @@ class FileStorageDomain(sd.StorageDomain):
             raise se.StorageDomainAccessError(self.sdUUID)
 
     def validateMasterMount(self):
-         return self.oop.fileUtils.pathExists(self.getMasterDir())
+        return self.oop.fileUtils.pathExists(self.getMasterDir())
 
     def getAllImages(self):
         """
@@ -301,27 +314,29 @@ class FileStorageDomain(sd.StorageDomain):
         metadata.
         Setting parent = None for compatibility with block version.
         """
-        volMetaPattern = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES, "*", "*.meta")
+        volMetaPattern = os.path.join(self.mountpoint, self.sdUUID,
+                                      sd.DOMAIN_IMAGES, "*", "*.meta")
         volMetaPaths = self.oop.glob.glob(volMetaPattern)
         volumes = {}
         for metaPath in volMetaPaths:
             head, tail = os.path.split(metaPath)
             volUUID, volExt = os.path.splitext(tail)
             imgUUID = os.path.basename(head)
-            if volumes.has_key(volUUID):
+            if volUUID in volumes:
                 # Templates have no parents
                 volumes[volUUID]['parent'] = sd.BLANK_UUID
                 # Template volumes are hard linked in every image directory
                 # which is derived from that template, therefore:
                 # 1. a template volume which is in use will appear at least
-                # twice (in the template image dir and in the derived image dir)
+                # twice (in the template image dir and in the derived image
+                # dir)
                 # 2. Any volume which appears more than once in the dir tree is
                 # by definition a template volume.
                 # 3. Any image which has more than 1 volume is not a template
-                # image. Therefore if imgUUID appears in more than one path then
-                # it is not a template.
+                # image. Therefore if imgUUID appears in more than one path
+                # then it is not a template.
                 if len(tuple(vPath for vPath in volMetaPaths
-                        if imgUUID in vPath)) > 1:
+                             if imgUUID in vPath)) > 1:
                     # Add template additonal image
                     volumes[volUUID]['imgs'].append(imgUUID)
                 else:
@@ -329,7 +344,8 @@ class FileStorageDomain(sd.StorageDomain):
                     volumes[volUUID]['imgs'].insert(0, imgUUID)
             else:
                 volumes[volUUID] = {'imgs': [imgUUID], 'parent': None}
-        return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent'])) for k, v in volumes.iteritems())
+        return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
+                    for k, v in volumes.iteritems())
 
     @classmethod
     def format(cls, sdUUID):
@@ -344,7 +360,8 @@ class FileStorageDomain(sd.StorageDomain):
             pass
         else:
             try:
-                oop.getProcessPool(sdUUID).fileUtils.cleanupdir(domaindir, ignoreErrors = False)
+                oop.getProcessPool(sdUUID).fileUtils.cleanupdir(
+                        domaindir, ignoreErrors=False)
             except RuntimeError as e:
                 raise se.MiscDirCleanupFailure(str(e))
 
@@ -376,8 +393,12 @@ class FileStorageDomain(sd.StorageDomain):
         Get storage domain statistics
         """
         ##self.log.info("sdUUID=%s", self.sdUUID)
-        stats = {'disktotal':'', 'diskfree':'', 'mdavalid':True, 'mdathreshold':True,
-                 'mdasize':0, 'mdafree':0}
+        stats = {'disktotal': '',
+                 'diskfree': '',
+                 'mdavalid': True,
+                 'mdathreshold': True,
+                 'mdasize': 0,
+                 'mdafree': 0}
         try:
             st = self.oop.os.statvfs(self.domaindir)
             stats['disktotal'] = str(st.f_frsize * st.f_blocks)
@@ -403,7 +424,6 @@ class FileStorageDomain(sd.StorageDomain):
         """
         pass
 
-
     def selftest(self):
         """
         Run internal self test
@@ -416,7 +436,8 @@ class FileStorageDomain(sd.StorageDomain):
                 # measures and unmounting this NFS resource. Chances are
                 # that is the most intelligent thing we can do in this
                 # situation anyway.
-                self.log.debug("Unmounting stale file system %s", self.mountpoint)
+                self.log.debug("Unmounting stale file system %s",
+                               self.mountpoint)
                 mount.getMountFromTarget(self.mountpoint).umount()
                 raise se.FileStorageDomainStaleNFSHandle()
             raise
@@ -427,12 +448,15 @@ class FileStorageDomain(sd.StorageDomain):
         remove the remnants of the removed images (they could be left sometimes
         (on NFS mostly) due to lazy file removal
         """
-        removedPattern = os.path.join(self.domaindir, sd.DOMAIN_IMAGES,
-            image.REMOVED_IMAGE_PREFIX+'*')
+        removedPattern = os.path.join(
+                self.domaindir, sd.DOMAIN_IMAGES,
+                image.REMOVED_IMAGE_PREFIX + '*')
         removedImages = self.oop.glob.glob(removedPattern)
-        self.log.debug("Removing remnants of deleted images %s" % removedImages)
+        self.log.debug("Removing remnants of deleted images %s" %
+                       removedImages)
         for imageDir in removedImages:
             self.oop.fileUtils.cleanupdir(imageDir)
+
 
 def getMountsList(pattern="*"):
     finalPat = os.path.join(sd.StorageDomain.storage_repository,
@@ -441,7 +465,8 @@ def getMountsList(pattern="*"):
     # For pattern='*' in mixed pool (block and file domains)
     # glob will return sd.BLOCKSD_DIR among of real mount points.
     # Remove sd.BLOCKSD_DIR from glob results.
-    return [ mnt for mnt in mntList if not mnt.endswith('/'+sd.BLOCKSD_DIR) ]
+    return [mnt for mnt in mntList if not mnt.endswith('/' + sd.BLOCKSD_DIR)]
+
 
 def scanDomains(pattern="*"):
     log = logging.getLogger("scanDomains")
@@ -450,11 +475,14 @@ def scanDomains(pattern="*"):
 
     def collectMetaFiles(possibleDomain):
         try:
-            metaFiles = oop.getGlobalProcPool().glob.glob(os.path.join(possibleDomain,
-                constants.UUID_GLOB_PATTERN, sd.DOMAIN_META_DATA))
+            metaFiles = oop.getGlobalProcPool().glob.glob(
+                os.path.join(possibleDomain,
+                             constants.UUID_GLOB_PATTERN,
+                             sd.DOMAIN_META_DATA))
 
             for metaFile in metaFiles:
-                if os.path.basename(os.path.dirname(metaFile)) != sd.MASTER_FS_DIR:
+                if (os.path.basename(os.path.dirname(metaFile)) !=
+                    sd.MASTER_FS_DIR):
                     sdUUID = os.path.basename(os.path.dirname(metaFile))
 
                     return (sdUUID, os.path.dirname(metaFile))
@@ -462,13 +490,15 @@ def scanDomains(pattern="*"):
         except Timeout:
             pass
         except Exception:
-            log.warn("Could not collect metadata file for domain path %s", possibleDomain, exc_info=True)
+            log.warn("Could not collect metadata file for domain path %s",
+                     possibleDomain, exc_info=True)
 
     for res in misc.itmap(collectMetaFiles, mntList):
         if res is None:
             continue
 
         yield res
+
 
 def getStorageDomainsList():
     return [item[0] for item in scanDomains()]
