@@ -22,16 +22,16 @@
 # VDSM API Schema
 #
 
-## Category: @Global ###########################################################
+## Category: @Host #############################################################
 ##
-# @Global.init:
+# @Host.init:
 #
-# Initialize a Global API object.
+# Initialize a global host-level API object.
 #
 # Since: 4.10.0
 # XXX: Extension: object constructors
 ##
-{'init': 'Global'}
+{'init': 'Host'}
 
 ##
 # @UUID:
@@ -72,7 +72,7 @@
           '*bondingOptions', 'str'}}
 
 ##
-# @Global.addNetwork:
+# @Host.addNetwork:
 #
 # Add a new network to this host.
 #
@@ -88,12 +88,12 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'addNetwork'},
+{'command': {'class': 'Host', 'name': 'addNetwork'},
  'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
           '*options': 'NetworkOptions'}}
 
 ##
-# @Global.delNetwork:
+# @Host.delNetwork:
 #
 # Remove a network from this host.
 #
@@ -110,12 +110,12 @@
 # Since: 4.10.0
 ##
 
-{'command': {'class': 'Global', 'name': 'delNetwork'},
+{'command': {'class': 'Host', 'name': 'delNetwork'},
  'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
           '*options': 'NetworkOptions'}}
 
 ##
-# @Global.editNetwork:
+# @Host.editNetwork:
 #
 # Add a new network to the host by replacing it with a new one.
 #
@@ -133,7 +133,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'editNetwork'},
+{'command': {'class': 'Host', 'name': 'editNetwork'},
  'data': {'oldBridge': 'str', 'newBridge': 'str', '*vlan': 'str',
           '*bond': 'str', '*nics': ['str'], '*options': 'NetworkOptions'}}
 
@@ -227,7 +227,7 @@
  'key': 'str', 'value': 'SetupNetworkBondAttributes'}
 
 ##
-# @Global.setupNetworks:
+# @Host.setupNetworks:
 #
 # Reconfigure host networking by adding, removing, and editing multiple bridge
 # and bond devices in a single call.
@@ -240,7 +240,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'setupNetworks'},
+{'command': {'class': 'Host', 'name': 'setupNetworks'},
  'data': {'networks': 'SetupNetworkNetConfig',
           'bondings': 'SetupNetworkBondConfig',
           'options': 'SetupNetworkOptions'}}
@@ -278,7 +278,7 @@
 {'enum': 'FenceNodePowerStatus', 'data': ['on', 'off', 'unknown']}
 
 ##
-# @Global.fenceNode:
+# @Host.fenceNode:
 #
 # Send a fencing command to a remote host.
 #
@@ -305,7 +305,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'fenceNode'},
+{'command': {'class': 'Host', 'name': 'fenceNode'},
  'data': {'addr': 'str', 'port': 'int', 'agent': 'str', 'username': 'str',
           'password': 'str', 'action': 'FenceNodeAction', '*secure': 'bool',
           '*options': 'str'},
@@ -335,7 +335,7 @@
  'key': 'UUID', 'value': 'TaskInfo'}
 
 ##
-# @Global.getAllTasksInfo:
+# @Host.getAllTasksInfo:
 #
 # Get extra information about all tasks.
 #
@@ -346,7 +346,7 @@
 #
 # Notes: Currently this API only returns tasks that are tagged with 'spm'.
 ##
-{'command': {'class': 'Global', 'name': 'getAllTasksInfo'},
+{'command': {'class': 'Host', 'name': 'getAllTasksInfo'},
  'returns': {'allTasksInfo': 'TasksInfo'}}
 
 ##
@@ -418,7 +418,7 @@
  'key': 'UUID', 'value': 'TaskStatus'}
 
 ##
-# @Global.getAllTasksStatuses:
+# @Host.getAllTasksStatuses:
 #
 # Get status information for all tasks.
 #
@@ -429,18 +429,18 @@
 #
 # Notes: Currently this API only returns tasks that are tagged with 'spm'.
 ##
-{'command': {'class': 'Global', 'name': 'getAllTasksStatuses'},
+{'command': {'class': 'Host', 'name': 'getAllTasksStatuses'},
  'returns': {'allTasksStatus': 'TasksStatus'}}
 
 ##
-# @Global.setMOMPolicy:
+# @Host.setMOMPolicy:
 #
 # Set MOM policy for different level of overcommitments.
 #
 # @policy:  MOM policy string.
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'setMOMPolicy'},
+{'command': {'class': 'Host', 'name': 'setMOMPolicy'},
  'data': {'policy': 'str'}}
 
 ##
@@ -480,7 +480,7 @@
  'key': 'UUID', 'value': 'TaskDetails'}
 
 ##
-# @Global.getAllTasks:
+# @Host.getAllTasks:
 #
 # Get all information about all tasks.
 #
@@ -490,9 +490,9 @@
 # Since: 4.10.0
 #
 # Notes: This API corrects the issues noted in @Global.getAllTasksStatuses and
-#        @Global.getAllTasksInfo
+#        @Host.getAllTasksInfo
 ##
-{'command': {'class': 'Global', 'name': 'getAllTasks'},
+{'command': {'class': 'Host', 'name': 'getAllTasks'},
  'returns': {'tasks': 'TasksDetails'}}
 
 
@@ -907,7 +907,7 @@
           'guestOverhead': 'uint'}}
 
 ##
-# @Global.getCapabilities:
+# @Host.getCapabilities:
 #
 # Get host capabilities.
 #
@@ -918,11 +918,11 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getCapabilities'},
+{'command': {'class': 'Host', 'name': 'getCapabilities'},
  'returns': {'info': 'VdsmCapabilities', 'netConfigDirty': 'bool'}}
 
 ##
-# @Global.getConnectedStoragePools:
+# @Host.getConnectedStoragePools:
 #
 # Get a list of all Storage Pools that are connected to this host.
 #
@@ -931,7 +931,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getConnectedStoragePools'},
+{'command': {'class': 'Host', 'name': 'getConnectedStoragePools'},
  'returns': {'poollist': ['UUID']}}
 
 ##
@@ -1055,7 +1055,7 @@
           'physicalblocksize': 'uint', 'partitioned': 'bool'}}
 
 ##
-# @Global.getDeviceInfo:
+# @Host.getDeviceInfo:
 #
 # Get information about a block device.
 #
@@ -1067,12 +1067,12 @@
 # Since: 4.10.0
 # XXX: Possibly missing 'options' parameter
 ##
-{'command': {'class': 'Global', 'name': 'getDeviceInfo'},
+{'command': {'class': 'Host', 'name': 'getDeviceInfo'},
  'data': {'guid': 'UUID'},
  'returns': {'info': 'BlockDeviceInfo'}}
 
 ##
-# @Global.getDeviceList:
+# @Host.getDeviceList:
 #
 # Get information about all block devices.
 #
@@ -1083,7 +1083,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getDeviceList'},
+{'command': {'class': 'Host', 'name': 'getDeviceList'},
  'data': {'*storageType': 'BlockDeviceType'},
  'returns': {'devList': ['BlockDeviceInfo']}}
 
@@ -1098,7 +1098,7 @@
  'key': 'UUID', 'value': 'bool'}
 
 ##
-# @Global.getDevicesVisibility:
+# @Host.getDevicesVisibility:
 #
 # Check if the host has access to block storage devices.
 #
@@ -1109,7 +1109,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getDevicesVisibility'},
+{'command': {'class': 'Host', 'name': 'getDevicesVisibility'},
  'data': {'guidList': ['UUID']},
  'returns': {'visibility': 'DeviceVisibilityMap'}}
 
@@ -1264,7 +1264,7 @@
           'attr': 'VolumeGroupAttributes', 'state': 'VolumeGroupState'}}
 
 ##
-# @Global.getLVMVolumeGroups:
+# @Host.getLVMVolumeGroups:
 #
 # Get information about Volume Groups in this host.
 #
@@ -1276,7 +1276,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getLVMVolumeGroups'},
+{'command': {'class': 'Host', 'name': 'getLVMVolumeGroups'},
  'data': {'*storageType': 'BlockDeviceType'},
  'returns': {'vglist': ['VolumeGroupInfo']}}
 
@@ -1493,7 +1493,7 @@
            'netConfigDirty': 'bool', 'generationID': 'UUID'}
 
 ##
-# @Global.getStats:
+# @Host.getStats:
 #
 # Get host statistics.
 #
@@ -1502,7 +1502,7 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getStats'},
+{'command': {'class': 'Host', 'name': 'getStats'},
  'returns': {'info': 'HostStats'}}
 
 ##
@@ -1547,7 +1547,7 @@
  'data': ['UNKNOWN', 'NFS', 'FCP', 'ISCSI', 'LOCALFS', 'CIFS', 'SHAREDFS']}
 
 ##
-# @Global.getStorageDomains:
+# @Host.getStorageDomains:
 #
 # Get a list of known Storage Domain UUIDs.
 #
@@ -1564,13 +1564,13 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getStorageDomains'},
+{'command': {'class': 'Host', 'name': 'getStorageDomains'},
  'data': {'*spUUID': 'UUID', '*domainClass': 'StorageDomainImageClass',
           '*storageType': 'StorageDomainType', '*remotePath': 'str'},
  'returns': {'domlist': ['UUID']}}
 
 ##
-# @Global.getStorageRepoStats:
+# @Host.getStorageRepoStats:
 #
 # Get statistics and liveness of currently attached Storage Domains.
 #
@@ -1580,7 +1580,7 @@
 # Since: 4.10.0
 # XXX: The return value is in the same dictionary as the command status!
 ##
-{'command': {'class': 'Global', 'name': 'getStorageRepoStats'},
+{'command': {'class': 'Host', 'name': 'getStorageRepoStats'},
  'returns': {'XXX': 'StorageDomainStatsMap'}}
 
 ##
@@ -2338,7 +2338,7 @@
 {'alias': 'VmDefinition', 'data': 'VmFullStatus'}
 
 ##
-# @Global.getVMList:
+# @Host.getVMList:
 #
 # Get information about the current virtual machines.
 #
@@ -2351,18 +2351,18 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'getVMList'},
+{'command': {'class': 'Host', 'name': 'getVMList'},
  'data': {'*fullStatus': 'bool', '*vmList': ['UUID']},
  'returns': {'vmList': ['VmDefinition']}}
 
 ##
-# @Global.ping:
+# @Host.ping:
 #
 # Test connectivity to vdsm.
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'ping'}}
+{'command': {'class': 'Host', 'name': 'ping'}}
 
 ##
 # @LoggingLevel:
@@ -2386,7 +2386,7 @@
  'data': ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']}
 
 ##
-# @Global.setLogLevel:
+# @Host.setLogLevel:
 #
 # Set the vdsm logging verbosity level.
 #
@@ -2394,17 +2394,17 @@
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'setLogLevel'},
+{'command': {'class': 'Host', 'name': 'setLogLevel'},
  'data': {'level': 'LoggingLevel'}}
 
 ##
-# @Global.setSafeNetworkConfig:
+# @Host.setSafeNetworkConfig:
 #
 # Mark the current network configuration good and persist any changes.
 #
 # Since: 4.10.0
 ##
-{'command': {'class': 'Global', 'name': 'setSafeNetworkConfig'}}
+{'command': {'class': 'Host', 'name': 'setSafeNetworkConfig'}}
 
 
 ## Category: @ConnectionRefs ##################################################
