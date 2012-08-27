@@ -27,5 +27,7 @@ EXTRA_DIST = \
 
 dist_vdsmtool_DATA = \
 	__init__.py \
+	load_needed_modules.py \
 	passwd.py \
-	validate_ovirt_certs.py
+	validate_ovirt_certs.py \
+	$(NULL)

@@ -198,32 +198,6 @@ test_space() {
     return 0
 }
 
-bond_dev_available() {
-    local BOND_DEVS=$(/bin/cat /sys/class/net/bonding_masters)
-    local x
-
-    [[ -z "$BOND_DEVS" ]] && return 1
-
-    for x in $BOND_DEVS; do
-        [[ "$x" == "$1" ]] && return 0
-    done
-
-    return 1
-}
-
-load_needed_modules() {
-    local b
-
-    /sbin/modprobe tun
-    /sbin/modprobe bonding
-    # RHEV-M currently assumes that all bonding devices pre-exist
-    for b in bond{0,1,2,3,4}; do
-        if ! bond_dev_available $b; then
-            echo +$b > /sys/class/net/bonding_masters 2>/dev/null
-        fi
-    done
-    /sbin/modprobe 8021q
-}
 
 test_already_running()
 {
@@ -499,7 +473,7 @@ start() {
     fi
 
     @VDSMDIR@/vdsm-restore-net-config
-    load_needed_modules
+    /usr/bin/vdsm-tool load-needed-modules
     mk_data_center
     mk_core_path
     mk_dom_backup
