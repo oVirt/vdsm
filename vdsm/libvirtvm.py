@@ -726,7 +726,8 @@ class _DomXML:
         <features/>
         """
         if utils.tobool(self.conf.get('acpiEnable', 'true')):
-            self.appendChildWithText('features', 'acpi')
+            self.dom.appendChild(self.doc.createElement('features')) \
+               .appendChild(self.doc.createElement('acpi'))
 
     def appendCpu(self):
         """
