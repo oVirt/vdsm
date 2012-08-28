@@ -172,9 +172,10 @@ class TestQdisc(TestCaseBase):
         self.assertFalse("qdisc ingress" in self._showQdisc(),
                 "Could not remove an ingress qdisc from the device.")
 
-    def testGetDevID(self):
+    def testQdiscsOfDevice(self):
         self._addIngress()
-        self.assertTrue("ffff:" in tc.qdisc_get_devid(self._bridge.devName))
+        self.assertEquals(("ffff:", ),
+                          tuple(tc._qdiscs_of_device(self._bridge.devName)))
 
     def testReplacePrio(self):
         self._addIngress()

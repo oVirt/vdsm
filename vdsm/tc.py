@@ -61,7 +61,7 @@ def setPortMirroring(network, target):
     _addTarget(network, QDISC_INGRESS, target)
 
     qdisc_replace_prio(network)
-    qdisc_id = qdisc_get_devid(network)
+    qdisc_id = _qdiscs_of_device(network).next()
     _addTarget(network, qdisc_id, target)
 
     set_promisc(network, True)
@@ -71,7 +71,7 @@ def unsetPortMirroring(network, target):
     # TODO handle the case where we have partial definitions on device due to
     # vdsm crash
     acts = _delTarget(network, QDISC_INGRESS, target)
-    qdisc_id = qdisc_get_devid(network)
+    qdisc_id = _qdiscs_of_device(network).next()
     acts += _delTarget(network, qdisc_id, target)
 
     if not acts:
@@ -122,12 +122,14 @@ def qdisc_replace_prio(dev):
     _process_request(command)
 
 
-def qdisc_get_devid(dev):
-    "Return qdisc_id of the first qdisc associated with dev"
+def _qdiscs_of_device(dev):
+    "Return an iterator of qdisc_ids associated with dev"
 
     command = [EXT_TC, 'qdisc', 'show', 'dev', dev]
     out = _process_request(command)
-    return out.split(' ')[2]
+
+    for line in out.splitlines():
+        yield line.split(' ')[2]
 
 
 def qdisc_del(dev, queue):
