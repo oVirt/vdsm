@@ -2220,8 +2220,10 @@ if __name__ == '__main__':
                          'desktop'
                         )),
         'getVmsInfo': (serv.do_getVmsInfo,
-                      ('<Import path> <Import type> <VM type>',
-                       'Return list of import candidates with their info'
+                      ('<spUUID> [<sdUUID> [vmList](vmId1,vmId2,...)]',
+                       'Return info of VMs from the pool or a backup domain '
+                       'if its sdUUID is given. If vmList is also given, return '
+                       'info for these VMs only.'
                        )),
         'getVmsList': (serv.do_getVmsList,
                       ('<spUUID> [sdUUID]',
