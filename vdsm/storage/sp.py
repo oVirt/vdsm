@@ -1869,11 +1869,11 @@ class StoragePool(Securable):
             If the *imgUUID* is **identical** to the *srcImgUUID* the new volume
             will be logically considered a snapshot of the old volume.
             If the *imgUUID* is **different** from the *srcImgUUID* the old volume
-            will be logically considered a template of the new volume.
+            will be logically considered as a template of the new volume.
 
         :param sdUUID: The UUID of the storage domain that contains the volume.
         :type sdUUID: UUID
-        :param imgUUID: The UUID of the image that id that the new volume will have.
+        :param imgUUID: The UUID of the image that the new volume will have.
         :type imgUUID: UUID
         :param size: The size of the new volume in bytes.
         :type size: int
@@ -1891,7 +1891,7 @@ class StoragePool(Securable):
         :param srcVolUUID: The UUID of the volume that will be the base of the new volume.
         :type srcVolUUID: UUID
 
-        :returns: a dicts with the UUID of the new volume.
+        :returns: a dict with the UUID of the new volume.
         :rtype: dict
         """
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
