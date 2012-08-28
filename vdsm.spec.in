@@ -776,82 +776,82 @@ exit 0
 
 %if 0%{?with_hooks}
 %files hook-directlun
-%defattr(-, vdsm, kvm, -)
-%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_directlun
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_directlun
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_directlun
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_directlun
+%defattr(-, root, root, -)
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_directlun
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_directlun
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_directlun
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_directlun
 
 %files hook-fileinject
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_fileinject
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_fileinject
 
 %files hook-floppy
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_floppy
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_floppy
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_floppy
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_floppy
 
 %files hook-hostusb
-%defattr(-, vdsm, kvm, -)
-%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_hostusb
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostusb
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_hostusb
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hostusb
+%defattr(-, root, root, -)
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_hostusb
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostusb
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_hostusb
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hostusb
 
 %files hook-hugepages
-%defattr(-, vdsm, kvm, -)
-%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_hugepages
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hugepages
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_hugepages
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hugepages
+%defattr(-, root, root, -)
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_hugepages
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hugepages
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_hugepages
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hugepages
 
 %files hook-isolatedprivatevlan
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
 %config(noreplace) %{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
 
 %files hook-numa
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_numa
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_numa
 
 %files hook-pincpu
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_pincpu
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_pincpu
 
 %files hook-promisc
-%defattr(-, vdsm, kvm, -)
-%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_promisc
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy/50_promisc
+%defattr(-, root, root, -)
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_promisc
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy/50_promisc
 
 %files hook-qos
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qos
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qos
 
 %files hook-scratchpad
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_scratchpad
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_scratchpad
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_scratchpad
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_scratchpad
 
 %files hook-smartcard
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smartcard
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smartcard
 
 %files hook-smbios
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smbios
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smbios
 
 %files hook-sriov
-%defattr(-, vdsm, kvm, -)
-%attr (440,root,root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_sriov
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_sriov
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_sriov
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_sriov
+%defattr(-, root, root, -)
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_sriov
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_sriov
+%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_sriov
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_sriov
 
 %files hook-vmdisk
-%defattr(-, vdsm, kvm, -)
-%attr (755,vdsm,kvm) %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmdisk
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmdisk
 %endif
 
 %files debug-plugin
