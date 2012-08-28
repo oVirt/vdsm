@@ -54,7 +54,7 @@ Requires: python
 # Update the qemu-kvm requires when block_stream will be included
 Requires: qemu-kvm >= 2:0.12.1.2-2.227
 Requires: qemu-img >= 2:0.12.1.2-2.227
-Requires: libvirt >= 0.9.10-20
+Requires: libvirt >= 0.9.10-21.el6_3.4
 Requires: libvirt-python, libvirt-lock-sanlock
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
