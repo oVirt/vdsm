@@ -1418,10 +1418,9 @@ class service:
         d = {}
         for arg in args:
             kv = arg.split('=', 1)
-            if len(kv) == 2:
-                k, v = kv
-            else:
-                k, v = kv, ''
+            if len(kv) != 2:
+                raise ValueError("Invalid argument: %s" % arg)
+            k, v = kv
             d[k] = v
         return d
 
