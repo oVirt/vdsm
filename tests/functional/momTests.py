@@ -17,11 +17,19 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import imp
 import random
 import time
+
 import testValidation
 from testrunner import VdsmTestCase as TestCaseBase
+from nose.plugins.skip import SkipTest
 from vdsm import vdscli
+
+try:
+    imp.find_module('mom')
+except ImportError:
+    raise SkipTest('MOM is not installed')
 
 
 class MOMTest(TestCaseBase):
@@ -37,7 +45,8 @@ class MOMTest(TestCaseBase):
             (Host.Control "ksm_pages_to_scan" %d)""" % \
             (run, pages_to_scan)
         s = vdscli.connect()
-        s.setMOMPolicy(testPolicyStr)
+        r = s.setMOMPolicy(testPolicyStr)
+        self.assertEqual(r['status']['code'], 0, str(r))
 
         # Wait for the policy taking effect
         time.sleep(10)
