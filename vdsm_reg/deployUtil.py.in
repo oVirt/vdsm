@@ -684,7 +684,7 @@ def setHostTime(VDCTime):
     fReturn = True
 
     out, err, rc = _logExec([EX_NTPQ, "-c", "rv"])
-    if 'clock_sync' in out:
+    if out and 'clock_sync' in out:
         logging.debug("setHostTime: Time is synchronised to NTP server.")
     else:
         try:
