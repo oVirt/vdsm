@@ -290,14 +290,29 @@ def getMachineUUID():
     return strReturn
 
 def getMacs():
+
+    # (
+    #     find /sys/class/net/*/device | while read f; do \
+    #         cat "$(dirname "$f")/address"; \
+    #     done; \
+    #     [ -d /proc/net/bonding ] && \
+    #         find /proc/net/bonding -type f -exec cat '{}' \; | \
+    #         grep 'Permanent HW addr:' | \
+    #         sed 's/.* //'
+    # ) | sed -e '/00:00:00:00/d' -e '/^$/d'
+
     macs = []
     for b in glob.glob('/sys/class/net/*/device'):
-        nic = b.split('/')[-2]
-        addr = '/sys/class/net/' + nic + '/address'
-        mac = file(addr).readlines()[0].split()[0]
+        mac = file(os.path.join(os.path.dirname(b), "address")). \
+            readline().replace("\n", "")
         macs.append(mac)
 
-    return macs
+    for b in glob.glob('/proc/net/bonding/*'):
+        for line in file(b):
+            if line.startswith("Permanent HW addr: "):
+                macs.append(line.split(": ")[1].replace("\n", ""))
+
+    return set(macs) - set(["", "00:00:00:00:00:00"])
 
 def getHostID():
     """
