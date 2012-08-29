@@ -290,9 +290,9 @@ class HSM:
             multipath.setupMultipath()
 
         self.__validateLvmLockingType()
-        lvm._lvminfo.bootstrap()
 
         def storageRefresh():
+            lvm._lvminfo.bootstrap()
             sdCache.refreshStorage()
 
             self.tasksDir = config.get('irs', 'hsm_tasks')
