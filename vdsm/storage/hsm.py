@@ -1702,6 +1702,7 @@ class HSM:
         return dict(uuid=lvm.getVG(vgname).uuid)
 
 
+    @deprecated
     @public
     def removeVG(self, vgUUID, options = None):
         """
