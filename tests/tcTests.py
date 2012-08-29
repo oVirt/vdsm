@@ -34,7 +34,7 @@ import ethtool
 
 from testrunner import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
-from constants import EXT_BRCTL, EXT_TC
+from vdsm.constants import EXT_BRCTL, EXT_TC
 from nose.plugins.skip import SkipTest
 
 import tc
