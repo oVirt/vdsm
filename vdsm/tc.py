@@ -47,13 +47,21 @@ def _addTarget(network, parent, target):
 
 
 def _delTarget(network, parent, target):
-    filt = list(filters(network, parent))[0]
-    filt.actions.remove(MirredAction(target))
-    if filt.actions:
+    fs = list(filters(network, parent))
+    if fs:
+        filt = fs[0]
+    else:
+        return set([])
+
+    acts = set(filt.actions)
+    acts.discard(MirredAction(target))
+
+    if acts:
+        filt = Filter(prio=filt.prio, handle=filt.handle, actions=acts)
         filter_replace(network, parent, filt)
     else:
         filter_del(network, target, parent, filt.prio)
-    return filt.actions
+    return acts
 
 
 def setPortMirroring(network, target):
@@ -71,8 +79,11 @@ def unsetPortMirroring(network, target):
     # TODO handle the case where we have partial definitions on device due to
     # vdsm crash
     acts = _delTarget(network, QDISC_INGRESS, target)
-    qdisc_id = _qdiscs_of_device(network).next()
-    acts += _delTarget(network, qdisc_id, target)
+    try:
+        qdisc_id = _qdiscs_of_device(network).next()
+        acts |= _delTarget(network, qdisc_id, target)
+    except StopIteration:
+        pass
 
     if not acts:
         qdisc_del(network, 'root')
