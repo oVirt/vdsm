@@ -20,6 +20,8 @@
 
 from collections import namedtuple
 
+import ethtool
+
 import storage.misc
 from vdsm.constants import EXT_TC, EXT_IFCONFIG
 
@@ -53,8 +55,9 @@ def _delTarget(network, parent, target):
     else:
         return set([])
 
-    acts = set(filt.actions)
-    acts.discard(MirredAction(target))
+    devices = set(ethtool.get_devices())
+    acts = [act for act in filt.actions
+            if act.target in devices and act.target != target]
 
     if acts:
         filt = Filter(prio=filt.prio, handle=filt.handle, actions=acts)
@@ -81,7 +84,7 @@ def unsetPortMirroring(network, target):
     acts = _delTarget(network, QDISC_INGRESS, target)
     try:
         qdisc_id = _qdiscs_of_device(network).next()
-        acts |= _delTarget(network, qdisc_id, target)
+        acts += _delTarget(network, qdisc_id, target)
     except StopIteration:
         pass
 
