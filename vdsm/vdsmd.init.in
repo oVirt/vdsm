@@ -414,7 +414,7 @@ reconfigure() {
 stop_libvirtd_sysv() {
     # stop libvirt SysV service if we intend to configure upstart
 
-    if upstart_libvirt; then
+    if upstart_libvirt && ! [[ -f /etc/init/libvirtd.conf ]]; then
         /sbin/chkconfig libvirtd off
         /sbin/service libvirtd stop
     fi
