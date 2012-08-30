@@ -514,37 +514,22 @@ def _getGlusterUuid():
         return ''
 
 
-def _parsePeerStatus(out, gHostName, gUuid, gStatus):
-    if not out[0].strip():
-        del out[0]
-    if out[-1].strip():
-        out += [""]
+def _parsePeerStatus(tree, gHostName, gUuid, gStatus):
+    hostList = [{'hostname': gHostName,
+                 'uuid': gUuid,
+                 'status': gStatus}]
 
-    hostList = [{'hostname': gHostName, 'uuid': gUuid, 'status': gStatus}]
-    if out[0].strip().upper() == "NO PEERS PRESENT":
-        return hostList
-    hostName = uuid = status = None
-    for line in out:
-        line = line.strip()
-        if not line:
-            if hostName != None and uuid != None and status != None:
-                hostList.append({'hostname': hostName, 'uuid': uuid,
-                                 'status': status})
-                hostName = uuid = status = None
-        tokens = line.split(":", 1)
-        key = tokens[0].strip().upper()
-        if key == "HOSTNAME":
-            hostName = tokens[1].strip()
-        elif key == "UUID":
-            uuid = tokens[1].strip()
-        elif key == "STATE":
-            statusValue = tokens[1].strip()
-            if '(Connected)' in statusValue:
-                status = HostStatus.CONNECTED
-            elif '(Disconnected)' in statusValue:
-                status = HostStatus.DISCONNECTED
-            else:
-                status = HostStatus.UNKNOWN
+    for el in tree.findall('peerStatus/peer'):
+        if el.find('state').text != '3':
+            status = HostStatus.UNKNOWN
+        elif el.find('connected').text == '1':
+            status = HostStatus.CONNECTED
+        else:
+            status = HostStatus.DISCONNECTED
+        hostList.append({'hostname': el.find('hostname').text,
+                         'uuid': el.find('uuid').text,
+                         'status': status})
+
     return hostList
 
 
@@ -554,9 +539,14 @@ def peerStatus():
     Returns:
         [{'hostname': HOSTNAME, 'uuid': UUID, 'status': STATE}, ...]
     """
-    rc, out, err = _execGluster(_getGlusterPeerCmd() + ["status"])
-    if rc:
-        raise ge.GlusterHostListFailedException(rc, out, err)
-    else:
-        return _parsePeerStatus(out, _getGlusterHostName(),
+    command = _getGlusterPeerCmd() + ["status"]
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterHostsListFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parsePeerStatus(xmltree,
+                                _getGlusterHostName(),
                                 _getGlusterUuid(), HostStatus.CONNECTED)
+    except (etree.ParseError, AttributeError, ValueError):
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])

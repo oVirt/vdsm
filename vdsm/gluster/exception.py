@@ -359,6 +359,6 @@ class GlusterHostRemoveFailedException(GlusterHostException):
     message = "Remove host failed"
 
 
-class GlusterHostListFailedException(GlusterHostException):
+class GlusterHostsListFailedException(GlusterHostException):
     code = 4407
-    message = "Host list failed"
+    message = "Hosts list failed"

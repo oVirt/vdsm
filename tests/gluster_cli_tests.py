@@ -28,6 +28,7 @@ try:
     from gluster import cli as gcli
 except ImportError:
     pass
+import xml.etree.cElementTree as etree
 
 
 class GlusterCliTests(TestCaseBase):
@@ -77,9 +78,17 @@ class GlusterCliTests(TestCaseBase):
         self._parseVolumeInfo_test()
 
     def _parsePeerStatus_empty_test(self):
-        out = ['No peers present']
+        out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr>No peers present</opErrstr>
+  <peerStatus/>
+</cliOutput>
+"""
+        tree = etree.fromstring(out)
         hostList = \
-            gcli._parsePeerStatus(out, 'fedora-16-test',
+            gcli._parsePeerStatus(tree, 'fedora-16-test',
                                   '711d2887-3222-46d8-801a-7e3f646bdd4d',
                                   gcli.HostStatus.CONNECTED)
         self.assertEquals(hostList,
@@ -88,17 +97,39 @@ class GlusterCliTests(TestCaseBase):
                             'status': gcli.HostStatus.CONNECTED}])
 
     def _parsePeerStatus_test(self):
-        out = ['Number of Peers: 1',
-               '',
-               'Hostname: 192.168.2.21',
-               'Uuid: 610f466c-781a-4e04-8f67-8eba9a201867',
-               'State: Peer in Cluster (Connected)',
-               '',
-               'Hostname: FC16-1',
-               'Uuid: 12345678-781a-aaaa-bbbb-8eba9a201867',
-               'State: Peer in Cluster (Disconnected)']
+        out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <peerStatus>
+    <peer>
+      <uuid>610f466c-781a-4e04-8f67-8eba9a201867</uuid>
+      <hostname>192.168.2.21</hostname>
+      <connected>1</connected>
+      <state>3</state>
+      <stateStr>Peer in Cluster</stateStr>
+    </peer>
+    <peer>
+      <uuid>12345678-781a-aaaa-bbbb-8eba9a201867</uuid>
+      <hostname>FC16-1</hostname>
+      <connected>0</connected>
+      <state>3</state>
+      <stateStr>Peer in Cluster</stateStr>
+    </peer>
+    <peer>
+      <uuid>12345678-cccc-aaaa-bbbb-8eba9a201867</uuid>
+      <hostname>FC16-2</hostname>
+      <connected>1</connected>
+      <state>2</state>
+      <stateStr>Peer rejected</stateStr>
+    </peer>
+  </peerStatus>
+</cliOutput>
+"""
+        tree = etree.fromstring(out)
         hostList = \
-            gcli._parsePeerStatus(out, 'fedora-16-test',
+            gcli._parsePeerStatus(tree, 'fedora-16-test',
                                   '711d2887-3222-46d8-801a-7e3f646bdd4d',
                                   gcli.HostStatus.CONNECTED)
         self.assertEquals(hostList,
@@ -110,7 +141,10 @@ class GlusterCliTests(TestCaseBase):
                             'status': gcli.HostStatus.CONNECTED},
                            {'hostname': 'FC16-1',
                             'uuid': '12345678-781a-aaaa-bbbb-8eba9a201867',
-                            'status': gcli.HostStatus.DISCONNECTED}])
+                            'status': gcli.HostStatus.DISCONNECTED},
+                           {'hostname': 'FC16-2',
+                            'uuid': '12345678-cccc-aaaa-bbbb-8eba9a201867',
+                            'status': gcli.HostStatus.UNKNOWN}])
 
     def test_parsePeerStatus(self):
         self._parsePeerStatus_empty_test()
