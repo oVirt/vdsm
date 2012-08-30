@@ -82,7 +82,7 @@ Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
-Requires: kernel >= 2.6.32-265
+Requires: kernel >= 2.6.32-279.9.1
 Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: selinux-policy-targeted >= 3.7.19-80
@@ -96,7 +96,7 @@ Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
-Requires: kernel >= 3.4
+Requires: kernel >= 3.6
 Requires: sanlock >= 2.4-2, sanlock-python
 Requires: sed >= 4.2.1-10
 Requires: selinux-policy-targeted >= 3.10.0-149
