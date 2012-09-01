@@ -36,12 +36,12 @@ import pwd
 import fcntl
 import functools
 import stat
+import glob
 
 import ethtool
 
 import constants
 from config import config
-import netinfo
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -663,6 +663,30 @@ def tobool(s):
     except:
         return False
 
+def _getAllMacs():
+
+    # (
+    #     find /sys/class/net/*/device | while read f; do \
+    #         cat "$(dirname "$f")/address"; \
+    #     done; \
+    #     [ -d /proc/net/bonding ] && \
+    #         find /proc/net/bonding -type f -exec cat '{}' \; | \
+    #         grep 'Permanent HW addr:' | \
+    #         sed 's/.* //'
+    # ) | sed -e '/00:00:00:00/d' -e '/^$/d'
+
+    macs = []
+    for b in glob.glob('/sys/class/net/*/device'):
+        mac = file(os.path.join(os.path.dirname(b), "address")). \
+            readline().replace("\n", "")
+        macs.append(mac)
+
+    for b in glob.glob('/proc/net/bonding/*'):
+        for line in file(b):
+            if line.startswith("Permanent HW addr: "):
+                macs.append(line.split(": ")[1].replace("\n", ""))
+
+    return set(macs) - set(["", "00:00:00:00:00:00"])
 
 __hostUUID = ''
 def getHostUUID():
@@ -687,9 +711,8 @@ def getHostUUID():
         else:
             logging.warning('Could not find host UUID.')
 
-        nics = netinfo.get()['nics']
         try:
-            mac = sorted([v['hwaddr'] for v in nics.itervalues()])[0]
+            mac = sorted(_getAllMacs())[0]
         except:
             mac = ""
             logging.warning('Could not find host MAC.', exc_info=True)
