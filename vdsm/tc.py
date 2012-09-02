@@ -53,7 +53,7 @@ def _delTarget(network, parent, target):
     if fs:
         filt = fs[0]
     else:
-        return set([])
+        return []
 
     devices = set(ethtool.get_devices())
     acts = [act for act in filt.actions
