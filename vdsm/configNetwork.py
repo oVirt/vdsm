@@ -18,7 +18,6 @@
 #
 
 import sys
-import subprocess
 import os
 import re
 import traceback
@@ -36,6 +35,7 @@ import selinux
 
 from vdsm import constants
 from vdsm import utils
+from storage.misc import execCmd
 import neterrors as ne
 from vdsm import define
 from vdsm import netinfo
@@ -56,26 +56,14 @@ class ConfigNetworkError(Exception):
 
 def ifdown(iface):
     "Bring down an interface"
-    p = subprocess.Popen([constants.EXT_IFDOWN, iface], stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, close_fds=True)
-    out, err = p.communicate()
-    if out.strip():
-        logging.info(out)
-    if err.strip():
-        logging.warn('\n'.join([line for line in err.splitlines()
-                                if not line.endswith(' does not exist!')]))
-    return p.returncode
+    rc, out, err = execCmd([constants.EXT_IFDOWN, iface], raw=True)
+    return rc
 
 
 def ifup(iface):
     "Bring up an interface"
-    p = subprocess.Popen([constants.EXT_IFUP, iface], stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, close_fds=True)
-    out, err = p.communicate()
-    if out.strip():
-        logging.info(out)
-    if err.strip():
-        logging.warn(err)
+    rc, out, err = execCmd([constants.EXT_IFUP, iface], raw=True)
+    return rc
 
 
 def ifaceUsers(iface):
@@ -176,8 +164,9 @@ class ConfigWriter(object):
 
         mounts = open('/proc/mounts').read()
         if ' /config ext3' in mounts and ' %s ext3' % filename in mounts:
-            subprocess.call([constants.EXT_UMOUNT, '-n', filename])
+            execCmd([constants.EXT_UMOUNT, '-n', filename])
         utils.rmFile(filename)
+        logging.debug("Removed file %s", filename)
 
     def _createNetwork(self, netXml):
         conn = libvirtconnection.get()
@@ -313,6 +302,8 @@ class ConfigWriter(object):
         for confFile, content in self._backups.iteritems():
             if content is None:
                 utils.rmFile(confFile)
+                logging.debug(
+                        'Removing empty configuration backup %s', confFile)
             else:
                 open(confFile, 'w').write(content)
             logging.info('Restored %s', confFile)
@@ -321,7 +312,7 @@ class ConfigWriter(object):
     def _persistentBackup(cls, filename):
         """ Persistently backup ifcfg-* config files """
         if os.path.exists('/usr/libexec/ovirt-functions'):
-            subprocess.call([constants.EXT_SH, '/usr/libexec/ovirt-functions',
+            execCmd([constants.EXT_SH, '/usr/libexec/ovirt-functions',
                              'unmount_config', filename])
             logging.debug("unmounted %s using ovirt", filename)
 
@@ -371,16 +362,12 @@ class ConfigWriter(object):
         if not self._backups and not self._networksBackups:
             return
 
-        subprocess.Popen(['/etc/init.d/network', 'stop'],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE).communicate()
+        execCmd(['/etc/init.d/network', 'stop'])
 
         self.restoreAtomicNetworkBackup()
         self.restoreAtomicBackup()
 
-        subprocess.Popen(['/etc/init.d/network', 'start'],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE).communicate()
+        execCmd(['/etc/init.d/network', 'start'])
 
     @classmethod
     def clearBackups(cls):
@@ -396,8 +383,8 @@ class ConfigWriter(object):
         try:
             selinux.restorecon(fileName)
         except:
-            logging.debug('ignoring restorecon error in case SElinux is '
-                          'disabled', exc_info=True)
+            logging.debug('ignoring restorecon error in case '
+                                      'SElinux is disabled', exc_info=True)
 
     def _createConfFile(self, conf, name, ipaddr=None, netmask=None,
                         gateway=None, bootproto=None, mtu=None, onboot='yes',
@@ -524,8 +511,7 @@ class ConfigWriter(object):
     def removeVlan(self, vlan, iface):
         vlandev = iface + '.' + vlan
         ifdown(vlandev)
-        subprocess.call([constants.EXT_IPROUTE, 'link', 'del', vlandev],
-                        stderr=subprocess.PIPE)
+        execCmd([constants.EXT_IPROUTE, 'link', 'del', vlandev])
         self._backup(self.NET_CONF_PREF + iface + '.' + vlan)
         self._removeFile(self.NET_CONF_PREF + iface + '.' + vlan)
 
@@ -535,7 +521,7 @@ class ConfigWriter(object):
 
     def removeBridge(self, bridge):
         ifdown(bridge)
-        subprocess.call([constants.EXT_BRCTL, 'delbr', bridge])
+        execCmd([constants.EXT_BRCTL, 'delbr', bridge])
         self._backup(self.NET_CONF_PREF + bridge)
         self._removeFile(self.NET_CONF_PREF + bridge)
 
@@ -1384,7 +1370,7 @@ def setupNetworks(networks={}, bondings={}, **options):
 
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
-    subprocess.Popen([constants.EXT_VDSM_STORE_NET_CONFIG])
+    execCmd([constants.EXT_VDSM_STORE_NET_CONFIG])
 
 
 def usage():
