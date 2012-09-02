@@ -147,7 +147,7 @@ shutdown_conflicting_srv() {
     return 0
 }
 
-upstart_libvirt() {
+libvirt_should_use_upstart() {
     [[ -x /sbin/initctl ]]
 }
 
@@ -414,7 +414,7 @@ reconfigure() {
 stop_libvirtd_sysv() {
     # stop libvirt SysV service if we intend to configure upstart
 
-    if upstart_libvirt && ! [[ -f /etc/init/libvirtd.conf ]]; then
+    if libvirt_should_use_upstart && ! [[ -f /etc/init/libvirtd.conf ]]; then
         /sbin/chkconfig libvirtd off
         /sbin/service libvirtd stop
     fi
@@ -442,7 +442,7 @@ start_libvirtd() {
     local packaged target
     local startout
 
-    if ! upstart_libvirt; then
+    if ! libvirt_should_use_upstart; then
         /sbin/service libvirtd start
         return
     fi
