@@ -4552,9 +4552,9 @@
 #
 # @statsAge:           The age of these statistics in seconds
 #
-# @cpuSys:             Ratio of CPU time spent in kernel by the qemu process
+# @cpuSys:             Ratio of CPU time spent by qemu on other than guest time
 #
-# @cpuUser:            Ratio of CPU time spent in userspace by the qemu process
+# @cpuUser:            Ratio of CPU time spent by the guest VM
 #
 # @acpiEnable:         Indicates if ACPI is enabled inside the VM
 #

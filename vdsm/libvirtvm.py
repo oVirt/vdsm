@@ -129,8 +129,8 @@ class VmStatsThread(utils.AdvancedStatsThread):
                     vmDrive.apparentsize = int(volSize['apparentsize'])
 
     def _sampleCpu(self):
-        state, maxMem, memory, nrVirtCpu, cpuTime = self._vm._dom.info()
-        return cpuTime / 1000 ** 3
+        cpuStats = self._vm._dom.getCPUStats(True, 0)
+        return cpuStats[0]
 
     def _sampleDisk(self):
         if not self._vm._volumesPrepared:
@@ -163,15 +163,30 @@ class VmStatsThread(utils.AdvancedStatsThread):
             netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
         return netSamples
 
+    def _diff(self, prev, curr, val):
+        return prev[val] - curr[val]
+
+    def _usagePercentage(self, val, sampleInterval):
+        return 100 * val / sampleInterval / 1000 ** 3
+
     def _getCpuStats(self, stats):
-        stats['cpuSys'] = 0.0
         sInfo, eInfo, sampleInterval = self.sampleCpu.getStats()
 
         try:
-            stats['cpuUser'] = 100.0 * (eInfo - sInfo) / sampleInterval
-        except (TypeError, ZeroDivisionError):
-            self._log.debug("CPU stats not available")
+            stats['cpuSys'] = self._usagePercentage(
+                self._diff(eInfo, sInfo, 'user_time')
+                 + self._diff(eInfo, sInfo, 'system_time'),
+                sampleInterval)
+            stats['cpuUser'] = self._usagePercentage(
+                self._diff(eInfo, sInfo, 'cpu_time')
+                - self._diff(eInfo, sInfo, 'user_time')
+                - self._diff(eInfo, sInfo, 'system_time'),
+                sampleInterval)
+
+        except (TypeError, ZeroDivisionError) as e:
+            self._log.debug("CPU stats not available: %s", e)
             stats['cpuUser'] = 0.0
+            stats['cpuSys'] = 0.0
 
     def _getNetworkStats(self, stats):
         stats['network'] = {}
