@@ -215,9 +215,9 @@ class VmStatsThread(utils.AdvancedStatsThread):
             dStats = {}
             try:
                 dStats = {'truesize':     str(vmDrive.truesize),
-                          'apparentsize': str(vmDrive.apparentsize),
-                          'imageID':      vmDrive.imageID}
-
+                          'apparentsize': str(vmDrive.apparentsize)}
+                if vmDrive.isVdsmImage():
+                    dStats['imageID'] = vmDrive.imageID
                 dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1]) /
                                       sampleInterval)
                 dStats['writeRate'] = ((eInfo[dName][3] - sInfo[dName][3]) /
