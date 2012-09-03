@@ -181,6 +181,7 @@ Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
 %package tests
 Summary:        VDSM Test Suite
 Requires:       vdsm = %{version}-%{release}
+Requires:       dracut
 BuildArch:      noarch
 
 %description tests
