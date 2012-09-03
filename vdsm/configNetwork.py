@@ -30,6 +30,7 @@ from xml.sax.saxutils import escape
 import glob
 import socket
 import shutil
+import struct
 
 import libvirt
 import selinux
@@ -731,6 +732,10 @@ def validateNetmask(netmask):
     if not _validateIpAddress(netmask):
         raise ConfigNetworkError(ne.ERR_BAD_ADDR,
                                  "Bad netmask: %r" % netmask)
+
+    num = struct.unpack('>I', socket.inet_aton(netmask))[0]
+    if num & (num - 1) != (num << 1) & 0xffffffff:
+        raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad netmask: %r" % netmask)
 
 
 def validateGateway(gateway):

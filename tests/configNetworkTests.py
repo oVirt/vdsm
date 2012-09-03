@@ -92,10 +92,10 @@ class TestconfigNetwork(TestCaseBase):
             self.assertEqual(configNetwork.validateIpAddress(address), None)
 
     def testIsNetmaskValid(self):
-        masks = ('10.18.1.254', '10.50.25.177', '250.0.0.1',
-                 '20.20.25.25')
-        badMasks = ('192.168.1.256', '10.50.25.1777', '256.0.0.1',
-                    '20.20.25.25.25')
+        masks = ('254.0.0.0', '255.255.255.0', '255.255.255.128',
+                 '255.255.255.224')
+        badMasks = ('192.168.1.0', '10.50.25.17', '255.0.255.0',
+                    '253.0.0.0')
 
         for mask in badMasks:
             with self.assertRaises(configNetwork.ConfigNetworkError) \
