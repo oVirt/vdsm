@@ -611,11 +611,15 @@ def addSSHKey(path, strKey):
 
     try:
         for key in file(path):
+            if not key.endswith('\n'): # make sure we have complete lines
+                key += '\n'
             if key != '\n' and not key.endswith(" ovirt-engine\n") or key.startswith("#"):
                 resKeys.append(key)
     except IOError:
         logging.debug("Failed to read %s", path)
-    resKeys.append('\n' + strKey)
+    if not strKey.endswith('\n'):
+        strKey += '\n'
+    resKeys.append(strKey)
 
     if isOvirt():
         # No problem to write to the original file here, since until it is not
