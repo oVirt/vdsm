@@ -333,17 +333,6 @@ class VmStatsThread(utils.AdvancedStatsThread):
         if ex.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
             return False
 
-        # If a VM is down, hibernating, migrating, destroyed or in the
-        # process of being shutdown we were expecting it to disappear
-        if ((self._vm.lastStatus in ('Down',
-                                     'Saving State', 'Migration Source'))
-                or self._vm.destroyed
-                or self._vm._guestEvent == 'Powering down'):
-            return True
-
-        self._log.debug("VM not found, moving to Down", exc_info=True)
-        self._vm.setDownStatus(ERROR, str(ex))
-
         return True
 
 
