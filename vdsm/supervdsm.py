@@ -45,8 +45,8 @@ def __supervdsmServerPath():
 
     raise RuntimeError("SuperVDSM Server not found")
 
-PIDFILE = "/var/run/vdsm/svdsm.pid"
-ADDRESS = "/var/run/vdsm/svdsm.sock"
+PIDFILE = os.path.join(constants.P_VDSM_RUN, "svdsm.pid")
+ADDRESS = os.path.join(constants.P_VDSM_RUN, "svdsm.sock")
 SUPERVDSM = __supervdsmServerPath()
 
 
