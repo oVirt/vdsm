@@ -34,7 +34,6 @@ vdsm/storage/protect/safelease
 vdsm/sudoers.vdsm
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-logrotate.conf
-vdsm/vdsm-restore-net-config
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
 vdsm/vdsm.conf.sample
