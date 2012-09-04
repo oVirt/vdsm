@@ -67,14 +67,8 @@ def getDomUuidFromMetafilePath(metafile):
     # Metafile path has pattern:
     #  /rhev/data-center/mnt/export-path/sdUUID/dom_md/metadata
 
-    # sdUUID position after data-center
-    sdUUIDPos = 3
-
-    metaList = metafile.split('/')
-    sdUUID = len(
-        os.path.normpath(config.get('irs',
-                                    'repository')).split('/')) + sdUUIDPos
-    return metaList[sdUUID]
+    metaList = os.path.normpath(metafile).split('/')
+    return metaList[-3]
 
 
 class FileMetadataRW(object):
