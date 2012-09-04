@@ -1034,12 +1034,11 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if network and bridged:
         configWriter.removeBridge(network)
 
-    name = None
+    iface = bonding if bonding else nics[0]
     if vlan:
-        configWriter.removeVlan(vlan, bonding or nics[0])
+        configWriter.removeVlan(vlan, iface)
     else:
-        name = bonding if bonding else nics[0]
-        cf = configWriter.NET_CONF_PREF + name
+        cf = configWriter.NET_CONF_PREF + iface
         if not bridged:
             # When removing bridgeless non-VLANed network
             # we need to remove IP/NETMASK from the cfg file
@@ -1056,18 +1055,18 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         if bonding and not bondingOtherUsers(network, vlan, bonding):
             ifdown(bonding)
             configWriter.removeBonding(bonding)
-            name = None if bonding == name else name
+            iface = None if bonding == iface else iface
 
         for nic in nics:
             if not nicOtherUsers(network, vlan, bonding, nic):
                 ifdown(nic)
                 configWriter.removeNic(nic)
-                name = None if nic == name else name
+                iface = None if nic == iface else iface
 
     # Now we can restart changed interface
-    if name:
-        ifdown(name)
-        ifup(name)
+    if iface:
+        ifdown(iface)
+        ifup(iface)
 
 def clientSeen(timeout):
     start = time.time()
