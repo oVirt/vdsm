@@ -1622,7 +1622,7 @@ if __name__ == '__main__':
                         ' myVmConfigFile',
                         'Example with no file    : vdsClient someServer create'
                         ' /dev/null vmId=<uuid> memSize=256 '
-                        'imageFile=someImage display=<vnc|local|qxl|qxlnc>',
+                        'imageFile=someImage display=<vnc|qxl|qxlnc>',
                         'Parameters list: r=required, o=optional',
                         'r   vmId=<uuid> : Unique identification for the '
                         'created VM. Any additional operation on the VM must '
@@ -1636,8 +1636,8 @@ if __name__ == '__main__':
                         'machine',
                         'r   macAddr=<aa:bb:cc:dd:ee:ff> : MAC address of the '
                         'machine',
-                        'r   display=<vnc|local|qxl|qxlnc> : send the machine '
-                        'display to vnc, local host, spice, or spice with no '
+                        'r   display=<vnc|qxl|qxlnc> : send the machine '
+                        'display to vnc, spice, or spice with no '
                         'image compression',
                         'o   drive=pool:poolID,domain:domainID,image:imageID,'
                         'volume:volumeID[,boot:true,format:cow] : disk image '

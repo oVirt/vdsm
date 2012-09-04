@@ -222,7 +222,7 @@ class VM(APIBase):
                                                   'No space on /tmp?'}}
                     return errCode['createErr']
 
-            if vmParams.get('display') not in ('vnc', 'qxl', 'qxlnc', 'local'):
+            if vmParams.get('display') not in ('vnc', 'qxl', 'qxlnc'):
                 return {'status': {'code': errCode['createErr']
                                                   ['status']['code'],
                                    'message': 'Unknown display type %s'
