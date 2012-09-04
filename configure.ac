@@ -222,8 +222,6 @@ AC_OUTPUT([
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm-tool/Makefile
-	vdsm/rest/Makefile
-	vdsm/rest/templates/Makefile
 ])
 
 AC_OUTPUT([

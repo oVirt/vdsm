@@ -77,8 +77,6 @@ PEP8_WHITELIST = \
 	vdsm/netinfo.py \
 	vdsm/nwfilter.py \
 	vdsm/parted_utils.py \
-	vdsm/rest/BindingREST.py \
-	vdsm/rest/Controller.py \
 	vdsm/storage/blockVolume.py \
 	vdsm/storage/devicemapper.py \
 	vdsm/storage/domainMonitor.py \
@@ -124,7 +122,7 @@ PEP8_WHITELIST = \
 	vdsm_reg/define.py \
 	$(NULL)
 
-PEP8_BLACKLIST = apiData.py,restData.py
+PEP8_BLACKLIST = apiData.py
 
 check-local:
 	find . -path './.git' -prune -type f -o \

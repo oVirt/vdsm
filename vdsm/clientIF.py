@@ -150,14 +150,6 @@ class clientIF:
                                                 resp_timeout, truststore_path,
                                                 default_bridge)
 
-    def _loadBindingREST(self):
-        from rest.BindingREST import BindingREST
-        ip = self._getServerIP(config.get('addresses', 'management_ip'))
-        rest_port = config.getint('addresses', 'rest_port')
-        templatePath = "%s/rest/templates" % constants.P_VDSM
-        self.bindings['rest'] = BindingREST(self, self.log, ip, rest_port,
-                                            templatePath)
-
     def _loadBindingJsonRpc(self):
         from BindingJsonRpc import BindingJsonRpc
         from Bridge import DynamicBridge
@@ -175,12 +167,7 @@ class clientIF:
             except ImportError:
                 self.log.error('Unable to load the xmlrpc server module. '
                                'Please make sure it is installed.')
-        if config.getboolean('vars', 'rest_enable'):
-            try:
-                self._loadBindingREST()
-            except ImportError:
-                self.log.warn('Unable to load the rest server module. '
-                              'Please make sure it is installed.')
+
         if config.getboolean('vars', 'jsonrpc_enable'):
             try:
                 self._loadBindingJsonRpc()
