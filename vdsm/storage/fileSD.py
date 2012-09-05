@@ -31,7 +31,6 @@ import fileVolume
 import image
 import misc
 import outOfProcess as oop
-from vdsm.config import config
 from remoteFileHandler import Timeout
 from persistentDict import PersistentDict, DictValidator
 from vdsm import constants
