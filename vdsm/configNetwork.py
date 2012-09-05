@@ -615,7 +615,7 @@ class ConfigWriter(object):
             vlans = [v for (_, v) in iface_bridged]
             iface = bonding
         else:
-            vlans = _netinfo.getVlansForNic(nics[0])
+            vlans = _netinfo.getVlansForIface(nics[0])
             iface = nics[0]
 
         newmtu = None
@@ -804,7 +804,7 @@ def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
 
         # Make sure nics don't used by vlans if bond requested
         if bonding:
-            vlansForNic = tuple(_netinfo.getVlansForNic(nic))
+            vlansForNic = tuple(_netinfo.getVlansForIface(nic))
             if vlansForNic:
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
                                     "nic %s already used by vlans %s" % \

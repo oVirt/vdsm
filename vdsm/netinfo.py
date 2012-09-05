@@ -374,9 +374,9 @@ class NetInfo(object):
                 elif netdict['iface'].startswith(iface + '.'):
                     yield (network, netdict['iface'].split('.',1)[1])
 
-    def getVlansForNic(self, nic):
+    def getVlansForIface(self, iface):
         for v, vdict in self.vlans.iteritems():
-            if nic == vdict['iface']:
+            if iface == vdict['iface']:
                 yield v.split('.', 1)[1]
 
     def getNetworksForIface(self, iface):
