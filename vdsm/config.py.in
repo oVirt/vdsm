@@ -228,7 +228,7 @@ parameters = [
 
         ('iscsi_default_ifaces', 'default',
             'Comma seperated ifaces to connect with. '
-            'i.e. iser,default' ),
+            'i.e. iser,default'),
 
         ('use_volume_leases', 'false',
             'Whether to use the volume leases or not.'),
@@ -252,6 +252,7 @@ parameters = [
     ]),
 ]
 
+
 def __prepare_config():
     global config
 
@@ -259,6 +260,7 @@ def __prepare_config():
         config.add_section(section)
         for key, value, comment in keylist:
             config.set(section, key, value)
+
 
 def print_config():
     twp = textwrap.TextWrapper(initial_indent='# ', subsequent_indent='# ')
@@ -270,7 +272,8 @@ def print_config():
         print "[%s]\n" % section
 
         for key, value, comment in keylist:
-            if comment: print twp.fill(comment)
+            if comment:
+                print twp.fill(comment)
             print twp.fill("%s = %s" % (key, value))
             print
 
