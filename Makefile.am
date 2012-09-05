@@ -48,6 +48,7 @@ PEP8_WHITELIST = \
 	vdsm/caps.py \
 	vdsm/clientIF.py \
 	vdsm/config.py.in \
+	vdsm/configNetwork.py \
 	vdsm/constants.py.in \
 	vdsm/debugPluginClient.py \
 	vdsm/define.py \

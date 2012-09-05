@@ -17,7 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import sys, subprocess, os, re, traceback
+import sys
+import subprocess
+import os
+import re
+import traceback
 import pipes
 import pwd
 import time
@@ -42,11 +46,13 @@ MAX_VLAN_ID = 4094
 MAX_BRIDGE_NAME_LEN = 15
 ILLEGAL_BRIDGE_CHARS = frozenset(':. \t')
 
+
 class ConfigNetworkError(Exception):
     def __init__(self, errCode, message):
         self.errCode = errCode
         self.message = message
         Exception.__init__(self, self.errCode, self.message)
+
 
 def ifdown(iface):
     "Bring down an interface"
@@ -60,6 +66,7 @@ def ifdown(iface):
                                 if not line.endswith(' does not exist!')]))
     return p.returncode
 
+
 def ifup(iface):
     "Bring up an interface"
     p = subprocess.Popen([constants.EXT_IFUP, iface], stdout=subprocess.PIPE,
@@ -69,6 +76,7 @@ def ifup(iface):
         logging.info(out)
     if err.strip():
         logging.warn(err)
+
 
 def ifaceUsers(iface):
     "Returns a list of entities using the interface"
@@ -87,8 +95,12 @@ def ifaceUsers(iface):
             users.add(v)
     return users
 
+
 def nicOtherUsers(bridge, vlan, bonding, nic):
-    "Returns a list of interfaces using a nic, other than the specified one (used for validation)"
+    """
+    Returns a list of interfaces using a nic,
+    other than the specified one (used for validation)
+    """
     if bonding:
         owner = bonding
     elif vlan:
@@ -101,8 +113,12 @@ def nicOtherUsers(bridge, vlan, bonding, nic):
     users.discard(owner)
     return users
 
+
 def bondingOtherUsers(bridge, vlan, bonding):
-    "Return a list of nics/interfaces using a bonding, other than the specified one (used for validation)"
+    """
+    Return a list of nics/interfaces using a bonding,
+    other than the specified one (used for validation)
+    """
     if vlan:
         owner = bonding + '.' + vlan
     else:
@@ -123,6 +139,8 @@ def bondingOtherUsers(bridge, vlan, bonding):
 #   nicSort(["p33p2", "p33p10"]) => ["p33p10", "p33p2"]
 #   nicSort(["p331", "p33p1"]) => ["p33p1", "p331"]
 #
+
+
 def nicSort(nics):
     "Return a list of nics/interfaces ordered by name"
 
@@ -141,6 +159,7 @@ def nicSort(nics):
         nics_list.append((prefix, intidx, stridx + postfix))
 
     return [x + z for x, y, z in sorted(nics_list)]
+
 
 class ConfigWriter(object):
     NET_CONF_PREF = netinfo.NET_CONF_DIR + 'ifcfg-'
@@ -274,7 +293,10 @@ class ConfigWriter(object):
         self._persistentBackup(filename)
 
     def _atomicBackup(self, filename):
-        """Backs up configuration to memory, for a later rollback in case of error."""
+        """
+        Backs up configuration to memory,
+        for a later rollback in case of error.
+        """
 
         if filename not in self._backups:
             try:
@@ -378,8 +400,10 @@ class ConfigWriter(object):
                           'disabled', exc_info=True)
 
     def _createConfFile(self, conf, name, ipaddr=None, netmask=None,
-                gateway=None, bootproto=None, mtu=None, onboot='yes', **kwargs):
+                        gateway=None, bootproto=None, mtu=None, onboot='yes',
+                        **kwargs):
         """ Create ifcfg-* file with proper fields per device """
+
         cfg = """DEVICE=%s\nONBOOT=%s\n""" % (pipes.quote(name),
                                               pipes.quote(onboot))
         cfg += conf
@@ -414,7 +438,7 @@ class ConfigWriter(object):
         """ Create ifcfg-* file with proper fields for bridge """
         conf = 'TYPE=Bridge\nDELAY=%s\n' % pipes.quote(delay)
         self._createConfFile(conf, name, ipaddr, netmask, gateway,
-                                           bootproto, mtu, onboot, **kwargs)
+                             bootproto, mtu, onboot, **kwargs)
 
     def addVlan(self, vlanId, iface, network, mtu=None, bridged=True,
                 ipaddr=None, netmask=None, gateway=None, bootproto=None,
@@ -454,8 +478,9 @@ class ConfigWriter(object):
                              bootproto, mtu, onboot, **kwargs)
 
         # create the bonding device to avoid initscripts noise
-        if bonding not in open('/sys/class/net/bonding_masters').read().split():
-            open('/sys/class/net/bonding_masters', 'w').write('+%s\n' % bonding)
+        bondMastersPath = '/sys/class/net/bonding_masters'
+        if bonding not in open(bondMastersPath).read().split():
+            open(bondMastersPath, 'w').write('+%s\n' % bonding)
 
     def addNic(self, nic, bonding=None, bridge=None, mtu=None,
                ipaddr=None, netmask=None, gateway=None, bootproto=None,
@@ -489,8 +514,8 @@ class ConfigWriter(object):
         cf = self.NET_CONF_PREF + nic
         self._backup(cf)
         try:
-            hwlines = [ line for line in open(cf).readlines()
-                        if line.startswith('HWADDR=') ]
+            hwlines = [line for line in open(cf).readlines()
+                       if line.startswith('HWADDR=')]
             l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n'] + hwlines
             open(cf, 'w').writelines(l)
         except IOError:
@@ -528,8 +553,8 @@ class ConfigWriter(object):
         its value or None if not found
         """
         with open(conffile) as f:
-            entries = [ line for line in f.readlines()
-                        if line.startswith(entry + '=') ]
+            entries = [line for line in f.readlines()
+                       if line.startswith(entry + '=')]
         if len(entries) != 0:
             value = entries[0].split('=', 1)[1]
             return value.strip()
@@ -554,8 +579,8 @@ class ConfigWriter(object):
         the configuration file
         """
         with open(conffile) as f:
-            entries = [ line for line in f.readlines()
-                        if not line.startswith(entry + '=') ]
+            entries = [line for line in f.readlines()
+                       if not line.startswith(entry + '=')]
 
         if not delete:
             entries.append('\n' + entry + '=' + value)
@@ -611,7 +636,7 @@ class ConfigWriter(object):
                 return
 
         nics, delvlan, bonding = \
-                            _netinfo.getNicsVlanAndBondingForNetwork(network)
+            _netinfo.getNicsVlanAndBondingForNetwork(network)
         if delvlan is None:
             return
 
@@ -648,14 +673,18 @@ class ConfigWriter(object):
                 cf = self.NET_CONF_PREF + nics[0]
                 self._updateConfigValue(cf, 'MTU', str(newmtu), newmtu is None)
 
+
 def isBridgeNameValid(bridgeName):
-    return bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and \
-           len(set(bridgeName) & ILLEGAL_BRIDGE_CHARS) == 0 and \
-           not bridgeName.startswith('-')
+    return (bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and
+            len(set(bridgeName) & ILLEGAL_BRIDGE_CHARS) == 0 and
+            not bridgeName.startswith('-'))
+
 
 def validateBridgeName(bridgeName):
     if not isBridgeNameValid(bridgeName):
-        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Bridge name isn't valid: %r"%bridgeName)
+        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
+                                 "Bridge name isn't valid: %r" % bridgeName)
+
 
 def _validateIpAddress(address):
     try:
@@ -669,41 +698,55 @@ def _validateIpAddress(address):
         return False
     return True
 
+
 def validateIpAddress(ipAddr):
     if not _validateIpAddress(ipAddr):
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad IP address: %r"%ipAddr)
+        raise ConfigNetworkError(ne.ERR_BAD_ADDR,
+                                 "Bad IP address: %r" % ipAddr)
+
 
 def validateNetmask(netmask):
     if not _validateIpAddress(netmask):
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad netmask: %r"%netmask)
+        raise ConfigNetworkError(ne.ERR_BAD_ADDR,
+                                 "Bad netmask: %r" % netmask)
+
 
 def validateGateway(gateway):
     if not _validateIpAddress(gateway):
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad gateway: %r"%gateway)
+        raise ConfigNetworkError(ne.ERR_BAD_ADDR,
+                                 "Bad gateway: %r" % gateway)
+
 
 def validateBondingName(bonding):
     if not re.match('^bond[0-9]+$', bonding):
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a valid bonding device name' % bonding)
+        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
+                                 '%r is not a valid bonding device name' %
+                                 bonding)
+
 
 def validateBondingOptions(bonding, bondingOptions):
     'Example: BONDING_OPTS="mode=802.3ad miimon=150"'
     try:
         for option in bondingOptions.split():
-            key,value = option.split('=')
-            if not os.path.exists('/sys/class/net/%(bonding)s/bonding/%(key)s'
-                                  % locals()):
+            key, value = option.split('=')
+            if not os.path.exists(
+                   '/sys/class/net/%(bonding)s/bonding/%(key)s' % locals()):
                 raise ConfigNetworkError(ne.ERR_BAD_BONDING,
                         "%r is not a valid bonding option" % key)
     except ValueError:
         raise ConfigNetworkError(ne.ERR_BAD_BONDING,
                 "Error parsing bonding options: %r" % bondingOptions)
 
+
 def validateVlanId(vlan):
     try:
         if not 0 <= int(vlan) <= MAX_VLAN_ID:
-            raise ConfigNetworkError(ne.ERR_BAD_VLAN, 'vlan id out of range: %r, must be 0..%s' % (vlan, MAX_VLAN_ID))
+            raise ConfigNetworkError(
+                ne.ERR_BAD_VLAN, 'vlan id out of range: %r, must be 0..%s' %
+                (vlan, MAX_VLAN_ID))
     except ValueError:
         raise ConfigNetworkError(ne.ERR_BAD_VLAN, 'vlan id must be a number')
+
 
 def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
     """
@@ -720,7 +763,7 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
         for (iface_net, iface_vlan) in ifaces:
             if iface_vlan is None:
                 raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                            "interface %r already member of network %r" % \
+                            "interface %r already member of network %r" %
                             (iface, iface_net))
 
     ifaces_bridgeless = tuple(ni.getBridgelessNetworksAndVlansForIface(iface))
@@ -742,8 +785,9 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
         # check whether interface is empty
         elif ifaces_bridged or ifaces_bridgeless:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                        "interface %r already has networks" % \
+                        "interface %r already has networks" %
                         (iface))
+
 
 def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
                           netmask, gateway, bondingOptions, bridged=True,
@@ -806,7 +850,7 @@ def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
         bondingForNics = _netinfo.getBondingForNic(nic)
         if bondingForNics and bondingForNics != bonding:
             raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                "nic %s already enslaved to %s" % \
+                                "nic %s already enslaved to %s" %
                                 (nic, bondingForNics))
 
         # Make sure nics don't used by vlans if bond requested
@@ -814,19 +858,21 @@ def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
             vlansForNic = tuple(_netinfo.getVlansForIface(nic))
             if vlansForNic:
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                    "nic %s already used by vlans %s" % \
+                                    "nic %s already used by vlans %s" %
                                     (nic, vlansForNic))
             networksForNic = tuple(_netinfo.getNetworksForIface(nic))
             if networksForNic:
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                    "nic %s already used by networks %s" % \
+                                    "nic %s already used by networks %s" %
                                     (nic, networksForNic))
         else:
             _validateInterNetworkCompatibility(_netinfo, vlan, nic, bridged)
 
+
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, mtu=None, gateway=None, force=False,
-               configWriter=None, bondingOptions=None, bridged=True, **options):
+               configWriter=None, bondingOptions=None, bridged=True,
+               **options):
     nics = nics or ()
     _netinfo = netinfo.NetInfo()
     bridged = utils.tobool(bridged)
@@ -838,9 +884,9 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if not utils.tobool(force):
         logging.debug('validating network...')
         _addNetworkValidation(_netinfo, network=network,
-                vlan=vlan, bonding=bonding, nics=nics, ipaddr=ipaddr,
-                netmask=netmask, gateway=gateway, bondingOptions=bondingOptions,
-                bridged=bridged, **options)
+              vlan=vlan, bonding=bonding, nics=nics, ipaddr=ipaddr,
+              netmask=netmask, gateway=gateway, bondingOptions=bondingOptions,
+              bridged=bridged, **options)
 
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
                  " bondingOptions=%s, mtu=%s, bridged=%s, options=%s",
@@ -866,7 +912,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     if bridged:
         configWriter.addBridge(network, ipaddr=ipaddr, netmask=netmask,
-                                mtu=mtu, gateway=gateway, **options)
+                               mtu=mtu, gateway=gateway, **options)
         ifdown(network)
         # We need to define (if requested) ip, mask & gateway on ifcfg-*
         # only on most top device according to following order:
@@ -897,10 +943,10 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     # First we need to prepare all conf files
     if bonding:
         configWriter.addBonding(bonding, bridge=bridgeForNic,
-                                 bondingOptions=bondingOptions,
-                                 mtu=max(prevmtu, mtu),
-                                 ipaddr=ipaddr, netmask=netmask,
-                                 gateway=gateway, **options)
+                                bondingOptions=bondingOptions,
+                                mtu=max(prevmtu, mtu),
+                                ipaddr=ipaddr, netmask=netmask,
+                                gateway=gateway, **options)
         # reset ip, netmask, gateway for lower level devices
         ipaddr = netmask = gateway = None
 
@@ -939,6 +985,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     # add libvirt network
     configWriter.createLibvirtNetwork(network, bridged, iface)
 
+
 def assertBridgeClean(bridge, vlan, bonding, nics):
     brifs = os.listdir('/sys/class/net/%s/brif/' % bridge)
     for nic in nics:
@@ -956,7 +1003,9 @@ def assertBridgeClean(bridge, vlan, bonding, nics):
         pass
 
     if brifs:
-        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'bridge %s has interfaces %s connected' % (bridge, brifs))
+        raise ConfigNetworkError(ne.ERR_USED_BRIDGE,
+                 'bridge %s has interfaces %s connected' % (bridge, brifs))
+
 
 def showNetwork(network):
     _netinfo = netinfo.NetInfo()
@@ -982,12 +1031,14 @@ def showNetwork(network):
 
     print "vlan=%s, bonding=%s, nics=%s" % (vlan, bonding, nics)
 
+
 def listNetworks():
     _netinfo = netinfo.NetInfo()
     print "Networks:", _netinfo.networks.keys()
     print "Vlans:", _netinfo.vlans.keys()
     print "Nics:", _netinfo.nics.keys()
     print "Bondings:", _netinfo.bondings.keys()
+
 
 def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                configWriter=None, implicitBonding=True, **options):
@@ -1021,7 +1072,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
             validateBondingName(bonding)
             if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
                 raise ConfigNetworkError(ne.ERR_BAD_NIC,
-                        "delNetwork: %s are not all nics enslaved to %s" % \
+                        "delNetwork: %s are not all nics enslaved to %s" %
                         (nics, bonding))
         if vlan:
             validateVlanId(vlan)
@@ -1076,6 +1127,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         ifdown(iface)
         ifup(iface)
 
+
 def clientSeen(timeout):
     start = time.time()
     while timeout >= 0:
@@ -1086,19 +1138,23 @@ def clientSeen(timeout):
     return False
 
 
-def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None, **options):
+def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
+                **options):
     configWriter = ConfigWriter()
     try:
         delNetwork(oldBridge, configWriter=configWriter, **options)
-        addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics, configWriter=configWriter, **options)
+        addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
+                   configWriter=configWriter, **options)
     except:
         configWriter.restoreBackups()
         raise
     if utils.tobool(options.get('connectivityCheck', False)):
-        if not clientSeen(int(options.get('connectivityTimeout', CONNECTIVITY_TIMEOUT_DEFAULT))):
+        if not clientSeen(int(options.get('connectivityTimeout',
+                                          CONNECTIVITY_TIMEOUT_DEFAULT))):
             delNetwork(newBridge, force=True)
             configWriter.restoreBackups()
             return define.errCode['noConPeer']['status']['code']
+
 
 def _validateNetworkSetup(networks={}, bondings={}):
     _netinfo = netinfo.NetInfo()
@@ -1106,7 +1162,8 @@ def _validateNetworkSetup(networks={}, bondings={}):
     for network, networkAttrs in networks.iteritems():
         if networkAttrs.get('remove', False):
             if set(networkAttrs) - set(['remove']):
-                raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Cannot specify any attribute when removing")
+                raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                          "Cannot specify any attribute when removing")
 
     for bonding, bondingAttrs in bondings.iteritems():
         validateBondingName(bonding)
@@ -1115,14 +1172,17 @@ def _validateNetworkSetup(networks={}, bondings={}):
 
         if bondingAttrs.get('remove', False):
             if bonding not in _netinfo.bondings:
-                raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Cannot remove bonding %s: Doesn\'t exist' % bonding)
+                raise ConfigNetworkError(ne.ERR_BAD_BONDING,
+                          'Cannot remove bonding %s: Doesn\'t exist' % bonding)
             continue
 
         nics = bondingAttrs.get('nics', None)
         if not nics:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Must specify nics for bonding")
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                                     "Must specify nics for bonding")
         if not set(nics).issubset(set(_netinfo.nics)):
-            raise ConfigNetworkError(ne.ERR_BAD_NIC, "Unknown nics in: %r"%list(nics))
+            raise ConfigNetworkError(ne.ERR_BAD_NIC,
+                                     "Unknown nics in: %r" % list(nics))
 
 
 def _editBondings(bondings, configWriter):
@@ -1133,7 +1193,7 @@ def _editBondings(bondings, configWriter):
 
     for bond, bondAttrs in bondings.iteritems():
         logger.debug("Creating/Editing bond %s with attributes %s",
-                        bond, bondAttrs)
+                     bond, bondAttrs)
 
         brNets = list(_netinfo.getBridgedNetworksForIface(bond))
         # Only one bridged-non-VLANed network allowed on same nic/bond
@@ -1173,6 +1233,7 @@ def _editBondings(bondings, configWriter):
         for nic in nicSort(bondAttrs['nics']):
             ifup(nic)
 
+
 def _removeBondings(bondings, configWriter):
     """ Remove bond interface """
     logger = logging.getLogger("_removeBondings")
@@ -1198,7 +1259,7 @@ def setupNetworks(networks={}, bondings={}, **options):
 
     Params:
         networks - dict of key=network, value=attributes
-                 where 'attributes' is a dict with the following optional items:
+            where 'attributes' is a dict with the following optional items:
                         vlan=<id>
                         bonding="<name>" | nic="<name>"
                         (bonding and nics are mutually exclusive)
@@ -1213,7 +1274,7 @@ def setupNetworks(networks={}, bondings={}, **options):
                         remove=True (other attributes can't be specified)
 
         bondings - dict of key=bonding, value=attributes
-                 where 'attributes' is a dict with the following optional items:
+            where 'attributes' is a dict with the following optional items:
                         nics=["<nic1>" , "<nic2>", ...]
                         options="<bonding-options>"
                         -- OR --
@@ -1291,8 +1352,8 @@ def setupNetworks(networks={}, bondings={}, **options):
                         logger.debug("Updating bond %r info", d['bonding'])
                         d['nics'] = _ni.bondings[d['bonding']]['slaves']
                         d['bondingOptions'] = \
-                           _ni.bondings[d['bonding']]['cfg'].get('BONDING_OPTS',
-                                                                 None)
+                            _ni.bondings[d['bonding']]['cfg'].get(
+                                                         'BONDING_OPTS', None)
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force
@@ -1320,16 +1381,19 @@ def setupNetworks(networks={}, bondings={}, **options):
         logger.error(e, exc_info=True)
         raise
 
+
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
     subprocess.Popen([constants.EXT_VDSM_STORE_NET_CONFIG])
+
 
 def usage():
     print """Usage:
     ./configNetwork.py add Network <attributes> <options>
                        edit oldNetwork newNetwork <attributes> <options>
                        del Network <options>
-                       setup Network [None|attributes] [++ Network [None|attributes] [++ ...]] [:: <options>]
+                       setup Network [None|attributes] \
+[++ Network [None|attributes] [++ ...]] [:: <options>]
 
                        attributes = [vlan=...] [bonding=...] [nics=<nic1>,...]
                        options = [Force=<True|False>] [bridged=<True|False>]...
@@ -1343,6 +1407,7 @@ def _parseKwargs(args):
     API.Global.translateNetOptionsToNew(kwargs)
 
     return kwargs
+
 
 def main():
     if len(sys.argv) <= 1:
@@ -1374,9 +1439,9 @@ def main():
             kwargs['nics'] = kwargs['nics'].split(',')
         editNetwork(oldBridge, newBridge, **kwargs)
     elif sys.argv[1] == 'setup':
-        batchCommands, options = utils.listSplit( sys.argv[2:], '::', 1 )
+        batchCommands, options = utils.listSplit(sys.argv[2:], '::', 1)
         d = {}
-        for batchCommand in utils.listSplit( batchCommands, '++' ):
+        for batchCommand in utils.listSplit(batchCommands, '++'):
             d[batchCommand[0]] = _parseKwargs(batchCommand[1:]) or None
         setupNetworks(d, **_parseKwargs(options))
     elif sys.argv[1] == 'show':
