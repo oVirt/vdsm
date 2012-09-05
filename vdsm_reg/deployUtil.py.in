@@ -164,17 +164,53 @@ def escapeXML(message):
     """
     return saxutils.escape(message, XML_QUOTES)
 
+def simpleDaemon(main, args=(), kwargs={}):
+    # Default maximum for the number of available file descriptors.
+    MAXFD = 1024
+
+    import resource  # Resource usage information.
+    maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+    if (maxfd == resource.RLIM_INFINITY):
+        maxfd = MAXFD
+
+    pid = os.fork()
+    if pid == 0:
+        try:
+            os.setsid()
+            for fd in range(0, maxfd):
+                try:
+                    os.close(fd)
+                except OSError:  # ERROR, fd wasn't open to begin with (ignored)
+                    pass
+
+            os.open(os.devnull, os.O_RDWR)  # standard input (0)
+            os.dup2(0, 1)  # standard output (1)
+            os.dup2(0, 2)  # standard error (2)
+
+            if os.fork() != 0:
+                os._exit(0)
+
+            main(*args, **kwargs)
+        finally:
+            os._exit(1)
+
+    pid, status = os.waitpid(pid, 0)
+
+    if not os.WIFEXITED(status) or os.WEXITSTATUS(status) != 0:
+        raise RuntimeError("Daemon not exited properly")
+
+def delayedReboot(sleepTime):
+    time.sleep(sleepTime)
+    os.execl(EX_REBOOT, EX_REBOOT)
+
 def reboot():
-    """
-        This function reboots the machine.
-    """
-    fReturn = True
-
-    out, err, ret = _logExec([EX_REBOOT])
-    if ret:
-        fReturn = False
-
-    return fReturn
+    logging.debug("scheduling reboot")
+    try:
+        simpleDaemon(delayedReboot, args=(10,))
+        return True
+    except:
+        logging.error("Could not reboot.", exc_info=True)
+        return False
 
 def setCoreDumpPath():
     logging.debug("setCoreDumpPath started.")
