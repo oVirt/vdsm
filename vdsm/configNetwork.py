@@ -587,48 +587,55 @@ class ConfigWriter(object):
                     mtu = mtuval
         return mtu
 
-    def setNewMtu(self, bridge):
+    def setNewMtu(self, network, bridged):
         """
-        Set new MTU value to bridge and its interfaces
+        Set new MTU value to network and its interfaces
 
-        :param bridge: bridge name
-        :type bridge: string
+        :param network: network name
+        :type network: string
+        :param bridged: network type (bridged or bridgeless)
+        :type bridged: bool
 
-        Update MTU to devices (bridge, interfaces, bonds and vlans)
-        Or added a new value,
-        also set the bridge to the higher value if its under vlans or bond
+        Update MTU to devices (vlans, bonds and nics)
+        or added a new value
         """
         _netinfo = netinfo.NetInfo()
-        cf = self.NET_CONF_PREF + bridge
-        currmtu = self._getConfigValue(cf, 'MTU')
-        if currmtu:
-            currmtu = int(currmtu)
-        else:
-            return
+        currmtu = None
+        if bridged:
+            cf = self.NET_CONF_PREF + network
+            currmtu = self._getConfigValue(cf, 'MTU')
+            if currmtu:
+                currmtu = int(currmtu)
+            else:
+                # Optimization: if network hasn't custom MTU, do nothing
+                return
 
-        nics, delvlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(bridge)
+        nics, delvlan, bonding = \
+                            _netinfo.getNicsVlanAndBondingForNetwork(network)
         if delvlan is None:
             return
 
-        if bonding:
-            iface_bridged = _netinfo.getBridgedNetworksAndVlansForIface(bonding)
-            vlans = [v for (_, v) in iface_bridged]
-            iface = bonding
-        else:
-            vlans = _netinfo.getVlansForIface(nics[0])
-            iface = nics[0]
+        iface = bonding if bonding else nics[0]
+        vlans = _netinfo.getVlansForIface(iface)
 
         newmtu = None
         for vlan in vlans:
-            if vlan == delvlan:
-                continue
             cf = self.NET_CONF_PREF + iface + '.' + vlan
             mtu = self._getConfigValue(cf, 'MTU')
             if mtu:
                 mtu = int(mtu)
+
+            if vlan == delvlan:
+                # For VLANed bridgeless networks use MTU of delvlan
+                # as current MTU
+                if not bridged and mtu:
+                    currmtu = mtu
+                continue
+
             newmtu = max(newmtu, mtu)
 
-        if newmtu != currmtu:
+        # Optimization: if network hasn't custom MTU (currmtu), do nothing
+        if currmtu and newmtu != currmtu:
             if bonding:
                 cf = self.NET_CONF_PREF + bonding
                 self._updateConfigValue(cf, 'MTU', str(newmtu), newmtu is None)
@@ -1021,10 +1028,9 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         if bridged:
             assertBridgeClean(network, vlan, bonding, nics)
 
-    if bridged:
-        configWriter.setNewMtu(network)
-
+    configWriter.setNewMtu(network=network, bridged=bridged)
     configWriter.removeLibvirtNetwork(network)
+
     # We need to gather NetInfo again to refresh networks info from libvirt.
     # The deleted bridge should never be up at this stage.
     if network in netinfo.NetInfo().networks:
