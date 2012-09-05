@@ -20,6 +20,8 @@
 
 from threading import Thread, Event
 from time import time
+import weakref
+
 import logging
 import misc
 from vdsm.config import config
@@ -79,7 +81,8 @@ class DomainMonitor(object):
         if sdUUID in self._domains:
             return
 
-        domainThread = DomainMonitorThread(sdUUID, hostId, self._interval)
+        domainThread = DomainMonitorThread(weakref.proxy(self),
+                                           sdUUID, hostId, self._interval)
         domainThread.start()
         # The domain should be added only after it succesfully started
         self._domains[sdUUID] = domainThread
@@ -108,10 +111,11 @@ class DomainMonitor(object):
 class DomainMonitorThread(object):
     log = logging.getLogger('Storage.DomainMonitorThread')
 
-    def __init__(self, sdUUID, hostId, interval):
+    def __init__(self, domainMonitor, sdUUID, hostId, interval):
         self.thread = Thread(target=self._monitorLoop)
         self.thread.setDaemon(True)
 
+        self.domainMonitor = domainMonitor
         self.stopEvent = Event()
         self.domain = None
         self.sdUUID = sdUUID
@@ -212,7 +216,7 @@ class DomainMonitorThread(object):
                            "Valid" if self.nextStatus.valid else "Invalid")
 
             try:
-                self.onDomainConnectivityStateChange.emit(
+                self.domainMonitor.onDomainConnectivityStateChange.emit(
                                         self.sdUUID, self.nextStatus.valid)
             except:
                 self.log.warn("Could not emit domain state change event",
