@@ -62,7 +62,7 @@ Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 Requires: kernel >= 2.6.32-265
-Requires: sanlock >= 2.3-3, sanlock-python
+Requires: sanlock >= 2.3-4, sanlock-python
 %else
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
