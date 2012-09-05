@@ -89,7 +89,7 @@ def doUpgrade(config):
     fReturn = True
 
     install = Install()
-    if install.ovirt_boot_setup():
+    if install.ovirt_boot_setup(reboot="Y"):
         msg = "<BSTRAP component='doUpgrade' status='OK' message='Upgrade Succeeded. Rebooting'/>"
         print (msg)
         logging.debug(msg)
