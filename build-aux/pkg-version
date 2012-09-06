@@ -27,11 +27,11 @@ AWK_RELEASE='
 
 PKG_VERSION=`cat VERSION 2> /dev/null || git describe --match "v[0-9]*"`
 
-if test "x$1" == "x--full"; then
+if test "x$1" = "x--full"; then
     echo $PKG_VERSION | tr -d '[:space:]'
-elif test "x$1" == "x--version"; then
+elif test "x$1" = "x--version"; then
     echo $PKG_VERSION | awk "$AWK_VERSION" | tr -cd '[:alnum:].'
-elif test "x$1" == "x--release"; then
+elif test "x$1" = "x--release"; then
     echo $PKG_VERSION | awk "$AWK_RELEASE" | tr -cd '[:alnum:].'
 else
     echo "usage: $0 [--full|--version|--release]"
