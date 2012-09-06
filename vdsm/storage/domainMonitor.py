@@ -131,7 +131,6 @@ class DomainMonitorThread(object):
         self.stopEvent.set()
         if wait:
             self.thread.join()
-        self.domain = None
 
     def getStatus(self):
         return self.status.copy()
@@ -151,7 +150,7 @@ class DomainMonitorThread(object):
 
         # If this is an ISO domain we didn't acquire the host id and releasing
         # it is superfluous.
-        if not self.isIsoDomain:
+        if self.domain and not self.isIsoDomain:
             try:
                 self.domain.releaseHostId(self.hostId, unused=True)
             except:
@@ -161,17 +160,6 @@ class DomainMonitorThread(object):
     def _monitorDomain(self):
         self.nextStatus.clear()
 
-        # We should produce the domain inside the monitoring loop because
-        # it might take some time and we don't want to slow down the thread
-        # start (and anything else that relies on that as for example
-        # updateMonitoringThreads). It also needs to be inside the loop
-        # since it might fail and we want keep trying until we succeed or
-        # the domain is deactivated.
-        if not self.domain:
-            self.domain = sdCache.produce(self.sdUUID)
-        if not self.isIsoDomain:
-            self.isIsoDomain = self.domain.isISO()
-
         if time() - self.lastRefresh > self.refreshTime:
             # Refreshing the domain object in order to pick up changes as,
             # for example, the domain upgrade.
@@ -180,6 +168,17 @@ class DomainMonitorThread(object):
             self.lastRefresh = time()
 
         try:
+            # We should produce the domain inside the monitoring loop because
+            # it might take some time and we don't want to slow down the thread
+            # start (and anything else that relies on that as for example
+            # updateMonitoringThreads). It also needs to be inside the loop
+            # since it might fail and we want keep trying until we succeed or
+            # the domain is deactivated.
+            if self.domain is None:
+                self.domain = sdCache.produce(self.sdUUID)
+            if self.isIsoDomain is None:
+                self.isIsoDomain = self.domain.isISO()
+
             self.domain.selftest()
 
             self.nextStatus.readDelay = self.domain.getReadDelay()
