@@ -464,7 +464,7 @@ start() {
        return $ret_val
     fi
 
-    @VDSMDIR@/nwfilter.py > /dev/null 2>&1
+    python @VDSMDIR@/nwfilter.pyc > /dev/null 2>&1
     ret_val=$?
     if [ $ret_val -ne 0 ]
     then
