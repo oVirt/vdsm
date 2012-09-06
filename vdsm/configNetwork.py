@@ -1034,20 +1034,22 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if network and bridged:
         configWriter.removeBridge(network)
 
-    iface = bonding if bonding else nics[0]
-    if vlan:
-        configWriter.removeVlan(vlan, iface)
-    else:
-        cf = configWriter.NET_CONF_PREF + iface
-        if not bridged:
-            # When removing bridgeless non-VLANed network
-            # we need to remove IP/NETMASK from the cfg file
-            for key in ('IPADDR', 'NETMASK', 'GATEWAY', 'BOOTPROTO'):
-                configWriter._updateConfigValue(cf, key, '', True)
+    nic = nics[0] if nics else None
+    iface = bonding if bonding else nic
+    if iface:
+        if vlan:
+            configWriter.removeVlan(vlan, iface)
         else:
-            # When removing bridged non-VLANed network
-            # we need to remove BRIDGE from the cfg file
-            configWriter._updateConfigValue(cf, 'BRIDGE', '', True)
+            cf = configWriter.NET_CONF_PREF + iface
+            if not bridged:
+                # When removing bridgeless non-VLANed network
+                # we need to remove IP/NETMASK from the cfg file
+                for key in ('IPADDR', 'NETMASK', 'GATEWAY', 'BOOTPROTO'):
+                    configWriter._updateConfigValue(cf, key, '', True)
+            else:
+                # When removing bridged non-VLANed network
+                # we need to remove BRIDGE from the cfg file
+                configWriter._updateConfigValue(cf, 'BRIDGE', '', True)
 
     # The (relatively) new setupNetwork verb allows to remove a network
     # defined on top of an bonding device without break the bond itself.
