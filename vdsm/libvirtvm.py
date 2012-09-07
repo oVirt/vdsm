@@ -667,7 +667,7 @@ class _DomXML:
             m.appendChild(self.doc.createTextNode(v))
             syselem.appendChild(m)
 
-        appendEntry('manufacturer', 'Red Hat')
+        appendEntry('manufacturer', constants.SMBIOS_MANUFACTURER)
         appendEntry('product', osname)
         appendEntry('version', osversion)
         appendEntry('serial', hostUUID)
@@ -1223,7 +1223,7 @@ class LibvirtVm(vm.Vm):
 
         osd = caps.osversion()
         domxml.appendSysinfo(
-            osname=caps.OSName.RHEVH,
+            osname=constants.SMBIOS_OSNAME,
             osversion=osd.get('version', '') + '-' + osd.get('release', ''),
             hostUUID=utils.getHostUUID())
 

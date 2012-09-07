@@ -13,7 +13,7 @@ adding changing entries to smbios domain entry:
 
 
 syntax:
-smbios={'serial': '1234'}^{'vendor': 'redhat'}
+smbios={'serial': '1234'}^{'vendor': 'oVirt'}
 '''
 
 bios_entries = ["vendor", "version", "date", "release"]

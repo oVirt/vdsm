@@ -93,6 +93,10 @@ AC_SUBST([VDSMBRIDGE], ['ovirtmgmt'])
 # Engine Name
 AC_SUBST([ENGINENAME], ['oVirt Engine'])
 
+# SMBIOS names
+AC_SUBST([SMBIOS_MANUFACTURER], ['oVirt'])
+AC_SUBST([SMBIOS_OSNAME], ['oVirt Node'])
+
 # Checking for pyflakes
 AC_PATH_PROG([PYFLAKES], [pyflakes])
 if test "x$PYFLAKES" = "x"; then
