@@ -22,7 +22,6 @@
 
 import os
 from xml.dom import minidom
-import subprocess
 import logging
 import time
 import struct
@@ -32,6 +31,7 @@ import linecache
 import glob
 
 import libvirt
+import rpm
 
 from vdsm.config import config
 from vdsm import libvirtconnection
@@ -39,7 +39,6 @@ import dsaversion
 from vdsm import netinfo
 import hooks
 from vdsm import utils
-from vdsm import constants
 import storage.hba
 
 # For debian systems we can use python-apt if available
@@ -214,13 +213,10 @@ def osversion():
             version = linecache.getline('/etc/debian_version', 1).strip("\n")
             release = ""  # Debian just has a version entry
         else:
-            p = subprocess.Popen([constants.EXT_RPM, '-qf', '--qf',
-                '%{VERSION} %{RELEASE}\n', '/etc/redhat-release'],
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, close_fds=True)
-            out, err = p.communicate()
-            if p.returncode == 0:
-                version, release = out.splitlines()[-1].split()
+            ts = rpm.TransactionSet()
+            for er in ts.dbMatch('basenames', '/etc/redhat-release'):
+                version = er['version']
+                release = er['release']
     except:
         logging.error('failed to find version/release', exc_info=True)
 
@@ -316,14 +312,12 @@ def _getKeyPackages():
                         'vdsm', 'spice-server', 'libvirt']
 
         try:
+            ts = rpm.TransactionSet()
             for pkg in KEY_PACKAGES:
-                rc, out, err = utils.execCmd([constants.EXT_RPM, '-q', '--qf',
-                      '%{NAME}\t%{VERSION}\t%{RELEASE}\t%{BUILDTIME}\n', pkg],
-                      sudo=False)
-                if rc:
-                    continue
-                line = out[-1]
-                n, v, r, t = line.split()
+                for er in ts.dbMatch('name', pkg):
+                    v = er['version']
+                    r = er['release']
+                    t = er['buildtime']
                 pkgs[pkg] = dict(version=v, release=r, buildtime=t)
         except:
             logging.error('', exc_info=True)

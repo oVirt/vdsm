@@ -47,6 +47,7 @@ Requires: xz
 Requires: ntp
 Requires: iproute
 Requires: python-ethtool
+Requires: rpm-python
 Requires: nfs-utils dmidecode
 Requires: lvm2 >= 2.02.95
 
