@@ -45,7 +45,7 @@ def _enable_bond_dev():
 
     # @ENGINENAME@ currently assumes that all bonding devices pre-exist
     existing = set(file(MASTER_FILE).read().split())
-    with open(MASTER_FILE) as f:
+    with open(MASTER_FILE, 'w') as f:
         for bond in REQUIRED - existing:
             f.write('+%s\n' % bond)
 
