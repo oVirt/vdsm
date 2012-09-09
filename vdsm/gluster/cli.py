@@ -23,6 +23,7 @@ import xml.etree.cElementTree as etree
 from functools import wraps
 
 from vdsm import utils
+from vdsm import netinfo
 import exception as ge
 from hostname import getHostNameFqdn, HostNameException
 
@@ -82,6 +83,13 @@ def _execGlusterXml(cmd):
         return tree
     else:
         raise ge.GlusterCmdFailedException(rc=rv, err=[msg])
+
+
+def _getLocalIpAddress():
+    for ip in netinfo.getIpAddresses():
+        if not ip.startswith('127.'):
+            return ip
+    return ''
 
 
 def _parseVolumeInfo(out):
@@ -546,7 +554,7 @@ def peerStatus():
         raise ge.GlusterHostsListFailedException(rc=e.rc, err=e.err)
     try:
         return _parsePeerStatus(xmltree,
-                                _getGlusterHostName(),
+                                _getLocalIpAddress() or _getGlusterHostName(),
                                 _getGlusterUuid(), HostStatus.CONNECTED)
     except (etree.ParseError, AttributeError, ValueError):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
