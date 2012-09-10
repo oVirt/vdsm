@@ -173,8 +173,6 @@ class VmStatsThread(utils.AdvancedStatsThread):
             self._log.debug("CPU stats not available")
             stats['cpuUser'] = 0.0
 
-        stats['cpuIdle'] = max(0.0, 100.0 - stats['cpuUser'])
-
     def _getNetworkStats(self, stats):
         stats['network'] = {}
         sInfo, eInfo, sampleInterval = self.sampleNet.getStats()
