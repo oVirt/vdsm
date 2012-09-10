@@ -28,12 +28,17 @@ CLEANFILES = \
 	$(nodist_vdsmexec_SCRIPTS)
 
 EXTRA_DIST = \
+	after_vdsm_stop.py \
 	before_vm_start.py
 
 install-data-local:
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_vdsm_stop
+	$(INSTALL_SCRIPT) $(srcdir)/after_vdsm_stop.py \
+		$(DESTDIR)$(vdsmhooksdir)/after_vdsm_stop/10_faqemu
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/10_faqemu
 
 uninstall-local:
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vdsm_stop/10_faqemu
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/10_faqemu
