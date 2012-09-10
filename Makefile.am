@@ -120,6 +120,15 @@ check-local:
 	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' \
 		$(PEP8_WHITELIST)
 
+	[ -f .gitignore ] || exit 0;                                    \
+	gitignore=`mktemp`;                                             \
+	lsfiles=`mktemp`;                                               \
+	LC_ALL=C sort .gitignore > "$$gitignore";                       \
+	git ls-files '*.py.in' | sed 's/\.in$$//' |                     \
+	LC_ALL=C sort > "$$lsfiles";                                    \
+	LC_ALL=C comm -1 -3 "$$gitignore" "$$lsfiles" |                 \
+	grep . && exit 1 || exit 0
+
 all-local: \
 	vdsm.spec
 
