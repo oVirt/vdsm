@@ -23,7 +23,6 @@ SUBDIRS = functional
 test_modules = \
 	alignmentScanTests.py \
 	betterPopenTests.py \
-	betterThreadingTests.py \
 	capsTests.py \
 	configNetworkTests.py \
 	fileUtilTests.py \

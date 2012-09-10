@@ -67,6 +67,7 @@ Requires: python-ethtool
 Requires: rpm-python
 Requires: nfs-utils
 Requires: lvm2 >= 2.02.95
+Requires: python-pthreading
 
 %ifarch x86_64
 Requires: dmidecode
@@ -636,8 +637,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/guestIF.py*
 %{_datadir}/%{vdsm_name}/logUtils.py*
 %{_datadir}/%{vdsm_name}/dsaversion.py*
-%{_datadir}/%{vdsm_name}/pthread.py*
-%{_datadir}/%{vdsm_name}/betterThreading.py*
 %{_libexecdir}/%{vdsm_name}/persist-vdsm-hooks
 %{_libexecdir}/%{vdsm_name}/unpersist-vdsm-hook
 %{_libexecdir}/%{vdsm_name}/ovirt_functions.sh

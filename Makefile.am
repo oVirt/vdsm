@@ -63,7 +63,6 @@ PEP8_WHITELIST = \
 	vdsm/momIF.py \
 	vdsm/netinfo.py \
 	vdsm/parted_utils.py \
-	vdsm/pthread.py \
 	vdsm/rest/BindingREST.py \
 	vdsm/rest/Controller.py \
 	vdsm/storage/blockVolume.py \

@@ -25,7 +25,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 dist_vdsm_PYTHON = \
 	alignmentScan.py \
 	API.py \
-	betterThreading.py \
 	BindingXMLRPC.py \
 	blkid.py \
 	caps.py \
@@ -47,7 +46,6 @@ dist_vdsm_PYTHON = \
 	neterrors.py \
 	nwfilter.py \
 	parted_utils.py \
-	pthread.py \
 	supervdsm.py \
 	supervdsmServer.py \
 	tc.py \

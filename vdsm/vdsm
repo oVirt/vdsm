@@ -21,7 +21,11 @@ from logging import config as lconfig
 
 from vdsm import constants
 import dsaversion
-import betterThreading  # before threading is ever used
+if sys.version_info[0] == 2:
+    # as long as we work with Python 2, we need to monkey-patch threading
+    # module before it is ever used.
+    import pthreading
+    pthreading.monkey_patch()
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 
