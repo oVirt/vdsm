@@ -38,7 +38,7 @@ import httplib
 import glob
 import imp
 from optparse import OptionParser
-from itertools import dropwhile, islice
+import platform
 
 try:
     from ovirtnode import ovirtfunctions
@@ -445,15 +445,11 @@ def getOSVersion():
     Return "Unknown OS" on any failure.
     """
 
-    s = ''
-    try:
-        s = file('/etc/redhat-release', 'r').read()
-
-        return islice(dropwhile(lambda x: x != 'release', s.split()),
-                      1, 2).next()
-    except:
-        logging.error('failed to parse os release from `%s`.', s, exc_info=True)
-        return "Unknown OS"
+    # platform.linux_distribution returns a tuple (distname, version, id) or
+    # default as given in args in case of any failure
+    osVer = platform.linux_distribution(distname='', version='Unknown OS')
+    logging.debug("OS Release Ver = %s", osVer[1])
+    return osVer[1]
 
 def getKernelVR():
     """Return current kernel version and release."""
