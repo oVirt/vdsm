@@ -13,6 +13,11 @@
 # Required paths
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 
+# Default to skipping autoreconf.  Distros can change just this one line
+# (or provide a command-line override) if they backport any patches that
+# touch configure.ac or Makefile.am.
+%{!?enable_autotools:%define enable_autotools 0}
+
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
@@ -35,6 +40,14 @@ BuildRequires: python-ethtool
 BuildRequires: libvirt-python
 BuildRequires: sanlock-python >= 2.3
 BuildRequires: genisoimage
+
+# Autotools BuildRequires
+%if 0%{?enable_autotools}
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: gettext-devel
+BuildRequires: libtool
+%endif
 
 %if !0%{?rhel}
 BuildRequires: systemd-units
@@ -336,6 +349,9 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 %setup -q
 
 %build
+%if 0%{?enable_autotools}
+autoreconf -if
+%endif
 %configure %{?with_hooks:--enable-hooks}
 make
 # Setting software_version and software_revision in dsaversion.py
