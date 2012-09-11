@@ -64,6 +64,7 @@ PEP8_WHITELIST = \
 	vdsm/libvirtvm.py \
 	vdsm/md_utils.py \
 	vdsm/momIF.py \
+	vdsm/netinfo.py \
 	vdsm/parted_utils.py \
 	vdsm/pthread.py \
 	vdsm/rest/BindingREST.py \

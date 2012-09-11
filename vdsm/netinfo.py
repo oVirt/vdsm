@@ -42,23 +42,28 @@ PROC_NET_VLAN = '/proc/net/vlan/'
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 
+
 def nics():
     res = []
     for b in glob.glob('/sys/class/net/*/device'):
         nic = b.split('/')[-2]
         if not any(map(lambda p: fnmatch(nic, p),
-                       config.get('vars', 'hidden_nics').split(',')) ):
+                       config.get('vars', 'hidden_nics').split(','))):
             res.append(nic)
     return res
 
+
 def bondings():
-    return [ b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bonding')]
+    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bonding')]
+
 
 def vlans():
-    return [ b.split('/')[-1] for b in glob.glob('/sys/class/net/*.*')]
+    return [b.split('/')[-1] for b in glob.glob('/sys/class/net/*.*')]
+
 
 def bridges():
-    return [ b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bridge')]
+    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bridge')]
+
 
 def networks():
     """
@@ -83,20 +88,25 @@ def networks():
                 nets[netname]['iface'] = interfaces[0].getAttribute('dev')
                 nets[netname]['bridged'] = False
             else:
-                nets[netname]['bridge'] = xml.getElementsByTagName('bridge')[0].getAttribute('name')
+                nets[netname]['bridge'] = \
+                    xml.getElementsByTagName('bridge')[0].getAttribute('name')
                 nets[netname]['bridged'] = True
     return nets
 
+
 def slaves(bonding):
-    return [ b.split('/')[-1].split('_', 1)[-1] for b in
+    return [b.split('/')[-1].split('_', 1)[-1] for b in
                 glob.glob('/sys/class/net/' + bonding + '/slave_*')]
+
 
 def ports(bridge):
     return os.listdir('/sys/class/net/' + bridge + '/brif')
 
+
 def getMtu(iface):
     mtu = file('/sys/class/net/%s/mtu' % iface).readline().rstrip()
     return mtu
+
 
 def bridge_stp_state(bridge):
     stp = file('/sys/class/net/%s/bridge/stp_state' % bridge).readline()
@@ -105,14 +115,18 @@ def bridge_stp_state(bridge):
     else:
         return 'off'
 
+
 def isvirtio(dev):
     return 'virtio' in os.readlink('/sys/class/net/%s/device' % dev)
+
 
 def isbonding(dev):
     return os.path.exists('/sys/class/net/%s/bonding' % dev)
 
+
 def operstate(dev):
     return file('/sys/class/net/%s/operstate' % dev).read().strip()
+
 
 def speed(dev):
     # return the speed of devices that are capable of replying
@@ -131,6 +145,7 @@ def speed(dev):
         logging.error('cannot read %s speed', dev, exc_info=True)
     return 0
 
+
 def getaddr(dev):
     dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
     addr = dev_info_list[0].ipv4_address
@@ -138,9 +153,12 @@ def getaddr(dev):
         addr = ''
     return addr
 
+
 def bitmask_to_address(bitmask):
-    binary = ~((1L << (32-bitmask)) - 1)
-    return ".".join(map(lambda x: str(binary>>(x<<3) & 0xff), [3, 2, 1, 0]))
+    binary = ~((1L << (32 - bitmask)) - 1)
+    return ".".join(map(lambda x: str(binary >> (x << 3) & 0xff),
+                        [3, 2, 1, 0]))
+
 
 def getnetmask(dev):
     dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
@@ -149,8 +167,10 @@ def getnetmask(dev):
         return ''
     return bitmask_to_address(netmask)
 
+
 def gethwaddr(dev):
     return file('/sys/class/net/%s/address' % dev).read().strip()
+
 
 def graph():
     for bridge in bridges():
@@ -163,11 +183,12 @@ def graph():
                 for slave in slaves(iface):
                     print '\t\t' + slave
 
+
 def getVlanBondingNic(bridge):
     """Return the (vlan, bonding, nics) tupple that belongs to bridge."""
 
     if bridge not in bridges():
-        raise ValueError, 'unknown bridge %s' % (bridge,)
+        raise ValueError('unknown bridge %s' % bridge)
     vlan = bonding = ''
     nics = []
     for iface in os.listdir('/sys/class/net/' + bridge + '/brif'):
@@ -180,6 +201,7 @@ def getVlanBondingNic(bridge):
             nics = [iface]
     return vlan, bonding, nics
 
+
 def intToAddress(ip_num):
     "Convert an integer to the corresponding ip address in the dot-notation"
     ip_address = []
@@ -190,13 +212,14 @@ def intToAddress(ip_num):
 
     return '.'.join(ip_address)
 
+
 def getRoutes():
     """Return the interface default gateway or None if not found."""
 
     gateways = dict()
 
     with open("/proc/net/route") as route_file:
-        route_file.readline() # skip header line
+        route_file.readline()  # skip header line
 
         for route_line in route_file.xreadlines():
             route_parm = route_line.rstrip().split('\t')
@@ -207,12 +230,14 @@ def getRoutes():
 
     return gateways
 
+
 def getIfaceCfg(iface):
     d = {}
     try:
         for line in open(NET_CONF_PREF + iface).readlines():
             line = line.strip()
-            if line.startswith('#'): continue
+            if line.startswith('#'):
+                continue
             try:
                 k, v = line.split('=', 1)
                 d[k] = ''.join(shlex.split(v))
@@ -221,6 +246,7 @@ def getIfaceCfg(iface):
     except:
         pass
     return d
+
 
 def permAddr():
     paddr = {}
@@ -234,6 +260,7 @@ def permAddr():
                 paddr[slave] = addr.upper()
     return paddr
 
+
 def get():
     d = {}
     routes = getRoutes()
@@ -244,7 +271,7 @@ def get():
         if nets[netname]['bridged']:
             devname = netname
             try:
-                d['networks'][netname] = { 'ports': ports(devname),
+                d['networks'][netname] = {'ports': ports(devname),
                         'stp': bridge_stp_state(devname),
                         'cfg': getIfaceCfg(devname), }
             except OSError, e:
@@ -262,8 +289,8 @@ def get():
             d['networks'][netname] = {}
 
             # ovirt-engine-3.1 expects to see "interface" iff the network is
-            # bridgeless. Please remove this line when that Engine version is no
-            # longer supported
+            # bridgeless. Please remove this line when that Engine version is
+            # no longer supported
             d['networks'][netname]['interface'] = devname
 
         d['networks'][netname].update({
@@ -284,33 +311,34 @@ def get():
                               })
                          for bridge in bridges()])
 
-    d['nics'] = dict([ (nic, {'speed': speed(nic),
+    d['nics'] = dict([(nic, {'speed': speed(nic),
                               'addr': getaddr(nic),
                               'netmask': getnetmask(nic),
                               'hwaddr': gethwaddr(nic),
                               'mtu': getMtu(nic),
                               'cfg': getIfaceCfg(nic),
                               })
-                        for nic in nics() ])
+                        for nic in nics()])
     paddr = permAddr()
     for nic, nd in d['nics'].iteritems():
         if paddr.get(nic):
             nd['permhwaddr'] = paddr[nic]
-    d['bondings'] = dict([ (bond, {'slaves': slaves(bond),
+    d['bondings'] = dict([(bond, {'slaves': slaves(bond),
                               'addr': getaddr(bond),
                               'netmask': getnetmask(bond),
                               'hwaddr': gethwaddr(bond),
                               'cfg': getIfaceCfg(bond),
                               'mtu': getMtu(bond)})
-                        for bond in bondings() ])
-    d['vlans'] = dict([ (vlan, {'iface': vlan.split('.')[0],
+                        for bond in bondings()])
+    d['vlans'] = dict([(vlan, {'iface': vlan.split('.')[0],
                                 'addr': getaddr(vlan),
                                 'netmask': getnetmask(vlan),
                                 'mtu': getMtu(vlan),
                                 'cfg': getIfaceCfg(vlan),
                                 })
-                        for vlan in vlans() ])
+                        for vlan in vlans()])
     return d
+
 
 def getVlanDevice(vlan):
     """ Return the device of the given VLAN. """
@@ -324,6 +352,7 @@ def getVlanDevice(vlan):
 
     return dev
 
+
 def getVlanID(vlan):
     """ Return the ID of the given VLAN. """
     id = None
@@ -336,9 +365,11 @@ def getVlanID(vlan):
 
     return id
 
+
 def getIpAddresses():
     "Return a list of the host's IP addresses"
-    return filter(None, [ getaddr(i) for i in ethtool.get_active_devices() ])
+    return filter(None, [getaddr(i) for i in ethtool.get_active_devices()])
+
 
 class NetInfo(object):
     def __init__(self, _netinfo=None):
@@ -363,7 +394,7 @@ class NetInfo(object):
                     if iface == interface:
                         yield (network, None)
                     elif interface.startswith(iface + '.'):
-                        yield (network, interface.split('.',1)[1])
+                        yield (network, interface.split('.', 1)[1])
 
     def getBridgelessNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (network, vlan) connected to nic/bond """
@@ -372,7 +403,7 @@ class NetInfo(object):
                 if iface == netdict['iface']:
                     yield (network, None)
                 elif netdict['iface'].startswith(iface + '.'):
-                    yield (network, netdict['iface'].split('.',1)[1])
+                    yield (network, netdict['iface'].split('.', 1)[1])
 
     def getVlansForIface(self, iface):
         for v, vdict in self.vlans.iteritems():
@@ -408,7 +439,8 @@ class NetInfo(object):
     def getBondingForNic(self, nic):
         bondings = list(self.getBondingsForNic(nic))
         if bondings:
-            assert len(bondings) == 1, "Unexpected configuration: More than one bonding per nic"
+            assert len(bondings) == 1, \
+                "Unexpected configuration: More than one bonding per nic"
             return bondings[0]
         return None
 
@@ -418,7 +450,7 @@ class NetInfo(object):
         lnics = []
 
         if self.networks[network]['bridged']:
-            ports =  self.networks[network]['ports']
+            ports = self.networks[network]['ports']
         else:
             ports = []
             interface = self.networks[network]['iface']
@@ -427,7 +459,7 @@ class NetInfo(object):
         for port in ports:
             if port in self.vlans:
                 assert vlan is None
-                nic, vlan = port.split('.',1)
+                nic, vlan = port.split('.', 1)
                 assert self.vlans[port]['iface'] == nic
                 port = nic
             if port in self.bondings:
@@ -446,4 +478,5 @@ class NetInfo(object):
         :returns: list of networks name
         :rtype: List
         """
-        return [ netname for (netname, net) in networks().iteritems() if not 'bridge' in net ]
+        return [netname for (netname, net) in networks().iteritems()
+                                           if not 'bridge' in net]
