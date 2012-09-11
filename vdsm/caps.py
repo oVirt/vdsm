@@ -193,14 +193,8 @@ def getos():
         return OSName.UNKNOWN
 
 
-__osversion = None
-
-
+@utils.memoized
 def osversion():
-    global __osversion
-    if __osversion is not None:
-        return __osversion
-
     version = release = ''
 
     osname = getos()
@@ -220,8 +214,7 @@ def osversion():
     except:
         logging.error('failed to find version/release', exc_info=True)
 
-    __osversion = dict(release=release, version=version, name=osname)
-    return __osversion
+    return dict(release=release, version=version, name=osname)
 
 
 def get():
