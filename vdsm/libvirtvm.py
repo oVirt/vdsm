@@ -347,6 +347,12 @@ class MigrationMonitorThread(threading.Thread):
         self.daemon = True
 
     def run(self):
+        def calculateProgress(remaining, total):
+            if remaining == 0:
+                return 100
+            progress = 100 - 100 * remaining / total if total else 0
+            return progress if (progress < 100) else 99
+
         self._vm.log.debug('starting migration monitor thread')
 
         lastProgressTime = time.time()
@@ -356,7 +362,7 @@ class MigrationMonitorThread(threading.Thread):
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
             (jobType, timeElapsed, _,
              dataTotal, dataProcessed, dataRemaining,
-             memTotal, memProcessed, _,
+             memTotal, memProcessed, memRemaining,
              fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
 
             if (smallest_dataRemaining is None or
@@ -376,8 +382,8 @@ class MigrationMonitorThread(threading.Thread):
             if jobType == 0:
                 continue
 
-            dataProgress = 100 * dataProcessed / dataTotal if dataTotal else 0
-            memProgress = 100 * memProcessed / memTotal if memTotal else 0
+            dataProgress = calculateProgress(dataRemaining, dataTotal)
+            memProgress = calculateProgress(memRemaining, memTotal)
 
             self._vm.log.info(
                     'Migration Progress: %s seconds elapsed, '
