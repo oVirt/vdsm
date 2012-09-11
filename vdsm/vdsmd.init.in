@@ -76,6 +76,7 @@ mk_data_center() {
 
 mk_dom_backup() {
     /bin/mkdir -p ${DOM_METADATA_BACKUP_DIR} > /dev/null 2>&1
+    /bin/chown vdsm.kvm `dirname ${DOM_METADATA_BACKUP_DIR}` > /dev/null 2>&1
     /bin/chown vdsm.kvm ${DOM_METADATA_BACKUP_DIR} > /dev/null 2>&1
 }
 
