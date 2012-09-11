@@ -59,6 +59,9 @@ OP_TYPES = {UNKNOWN_OP:'UNKNOWN', COPY_OP:'COPY', MOVE_OP:'MOVE'}
 REMOVED_IMAGE_PREFIX = "_remove_me_"
 RENAME_RANDOM_STRING_LEN = 8
 
+# Temporary size of a volume when we optimize out the prezeroing
+TEMPORARY_VOLUME_SIZE = 20480  # in sectors (10M)
+
 
 class Image:
     """ Actually represents a whole virtual disk.
@@ -498,18 +501,34 @@ class Image:
                     volParams = srcVol.getVolumeParams(bs=1)
 
                     # To avoid 'prezeroing' preallocated volume on NFS domain,
-                    # we create the target volume with minimal size and after that w'll change
-                    # its metadata back to the original size.
-                    tmpSize = 20480 # in sectors (10M)
-                    destDom.createVolume(imgUUID=imgUUID, size=tmpSize,
-                                         volFormat=volParams['volFormat'], preallocate=volParams['prealloc'],
-                                         diskType=volParams['disktype'], volUUID=srcVol.volUUID, desc=volParams['descr'],
-                                         srcImgUUID=pimg, srcVolUUID=volParams['parent'])
-                    dstVol = destDom.produceVolume(imgUUID=imgUUID, volUUID=srcVol.volUUID)
+                    # we create the target volume with minimal size and after
+                    # that w'll change its metadata back to the original size.
+                    if (volParams['volFormat'] == volume.COW_FORMAT
+                            or volParams['prealloc'] == volume.SPARSE_VOL):
+                        volTmpSize = volParams['size']
+                    else:
+                        volTmpSize = TEMPORARY_VOLUME_SIZE  # in sectors (10M)
+
+                    destDom.createVolume(imgUUID=imgUUID, size=volTmpSize,
+                                         volFormat=volParams['volFormat'],
+                                         preallocate=volParams['prealloc'],
+                                         diskType=volParams['disktype'],
+                                         volUUID=srcVol.volUUID,
+                                         desc=volParams['descr'],
+                                         srcImgUUID=pimg,
+                                         srcVolUUID=volParams['parent'])
+
+                    dstVol = destDom.produceVolume(imgUUID=imgUUID,
+                                                   volUUID=srcVol.volUUID)
+
                     # Extend volume (for LV only) size to the actual size
                     dstVol.extend((volParams['apparentsize'] + 511) / 512)
-                    # Change destination volume metadata back to the original size.
-                    dstVol.setSize(volParams['size'])
+
+                    # Change destination volume metadata back to the original
+                    # size.
+                    if volTmpSize != volParams['size']:
+                        dstVol.setSize(volParams['size'])
+
                     dstChain.append(dstVol)
                 except se.StorageException:
                     self.log.error("Unexpected error", exc_info=True)
@@ -744,7 +763,7 @@ class Image:
                 # To avoid 'prezeroing' preallocated volume on NFS domain,
                 # we create the target volume with minimal size and after that w'll change
                 # its metadata back to the original size.
-                tmpSize = 20480 # in sectors (10M)
+                tmpSize = TEMPORARY_VOLUME_SIZE  # in sectors (10M)
                 destDom.createVolume(imgUUID=dstImgUUID, size=tmpSize,
                                       volFormat=dstVolFormat, preallocate=volParams['prealloc'],
                                       diskType=volParams['disktype'], volUUID=dstVolUUID, desc=descr,
