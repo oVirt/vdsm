@@ -48,7 +48,7 @@ class Setup:
         self.vdsmDir = config.get('vars', 'vdsm_dir')
         if self.vdcURL != "None":
             self.ovirtURL = deployUtil.getMGTIP(self.vdsmDir, self.vdcName)
-            self.ovirtName = socket.getfqdn()
+            self.ovirtName = socket.gethostname()
             self.ovirtUID = deployUtil.getHostID()
         else:
             self.ovirtURL = "None"
