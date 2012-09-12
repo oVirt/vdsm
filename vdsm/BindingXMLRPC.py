@@ -79,6 +79,7 @@ class BindingXMLRPC(object):
         self._enabled = False
         self.server.server_close()
         self._thread.join()
+        return {'status': doneCode}
 
     def getServerInfo(self):
         """
@@ -759,7 +760,7 @@ class BindingXMLRPC(object):
                 (self.ping, 'ping'),
                 (self.setSafeNetworkConfig, 'setSafeNetworkConfig'),
                 (self.fenceNode, 'fenceNode'),
-                (self.cif.prepareForShutdown, 'prepareForShutdown'),
+                (self.prepareForShutdown, 'prepareForShutdown'),
                 (self.setLogLevel, 'setLogLevel'),
                 (self.setMOMPolicy, 'setMOMPolicy'),
                 (self.vmHotplugDisk, 'hotplugDisk'),
