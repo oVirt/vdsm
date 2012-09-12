@@ -237,14 +237,14 @@ class Plugin(PluginBase):
                     # Try one more time with SSL=False
                     if not isHostReachable(host=self.engine_server.value(),
                             port=enginePort, ssl=False, timeout=TIMEOUT_FIND_HOST_SEC):
-                        msgConn = "Can't connect to oVirt Engine in the specific" \
+                        msgConn = "Can't connect to @ENGINENAME@ in the specific" \
                         " port %s" % enginePort
 
                         ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
                                 msgConn, buttons = ['Ok'])
                         return False
                 else:
-                    msgConn = "Can't connect to oVirt Engine port %s," \
+                    msgConn = "Can't connect to @ENGINENAME@ port %s," \
                         " trying compatible port %s" % \
                         (enginePort, compatPort)
 
@@ -253,7 +253,7 @@ class Plugin(PluginBase):
 
                     if not isHostReachable(host=self.engine_server.value(),
                             port=compatPort, ssl=sslPort, timeout=TIMEOUT_FIND_HOST_SEC):
-                        msgConn = "Can't connect to oVirt Engine using" \
+                        msgConn = "Can't connect to @ENGINENAME@ using" \
                             " compatible port %s" % compatPort
                         ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
                             msgConn, buttons = ['Ok'])
