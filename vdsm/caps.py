@@ -313,12 +313,18 @@ def _getKeyPackages():
 
         try:
             ts = rpm.TransactionSet()
+
             for pkg in KEY_PACKAGES:
-                for er in ts.dbMatch('name', pkg):
-                    v = er['version']
-                    r = er['release']
-                    t = er['buildtime']
-                pkgs[pkg] = dict(version=v, release=r, buildtime=t)
+                try:
+                    mi = ts.dbMatch('name', pkg).next()
+                except StopIteration:
+                    logging.debug("rpm package %s not found", pkg)
+                else:
+                    pkgs[pkg] = {
+                        'version': mi['version'],
+                        'release': mi['release'],
+                        'buildtime': mi['buildtime'],
+                    }
         except:
             logging.error('', exc_info=True)
 
