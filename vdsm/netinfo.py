@@ -277,7 +277,7 @@ def get():
             except OSError, e:
                 # If the bridge reported by libvirt does not exist anymore, do
                 # not report it, as this already assures that the bridge is not
-                # added d['networks']
+                # added to d['networks']
                 if e.errno == errno.ENOENT:
                     logging.info('Obtaining info for net %s.', devname,
                                  exc_info=True)
@@ -293,13 +293,25 @@ def get():
             # no longer supported
             d['networks'][netname]['interface'] = devname
 
-        d['networks'][netname].update({
-                    'iface': devname,
-                    'bridged': nets[netname]['bridged'],
-                    'addr': getaddr(devname),
-                    'netmask': getnetmask(devname),
-                    'gateway': routes.get(devname, '0.0.0.0'),
-                    'mtu': getMtu(devname), })
+        try:
+            d['networks'][netname].update({
+                        'iface': devname,
+                        'bridged': nets[netname]['bridged'],
+                        'addr': getaddr(devname),
+                        'netmask': getnetmask(devname),
+                        'gateway': routes.get(devname, '0.0.0.0'),
+                        'mtu': getMtu(devname), })
+        except OSError, e:
+            if e.errno == errno.ENOENT:
+                logging.info('Obtaining info for net %s.', devname,
+                             exc_info=True)
+                # When a net is not bridged it will have left an entry in
+                # d['networks']
+                if netname in d['networks']:
+                    del d['networks'][netname]
+                continue
+            else:
+                raise
 
     d['bridges'] = dict([(bridge, {
                               'ports': ports(bridge),
