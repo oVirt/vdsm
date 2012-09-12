@@ -83,7 +83,7 @@ rmanager = rm.ResourceManager.getInstance()
 # FIXME: moved from spm.py but this should be somewhere else
 SECTOR_SIZE = 512
 
-STORAGE_CONNECTION_DIR = "/var/run/vdsm/connections/"
+STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_RUN, "connections/")
 
 def public(f=None, **kwargs):
     if f is None:
