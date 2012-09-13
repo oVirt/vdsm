@@ -724,7 +724,8 @@ class Deploy:
                 logging.error(self.message)
                 #Do not set rc to allow changes from rhev-m.
             else:
-                self._addNetwork(url, port)
+                if not self._addNetwork(url, port):
+                    self.status = "WARN"
 
         self._xmlOutput('SetNetworking', self.status, None, None, self.message)
         return self.rc
