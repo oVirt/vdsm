@@ -561,7 +561,7 @@ class HostStatsThread(StatsThread):
         for sd, d in self._imagesStatus.storageDomains.iteritems():
             stats['storageDomains'][sd] = {'code': d['code'],
                         'delay': d['delay'],
-                        'lastCheck': '%.1f' % (now - d['lastCheck']),
+                        'lastCheck': d['lastCheck'],
                         'valid': d['valid']}
         stats['elapsedTime'] = int(now - self.startTime)
         if len(self._samples) < 2:

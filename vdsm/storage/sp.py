@@ -19,6 +19,7 @@
 #
 
 import os
+import time
 from glob import iglob, glob
 import logging
 import threading
@@ -1355,6 +1356,7 @@ class StoragePool(Securable):
     def getRepoStats(self):
         #FIXME : this should actually be  built in HSM
         res = {}
+        now = time.time()
         for sdUUID in self.domainMonitor.monitoredDomains:
             st = self.domainMonitor.getStatus(sdUUID)
             if st.error is None:
@@ -1369,7 +1371,7 @@ class StoragePool(Securable):
                     'finish' : st.lastCheck,
                     'result' : {
                         'code'      : code,
-                        'lastCheck' : st.lastCheck,
+                        'lastCheck' : '%.1f' % (now - st.lastCheck),
                         'delay'     : str(st.readDelay),
                         'valid'     : (st.error is None)
                         },
