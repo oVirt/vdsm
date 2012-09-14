@@ -215,6 +215,7 @@ without the sharing and storage handling of VDSM.
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
 BuildArch:      noarch
+Requires:       python-libguestfs
 
 %description hook-fileinject
 Hook is getting target file name and its content and
