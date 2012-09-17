@@ -8,8 +8,13 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-import os, sys, getopt, signal
-import getpass, pwd, grp
+import os
+import sys
+import getopt
+import signal
+import getpass
+import pwd
+import grp
 import threading
 import logging
 from logging import config as lconfig
@@ -20,30 +25,36 @@ import betterThreading # before threading is ever used
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 
+
 def usage():
     print "Usage:  vdsm [OPTIONS]"
     print "     -h  - Display this help message"
 
+
 def serve_clients(log):
     cif = None
+
     def sigtermHandler(signum, frame):
         if cif:
             cif.prepareForShutdown()
+
     def sigusr1Handler(signum, frame):
         if cif and cif.irs:
-            cif.irs.spmStop(cif.irs.getConnectedStoragePoolsList()['poollist'][0])
+            cif.irs.spmStop(
+                    cif.irs.getConnectedStoragePoolsList()['poollist'][0])
 
     signal.signal(signal.SIGTERM, sigtermHandler)
     signal.signal(signal.SIGUSR1, sigusr1Handler)
 
-    from clientIF import clientIF # must import after config is read
+    from clientIF import clientIF  # must import after config is read
     cif = clientIF.getInstance(log)
     cif.serve()
+
 
 def run():
     lconfig.fileConfig(loggerConfFile)
     logging.addLevelName(5, 'TRACE')
-    logging.TRACE = 5 # impolite but helpful
+    logging.TRACE = 5  # impolite but helpful
 
     # Used to debug vdsm. on production machines
     # vdsmDebugPlugin.py should not exists
@@ -55,7 +66,6 @@ def run():
         # Any other error is an error in the debug
         # plugin and we would like to print that out.
         pass
-
 
     log = logging.getLogger('vds')
     try:
@@ -73,14 +83,17 @@ def run():
     except:
         log.error("Exception raised", exc_info=True)
 
-    log.info("VDSM main thread ended. Waiting for %d other threads..." % (threading.activeCount() - 1))
+    log.info("VDSM main thread ended. Waiting for %d other threads..." %
+             (threading.activeCount() - 1))
     for t in threading.enumerate():
-        if hasattr(t, 'stop'): t.stop()
+        if hasattr(t, 'stop'):
+            t.stop()
         log.info(str(t))
+
 
 def parse_args():
     opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-    for o,v in opts:
+    for o, v in opts:
         o = o.lower()
         if o == "-h" or o == "--help":
             usage()
@@ -89,6 +102,7 @@ def parse_args():
     if len(args) >= 1:
         usage()
         sys.exit(1)
+
 
 def __assertVdsmUser():
     username = getpass.getuser()

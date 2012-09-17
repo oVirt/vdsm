@@ -96,6 +96,7 @@ PEP8_WHITELIST = \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
 	vdsm/tc.py \
+	vdsm/vdsm \
 	vdsm_cli \
 	vdsm_hooks/fileinject/before_vm_start.py \
 	vdsm_hooks/promisc/after_vm_start.py \
