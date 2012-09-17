@@ -72,8 +72,16 @@ set_addresses() {
 		echo "checkpoint 2 ::management_server: $managment_server" >> $LOG 2>&1
 
 		if [ ! -z "$managment_server" ]; then
-			vdc_managment_server=${managment_server%:*}
-			vdc_managment_port=${managment_server#*:}
+			case "${managment_server}" in
+				*:*)
+				vdc_managment_server="${managment_server%:*}"
+				vdc_managment_port="${managment_server#*:}"
+				;;
+				*)
+				vdc_managment_server="${managment_server}"
+				vdc_managment_port=443
+				;;
+			esac
 			strRHEVMAddress=$vdc_managment_server
 			tmp_vdsm_reg_conf=`mktemp`
 			cat /etc/vdsm-reg/vdsm-reg.conf > "$tmp_vdsm_reg_conf"
