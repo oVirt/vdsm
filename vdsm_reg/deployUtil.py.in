@@ -94,6 +94,18 @@ XML_QUOTES = {
     "'":'~'
 }
 
+# Regular expression used to validate content of SSH public keys:
+SSH_PUBLIC_KEY_RE = re.compile(flags=re.VERBOSE, pattern=r"""
+  ^
+  \s*
+  ssh-(rsa|dss)
+  \s+
+  ([A-Za-z0-9+/]+={0,2})
+  (\s+[^\s]+)?
+  \s*
+  $
+""")
+
 #
 # Script interface to use, required for
 # multi-engine version support.
@@ -634,10 +646,12 @@ def getAuthKeysFile(IP, port):
         This functions returns the public ssh key of @ENGINENAME@.
     """
     CACERT, dontcare = certPaths('')
-    for cert in REMOTE_SSH_KEY_FILE:
-        data = getRemoteFile(IP, port, cert,
+    data = None
+    for key in REMOTE_SSH_KEY_FILE:
+        tmp = getRemoteFile(IP, port, key,
                    timeout=HTTP_TIMEOUT, certPath=CACERT)
-        if data != None:
+        if tmp != None and validateSSHKey(tmp):
+            data = tmp
             break
 
     return data
@@ -673,6 +687,14 @@ def silentRestoreCon(path):
         return selinux.restorecon(path)
     except:
         logging.error('restorecon %s failed', path, exc_info=True)
+
+def validateSSHKey(strKey):
+    """Check that the given string is a valid SSH public key"""
+    if SSH_PUBLIC_KEY_RE.match(strKey) is None:
+        logging.debug("validateSSHKey: the string \"%s\" is not a valid SSH key" % strKey)
+        return False
+    else:
+        return True
 
 def handleSSHKey(strKey):
     """
