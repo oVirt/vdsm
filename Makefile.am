@@ -109,6 +109,7 @@ PEP8_WHITELIST = \
 	vdsm_hooks/vhostmd/before_vm_start.py \
 	vdsm_reg/createDaemon.py \
 	vdsm_reg/define.py \
+	vds_bootstrap/miniyum.py \
 	$(NULL)
 
 PEP8_BLACKLIST = \

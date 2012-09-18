@@ -44,6 +44,7 @@ interface2dir=$(vdsmbootstrapdir)/interface-2
 dist_interface2_SCRIPTS = \
 	vds_bootstrap_complete.py \
 	vds_bootstrap.py \
+	miniyum.py \
 	setup
 
 nodist_interface2_SCRIPTS = \

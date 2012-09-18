@@ -50,7 +50,7 @@ import logging.config
 import ConfigParser
 import socket
 import tempfile
-from time import strftime
+import time
 
 import deployUtil
 
@@ -58,13 +58,78 @@ try:
     LOGDIR=os.environ["OVIRT_LOGDIR"]
 except KeyError:
     LOGDIR=tempfile.gettempdir()
+LOGFILE='%s/vdsm-bootstrap-%s-%s.log' % (LOGDIR, "phase1",
+    time.strftime("%Y%m%d%H%M%S"))
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(module)s '
                            '%(lineno)d %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
-                    filename='%s/vdsm-bootstrap-%s-%s.log' %
-                             (LOGDIR, "phase1", strftime("%Y%m%d%H%M%S")),
+                    filename=LOGFILE,
                     filemode='w')
+
+
+class myminiyumsink():
+
+    KEEPALIVE_INTERVAL = 60
+
+    def __init__(self):
+        """
+            We dup the stdout as during yum operation
+            we redirect it.
+        """
+        self._component = 'PACKAGES'
+        self._group = 'yum'
+        self._stream = None
+        self._stream = os.dup(sys.stdout.fileno())
+        self._touch()
+
+    def __del__(self):
+        if self._stream is not None:
+            os.close(self._stream)
+
+    def _touch(self):
+        self._last = time.time()
+
+    def _status(self, status, message):
+        self._touch()
+        os.write(
+            self._stream,
+            ((
+                "<BSTRAP component='%s' "
+                "status='%s' result='%s' "
+                "message='%s'/>\n"
+            ) % (
+                deployUtil.escapeXML(str(self._component)),
+                deployUtil.escapeXML(str(status)),
+                deployUtil.escapeXML(str(self._group)),
+                deployUtil.escapeXML(str(message))
+            )).encode('utf-8')
+        )
+
+    def verbose(self, msg):
+        logging.debug("MiniYum: VERB:  %s", msg)
+
+    def info(self, msg):
+        logging.info("MiniYum: INFO:  %s", msg)
+        self._status('OK', msg)
+
+    def error(self, msg):
+        logging.error("MiniYum: ERROR: %s", msg)
+
+    def keepAlive(self, msg):
+        if time.time() - self._last >= \
+                myminiyumsink.KEEPALIVE_INTERVAL:
+            self.info(msg)
+
+    def askForGPGKeyImport(self, userid, hexkeyid):
+        msg = "Approving GnuPG key: userid=%s hexkeyid=%s" % (
+            userid,
+            hexkeyid
+        )
+        logging.warning("MiniYum: WARN:  %s", msg)
+        self._status('WARN', msg)
+        return True
+
 
 rhel6based = deployUtil.versionCompare(deployUtil.getOSVersion(), "6.0") >= 0
 
@@ -546,7 +611,6 @@ class Deploy:
 
         if not self.rc:
             self._getAllPackages()
-            deployUtil.setService("vdsmd", "stop")
             self._installPackages()
 
         return self.rc
@@ -857,7 +921,8 @@ class Deploy:
 # End of deploy class.
 
 def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
-        firewallRulesFile, engine_ssh_key, installVirtualizationService, installGlusterService):
+        firewallRulesFile, engine_ssh_key, installVirtualizationService,
+        installGlusterService, miniyum):
     """ --- Check VDS Compatibility.
     """
     logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s', installVirtualizationService = '%s', installGlusterService = '%s')"%(subject, random_num, rev_num, installVirtualizationService, installGlusterService))
@@ -896,14 +961,43 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
         logging.error('kernelArgs failed')
         return False
 
-    if oDeploy.packagesExplorer():
-        logging.error('packagesExplorer test failed')
-        return False
+    #
+    # stop vdsm at this point,
+    # before any setting is changed.
+    #
+    # stopping vdsm at installation is important
+    # so master will not connect to the old instance
+    # before reboot.
+    #
+    deployUtil.setService("vdsmd", "stop")
 
-    if installGlusterService:
-        if oDeploy.installGlusterPackages():
-            logging.error('installGlusterPackages failed')
+    if miniyum is not None:
+        try:
+            with miniyum.transaction():
+                miniyum.clean(['expire-cache'])
+
+            with miniyum.transaction():
+                miniyum.install(('qemu-kvm-tools',))
+                miniyum.installUpdate(('vdsm', 'vdsm-cli'))
+
+                if installGlusterService:
+                    miniyum.install(('glusterfs-rdma', 'glusterfs-geo-replication'))
+                    miniyum.installUpdate(('vdsm-gluster',))
+
+                if miniyum.buildTransaction():
+                    miniyum.processTransaction()
+        except:
+            logging.error('package installation failed', exc_info=True)
             return False
+    else:
+        if oDeploy.packagesExplorer():
+            logging.error('packagesExplorer test failed')
+            return False
+
+        if installGlusterService:
+            if oDeploy.installGlusterPackages():
+                logging.error('installGlusterPackages failed')
+                return False
 
     if not oDeploy.createConf():
         logging.error('createConf failed')
@@ -987,10 +1081,34 @@ obsolete options:
         print main.__doc__
         return False
 
+    #
+    # miniyum setup must be done first as process
+    # is probably going to be reexecute with
+    # proper selinux role
+    #
+    miniyum = None
+    if deployUtil.getBootstrapInterfaceVersion() >= 2:
+        try:
+            from miniyum import MiniYum
+
+            miniyumsink = myminiyumsink()
+            MiniYum.setup_log_hook(sink=miniyumsink)
+            extraLog = open(LOGFILE, "a")
+            miniyum = MiniYum(sink=miniyumsink, extraLog=extraLog)
+            miniyum.selinux_role()
+        except:
+            logging.error("MiniYum selinux setup failed", exc_info=True)
+            print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
+            return False
+
     logging.debug('**** Start VDS Validation ****')
     try:
-        ret = VdsValidation(url, subject, random_num, rev_num,
-                            orgName, systime, firewallRulesFile, engine_ssh_key, installVirtualizationService, installGlusterService)
+        ret = VdsValidation(
+            url, subject, random_num, rev_num, orgName, systime,
+            firewallRulesFile, engine_ssh_key,
+            installVirtualizationService, installGlusterService,
+            miniyum
+        )
     except:
         logging.error("VDS validation failed", exc_info=True)
         logging.error(main.__doc__)
