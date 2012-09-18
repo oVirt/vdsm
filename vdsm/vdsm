@@ -21,7 +21,7 @@ from logging import config as lconfig
 
 from vdsm import constants
 import dsaversion
-import betterThreading # before threading is ever used
+import betterThreading  # before threading is ever used
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 
