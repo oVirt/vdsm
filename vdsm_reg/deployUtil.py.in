@@ -1123,6 +1123,15 @@ def yumSearchVersion(pkgName, ver):
 # Host PKI functions.
 #############################################################################################################
 
+def validateX509Cert(strCert):
+    """Validates a PEM encoded X.509 digital certificate"""
+    out, err, rc = _logExec([EX_OPENSSL, "x509", "-noout"], input=strCert)
+    if rc != 0:
+        logging.debug("validateX509Cert: the string \"%s\" is not a valid X.509 certificate", strCert)
+        return False
+    else:
+        return True
+
 def _tsDir(confFile):
     import ConfigParser
 
@@ -1474,7 +1483,7 @@ def getRhevmCert(IP, port):
     CACERT, VDSMCERT = certPaths('')
     RHEVM_CERT_FILE = "/ca.crt"
     rhevmCert = getRemoteFile(str(IP), str(port), RHEVM_CERT_FILE)
-    if rhevmCert:
+    if rhevmCert and validateX509Cert(rhevmCert):
         dirName = os.path.dirname(CACERT)
         if not os.path.exists(dirName):
             os.makedirs(dirName)
