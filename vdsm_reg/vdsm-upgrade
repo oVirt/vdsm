@@ -129,6 +129,27 @@ def main():
     fOK = True
     fMounted = False
 
+    # Checking the current status of vdsm
+    out, err, ret = deployUtil.setService('vdsmd', 'status')
+    if ret == 0:
+       # Stop vdsm to avoid communication with Engine before the reboot happens
+        out, err, ret = deployUtil.setService('vdsmd', 'stop')
+        if ret != 0:
+            msg = "<BSTRAP component='RHEL_INSTALL' status='FAIL'" \
+                      "message='Cannot stop vdsm daemon before we" \
+                      " start the upgrade, please verify!'/>"
+        else:
+            msg = "<BSTRAP component='RHEL_INSTALL' status='OK'" \
+                      "message='vdsm daemon stopped for upgrade process!'/>"
+
+    else:
+        msg = "<BSTRAP component='RHEL_INSTALL' status='WARN'" \
+                  "message='vdsm daemon is already down before we" \
+                  " stop it for upgrade.'/>"
+
+    logging.debug(msg)
+    print(msg)
+
     try:
         config.read(VDSM_REG_CONF_FILE)
 
