@@ -904,8 +904,9 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         # only on most top device according to following order:
         # bridge -> vlan -> bond -> nic
         # For lower level devices we should ignore it.
-        # reset ip, netmask, gateway for lower level devices
-        ipaddr = netmask = gateway = None
+        # reset ip, netmask, gateway and bootproto for lower level devices
+        bridgeBootproto = options.get('bootproto')
+        ipaddr = netmask = gateway = options['bootproto'] = None
 
     # For VLAN we should attach bridge only to the VLAN device
     # rather than to underlying NICs or bond
@@ -923,8 +924,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                              ipaddr=ipaddr, netmask=netmask,
                              gateway=gateway, **options)
         iface += '.' + vlan
-        # reset ip, netmask, gateway for lower level devices
-        ipaddr = netmask = gateway = None
+        # reset ip, netmask, gateway and bootproto for lower level devices
+        ipaddr = netmask = gateway = options['bootproto'] = None
 
     # First we need to prepare all conf files
     if bonding:
@@ -933,8 +934,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 mtu=max(prevmtu, mtu),
                                 ipaddr=ipaddr, netmask=netmask,
                                 gateway=gateway, **options)
-        # reset ip, netmask, gateway for lower level devices
-        ipaddr = netmask = gateway = None
+        # reset ip, netmask, gateway and bootproto for lower level devices
+        ipaddr = netmask = gateway = options['bootproto'] = None
 
     for nic in nics:
         configWriter.addNic(nic, bonding=bonding,
@@ -957,7 +958,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         ifup(iface)
 
     if bridged:
-        if options.get('bootproto') == 'dhcp' and \
+        if bridgeBootproto == 'dhcp' and \
            not utils.tobool(options.get('blockingdhcp')):
             # wait for dhcp in another thread,
             # so vdsm won't get stuck (BZ#498940)
