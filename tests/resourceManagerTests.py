@@ -599,7 +599,7 @@ class ResourceManagerTests(TestCaseBase):
         requests = []
 
         procLimit, _ = getrlimit(RLIMIT_NPROC)
-        procLimit *= 0.75
+        procLimit *= 0.5
         procLimit = int(procLimit)
         threadLimit = threading.Semaphore(procLimit)
         nthreads = procLimit
