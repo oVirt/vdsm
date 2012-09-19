@@ -1284,7 +1284,7 @@ class HSM:
             # intended to quickly fix the integration issue with rhev-m. In 2.3
             # we should use the new resource system to synchronize the process
             # an eliminate all race conditions
-            self._spmSchedule(spUUID, "deleteImage", lambda : True)
+            self._spmSchedule(spUUID, "deleteImage_%s" % imgUUID, lambda : True)
 
 
     def validateImageMove(self, srcDom, dstDom, imgUUID):
@@ -1339,7 +1339,7 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._spmSchedule(spUUID, "moveImage", pool.moveImage, srcDomUUID,
+        self._spmSchedule(spUUID, "moveImage_%s" % imgUUID, pool.moveImage, srcDomUUID,
                     dstDomUUID, imgUUID, vmUUID, op, misc.parseBool(postZero),
                     misc.parseBool(force)
         )
@@ -1415,7 +1415,7 @@ class HSM:
         for dom in domains:
             vars.task.getSharedLock(STORAGE, dom)
 
-        self._spmSchedule(spUUID, "copyImage", pool.copyImage,
+        self._spmSchedule(spUUID, "copyImage_%s" % dstImgUUID, pool.copyImage,
             sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
             dstVolUUID, description, dstSdUUID, volType, volFormat,
             preallocate, misc.parseBool(postZero), misc.parseBool(force)
