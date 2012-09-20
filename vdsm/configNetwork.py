@@ -898,6 +898,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     nic = nics[0] if nics else None
     iface = bonding or nic
+    blockingDhcp = utils.tobool(options.get('blockingdhcp'))
 
     # take down nics that need to be changed
     vlanedIfaces = [v['iface'] for v in _netinfo.vlans.values()]
@@ -934,6 +935,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                              ipaddr=ipaddr, netmask=netmask,
                              gateway=gateway, **options)
         iface += '.' + vlan
+        vlanBootproto = options.get('bootproto')
         # reset ip, netmask, gateway and bootproto for lower level devices
         ipaddr = netmask = gateway = options['bootproto'] = None
 
@@ -944,6 +946,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 mtu=max(prevmtu, mtu),
                                 ipaddr=ipaddr, netmask=netmask,
                                 gateway=gateway, **options)
+        bondBootproto = options.get('bootproto')
         # reset ip, netmask, gateway and bootproto for lower level devices
         ipaddr = netmask = gateway = options['bootproto'] = None
 
@@ -956,21 +959,19 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     # Now we can run ifup for all interfaces
     if bonding:
-        ifup(bonding)
+        ifup(bonding, bondBootproto == 'dhcp' and not blockingDhcp)
 
     # NICs must be activated in the same order of boot time
     # to expose the correct MAC address.
     for nic in nicSort(nics):
-        ifup(nic)
+        ifup(nic, options.get('bootproto') == 'dhcp' and not blockingDhcp)
 
     # Now we can ifup VLAN interface, because bond and nic already up
     if vlan:
-        ifup(iface)
+        ifup(iface, vlanBootproto == 'dhcp' and not blockingDhcp)
 
     if bridged:
-        ifup(network,
-             async=bridgeBootproto == 'dhcp' and
-                   not utils.tobool(options.get('blockingdhcp')))
+        ifup(network, bridgeBootproto == 'dhcp' and not blockingDhcp)
 
     # add libvirt network
     configWriter.createLibvirtNetwork(network, bridged, iface)
