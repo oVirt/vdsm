@@ -408,6 +408,9 @@ make check
 rm -rf %{buildroot}
 
 %pre
+# Force standard locale behavior (English)
+export LC_ALL=C
+
 /usr/bin/getent passwd %{vdsm_user} >/dev/null || \
     /usr/sbin/useradd -r -u 36 -g %{vdsm_group} -d /var/lib/vdsm \
         -s /sbin/nologin -c "Node Virtualization Manager" %{vdsm_user}
@@ -419,6 +422,7 @@ rm -rf %{buildroot}
 virtNFS=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_nfs | cut -d ',' -f 2)
 virtSANLOCK=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_sanlock | cut -d ',' -f 2)
 
+# Set the booleans and persist it across reboots
 if [[ "${virtNFS}" == *off* || "${virtSANLOCK}" == *off* ]]; then
     /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
 virt_use_nfs=1
@@ -426,6 +430,7 @@ virt_use_sanlock=1
 _EOF
 fi
 
+# Set the current state of SELinux booleans
 if /usr/sbin/selinuxenabled; then
     /usr/sbin/setsebool virt_use_nfs on
     /usr/sbin/setsebool virt_use_sanlock on
