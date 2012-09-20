@@ -329,18 +329,23 @@ def getMachineUUID():
     """
         This function parses the DMI data for the host's UUID. If not found, returns "None".
     """
-    strReturn = "None"
+    arch = platform.machine()
+    if arch == 'x86_64':
+        out, err, ret = _logExec([EX_DMIDECODE, "-s", "system-uuid"])
+        out = '\n'.join( line for line in out.splitlines()
+                         if not line.startswith('#') )
 
-    out, err, ret = _logExec([EX_DMIDECODE, "-s", "system-uuid"])
-    out = '\n'.join( line for line in out.splitlines()
-                     if not line.startswith('#') )
+        # Avoid error string- 'Not Settable' or 'Not Present'
+        if ret == 0 and "Not" not in out:
+            return out.replace ("\n", "")
+    elif arch == "ppc64":
+        if os.path.exists('/proc/device-tree/system-id'):
+            #eg. output IBM,03061C14A
+            return file('/proc/device-tree/system-id').readline().replace(",","")
 
-    if ret == 0 and "Not" not in out: #Avoid error string- 'Not Settable' or 'Not Present'
-        strReturn = out.replace ("\n", "")
-    else:
-        logging.error("getMachineUUID: Could not find machine's UUID.")
+    logging.error("getMachineUUID: Could not find machine's UUID.")
 
-    return strReturn
+    return "None"
 
 def getMacs():
 
@@ -1394,17 +1399,33 @@ def _svm_enabled_by_bios():
         return 0
     return 1
 
+
+def _check_kvm_support_on_power():
+    for line in file('/proc/cpuinfo').readlines():
+        if ':' in line:
+            k, v = line.split(':', 1)
+            k = k.strip()
+            v = v.strip()
+        if k == 'platform':
+            if 'powernv' in v.lower():
+                return 1
+
+    return 0
+
+
 def cpuVendorID():
     for line in file('/proc/cpuinfo').readlines():
         if ':' in line:
             k, v = line.split(':', 1)
             k = k.strip()
             v = v.strip()
-        if k == 'vendor_id':
+        if k == 'vendor_id' or k == 'cpu':
             if v == 'GenuineIntel':
                 return v
             elif v == 'AuthenticAMD':
                 return v
+            elif 'power' in v.lower():
+                return 'IBM_POWER'
     return ''
 
 def virtEnabledInCpuAndBios():
@@ -1418,6 +1439,10 @@ def virtEnabledInCpuAndBios():
         elif vendor == 'AuthenticAMD':
             bios_en = _svm_enabled_by_bios();
             has_cpu = _cpu_has_svm_support();
+        elif vendor == 'IBM_POWER':
+            if _check_kvm_support_on_power():
+                bios_en = 1;
+                has_cpu = 1;
         else:
             return False
 

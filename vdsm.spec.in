@@ -65,8 +65,12 @@ Requires: ntp
 Requires: iproute
 Requires: python-ethtool
 Requires: rpm-python
-Requires: nfs-utils dmidecode
+Requires: nfs-utils
 Requires: lvm2 >= 2.02.95
+
+%ifarch x86_64
+Requires: dmidecode
+%endif
 
 %if 0%{?rhel}
 Requires: python

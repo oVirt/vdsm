@@ -360,8 +360,13 @@ class Deploy:
 
             if "GenuineIntel" == deployUtil.cpuVendorID():
                 self.res = "Intel"
-            else:
+            elif "AuthenticAMD" == deployUtil.cpuVendorID():
                 self.res = "AMD"
+            elif "IBM_POWER" == deployUtil.cpuVendorID():
+                self.res = "IBM"
+            else:
+                self.res = "Unknown"
+                logging.error("Unable to get CPU Vendor ID")
 
         if self.vt_svm is None:
             self.vt_svm = "NA"
