@@ -60,10 +60,20 @@ def ifdown(iface):
     return rc
 
 
-def ifup(iface):
+def ifup(iface, async=False):
     "Bring up an interface"
-    rc, out, err = execCmd([constants.EXT_IFUP, iface], raw=True)
-    return rc
+    _ifup = lambda netIf: execCmd([constants.EXT_IFUP, netIf], raw=True)
+
+    if async:
+        # wait for dhcp in another thread,
+        # so vdsm won't get stuck (BZ#498940)
+        t = threading.Thread(target=_ifup, name='ifup-waiting-on-dhcp',
+                             args=(iface,))
+        t.daemon = True
+        t.start()
+    else:
+        rc, out, err = _ifup(iface)
+        return rc
 
 
 def ifaceUsers(iface):
@@ -958,16 +968,9 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         ifup(iface)
 
     if bridged:
-        if bridgeBootproto == 'dhcp' and \
-           not utils.tobool(options.get('blockingdhcp')):
-            # wait for dhcp in another thread,
-            # so vdsm won't get stuck (BZ#498940)
-            t = threading.Thread(target=ifup, name='ifup-waiting-on-dhcp',
-                                 args=(network,))
-            t.daemon = True
-            t.start()
-        else:
-            ifup(network)
+        ifup(network,
+             async=bridgeBootproto == 'dhcp' and
+                   not utils.tobool(options.get('blockingdhcp')))
 
     # add libvirt network
     configWriter.createLibvirtNetwork(network, bridged, iface)
