@@ -229,7 +229,7 @@ class NFSConnection(object):
 
     @property
     def version(self):
-        if self._version is not None:
+        if self._version != 'auto':
             return self._version
 
         # Version was not specified but if we are connected we can figure out
@@ -249,16 +249,15 @@ class NFSConnection(object):
         return -1
 
 
-    def __init__(self, export, timeout=600, retrans=6, version=None):
+    def __init__(self, export, timeout=600, retrans=6, version=3):
         self._remotePath = normpath(export)
-        self._version = version
         options = self.DEFAULT_OPTIONS[:]
         self._timeout = timeout
         self._version = version
         self._retrans = retrans
         _addIntegerOption(options, "timeo", timeout)
         _addIntegerOption(options, "retrans", retrans)
-        if version:
+        if version != 'auto':
             _addIntegerOption(options, "vers", version)
 
         self._mountCon = MountConnection(export, "nfs", ",".join(options))
