@@ -50,6 +50,7 @@ test_modules = \
 	storageMailboxTests.py \
 	superVdsmTests.py \
 	tcTests.py \
+	utilsTests.py \
 	vdsClientTests.py \
 	volumeTests.py \
 	zombieReaperTests.py \

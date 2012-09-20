@@ -910,7 +910,7 @@ class CommandPath(object):
 
 
 def retry(func, expectedException=Exception, tries=None,
-          timeout=None, sleep=1):
+          timeout=None, sleep=1, stopCallback=None):
     """
     Retry a function. Wraps the retry logic so you don't have to
     implement it each time you need it.
@@ -923,6 +923,9 @@ def retry(func, expectedException=Exception, tries=None,
                     the method. It will just not run it if it ended after the
                     timeout.
     :param sleep: Time to sleep between calls in seconds.
+    :param stopCallback: A function that takes no parameters and causes the
+                         method to stop retrying when it returns with a
+                         positive value.
     """
     if tries in [0, None]:
         tries = -1
@@ -941,6 +944,9 @@ def retry(func, expectedException=Exception, tries=None,
                 raise
 
             if (timeout > 0) and ((time.time() - startTime) > timeout):
+                raise
+
+            if stopCallback is not None and stopCallback():
                 raise
 
             time.sleep(sleep)
