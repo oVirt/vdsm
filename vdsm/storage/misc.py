@@ -201,7 +201,9 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     p = AsyncProc(p)
     if not sync:
         if data is not None:
-            p.stdout.write(data)
+            p.stdin.write(data)
+            p.stdin.flush()
+
         return p
 
     (out, err) = p.communicate(data)

@@ -352,6 +352,13 @@ class AsyncProcTests(TestCaseBase):
         self.assertTrue(duration > (ttl))
         p.kill()
 
+    def testCommunicate(self):
+        data = ("The trouble with the world is that the stupid are cocksure "
+                "and the intelligent are full of doubt")
+        p = misc.execCmd(["dd"], data=data, sudo=False, sync=False)
+        p.stdin.close()
+        self.assertEquals(p.stdout.read(len(data)).strip(), data)
+
 
 class DdWatchCopy(TestCaseBase):
     def testNonAlignedCopy(self, sudo=False):
