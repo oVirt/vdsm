@@ -70,6 +70,8 @@ P_VDSM_LIBVIRT_PASSWD = P_VDSM_KEYS + 'libvirt_password'
 
 P_VDSM_CLIENT_LOG = '@VDSMRUNDIR@/client.log'
 P_VDSM_LOG = '@VDSMLOGDIR@'
+P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
+
 
 #
 # External programs (sorted, please keep in order).

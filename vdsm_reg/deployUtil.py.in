@@ -51,6 +51,7 @@ P_ETC_INITD = '/etc/init.d/'
 P_LIB_SYSTEMD = '/lib/systemd/systemd-'
 P_ROOT_SSH = pwd.getpwnam('root').pw_dir + '/.ssh'
 P_ROOT_AUTH_KEYS = P_ROOT_SSH + '/authorized_keys'
+P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
 P_SBIN = '/sbin/'
 P_USR_BIN = '/usr/bin/'
 P_USR_SBIN = '/usr/sbin/'
@@ -370,20 +371,28 @@ def getHostID():
     """
         This function concatenate the first serted mac address to the machine's UUID.
     """
-    strReturn = getMachineUUID()
+    strReturn = "None"
 
-    macs = getMacs()
-
-    if len(macs) > 0:
-        strMAC = sorted(macs)[0]
+    if os.path.exists(P_VDSM_NODE_ID):
+        if isOvirt():
+            ovirtfunctions.ovirt_store_config(P_VDSM_NODE_ID)
+        with open(P_VDSM_NODE_ID) as f:
+            strReturn = f.readline().replace("\n", "")
     else:
-        strMAC = ""
-        logging.warning("getHostID: Could not find machine's MAC, returning UUID only.")
+        strReturn = getMachineUUID()
 
-    if strReturn != "None":
-        strReturn += "_" + strMAC
-    else:
-        strReturn = "_" + strMAC
+        macs = getMacs()
+
+        if len(macs) > 0:
+            strMAC = sorted(macs)[0]
+        else:
+            strMAC = ""
+            logging.warning("getHostID: Could not find machine's MAC, returning UUID only.")
+
+        if strReturn != "None":
+            strReturn += "_" + strMAC
+        else:
+            strReturn = "_" + strMAC
 
     logging.debug("getHostID: " + str(strReturn))
     return strReturn

@@ -215,6 +215,9 @@ def update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket):
         logging.error(traceback.format_exc())
         return False
 
+    if os.path.exists(deployUtil.P_VDSM_NODE_ID):
+        deployUtil.ovirtfunctions.ovirt_store_config(deployUtil.P_VDSM_NODE_ID)
+
     return_value = False
     if not os.path.exists(vdsm_reg_conf_file):
         message = "Error trying to configure registration service."

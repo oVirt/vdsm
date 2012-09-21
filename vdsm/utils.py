@@ -697,30 +697,34 @@ def getHostUUID():
     __hostUUID = 'None'
 
     try:
-        p = subprocess.Popen([constants.EXT_SUDO,
-                              constants.EXT_DMIDECODE, "-s", "system-uuid"],
-                             close_fds=True, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        out = '\n'.join( line for line in out.splitlines()
-                         if not line.startswith('#') )
-
-        if p.returncode == 0 and 'Not' not in out:
-            #Avoid error string - 'Not Settable' or 'Not Present'
-            __hostUUID = out.strip()
+        if os.path.exists(constants.P_VDSM_NODE_ID):
+            with open(constants.P_VDSM_NODE_ID) as f:
+                __hostUUID = f.readline().replace("\n", "")
         else:
-            logging.warning('Could not find host UUID.')
+            p = subprocess.Popen([constants.EXT_SUDO,
+                                  constants.EXT_DMIDECODE, "-s", "system-uuid"],
+                                 close_fds=True, stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            out = '\n'.join( line for line in out.splitlines()
+                             if not line.startswith('#') )
 
-        try:
-            mac = sorted(_getAllMacs())[0]
-        except:
-            mac = ""
-            logging.warning('Could not find host MAC.', exc_info=True)
+            if p.returncode == 0 and 'Not' not in out:
+                #Avoid error string - 'Not Settable' or 'Not Present'
+                __hostUUID = out.strip()
+            else:
+                logging.warning('Could not find host UUID.')
 
-        if __hostUUID != "None":
-            __hostUUID += "_" + mac
-        else:
-            __hostUUID = "_" + mac
+            try:
+                mac = sorted(_getAllMacs())[0]
+            except:
+                mac = ""
+                logging.warning('Could not find host MAC.', exc_info=True)
+
+            if __hostUUID != "None":
+                __hostUUID += "_" + mac
+            else:
+                __hostUUID = "_" + mac
     except:
         logging.error("Error retrieving host UUID", exc_info=True)
 
