@@ -44,8 +44,9 @@ NFS_OPTIONS = "".join(config.get('irs', 'nfs_mount_options').split())
 
 log = logging.getLogger('fileUtils')
 
-PAGESIZE = libc.getpagesize()
 CharPointer = ctypes.POINTER(ctypes.c_char)
+
+_PC_REC_XFER_ALIGN = 17
 
 
 class TarCopyFailed(RuntimeError):
@@ -78,7 +79,8 @@ def isStaleHandle(path):
         os.listdir(path)
     except OSError as ex:
         if ex.errno in (errno.EIO, errno.ESTALE):
-            return  True
+            return True
+
         # We could get contradictory results because of
         # soft mounts
         if (exists or st) and ex.errno == errno.ENOENT:
@@ -293,7 +295,8 @@ class DirectFile(object):
         ppbuff = ctypes.pointer(pbuff)
         # Because we usually have fixed sizes for our reads, caching
         # buffers might give a slight performance boost.
-        rc = libc.posix_memalign(ppbuff, PAGESIZE, size)
+        alignment = libc.fpathconf(self.fileno(), _PC_REC_XFER_ALIGN)
+        rc = libc.posix_memalign(ppbuff, alignment, size)
         if rc:
             raise OSError(rc, "Could not allocate aligned buffer")
         try:
