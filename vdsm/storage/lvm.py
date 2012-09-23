@@ -861,7 +861,7 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
 def removeVG(vgName):
     cmd = ["vgremove", "-f", vgName]
     rc, out, err = _lvminfo.cmd(cmd)
-    pvs = tuple(pv for pv in _lvminfo._pvs.iterkeys()
+    pvs = tuple(pvName for pvName, pv in _lvminfo._pvs.iteritems()
                 if not isinstance(pv, Stub) and pv.vg_name == vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
     # if vg remove failed, something must be wrong with devices and we want
