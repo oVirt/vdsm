@@ -76,6 +76,7 @@ Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 Requires: kernel >= 2.6.32-265
 Requires: sanlock >= 2.3-4, sanlock-python
+Requires: initscripts >= 9.03.31-2.el6_3.1
 %else
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
