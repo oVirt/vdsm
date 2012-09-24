@@ -35,6 +35,7 @@ import time
 import signal
 import types
 import math
+import stat
 
 from vdsm.config import config
 import sp
@@ -1649,14 +1650,23 @@ class HSM:
                   boolean
         :rtype: dict
         """
-        import stat
-        def devVisible(guid):
+        def _isVisible(guid):
             try:
                 res = os.stat('/dev/mapper/' + guid).st_mode & stat.S_IRUSR != 0
             except:
                 res = False
             return res
-        return {'visible' : dict(zip(guids, map(devVisible, guids)))}
+
+        visibility = {}
+        scanned = False
+        for guid in guids:
+            visible = _isVisible(guid)
+            if not scanned and not visible:
+                iscsi.forceIScsiScan()
+                scanned = True
+                visible = _isVisible(guid)
+            visibility[guid] = visible
+        return {'visible' : visibility}
 
 
     @public
