@@ -419,6 +419,7 @@ start_libvirtd() {
 
     if ! libvirt_should_use_upstart; then
         /sbin/service libvirtd start
+        await_libvirt_start_workaround
         return
     fi
 
