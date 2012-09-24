@@ -2444,13 +2444,19 @@ class HSM:
 
     #TODO: Remove this  function when formatStorageDomain() is removed.
     def _recycle(self, dom):
+        sdUUID = dom.sdUUID
         try:
-            sdCache.manuallyRemoveDomain(dom.sdUUID)
-        except KeyError:
-            self.log.warn("Storage domain %s doesn't exist in cache. Trying "
-                          "recycle leftovers ...", dom.sdUUID)
-
-        dom.format(dom.sdUUID)
+            dom.format(dom.sdUUID)
+            # dom is a DomainProxy, attribute operations will trigger the
+            # domain added to sdCache again. Delete the local variable binding
+            # here to avoid visiting its attribute accidentally.
+            del dom
+        finally:
+            try:
+                sdCache.manuallyRemoveDomain(sdUUID)
+            except KeyError:
+                self.log.warn("Storage domain %s doesn't exist in cache. "
+                              "Leftovers are recycled.", sdUUID)
 
     @public
     def formatStorageDomain(self, sdUUID, autoDetach=False, options=None):
