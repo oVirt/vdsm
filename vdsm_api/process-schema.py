@@ -32,7 +32,7 @@ html_escape_table = {
     }
 
 # Symbols of these types are considered data types
-typeKinds = ('type', 'enum', 'map', 'union', 'alias')
+typeKinds = ('class', 'type', 'enum', 'map', 'union', 'alias')
 
 def read_symbol_comment(f, symbols):
     """
@@ -97,7 +97,7 @@ def read_symbol_comment(f, symbols):
 
     # Find the already processed symbol information
     symbol = find_symbol(symbols, name)
-    symbol.update({'name': name, 'info_data': {}, 'info_return': {},
+    symbol.update({'name': name, 'info_data': {}, 'info_return': '',
                    'xxx': []})
 
     # Pop a blank line
@@ -134,7 +134,7 @@ def read_symbol_comment(f, symbols):
         elif line.startswith('Notes:'):
             mode = 'notes'
             symbol['notes'] = line[6:]
-        elif mode in ('info_data', 'info_return'):
+        elif mode == 'info_data':
             # Try to read a parameter or return value
             m = re.search('^\@(.*?):\s*(.*)', line)
             if m:
@@ -145,6 +145,8 @@ def read_symbol_comment(f, symbols):
             else:
                 # Just append it to the last one we added
                 symbol[mode][last_arg] += ' ' + line
+        elif mode == 'info_return':
+            symbol[mode] += line if symbol[mode] else ' ' + line
         else:
             raise ValueError("Line not valid: %s" % line)
 
@@ -262,10 +264,9 @@ def write_symbol(f, s):
 
     if 'command' in s and 'returns' in s:
         # Command return value(s)
-        names = strip_stars(s.get('returns', {}).keys())
-        types = filter_types(s.get('returns', {}).values())
-        details = [s['info_return'][n] for n in names]
-        attr_table('Returns', names, types, details)
+        types = filter_types([s.get('returns')])
+        detail = [s['info_return']]
+        attr_table('Returns', [''], types, detail)
 
     if 'notes' in s:
         f.write('Notes:\n<ul>\n')

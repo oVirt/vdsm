@@ -74,7 +74,7 @@
 # Since: 4.10.0
 ##
 {'type': 'NetworkOptions',
- 'data': {'*ipaddr', 'str', '*netmask': 'str', '*gateway': 'str',
+ 'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
           '*bootproto': 'str', '*delay': 'uint', '*onboot': 'str',
           '*bondingOptions', 'str'}}
 
@@ -445,6 +445,7 @@
 # Set MOM policy for different level of overcommitments.
 #
 # @policy:  MOM policy string.
+#
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'setMOMPolicy'},
@@ -455,19 +456,19 @@
 #
 # A collection of information about a task.
 #
-# @id:       The task @UUID
+# @id:          The task @UUID
 #
-# @verb:     The underlying operation to be performed by the task
+# @verb:        The underlying operation to be performed by the task
 #
-# @state:    Current task state (@TaskState)
+# @state:       Current task state (@TaskState)
 #
-# @code:     Return code from the underlying task verb
+# @code:        Return code from the underlying task verb
 #
-# @message:  Detailed error message from the underlying task verb
+# @message:     Detailed error message from the underlying task verb
 #
-# @result:   Final task result (@TaskResult)
+# @taskResult:  Final task result (@TaskResult)
 #
-# @tag:     The tag assigned to the task
+# @tag:         The tag assigned to the task
 #
 # Since: 4.10.0
 ##
@@ -3744,6 +3745,8 @@
 # @info:     Storage Pool information
 #
 # @dominfo:  Information about active Storage Domains
+#
+# Since: 4.10.0
 ##
 {'type': 'StoragePoolFullInfo',
  'data': {'info': 'StoragePoolInfo', 'dominfo': 'StoragePoolDomainInfoMap'}}
@@ -4819,6 +4822,8 @@
 # @migrationPort:  The port used for migration (currently always 0)
 #
 # @params:         The VM status
+#
+# Since: 4.10.0
 ##
 {'type': 'MigrationCreateState',
  'data': {'migrationPort': 'int', 'params': 'VmFullStatus'}}
