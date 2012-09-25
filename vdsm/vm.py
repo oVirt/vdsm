@@ -58,7 +58,11 @@ def isVdsmImage(drive):
 class Device(object):
     def __init__(self, conf, log, **kwargs):
         for attr, value in kwargs.iteritems():
-            setattr(self, attr, value)
+            try:
+                setattr(self, attr, value)
+            except AttributeError:
+                # skip read-only properties
+                pass
         self.conf = conf
         self.log = log
 
