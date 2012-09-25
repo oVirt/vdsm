@@ -542,7 +542,7 @@ if [ "$1" -eq 1 ] ; then
 fi
 %else
 if [ "$1" -eq 1 ] ; then
-    /bin/systemctl enable vdsmd-reg.service >/dev/null 2>&1 || :
+    /bin/systemctl enable vdsm-reg.service >/dev/null 2>&1 || :
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
@@ -557,8 +557,8 @@ then
 fi
 %else
 if [ "$1" -eq 0 ]; then
-    /bin/systemctl --no-reload disable vdsmd-reg.service > /dev/null 2>&1 || :
-    /bin/systemctl stop vdsmd-reg.service > /dev/null 2>&1 || :
+    /bin/systemctl --no-reload disable vdsm-reg.service > /dev/null 2>&1 || :
+    /bin/systemctl stop vdsm-reg.service > /dev/null 2>&1 || :
 fi
 exit 0
 %endif
