@@ -402,8 +402,8 @@ await_libvirt_start_workaround() {
 
     for i in {1..50}
     do
-        if pgrep libvirtd > /dev/null 2>&1;
-        then
+        if [ -S /var/run/libvirt/libvirt-sock ] &&
+                pgrep libvirtd > /dev/null 2>&1; then
             return 0
         fi
         sleep 0.2
