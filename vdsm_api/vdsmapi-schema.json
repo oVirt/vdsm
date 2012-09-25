@@ -493,7 +493,7 @@
 # Get all information about all tasks.
 #
 # Returns:
-# @tasks:  A mapping of task information
+# A mapping of task information
 #
 # Since: 4.10.0
 #
