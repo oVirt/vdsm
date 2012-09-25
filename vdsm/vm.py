@@ -260,7 +260,8 @@ class Vm(object):
     its behaviour.
     """
     log = logging.getLogger("vm.Vm")
-    _ongoingCreations = threading.BoundedSemaphore(caps.CpuInfo().cores())
+    # limit threads number until the libvirt lock will be fixed
+    _ongoingCreations = threading.BoundedSemaphore(4)
     MigrationSourceThreadClass = MigrationSourceThread
 
     def __init__(self, cif, params):
