@@ -1077,10 +1077,11 @@ def versionCompare(pkg1, pkg2):
 
 def yumCleanCache():
     """
-        Clean yum's current cache.
+        Make sure that yum cache is valid. This function makes yum revalidate
+        the cache for each repo next time it is used.
     """
     fReturn = False
-    out, err, ret = _logExec([EX_YUM, "clean", "all"] )
+    out, err, ret = _logExec([EX_YUM, "clean", "expire-cache"] )
     if not ret:
         fReturn = True
 
