@@ -133,6 +133,7 @@ EXTRA_DIST = \
 	vdsmd.service \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
+	vdsm-libvirt-access.rules \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf.in \

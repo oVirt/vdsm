@@ -1,0 +1,8 @@
+# VDSM libvirt management permissions
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.libvirt.unix.manage" &&
+        subject.user == "vdsm") {
+        return polkit.Result.YES;
+    }
+});

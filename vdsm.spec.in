@@ -11,7 +11,11 @@
 %global snlk_user @SNLKUSER@
 
 # Required paths
+%if 0%{?fedora} >= 18
+%global _polkitdir %{_datadir}/polkit-1/rules.d
+%else
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
+%endif
 
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
@@ -398,9 +402,15 @@ install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
                  %{buildroot}%{_unitdir}/vdsm-reg.service
+
 # Install the polkit for libvirt
+%if 0%{?fedora} >= 18
+install -Dm 0644 vdsm/vdsm-libvirt-access.rules \
+                 %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.rules
+%else
 install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
                  %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.pkla
+%endif
 %endif
 
 %check
@@ -706,7 +716,11 @@ exit 0
 %if 0%{?rhel}
 %dir %{_localstatedir}/log/core
 %else
+%if 0%{?fedora} >= 18
+%{_polkitdir}/10-vdsm-libvirt-access.rules
+%else
 %{_polkitdir}/10-vdsm-libvirt-access.pkla
+%endif
 %endif
 
 %defattr(-, %{vdsm_user}, %{qemu_group}, -)
