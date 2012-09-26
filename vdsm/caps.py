@@ -178,6 +178,7 @@ def _getIscsiIniName():
     return ''
 
 
+@utils.memoized
 def getos():
     if os.path.exists('/etc/rhev-hypervisor-release'):
         return OSName.RHEVH
