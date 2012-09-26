@@ -125,18 +125,15 @@ def _getCpuTopology(capabilities):
 
 
 @utils.memoized
-def _getEmulatedMachines():
-    caps = minidom.parseString(_getCapsXMLStr())
-    guestTag = caps.getElementsByTagName('guest')
-    # Guest element is missing if kvm modules are not loaded
-    if len(guestTag) == 0:
-        return []
-
-    guestTag = guestTag[0]
-
-    return [m.firstChild.toxml()
-            for m in guestTag.getElementsByTagName('machine')]
-
+def _getEmulatedMachines(capabilities=None):
+    if capabilities is None:
+        capabilities = _getCapsXMLStr()
+    caps = minidom.parseString(capabilities)
+    for archTag in caps.getElementsByTagName('arch'):
+        if archTag.getAttribute('name') == 'x86_64':
+            return [m.firstChild.data for m in archTag.childNodes
+                    if m.nodeName == 'machine']
+    return []
 
 def _getAllCpuModels():
     cpu_map = minidom.parseString(

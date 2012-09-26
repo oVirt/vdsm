@@ -61,6 +61,16 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.cores(), 12)
         self.assertEqual(t.sockets(), 2)
 
+    def testEmulatedMachines(self):
+        testPath = os.path.realpath(__file__)
+        dirName = os.path.split(testPath)[0]
+        path = os.path.join(dirName, "caps_libvirt.out")
+        machines = caps._getEmulatedMachines(file(path).read())
+        expectedMachines = ['pc-1.2', 'none', 'pc', 'pc-1.1', 'pc-1.0',
+                            'pc-0.15', 'pc-0.14', 'pc-0.13', 'pc-0.12', 'pc-0.11',
+                            'pc-0.10', 'isapc']
+        self.assertEqual(machines, expectedMachines)
+
     def test_parseKeyVal(self):
         lines = ["x=&2", "y& = 2", " z = 2 ", " s=3=&'5", " w=", "4&"]
         expectedRes = [{'x': '&2', 'y&': '2', 'z': '2', 's': "3=&'5", 'w': ''},
