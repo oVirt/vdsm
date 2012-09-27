@@ -120,15 +120,12 @@ check-local:
 		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES)
 	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' \
 		$(PEP8_WHITELIST)
-
-	[ -f .gitignore ] || exit 0;                                    \
-	gitignore=`mktemp`;                                             \
-	lsfiles=`mktemp`;                                               \
-	LC_ALL=C sort .gitignore > "$$gitignore";                       \
-	git ls-files '*.py.in' | sed 's/\.in$$//' |                     \
-	LC_ALL=C sort > "$$lsfiles";                                    \
-	LC_ALL=C comm -1 -3 "$$gitignore" "$$lsfiles" |                 \
-	grep . && exit 1 || exit 0
+	@if test -f .gitignore; then \
+	  for i in `git ls-files \*.in`; do \
+	    if ! grep -q -x $${i%%.in} .gitignore; then \
+	      echo "Missing $${i%%.in} in .gitignore"; exit 1; fi; \
+	  done; \
+	fi;
 
 all-local: \
 	vdsm.spec
