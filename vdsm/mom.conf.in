@@ -25,7 +25,7 @@ hypervisor-interface: VDSM
 policy-engine-interval: 10
 
 # A comma-separated list of Controller plugins to enable
-controllers: KSM
+controllers: Balloon, KSM
 
 # Sets the maximum number of statistic samples to keep for the purpose of
 # calculating moving averages.
