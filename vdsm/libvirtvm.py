@@ -2487,7 +2487,10 @@ class LibvirtVm(vm.Vm):
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             model = x.getElementsByTagName('model')[0].getAttribute('type')
-            bridge = x.getElementsByTagName('source')[0].getAttribute('bridge')
+            bridge = None
+            source = x.getElementsByTagName('source')
+            if source:
+                bridge = source[0].getAttribute('bridge')
             # Get nic address
             address = self._getUnderlyingDeviceAddress(x)
             for nic in self._devices[vm.NIC_DEVICES]:
@@ -2505,13 +2508,15 @@ class LibvirtVm(vm.Vm):
                     knownDev = True
             # Add unknown nic device to vm's conf
             if not knownDev:
-                self.conf['devices'].append({'type': vm.NIC_DEVICES,
-                                             'device': devType,
-                                             'macAddr': mac,
-                                             'nicModel': model,
-                                             'network': bridge,
-                                             'address': address,
-                                             'alias': alias})
+                nicDev = {'type': vm.NIC_DEVICES,
+                          'device': devType,
+                          'macAddr': mac,
+                          'nicModel': model,
+                          'address': address,
+                          'alias': alias}
+                if bridge:
+                    nicDev['network'] = bridge
+                self.conf['devices'].append(nicDev)
 
     def _setWriteWatermarks(self):
         """
