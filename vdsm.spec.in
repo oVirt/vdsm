@@ -433,12 +433,15 @@ export LC_ALL=C
 # The next lines will collect the default selinux behaviour for the booleans
 virtNFS=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_nfs | cut -d ',' -f 2)
 virtSANLOCK=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_sanlock | cut -d ',' -f 2)
+snlkNFS=$(/usr/sbin/semanage boolean -l | /bin/grep sanlock_use_nfs | cut -d ',' -f 2)
 
 # Set the booleans and persist it across reboots
-if [[ "${virtNFS}" == *off* || "${virtSANLOCK}" == *off* ]]; then
+if [[ "${virtNFS}" == *off* || "${virtSANLOCK}" == *off* || \
+      "${snlkNFS}" == *off* ]]; then
     /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
 virt_use_nfs=1
 virt_use_sanlock=1
+sanlock_use_nfs=1
 _EOF
 fi
 
@@ -446,6 +449,7 @@ fi
 if /usr/sbin/selinuxenabled; then
     /usr/sbin/setsebool virt_use_nfs on
     /usr/sbin/setsebool virt_use_sanlock on
+    /usr/sbin/setsebool sanlock_use_nfs on
 fi
 
 %post
@@ -496,11 +500,13 @@ then
     /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
 virt_use_nfs=0
 virt_use_sanlock=0
+sanlock_use_nfs=0
 _EOF
 
     if /usr/sbin/selinuxenabled; then
         /usr/sbin/setsebool virt_use_nfs off
         /usr/sbin/setsebool virt_use_sanlock off
+        /usr/sbin/setsebool sanlock_use_nfs off
     fi
 
     /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@ovirt
