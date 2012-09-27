@@ -208,7 +208,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
 
     (out, err) = p.communicate(data)
 
-    if out == None:
+    if out is None:
         # Prevent splitlines() from barfing later on
         out = ""
 
@@ -644,7 +644,7 @@ class RWLock(object):
 
         # Handle reacquiring lock in the same thread
         if currentThread in self._holdingThreads:
-            if self._currentState == False and exclusive:
+            if self._currentState is False and exclusive:
                 raise RuntimeError("Lock promotion is forbidden.")
 
             self._holdingThreads[currentThread] += 1
@@ -1015,7 +1015,7 @@ class SamplingMethod(object):
         self.__funcParent = None
 
     def __call__(self, *args, **kwargs):
-        if self.__funcParent == None:
+        if self.__funcParent is None:
             if (hasattr(self.__func, "func_code") and
                     self.__func.func_code.co_varnames == 'self'):
                 self.__funcParent = args[0].__class__.__name__
@@ -1155,7 +1155,7 @@ class Event(object):
                         continue
                 try:
                     self._log.debug("Calling registered method `%s`",
-                            func.func_name if hasattr(func, "func_name") \
+                            func.func_name if hasattr(func, "func_name")
                                     else str(func))
                     if self._sync:
                         func(*args, **kwargs)
