@@ -725,16 +725,35 @@ def _setVgAvailability(vgs, available):
                 "vgchange on vg(s) %s failed. %d %s %s" % (vgs, rc, out, err))
 
 
-def changelv(vg, lvs, attrName, attrValue):
-    # Note:
-    # You may activate an activated LV without error
-    # but lvchange returns an error (RC=5) when activating rw if already rw
+def changelv(vg, lvs, attrs):
+    """
+    Change multiple attributes on multiple LVs.
+
+    vg: VG name
+    lvs: a single LV name or iterable of LV names.
+    attrs: an iterable of (attr, value) pairs),
+            e.g. (('--available', 'y'), ('--permission', 'rw')
+
+    Note:
+    You may activate an activated LV without error
+    but lvchange returns an error (RC=5) when activating rw if already rw
+    """
+
     lvs = _normalizeargs(lvs)
     # If it fails or not we (may be) change the lv,
     # so we invalidate cache to reload these volumes on first occasion
     lvnames = tuple("%s/%s" % (vg, lv) for lv in lvs)
-    cmd = ("lvchange",) + LVM_NOBACKUP + (attrName, attrValue) + lvnames
-    rc, out, err = _lvminfo.cmd(cmd)
+    cmd = ["lvchange"]
+    cmd.extend(LVM_NOBACKUP)
+    if isinstance(attrs[0], str):
+        # ("--attribute", "value")
+        cmd.extend(attrs)
+    else:
+        # (("--aa", "v1"), ("--ab", "v2"))
+        for attr in attrs:
+            cmd.extend(attr)
+    cmd.extend(lvnames)
+    rc, out, err = _lvminfo.cmd(tuple(cmd))
     _lvminfo._invalidatelvs(vg, lvs)
     if rc != 0  and len(out) < 1:
         raise se.StorageException("%d %s %s\n%s/%s" % (rc, out, err, vg, lvs))
@@ -742,7 +761,7 @@ def changelv(vg, lvs, attrName, attrValue):
 
 def _setLVAvailability(vg, lvs, available):
     try:
-        changelv(vg, lvs, "--available", available)
+        changelv(vg, lvs, ("--available", available))
     except se.StorageException, e:
         error = ({"y": se.CannotActivateLogicalVolumes,
                   "n": se.CannotDeactivateLogicalVolume}
@@ -1035,7 +1054,7 @@ def removeLVs(vgName, lvNames):
             _lvminfo._invalidatevgs(vgName)
     else:
         # Otherwise LV info needs to be refreshed
-        _lvminfo._invalidatelvs(vgName, lvName)
+        _lvminfo._invalidatelvs(vgName, lvNames)
         raise se.CannotRemoveLogicalVolume(vgName, str(lvNames))
 
 
@@ -1230,7 +1249,7 @@ def listPVNames(vgName):
 def setrwLV(vg, lv, rw=True):
     permission = {False: 'r', True: 'rw'}[rw]
     try:
-        changelv(vg, lv, "--permission", permission)
+        changelv(vg, lv, ("--permission", permission))
     except se.StorageException:
         l = getLV(vg, lv)
         if l.writeable == rw:

@@ -647,7 +647,7 @@ def _postZero(sdUUID, volumes):
     lvNames = tuple(vol.volUUID for vol in volumes)
     #Assert volumes are writable. (Don't do this at home.)
     try:
-        lvm.changelv(sdUUID, lvNames, "--permission", "rw")
+        lvm.changelv(sdUUID, lvNames, ("--permission", "rw"))
     except se.StorageException, e:
         # Hope this only means that some volumes were already writable.
         pass
