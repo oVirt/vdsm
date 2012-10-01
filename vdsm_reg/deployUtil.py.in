@@ -654,11 +654,11 @@ def getAuthKeysFile(IP, port):
     """
         This functions returns the public ssh key of @ENGINENAME@.
     """
-    CACERT, dontcare = certPaths('')
+    _, _, engineWebCACert = certPaths('')
     data = None
     for key in REMOTE_SSH_KEY_FILE:
         tmp = getRemoteFile(IP, port, key,
-                   timeout=HTTP_TIMEOUT, certPath=CACERT)
+                   timeout=HTTP_TIMEOUT, certPath=engineWebCACert)
         if tmp != None and validateSSHKey(tmp):
             data = tmp
             break
@@ -1182,8 +1182,9 @@ def certPaths(confFile, fAddID=False):
     if fAddID:
         VDSMCERT = tsDir + "/certs/vdsm-" + os.environ.get("SSH_CONNECTION").split()[2] + "-cert.pem"
     CACERT = tsDir + "/certs/cacert.pem"
+    engineWebCACert = tsDir + "/certs/engine_web_ca.pem"
 
-    return CACERT, VDSMCERT
+    return CACERT, VDSMCERT, engineWebCACert
 
 def pkiCleanup(key, cert):
     """
@@ -1230,7 +1231,7 @@ def instCert(random_num, confFile):
         nGID = gGroup.gr_gid
         uUserInfo = pwd.getpwnam(VDSM_USER)
         nUID = uUserInfo.pw_uid
-        CACERT, VDSMCERT = certPaths(confFile)
+        CACERT, VDSMCERT, engineWebCACert = certPaths(confFile)
 
         # Delete old certificates
         logging.debug("instCert: try to delete old certificates")
@@ -1492,34 +1493,41 @@ def _nodeBackupCerts(certs):
     backupTime = dt.strftime("%Y-%m-%d_%H%M%S")
 
     for pemFile in certs:
-        certName = os.path.basename(pemFile)
-        dirName  = os.path.dirname(pemFile)
+        if os.path.exists(pemFile):
+            certName = os.path.basename(pemFile)
+            dirName  = os.path.dirname(pemFile)
 
-        bkpCertName = dirName + "/bkp-" + backupTime + '_' + certName
+            bkpCertName = dirName + "/bkp-" + backupTime + '_' + certName
 
-        shutil.copy2(pemFile, bkpCertName)
-        st = os.stat(pemFile)
-        os.chown(bkpCertName, st.st_uid, st.st_gid)
-        ovirtfunctions.ovirt_store_config(bkpCertName)
+            shutil.copy2(pemFile, bkpCertName)
+            st = os.stat(pemFile)
+            os.chown(bkpCertName, st.st_uid, st.st_gid)
+            ovirtfunctions.ovirt_store_config(bkpCertName)
 
 def nodeCleanup():
     if isOvirt():
-        CACERT, VDSMCERT = certPaths('')
+        CACERT, VDSMCERT, engineWebCACert = certPaths('')
 
-        _nodeBackupCerts([CACERT, VDSMCERT])
-        if os.path.exists(CACERT):
-            ovirtfunctions.ovirt_safe_delete_config(CACERT)
+        _nodeBackupCerts([CACERT, VDSMCERT, engineWebCACert])
+        if os.path.exists(engineWebCACert):
+            ovirtfunctions.ovirt_safe_delete_config(engineWebCACert)
 
 def getRhevmCert(IP, port):
+    """Download the certificate of the CA of the engine web server.
 
-    CACERT, VDSMCERT = certPaths('')
+    This certificate is saved to a file and later used
+    to validate HTTPS connections with the engine web
+    server.
+
+    """
+    _, _, engineWebCACert = certPaths('')
     RHEVM_CERT_FILE = "/ca.crt"
     rhevmCert = getRemoteFile(str(IP), str(port), RHEVM_CERT_FILE)
     if rhevmCert and validateX509Cert(rhevmCert):
-        dirName = os.path.dirname(CACERT)
+        dirName = os.path.dirname(engineWebCACert)
         if not os.path.exists(dirName):
             os.makedirs(dirName)
-        crt = file(CACERT, "w+")
+        crt = file(engineWebCACert, "w+")
         try:
             crt.write(rhevmCert)
         finally:
@@ -1587,14 +1595,14 @@ def main():
         if not getRhevmCert(options.serverIp, options.serverPort):
             print 'Failed downloading the @ENGINENAME@ certificate file'
             return -1
-        CACERT, dontcare = certPaths('')
-        fp = generateFingerPrint(CACERT)
+        _, _, engineWebCACert = certPaths('')
+        fp = generateFingerPrint(engineWebCACert)
         if options.fingerPrint != fp:
             print 'Expected fingerprint %s is different from recieved fingerprint %s' % (options.fingerPrint, fp)
             return -1
 
         if isOvirt():
-            ovirtfunctions.ovirt_store_config(CACERT)
+            ovirtfunctions.ovirt_store_config(engineWebCACert)
         print '@ENGINENAME@ certificate downloaded and verified successfully.'
         return 0
     print 'Missing arguments'

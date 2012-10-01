@@ -283,7 +283,7 @@ class Plugin(PluginBase):
 
             if self.verify_engine_cert.selected():
                 if deployUtil.getRhevmCert(self.engine_server.value(), enginePort):
-                    path, dontCare = deployUtil.certPaths('')
+                    _, _, path = deployUtil.certPaths('')
                     fp = deployUtil.generateFingerPrint(path)
                     approval = ButtonChoiceWindow(self.ncs.screen,
                                 "Certificate Fingerprint:",
