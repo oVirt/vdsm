@@ -118,7 +118,10 @@ def get(cif=None):
             except libvirt.libvirtError, e:
                 edom = e.get_error_domain()
                 ecode = e.get_error_code()
-                EDOMAINS = (libvirt.VIR_FROM_REMOTE, libvirt.VIR_FROM_RPC)
+                EDOMAINS = (libvirt.VIR_FROM_REMOTE,
+                            libvirt.VIR_FROM_RPC,
+                            libvirt.VIR_ERR_NO_CONNECT,
+                            libvirt.VIR_ERR_INVALID_CONN)
                 if edom in EDOMAINS and ecode == libvirt.VIR_ERR_SYSTEM_ERROR:
                     cif.log.error('connection to libvirt broken. '
                                   'taking vdsm down.')
