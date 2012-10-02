@@ -323,7 +323,7 @@ class IscsiConnection(object):
         if self._target.portal.port != portal.port:
             return False
 
-        if self._target.tpgt != target.tpgt:
+        if self._target.tpgt != None and self._target.tpgt != target.tpgt:
             return False
 
         if self._target.iqn != target.iqn:
