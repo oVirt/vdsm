@@ -1661,7 +1661,7 @@ class HSM:
         for guid in guids:
             visible = _isVisible(guid)
             if not scanned and not visible:
-                iscsi.forceIScsiScan()
+                multipath.rescan()
                 scanned = True
                 visible = _isVisible(guid)
             visibility[guid] = visible
