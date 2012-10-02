@@ -33,7 +33,6 @@ import kaxmlrpclib
 from logUtils import SimpleLogAdapter
 import libvirt
 from vdsm import vdscli
-import caps
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
 
