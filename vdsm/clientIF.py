@@ -90,7 +90,7 @@ class clientIF:
                                         ifrates=ifrates)
             self._hostStats.start()
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
-                      caps.CpuInfo().cores())
+                      caps.CpuTopology().cores())
             vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
 
             self.lastRemoteAccess = 0

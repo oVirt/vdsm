@@ -55,6 +55,7 @@ dist_noinst_DATA = \
 dist_vdsmtests_DATA = \
 	README \
 	cpu_info.out \
+	caps_libvirt.out \
 	glob_1c60971a-8647-44ac-ae33-6520887f8843.out \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	netmaskconversions \

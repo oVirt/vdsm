@@ -32,8 +32,6 @@ class TestCaps(TestCaseBase):
         dirName = os.path.split(testPath)[0]
         path = os.path.join(dirName, "cpu_info.out")
         c = caps.CpuInfo(path)
-        self.assertEqual(c.cores(), 12)
-        self.assertEqual(c.sockets(), 2)
         self.assertEqual(set(c.flags()), set("""fpu vme de pse tsc msr pae
                                                 mce cx8 apic mtrr pge mca
                                                 cmov pat pse36 clflush dts
@@ -53,6 +51,15 @@ class TestCaps(TestCaseBase):
         self.assertEqual(c.mhz(), '2533.402')
         self.assertEqual(c.model(),
                         'Intel(R) Xeon(R) CPU           E5649  @ 2.53GHz')
+
+    def testCpuTopology(self):
+        testPath = os.path.realpath(__file__)
+        dirName = os.path.split(testPath)[0]
+        path = os.path.join(dirName, "caps_libvirt.out")
+        t = caps.CpuTopology(path)
+        self.assertEqual(t.threads(), 24)
+        self.assertEqual(t.cores(), 12)
+        self.assertEqual(t.sockets(), 2)
 
     def test_parseKeyVal(self):
         lines = ["x=&2", "y& = 2", " z = 2 ", " s=3=&'5", " w=", "4&"]

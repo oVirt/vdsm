@@ -73,17 +73,6 @@ class CpuInfo(object):
             else:
                 p[key] = value
 
-    def cores(self):
-        return len(set((p.get('core id', '0'), p.get('physical id', '0'))
-                    for p in self._info.values()))
-
-    def threads(self):
-        return len(self._info)
-
-    def sockets(self):
-        phys_ids = [p.get('physical id', '0') for p in self._info.values()]
-        return len(set(phys_ids))
-
     def flags(self):
         return self._info.itervalues().next()['flags'].split()
 
@@ -92,6 +81,44 @@ class CpuInfo(object):
 
     def model(self):
         return self._info.itervalues().next()['model name']
+
+
+class CpuTopology(object):
+    def __init__(self, capabilities=None):
+        self._topology = _getCpuTopology(capabilities)
+
+    def threads(self):
+        return (self._topology['threads'])
+
+ # this assumes that all numa nodes have the same number of sockets,
+ # and that all socket have the same number of cores.
+    def cores(self):
+        return (self._topology['cells'] *
+                self._topology['sockets'] *
+                self._topology['cores'])
+
+    def sockets(self):
+        return (self._topology['cells'] *
+                self._topology['sockets'])
+
+
+@utils.memoized
+def _getCpuTopology(capabilities):
+    if capabilities:
+        caps = minidom.parse(capabilities)
+    else:
+        c = libvirtconnection.get()
+        caps = minidom.parseString(c.getCapabilities())
+    host = caps.getElementsByTagName('host')[0]
+    cpu = host.getElementsByTagName('cpu')[0]
+    cells = host.getElementsByTagName('cells')[0]
+    topology = {'cells': int(cells.getAttribute('num')),
+                'sockets': int(cpu.getElementsByTagName('topology')[0].
+                                                      getAttribute('sockets')),
+                'cores': int(cpu.getElementsByTagName('topology')[0].
+                                                        getAttribute('cores')),
+                'threads': cells.getElementsByTagName('cpu').length}
+    return topology
 
 
 @utils.memoized
@@ -226,12 +253,13 @@ def get():
                     os.path.exists('/dev/kvm')).lower()
 
     cpuInfo = CpuInfo()
+    cpuTopology = CpuTopology()
     if config.getboolean('vars', 'report_host_threads_as_cores'):
-        caps['cpuCores'] = str(cpuInfo.threads())
+        caps['cpuCores'] = str(cpuTopology.threads())
     else:
-        caps['cpuCores'] = str(cpuInfo.cores())
+        caps['cpuCores'] = str(cpuTopology.cores())
 
-    caps['cpuSockets'] = str(cpuInfo.sockets())
+    caps['cpuSockets'] = str(cpuTopology.sockets())
     caps['cpuSpeed'] = cpuInfo.mhz()
     if config.getboolean('vars', 'fake_kvm_support'):
         caps['cpuModel'] = 'Intel(Fake) CPU'
