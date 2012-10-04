@@ -420,37 +420,6 @@ class BlockVolume(volume.Volume):
             os.symlink(lvm.lvPath(self.sdUUID, self.volUUID), volPath)
         self.volumePath = volPath
 
-    def findImagesByVolume(self, legal=False):
-        """
-        Find the image(s) UUID by one of its volume UUID.
-        Templated and shared disks volumes may result more then one image.
-        """
-        lvs = lvm.getLV(self.sdUUID)
-        imgUUIDs = [self.imgUUID]  # Add volume image
-        for lv in lvs:
-            imgUUID = ""
-            parent = ""
-            for tag in lv.tags:
-                if tag.startswith(TAG_PREFIX_IMAGE):
-                    imgUUID = tag[len(TAG_PREFIX_IMAGE):]
-                elif tag.startswith(TAG_PREFIX_PARENT):
-                    if tag[len(TAG_PREFIX_PARENT):] != self.volUUID:
-                        break  # Not a child
-                    parent = tag[len(TAG_PREFIX_PARENT):]
-                if parent and image:
-                    if imgUUID not in imgUUIDs:
-                        imgUUIDs.append(imgUUID)
-                    break
-
-        # Check image legality, if needed
-        if legal:
-            for imgUUID in imgUUIDs[:]:
-                if not image.Image(self.repoPath).isLegal(self.sdUUID,
-                                                          imgUUID):
-                    imgUUIDs.remove(imgUUID)
-
-        return imgUUIDs
-
     def getVolumeTag(self, tagPrefix):
         return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
 
@@ -659,39 +628,3 @@ def _getVolumeTag(sdUUID, volUUID, tagPrefix):
         log.error("Missing tag %s in volume: %s/%s. tags: %s",
                   tagPrefix, sdUUID, volUUID, tags)
         raise se.MissingTagOnLogicalVolume(volUUID, tagPrefix)
-
-
-def _postZero(sdUUID, volumes):
-    # Assumed that there is no any thread that can deactivate these LVs
-    # on this host or change the rw permission on this or any other host.
-
-    lvNames = tuple(vol.volUUID for vol in volumes)
-    # Assert volumes are writable. (Don't do this at home.)
-    try:
-        lvm.changelv(sdUUID, lvNames, ("--permission", "rw"))
-    except se.StorageException:
-        # Hope this only means that some volumes were already writable.
-        pass
-
-    lvm.activateLVs(sdUUID, lvNames)
-
-    for lv in lvm.getLV(sdUUID):
-        if lv.name in lvNames:
-            # wipe out the whole volume
-            try:
-                misc.ddWatchCopy(
-                    "/dev/zero", lvm.lvPath(sdUUID, lv.name),
-                    vars.task.aborting, int(lv.size),
-                    recoveryCallback=volume.baseAsyncTasksRollback)
-            except utils.ActionStopped:
-                raise
-            except Exception:
-                raise se.VolumesZeroingError(lv.name)
-
-
-def deleteMultipleVolumes(sdUUID, volumes, postZero):
-    "Delete multiple volumes (LVs) in the same domain (VG)."""
-    if postZero:
-        _postZero(sdUUID, volumes)
-    lvNames = [vol.volUUID for vol in volumes]
-    lvm.removeLVs(sdUUID, lvNames)

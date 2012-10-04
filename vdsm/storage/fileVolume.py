@@ -53,18 +53,6 @@ def getDomUuidFromVolumePath(volPath):
     return volList[sdUUID]
 
 
-def deleteMultipleVolumes(sdUUID, volumes, postZero):
-    # Posix asserts that the blocks will be zeroed before reuse
-    for vol in volumes:
-        vol.setLegality(volume.ILLEGAL_VOL)
-        volPath = vol.getVolumePath()
-        try:
-            oop.getGlobalProcPool().utils.rmFile(volPath)
-        except OSError:
-            volume.log.error("cannot delete volume at path: %s",
-                             volPath, exc_info=True)
-
-
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
@@ -389,33 +377,6 @@ class FileVolume(volume.Volume):
         cls.file_setrw(leasePath, rw=True)
         sanlock.init_resource(sdUUID, volUUID, [(leasePath,
                                                  LEASE_FILEOFFSET)])
-
-    def findImagesByVolume(self, legal=False):
-        """
-        Find the image(s) UUID by one of its volume UUID.
-        Templated and shared disks volumes may result more then one image.
-        """
-        try:
-            pattern = os.path.join(self.repoPath, self.sdUUID,
-                                   sd.DOMAIN_IMAGES, "*", self.volUUID)
-            vollist = self.oop.glob.glob(pattern)
-            for vol in vollist[:]:
-                img = os.path.basename(os.path.dirname(vol))
-                if img.startswith(sd.REMOVED_IMAGE_PREFIX):
-                    vollist.remove(vol)
-        except Exception as e:
-            self.log.info("Volume %s does not exists." % (self.volUUID))
-            raise se.VolumeDoesNotExist("%s: %s:" % (self.volUUID, e))
-
-        imglist = [os.path.basename(os.path.dirname(vol)) for vol in vollist]
-
-        # Check image legality, if needed
-        if legal:
-            for img in imglist[:]:
-                if not image.Image(self.repoPath).isLegal(self.sdUUID, img):
-                    imglist.remove(img)
-
-        return imglist
 
     def getParent(self):
         """

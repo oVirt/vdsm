@@ -133,119 +133,6 @@ class Image:
         """
         return os.path.join(self.repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID)
 
-    def delete(self, sdUUID, imgUUID, postZero, force):
-        """
-        Delete whole image
-        """
-        name = "delete image %s retry" % imgUUID
-        vars.task.pushRecovery(task.Recovery(name, "image", "Image",
-                               "deleteRecover", [self.repoPath, sdUUID,
-                                                 imgUUID, str(postZero),
-                                                 str(force)]))
-
-        try:
-            self._delete(sdUUID, imgUUID, postZero, force)
-        except se.StorageException:
-            self.log.error("Unexpected error", exc_info=True)
-            raise
-        except Exception as e:
-            self.log.error("Unexpected error", exc_info=True)
-            raise se.ImageDeleteError("%s: %s" % (imgUUID, str(e)))
-
-    @classmethod
-    def deleteRecover(cls, taskObj, repoPath, sdUUID, imgUUID, postZero,
-                      force):
-        """
-        Delete image rollforward
-        """
-        Image(repoPath)._delete(sdUUID, imgUUID, misc.parseBool(postZero),
-                                misc.parseBool(force))
-
-    def validateDelete(self, sdUUID, imgUUID):
-        """
-        Validate image before deleting
-        """
-        # Get the list of the volumes
-        volclass = sdCache.produce(sdUUID).getVolumeClass()
-        uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
-        volumes = [volclass(self.repoPath, sdUUID, imgUUID, volUUID) for
-                   volUUID in uuidlist]
-
-        for vol in volumes:
-            try:
-                if vol.isShared():
-                    images = vol.findImagesByVolume(legal=True)
-                    if len(images) > 1:
-                        msg = "Cannot delete image %s due to shared volume "\
-                            "%s" % (imgUUID, vol.volUUID)
-                        raise se.CannotDeleteSharedVolume(msg)
-            except se.MetaDataKeyNotFoundError as e:
-                # In case of metadata key error, we have corrupted
-                # volume (One of metadata corruptions may be
-                # previous volume deletion failure).
-                # So, there is no reasons to avoid its deletion
-                self.log.warn("Volume %s metadata error (%s)", vol.volUUID,
-                              str(e))
-        return volumes
-
-    def _delete(self, sdUUID, imgUUID, postZero, force):
-        """Delete Image folder with all volumes
-            'sdUUID' - storage domain UUID
-            'imgUUID' - image UUID
-            'force'   - make it brutal
-        """
-        # Get the list of the volumes
-        volclass = sdCache.produce(sdUUID).getVolumeClass()
-        uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
-
-        # If we are not 'force'd to remove check that there will be no issues
-        if not force:
-            volumes = self.validateDelete(sdUUID, imgUUID)
-        else:
-            volumes = [volclass(self.repoPath, sdUUID, imgUUID, volUUID) for
-                       volUUID in uuidlist]
-
-        # If we got here than go ahead and remove all of them without mercy
-        if volumes:
-            try:
-                mod = __import__(volclass.__module__,
-                                 fromlist=['deleteMultipleVolumes'])
-                mod.deleteMultipleVolumes(sdUUID, volumes, postZero)
-            except (se.CannotRemoveLogicalVolume, se.VolumeAccessError):
-                #Any volume deletion failed, but we don't really care at this
-                # point
-                self.log.warn("Problems during image %s deletion. Continue...",
-                              imgUUID, exc_info=True)
-
-        # Now clean the image directory
-        removedImage = imageDir = self.getImageDir(sdUUID, imgUUID)
-
-        # If image directory doesn't exist we are done
-        if not os.path.exists(imageDir):
-            return True
-
-        # Otherwise move it out of the way if it hasn't been moved yet
-        if not imgUUID.startswith(sd.REMOVED_IMAGE_PREFIX):
-            removedImage = os.path.join(
-                os.path.dirname(imageDir),
-                sd.REMOVED_IMAGE_PREFIX + os.path.basename(imageDir))
-            os.rename(imageDir, removedImage)
-
-        # Cleanup (hard|soft) links and other state files,
-        # i.e. remove everything left including directory itself
-        #
-        # N.B. The cleanup can fail, but it doesn't bother us at all
-        # since the image directory is removed and this image will not show up
-        # in the image list anymore. If will be cleaned up at some later time
-        # by one of the hosts running vdsm.
-        #
-        # Inquiring mind can notice that it might happen even on HSM (the
-        # image removal itself only performed by SPM), but that is OK - we
-        # are not touching any live data. We are removing garbage, that is not
-        # used anyway.
-        fileUtils.cleanupdir(removedImage)
-        return True
-
     def deletedVolumeName(self, uuid):
         """
         Create REMOVED_IMAGE_PREFIX + <random> + uuid string.
@@ -635,6 +522,7 @@ class Image:
         vars.task.clearRecoveries()
         # If it's 'move' operation, we should delete src image after copying
         if op == MOVE_OP:
+            # TODO: Should raise here.
             try:
                 dom = sdCache.produce(srcSdUUID)
                 _deleteImage(dom, imgUUID, postZero)
@@ -841,7 +729,7 @@ class Image:
                 if force:
                     self.log.info("delete image %s on domain %s before "
                                   "overwriting", dstImgUUID, dstSdUUID)
-                    self.delete(dstSdUUID, dstImgUUID, postZero, force=True)
+                    _deleteImage(destDom, dstImgUUID, postZero)
 
                 # To avoid 'prezeroing' preallocated volume on NFS domain,
                 # we create the target volume with minimal size and after that
