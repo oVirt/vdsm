@@ -20,7 +20,6 @@
 
 import os
 import tempfile
-import time
 from contextlib import contextmanager
 
 from testrunner import VdsmTestCase as TestCaseBase
@@ -29,7 +28,7 @@ from nose.plugins.skip import SkipTest
 from vdsm.config import config
 from vdsm import vdscli
 from storage.misc import execCmd
-from vdsm.utils import CommandPath
+from vdsm.utils import CommandPath, retry
 
 if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
@@ -104,20 +103,6 @@ class XMLRPCTest(TestCaseBase):
 
         self.assertTrue(member in container, msg)
 
-    def retryAssert(self, assertion, retries, delay=1):
-        '''retry an "assertion" every "delay" seconds for "retries" times.
-        assertion should be a closure, raises AssertionError when assert fails.
-        '''
-        for t in xrange(retries):
-            try:
-                assertion()
-                break
-            except AssertionError:
-                pass
-            time.sleep(delay)
-        else:
-            assertion()
-
     def assertVdsOK(self, vdsResult):
         # code == 0 means OK
         self.assertEquals(vdsResult['status']['code'], 0)
@@ -137,7 +122,7 @@ class XMLRPCTest(TestCaseBase):
                            'vmName': 'foo'})
         self.assertVdsOK(r)
         try:
-            self.retryAssert(lambda: self.assertVmUp(VMID), 20)
+            retry(lambda: self.assertVmUp(VMID), timeout=20)
         finally:
             # FIXME: if the server dies now, we end up with a leaked VM.
             r = self.s.destroy(VMID)
@@ -169,7 +154,7 @@ class XMLRPCTest(TestCaseBase):
             try:
                 self.assertVdsOK(self.s.create(conf))
                 # wait 65 seconds for VM to come up until timeout
-                self.retryAssert(assertVMAndGuestUp, 65, 1)
+                retry(assertVMAndGuestUp, timeout=65)
             finally:
                 destroyResult = self.s.destroy(VMID)
 
