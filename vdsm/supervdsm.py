@@ -29,7 +29,7 @@ from time import sleep
 import socket
 
 import storage.misc as misc
-from vdsm import constants
+from vdsm import constants, utils
 
 _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()
@@ -121,7 +121,7 @@ class SuperVdsmProxy(object):
     def _restartSupervdsm(self):
         self._killSupervdsm()
         self._launchSupervdsm()
-        misc.retry(self._connect, Exception, timeout=60)
+        utils.retry(self._connect, Exception, timeout=60)
 
     def __getattr__(self, name):
         return ProxyCaller(self, name)
