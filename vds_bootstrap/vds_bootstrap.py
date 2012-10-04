@@ -765,9 +765,7 @@ class Deploy:
     def setNetworking(self, iurl):
         """
             Create management bridge.
-            This class will try to create a management bridge named "rehvm". Class
-            always succeeds to allow network configuration from managment server
-            even in case this class will fail to set the management bridge.
+            This class will try to create a management bridge.
             Note: expected input format: http://www.redhat.com/a/b/c or: ftp://10.0.0.23/d/e/f
         """
         self.status = "OK"
@@ -786,10 +784,11 @@ class Deploy:
                 self.message = "Failed to parse manager URL!"
                 self.status = "FAIL"
                 logging.error(self.message)
-                #Do not set rc to allow changes from rhev-m.
+                #Do not set rc to allow changes from Engine
             else:
                 if not self._addNetwork(url, port):
-                    self.status = "WARN"
+                    self.status = "FAIL"
+                    self.rc = False
 
         self._xmlOutput('SetNetworking', self.status, None, None, self.message)
         return self.rc
