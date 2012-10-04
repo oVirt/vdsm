@@ -48,6 +48,7 @@ log = logging.getLogger('fileUtils')
 CharPointer = ctypes.POINTER(ctypes.c_char)
 
 _PC_REC_XFER_ALIGN = 17
+_PC_REC_MIN_XFER_SIZE = 16
 
 class TarCopyFailed(RuntimeError): pass
 
@@ -265,6 +266,13 @@ class DirectFile(object):
         # Because we usually have fixed sizes for our reads, caching
         # buffers might give a slight performance boost.
         alignment = libc.fpathconf(self.fileno(), _PC_REC_XFER_ALIGN)
+        minXferSize = libc.fpathconf(self.fileno(), _PC_REC_MIN_XFER_SIZE)
+        chunks, remainder = divmod(size, minXferSize)
+        if remainder > 0:
+            chunks += 1
+
+        size = chunks * minXferSize
+
         rc = libc.posix_memalign(ppbuff, alignment, size)
         if rc:
             raise OSError(rc, "Could not allocate aligned buffer")
