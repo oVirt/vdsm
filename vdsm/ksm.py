@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,9 +36,13 @@ class KsmMonitorThread(threading.Thread):
                                  raw=False, sudo=False)[1]
             if pids:
                 self._pid = pids[0].strip()
+                self._cif.log.info(
+                    'starting ksm monitor thread, ksm pid is %s', self._pid)
                 self.start()
             else:
                 self._cif.log.error('failed to find ksmd thread')
+        else:
+           self._cif.log.info('ksm monitor thread disabled, not starting')
         self.cpuUsage = 0
 
     def _getKsmdJiffies(self):
@@ -46,6 +50,7 @@ class KsmMonitorThread(threading.Thread):
                                     .read().split()[13:15]))
 
     def run(self):
+        start()
         try:
             self.state, self.pages = self.readState()
             KSM_MONITOR_INTERVAL = 60
@@ -95,15 +100,8 @@ def npages():
         return 0
 
 def start():
-    if not running():
-        utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'start'], sudo=True)
-        utils.execCmd([constants.EXT_SERVICE, 'ksm', 'start'], sudo=True)
-
-def stop():
-    if running():
-        utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'stop'], sudo=True)
-        utils.execCmd([constants.EXT_SERVICE, 'ksm', 'stop'], sudo=True)
-
+    utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'start'], sudo=True)
+    utils.execCmd([constants.EXT_SERVICE, 'ksm', 'start'], sudo=True)
 
 def tune(params):
     # For supervdsm
