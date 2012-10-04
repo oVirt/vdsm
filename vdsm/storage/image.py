@@ -253,40 +253,6 @@ class Image:
         randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
         return "%s%s_%s" % (sd.REMOVED_IMAGE_PREFIX, randomStr, uuid)
 
-    def preDeleteRename(self, sdUUID, imgUUID):
-        # Get the list of the volumes
-        volclass = sdCache.produce(sdUUID).getVolumeClass()
-        uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
-        imageDir = self.getImageDir(sdUUID, imgUUID)
-
-        # If image directory doesn't exist we are done
-        if not os.path.exists(imageDir):
-            return imgUUID
-
-        # Otherwise move it out of the way
-        newImgUUID = self.deletedVolumeName(imgUUID)
-        self.log.info("Rename image %s -> %s", imgUUID, newImgUUID)
-        if not imgUUID.startswith(sd.REMOVED_IMAGE_PREFIX):
-            removedImage = os.path.join(os.path.dirname(imageDir), newImgUUID)
-            os.rename(imageDir, removedImage)
-        else:
-            self.log.warning("Image %s in domain %s already renamed", imgUUID,
-                             sdUUID)
-
-        volumes = [volclass(self.repoPath, sdUUID, newImgUUID, volUUID) for
-                   volUUID in uuidlist]
-        for vol in volumes:
-            if not vol.volUUID.startswith(sd.REMOVED_IMAGE_PREFIX):
-                vol.rename(self.deletedVolumeName(vol.volUUID), recovery=False)
-            else:
-                self.log.warning("Volume %s of image %s already renamed",
-                                 vol.volUUID, imgUUID)
-            # We change image UUID in metadata
-            # (and IU_ LV tag for block volumes) of all volumes in image
-            vol.setImage(newImgUUID)
-
-        return newImgUUID
-
     def __chainSizeCalc(self, sdUUID, imgUUID, volUUID, size):
         """
         Compute an estimate of the whole chain size
