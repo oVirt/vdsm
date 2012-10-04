@@ -19,11 +19,12 @@
 #
 
 import threading
+import functools
 
 import libvirt
 
 import libvirtev
-from vdsm import constants
+from vdsm import constants, utils
 
 # Make sure to never reload this module, or you would lose events
 # TODO: make this internal to libvirtev, and make the thread stoppable
@@ -110,7 +111,9 @@ def get(cif=None):
     with __connectionLock:
         conn = __connections.get(id(cif))
         if not conn:
-            conn = libvirt.openAuth('qemu:///system', auth, 0)
+            libvirtOpenAuth = functools.partial(libvirt.openAuth,
+                                                'qemu:///system', auth, 0)
+            conn = utils.retry(libvirtOpenAuth, timeout=10, sleep=0.2)
             __connections[id(cif)] = conn
             if cif != None:
                 for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
