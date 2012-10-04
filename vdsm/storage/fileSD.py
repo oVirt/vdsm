@@ -28,7 +28,6 @@ import re
 import sd
 import storage_exception as se
 import fileVolume
-import image
 import misc
 import outOfProcess as oop
 from remoteFileHandler import Timeout
@@ -60,6 +59,23 @@ def validateDirAccess(dirPath):
         raise
 
     return True
+
+
+def getDomPath(sdUUID):
+    pattern = os.path.join(sd.StorageDomain.storage_repository,
+                                            sd.DOMAIN_MNT_POINT, '*', sdUUID)
+    # Warning! You need a global proc pool big as the number of NFS domains.
+    domPaths = getProcPool().glob.glob(pattern)
+    if len(domPaths) == 0:
+        raise se.StorageDomainDoesNotExist(sdUUID)
+    elif len(domPaths) > 1:
+        raise se.StorageDomainLayoutError(sdUUID)
+    else:
+        return domPaths[0]
+
+
+def getImagePath(sdUUID, imgUUID):
+    return os.path.join(getDomPath(sdUUID), 'images', imgUUID)
 
 
 def getDomUuidFromMetafilePath(metafile):
@@ -309,6 +325,34 @@ class FileStorageDomain(sd.StorageDomain):
                 imgList.append(os.path.basename(i))
         return imgList
 
+    def deleteImage(self, sdUUID, imgUUID, volsImgs):
+        currImgDir = getImagePath(sdUUID, imgUUID)
+        dirName, baseName = os.path.split(currImgDir)
+        toDelDir = os.tempnam(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
+        try:
+            self.oop.os.rename(currImgDir, toDelDir)
+        except OSError as e:
+            self.log.error("image: %s can't be moved", currImgDir)
+            raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
+        for volUUID in volsImgs:
+            volPath = os.path.join(toDelDir, volUUID)
+            try:
+                self.oop.os.remove(volPath)
+                self.oop.os.remove(volPath + '.meta')
+                self.oop.os.remove(volPath + '.lease')
+            except OSError as e:
+                self.log.error("vol: %s can't be removed.",
+                                volPath, exc_info=True)
+        try:
+            self.oop.os.rmdir(toDelDir)
+        except OSError as e:
+            self.log.error("removed image dir: %s can't be removed", toDelDir)
+            raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
+
+    def zeroImage(self, sdUUID, imgUUID, volsImgs):
+        raise se.SourceImageActionError(imgUUID, sdUUID, "image %s on a "
+            "fileSD %s should not be zeroed." % (imgUUID, sdUUID))
+
     def getAllVolumes(self):
         """
         Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
@@ -454,7 +498,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         removedPattern = os.path.join(
                 self.domaindir, sd.DOMAIN_IMAGES,
-                image.REMOVED_IMAGE_PREFIX + '*')
+                sd.REMOVED_IMAGE_PREFIX + '*')
         removedImages = self.oop.glob.glob(removedPattern)
         self.log.debug("Removing remnants of deleted images %s" %
                        removedImages)

@@ -134,11 +134,15 @@ TASKS_DIR = 'tasks'
 ImgsPar = namedtuple("ImgsPar", "imgs,parent")
 ISO_IMAGE_UUID = '11111111-1111-1111-1111-111111111111'
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
+REMOVED_IMAGE_PREFIX = "_remove_me_"
 
 # Blocks used for each lease (valid on all domain types)
 LEASE_BLOCKS = 2048
 
 UNICODE_MINIMAL_VERSION = 3
+
+storage_repository = config.get('irs', 'repository')
+mountBasePath = os.path.join(storage_repository, DOMAIN_MNT_POINT)
 
 
 def getVolsOfImage(allVols, imgUUID):

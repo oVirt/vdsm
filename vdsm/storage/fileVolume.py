@@ -418,7 +418,7 @@ class FileVolume(volume.Volume):
             vollist = self.oop.glob.glob(pattern)
             for vol in vollist[:]:
                 img = os.path.basename(os.path.dirname(vol))
-                if img.startswith(image.REMOVED_IMAGE_PREFIX):
+                if img.startswith(sd.REMOVED_IMAGE_PREFIX):
                     vollist.remove(vol)
         except Exception, e:
             self.log.info("Volume %s does not exists." % (self.volUUID))

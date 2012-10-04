@@ -61,7 +61,6 @@ COPY_OP = 1
 MOVE_OP = 2
 OP_TYPES = {UNKNOWN_OP:'UNKNOWN', COPY_OP:'COPY', MOVE_OP:'MOVE'}
 
-REMOVED_IMAGE_PREFIX = "_remove_me_"
 RENAME_RANDOM_STRING_LEN = 8
 
 # Temporary size of a volume when we optimize out the prezeroing
@@ -195,9 +194,9 @@ class Image:
             return True
 
         # Otherwise move it out of the way if it hasn't been moved yet
-        if not imgUUID.startswith(REMOVED_IMAGE_PREFIX):
+        if not imgUUID.startswith(sd.REMOVED_IMAGE_PREFIX):
             removedImage = os.path.join(os.path.dirname(imageDir),
-                REMOVED_IMAGE_PREFIX + os.path.basename(imageDir))
+                sd.REMOVED_IMAGE_PREFIX + os.path.basename(imageDir))
             os.rename(imageDir, removedImage)
 
         # Cleanup (hard|soft) links and other state files,
@@ -220,7 +219,7 @@ class Image:
         Create REMOVED_IMAGE_PREFIX + <random> + uuid string.
         """
         randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
-        return "%s%s_%s" % (REMOVED_IMAGE_PREFIX, randomStr, uuid)
+        return "%s%s_%s" % (sd.REMOVED_IMAGE_PREFIX, randomStr, uuid)
 
     def preDeleteRename(self, sdUUID, imgUUID):
         # Get the list of the volumes

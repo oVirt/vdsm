@@ -22,6 +22,7 @@ import os
 import threading
 import logging
 import signal
+import select
 import errno
 import re
 from StringIO import StringIO
@@ -164,12 +165,99 @@ def getAllVolumes(sdUUID):
         if vImg not in res[vName]['imgs']:
             res[vName]['imgs'].insert(0, vImg)
         if vPar != sd.BLANK_UUID and \
-            not vName.startswith(blockVolume.image.REMOVED_IMAGE_PREFIX) \
+            not vName.startswith(sd.REMOVED_IMAGE_PREFIX) \
             and vImg not in res[vPar]['imgs']:
             res[vPar]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
                     for k, v in res.iteritems())
+
+
+def deleteVolumes(sdUUID, vols):
+    lvm.removeLVs(sdUUID, vols)
+
+
+def _zeroVolume(sdUUID, volUUID):
+    """Fill a block volume.
+
+    This function requires an active LV.
+    """
+    dm = lvm.lvDmDev(sdUUID, volUUID)
+    size = multipath.getDeviceSize(dm) # Bytes
+    # TODO: Change for zero 128 M chuncks and log.
+    # 128 M is the vdsm extent size default
+    BS = constants.MEGAB # 1024 ** 2 = 1 MiB
+    count = size / BS
+    cmd = tuple(constants.CMD_LOWPRIO)
+    cmd += (constants.EXT_DD, "oflag=%s" % misc.DIRECTFLAG, "if=/dev/zero",
+                    "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
+                    "count=%s" % count)
+    p = misc.execCmd(cmd, sudo=False, sync=False)
+    return p
+
+
+def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
+    ProcVol = namedtuple("ProcVol", "proc, vol")
+    # Put a sensible value for dd zeroing a 128 M or 1 G chunk and lvremove
+    # spent time.
+    ZEROING_TIMEOUT = 60000 # [miliseconds]
+    log.debug("sd: %s, LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
+    # Prepare for zeroing
+    try:
+        lvm.changelv(sdUUID, volUUIDs, (("-a", "y"), ("--deltag", imgUUID),
+                            ("--addtag", sd.REMOVED_IMAGE_PREFIX + imgUUID)))
+    except se.StorageException as e:
+        log.debug("SD %s, Image %s pre zeroing ops failed", sdUUID, imgUUID,
+                    volUUIDs)
+    # Following call to changelv is separate since setting rw permission on an
+    # LV fails if the LV is already set to the same value, hence we would not
+    # be able to differentiate between a real failure of deltag/addtag and one
+    # we would like to ignore (permission is the same)
+    try:
+        lvm.changelv(sdUUID, volUUIDs, ("--permission", "rw"))
+    except se.StorageException as e:
+        # Hope this only means that some volumes were already writable.
+        log.debug("Ignoring failed permission change: %s", e)
+    # blank the volumes.
+    zerofds = {}
+    poller = select.poll()
+    for volUUID in volUUIDs:
+        proc = _zeroVolume(sdUUID, volUUID)
+        fd = proc.stdout.fileno()
+        zerofds[fd] = ProcVol(proc, volUUID)
+        poller.register(fd, select.EPOLLHUP)
+
+    # Wait until all the asyncs procs return
+    # Yes, this is a potentially infinite loop. Kill the vdsm task.
+    while zerofds:
+        fdevents = poller.poll(ZEROING_TIMEOUT) # [(fd, event)]
+        toDelete = []
+        for fd, event in fdevents:
+            proc, vol = zerofds[fd]
+            if not proc.wait(0):
+                continue
+            else:
+                poller.unregister(fd)
+                zerofds.pop(fd)
+                if proc.returncode != 0:
+                    log.error("zeroing %s/%s failed. Zero and remove this "
+                              "volume manually. rc=%s %s", sdUUID, vol,
+                              proc.returncode, proc.stderr.read(1000))
+                else:
+                    log.debug("%s/%s was zeroed and will be deleted",
+                                                            sdUUID, volUUID)
+                    toDelete.append(vol)
+        if toDelete:
+            try:
+                deleteVolumes(sdUUID, toDelete)
+            except se.CannotRemoveLogicalVolume:
+                # TODO: Add the list of removed fail volumes to the exception.
+                log.error("Remove failed for some of VG: %s zeroed volumes: %s",
+                            sdUUID, toDelete, exc_info=True)
+
+
+    log.debug("finished with VG:%s LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
+    return
 
 
 class VGTagMetadataRW(object):
@@ -826,6 +914,12 @@ class BlockStorageDomain(sd.StorageDomain):
         images = [ i[taglen:] for i in tags
                         if i.startswith(blockVolume.TAG_PREFIX_IMAGE) ]
         return images
+
+    def deleteImage(self, sdUUID, imgUUID, volsImgs):
+        return deleteVolumes(sdUUID, volsImgs)
+
+    def zeroImage(self, sdUUID, imgUUID, volsImgs):
+        return zeroImgVolumes(sdUUID, imgUUID, volsImgs)
 
     def getAllVolumes(self):
         """

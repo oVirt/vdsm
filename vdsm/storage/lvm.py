@@ -1176,6 +1176,17 @@ def lvPath(vgName, lvName):
     return os.path.join("/dev", vgName, lvName)
 
 
+def lvDmDev(vgName, lvName):
+    """Return the LV dm device.
+
+    returns: dm-X
+    If the LV is inactive there is no dm device
+    and OSError will be raised.
+    """
+    lvp = lvPath(vgName, lvName)
+    return os.path.basename(os.readlink(lvp))
+
+
 def _isLVActive(vgName, lvName):
     """Active volumes have a mp link.
 

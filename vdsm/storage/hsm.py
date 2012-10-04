@@ -1310,24 +1310,26 @@ class HSM:
         Delete Image folder with all volumes
         """
         #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
-        pool = self.getPool(spUUID) #Validates that the pool is connected. WHY?
-        self.validateSdUUID(sdUUID)
+        self.getPool(spUUID) #Validates that the pool is connected. WHY?
+        dom = self.validateSdUUID(sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, imgUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
-        # Do not validate if forced.
-        if not misc.parseBool(force):
-            pool.validateDelete(sdUUID, imgUUID)
-        # Rename image if postZero and perform delete as async operation
-        # else delete image in sync. stage
+        allVols = dom.getAllVolumes()
+        volsByImg = sd.getVolsOfImage(allVols, imgUUID)
+        # on data domains, images should not be deleted if they are templates
+        # being used by other images.
+        if not misc.parseBool(force) and not dom.isBackup() \
+                and not all(len(v.imgs) == 1 for v in volsByImg.itervalues()):
+                raise se.CannotDeleteSharedVolume("Cannot delete shared image"
+                    "%s. volImgs: %s"  % (imgUUID, volsByImg))
+
+        # zeroImage will delete zeroed volumes at the end.
         if misc.parseBool(postZero):
-            newImgUUID = pool.preDeleteRename(sdUUID, imgUUID)
-            self._spmSchedule(spUUID, "deleteImage", pool.deleteImage, sdUUID, newImgUUID,
-                            misc.parseBool(postZero), misc.parseBool(force)
-            )
+            self._spmSchedule(spUUID, "zeroImage_%s" % imgUUID, dom.zeroImage,
+                              sdUUID, imgUUID, volsByImg.keys())
         else:
-            pool.deleteImage(sdUUID, imgUUID,
-                              misc.parseBool(postZero), misc.parseBool(force))
+            dom.deleteImage(sdUUID, imgUUID, volsByImg)
             # This is a hack to keep the interface consistent
             # We currently have race conditions in delete image, to quickly fix
             # this we delete images in the "synchronous" state. This only works
