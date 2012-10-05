@@ -208,6 +208,23 @@ class MigrationSourceThread(threading.Thread):
             self._vm.setDownStatus(NORMAL, "SaveState succeeded")
             self.status = {'status': {'code': 0, 'message': 'SaveState done'}, 'progress': 100}
 
+    def _patchConfigForLegacy(self):
+        """
+        Remove from the VM config drives list "cdrom" and "floppy"
+        items and set them up as full paths
+        """
+        # care only about "drives" list, since
+        # "devices" doesn't cause errors
+        if 'drives' in self._vm.conf:
+            for item in ("cdrom", "floppy"):
+                new_drives = []
+                for drive in self._vm.conf['drives']:
+                    if drive['device'] == item:
+                        self._vm.conf[item] = drive['path']
+                    else:
+                        new_drives.append(drive)
+                self._vm.conf['drives'] = new_drives
+
     def run(self):
         try:
             mstate = ''
@@ -218,6 +235,8 @@ class MigrationSourceThread(threading.Thread):
             MigrationSourceThread._ongoingMigrations.acquire()
             try:
                 self.log.debug("migration semaphore acquired")
+                # patch VM config for targets < 3.1
+                self._patchConfigForLegacy()
                 if not mstate:
                     self._vm.conf['_migrationParams'] = {'dst': self._dst,
                                 'mode': self._mode, 'method': self._method,
