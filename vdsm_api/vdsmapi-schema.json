@@ -1875,12 +1875,7 @@
 #
 # @name:             A user-friendly device name for display only
 #
-# @needExtend:       Indicates whether an underlying block device needs to be
-#                    expanded to accomodate growing disk allocation
-#
 # @optional:         States if the VM may start if the disk is not present
-#
-# @reqsize:          The most recently requested drive size (in bytes)
 #
 # @shared:           Indicates if this disk is intended to be shared by
 #                    multiple virtual machines
@@ -1903,8 +1898,7 @@
           'address': 'VmDeviceAddress', 'alias': 'str',
           'deviceId': 'UUID', '*specParams': 'VmDiskDeviceSpecParams',
           'apparentsize': 'uint', 'index': 'int', 'name': 'str',
-          'needExtend': 'bool', 'optional': 'bool',
-          'reqsize': 'uint', 'shared': 'bool', 'truesize': 'uint',
+          'optional': 'bool', 'shared': 'bool', 'truesize': 'uint',
           'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
           '*baseVolumeID': 'UUID'}}
 

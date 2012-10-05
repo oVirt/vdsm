@@ -346,8 +346,7 @@ class Vm(object):
         return str(idx)
 
     def _normalizeVdsmImg(self, drv):
-        drv['needExtend'] = False
-        drv['reqsize'] = drv.get('reqsize', '0')
+        drv['reqsize'] = drv.get('reqsize', '0')  # Backward compatible
         if not drv.has_key('device'):
             drv['device'] = 'disk'
 
@@ -727,7 +726,6 @@ class Vm(object):
         self._lvExtend(block_dev)
 
     def _lvExtend(self, block_dev, newsize=None):
-        volID = None
         for d in self._devices[DISK_DEVICES]:
             if not d.blockDev: continue
             if d.name != block_dev: continue
@@ -738,9 +736,7 @@ class Vm(object):
             # TODO cap newsize by max volume size
             volDict = {'poolID': d.poolID, 'domainID': d.domainID,
                        'imageID': d.imageID, 'volumeID': d.volumeID,
-                       'name': d.name}
-            d.needExtend = True
-            d.reqsize = newsize
+                       'name': d.name, 'newSize': newsize}
             # sendExtendMsg expects size in bytes
             self.cif.irs.sendExtendMsg(d.poolID, volDict, newsize * 2**20,
                                            self._afterLvExtend)
@@ -748,14 +744,7 @@ class Vm(object):
                            d.volumeID, d.name, d.apparentsize / constants.MEGAB,
                            newsize) #in MiB
 
-            volID = d.volumeID
             break
-
-        # store most recently requested size in conf, to be re-requested on
-        # migration destination
-        for dev in self.conf['devices']:
-            if dev['type'] == DISK_DEVICES and dev.get('volumeID') == volID:
-                    dev['reqsize'] = str(newsize)
 
     def _refreshLV(self, domainID, poolID, imageID, volumeID):
         """ Stop vm before refreshing LV. """
@@ -787,10 +776,16 @@ class Vm(object):
 
             apparentsize = int(res['apparentsize'])
             truesize = int(res['truesize'])
+
+            # This is for backward compatibility if the volume extension
+            # request came in before a vdsm update and the newSize value
+            # was stored in the drive property rather than in the task.
+            newSize = drive.get('newSize', d.reqsize)
+
             self.log.debug('_afterLvExtend apparentsize %s req size %s',
-                            apparentsize / constants.MEGAB, d.reqsize) # MiB
-            if apparentsize >= d.reqsize * constants.MEGAB: #in Bytes
-                d.needExtend = False
+                           apparentsize / constants.MEGAB, newSize)  # MiB
+
+            if apparentsize >= newSize * constants.MEGAB:  # in Bytes
                 try:
                     self.cont()
                 except libvirt.libvirtError:

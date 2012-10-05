@@ -124,7 +124,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
                                               vmDrive.poolID,
                                               vmDrive.imageID,
                                               vmDrive.volumeID))
-                if volSize['status']['code'] == 0 and not vmDrive.needExtend:
+                if volSize['status']['code'] == 0:
                     vmDrive.truesize = int(volSize['truesize'])
                     vmDrive.apparentsize = int(volSize['apparentsize'])
 
@@ -1025,7 +1025,7 @@ class Drive(LibvirtVmDevice):
             self.serial = kwargs.get('imageID'[-20:]) or ''
         LibvirtVmDevice.__init__(self, conf, log, **kwargs)
         # Keep sizes as int
-        self.reqsize = int(kwargs.get('reqsize', '0'))
+        self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
         self.name = self._makeName()
