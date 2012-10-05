@@ -327,7 +327,7 @@ class Vm(object):
                                 self.conf.pop('elapsedTimeOffset', 0))
 
         self._usedIndices = {} #{'ide': [], 'virtio' = []}
-        self._volumesPrepared = False
+        self.stopDisksStatsCollection()
         self._vmCreationEvent = threading.Event()
         self._pathsPreparedEvent = threading.Event()
         self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
@@ -638,6 +638,15 @@ class Vm(object):
     def _incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
 
+    def stopDisksStatsCollection(self):
+        self._volumesPrepared = False
+
+    def startDisksStatsCollection(self):
+        self._volumesPrepared = True
+
+    def isDisksStatsCollectionEnabled(self):
+        return self._volumesPrepared
+
     def preparePaths(self, drives):
         for drive in drives:
             with self._volPrepareLock:
@@ -647,7 +656,7 @@ class Vm(object):
                 drive['path'] = self.cif.prepareVolumePath(drive, self.id)
         else:
             # Now we got all the resources we needed
-            self._volumesPrepared = True
+            self.startDisksStatsCollection()
 
     def releaseVm(self):
         """
@@ -739,33 +748,30 @@ class Vm(object):
         self.log.debug('new rtc offset %s', timeOffset)
         self.conf['timeOffset'] = timeOffset
 
-    def _onHighWrite(self, block_dev, offset):
-        self.log.info('_onHighWrite: write above watermark on %s offset %s',
-                      block_dev, offset)
-        self._lvExtend(block_dev)
+    def extendDriveVolume(self, vmDrive, newSize=None):
+        if not vmDrive.blockDev:
+            return
 
-    def _lvExtend(self, block_dev, newsize=None):
-        for d in self._devices[DISK_DEVICES]:
-            if not d.blockDev: continue
-            if d.name != block_dev: continue
-            if newsize is None:
-                newsize = config.getint('irs',
-                    'volume_utilization_chunk_mb') + (d.apparentsize + 2**20
-                                                     - 1) / 2**20
-            # TODO cap newsize by max volume size
-            volDict = {'poolID': d.poolID, 'domainID': d.domainID,
-                       'imageID': d.imageID, 'volumeID': d.volumeID,
-                       'name': d.name, 'newSize': newsize}
-            # sendExtendMsg expects size in bytes
-            self.cif.irs.sendExtendMsg(d.poolID, volDict, newsize * 2**20,
-                                           self._afterLvExtend)
-            self.log.debug('%s/%s (%s): apparentsize %s req %s', d.domainID,
-                           d.volumeID, d.name, d.apparentsize / constants.MEGAB,
-                           newsize) #in MiB
+        if newSize is None:
+            # newSize is always in megabytes
+            newSize = (config.getint('irs', 'volume_utilization_chunk_mb')
+                        + ((vmDrive.apparentsize + constants.MEGAB - 1)
+                            / constants.MEGAB))
 
-            break
+        if getattr(vmDrive, 'diskReplicate', None):
+            volInfo = {'poolID': vmDrive.diskReplicate['poolID'],
+                       'domainID': vmDrive.diskReplicate['domainID'],
+                       'imageID': vmDrive.diskReplicate['imageID'],
+                       'volumeID': vmDrive.diskReplicate['volumeID'],
+                       'name': vmDrive.name, 'newSize': newSize}
+            self.log.debug("Requesting an extension for the volume "
+                           "replication: %s", volInfo)
+            self.cif.irs.sendExtendMsg(vmDrive.poolID, volInfo,
+                    newSize * constants.MEGAB, self.__afterReplicaExtension)
+        else:
+            self.__extendDriveVolume(vmDrive, newSize)
 
-    def _refreshLV(self, domainID, poolID, imageID, volumeID):
+    def __refreshDriveVolume(self, volInfo):
         """ Stop vm before refreshing LV. """
 
         self._guestCpuLock.acquire()
@@ -773,49 +779,69 @@ class Vm(object):
             wasRunning = self._guestCpuRunning
             if wasRunning:
                 self.pause(guestCpuLocked=True)
-            self.cif.irs.refreshVolume(domainID, poolID, imageID, volumeID)
+            self.cif.irs.refreshVolume(volInfo['domainID'],
+                volInfo['poolID'], volInfo['imageID'], volInfo['volumeID'])
             if wasRunning:
                 self.cont(guestCpuLocked=True)
         finally:
             self._guestCpuLock.release()
 
-    def _afterLvExtend(self, drive):
-        self.log.debug('_afterLvExtend %s' % drive)
-        for d in self._devices[DISK_DEVICES]:
-            if d.name != drive['name']:
-                continue
-            self._refreshLV(d.domainID, d.poolID,
-                            d.imageID, d.volumeID)
-            res = self.cif.irs.getVolumeSize(d.domainID, d.poolID,
-                                             d.imageID, d.volumeID)
-            if res['status']['code']:
-                self.log.debug("Get size failed for %s %s %s %s. Skipping.",
-                                d.domainID, d.poolID, d.imageID, d.volumeID)
-                continue
+    def __verifyVolumeExtension(self, volInfo):
+        self.log.debug("Refreshing drive volume for %s (domainID: %s, "
+                       "volumeID: %s)", volInfo['name'], volInfo['domainID'],
+                       volInfo['volumeID'])
 
-            apparentsize = int(res['apparentsize'])
-            truesize = int(res['truesize'])
+        self.__refreshDriveVolume(volInfo)
+        volSizeRes = self.cif.irs.getVolumeSize(volInfo['domainID'],
+                    volInfo['poolID'], volInfo['imageID'], volInfo['volumeID'])
 
-            # This is for backward compatibility if the volume extension
-            # request came in before a vdsm update and the newSize value
-            # was stored in the drive property rather than in the task.
-            newSize = drive.get('newSize', d.reqsize)
+        if volSizeRes['status']['code']:
+            raise RuntimeError(("Cannot get the volume size for %s "
+                    "(domainID: %s, volumeID: %s)") % (volInfo['name'],
+                    volInfo['domainID'], volInfo['volumeID']))
 
-            self.log.debug('_afterLvExtend apparentsize %s req size %s',
-                           apparentsize / constants.MEGAB, newSize)  # MiB
+        apparentSize = int(volSizeRes['apparentsize'])
+        trueSize = int(volSizeRes['truesize'])
 
-            if apparentsize >= newSize * constants.MEGAB:  # in Bytes
-                try:
-                    self.cont()
-                except libvirt.libvirtError:
-                    self.log.debug("vm %s can't be resumed", self.id,
-                                   exc_info=True)
+        self.log.debug("Verifying extension for volume %s, requested size %s, "
+                       "current size %s", volInfo['volumeID'],
+                       volInfo['newSize'] * constants.MEGAB, apparentSize)
 
-            # TODO report failure to VDC
-            d.truesize = truesize
-            d.apparentsize = apparentsize
-            self._setWriteWatermarks()
-            return {'status': doneCode}
+        if apparentSize < volInfo['newSize'] * constants.MEGAB:  # in bytes
+            raise RuntimeError(("Volume extension failed for %s "
+                    "(domainID: %s, volumeID: %s)") % (volInfo['name'],
+                    volInfo['domainID'], volInfo['volumeID']))
+
+        return apparentSize, trueSize
+
+    def __afterReplicaExtension(self, volInfo):
+        self.__verifyVolumeExtension(volInfo)
+        vmDrive = self._findDriveByName(volInfo['name'])
+        self.log.debug("Requesting extension for the original drive: %s "
+                       "(domainID: %s, volumeID: %s)",
+                       vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
+        self.__extendDriveVolume(vmDrive, volInfo['newSize'])
+
+    def __extendDriveVolume(self, vmDrive, newSize):
+        volInfo = {'poolID': vmDrive.poolID, 'domainID': vmDrive.domainID,
+                   'imageID': vmDrive.imageID, 'volumeID': vmDrive.volumeID,
+                   'name': vmDrive.name, 'newSize': newSize}
+        self.log.debug("Requesting an extension for the volume: %s", volInfo)
+        self.cif.irs.sendExtendMsg(vmDrive.poolID, volInfo,
+                       newSize * constants.MEGAB, self.__afterVolumeExtension)
+
+    def __afterVolumeExtension(self, volInfo):
+        # Either the extension succeeded and we're setting the new apparentSize
+        # and trueSize, or it fails and we raise an exception.
+        # TODO: Report failure to the engine.
+        apparentSize, trueSize = self.__verifyVolumeExtension(volInfo)
+        vmDrive = self._findDriveByName(volInfo['name'])
+        vmDrive.apparentsize, vmDrive.truesize = apparentSize, trueSize
+        try:
+            self.cont()
+        except libvirt.libvirtError:
+            self.log.debug("VM %s can't be resumed", self.id, exc_info=True)
+        self._setWriteWatermarks()
 
     def changeCD(self, drivespec):
         return self._changeBlockDev('cdrom', 'ide1-cd0', drivespec)

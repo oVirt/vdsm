@@ -492,6 +492,18 @@ class VM(APIBase):
         """
         return errCode['noimpl']
 
+    def diskReplicateStart(self, srcDisk, dstDisk):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.diskReplicateStart(srcDisk, dstDisk)
+
+    def diskReplicateFinish(self, srcDisk, dstDisk):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.diskReplicateFinish(srcDisk, dstDisk)
+
     def pause(self):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
@@ -737,6 +749,14 @@ class Image(APIBase):
         # XXX: On success, self._sdUUID needs to be updated
         return self._irs.moveImage(self._spUUID, self._sdUUID,
                 dstSdUUID, self._UUID, vmUUID, operation, postZero, force)
+
+    def cloneStructure(self, dstSdUUID):
+        return self._irs.cloneImageStructure(self._spUUID, self._sdUUID,
+                self._UUID, dstSdUUID)
+
+    def syncData(self, dstSdUUID, syncType):
+        return self._irs.syncImageData(self._spUUID, self._sdUUID,
+                self._UUID, dstSdUUID, syncType)
 
 
 class LVMVolumeGroup(APIBase):

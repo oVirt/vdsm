@@ -50,6 +50,11 @@ DISK_TYPES = {UNKNOWN_DISK_TYPE:'UNKNOWN', SYSTEM_DISK_TYPE:'SYSTEM',
                 DATA_DISK_TYPE:'DATA', SHARED_DISK_TYPE:'SHARED',
                 SWAP_DISK_TYPE:'SWAP', TEMP_DISK_TYPE:'TEMP'}
 
+# What volumes to synchronize
+SYNC_VOLUMES_ALL = 'ALL'
+SYNC_VOLUMES_INTERNAL = 'INTERNAL'
+SYNC_VOLUMES_LEAF = 'LEAF'
+
 # Image Operations
 UNKNOWN_OP = 0
 COPY_OP = 1
@@ -627,6 +632,44 @@ class Image:
 
         self.log.info("%s task on image %s was successfully finished", OP_TYPES[op], imgUUID)
         return True
+
+    def cloneStructure(self, sdUUID, imgUUID, dstSdUUID):
+        self._createTargetImage(sdCache.produce(dstSdUUID), sdUUID, imgUUID)
+
+    def syncData(self, sdUUID, imgUUID, dstSdUUID, syncType):
+        srcChain = self.getChain(sdUUID, imgUUID)
+        dstChain = self.getChain(dstSdUUID, imgUUID)
+
+        if syncType == SYNC_VOLUMES_INTERNAL:
+            try:
+                # Removing the leaf volumes
+                del srcChain[-1], dstChain[-1]
+            except IndexError:
+                raise se.ImageIsNotLegalChain()
+        elif syncType == SYNC_VOLUMES_LEAF:
+            try:
+                # Removing all the internal volumes
+                del srcChain[:-1], dstChain[:-1]
+            except IndexError:
+                raise se.ImageIsNotLegalChain()
+        elif syncType != SYNC_VOLUMES_ALL:
+            raise se.NotImplementedException()
+
+        if len(srcChain) != len(dstChain):
+            raise se.DestImageActionError(imgUUID, dstSdUUID)
+
+        # Checking the volume uuids (after removing the leaves to allow
+        # different uuids for the current top layer, see previous check).
+        for i, v in enumerate(srcChain):
+            if v.volUUID != dstChain[i].volUUID:
+                raise se.DestImageActionError(imgUUID, dstSdUUID)
+
+        dstDom = sdCache.produce(dstSdUUID)
+
+        self._interImagesCopy(dstDom, sdUUID, imgUUID,
+                      {'srcChain': srcChain, 'dstChain': dstChain})
+        self._finalizeDestinationImage(dstDom, imgUUID,
+                      {'srcChain': srcChain, 'dstChain': dstChain}, False)
 
     def __cleanupMultimove(self, sdUUID, imgList, postZero=False):
         """

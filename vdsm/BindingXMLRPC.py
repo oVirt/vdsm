@@ -332,6 +332,14 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.monitorCommand(cmd)
 
+    def vmDiskReplicateStart(self, vmId, srcDisk, dstDisk):
+        vm = API.VM(vmId)
+        return vm.diskReplicateStart(srcDisk, dstDisk)
+
+    def vmDiskReplicateFinish(self, vmId, srcDisk, dstDisk):
+        vm = API.VM(vmId)
+        return vm.diskReplicateFinish(srcDisk, dstDisk)
+
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
         api = API.Global()
         return api.addNetwork(bridge, vlan, bond, nics, options)
@@ -463,6 +471,14 @@ class BindingXMLRPC(object):
                   op, postZero=False, force=False):
         image = API.Image(imgUUID, spUUID, srcDomUUID)
         return image.move(dstDomUUID, op, postZero, force)
+
+    def imageCloneStructure(self, spUUID, sdUUID, imgUUID, dstSdUUID):
+        image = API.Image(imgUUID, spUUID, sdUUID)
+        return image.cloneStructure(dstSdUUID)
+
+    def imageSyncData(self, spUUID, sdUUID, imgUUID, dstSdUUID, syncType):
+        image = API.Image(imgUUID, spUUID, sdUUID)
+        return image.syncData(dstSdUUID, syncType)
 
     def poolConnect(self, spUUID, hostID, scsiKey, msdUUID, masterVersion,
                     options=None):
@@ -758,6 +774,8 @@ class BindingXMLRPC(object):
                 (self.vmDesktopSendHcCommand, 'sendHcCmdToDesktop'),
                 (self.vmHibernate, 'hibernate'),
                 (self.vmMonitorCommand, 'monitorCommand'),
+                (self.vmDiskReplicateStart, 'diskReplicateStart'),
+                (self.vmDiskReplicateFinish, 'diskReplicateFinish'),
                 (self.addNetwork, 'addNetwork'),
                 (self.delNetwork, 'delNetwork'),
                 (self.editNetwork, 'editNetwork'),
@@ -794,6 +812,8 @@ class BindingXMLRPC(object):
                 (self.imageDeleteVolumes, 'deleteVolume'),
                 (self.imageMergeSnapshots, 'mergeSnapshots'),
                 (self.imageMove, 'moveImage'),
+                (self.imageCloneStructure, 'cloneImageStructure'),
+                (self.imageSyncData, 'syncImageData'),
                 (self.poolConnect, 'connectStoragePool'),
                 (self.poolConnectStorageServer, 'connectStorageServer'),
                 (self.poolCreate, 'createStoragePool'),

@@ -1734,6 +1734,61 @@ class StoragePool(Securable):
             repoPath = os.path.join(self.storage_repository, self.spUUID)
             image.Image(repoPath).move(srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero, force)
 
+    def cloneImageStructure(self, sdUUID, imgUUID, dstSdUUID):
+        """
+        Clone an image structure from a source domain to a destination domain
+        within the same pool.
+
+        :param spUUID: The storage pool where the operation will take place.
+        :type spUUID: UUID
+        :param sdUUID: The UUID of the storage domain you want to copy from.
+        :type sdUUID: UUID
+        :param imgUUID: The UUID of the image you want to copy.
+        :type imgUUID: UUID
+        :param dstSdUUID: The UUID of the storage domain you want to copy to.
+        :type dstSdUUID: UUID
+        """
+        srcImgResNs = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        dstImgResNs = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
+
+        # Preparing the ordered resource list to be acquired
+        resList = (rmanager.acquireResource(*x) for x in sorted((
+            (srcImgResNs, imgUUID, rm.LockType.shared),
+            (dstImgResNs, imgUUID, rm.LockType.exclusive),
+        )))
+
+        with nested(*resList):
+            repoPath = os.path.join(self.storage_repository, self.spUUID)
+            image.Image(repoPath).cloneStructure(sdUUID, imgUUID, dstSdUUID)
+
+    def syncImageData(self, sdUUID, imgUUID, dstSdUUID, syncType):
+        """
+        Synchronize image data between storage domains within same pool.
+
+        :param spUUID: The storage pool where the operation will take place.
+        :type spUUID: UUID
+        :param sdUUID: The UUID of the storage domain you want to copy from.
+        :type sdUUID: UUID
+        :param imgUUID: The UUID of the image you want to copy.
+        :type imgUUID: UUID
+        :param dstSdUUID: The UUID of the storage domain you want to copy to.
+        :type dstSdUUID: UUID
+        :param syncType: The type of sync to perform (all volumes, etc.).
+        :type syncType: syncType enum
+        """
+        srcImgResNs = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        dstImgResNs = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
+
+        # Preparing the ordered resource list to be acquired
+        resList = (rmanager.acquireResource(*x) for x in sorted((
+            (srcImgResNs, imgUUID, rm.LockType.shared),
+            (dstImgResNs, imgUUID, rm.LockType.exclusive),
+        )))
+
+        with nested(*resList):
+            repoPath = os.path.join(self.storage_repository, self.spUUID)
+            image.Image(repoPath).syncData(sdUUID, imgUUID, dstSdUUID,
+                                           syncType)
 
     def moveMultipleImages(self, srcDomUUID, dstDomUUID, imgDict, vmUUID, force):
         """

@@ -97,43 +97,48 @@ class VmStatsThread(utils.AdvancedStatsThread):
             self.sampleDisk, self.sampleDiskLatency, self.sampleNet)
 
     def _highWrite(self):
-        if not self._vm._volumesPrepared:
+        if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
-            if vmDrive.blockDev and vmDrive.format == 'cow':
-                capacity, alloc, physical = \
-                    self._vm._dom.blockInfo(vmDrive.path, 0)
-                if physical - alloc < self._vm._MIN_DISK_REMAIN:
-                    self._log.info('%s/%s apparent: %s capacity: %s, '
-                                   'alloc: %s phys: %s', vmDrive.domainID,
-                                   vmDrive.volumeID, vmDrive.apparentsize,
-                                   capacity, alloc, physical)
-                    self._vm._onHighWrite(vmDrive.name, alloc)
+            if not vmDrive.blockDev or vmDrive.format != 'cow':
+                continue
+
+            capacity, alloc, physical = \
+                self._vm._dom.blockInfo(vmDrive.path, 0)
+
+            if physical - alloc >= self._vm._MIN_DISK_REMAIN:
+                continue
+
+            self._log.info('%s/%s apparent: %s capacity: %s, alloc: %s, '
+                           'phys: %s', vmDrive.domainID, vmDrive.volumeID,
+                           vmDrive.apparentsize, capacity, alloc, physical)
+
+            self._vm.extendDriveVolume(vmDrive)
 
     def _updateVolumes(self):
-        if not self._vm._volumesPrepared:
+        if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             if vmDrive.device == 'disk' and vmDrive.isVdsmImage():
-                volSize = (self._vm.cif.irs.
-                                getVolumeSize(vmDrive.domainID,
-                                              vmDrive.poolID,
-                                              vmDrive.imageID,
-                                              vmDrive.volumeID))
-                if volSize['status']['code'] == 0:
-                    vmDrive.truesize = int(volSize['truesize'])
-                    vmDrive.apparentsize = int(volSize['apparentsize'])
+                volSize = self._vm.cif.irs.getVolumeSize(vmDrive.domainID,
+                        vmDrive.poolID, vmDrive.imageID, vmDrive.volumeID)
+
+                if volSize['status']['code'] != 0:
+                    continue
+
+                vmDrive.truesize = int(volSize['truesize'])
+                vmDrive.apparentsize = int(volSize['apparentsize'])
 
     def _sampleCpu(self):
         cpuStats = self._vm._dom.getCPUStats(True, 0)
         return cpuStats[0]
 
     def _sampleDisk(self):
-        if not self._vm._volumesPrepared:
+        if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
 
@@ -144,7 +149,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
         return diskSamples
 
     def _sampleDiskLatency(self):
-        if not self._vm._volumesPrepared:
+        if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
         #{'wr_total_times': 0L, 'rd_operations': 9638L,
@@ -1703,6 +1708,12 @@ class LibvirtVm(vm.Vm):
         hooks.before_vm_pause(self._dom.XMLDesc(0), self.conf)
         self._dom.suspend()
 
+    def _findDriveByName(self, name):
+        for device in self._devices[vm.DISK_DEVICES][:]:
+            if device.name == name:
+                return device
+        raise LookupError("No such drive: '%s'" % name)
+
     def _findDriveByUUIDs(self, drive):
         """Find a drive given its definition"""
 
@@ -1731,7 +1742,32 @@ class LibvirtVm(vm.Vm):
                 if device.UUID == drive["UUID"]:
                     return device
 
-        return None
+        raise LookupError("No such drive: '%s'" % drive)
+
+    def _updateDrive(self, drive):
+        """Update the drive with the new volume information"""
+
+        # Updating the drive object
+        for device in self._devices[vm.DISK_DEVICES][:]:
+            if device.name == drive["name"]:
+                for k, v in drive.iteritems():
+                    setattr(device, k, v)
+                break
+        else:
+            self.log.error("Unable to update the drive object for: %s",
+                           drive["name"])
+
+        # Updating the VM configuration
+        for device in self.conf["devices"][:]:
+            if (device['type'] == vm.DISK_DEVICES and
+                device.get("name") == drive["name"]):
+                device.update(drive)
+                break
+        else:
+            self.log.error("Unable to update the device configuration ",
+                           "for: %s", drive["name"])
+
+        self.saveState()
 
     def snapshot(self, snapDrives):
         """Live snapshot command"""
@@ -1783,31 +1819,6 @@ class LibvirtVm(vm.Vm):
                     self.log.error("Unable to teardown drive: %s", vmDevName,
                                    exc_info=True)
 
-        def _updateDrive(drive):
-            """Update the drive with the new volume information"""
-
-            # Updating the drive object
-            for device in self._devices[vm.DISK_DEVICES][:]:
-                if device.name == drive["name"]:
-                    for k, v in drive.iteritems():
-                        setattr(device, k, v)
-                    break
-            else:
-                self.log.error("Unable to update the drive object for: %s",
-                               drive["name"])
-
-            # Updating the VM configuration
-            for device in self.conf["devices"][:]:
-                if (device['type'] == vm.DISK_DEVICES and
-                    device.get("name") == drive["name"]):
-                    device.update(drive)
-                    break
-            else:
-                self.log.error("Unable to update the device configuration ",
-                               "for: %s", drive["name"])
-
-            self.saveState()
-
         snap = xml.dom.minidom.Element('domainsnapshot')
         disks = xml.dom.minidom.Element('disks')
         newDrives = {}
@@ -1818,14 +1829,20 @@ class LibvirtVm(vm.Vm):
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)
 
-            if self._findDriveByUUIDs(tgetDrv):
+            try:
+                self._findDriveByUUIDs(tgetDrv)
+            except LookupError:
+                # The vm is not already using the requested volume for the
+                # snapshot, continuing.
+                pass
+            else:
                 # The snapshot volume is the current one, skipping
                 self.log.debug("The volume is already in use: %s", tgetDrv)
-                continue
+                continue  # Next drive
 
-            vmDrive = self._findDriveByUUIDs(baseDrv)
-
-            if vmDrive is None:
+            try:
+                vmDrive = self._findDriveByUUIDs(baseDrv)
+            except LookupError:
                 # The volume we want to snapshot doesn't exist
                 _rollbackDrives(newDrives)
                 self.log.error("The base volume doesn't exist: %s", baseDrv)
@@ -1858,7 +1875,7 @@ class LibvirtVm(vm.Vm):
         snapxml = snap.toprettyxml()
 
         self.log.debug(snapxml)
-        self._volumesPrepared = False
+        self.stopDisksStatsCollection()
 
         snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
                      libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT)
@@ -1891,9 +1908,9 @@ class LibvirtVm(vm.Vm):
             else:
                 # Update the drive information
                 for drive in newDrives.values():
-                    _updateDrive(drive)
+                    self._updateDrive(drive)
             finally:
-                self._volumesPrepared = True
+                self.startDisksStatsCollection()
 
             # Successful
             break
@@ -1948,7 +1965,10 @@ class LibvirtVm(vm.Vm):
 
         # Preparing the merge statuses
         for drive in mergeDrives:
-            mergeDrive = self._findDriveByUUIDs(drive)
+            try:
+                mergeDrive = self._findDriveByUUIDs(drive)
+            except LookupError:
+                mergeDrive = None
 
             mergeStatus = drive.copy()
             mergeStatus['status'] = MERGESTATUS.NOT_STARTED
@@ -2003,6 +2023,165 @@ class LibvirtVm(vm.Vm):
             mergeStatus['status'] = MERGESTATUS.FAILED
 
         self.saveState()
+
+    def _setDiskReplica(self, srcDrive, dstDisk):
+        """
+        This utility method is used to set the disk replication information
+        both in the live object used by vdsm and the vm configuration
+        dictionary that is stored on disk (so that the information is not
+        lost across restarts).
+        """
+        for device in self.conf["devices"]:
+            if (device['type'] == vm.DISK_DEVICES
+                    and device.get("name") == srcDrive.name):
+                device['diskReplicate'] = dstDisk
+                break
+        else:
+            raise LookupError("No such drive: '%s'" % srcDrive.name)
+
+        srcDrive.diskReplicate = dstDisk
+        self.saveState()
+
+    def isDiskReplicationInProgress(self, srcDrive):
+        return hasattr(srcDrive, 'diskReplicate')
+
+    def _delDiskReplica(self, srcDrive):
+        """
+        This utility method is the inverse of _setDiskReplica, look at the
+        _setDiskReplica description for more information.
+        """
+        for device in self.conf["devices"]:
+            if (device['type'] == vm.DISK_DEVICES
+                    and device.get("name") == srcDrive.name):
+                del device['diskReplicate']
+                break
+        else:
+            raise LookupError("No such drive: '%s'" % srcDrive.name)
+
+        del srcDrive.diskReplicate
+        self.saveState()
+
+    def diskReplicateStart(self, srcDisk, dstDisk):
+        try:
+            srcDrive = self._findDriveByUUIDs(srcDisk)
+        except LookupError:
+            return errCode['imageErr']
+
+        if self.isDiskReplicationInProgress(srcDrive):
+            return errCode['replicaErr']
+
+        self._setDiskReplica(srcDrive, dstDisk)
+        dstDiskCopy = dstDisk.copy()
+
+        # The device entry is enforced because stricly required by
+        # prepareVolumePath
+        dstDiskCopy.update({'device': srcDrive.device})
+
+        try:
+            dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
+
+            try:
+                self._dom.blockRebase(srcDrive.name, dstDiskCopy['path'], 0, (
+                    libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY |
+                    libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
+                    libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW
+                ))
+            except:
+                self.log.error("Unable to start the replication for %s to %s",
+                               srcDrive.name, dstDiskCopy, exc_info=True)
+                self.cif.teardownVolumePath(dstDiskCopy)
+                raise
+        except:
+            self.log.error("Cannot complete the disk replication process",
+                           exc_info=True)
+            self._delDiskReplica(srcDrive)
+            return errCode['replicaErr']
+
+        try:
+            self.extendDriveVolume(srcDrive)
+        except:
+            self.log.error("Initial extension request failed for %s",
+                           srcDrive.name, exc_info=True)
+
+        return {'status': doneCode}
+
+    def diskReplicateFinish(self, srcDisk, dstDisk):
+        try:
+            srcDrive = self._findDriveByUUIDs(srcDisk)
+        except LookupError:
+            return errCode['imageErr']
+
+        if not self.isDiskReplicationInProgress(srcDrive):
+            return errCode['replicaErr']
+
+        # Looking for the replication blockJob info (checking its presence)
+        blkJobInfo = self._dom.blockJobInfo(srcDrive.name, 0)
+
+        if (not isinstance(blkJobInfo, dict)
+                or 'cur' not in blkJobInfo or 'end' not in blkJobInfo):
+            self.log.error("Replication job not found for disk %s (%s)",
+                           srcDrive.name, srcDisk)
+
+            # Making sure that we don't have any stale information
+            self._delDiskReplica(srcDrive)
+            return errCode['replicaErr']
+
+        # Checking if we reached the replication mode ("mirroring" in libvirt
+        # and qemu terms)
+        if blkJobInfo['cur'] != blkJobInfo['end']:
+            return errCode['unavail']
+
+        dstDiskCopy = dstDisk.copy()
+
+        # Updating the destination disk device and name, the device is used by
+        # prepareVolumePath (required to fill the new information as the path)
+        # and the name is used by _updateDrive.
+        dstDiskCopy.update({'device': srcDrive.device, 'name': srcDrive.name})
+        dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
+
+        if srcDisk != dstDisk:
+            self.log.debug("Stopping the disk replication switching to the "
+                           "destination drive: %s", dstDisk)
+            blockJobFlags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
+            diskToTeardown = srcDisk
+
+            # We need to stop the stats collection in order to avoid spurious
+            # errors from the stats threads during the switch from the old
+            # drive to the new one. This applies only to the case where we
+            # actually switch to the destination.
+            self.stopDisksStatsCollection()
+        else:
+            self.log.debug("Stopping the disk replication remaining on the "
+                           "source drive: %s", dstDisk)
+            blockJobFlags = 0
+            diskToTeardown = srcDrive.diskReplicate
+
+        try:
+            # Stopping the replication
+            self._dom.blockJobAbort(srcDrive.name, blockJobFlags)
+        except:
+            self.log.error("Unable to stop the replication for the drive: %s",
+                           srcDrive.name, exc_info=True)
+            try:
+                self.cif.teardownVolumePath(srcDrive.diskReplicate)
+            except:
+                # There is nothing we can do at this point other than logging
+                self.log.error("Unable to teardown the replication "
+                               "destination disk", exc_info=True)
+            return errCode['changeDisk']  # Finally is evaluated
+        else:
+            try:
+                self.cif.teardownVolumePath(diskToTeardown)
+            except:
+                # There is nothing we can do at this point other than logging
+                self.log.error("Unable to teardown the previous chain: %s",
+                               diskToTeardown, exc_info=True)
+            self._updateDrive(dstDiskCopy)  # Updating the drive structure
+        finally:
+            self._delDiskReplica(srcDrive)
+            self.startDisksStatsCollection()
+
+        return {'status': doneCode}
 
     def changeCD(self, drivespec):
         return self._changeBlockDev('cdrom', 'hdc', drivespec)
@@ -2100,7 +2279,7 @@ class LibvirtVm(vm.Vm):
                     self.log.info('%s = %s/%s error %s phys: %s alloc: %s',
                                   blockDevAlias, d.domainID, d.volumeID, err,
                                   physical, alloc)
-                    self._lvExtend(d.name)
+                    self.extendDriveVolume(d)
 
     def _acpiShutdown(self):
         self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)

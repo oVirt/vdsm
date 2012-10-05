@@ -2880,6 +2880,41 @@
           'postZero': 'bool', 'force': 'bool'},
  'returns': 'UUID'}
 
+##
+# @Image.cloneStructure:
+#
+# Clone an image structure from a source domain to a destination domain
+# within the same Storage Pool.
+#
+# @dstSdUUID:   The destination Storage Domain UUID
+#
+# Returns:
+# A task UUID
+#
+# Since: 4.11.0
+##
+{'command': {'class': 'Image', 'name': 'sync'},
+ 'data': {'dstSdUUID': 'UUID'},
+ 'returns': 'UUID'}
+
+##
+# @Image.syncData:
+#
+# Synchronize image data between storage domains within same Storage Pool.
+#
+# @dstSdUUID:   The destination Storage Domain UUID
+#
+# @syncType:    The type of synchronization to perform
+#
+# Returns:
+# A task UUID
+#
+# Since: 4.11.0
+##
+{'command': {'class': 'Image', 'name': 'sync'},
+ 'data': {'dstSdUUID': 'UUID', 'syncType': 'syncType'},
+ 'returns': 'UUID'}
+
 ## Category: @LVMVolumeGroup ###################################################
 ##
 # @LVMVolumeGroup:
@@ -5128,6 +5163,33 @@
 ##
 {'command': {'class': 'VM', 'name': 'setBalloonTarget'},
  'data': {'target': 'uint'}}
+
+# @VM.diskReplicateStart:
+#
+# Start the replication of a disk to a destination.
+#
+# @srcDisk:  A @DriveSpecVolume structure rapresenting the source disk
+#
+# @dstDisk:  A @DriveSpecVolume structure rapresenting the destination disk
+#
+# Since: 4.11.0
+##
+{'command': {'class': 'VM', 'name': 'diskReplicateStart'},
+ 'data': {'srcDisk': 'DriveSpecVolume', 'dstDisk': 'DriveSpecVolume'}}
+
+##
+# @VM.diskReplicateFinish:
+#
+# Stop the replication of a disk switching to a destination.
+#
+# @srcDisk:  A @DriveSpecVolume structure rapresenting the source disk
+#
+# @dstDisk:  A @DriveSpecVolume structure rapresenting the destination disk
+#
+# Since: 4.11.0
+##
+{'command': {'class': 'VM', 'name': 'diskReplicateFinish'},
+ 'data': {'srcDisk': 'DriveSpecVolume', 'dstDisk': 'DriveSpecVolume'}}
 
 ## Category: @Volume ###########################################################
 ##

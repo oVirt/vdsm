@@ -1259,6 +1259,26 @@ class service:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
 
+    def cloneImageStructure(self, args):
+        spUUID, sdUUID, imgUUID, dstSdUUID = args
+        image = self.s.cloneImageStructure(spUUID, sdUUID, imgUUID, dstSdUUID)
+
+        if image['status']['code']:
+            return image['status']['code'], image['status']['message']
+
+        return 0, image['uuid']
+
+    def syncImageData(self, args):
+        spUUID, sdUUID, imgUUID, dstSdUUID, syncType = args
+
+        image = self.s.syncImageData(spUUID, sdUUID, imgUUID, dstSdUUID,
+                                     syncType)
+
+        if image['status']['code']:
+            return image['status']['code'], image['status']['message']
+
+        return 0, image['uuid']
+
     def moveMultiImage(self, args):
         spUUID = args[0]
         srcDomUUID = args[1]
@@ -1614,6 +1634,26 @@ class service:
         target = int(args[1])
         response = self.s.setBalloonTarget(vmId, target)
         return response['status']['code'], response['status']['message']
+
+    def diskReplicateStart(self, args):
+        vmUUID, spUUID, sdUUID, imgUUID, volUUID, dstSdUUID = args
+
+        status = self.s.diskReplicateStart(vmUUID, {'poolID': spUUID,
+            'domainID': sdUUID, 'imageID': imgUUID, 'volumeID': volUUID},
+            {'poolID': spUUID, 'domainID': dstSdUUID, 'imageID': imgUUID,
+            'volumeID': volUUID})
+
+        return status['status']['code'], status['status']['message']
+
+    def diskReplicateFinish(self, args):
+        vmUUID, spUUID, sdUUID, imgUUID, volUUID, dstSdUUID = args
+
+        status = self.s.diskReplicateFinish(vmUUID, {'poolID': spUUID,
+            'domainID': sdUUID, 'imageID': imgUUID, 'volumeID': volUUID},
+            {'poolID': spUUID, 'domainID': dstSdUUID, 'imageID': imgUUID,
+            'volumeID': volUUID})
+
+        return status['status']['code'], status['status']['message']
 
 if __name__ == '__main__':
     if _glusterEnabled:
@@ -2178,6 +2218,16 @@ if __name__ == '__main__':
                        'Move/Copy image between storage domains within same '
                        'storage pool'
                        )),
+        'cloneImageStructure': (serv.cloneImageStructure,
+                       ('<spUUID> <sdUUID> <imgUUID> <dstSdUUID>',
+                       'Clone an image structure from a source domain to a '
+                       'destination domain within the same pool.'
+                       )),
+        'syncImageData': (serv.syncImageData,
+                       ('<spUUID> <sdUUID> <imgUUID> <dstSdUUID> <syncType>',
+                       'Synchronize image data between storage domains within '
+                       'same pool.'
+                       )),
         'moveMultiImage': (serv.moveMultiImage,
                        ('<spUUID> <srcDomUUID> <dstDomUUID> '
                            '<imgList>({imgUUID=postzero,imgUUID=postzero,...})'
@@ -2277,6 +2327,16 @@ if __name__ == '__main__':
                        ('<vmId> <target>',
                        "Set VM's balloon target"
                       )),
+        'diskReplicateStart': (serv.diskReplicateStart,
+                       ('<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID> '
+                           '<dstSdUUID>',
+                           "Start live replication to the destination domain"
+                       )),
+        'diskReplicateFinish': (serv.diskReplicateFinish,
+                       ('<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID> '
+                           '<dstSdUUID>',
+                           "Start live replication to the destination domain"
+                       )),
     }
     if _glusterEnabled:
         commands.update(ge.getGlusterCmdDict(serv))

@@ -1344,6 +1344,38 @@ class HSM:
                     misc.parseBool(force)
         )
 
+    @public
+    def cloneImageStructure(self, spUUID, sdUUID, imgUUID, dstSdUUID):
+        """
+        Clone an image structure (volume chain) to a destination domain within
+        the same pool.
+        """
+        self.validateSdUUID(sdUUID)
+        self.validateSdUUID(dstSdUUID)
+
+        for dom in sorted((sdUUID, dstSdUUID)):
+            vars.task.getSharedLock(STORAGE, dom)
+
+        pool = self.getPool(spUUID)
+        self._spmSchedule(spUUID, "cloneImageStructure",
+                          pool.cloneImageStructure, sdUUID, imgUUID, dstSdUUID)
+
+    @public
+    def syncImageData(self, spUUID, sdUUID, imgUUID, dstSdUUID, syncType):
+        """
+        Copy the internal data between image structures (volume chain) within
+        the same pool.
+        """
+        self.validateSdUUID(sdUUID)
+        self.validateSdUUID(dstSdUUID)
+
+        for dom in sorted((sdUUID, dstSdUUID)):
+            vars.task.getSharedLock(STORAGE, dom)
+
+        pool = self.getPool(spUUID)
+        self._spmSchedule(spUUID, "syncImageData", pool.syncImageData,
+                          sdUUID, imgUUID, dstSdUUID, syncType)
+
     @deprecated
     @public
     def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force=False):

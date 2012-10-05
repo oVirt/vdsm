@@ -121,6 +121,9 @@ errCode = {'noVM':         {'status':
             'momErr':       {'status':
                              {'code': 54,
                               'message': 'Failed to set mom policy'}},
+            'replicaErr':   {'status':
+                             {'code': 55,
+                              'message': 'Drive replication error'}},
             'recovery':     {'status':
                              {'code': 99,
                               'message':
