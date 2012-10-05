@@ -2489,19 +2489,8 @@ class Vm(object):
             self.__extendDriveVolume(vmDrive, newSize)
 
     def __refreshDriveVolume(self, volInfo):
-        """ Stop vm before refreshing LV. """
-
-        self._guestCpuLock.acquire()
-        try:
-            wasRunning = self._guestCpuRunning
-            if wasRunning:
-                self.pause(guestCpuLocked=True)
-            self.cif.irs.refreshVolume(volInfo['domainID'], volInfo['poolID'],
-                                       volInfo['imageID'], volInfo['volumeID'])
-            if wasRunning:
-                self.cont(guestCpuLocked=True)
-        finally:
-            self._guestCpuLock.release()
+        self.cif.irs.refreshVolume(volInfo['domainID'], volInfo['poolID'],
+                                   volInfo['imageID'], volInfo['volumeID'])
 
     def __verifyVolumeExtension(self, volInfo):
         self.log.debug("Refreshing drive volume for %s (domainID: %s, "
