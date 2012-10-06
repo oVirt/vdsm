@@ -454,17 +454,19 @@ def getMGTIP(vdsmDir, vdcHostName):
     logging.debug("getMGTIP: Host MGT IP=" + strReturn)
     return strReturn
 
-def preventDuplicate():
+def preventDuplicate(bridgeName=None):
     """
       This function checks if the needed bridge (@VDSMBRIDGE@) already exist.
     """
+    if bridgeName is None:
+        bridgeName = MGT_BRIDGE_NAME
     fFound = False
 
-    if os.path.exists('/sys/class/net/' + MGT_BRIDGE_NAME):
+    if os.path.exists('/sys/class/net/' + bridgeName):
         fFound = True
-        logging.debug("Bridge " + MGT_BRIDGE_NAME + " already exists.")
+        logging.debug("Bridge %s already exists." % bridgeName)
     else:
-        logging.debug("Bridge " + MGT_BRIDGE_NAME + " not found, need to create it.")
+        logging.debug("Bridge %s not found, need to create it." % bridgeName)
 
     return fFound
 
@@ -899,7 +901,7 @@ def _getOvirtBridgeParams(mgtBridge):
 
     return vlan, bonding, nic
 
-def _getRHELBridgeParams(mgtIface):
+def _getRHELBridgeParams(mgtIface, bridgeName=None):
     """
         This helper function extract the relevant parameters of the existing
         RHEL interface, in order to create a managment bridge.
@@ -919,9 +921,14 @@ def _getRHELBridgeParams(mgtIface):
             nic = mgtIface
 
         if nic in netinfo.bondings():
-            logging.error("_getRHELBridgeParams Found bonding: " + str(nic) + \
-               ". This network configuration is not" \
-                "supported! Please configure " + MGT_BRIDGE_NAME + " bridge manually and re-install.")
+            logging.error(
+                (
+                    "_getRHELBridgeParams Found bonding: %s."
+                    "This network configuration is not"
+                    "supported! Please configure %s bridge"
+                    "manually and re-install."
+                ) % (nic, bridgeName)
+            )
             nic = None
     except:
         logging.error("_getRHELBridgeParams Failed to test for VLAN data")
@@ -943,11 +950,13 @@ def setSafeVdsmNetworkConfig():
                 os.remove(f)
 
 
-def makeBridge(vdcName, vdsmDir):
+def makeBridge(vdcName, vdsmDir, bridgeName=None):
     """
         Create (for RHEL) or rename (oVirt default bridge) to @VDSMBRIDGE@ bridge.
     """
     logging.debug('makeBridge begin.')
+    if bridgeName is None:
+        bridgeName = MGT_BRIDGE_NAME
 
     try:
         vdsmImport("netinfo", vdsmDir)
@@ -992,7 +1001,7 @@ def makeBridge(vdcName, vdsmDir):
         if fIsOvirt:
             vlan, bonding, nic = _getOvirtBridgeParams(mgtBridge)
         else:
-            vlan, bonding, nic = _getRHELBridgeParams(mgtIface)
+            vlan, bonding, nic = _getRHELBridgeParams(mgtIface, bridgeName=bridgeName)
         fReturn = (nic is not None)
 
     #Delete existing bridge in oVirt
@@ -1011,17 +1020,22 @@ def makeBridge(vdcName, vdsmDir):
             fReturn = False
             logging.debug("makeBridge Failed to del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
 
-    #Add @VDSMBRIDGE@ bridge
+    #Add bridge
     if fReturn:
         try:
             lstBridgeOptions.append('blockingdhcp=true')
-            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_ADD) , MGT_BRIDGE_NAME, vlan, bonding, nic] + lstBridgeOptions)
+            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_ADD) , bridgeName, vlan, bonding, nic] + lstBridgeOptions)
             if ret:
-                fReturn = False
-                logging.debug("makeBridge Failed to add " + MGT_BRIDGE_NAME + " bridge out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+                raise Exception('Failed to add bridge')
         except:
             fReturn = False
-            logging.debug("makeBridge Failed to add " + MGT_BRIDGE_NAME + " bridge out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+            logging.debug(
+                (
+                    "makeBridge Failed to add %s bridge out=%s\n"
+                    "err=%s\n"
+                    "ret=%s"
+                ) % (bridgeName, out, err, ret)
+            )
 
     #Save current config by removing the undo files:
     try:

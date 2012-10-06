@@ -247,6 +247,9 @@ class Deploy:
     """
         This class holds the relevant functionality for vdsm deployment on RHEL.
     """
+    def __init__(self, bridgeName=None):
+        self._bridgeName = bridgeName
+
     def _xmlOutput(self, component, status, resultKey, result, msg, test=False):
         """
             Internal: publish results to server and log.
@@ -704,7 +707,11 @@ class Deploy:
 
         #add management bridge
         try:
-            fReturn = deployUtil.makeBridge(vdcName, VDSM_DIR)
+            fReturn = deployUtil.makeBridge(
+                vdcName,
+                VDSM_DIR,
+                bridgeName=self._bridgeName
+            )
             if fReturn: #save current config by removing the undo files:
                 if not vdcPort:
                     vdcPort = 80
@@ -780,7 +787,7 @@ class Deploy:
         if rhel6based:
              deployUtil.setService("libvirtd", "start")
 
-        if deployUtil.preventDuplicate():
+        if deployUtil.preventDuplicate(bridgeName=self._bridgeName):
             self.message = "Bridge management already exists. Skipping bridge creation."
             logging.debug(self.message)
         else:
@@ -926,17 +933,17 @@ class Deploy:
 
 def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
         firewallRulesFile, engine_ssh_key, installVirtualizationService,
-        installGlusterService, miniyum):
+        installGlusterService, bridgeName, miniyum):
     """ --- Check VDS Compatibility.
     """
-    logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s', installVirtualizationService = '%s', installGlusterService = '%s')"%(subject, random_num, rev_num, installVirtualizationService, installGlusterService))
+    logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s', installVirtualizationService = '%s', installGlusterService = '%s', bridgeName = '%s')"%(subject, random_num, rev_num, installVirtualizationService, installGlusterService, bridgeName))
 
     if installGlusterService:
         if not rhel6based:
             logging.error('unsupported system for Gluster service')
             return False
 
-    oDeploy = Deploy()
+    oDeploy = Deploy(bridgeName=bridgeName)
 
     if systime:
         if not oDeploy.setSystemTime(systime):
@@ -1055,7 +1062,8 @@ obsolete options:
         engine_ssh_key = None
         installVirtualizationService = True
         installGlusterService = False
-        opts, args = getopt.getopt(sys.argv[1:], "v:r:O:t:f:S:n:u:Vg")
+        bridgeName = None
+        opts, args = getopt.getopt(sys.argv[1:], "v:r:O:t:f:S:n:u:B:Vg")
         for o,v in opts:
             if o == "-v":
                 deployUtil.setBootstrapInterfaceVersion(int(v))
@@ -1074,6 +1082,8 @@ obsolete options:
                 NEEDED_SERVICES.append('iptables')
             elif o == '-S':
                 engine_ssh_key = v
+            elif o == '-B':
+                bridgeName = v
 
         url = args[0]
         subject = args[1]
@@ -1111,7 +1121,7 @@ obsolete options:
             url, subject, random_num, rev_num, orgName, systime,
             firewallRulesFile, engine_ssh_key,
             installVirtualizationService, installGlusterService,
-            miniyum
+            bridgeName, miniyum
         )
     except:
         logging.error("VDS validation failed", exc_info=True)

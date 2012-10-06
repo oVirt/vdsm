@@ -143,7 +143,7 @@ def testPlatform():
 
     return fReturn
 
-def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_config_str, url_rpm, vds_server, random_num, script, vds_complete, firewall_rules_file, engine_ssh_key, rebootAfterInstallation, installVirtualizationService, installGlusterService):
+def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_config_str, url_rpm, vds_server, random_num, script, vds_complete, firewall_rules_file, engine_ssh_key, rebootAfterInstallation, installVirtualizationService, installGlusterService, bridgeName):
     """ -- Run VDS bootstrap scripts
     """
     try:
@@ -165,6 +165,8 @@ def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_
                     execfn += ["-f", firewall_rules_file]
                 if engine_ssh_key:
                     execfn += ["-S", engine_ssh_key]
+                if bridgeName:
+                    execfn += ["-B", bridgeName]
                 execfn += [url_rpm, vds_server, random_num]
             else:
                 if vds_config_str:
@@ -267,7 +269,7 @@ def handle_ssh_key(host, port, engine_ssh_key):
     return ssh_result
 
 def main():
-    """Usage: vds_installer.py  [-c vds_config_str] [-v ver] [-m remote_nfs] [-r rev_num] [-O organizationName] [-t YYYY-MM-DDTHH:mm:SS_system_time] [-S engine-ssh-key] [-p engine_port] [-V] [-g] <url_bs> <url_rpm> <vds_server> <random_num> <vds_complete>
+    """Usage: vds_installer.py  [-c vds_config_str] [-v ver] [-m remote_nfs] [-r rev_num] [-O organizationName] [-t YYYY-MM-DDTHH:mm:SS_system_time] [-S engine-ssh-key] [-p engine_port] [-B bridge_name] [-V] [-g] <url_bs> <url_rpm> <vds_server> <random_num> <vds_complete>
                     url_bs - components url
                     url_rpm - rpm download url
                     random_num - random number for temp. file names generation
@@ -275,6 +277,7 @@ def main():
                     vds_complete - to run first vds_bootstrap script = false
                                    to run second vds_bootstrap_complete script = true
                     -v - interface version, default=2
+                    -B - bridge name, default is installation specific
                     -V - don't install virutalization components on the host
     """
     try:
@@ -290,7 +293,8 @@ def main():
         rebootAfterInstallation = False
         installVirtualizationService = True
         installGlusterService = False
-        opts, args = getopt.getopt(sys.argv[1:], "c:m:r:O:t:p:bf:S:gVv:")
+        bridgeName = None
+        opts, args = getopt.getopt(sys.argv[1:], "c:m:r:O:t:p:bf:S:gB:Vv:")
         for o,v in opts:
             if o == "-v":
                 bootstrap_interface_version = int(v)
@@ -312,6 +316,8 @@ def main():
                 engine_ssh_key = v
             if o == "-b":
                 rebootAfterInstallation = True
+            if o == "-B":
+                bridgeName = v
             if o == "-V":
                 installVirtualizationService = False
             if o == "-g":
@@ -363,7 +369,8 @@ def main():
                     engine_ssh_key,
                     rebootAfterInstallation,
                     installVirtualizationService,
-                    installGlusterService):
+                    installGlusterService,
+                    bridgeName):
                 return False
 
             if firewall_rules_file is not None:
