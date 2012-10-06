@@ -1160,15 +1160,6 @@ def yumSearchVersion(pkgName, ver):
 # Host PKI functions.
 #############################################################################################################
 
-def validateX509Cert(strCert):
-    """Validates a PEM encoded X.509 digital certificate"""
-    out, err, rc = _logExec([EX_OPENSSL, "x509", "-noout"], input=strCert)
-    if rc != 0:
-        logging.debug("validateX509Cert: the string \"%s\" is not a valid X.509 certificate", strCert)
-        return False
-    else:
-        return True
-
 def _tsDir(confFile):
     import ConfigParser
 
@@ -1537,28 +1528,75 @@ def nodeCleanup():
         if os.path.exists(engineWebCACert):
             ovirtfunctions.ovirt_safe_delete_config(engineWebCACert)
 
+def getChainFromSSL(host):
+    """Return certificate from SSL handlshake
+
+    Parameters:
+    host -- (host, port)
+
+    """
+    # import OpenSSL here so
+    # it be done only at vdsm-reg
+    # which depends on pyOpenSSL
+    import OpenSSL
+
+    # openssl verify callback does not
+    # accept context, so we collect the chain
+    # in semi-global dictionary
+    #
+    # a certificate may be revisit more than one time.
+    #
+    # format:
+    #   depth: certificate
+    chain = {}
+
+    def verify(conn, cert, errnum, depth, ok):
+        chain[depth] = OpenSSL.crypto.dump_certificate(
+            OpenSSL.crypto.FILETYPE_PEM,
+            cert
+        ).decode("utf-8")
+        return True
+
+    ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+    ctx.set_verify(OpenSSL.SSL.VERIFY_PEER, verify)
+    ctx.set_verify_depth(10)
+    sock = OpenSSL.SSL.Connection(
+        ctx,
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    )
+    sock.connect(host)
+    sock.do_handshake()
+    sock.shutdown()
+    sock.close()
+
+    # return sorted by depth
+    # first is end certificate
+    return [chain[depth] for depth in sorted(chain.keys())]
+
 def getRhevmCert(IP, port):
-    """Download the certificate of the CA of the engine web server.
+    """Aquire CA certificate from SSL handshake
 
     This certificate is saved to a file and later used
     to validate HTTPS connections with the engine web
     server.
 
     """
-    _, _, engineWebCACert = certPaths('')
-    RHEVM_CERT_FILE = "/ca.crt"
-    rhevmCert = getRemoteFile(str(IP), str(port), RHEVM_CERT_FILE)
-    if rhevmCert and validateX509Cert(rhevmCert):
+    try:
+        chain = getChainFromSSL((IP, int(port)))
+        ca = chain[-1]
+        _, _, engineWebCACert = certPaths('')
         dirName = os.path.dirname(engineWebCACert)
         if not os.path.exists(dirName):
             os.makedirs(dirName)
-        crt = file(engineWebCACert, "w+")
-        try:
-            crt.write(rhevmCert)
-        finally:
-            crt.close()
+        with open(engineWebCACert, "w+") as f:
+            f.write(ca)
+
         return True
-    else:
+    except:
+        logging.error(
+            "Failed acquiring web certificates",
+            exc_info=True
+        )
         return False
 
 def generateFingerPrint(path):

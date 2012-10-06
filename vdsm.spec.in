@@ -168,6 +168,7 @@ BuildArch:      noarch
 
 Requires: %{name} = %{version}-%{release}
 Requires: traceroute
+Requires: pyOpenSSL
 
 %description reg
 VDSM registration package. Used to register a Linux host to a Virtualization
