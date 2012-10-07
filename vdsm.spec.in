@@ -167,7 +167,6 @@ Summary:        VDSM registration package
 BuildArch:      noarch
 
 Requires: %{name} = %{version}-%{release}
-Requires: traceroute
 Requires: pyOpenSSL
 
 %description reg
