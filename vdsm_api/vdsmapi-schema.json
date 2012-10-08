@@ -564,10 +564,14 @@
 #
 # A discriminated record to store information about a VDSM network.
 #
+# @bridged:  If True, the union is a 'NetInfoBridgedNetwork'
+#            If False, the union is a 'NetInfoBridgelessNetwork'
+#
 # Since: 4.10.0
 ##
-{'union': 'NetInfoNetwork',
- 'data': ['NetInfoBridgedNetwork', 'NetInfoBridgelessNetwork']}
+{'type': 'NetInfoNetwork',
+ 'data': {'bridged': 'bool'},
+ 'union': ['NetInfoBridgedNetwork', 'NetInfoBridgelessNetwork']}
 
 ##
 # @NetInfoNic:
@@ -1795,10 +1799,13 @@
 #
 # A discriminated record of device address information.
 #
+# @addressType:  The device address type
+#
 # Since: 4.10.0
 ##
-{'union': 'VmDeviceAddress',
- 'data': ['VmDevicePciAddress', 'VmDeviceIdeAddress',
+{'type': 'VmDeviceAddress',
+ 'data': {'addressType': 'VmDeviceAddressType'},
+ 'union': ['VmDevicePciAddress', 'VmDeviceIdeAddress',
           'VmDeviceVirtioSerialAddress']}
 
 ##
@@ -2251,10 +2258,13 @@
 #
 # A discriminated record containing VM device properties.
 #
+# @deviceType:  Indicates the specific device type
+#
 # Since: 4.10.0
 ##
-{'union': 'VmDevice',
- 'data': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
+{'type': 'VmDevice',
+ 'data': {'deviceType': 'VmDeviceType',},
+ 'union': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
           'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
           'VmChannelDevice']}
 
@@ -2354,7 +2364,18 @@
 ##
 {'alias': 'VmFullStatus', 'data': 'VmDefinition'}
 
-{'union': 'VmInfo', 'data': ['VmFullStatus', 'VmShortStatus']}
+##
+# @VmInfo:
+#
+# A discriminated record of VM status information.
+#
+# XXX: This type lacks an identifier to indicate the union type
+#
+# Since: 4.10.0
+##
+{'type': 'VmInfo',
+ 'data': {},
+ 'union': ['VmFullStatus', 'VmShortStatus']}
 
 ##
 # @Host.getVMList:
@@ -2565,11 +2586,14 @@
 #
 # A discriminated record of parameters used to establish a ConnectionRef.
 #
+# XXX: This type lacks an identifier to indicate the union type
+#
 # Since: 4.10.0
 ##
-{'union': 'ConnectionRefParameters',
- 'data': ['IscsiConnectionParameters', 'PosixFsConnectionParameters',
-          'NfsConnectionParameters', 'LocalFsConnectionParameters']}
+{'type': 'ConnectionRefParameters',
+ 'data': {},
+ 'union': ['IscsiConnectionParameters', 'PosixFsConnectionParameters',
+           'NfsConnectionParameters', 'LocalFsConnectionParameters']}
 
 ##
 # @ConnectionRefType:
@@ -3011,11 +3035,13 @@
 #
 # Since: 4.10.0
 # XXX: Union is not a dict
+# XXX: This type lacks an identifier to indicate the union type
 ##
-{'union': 'StorageDomainCreateArguments',
- 'data': ['StorageDomainCreateArgumentsBlock',
-          'StorageDomainCreateArgumentsLocal',
-          'StorageDomainCreateArgumentsNfs']}
+{'type': 'StorageDomainCreateArguments',
+ 'data': {}
+ 'union': ['StorageDomainCreateArgumentsBlock',
+           'StorageDomainCreateArgumentsLocal',
+           'StorageDomainCreateArgumentsNfs']}
 
 ##
 # @StorageDomain.create:
@@ -4201,10 +4227,13 @@
 #
 # A discriminated record containing a VM drive specification
 #
+# XXX: This type lacks an identifier to indicate the union type
+#
 # Since: 4.10.0
 ##
-{'union': 'DriveSpec',
- 'data': ['DriveSpecVolume', 'DriveSpecGUID', 'DriveSpecUUID',
+{'type': 'DriveSpec',
+ 'data': {},
+ 'union': ['DriveSpecVolume', 'DriveSpecGUID', 'DriveSpecUUID',
           'DriveSpecPayload', 'DriveSpecPath']}
 
 ##
@@ -4606,13 +4635,13 @@
 #
 # A discriminated record containing virtual machine statistics.
 #
-# @ExitedVmStats:   Statistica for a VM that has exited
-#
-# @RunningVmStats:  Statistics for a running VM
+# XXX: This type lacks an identifier to indicate the union type
 #
 # Since: 4.10.0
 ##
-{'union': 'VmStats', 'data': ['ExitedVmStats', 'RunningVmStats']}
+{'type': 'VmStats',
+ 'data': {},
+ 'union': ['ExitedVmStats', 'RunningVmStats']}
 
 ##
 # @VM.getStats:
@@ -5032,11 +5061,14 @@
 #
 # A discriminated record of snapshot information for a VM disk.
 #
+# XXX: This type lacks an identifier to indicate the union type
+#
 # Since: 4.10.0
 ##
-{'union': 'SnapshotDriveInfo',
- 'data': ['SnapshotVolumeDriveInfo', 'SnapshotGUIDDriveInfo',
-          'SnapshotUUIDDriveInfo']}
+{'type': 'SnapshotDriveInfo',
+ 'data': {},
+ 'union': ['SnapshotVolumeDriveInfo', 'SnapshotGUIDDriveInfo',
+           'SnapshotUUIDDriveInfo']}
 
 ##
 # @VM.snapshot:
