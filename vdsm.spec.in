@@ -192,6 +192,7 @@ Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
 Summary:        VDSM Test Suite
 Requires:       vdsm = %{version}-%{release}
 Requires:       dracut
+Requires:       python-nose
 BuildArch:      noarch
 
 %description tests
