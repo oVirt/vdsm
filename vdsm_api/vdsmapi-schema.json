@@ -2273,7 +2273,7 @@
  'data': {'vmId': 'UUID', 'status': 'VmStatus'}}
 
 ##
-# @VmFullStatus:
+# @VmDefinition:
 #
 # Full virtual machine status and properties.
 #
@@ -2332,7 +2332,7 @@
 #
 # Since: 4.10.0
 ##
-{'type': 'VmFullStatus',
+{'type': 'VmDefinition',
  'data': {'acpiEnable': 'bool', 'clientIp': 'str', 'cpuType': 'str',
           'custom': 'StringMap', 'devices': ['VmDevice'],
           'display': 'VmDisplayType', 'displayIp': 'str',
@@ -2346,13 +2346,15 @@
           'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType'}}
 
 ##
-# @VmDefinition:
+# @VmFullStatus:
 #
-# A VmDefinition uses the same format as a VmFullStatus.
+# A VmFullStatus uses the same format as a VmDefinition.
 #
 # Since: 4.10.0
 ##
-{'alias': 'VmDefinition', 'data': 'VmFullStatus'}
+{'alias': 'VmFullStatus', 'data': 'VmDefinition'}
+
+{'union': 'VmInfo', 'data': ['VmFullStatus', 'VmShortStatus']}
 
 ##
 # @Host.getVMList:
@@ -2370,7 +2372,7 @@
 ##
 {'command': {'class': 'Host', 'name': 'getVMList'},
  'data': {'*fullStatus': 'bool', '*vmList': ['UUID']},
- 'returns': ['VmDefinition']}
+ 'returns': ['VmInfo']}
 
 ##
 # @Host.ping:
