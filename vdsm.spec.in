@@ -85,6 +85,7 @@ Requires: e2fsprogs >= 1.41.12-11
 Requires: kernel >= 2.6.32-265
 Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
+Requires: selinux-policy-targeted >= 3.7.19-80
 %else
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
@@ -98,6 +99,7 @@ Requires: e2fsprogs >= 1.41.14
 Requires: kernel >= 3.4
 Requires: sanlock >= 2.4-2, sanlock-python
 Requires: sed >= 4.2.1-10
+Requires: selinux-policy-targeted >= 3.10.0-149
 %endif
 
 Requires: psmisc >= 22.6-15
@@ -108,11 +110,11 @@ Requires: tree
 Requires: dosfstools
 Requires: policycoreutils-python
 Requires: genisoimage
-Requires(pre,preun): policycoreutils-python
 Requires: libselinux-python
 Requires: %{name}-python = %{version}-%{release}
-Requires: selinux-policy-targeted >= 3.7.19-80.el6
 Requires: pyparted
+
+Requires(pre,preun): policycoreutils-python
 Requires(post): /usr/sbin/saslpasswd2
 Requires(post): /bin/hostname
 
