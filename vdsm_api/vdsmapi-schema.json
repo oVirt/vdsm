@@ -1583,15 +1583,6 @@
  'returns': ['UUID']}
 
 ##
-# @StorageDomainStatsMap:
-#
-# A map of StorageDomainStats indexed by Storage Domain UUID.
-#
-# Since: 4.10.0
-##
-{'map': 'StorageDomainStatsMap', 'key': 'UUID', 'value': 'StorageDomainStats'}
-
-##
 # @Host.getStorageRepoStats:
 #
 # Get statistics and liveness of currently attached Storage Domains.
@@ -1602,7 +1593,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getStorageRepoStats'},
- 'returns': 'StorageDomainStatsMap'}
+ 'returns': 'StorageDomainVitalsMap'}
 
 ##
 # @VmStatus:
