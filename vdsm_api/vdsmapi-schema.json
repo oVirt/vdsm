@@ -4544,8 +4544,6 @@
 #
 # @monitorResponse:    Indicates if the qemu monitor is responsive
 #
-# @nice:               The host scheduling priority
-#
 # @elapsedTime:        The number of seconds that the VM has been running
 #
 # @cdrom: #optional    The path to an ISO image used in the VM's CD-ROM device
@@ -4590,7 +4588,7 @@
           'vmType': 'VmType', 'kvmEnable': 'bool',
           'network': 'NetworkInterfaceStatsMap',
           'disks': 'VmDiskStatsMap', 'monitorResponse': 'int',
-          'nice': 'int', 'elapsedTime': 'uint', '*cdrom': 'str',
+          'elapsedTime': 'uint', '*cdrom': 'str',
           '*boot': 'VmBootMode','statsAge': 'float', 'cpuSys': 'float',
           'cpuUser': 'float',
           'acpiEnable': 'bool', 'timeOffset': 'uint',

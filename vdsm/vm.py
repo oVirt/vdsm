@@ -290,7 +290,6 @@ class Vm(object):
             self._lastStatus = 'Restoring state'
         else:
             self._lastStatus = 'WaitForLaunch'
-        self._nice = ''
         self._migrationSourceThread = self.MigrationSourceThreadClass(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._guestSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
@@ -982,7 +981,6 @@ class Vm(object):
                  'kvmEnable': self._kvmEnable,
                  'network': {}, 'disks': {},
                  'monitorResponse': str(self._monitorResponse),
-                 'nice': self._nice,
                  'elapsedTime' : str(int(time.time() - self._startTime)),
                  }
         if 'cdrom' in self.conf:
