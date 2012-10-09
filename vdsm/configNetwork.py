@@ -62,7 +62,14 @@ def ifdown(iface):
 
 def ifup(iface, async=False):
     "Bring up an interface"
-    _ifup = lambda netIf: execCmd([constants.EXT_IFUP, netIf], raw=True)
+    def _ifup(netIf):
+        rc, out, err = execCmd([constants.EXT_IFUP, netIf], raw=False)
+
+        if rc != 0:
+            # In /etc/sysconfig/network-scripts/ifup* the last line usually
+            # contains the error reason.
+            raise ConfigNetworkError(ne.ERR_FAILED_IFUP, out[-1])
+        return rc, out, err
 
     if async:
         # wait for dhcp in another thread,
@@ -350,7 +357,11 @@ class ConfigWriter(object):
 
     def _startAtomicDevices(self):
         for dev in self._sortModifiedIfcfgs():
-            ifup(dev)
+            try:
+                ifup(dev)
+            except ConfigNetworkError:
+                logging.error('Failed to ifup device %s during rollback.', dev,
+                              exc_info=True)
 
     @classmethod
     def _persistentBackup(cls, filename):
