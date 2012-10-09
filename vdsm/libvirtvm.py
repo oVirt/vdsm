@@ -735,7 +735,7 @@ class _DomXML:
 
         for feature in features[1:]:
             # convert Linux name of feature to libvirt
-            if feature[1:5] == 'sse4_':
+            if feature[1:6] == 'sse4_':
                 feature = feature[0] + 'sse4.' + feature[6:]
 
             f = self.doc.createElement('feature')
