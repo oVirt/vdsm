@@ -198,6 +198,28 @@ class XMLRPCTest(TestCaseBase):
         with RollbackContext() as rollback:
             self._createVdsmStorageLayout(conf, rollback)
 
+    def testSimpleVMoLocalfs(self):
+        self.skipNoKVM()
+
+        localfs = storageLayouts['localfs']
+        drives = []
+        for poolid, domains in localfs['layout'].iteritems():
+            for sdid, imageList in domains.iteritems():
+                for imgid in imageList:
+                    volume = localfs['img'][imgid]
+                    drives.append({'poolID': poolid,
+                                   'domainID': sdid,
+                                   'imageID': imgid,
+                                   'volumeID': volume['volid'],
+                                   'format': volume['format']})
+        customization = {'vmId': '88888888-eeee-ffff-aaaa-111111111111',
+                         'vmName': 'vdsm_testSmallVM_localfs',
+                         'drives': drives}
+
+        with RollbackContext() as rollback:
+            self._createVdsmStorageLayout(localfs, rollback)
+            self._runVMKernelBootTemplate(customization)
+
     def _createVdsmStorageLayout(self, conf, rollback):
         backendServer = conf['server'](self.s, self)
         connDef = conf['conn']
