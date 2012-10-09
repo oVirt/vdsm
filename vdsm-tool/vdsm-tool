@@ -137,7 +137,7 @@ def main():
     if cmd not in tool_command.keys():
         usage_and_exit(1)
 
-    tool_command[cmd]["command"](*args[1:])
+    return tool_command[cmd]["command"](*args[1:])
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
