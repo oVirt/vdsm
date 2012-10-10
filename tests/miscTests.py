@@ -930,6 +930,9 @@ class ExecCmd(TestCaseBase):
 
         self.assertEquals(ret, 0)
 
+    def testNoCommand(self):
+        self.assertRaises(OSError, misc.execCmd, ["I.DONT.EXIST"], sudo=False)
+
     def testStdOut(self):
         """
         Tests that execCmd correctly returns the standard output of the prog it
