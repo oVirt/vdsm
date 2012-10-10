@@ -1243,6 +1243,21 @@ class WatchdogDevice(LibvirtVmDevice):
         return m
 
 
+class SmartCardDevice(LibvirtVmDevice):
+    def getXML(self):
+        """
+        Add smartcard section to domain xml
+
+        <smartcard mode='passthrough' type='spicevmc'>
+          <address ... />
+        </smartcard>
+        """
+        card = self.createXmlElem(self.device, None, ['address'])
+        card.setAttribute('mode', self.specParams['mode'])
+        card.setAttribute('type', self.specParams['type'])
+        return card
+
+
 class RedirDevice(LibvirtVmDevice):
     def getXML(self):
         """
@@ -1395,6 +1410,7 @@ class LibvirtVm(vm.Vm):
         self._getUnderlyingControllerDeviceInfo()
         self._getUnderlyingBalloonDeviceInfo()
         self._getUnderlyingWatchdogDeviceInfo()
+        self._getUnderlyingSmartcardDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
@@ -1486,7 +1502,8 @@ class LibvirtVm(vm.Vm):
                   vm.BALLOON_DEVICES: BalloonDevice,
                   vm.WATCHDOG_DEVICES: WatchdogDevice,
                   vm.REDIR_DEVICES: RedirDevice,
-                  vm.CONSOLE_DEVICES: ConsoleDevice}
+                  vm.CONSOLE_DEVICES: ConsoleDevice,
+                  vm.SMARTCARD_DEVICES: SmartCardDevice}
 
         for devType, devClass in devMap.items():
             for dev in devices[devType]:
@@ -2797,6 +2814,31 @@ class LibvirtVm(vm.Vm):
             for dev in self.conf['devices']:
                 if ((dev['type'] == vm.BALLOON_DEVICES) and
                         not dev.get('address')):
+                    dev['address'] = address
+                    dev['alias'] = alias
+
+    def _getUnderlyingSmartcardDeviceInfo(self):
+        """
+        Obtain smartcard device info from libvirt.
+        """
+        smartcardxml = _domParseStr(self._lastXMLDesc).childNodes[0].\
+            getElementsByTagName('devices')[0].\
+            getElementsByTagName('smartcard')
+        for x in smartcardxml:
+            if not x.getElementsByTagName('address'):
+                continue
+
+            address = self._getUnderlyingDeviceAddress(x)
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+
+            for dev in self._devices[vm.SMARTCARD_DEVICES]:
+                if not hasattr(dev, 'address'):
+                    dev.address = address
+                    dev.alias = alias
+
+            for dev in self.conf['devices']:
+                if dev['device'] == vm.SMARTCARD_DEVICES and \
+                        not dev.get('address'):
                     dev['address'] = address
                     dev['alias'] = alias
 

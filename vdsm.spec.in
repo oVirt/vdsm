@@ -353,14 +353,6 @@ Hook creates a disk for a VM onetime usage,
 the disk will be erased when the VM destroyed.
 VM cannot be migrated when using scratchpad hook
 
-%package hook-smartcard
-Summary:        Smartcard support for Spice protocol in VDSM
-BuildArch:      noarch
-
-%description hook-smartcard
-Smartcard hook add support for spice in VDSM.
-Smartcard hook enable user to use its smartcard inside virtual machines.
-
 %package hook-smbios
 Summary:        Adding custom smbios entries to libvirt domain via VDSM
 BuildArch:      noarch
@@ -886,10 +878,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_scratchpad
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_scratchpad
-
-%files hook-smartcard
-%defattr(-, root, root, -)
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smartcard
 
 %files hook-smbios
 %defattr(-, root, root, -)

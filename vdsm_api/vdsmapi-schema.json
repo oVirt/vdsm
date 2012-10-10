@@ -1685,11 +1685,13 @@
 #
 # @console:     A console device
 #
+# @smartcard:   A smartcard device
+#
 # Since: 4.10.0
 ##
 {'enum': 'VmDeviceType',
  'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
-          'channel', 'console']}
+          'channel', 'console', 'smartcard']}
 
 ##
 # @VmDiskDeviceType:
@@ -2356,6 +2358,48 @@
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
 
 ##
+# @VmSmartcardDeviceSpecParams:
+#
+# Additional VM smartcard device parameters.
+#
+# Since: 4.10.3
+##
+{'type': 'VmSmartcardDeviceSpecParams', 'data': {}}
+
+##
+# @VmSmartcardDeviceType:
+#
+# An enumeration of VM smartcard device types.
+#
+# @smartcard: A smartcard
+#
+# Since: 4.10.3
+##
+{'enum': 'VmSmartcardDeviceType', 'data': ['smartcard']}
+
+##
+# @VmSmartcardDevice:
+#
+# Properties of a VM smartcard device.
+#
+# @deviceType:  The device type (always @smartcard)
+#
+# @device:      The the type of smartcard device
+#
+# @address:     Device hardware address
+#
+# @alias:       Alias used to identify this device in commands
+#
+# @specParams:  #optional Additional device parameters
+#
+# Since: 4.10.3
+##
+{'type': 'VmSmartcardDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmSmartcardDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str',
+          '*specParams': 'VmSmartcardDeviceSpecParams'}}
+
+##
 # @VmConsoleDevice:
 #
 # Properties of a VM console device.
@@ -2382,7 +2426,8 @@
  'data': {'deviceType': 'VmDeviceType',},
  'union': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
           'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
-          'VmChannelDevice', 'VmWatchdogDevice', 'VmConsoleDevice']}
+          'VmChannelDevice', 'VmWatchdogDevice', 'VmConsoleDevice',
+          'VmSmartcardDevice']}
 
 ##
 # @VmShortStatus:
