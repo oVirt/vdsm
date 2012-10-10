@@ -91,6 +91,13 @@ class TestLibvirtvm(TestCaseBase):
             domxml.appendOs()
             self.assertXML(domxml.dom, xml, 'os')
 
+    def testSmartcardXML(self):
+        smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'
+        dev = {'device': 'smartcard',
+               'specParams': {'mode': 'passthrough', 'type': 'spicevmc'}}
+        smartcard = libvirtvm.SmartCardDevice(self.conf, self.log, **dev)
+        self.assertXML(smartcard.getXML(), smartcardXML)
+
     def testFeaturesXML(self):
         featuresXML = """
             <features>

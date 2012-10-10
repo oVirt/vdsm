@@ -1,9 +1,0 @@
-smartcard hook:
-===============
-add smartcard support for spice
-
-syntax:
-smartcard: smartcard=true
-
-libvirt xml:
-<smartcard mode='passthrough' type='spicevmc'/>

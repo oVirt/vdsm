@@ -37,7 +37,6 @@ SUBDIRS += \
 	promisc \
 	qos \
 	scratchpad \
-	smartcard \
 	smbios \
 	sriov \
 	vmdisk \

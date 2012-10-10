@@ -47,6 +47,7 @@ BALLOON_DEVICES = 'balloon'
 REDIR_DEVICES = 'redir'
 WATCHDOG_DEVICES = 'watchdog'
 CONSOLE_DEVICES = 'console'
+SMARTCARD_DEVICES = 'smartcard'
 
 """
 A module containing classes needed for VM communication.
@@ -364,7 +365,8 @@ class Vm(object):
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
                          CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
                          BALLOON_DEVICES: [], REDIR_DEVICES: [],
-                         WATCHDOG_DEVICES: [], CONSOLE_DEVICES: []}
+                         WATCHDOG_DEVICES: [], CONSOLE_DEVICES: [],
+                         SMARTCARD_DEVICES: []}
 
     def _get_lastStatus(self):
         PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -447,7 +449,8 @@ class Vm(object):
                    SOUND_DEVICES: [], VIDEO_DEVICES: [],
                    CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
                    BALLOON_DEVICES: [], REDIR_DEVICES: [],
-                   WATCHDOG_DEVICES: [], CONSOLE_DEVICES: []}
+                   WATCHDOG_DEVICES: [], CONSOLE_DEVICES: [],
+                   SMARTCARD_DEVICES: []}
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
@@ -485,6 +488,7 @@ class Vm(object):
             devices[GENERAL_DEVICES] = []
             devices[BALLOON_DEVICES] = []
             devices[WATCHDOG_DEVICES] = []
+            devices[SMARTCARD_DEVICES] = self.getConfSmartcard()
             devices[REDIR_DEVICES] = []
             devices[CONSOLE_DEVICES] = []
         else:
@@ -548,6 +552,17 @@ class Vm(object):
                            'device': devType})
 
         return vcards
+
+    def getConfSmartcard(self):
+        """
+        Normalize smartcard device (now there is only one)
+        """
+        cards = []
+        if self.conf.get('smartcard'):
+            cards.append({'device': SMARTCARD_DEVICES,
+                          'specParams': {'mode': 'passthrough',
+                                         'type': 'spicevmc'}})
+        return cards
 
     def getConfSound(self):
         """
