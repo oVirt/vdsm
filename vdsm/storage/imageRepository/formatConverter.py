@@ -120,17 +120,12 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                      "%s", vol.volUUID, metaVolSize, virtVolSize)
             vol.setMetaParam(volume.SIZE, str(virtVolSize))
 
-    def v3UpdateVolume(vol):
+    def v3UpgradeVolumePermissions(vol):
         log.debug("Changing permissions (read-write) for the "
                   "volume %s", vol.volUUID)
-
         # Using the internal call to skip the domain V3 validation,
         # see volume.setrw for more details.
         vol._setrw(True)
-
-        log.debug("Creating the volume lease for %s", vol.volUUID)
-        metaId = vol.getMetadataId()
-        type(vol).newVolumeLease(metaId, vol.sdUUID, vol.volUUID)
 
     try:
         if isMsd:
@@ -138,10 +133,42 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                       "host id: %s", domain.sdUUID, hostId)
             newClusterLock.acquire(hostId)
 
+        allVolumes = domain.getAllVolumes()
+        allImages = set()
+
+        # Updating the volumes one by one, doesn't require activation
+        for volUUID, (imgUUIDs, parentUUID) in allVolumes.iteritems():
+            log.debug("Converting volume: %s", volUUID)
+
+            allImages.update(imgUUIDs)  # Maintaining a set of images
+
+            # The first imgUUID is the imgUUID of the template or the
+            # only imgUUID where the volUUID appears.
+            vol = domain.produceVolume(imgUUIDs[0], volUUID)
+            v3UpgradeVolumePermissions(vol)
+
+            log.debug("Creating the volume lease for %s", volUUID)
+            metaId = vol.getMetadataId()
+            type(vol).newVolumeLease(metaId, domain.sdUUID, volUUID)
+
+            # If this volume is used as a template let's update the other
+            # volume's permissions and share the volume lease (at the moment
+            # of this writing this is strictly needed only on file domains).
+            for imgUUID in imgUUIDs[1:]:
+                dstVol = domain.produceVolume(imgUUID, volUUID)
+
+                v3UpgradeVolumePermissions(dstVol)
+
+                # Sharing the original template volume lease file with the
+                # same volume in the other images.
+                vol._shareLease(dstVol.imagePath)
+
         img = image.Image(repoPath)
 
-        for imgUUID in domain.getAllImages():
-            log.debug("Converting domain image: %s", imgUUID)
+        # Updating the volumes to fix BZ#811880, here the activation is
+        # required and to be more effective we do it by image (one shot).
+        for imgUUID in allImages:
+            log.debug("Converting image: %s", imgUUID)
 
             # XXX: The only reason to prepare the image is to verify the volume
             # virtual size configured in the qcow2 header (BZ#811880).
@@ -169,7 +196,6 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
             try:
                 for vol in volChain:
-                    v3UpdateVolume(vol)
                     v3ResetMetaVolSize(vol)  # BZ#811880
             finally:
                 try:

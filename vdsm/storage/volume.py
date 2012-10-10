@@ -273,6 +273,13 @@ class Volume(object):
                            (self.volumePath, dst_path))
             raise se.CannotCloneVolume(self.volumePath, dst_path, str(e))
 
+    def _shareLease(self, dstImgPath):
+        """
+        Internal utility method used during the share process and by the
+        domain V3 upgrade.
+        """
+        pass  # Do not remove this method or the V3 upgrade will fail.
+
     def share(self, dstImgPath):
         """
         Share this volume to dstImgPath

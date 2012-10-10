@@ -223,6 +223,18 @@ class FileVolume(volume.Volume):
         """
         return self.getVolumePath()
 
+    def _shareLease(self, dstImgPath):
+        """
+        Internal utility method used to share the template volume lease file
+        with the images based on such template.
+        """
+        self.log.debug("Share volume lease of %s to %s", self.volUUID,
+                       dstImgPath)
+        dstLeasePath = self._getLeaseVolumePath(
+                                os.path.join(dstImgPath, self.volUUID))
+        self.oop.fileUtils.safeUnlink(dstLeasePath)
+        self.oop.os.link(self._getLeaseVolumePath(), dstLeasePath)
+
     def _share(self, dstImgPath):
         """
         Share this volume to dstImgPath, including the metadata and the lease
@@ -243,13 +255,7 @@ class FileVolume(volume.Volume):
 
         # Link the lease file if the domain uses sanlock
         if sdCache.produce(self.sdUUID).hasVolumeLeases():
-            dstLeasePath = self._getLeaseVolumePath(dstVolPath)
-
-            self.log.debug("Share volume lease of %s to %s", self.volUUID,
-                           dstImgPath)
-
-            self.oop.fileUtils.safeUnlink(dstLeasePath)
-            self.oop.os.link(self._getLeaseVolumePath(), dstLeasePath)
+            self._shareLease(dstImgPath)
 
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
