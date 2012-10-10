@@ -28,7 +28,7 @@ from nose.plugins.skip import SkipTest
 from vdsm.config import config
 from vdsm import vdscli
 from storage.misc import execCmd
-from vdsm.utils import CommandPath, retry
+from vdsm.utils import CommandPath
 
 if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
@@ -122,7 +122,7 @@ class XMLRPCTest(TestCaseBase):
                            'vmName': 'foo'})
         self.assertVdsOK(r)
         try:
-            retry(lambda: self.assertVmUp(VMID), timeout=20)
+            self.retryAssert(lambda: self.assertVmUp(VMID), timeout=20)
         finally:
             # FIXME: if the server dies now, we end up with a leaked VM.
             r = self.s.destroy(VMID)
@@ -154,7 +154,7 @@ class XMLRPCTest(TestCaseBase):
             try:
                 self.assertVdsOK(self.s.create(conf))
                 # wait 65 seconds for VM to come up until timeout
-                retry(assertVMAndGuestUp, timeout=65)
+                self.retryAssert(assertVMAndGuestUp, timeout=65)
             finally:
                 destroyResult = self.s.destroy(VMID)
 

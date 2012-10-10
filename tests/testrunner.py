@@ -112,6 +112,16 @@ class VdsmTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
         self.log = logging.getLogger(self.__class__.__name__)
 
+    def retryAssert(self, *args, **kwargs):
+        '''Keep retrying an assertion if AssertionError is raised.
+           See function utils.retry for the meaning of the arguments.
+        '''
+        # the utils module only can be imported correctly after
+        # hackVdsmModule() is called. Do not import it at the
+        # module level.
+        from vdsm.utils import retry
+        retry(expectedException=AssertionError, *args, **kwargs)
+
 
 class VdsmTestResult(result.TextTestResult):
     def __init__(self, *args, **kwargs):
