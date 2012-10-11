@@ -565,7 +565,6 @@ class HSM:
         # ExtendVolume expects size in MB
         size = math.ceil(size / 2 ** 20)
 
-        vars.task.getSharedLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
@@ -2565,7 +2564,6 @@ class HSM:
 
         :returns: Nothing ? Stuff not implemented
         """
-        vars.task.getSharedLock(STORAGE, sdUUID)
         return sdCache.produce(sdUUID=sdUUID).produceVolume(imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
 
 
@@ -2587,7 +2585,6 @@ class HSM:
         :returns: a dict with the size of the volume.
         :rtype: dict
         """
-        vars.task.getSharedLock(STORAGE, sdUUID)
         # Return string because xmlrpc's "int" is very limited
         apparentsize = str(volume.Volume.getVSize(sdUUID, imgUUID, volUUID, bs=1))
         truesize = str(volume.Volume.getVTrueSize(sdUUID, imgUUID, volUUID, bs=1))
