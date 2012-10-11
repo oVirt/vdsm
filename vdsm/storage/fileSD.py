@@ -481,7 +481,8 @@ def scanDomains(pattern="*"):
                     return (sdUUID, os.path.dirname(metaFile))
 
         except Timeout:
-            pass
+            log.warn("Metadata collection for domain path %s timedout",
+                     possibleDomain, exc_info=True)
         except Exception:
             log.warn("Could not collect metadata file for domain path %s",
                      possibleDomain, exc_info=True)
