@@ -1111,6 +1111,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
             if not nicOtherUsers(network, vlan, bonding, nic):
                 ifdown(nic)
                 configWriter.removeNic(nic)
+                ifup(nic)
                 iface = None if nic == iface else iface
 
     # Now we can restart changed interface
@@ -1203,6 +1204,8 @@ def _editBondings(bondings, configWriter):
             for nic in _netinfo.getNicsForBonding(bond):
                 ifdown(nic)
                 configWriter.removeNic(nic)
+                if nic not in bondAttrs['nics']:
+                    ifup(nic)
 
         # Note! In case we have bridge up and connected to the bond
         # we will get error in log:
@@ -1241,6 +1244,7 @@ def _removeBondings(bondings, configWriter):
             for nic in nics:
                 ifdown(nic)
                 configWriter.removeNic(nic)
+                ifup(nic)
 
             del bondings[bond]
 
