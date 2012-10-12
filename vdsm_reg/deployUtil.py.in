@@ -1549,10 +1549,10 @@ def getChainFromSSL(host):
     host -- (host, port)
 
     """
-    # import OpenSSL here so
+    # import M2Crypto here so
     # it be done only at vdsm-reg
-    # which depends on pyOpenSSL
-    import OpenSSL
+    # which depends on M2Crypto
+    from M2Crypto import SSL, X509
 
     # openssl verify callback does not
     # accept context, so we collect the chain
@@ -1564,23 +1564,22 @@ def getChainFromSSL(host):
     #   depth: certificate
     chain = {}
 
-    def verify(conn, cert, errnum, depth, ok):
-        chain[depth] = OpenSSL.crypto.dump_certificate(
-            OpenSSL.crypto.FILETYPE_PEM,
-            cert
-        ).decode("utf-8")
+    def verify(ssl_ctx_ptr, x509_ptr, errnum, errdepth, ok):
+        chain[errdepth] = X509.X509(x509=x509_ptr).as_pem()
+        return True
+    def check_ignore(*args, **kw):
         return True
 
-    ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
-    ctx.set_verify(OpenSSL.SSL.VERIFY_PEER, verify)
-    ctx.set_verify_depth(10)
-    sock = OpenSSL.SSL.Connection(
-        ctx,
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ctx = SSL.Context()
+    ctx.set_verify(
+        SSL.verify_peer | SSL.verify_fail_if_no_peer_cert,
+        depth=10,
+        callback=verify
     )
+    sock = SSL.Connection(ctx)
+    # we would like to ignore any issue with certificates
+    sock.set_post_connection_check_callback(check_ignore)
     sock.connect(host)
-    sock.do_handshake()
-    sock.shutdown()
     sock.close()
 
     # return sorted by depth

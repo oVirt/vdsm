@@ -167,7 +167,7 @@ Summary:        VDSM registration package
 BuildArch:      noarch
 
 Requires: %{name} = %{version}-%{release}
-Requires: pyOpenSSL
+Requires: m2crypto
 
 %description reg
 VDSM registration package. Used to register a Linux host to a Virtualization
