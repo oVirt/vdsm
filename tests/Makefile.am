@@ -31,6 +31,7 @@ test_modules = \
 	gluster_cli_tests.py \
 	guestIFTests.py \
 	hooksTests.py \
+	libvirtvmTests.py \
 	lsblkTests.py \
 	main.py \
 	md_utils_tests.py \
