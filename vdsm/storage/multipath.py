@@ -312,11 +312,11 @@ def pathListIter(filterGuids=None):
                             "initiatorname": sess.iface.name
                             }
 
-                    # FIXME: When updating the API remember not to
-                    # send back credential information
+                    # Note that credentials must be sent back in order for
+                    # the engine to tell vdsm how to reconnect later
                     if sess.credentials:
                         cred = sess.credentials
-                        sessionInfo['username'] = cred.username
+                        sessionInfo['user'] = cred.username
                         sessionInfo['password'] = cred.password
 
                     knownSessions[sessionID] = sessionInfo

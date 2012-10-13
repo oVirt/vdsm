@@ -40,6 +40,7 @@ from lsblk import getLsBlk as _getLsBlk
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
+from storage.iscsi import readSessionInfo as _readSessionInfo
 from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
@@ -116,6 +117,10 @@ class _SuperVdsm(object):
     @logDecorator
     def getdeviSCSIinfo(self, *args, **kwargs):
         return _getdeviSCSIinfo(*args, **kwargs)
+
+    @logDecorator
+    def readSessionInfo(self, sessionID):
+        return _readSessionInfo(sessionID)
 
     @logDecorator
     def getPathsStatus(self):

@@ -37,6 +37,7 @@ import devicemapper
 from threading import RLock
 
 import iscsiadm
+import supervdsm
 
 IscsiPortal = namedtuple("IscsiPortal", "hostname, port")
 IscsiTarget = namedtuple("IscsiTarget", "portal, tpgt, iqn")
@@ -71,6 +72,9 @@ def getDevIscsiInfo(dev):
             IscsiTarget(IscsiPortal("", 0), 0, ""), None)
 
 def getSessionInfo(sessionID):
+    return supervdsm.getProxy().readSessionInfo(sessionID)
+
+def readSessionInfo(sessionID):
     sessionName = "session%d" % sessionID
     connectionName = "connection%d:0" % sessionID
     iscsi_session = "/sys/class/iscsi_session/%s/" % sessionName
@@ -113,7 +117,7 @@ def getSessionInfo(sessionID):
     cred = None
     #FIXME: Don't just assume CHAP
     if username or password:
-        cred = ChapCredentials(user, password)
+        cred = ChapCredentials(username, password)
 
     return IscsiSession(sessionID, iface, target, cred)
 
