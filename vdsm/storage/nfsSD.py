@@ -32,9 +32,11 @@ import misc
 class NfsStorageDomain(fileSD.FileStorageDomain):
 
     @classmethod
-    def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg, version):
+    def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg,
+                             storageType, version):
         # Some trivial resource validation
-        if ":" not in typeSpecificArg:
+        # TODO Checking storageType==nfs in the nfs class is not clean
+        if storageType == sd.NFS_DOMAIN and ":" not in typeSpecificArg:
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
 
         sd.validateDomainVersion(version)
@@ -74,7 +76,8 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         mntPoint = os.path.join(cls.storage_repository,
             sd.DOMAIN_MNT_POINT, mntPath)
 
-        cls._preCreateValidation(sdUUID, mntPoint, remotePath, version)
+        cls._preCreateValidation(sdUUID, mntPoint, remotePath, storageType,
+                                 version)
 
         domainDir = os.path.join(mntPoint, sdUUID)
         cls._prepareMetadata(domainDir, sdUUID, domainName, domClass,
