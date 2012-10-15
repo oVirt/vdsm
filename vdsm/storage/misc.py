@@ -53,6 +53,7 @@ import time
 import types
 import weakref
 import fcntl
+import inspect
 
 sys.path.append("../")
 from vdsm import constants
@@ -145,12 +146,7 @@ def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[],
     # Ignore file extension can be either py or pyc
     ignoreSourceFiles = ignoreSourceFiles + [logging._srcfile]
     ignoreSourceFiles = [os.path.splitext(sf)[0] for sf in ignoreSourceFiles]
-    frame = None
-    try:
-        raise Exception()
-    except:
-        # get the caller of my caller
-        frame = sys.exc_info()[2].tb_frame.f_back.f_back
+    frame = inspect.currentframe().f_back
 
     result = "(unknown file)", 0, "(unknown function)"
     # pop frames until you find an unfiltered one

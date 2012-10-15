@@ -23,6 +23,7 @@ import uuid
 import time
 import threading
 from testrunner import VdsmTestCase as TestCaseBase
+import inspect
 
 import storage.misc as misc
 import storage.fileUtils as fileUtils
@@ -1030,3 +1031,38 @@ class DeferableContextTests(TestCaseBase):
             self.fail("Wrong exception was raised")
 
         self.fail("Exception was not raised")
+
+
+class FindCallerTests(TestCaseBase):
+    def _assertFindCaller(self, callback):
+        frame = inspect.currentframe()
+        code = frame.f_code
+        filename = os.path.normcase(code.co_filename)
+        # Make sure these two lines follow each other
+        result = (filename, frame.f_lineno + 1, code.co_name)
+        self.assertEquals(result, callback())
+
+    def testSkipUp(self):
+        def _foo():
+            return misc.findCaller(1)
+
+        self._assertFindCaller(_foo)
+
+    def testLogSkipName(self):
+        @misc.logskip("Freeze the Atlantic")
+        def _foo():
+            return misc.findCaller(logSkipName="Freeze the Atlantic")
+
+        self._assertFindCaller(_foo)
+
+    def testMethodIgnore(self):
+        def _foo():
+            return misc.findCaller(ignoreMethodNames=["_foo"])
+
+        self._assertFindCaller(_foo)
+
+    def testNoSkip(self):
+        def _foo():
+            return misc.findCaller()
+
+        self.assertRaises(AssertionError, self._assertFindCaller, _foo)
