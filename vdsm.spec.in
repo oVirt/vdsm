@@ -463,9 +463,6 @@ fi
 # set the vdsm "secret" password for libvirt
 %{_bindir}/vdsm-tool set-saslpasswd
 
-# generate the vdsm certificates (if missing)
-%{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
-
 # Have moved vdsm section in /etc/sysctl.conf to /etc/sysctl.d/vdsm.
 # So Remove them if it is played with /etc/sysctl.conf.
 if grep -q "# VDSM section begin" /etc/sysctl.conf; then
