@@ -498,6 +498,11 @@ start() {
 
     shutdown_conflicting_srv && stop_libvirtd_sysv
 
+    if ! @LIBEXECDIR@/vdsm-gencerts.sh --check; then
+        echo -n $"Configuring a self-signed VDSM host certificate: "
+        @LIBEXECDIR@/vdsm-gencerts.sh && success || failure ; echo
+    fi
+
     reconfigure noforce
     ret_val=$?
     if [ $ret_val -ne 0 ]

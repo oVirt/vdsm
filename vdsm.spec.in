@@ -404,9 +404,6 @@ if [ -f /etc/pki/vdsm/keys/libvirt_password ]; then
         /etc/pki/vdsm/keys/libvirt_password
 fi
 
-# generate the vdsm certificates (if missing)
-%{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
-
 %if 0%{?rhel}
 if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsmd

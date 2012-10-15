@@ -33,6 +33,10 @@ VDSM_PERMS="@VDSMUSER@:@VDSMGROUP@"
 
 umask 077
 
+if [ "$1" = "--check" ]; then
+    [ -s "$VDSM_KEY" -a -s "$VDSM_CA" -a -s "$VDSM_CRT" ] && exit 0 || exit 1
+fi
+
 if [ ! -f "$VDSM_KEY" ]; then
     /usr/bin/certtool --generate-privkey --outfile "$VDSM_KEY" 2> /dev/null
     /bin/chown "$VDSM_PERMS" "$VDSM_KEY"
