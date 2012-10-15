@@ -2553,7 +2553,7 @@
 ##
 {'type': 'NfsConnectionParameters',
  'data': {'export': 'str', '*retrans': 'int', '*timeout': 'int',
-          '*version': 'int'}}
+          '*version': 'str'}}
 
 ##
 # @LocalFsConnectionParameters:

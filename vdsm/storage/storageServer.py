@@ -117,11 +117,6 @@ def dict2conInfo(d):
     params = _TYPE_NT_MAPPING[conType](d.get('params', {}))
     return ConnectionInfo(conType, params)
 
-def _addIntegerOption(options, key, value):
-    try:
-        options.append("%s=%d" % (key, int(value)))
-    except ValueError:
-        raise se.InvalidParameterException(key, value)
 
 class ExampleConnection(object):
     """Do not inherit from this object it is just to show and document the
@@ -260,7 +255,7 @@ class NFSConnection(object):
 
     @property
     def version(self):
-        if self._version != 'auto':
+        if self._version is not None:
             return self._version
 
         # Version was not specified but if we are connected we can figure out
@@ -279,17 +274,27 @@ class NFSConnection(object):
         # Return -1 to signify the version has not been negotiated yet
         return -1
 
-
-    def __init__(self, export, timeout=600, retrans=6, version=3):
+    def __init__(self, export, timeout=600, retrans=6, version=None):
         self._remotePath = normpath(export)
         options = self.DEFAULT_OPTIONS[:]
         self._timeout = timeout
         self._version = version
         self._retrans = retrans
-        _addIntegerOption(options, "timeo", timeout)
-        _addIntegerOption(options, "retrans", retrans)
-        if version != 'auto':
-            _addIntegerOption(options, "vers", version)
+        options.append("timeo=%d" % timeout)
+        options.append("retrans=%d" % retrans)
+
+        if version:
+            try:
+                vers = [int(p) for p in version.split(".")]
+            except ValueError:
+                raise ValueError("Invalid NFS version '%s'" % version)
+
+            if len(vers) > 2:
+                raise ValueError("Invalid NFS version '%s'" % version)
+
+            options.append("nfsvers=%d" % vers[0])
+            if len(vers) > 1:
+                options.append("minorversion=%d" % vers[1])
 
         self._mountCon = MountConnection(export, "nfs", ",".join(options))
 

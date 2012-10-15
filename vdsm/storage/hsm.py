@@ -140,16 +140,32 @@ def _BCInitiatorNameResolve(ifaceName):
     return iface
 
 def _connectionDict2ConnectionInfo(conTypeId, conDict):
+    def getIntParam(optDict, key, default):
+        res = optDict.get(key, default)
+        if res is None:
+            return res
+
+        try:
+            return int(res)
+        except ValueError:
+            raise se.InvalidParameterException(key, res)
+
     typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
     if typeName == 'localfs':
         params = storageServer.LocaFsConnectionParameters(
                 conDict.get('connection', None))
     elif typeName == 'nfs':
+        version = conDict.get('protocol_version', "3")
+        version = str(version)
+        if version == "auto":
+            version = None
+
         params = storageServer.NfsConnectionParameters(
                 conDict.get('connection', None),
-                conDict.get('retrans', None),
-                conDict.get('timeout', None),
-                conDict.get('protocol_version', None))
+                getIntParam(conDict, 'retrans', None),
+                getIntParam(conDict, 'timeout', None),
+                version
+                )
     elif typeName == 'posixfs':
         params = storageServer.PosixFsConnectionParameters(
                 conDict.get('connection', None),
