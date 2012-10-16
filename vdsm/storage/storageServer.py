@@ -29,22 +29,37 @@ import glob
 from collections import namedtuple
 import misc
 from functools import partial
-import storage_exception as se
 
 import mount
 import fileSD
 import iscsi
 from sync import asyncmethod, AsyncCallStub
+import storage_exception as se
 
-class AliasAlreadyRegisteredError(RuntimeError): pass
-class AliasNotRegisteredError(RuntimeError): pass
-class UnsupportedAuthenticationMethod(RuntimeError): pass
 
-IscsiConnectionParameters = namedtuple("IscsiConnectionParameters", "target, iface, credentials")
-PosixFsConnectionParameters = namedtuple("PosixFsConnectionParameters", "spec, vfsType, options")
+class AliasAlreadyRegisteredError(RuntimeError):
+    pass
+
+
+class AliasNotRegisteredError(RuntimeError):
+    pass
+
+
+class UnsupportedAuthenticationMethod(RuntimeError):
+    pass
+
+IscsiConnectionParameters = namedtuple("IscsiConnectionParameters",
+                                       "target, iface, credentials")
+
+PosixFsConnectionParameters = namedtuple("PosixFsConnectionParameters",
+                                         "spec, vfsType, options")
+
 LocaFsConnectionParameters = namedtuple("LocaFsConnectionParameters", "path")
-NfsConnectionParameters = namedtuple("NfsConnectionParameters", "export, retrans, timeout, version")
+NfsConnectionParameters = namedtuple("NfsConnectionParameters",
+                                     "export, retrans, timeout, version")
+
 ConnectionInfo = namedtuple("ConnectionInfo", "type, params")
+
 
 def _credentialAssembly(credInfo):
     authMethod = credInfo.get('type', 'chap').lower()
@@ -72,6 +87,7 @@ def _iscsiParameterAssembly(d):
 
     return IscsiConnectionParameters(target, iface, cred)
 
+
 def _namedtupleAssembly(nt, d):
     d = d.copy()
     for field in nt._fields:
@@ -83,7 +99,8 @@ def _namedtupleAssembly(nt, d):
 _posixFsParameterAssembly = partial(_namedtupleAssembly,
         PosixFsConnectionParameters)
 _nfsParamerterAssembly = partial(_namedtupleAssembly, NfsConnectionParameters)
-_localFsParameterAssembly = partial(_namedtupleAssembly, LocaFsConnectionParameters)
+_localFsParameterAssembly = partial(_namedtupleAssembly,
+                                    LocaFsConnectionParameters)
 
 
 _TYPE_NT_MAPPING = {
@@ -92,6 +109,7 @@ _TYPE_NT_MAPPING = {
         'posixfs': _posixFsParameterAssembly,
         'nfs': _nfsParamerterAssembly,
         'localfs': _localFsParameterAssembly}
+
 
 def dict2conInfo(d):
     conType = d['type']
@@ -132,12 +150,14 @@ class ExampleConnection(object):
         pass
 
     def __eq__(self):
-        """Implement this! It will be used to detect multiple connections to the
-        same target"""
+        """Implement this! It will be used to detect multiple connections to
+        the same target"""
         pass
 
     def __hash__(self):
-        """All connection objects mush be hashable so they can be used as keys of dictionaries"""
+        """All connection objects mush be hashable so they can be used as keys
+        of dictionaries"""
+
 
 class MountConnection(object):
     log = logging.getLogger("StorageServer.MountConnection")
@@ -166,7 +186,8 @@ class MountConnection(object):
         self._mount = mount.Mount(spec, self._getLocalPath())
 
     def _getLocalPath(self):
-        return os.path.join(self.localPathBase, self._remotePath.replace("_", "__").replace("/", "_"))
+        return os.path.join(self.localPathBase,
+                self._remotePath.replace("_", "__").replace("/", "_"))
 
     def connect(self):
         if self._mount.isMounted():
@@ -186,7 +207,8 @@ class MountConnection(object):
             try:
                 self.disconnect()
             except OSError:
-                self.log.warn("Error while disconnecting after access problem", exc_info=True)
+                self.log.warn("Error while disconnecting after access problem",
+                              exc_info=True)
             raise
 
     def isConnected(self):
@@ -211,6 +233,7 @@ class MountConnection(object):
 
     def __hash__(self):
         return hash(type(self)) ^ hash(self._mount)
+
 
 class NFSConnection(object):
     DEFAULT_OPTIONS = ["soft", "nosharecache"]
@@ -280,6 +303,7 @@ class NFSConnection(object):
     def __hash__(self):
         return hash(type(self)) ^ hash(self._mountCon)
 
+
 class IscsiConnection(object):
     @property
     def target(self):
@@ -322,7 +346,7 @@ class IscsiConnection(object):
         if self._target.portal.port != portal.port:
             return False
 
-        if self._target.tpgt != None and self._target.tpgt != target.tpgt:
+        if self._target.tpgt is not None and self._target.tpgt != target.tpgt:
             return False
 
         if self._target.iqn != target.iqn:
@@ -404,10 +428,12 @@ class LocalDirectoryConnection(object):
         cls.localPathBase = path
 
     def _getLocalPath(self):
-        return os.path.join(self.localPathBase, self._path.replace("_", "__").replace("/", "_"))
+        return os.path.join(self.localPathBase,
+                self._path.replace("_", "__").replace("/", "_"))
 
     def checkTarget(self):
-        return os.path.isdir(self._path) and fileSD.validateDirAccess(self._path)
+        return (os.path.isdir(self._path) and
+                fileSD.validateDirAccess(self._path))
 
     def checkLink(self):
         lnPath = self._getLocalPath()
@@ -452,9 +478,14 @@ class LocalDirectoryConnection(object):
     def __hash__(self):
         return hash(type(self)) ^ hash(self._path)
 
-class IlligalAliasError(RuntimeError): pass
+
+class IlligalAliasError(RuntimeError):
+    pass
+
+
 class ConnectionAliasRegistrar(object):
     log = logging.getLogger("StorageServer.ConnectionAliasRegistrar")
+
     def __init__(self, persistDir):
         self._aliases = {}
         self._syncroot = Lock()
@@ -525,14 +556,17 @@ class ConnectionAliasRegistrar(object):
     def _unpersistAlias(self, alias):
         os.unlink(self._getConnectionFile(alias))
 
-class UnknownConnectionTypeError(RuntimeError): pass
+
+class UnknownConnectionTypeError(RuntimeError):
+    pass
+
 
 class ConnectionFactory(object):
     _registeredConnectionTypes = {
-        "nfs" : NFSConnection,
-        "posixfs" : MountConnection,
-        "iscsi" : IscsiConnection,
-        "localfs" : LocalDirectoryConnection,
+        "nfs": NFSConnection,
+        "posixfs": MountConnection,
+        "iscsi": IscsiConnection,
+        "localfs": LocalDirectoryConnection,
         }
 
     @classmethod
@@ -593,13 +627,13 @@ class ConnectionMonitor(object):
             self._log.debug("Recovering lost connection '%s'", conId)
             self._activeOperations[con] = self._asyncConnect(con)
 
-
     def _checkConnections(self):
         for conId, con in self._conDict.iteritems():
             # Spread checks over time so we don't get cpu spikes
             # I'm not sure it's the best way to go but I would like to try it
             # out. It feels like it might be a good pattern to use.
-            self._stopEvent.wait(self.checkInterval / float(len(self._conDict)))
+            interval = self.checkInterval / float(len(self._conDict))
+            self._stopEvent.wait(interval)
 
             if self._stopEvent.isSet():
                 break
@@ -631,7 +665,7 @@ class ConnectionMonitor(object):
         for key in self._monitorConnections.keys():
             # A key could be removed while iterating
             value = self._monitorConnections.get(key, None)
-            if value == None:
+            if value is None:
                 continue
 
             res[key] = (value.isConnected(), "")
