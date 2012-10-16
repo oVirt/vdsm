@@ -4598,6 +4598,8 @@
 #
 # @memoryStats:        Memory statistics as reported by the guest agent
 #
+# @balloonInfo:        Guest memory balloon information
+#
 # @disksUsage:         Info about mounted filesystems as reported by the agent
 #
 # @netIfaces:          Network device address info as reported by the agent
