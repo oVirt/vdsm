@@ -164,17 +164,18 @@ def getAllVolumes(sdUUID):
     """
     vols = _getVolsTree(sdUUID)
     res = {}
-    for vName in vols.iterkeys():
-        res[vName] = {'imgs': [], 'parent': None}
+    for volName in vols.iterkeys():
+        res[volName] = {'imgs': [], 'parent': None}
 
-    for vName, vImg, vPar in vols.itervalues():
-        res[vName]['parent'] = vPar
-        if vImg not in res[vName]['imgs']:
-            res[vName]['imgs'].insert(0, vImg)
-        if (vPar != sd.BLANK_UUID and
-                not vName.startswith(sd.REMOVED_IMAGE_PREFIX) and
-                vImg not in res[vPar]['imgs']):
-            res[vPar]['imgs'].append(vImg)
+    for volName, vImg, parentVol in vols.itervalues():
+        res[volName]['parent'] = parentVol
+        if vImg not in res[volName]['imgs']:
+            res[volName]['imgs'].insert(0, vImg)
+        if (parentVol != sd.BLANK_UUID and
+                not volName.startswith(
+                    sd.REMOVED_IMAGE_PREFIX) and
+                vImg not in res[parentVol]['imgs']):
+            res[parentVol]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
                 for k, v in res.iteritems())
