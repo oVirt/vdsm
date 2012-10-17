@@ -474,6 +474,25 @@ class Volume(object):
                                  preallocate, volParent, srcImgUUID,
                                  srcVolUUID, imgPath, volPath)
 
+            # When the volume format is raw what the guest sees is the apparent
+            # size of the file/device therefore if the requested size doesn't
+            # match the apparent size (eg: physical extent granularity in LVM)
+            # we need to update the size value so that the metadata reflects
+            # the correct state.
+            if volFormat == RAW_FORMAT:
+                apparentSize = cls.getVSize(dom, imgUUID, volUUID)
+                if apparentSize < size:
+                    cls.log.error("The volume %s apparent size %s is smaller "
+                        "than the requested size %s", volUUID, apparentSize,
+                        size)
+                    raise se.VolumeCreationError()
+                if apparentSize > size:
+                    cls.log.info("The requested size for volume %s doesn't "
+                        "match the granularity on domain %s, updating the "
+                        "volume size from %s to %s", volUUID, sdUUID, size,
+                        apparentSize)
+                    size = apparentSize
+
             vars.task.pushRecovery(
                 task.Recovery("Create volume metadata rollback", clsModule,
                               clsName, "createVolumeMetadataRollback",
