@@ -66,7 +66,6 @@ Requires: iproute
 Requires: python-ethtool
 Requires: rpm-python
 Requires: nfs-utils
-Requires: lvm2 >= 2.02.95
 Requires: python-pthreading
 
 %ifarch x86_64
@@ -87,6 +86,7 @@ Requires: kernel >= 2.6.32-279.9.1
 Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: selinux-policy-targeted >= 3.7.19-80
+Requires: lvm2 >= 2.02.95-10.el6_3.2
 %else
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
@@ -101,6 +101,7 @@ Requires: kernel >= 3.6
 Requires: sanlock >= 2.4-2, sanlock-python
 Requires: sed >= 4.2.1-10
 Requires: selinux-policy-targeted >= 3.10.0-149
+Requires: lvm2 >= 2.02.95
 %endif
 
 Requires: psmisc >= 22.6-15
