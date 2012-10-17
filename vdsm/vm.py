@@ -939,11 +939,13 @@ class Vm(object):
         self.saveState()
 
     def status(self):
-        # used by clientIF.list
+        # used by API.Global.getVMList
         self.conf['status'] = self.lastStatus
         return self.conf
 
     def getStats(self):
+        # used by API.Vm.getStats
+
         def _getGuestStatus():
             GUEST_WAIT_TIMEOUT = 60
             now = time.time()
@@ -957,7 +959,6 @@ class Vm(object):
                 return self._guestEvent
             return 'Up'
 
-        # used by clientIF.getVmStats
         if self.lastStatus == 'Down':
             stats = {}
             stats['exitCode'] = self.conf['exitCode']
