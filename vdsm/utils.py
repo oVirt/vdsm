@@ -59,13 +59,17 @@ def rmFile(fileToRemove):
     """
     Try to remove a file.
 
-    .. note::
-        If the operation fails the function exists silently.
+    If the file doesn't exist is assumed that it was already removed.
     """
     try:
         os.unlink(fileToRemove)
-    except:
-        pass
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            logging.warning("File: %s already removed", fileToRemove)
+        else:
+            logging.error("Removing file: %s failed", fileToRemove,
+                          exc_info=True)
+            raise
 
 
 def readMemInfo():
