@@ -4988,18 +4988,11 @@
 #
 # @volumeID:        The Volume in which to create the snapshot
 #
-# @mirrorDomainID:  #optional  The Storage Domain to use for snapshot mirroring
-#
-# @mirrorImageID:   #optional  The Image to use for snapshot mirroring
-#
-# @mirrorVolumeID:  #optional  The Volume to use for snapshot mirroring
-#
 # Since: 4.10.0
 ##
 {'type': 'SnapshotVolumeDriveInfo',
  'data': {'domainID': 'UUID', 'imageID': 'UUID', 'baseVolumeID': 'UUID',
-          'volumeID': 'UUID', '*mirrorDomainID': 'UUID',
-          '*mirrorImageID': 'UUID', '*mirrorVolumeID': 'UUID'}}
+          'volumeID': 'UUID'}}
 
 ##
 # @SnapshotGUIDDriveInfo:
@@ -5010,17 +5003,10 @@
 #
 # @GUID:            The devmapper device GUID in which to create the snapshot
 #
-# @mirrorDomainID:  #optional  The Storage Domain to use for snapshot mirroring
-#
-# @mirrorImageID:   #optional  The Image to use for snapshot mirroring
-#
-# @mirrorVolumeID:  #optional  The Volume to use for snapshot mirroring
-#
 # Since: 4.10.0
 ##
 {'type': 'SnapshotGUIDDriveInfo',
- 'data': {'baseGUID': 'UUID', 'GUID': 'UUID', '*mirrorDomainID': 'UUID',
-          '*mirrorImageID': 'UUID', '*mirrorVolumeID': 'UUID'}}
+ 'data': {'baseGUID': 'UUID', 'GUID': 'UUID'}}
 
 ##
 # @SnapshotUUIDDriveInfo:
@@ -5031,17 +5017,10 @@
 #
 # @UUID:      The block device ID in which to create the snapshot
 #
-# @mirrorDomainID:  #optional  The Storage Domain to use for snapshot mirroring
-#
-# @mirrorImageID:   #optional  The Image to use for snapshot mirroring
-#
-# @mirrorVolumeID:  #optional  The Volume to use for snapshot mirroring
-#
 # Since: 4.10.0
 ##
 {'type': 'SnapshotUUIDDriveInfo',
- 'data': {'baseUUID': 'UUID', 'UUID': 'UUID', '*mirrorDomainID': 'UUID',
-          '*mirrorImageID': 'UUID', '*mirrorVolumeID': 'UUID'}}
+ 'data': {'baseUUID': 'UUID', 'UUID': 'UUID'}}
 
 ##
 # @SnapshotDriveInfo:
