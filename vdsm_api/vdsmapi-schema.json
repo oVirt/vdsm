@@ -861,7 +861,7 @@
 #
 # @software_revision:   Extra VDSM version information
 #
-# @supportedRHEVMs:     A list of supported ovirt-engine versions
+# @supportedENGINEs:     A list of supported ovirt-engine versions
 #
 # @supportedProtocols:  A list of supported xmlrpc protocol versions
 #
@@ -909,7 +909,7 @@
  'data': {'kvmEnabled': 'bool', 'cpuCores': 'uint',
           'cpuSockets': 'uint', 'cpuSpeed': 'float', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
-          'software_revision': 'str', 'supportedRHEVMs': ['str'],
+          'software_revision': 'str', 'supportedENGINEs': ['str'],
           'supportedProtocols': ['str'], 'clusterLevels': ['str'],
           'networks': 'NetInfoNetworkMap',
           'nics': 'NetInfoNicMap', 'bondings': 'NetInfoBondMap',
