@@ -26,6 +26,7 @@
 
 from collections import OrderedDict
 
+
 def tokenize(data):
     while len(data):
         if data[0] in ['{', '}', ':', ',', '[', ']']:
@@ -42,6 +43,7 @@ def tokenize(data):
             data = data[1:]
             yield string
 
+
 def parse(tokens):
     if tokens[0] == '{':
         ret = OrderedDict()
@@ -50,7 +52,7 @@ def parse(tokens):
             key = tokens[0]
             tokens = tokens[1:]
 
-            tokens = tokens[1:] # :
+            tokens = tokens[1:]  # Skip ':'
 
             value, tokens = parse(tokens)
 
@@ -73,8 +75,10 @@ def parse(tokens):
     else:
         return tokens[0], tokens[1:]
 
+
 def evaluate(string):
     return parse(map(lambda x: x, tokenize(string)))[0]
+
 
 def parse_schema(fp):
     exprs = []
@@ -89,9 +93,9 @@ def parse_schema(fp):
             expr += line
         elif expr:
             expr_eval = evaluate(expr)
-            if expr_eval.has_key('enum'):
+            if 'enum' in expr_eval:
                 add_enum(expr_eval['enum'])
-            elif expr_eval.has_key('union'):
+            elif 'union' in expr_eval:
                 add_enum('%sKind' % expr_eval['union'])
             exprs.append(expr_eval)
             expr = line
@@ -100,13 +104,14 @@ def parse_schema(fp):
 
     if expr:
         expr_eval = evaluate(expr)
-        if expr_eval.has_key('enum'):
+        if 'enum' in expr_eval:
             add_enum(expr_eval['enum'])
-        elif expr_eval.has_key('union'):
+        elif 'union' in expr_eval:
             add_enum('%sKind' % expr_eval['union'])
         exprs.append(expr_eval)
 
     return exprs
+
 
 def parse_args(typeinfo):
     for member in typeinfo:
@@ -121,6 +126,7 @@ def parse_args(typeinfo):
             structured = True
         yield (argname, argentry, optional, structured)
 
+
 def de_camel_case(name):
     new_name = ''
     for ch in name:
@@ -131,6 +137,7 @@ def de_camel_case(name):
         else:
             new_name += ch.lower()
     return new_name
+
 
 def camel_case(name):
     new_name = ''
@@ -145,29 +152,37 @@ def camel_case(name):
             new_name += ch.lower()
     return new_name
 
+
 def c_var(name):
     return name.replace('-', '_').lstrip("*")
+
 
 def c_fun(name):
     return c_var(name).replace('.', '_')
 
+
 def c_list_type(name):
     return '%sList' % name
+
 
 def type_name(name):
     if type(name) == list:
         return c_list_type(name[0])
     return name
 
+
 enum_types = []
+
 
 def add_enum(name):
     global enum_types
     enum_types.append(name)
 
+
 def is_enum(name):
     global enum_types
     return (name in enum_types)
+
 
 def c_type(name):
     if name == 'str':
@@ -189,21 +204,26 @@ def c_type(name):
     else:
         return '%s *' % name
 
+
 def genindent(count):
     ret = ""
     for i in range(count):
         ret += " "
     return ret
 
+
 indent_level = 0
+
 
 def push_indent(indent_amount=4):
     global indent_level
     indent_level += indent_amount
 
+
 def pop_indent(indent_amount=4):
     global indent_level
     indent_level -= indent_amount
+
 
 def cgen(code, **kwds):
     indent = genindent(indent_level)
@@ -211,11 +231,14 @@ def cgen(code, **kwds):
     lines = map(lambda x: indent + x, lines)
     return '\n'.join(lines) % kwds + '\n'
 
+
 def mcgen(code, **kwds):
     return cgen('\n'.join(code.split('\n')[1:-1]), **kwds)
 
+
 def basename(filename):
     return filename.split("/")[-1]
+
 
 def guardname(filename):
     guard = basename(filename).rsplit(".", 1)[0]

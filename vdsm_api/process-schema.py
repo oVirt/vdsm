@@ -152,6 +152,7 @@ def read_symbol_comment(f, symbols):
 
     return symbol
 
+
 def read_schema_doc(f, symbols):
     """
     Read all of the documentation information from the schema and attach it to
@@ -165,11 +166,13 @@ def read_schema_doc(f, symbols):
             read_symbol_comment(f, symbols)
             continue
 
+
 def html_escape(text):
     """
     Escape stings for proper display in html documents.
     """
-    return "".join(html_escape_table.get(c,c) for c in text)
+    return "".join(html_escape_table.get(c, c) for c in text)
+
 
 def write_symbol(f, s):
     """
@@ -278,6 +281,7 @@ def write_symbol(f, s):
 
     f.write('</p><br/>\n')
 
+
 def create_doc(symbols, filename):
     f = open(filename, 'w')
 
@@ -321,6 +325,7 @@ def create_doc(symbols, filename):
         write_symbol(f, s)
     f.write(footer)
 
+
 def main():
     schema = sys.argv[1]
     output = sys.argv[2]
@@ -333,6 +338,7 @@ def main():
     with open(schema) as f:
         symbols = read_schema_doc(f, symbols)
     create_doc(symbols, output)
+
 
 if __name__ == '__main__':
     main()
