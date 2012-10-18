@@ -34,6 +34,7 @@ import mount
 import fileSD
 import iscsi
 from sync import asyncmethod, AsyncCallStub
+from mount import MountError
 import storage_exception as se
 
 
@@ -199,7 +200,14 @@ class MountConnection(object):
             if e.errno != errno.EEXIST:
                 raise
 
-        self._mount.mount(self.options, self._vfsType)
+        try:
+            self._mount.mount(self.options, self._vfsType)
+        except MountError:
+            try:
+                os.rmdir(self._getLocalPath())
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
 
         try:
             fileSD.validateDirAccess(self.getMountObj().getRecord().fs_file)
