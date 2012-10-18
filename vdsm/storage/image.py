@@ -1024,32 +1024,30 @@ class Image:
         # Step 4: Rename successor_MERGE to successor
         # Step 5: Unsafely rebase successor's children on top of temporary volume
         srcVol = chain[-1]
-        srcVol.prepare(rw=True, chainrw=True, setrw=True)
-        # Find out successor's children list
-        chList = srcVolParams['children']
-        # Step 1: Create an empty volume named sucessor_MERGE with destination volume's parent parameters
-        newUUID = srcVol.volUUID + "_MERGE"
-        sdDom.createVolume(imgUUID=srcVolParams['imgUUID'],
-                                         size=volParams['size'], volFormat=volParams['volFormat'],
-                                         preallocate=volParams['prealloc'], diskType=volParams['disktype'],
-                                         volUUID=newUUID, desc=srcVolParams['descr'],
-                                         srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID)
+        with srcVol.scopedPrepare(rw=True, chainrw=True, setrw=True):
+            # Find out successor's children list
+            chList = srcVolParams['children']
+            # Step 1: Create an empty volume named sucessor_MERGE with destination volume's parent parameters
+            newUUID = srcVol.volUUID + "_MERGE"
+            sdDom.createVolume(imgUUID=srcVolParams['imgUUID'],
+                                             size=volParams['size'], volFormat=volParams['volFormat'],
+                                             preallocate=volParams['prealloc'], diskType=volParams['disktype'],
+                                             volUUID=newUUID, desc=srcVolParams['descr'],
+                                             srcImgUUID=volume.BLANK_UUID, srcVolUUID=volume.BLANK_UUID)
 
-        newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
-        newVol.prepare(rw=True, justme=True, setrw=True)
+            newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'], volUUID=newUUID)
+            with newVol.scopedPrepare(rw=True, justme=True, setrw=True):
 
-        # Step 2: Convert successor to new volume
-        #   qemu-img convert -f qcow2 successor -O raw newUUID
-        (rc, out, err) = volume.qemuConvert(srcVolParams['path'], newVol.getVolumePath(),
-            srcVolParams['volFormat'], volParams['volFormat'], vars.task.aborting,
-            size=volParams['apparentsize'], dstvolType=newVol.getType())
-        if rc:
-            self.log.error("qemu-img convert failed: rc=%s, out=%s, err=%s",
-                            rc, out, err)
-            raise se.MergeSnapshotsError(newUUID)
+                # Step 2: Convert successor to new volume
+                #   qemu-img convert -f qcow2 successor -O raw newUUID
+                (rc, out, err) = volume.qemuConvert(srcVolParams['path'], newVol.getVolumePath(),
+                    srcVolParams['volFormat'], volParams['volFormat'], vars.task.aborting,
+                    size=volParams['apparentsize'], dstvolType=newVol.getType())
+                if rc:
+                    self.log.error("qemu-img convert failed: rc=%s, out=%s, err=%s",
+                                    rc, out, err)
+                    raise se.MergeSnapshotsError(newUUID)
 
-        newVol.teardown(sdUUID=newVol.sdUUID, volUUID=newVol.volUUID)
-        srcVol.teardown(sdUUID=srcVol.sdUUID, volUUID=srcVol.volUUID)
         if chList:
             newVol.setInternal()
 

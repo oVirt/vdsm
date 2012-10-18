@@ -22,6 +22,7 @@ import os.path
 import logging
 import time
 import signal
+from contextlib import contextmanager
 
 import image
 from vdsm import constants
@@ -684,6 +685,16 @@ class Volume(object):
             self.setInternal()
 
         return self.isLeaf()
+
+    @contextmanager
+    def scopedPrepare(self, rw=True, justme=False, chainrw=False, setrw=False,
+                 force=False):
+        self.prepare(rw=True, justme=False, chainrw=False, setrw=False,
+                     force=False)
+        try:
+            yield self
+        finally:
+            self.teardown(self.sdUUID, self.volUUID, justme)
 
     def prepare(self, rw=True, justme=False,
                 chainrw=False, setrw=False, force=False):
