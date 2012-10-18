@@ -53,11 +53,7 @@ PEP8_WHITELIST = \
 	vdsm/debugPluginClient.py \
 	vdsm/define.py \
 	vdsm/exception.py \
-	vdsm/gluster/__init__.py \
-	vdsm/gluster/api.py \
-	vdsm/gluster/cli.py \
-	vdsm/gluster/exception.py \
-	vdsm/gluster/hostname.py \
+	vdsm/gluster \
 	vdsm/guestIF.py \
 	vdsm/hooks.py \
 	vdsm/libvirtev.py \
@@ -99,14 +95,11 @@ PEP8_WHITELIST = \
 	vdsm/tc.py \
 	vdsm/vdsm \
 	vdsm_cli \
-	vdsm_hooks/fileinject/before_vm_start.py \
+	vdsm_hooks/fileinject \
 	vdsm_hooks/promisc/after_vm_start.py \
-	vdsm_hooks/scratchpad/after_vm_destroy.py \
-	vdsm_hooks/scratchpad/before_vm_migrate_source.py \
-	vdsm_hooks/scratchpad/before_vm_start.py \
+	vdsm_hooks/scratchpad \
 	vdsm_hooks/sriov/before_vm_start.py \
-	vdsm_hooks/vhostmd/after_vm_destroy.py \
-	vdsm_hooks/vhostmd/before_vm_start.py \
+	vdsm_hooks/vhostmd \
 	vdsm_reg/createDaemon.py \
 	vdsm_reg/define.py \
 	vds_bootstrap/miniyum.py \
