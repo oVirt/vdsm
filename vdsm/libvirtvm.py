@@ -2541,6 +2541,7 @@ class LibvirtVm(vm.Vm):
                     dev['macAddr'].lower() == mac.lower()):
                     dev['address'] = address
                     dev['alias'] = alias
+                    dev['name'] = name
                     knownDev = True
             # Add unknown nic device to vm's conf
             if not knownDev:
@@ -2549,7 +2550,8 @@ class LibvirtVm(vm.Vm):
                           'macAddr': mac,
                           'nicModel': model,
                           'address': address,
-                          'alias': alias}
+                          'alias': alias,
+                          'name': name}
                 if bridge:
                     nicDev['network'] = bridge
                 self.conf['devices'].append(nicDev)
