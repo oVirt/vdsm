@@ -1663,19 +1663,18 @@ def main():
         print 'Node clean-up successful'
         return 0
     if options.downloadRhevmCert:
-        if not options.serverIp or not options.serverPort or \
-                not options.fingerPrint:
-            print "Must supply @ENGINENAME@'s IP, port and a fingerprint to " + \
-                  "verify against"
+        if not options.serverIp or not options.serverPort:
+            print "Must supply @ENGINENAME@'s IP and port"
             return -1
         if not getRhevmCert(options.serverIp, options.serverPort):
             print 'Failed downloading the @ENGINENAME@ certificate file'
             return -1
         _, _, engineWebCACert = certPaths('')
-        fp = generateFingerPrint(engineWebCACert)
-        if options.fingerPrint != fp:
-            print 'Expected fingerprint %s is different from recieved fingerprint %s' % (options.fingerPrint, fp)
-            return -1
+        if options.fingerPrint:
+            fp = generateFingerPrint(engineWebCACert)
+            if options.fingerPrint != fp:
+                print 'Expected fingerprint %s is different from recieved fingerprint %s' % (options.fingerPrint, fp)
+                return -1
 
         if isOvirt():
             ovirtfunctions.ovirt_store_config(engineWebCACert)

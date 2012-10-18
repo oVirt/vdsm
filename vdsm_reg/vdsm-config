@@ -102,19 +102,15 @@ set_addresses() {
 					/etc/vdsm-reg/vdsm-reg.conf
 			fi
 
-			if [ ! -z "$management_server_fingerprint" ]; then
-				res=`python "$DEPLOY_UTIL" --download-rhevm-cert --server-address="$vdc_managment_server" --server-port="$vdc_managment_port" --fingerprint="$management_server_fingerprint"`
-				ret_val=$?
-				echo "$res" >> $LOG 2>&1
-				if [ ! $ret_val -eq 0 ];then
-					mv "$tmp_vdsm_reg_conf" /etc/vdsm-reg/vdsm-reg.conf
-					echo "Rebooting ... " >> $LOG 2>&1
-					/sbin/reboot
-				fi
-				rm -f "$tmp_vdsm_reg_conf"
-			else
-				echo "No management_server_fingerprint found." | tee -a $LOG
+			res=`python "$DEPLOY_UTIL" --download-rhevm-cert --server-address="$vdc_managment_server" --server-port="$vdc_managment_port" --fingerprint="$management_server_fingerprint"`
+			ret_val=$?
+			echo "$res" >> $LOG 2>&1
+			if [ ! $ret_val -eq 0 ];then
+				mv "$tmp_vdsm_reg_conf" /etc/vdsm-reg/vdsm-reg.conf
+				echo "Rebooting ... " >> $LOG 2>&1
+				/sbin/reboot
 			fi
+			rm -f "$tmp_vdsm_reg_conf"
 
 			## Set new configuration
 			fWriteConfig=1
