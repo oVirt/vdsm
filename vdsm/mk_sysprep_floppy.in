@@ -37,6 +37,6 @@ mount -o loop,uid=`id -u`,gid=`id -g` "$FLOPPY_DIR/$FLOPPY_NAME" $mntpoint
 
 /bin/cat > $mntpoint/sysprep.inf
 
-umount $mntpoint
+umount -d $mntpoint
 rmdir $mntpoint
 
