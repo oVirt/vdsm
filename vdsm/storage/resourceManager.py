@@ -483,8 +483,10 @@ class ResourceManager(object):
         LockType.validate(lockType)
 
         request = Request(namespace, name, lockType, callback)
-        self._log.debug("Trying to register resource '%s' for lock type '%s'", fullName, lockType)
-        with nested(misc.DeferableContext(), self._syncRoot.shared) as (contextCleanup, lock):
+        self._log.debug("Trying to register resource '%s' for lock type '%s'",
+                        fullName, lockType)
+        with nested(misc.RollbackContext(),
+                    self._syncRoot.shared) as (contextCleanup, lock):
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:
@@ -536,7 +538,8 @@ class ResourceManager(object):
         fullName = "%s.%s" % (namespace, name)
 
         self._log.debug("Trying to release resource '%s'", fullName)
-        with nested(misc.DeferableContext(), self._syncRoot.shared) as (contextCleanup, lock):
+        with nested(misc.RollbackContext(),
+                    self._syncRoot.shared) as (contextCleanup, lock):
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:

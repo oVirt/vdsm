@@ -702,7 +702,21 @@ class RWLock(object):
         nextRequest.set()
 
 
-class DeferableContext():
+class RollbackContext(object):
+    '''
+    A context manager for recording and playing rollback.
+    The first exception will be remembered and re-raised after rollback
+
+    Sample usage:
+    with RollbackContext() as rollback:
+        step1()
+        rollback.prependDefer(lambda: undo step1)
+        def undoStep2(arg): pass
+        step2()
+        rollback.prependDefer(undoStep2, arg)
+
+    More examples see tests/miscTests.py
+    '''
     def __init__(self, *args):
         self._finally = []
 
@@ -710,16 +724,21 @@ class DeferableContext():
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        lastException = None
+        firstException = exc_value
 
-        for func, args, kwargs in self._finally:
+        for undo, args, kwargs in self._finally:
             try:
-                func(*args, **kwargs)
-            except Exception, ex:
-                lastException = ex
+                undo(*args, **kwargs)
+            except Exception as e:
+                # keep the earliest exception info
+                if not firstException:
+                    firstException = e
+                    # keep the original traceback info
+                    traceback = sys.exc_info()[2]
 
-        if lastException is not None:
-            raise lastException
+        # re-raise the earliest exception
+        if firstException is not None:
+            raise firstException, None, traceback
 
     def defer(self, func, *args, **kwargs):
         self._finally.append((func, args, kwargs))

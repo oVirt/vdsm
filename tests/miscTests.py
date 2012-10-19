@@ -1028,7 +1028,7 @@ class ExecCmd(TestCaseBase):
         self.assertEquals(stdout[0], SUDO_USER)
 
 
-class DeferableContextTests(TestCaseBase):
+class RollbackContextTests(TestCaseBase):
     def setUp(self):
         self._called = 0
 
@@ -1041,8 +1041,8 @@ class DeferableContextTests(TestCaseBase):
         raise ex
 
     def test(self):
-        with misc.DeferableContext() as dc:
-            dc.defer(self._callDef)
+        with misc.RollbackContext() as rollback:
+            rollback.prependDefer(self._callDef)
 
         self.assertEquals(self._called, 1)
 
@@ -1052,37 +1052,29 @@ class DeferableContextTests(TestCaseBase):
         not block all subsequent actions from running
         """
         try:
-            with misc.DeferableContext() as dc:
-                dc.defer(self._callDef)
-                dc.defer(self._raiseDef)
-                dc.defer(self._callDef)
-        except:
+            with misc.RollbackContext() as rollback:
+                rollback.prependDefer(self._callDef)
+                rollback.prependDefer(self._raiseDef)
+                rollback.prependDefer(self._callDef)
+        except Exception:
             self.assertEquals(self._called, 2)
             return
 
         self.fail("Exception was not raised")
 
-    def testLastException(self):
+    def testFirstException(self):
         """
-        Test that if multiple actions raise an exception only the last one is
-        raised.
-        This is done to preserve behaviour of:
-        try:
-            try:
-                pass
-            finally:
-                raise Exception()
-        finally:
-            # This will swallow previous exception
-            raise Exception()
+        Test that if multiple actions raise an exception only the first one is
+        raised. When performing a batch rollback operations, probably the first
+        exception is the root cause.
         """
         try:
-            with misc.DeferableContext() as dc:
-                dc.defer(self._callDef)
-                dc.defer(self._raiseDef)
-                dc.defer(self._callDef)
-                dc.defer(self._raiseDef, RuntimeError())
-                dc.defer(self._callDef)
+            with misc.RollbackContext() as rollback:
+                rollback.prependDefer(self._callDef)
+                rollback.prependDefer(self._raiseDef)
+                rollback.prependDefer(self._callDef)
+                rollback.prependDefer(self._raiseDef, RuntimeError())
+                rollback.prependDefer(self._callDef)
         except RuntimeError:
             self.assertEquals(self._called, 3)
             return
