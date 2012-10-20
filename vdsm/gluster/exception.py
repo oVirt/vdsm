@@ -46,12 +46,20 @@ class GlusterException(VdsmException):
         self.err = err
 
     def __str__(self):
-        return '%s\nerror: %s%s%sreturn code: %s' % \
-            (self.message,
-             ('\n'.join(self.out) + '\n') if self.out else '',
-             ('\n'.join(self.err) + '\n') if self.err else '',
-             '\n' if not (self.out or self.err) else '',
-             self.rc)
+        o = '\n'.join(self.out)
+        e = '\n'.join(self.err)
+        if o and e:
+            m = o + '\n' + e
+        else:
+            m = o or e
+
+        s = self.message
+        if m:
+            s += '\nerror: ' + m
+        if self.rc:
+            s += '\nreturn code: %s' % self.rc
+
+        return s
 
     def response(self):
         return {'status': {'code': self.code, 'message': str(self),
