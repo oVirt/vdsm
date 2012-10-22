@@ -35,6 +35,9 @@ CORE_PATTERN=/proc/sys/kernel/core_pattern
 NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock"
 CONFLICTING_SERVICES="libvirt-guests"
 
+# trigger for reconfiguration
+FORCE_RECONFIGURE=@VDSMLIBDIR@/reconfigure
+
 LCONF=/etc/libvirt/libvirtd.conf
 QCONF=/etc/libvirt/qemu.conf
 LDCONF=/etc/sysconfig/libvirtd
@@ -269,8 +272,14 @@ configure_libvirt()
         /usr/bin/vdsm-tool validate-ovirt-certs
     fi
 
-    # do not reconfigure, return 0, so that vdsm start can continue.
+    #
+    # reconfigure if:
+    # - force specified or
+    # - we have the FORCE_RECONFIGURE trigger file
+    # - not configured
+    #
     if [ "$force_reconfigure" != "force" ] &&
+       ! [ -f "$FORCE_RECONFIGURE" ] &&
        grep -q "$by_vdsm_vers" $lconf && grep -q "$by_vdsm_vers" $qconf && \
        grep -q "$by_vdsm_vers" $ldconf && grep -q "$by_vdsm_vers" $qlconf
     then
@@ -367,6 +376,14 @@ EOF
     ovirt_store_config "$lconf" "$qconf" "$ldconf" "$llogr"
 
     /sbin/initctl restart libvirtd 2>/dev/null || :
+
+    #
+    # finished reconfiguration, do not trigger
+    # next time
+    #
+    if [ -f "$FORCE_RECONFIGURE" ]; then
+        rm -f "$FORCE_RECONFIGURE"
+    fi
 }
 
 
