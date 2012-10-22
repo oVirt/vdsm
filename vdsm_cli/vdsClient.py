@@ -60,10 +60,11 @@ INTERNAL_VOL = 7
 LEAF_VOL = 8
 
 
-def validateArgTypes(args, conv, requireAllArgs=False):
-    if len(args) > len(conv) or requireAllArgs and len(args) < len(conv):
+def validateArgTypes(args, conv, requiredArgsNumber=0):
+    if len(args) > len(conv) or len(args) < requiredArgsNumber:
         raise ValueError("Wrong number of arguments provided, "
-                         "expecting %d got %d" % (len(conv), len(args)))
+                         "expecting %d (%d required) got %d"
+                         % (len(conv), requiredArgsNumber, len(args)))
 
     for i in range(len(args)):
         args[i] = conv[i](args[i])
@@ -713,7 +714,8 @@ class service:
         return 0, ''
 
     def spmStart(self, args):
-        validateArgTypes(args, [str, int, int, int, str, int, int])
+        validateArgTypes(args, [str, int, int, int, str, int, int],
+                         requiredArgsNumber=5)
         status = self.s.spmStart(*args)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
