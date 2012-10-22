@@ -170,12 +170,28 @@ def cleanupdir(dirPath, ignoreErrors=True):
 def createdir(dirPath, mode=None):
     """
     Recursively create directory if doesn't exist
+
+    If already exists check that permissions are as requested.
     """
-    if not os.path.exists(dirPath):
-        if mode:
-            os.makedirs(dirPath, mode)
+    if mode is not None:
+        mode |= stat.S_IFDIR
+        params = (dirPath, mode)
+    else:
+        params = (dirPath,)
+
+    try:
+        os.makedirs(*params)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
         else:
-            os.makedirs(dirPath)
+            log.warning("Dir %s already exists", dirPath)
+            if mode is not None:
+                statinfo = os.stat(dirPath)
+                if statinfo[stat.ST_MODE] != mode:
+                    raise OSError(errno.EPERM,
+                        "Existing %s permissions %s are not as requested %s" %
+                        (dirPath, oct(statinfo[stat.ST_MODE]), oct(mode)))
 
 
 def resolveUid(user):
