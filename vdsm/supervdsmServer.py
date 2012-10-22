@@ -28,6 +28,7 @@ import re
 from time import sleep
 import signal
 from multiprocessing import Pipe, Process
+import storage.misc as misc
 
 try:
     from gluster import cli as gcli
@@ -41,7 +42,7 @@ from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
-from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS
+from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS, TIMESTAMP
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, \
@@ -328,8 +329,11 @@ def main():
         authkey, parentPid = sys.argv[1:]
 
         log.debug("Creating PID file")
+        spid = os.getpid()
         with open(PIDFILE, "w") as f:
-            f.write(str(os.getpid()) + "\n")
+            f.write(str(spid) + "\n")
+        with open(TIMESTAMP, "w") as f:
+            f.write(str(misc.getProcCtime(spid) + "\n"))
 
         log.debug("Cleaning old socket")
         if os.path.exists(ADDRESS):
@@ -350,7 +354,8 @@ def main():
         servThread.setDaemon(True)
         servThread.start()
 
-        chown(ADDRESS, METADATA_USER, METADATA_GROUP)
+        for f in (ADDRESS, TIMESTAMP, PIDFILE):
+            chown(f, METADATA_USER, METADATA_GROUP)
 
         log.debug("Started serving super vdsm object")
         servThread.join()

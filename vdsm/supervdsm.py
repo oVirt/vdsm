@@ -26,8 +26,7 @@ import logging
 import threading
 import uuid
 from time import sleep
-import socket
-
+from errno import ENOENT, ESRCH
 import storage.misc as misc
 from vdsm import constants, utils
 
@@ -46,6 +45,7 @@ def __supervdsmServerPath():
     raise RuntimeError("SuperVDSM Server not found")
 
 PIDFILE = os.path.join(constants.P_VDSM_RUN, "svdsm.pid")
+TIMESTAMP = os.path.join(constants.P_VDSM_RUN, "svdsm.time")
 ADDRESS = os.path.join(constants.P_VDSM_RUN, "svdsm.sock")
 SUPERVDSM = __supervdsmServerPath()
 
@@ -55,6 +55,7 @@ class _SuperVdsmManager(BaseManager):
 
 
 class ProxyCaller(object):
+
     def __init__(self, supervdsmProxy, funcName):
         self._funcName = funcName
         self._supervdsmProxy = supervdsmProxy
@@ -63,10 +64,21 @@ class ProxyCaller(object):
         callMethod = lambda: \
             getattr(self._supervdsmProxy._svdsm, self._funcName)(*args,
                                                                  **kwargs)
+        if not self._supervdsmProxy.isRunning():
+            # getting inside only when svdsm is down. its rare case so we
+            # don't care that isRunning will run twice
+            with self._supervdsmProxy.proxyLock:
+                if not self._supervdsmProxy.isRunning():
+                    self._supervdsmProxy.launch()
+
         try:
             return callMethod()
-        except (IOError, socket.error, AuthenticationError):
-            self._supervdsmProxy._restartSupervdsm()
+        # handling internal exception that we raise to identify supervdsm
+        # validation. only this exception can cause kill!
+        except AuthenticationError:
+            with self._supervdsmProxy.proxyLock:
+                self._supervdsmProxy.kill()
+                self._supervdsmProxy.launch()
             return callMethod()
 
 
@@ -77,16 +89,20 @@ class SuperVdsmProxy(object):
     _log = logging.getLogger("SuperVdsmProxy")
 
     def __init__(self):
-        # Kill supervdsm from previous session (if exists),
-        # and launch a new one
-        self._restartSupervdsm()
-
-        self._log.debug("Connected to Super Vdsm")
+        self.proxyLock = threading.Lock()
+        self._firstLaunch = True
 
     def open(self, *args, **kwargs):
         return self._manager.open(*args, **kwargs)
 
-    def _launchSupervdsm(self):
+    def _cleanOldFiles(self):
+        self._log.warn("Cleanning svdsm old files: %s, %s, %s",
+                        PIDFILE, TIMESTAMP, ADDRESS)
+        utils.rmFile(PIDFILE)
+        utils.rmFile(TIMESTAMP)
+        utils.rmFile(ADDRESS)
+
+    def _start(self):
         self._authkey = str(uuid.uuid4())
         self._log.debug("Launching Super Vdsm")
         superVdsmCmd = [constants.EXT_PYTHON, SUPERVDSM,
@@ -94,16 +110,48 @@ class SuperVdsmProxy(object):
         misc.execCmd(superVdsmCmd, sync=False, sudo=True)
         sleep(2)
 
-    def _killSupervdsm(self):
+    def kill(self):
         try:
             with open(PIDFILE, "r") as f:
                 pid = int(f.read().strip())
             misc.execCmd([constants.EXT_KILL, "-9", str(pid)], sudo=True)
-        except Exception, ex:
-            self._log.debug("Could not kill old Super Vdsm %s", ex)
+        except Exception:
+            self._log.error("Could not kill old Super Vdsm %s",
+                            exc_info=True)
 
+        self._cleanOldFiles()
         self._authkey = None
         self._manager = None
+        self._svdsm = None
+        self._firstLaunch = True
+
+    def isRunning(self):
+        try:
+            with open(PIDFILE, "r") as f:
+                spid = f.read().strip()
+            with open(TIMESTAMP, "r") as f:
+                createdTime = f.read().strip()
+        except IOError as e:
+            # pid file and timestamp file must be exist after first launch,
+            # otherwise excpetion will be raised to svdsm caller
+            if e.errno == ENOENT and self._firstLaunch:
+                return False
+            else:
+                raise
+
+        try:
+            pTime = str(misc.getProcCtime(spid))
+        except OSError as e:
+            if e.errno == ESRCH:
+                # Means pid is not exist, svdsm was killed
+                return False
+            else:
+                raise
+
+        if pTime == createdTime:
+            return True
+        else:
+            return False
 
     def _connect(self):
         self._manager = _SuperVdsmManager(address=ADDRESS,
@@ -114,13 +162,13 @@ class SuperVdsmProxy(object):
         try:
             self._manager.connect()
         except Exception, ex:
-            self._log.debug("Connect failed %s", ex)
+            self._log.warn("Connect to svdsm failed %s", ex)
             raise
         self._svdsm = self._manager.instance()
 
-    def _restartSupervdsm(self):
-        self._killSupervdsm()
-        self._launchSupervdsm()
+    def launch(self):
+        self.firstLaunch = False
+        self._start()
         utils.retry(self._connect, Exception, timeout=60)
 
     def __getattr__(self, name):
