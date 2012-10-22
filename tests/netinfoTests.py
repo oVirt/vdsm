@@ -33,11 +33,13 @@ class TestNetinfo(TestCaseBase):
 
     def testNetmaskConversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
-        for line in file(path):
-            if line.startswith('#'):
-                continue
-            bitmask, address = map(str.strip, line.split())
-            self.assertEqual(netinfo.bitmask_to_address(int(bitmask)), address)
+        with open(path) as netmaskFile:
+            for line in netmaskFile:
+                if line.startswith('#'):
+                    continue
+                bitmask, address = [value.strip() for value in line.split()]
+                self.assertEqual(netinfo.bitmask_to_address(int(bitmask)),
+                                 address)
 
     def testSpeedInvalidNic(self):
         nicName = 'DUMMYNICDEVNAME'
