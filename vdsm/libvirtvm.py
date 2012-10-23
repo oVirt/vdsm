@@ -1450,7 +1450,7 @@ class LibvirtVm(vm.Vm):
         nicParams = params.get('nic', {})
         nic = NetworkInterfaceDevice(self.conf, self.log, **nicParams)
         nicXml = nic.getXML().toprettyxml(encoding='utf-8')
-        self.log.debug("Hotplug NIC xml: %s" % (nicXml))
+        self.log.debug("Hotplug NIC xml: %s", nicXml)
 
         try:
             self._dom.attachDevice(nicXml)
@@ -1471,8 +1471,23 @@ class LibvirtVm(vm.Vm):
             self._getUnderlyingNetworkInterfaceInfo()
 
         if hasattr(nic, 'portMirroring'):
-            for network in nic.portMirroring:
-                supervdsm.getProxy().setPortMirroring(network, nic.name)
+            mirroredNetworks = []
+            try:
+                for network in nic.portMirroring:
+                    supervdsm.getProxy().setPortMirroring(network, nic.name)
+                    mirroredNetworks.append(network)
+            # The better way would be catch the proper exception.
+            # One of such exceptions is TrafficControlException, but
+            # I am not sure that we'll get it for all traffic control errors.
+            # In any case we need below rollback for all kind of failures.
+            except Exception, e:
+                self.log.error("setPortMirroring for network %s failed",
+                                network, exc_info=True)
+                nicParams['portMirroring'] = mirroredNetworks
+                self.hotunplugNic({'nic': nicParams})
+                return {'status':
+                        {'code': errCode['hotplugNic']['status']['code'],
+                         'message': e.message}}
 
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -1490,8 +1505,8 @@ class LibvirtVm(vm.Vm):
                 break
 
         if nic:
-            if hasattr(nic, 'portMirroring'):
-                for network in nic.portMirroring:
+            if 'portMirroring' in nicParams:
+                for network in nicParams['portMirroring']:
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
             nicXml = nic.getXML().toprettyxml(encoding='utf-8')
