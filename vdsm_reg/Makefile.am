@@ -73,6 +73,7 @@ EXTRA_DIST = \
 all-local: \
 	$(nodist_noinst_DATA) \
 	$(dist_ovirtsetup_PYTHON) \
+	$(nodist_vdsmreg_PYTHON) \
 	$(nodist_vdsmreg_SCRIPTS)
 
 install-data-local: \
