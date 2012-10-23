@@ -241,6 +241,6 @@ def getGlusterMethods(gluster):
     l = []
     for name in dir(gluster):
         func = getattr(gluster, name)
-        if getattr(func, 'exportAsVerb', False) == True:
+        if getattr(func, 'exportAsVerb', False) is True:
             l.append((func, 'gluster%s%s' % (name[0].upper(), name[1:])))
     return tuple(l)

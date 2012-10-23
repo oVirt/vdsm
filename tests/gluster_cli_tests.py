@@ -56,7 +56,7 @@ class GlusterCliTests(TestCaseBase):
                'Options Reconfigured:',
                'auth.allow: *']
         volumeInfo = gcli._parseVolumeInfo(out)
-        for volumeName  in volumeInfo:
+        for volumeName in volumeInfo:
             if volumeName == 'music':
                 self.assertEquals(volumeInfo['music']['volumeName'],
                                   volumeName)

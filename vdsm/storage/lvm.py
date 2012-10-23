@@ -594,7 +594,7 @@ class LVMCache(object):
             # be in the vg.
             # Will be better when the pvs dict will be part of the vg.
             #Fix me: should not be more stubs
-            if self._stalelv  or any(isinstance(lv, Stub)
+            if self._stalelv or any(isinstance(lv, Stub)
                                      for lv in self._lvs.values()):
                 lvs = self._reloadlvs(vgName)
             else:
@@ -667,7 +667,7 @@ def _initpvs(devices, metadataSize, force=False):
                 else:
                     raise
 
-    if force == True:
+    if force is True:
         options = ("-y", "-ff")
         _initpvs_removeHolders()
     else:
@@ -755,7 +755,7 @@ def changelv(vg, lvs, attrs):
     cmd.extend(lvnames)
     rc, out, err = _lvminfo.cmd(tuple(cmd))
     _lvminfo._invalidatelvs(vg, lvs)
-    if rc != 0  and len(out) < 1:
+    if rc != 0 and len(out) < 1:
         raise se.StorageException("%d %s %s\n%s/%s" % (rc, out, err, vg, lvs))
 
 

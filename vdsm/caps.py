@@ -350,7 +350,7 @@ def _getKeyPackages():
         except:
             logging.error('', exc_info=True)
 
-    elif getos() == OSName.DEBIAN and python_apt == True:
+    elif getos() == OSName.DEBIAN and python_apt:
         KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm', 'qemu-img': 'qemu-utils',
                         'vdsm': 'vdsmd', 'spice-server': 'libspice-server1',
                         'libvirt': 'libvirt0'}

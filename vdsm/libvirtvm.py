@@ -2237,14 +2237,14 @@ class LibvirtVm(vm.Vm):
 
         def reportError(key='balloonErr', msg=None):
             self.log.error("Set new balloon target failed", exc_info=True)
-            if msg == None:
+            if msg is None:
                 error = errCode[key]
             else:
                 error = {'status': {'code': errCode[key]
                          ['status']['code'], 'message': msg}}
             return error
 
-        if self._dom == None:
+        if self._dom is None:
             return reportError()
         try:
             target = int(target)

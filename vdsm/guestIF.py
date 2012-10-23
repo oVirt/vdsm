@@ -102,7 +102,7 @@ class GuestAgent ():
 
     def _handleMessage(self, message, args):
         self.log.log(logging.TRACE, "Guest's message %s: %s", message, args)
-        if self.guestStatus == None:
+        if self.guestStatus is None:
             self.guestStatus = 'Running'
         if message == 'heartbeat':
             self.guestStatus = 'Running'

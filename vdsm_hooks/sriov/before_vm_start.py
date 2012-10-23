@@ -53,7 +53,7 @@ def detachDevice(addr):
 
     connection = libvirtconnection.get(None)
     nodeDevice = connection.nodeDeviceLookupByName(addr)
-    if nodeDevice != None:
+    if nodeDevice is not None:
         sys.stderr.write('sriov: detaching pci device: %s\n' % addr)
         nodeDevice.dettach()
     else:

@@ -118,8 +118,8 @@ class clientIF:
     @classmethod
     def getInstance(cls, log=None):
         with cls._instanceLock:
-            if cls._instance == None:
-                if log == None:
+            if cls._instance is None:
+                if log is None:
                     raise Exception("Logging facility is required to create "
                                     "the single clientIF instance")
                 else:

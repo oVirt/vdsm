@@ -32,7 +32,7 @@ from alignmentScan import runScanArgs, scanImage, VirtAlignError
 def mkimage(imagepath, aligned=True):
     open(imagepath, "wb").truncate(4 * 1024 ** 3)
     cmd = ["/sbin/sfdisk", "-uS", "--force", imagepath]
-    cmd_input = "128,,\n" if aligned == True else "1,,\n"
+    cmd_input = "128,,\n" if aligned else "1,,\n"
     r, o, e = execCmd(cmd, data=cmd_input)
     assert r == 0
 
