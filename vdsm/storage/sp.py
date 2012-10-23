@@ -1573,8 +1573,8 @@ class StoragePool(Securable):
 
     @unsecured
     def getDomains(self, activeOnly=False):
-        return dict((sdUUID, status) \
-               for sdUUID, status in self.getMetaParam(PMDK_DOMAINS).iteritems() \
+        return dict((sdUUID, status)
+               for sdUUID, status in self.getMetaParam(PMDK_DOMAINS).iteritems()
                if not activeOnly or status == sd.DOM_ACTIVE_STATUS)
 
     def checkBackupDomain(self):
@@ -1806,7 +1806,7 @@ class StoragePool(Securable):
                         imgsByVol.iteritems() if len(vol.imgs) > 1)
             if len(ts) != 1:
                 raise se.ImageValidationError("Image points to multiple"
-                                              "templates %s in %s from %s" % \
+                                              "templates %s in %s from %s" %
                                               (ts, imgsByVol, allVols))
             # TODO: Lock the template, reload allVols.
             # template = ts[0] = [(tName, tImgs)]

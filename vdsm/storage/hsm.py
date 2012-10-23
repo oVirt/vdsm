@@ -744,8 +744,8 @@ class HSM:
                                ioOpTimeoutSec=ioOpTimeoutSec,
                                leaseRetries=leaseRetries)
         vars.task.setDefaultException(
-            se.StoragePoolCreationError("spUUID=%s, " \
-                "poolName=%s, masterDom=%s, domList=%s, masterVersion=%s, " \
+            se.StoragePoolCreationError("spUUID=%s, "
+                "poolName=%s, masterDom=%s, domList=%s, masterVersion=%s, "
                 "safelease params: (%s)" % (
                     spUUID, poolName, masterDom, domList,
                     masterVersion, safeLease
@@ -806,7 +806,7 @@ class HSM:
         :raises: :exc:`storage_exception.ConnotConnectMultiplePools` when storage pool is not connected to the system.
         """
         vars.task.setDefaultException(
-            se.StoragePoolConnectionError("spUUID=%s, msdUUID=%s, masterVersion=%s, " \
+            se.StoragePoolConnectionError("spUUID=%s, msdUUID=%s, masterVersion=%s, "
                                           "hostID=%s, scsiKey=%s" % (spUUID, msdUUID,
                                           masterVersion, hostID, scsiKey)))
         return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID, masterVersion, options)
@@ -1704,8 +1704,8 @@ class HSM:
 
         lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                      metadataSize=blockSD.VG_METADATASIZE,
-                     force=(force == True) or \
-                     (type(force) == type("") and \
+                     force=(force == True) or
+                     (type(force) == type("") and
                                             (force.capitalize() == "True")))
 
         return dict(uuid=lvm.getVG(vgname).uuid)

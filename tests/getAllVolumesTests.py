@@ -42,7 +42,7 @@ class TestBlockGetAllVolumes(TestCaseBase):
         lvs_out = open(os.path.join(testDir, 'lvs_%s.out' % vgName),
                     "r").read()
         for line in lvs_out.split():
-            fields = [field.strip() for field in \
+            fields = [field.strip() for field in
                         line.split(storage.lvm.SEPARATOR)]
             lvs.append(storage.lvm.makeLV(*fields))
         return lvs

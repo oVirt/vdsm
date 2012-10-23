@@ -122,9 +122,9 @@ def main():
         vdcHostName = None
 
     if not force and vdcHostName and "NONE" != vdcHostName.upper():
-        sys.stdout.write('Node already configured to Engine %s\n' % \
+        sys.stdout.write('Node already configured to Engine %s\n' %
                              vdcHostName)
-        sys.stdout.write('Do you want to reset and use %s (yes/NO): ' % \
+        sys.stdout.write('Do you want to reset and use %s (yes/NO): ' %
                              newVdcHostName)
         ans = sys.stdin.readline()
         if "YES" != ans.strip().upper():

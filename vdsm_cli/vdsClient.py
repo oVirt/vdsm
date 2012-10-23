@@ -1898,7 +1898,7 @@ if __name__ == '__main__':
                            '[,initiatorName=...])>',
                         'Connect to a storage low level entity (server)'
                         )),
-        'validateStorageServerConnection': \
+        'validateStorageServerConnection':
                 (serv.validateStorageServerConnection,
                        ('<server type> <spUUID> <conList (id=...,'
                            'connection=server:/export_path,portal=...,port=...'

@@ -117,7 +117,7 @@ class SPM_Extend_Message:
         # Sanity check - Make sure reply is for current message
         sizeOffset = 5 + 2 * PACKED_UUID_SIZE
         if (self.payload[0:sizeOffset] != reply[0:sizeOffset]):
-            self.log.error("SPM_Extend_Message: Reply message volume data (domainID + volumeID)"\
+            self.log.error("SPM_Extend_Message: Reply message volume data (domainID + volumeID)"
                            " differs from request message, reply : %s, orig: %s", reply, self.payload)
             raise RuntimeError('Incorrect reply')
         #if (self.payload[sizeOffset:sizeOffset + PACKED_UUID_SIZE] > reply[sizeOffset:sizeOffset + PACKED_UUID_SIZE]):
@@ -314,7 +314,7 @@ class HSM_MailMonitor(threading.Thread):
                         self.log.error("HSM_MailMonitor: exception caught while running msg callback, for message: %s, callback function: %s",
                                 repr(msg.payload), msg.callback, exc_info=True)
             except RuntimeError, e:
-                self.log.error("HSM_MailMonitor: exception: %s caught while checking reply for message: %s, reply: %s", \
+                self.log.error("HSM_MailMonitor: exception: %s caught while checking reply for message: %s, reply: %s",
                                 str(e), repr(msg.payload), repr(newMsg))
             except:
                 self.log.error("HSM_MailMonitor: exception caught while checking reply from SPM, request was: %s reply: %s",

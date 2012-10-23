@@ -43,7 +43,7 @@ def scanImage(image_path):
     if retcode == 0:
         pass
     elif retcode == 1:
-        raise VirtAlignError("An error scanning the disk image " \
+        raise VirtAlignError("An error scanning the disk image "
                              "or guest:\n%s" % err)
     elif retcode == 2:
         # Successful exit, some partitions have alignment < 64K
@@ -54,7 +54,7 @@ def scanImage(image_path):
         # which can result in poor performance on most hypervisors.
         pass
     else:
-        raise VirtAlignError("Unexpected return code from " \
+        raise VirtAlignError("Unexpected return code from "
                              "virt-alignment-scan: %d" % retcode)
     out_list = []
     for line in out:

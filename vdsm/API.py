@@ -176,7 +176,7 @@ class VM(APIBase):
                     self.log.error('Missing required parameter %s' % (param))
                     return {'status': {'code': errCode['MissParam']
                                                       ['status']['code'],
-                                       'message': 'Missing required' + \
+                                       'message': 'Missing required ' +
                                        'parameter %s' % (param)}}
             try:
                 storage.misc.validateUUID(vmParams['vmId'])
@@ -359,7 +359,7 @@ class VM(APIBase):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, nic')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required' + \
+                               'message': 'Missing one of required ' +
                                           'parameters: vmId, nic'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
@@ -375,7 +375,7 @@ class VM(APIBase):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, nic')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required' + \
+                               'message': 'Missing one of required ' +
                                           'parameters: vmId, nic'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
@@ -391,7 +391,7 @@ class VM(APIBase):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, drive')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required' + \
+                               'message': 'Missing one of required ' +
                                           'parameters: vmId, drive'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
@@ -407,7 +407,7 @@ class VM(APIBase):
         except ValueError:
             self.log.error('Missing one of required parameters: vmId, drive')
             return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required' + \
+                               'message': 'Missing one of required ' +
                                           'parameters: vmId, drive'}}
         try:
             curVm = self._cif.vmContainer[self._UUID]
@@ -1120,7 +1120,7 @@ class Global(APIBase):
 
         Doesn't survive a restart
         """
-        logging.getLogger('clientIF.setLogLevel').info('Setting loglevel' + \
+        logging.getLogger('clientIF.setLogLevel').info('Setting loglevel ' +
                                                        'to %s' % level)
         handlers = logging.getLogger().handlers
         [fileHandler] = [h for h in handlers if
@@ -1205,7 +1205,7 @@ class Global(APIBase):
 
             if vlan or bond or nics:
                 # Backwards compatibility
-                self.log.warn('Specifying vlan,' + \
+                self.log.warn('Specifying vlan, ' +
                               'bond or nics to delNetwork is deprecated')
                 _netinfo = netinfo.NetInfo()
                 try:
@@ -1215,7 +1215,7 @@ class Global(APIBase):
                         configNetwork.validateVlanId(vlan)
                     if nics and bond and set(nics) != \
                             set(_netinfo.bondings[bond]["slaves"]):
-                        self.log.error('delNetwork: not all nics specified' + \
+                        self.log.error('delNetwork: not all nics specified ' +
                                        'are enslaved (%s != %s)' %
                                        (nics,
                                         _netinfo.bondings[bond]["slaves"]))

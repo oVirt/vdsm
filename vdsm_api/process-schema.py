@@ -210,7 +210,7 @@ def write_symbol(f, s):
         f.write('<table class="attrlist">\n')
         f.write('<caption>%s</caption>\n' % caption)
         if not names:
-            f.write('<tr><td class="attrlist">None</td>' \
+            f.write('<tr><td class="attrlist">None</td>'
                          '<td class="attrlist"></td></tr>\n')
         for name, dataType, desc in zip(names, types, details):
             f.write('<tr>')

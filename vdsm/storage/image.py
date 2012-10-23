@@ -596,7 +596,7 @@ class Image:
         """
         Move/Copy image between storage domains within same storage pool
         """
-        self.log.info("srcSdUUID=%s dstSdUUID=%s "\
+        self.log.info("srcSdUUID=%s dstSdUUID=%s "
             "imgUUID=%s vmUUID=%s op=%s force=%s postZero=%s",
             srcSdUUID, dstSdUUID, imgUUID, vmUUID, OP_TYPES[op], str(force), str(postZero))
 
@@ -699,8 +699,8 @@ class Image:
         Create new template/volume from VM.
         Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)
         """
-        self.log.info("sdUUID=%s vmUUID=%s "\
-            "srcImgUUID=%s srcVolUUID=%s dstImgUUID=%s dstVolUUID=%s dstSdUUID=%s volType=%s"\
+        self.log.info("sdUUID=%s vmUUID=%s "
+            "srcImgUUID=%s srcVolUUID=%s dstImgUUID=%s dstVolUUID=%s dstSdUUID=%s volType=%s"
             " volFormat=%s preallocate=%s force=%s postZero=%s", sdUUID, vmUUID, srcImgUUID, srcVolUUID,
             dstImgUUID, dstVolUUID, dstSdUUID, volType, volume.type2name(volFormat),
             volume.type2name(preallocate), str(force), str(postZero))
@@ -1058,7 +1058,7 @@ class Image:
             'successor' - source volume UUID
             'ancestor' - destination volume UUID
         """
-        self.log.info("sdUUID=%s vmUUID=%s"\
+        self.log.info("sdUUID=%s vmUUID=%s"
                       " imgUUID=%s ancestor=%s successor=%s postZero=%s",
                       sdUUID, vmUUID, imgUUID,
                       ancestor, successor, str(postZero))

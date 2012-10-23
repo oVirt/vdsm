@@ -67,7 +67,7 @@ def getFakeAPI():
             try:
                 return _fakeret[self.type][self.lastFunc].pop(0)
             except (KeyError, IndexError):
-                raise Exception("No API data avilable for %s.%s" % \
+                raise Exception("No API data avilable for %s.%s" %
                                 (self.type, self.lastFunc))
 
         def __getattr__(self, name):

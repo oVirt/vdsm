@@ -67,8 +67,8 @@ class PersistentDictTests(TestCaseBase):
         try:
             with pd.transaction():
                 with pd.transaction():
-                    raise SpecialError("Take the Kama Sutra. How many people" \
-                                       "died from the Kama Sutra, as opposed" \
+                    raise SpecialError("Take the Kama Sutra. How many people "
+                                       "died from the Kama Sutra, as opposed "
                                        "to the Bible? Who wins?")
                                        # (C) Frank Zappa
         except RuntimeError:
