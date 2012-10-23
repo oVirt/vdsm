@@ -25,6 +25,7 @@ import threading
 from testrunner import VdsmTestCase as TestCaseBase
 import inspect
 
+import storage.outOfProcess as oop
 import storage.misc as misc
 import storage.fileUtils as fileUtils
 from testValidation import checkSudo, brokentest
@@ -195,6 +196,48 @@ class TMap(TestCaseBase):
             return
         else:
             self.fail("tmap did not throw an exception")
+
+
+class ITMap(TestCaseBase):
+    def testMoreArgsThanThreads(self):
+        def dummy(arg):
+            time.sleep(0.5)
+            return arg
+        data = frozenset([1, 2, 3, 4])
+        currentTime = time.time()
+        # we provide 3 thread slots and the input contain 4 vals, means we
+        # need to wait for 1 thread to finish before processing all input.
+        ret = frozenset(misc.itmap(dummy, data, 3))
+        afterTime = time.time()
+        # the time should take at least 0.5sec to wait for 1 of the first 3 to
+        # finish and another 0.5sec for the last operation,
+        # not more than 2 seconds (and I'm large here..)
+        self.assertFalse(afterTime - currentTime > 2,
+                msg="Operation took too long (more than 2 second). starts: " +
+                str(currentTime) + " ends: " + str(afterTime))
+        # Verify the operation waits at least for 1 thread to finish
+        self.assertFalse(afterTime - currentTime < 1,
+                msg="Operation was too fast, not all threads were "
+                    "initiated as desired (with 1 thread delay)")
+        self.assertEquals(ret, data)
+
+    def testMaxAvailableProcesses(self):
+        def dummy(arg):
+            return arg
+        # here we launch the maximum threads we can initiate in every
+        # outOfProcess operation + 1. it let us know that oop and itmap operate
+        # properly with their limitations
+        data = frozenset(range(oop.HELPERS_PER_DOMAIN + 1))
+        ret = frozenset(misc.itmap(dummy, data, misc.UNLIMITED_THREADS))
+        self.assertEquals(ret, data)
+
+    def testMoreThreadsThanArgs(self):
+        data = [1]
+        self.assertEquals(list(misc.itmap(int, data, 80)), data)
+
+    def testInvalidITMapParams(self):
+        data = 1
+        self.assertRaises(ValueError, misc.itmap(int, data, 0).next)
 
 
 class RotateFiles(TestCaseBase):
