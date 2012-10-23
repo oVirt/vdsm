@@ -69,6 +69,7 @@ UUID_HYPHENS = [8, 13, 18, 23]
 OVIRT_NODE = False
 MEGA = 1 << 20
 SUDO_NON_INTERACTIVE_FLAG = "-n"
+UNLIMITED_THREADS = -1
 
 log = logging.getLogger('Storage.Misc')
 
@@ -1250,7 +1251,7 @@ def killall(name, signum, group=False):
         raise exception
 
 
-def itmap(func, iterable):
+def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
     """
     Make an iterator that computes the function using
     arguments from the iterable. It works similar to tmap
@@ -1258,7 +1259,13 @@ def itmap(func, iterable):
     causes the results not to return in any particular
     order so it's good if you don't care about the order
     of the results.
+    maxthreads stands for maximum threads that we can initiate simultaneosly.
+               If we reached to max threads the function waits for thread to
+               finish before initiate the next one.
     """
+    if maxthreads < 1 and maxthreads != UNLIMITED_THREADS:
+        raise ValueError("Wrong input to function itmap: %s", maxthreads)
+
     respQueue = Queue.Queue()
 
     def wrapper(value):
@@ -1267,13 +1274,29 @@ def itmap(func, iterable):
         except Exception, e:
             respQueue.put(e)
 
-    n = 0
+    threadsCount = 0
     for arg in iterable:
+        if maxthreads != UNLIMITED_THREADS:
+            if maxthreads == 0:
+                # This not supposed to happened. If it does, it's a bug.
+                # maxthreads should get to 0 only after threadsCount is
+                # greater than 1
+                if threadsCount < 1:
+                    raise RuntimeError("No thread initiated")
+                else:
+                    yield respQueue.get()
+                    # if yield returns one thread stopped, so we can run
+                    # another thread in queue
+                    maxthreads += 1
+                    threadsCount -= 1
+
         t = threading.Thread(target=wrapper, args=(arg,))
         t.start()
-        n += 1
+        threadsCount += 1
+        maxthreads -= 1
 
-    for i in xrange(n):
+    # waiting for rest threads to end
+    for i in xrange(threadsCount):
         yield respQueue.get()
 
 

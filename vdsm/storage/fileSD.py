@@ -486,7 +486,13 @@ def scanDomains(pattern="*"):
             log.warn("Could not collect metadata file for domain path %s",
                      possibleDomain, exc_info=True)
 
-    for res in misc.itmap(collectMetaFiles, mntList):
+    # Run collectMetaFiles in extenral processes.
+    # The amount of processes that can be initiated in the same time is the
+    # amount of stuck domains we are willing to handle +1.
+    # We Use 30% of the available slots.
+    # TODO: calculate it right, now we use same value of max process per
+    #       domain.
+    for res in misc.itmap(collectMetaFiles, mntList, oop.HELPERS_PER_DOMAIN):
         if res is None:
             continue
 
