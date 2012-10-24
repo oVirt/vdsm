@@ -33,7 +33,7 @@ FLOPPY_NAME="$1"
 /bin/chown @VDSMUSER@:@QEMUGROUP@ "$FLOPPY_NAME"
 /bin/chmod 0440 "$FLOPPY_NAME"
 mntpoint=`mktemp -d`
-mount -o loop,uid=`id -u`,gid=`id -g` "$FLOPPY_DIR/$FLOPPY_NAME" $mntpoint
+mount -o loop,uid=`id -u`,gid=`id -g` "$FLOPPY_NAME" $mntpoint
 
 /bin/cat > $mntpoint/sysprep.inf
 
