@@ -361,9 +361,21 @@ def forceIScsiScan():
     for hba in glob.glob(SCAN_PATTERN):
         cmd = [constants.EXT_DD, 'of=' + hba]
         p = misc.execCmd(cmd, sudo=False, sync=False)
-        p.stdin.write("- - -")
-        p.stdin.flush()
-        p.stdin.close()
+        try:
+            p.stdin.write("- - -")
+            p.stdin.flush()
+            p.stdin.close()
+        except OSError as e:
+            if p.wait(0) is False:
+                log.error("pid %s still running", p.pid)
+            log.warning("Error in rescan of hba:%s with returncode:%s and error"
+                        " message: %s", hba, p.returncode, p.stderr.read(1000))
+            if e.errno != errno.EPIPE:
+                raise
+            else:
+                log.warning("Ignoring error in rescan of hba %s: ",
+                                            hba, exc_info=True)
+                continue
         processes.append((hba, p))
     if (minTimeout > maxTimeout or minTimeout < 0):
         minTimeout = 2
