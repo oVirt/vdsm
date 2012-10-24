@@ -2339,6 +2339,8 @@ class LibvirtVm(vm.Vm):
             self.log.info('Release VM resources')
             self.lastStatus = 'Powering down'
             try:
+                # Terminate the VM's creation thread.
+                self._incomingMigrationFinished.set()
                 if self._vmStats:
                     self._vmStats.stop()
                 if self.guestAgent:
