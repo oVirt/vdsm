@@ -1189,8 +1189,8 @@ def changeVGTags(vgName, delTags=[], addTags=[]):
     addTags = set(addTags)
     if delTags.intersection(addTags):
         raise se.VolumeGroupReplaceTagError(
-            "Cannot add and delete the same tag vg: `%s` tags: `%s`",
-            vgName, ", ".join(delTags.intersection(addTags)))
+            "Cannot add and delete the same tag vg: `%s` tags: `%s`"
+             % (vgName, ", ".join(delTags.intersection(addTags))))
 
     cmd = ["vgchange"]
 
