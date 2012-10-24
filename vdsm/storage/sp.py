@@ -1826,7 +1826,7 @@ class StoragePool(Securable):
                 img.delete(sdUUID=sdUUID, imgUUID=templateImage, postZero=postZero,
                             force=force)
             elif not dom.isBackup():
-                raise se.ImagesActionError("Can't remove template with children %s",
+                raise se.ImagesActionError("Can't remove template with children %s" %
                                         allVols)
             else:
                 # Removing a template with dependencies in backup domain

@@ -490,8 +490,8 @@ class Volume(object):
             raise
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeCreationError("Volume creation %s failed: %s",
-                                         volUUID, e)
+            raise se.VolumeCreationError("Volume creation %s failed: %s" %
+                                         (volUUID, e))
 
         # Remove the rollback for the halfbaked volume
         vars.task.replaceRecoveries(
