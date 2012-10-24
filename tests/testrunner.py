@@ -27,6 +27,14 @@ from nose import config
 from nose import core
 from nose import result
 
+# Monkey patch pthreading in necessary
+if sys.version_info[0] == 2:
+    # as long as we work with Python 2, we need to monkey-patch threading
+    # module before it is ever used.
+    import pthreading
+    pthreading.monkey_patch()
+
+
 from testValidation import SlowTestsPlugin
 
 PERMUTATION_ATTR = "_permutations_"
