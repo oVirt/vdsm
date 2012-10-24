@@ -64,6 +64,7 @@ class vdsm(sos.plugintools.PluginBase):
         self.addCopySpec("/tmp/vds_installer*")
         self.addCopySpec("/tmp/vds_bootstrap*")
         self.addCopySpec("/etc/vdsm/*")
+        self.addCopySpec("/etc/vdsm-reg/*")
         logsize = self.getOption('logsize')
         self.__addCopySpecLogLimit("/var/log/vdsm/*", logsize)
         self.__addCopySpecLogLimit("/var/log/vdsm-reg/*", logsize)
