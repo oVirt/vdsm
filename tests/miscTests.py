@@ -60,14 +60,13 @@ class PgrepTests(TestCaseBase):
             sleepProcs.append(misc.execCmd(["sleep", "3"], sync=False,
                 sudo=False))
 
-        time.sleep(1)
-
         pids = misc.pgrep("sleep")
         for proc in sleepProcs:
             self.assertTrue(proc.pid in pids, "pid %d was not located by pgrep"
                     % proc.pid)
 
         for proc in sleepProcs:
+            proc.kill()
             proc.wait()
 
 
@@ -75,8 +74,8 @@ class GetCmdArgsTests(TestCaseBase):
     def test(self):
         args = ("sleep", "4")
         sproc = misc.execCmd(args, sync=False, sudo=False)
-        time.sleep(1)
         self.assertEquals(misc.getCmdArgs(sproc.pid), args)
+        sproc.kill()
         sproc.wait()
 
 
@@ -84,13 +83,13 @@ class PidStatTests(TestCaseBase):
     def test(self):
         args = ["sleep", "3"]
         sproc = misc.execCmd(args, sync=False, sudo=False)
-        time.sleep(1)
         stats = misc.pidStat(sproc.pid)
         pid = int(stats[0])
         # procName comes in the format of (procname)
         name = stats[1]
         self.assertEquals(pid, sproc.pid)
         self.assertEquals(name, args[0])
+        sproc.kill()
         sproc.wait()
 
 
