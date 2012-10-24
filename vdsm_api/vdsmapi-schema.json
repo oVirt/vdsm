@@ -2341,6 +2341,53 @@
           'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType'}}
 
 ##
+# @VmParameters:
+#
+# Parameters for creating a new virtual machine
+#
+# @acpiEnable:            Indicates if ACPI is enabled inside the VM
+#
+# @custom:                #opional A dictionary of custom, free-form properties
+#
+# @devices:               #optional An array of VM devices requested
+#
+# @display:               The type of display
+#
+# @kvmEnable:             Indicates if KVM hardware acceleration is enabled
+#
+# @memSize:               The amount of memory assigned to the VM in MB
+#
+# @nice:                  The host scheduling priority
+#
+# @smp:                   The number of CPUs presented to the VM
+#
+# @smpCoresPerSocket:     #optional Indicates the number of CPU cores per socket
+#
+# @smpThreadsPerCore:     #optional Indicates the number of CPU threads per core
+#
+# @timeOffset:            The time difference from host to the VM in seconds
+#
+# @transparentHugePages:  Indicates if the Transparent Huge Pages feature is
+#                         enabled for this virtual machine
+#
+# @vmId:                  The VM UUID
+#
+# @vmName:                The VM name
+#
+# @vmType:                The type of VM
+#
+# Since: 4.10.0
+##
+{'type': 'VmParameters',
+ 'data': {'acpiEnable': 'bool',
+          '*custom': 'StringMap', '*devices': ['VmDevice'],
+          'display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
+          'nice': 'int', 'smp': 'uint', 'smpCoresPerSocket': 'uint',
+          'smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
+          'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
+          'vmType': 'VmType'}}
+
+##
 # @VmFullStatus:
 #
 # A VmFullStatus uses the same format as a VmDefinition.
@@ -4310,7 +4357,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'create'},
- 'data': {'vmParams': 'VmDefinition'},
+ 'data': {'vmParams': 'VmParameters'},
  'returns': 'VmDefinition'}
 
 ##
