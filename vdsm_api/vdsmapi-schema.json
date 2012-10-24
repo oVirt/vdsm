@@ -2388,15 +2388,6 @@
           'vmType': 'VmType'}}
 
 ##
-# @VmFullStatus:
-#
-# A VmFullStatus uses the same format as a VmDefinition.
-#
-# Since: 4.10.0
-##
-{'alias': 'VmFullStatus', 'data': 'VmDefinition'}
-
-##
 # @VmInfo:
 #
 # A discriminated record of VM status information.
@@ -2407,7 +2398,7 @@
 ##
 {'type': 'VmInfo',
  'data': {},
- 'union': ['VmFullStatus', 'VmShortStatus']}
+ 'union': ['VmDefinition', 'VmShortStatus']}
 
 ##
 # @Host.getVMList:
@@ -4939,7 +4930,7 @@
 # Since: 4.10.0
 ##
 {'type': 'MigrationCreateState',
- 'data': {'migrationPort': 'int', 'params': 'VmFullStatus'}}
+ 'data': {'migrationPort': 'int', 'params': 'VmDefinition'}}
 
 ##
 # @VM.migrationCreate:
