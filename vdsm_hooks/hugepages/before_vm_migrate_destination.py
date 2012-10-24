@@ -41,7 +41,7 @@ def freeSysHugepages(pages):
             sys.exit(2)
 
 
-if os.environ.has_key('hugepages'):
+if 'hugepages' in os.environ:
     try:
         pages = int(os.environ.get('hugepages'))
 

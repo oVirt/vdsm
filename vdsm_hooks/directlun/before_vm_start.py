@@ -120,7 +120,7 @@ def cloneDeviceNode(srcpath, devpath):
         sys.exit(2)
 
 
-if os.environ.has_key('directlun'):
+if 'directlun' in os.environ:
     try:
         luns = os.environ['directlun']
 

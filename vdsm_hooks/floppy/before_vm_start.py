@@ -23,7 +23,7 @@ Note:
     # modprobe floppy
 '''
 
-if os.environ.has_key('floppy'):
+if 'floppy' in os.environ:
     try:
         floppy = os.environ['floppy']
 

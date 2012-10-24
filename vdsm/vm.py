@@ -366,7 +366,7 @@ class Vm(object):
 
     def _normalizeVdsmImg(self, drv):
         drv['reqsize'] = drv.get('reqsize', '0')  # Backward compatible
-        if not drv.has_key('device'):
+        if 'device' not in drv:
             drv['device'] = 'disk'
 
         if drv['device'] == 'disk':
@@ -563,7 +563,7 @@ class Vm(object):
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
         indexed = []
         for order, drv in drives:
-            if not self._usedIndices.has_key(drv['iface']):
+            if drv['iface'] not in self._usedIndices:
                 self._usedIndices[drv['iface']] = []
             idx = drv.get('index')
             if idx is not None:

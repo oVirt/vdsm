@@ -30,7 +30,7 @@ def removeMirrorNetwork(networkName):
     if retcode != 0:
         sys.stderr.write('promisc: error executing command "%s" error: %s' % (command, err))
 
-if os.environ.has_key('promisc'):
+if 'promisc' in os.environ:
     try:
         networks = os.environ['promisc']
 

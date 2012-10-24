@@ -3,6 +3,6 @@
 import os
 import sys
 
-if os.environ.has_key('hostusb'):
+if 'hostusb' in os.environ:
     sys.stderr.write('hostusb: cannot migrate VM with host usb devices\n')
     sys.exit(2)

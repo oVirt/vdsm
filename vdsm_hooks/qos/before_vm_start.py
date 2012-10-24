@@ -66,7 +66,7 @@ def find_interface(mac, interfaces):
             return iface
     return None
 
-if os.environ.has_key('qos'):
+if 'qos' in os.environ:
     try:
         domxml = hooking.read_domxml()
         interfaces = domxml.getElementsByTagName('interface')

@@ -14,7 +14,7 @@ pincpu="^3" (dont use cpu 3)
 pincpu="1-4,^3,6" (or all together)
 '''
 
-if os.environ.has_key('pincpu'):
+if 'pincpu' in os.environ:
     try:
         domxml = hooking.read_domxml()
 

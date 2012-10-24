@@ -25,7 +25,7 @@ syntax:
     numa=strict:1-4
 '''
 
-if os.environ.has_key('numa'):
+if 'numa' in os.environ:
     try:
         mode, nodeset = os.environ['numa'].split(':')
 

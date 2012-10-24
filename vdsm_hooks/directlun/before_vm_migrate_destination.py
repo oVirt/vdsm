@@ -64,7 +64,7 @@ def cloneDeviceNode(srcpath, devpath):
         sys.stderr.write('directlun: error chown %s to %s, err = %s\n' % (devpath, owner, err))
         sys.exit(2)
 
-if os.environ.has_key('directlun'):
+if 'directlun' in os.environ:
     try:
         luns = os.environ['directlun']
 

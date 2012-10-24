@@ -27,7 +27,7 @@ def addInterfaceFilter(domxml, interface, gateway, ip):
     parameter.setAttribute('value', gateway)
     filterref.appendChild(parameter)
 
-if os.environ.has_key('isolatedprivatevlan'):
+if 'isolatedprivatevlan' in os.environ:
     try:
         try:
             gateway, ip = os.environ['isolatedprivatevlan'].split(',')

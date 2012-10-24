@@ -1582,7 +1582,7 @@ class HSM:
                     'physicalblocksize': dev.get("physicalblocksize", "")
                     }
             for path in devInfo["pathstatus"]:
-                if path.has_key("hbtl"):
+                if 'hbtl' in path:
                     path["lun"] = path["hbtl"].lun
                     del path["hbtl"]
                 del path["devnum"]
@@ -1988,7 +1988,7 @@ class HSM:
         """
         # FIXME: remove this method when iface selection is in higher interface
         typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
-        if typeName == 'iscsi' and not conDef.has_key('initiatorName'):
+        if typeName == 'iscsi' and 'initiatorName' not in conDef:
             ifaces = config.get('irs', 'iscsi_default_ifaces').split(',')
             if 'iser' in ifaces:
                 conObj._iface = iscsi.IscsiInterface('iser')

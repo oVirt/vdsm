@@ -66,7 +66,7 @@ def chown(vendorid, productid):
         sys.stderr.write('hostusb after_vm_destroy: error chown %s to %s, err = %s\n' % (devpath, owner, err))
         sys.exit(2)
 
-if os.environ.has_key('hostusb'):
+if 'hostusb' in os.environ:
     try:
         regex = re.compile('^0x[\d,A-F,a-f]{4}$')
         for usb in os.environ['hostusb'].split('&'):

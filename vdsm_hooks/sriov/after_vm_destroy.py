@@ -30,7 +30,7 @@ def returnDeviceToHost(addr, devpath):
                 sys.stderr.write('sriov after_vm_destroy: error chown %s to %s, err = %s\n' % (dev, owner, err))
                 sys.exit(2)
 
-if os.environ.has_key('sriov'):
+if 'sriov' in os.environ:
     try:
         lines = ''
         nics = os.environ['sriov']

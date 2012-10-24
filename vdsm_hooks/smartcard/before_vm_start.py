@@ -11,7 +11,7 @@ adding to domain xml
 <smartcard mode='passthrough' type='spicevmc'/>
 '''
 
-if os.environ.has_key('smartcard'):
+if 'smartcard' in os.environ:
     try:
         sys.stderr.write('smartcard: adding smartcard support\n')
         domxml = hooking.read_domxml()

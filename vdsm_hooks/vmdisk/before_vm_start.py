@@ -63,7 +63,7 @@ def createDiskElement(domxml, devpath, drivertype):
 
     return disk
 
-if os.environ.has_key('vmdisk'):
+if 'vmdisk' in os.environ:
     try:
         disks = os.environ['vmdisk']
 

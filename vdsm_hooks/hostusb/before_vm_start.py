@@ -108,7 +108,7 @@ def create_usb_device(domxml, vendorid, productid):
 
     return hostdev
 
-if os.environ.has_key('hostusb'):
+if 'hostusb' in os.environ:
     try:
         regex = re.compile('^0x[\d,A-F,a-f]{4}$')
         domxml = hooking.read_domxml()

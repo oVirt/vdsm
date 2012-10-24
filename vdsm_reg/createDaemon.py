@@ -155,7 +155,7 @@ def createDaemon():
     #
     # OR
     #
-    # if (os.sysconf_names.has_key("SC_OPEN_MAX")):
+    # if 'SC_OPEN_MAX' in os.sysconf_names:
     #    maxfd = os.sysconf("SC_OPEN_MAX")
     # else:
     #    maxfd = MAXFD

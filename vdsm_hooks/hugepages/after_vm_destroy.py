@@ -16,7 +16,7 @@ def removeSysHugepages(pages):
 
     sys.stderr.write('hugepages: removing %d huge pages\n' % pages)
 
-if os.environ.has_key('hugepages'):
+if 'hugepages' in os.environ:
     try:
         pages = int(os.environ.get('hugepages'))
 
