@@ -134,6 +134,8 @@ parameters = [
 
         ('rest_enable', 'true', 'Enable the REST server'),
 
+        ('jsonrpc_enable', 'true', 'Enable the JSON RPC server'),
+
         ('report_host_threads_as_cores', 'false',
             'Count each cpu hyperthread as an individual core'),
     ]),
@@ -253,6 +255,10 @@ parameters = [
 
         ('rest_port', '8088',
             'Port on which the vdsmd REST server listens to network '
+            'clients.'),
+
+        ('json_port', '4044',
+            'Port on which the vdsmd Json RPC server listens to network '
             'clients.'),
 
         ('management_ip', '', None),

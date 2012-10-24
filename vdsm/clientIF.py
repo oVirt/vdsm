@@ -158,6 +158,15 @@ class clientIF:
         self.bindings['rest'] = BindingREST(self, self.log, ip, rest_port,
                                             templatePath)
 
+    def _loadBindingJsonRpc(self):
+        from BindingJsonRpc import BindingJsonRpc
+        from Bridge import DynamicBridge
+        schema = os.path.join(constants.P_VDSM, 'vdsmapi-schema.json')
+        ip = self._getServerIP(config.get('addresses', 'management_ip'))
+        port = config.getint('addresses', 'json_port')
+        self.bindings['json'] = BindingJsonRpc(DynamicBridge(schema),
+                                               ip, port)
+
     def _prepareBindings(self):
         self.bindings = {}
         if config.getboolean('vars', 'xmlrpc_enable'):
@@ -171,6 +180,12 @@ class clientIF:
                 self._loadBindingREST()
             except ImportError:
                 self.log.warn('Unable to load the rest server module. '
+                              'Please make sure it is installed.')
+        if config.getboolean('vars', 'jsonrpc_enable'):
+            try:
+                self._loadBindingJsonRpc()
+            except ImportError:
+                self.log.warn('Unable to load the json rpc server module. '
                               'Please make sure it is installed.')
 
     def _prepareMOM(self):

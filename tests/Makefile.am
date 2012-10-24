@@ -22,6 +22,7 @@ SUBDIRS = functional
 
 test_modules = \
 	alignmentScanTests.py \
+	apiTests.py \
 	betterPopenTests.py \
 	capsTests.py \
 	configNetworkTests.py \
@@ -67,6 +68,7 @@ dist_vdsmtests_DATA = \
 
 dist_vdsmtests_PYTHON = \
 	$(test_modules) \
+	apiData.py \
 	monkeypatch.py \
 	testrunner.py \
 	testValidation.py

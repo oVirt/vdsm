@@ -18,7 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = vdsm vdsm_cli vds_bootstrap vdsm_reg vdsm_hooks tests vdsm-tool
+SUBDIRS = vdsm \
+	  vdsm_cli \
+	  vds_bootstrap \
+	  vdsm_reg \
+	  vdsm_hooks \
+	  tests \
+	  vdsm-tool \
+	  vdsm_api \
+	  $(NULL)
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -101,6 +109,7 @@ PEP8_WHITELIST = \
 	vdsm/vdsm \
 	vdsm/vdsmDebugPlugin.py \
 	vdsm/vm.py \
+	vdsm_api \
 	vdsm_cli \
 	vdsm_hooks/fileinject \
 	vdsm_hooks/promisc/after_vm_start.py \
@@ -111,8 +120,7 @@ PEP8_WHITELIST = \
 	vdsm_reg/define.py \
 	$(NULL)
 
-PEP8_BLACKLIST = \
-	restData.py
+PEP8_BLACKLIST = apiData.py,restData.py
 
 check-local:
 	find . -path './.git' -prune -type f -o \

@@ -157,6 +157,15 @@ Requires: python-cherrypy python-cheetah
 %description rest
 A REST interface for interacting with vdsmd.
 
+%package jsonrpc
+Summary:        VDSM API Server
+BuildArch:      noarch
+
+Requires: %{name}-python = %{version}-%{release}
+
+%description jsonrpc
+A Json-based RPC interface that serves as the protocol for libvdsm.
+
 %package bootstrap
 Summary:        VDSM bootstrapping package
 BuildArch:      noarch
@@ -909,6 +918,12 @@ exit 0
 %{_datadir}/%{vdsm_name}/rest/templates/*.x
 %{_datadir}/%{vdsm_name}/rest/templates/api.xsd
 %{_datadir}/%{vdsm_name}/rest/templates/rsdl.xml
+
+%files jsonrpc
+%{_datadir}/%{vdsm_name}/BindingJsonRpc.py*
+%{_datadir}/%{vdsm_name}/Bridge.py*
+%{_datadir}/%{vdsm_name}/vdsmapi.py*
+%{_datadir}/%{vdsm_name}/vdsmapi-schema.json
 
 %files bootstrap
 %defattr(-, root, root, -)

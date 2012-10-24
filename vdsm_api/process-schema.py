@@ -34,6 +34,7 @@ html_escape_table = {
 # Symbols of these types are considered data types
 typeKinds = ('class', 'type', 'enum', 'map', 'union', 'alias')
 
+
 def read_symbol_comment(f, symbols):
     """
     In the VDSM API schema, each entity is preceeded by a comment that provides
