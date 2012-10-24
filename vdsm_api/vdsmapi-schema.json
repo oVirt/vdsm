@@ -940,12 +940,12 @@
 # Get a list of all Storage Pools that are connected to this host.
 #
 # Returns:
-# A list of Storage Pool UUIDs
+# A list of Storage Pools
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getConnectedStoragePools'},
- 'returns': ['UUID']}
+ 'returns': ['StoragePool']}
 
 ##
 # @BlockDeviceType:
@@ -1562,15 +1562,15 @@
 ##
 # @Host.getStorageDomains:
 #
-# Get a list of known Storage Domain UUIDs.
+# Get a list of known Storage Domains.
 #
-# @spUUID:       #optional Limit to Domains belonging to this Storage Pool
+# @storagepoolID:  #optional Limit to Domains belonging to this Storage Pool
 #
-# @domainClass:  #optional Limit to Domains of this @StorageDomainImageClass
+# @domainClass:    #optional Limit to Domains of this @StorageDomainImageClass
 #
-# @storageType:  #optional Limit to Domains of this @StorageDomainType
+# @storageType:    #optional Limit to Domains of this @StorageDomainType
 #
-# @remotePath:   #optional Limit to Domains having this remotePath
+# @remotePath:     #optional Limit to Domains having this remotePath
 #
 # Returns:
 # A list of known Storage Domains
@@ -1578,9 +1578,9 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getStorageDomains'},
- 'data': {'*spUUID': 'UUID', '*domainClass': 'StorageDomainImageClass',
+ 'data': {'*storagepoolID': 'UUID', '*domainClass': 'StorageDomainImageClass',
           '*storageType': 'StorageDomainType', '*remotePath': 'str'},
- 'returns': ['UUID']}
+ 'returns': ['StorageDomain']}
 
 ##
 # @Host.getStorageRepoStats:
@@ -2405,18 +2405,16 @@
 #
 # Get information about the current virtual machines.
 #
-# @fullStatus:  #optional Set to request complete VM information
-#
 # @vmList:      #optional Filter the results by a list of UUIDs
 #
 # Returns:
-# A list of VM definitions
+# A list of VMs
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getVMList'},
- 'data': {'*fullStatus': 'bool', '*vmList': ['UUID']},
- 'returns': ['VmInfo']}
+ 'data': {'*vmList': ['UUID']},
+ 'returns': ['VM']}
 
 ##
 # @Host.ping:
@@ -2796,18 +2794,19 @@
 #
 # Image API object.
 #
-# @conn:    A connected base API object
+# @conn:             A connected base API object
 #
-# @UUID:    The UUID of the Image
+# @imageID:          The UUID of the Image
 #
-# @spUUID:  The UUID of the Storage Pool associated with the Image
+# @storagepoolID:    The UUID of the Storage Pool associated with the Image
 #
-# @sdUUID:  The UUID of the Storage Domain associated with the Image
+# @storagedomainID:  The UUID of the Storage Domain associated with the Image
 #
 # Since: 4.10.0
 ##
 {'class': 'Image',
- 'data': {'conn': 'Host', 'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID'}}
+ 'data': {'conn': 'Host', 'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID'}}
 
 ##
 # @Image.delete:
@@ -2853,12 +2852,12 @@
 # Get a list of Volumes associated with this Image.
 #
 # Returns:
-# A list of Image UUIDs
+# A list of Volumes
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'getVolumes'},
- 'returns': ['UUID']}
+ 'returns': ['Volume']}
 
 ##
 # @Image.mergeSnapshots:
@@ -2959,13 +2958,15 @@
 #
 # LVMVolumeGroup API object.
 #
-# @conn:  A connected base API object
+# @conn:              A connected base API object
 #
-# @UUID:  #optional Associate this object with an existing LVM Volume Group
+# @lvmvolumegroupID:  #optional Associate this object with an existing LVM
+#                     Volume Group
 #
 # Since: 4.10.0
 ##
-{'class': 'LVMVolumeGroup', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
+{'class': 'LVMVolumeGroup',
+ 'data': {'conn': 'Host', 'lvmvolumegroupID': 'UUID'}}
 
 ##
 # @LVMVolumeGroup.create:
@@ -3018,16 +3019,17 @@
 #
 # StorageDomain API object.
 #
-# @conn:    A connected base API object
+# @conn:             A connected base API object
 #
-# @UUID:    Associate this object with a new or existing Storage Domain
+# @storagedomainID:  Associate this object with a new or existing Storage Domain
 #
-# @spUUID:  #optional The Storage Pool UUID if this Storage Domain is attached
+# @storagepoolID:    #optional The Storage Pool UUID if this Storage Domain is
+#                    attached
 #
 # Since: 4.10.0
 ##
 {'class': 'StorageDomain',
- 'data': {'conn': 'Host', 'UUID': 'UUID', '*spUUID': 'UUID'}}
+ 'data': {'conn': 'Host', 'storagedomainID': 'UUID', 'storagepoolID': 'UUID'}}
 
 ##
 # @StorageDomain.activate:
@@ -3043,12 +3045,12 @@
 #
 # Attach a Storage Domain to a Storage Pool.
 #
-# @spUUID:  The Storage Pool to which the Storage Domain should be attached
+# @storagepoolID:  The UUID of the pool to which this domain should be attached
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'attach'},
- 'data': {'spUUID': 'UUID'}}
+ 'data': {'storagepoolID': 'UUID'}}
 
 ##
 # @StorageDomainCreateArgumentsBlock:
@@ -3230,12 +3232,12 @@
 # Get a list of Images associated with this Storage Domain.
 #
 # Returns:
-# An array of Image UUIDs
+# An array of Imags
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getImages'},
- 'returns': ['UUID']}
+ 'returns': ['Image']}
 
 ##
 # @StorageDomainRole:
@@ -3337,16 +3339,16 @@
 #
 # Get a list of Volumes contained within a Storage Domain.
 #
-# @imgUUID:  Limit results to Volumes associated with a single Image
+# @imageID:  Limit results to Volumes associated with a single Image
 #
 # Returns:
-# A list of Volume UUIDs
+# A list of Volumes
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getVolumes'},
- 'data': {'imgUUID': 'UUID'},
- 'returns': ['UUID']}
+ 'data': {'imageID': 'UUID'},
+ 'returns': ['Volume']}
 
 ##
 # @StorageDomain.setDescription:
@@ -3378,21 +3380,21 @@
 #
 # Upload a Volume into a Storage Domain from a remote location.
 #
-# @imgUUID:  The UUID of the image that is associated with the Volume
+# @imageID:   The UUID of the image that is associated with the Volume
 #
-# @volUUID:  The UUID of an existing Volume where the data will be uploaded
+# @volumeID:  The UUID of an existing Volume where the data will be uploaded
 #
-# @srcPath:  The remote location of the Volume data.  Must be in a format that
-#            can be understood by the command indicated in @method.
+# @srcPath:   The remote location of the Volume data.  Must be in a format that
+#             can be understood by the command indicated in @method.
 #
-# @size:     The size of the volume data in blocks
+# @size:      The size of the volume data in blocks
 #
-# @method:   The method (command) to use to upload the data
+# @method:    The method (command) to use to upload the data
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'uploadVolume'},
- 'data': {'imgUUID': 'UUID', 'volUUID': 'UUID', 'srcPath': 'str',
+ 'data': {'imageID': 'UUID', 'volumeID': 'UUID', 'srcPath': 'str',
           'size': 'int', 'method': 'UploadVolumeMethod'}}
 
 ##
@@ -3410,13 +3412,13 @@
 #
 # StoragePool API object.
 #
-# @conn:  A connected base API object
+# @conn:           A connected base API object
 #
-# @UUID:  Associate this object with a new or existing Storage Pool
+# @storagepoolID:  Associate this object with a new or existing Storage Pool
 #
 # Since: 4.10.0
 ##
-{'class': 'StoragePool', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
+{'class': 'StoragePool', 'data': {'conn': 'Host', 'storagepoolID': 'UUID'}}
 
 ##
 # @StoragePool.connect:
@@ -3621,7 +3623,7 @@
 #
 # Get information about backed-up virtual machines from a Backup Storage Domain.
 #
-# @sdUUID:  The UUID of the Backup Storage Domain to check
+# @storagedomainID:  The UUID of the Backup Storage Domain to check
 #
 # @vmList:  Limit results to a list of VM UUIDs
 #
@@ -3634,7 +3636,7 @@
 #         previously injected it into the Backup Storage Domain.
 ##
 {'command': {'class': 'StoragePool', 'name': 'getBackedUpVmsInfo'},
- 'data': {'sdUUID': 'UUID', 'vmList': ['UUID']},
+ 'data': {'storagedomainID': 'UUID', 'vmList': ['UUID']},
  'returns': 'OVFMap'}
 
 ##
@@ -3642,7 +3644,7 @@
 #
 # Get a list of backed up virtual machines from a Backup Storage Domain.
 #
-# @sdUUID:  The UUID of the Backup Storage Domain to check
+# @storagedomainID:  The UUID of the Backup Storage Domain to check
 #
 # Returns:
 # A list of VM UUIDs
@@ -3650,7 +3652,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getBackedUpVmsList'},
- 'data': {'sdUUID': 'UUID'},
+ 'data': {'storagedomainID': 'UUID'},
  'returns': ['UUID']}
 
 ##
@@ -3671,18 +3673,18 @@
 #
 # Get a list of Storage Domains that contain an Image.
 #
-# @imgUUID:          The UUID of the Image to search for
+# @imageID:          The UUID of the Image to search for
 #
 # @onlyDataDomains:  #optional Only include Data Storage Domains
 #
 # Returns:
-# A list of Storage Domain UUIDs that contain the Image
+# A list of Storage Domains that contain the Image
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getDomainsContainingImage'},
- 'data': {'imgUUID': 'UUID', '*onlyDataDomains': 'bool'},
- 'returns': ['UUID']}
+ 'data': {'imageID': 'UUID', '*onlyDataDomains': 'bool'},
+ 'returns': ['StorageDomain']}
 
 ##
 # @StoragePool.getIsoList:
@@ -4088,26 +4090,26 @@
 #
 # @vmList:  A list of virtual machine definitions to store
 #
-# @sdUUID:  The Storage Domain to use for storing the VM definitions
+# @storagedomainID:  The Storage Domain to use for storing the VM definitions
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'updateVMs'},
- 'data': {'vmList': ['UpdateVmDefinition'], 'sdUUID': 'UUID'}}
+ 'data': {'vmList': ['UpdateVmDefinition'], 'storagedomainID': 'UUID'}}
 
 ##
 # @StoragePool.removeVM:
 #
 # Remove a previously saved virtual machine definition.
 #
-# @vmUUID:  Remove the saved definition of the VM with this UUID
+# @vmUUID:           Remove the saved definition of the VM with this UUID
 #
-# @sdUUID:  The Storage Domain where the VM is stored
+# @storagedomainID:  The Storage Domain where the VM is stored
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'removeVM'},
- 'data': {'vmUUID': 'UUID', 'sdUUID': 'UUID'}}
+ 'data': {'vmUUID': 'UUID', 'storagedomainID': 'UUID'}}
 
 ## Category: @Task #############################################################
 ##
@@ -4115,13 +4117,13 @@
 #
 # Task API object.
 #
-# @conn:  A connected base API object
+# @conn:    A connected base API object
 #
-# @UUID:  Associate this object with an existing Task
+# @taskID:  Associate this object with an existing Task
 #
 # Since: 4.10.0
 ##
-{'class': 'Task', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
+{'class': 'Task', 'data': {'conn': 'Host', 'taskID': 'UUID'}}
 
 ##
 # @Task.clear:
@@ -4184,11 +4186,11 @@
 #
 # @conn:  A connected base API object
 #
-# @UUID:  Associate this object with an existing VM
+# @vmID:  Associate this object with an existing VM
 #
 # Since: 4.10.0
 ##
-{'class': 'VM', 'data': {'conn': 'Host', 'UUID': 'UUID'}}
+{'class': 'VM', 'data': {'conn': 'Host', 'vmID': 'UUID'}}
 
 ##
 # @DriveSpecVolume:
@@ -4410,6 +4412,20 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'destroy'}}
+
+##
+# @VM.getInfo:
+#
+# Get detailed information about a VM.
+#
+# Returns:
+# VM information
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'VM', 'name': 'getInfo'},
+ 'returns': 'VmDefinition'}
+
 
 ##
 # @VM.getMigrationStatus:
@@ -5235,21 +5251,21 @@
 #
 # Volume API object.
 #
-# @conn:     A connected base API object
+# @conn:             A connected base API object
 #
-# @UUID:     The UUID of the Volume
+# @volumeID:         The UUID of the Volume
 #
-# @spUUID:   The Storage Pool associated with @UUID
+# @storagepoolID:    The Storage Pool associated with @UUID
 #
-# @sdUUID:   The Storage Domain associated with @UUID
+# @storagedomainID:  The Storage Domain associated with @UUID
 #
-# @imgUUID:  The Image associated with @UUID
+# @imageID:          The Image associated with @UUID
 #
 # Since: 4.10.0
 ##
 {'class': 'Volume',
- 'data': {'conn': 'Host', 'UUID': 'UUID', 'spUUID': 'UUID', 'sdUUID': 'UUID',
-          'imgUUID': 'UUID'}}
+ 'data': {'conn': 'Host', 'volumeID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'imageID': 'UUID'}}
 
 ##
 # @VolumeRole:
