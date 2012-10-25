@@ -1447,7 +1447,7 @@ class LibvirtVm(vm.Vm):
         if self.isMigrating():
             return errCode['migInProgress']
 
-        nicParams = params.get('nic', {})
+        nicParams = params['nic']
         nic = NetworkInterfaceDevice(self.conf, self.log, **nicParams)
         nicXml = nic.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug NIC xml: %s", nicXml)
@@ -1495,7 +1495,7 @@ class LibvirtVm(vm.Vm):
         if self.isMigrating():
             return errCode['migInProgress']
 
-        nicParams = params.get('nic', {})
+        nicParams = params['nic']
 
         # Find NIC object in vm's NICs list
         nic = None
