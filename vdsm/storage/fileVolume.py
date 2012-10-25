@@ -542,7 +542,7 @@ class FileVolume(volume.Volume):
         """
         if not vol_path:
             vol_path = self.getVolumePath()
-        return type(self).__metaVolumePath(vol_path)
+        return self.__metaVolumePath(vol_path)
 
     def _getLeaseVolumePath(self, vol_path=None):
         """
@@ -550,7 +550,7 @@ class FileVolume(volume.Volume):
         """
         if not vol_path:
             vol_path = self.getVolumePath()
-        return type(self).__leaseVolumePath(vol_path)
+        return self.__leaseVolumePath(vol_path)
 
     def validateVolumePath(self):
         """

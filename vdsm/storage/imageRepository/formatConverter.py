@@ -152,7 +152,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
             log.debug("Creating the volume lease for %s", volUUID)
             metaId = vol.getMetadataId()
-            type(vol).newVolumeLease(metaId, domain.sdUUID, volUUID)
+            vol.newVolumeLease(metaId, domain.sdUUID, volUUID)
 
             # If this volume is used as a template let's update the other
             # volume's permissions and share the volume lease (at the moment

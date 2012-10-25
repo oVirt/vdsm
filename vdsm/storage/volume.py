@@ -294,7 +294,7 @@ class Volume(object):
             raise se.VolumeOwnershipError(self)
 
         dstPath = os.path.join(dstImgPath, self.volUUID)
-        clsModule, clsName = type(self)._getModuleAndClass()
+        clsModule, clsName = self._getModuleAndClass()
 
         try:
             vars.task.pushRecovery(
