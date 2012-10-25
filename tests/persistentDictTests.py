@@ -24,7 +24,7 @@ import storage.persistentDict as persistentDict
 class DummyFailWriter(object):
 
     def writelines(self, lines):
-        raise RuntimeError("You might have a very minor case of " +
+        raise RuntimeError("You might have a very minor case of "
                            "serious brain damage")
                            # (C) Valve - Portal 2
 

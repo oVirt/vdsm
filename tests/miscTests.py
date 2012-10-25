@@ -193,7 +193,7 @@ class TMap(TestCaseBase):
         self.assertEquals(list(misc.tmap(dummy, data)), data)
 
     def testErrMethod(self):
-        exceptionStr = ("It's time to kick ass and chew bubble gum... " +
+        exceptionStr = ("It's time to kick ass and chew bubble gum... "
                         "and I'm all outta gum.")
 
         def dummy(arg):
@@ -275,8 +275,8 @@ class RotateFiles(TestCaseBase):
         """
         #Prepare
         prefix = "prefix"
-        stubContent = ('"Multiple exclamation marks", ' +
-                       'he went on, shaking his head, ' +
+        stubContent = ('"Multiple exclamation marks", '
+                       'he went on, shaking his head, '
                        '"are a sure sign of a diseased mind."')
         # (C) Terry Pratchet - Small Gods
         dir = tempfile.mkdtemp()
@@ -857,8 +857,8 @@ class ReadFile(TestCaseBase):
         Test if method works when given a valid file.
         """
         #create
-        writeData = ("Trust me, I know what self-loathing is," +
-                     "but to kill myself? That would put a damper on my " +
+        writeData = ("Trust me, I know what self-loathing is,"
+                     "but to kill myself? That would put a damper on my "
                      "search for answers. Not at all productive.")
         # (C) Jhonen Vasquez - Johnny the Homicidal Maniac
         fd, path = tempfile.mkstemp()

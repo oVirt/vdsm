@@ -120,7 +120,7 @@ class ClusterLock(object):
             (rc, out, err) = misc.execCmd(releaseLockCommand, sudo=False,
                     cwd=self.lockUtilPath)
             if rc != 0:
-                self.log.error("Could not release cluster lock " +
+                self.log.error("Could not release cluster lock "
                         "rc=%s out=%s, err=%s" % (str(rc), out, err))
 
             self.log.debug("Cluster lock released successfully")

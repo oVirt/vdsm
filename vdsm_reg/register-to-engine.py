@@ -112,7 +112,7 @@ def main():
         try:
             port = config.get('vars', 'vdc_host_port')
         except ConfigParser.NoOptionError:
-            sys.stderr.write("Failed to retrieve port number " +
+            sys.stderr.write("Failed to retrieve port number "
                              "from config file: %s\n" % VDSM_REG_CONF_FILE)
             sys.exit(CONF_FILE_READ_ERROR)
 

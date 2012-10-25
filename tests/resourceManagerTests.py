@@ -197,7 +197,7 @@ class ResourceManagerTests(TestCaseBase):
             except AttributeError:
                 return
             except Exception as ex:
-                self.fail("Wrong exception was raised. " +
+                self.fail("Wrong exception was raised. "
                           "Expected AttributeError got %s",
                           ex.__class__.__name__)
 
@@ -217,7 +217,7 @@ class ResourceManagerTests(TestCaseBase):
         except AttributeError:
             return
         except Exception as ex:
-            self.fail("Wrong exception was raised. " +
+            self.fail("Wrong exception was raised. "
                       "Expected AttributeError got %s", ex.__class__.__name__)
         finally:
             req.wait()
