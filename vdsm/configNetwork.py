@@ -1311,6 +1311,27 @@ def _removeBondings(bondings, configWriter):
             del bondings[bond]
 
 
+def _buildBondOptions(bondName, bondings, _netinfo):
+    logger = logging.getLogger("_buildBondOptions")
+
+    bond = {}
+    if bondings.get(bondName):
+        bond['nics'] = bondings[bondName]['nics']
+        bond['bondingOptions'] = bondings[bondName].get('options', None)
+    elif bondName in _netinfo.bondings:
+        # We may not receive any information about the bonding device if it is
+        # unchanged. In this case check whether this bond exists on host and
+        # take its parameters.
+        logger.debug("Fetching bond %r info", bondName)
+        existingBond = _netinfo.bondings[bondName]
+        bond['nics'] = existingBond['slaves']
+        bond['bondingOptions'] = existingBond['cfg'].get('BONDING_OPTS', None)
+    else:
+        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "No bonding option given, "
+                                 "nor existing bond %s found." % bondName)
+    return bond
+
+
 def setupNetworks(networks={}, bondings={}, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -1354,12 +1375,6 @@ def setupNetworks(networks={}, bondings={}, **options):
         _netinfo = netinfo.NetInfo()
         configWriter = ConfigWriter()
         networksAdded = set()
-        # keep set netsWithNewBonds to be able remove
-        # a new added network if connectivity check fail.
-        # If a new network needs to be created on top of existing bond,
-        # we will need to keep the bond on rollback flow,
-        # else we will break the new created bond.
-        netsWithNewBonds = set()
 
         logger.debug("Setting up network according to configuration: "
                      "networks:%r, bondings:%r, options:%r" % (networks,
@@ -1394,23 +1409,7 @@ def setupNetworks(networks={}, bondings={}, **options):
             for network, networkAttrs in networks.iteritems():
                 d = dict(networkAttrs)
                 if 'bonding' in d:
-                    # we may not receive any information
-                    # about the bonding device if it is unchanged
-                    # In this case check whether this bond exists
-                    # on host and take its parameters
-                    if bondings.get(d['bonding']):
-                        d['nics'] = bondings[d['bonding']]['nics']
-                        d['bondingOptions'] = \
-                            bondings[d['bonding']].get('options', None)
-                        # we create a new bond
-                        if network in networksAdded:
-                            netsWithNewBonds.add(network)
-                    elif d['bonding'] in _ni.bondings:
-                        logger.debug("Updating bond %r info", d['bonding'])
-                        d['nics'] = _ni.bondings[d['bonding']]['slaves']
-                        d['bondingOptions'] = \
-                            _ni.bondings[d['bonding']]['cfg'].get(
-                                'BONDING_OPTS', None)
+                    d.update(_buildBondOptions(d['bonding'], bondings, _ni))
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force
@@ -1425,8 +1424,12 @@ def setupNetworks(networks={}, bondings={}, **options):
                                       CONNECTIVITY_TIMEOUT_DEFAULT))):
                     logger.info('Connectivity check failed, rolling back')
                     for network in networksAdded:
+                        # If the new added network was created on top of
+                        # existing bond, we need to keep the bond on rollback
+                        # flow, else we will break the new created bond.
                         delNetwork(network, force=True,
-                                   implicitBonding=network in netsWithNewBonds)
+                                   implicitBonding=networks[network].
+                                   get('bonding') in bondings)
                     raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                              'connectivity check failed')
         except:
