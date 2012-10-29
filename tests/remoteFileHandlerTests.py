@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import os
+from vdsm import utils
 
 from testrunner import VdsmTestCase as TestCaseBase
 import storage.remoteFileHandler as rhandler
@@ -41,7 +43,7 @@ class RemoteFileHandlerTests(TestCaseBase):
     def testTimeout(self):
         sleep = 5
         self.assertRaises(rhandler.Timeout, self.pool.callCrabRPCFunction,
-            0, "sleep", sleep)
+                          0, "sleep", sleep)
 
     def testRegeneration(self):
         """Makes all the helpers fail and get killed, it does this more than
@@ -53,3 +55,17 @@ class RemoteFileHandlerTests(TestCaseBase):
 
     def tearDown(self):
         self.pool.close()
+
+
+class PoolHandlerTests(TestCaseBase):
+    def testStop(self):
+        p = rhandler.PoolHandler()
+        procPath = os.path.join("/proc", str(p.process.pid))
+
+        # Make sure handler is running
+        self.assertTrue(p.proxy.callCrabRPCFunction(1, "os.path.exists",
+                                                    procPath))
+        p.stop()
+        test = lambda: self.assertFalse(os.path.exists(procPath))
+
+        utils.retry(test, AssertionError, timeout=4, sleep=0.1)

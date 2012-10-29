@@ -30,10 +30,10 @@ import signal
 import sys
 import select
 from contextlib import contextmanager
-from threading import Thread
 
 import misc
 import fileUtils
+import zombieReaper
 
 # Crabs are known for their remote process calls
 LENGTH_STRUCT_FMT = "Q"
@@ -240,10 +240,7 @@ class PoolHandler(object):
         except:
             pass
 
-        # For some reason Thread might have been released if python is going
-        # down. This makes sure that there are no issues when this happens
-        if self.process.poll() and Thread:
-            Thread(target=self.process.wait).start()
+        zombieReaper.autoReapPID(self.process.pid)
 
     def __del__(self):
         self.stop()
