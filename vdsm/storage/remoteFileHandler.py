@@ -186,7 +186,7 @@ class CrabRPCProxy(object):
         except:
             # If for some reason the connection drops\gets out of sync we treat
             # it as a timeout so we only have one error path
-            self.log.warn("Problem with handler, treating as timeout",
+            self.log.error("Problem with handler, treating as timeout",
                     exc_info=True)
             raise Timeout()
 
