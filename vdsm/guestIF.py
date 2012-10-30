@@ -26,9 +26,9 @@ import supervdsm
 
 __RESTRICTED_CHARS = set(range(8 + 1)).union(
     set(range(0xB, 0xC + 1))).union(
-    set(range(0xE, 0x1F + 1))).union(
-    set(range(0x7F, 0x84 + 1))).union(
-    set(range(0x86, 0x9F + 1)))
+        set(range(0xE, 0x1F + 1))).union(
+            set(range(0x7F, 0x84 + 1))).union(
+                set(range(0x86, 0x9F + 1)))
 
 
 def _filterXmlChars(u):
@@ -61,9 +61,14 @@ class GuestAgent ():
         self._stopped = True
         self.guestStatus = None
         self.guestInfo = {
-                'username': user, 'memUsage': 0, 'guestIPs': ips,
-                'session': 'Unknown', 'appsList': [], 'disksUsage': [],
-                'netIfaces': [], 'memoryStats': {}}
+            'username': user,
+            'memUsage': 0,
+            'guestIPs': ips,
+            'session': 'Unknown',
+            'appsList': [],
+            'disksUsage': [],
+            'netIfaces': [],
+            'memoryStats': {}}
         self._agentTimestamp = 0
         self._channelListener = channelListener
         if connect:
@@ -72,8 +77,12 @@ class GuestAgent ():
             except:
                 self.log.error("Failed to prepare vmchannel", exc_info=True)
             else:
-                self._channelListener.register(self._sock_fd, self._connect,
-                    self._onChannelRead, self._onChannelTimeout, self)
+                self._channelListener.register(
+                    self._sock_fd,
+                    self._connect,
+                    self._onChannelRead,
+                    self._onChannelTimeout,
+                    self)
 
     def _prepare_socket(self):
         supervdsm.getProxy().prepareVmChannel(self._socketName)
@@ -190,10 +199,12 @@ class GuestAgent ():
         if self.isResponsive():
             return self.guestInfo
         else:
-            return {'username': 'Unknown',
-                 'session': 'Unknown', 'memUsage': 0,
-                 'appsList': self.guestInfo['appsList'],
-                 'guestIPs': self.guestInfo['guestIPs']}
+            return {
+                'username': 'Unknown',
+                'session': 'Unknown',
+                'memUsage': 0,
+                'appsList': self.guestInfo['appsList'],
+                'guestIPs': self.guestInfo['guestIPs']}
 
     def onReboot(self):
         self.guestStatus = 'RebootInProgress'

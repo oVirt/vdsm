@@ -20,7 +20,8 @@
 
 import os
 import time
-import threading, logging
+import threading
+import logging
 from vdsm import constants
 import tempfile
 import pickle
@@ -49,9 +50,10 @@ REDIR_DEVICES = 'redir'
 A module containing classes needed for VM communication.
 """
 
+
 def isVdsmImage(drive):
     return all(k in drive.keys() for k in ('volumeID', 'domainID', 'imageID',
-                'poolID'))
+                                           'poolID'))
 
 
 class Device(object):
@@ -70,13 +72,17 @@ class Device(object):
                  if not a.startswith('__')]
         return " ".join(attrs)
 
-class _MigrationError(RuntimeError): pass
+
+class _MigrationError(RuntimeError):
+    pass
+
 
 class MigrationSourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
     """
     _ongoingMigrations = threading.BoundedSemaphore(1)
+
     @classmethod
     def setMaxOutgoingMigrations(cls, n):
         """Set the initial value of the _ongoingMigrations semaphore.
@@ -84,8 +90,8 @@ class MigrationSourceThread(threading.Thread):
         must not be called after any vm has been run."""
         cls._ongoingMigrations = threading.BoundedSemaphore(n)
 
-    def __init__ (self, vm, dst='', dstparams='',
-                  mode='remote', method='online', **kwargs):
+    def __init__(self, vm, dst='', dstparams='',
+                 mode='remote', method='online', **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dst = dst
@@ -94,20 +100,25 @@ class MigrationSourceThread(threading.Thread):
         self._dstparams = dstparams
         self._machineParams = {}
         self._downtime = kwargs.get('downtime') or \
-                            config.get('vars', 'migration_downtime')
-        self.status = {'status': {'code': 0, 'message': 'Migration in process'}, 'progress': 0}
+            config.get('vars', 'migration_downtime')
+        self.status = {
+            'status': {
+                'code': 0,
+                'message': 'Migration in process'},
+            'progress': 0}
         threading.Thread.__init__(self)
         self._preparingMigrationEvt = False
         self._migrationCanceledEvt = False
 
-    def getStat (self):
+    def getStat(self):
         """
         Get the status of the migration.
         """
         return self.status
 
     def _setupVdsConnection(self):
-        if self._mode == 'file': return
+        if self._mode == 'file':
+            return
         self.remoteHost = self._dst.split(':')[0]
         # FIXME: The port will depend on the binding being used.
         # This assumes xmlrpc
@@ -118,8 +129,10 @@ class MigrationSourceThread(threading.Thread):
             pass
         serverAddress = self.remoteHost + ':' + self.remotePort
         if config.getboolean('vars', 'ssl'):
-            self.destServer = vdscli.connect(serverAddress, useSSL=True,
-                    TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
+            self.destServer = vdscli.connect(
+                serverAddress,
+                useSSL=True,
+                TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
         else:
             self.destServer = kaxmlrpclib.Server('http://' + serverAddress)
         self.log.debug('Destination server is: ' + serverAddress)
@@ -140,7 +153,7 @@ class MigrationSourceThread(threading.Thread):
         else:
             self._machineParams['afterMigrationStatus'] = 'Pause'
         self._machineParams['elapsedTimeOffset'] = \
-                                time.time() - self._vm._startTime
+            time.time() - self._vm._startTime
         vmStats = self._vm.getStats()
         if 'username' in vmStats:
             self._machineParams['username'] = vmStats['username']
@@ -166,7 +179,8 @@ class MigrationSourceThread(threading.Thread):
                 lockTimeout -= 1
                 if lockTimeout == 0:
                     self.log.warning('Agent ' + self._vm.id +
-                            ' unresponsive. Hiberanting without desktopLock.')
+                                     ' unresponsive. Hiberanting without '
+                                     'desktopLock.')
                     break
             self._vm.pause('Saving State')
         else:
@@ -191,7 +205,11 @@ class MigrationSourceThread(threading.Thread):
     def _finishSuccessfully(self):
         if self._mode != 'file':
             self._vm.setDownStatus(NORMAL, "Migration succeeded")
-            self.status = {'status': {'code': 0, 'message': 'Migration done'}, 'progress': 100}
+            self.status = {
+                'status': {
+                    'code': 0,
+                    'message': 'Migration done'},
+                'progress': 100}
         else:
             # don't pickle transient params
             for ignoreParam in ('displayIp', 'display', 'pid'):
@@ -206,7 +224,10 @@ class MigrationSourceThread(threading.Thread):
                 self._vm.cif.teardownVolumePath(self._dstparams)
 
             self._vm.setDownStatus(NORMAL, "SaveState succeeded")
-            self.status = {'status': {'code': 0, 'message': 'SaveState done'}, 'progress': 100}
+            self.status = {'status': {
+                'code': 0,
+                'message': 'SaveState done'},
+                'progress': 100}
 
     def _patchConfigForLegacy(self):
         """
@@ -238,16 +259,20 @@ class MigrationSourceThread(threading.Thread):
                 # patch VM config for targets < 3.1
                 self._patchConfigForLegacy()
                 if not mstate:
-                    self._vm.conf['_migrationParams'] = {'dst': self._dst,
-                                'mode': self._mode, 'method': self._method,
-                                'dstparams': self._dstparams}
+                    self._vm.conf['_migrationParams'] = {
+                        'dst': self._dst,
+                        'mode': self._mode,
+                        'method': self._method,
+                        'dstparams': self._dstparams}
                     self._vm.saveState()
                     self._startUnderlyingMigration()
                 self._finishSuccessfully()
             except libvirt.libvirtError, e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
-                    self.status = {'status': {'code': errCode['migCancelErr'],
-                        'message': 'Migration canceled'}}
+                    self.status = {
+                        'status': {
+                            'code': errCode['migCancelErr'],
+                            'message': 'Migration canceled'}}
                 raise
             finally:
                 if '_migrationParams' in self._vm.conf:
@@ -262,12 +287,15 @@ class VolumeError(RuntimeError):
     def __str__(self):
         return "Bad volume specification " + RuntimeError.__str__(self)
 
-class DoubleDownError(RuntimeError): pass
+
+class DoubleDownError(RuntimeError):
+    pass
 
 VALID_STATES = ('Down', 'Migration Destination', 'Migration Source',
                 'Paused', 'Powering down', 'RebootInProgress',
                 'Restoring state', 'Saving State',
                 'Up', 'WaitForLaunch')
+
 
 class Vm(object):
     """
@@ -294,10 +322,10 @@ class Vm(object):
         self.conf = {'pid': '0'}
         self.conf.update(params)
         self.cif = cif
-        self.log = SimpleLogAdapter(self.log, {"vmId" : self.conf['vmId']})
+        self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
         self.destroyed = False
-        self._recoveryFile = constants.P_VDSM_RUN + str(
-                                    self.conf['vmId']) + '.recovery'
+        self._recoveryFile = constants.P_VDSM_RUN + \
+            str(self.conf['vmId']) + '.recovery'
         self.user_destroy = False
         self._monitorResponse = 0
         self.conf['clientIp'] = ''
@@ -312,7 +340,7 @@ class Vm(object):
         self._migrationSourceThread = self.MigrationSourceThreadClass(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._guestSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
-                                '.guest.socket'
+            '.guest.socket'
         self._incomingMigrationFinished = threading.Event()
         self.id = self.conf['vmId']
         self._volPrepareLock = threading.Lock()
@@ -323,10 +351,10 @@ class Vm(object):
         self._vmStats = None
         self._guestCpuRunning = False
         self._guestCpuLock = threading.Lock()
-        self._startTime = time.time() - float(
-                                self.conf.pop('elapsedTimeOffset', 0))
+        self._startTime = time.time() - \
+            float(self.conf.pop('elapsedTimeOffset', 0))
 
-        self._usedIndices = {} #{'ide': [], 'virtio' = []}
+        self._usedIndices = {}  # {'ide': [], 'virtio' = []}
         self.stopDisksStatsCollection()
         self._vmCreationEvent = threading.Event()
         self._pathsPreparedEvent = threading.Event()
@@ -336,8 +364,8 @@ class Vm(object):
                          BALLOON_DEVICES: [], REDIR_DEVICES: []}
 
     def _get_lastStatus(self):
-        SHOW_PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
-        if not self._guestCpuRunning and self._lastStatus in SHOW_PAUSED_STATES:
+        PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
+        if not self._guestCpuRunning and self._lastStatus in PAUSED_STATES:
             return 'Paused'
         return self._lastStatus
 
@@ -370,9 +398,8 @@ class Vm(object):
             drv['device'] = 'disk'
 
         if drv['device'] == 'disk':
-            res = self.cif.irs.getVolumeSize(drv['domainID'],
-                             drv['poolID'], drv['imageID'],
-                             drv['volumeID'])
+            res = self.cif.irs.getVolumeSize(drv['domainID'], drv['poolID'],
+                                             drv['imageID'], drv['volumeID'])
             drv['truesize'] = res['truesize']
             drv['apparentsize'] = res['apparentsize']
         else:
@@ -380,27 +407,36 @@ class Vm(object):
             drv['apparentsize'] = 0
 
     def __legacyDrives(self):
-         """
-         Backward compatibility for qa scripts that specify direct paths.
-         """
-         legacies = []
-         for index, linuxName in ((0, 'hda'), (1, 'hdb'), (2, 'hdc'), (3, 'hdd')):
-             path = self.conf.get(linuxName)
-             if path:
-                 legacies.append({'type': DISK_DEVICES, 'device': 'disk',
-                                  'path': path, 'iface': 'ide', 'index': index,
-                                  'truesize': 0})
-         return legacies
+        """
+        Backward compatibility for qa scripts that specify direct paths.
+        """
+        legacies = []
+        DEVICE_SPEC = ((0, 'hda'), (1, 'hdb'), (2, 'hdc'), (3, 'hdd'))
+        for index, linuxName in DEVICE_SPEC:
+            path = self.conf.get(linuxName)
+            if path:
+                legacies.append({'type': DISK_DEVICES, 'device': 'disk',
+                                 'path': path, 'iface': 'ide', 'index': index,
+                                 'truesize': 0})
+        return legacies
 
     def __removableDrives(self):
-        removables =  [{'type': DISK_DEVICES, 'device': 'cdrom', 'iface': 'ide',
-                        'path': self.conf.get('cdrom', ''), 'index': 2,
-                        'truesize': 0}]
+        removables = [{
+            'type': DISK_DEVICES,
+            'device': 'cdrom',
+            'iface': 'ide',
+            'path': self.conf.get('cdrom', ''),
+            'index': 2,
+            'truesize': 0}]
         floppyPath = self.conf.get('floppy')
         if floppyPath:
-            removables.append({'type': DISK_DEVICES, 'device': 'floppy',
-                               'path': floppyPath, 'iface': 'fdc',
-                               'index': 0, 'truesize': 0})
+            removables.append({
+                'type': DISK_DEVICES,
+                'device': 'floppy',
+                'path': floppyPath,
+                'iface': 'fdc',
+                'index': 0,
+                'truesize': 0})
         return removables
 
     def getConfDevices(self):
@@ -435,7 +471,7 @@ class Vm(object):
         # by existence/absence of the 'devices' key
         devices = {}
         # Build devices structure
-        if self.conf.get('devices') == None:
+        if self.conf.get('devices') is None:
             self.conf['devices'] = []
             devices[DISK_DEVICES] = self.getConfDrives()
             devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
@@ -456,8 +492,11 @@ class Vm(object):
         # Preserve old behavior. Since libvirt add a memory balloon device
         # to all guests, we need to specifically request not to add it.
         if len(devices[BALLOON_DEVICES]) == 0:
-            devices[BALLOON_DEVICES].append({'type': BALLOON_DEVICES,
-                'device': 'memballoon', 'specParams': {'model': 'none'}})
+            devices[BALLOON_DEVICES].append({
+                'type': BALLOON_DEVICES,
+                'device': 'memballoon',
+                'specParams': {
+                    'model': 'none'}})
 
         return devices
 
@@ -467,14 +506,15 @@ class Vm(object):
         """
         controllers = []
         # For now we create by default only 'virtio-serial' controller
-        controllers.append({'type': CONTROLLER_DEVICES, 'device': 'virtio-serial'})
+        controllers.append({'type': CONTROLLER_DEVICES,
+                            'device': 'virtio-serial'})
         return controllers
 
     def getConfVideo(self):
         """
         Normalize video device provided by conf.
         """
-        vcards =[]
+        vcards = []
         if self.conf.get('display') == 'vnc':
             devType = 'cirrus'
         elif self.conf.get('display') == 'qxl':
@@ -507,9 +547,12 @@ class Vm(object):
         macs = self.conf.get('macAddr', '').split(',')
         models = self.conf.get('nicModel', '').split(',')
         bridges = self.conf.get('bridge', DEFAULT_BRIDGE).split(',')
-        if macs == ['']: macs = []
-        if models == ['']: models = []
-        if bridges == ['']: bridges = []
+        if macs == ['']:
+            macs = []
+        if models == ['']:
+            models = []
+        if bridges == ['']:
+            bridges = []
         if len(models) < len(macs) or len(models) < len(bridges):
             raise ValueError('Bad nic specification')
         if models and not (macs or bridges):
@@ -522,8 +565,9 @@ class Vm(object):
         for mac, model, bridge in zip(macs, models, bridges):
             if model == 'pv':
                 model = 'virtio'
-            nics.append({'type': NIC_DEVICES, 'macAddr': mac, 'nicModel': model,
-                         'network': bridge, 'device': 'bridge'})
+            nics.append({'type': NIC_DEVICES, 'macAddr': mac,
+                         'nicModel': model, 'network': bridge,
+                         'device': 'bridge'})
         return nics
 
     def getConfDrives(self):
@@ -531,7 +575,7 @@ class Vm(object):
         Normalize drives provided by conf.
         """
         # FIXME
-        # Will be better to change the self.conf but this implies an API change.
+        # Will be better to change the self.conf but this implies an API change
         # Remove this when the API parameters will be consistent.
         confDrives = self.conf['drives'] if self.conf.get('drives') else []
         if not confDrives:
@@ -583,8 +627,9 @@ class Vm(object):
         """
         Reserve the required memory for this VM.
         """
-        self.memCommitted = 2**20 * (int(self.conf['memSize']) +
-                                config.getint('vars', 'guest_ram_overhead'))
+        memory = int(self.conf['memSize'])
+        memory += config.getint('vars', 'guest_ram_overhead')
+        self.memCommitted = 2 ** 20 * memory
 
     def _startUnderlyingVm(self):
         self.log.debug("Start")
@@ -610,8 +655,8 @@ class Vm(object):
                 self._ongoingCreations.release()
                 self.log.debug("_ongoingCreations released")
 
-            if ('migrationDest' in self.conf or 'restoreState' in self.conf
-                                               ) and self.lastStatus != 'Down':
+            if ('migrationDest' in self.conf or 'restoreState' in self.conf) \
+                    and self.lastStatus != 'Down':
                 self._waitForIncomingMigrationFinish()
 
             self.lastStatus = 'Up'
@@ -690,7 +735,7 @@ class Vm(object):
             load = len(self.cif.vmContainer)
         return base * (doubler + load) / doubler
 
-    def saveState (self):
+    def saveState(self):
         if self.destroyed:
             return
         toSave = deepcopy(self.status())
@@ -703,7 +748,8 @@ class Vm(object):
             toSave['guestIPs'] = ""
         if 'sysprepInf' in toSave:
             del toSave['sysprepInf']
-            if 'floppy' in toSave: del toSave['floppy']
+            if 'floppy' in toSave:
+                del toSave['floppy']
         for drive in toSave.get('drives', []):
             for d in self._devices[DISK_DEVICES]:
                 if d.isVdsmImage() and drive.get('volumeID') == d.volumeID:
@@ -712,11 +758,11 @@ class Vm(object):
 
         with tempfile.NamedTemporaryFile(dir=constants.P_VDSM_RUN,
                                          delete=False) as f:
-             pickle.dump(toSave, f)
+            pickle.dump(toSave, f)
 
         os.rename(f.name, self._recoveryFile)
 
-    def onReboot (self, withRelaunch):
+    def onReboot(self, withRelaunch):
         try:
             self.log.debug('reboot event')
             self._startTime = time.time()
@@ -732,7 +778,7 @@ class Vm(object):
         except:
             self.log.error("Reboot event failed", exc_info=True)
 
-    def onShutdown (self):
+    def onShutdown(self):
         self.log.debug('onShutdown() event')
         self.user_destroy = True
 
@@ -754,9 +800,9 @@ class Vm(object):
 
         if newSize is None:
             # newSize is always in megabytes
-            newSize = (config.getint('irs', 'volume_utilization_chunk_mb')
-                        + ((vmDrive.apparentsize + constants.MEGAB - 1)
-                            / constants.MEGAB))
+            newSize = (config.getint('irs', 'volume_utilization_chunk_mb') +
+                       ((vmDrive.apparentsize + constants.MEGAB - 1) /
+                        constants.MEGAB))
 
         if getattr(vmDrive, 'diskReplicate', None):
             volInfo = {'poolID': vmDrive.diskReplicate['poolID'],
@@ -767,7 +813,8 @@ class Vm(object):
             self.log.debug("Requesting an extension for the volume "
                            "replication: %s", volInfo)
             self.cif.irs.sendExtendMsg(vmDrive.poolID, volInfo,
-                    newSize * constants.MEGAB, self.__afterReplicaExtension)
+                                       newSize * constants.MEGAB,
+                                       self.__afterReplicaExtension)
         else:
             self.__extendDriveVolume(vmDrive, newSize)
 
@@ -779,8 +826,8 @@ class Vm(object):
             wasRunning = self._guestCpuRunning
             if wasRunning:
                 self.pause(guestCpuLocked=True)
-            self.cif.irs.refreshVolume(volInfo['domainID'],
-                volInfo['poolID'], volInfo['imageID'], volInfo['volumeID'])
+            self.cif.irs.refreshVolume(volInfo['domainID'], volInfo['poolID'],
+                                       volInfo['imageID'], volInfo['volumeID'])
             if wasRunning:
                 self.cont(guestCpuLocked=True)
         finally:
@@ -793,12 +840,16 @@ class Vm(object):
 
         self.__refreshDriveVolume(volInfo)
         volSizeRes = self.cif.irs.getVolumeSize(volInfo['domainID'],
-                    volInfo['poolID'], volInfo['imageID'], volInfo['volumeID'])
+                                                volInfo['poolID'],
+                                                volInfo['imageID'],
+                                                volInfo['volumeID'])
 
         if volSizeRes['status']['code']:
-            raise RuntimeError(("Cannot get the volume size for %s "
-                    "(domainID: %s, volumeID: %s)") % (volInfo['name'],
-                    volInfo['domainID'], volInfo['volumeID']))
+            raise RuntimeError(
+                "Cannot get the volume size for %s "
+                "(domainID: %s, volumeID: %s)" % (volInfo['name'],
+                                                  volInfo['domainID'],
+                                                  volInfo['volumeID']))
 
         apparentSize = int(volSizeRes['apparentsize'])
         trueSize = int(volSizeRes['truesize'])
@@ -808,9 +859,9 @@ class Vm(object):
                        volInfo['newSize'] * constants.MEGAB, apparentSize)
 
         if apparentSize < volInfo['newSize'] * constants.MEGAB:  # in bytes
-            raise RuntimeError(("Volume extension failed for %s "
-                    "(domainID: %s, volumeID: %s)") % (volInfo['name'],
-                    volInfo['domainID'], volInfo['volumeID']))
+            raise RuntimeError(
+                "Volume extension failed for %s (domainID: %s, volumeID: %s)" %
+                (volInfo['name'], volInfo['domainID'], volInfo['volumeID']))
 
         return apparentSize, trueSize
 
@@ -827,8 +878,11 @@ class Vm(object):
                    'imageID': vmDrive.imageID, 'volumeID': vmDrive.volumeID,
                    'name': vmDrive.name, 'newSize': newSize}
         self.log.debug("Requesting an extension for the volume: %s", volInfo)
-        self.cif.irs.sendExtendMsg(vmDrive.poolID, volInfo,
-                       newSize * constants.MEGAB, self.__afterVolumeExtension)
+        self.cif.irs.sendExtendMsg(
+            vmDrive.poolID,
+            volInfo,
+            newSize * constants.MEGAB,
+            self.__afterVolumeExtension)
 
     def __afterVolumeExtension(self, volInfo):
         # Either the extension succeeded and we're setting the new apparentSize
@@ -858,7 +912,7 @@ class Vm(object):
 
     def _acquireCpuLockWithTimeout(self):
         timeout = self._loadCorrectedTimeout(
-                                config.getint('vars', 'vm_command_timeout'))
+            config.getint('vars', 'vm_command_timeout'))
         end = time.time() + timeout
         while not self._guestCpuLock.acquire(False):
             time.sleep(0.1)
@@ -871,8 +925,8 @@ class Vm(object):
             self._acquireCpuLockWithTimeout()
         try:
             if self.lastStatus in ('Migration Source', 'Saving State', 'Down'):
-                 self.log.error('cannot cont while %s', self.lastStatus)
-                 return errCode['unexpected']
+                self.log.error('cannot cont while %s', self.lastStatus)
+                return errCode['unexpected']
             self._underlyingCont()
             if hasattr(self, 'updateGuestCpuRunning'):
                 self.updateGuestCpuRunning()
@@ -910,7 +964,8 @@ class Vm(object):
                 self._guestEvent = 'Powering down'
                 self.log.debug('guestAgent shutdown called')
                 self.guestAgent.desktopShutdown(timeout, message)
-                agent_timeout = int(timeout) + config.getint('vars', 'sys_shutdown_timeout')
+                agent_timeout = (int(timeout) +
+                                 config.getint('vars', 'sys_shutdown_timeout'))
                 timer = threading.Timer(agent_timeout, self._timedShutdown)
                 timer.start()
             elif utils.tobool(self.conf.get('acpiEnable', 'true')):
@@ -919,8 +974,11 @@ class Vm(object):
                 self._acpiShutdown()
             # No tools, no ACPI
             else:
-                return {'status': {'code': errCode['exist']['status']['code'],
-                        'message': 'VM without ACPI or active SolidICE tools. Try Forced Shutdown.'}}
+                return {
+                    'status': {
+                        'code': errCode['exist']['status']['code'],
+                        'message': 'VM without ACPI or active SolidICE tools. '
+                                   'Try Forced Shutdown.'}}
         except:
             self.log.error("Shutdown failed", exc_info=True)
         return {'status': {'code': doneCode['code'],
@@ -962,7 +1020,7 @@ class Vm(object):
         utils.rmFile(self._guestSocketFile)
         utils.rmFile(self._recoveryFile)
 
-    def setDownStatus (self, code, reason):
+    def setDownStatus(self, code, reason):
         try:
             self.lastStatus = 'Down'
             self.conf['exitCode'] = code
@@ -1013,17 +1071,17 @@ class Vm(object):
                 stats['timeOffset'] = self.conf['timeOffset']
             return stats
 
-        stats = {'displayPort': self.conf['displayPort'],
-                 'displaySecurePort': self.conf['displaySecurePort'],
-                 'displayType': self.conf['display'],
-                 'displayIp': self.conf['displayIp'],
-                 'pid': self.conf['pid'],
-                 'vmType': self.conf['vmType'],
-                 'kvmEnable': self._kvmEnable,
-                 'network': {}, 'disks': {},
-                 'monitorResponse': str(self._monitorResponse),
-                 'elapsedTime' : str(int(time.time() - self._startTime)),
-                 }
+        stats = {
+            'displayPort': self.conf['displayPort'],
+            'displaySecurePort': self.conf['displaySecurePort'],
+            'displayType': self.conf['display'],
+            'displayIp': self.conf['displayIp'],
+            'pid': self.conf['pid'],
+            'vmType': self.conf['vmType'],
+            'kvmEnable': self._kvmEnable,
+            'network': {}, 'disks': {},
+            'monitorResponse': str(self._monitorResponse),
+            'elapsedTime': str(int(time.time() - self._startTime)), }
         if 'cdrom' in self.conf:
             stats['cdrom'] = self.conf['cdrom']
         if 'boot' in self.conf:
@@ -1034,8 +1092,8 @@ class Vm(object):
             if self._vmStats:
                 decStats = self._vmStats.get()
                 if (not self.isMigrating()
-                    and decStats['statsAge'] > config.getint('vars',
-                                                       'vm_command_timeout')):
+                    and decStats['statsAge'] >
+                        config.getint('vars', 'vm_command_timeout')):
                     stats['monitorResponse'] = '-1'
         except:
             self.log.error("Error fetching vm stats", exc_info=True)
@@ -1048,12 +1106,15 @@ class Vm(object):
                 try:
                     stats['disks'][var] = {}
                     for value in decStats[var]:
-                        stats['disks'][var][value] = utils.convertToStr(decStats[var][value])
+                        stats['disks'][var][value] = \
+                            utils.convertToStr(decStats[var][value])
                 except:
-                    self.log.error("Error setting vm disk stats", exc_info=True)
+                    self.log.error("Error setting vm disk stats",
+                                   exc_info=True)
 
-
-        if self.lastStatus in ('Saving State', 'Restoring state', 'Migration Source', 'Migration Destination', 'Paused'):
+        statuses = ('Saving State', 'Restoring state', 'Migration Source',
+                    'Migration Destination', 'Paused')
+        if self.lastStatus in statuses:
             stats['status'] = self.lastStatus
         elif self.isMigrating():
             if self._migrationSourceThread._mode == 'file':
@@ -1076,7 +1137,8 @@ class Vm(object):
         memUsage = 0
         realMemUsage = int(stats['memUsage'])
         if realMemUsage != 0:
-            memUsage = 100 - float(realMemUsage) / int(self.conf['memSize']) * 100
+            memUsage = (100 - float(realMemUsage) /
+                        int(self.conf['memSize']) * 100)
         stats['memUsage'] = utils.convertToStr(int(memUsage))
         stats['balloonInfo'] = self._getBalloonInfo()
         return stats
@@ -1094,8 +1156,8 @@ class Vm(object):
             # taken self Down
             if self._lastStatus == 'Down':
                 return errCode['noVM']
-            self._migrationSourceThread = self.MigrationSourceThreadClass(self,
-                                                                     **params)
+            self._migrationSourceThread = \
+                self.MigrationSourceThreadClass(self, **params)
             self._migrationSourceThread.start()
             check = self._migrationSourceThread.getStat()
             if check['status']['code']:

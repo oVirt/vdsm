@@ -40,6 +40,7 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	tests \
+	vds_bootstrap/miniyum.py \
 	vdsm-tool \
 	vdsm/API.py \
 	vdsm/BindingXMLRPC.py \
@@ -76,8 +77,8 @@ PEP8_WHITELIST = \
 	vdsm/storage/fileVolume.py \
 	vdsm/storage/fuser.py \
 	vdsm/storage/hba.py \
-	vdsm/storage/iscsiadm.py \
 	vdsm/storage/imageRepository \
+	vdsm/storage/iscsiadm.py \
 	vdsm/storage/localFsSD.py \
 	vdsm/storage/lvm.py \
 	vdsm/storage/misc.py \
@@ -98,6 +99,7 @@ PEP8_WHITELIST = \
 	vdsm/tc.py \
 	vdsm/vdsm \
 	vdsm/vdsmDebugPlugin.py \
+	vdsm/vm.py \
 	vdsm_cli \
 	vdsm_hooks/fileinject \
 	vdsm_hooks/promisc/after_vm_start.py \
@@ -106,7 +108,6 @@ PEP8_WHITELIST = \
 	vdsm_hooks/vhostmd \
 	vdsm_reg/createDaemon.py \
 	vdsm_reg/define.py \
-	vds_bootstrap/miniyum.py \
 	$(NULL)
 
 PEP8_BLACKLIST = \
