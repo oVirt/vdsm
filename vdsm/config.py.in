@@ -38,6 +38,10 @@ parameters = [
         ('extra_mem_reserve', '65',
             'Memory reserved for non-vds-administered programs.'),
 
+        ('fake_nics', '',
+            'Comma-separated list of fnmatch-patterns for dummy hosts nics to '
+            'be shown to vdsm.'),
+
         ('nic_model', 'rtl8139,pv',
             'NIC model is rtl8139, ne2k_pci pv or any other valid device '
             'recognized by kvm/qemu if a coma separated list given then a '

@@ -66,3 +66,6 @@ class TestNetinfo(TestCaseBase):
         # just log a traceback. If it raises an exception the test will fail as
         # it should.
         netinfo.get()
+
+    def testMatchNicName(self):
+        self.assertTrue(netinfo._match_nic_name('test1', ['test0', 'test1']))

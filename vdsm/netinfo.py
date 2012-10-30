@@ -43,13 +43,23 @@ PROC_NET_VLAN = '/proc/net/vlan/'
 LIBVIRT_NET_PREFIX = 'vdsm-'
 
 
+def _match_nic_name(nic, patterns):
+    return any(map(lambda p: fnmatch(nic, p), patterns))
+
+
 def nics():
     res = []
-    for b in glob.glob('/sys/class/net/*/device'):
-        nic = b.split('/')[-2]
-        if not any(map(lambda p: fnmatch(nic, p),
-                       config.get('vars', 'hidden_nics').split(','))):
+    hidden_nics = config.get('vars', 'hidden_nics').split(',')
+    fake_nics = config.get('vars', 'fake_nics').split(',')
+
+    for b in glob.glob('/sys/class/net/*'):
+        nic = b.split('/')[-1]
+        if not os.path.exists(os.path.join(b, 'device')):
+            if _match_nic_name(nic, fake_nics):
+                res.append(nic)
+        elif not _match_nic_name(nic, hidden_nics):
             res.append(nic)
+
     return res
 
 
