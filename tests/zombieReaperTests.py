@@ -26,12 +26,6 @@ from vdsm.betterPopen import BetterPopen
 
 
 class zombieReaperTests(TestCaseBase):
-    def setUp(self):
-        zombieReaper.registerSignalHandler()
-
-    def tearDown(self):
-        zombieReaper.unregisterSignalHandler()
-
     def testProcessDiesAfterBeingTracked(self):
         p = BetterPopen(["sleep", "1"])
         zombieReaper.autoReapPID(p.pid)
