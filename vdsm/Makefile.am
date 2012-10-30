@@ -52,6 +52,7 @@ dist_vdsm_PYTHON = \
 	vdsmDebugPlugin.py \
 	vmChannels.py \
 	vm.py \
+	zombieReaper.py \
 	$(NULL)
 
 dist_vdsmpylib_PYTHON = \

@@ -50,6 +50,7 @@ test_modules = \
 	vdsClientTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
+	zombieReaperTests.py \
 	$(NULL)
 
 dist_noinst_DATA = \
