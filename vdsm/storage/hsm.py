@@ -2270,6 +2270,7 @@ class HSM:
 
         :returns: Nothing
         """
+        multipath.rescan()
         vars.task.setDefaultException(se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         #getSharedLock(connectionsResource...)
 
