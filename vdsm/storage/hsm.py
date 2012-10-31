@@ -150,22 +150,48 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         except ValueError:
             raise se.InvalidParameterException(key, res)
 
+    # FIXME: Remove when nfs_mount_options is no longer supported.  This is
+    # in the compatibility layer so that the NFSConnection class stays clean.
+    # Engine options have precendence, so use deprecated nfs_mount_options
+    # only if engine passed nothing (indicated by default params of 'None').
+    def tryDeprecatedNfsParams(conDict):
+        if (conDict.get('protocol_version', None),
+                conDict.get('retrans', None),
+                conDict.get('timeout', None)) == (None, None, None):
+            conf_options = (config.get('irs', 'nfs_mount_options')
+                    .replace(' ', ''))
+            if (frozenset(conf_options.split(',')) !=
+                    frozenset(storageServer.NFSConnection.DEFAULT_OPTIONS)):
+                logging.warning("Using deprecated nfs_mount_options from"
+                        " vdsm.conf to mount %s: %s",
+                        conDict.get('connection', '(unknown)'), conf_options)
+                return storageServer.PosixFsConnectionParameters(
+                        conDict.get('connection', None),
+                        'nfs',
+                        conf_options)
+        return None
+
     typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
     if typeName == 'localfs':
         params = storageServer.LocaFsConnectionParameters(
                 conDict.get('connection', None))
     elif typeName == 'nfs':
-        version = conDict.get('protocol_version', "3")
-        version = str(version)
-        if version == "auto":
-            version = None
+        params = tryDeprecatedNfsParams(conDict)
+        if params is not None:
+            # Hack to support vdsm.conf nfs_mount_options
+            typeName = 'posixfs'
+        else:
+            version = conDict.get('protocol_version', "3")
+            version = str(version)
+            if version == "auto":
+                version = None
 
-        params = storageServer.NfsConnectionParameters(
-                conDict.get('connection', None),
-                getIntParam(conDict, 'retrans', None),
-                getIntParam(conDict, 'timeout', None),
-                version
-                )
+            params = storageServer.NfsConnectionParameters(
+                        conDict.get('connection', None),
+                        getIntParam(conDict, 'retrans', None),
+                        getIntParam(conDict, 'timeout', None),
+                        version
+                        )
     elif typeName == 'posixfs':
         params = storageServer.PosixFsConnectionParameters(
                 conDict.get('connection', None),

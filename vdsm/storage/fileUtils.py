@@ -35,12 +35,8 @@ import subprocess
 import shutil
 from vdsm import constants
 import logging
-from vdsm.config import config
 import errno
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
-
-# We must insure there are no white spaces in the NFS options
-NFS_OPTIONS = "".join(config.get('irs', 'nfs_mount_options').split())
 
 log = logging.getLogger('fileUtils')
 
