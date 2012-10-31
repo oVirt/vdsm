@@ -27,7 +27,7 @@ import inspect
 
 import storage.misc as misc
 import storage.fileUtils as fileUtils
-from testValidation import checkSudo
+from testValidation import checkSudo, brokentest
 
 EXT_DD = "/bin/dd"
 EXT_CHMOD = "/bin/chmod"
@@ -70,6 +70,8 @@ class PgrepTests(TestCaseBase):
             proc.wait()
 
 
+@brokentest('Test sometimes fail, when misc.getCmdArgs() returns '
+            'the empty tuple right after process creation')
 class GetCmdArgsTests(TestCaseBase):
     def test(self):
         args = ("sleep", "4")
