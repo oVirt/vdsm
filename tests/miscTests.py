@@ -70,9 +70,9 @@ class PgrepTests(TestCaseBase):
             proc.wait()
 
 
-@brokentest('Test sometimes fail, when misc.getCmdArgs() returns '
-            'the empty tuple right after process creation')
 class GetCmdArgsTests(TestCaseBase):
+    @brokentest('Test sometimes fail, when misc.getCmdArgs() returns '
+                'the empty tuple right after process creation')
     def test(self):
         args = ("sleep", "4")
         sproc = misc.execCmd(args, sync=False, sudo=False)
