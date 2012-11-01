@@ -130,7 +130,7 @@ class VdsmTestResult(result.TextTestResult):
             storage, label, isfail = self.errorClasses[SkipTest]
             storage.append((test, reason))
             self._writeResult(test, 'SKIP : %s' % reason, TermColor.blue, 'S',
-                    True)
+                              True)
 
     def addError(self, test, err):
         stream = getattr(self, 'stream', None)
@@ -197,10 +197,10 @@ def run():
     testdir = os.path.dirname(os.path.abspath(__file__))
 
     conf = config.Config(stream=stream,
-                      env=os.environ,
-                      verbosity=verbosity,
-                      workingDir=testdir,
-                      plugins=core.DefaultPluginManager())
+                         env=os.environ,
+                         verbosity=verbosity,
+                         workingDir=testdir,
+                         plugins=core.DefaultPluginManager())
     conf.plugins.addPlugin(SlowTestsPlugin())
 
     runner = VdsmTestRunner(stream=conf.stream,
@@ -242,8 +242,8 @@ def findRemove(listR, value):
 if __name__ == '__main__':
     if "--help" in sys.argv:
         print("testrunner options:\n"
-                "--local-modules   use vdsm modules from source tree, "
-                "instead of installed ones.\n")
+              "--local-modules   use vdsm modules from source tree, "
+              "instead of installed ones.\n")
     if findRemove(sys.argv, "--local-modules"):
         hackVdsmModule()
     run()

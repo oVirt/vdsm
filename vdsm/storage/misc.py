@@ -59,6 +59,7 @@ sys.path.append("../")
 from vdsm import constants
 import storage_exception as se
 from vdsm.betterPopen import BetterPopen
+import logUtils
 
 
 IOUSER = "vdsm"
@@ -81,7 +82,7 @@ def namedtuple2dict(nt):
 def enableLogSkip(logger, *args, **kwargs):
     skipFunc = partial(findCaller, *args, **kwargs)
     logger.findCaller = types.MethodType(lambda self: skipFunc(),
-            logger, logger.__class__)
+                                         logger, logger.__class__)
 
     return logger
 
@@ -109,7 +110,7 @@ class _LogSkip(object):
     @classmethod
     def checkForSkip(cls, codeId, loggerName):
         return codeId in chain(cls._ignoreMap[cls.ALL_KEY],
-                cls._ignoreMap[loggerName])
+                               cls._ignoreMap[loggerName])
 
     @classmethod
     def wrap(cls, func, loggerName):
@@ -124,7 +125,7 @@ def logskip(var):
 
 
 def _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
-        logSkipName, code, filename):
+                   logSkipName, code, filename):
     if logSkipName is not None:
         if _LogSkip.checkForSkip(id(code), logSkipName):
             return True
@@ -139,7 +140,7 @@ def _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
 
 
 def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[],
-        logSkipName=None):
+               logSkipName=None):
     """
     Find the stack frame of the caller so that we can note the source
     file name, line number and function name.
@@ -156,7 +157,7 @@ def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[],
         filename = os.path.normcase(code.co_filename)
 
         logSkip = _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
-        logSkipName, code, filename)
+                                 logSkipName, code, filename)
 
         if logSkip:
             skipUp -= 1
@@ -176,12 +177,13 @@ def panic(msg):
 
 
 execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'),
-        ignoreSourceFiles=[__file__], logSkipName="Storage.Misc.excCmd")
+                              ignoreSourceFiles=[__file__],
+                              logSkipName="Storage.Misc.excCmd")
 
 
 @logskip("Storage.Misc.excCmd")
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
-        printable=None, env=None, sync=True):
+            printable=None, env=None, sync=True):
     """
     Executes an external command, optionally via sudo.
     """
@@ -210,8 +212,8 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
         out = ""
 
     execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
-            {True: "SUCCESS", False: "FAILED"}[p.returncode == 0],
-            repr(err), p.returncode)
+                        {True: "SUCCESS", False: "FAILED"}[p.returncode == 0],
+                        repr(err), p.returncode)
 
     if not raw:
         out = out.splitlines(False)
@@ -239,7 +241,7 @@ def getProcCtime(pid):
         ctime = stats.st_ctime
     except OSError:
         raise OSError(os.errno.ESRCH,
-                "Could not find process with pid %s" % pid)
+                      "Could not find process with pid %s" % pid)
 
     return str(ctime)
 
@@ -260,8 +262,9 @@ def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None):
     err = stripNewLines(proc.stderr)
 
     execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
-            {True: "SUCCESS", False: "FAILED"}[proc.returncode == 0],
-        repr(err), proc.returncode)
+                        {True: "SUCCESS", False: "FAILED"}
+                        [proc.returncode == 0],
+                        repr(err), proc.returncode)
 
     return (proc.returncode, out, err)
 
@@ -296,7 +299,7 @@ def readblock(name, offset, size):
         (iounit, count, iooffset) = _alignData(left, offset)
 
         cmd = [constants.EXT_DD, "iflag=%s" % DIRECTFLAG, "skip=%d" % iooffset,
-                "bs=%d" % iounit, "if=%s" % name, 'count=%s' % count]
+               "bs=%d" % iounit, "if=%s" % name, 'count=%s' % count]
 
         (rc, out, err) = execCmd(cmd, raw=True)
         if rc:
@@ -384,8 +387,8 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
             conv += ",%s" % DATASYNCFLAG
 
         cmd = [constants.EXT_DD, "if=%s" % src, "of=%s" % dst,
-                "bs=%d" % iounit, "seek=%s" % iooffset, "skip=%s" % iooffset,
-                "conv=%s" % conv, 'count=%s' % count]
+               "bs=%d" % iounit, "seek=%s" % iooffset, "skip=%s" % iooffset,
+               "conv=%s" % conv, 'count=%s' % count]
 
         if oflag:
             cmd.append("oflag=%s" % oflag)
@@ -504,7 +507,7 @@ def validateN(number, name):
 
 def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
     log.debug("dir: %s, prefixName: %s, versions: %s" %
-            (directory, prefixName, gen))
+              (directory, prefixName, gen))
     gen = int(gen)
     files = os.listdir(directory)
     files = glob.glob("%s*" % prefixName)
@@ -661,8 +664,8 @@ class RWLock(object):
             try:
                 self._queue.put_nowait((currentEvent, exclusive))
             except Queue.Full:
-                raise RuntimeError(
-                        "There are too many objects waiting for this lock")
+                raise RuntimeError("There are too many objects waiting for "
+                                   "this lock")
 
             if self._queue.unfinished_tasks == 1:
                 # Bootstrap the process if needed. A lock is released the when
@@ -811,7 +814,7 @@ class AsyncProc(object):
 
             if self._stream.len != 0:
                 raise IOError(errno.EPIPE,
-                        "Could not write all data to stream")
+                              "Could not write all data to stream")
 
             return len(data)
 
@@ -834,17 +837,17 @@ class AsyncProc(object):
         self._poller.register(fderr, select.EPOLLIN | select.EPOLLPRI)
         self._poller.register(self._fdin, 0)
         self._fdMap = {fdout: self._stdout,
-                        fderr: self._stderr,
-                        self._fdin: self._stdin}
+                       fderr: self._stderr,
+                       self._fdin: self._stdin}
 
         self.stdout = io.BufferedReader(self._streamWrapper(self,
-            self._stdout, fdout), BUFFSIZE)
+                                        self._stdout, fdout), BUFFSIZE)
 
         self.stderr = io.BufferedReader(self._streamWrapper(self,
-            self._stderr, fderr), BUFFSIZE)
+                                        self._stderr, fderr), BUFFSIZE)
 
         self.stdin = io.BufferedWriter(self._streamWrapper(self,
-            self._stdin, self._fdin), BUFFSIZE)
+                                       self._stdin, self._fdin), BUFFSIZE)
 
         self._returncode = None
 
@@ -911,8 +914,8 @@ class AsyncProc(object):
         except OSError as ex:
             if ex.errno != errno.EPERM:
                 raise
-            execCmd([constants.EXT_KILL, "-" + str(signal.SIGTERM),
-                str(self.pid)], sudo=True)
+            execCmd([constants.EXT_KILL, "-%d" % (signal.SIGTERM,),
+                    str(self.pid)], sudo=True)
 
     def wait(self, timeout=None, cond=None):
         startTime = time.time()
@@ -1020,7 +1023,7 @@ class SamplingMethod(object):
                 self.__funcParent = self.__func.__module__
 
         self._log.debug("Trying to enter sampling method (%s.%s)",
-                self.__funcParent, self.__funcName)
+                        self.__funcParent, self.__funcName)
         if self.__barrier.enter():
             self._log.debug("Got in to sampling method")
             try:
@@ -1152,28 +1155,27 @@ class Event(object):
                         continue
                 try:
                     self._log.debug("Calling registered method `%s`",
-                            func.func_name if hasattr(func, "func_name")
-                                    else str(func))
+                                    logUtils.funcName(func))
                     if self._sync:
                         func(*args, **kwargs)
                     else:
                         threading.Thread(target=func, args=args,
-                                kwargs=kwargs).start()
+                                         kwargs=kwargs).start()
                 except:
                     self._log.warn("Could not run registered method because "
-                     "of an exception", exc_info=True)
+                                   "of an exception", exc_info=True)
 
         self._log.debug("Event emitted")
 
     def emit(self, *args, **kwargs):
         if len(self._registrar) > 0:
             threading.Thread(target=self._emit, args=args,
-                    kwargs=kwargs).start()
+                             kwargs=kwargs).start()
 
 
 class OperationMutex(object):
     log = enableLogSkip(logging.getLogger("OperationMutex"),
-            ignoreSourceFiles=[__file__, contextlib.__file__])
+                        ignoreSourceFiles=[__file__, contextlib.__file__])
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -1216,7 +1218,7 @@ class OperationMutex(object):
             self._counter -= 1
             if self._counter == 0:
                 self.log.debug("Operation '%s' released the operation mutex",
-                        self._active)
+                               self._active)
                 self._lock.release()
                 self._cond.notifyAll()
 
@@ -1227,7 +1229,7 @@ def killall(name, signum, group=False):
     pidList = pgrep(name)
     if len(pidList) == 0:
         raise OSError(errno.ESRCH,
-                "Could not find processes named `%s`" % name)
+                      "Could not find processes named `%s`" % name)
 
     for pid in pidList:
         try:

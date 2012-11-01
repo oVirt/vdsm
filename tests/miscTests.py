@@ -49,7 +49,7 @@ def ddWatchCopy(srcPath, dstPath, callback, dataLen):
 
 def watchCmd(cmd, stop, cwd=None, data=None, recoveryCallback=None):
     ret, out, err = misc.watchCmd(cmd, stop, cwd=cwd, data=data,
-            recoveryCallback=recoveryCallback)
+                                  recoveryCallback=recoveryCallback)
 
     return ret, out, err
 
@@ -59,12 +59,12 @@ class PgrepTests(TestCaseBase):
         sleepProcs = []
         for i in range(3):
             sleepProcs.append(misc.execCmd(["sleep", "3"], sync=False,
-                sudo=False))
+                              sudo=False))
 
         pids = misc.pgrep("sleep")
         for proc in sleepProcs:
             self.assertTrue(proc.pid in pids, "pid %d was not located by pgrep"
-                    % proc.pid)
+                            % proc.pid)
 
         for proc in sleepProcs:
             proc.kill()
@@ -213,12 +213,13 @@ class ITMap(TestCaseBase):
         # finish and another 0.5sec for the last operation,
         # not more than 2 seconds (and I'm large here..)
         self.assertFalse(afterTime - currentTime > 2,
-                msg="Operation took too long (more than 2 second). starts: " +
-                str(currentTime) + " ends: " + str(afterTime))
+                         msg=("Operation took too long (more than 2 second). "
+                              "starts: %s ends: %s") %
+                         (currentTime, afterTime))
         # Verify the operation waits at least for 1 thread to finish
         self.assertFalse(afterTime - currentTime < 1,
-                msg="Operation was too fast, not all threads were "
-                    "initiated as desired (with 1 thread delay)")
+                         msg="Operation was too fast, not all threads were "
+                             "initiated as desired (with 1 thread delay)")
         self.assertEquals(ret, data)
 
     def testMaxAvailableProcesses(self):
@@ -246,7 +247,7 @@ class RotateFiles(TestCaseBase):
         Tests that the method fails correctly when given a non existing dir.
         """
         self.assertRaises(OSError, misc.rotateFiles, "/I/DONT/EXIST", "prefix",
-                2, persist=persist)
+                          2, persist=persist)
 
     def testEmptyDir(self, persist=False):
         """
@@ -493,7 +494,7 @@ class DdWatchCopy(TestCaseBase):
 
         #Copy
         self.assertRaises(misc.se.MiscBlockWriteException, ddWatchCopy,
-                srcPath, "/tmp/tmp", None, 100)
+                          srcPath, "/tmp/tmp", None, 100)
 
     def testStop(self):
         """
@@ -587,21 +588,21 @@ class ValidateUuid(TestCaseBase):
         Test that validator detects when a non HEX char is in the input.
         """
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                "Dc08ff668-4072-4191-9fbb-f1c8f2daz333")
+                          "Dc08ff668-4072-4191-9fbb-f1c8f2daz333")
 
     def testInvalidInputInteger(self):
         """
         Test that validator detects when an integer is in the input.
         """
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                23)
+                          23)
 
     def testInvalidInputUTF(self):
         """
         Test that validator detects encoded utf-8 is in the input
         """
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                u'\xe4\xbd\xa0\xe5\xa5\xbd')
+                          u'\xe4\xbd\xa0\xe5\xa5\xbd')
 
     def testWrongLength(self):
         """
@@ -609,13 +610,13 @@ class ValidateUuid(TestCaseBase):
         length
         """
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                "Dc08ff668-4072-4191-9fbb-f1c8f2daa33")
+                          "Dc08ff668-4072-4191-9fbb-f1c8f2daa33")
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                "Dc08ff668-4072-4191-9fb-f1c8f2daa333")
+                          "Dc08ff668-4072-4191-9fb-f1c8f2daa333")
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                "Dc08ff68-4072-4191-9fbb-f1c8f2daa333")
+                          "Dc08ff68-4072-4191-9fbb-f1c8f2daa333")
         self.assertRaises(misc.se.InvalidParameterException, misc.validateUUID,
-                "Dc08ff668-4072-4191-9fbb-f1c8f2daa3313")
+                          "Dc08ff668-4072-4191-9fbb-f1c8f2daa3313")
 
 
 class UuidPack(TestCaseBase):
@@ -681,7 +682,7 @@ class ValidateDDBytes(TestCaseBase):
         count = 802
         with tempfile.NamedTemporaryFile() as f:
             cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
-                'count=%d' % count]
+                   'count=%d' % count]
             rc, out, err = misc.execCmd(cmd, sudo=False)
 
         self.assertTrue(misc.validateDDBytes(err, count))
@@ -693,7 +694,7 @@ class ValidateDDBytes(TestCaseBase):
         count = 802
         with tempfile.NamedTemporaryFile() as f:
             cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
-                'count=%d' % count]
+                   'count=%d' % count]
             rc, out, err = misc.execCmd(cmd, sudo=False)
 
         self.assertFalse(misc.validateDDBytes(err, count + 1))
@@ -703,9 +704,11 @@ class ValidateDDBytes(TestCaseBase):
         Test that the method handles wired input.
         """
         self.assertRaises(misc.se.InvalidParameterException,
-                misc.validateDDBytes, ["I AM", "PRETENDING TO", "BE DD"], "BE")
+                          misc.validateDDBytes,
+                          ["I AM", "PRETENDING TO", "BE DD"], "BE")
         self.assertRaises(misc.se.InvalidParameterException,
-                misc.validateDDBytes, ["I AM", "PRETENDING TO", "BE DD"], 32)
+                          misc.validateDDBytes,
+                          ["I AM", "PRETENDING TO", "BE DD"], 32)
 
 
 class ReadBlock(TestCaseBase):
@@ -761,7 +764,7 @@ class ReadBlock(TestCaseBase):
         """
         offset = 513
         self.assertRaises(misc.se.MiscBlockReadException, misc.readblock,
-                "/dev/urandom", offset, 512)
+                          "/dev/urandom", offset, 512)
 
     def testInvalidSize(self):
         """
@@ -769,7 +772,7 @@ class ReadBlock(TestCaseBase):
         """
         size = 513
         self.assertRaises(misc.se.MiscBlockReadException, misc.readblock,
-                "/dev/urandom", 512, size)
+                          "/dev/urandom", 512, size)
 
     def testReadingMoreTheFileSize(self):
         """
@@ -786,7 +789,7 @@ class ReadBlock(TestCaseBase):
         path = self._createTempFile(offset + size - 100, writeData)
 
         self.assertRaises(misc.se.MiscBlockReadIncomplete, misc.readblock,
-                path, offset, size)
+                          path, offset, size)
 
         os.unlink(path)
 
@@ -950,7 +953,7 @@ class WatchCmd(TestCaseBase):
         # (C) Terry Pratchet - Small Gods
         code = "import sys; sys.stderr.write('%s')" % line
         ret, stdout, stderr = watchCmd([EXT_PYTHON, "-c", code],
-                lambda: False)
+                                       lambda: False)
         self.assertEquals(stderr[0], line)
 
     def testLeakFd(self):
@@ -999,7 +1002,7 @@ class ExecCmd(TestCaseBase):
         # (C) Fox - The X Files
         code = "import sys; sys.stderr.write('%s')" % line
         ret, stdout, stderr = misc.execCmd([EXT_PYTHON, "-c", code],
-                sudo=False)
+                                           sudo=False)
         self.assertEquals(stderr[0], line)
 
     def testSudo(self):
