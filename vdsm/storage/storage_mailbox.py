@@ -687,5 +687,6 @@ class SPM_MailMonitor:
                 time.sleep(self._monitorInterval)
         finally:
             self._stopped = True
+            self.tp.joinAll(waitForTasks=False)
             self.log.info("SPM_MailMonitor - Incoming mail monitoring thread stopped")
 

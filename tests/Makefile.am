@@ -44,10 +44,12 @@ test_modules = \
 	persistentDictTests.py \
 	restTests.py \
 	restData.py \
+	storageMailboxTests.py \
 	tcTests.py \
 	vdsClientTests.py \
 	remoteFileHandlerTests.py \
-	resourceManagerTests.py
+	resourceManagerTests.py \
+	$(NULL)
 
 dist_noinst_DATA = \
 	run_tests_local.sh
