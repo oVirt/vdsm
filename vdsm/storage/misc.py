@@ -1068,7 +1068,7 @@ def pgrep(name):
 
 def getCmdArgs(pid):
     with open("/proc/%d/cmdline" % pid, "r") as f:
-        return tuple(f.readline().split("\0")[:-1])
+        return tuple(f.read().split("\0")[:-1])
 
 
 def pidStat(pid):
