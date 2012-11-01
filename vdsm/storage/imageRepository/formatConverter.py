@@ -100,6 +100,9 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
     V2META_SECTORSIZE = 512
 
+    if domain.getStorageType() in sd.FILE_DOMAIN_TYPES:
+        domain.setMetadataPermissions()
+
     def v3ResetMetaVolSize(vol):
         # BZ811880 Verifiying that the volume size is the same size advertised
         # by the metadata

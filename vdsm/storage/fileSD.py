@@ -128,6 +128,17 @@ class FileStorageDomain(sd.StorageDomain):
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
 
+    def setMetadataPermissions(self):
+        procPool = oop.getProcessPool(self.sdUUID)
+        for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
+            try:
+                fpath = os.path.join(self.getMDPath(), metaFile)
+                procPool.os.chmod(fpath, 0660)
+            except Exception, e:
+                raise se.StorageDomainMetadataCreationError(
+                    "Lease permission change file '%s' failed: %s"
+                    % (metaFile, e))
+
     @classmethod
     def _prepareMetadata(cls, domPath, sdUUID, domainName, domClass,
                          remotePath, storageType, version):
