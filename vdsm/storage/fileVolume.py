@@ -460,7 +460,10 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
-        return sdobj.produceVolume(imgUUID, volUUID).getVolumeSize(bs)
+        imagePath = image.Image(sdobj._getRepoPath()).getImageDir(
+                                                    sdobj.sdUUID, imgUUID)
+        volPath = os.path.join(imagePath, volUUID)
+        return int(sdobj.oop.os.stat(volPath).st_size / bs)
 
     @classmethod
     def getVTrueSize(cls, sdobj, imgUUID, volUUID, bs=512):
