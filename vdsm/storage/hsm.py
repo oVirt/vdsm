@@ -334,15 +334,24 @@ class HSM:
 
         self.__validateLvmLockingType()
 
+        # cleanStorageRepoitory uses tasksDir value, this must be assigned
+        # before calling it
+        self.tasksDir = config.get('irs', 'hsm_tasks')
+
+        # This part should be in same thread to prevent race on mounted path,
+        # otherwise, storageRefresh can unlink path that is used by another
+        # thread that was initiated in the same time and tried to use the
+        # same link.
+        try:
+            # This call won't get stuck if mount is inaccessible thanks to
+            # misc.walk, this sync call won't delay hsm initialization.
+            self.__cleanStorageRepository()
+        except Exception:
+            self.log.warn("Failed to clean Storage Repository.", exc_info=True)
+
         def storageRefresh():
             lvm._lvminfo.bootstrap()
             sdCache.refreshStorage()
-
-            self.tasksDir = config.get('irs', 'hsm_tasks')
-            try:
-                self.__cleanStorageRepository()
-            except Exception:
-                self.log.warn("Failed to clean Storage Repository.", exc_info=True)
 
             fileUtils.createdir(self.tasksDir)
             # TBD: Should this be run in connectStoragePool? Should tasksDir exist under pool link as well (for hsm tasks)
@@ -434,7 +443,7 @@ class HSM:
         rmDirList = []
 
         # We can't list files form top to bottom because the process
-        # would descend into mounpoints and an unreachable NFS storage
+        # would descend into mountpoints and an unreachable NFS storage
         # could freeze the vdsm startup. Since we will ignore files in
         # mounts anyway using out of process file operations is useless.
         # We just clean all directories before removing them from the
