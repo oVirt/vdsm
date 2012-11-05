@@ -982,9 +982,9 @@ def qemuRebase(src, srcFormat, backingFile,
     log.debug('(qemuRebase): REBASE %s (fmt=%s) on top of %s (%s) START' %
               (src, srcFormat, backingFile, backingFormat))
 
-    cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "rebase",
-                                   "-t", "none", "-f", srcFormat,
-                                   "-b", backingFile, "-F", backingFormat]
+    cmd = [constants.EXT_QEMUIMG, "rebase",
+           "-t", "none", "-f", srcFormat,
+           "-b", backingFile, "-F", backingFormat]
     if unsafe:
         cmd += ["-u"]
     cmd += [src]
@@ -993,7 +993,9 @@ def qemuRebase(src, srcFormat, backingFile,
     if rollback:
         recoveryCallback = baseAsyncTasksRollback
     (rc, out, err) = misc.watchCmd(cmd, stop=stop, cwd=cwd,
-                                   recoveryCallback=recoveryCallback)
+                                   recoveryCallback=recoveryCallback,
+                                   ioclass=misc.IOCLASS.IDLE,
+                                   nice=misc.NICENESS.LOW)
 
     log.debug('(qemuRebase): REBASE %s DONE' % (src))
     return (rc, out, err)
@@ -1015,11 +1017,13 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
                                     stop=stop, size=size,
                                     recoveryCallback=baseAsyncTasksRollback)
     else:
-        cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert",
-                                       "-t", "none", "-f", src_fmt, src,
-                                       "-O", dst_fmt, dst]
+        cmd = [constants.EXT_QEMUIMG, "convert",
+               "-t", "none", "-f", src_fmt, src,
+               "-O", dst_fmt, dst]
         (rc, out, err) = misc.watchCmd(cmd, stop=stop,
-                                       recoveryCallback=baseAsyncTasksRollback)
+                                       recoveryCallback=baseAsyncTasksRollback,
+                                       ioclass=misc.IOCLASS.IDLE,
+                                       nice=misc.NICENESS.LOW)
 
     log.debug('(qemuConvert): COPY %s to %s DONE' % (src, dst))
     return (rc, out, err)

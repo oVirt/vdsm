@@ -149,8 +149,6 @@ EXT_VDSM_STORE_NET_CONFIG = '@VDSMDIR@/vdsm-store-net-config'
 EXT_WGET = '@WGET_PATH@'
 EXT_WRITE_NET_CONFIG = '@VDSMDIR@/write-net-config'
 
-CMD_LOWPRIO = [EXT_NICE, '-n', '19', EXT_IONICE, '-c', '3']
-
 #
 # Storage constants
 #

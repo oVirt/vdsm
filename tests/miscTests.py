@@ -1034,6 +1034,14 @@ class ExecCmd(TestCaseBase):
         ret, stdout, stderr = misc.execCmd(cmd, sudo=True)
         self.assertEquals(stdout[0], SUDO_USER)
 
+    def testNice(self):
+        cmd = ["sleep", "10"]
+        proc = misc.execCmd(cmd, sudo=False, nice=10, sync=False)
+        nice = misc.pidStat(proc.pid)[18]
+        self.assertEquals(nice, 10)
+        proc.kill()
+        proc.wait()
+
 
 class RollbackContextTests(TestCaseBase):
     def setUp(self):

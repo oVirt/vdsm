@@ -99,11 +99,12 @@ class ClusterLock(object):
                 str(self._leaseFile), str(leaseTimeMs), str(ioOpTimeoutMs),
                 str(self._leaseFailRetry)])
 
-            cmd = [constants.EXT_SETSID, constants.EXT_IONICE, '-c1', '-n0',
-                constants.EXT_SU, misc.IOUSER, '-s', constants.EXT_SH, '-c',
-                acquireLockCommand]
+            cmd = [constants.EXT_SU, misc.IOUSER, '-s', constants.EXT_SH, '-c',
+                   acquireLockCommand]
             (rc, out, err) = misc.execCmd(cmd, cwd=self.lockUtilPath,
-                    sudo=True)
+                                          sudo=True,
+                                          ioclass=misc.IOCLASS.REALTIME,
+                                          ioclassdata=0, setsid=True)
             if rc != 0:
                 raise se.AcquireLockFailure(self._sdUUID, rc, out, err)
             self.log.debug("Clustered lock acquired successfully")

@@ -40,7 +40,7 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @CP_PATH@ * /var/log/vdsm/backup/* *, \
     @MULTIPATH_PATH@, \
     @BLOCKDEV_PATH@ --getsize64 *, \
-    @SETSID_PATH@ @IONICE_PATH@ -c? -n? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
+    @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
     @SERVICE_PATH@ vdsmd *, \
     @REBOOT_PATH@ -f, \
     @PYTHON@ @VDSMDIR@/supervdsmServer.py* [a-z0-9\\-]* [0-9]*
