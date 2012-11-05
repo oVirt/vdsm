@@ -28,7 +28,7 @@ import inspect
 import storage.outOfProcess as oop
 import storage.misc as misc
 import storage.fileUtils as fileUtils
-from testValidation import checkSudo, brokentest
+from testValidation import checkSudo
 
 EXT_DD = "/bin/dd"
 EXT_CHMOD = "/bin/chmod"
@@ -72,14 +72,23 @@ class PgrepTests(TestCaseBase):
 
 
 class GetCmdArgsTests(TestCaseBase):
-    @brokentest('Test sometimes fail, when misc.getCmdArgs() returns '
-                'the empty tuple right after process creation')
     def test(self):
-        args = ("sleep", "4")
+        args = ["sleep", "4"]
         sproc = misc.execCmd(args, sync=False, sudo=False)
-        self.assertEquals(misc.getCmdArgs(sproc.pid), args)
+        try:
+            self.assertEquals(misc.getCmdArgs(sproc.pid), tuple(args))
+        finally:
+            sproc.kill()
+            sproc.wait()
+
+    def testZombie(self):
+        args = ["sleep", "0"]
+        sproc = misc.execCmd(args, sync=False, sudo=False)
         sproc.kill()
-        sproc.wait()
+        try:
+            self.assertEquals(misc.getCmdArgs(sproc.pid), tuple())
+        finally:
+            sproc.wait()
 
 
 class PidStatTests(TestCaseBase):

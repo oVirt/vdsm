@@ -1069,9 +1069,23 @@ def pgrep(name):
     return res
 
 
-def getCmdArgs(pid):
-    with open("/proc/%d/cmdline" % pid, "r") as f:
+def _parseCmdLine(pid):
+    with open("/proc/%d/cmdline" % pid, "rb") as f:
         return tuple(f.read().split("\0")[:-1])
+
+
+def getCmdArgs(pid):
+    res = tuple()
+    # Sometimes cmdline is empty even though the process is not a zombie.
+    # Retrying seems to solve it.
+    while len(res) == 0:
+        # cmdline is empty for zombie processes
+        if pidStat(pid)[2] in ("Z", "z"):
+            return tuple()
+
+        res = _parseCmdLine(pid)
+
+    return res
 
 
 def pidStat(pid):
