@@ -523,7 +523,7 @@ def scanDomains(pattern="*"):
 
     def collectMetaFiles(possibleDomain):
         try:
-            metaFiles = oop.getGlobalProcPool().glob.glob(
+            metaFiles = oop.getProcessPool(possibleDomain).glob.glob(
                 os.path.join(possibleDomain,
                              constants.UUID_GLOB_PATTERN,
                              sd.DOMAIN_META_DATA))
