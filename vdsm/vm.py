@@ -148,6 +148,8 @@ class MigrationSourceThread(threading.Thread):
 
     def _setupRemoteMachineParams(self):
         self._machineParams.update(self._vm.status())
+        # patch VM config for targets < 3.1
+        self._patchConfigForLegacy()
         if self._vm._guestCpuRunning:
             self._machineParams['afterMigrationStatus'] = 'Up'
         else:
@@ -236,15 +238,15 @@ class MigrationSourceThread(threading.Thread):
         """
         # care only about "drives" list, since
         # "devices" doesn't cause errors
-        if 'drives' in self._vm.conf:
+        if 'drives' in self._machineParams:
             for item in ("cdrom", "floppy"):
                 new_drives = []
-                for drive in self._vm.conf['drives']:
+                for drive in self._machineParams['drives']:
                     if drive['device'] == item:
-                        self._vm.conf[item] = drive['path']
+                        self._machineParams[item] = drive['path']
                     else:
                         new_drives.append(drive)
-                self._vm.conf['drives'] = new_drives
+                self._machineParams['drives'] = new_drives
 
     def run(self):
         try:
@@ -256,8 +258,6 @@ class MigrationSourceThread(threading.Thread):
             MigrationSourceThread._ongoingMigrations.acquire()
             try:
                 self.log.debug("migration semaphore acquired")
-                # patch VM config for targets < 3.1
-                self._patchConfigForLegacy()
                 if not mstate:
                     self._vm.conf['_migrationParams'] = {
                         'dst': self._dst,
