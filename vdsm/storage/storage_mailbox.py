@@ -235,9 +235,9 @@ class HSM_MailMonitor(threading.Thread):
 
     def __init__(self, inbox, outbox, hostID, queue, monitorInterval):
         # Save arguments
-        tpSize = config.getfloat('irs', 'thread_pool_size') / 2
+        tpSize = config.getint('irs', 'thread_pool_size') / 2
         waitTimeout = 3
-        maxTasks = config.getfloat('irs', 'max_tasks')
+        maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool(tpSize, waitTimeout, maxTasks)
         self._stop = False
         self._flush = False
@@ -531,9 +531,9 @@ class SPM_MailMonitor:
         self._stopped = False
         self._poolID = str(pool.spUUID)
         self._spmStorageDir = pool.storage_repository
-        tpSize = config.getfloat('irs', 'thread_pool_size') / 2
+        tpSize = config.getint('irs', 'thread_pool_size') / 2
         waitTimeout = 3
-        maxTasks = config.getfloat('irs', 'max_tasks')
+        maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool(tpSize, waitTimeout, maxTasks)
         #  *** IMPORTANT NOTE: The SPM's inbox is the HSMs' outbox and vice
         #                      versa *** #

@@ -31,9 +31,9 @@ class TaskManager:
     log = logging.getLogger('TaskManager')
 
     def __init__(self,
-                 tpSize=config.getfloat('irs', 'thread_pool_size'),
+                 tpSize=config.getint('irs', 'thread_pool_size'),
                  waitTimeout=3,
-                 maxTasks=config.getfloat('irs', 'max_tasks')):
+                 maxTasks=config.getint('irs', 'max_tasks')):
         self.storage_repository = config.get('irs', 'repository')
         self.tp = ThreadPool(tpSize, waitTimeout, maxTasks)
         self._tasks = {}

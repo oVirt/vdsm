@@ -255,7 +255,8 @@ parameters = [
 
         ('free_lock_cmd', 'spmstop.sh', None),
 
-        ('thread_pool_size', '10', None),
+        ('thread_pool_size', '10',
+            'The number of threads to allocate to the task manager.'),
 
         ('max_tasks', '500', None),
 
