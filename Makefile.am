@@ -97,6 +97,7 @@ PEP8_WHITELIST = \
 	vdsm/supervdsm.py \
 	vdsm/supervdsmServer.py \
 	vdsm/tc.py \
+	vdsm/utils.py \
 	vdsm/vdsm \
 	vdsm/vdsmDebugPlugin.py \
 	vdsm/vm.py \

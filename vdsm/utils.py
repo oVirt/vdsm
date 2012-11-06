@@ -19,7 +19,8 @@
 #
 
 """
-A module containing miscellaneous functions and classes that are user plentifuly around vdsm.
+A module containing miscellaneous functions and classes that are user
+plentifuly around vdsm.
 
 .. attribute:: utils.symbolerror
 
@@ -28,7 +29,8 @@ A module containing miscellaneous functions and classes that are user plentifuly
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import SocketServer
 import threading
-import os, time
+import os
+import time
 import logging
 import errno
 import subprocess
@@ -47,6 +49,7 @@ _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 
+
 def isBlockDevice(path):
     path = os.path.abspath(path)
     return stat.S_ISBLK(os.stat(path).st_mode)
@@ -63,6 +66,7 @@ def rmFile(fileToRemove):
         os.unlink(fileToRemove)
     except:
         pass
+
 
 def readMemInfo():
     """
@@ -92,9 +96,12 @@ def readMemInfo():
                 raise
             time.sleep(0.1)
 
+
 #Threaded version of SimpleXMLRPCServer
-class SimpleThreadedXMLRPCServer(SocketServer.ThreadingMixIn, SimpleXMLRPCServer):
+class SimpleThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
+                                 SimpleXMLRPCServer):
     allow_reuse_address = True
+
 
 class InterfaceSample:
     """
@@ -123,7 +130,8 @@ class InterfaceSample:
             try:
                 s = file(f).read()
             except IOError, e:
-                if e.errno != errno.ENOENT: # silently ignore missing wifi stats
+                # silently ignore missing wifi stats
+                if e.errno != errno.ENOENT:
                     logging.debug("Could not read %s", f, exc_info=True)
                 return 0
             try:
@@ -131,7 +139,7 @@ class InterfaceSample:
             except:
                 if s != '':
                     logging.warning("Could not parse statistics (%s) from %s",
-                            f, s, exc_info=True)
+                                    f, s, exc_info=True)
                 logging.debug('bad %s: (%s)', f, s)
                 if not tries:
                     raise
@@ -140,7 +148,8 @@ class InterfaceSample:
         """
         Return the operational state of the interface.
 
-        :returns: ``'up'`` if interface is up. ``'down'`` or ``0`` id it's down.
+        :returns: ``'up'`` if interface is up. ``'down'`` or ``0`` id it's
+                  down.
         """
         try:
             flags = ethtool.get_flags(ifid)
@@ -166,8 +175,9 @@ class TotalCpuSample:
     """
     def __init__(self):
         self.user, userNice, self.sys, self.idle = \
-                        map(int, file('/proc/stat').readline().split()[1:5])
+            map(int, file('/proc/stat').readline().split()[1:5])
         self.user += userNice
+
 
 class PidCpuSample:
     """
@@ -177,11 +187,13 @@ class PidCpuSample:
     """
     def __init__(self, pid):
         self.user, self.sys = \
-                map(int, file('/proc/%s/stat' % pid).read().split()[13:15])
+            map(int, file('/proc/%s/stat' % pid).read().split()[13:15])
+
 
 class TimedSample:
     def __init__(self):
         self.timestamp = time.time()
+
 
 class BaseSample(TimedSample):
     """
@@ -189,10 +201,11 @@ class BaseSample(TimedSample):
     """
     def __init__(self, pid, ifids):
         TimedSample.__init__(self)
-        self.interfaces= {}
+        self.interfaces = {}
         for ifid in ifids:
             self.interfaces[ifid] = InterfaceSample(ifid)
         self.pidcpu = PidCpuSample(pid)
+
 
 class HostSample(BaseSample):
     """
@@ -200,7 +213,8 @@ class HostSample(BaseSample):
 
     Contains the sate of the host in the time of initialization.
     """
-    MONITORED_PATHS = ['/tmp', '/var/log', '/var/log/core', constants.P_VDSM_RUN]
+    MONITORED_PATHS = ['/tmp', '/var/log', '/var/log/core',
+                       constants.P_VDSM_RUN]
 
     def _getDiskStats(self):
         d = {}
@@ -208,7 +222,7 @@ class HostSample(BaseSample):
             free = 0
             try:
                 stat = os.statvfs(p)
-                free = stat.f_bavail * stat.f_bsize / 2**20
+                free = stat.f_bavail * stat.f_bsize / (2 ** 20)
             except:
                 pass
             d[p] = {'free': str(free)}
@@ -238,9 +252,10 @@ class HostSample(BaseSample):
         try:
             with file(_THP_STATE_PATH) as f:
                 s = f.read()
-                self.thpState = s[s.index('[')+1:s.index(']')]
+                self.thpState = s[s.index('[') + 1:s.index(']')]
         except:
             self.thpState = 'never'
+
 
 class AdvancedStatsFunction(object):
     """
@@ -265,8 +280,8 @@ class AdvancedStatsFunction(object):
         return self._interval
 
     def __repr__(self):
-        return "<AdvancedStatsFunction %s at 0x%x>" % \
-                   (self._function.__name__, id(self._function.__name__))
+        return "<AdvancedStatsFunction %s at 0x%x>" % (
+            self._function.__name__, id(self._function.__name__))
 
     def __call__(self, *args, **kwargs):
         retValue = self._function(*args, **kwargs)
@@ -284,12 +299,14 @@ class AdvancedStatsFunction(object):
         the first and the last return value in the defined 'window' and the
         time difference.
         """
-        if len(self._sample) < 2: return None, None, None
+        if len(self._sample) < 2:
+            return None, None, None
 
         bgn_time, bgn_sample = self._sample[0]
         end_time, end_sample = self._sample[-1]
 
         return bgn_sample, end_sample, (end_time - bgn_time)
+
 
 class AdvancedStatsThread(threading.Thread):
     """
@@ -386,8 +403,8 @@ class AdvancedStatsThread(threading.Thread):
             waitInterval = maxInterval
 
             for statsFunction in self._statsFunctions:
-                thisInterval = statsFunction.interval - \
-                               (intervalAccum % statsFunction.interval)
+                thisInterval = statsFunction.interval - (
+                    intervalAccum % statsFunction.interval)
                 waitInterval = min(waitInterval, thisInterval)
 
                 if intervalAccum % statsFunction.interval == 0:
@@ -401,6 +418,7 @@ class AdvancedStatsThread(threading.Thread):
             self._stopEvent.wait(waitInterval)
             intervalAccum = (intervalAccum + waitInterval) % maxInterval
 
+
 class StatsThread(threading.Thread):
     """
     A thread that periodically checks the stats of interfaces
@@ -408,6 +426,7 @@ class StatsThread(threading.Thread):
     AVERAGING_WINDOW = 5
     SAMPLE_INTERVAL_SEC = 2
     MBITTOBYTES = 1000000 / 8
+
     def __init__(self, log, ifids, ifrates, ifmacs):
         threading.Thread.__init__(self)
         self._log = log
@@ -418,7 +437,8 @@ class StatsThread(threading.Thread):
         self._ifrates = ifrates
         self._ifmacs = ifmacs
         self._ncpus = 1
-        self._lineRate = (sum(ifrates) or 1000) * 10**6 / 8 # in bytes-per-second
+        # in bytes-per-second
+        self._lineRate = (sum(ifrates) or 1000) * (10 ** 6) / 8
         self._paused = False
         self._lastSampleTime = time.time()
 
@@ -431,7 +451,7 @@ class StatsThread(threading.Thread):
     def cont(self):
         self._paused = False
 
-    def sample(self): # override
+    def sample(self):  # override
         pass
 
     def run(self):
@@ -449,7 +469,7 @@ class StatsThread(threading.Thread):
                             self._samples.pop(0)
                     except libvirtvm.TimeoutError:
                         self._log.error("Timeout while sampling stats",
-                                exc_info=True)
+                                        exc_info=True)
                 self._stopEvent.wait(self.SAMPLE_INTERVAL_SEC)
         except:
             if not self._stopEvent.isSet():
@@ -480,27 +500,33 @@ class StatsThread(threading.Thread):
         for ifid, ifrate, ifmac in zip(self._ifids, self._ifrates,
                                        self._ifmacs):
             ifrate = ifrate or 1000
-            Mbps2Bps = 10**6 / 8
-            thisRx = (hs1.interfaces[ifid].rx - hs0.interfaces[ifid].rx) % 2**32
-            thisTx = (hs1.interfaces[ifid].tx - hs0.interfaces[ifid].tx) % 2**32
+            Mbps2Bps = (10 ** 6) / 8
+            thisRx = (hs1.interfaces[ifid].rx - hs0.interfaces[ifid].rx) % \
+                (2 ** 32)
+            thisTx = (hs1.interfaces[ifid].tx - hs0.interfaces[ifid].tx) % \
+                (2 ** 32)
             rxRate = 100.0 * thisRx / interval / ifrate / Mbps2Bps
             txRate = 100.0 * thisTx / interval / ifrate / Mbps2Bps
             if txRate > 100 or rxRate > 100:
                 txRate = min(txRate, 100.0)
                 rxRate = min(rxRate, 100.0)
-                self._log.debug('Rate above 100%%. DEBUG: ifid %s interval: %s thisRx %s thisTx %s samples %s', ifid, interval, thisRx, thisTx, [(hs.timestamp, hs.interfaces[ifid].rx, hs.interfaces[ifid].tx) for hs in self._samples])
+                self._log.debug('Rate above 100%%. DEBUG: ifid %s interval: '
+                                '%s thisRx %s thisTx %s samples %s', ifid,
+                                interval, thisRx, thisTx,
+                                [(hs.timestamp, hs.interfaces[ifid].rx,
+                                 hs.interfaces[ifid].tx)
+                                 for hs in self._samples])
+            iface = hs1.interfaces[ifid]
             stats['network'][ifid] = {'name': ifid, 'speed': str(ifrate),
-                    'rxDropped': str(hs1.interfaces[ifid].rxDropped),
-                    'txDropped': str(hs1.interfaces[ifid].txDropped),
-                    'rxErrors': str(hs1.interfaces[ifid].rxErrors),
-                    'txErrors': str(hs1.interfaces[ifid].txErrors),
-                    'state': hs1.interfaces[ifid].operstate,
-                    'rxRate': '%.1f' % rxRate,
-                    'txRate': '%.1f' % txRate,
-                    'macAddr': ifmac,
-#                    'interval': str(interval), 'thisRx': str(thisRx), 'thisTx': str(thisTx),
-#                    'samples': str([(hs.timestamp, hs.interfaces[ifid].rx, hs.interfaces[ifid].tx) for hs in self._samples])
-                    }
+                                      'rxDropped': str(iface.rxDropped),
+                                      'txDropped': str(iface.txDropped),
+                                      'rxErrors': str(iface.rxErrors),
+                                      'txErrors': str(iface.txErrors),
+                                      'state': iface.operstate,
+                                      'rxRate': '%.1f' % rxRate,
+                                      'txRate': '%.1f' % txRate,
+                                      'macAddr': ifmac,
+                                      }
             rx += thisRx
             tx += thisTx
             rxDropped += hs1.interfaces[ifid].rxDropped
@@ -518,6 +544,7 @@ class StatsThread(threading.Thread):
 
         return stats
 
+
 class HostStatsThread(StatsThread):
     """
     A thread that periodically samples host statistics.
@@ -525,7 +552,7 @@ class HostStatsThread(StatsThread):
     def __init__(self, cif, log, ifids, ifrates):
         self.startTime = time.time()
         StatsThread.__init__(self, log, ifids, ifrates,
-                             [''] * len(ifids)) # fake ifmacs
+                             [''] * len(ifids))  # fake ifmacs
         self._imagesStatus = ImagePathStatus(cif)
         self._pid = os.getpid()
         self._ncpus = len(os.listdir('/sys/class/cpuid/'))
@@ -540,8 +567,8 @@ class HostStatsThread(StatsThread):
 
         i = 0
         for ifid in self._ifids:
-            if hs0.interfaces[ifid].operstate != \
-               hs1.interfaces[ifid].operstate:
+            if (hs0.interfaces[ifid].operstate !=
+                    hs1.interfaces[ifid].operstate):
                 self._ifrates[i] = nicspeed(ifid)
             i += 1
 
@@ -560,25 +587,25 @@ class HostStatsThread(StatsThread):
         now = time.time()
         for sd, d in self._imagesStatus.storageDomains.iteritems():
             stats['storageDomains'][sd] = {'code': d['code'],
-                        'delay': d['delay'],
-                        'lastCheck': d['lastCheck'],
-                        'valid': d['valid']}
+                                           'delay': d['delay'],
+                                           'lastCheck': d['lastCheck'],
+                                           'valid': d['valid']}
         stats['elapsedTime'] = int(now - self.startTime)
         if len(self._samples) < 2:
             return stats
         hs0, hs1 = self._samples[0], self._samples[-1]
         interval = hs1.timestamp - hs0.timestamp
-        jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % 2**32
-        stats['cpuUserVdsmd'] = (jiffies / interval) % 2**32
+        jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % (2 ** 32)
+        stats['cpuUserVdsmd'] = (jiffies / interval) % (2 ** 32)
         jiffies = hs1.pidcpu.sys - hs0.pidcpu.sys
-        stats['cpuSysVdsmd'] = (jiffies / interval) % 2**32
+        stats['cpuSysVdsmd'] = (jiffies / interval) % (2 ** 32)
 
-        jiffies = (hs1.totcpu.user - hs0.totcpu.user) % 2**32
+        jiffies = (hs1.totcpu.user - hs0.totcpu.user) % (2 ** 32)
         stats['cpuUser'] = jiffies / interval / self._ncpus
-        jiffies = (hs1.totcpu.sys - hs0.totcpu.sys) % 2**32
+        jiffies = (hs1.totcpu.sys - hs0.totcpu.sys) % (2 ** 32)
         stats['cpuSys'] = jiffies / interval / self._ncpus
         stats['cpuIdle'] = max(0.0,
-                 100.0 - stats['cpuUser'] - stats['cpuSys'])
+                               100.0 - stats['cpuUser'] - stats['cpuSys'])
         stats['memUsed'] = hs1.memUsed
         stats['anonHugePages'] = hs1.anonHugePages
         stats['cpuLoad'] = hs1.cpuLoad
@@ -587,7 +614,8 @@ class HostStatsThread(StatsThread):
         stats['thpState'] = hs1.thpState
         return stats
 
-def convertToStr (val):
+
+def convertToStr(val):
     varType = type(val)
     if varType is float:
         return '%.2f' % (val)
@@ -596,10 +624,12 @@ def convertToStr (val):
     else:
         return val
 
+
 def execCmd(*args, **kwargs):
     # import only after config as been initialized
     from storage.misc import execCmd
     return execCmd(*args, **kwargs)
+
 
 def checkPathStat(pathToCheck):
     try:
@@ -610,8 +640,9 @@ def checkPathStat(pathToCheck):
     except:
         return (False, 0)
 
+
 class ImagePathStatus(threading.Thread):
-    def __init__ (self, cif, interval=None):
+    def __init__(self, cif, interval=None):
         if interval is None:
             interval = config.getint('irs', 'images_check_times')
         self._interval = interval
@@ -622,7 +653,7 @@ class ImagePathStatus(threading.Thread):
         if self._interval > 0:
             self.start()
 
-    def stop (self):
+    def stop(self):
         self._stopEvent.set()
 
     def _refreshStorageDomains(self):
@@ -631,7 +662,7 @@ class ImagePathStatus(threading.Thread):
         if "args" in self.storageDomains:
             del self.storageDomains["args"]
 
-    def run (self):
+    def run(self):
         try:
             while not self._stopEvent.isSet():
                 if self._cif.irs:
@@ -639,7 +670,8 @@ class ImagePathStatus(threading.Thread):
                 self._stopEvent.wait(self._interval)
         except:
             logging.error("Error while refreshing storage domains",
-                    exc_info=True)
+                          exc_info=True)
+
 
 def getPidNiceness(pid):
     """
@@ -651,9 +683,10 @@ def getPidNiceness(pid):
     stat = file('/proc/%s/stat' % (pid)).readlines()[0]
     return int(stat.split(') ')[-1].split()[16])
 
+
 def tobool(s):
     try:
-        if s == None:
+        if s is None:
             return False
         if type(s) == bool:
             return s
@@ -662,6 +695,7 @@ def tobool(s):
         return bool(int(s))
     except:
         return False
+
 
 def _getAllMacs():
 
@@ -689,6 +723,8 @@ def _getAllMacs():
     return set(macs) - set(["", "00:00:00:00:00:00"])
 
 __hostUUID = ''
+
+
 def getHostUUID():
     global __hostUUID
     if __hostUUID:
@@ -702,12 +738,14 @@ def getHostUUID():
                 __hostUUID = f.readline().replace("\n", "")
         else:
             p = subprocess.Popen([constants.EXT_SUDO,
-                                  constants.EXT_DMIDECODE, "-s", "system-uuid"],
+                                  constants.EXT_DMIDECODE, "-s",
+                                  "system-uuid"],
                                  close_fds=True, stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
             out, err = p.communicate()
-            out = '\n'.join( line for line in out.splitlines()
-                             if not line.startswith('#') )
+            out = '\n'.join(line for line in out.splitlines()
+                            if not line.startswith('#'))
 
             if p.returncode == 0 and 'Not' not in out:
                 #Avoid error string - 'Not Settable' or 'Not Present'
@@ -734,6 +772,7 @@ symbolerror = {}
 for code, symbol in errno.errorcode.iteritems():
     symbolerror[os.strerror(code)] = symbol
 
+
 def getUserPermissions(userName, path):
     """
     Return a dictionary with user specific permissions with respect to the
@@ -759,19 +798,20 @@ def getUserPermissions(userName, path):
     isSameOwner = userInfo.pw_uid == fileStats.st_uid
 
     # 'Other' permissions are the base permissions
-    permissions['read'] = isRead(otherBits) or \
-            isSameGroup and isRead(groupBits) or \
-            isSameOwner and isRead(ownerBits)
+    permissions['read'] = (isRead(otherBits) or
+                           isSameGroup and isRead(groupBits) or
+                           isSameOwner and isRead(ownerBits))
 
-    permissions['write'] = isWrite(otherBits) or \
-            isSameGroup and isWrite(groupBits) or \
-            isSameOwner and isWrite(ownerBits)
+    permissions['write'] = (isWrite(otherBits) or
+                            isSameGroup and isWrite(groupBits) or
+                            isSameOwner and isWrite(ownerBits))
 
-    permissions['exec'] = isExec(otherBits) or \
-            isSameGroup and isExec(groupBits) or \
-            isSameOwner and isExec(ownerBits)
+    permissions['exec'] = (isExec(otherBits) or
+                           isSameGroup and isExec(groupBits) or
+                           isSameOwner and isExec(ownerBits))
 
     return permissions
+
 
 def listSplit(l, elem, maxSplits=None):
     splits = []
@@ -783,13 +823,14 @@ def listSplit(l, elem, maxSplits=None):
         except ValueError:
             break
 
-        splits.append( l[:splitOffset] )
-        l = l[splitOffset+1:]
-        splitCount +=1
+        splits.append(l[:splitOffset])
+        l = l[splitOffset + 1:]
+        splitCount += 1
         if maxSplits is not None and splitCount >= maxSplits:
             break
 
     return splits + [l]
+
 
 def listJoin(elem, *lists):
     if lists == []:
@@ -799,9 +840,11 @@ def listJoin(elem, *lists):
         l += [elem] + i
     return l
 
+
 def closeOnExec(fd):
     old = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
     fcntl.fcntl(fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
+
 
 class memoized(object):
     """Decorator that caches a function's return value each time it is called.
@@ -815,6 +858,7 @@ class memoized(object):
         self.func = func
         self.cache = {}
         functools.update_wrapper(self, func)
+
     def __call__(self, *args):
         try:
             return self.cache[args]
@@ -822,13 +866,16 @@ class memoized(object):
             value = self.func(*args)
             self.cache[args] = value
             return value
+
     def __get__(self, obj, objtype):
         """Support instance methods."""
         return functools.partial(self.__call__, obj)
 
+
 def validateMinimalKeySet(dictionary, reqParams):
     if not all(key in dictionary for key in reqParams):
         raise ValueError
+
 
 class CommandPath(object):
     def __init__(self, name, *args):
