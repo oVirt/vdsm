@@ -159,8 +159,7 @@ if rhel6based:
                 'fence-agents', 'libselinux-python', 'sanlock',
                 'sanlock-python')
     # Gluster packages
-    GLUSTER_PACK = ('vdsm-gluster', 'glusterfs-server', 'glusterfs-rdma',
-                    'glusterfs-geo-replication')
+    GLUSTER_PACK = (VDSM_NAME + '-gluster', )
 else:
     # Devel packages
     DEVEL_PACK = ('gdb', 'tcpdump', 'strace', 'ltrace', 'sysstat', 'ntp',

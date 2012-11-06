@@ -433,7 +433,10 @@ Summary:        Gluster Plugin for VDSM
 BuildArch:      noarch
 
 Requires: %{name} = %{version}-%{release}
-Requires: glusterfs glusterfs-server glusterfs-fuse
+Requires: glusterfs
+Requires: glusterfs-server
+Requires: glusterfs-fuse
+Requires: glusterfs-rdma
 
 %description gluster
 Gluster plugin enables VDSM to serve Gluster functionalities.
