@@ -42,6 +42,9 @@ zombieReaper.registerSignalHandler()
 
 PERMUTATION_ATTR = "_permutations_"
 
+# At the moment of this writing the tests don't need a mock object for sanlock
+sys.modules.update({'sanlock': object()})
+
 
 def _getPermutation(f, args):
     @wraps(f)
