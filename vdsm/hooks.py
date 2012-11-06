@@ -174,6 +174,33 @@ def after_vm_set_ticket(domxml, vmconf={}, params={}):
                         raiseError=False, params=params)
 
 
+def before_nic_hotplug(nicxml, vmconf={}):
+    return _runHooksDir(nicxml, 'before_nic_hotplug', vmconf=vmconf)
+
+
+def after_nic_hotplug(nicxml, vmconf={}):
+    return _runHooksDir(nicxml, 'after_nic_hotplug', vmconf=vmconf)
+
+
+def before_nic_hotunplug(nicxml, vmconf={}):
+    return _runHooksDir(nicxml, 'before_nic_hotunplug', vmconf=vmconf)
+
+
+def after_nic_hotunplug(nicxml, vmconf={}):
+    return _runHooksDir(nicxml, 'after_nic_hotunplug', vmconf=vmconf,
+                        raiseError=False)
+
+
+def after_nic_hotplug_fail(nicxml, vmconf={}):
+    return _runHooksDir(nicxml, 'after_nic_hotplug_fail', vmconf=vmconf,
+                        raiseError=False)
+
+
+def after_nic_hotunplug_fail(nicxml, vmconf={}):
+    return _runHooksDir(nicxml, 'after_nic_hotunplug_fail', vmconf=vmconf,
+                        raiseError=False)
+
+
 def before_vdsm_start():
     return _runHooksDir(None, 'before_vdsm_start', raiseError=False)
 

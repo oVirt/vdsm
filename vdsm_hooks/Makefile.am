@@ -72,8 +72,14 @@ VDSMHOOKS = \
 	after_vm_migrate_destination \
 	before_vm_destroy \
 	after_vm_destroy \
-    before_vm_set_ticket \
+	before_vm_set_ticket \
 	after_vm_set_ticket \
+	before_nic_hotplug \
+	after_nic_hotplug \
+	before_nic_hotunplug \
+	after_nic_hotunplug \
+	after_nic_hotplug_fail \
+	after_nic_hotunplug_fail \
 	before_vdsm_start \
 	after_vdsm_stop
 

@@ -1455,12 +1455,14 @@ class LibvirtVm(vm.Vm):
         nicParams = params['nic']
         nic = NetworkInterfaceDevice(self.conf, self.log, **nicParams)
         nicXml = nic.getXML().toprettyxml(encoding='utf-8')
+        nicXml = hooks.before_nic_hotplug(nicXml, self.conf)
         self.log.debug("Hotplug NIC xml: %s", nicXml)
 
         try:
             self._dom.attachDevice(nicXml)
         except libvirt.libvirtError, e:
             self.log.error("Hotplug failed", exc_info=True)
+            nicXml = hooks.after_nic_hotplug_fail(nicXml, self.conf)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             return {'status': {'code': errCode['hotplugNic']['status']['code'],
@@ -1474,6 +1476,7 @@ class LibvirtVm(vm.Vm):
             self.conf['devices'].append(nicParams)
             self.saveState()
             self._getUnderlyingNetworkInterfaceInfo()
+            hooks.after_nic_hotplug(nicXml, self.conf)
 
         if hasattr(nic, 'portMirroring'):
             mirroredNetworks = []
@@ -1515,10 +1518,12 @@ class LibvirtVm(vm.Vm):
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
             nicXml = nic.getXML().toprettyxml(encoding='utf-8')
+            hooks.before_nic_hotunplug(nicXml, self.conf)
             self.log.debug("Hotunplug NIC xml: %s", nicXml)
         else:
             self.log.error("Hotunplug NIC failed - NIC not found: %s",
                            nicParams)
+            hooks.after_nic_hotunplug_fail(nicXml, self.conf)
             return {'status': {'code': errCode['hotunplugNic']
                                               ['status']['code'],
                                'message': "NIC not found"}}
@@ -1550,10 +1555,12 @@ class LibvirtVm(vm.Vm):
             if nic:
                 self._devices[vm.NIC_DEVICES].append(nic)
             self.saveState()
+            hooks.after_nic_hotunplug_fail(nicXml, self.conf)
             return {
                 'status': {'code': errCode['hotunplugNic']['status']['code'],
                            'message': e.message}}
 
+        hooks.after_nic_hotunplug(nicXml, self.conf)
         return {'status': doneCode, 'vmList': self.status()}
 
     def hotplugDisk(self, params):
