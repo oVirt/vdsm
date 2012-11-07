@@ -797,7 +797,7 @@ class Vm(object):
 
         os.rename(f.name, self._recoveryFile)
 
-    def onReboot(self, withRelaunch):
+    def onReboot(self):
         try:
             self.log.debug('reboot event')
             self._startTime = time.time()
@@ -808,8 +808,6 @@ class Vm(object):
             if self.conf.get('volatileFloppy'):
                 self._ejectFloppy()
                 self.log.debug('ejected volatileFloppy')
-            if withRelaunch:
-                self.cif.relaunch(self.status())
         except:
             self.log.error("Reboot event failed", exc_info=True)
 

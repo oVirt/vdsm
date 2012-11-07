@@ -67,7 +67,7 @@ def __eventCallback(conn, dom, *args):
             event, detail = args[:-1]
             v._onLibvirtLifecycleEvent(event, detail, None)
         elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_REBOOT:
-            v.onReboot(False)
+            v.onReboot()
         elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE:
             utcoffset, = args[:-1]
             v._rtcUpdate(utcoffset)
