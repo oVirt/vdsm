@@ -234,7 +234,7 @@ class Image:
         # Otherwise move it out of the way
         newImgUUID = self.deletedVolumeName(imgUUID)
         self.log.info("Rename image %s -> %s", imgUUID, newImgUUID)
-        if not imgUUID.startswith(REMOVED_IMAGE_PREFIX):
+        if not imgUUID.startswith(sd.REMOVED_IMAGE_PREFIX):
             removedImage = os.path.join(os.path.dirname(imageDir), newImgUUID)
             os.rename(imageDir, removedImage)
         else:
@@ -242,7 +242,7 @@ class Image:
 
         volumes = [volclass(self.repoPath, sdUUID, newImgUUID, volUUID) for volUUID in uuidlist]
         for vol in volumes:
-            if not vol.volUUID.startswith(REMOVED_IMAGE_PREFIX):
+            if not vol.volUUID.startswith(sd.REMOVED_IMAGE_PREFIX):
                 vol.rename(self.deletedVolumeName(vol.volUUID), recovery=False)
             else:
                 self.log.warning("Volume %s of image %s already renamed", vol.volUUID, imgUUID)
