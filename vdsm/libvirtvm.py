@@ -1853,6 +1853,7 @@ class LibvirtVm(vm.Vm):
             newDrives[vmDevName] = tgetDrv.copy()
             newDrives[vmDevName]["poolID"] = vmDrive.poolID
             newDrives[vmDevName]["name"] = vmDevName
+            newDrives[vmDevName]["format"] = "cow"
 
             try:
                 newDrives[vmDevName]["path"] = \
