@@ -2930,7 +2930,7 @@
 #
 # Since: 4.11.0
 ##
-{'command': {'class': 'Image', 'name': 'sync'},
+{'command': {'class': 'Image', 'name': 'cloneStructure'},
  'data': {'dstSdUUID': 'UUID'},
  'returns': 'UUID'}
 
@@ -2948,7 +2948,7 @@
 #
 # Since: 4.11.0
 ##
-{'command': {'class': 'Image', 'name': 'sync'},
+{'command': {'class': 'Image', 'name': 'syncData'},
  'data': {'dstSdUUID': 'UUID', 'syncType': 'syncType'},
  'returns': 'UUID'}
 
@@ -5218,6 +5218,7 @@
 {'command': {'class': 'VM', 'name': 'setBalloonTarget'},
  'data': {'target': 'uint'}}
 
+##
 # @VM.diskReplicateStart:
 #
 # Start the replication of a disk to a destination.
