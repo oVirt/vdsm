@@ -51,6 +51,9 @@ test_modules = \
 	storageMailboxTests.py \
 	tcTests.py \
 	vdsClientTests.py \
+	volumeTests.py \
+	remoteFileHandlerTests.py \
+	resourceManagerTests.py \
 	zombieReaperTests.py \
 	$(NULL)
 
