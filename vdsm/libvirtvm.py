@@ -1903,7 +1903,8 @@ class LibvirtVm(vm.Vm):
         self.stopDisksStatsCollection()
 
         snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
-                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT)
+                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT |
+                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA)
 
         if utils.tobool(self.conf.get('qgaEnable', 'true')):
             snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
