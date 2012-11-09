@@ -178,7 +178,7 @@ class clientIF:
             momconf = config.get("mom", "conf")
             self.mom = MomThread(momconf)
         except:
-            self.log.error("MOM initialization failed and fall "
+            self.log.warn("MOM initialization failed and fall "
                            "back to KsmMonitor", exc_info=True)
             self.ksmMonitor = ksm.KsmMonitorThread(self)
 
