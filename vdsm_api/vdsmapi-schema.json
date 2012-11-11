@@ -176,7 +176,7 @@
 {'type': 'SetupNetworkNetAttributes',
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
-          '*delay': 'uint', '*onboot': 'bool', 'remove': 'bool'}}
+          '*delay': 'uint', '*onboot': 'bool', '*remove': 'bool'}}
 
 ##
 # @SetupNetworkBondAttributes:
