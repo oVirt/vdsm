@@ -67,6 +67,19 @@ RENAME_RANDOM_STRING_LEN = 8
 TEMPORARY_VOLUME_SIZE = 20480  # in sectors (10M)
 
 
+def _deleteImage(dom, imgUUID, postZero):
+    """This ancillary function will be removed.
+
+    Replaces Image.delete() in Image.[copy(), move(),multimove()].
+    """
+    allVols = dom.getAllVolumes()
+    imgVols = sd.getVolsOfImage(allVols, imgUUID)
+    if postZero:
+        dom.zeroImage(dom.sdUUID, imgUUID, imgVols)
+    else:
+        dom.deleteImage(dom.sdUUID, imgUUID, imgVols)
+
+
 class Image:
     """ Actually represents a whole virtual disk.
         Consist from chain of volumes.
@@ -612,7 +625,7 @@ class Image:
         # in destination domain, if we got the overwrite command
         if force:
             self.log.info("delete image %s on domain %s before overwriting", imgUUID, destDom.sdUUID)
-            self.delete(destDom.sdUUID, imgUUID, postZero, force=True)
+            _deleteImage(destDom, imgUUID, postZero)
 
         chains = self._createTargetImage(destDom, srcSdUUID, imgUUID)
         self._interImagesCopy(destDom, srcSdUUID, imgUUID, chains)
@@ -627,7 +640,12 @@ class Image:
         vars.task.clearRecoveries()
         # If it's 'move' operation, we should delete src image after copying
         if op == MOVE_OP:
-            self.delete(srcSdUUID, imgUUID, postZero, force=True)
+            try:
+                dom = sdCache.produce(srcSdUUID)
+                _deleteImage(dom, imgUUID, postZero)
+            except se.StorageException:
+                self.log.warning("Failed to remove img: %s from srcDom %s: "
+                    "after it was copied to: %s", imgUUID, srcSdUUID, dstSdUUID)
 
         self.log.info("%s task on image %s was successfully finished", OP_TYPES[op], imgUUID)
         return True
@@ -676,9 +694,11 @@ class Image:
         """
         for imgUUID in imgList:
             try:
-                self.delete(sdUUID, imgUUID, postZero, force=True)
-            except Exception:
-                pass
+                dom = sdCache.produce(sdUUID)
+                _deleteImage(dom, imgUUID, postZero)
+            except se.StorageException:
+                self.log.warning("Delete image failed for image: %s in SD: %s",
+                                    imgUUID, sdUUID, exc_info=True)
 
     def multiMove(self, srcSdUUID, dstSdUUID, imgDict, vmUUID, force):
         """
@@ -706,9 +726,11 @@ class Image:
         # Remove images from source domain only after successfull copying of all images to the destination domain
         for (imgUUID, postZero) in imgDict.iteritems():
             try:
-                self.delete(srcSdUUID, imgUUID, postZero, force=True)
-            except Exception:
-                pass
+                dom = sdCache.produce(srcSdUUID)
+                _deleteImage(dom, imgUUID, postZero)
+            except se.StorageException:
+                self.log.warning("Delete image failed for image %s in SD: %s",
+                                    imgUUID, dom.sdUUID, exc_info=True)
 
     def __cleanupCopy(self, srcVol, dstVol):
         """

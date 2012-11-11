@@ -1823,73 +1823,6 @@ class StoragePool(Securable):
             image.Image(repoPath).multiMove(srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
 
 
-    def deleteImage(self, sdUUID, imgUUID, postZero, force):
-        """
-        Deletes an Image folder with all its volumes.
-
-        This function assumes that imgUUID is locked.
-        In addition to removing image, this function also does the following:
-        If removing a template from a backup SD which has dependent images:
-        - creates a fake template.
-        If removing the last image which depends on a fake template:
-        - removes the fake template as well
-        :param sdUUID: The UUID of the storage domain that contains the images.
-        :type sdUUID: UUID
-        :param imgUUID: The UUID of the image you want to delete.
-        :type imgUUID: UUID
-        :param postZero: bool
-        :param force: Should the operation be forced.
-        :type force: bool
-        """
-        # TODO: This function works on domains. No relation with pools.
-        # Therefore move this to the relevant *sd module
-        repoPath = os.path.join(self.storage_repository, self.spUUID)
-        img = image.Image(repoPath)
-        dom = sdCache.produce(sdUUID)
-        allVols = dom.getAllVolumes()
-        # Filter volumes related to this image
-        imgsByVol = sd.getVolsOfImage(allVols, imgUUID)
-        if all(len(v.imgs) == 1 for k, v in imgsByVol.iteritems()):
-            # This is a self contained regular image, i.e. it's either an image
-            # which is not based on a template or a template which has no
-            # derived images, e.g. not derived from a template
-            img.delete(sdUUID=sdUUID, imgUUID=imgUUID, postZero=postZero, force=force)
-        else:
-            # This is either a template with derived images or a derived image
-            # so needs further scrutiny
-            ts = tuple((volName, vol.imgs) for volName, vol in
-                        imgsByVol.iteritems() if len(vol.imgs) > 1)
-            if len(ts) != 1:
-                raise se.ImageValidationError("Image points to multiple"
-                                              "templates %s in %s from %s" %
-                                              (ts, imgsByVol, allVols))
-            # TODO: Lock the template, reload allVols.
-            # template = ts[0] = [(tName, tImgs)]
-            tName, tImgs = ts[0]
-            # getAllVolumes makes the template self img the 1st one in tImgs
-            templateImage = tImgs[0]
-            numOfDependentImgs = len(tImgs) - 1
-            if templateImage != imgUUID:
-                # Removing an image based on a template
-                img.delete(sdUUID=sdUUID, imgUUID=imgUUID, postZero=postZero, force=force)
-                if numOfDependentImgs == 1 and dom.produceVolume(templateImage, tName).isFake():
-                    # Remove the fake template since last consumer was removed
-                    img.delete(sdUUID=sdUUID, imgUUID=templateImage, postZero=False, force=True)
-
-            # Removing a template with dependencies
-            elif force:
-                img.delete(sdUUID=sdUUID, imgUUID=templateImage, postZero=postZero,
-                            force=force)
-            elif not dom.isBackup():
-                raise se.ImagesActionError("Can't remove template with children %s" %
-                                        allVols)
-            else:
-                # Removing a template with dependencies in backup domain
-                # A fake template will be created
-                img.delete(sdUUID=sdUUID, imgUUID=imgUUID, postZero=postZero, force=True)
-                tParams = dom.produceVolume(imgUUID, tName).getVolumeParams()
-                img.createFakeTemplate(sdUUID=sdUUID, volParams=tParams)
-
     def mergeSnapshots(self, sdUUID, vmUUID, imgUUID, ancestor, successor, postZero):
         """
         Merges the source volume to the destination volume.
@@ -2065,14 +1998,6 @@ class StoragePool(Securable):
                 vol.teardown(sdUUID, volUUID)
             except:
                 self.log.warning("SP %s SD %s img %s Vol %s - teardown failed")
-
-    def preDeleteRename(self, sdUUID, imgUUID):
-        repoPath = os.path.join(self.storage_repository, self.spUUID)
-        return image.Image(repoPath).preDeleteRename(sdUUID, imgUUID)
-
-    def validateDelete(self, sdUUID, imgUUID):
-        repoPath = os.path.join(self.storage_repository, self.spUUID)
-        image.Image(repoPath).validateDelete(sdUUID, imgUUID)
 
     def validateVolumeChain(self, sdUUID, imgUUID):
         repoPath = os.path.join(self.storage_repository, self.spUUID)
