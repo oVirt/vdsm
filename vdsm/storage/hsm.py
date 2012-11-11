@@ -1308,6 +1308,8 @@ class HSM:
     def deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False, force=False):
         """
         Delete Image folder with all volumes
+
+        force parameter is deprecated and not evaluated.
         """
         #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
         self.getPool(spUUID) #Validates that the pool is connected. WHY?
@@ -1317,15 +1319,31 @@ class HSM:
         vars.task.getSharedLock(STORAGE, sdUUID)
         allVols = dom.getAllVolumes()
         volsByImg = sd.getVolsOfImage(allVols, imgUUID)
+        if not volsByImg:
+            self.log.error("Empty or not found image %s in SD %s. %s",
+                                                    imgUUID, sdUUID, allVols)
+            raise se.ImageDoesNotExistInSD(imgUUID, sdUUID)
+
         # on data domains, images should not be deleted if they are templates
         # being used by other images.
-        if not misc.parseBool(force) and not dom.isBackup() \
-                and not all(len(v.imgs) == 1 for v in volsByImg.itervalues()):
-                raise se.CannotDeleteSharedVolume("Cannot delete shared image"
-                    "%s. volImgs: %s"  % (imgUUID, volsByImg))
+        isTemplateWithChildren = False
+        for v in volsByImg.itervalues():
+            if len(v.imgs) > 1 and v.imgs[0] == imgUUID:
+                isTemplateWithChildren = True
+                break
+
+        if not isTemplateWithChildren:
+            needFake = False
+        elif dom.isBackup():
+            needFake = True
+        else:
+            raise se.CannotDeleteSharedVolume("Cannot delete shared image %s. "
+                                        "volImgs: %s"  % (imgUUID, volsByImg))
 
         # zeroImage will delete zeroed volumes at the end.
         if misc.parseBool(postZero):
+            # postZero implies block domain. Backup domains are always NFS
+            # hence no need to create fake template if postZero is true.
             self._spmSchedule(spUUID, "zeroImage_%s" % imgUUID, dom.zeroImage,
                               sdUUID, imgUUID, volsByImg.keys())
         else:
@@ -1337,6 +1355,11 @@ class HSM:
             # intended to quickly fix the integration issue with rhev-m. In 2.3
             # we should use the new resource system to synchronize the process
             # an eliminate all race conditions
+            if needFake:
+                img = image.Image(os.path.join(self.storage_repository, spUUID))
+                tName = volsByImg.iterkeys()[0]
+                tParams = dom.produceVolume(imgUUID, tName).getVolumeParams()
+                img.createFakeTemplate(sdUUID=sdUUID, volParams=tParams)
             self._spmSchedule(spUUID, "deleteImage_%s" % imgUUID, lambda : True)
 
 

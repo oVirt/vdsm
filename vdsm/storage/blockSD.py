@@ -207,8 +207,10 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
         lvm.changelv(sdUUID, volUUIDs, (("-a", "y"), ("--deltag", imgUUID),
                             ("--addtag", sd.REMOVED_IMAGE_PREFIX + imgUUID)))
     except se.StorageException as e:
-        log.debug("SD %s, Image %s pre zeroing ops failed", sdUUID, imgUUID,
-                    volUUIDs)
+        log.error("Can't activate or change LV tags in SD %s. "
+                  "failing Image %s pre zeroing operation for vols: %s. %s",
+                  sdUUID, imgUUID, volUUIDs, e)
+        raise
     # Following call to changelv is separate since setting rw permission on an
     # LV fails if the LV is already set to the same value, hence we would not
     # be able to differentiate between a real failure of deltag/addtag and one
@@ -915,11 +917,39 @@ class BlockStorageDomain(sd.StorageDomain):
                         if i.startswith(blockVolume.TAG_PREFIX_IMAGE) ]
         return images
 
+    def rmDCVolLinks(self, imgPath, volsImgs):
+        for vol in volsImgs:
+            lPath = os.path.join(imgPath, vol)
+            removedPaths = []
+            try:
+                os.unlink(lPath)
+            except OSError as e:
+                self.log.warning("Can't unlink %s. %s", lPath, e)
+            else:
+                removedPaths.append(lPath)
+        self.log.debug("removed: %s", removedPaths)
+        return tuple(removedPaths)
+
+    def rmDCImgDir(self, imgUUID, volsImgs):
+        imgPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES, imgUUID)
+        self.rmDCVolLinks(imgPath, volsImgs)
+        try:
+            os.rmdir(imgPath)
+        except OSError:
+            self.log.warning("Can't rmdir %s. %s", imgPath, exc_info = True)
+        else:
+            self.log.debug("removed image dir: %s", imgPath)
+        return imgPath
+
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
-        return deleteVolumes(sdUUID, volsImgs)
+        toDel = tuple(vName for vName, v in volsImgs.iteritems()
+                                                    if v.imgs[0] == imgUUID)
+        deleteVolumes(sdUUID, toDel)
+        self.rmDCImgDir(imgUUID, volsImgs)
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
-        return zeroImgVolumes(sdUUID, imgUUID, volsImgs)
+        zeroImgVolumes(sdUUID, imgUUID, volsImgs)
+        self.rmDCImgDir(imgUUID, volsImgs)
 
     def getAllVolumes(self):
         """

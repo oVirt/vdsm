@@ -496,9 +496,8 @@ class FileStorageDomain(sd.StorageDomain):
         remove the remnants of the removed images (they could be left sometimes
         (on NFS mostly) due to lazy file removal
         """
-        removedPattern = os.path.join(
-                self.domaindir, sd.DOMAIN_IMAGES,
-                sd.REMOVED_IMAGE_PREFIX + '*')
+        removedPattern = os.path.join(self.domaindir, sd.DOMAIN_IMAGES,
+                                            sd.REMOVED_IMAGE_PREFIX + '*')
         removedImages = self.oop.glob.glob(removedPattern)
         self.log.debug("Removing remnants of deleted images %s" %
                        removedImages)
