@@ -55,7 +55,6 @@ import weakref
 import fcntl
 import inspect
 
-sys.path.append("../")
 from vdsm import constants
 import storage_exception as se
 from vdsm.betterPopen import BetterPopen
