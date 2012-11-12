@@ -126,15 +126,24 @@ VDSM_LVM_CONF = os.path.join(VDSM_LVM_SYSTEM_DIR, "lvm.conf")
 
 USER_DEV_LIST = filter(None, config.get("irs", "lvm_dev_whitelist").split(","))
 
+re_dev = re.compile("\W")
+
 
 def _buildFilter(devList):
     devList = list(devList)
     devList.sort()
-    filt = '|'.join(dev.strip() for dev in devList if dev.strip())
+    devs = []
+    for dev in devList:
+        strippedDev = dev.strip()
+        if strippedDev:
+            decodedDev = strippedDev.decode("string_escape")
+            devs.append(re_dev.sub(lambda m: r'\\x%x' % ord(m.group()),
+                        decodedDev))
+    filt = '|'.join(devs)
     if len(filt) > 0:
-        filt = '"a%' + filt + '%", '
+        filt = "'a%" + filt + "%', "
 
-    filt = 'filter = [ ' + filt + '"r%.*%" ]'
+    filt = "filter = [ " + filt + "'r%.*%' ]"
     return filt
 
 

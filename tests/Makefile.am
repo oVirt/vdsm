@@ -35,6 +35,7 @@ test_modules = \
 	jsonRpcTests.py \
 	libvirtvmTests.py \
 	lsblkTests.py \
+	lvmTests.py \
 	main.py \
 	md_utils_tests.py \
 	miscTests.py \
