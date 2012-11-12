@@ -67,6 +67,7 @@ Requires: python-ethtool
 Requires: rpm-python
 Requires: nfs-utils
 Requires: python-pthreading
+Requires: %{name}-xmlrpc = %{version}-%{release}
 
 %ifarch x86_64
 Requires: dmidecode
