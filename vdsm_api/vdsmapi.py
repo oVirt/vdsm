@@ -197,7 +197,7 @@ def c_type(name):
         return '%s *' % c_list_type(name[0])
     elif is_enum(name):
         return name
-    elif name == None or len(name) == 0:
+    elif name is None or len(name) == 0:
         return 'void'
     elif name == name.upper():
         return '%sEvent *' % camel_case(name)
