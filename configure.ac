@@ -125,6 +125,7 @@ fi
 # Checking for python modules (sorted, please keep in order)
 AX_PYTHON_MODULE([ethtool], [fatal])
 AX_PYTHON_MODULE([libvirt], [fatal])
+AX_PYTHON_MODULE([pthreading], [fatal])
 
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])
