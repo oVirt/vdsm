@@ -847,9 +847,9 @@ class StorageDomain(APIBase):
             return self._irs.detachStorageDomain(self._UUID,
                     self._spUUID, masterSdUUID, masterVersion)
 
-    def extend(self, devlist):
+    def extend(self, devlist, force=False):
         return self._irs.extendStorageDomain(self._UUID,
-                self._spUUID, devlist)
+                self._spUUID, devlist, force)
 
     def format(self, autoDetach):
         return self._irs.formatStorageDomain(self._UUID, autoDetach)

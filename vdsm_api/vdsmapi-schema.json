@@ -3166,10 +3166,13 @@
 #
 # @devlist:  An array of block device names to add to the domain
 #
+# @force:    #optional Try to extend a domain with LUN even if it is not empty
+#            (e.g. already marked as part of a VG).
+#
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'extend'},
- 'data': {'devlist': ['str']}}
+ 'data': {'devlist': ['str'], '*force': 'bool'}}
 
 ##
 # @StorageDomain.format:

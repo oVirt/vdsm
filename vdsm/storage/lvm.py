@@ -901,12 +901,12 @@ def removeVGbyUUID(vgUUID):
         removeVG(vg.name)
 
 
-def extendVG(vgName, devices):
+def extendVG(vgName, devices, force):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs, getVGBlockSizes(vgName))
     vg = _lvminfo.getVg(vgName)
     #Format extension PVs as all the other already in the VG
-    _initpvs(pvs, int(vg.vg_mda_size) / 2 ** 20)
+    _initpvs(pvs, int(vg.vg_mda_size) / 2 ** 20, force)
 
     cmd = ["vgextend", vgName] + pvs
     rc, out, err = _lvminfo.cmd(cmd)

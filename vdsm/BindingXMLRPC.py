@@ -409,9 +409,9 @@ class BindingXMLRPC(object):
         domain = API.StorageDomain(sdUUID, spUUID)
         return domain.detach(None, None, force=True)
 
-    def domainExtend(self, sdUUID, spUUID, devlist, options=None):
+    def domainExtend(self, sdUUID, spUUID, devlist, force=False, options=None):
         domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.extend(devlist)
+        return domain.extend(devlist, force)
 
     def domainFormat(self, sdUUID,
                      autoDetach=False, options=None):

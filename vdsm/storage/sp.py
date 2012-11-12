@@ -2003,6 +2003,6 @@ class StoragePool(Securable):
         repoPath = os.path.join(self.storage_repository, self.spUUID)
         image.Image(repoPath).validateVolumeChain(sdUUID, imgUUID)
 
-    def extendSD(self, sdUUID, devlist):
-        sdCache.produce(sdUUID).extend(devlist)
+    def extendSD(self, sdUUID, devlist, force):
+        sdCache.produce(sdUUID).extend(devlist, force)
 

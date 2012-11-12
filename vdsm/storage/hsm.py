@@ -649,7 +649,8 @@ class HSM:
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
     @public
-    def extendStorageDomain(self, sdUUID, spUUID, devlist, options=None):
+    def extendStorageDomain(self, sdUUID, spUUID, devlist,
+                            force=False, options=None):
         """
         Extends a VG. ?
 
@@ -672,7 +673,7 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         # We need to let the domain to extend itself
         pool = self.getPool(spUUID)
-        pool.extendSD(sdUUID, devlist)
+        pool.extendSD(sdUUID, devlist, force)
 
     @public
     def forcedDetachStorageDomain(self, sdUUID, spUUID, options=None):

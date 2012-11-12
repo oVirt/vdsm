@@ -678,7 +678,7 @@ class BlockStorageDomain(sd.StorageDomain):
                     else:
                         del self._metadata[key]
 
-    def extend(self, devlist):
+    def extend(self, devlist, force):
         mapping = self.readMetadataMapping().values()
         if self.getVersion() in VERS_METADATA_LV:
             if len(mapping) + len(devlist) > MAX_PVS:
@@ -696,7 +696,7 @@ class BlockStorageDomain(sd.StorageDomain):
                 else:
                     raise se.InvalidPhysDev(dev)
 
-            lvm.extendVG(self.sdUUID, devices)
+            lvm.extendVG(self.sdUUID, devices, force)
             self.updateMapping()
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)

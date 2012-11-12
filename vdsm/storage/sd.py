@@ -742,7 +742,7 @@ class StorageDomain:
     def refresh(self):
         pass
 
-    def extend(self, devlist):
+    def extend(self, devlist, force):
         pass
 
     def isMaster(self):
