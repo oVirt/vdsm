@@ -24,6 +24,7 @@ import time
 import threading
 from testrunner import VdsmTestCase as TestCaseBase
 import inspect
+from vdsm import utils
 
 import storage.outOfProcess as oop
 import storage.misc as misc
@@ -86,7 +87,9 @@ class GetCmdArgsTests(TestCaseBase):
         sproc = misc.execCmd(args, sync=False, sudo=False)
         sproc.kill()
         try:
-            self.assertEquals(misc.getCmdArgs(sproc.pid), tuple())
+            test = lambda: self.assertEquals(misc.getCmdArgs(sproc.pid),
+                                             tuple())
+            utils.retry(AssertionError, test, tries=10, sleep=0.1)
         finally:
             sproc.wait()
 
