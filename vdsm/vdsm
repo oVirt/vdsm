@@ -82,9 +82,10 @@ def run():
         file(pidfile, 'w').write(str(os.getpid()) + "\n")
         os.chmod(pidfile, 0664)
 
-        log.info('I am the actual vdsm %s-%s',
-             dsaversion.software_version,
-             dsaversion.software_revision)
+        sysname, nodename, release, version, machine = os.uname()
+        log.info('I am the actual vdsm %s-%s %s (%s)',
+             dsaversion.software_version, dsaversion.software_revision,
+             nodename, release)
         serve_clients(log)
     except:
         log.error("Exception raised", exc_info=True)
