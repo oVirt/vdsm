@@ -810,15 +810,11 @@ class Vm(object):
         self.log.debug('new rtc offset %s', timeOffset)
         self.conf['timeOffset'] = timeOffset
 
-    def extendDriveVolume(self, vmDrive, newSize=None):
+    def extendDriveVolume(self, vmDrive):
         if not vmDrive.blockDev:
             return
 
-        if newSize is None:
-            # newSize is always in megabytes
-            newSize = (config.getint('irs', 'volume_utilization_chunk_mb') +
-                       ((vmDrive.apparentsize + constants.MEGAB - 1) /
-                        constants.MEGAB))
+        newSize = vmDrive.getNextVolumeSize()  # newSize is in megabytes
 
         if getattr(vmDrive, 'diskReplicate', None):
             volInfo = {'poolID': vmDrive.diskReplicate['poolID'],

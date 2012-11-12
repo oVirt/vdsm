@@ -123,7 +123,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
             capacity, alloc, physical = \
                 self._vm._dom.blockInfo(vmDrive.path, 0)
 
-            if physical - alloc >= self._vm._MIN_DISK_REMAIN:
+            if physical - alloc >= vmDrive.watermarkLimit:
                 continue
 
             self._log.info('%s/%s apparent: %s capacity: %s, alloc: %s, '
@@ -1040,6 +1040,9 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
 
 
 class Drive(LibvirtVmDevice):
+    VOLWM_CHUNK_MB = config.getint('irs', 'volume_utilization_chunk_mb')
+    VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
+    VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
 
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
@@ -1057,6 +1060,37 @@ class Drive(LibvirtVmDevice):
             self._blockDev = None
 
         self._customize()
+
+    @property
+    def volExtensionChunk(self):
+        """
+        Returns the volume extension chunks (used for the thin provisioning
+        on block devices). The value is based on the vdsm configuration but
+        can also dynamically change according to the VM needs (e.g. increase
+        during a live storage migration).
+        """
+        if hasattr(self, "diskReplicate"):
+            return self.VOLWM_CHUNK_MB * self.VOLWM_CHUNK_REPLICATE_MULT
+        return self.VOLWM_CHUNK_MB
+
+    @property
+    def watermarkLimit(self):
+        """
+        Returns the watermark limit, when the LV usage reaches this limit an
+        extension is in order (thin provisioning on block devices).
+        """
+        return (self.VOLWM_FREE_PCT * self.volExtensionChunk *
+                constants.MEGAB / 100)
+
+    def getNextVolumeSize(self):
+        """
+        Returns the next volume size in megabytes. This value is based on the
+        volExtensionChunk property and it's the size that should be requested
+        for the next LV extension.
+        """
+        return (self.volExtensionChunk +
+                   ((self.apparentsize + constants.MEGAB - 1) /
+                    constants.MEGAB))
 
     @property
     def blockDev(self):
@@ -1227,12 +1261,6 @@ class LibvirtVm(vm.Vm):
         self._qemuguestSocketFile = (constants.P_LIBVIRT_VMCHANNELS +
                                      self.conf['vmName'].encode('utf-8') +
                                      '.' + _QEMU_GA_DEVICE_NAME)
-        # TODO find a better idea how to calculate this constant only after
-        # config is initialized
-        self._MIN_DISK_REMAIN = \
-            ((100 - config.getint('irs', 'volume_utilization_percent')) *
-             config.getint('irs', 'volume_utilization_chunk_mb') *
-             2 ** 20 / 100)
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
         self._devXmlHash = '0'
         self._released = False
