@@ -41,6 +41,7 @@ BuildRequires: python-nose
 BuildRequires: python-ethtool
 BuildRequires: libvirt-python
 BuildRequires: genisoimage
+BuildRequires: openssl
 %if 0%{?rhel}
 BuildRequires: python-ordereddict
 %endif
@@ -69,6 +70,7 @@ Requires: python-ethtool
 Requires: rpm-python
 Requires: nfs-utils
 Requires: python-pthreading
+Requires: m2crypto
 Requires: %{name}-xmlrpc = %{version}-%{release}
 
 %ifarch x86_64

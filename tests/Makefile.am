@@ -47,6 +47,7 @@ test_modules = \
 	resourceManagerTests.py \
 	restData.py \
 	restTests.py \
+	sslTests.py \
 	storageMailboxTests.py \
 	tcTests.py \
 	vdsClientTests.py \

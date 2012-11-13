@@ -34,8 +34,84 @@ import ssl
 import httplib
 import socket
 import SocketServer
+import logging
+
+from M2Crypto import SSL, X509
 
 SecureXMLRPCRequestHandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
+
+
+class SSLSocket(object):
+    """SSL decorator for sockets.
+
+    This class wraps a socket returned by the accept method of a
+    server socket providing the SSL socket methods that are missing in
+    the connection class. The rest of the methods are just delegated.
+    """
+
+    def __init__(self, connection):
+        # Save the reference to the connection so that we can delegate
+        # calls to it later:
+        self.connection = connection
+
+    def gettimeout(self):
+        return self.connection.socket.gettimeout()
+
+    def __getattr__(self, name):
+        # This is how we delegate all the rest of the methods to the
+        # underlying SSL connection:
+        return getattr(self.connection, name)
+
+
+class SSLServerSocket(SSLSocket):
+    """SSL decorator for server sockets.
+
+    This class wraps a normal socket so that when the accept method is
+    called the accepted socket is also decorated.
+    """
+
+    def __init__(self, raw, certfile=None, keyfile=None, ca_certs=None,
+                 session_id="vdsm", protocol="sslv23"):
+        # Create the SSL context:
+        self.context = SSL.Context(protocol)
+        self.context.set_session_id_ctx(session_id)
+
+        # Load the server certificate and key files:
+        if certfile and keyfile:
+            self.context.load_cert_chain(certfile, keyfile)
+
+        def verify(context, certificate, error, depth, result):
+            # The validation of the client certificate has already been
+            # performed by the OpenSSL library and the handhake already aborted
+            # if it fails as we use the verify_fail_if_no_peer_cert mode. We
+            # are not doing any additional validation, so we just need to log
+            # it and return the same result.
+            if not result:
+                certificate = X509.X509(certificate)
+                logging.error(
+                    "invalid client certificate with subject \"%s\"",
+                    certificate.get_subject())
+            return result
+
+        # Load the certificates of the CAs used to verify client
+        # connections:
+        if ca_certs:
+            self.context.load_verify_locations(ca_certs)
+            self.context.set_verify(
+                mode=SSL.verify_peer | SSL.verify_fail_if_no_peer_cert,
+                depth=10,
+                callback=verify)
+
+        # Create the SSL connection:
+        self.connection = SSL.Connection(self.context, sock=raw)
+
+    def accept(self):
+        # The SSL connection already returns a SSL prepared socket, but it
+        # misses some of the methods that the XML PRC server uses, so we need
+        # to wrap it as well:
+        client, address = self.connection.accept()
+        client = SSLSocket(client)
+        return client, address
 
 
 class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
@@ -53,27 +129,15 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
                  requestHandler,
                  logRequests, allow_none, encoding,
                  bind_and_activate=False)
-        self.socket = ssl.wrap_socket(self.socket,
-                 keyfile=keyfile, certfile=certfile,
-                 ca_certs=ca_certs, server_side=True,
-                 cert_reqs=ssl.CERT_REQUIRED,
-                 do_handshake_on_connect=False)
+        self.socket = SSLServerSocket(raw=self.socket, certfile=certfile,
+                                      keyfile=keyfile, ca_certs=ca_certs)
         if timeout is not None:
             self.socket.settimeout = timeout
         if bind_and_activate:
             self.server_bind()
             self.server_activate()
 
-    def finish_request(self, request, client_address):
-        request.do_handshake()
-
-        return SimpleXMLRPCServer.SimpleXMLRPCServer.finish_request(
-                                                             self,
-                                                             request,
-                                                             client_address)
-
     def handle_error(self, request, client_address):
-        import logging
         logging.error('client %s', client_address, exc_info=True)
 
 
