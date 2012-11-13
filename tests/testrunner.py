@@ -240,6 +240,8 @@ def hackVdsmModule():
                     setattr(mod, name, sub)
                     sys.modules['vdsm.%s' % name] = getattr(mod, name)
 
+    sys.modules['vdsm.constants'].P_VDSM = "../"
+
 
 def findRemove(listR, value):
     """used to test if a value exist, if it is, return true and remove it."""
