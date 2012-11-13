@@ -315,11 +315,11 @@ If the nested virtualization is enabled in your kvm module
 this hook will expose it to the guests.
 
 %package hook-numa
-Summary:        numa sopport for VDSM
+Summary:        NUMA support for VDSM
 BuildArch:      noarch
 
 %description hook-numa
-Hooks is getting number/rage of numa nodes and numa mode,
+Hooks is getting number/rage of NUMA nodes and NUMA mode,
 and update the VM xml.
 
 %package hook-pincpu
