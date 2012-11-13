@@ -24,7 +24,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+    OrderedDict  # make pyflakes happy
+except ImportError:
+    from ordereddict import OrderedDict
 
 
 def tokenize(data):

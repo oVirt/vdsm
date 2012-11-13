@@ -42,6 +42,9 @@ BuildRequires: python-ethtool
 BuildRequires: libvirt-python
 BuildRequires: sanlock-python >= 2.3
 BuildRequires: genisoimage
+%if 0%{?rhel}
+BuildRequires: python-ordereddict
+%endif
 
 # Autotools BuildRequires
 %if 0%{?enable_autotools}
@@ -162,6 +165,9 @@ Summary:        VDSM API Server
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
+%if 0%{?rhel}
+Requires: python-ordereddict
+%endif
 
 %description jsonrpc
 A Json-based RPC interface that serves as the protocol for libvdsm.
