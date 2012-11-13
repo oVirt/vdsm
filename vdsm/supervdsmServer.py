@@ -29,7 +29,7 @@ from time import sleep
 import signal
 from multiprocessing import Pipe, Process
 import storage.misc as misc
-import utils
+from vdsm import utils
 
 try:
     from gluster import cli as gcli
