@@ -1438,7 +1438,8 @@ class HSM:
             needFake = True
         else:
             raise se.CannotDeleteSharedVolume("Cannot delete shared image %s. "
-                                        "volImgs: %s"  % (imgUUID, volsByImg))
+                                              "volImgs: %s" % (imgUUID,
+                                                               volsByImg))
 
         # zeroImage will delete zeroed volumes at the end.
         if misc.parseBool(postZero):
@@ -1456,12 +1457,12 @@ class HSM:
             # we should use the new resource system to synchronize the process
             # an eliminate all race conditions
             if needFake:
-                img = image.Image(os.path.join(self.storage_repository, spUUID))
+                img = image.Image(os.path.join(self.storage_repository,
+                                               spUUID))
                 tName = volsByImg.iterkeys()[0]
                 tParams = dom.produceVolume(imgUUID, tName).getVolumeParams()
                 img.createFakeTemplate(sdUUID=sdUUID, volParams=tParams)
-            self._spmSchedule(spUUID, "deleteImage_%s" % imgUUID, lambda : True)
-
+            self._spmSchedule(spUUID, "deleteImage_%s" % imgUUID, lambda: True)
 
     def validateImageMove(self, srcDom, dstDom, imgUUID):
         """
