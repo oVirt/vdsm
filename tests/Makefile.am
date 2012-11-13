@@ -47,13 +47,11 @@ test_modules = \
 	resourceManagerTests.py \
 	restData.py \
 	restTests.py \
-	superVdsmTests.py \
 	storageMailboxTests.py \
+	superVdsmTests.py \
 	tcTests.py \
 	vdsClientTests.py \
 	volumeTests.py \
-	remoteFileHandlerTests.py \
-	resourceManagerTests.py \
 	zombieReaperTests.py \
 	$(NULL)
 
