@@ -23,6 +23,8 @@ import threading
 import logging
 import sanlock
 
+from vdsm import qemuImg
+from vdsm import constants
 from vdsm.config import config
 import vdsm.utils as utils
 import storage_exception as se
@@ -293,6 +295,41 @@ class BlockVolume(volume.Volume):
         # Backend APIs:
         sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
+
+    def reduce(self, newSize):
+        """Reduce a logical volume
+            'newSize' - new size in blocks
+        """
+        self.log.info("Request to reduce LV %s of image %s in VG %s with "
+                      "size = %s", self.volUUID, self.imgUUID, self.sdUUID,
+                      newSize)
+        sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
+        lvm.reduceLV(self.sdUUID, self.volUUID, sizemb)
+
+    def shrinkToOptimalSize(self):
+        """
+        Reduce a logical volume to the actual
+        disk size, adding round up to next
+        closest volume utilization chunk
+        """
+        volParams = self.getVolumeParams()
+        if volParams['volFormat'] == volume.COW_FORMAT:
+            self.prepare(justme=True)
+            try:
+                check = qemuImg.check(self.getVolumePath(),
+                                      qemuImg.FORMAT.QCOW2)
+            finally:
+                self.teardown(self.sdUUID, self.volUUID, justme=True)
+            volActualSize = check['offset']
+            volExtendSizeMB = int(config.get(
+                                  "irs", "volume_utilization_chunk_mb"))
+            volExtendSize = volExtendSizeMB * constants.MEGAB
+            volUtil = int(config.get("irs", "volume_utilization_percent"))
+            finalSize = (volActualSize + volExtendSize * volUtil * 0.01)
+            finalSize += volExtendSize - (finalSize % volExtendSize)
+            self.log.debug('Shrink qcow volume: %s to : %s bytes',
+                           self.volUUID, finalSize)
+            self.reduce((finalSize + BLOCK_SIZE - 1) / BLOCK_SIZE)
 
     @classmethod
     def renameVolumeRollback(cls, taskObj, sdUUID, oldUUID, newUUID):

@@ -1153,6 +1153,11 @@ class Image:
             self.log.error("Failure to remove subchain %s -> %s in image %s",
                            ancestor, successor, imgUUID, exc_info=True)
 
+        try:
+            srcVol.shrinkToOptimalSize()
+        except qemuImg.QImgError:
+            self.log.warning("Auto shrink after merge failed", exc_info=True)
+
         self.log.info("Merge src=%s with dst=%s was successfully finished.",
                       srcVol.getVolumePath(), dstVol.getVolumePath())
 

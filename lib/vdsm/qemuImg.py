@@ -34,11 +34,12 @@ class FORMAT:
     VMDK = "vmdk"
 
 __iregex = {
-    'format': re.compile("^file format: (?P<value>\w+)$"),
-    'virtualsize': re.compile("^virtual size: "
-                              "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
-    'clustersize': re.compile("^cluster_size: (?P<value>\d+)$"),
-    'backingfile': re.compile("^backing file: (?P<value>.+) \(actual path"),
+    'format':       re.compile("^file format: (?P<value>\w+)$"),
+    'virtualsize':  re.compile("^virtual size: "
+                               "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
+    'clustersize':  re.compile("^cluster_size: (?P<value>\d+)$"),
+    'backingfile':  re.compile("^backing file: (?P<value>.+) \(actual path"),
+    'offset':  re.compile("^Image end offset: (?P<value>\d+)$"),
 }
 
 
@@ -82,7 +83,7 @@ def info(image, format=None):
         if len(out) > 5:
             info['backingfile'] = __iregexSearch("backingfile", out[5])
     except:
-        raise QImgError(rc, out, err, "unable to parse qemu-img output")
+        raise QImgError(rc, out, err, "unable to parse qemu-img info output")
 
     return info
 
@@ -96,8 +97,18 @@ def check(image, format=None):
     cmd.append(image)
     rc, out, err = utils.execCmd(cmd)
 
+    #FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
         raise QImgError(rc, out, err)
+    try:
+        check = {
+            'offset': int(__iregexSearch("offset", out[1]))
+        }
+    #TODO: Add requires for qemu supporting offset and print exc_info
+    except:
+        raise QImgError(rc, out, err, "unable to parse qemu-img check output")
+
+    return check
 
 
 def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None):

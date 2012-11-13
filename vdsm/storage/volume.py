@@ -562,6 +562,12 @@ class Volume(object):
         """
         pass
 
+    def reduce(self, newsize):
+        """
+        reduce a logical volume
+        """
+        pass
+
     def syncMetadata(self):
         volFormat = self.getFormat()
         if volFormat != RAW_FORMAT:
@@ -1014,6 +1020,13 @@ class Volume(object):
         volParams['descr'] = self.getDescription()
         volParams['legality'] = self.getLegality()
         return volParams
+
+    def shrinkToOptimalSize(self):
+        """
+        Shrink only block volume of snapshot
+        by reducing the lv to minimal size required
+        """
+        pass
 
 
 def createVolume(parent, parent_format, volume, size, format, prealloc):

@@ -1064,7 +1064,7 @@ def removeLVs(vgName, lvNames):
         raise se.CannotRemoveLogicalVolume(vgName, str(lvNames))
 
 
-def extendLV(vgName, lvName, size):
+def _resizeLV(op, vgName, lvName, size):
     """
     Size units: MB (1024 ** 2 = 2 ** 20)B.
     """
@@ -1073,7 +1073,7 @@ def extendLV(vgName, lvName, size):
     # (s)ectors,(k)ilobytes, (m)egabytes, (g)igabytes, (t)erabytes,
     # (p)etabytes, (e)xabytes.
     # Capitalise to use multiples of 1000 (S.I.) instead of 1024.
-    cmd = ("lvextend",) + LVM_NOBACKUP
+    cmd = (op,) + LVM_NOBACKUP
     cmd += ("--size", "%sm" % (size,), "%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd)
     if rc == 0:
@@ -1094,6 +1094,14 @@ def extendLV(vgName, lvName, size):
                                            free_size / constants.MEGAB))
 
         raise se.LogicalVolumeExtendError(vgName, lvName, "%sM" % (size, ))
+
+
+def extendLV(vgName, lvName, size):
+    _resizeLV("lvextend", vgName, lvName, size)
+
+
+def reduceLV(vgName, lvName, size):
+    _resizeLV("lvreduce", vgName, lvName, size)
 
 
 def activateLVs(vgName, lvNames):
