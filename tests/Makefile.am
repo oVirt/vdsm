@@ -43,13 +43,14 @@ test_modules = \
 	parted_utils_tests.py \
 	permutationTests.py \
 	persistentDictTests.py \
-	restTests.py \
+	remoteFileHandlerTests.py \
+	resourceManagerTests.py \
 	restData.py \
+	restTests.py \
+	superVdsmTests.py \
 	storageMailboxTests.py \
 	tcTests.py \
 	vdsClientTests.py \
-	remoteFileHandlerTests.py \
-	resourceManagerTests.py \
 	zombieReaperTests.py \
 	$(NULL)
 

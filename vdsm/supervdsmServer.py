@@ -29,6 +29,7 @@ from time import sleep
 import signal
 from multiprocessing import Pipe, Process
 import storage.misc as misc
+import utils
 
 try:
     from gluster import cli as gcli
@@ -42,10 +43,10 @@ from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
-from supervdsm import _SuperVdsmManager, PIDFILE, ADDRESS, TIMESTAMP
+from supervdsm import _SuperVdsmManager
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
-from vdsm.constants import METADATA_GROUP, METADATA_USER, EXT_UDEVADM, \
+from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
         DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import storage.misc
@@ -86,6 +87,12 @@ LOG_CONF_PATH = "/etc/vdsm/logger.conf"
 
 
 class _SuperVdsm(object):
+
+    @logDecorator
+    def ping(self, *args, **kwargs):
+        # This method exists for testing purposes
+        return True
+
     @logDecorator
     def getDevicePartedInfo(self, *args, **kwargs):
         return _getDevicePartedInfo(*args, **kwargs)
@@ -287,13 +294,13 @@ class _SuperVdsm(object):
         return mkimage.removeFs(path)
 
 
-def __pokeParent(parentPid):
+def __pokeParent(parentPid, address):
     try:
         while True:
             os.kill(parentPid, 0)
             sleep(2)
     except Exception:
-        os.unlink(ADDRESS)
+        utils.rmFile(address)
         os.kill(os.getpid(), signal.SIGTERM)
 
 
@@ -320,53 +327,57 @@ def main():
         log.warn("Could not init proper logging", exc_info=True)
 
     log = logging.getLogger("SuperVdsm.Server")
+
     try:
         log.debug("Making sure I'm root")
         if os.geteuid() != 0:
             sys.exit(errno.EPERM)
 
         log.debug("Parsing cmd args")
-        authkey, parentPid = sys.argv[1:]
+        authkey, parentPid, pidfile, timestamp, address, uid = sys.argv[1:]
 
-        log.debug("Creating PID file")
+        log.debug("Creating PID and TIMESTAMP files: %s, %s",
+                  pidfile, timestamp)
         spid = os.getpid()
-        with open(PIDFILE, "w") as f:
+        with open(pidfile, "w") as f:
             f.write(str(spid) + "\n")
-        with open(TIMESTAMP, "w") as f:
+        with open(timestamp, "w") as f:
             f.write(str(misc.getProcCtime(spid) + "\n"))
 
-        log.debug("Cleaning old socket")
-        if os.path.exists(ADDRESS):
-            os.unlink(ADDRESS)
+        log.debug("Cleaning old socket %s", address)
+        if os.path.exists(address):
+            os.unlink(address)
 
         log.debug("Setting up keep alive thread")
+
         monThread = threading.Thread(target=__pokeParent,
-                args=[int(parentPid)])
+                        args=[int(parentPid), address])
         monThread.setDaemon(True)
         monThread.start()
 
-        log.debug("Creating remote object manager")
-        manager = _SuperVdsmManager(address=ADDRESS, authkey=authkey)
-        manager.register('instance', callable=_SuperVdsm)
+        try:
+            log.debug("Creating remote object manager")
+            manager = _SuperVdsmManager(address=address, authkey=authkey)
+            manager.register('instance', callable=_SuperVdsm)
 
-        server = manager.get_server()
-        servThread = threading.Thread(target=server.serve_forever)
-        servThread.setDaemon(True)
-        servThread.start()
+            server = manager.get_server()
+            servThread = threading.Thread(target=server.serve_forever)
+            servThread.setDaemon(True)
+            servThread.start()
 
-        for f in (ADDRESS, TIMESTAMP, PIDFILE):
-            chown(f, METADATA_USER, METADATA_GROUP)
+            for f in (address, timestamp, pidfile):
+                chown(f, int(uid), METADATA_GROUP)
 
-        log.debug("Started serving super vdsm object")
-        servThread.join()
+            log.debug("Started serving super vdsm object")
+            servThread.join()
+        finally:
+            if os.path.exists(address):
+                os.unlink(address)
+                raise
+
     except Exception:
         log.error("Could not start Super Vdsm", exc_info=True)
         sys.exit(1)
-    finally:
-        try:
-            os.unlink(ADDRESS)
-        except OSError:
-            pass
 
 if __name__ == '__main__':
     main()

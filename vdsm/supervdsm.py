@@ -27,6 +27,7 @@ import threading
 import uuid
 from time import sleep
 from errno import ENOENT, ESRCH
+
 import storage.misc as misc
 from vdsm import constants, utils
 
@@ -92,27 +93,41 @@ class SuperVdsmProxy(object):
         self.proxyLock = threading.Lock()
         self._firstLaunch = True
 
+        # Declaration of public variables that keep files' names that svdsm
+        # uses. We need to be able to change these variables so that running
+        # tests doesn't disturb and already running VDSM on the host.
+        self.setIPCPaths(PIDFILE, TIMESTAMP, ADDRESS)
+
+    def setIPCPaths(self, pidfile, timestamp, address):
+        self.pidfile = pidfile
+        self.timestamp = timestamp
+        self.address = address
+
     def open(self, *args, **kwargs):
         return self._manager.open(*args, **kwargs)
 
     def _cleanOldFiles(self):
-        self._log.warn("Cleanning svdsm old files: %s, %s, %s",
-                        PIDFILE, TIMESTAMP, ADDRESS)
-        utils.rmFile(PIDFILE)
-        utils.rmFile(TIMESTAMP)
-        utils.rmFile(ADDRESS)
+        self._log.debug("Cleanning svdsm old files: %s, %s, %s",
+                        self.pidfile, self.timestamp, self.address)
+        for f in (self.pidfile, self.timestamp, self.address):
+            utils.rmFile(f)
 
     def _start(self):
         self._authkey = str(uuid.uuid4())
         self._log.debug("Launching Super Vdsm")
+        # we pass to svdsm filenames and uid. Svdsm will use those filenames
+        # to create its internal files and give to the passed uid the
+        # permissions to read those files.
         superVdsmCmd = [constants.EXT_PYTHON, SUPERVDSM,
-                        self._authkey, str(os.getpid())]
+                        self._authkey, str(os.getpid()),
+                        self.pidfile, self.timestamp, self.address,
+                        str(os.getuid())]
         misc.execCmd(superVdsmCmd, sync=False, sudo=True)
         sleep(2)
 
     def kill(self):
         try:
-            with open(PIDFILE, "r") as f:
+            with open(self.pidfile, "r") as f:
                 pid = int(f.read().strip())
             misc.execCmd([constants.EXT_KILL, "-9", str(pid)], sudo=True)
         except Exception:
@@ -127,9 +142,9 @@ class SuperVdsmProxy(object):
 
     def isRunning(self):
         try:
-            with open(PIDFILE, "r") as f:
+            with open(self.pidfile, "r") as f:
                 spid = f.read().strip()
-            with open(TIMESTAMP, "r") as f:
+            with open(self.timestamp, "r") as f:
                 createdTime = f.read().strip()
         except IOError as e:
             # pid file and timestamp file must be exist after first launch,
@@ -154,7 +169,7 @@ class SuperVdsmProxy(object):
             return False
 
     def _connect(self):
-        self._manager = _SuperVdsmManager(address=ADDRESS,
+        self._manager = _SuperVdsmManager(address=self.address,
                                           authkey=self._authkey)
         self._manager.register('instance')
         self._manager.register('open')
