@@ -48,7 +48,6 @@ test_modules = \
 	restData.py \
 	restTests.py \
 	storageMailboxTests.py \
-	superVdsmTests.py \
 	tcTests.py \
 	vdsClientTests.py \
 	volumeTests.py \
