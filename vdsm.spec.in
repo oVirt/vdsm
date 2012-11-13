@@ -278,6 +278,14 @@ hook prevent VM from spoofing its mac or  ip address
 by using <filterref filter='clean-traffic'/> libvirt filter
 and by adding custom filter: isolatedprivatevlan-vdsm.xml
 
+%package hook-nestedvt
+Summary:        Nested Virtualization support for VDSM
+BuildArch:      noarch
+
+%description hook-nestedvt
+If the nested virtualization is enabled in your kvm module
+this hook will expose it to the guests.
+
 %package hook-numa
 Summary:        numa sopport for VDSM
 BuildArch:      noarch
@@ -852,6 +860,11 @@ exit 0
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
 %config(noreplace) %{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
+
+%files hook-nestedvt
+%defattr(-, root, root, -)
+%{_sysconfdir}/modprobe.d/vdsm-nestedvt.conf
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_nestedvt
 
 %files hook-numa
 %defattr(-, root, root, -)

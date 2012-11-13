@@ -202,6 +202,7 @@ AC_OUTPUT([
 	vdsm_hooks/hugepages/Makefile
 	vdsm_hooks/isolatedprivatevlan/Makefile
 	vdsm_hooks/Makefile
+	vdsm_hooks/nestedvt/Makefile
 	vdsm_hooks/numa/Makefile
 	vdsm_hooks/pincpu/Makefile
 	vdsm_hooks/promisc/Makefile

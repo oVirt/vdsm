@@ -31,6 +31,7 @@ SUBDIRS += \
 	hostusb \
 	hugepages \
 	isolatedprivatevlan \
+	nestedvt \
 	numa \
 	pincpu \
 	promisc \

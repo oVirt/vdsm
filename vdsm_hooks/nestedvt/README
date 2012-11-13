@@ -1,0 +1,15 @@
+VDSM Nested Virtualization
+==========================
+This hook provides the support for nested virtualization in the guests managed
+by VDSM. After installing the hook it is recomended to reboot the host to make
+the new modprobe configuration effective, alternatively it is possible to try
+to reload the kvm module:
+
+ # modprobe -r [kvm-intel|kvm-amd]
+ # modprobe [kvm-intel|kvm-amd]
+
+The nested option should now be enabled:
+
+ # cat /sys/module/kvm*/parameters/nested
+ Y
+
