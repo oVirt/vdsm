@@ -55,6 +55,7 @@ import tc
 import ksm
 import mkimage
 from storage.multipath import MPATH_CONF
+import zombieReaper
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -184,6 +185,7 @@ class _SuperVdsm(object):
         pipe, hisPipe = Pipe()
         proc = Process(target=child, args=(hisPipe,))
         proc.start()
+        zombieReaper.autoReapPID(proc.pid)
 
         if not pipe.poll(RUN_AS_TIMEOUT):
             try:
@@ -347,6 +349,8 @@ def main():
         if os.path.exists(address):
             os.unlink(address)
 
+        zombieReaper.registerSignalHandler()
+
         log.debug("Setting up keep alive thread")
 
         monThread = threading.Thread(target=__pokeParent,
@@ -368,7 +372,11 @@ def main():
                 chown(f, int(uid), METADATA_GROUP)
 
             log.debug("Started serving super vdsm object")
-            servThread.join()
+
+            # Python bug of thread.join() will block signal
+            # http://bugs.python.org/issue1167930
+            while servThread.isAlive():
+                servThread.join(5)
         finally:
             if os.path.exists(address):
                 utils.rmFile(address)
