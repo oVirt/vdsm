@@ -40,7 +40,10 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
+# Gluster should not be shipped with RHEV
+%if ! 0%{?rhev_build}
 %global with_gluster 1
+%endif
 
 %if ! 0%{?rhel}
 %global with_vhostmd 1
@@ -279,6 +282,14 @@ Requires(post): /usr/sbin/saslpasswd2
 Requires(post): hostname
 %else
 Requires(post): /bin/hostname
+%endif
+
+%if 0%{?rhev_build}
+# backward compatible with older bootstrap code
+# see bug#870079
+# can be removed when rhevm-3.0 hosts are
+# updated with latest vdsm-bootstrap
+Requires: %{name}-cli = %{version}-%{release}
 %endif
 
 %description
