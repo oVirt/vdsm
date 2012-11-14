@@ -22,7 +22,6 @@ import logging
 import os
 import os.path
 import socket
-import errno
 import json
 import struct
 from contextlib import closing
@@ -30,9 +29,12 @@ from contextlib import closing
 from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import constants
 import BindingJsonRpc
+import jsonrpc
 import apiData
+from jsonRpcTests import _getFreePort
 
-ip = '0.0.0.0'
+
+ip = '127.0.0.1'
 port = 9824
 _fakeret = {}
 
@@ -146,19 +148,10 @@ def setUpModule():
     bridge = Bridge.DynamicBridge(schema)
 
     # Support parallel testing.  Try hard to find an open port to use
-    while True:
-        try:
-            server = BindingJsonRpc.BindingJsonRpc(bridge, ip, port)
-            break
-        except socket.error as ex:
-            if ex.errno == errno.EADDRINUSE:
-                port += 1
-                if port > 65535:
-                    raise socket.error(
-                        errno.EADDRINUSE,
-                        "Can not find available port to bind")
-            else:
-                raise
+    port = _getFreePort()
+    server = BindingJsonRpc.BindingJsonRpc(bridge,
+                                           [('tcp', {"ip": ip,
+                                                     "port": port})])
     server.start()
 
 
@@ -199,16 +192,21 @@ class JsonRawTest(APITest):
         resp = msize + msg
         return resp
 
+    def _createRequest(self, method, reqId=None, params=()):
+        return {'jsonrpc': '2.0', "id": reqId, "method": method,
+                "params": params}
+
     def sendMessage(self, msg):
         with closing(socket.socket(socket.AF_INET,
                                    socket.SOCK_STREAM)) as sock:
+            sock.settimeout(3)
             try:
                 sock.connect((ip, port))
             except socket.error as e:
                 raise ConnectionError("Unable to connect to server: %s", e)
             try:
                 sock.sendall(msg)
-            except socket.error as e:
+            except (socket.error, socket.timeout), e:
                 raise ProtocolError("Unable to send request: %s", e)
             try:
                 data = sock.recv(JsonRawTest._Size.size)
@@ -228,7 +226,9 @@ class JsonRawTest(APITest):
     def testPing(self):
         self.clearAPI()
         self.programAPI("testPing")
-        msg = self.buildMessage({'id': 1, 'method': 'Host.ping',
+        msg = self.buildMessage({'jsonrpc': '2.0',
+                                 'id': 1,
+                                 'method': 'Host.ping',
                                  'params': {}})
         reply = self.sendMessage(msg)
         self.assertFalse('error' in reply)
@@ -237,21 +237,26 @@ class JsonRawTest(APITest):
     def testPingError(self):
         self.clearAPI()
         self.programAPI("testPingError")
-        msg = self.buildMessage({'id': 1, 'method': 'Host.ping',
+        msg = self.buildMessage({'jsonrpc': '2.0',
+                                 'id': 1, 'method': 'Host.ping',
                                  'params': {}})
         reply = self.sendMessage(msg)
         self.assertEquals(1, reply['error']['code'])
         self.assertFalse('result' in reply)
 
     def testNoMethod(self):
-        msg = self.buildMessage({'id': 1, 'method': 'Host.fake'})
+        msg = self.buildMessage({'jsonrpc': '2.0',
+                                 'id': 1,
+                                 'method': 'Host.fake'})
         reply = self.sendMessage(msg)
-        self.assertEquals(4, reply['error']['code'])
+        self.assertEquals(jsonrpc.JsonRpcMethodNotFoundError().code,
+                          reply['error']['code'])
 
     def testBadMethod(self):
-        msg = self.buildMessage({'id': 1, 'method': 'malformed\''})
+        msg = self.buildMessage(self._createRequest('malformed\'', 1))
         reply = self.sendMessage(msg)
-        self.assertEquals(4, reply['error']['code'])
+        self.assertEquals(jsonrpc.JsonRpcMethodNotFoundError().code,
+                          reply['error']['code'])
 
     def testMissingSize(self):
         self.assertRaises(ProtocolError, self.sendMessage,
@@ -261,7 +266,9 @@ class JsonRawTest(APITest):
         msg = "malformed message"
         msize = JsonRawTest._Size.pack(len(msg))
         msg = msize + msg
-        self.assertRaises(ProtocolError, self.sendMessage, msg)
+        reply = self.sendMessage(msg)
+        self.assertEquals(jsonrpc.JsonRpcParseError().code,
+                          reply['error']['code'])
 
     def testSynchronization(self):
         def doPing(msg):
@@ -270,7 +277,9 @@ class JsonRawTest(APITest):
             ret = self.sendMessage(msg)
             self.assertFalse('error' in ret)
 
-        msg = self.buildMessage({'id': 1, 'method': 'Host.ping'})
+        msg = self.buildMessage({'jsonrpc': '2.0',
+                                 'id': 1,
+                                 'method': 'Host.ping'})
         # Send Truncated message
         self.assertRaises(ProtocolError, doPing, msg[:-1])
 
@@ -284,6 +293,8 @@ class JsonRawTest(APITest):
         doPing(msg)
 
     def testInternalError(self):
-        msg = self.buildMessage({'id': 1, 'method': 'Host.ping'})
+        msg = self.buildMessage({'jsonrpc': '2.0',
+                                 'id': 1, 'method': 'Host.ping'})
         reply = self.sendMessage(msg)
-        self.assertEquals(5, reply['error']['code'])
+        self.assertEquals(jsonrpc.JsonRpcInternalError().code,
+                          reply['error']['code'])

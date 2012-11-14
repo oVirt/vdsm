@@ -14,86 +14,53 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 import threading
-import SocketServer
-import json
 import logging
-
 import struct
-
 
 _Size = struct.Struct("!Q")
 
+from jsonrpc import JsonRpcServer
+from jsonrpc.tcpReactor import TCPReactor
 
-class BindingJsonRpc:
+
+class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
-    def __init__(self, bridge, ip, port):
+    def __init__(self, bridge, backendConfig):
+        reactors = []
         self.bridge = bridge
-        self.serverPort = port
-        self.serverIP = ip
-        self._createServer()
+        self.server = JsonRpcServer(bridge)
+        for backendType, cfg in backendConfig:
+            if backendType == "tcp":
+                reactors.append(self._createTcpReactor(cfg))
 
-    def _createServer(self):
-        ip = self.serverIP or '0.0.0.0'
-        self.server = JsonRpcServer((ip, self.serverPort), JsonRpcTCPHandler,
-                                    self.bridge)
+        self._reactors = reactors
+
+    def _createTcpReactor(self, cfg):
+        address = cfg.get("ip", "0.0.0.0")
+        try:
+            port = cfg["port"]
+        except KeyError:
+            raise ValueError("cfg")
+
+        return TCPReactor((address, port), self.server)
 
     def start(self):
-        t = threading.Thread(target=self.server.serve_forever,
-                             name='JsonRpc')
-        t.setDaemon(True)
-        t.start()
+        for reactor in self._reactors:
+            reactorName = reactor.__class__.__name__
+            try:
+                reactor.start_listening()
+            except:
+                # TBD: propegate error and crash VDSM
+                self.log.warning("Could not listen on for rector '%s'",
+                                 reactorName)
+            else:
+                t = threading.Thread(target=reactor.process_requests,
+                                     name='JsonRpc (%s)' % reactorName)
+                t.setDaemon(True)
+                t.start()
 
     def prepareForShutdown(self):
         self.server.shutdown()
-
-
-class JsonRpcServer(SocketServer.TCPServer):
-    def __init__(self, addrInfo, handler, bridge):
-        self.bridge = bridge
-        self.allow_reuse_address = True
-        SocketServer.TCPServer.__init__(self, addrInfo, handler)
-
-
-class JsonRpcTCPHandler(SocketServer.StreamRequestHandler):
-    log = logging.getLogger('JsonRpcTCPHandler')
-
-    def handle(self):
-        while True:
-            # self.request is the TCP socket connected to the client
-            try:
-                data = self.request.recv(_Size.size)
-                if len(data) != _Size.size:
-                    self.log.debug("Connection closed")
-                    return
-                msgLen = _Size.unpack(data)[0]
-                msg = json.loads(self.request.recv(msgLen))
-            except:
-                self.log.warn("Unexpected exception", exc_info=True)
-                return
-            self.log.debug('Received request: %s', msg)
-
-            try:
-                ret = self.server.bridge.dispatch(msg['method'],
-                                                  msg.get('params', {}))
-                resp = self.buildResponse(msg['id'], ret)
-            except Exception as e:
-                self.log.warn("Dispatch error", exc_info=True)
-                err = {'error': {'code': 5,
-                                 'message': 'Dispatch error: %s' % e}}
-                resp = self.buildResponse(msg['id'], err)
-
-            self.wfile.write(resp)
-            self.wfile.flush()
-
-    def buildResponse(self, msgId, result):
-        msgData = {'id': msgId}
-        if result['error']['code'] != 0:
-            msgData['error'] = result['error']
-        else:
-            msgData['result'] = result['result']
-        msg = json.dumps(msgData)
-        msg = msg.encode('utf-8')
-        self.log.debug('Sending reply: %s', msg)
-        msize = _Size.pack(len(msg))
-        return msize + msg
+        for reactor in self._reactors:
+            reactor.stop()

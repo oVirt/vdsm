@@ -14,10 +14,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 from functools import partial
+
 import vdsmapi
 import logging
 import types
 import API
+import jsonrpc
 
 
 class VdsmError(Exception):
@@ -33,18 +35,19 @@ class DynamicBridge(object):
     def dispatch(self, name, argobj):
         methodName = name.replace('.', '_')
         result = None
-        error = {'code': 0, 'message': 'Success'}
         try:
             fn = getattr(self, methodName)
         except AttributeError:
-            error = {'code': 4,
-                     'message': "Operation '%s' not supported" % name}
-            return {'result': result, 'error': error}
+            raise jsonrpc.JsonRpcMethodNotFoundError()
+
         try:
             result = fn(argobj)
-        except VdsmError as e:
-            error = {'code': e.code, 'message': e.message}
-        return {'result': result, 'error': error}
+        except VdsmError, e:
+            # TBD: Do we really want to always log here
+            self.log.debug("Operation failed, returning error", exc_info=True)
+            raise jsonrpc.JsonRpcError(e.code, e.message)
+
+        return result
 
     def _getArgs(self, argobj, arglist):
         return tuple(argobj[arg] for arg in arglist if arg in argobj)
@@ -80,7 +83,7 @@ class DynamicBridge(object):
             className, methodName = attr.split('_')
             return partial(self._dynamicMethod, className, methodName)
         else:
-            raise AttributeError()
+            raise AttributeError("Attribute not found '%s'" % attr)
 
     def _convertClassName(self, name):
         """
@@ -178,8 +181,20 @@ class DynamicBridge(object):
             self._typeFixup('return', retType, result)
         return result
 
-    def _dynamicMethod(self, className, methodName, argobj):
+    def _nameArgs(self, args, kwargs, arglist):
+        kwargs = kwargs.copy()
+        for i, arg in enumerate(args):
+            argName = arglist[i]
+            kwargs[argName] = arg
+
+        return kwargs
+
+    def _getArgList(self, cmd):
+        return self.commands[cmd].get('data', {}).keys()
+
+    def _dynamicMethod(self, className, methodName, *args, **kwargs):
         cmd = '%s_%s' % (className, methodName)
+        argobj = self._nameArgs(args, kwargs, self._getArgList(cmd))
         api = self._getApiInstance(className, argobj)
         methodArgs = self._getMethodArgs(className, cmd, argobj)
         self._fixupArgs(cmd, methodArgs)
@@ -195,7 +210,7 @@ class DynamicBridge(object):
         if result['status']['code']:
             code = result['status']['code']
             msg = result['status']['message']
-            raise VdsmError(code, msg)
+            raise jsonrpc.JsonRpcError(code, msg)
 
         retfield = command_info.get(cmd, {}).get('ret')
         if isinstance(retfield, types.FunctionType):

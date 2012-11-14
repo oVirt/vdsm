@@ -942,6 +942,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/Bridge.py*
 %{_datadir}/%{vdsm_name}/vdsmapi.py*
 %{_datadir}/%{vdsm_name}/vdsmapi-schema.json
+%{_datadir}/%{vdsm_name}/jsonrpc/__init__.py*
+%{_datadir}/%{vdsm_name}/jsonrpc/tcpReactor.py*
 
 %files bootstrap
 %defattr(-, root, root, -)

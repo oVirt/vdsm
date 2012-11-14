@@ -156,8 +156,8 @@ class clientIF:
         schema = os.path.join(constants.P_VDSM, 'vdsmapi-schema.json')
         ip = self._getServerIP(config.get('addresses', 'management_ip'))
         port = config.getint('addresses', 'json_port')
-        self.bindings['json'] = BindingJsonRpc(DynamicBridge(schema),
-                                               ip, port)
+        conf = [('tcp', {"ip": ip, "port": port})]
+        self.bindings['json'] = BindingJsonRpc(DynamicBridge(schema), conf)
 
     def _prepareBindings(self):
         self.bindings = {}
