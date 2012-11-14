@@ -12,7 +12,7 @@ vdc_host_name=None
 #The port of the @ENGINENAME@. Allows http or https connections.
 vdc_host_port=443
 #The registrtion uri
-vdc_reg_uri=/OvirtEngineWeb/register
+vdc_reg_uri=@VDSM_REG_URI@
 #Upgrade settings
 upgrade_iso_file=@VDSMUPGRADEDIR@/ovirt-node-image.iso
 upgrade_mount_point=/live

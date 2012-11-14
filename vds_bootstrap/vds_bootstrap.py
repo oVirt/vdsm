@@ -154,10 +154,10 @@ REQ_PACK = ('SDL.x86_64', 'bridge-utils.x86_64', 'mesa-libGLU.x86_64',
 
 if rhel6based:
     DEVEL_PACK = ()
-    VDS_PACK = ('qemu-kvm', 'qemu-kvm-tools', VDSM_NAME, VDSM_NAME + '-cli',
-                'libjpeg', 'spice-server', 'pixman', 'seabios', 'qemu-img',
-                'fence-agents', 'libselinux-python', 'sanlock',
-                'sanlock-python')
+    VDS_PACK = (deployUtil.QEMU_KVM_PKG, 'qemu-kvm-tools', VDSM_NAME,
+                VDSM_NAME + '-cli', 'libjpeg', 'spice-server', 'pixman',
+                'seabios', deployUtil.QEMU_IMG_PKG, 'fence-agents',
+                'libselinux-python', 'sanlock', 'sanlock-python')
     # Gluster packages
     GLUSTER_PACK = (VDSM_NAME + '-gluster', )
 else:

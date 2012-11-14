@@ -146,11 +146,57 @@ AC_SUBST([vdsmupgradedir], ['/data/updates'])
 AC_SUBST([SERVICE_STOP_TIMEOUT], ['10'])
 
 # Engine Name
-AC_SUBST([ENGINENAME], ['oVirt Engine'])
+AC_ARG_WITH(
+    [engine-name],
+    [AS_HELP_STRING([--with-engine-name=NAME],
+                    [name of the engine @<:@default=oVirt Engine@:>@])],
+    [ENGINENAME="${withval}"],
+    [ENGINENAME="oVirt Engine"])
+AC_SUBST([ENGINENAME])
 
 # SMBIOS names
-AC_SUBST([SMBIOS_MANUFACTURER], ['oVirt'])
-AC_SUBST([SMBIOS_OSNAME], ['oVirt Node'])
+AC_ARG_WITH(
+    [smbios-manufacturer],
+    [AS_HELP_STRING([--with-smbios-manufacturer=NAME],
+                    [SMBIOS manufacturer name @<:@default=oVirt@:>@])],
+    [SMBIOS_MANUFACTURER="${withval}"],
+    [SMBIOS_MANUFACTURER="oVirt"])
+AC_SUBST([SMBIOS_MANUFACTURER])
+
+AC_ARG_WITH(
+    [smbios-osname],
+    [AS_HELP_STRING([--with-smbios-osname=NAME],
+                    [SMBIOS OS name @<:@default=oVirt Node@:>@])],
+    [SMBIOS_OSNAME="${withval}"],
+    [SMBIOS_OSNAME="oVirt Node"])
+AC_SUBST([SMBIOS_OSNAME])
+
+# Package names
+AC_ARG_WITH(
+    [qemu-kvm],
+    [AS_HELP_STRING([--with-qemu-kvm=PKGNAME],
+                    [package name for qemu-kvm @<:@default=qemu-kvm@:>@])],
+    [QEMU_KVM_PKG="${withval}"],
+    [QEMU_KVM_PKG="qemu-kvm"])
+AC_SUBST([QEMU_KVM_PKG])
+
+AC_ARG_WITH(
+    [qemu-img],
+    [AS_HELP_STRING([--with-qemu-img=PKGNAME],
+                    [package name for qemu-img @<:@default=qemu-img@:>@])],
+    [QEMU_IMG_PKG="${withval}"],
+    [QEMU_IMG_PKG="qemu-img"])
+AC_SUBST([QEMU_IMG_PKG])
+
+AC_ARG_WITH(
+    [register-uri],
+    [AS_HELP_STRING([--with-register-uri=URI],
+                    [registration URI on engine side]
+                    [@<:@default=/OvirtEngineWeb/register@:>@])],
+    [VDSM_REG_URI="${withval}"],
+    [VDSM_REG_URI="/OvirtEngineWeb/register"])
+AC_SUBST([VDSM_REG_URI])
+
 
 # Checking for pyflakes
 AC_PATH_PROG([PYFLAKES], [pyflakes])

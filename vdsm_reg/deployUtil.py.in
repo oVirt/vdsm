@@ -87,13 +87,16 @@ SCRIPT_NAME_ADD = "addNetwork"
 SCRIPT_NAME_DEL = "delNetwork"
 IFACE_CONFIG = "/etc/sysconfig/network-scripts/ifcfg-"
 MGT_BRIDGE_NAME = "ovirtmgmt"
-REMOTE_SSH_KEY_FILE = ('/engine.ssh.key.txt',)
+REMOTE_SSH_KEY_FILE = ('/engine.ssh.key.txt', '/rhevm.ssh.key.txt')
 CORE_DUMP_PATH = '/var/lib/vdsm/core'
 CORE_PATTERN = '/proc/sys/kernel/core_pattern'
 XML_QUOTES = {
     "\n": ' ',
     "'": '~'
 }
+
+QEMU_KVM_PKG = '@QEMU_KVM_PKG@'
+QEMU_IMG_PKG = '@QEMU_IMG_PKG@'
 
 # Regular expression used to validate content of SSH public keys:
 SSH_PUBLIC_KEY_RE = re.compile(flags=re.VERBOSE, pattern=r"""
