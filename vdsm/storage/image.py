@@ -36,6 +36,8 @@ from threadLocal import vars
 import resourceFactories
 import resourceManager as rm
 import outOfProcess as oop
+
+log = logging.getLogger('Storage.Image')
 rmanager = rm.ResourceManager.getInstance()
 
 # Disk type
@@ -74,7 +76,10 @@ def _deleteImage(dom, imgUUID, postZero):
     """
     allVols = dom.getAllVolumes()
     imgVols = sd.getVolsOfImage(allVols, imgUUID)
-    if postZero:
+    if not imgVols:
+        log.warning("No volumes found for image %s. %s", imgUUID, allVols)
+        return
+    elif postZero:
         dom.zeroImage(dom.sdUUID, imgUUID, imgVols)
     else:
         dom.deleteImage(dom.sdUUID, imgUUID, imgVols)
