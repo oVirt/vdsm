@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011,2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 import logging
 import time
 import socket
+import errno
 import json
 import supervdsm
 
@@ -49,7 +50,14 @@ def _filterXmlChars(u):
     return ''.join(maskRestricted(c) for c in u)
 
 
+class MessageState:
+    NORMAL = 'normal'
+    TOO_BIG = 'too-big'
+
+
 class GuestAgent ():
+    MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
+
     def __init__(self, socketName, channelListener, log, user='Unknown',
                  ips='', connect=True):
         self.log = log
@@ -71,6 +79,7 @@ class GuestAgent ():
             'memoryStats': {}}
         self._agentTimestamp = 0
         self._channelListener = channelListener
+        self._messageState = MessageState.NORMAL
         if connect:
             try:
                 self._prepare_socket()
@@ -95,7 +104,8 @@ class GuestAgent ():
             self.log.debug("Attempting connection to %s", self._socketName)
             if self._sock.connect_ex(self._socketName) == 0:
                 self.log.debug("Connected to %s", self._socketName)
-                self._buffer = ''
+                self._messageState = MessageState.NORMAL
+                self._clearReadBuffer()
                 self._forward('refresh')
                 self._stopped = False
                 ret = True
@@ -259,23 +269,50 @@ class GuestAgent ():
             self.log.log(logging.TRACE, "Guest connection timed out")
             self.guestStatus = None
 
+    def _clearReadBuffer(self):
+        self._buffer = []
+        self._bufferSize = 0
+
+    def _processMessage(self, line):
+        try:
+            (message, args) = self._parseLine(line)
+            self._agentTimestamp = time.time()
+            self._handleMessage(message, args)
+        except ValueError as err:
+            self.log.error("%s: %s" % (err, repr(line)))
+
+    def _handleData(self, data):
+        while (not self._stopped) and '\n' in data:
+            line, data = data.split('\n', 1)
+            line = ''.join(self._buffer) + line
+            self._clearReadBuffer()
+            if self._messageState is MessageState.TOO_BIG:
+                self._messageState = MessageState.NORMAL
+                self.log.warning("Not processing current message because it "
+                                 "was too big")
+            else:
+                self._processMessage(line)
+
+        self._buffer.append(data)
+        self._bufferSize += len(data)
+
+        if self._bufferSize >= self.MAX_MESSAGE_SIZE:
+            self.log.warning("Discarding buffer with size: %d because the "
+                             "message reached maximum size of %d bytes before "
+                             "message end was reached.", self._bufferSize,
+                             self.MAX_MESSAGE_SIZE)
+            self._messageState = MessageState.TOO_BIG
+            self._clearReadBuffer()
+
     @staticmethod
     def _onChannelRead(self):
         try:
-            while True:
-                self._buffer += self._sock.recv(2 ** 16)
+            while not self._stopped:
+                data = self._sock.recv(2 ** 16)
+                self._handleData(data)
         except socket.error as err:
-            if err.errno == 11:
-                # Nothing more to receive (Resource temporarily unavailable).
+            if err.errno == errno.EWOULDBLOCK:
                 pass
-        while (not self._stopped) and (self._buffer.find('\n') >= 0):
-            line, self._buffer = self._buffer.split('\n', 1)
-            try:
-                (message, args) = self._parseLine(line)
-                self._agentTimestamp = time.time()
-                self._handleMessage(message, args)
-            except ValueError as err:
-                self.log.error("%s: %s" % (err, repr(line)))
 
     def _parseLine(self, line):
         args = json.loads(line.decode('utf8'))
