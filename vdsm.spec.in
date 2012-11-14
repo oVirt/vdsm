@@ -42,6 +42,7 @@ BuildRequires: python-ethtool
 BuildRequires: libvirt-python
 BuildRequires: genisoimage
 BuildRequires: openssl
+BuildRequires: m2crypto
 %if 0%{?rhel}
 BuildRequires: python-ordereddict
 %endif
