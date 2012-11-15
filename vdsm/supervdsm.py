@@ -35,20 +35,21 @@ _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()
 
 
-def __supervdsmServerPath():
+def __supervdsmServerPath(serverFile):
     base = os.path.dirname(__file__)
 
-    for serverFile in ("supervdsmServer.py", "supervdsmServer.pyc"):
-        serverPath = os.path.join(base, serverFile)
-        if os.path.exists(serverPath):
-            return os.path.abspath(serverPath)
+    serverPath = os.path.join(base, serverFile)
+    if os.path.exists(serverPath):
+        return os.path.abspath(serverPath)
 
     raise RuntimeError("SuperVDSM Server not found")
 
 PIDFILE = os.path.join(constants.P_VDSM_RUN, "svdsm.pid")
 TIMESTAMP = os.path.join(constants.P_VDSM_RUN, "svdsm.time")
 ADDRESS = os.path.join(constants.P_VDSM_RUN, "svdsm.sock")
-SUPERVDSM = __supervdsmServerPath()
+SUPERVDSM = __supervdsmServerPath("supervdsmServer.py")
+
+extraPythonPathList = []
 
 
 class _SuperVdsmManager(BaseManager):
@@ -115,10 +116,15 @@ class SuperVdsmProxy(object):
     def _start(self):
         self._authkey = str(uuid.uuid4())
         self._log.debug("Launching Super Vdsm")
+
+        pypathCmd = "PYTHONPATH=$PYTHONPATH"
+        for path in extraPythonPathList:
+            pypathCmd = pypathCmd + ":" + str(path)
+
         # we pass to svdsm filenames and uid. Svdsm will use those filenames
         # to create its internal files and give to the passed uid the
         # permissions to read those files.
-        superVdsmCmd = [constants.EXT_PYTHON, SUPERVDSM,
+        superVdsmCmd = [pypathCmd, constants.EXT_PYTHON, SUPERVDSM,
                         self._authkey, str(os.getpid()),
                         self.pidfile, self.timestamp, self.address,
                         str(os.getuid())]
@@ -182,7 +188,7 @@ class SuperVdsmProxy(object):
         self._svdsm = self._manager.instance()
 
     def launch(self):
-        self.firstLaunch = False
+        self._firstLaunch = False
         self._start()
         utils.retry(self._connect, Exception, timeout=60)
 

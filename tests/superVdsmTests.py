@@ -6,10 +6,18 @@ from vdsm import utils
 import os
 
 
-class TestSuperVdsm(TestCaseBase):
+def getNeededPythonPath():
+    testDir = os.path.dirname(__file__)
+    base = os.path.dirname(testDir)
+    vdsmPath = os.path.join(base, 'vdsm')
+    cliPath = os.path.join(base, 'vdsm_cli')
+    yield [base, vdsmPath, cliPath]
 
+
+class TestSuperVdsm(TestCaseBase):
     def setUp(self):
-        testValidation.checkSudo(['python', "supervdsmServer.py"])
+        supervdsm.extraPythonPathList = getNeededPythonPath().next()
+        testValidation.checkSudo(['python', supervdsm.SUPERVDSM])
         self._proxy = supervdsm.getProxy()
 
         # temporary values to run temporary svdsm
@@ -20,13 +28,13 @@ class TestSuperVdsm(TestCaseBase):
         self._proxy.setIPCPaths(pidfile, timestamp, address)
 
     def tearDown(self):
+        supervdsm.extraPythonPathList = []
         for fd in (self.pidfd, self.timefd, self.addfd):
             os.close(fd)
         self._proxy.kill()  # cleanning old temp files
 
     def testIsSuperUp(self):
         self._proxy.ping()  # this call initiate svdsm
-
         self.assertTrue(self._proxy.isRunning())
 
     def testKillSuper(self):
@@ -40,4 +48,4 @@ class TestSuperVdsm(TestCaseBase):
         self._proxy.ping()  # svdsm is up
         self.assertTrue(self._proxy.isRunning())
         utils.rmFile(self._proxy.timestamp)
-        self.assertFalse(self._proxy.isRunning())
+        self.assertRaises(IOError, self._proxy.isRunning)
