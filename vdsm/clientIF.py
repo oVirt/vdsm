@@ -194,7 +194,8 @@ class clientIF:
             self.mom = MomThread(momconf)
         except:
             self.log.warn("MOM initialization failed and fall "
-                           "back to KsmMonitor", exc_info=True)
+                          "back to KsmMonitor")
+            self.log.debug("Details:", exc_info=True)
             self.ksmMonitor = ksm.KsmMonitorThread(self)
 
     def _syncLibvirtNetworks(self):
