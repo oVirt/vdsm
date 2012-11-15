@@ -24,6 +24,7 @@ import socket
 import tempfile
 import threading
 import subprocess
+import errno
 
 import testrunner
 import SecureXMLRPCServer
@@ -104,12 +105,28 @@ class SSLTests(testrunner.VdsmTestCase):
             keyfile=self.keyfile,
             certfile=self.certfile,
             ca_certs=self.certfile)
-        self.server.bind(ADDRESS)
+        self.address = self.tryBind(ADDRESS)
         self.server.listen(5)
 
         # Start the server thread:
         self.thread = SSLServerThread(self.server)
         self.thread.start()
+
+    def tryBind(self, address):
+        ipadd, port = address
+        while True:
+            try:
+                self.server.bind((ipadd, port))
+                return (ipadd, port)
+            except socket.error as ex:
+                if ex.errno == errno.EADDRINUSE:
+                    port += 1
+                    if port > 65535:
+                        raise socket.error(
+                            errno.EADDRINUSE,
+                            "Can not find available port to bind")
+                else:
+                    raise
 
     def tearDown(self):
         """Release the resources used by the tests.
@@ -152,7 +169,7 @@ class SSLTests(testrunner.VdsmTestCase):
         command = [
             "openssl",
             "s_client",
-            "-connect", "%s:%d" % ADDRESS,
+            "-connect", "%s:%d" % self.address,
         ]
         if args:
             command += args
