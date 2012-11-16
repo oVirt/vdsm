@@ -1420,6 +1420,22 @@
  'key': 'str', 'value': 'PathStats'}
 
 ##
+# @MOMStatus:
+#
+# An enumeration of possible MOM statuses.
+#
+# @disabled:  MOM is not enabled on this host
+#
+# @active:    MOM is enabled and running
+#
+# @inactive:  MOM has terminated
+#
+# Since: 4.10.1
+##
+{'enum': 'MOMStatus', 'data': ['disabled', 'active', 'inactive']}
+
+
+##
 # @HostStats:
 #
 # Statistics about this host.
@@ -1490,6 +1506,8 @@
 #
 # @generationID:    A @UUID that is refreshed each time vdsm starts
 #
+# @momStatus:       The current status of the MOM policy engine
+#
 # Since: 4.10.0
 ##
 {'type': 'HostStats',
@@ -1506,7 +1524,8 @@
            'swapTotal': 'int', 'swapFree': 'int','vmCount': 'int',
            'vmActive': 'int', 'vmMigrating': 'int', 'dateTime': 'str',
            'ksmState': 'bool', 'ksmPages': 'int', 'ksmCpu': 'float',
-           'netConfigDirty': 'bool', 'generationID': 'UUID'}
+           'netConfigDirty': 'bool', 'generationID': 'UUID',
+           'momStatus': 'MOMStatus'}
 
 ##
 # @Host.getStats:

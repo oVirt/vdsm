@@ -1120,8 +1120,10 @@ class Global(APIBase):
         stats['dateTime'] = '%02d-%02d-%02dT%02d:%02d:%02d GMT' % (
                 tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec)
         if self._cif.mom:
+            stats['momStatus'] = self._cif.mom.getStatus()
             stats.update(self._cif.mom.getKsmStats())
         else:
+            stats['momStatus'] = 'disabled'
             stats['ksmState'] = self._cif.ksmMonitor.state
             stats['ksmPages'] = self._cif.ksmMonitor.pages
             stats['ksmCpu'] = self._cif.ksmMonitor.cpuUsage

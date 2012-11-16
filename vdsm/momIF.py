@@ -55,3 +55,9 @@ class MomThread(threading.Thread):
         if self._mom is not None:
             self.log.info("Shutting down MOM")
             self._mom.shutdown()
+
+    def getStatus(self):
+        if self.isAlive():
+            return 'active'
+        else:
+            return 'inactive'
