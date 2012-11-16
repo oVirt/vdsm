@@ -706,10 +706,13 @@
 #
 # @libvirt:       Low level virtualization API
 #
+# @mom:           Dynamically manage system resources on virtualization hosts
+#
 # Since: 4.10.0
 ##
 {'enum': 'SoftwarePackage',
- 'data': ['kernel', 'qemu-kvm', 'qemu-img', 'vdsm', 'spice-server', 'libvirt']}
+ 'data': ['kernel', 'qemu-kvm', 'qemu-img', 'vdsm', 'spice-server', 'libvirt',
+          'mom']}
 
 ##
 # @SoftwarePackageInfo:

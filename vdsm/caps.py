@@ -331,7 +331,7 @@ def _getKeyPackages():
 
     if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL):
         KEY_PACKAGES = ['qemu-kvm', 'qemu-img',
-                        'vdsm', 'spice-server', 'libvirt']
+                        'vdsm', 'spice-server', 'libvirt', 'mom']
 
         try:
             ts = rpm.TransactionSet()
@@ -353,7 +353,7 @@ def _getKeyPackages():
     elif getos() == OSName.DEBIAN and python_apt:
         KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm', 'qemu-img': 'qemu-utils',
                         'vdsm': 'vdsmd', 'spice-server': 'libspice-server1',
-                        'libvirt': 'libvirt0'}
+                        'libvirt': 'libvirt0', 'mom': 'nom'}
 
         cache = apt.Cache()
 
