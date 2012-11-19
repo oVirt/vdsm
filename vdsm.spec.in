@@ -121,6 +121,7 @@ Requires: genisoimage
 Requires: libselinux-python
 Requires: %{name}-python = %{version}-%{release}
 Requires: pyparted
+Requires: mom >= 0.3.0
 
 Requires(pre,preun): policycoreutils-python
 Requires(post): /usr/sbin/saslpasswd2
