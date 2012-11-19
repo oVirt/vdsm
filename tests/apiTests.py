@@ -22,6 +22,7 @@ import logging
 import os
 import os.path
 import socket
+import errno
 import json
 import struct
 
@@ -123,6 +124,7 @@ def setUpModule():
     1. Override the API so we can program our own return values
     2. Start an embedded server to process our requests
     """
+    global port
     log = logging.getLogger('apiTests')
     handler = logging.StreamHandler()
     fmt_str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -137,9 +139,22 @@ def setUpModule():
     # Bridge imports the API module so we must set up the fake API first
     import Bridge
     bridge = Bridge.DynamicBridge(schema)
-    server = BindingJsonRpc.BindingJsonRpc(bridge, ip, port)
-    server.start()
 
+    # Support parallel testing.  Try hard to find an open port to use
+    while True:
+        try:
+            server = BindingJsonRpc.BindingJsonRpc(bridge, ip, port)
+            break
+        except socket.error as ex:
+            if ex.errno == errno.EADDRINUSE:
+                port += 1
+                if port > 65535:
+                    raise socket.error(
+                        errno.EADDRINUSE,
+                        "Can not find available port to bind")
+            else:
+                raise
+    server.start()
 
 class APITest(TestCaseBase):
     def expectAPI(self, obj, meth, retval):
