@@ -1398,6 +1398,7 @@ class Global(APIBase):
         _translationMap = {
             'IPADDR': 'ipaddr',
             'NETMASK': 'netmask',
+            'PREFIX': 'prefix',
             'GATEWAY': 'gateway',
             'BOOTPROTO': 'bootproto',
             'DELAY': 'delay',

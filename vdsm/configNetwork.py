@@ -29,6 +29,8 @@ import threading
 from xml.sax.saxutils import escape
 import glob
 import shutil
+import socket
+import struct
 
 import libvirt
 import selinux
@@ -865,6 +867,21 @@ def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
             _validateInterNetworkCompatibility(_netinfo, vlan, nic, bridged)
 
 
+def _prefix2netmask(prefix):
+    return socket.inet_ntoa(
+        struct.pack(
+            "!I",
+            int(
+                (
+                    ''.ljust(prefix, '1') +
+                    ''.ljust(32 - prefix, '0')
+                ),
+                2
+            )
+        )
+    )
+
+
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, mtu=None, gateway=None, force=False,
                configWriter=None, bondingOptions=None, bridged=True,
@@ -875,6 +892,15 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     if mtu:
         mtu = int(mtu)
+
+    prefix = options.get('prefix')
+    if prefix is not None:
+        if netmask is None:
+            netmask = _prefix2netmask(int(prefix))
+            del options['prefix']
+        else:
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                                     'Both PREFIX and NETMASK supplied')
 
     # Validation
     if not utils.tobool(force):
