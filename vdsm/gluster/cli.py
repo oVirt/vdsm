@@ -117,12 +117,12 @@ def _getGlusterUuid():
 
 
 def _parseVolumeStatus(tree):
-    status = {'name': tree.find('volStatus/volName').text,
+    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
               'bricks': [],
               'nfs': [],
               'shd': []}
     hostname = _getLocalIpAddress() or _getGlusterHostName()
-    for el in tree.findall('volStatus/node'):
+    for el in tree.findall('volStatus/volumes/volume/node'):
         value = {}
 
         for ch in el.getchildren():
@@ -155,9 +155,9 @@ def _parseVolumeStatus(tree):
 
 
 def _parseVolumeStatusDetail(tree):
-    status = {'name': tree.find('volStatus/volName').text,
+    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
               'bricks': []}
-    for el in tree.findall('volStatus/node'):
+    for el in tree.findall('volStatus/volumes/volume/node'):
         value = {}
 
         for ch in el.getchildren():
@@ -179,9 +179,9 @@ def _parseVolumeStatusDetail(tree):
 
 
 def _parseVolumeStatusClients(tree):
-    status = {'name': tree.find('volStatus/volName').text,
+    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
               'bricks': []}
-    for el in tree.findall('volStatus/node'):
+    for el in tree.findall('volStatus/volumes/volume/node'):
         hostname = el.find('hostname').text
         path = el.find('path').text
 
@@ -200,9 +200,9 @@ def _parseVolumeStatusClients(tree):
 
 
 def _parseVolumeStatusMem(tree):
-    status = {'name': tree.find('volStatus/volName').text,
+    status = {'name': tree.find('volStatus/volumes/volume/volName').text,
               'bricks': []}
-    for el in tree.findall('volStatus/node'):
+    for el in tree.findall('volStatus/volumes/volume/node'):
         brick = {'brick': '%s:%s' % (el.find('hostname').text,
                                      el.find('path').text),
                  'mallinfo': {},
