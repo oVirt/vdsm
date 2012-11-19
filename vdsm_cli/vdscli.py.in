@@ -30,6 +30,18 @@ d_addr = '0'
 d_port = '54321'
 
 
+class SingleRequestTransport(xmlrpclib.Transport):
+    '''Python 2.7 Transport introduced a change that makes it reuse connections
+    by default when new connections are requested for a host with an existing
+    connection. This class reverts the change to avoid the concurrency
+    issues.'''
+
+    def make_connection(self, host):
+        '''Creates a new HTTPConnection to the host.'''
+        self._connection = None
+        return xmlrpclib.Transport.make_connection(self, host)
+
+
 def __guessDefaults():
     global d_useSSL, d_tsPath, d_addr, d_port
     VDSM_CONF = '/etc/vdsm/vdsm.conf'
@@ -112,7 +124,8 @@ def connect(addrport=None, useSSL=None, tsPath=None,
         server = xmlrpclib.ServerProxy('https://%s' % addrport,
                                        transport=transport)
     else:
-        server = xmlrpclib.Server('http://%s' % addrport)
+        server = xmlrpclib.Server('http://%s' % addrport,
+                                  transport=SingleRequestTransport())
     return server
 
 if __name__ == '__main__':
