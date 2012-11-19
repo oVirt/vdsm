@@ -353,7 +353,7 @@ def _getKeyPackages():
     elif getos() == OSName.DEBIAN and python_apt:
         KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm', 'qemu-img': 'qemu-utils',
                         'vdsm': 'vdsmd', 'spice-server': 'libspice-server1',
-                        'libvirt': 'libvirt0', 'mom': 'nom'}
+                        'libvirt': 'libvirt0', 'mom': 'mom'}
 
         cache = apt.Cache()
 
