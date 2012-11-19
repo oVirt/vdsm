@@ -371,8 +371,7 @@ def main():
             servThread.join()
         finally:
             if os.path.exists(address):
-                os.unlink(address)
-                raise
+                utils.rmFile(address)
 
     except Exception:
         log.error("Could not start Super Vdsm", exc_info=True)
