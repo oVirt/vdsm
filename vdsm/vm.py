@@ -363,7 +363,7 @@ class Vm(object):
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
                          CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
                          BALLOON_DEVICES: [], REDIR_DEVICES: [],
-                         WATCHDOG_DEVICES: [],}
+                         WATCHDOG_DEVICES: []}
 
     def _get_lastStatus(self):
         PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -495,7 +495,8 @@ class Vm(object):
             if not 'specParams' in devices[WATCHDOG_DEVICES][0]:
                 devices[WATCHDOG_DEVICES][0]['specParams'] = {}
             if not 'model' in devices[WATCHDOG_DEVICES][0]['specParams']:
-                devices[WATCHDOG_DEVICES][0]['specParams']['model'] = 'i6300esb'
+                devices[WATCHDOG_DEVICES][0]['specParams']['model'] = \
+                    'i6300esb'
             if not 'action' in devices[WATCHDOG_DEVICES][0]['specParams']:
                 devices[WATCHDOG_DEVICES][0]['specParams']['action'] = 'none'
 
