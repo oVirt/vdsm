@@ -19,11 +19,15 @@
 #
 
 from collections import namedtuple
+from contextlib import closing
+import ctypes
+import fcntl
+import socket
 
 import ethtool
 
 import storage.misc
-from vdsm.constants import EXT_TC, EXT_IFCONFIG
+from vdsm.constants import EXT_TC
 
 ERR_DEV_NOEXIST = 2
 
@@ -155,12 +159,32 @@ def qdisc_del(dev, queue):
             raise
 
 
+def set_flags(dev, flags):
+    "Set device flags. We need this local definition until ethtool has it"
+
+    SIOCSIFFLAGS = 0x8914
+
+    class ifreq(ctypes.Structure):
+        _fields_ = [("ifr_ifrn", ctypes.c_char * 16),
+                    ("ifr_flags", ctypes.c_short)]
+
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as s:
+        ifr = ifreq()
+        ifr.ifr_ifrn = dev
+        ifr.ifr_flags = flags
+
+        fcntl.ioctl(s.fileno(), SIOCSIFFLAGS, ifr)
+
+
 def set_promisc(dev, on=True):
-    promisc = 'promisc'
-    if not on:
-        promisc = '-promisc'
-    command = [EXT_IFCONFIG, dev, promisc]
-    _process_request(command)
+    flags = ethtool.get_flags(dev)
+
+    if on:
+        flags |= ethtool.IFF_PROMISC
+    else:
+        flags &= ~ethtool.IFF_PROMISC
+
+    set_flags(dev, flags)
 
 
 Filter = namedtuple('Filter', 'prio handle actions')
