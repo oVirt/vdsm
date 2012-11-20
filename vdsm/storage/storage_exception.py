@@ -1184,8 +1184,7 @@ class StorageServerConnectionRefIdAlreadyInUse(StorageException):
 
 class StorageServerConnectionRefIdDoesNotExist(StorageException):
     code = 479
-    message = ("Connection Reference ID was not "
-               "in the registered with this VDSM")
+    message = "Connection Reference ID was not registered"
 
 
 #################################################
