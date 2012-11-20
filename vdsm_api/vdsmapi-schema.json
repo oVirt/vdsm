@@ -1685,7 +1685,7 @@
 ##
 {'enum': 'VmDeviceType',
  'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
-          'channel']}
+          'channel', 'console']}
 
 ##
 # @VmDiskDeviceType:
@@ -2352,6 +2352,20 @@
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
 
 ##
+# @VmConsoleDevice:
+#
+# Properties of a VM console device.
+#
+# @deviceType:  The device type (always @console)
+#
+# @deviceId:    A unique ID for this device
+#
+# Since: 4.10.0
+##
+{'type': 'VmConsoleDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'deviceId': 'UUID'}}
+
+##
 # @VmDevice:
 #
 # A discriminated record containing VM device properties.
@@ -2364,7 +2378,7 @@
  'data': {'deviceType': 'VmDeviceType',},
  'union': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
           'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
-          'VmChannelDevice', 'VmWatchdogDevice']}
+          'VmChannelDevice', 'VmWatchdogDevice', 'VmConsoleDevice']}
 
 ##
 # @VmShortStatus:

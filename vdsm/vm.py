@@ -46,6 +46,7 @@ GENERAL_DEVICES = 'general'
 BALLOON_DEVICES = 'balloon'
 REDIR_DEVICES = 'redir'
 WATCHDOG_DEVICES = 'watchdog'
+CONSOLE_DEVICES = 'console'
 
 """
 A module containing classes needed for VM communication.
@@ -363,7 +364,7 @@ class Vm(object):
                          SOUND_DEVICES: [], VIDEO_DEVICES: [],
                          CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
                          BALLOON_DEVICES: [], REDIR_DEVICES: [],
-                         WATCHDOG_DEVICES: []}
+                         WATCHDOG_DEVICES: [], CONSOLE_DEVICES: []}
 
     def _get_lastStatus(self):
         PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -446,7 +447,7 @@ class Vm(object):
                    SOUND_DEVICES: [], VIDEO_DEVICES: [],
                    CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
                    BALLOON_DEVICES: [], REDIR_DEVICES: [],
-                   WATCHDOG_DEVICES: []}
+                   WATCHDOG_DEVICES: [], CONSOLE_DEVICES: []}
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
@@ -485,6 +486,7 @@ class Vm(object):
             devices[BALLOON_DEVICES] = []
             devices[WATCHDOG_DEVICES] = []
             devices[REDIR_DEVICES] = []
+            devices[CONSOLE_DEVICES] = []
         else:
             devices = self.getConfDevices()
 
@@ -499,6 +501,9 @@ class Vm(object):
                     'i6300esb'
             if not 'action' in devices[WATCHDOG_DEVICES][0]['specParams']:
                 devices[WATCHDOG_DEVICES][0]['specParams']['action'] = 'none'
+
+        if len(devices[CONSOLE_DEVICES]) > 1:
+            raise ValueError("Only a single console device is supported")
 
         # Normalize vdsm images
         for drv in devices[DISK_DEVICES]:

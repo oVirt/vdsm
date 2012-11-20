@@ -596,22 +596,6 @@ class _DomXML:
         childNode.appendChild(textNode)
         self.dom.appendChild(childNode)
 
-    def appendConsole(self):
-        """
-        Add <console> element to domain
-
-        <console type='pty'>
-           <target type='virtio' port='0'/>
-        </console>
-        """
-        m = self.doc.createElement('console')
-        m.setAttribute('type', 'pty')
-        t = self.doc.createElement('target')
-        t.setAttribute('port', '0')
-        t.setAttribute('type', 'virtio')
-        m.appendChild(t)
-        self._devices.appendChild(m)
-
     def appendClock(self):
         """
         Add <clock> element to domain:
@@ -1271,6 +1255,22 @@ class RedirDevice(LibvirtVmDevice):
         return self.createXmlElem('redirdev', self.device, ['bus', 'address'])
 
 
+class ConsoleDevice(LibvirtVmDevice):
+    def getXML(self):
+        """
+        Create domxml for a console device.
+
+        <console type='pty'>
+          <target type='virtio' port='0'/>
+        </console>
+        """
+        target = self.createXmlElem('target', 'virtio')
+        target.setAttribute('port', '0')
+        m = self.createXmlElem('console', 'pty')
+        m.appendChild(target)
+        return m
+
+
 class LibvirtVm(vm.Vm):
     MigrationSourceThreadClass = MigrationSourceThread
 
@@ -1346,7 +1346,6 @@ class LibvirtVm(vm.Vm):
                         _QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
         domxml.appendGraphics()
-        domxml.appendConsole()
 
         for devType in self._devices:
             for dev in self._devices[devType]:
@@ -1386,7 +1385,7 @@ class LibvirtVm(vm.Vm):
 
     def _getUnderlyingVmDevicesInfo(self):
         """
-        Obtain underluing vm's devices info from libvirt.
+        Obtain underlying vm's devices info from libvirt.
         """
         self._getUnderlyingNetworkInterfaceInfo()
         self._getUnderlyingDriveInfo()
@@ -1486,7 +1485,8 @@ class LibvirtVm(vm.Vm):
                   vm.GENERAL_DEVICES: GeneralDevice,
                   vm.BALLOON_DEVICES: BalloonDevice,
                   vm.WATCHDOG_DEVICES: WatchdogDevice,
-                  vm.REDIR_DEVICES: RedirDevice}
+                  vm.REDIR_DEVICES: RedirDevice,
+                  vm.CONSOLE_DEVICES: ConsoleDevice}
 
         for devType, devClass in devMap.items():
             for dev in devices[devType]:

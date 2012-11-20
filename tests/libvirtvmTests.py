@@ -125,9 +125,9 @@ class TestLibvirtvm(TestCaseBase):
             <console type="pty">
                 <target port="0" type="virtio"/>
             </console>"""
-        domxml = libvirtvm._DomXML(self.conf, self.log)
-        domxml.appendConsole()
-        self.assertXML(domxml.dom, consoleXML, 'devices/console')
+        dev = {'device': 'console'}
+        console = libvirtvm.ConsoleDevice(self.conf, self.log, **dev)
+        self.assertXML(console.getXML(), consoleXML)
 
     def testClockXML(self):
         clockXML = """
