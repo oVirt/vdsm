@@ -473,30 +473,8 @@ export LC_ALL=C
 /usr/sbin/usermod -a -G %{qemu_group},%{snlk_group} %{vdsm_user}
 /usr/sbin/usermod -a -G %{qemu_group},%{vdsm_group} %{snlk_user}
 
-# vdsm makes extensive use of nfs-exported images
-# The next lines will collect the default selinux behaviour for the booleans
-virtNFS=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_nfs | cut -d ',' -f 2)
-virtSANLOCK=$(/usr/sbin/semanage boolean -l | /bin/grep virt_use_sanlock | cut -d ',' -f 2)
-snlkNFS=$(/usr/sbin/semanage boolean -l | /bin/grep sanlock_use_nfs | cut -d ',' -f 2)
-
-# Set the booleans and persist it across reboots
-if [[ "${virtNFS}" == *off* || "${virtSANLOCK}" == *off* || \
-      "${snlkNFS}" == *off* ]]; then
-    /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
-virt_use_nfs=1
-virt_use_sanlock=1
-sanlock_use_nfs=1
-_EOF
-fi
-
-# Set the current state of SELinux booleans
-if /usr/sbin/selinuxenabled; then
-    /usr/sbin/setsebool virt_use_nfs on
-    /usr/sbin/setsebool virt_use_sanlock on
-    /usr/sbin/setsebool sanlock_use_nfs on
-fi
-
 %post
+%{_bindir}/vdsm-tool sebool-config
 # set the vdsm "secret" password for libvirt
 %{_bindir}/vdsm-tool set-saslpasswd
 
@@ -538,17 +516,7 @@ then
     /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
         /etc/sysctl.conf
 
-    /usr/sbin/semanage boolean -m -S targeted -F /dev/stdin  << _EOF
-virt_use_nfs=0
-virt_use_sanlock=0
-sanlock_use_nfs=0
-_EOF
-
-    if /usr/sbin/selinuxenabled; then
-        /usr/sbin/setsebool virt_use_nfs off
-        /usr/sbin/setsebool virt_use_sanlock off
-        /usr/sbin/setsebool sanlock_use_nfs off
-    fi
+    %{_bindir}/vdsm-tool sebool-unconfig
 
     /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@ovirt
 
@@ -811,9 +779,10 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/betterPopen/__init__.py*
 %{python_sitearch}/%{vdsm_name}/betterPopen/createprocess.so
 %{python_sitearch}/%{vdsm_name}/tool/__init__.py*
-%{python_sitearch}/%{vdsm_name}/tool/passwd.py*
-%{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 %{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*
+%{python_sitearch}/%{vdsm_name}/tool/passwd.py*
+%{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
+%{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README

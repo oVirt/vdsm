@@ -29,5 +29,6 @@ dist_vdsmtool_DATA = \
 	__init__.py \
 	load_needed_modules.py \
 	passwd.py \
+	seboolsetup.py \
 	validate_ovirt_certs.py \
 	$(NULL)
