@@ -33,7 +33,7 @@ CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
 QEMU_DUMP_PATH="/var/log/core"
-NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock"
+NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock network"
 CONFLICTING_SERVICES="libvirt-guests"
 
 # trigger for reconfiguration

@@ -1,6 +1,6 @@
 [Unit]
 Description=Virtual Desktop Server Manager
-Requires=multipathd.service libvirtd.service ntpd.service network.service
+Requires=multipathd.service libvirtd.service ntpd.service
 Conflicts=libvirt-guests.service
 
 [Service]
