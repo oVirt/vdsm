@@ -49,7 +49,6 @@ from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS
 from storage.devicemapper import _removeMapping, _getPathsStatus
-import storage.misc
 import configNetwork
 from vdsm.config import config
 import tc
@@ -217,7 +216,7 @@ class _SuperVdsm(object):
     def udevTrigger(self, guid):
         cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
                '--property-match=DM_NAME=%s' % guid]
-        rc, out, err = storage.misc.execCmd(cmd, sudo=False)
+        rc, out, err = misc.execCmd(cmd, sudo=False)
         if rc:
             raise OSError(errno.EINVAL, "Could not trigger change for device \
                           %s, out %s\nerr %s" % (guid, out, err))
