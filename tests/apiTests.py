@@ -156,6 +156,7 @@ def setUpModule():
                 raise
     server.start()
 
+
 class APITest(TestCaseBase):
     def expectAPI(self, obj, meth, retval):
         global _fakeret
