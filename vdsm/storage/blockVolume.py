@@ -20,6 +20,7 @@
 
 import os
 import threading
+import logging
 import sanlock
 
 from vdsm.config import config
@@ -42,6 +43,7 @@ TAG_PREFIX_MD = "MD_"
 TAG_PREFIX_MDNUMBLKS = "MS_"
 TAG_PREFIX_IMAGE = "IU_"
 TAG_PREFIX_PARENT = "PU_"
+TAG_VOL_UNINIT = "OVIRT_VOL_INITIALIZING"
 VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_IMAGE,
                TAG_PREFIX_MD,
@@ -58,6 +60,7 @@ VOLUME_MDNUMBLKS = 1
 #  - 2..100  (Unassigned)
 RESERVED_LEASES = 100
 
+log = logging.getLogger('Storage.Volume')
 rmanager = rm.ResourceManager.getInstance()
 
 
@@ -159,7 +162,8 @@ class BlockVolume(volume.Volume):
         else:
             volSize = "%s" % (size / 2 / 1024)
 
-        lvm.createLV(dom.sdUUID, volUUID, volSize, activate=True)
+        lvm.createLV(dom.sdUUID, volUUID, volSize, activate=True,
+                                                initialTag=TAG_VOL_UNINIT)
 
         fileUtils.safeUnlink(volPath)
         os.symlink(lvm.lvPath(dom.sdUUID, volUUID), volPath)
@@ -180,11 +184,11 @@ class BlockVolume(volume.Volume):
 
         with cls._tagCreateLock:
             mdSlot = dom.mapMetaOffset(volUUID, VOLUME_MDNUMBLKS)
-            lvm.addLVTags(dom.sdUUID, volUUID, (
-                            "%s%s" % (TAG_PREFIX_MD, mdSlot),
-                            "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID,),
-                            "%s%s" % (TAG_PREFIX_IMAGE, imgUUID,)
-            ))
+            mdTags = ["%s%s" % (TAG_PREFIX_MD, mdSlot),
+                      "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID),
+                      "%s%s" % (TAG_PREFIX_IMAGE, imgUUID)]
+            lvm.changeLVTags(dom.sdUUID, volUUID, delTags=[TAG_VOL_UNINIT],
+                         addTags=mdTags)
 
         try:
             lvm.deactivateLVs(dom.sdUUID, volUUID)
@@ -541,13 +545,15 @@ class BlockVolume(volume.Volume):
     def getMetaOffset(self):
         if self.metaoff:
             return self.metaoff
-        l = lvm.getLV(self.sdUUID, self.volUUID).tags
-        for t in l:
-            if t.startswith(TAG_PREFIX_MD):
-                return int(t[3:])
-        self.log.error("missing offset tag on volume %s", self.volUUID)
-        raise se.VolumeMetadataReadError("missing offset tag on volume %s"
-                                          % self.volUUID)
+        try:
+            md = _getVolumeTag(self.sdUUID, self.volUUID, TAG_PREFIX_MD)
+        except se.MissingTagOnLogicalVolume:
+            self.log.error("missing offset tag on volume %s/%s",
+                            self.sdUUID, self.volUUID, exc_info=True)
+            raise se.VolumeMetadataReadError("missing offset tag on volume"
+                                        "%s/%s" % (self.sdUUID, self.volUUID))
+        else:
+            return int(md)
 
     def getMetadataId(self):
         """
@@ -633,11 +639,22 @@ class BlockVolume(volume.Volume):
 
 
 def _getVolumeTag(sdUUID, volUUID, tagPrefix):
-    for tag in lvm.getLV(sdUUID, volUUID).tags:
+    tags = lvm.getLV(sdUUID, volUUID).tags
+    if TAG_VOL_UNINIT in tags:
+        log.warning("Reloading uninitialized volume %s/%s", sdUUID, volUUID)
+        lvm.invalidateVG(sdUUID)
+        tags = lvm.getLV(sdUUID, volUUID).tags
+        if TAG_VOL_UNINIT in tags:
+            log.error("Found uninitialized volume: %s/%s", sdUUID, volUUID)
+            raise se.VolumeDoesNotExist("%s/%s" % (sdUUID, volUUID))
+
+    for tag in tags:
         if tag.startswith(tagPrefix):
             return tag[len(tagPrefix):]
-
-    raise se.MissingTagOnLogicalVolume(volUUID, tagPrefix)
+    else:
+        log.error("Missing tag %s in volume: %s/%s. tags: %s",
+                   tagPrefix, sdUUID, volUUID, tags)
+        raise se.MissingTagOnLogicalVolume(volUUID, tagPrefix)
 
 
 def _postZero(sdUUID, volumes):
