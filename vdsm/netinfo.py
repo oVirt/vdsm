@@ -181,6 +181,13 @@ def getnetmask(dev):
     return prefix2netmask(netmask)
 
 
+def getipv6addrs(dev):
+    """Return a list of IPv6 addresses in the format of 'address/prefixlen'."""
+    dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
+    ipv6addrs = dev_info_list[0].get_ipv6_addresses()
+    return [addr.address + '/' + str(addr.netmask) for addr in ipv6addrs]
+
+
 def gethwaddr(dev):
     return file('/sys/class/net/%s/address' % dev).read().strip()
 
@@ -242,6 +249,40 @@ def getRoutes():
                 gateways[route_parm[0]] = intToAddress(ip_num)
 
     return gateways
+
+
+def ipv6StrToAddress(ipv6_str):
+
+    return socket.inet_ntop(
+        socket.AF_INET6,
+        struct.pack('>QQ', *divmod(int(ipv6_str, 16), 2 ** 64)))
+
+
+def getIPv6Routes():
+    """
+    Return the default IPv6 gateway for each interface or None if not found.
+    """
+
+    ipv6gateways = dict()
+
+    try:
+        with open("/proc/net/ipv6_route") as route_file:
+            for route_line in route_file.xreadlines():
+                route_parm = route_line.rstrip().split(' ')
+                dest = route_parm[0]
+                prefix = route_parm[1]
+                nexthop = route_parm[4]
+                device = route_parm[-1]
+                if dest == '0' * 32 and prefix == '00' and nexthop != '0' * 32:
+                    ipv6gateways[device] = ipv6StrToAddress(nexthop)
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            # ipv6 module not loaded
+            pass
+        else:
+            raise
+
+    return ipv6gateways
 
 
 def getIfaceCfg(iface):

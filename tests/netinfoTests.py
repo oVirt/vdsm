@@ -60,6 +60,22 @@ class TestNetinfo(TestCaseBase):
         for n, addr in zip(num, ip):
             self.assertEqual(addr, netinfo.intToAddress(n))
 
+    def testIPv6StrToAddress(self):
+        inputs = [
+            '00000000000000000000000000000000',
+            '00000000000000000000000000000001',
+            '20010db8000000000001000000000002',
+            '20010db8aaaabbbbccccddddeeeeffff',
+            'fe80000000000000be305bbffec58446']
+        ip = [
+            '::',
+            '::1',
+            '2001:db8::1:0:0:2',
+            '2001:db8:aaaa:bbbb:cccc:dddd:eeee:ffff',
+            'fe80::be30:5bbf:fec5:8446']
+        for s, addr in zip(inputs, ip):
+            self.assertEqual(addr, netinfo.ipv6StrToAddress(s))
+
     @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
     def testGetNonExistantBridgeInfo(self):
         # Getting info of non existing bridge should not raise an exception,
