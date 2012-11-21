@@ -274,9 +274,9 @@ def permAddr():
 def get():
     d = {}
     routes = getRoutes()
-    # FIXME handle bridge/nic missing from ifconfig
     d['networks'] = {}
     nets = networks()
+
     for netname in nets.iterkeys():
         if nets[netname]['bridged']:
             devname = netname

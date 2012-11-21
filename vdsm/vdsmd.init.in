@@ -179,7 +179,7 @@ start_needed_srv() {
 }
 
 test_lo() {
-    if ! LC_ALL=C /sbin/ifconfig lo | /bin/grep -q UP;
+    if ! LC_ALL=C /sbin/ip link show lo | /bin/grep -q UP;
     then
         log_failure_msg "VDSMD: lo interface is down, can't run !"
         echo "VDSMD: lo interface is down, can't run !" > /dev/kmsg
