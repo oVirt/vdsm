@@ -488,7 +488,7 @@ class NetInfo(object):
                 assert bonding is None
                 bonding = port
                 lnics += self.bondings[bonding]['slaves']
-            else:
+            elif port in self.nics:
                 lnics.append(port)
 
         return lnics, vlan, bonding
