@@ -511,31 +511,39 @@
 #
 # Information about a VDSM bridged network.
 #
-# @ports:    A list of nic device names that are bridged
+# @ports:       A list of nic device names that are bridged
 #
-# @stp:      Whether Spanning Tree Protocol status for the bridge device
-#            should be turned on
+# @stp:         Whether Spanning Tree Protocol status for the bridge device
+#               should be turned on
 #
-# @addr:     The IP address assigned to the bridge device
+# @addr:        The IP address assigned to the bridge device
 #
-# @netmask:  The netmask of the defined subnet
+# @netmask:     The netmask of the defined subnet
 #
-# @gateway:  The IP address of the subnet's gateway
+# @gateway:     The IP address of the subnet's gateway
 #
-# @mtu:      The Maximum Transmission Unit size for the bridge device
+# @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
+#               that are assigned to the bridge device
 #
-# @cfg:      A map containing network interface parameters from ifcfg-* files.
-#            It is indexed by parameter name and stores the parameter value.
+# @ipv6gateway: The default IPv6 gateway for the bridge device
 #
-# @bridged:  Always True to distinguish this type from @NetInfoBridgelessNetwork
+# @mtu:         The Maximum Transmission Unit size for the bridge device
+#
+# @cfg:         A map containing network interface parameters from ifcfg-*
+#               files. It is indexed by parameter name and stores the
+#               parameter value.
+#
+# @bridged:     Always True to distinguish this type from
+#               @NetInfoBridgelessNetwork
 #
 # Since: 4.10.0
 # XXX: Add types for IP Address?
 ##
 {'type': 'NetInfoBridgedNetwork',
  'data': {'ports': ['str'], 'stp': 'bool', 'addr': 'str',
-          'netmask': 'str', 'gateway': 'str', 'mtu': 'uint',
-          'cfg': 'StringMap', 'bridged': 'bool'}}
+          'netmask': 'str', 'gateway': 'str', 'ipv6addrs': ['str'],
+          'ipv6gateway': 'str', 'mtu': 'uint', 'cfg': 'StringMap',
+          'bridged': 'bool'}}
 
 ##
 # @NetInfoBridgelessNetwork:
@@ -576,6 +584,9 @@
 #
 # @netmask:     The netmask of the defined subnet
 #
+# @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
+#               that are assigned to the nic
+#
 # @hwaddr:      The Media Access Control address being used by the nic
 #
 # @mtu:         The Maximum Transmission Unit size for the nic
@@ -586,49 +597,58 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoNic',
- 'data': {'speed': 'int', 'addr': 'str', 'netmask': 'str', 'hwaddr': 'str',
-          'mtu': 'uint', '*permhwaddr': 'str'}}
+ 'data': {'speed': 'int', 'addr': 'str', 'netmask': 'str',
+          'ipv6addrs': ['str'], 'hwaddr': 'str', 'mtu': 'uint',
+          '*permhwaddr': 'str'}}
 
 ##
 # @NetInfoBond:
 #
 # Information about a ethernet bond device
 #
-# @slaves:   A list of devices that are enslaved to the bond device
+# @slaves:      A list of devices that are enslaved to the bond device
 #
-# @addr:     The IP address assigned to the bond
+# @addr:        The IP address assigned to the bond
 #
-# @netmask:  The netmask of the defined subnet
+# @netmask:     The netmask of the defined subnet
 #
-# @hwaddr:   The Media Access Control address being used by the bond device
+# @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
+#               that are assigned to the bond device
 #
-# @cfg:      Raw device configuration parameters
+# @hwaddr:      The Media Access Control address being used by the bond device
 #
-# @mtu:      The Maximum Transmission Unit size for the nic
+# @cfg:         Raw device configuration parameters
+#
+# @mtu:         The Maximum Transmission Unit size for the nic
 #
 # Since: 4.10.0
 ##
 {'type': 'NetInfoBond',
- 'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str', 'hwaddr': 'str',
-          'cfg': 'StringMap', 'mtu': 'uint'}}
+ 'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str',
+          'ipv6addrs': ['str'], 'hwaddr': 'str', 'cfg': 'StringMap',
+          'mtu': 'uint'}}
 
 ##
 # @NetInfoVlan:
 #
 # Information about a Virtual Local Area Network
 #
-# @iface:    The network device associated with the vlan
+# @iface:       The network device associated with the vlan
 #
-# @addr:     The IP address assigned to the vlan device
+# @addr:        The IP address assigned to the vlan device
 #
-# @netmask:  The netmask of the defined subnet
+# @netmask:     The netmask of the defined subnet
 #
-# @mtu:      The Maximum Transmission Unit size for the vlan
+# @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
+#               that are assigned to the vlan device
+#
+# @mtu:         The Maximum Transmission Unit size for the vlan
 #
 # Since: 4.10.0
 ##
 {'type': 'NetInfoVlan',
- 'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str', 'mtu': 'uint'}}
+ 'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str',
+          'ipv6addrs': ['str'], 'mtu': 'uint'}}
 
 ##
 # @HookScriptInfo:

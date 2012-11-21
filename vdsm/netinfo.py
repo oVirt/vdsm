@@ -315,7 +315,7 @@ def permAddr():
     return paddr
 
 
-def _getNetInfo(iface, bridged, routes):
+def _getNetInfo(iface, bridged, routes, ipv6routes):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -331,6 +331,8 @@ def _getNetInfo(iface, bridged, routes):
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': getaddr(iface), 'netmask': getnetmask(iface),
                      'gateway': routes.get(iface, '0.0.0.0'),
+                     'ipv6addrs': getipv6addrs(iface),
+                     'ipv6gateway': ipv6routes.get(iface, '::'),
                      'mtu': getMtu(iface)})
     except OSError as e:
         if e.errno == errno.ENOENT:
@@ -344,12 +346,14 @@ def _getNetInfo(iface, bridged, routes):
 def get():
     d = {}
     routes = getRoutes()
+    ipv6routes = getIPv6Routes()
     d['networks'] = {}
 
     for net, netAttr in networks().iteritems():
         try:
             d['networks'][net] = _getNetInfo(netAttr.get('iface', net),
-                                             netAttr['bridged'], routes)
+                                             netAttr['bridged'], routes,
+                                             ipv6routes)
         except KeyError:
             continue  # Do not report missing libvirt networks.
 
@@ -358,6 +362,8 @@ def get():
                                    'addr': getaddr(bridge),
                                    'netmask': getnetmask(bridge),
                                    'gateway': routes.get(bridge, '0.0.0.0'),
+                                   'ipv6addrs': getipv6addrs(bridge),
+                                   'ipv6gateway': ipv6routes.get(bridge, '::'),
                                    'mtu': getMtu(bridge),
                                    'cfg': getIfaceCfg(bridge),
                                    })
@@ -366,6 +372,7 @@ def get():
     d['nics'] = dict([(nic, {'speed': speed(nic),
                              'addr': getaddr(nic),
                              'netmask': getnetmask(nic),
+                             'ipv6addrs': getipv6addrs(nic),
                              'hwaddr': gethwaddr(nic),
                              'mtu': getMtu(nic),
                              'cfg': getIfaceCfg(nic),
@@ -378,6 +385,7 @@ def get():
     d['bondings'] = dict([(bond, {'slaves': slaves(bond),
                                   'addr': getaddr(bond),
                                   'netmask': getnetmask(bond),
+                                  'ipv6addrs': getipv6addrs(bond),
                                   'hwaddr': gethwaddr(bond),
                                   'cfg': getIfaceCfg(bond),
                                   'mtu': getMtu(bond)})
@@ -385,6 +393,7 @@ def get():
     d['vlans'] = dict([(vlan, {'iface': vlan.split('.')[0],
                                'addr': getaddr(vlan),
                                'netmask': getnetmask(vlan),
+                               'ipv6addrs': getipv6addrs(vlan),
                                'mtu': getMtu(vlan),
                                'cfg': getIfaceCfg(vlan),
                                })
