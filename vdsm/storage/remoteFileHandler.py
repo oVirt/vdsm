@@ -146,7 +146,7 @@ class CrabRPCProxy(object):
                 raise Timeout()
 
             if not self._poll(self._myRead, select.POLLIN | select.POLLPRI,
-                    timeLeft):
+                              timeLeft):
                 raise Timeout()
 
             try:
@@ -166,7 +166,7 @@ class CrabRPCProxy(object):
                 raise Timeout()
 
             if not self._poll(self._myWrite, select.POLLOUT,
-                    timeLeft):
+                              timeLeft):
                 raise Timeout()
 
             l += os.write(self._myWrite, data[l:])
@@ -187,7 +187,7 @@ class CrabRPCProxy(object):
             # If for some reason the connection drops\gets out of sync we treat
             # it as a timeout so we only have one error path
             self.log.error("Problem with handler, treating as timeout",
-                    exc_info=True)
+                           exc_info=True)
             raise Timeout()
 
         res, err = pickle.loads(rawResponse)
@@ -223,7 +223,8 @@ class PoolHandler(object):
             env['PYTHONPATH'] = "%s:%s" % (
                 constants.P_VDSM, env.get("PYTHONPATH", ""))
             self.process = BetterPopen([constants.EXT_PYTHON, __file__,
-                str(hisRead), str(hisWrite)], close_fds=False, env=env)
+                                       str(hisRead), str(hisWrite)],
+                                       close_fds=False, env=env)
 
             self.proxy = CrabRPCProxy(myRead, myWrite)
 
@@ -272,14 +273,14 @@ class RemoteFileHandlerPool(object):
                     handler = self.handlers[i] = PoolHandler()
 
                 return handler.proxy.callCrabRPCFunction(timeout, name,
-                        *args, **kwargs)
+                                                         *args, **kwargs)
             except Timeout:
                 try:
                     self.handlers[i] = None
                     handler.stop()
                 except:
                     self.log.error("Could not signal stuck handler (PID:%d)",
-                            handler.process.pid, exc_info=True)
+                                   handler.process.pid, exc_info=True)
 
                 self.handlers[i] = None
                 raise
@@ -385,7 +386,7 @@ if __name__ == "__main__":
         try:
             server = CrabRPCServer(myRead, myWrite)
             for func in (writeLines, readLines, createSparseFile, echo, sleep,
-                    directWriteLines, directReadLines, simpleWalk):
+                         directWriteLines, directReadLines, simpleWalk):
 
                 server.registerFunction(func)
 
