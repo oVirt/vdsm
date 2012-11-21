@@ -394,9 +394,9 @@ def forceIScsiScan():
     if (minTimeout > maxTimeout or minTimeout < 0):
         minTimeout = 2
         maxTimeout = 30
-        log.warning("One of the following configuration arguments has an ",
-                    "illegal value: scsi_rescan_minimal_timeout or ",
-                    "scsi_rescan_maximal_timeout. Set to %s and %s seconds ",
+        log.warning("One of the following configuration arguments has an "
+                    "illegal value: scsi_rescan_minimal_timeout or "
+                    "scsi_rescan_maximal_timeout. Set to %s and %s seconds "
                     "respectively.", minTimeout, maxTimeout)
     log.debug("Performing SCSI scan, this will take up to %s seconds",
                 maxTimeout)
