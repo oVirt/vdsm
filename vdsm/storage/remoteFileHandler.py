@@ -242,7 +242,11 @@ class PoolHandler(object):
         except:
             pass
 
-        zombieReaper.autoReapPID(self.process.pid)
+        try:
+            zombieReaper.autoReapPID(self.process.pid)
+        except AttributeError:
+            if zombieReaper is not None:
+                raise
 
     def __del__(self):
         self.stop()
