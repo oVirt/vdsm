@@ -45,7 +45,7 @@ class vdsm(sos.plugintools.PluginBase):
 
     optionList = [("logsize",  'max size (MiB) to collect per log file', '', False)]
 
-    def __addCopySpecLogLimit(self,path, logsize=None):
+    def __addCopySpecLogLimit(self, path, logsize=None):
         """
         Glob the files in path and ensure that the sorted cumulative
         list of globbed files isn't larger than logsize in MiB if

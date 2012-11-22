@@ -150,11 +150,11 @@ class Request(object):
     Internal request object, don't use directly
     """
     _log = logging.getLogger("ResourceManager.Request")
-    namespace = property(lambda self : self._namespace)
-    name = property(lambda self : self._name)
-    fullName = property(lambda self : "%s.%s" % (self._namespace, self._name))
-    lockType = property(lambda self : self._lockType)
-    syncRoot = property(lambda self : self._syncRoot)
+    namespace = property(lambda self: self._namespace)
+    name = property(lambda self: self._name)
+    fullName = property(lambda self: "%s.%s" % (self._namespace, self._name))
+    lockType = property(lambda self: self._lockType)
+    syncRoot = property(lambda self: self._syncRoot)
 
     def __init__(self, namespace, name, lockType, callback):
         self._syncRoot = threading.RLock()
@@ -166,7 +166,7 @@ class Request(object):
         self._doneEvent = threading.Event()
         self._callback = callback
         self.reqID = str(uuid4())
-        self._log = SimpleLogAdapter(self._log, {"ResName" : self.fullName, "ReqID" : self.reqID})
+        self._log = SimpleLogAdapter(self._log, {"ResName": self.fullName, "ReqID": self.reqID})
 
         # Because findCaller is expensive. We make sure it wll be printed before
         # calculating it
@@ -237,17 +237,17 @@ class ResourceRef(object):
     This object will auto release the referenced resource unless autorelease is set to `False`
     """
     _log = logging.getLogger("ResourceManager.ResourceRef")
-    namespace = property(lambda self : self._namespace)
-    name = property(lambda self : self._name)
-    fullName = property(lambda self : "%s.%s" % (self._namespace, self._name))
+    namespace = property(lambda self: self._namespace)
+    name = property(lambda self: self._name)
+    fullName = property(lambda self: "%s.%s" % (self._namespace, self._name))
 
     # States whether this reference is pointing to an owned reference
-    isValid = property(lambda self : self._isValid)
+    isValid = property(lambda self: self._isValid)
 
     def __init__(self, namespace, name, wrappedObject=None, resRefID=str(uuid4())):
         self._namespace = namespace
         self._name = name
-        self._log = SimpleLogAdapter(self._log, {"ResName" : self.fullName, "ResRefID" : resRefID})
+        self._log = SimpleLogAdapter(self._log, {"ResName": self.fullName, "ResRefID": resRefID})
 
         self.__wrappedObject = wrappedObject
         if wrappedObject is not None:
@@ -259,7 +259,7 @@ class ResourceRef(object):
 
     def __wrapObj(self):
         for attr in dir(self.__wrappedObject):
-            if hasattr(self,attr) or attr in ('close', 'switchLockType'):
+            if hasattr(self, attr) or attr in ('close', 'switchLockType'):
                 continue
 
             setattr(self, attr, partial(self.__methodProxy, attr))

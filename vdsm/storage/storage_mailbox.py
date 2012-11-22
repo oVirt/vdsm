@@ -57,7 +57,7 @@ SLOTS_PER_MAILBOX = int(MAILBOX_SIZE / MESSAGE_SIZE)
 MESSAGES_PER_MAILBOX = SLOTS_PER_MAILBOX - 1 # Last message slot is reserved for metadata (checksum, extendable mailbox, etc)
 
 _zeroCheck = misc.checksum(EMPTYMAILBOX, CHECKSUM_BYTES)
-pZeroChecksum = struct.pack('<l',_zeroCheck) # Assumes CHECKSUM_BYTES equals 4!!!
+pZeroChecksum = struct.pack('<l', _zeroCheck) # Assumes CHECKSUM_BYTES equals 4!!!
 
 def dec2hex(n):
     return "%x" % n
@@ -102,9 +102,9 @@ class SPM_Extend_Message:
         domain = misc.packUuid(volumeData['domainID'])
         volume = misc.packUuid(volumeData['volumeID'])
         # Build base payload
-        payload = MESSAGE_VERSION + EXTEND_CODE + domain + volume + self.newSize.rjust(SIZE_CHARS,"0")
+        payload = MESSAGE_VERSION + EXTEND_CODE + domain + volume + self.newSize.rjust(SIZE_CHARS, "0")
         # Pad payload with zeros
-        self.payload = payload.ljust(MESSAGE_SIZE,"0")
+        self.payload = payload.ljust(MESSAGE_SIZE, "0")
 
         self.log.debug('new extend msg created: domain: %s, volume: %s', volumeData['domainID'], volumeData['volumeID'])
 
@@ -135,8 +135,8 @@ class SPM_Extend_Message:
 
         volume = {}
         volume['poolID'] = pool.spUUID
-        volume['domainID'] = misc.unpackUuid(payload[sdOffset : sdOffset+PACKED_UUID_SIZE])
-        volume['volumeID'] = misc.unpackUuid(payload[volumeOffset : volumeOffset+PACKED_UUID_SIZE])
+        volume['domainID'] = misc.unpackUuid(payload[sdOffset: sdOffset+PACKED_UUID_SIZE])
+        volume['volumeID'] = misc.unpackUuid(payload[volumeOffset: volumeOffset+PACKED_UUID_SIZE])
         size = int(payload[sizeOffset:sizeOffset + SIZE_CHARS], 16)
 
         cls.log.info("processRequest: extending volume %s "
@@ -289,18 +289,18 @@ class HSM_MailMonitor(threading.Thread):
             #
             rc = True
 
-            newMsg = newMsgs[start : start + MESSAGE_SIZE]
+            newMsg = newMsgs[start: start + MESSAGE_SIZE]
 
             if newMsg == CLEAN_MESSAGE:
                 del self._activeMessages[i]
                 self._used_slots_array[i] = 0
                 self._msgCounter -= 1
-                self._outgoingMail = self._outgoingMail[0 : start] + MESSAGE_SIZE * "\0" + self._outgoingMail[start + MESSAGE_SIZE : ]
+                self._outgoingMail = self._outgoingMail[0: start] + MESSAGE_SIZE * "\0" + self._outgoingMail[start + MESSAGE_SIZE: ]
                 continue
 
             msg = self._activeMessages[i]
             self._activeMessages[i] = CLEAN_MESSAGE
-            self._outgoingMail = self._outgoingMail[0 : start] + CLEAN_MESSAGE + self._outgoingMail[start + MESSAGE_SIZE : ]
+            self._outgoingMail = self._outgoingMail[0: start] + CLEAN_MESSAGE + self._outgoingMail[start + MESSAGE_SIZE: ]
 
             try:
                 self.log.debug("HSM_MailboxMonitor(%s/%s) - Checking reply: %s", self._msgCounter, MESSAGES_PER_MAILBOX, repr(newMsg))
@@ -338,9 +338,9 @@ class HSM_MailMonitor(threading.Thread):
 
     def _sendMail(self):
         self.log.info("HSM_MailMonitor sending mail to SPM - " + str(self._outCmd))
-        chk = misc.checksum(self._outgoingMail[0 : MAILBOX_SIZE-CHECKSUM_BYTES], CHECKSUM_BYTES)
-        pChk = struct.pack('<l',chk) # Assumes CHECKSUM_BYTES equals 4!!!
-        self._outgoingMail = self._outgoingMail[0 : MAILBOX_SIZE-CHECKSUM_BYTES] + pChk
+        chk = misc.checksum(self._outgoingMail[0: MAILBOX_SIZE-CHECKSUM_BYTES], CHECKSUM_BYTES)
+        pChk = struct.pack('<l', chk) # Assumes CHECKSUM_BYTES equals 4!!!
+        self._outgoingMail = self._outgoingMail[0: MAILBOX_SIZE-CHECKSUM_BYTES] + pChk
         misc.execCmd(self._outCmd, data=self._outgoingMail, sudo=False)
 
 
@@ -393,7 +393,7 @@ class HSM_MailMonitor(threading.Thread):
                         try:
                             #self.log.debug("No requests in queue, going to sleep until new requests arrive")
                             # Check if a new message is waiting to be sent
-                            message = self._queue.get(block=True,timeout=self._monitorInterval)
+                            message = self._queue.get(block=True, timeout=self._monitorInterval)
                             self._handleMessage(message)
                             message = None
                             sendMail = True
@@ -542,9 +542,9 @@ class SPM_MailMonitor:
 
     def _validateMailbox(self, mailbox, mailboxIndex):
         chkStart = MAILBOX_SIZE-CHECKSUM_BYTES
-        chk = misc.checksum(mailbox[0 : chkStart], CHECKSUM_BYTES)
-        pChk = struct.pack('<l',chk) # Assumes CHECKSUM_BYTES equals 4!!!
-        if pChk != mailbox[chkStart : chkStart+CHECKSUM_BYTES]:
+        chk = misc.checksum(mailbox[0: chkStart], CHECKSUM_BYTES)
+        pChk = struct.pack('<l', chk) # Assumes CHECKSUM_BYTES equals 4!!!
+        if pChk != mailbox[chkStart: chkStart+CHECKSUM_BYTES]:
             self.log.error("SPM_MailMonitor: mailbox %s checksum failed, not clearing mailbox, clearing newMail.", str(mailboxIndex))
             return False
         elif pChk == pZeroChecksum: return False  # Ignore messages of empty mailbox
@@ -573,7 +573,7 @@ class SPM_MailMonitor:
                 # Most mailboxes are probably empty so it costs less to check that all messages start with 0 than
                 # to validate the mailbox, therefor this is done after we find a non empty message in mailbox
                 if not isMailboxValidated:
-                    if not self._validateMailbox(newMail[mailboxStart : mailboxStart + MAILBOX_SIZE], host):
+                    if not self._validateMailbox(newMail[mailboxStart: mailboxStart + MAILBOX_SIZE], host):
                         #Cleaning invalid mbx in newMail
                         newMail = newMail[:mailboxStart] + EMPTYMAILBOX +  newMail[mailboxStart + MAILBOX_SIZE:]
                         break
@@ -581,13 +581,13 @@ class SPM_MailMonitor:
                     isMailboxValidated = True
 
 
-                newMsg = newMail[msgStart : msgStart+MESSAGE_SIZE]
+                newMsg = newMail[msgStart: msgStart+MESSAGE_SIZE]
                 msgOffset = msgId * MESSAGE_SIZE
                 if newMsg == CLEAN_MESSAGE:
                     # Should probably put a setter on outgoingMail which would take the lock
                     self._outLock.acquire()
                     try:
-                        self._outgoingMail = self._outgoingMail[0:msgOffset] + CLEAN_MESSAGE + self._outgoingMail[msgOffset+MESSAGE_SIZE : self._outMailLen]
+                        self._outgoingMail = self._outgoingMail[0:msgOffset] + CLEAN_MESSAGE + self._outgoingMail[msgOffset+MESSAGE_SIZE: self._outMailLen]
                     finally:
                         self._outLock.release()
                     send = True
@@ -605,14 +605,14 @@ class SPM_MailMonitor:
 
                 # We only get here if there is a novel request
                 try:
-                    msgType = newMail[msgStart+1 : msgStart+5]
+                    msgType = newMail[msgStart+1: msgStart+5]
                     if msgType in self._messageTypes:
                         # Use message class to process request according to message specific logic
                         id = str(uuid.uuid4())
-                        self.log.debug("SPM_MailMonitor: processing request: %s" % repr(newMail[msgStart : msgStart+MESSAGE_SIZE]))
+                        self.log.debug("SPM_MailMonitor: processing request: %s" % repr(newMail[msgStart: msgStart+MESSAGE_SIZE]))
                         res = self.tp.queueTask(id, runTask,
                                 (self._messageTypes[msgType], msgId,
-                                newMail[msgStart : msgStart+MESSAGE_SIZE])
+                                newMail[msgStart: msgStart+MESSAGE_SIZE])
                         )
                         if not res:
                             raise Exception()
@@ -663,9 +663,9 @@ class SPM_MailMonitor:
         self._outLock.acquire()
         try:
             msgOffset = msgID*MESSAGE_SIZE
-            self._outgoingMail = self._outgoingMail[0:msgOffset] + msg.payload + self._outgoingMail[msgOffset+MESSAGE_SIZE : self._outMailLen]
+            self._outgoingMail = self._outgoingMail[0:msgOffset] + msg.payload + self._outgoingMail[msgOffset+MESSAGE_SIZE: self._outMailLen]
             mailboxOffset = (msgID / SLOTS_PER_MAILBOX) * MAILBOX_SIZE
-            mailbox = self._outgoingMail[mailboxOffset : mailboxOffset + MAILBOX_SIZE]
+            mailbox = self._outgoingMail[mailboxOffset: mailboxOffset + MAILBOX_SIZE]
             cmd = self._outCmd + ['bs=' + str(MAILBOX_SIZE), 'seek=' + str(mailboxOffset / MAILBOX_SIZE)]
             #self.log.debug("Running command: %s, for message id: %s", str(cmd), str(msgID))
             (rc, out, err) = misc.execCmd(cmd, sudo=False, data=mailbox)

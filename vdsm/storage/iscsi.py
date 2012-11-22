@@ -429,7 +429,7 @@ def getiScsiSession(dev):
 
 def getDefaultInitiatorName():
     with open("/etc/iscsi/initiatorname.iscsi", "r") as f:
-        return f.read().strip().split("=",1)[1]
+        return f.read().strip().split("=", 1)[1]
 
 
 def findUnderlyingStorage(devPath):

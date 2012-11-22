@@ -133,7 +133,7 @@ def getEngineConfig():
     config = {}
     config["vdc_host_port"] = VDC_HOST_PORT
     for line in vdsm_config:
-        line = line.strip().replace(" ","").split("=")
+        line = line.strip().replace(" ", "").split("=")
         if "vdc_host_name" in line:
             item, config["vdc_host_name"] = line[0], line[1]
         if "vdc_host_port" in line:
@@ -161,7 +161,7 @@ class Plugin(PluginBase):
             self.ncs.screen.setColor(customColorset(1), "black", "magenta")
             heading.setColors(customColorset(1))
         elements.setField(heading, 0, 0, anchorLeft = 1)
-        engine_grid = Grid(2,2)
+        engine_grid = Grid(2, 2)
         engine_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
         self.engine_server = Entry(25, "")
         self.engine_server.setCallback(self.validEngineServerCallback)
@@ -170,14 +170,14 @@ class Plugin(PluginBase):
         self.engine_server_port.setCallback(self.validEngineServerPortCallback)
         engine_grid.setField(self.engine_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
         engine_grid.setField(self.engine_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 0))
-        elements.setField(engine_grid, 0, 1, anchorLeft = 1, padding = (0,0,0,0))
+        elements.setField(engine_grid, 0, 1, anchorLeft = 1, padding = (0, 0, 0, 0))
         elements.setField(Label(""), 0, 2, anchorLeft = 1)
         self.verify_engine_cert = Checkbox("Connect to @ENGINENAME@ and Validate Certificate", isOn=True)
-        elements.setField(self.verify_engine_cert, 0, 3, anchorLeft = 1, padding = (0,0,0,0))
+        elements.setField(self.verify_engine_cert, 0, 3, anchorLeft = 1, padding = (0, 0, 0, 0))
         elements.setField(Label(""), 0, 4, anchorLeft = 1)
 
         elements.setField(Label("Optional password for adding node through @ENGINENAME@ UI"), 0, 5, anchorLeft = 1)
-        pw_elements = Grid(3,3)
+        pw_elements = Grid(3, 3)
 
         pw_elements.setField(Label("Password: "), 0, 1, anchorLeft = 1)
         self.root_password_1 = Entry(15, password=1)
@@ -192,7 +192,7 @@ class Plugin(PluginBase):
         self.pw_resp = PASSWORD_MATCH
 
         elements.setField(pw_elements, 0, 6, anchorLeft=1)
-        elements.setField(self.pw_msg, 0, 7, padding = (0,0,0,0))
+        elements.setField(self.pw_msg, 0, 7, padding = (0, 0, 0, 0))
 
         inputFields = [self.engine_server, self.engine_server_port, self.verify_engine_cert,
                        self.root_password_1, self.root_password_2]
@@ -202,7 +202,7 @@ class Plugin(PluginBase):
 
         try:
             engine_server = getEngineConfig()
-            engine_server,engine_port = engine_server.split(":")
+            engine_server, engine_port = engine_server.split(":")
             if engine_server.startswith("None"):
                 self.engine_server.set("")
             else:

@@ -72,7 +72,7 @@ def main():
         installVirtualizationService = True
         installGlusterService = False
         opts, args = getopt.getopt(sys.argv[1:], "v:c:Vg")
-        for o,v in opts:
+        for o, v in opts:
             if o == "-v":
                 deployUtil.setBootstrapInterfaceVersion(int(v))
             if o == "-c":

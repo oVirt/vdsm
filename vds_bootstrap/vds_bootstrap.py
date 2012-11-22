@@ -149,7 +149,7 @@ else:
     MINIMAL_SUPPORTED_PLATFORM = "5.5"
 
 # Required packages
-REQ_PACK = ('SDL.x86_64','bridge-utils.x86_64','mesa-libGLU.x86_64',
+REQ_PACK = ('SDL.x86_64', 'bridge-utils.x86_64', 'mesa-libGLU.x86_64',
             'openssl.x86_64', 'rsync.x86_64')
 
 if rhel6based:
@@ -163,9 +163,9 @@ if rhel6based:
                     'glusterfs-geo-replication')
 else:
     # Devel packages
-    DEVEL_PACK = ('gdb','tcpdump','strace','ltrace','sysstat','ntp',
-                    'pstack','vim-common','vim-enhanced',
-                    'systemtap','systemtap-runtime')
+    DEVEL_PACK = ('gdb', 'tcpdump', 'strace', 'ltrace', 'sysstat', 'ntp',
+                    'pstack', 'vim-common', 'vim-enhanced',
+                    'systemtap', 'systemtap-runtime')
     # VDS packages
     VDS_PACK = ('kvm', 'kmod-kvm', 'kvm-tools', VDSM_NAME, VDSM_NAME+'-cli', 'qcairo',
                 'qffmpeg-libs', 'qspice-libs', 'qpixman', 'log4cpp',
@@ -494,7 +494,7 @@ class Deploy:
                 self.req_pack.append(pack)
 
         for p in self.req_pack:
-            logging.debug('>>> %s should be installed',p)
+            logging.debug('>>> %s should be installed', p)
         logging.debug('Check VDS packages ...')
         for pack in VDS_PACK:
             self.res, self.message = deployUtil.getPackageInfo("VDS", pack, 'status')
@@ -503,7 +503,7 @@ class Deploy:
                 self.vds_pack.append(pack)
 
         for p in self.vds_pack:
-            logging.debug('>>> %s should be installed',p)
+            logging.debug('>>> %s should be installed', p)
         logging.debug('Check development packages ...')
         for pack in DEVEL_PACK:
             self.res, self.message = deployUtil.getPackageInfo("DEVEL", pack, 'status')
@@ -512,11 +512,11 @@ class Deploy:
                 self.devel_pack.append(pack)
 
         for p in self.devel_pack:
-            logging.debug('>>> %s should be installed',p)
+            logging.debug('>>> %s should be installed', p)
 
     def _installPackage(self, pack, type, update=0):
         nReturn = 0
-        logging.debug('Installing %s %d',pack, update )
+        logging.debug('Installing %s %d', pack, update )
         if type == "REQ" or type == "DEVEL":
             self.res, self.message = deployUtil.installAndVerify(type, pack, "install")
             res = "OK"
@@ -578,7 +578,7 @@ class Deploy:
         # install/update packages
         while self.req_pack:
             logging.debug('Install required packages ...')
-            self.rc = self._installPackage(self.req_pack.pop(),"REQ")
+            self.rc = self._installPackage(self.req_pack.pop(), "REQ")
             if self.rc:
                 return
 
@@ -587,17 +587,17 @@ class Deploy:
         logging.debug('Update VDS packages ...  %s', self.vds_pack.__repr__())
         for pack in VDS_PACK:
             if pack not in self.vds_pack:
-                self.rc = self._installPackage(pack,"VDS", 1)
+                self.rc = self._installPackage(pack, "VDS", 1)
                 if self.rc:
                     return
         while self.vds_pack:
-            self.rc = self._installPackage(self.vds_pack.pop(),"VDS")
+            self.rc = self._installPackage(self.vds_pack.pop(), "VDS")
             if self.rc:
                 return
 
         while self.devel_pack:
             logging.debug('Install development packages ...')
-            self._installPackage(self.devel_pack.pop(),"DEVEL")
+            self._installPackage(self.devel_pack.pop(), "DEVEL")
 
     def packagesExplorer(self):
         """
@@ -1064,7 +1064,7 @@ obsolete options:
         installGlusterService = False
         bridgeName = None
         opts, args = getopt.getopt(sys.argv[1:], "v:r:O:t:f:S:n:u:B:Vg")
-        for o,v in opts:
+        for o, v in opts:
             if o == "-v":
                 deployUtil.setBootstrapInterfaceVersion(int(v))
             if o == "-r":

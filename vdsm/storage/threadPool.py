@@ -252,13 +252,13 @@ if __name__ == "__main__":
     pool = ThreadPool(100)
 
     # Insert tasks into the queue and let them run
-    print "Running tasks: ", pool.getRunningTasks(),"\n"
+    print "Running tasks: ", pool.getRunningTasks(), "\n"
     pool.queueTask(sortTask, (1000, 100000), taskCallback)
-    print "Running tasks: ", pool.getRunningTasks(),"\n"
+    print "Running tasks: ", pool.getRunningTasks(), "\n"
     pool.queueTask(waitTask, 5, taskCallback)
     pool.queueTask(sortTask, (200, 200000), taskCallback)
     pool.queueTask(waitTask, 2, taskCallback)
-    print "Running tasks: ", pool.getRunningTasks(),"\n"
+    print "Running tasks: ", pool.getRunningTasks(), "\n"
     pool.queueTask(sortTask, (3, 30000), taskCallback)
     pool.queueTask(waitTask, 7, taskCallback)
 

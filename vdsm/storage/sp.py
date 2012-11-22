@@ -86,11 +86,11 @@ def domainListDecoder(s):
 
 SP_MD_FIELDS = {
         # Key          dec,  enc
-        PMDK_DOMAINS : (domainListDecoder, domainListEncoder),
-        PMDK_POOL_DESCRIPTION : (unicodeDecoder, unicodeEncoder),
-        PMDK_LVER : (int, str),
-        PMDK_SPM_ID : (int, str),
-        PMDK_MASTER_VER : (int, str)
+        PMDK_DOMAINS: (domainListDecoder, domainListEncoder),
+        PMDK_POOL_DESCRIPTION: (unicodeDecoder, unicodeEncoder),
+        PMDK_LVER: (int, str),
+        PMDK_SPM_ID: (int, str),
+        PMDK_MASTER_VER: (int, str)
     }
 
 # Calculate how many domains can be in the pool before overflowing the Metadata
@@ -1368,24 +1368,24 @@ class StoragePool(Securable):
             disktotal, diskfree = st.diskUtilization
             vgmdtotal, vgmdfree = st.vgMdUtilization
             res[sdUUID] = {
-                    'finish' : st.lastCheck,
-                    'result' : {
-                        'code'      : code,
-                        'lastCheck' : '%.1f' % (now - st.lastCheck),
-                        'delay'     : str(st.readDelay),
-                        'valid'     : (st.error is None)
+                    'finish': st.lastCheck,
+                    'result': {
+                        'code': code,
+                        'lastCheck': '%.1f' % (now - st.lastCheck),
+                        'delay': str(st.readDelay),
+                        'valid': (st.error is None)
                         },
-                    'disktotal' : disktotal,
-                    'diskfree' : diskfree,
+                    'disktotal': disktotal,
+                    'diskfree': diskfree,
 
-                    'mdavalid' : st.vgMdHasEnoughFreeSpace,
-                    'mdathreshold' : st.vgMdFreeBelowThreashold,
-                    'mdasize' : vgmdtotal,
-                    'mdafree' : vgmdfree,
+                    'mdavalid': st.vgMdHasEnoughFreeSpace,
+                    'mdathreshold': st.vgMdFreeBelowThreashold,
+                    'mdasize': vgmdtotal,
+                    'mdafree': vgmdfree,
 
-                    'masterValidate' : {
-                        'mount' : st.masterMounted,
-                        'valid' : st.masterValid
+                    'masterValidate': {
+                        'mount': st.masterMounted,
+                        'valid': st.masterValid
                         }
                     }
         return res
@@ -1449,14 +1449,14 @@ class StoragePool(Securable):
                         stats['disktotal'] = repoStats[item]['disktotal']
                         stats['diskfree'] = repoStats[item]['diskfree']
                     if not repoStats[item]['mdavalid']:
-                        alerts.append({'code':se.SmallVgMetadata.code,
-                                       'message':se.SmallVgMetadata.message})
+                        alerts.append({'code': se.SmallVgMetadata.code,
+                                       'message': se.SmallVgMetadata.message})
                         self.log.warning("VG %s's metadata size too small %s",
                                           dom.sdUUID, repoStats[item]['mdasize'])
 
                     if not repoStats[item]['mdathreshold']:
-                        alerts.append({'code':se.VgMetadataCriticallyFull.code,
-                                       'message':se.VgMetadataCriticallyFull.message})
+                        alerts.append({'code': se.VgMetadataCriticallyFull.code,
+                                       'message': se.VgMetadataCriticallyFull.message})
                         self.log.warning("VG %s's metadata size exceeded critical size: \
                                          mdasize=%s mdafree=%s", dom.sdUUID,
                                          repoStats[item]['mdasize'], repoStats[item]['mdafree'])
@@ -1479,7 +1479,7 @@ class StoragePool(Securable):
         for item in domDict:
             try:
                 dom = sdCache.produce(item)
-            except se.StorageDomainDoesNotExist :
+            except se.StorageDomainDoesNotExist:
                self.log.warn("Storage domain %s does not exist", item)
                continue
 

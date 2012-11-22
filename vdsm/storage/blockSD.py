@@ -108,10 +108,10 @@ BLOCK_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
 # TBD: Do we really need this key?
 BLOCK_SD_MD_FIELDS.update({
     # Key           dec,  enc
-    DMDK_PV_REGEX : (decodePVInfo, encodePVInfo),
-    DMDK_VGUUID : (str, str),
-    DMDK_LOGBLKSIZE : (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
-    DMDK_PHYBLKSIZE : (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
+    DMDK_PV_REGEX: (decodePVInfo, encodePVInfo),
+    DMDK_VGUUID: (str, str),
+    DMDK_LOGBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
+    DMDK_PHYBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
 })
 
 INVALID_CHARS = re.compile(r"[^a-zA-Z0-9_+.\-/=!:#]")
@@ -341,8 +341,8 @@ class LvMetadataRW(object):
             f.seek(self._offset)
             f.write(data)
 
-LvBasedSDMetadata = lambda vg, lv : DictValidator(PersistentDict(LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)), BLOCK_SD_MD_FIELDS)
-TagBasedSDMetadata = lambda vg : DictValidator(PersistentDict(VGTagMetadataRW(vg)), BLOCK_SD_MD_FIELDS)
+LvBasedSDMetadata = lambda vg, lv: DictValidator(PersistentDict(LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)), BLOCK_SD_MD_FIELDS)
+TagBasedSDMetadata = lambda vg: DictValidator(PersistentDict(VGTagMetadataRW(vg)), BLOCK_SD_MD_FIELDS)
 
 def selectMetadata(sdUUID):
     mdProvider = LvBasedSDMetadata(sdUUID, sd.METADATA)
@@ -358,7 +358,7 @@ def metadataValidity(vg):
      mdathreshold - False if the VG's metadata exceeded its threshold, else True
      mdavalid - False if the VG's metadata size too small, else True
     """
-    mdaStatus = {'mdavalid':True, 'mdathreshold':True}
+    mdaStatus = {'mdavalid': True, 'mdathreshold': True}
     mda_size = int(vg.vg_mda_size)
     mda_free = int(vg.vg_mda_free)
 
@@ -477,7 +477,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         numOfPVs = len(lvm.listPVNames(vgName))
         if version in VERS_METADATA_LV and numOfPVs > MAX_PVS:
-            cls.log.debug("%d > %d" , numOfPVs, MAX_PVS)
+            cls.log.debug("%d > %d", numOfPVs, MAX_PVS)
             raise se.StorageDomainIsMadeFromTooManyPVs()
 
         # Create metadata service volume
@@ -528,21 +528,21 @@ class BlockStorageDomain(sd.StorageDomain):
         #         Do we really need to keep the VGUUID?
         #         no one reads it from here anyway
         initialMetadata = {
-                sd.DMDK_VERSION : version,
-                sd.DMDK_SDUUID : sdUUID,
-                sd.DMDK_TYPE : storageType,
-                sd.DMDK_CLASS : domClass,
-                sd.DMDK_DESCRIPTION : domainName,
-                sd.DMDK_ROLE : sd.REGULAR_DOMAIN,
-                sd.DMDK_POOLS : [],
-                sd.DMDK_LOCK_POLICY : '',
-                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_LEASE_TIME_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_IO_OP_TIMEOUT_SEC : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
-                sd.DMDK_LEASE_RETRIES : sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
-                DMDK_VGUUID : vgUUID,
-                DMDK_LOGBLKSIZE : logBlkSize,
-                DMDK_PHYBLKSIZE : phyBlkSize,
+                sd.DMDK_VERSION: version,
+                sd.DMDK_SDUUID: sdUUID,
+                sd.DMDK_TYPE: storageType,
+                sd.DMDK_CLASS: domClass,
+                sd.DMDK_DESCRIPTION: domainName,
+                sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
+                sd.DMDK_POOLS: [],
+                sd.DMDK_LOCK_POLICY: '',
+                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+                sd.DMDK_LEASE_TIME_SEC: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+                sd.DMDK_IO_OP_TIMEOUT_SEC: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
+                sd.DMDK_LEASE_RETRIES: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
+                DMDK_VGUUID: vgUUID,
+                DMDK_LOGBLKSIZE: logBlkSize,
+                DMDK_PHYBLKSIZE: phyBlkSize,
                 }
 
         initialMetadata.update(mapping)
@@ -711,7 +711,7 @@ class BlockStorageDomain(sd.StorageDomain):
             return self.getFreeMetadataSlot(slotSize)
 
     def _getOccupiedMetadataSlots(self):
-        stripPrefix = lambda s, pfx : s[len(pfx):]
+        stripPrefix = lambda s, pfx: s[len(pfx):]
         occupiedSlots = []
         for lv in lvm.getLV(self.sdUUID):
             if lv.name in SPECIAL_LVS:

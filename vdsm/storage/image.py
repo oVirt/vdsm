@@ -48,9 +48,9 @@ SHARED_DISK_TYPE = 3
 SWAP_DISK_TYPE = 4
 TEMP_DISK_TYPE = 5
 
-DISK_TYPES = {UNKNOWN_DISK_TYPE:'UNKNOWN', SYSTEM_DISK_TYPE:'SYSTEM',
-                DATA_DISK_TYPE:'DATA', SHARED_DISK_TYPE:'SHARED',
-                SWAP_DISK_TYPE:'SWAP', TEMP_DISK_TYPE:'TEMP'}
+DISK_TYPES = {UNKNOWN_DISK_TYPE: 'UNKNOWN', SYSTEM_DISK_TYPE: 'SYSTEM',
+                DATA_DISK_TYPE: 'DATA', SHARED_DISK_TYPE: 'SHARED',
+                SWAP_DISK_TYPE: 'SWAP', TEMP_DISK_TYPE: 'TEMP'}
 
 # What volumes to synchronize
 SYNC_VOLUMES_ALL = 'ALL'
@@ -61,7 +61,7 @@ SYNC_VOLUMES_LEAF = 'LEAF'
 UNKNOWN_OP = 0
 COPY_OP = 1
 MOVE_OP = 2
-OP_TYPES = {UNKNOWN_OP:'UNKNOWN', COPY_OP:'COPY', MOVE_OP:'MOVE'}
+OP_TYPES = {UNKNOWN_OP: 'UNKNOWN', COPY_OP: 'COPY', MOVE_OP: 'MOVE'}
 
 RENAME_RANDOM_STRING_LEN = 8
 
@@ -562,7 +562,7 @@ class Image:
                 # only base may have a different parent image
                 pimg = imgUUID
 
-        return {'srcChain':srcChain, 'dstChain':dstChain}
+        return {'srcChain': srcChain, 'dstChain': dstChain}
 
     def _interImagesCopy(self, destDom, srcSdUUID, imgUUID, chains):
         srcLeafVol = chains['srcChain'][-1]
