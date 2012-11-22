@@ -22,6 +22,7 @@ import threading
 import time
 import select
 
+
 class Listener(threading.Thread):
     """
     An events driven listener which handle messages from virtual machines.
@@ -68,7 +69,7 @@ class Listener(threading.Thread):
         """ Add new channels to unconnected channels list. """
         for (fileno, obj) in self._add_channels.items():
             self.log.debug("fileno %d was added to unconnected channels.",
-                fileno)
+                           fileno)
             self._unconnected[fileno] = obj
         self._add_channels.clear()
 
@@ -139,13 +140,16 @@ class Listener(threading.Thread):
         self.log.info("Setting channels' timeout to %d seconds.", seconds)
         self._timeout = seconds
 
-    def register(self, fileno, connect_callback, read_callback, timeout_callback, opaque):
+    def register(self, fileno, connect_callback, read_callback,
+                 timeout_callback, opaque):
         """ Register a new file descriptor to the listener. """
         self.log.debug("Add fileno %d to listener's channels.", fileno)
         with self._update_lock:
-            self._add_channels[fileno] = { 'connect_cb': connect_callback,
+            self._add_channels[fileno] = {
+                'connect_cb': connect_callback,
                 'read_cb': read_callback, 'timeout_cb': timeout_callback,
-                'opaque': opaque, 'read_time': 0.0 }
+                'opaque': opaque, 'read_time': 0.0,
+            }
 
     def unregister(self, fileno):
         """ Unregister an exist file descriptor from the listener. """

@@ -25,6 +25,7 @@ import libvirt
 
 from vdsm import libvirtconnection
 
+
 def main():
     """
     Defines network filters on libvirt
@@ -32,6 +33,7 @@ def main():
     conn = libvirtconnection.get()
     NoMacSpoofingFilter().defineNwFilter(conn)
     conn.close()
+
 
 class NwFilter(object):
     """

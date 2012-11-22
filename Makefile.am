@@ -74,6 +74,7 @@ PEP8_WHITELIST = \
 	vdsm/momIF.py \
 	vdsm/neterrors.py \
 	vdsm/netinfo.py \
+	vdsm/nwfilter.py \
 	vdsm/parted_utils.py \
 	vdsm/rest/BindingREST.py \
 	vdsm/rest/Controller.py \
@@ -110,6 +111,7 @@ PEP8_WHITELIST = \
 	vdsm/vdsm \
 	vdsm/vdsmDebugPlugin.py \
 	vdsm/vm.py \
+	vdsm/vmChannels.py \
 	vdsm_api \
 	vdsm_cli \
 	vdsm_hooks/fileinject \
