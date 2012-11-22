@@ -29,8 +29,7 @@ from vdsm.define import ERROR, doneCode, errCode
 from vdsm import utils
 from vdsm import constants
 import guestIF
-import libvirtev
-from vdsm import libvirtconnection
+from vdsm import libvirtconnection, libvirtev
 from vdsm.config import config
 import hooks
 import caps

@@ -618,7 +618,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
-%{_datadir}/%{vdsm_name}/libvirtev.py*
 %{_datadir}/%{vdsm_name}/libvirtvm.py*
 %{_datadir}/%{vdsm_name}/lsblk.py*
 %{_datadir}/%{vdsm_name}/md_utils.py*
@@ -777,6 +776,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/define.py*
 %{python_sitearch}/%{vdsm_name}/exception.py*
 %{python_sitearch}/%{vdsm_name}/libvirtconnection.py*
+%{python_sitearch}/%{vdsm_name}/libvirtev.py*
 %{python_sitearch}/%{vdsm_name}/netinfo.py*
 %{python_sitearch}/%{vdsm_name}/qemuImg.py*
 %{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*

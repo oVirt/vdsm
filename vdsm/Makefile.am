@@ -36,7 +36,6 @@ dist_vdsm_PYTHON = \
 	hooks.py \
 	kaxmlrpclib.py \
 	ksm.py \
-	libvirtev.py \
 	libvirtvm.py \
 	logUtils.py \
 	lsblk.py \
@@ -60,6 +59,7 @@ dist_vdsmpylib_PYTHON = \
 	define.py \
 	exception.py \
 	libvirtconnection.py \
+	libvirtev.py \
 	netinfo.py \
 	qemuImg.py \
 	SecureXMLRPCServer.py \
