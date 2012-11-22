@@ -638,6 +638,7 @@ class StoragePool(Securable):
         self.scsiKey = scsiKey
         # Make sure SDCache doesn't have stale data (it can be in case of FC)
         sdCache.invalidateStorage()
+        sdCache.refresh()
         # Rebuild whole Pool
         self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
         self.__createMailboxMonitor()
@@ -1230,6 +1231,7 @@ class StoragePool(Securable):
         Refresh storage pool.
          'msdUUID' - master storage domain UUID
         """
+        sdCache.invalidateStorage()
         sdCache.refresh()
         self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
 
