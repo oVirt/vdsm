@@ -56,7 +56,7 @@ class TestCaps(TestCaseBase):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
         path = os.path.join(dirName, "caps_libvirt.out")
-        t = caps.CpuTopology(path)
+        t = caps.CpuTopology(file(path).read())
         self.assertEqual(t.threads(), 24)
         self.assertEqual(t.cores(), 12)
         self.assertEqual(t.sockets(), 2)

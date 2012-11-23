@@ -103,12 +103,15 @@ class CpuTopology(object):
 
 
 @utils.memoized
+def _getCapsXMLStr():
+    return libvirtconnection.get().getCapabilities()
+
+
+@utils.memoized
 def _getCpuTopology(capabilities):
-    if capabilities:
-        caps = minidom.parse(capabilities)
-    else:
-        c = libvirtconnection.get()
-        caps = minidom.parseString(c.getCapabilities())
+    if capabilities is None:
+        capabilities = _getCapsXMLStr()
+    caps = minidom.parseString(capabilities)
     host = caps.getElementsByTagName('host')[0]
     cpu = host.getElementsByTagName('cpu')[0]
     cells = host.getElementsByTagName('cells')[0]
@@ -123,8 +126,7 @@ def _getCpuTopology(capabilities):
 
 @utils.memoized
 def _getEmulatedMachines():
-    c = libvirtconnection.get()
-    caps = minidom.parseString(c.getCapabilities())
+    caps = minidom.parseString(_getCapsXMLStr())
     guestTag = caps.getElementsByTagName('guest')
     # Guest element is missing if kvm modules are not loaded
     if len(guestTag) == 0:
