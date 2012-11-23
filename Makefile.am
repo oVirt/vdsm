@@ -67,6 +67,7 @@ PEP8_WHITELIST = \
 	vdsm/hooks.py \
 	vdsm/kaxmlrpclib.py \
 	vdsm/ksm.py \
+	vdsm/libvirtconnection.py \
 	vdsm/libvirtev.py \
 	vdsm/libvirtvm.py \
 	vdsm/lsblk.py \

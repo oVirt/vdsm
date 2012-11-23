@@ -30,6 +30,7 @@ from vdsm import constants, utils
 # TODO: make this internal to libvirtev, and make the thread stoppable
 libvirtev.virEventLoopPureStart()
 
+
 def __eventCallback(conn, dom, *args):
     try:
         cif, eventid = args[-1]
@@ -38,7 +39,7 @@ def __eventCallback(conn, dom, *args):
 
         if not v:
             cif.log.debug('unknown vm %s eventid %s args %s', vmid, eventid,
-                    args)
+                          args)
             return
 
         if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
@@ -72,8 +73,11 @@ def __eventCallback(conn, dom, *args):
     except:
         cif.log.error("Error running VM callback", exc_info=True)
 
+
 __connections = {}
 __connectionLock = threading.Lock()
+
+
 def get(cif=None):
     """Return current connection to libvirt or open a new one.
 
@@ -91,8 +95,9 @@ def get(cif=None):
                             setattr(ret, name, wrapMethod(method))
                 return ret
             except libvirt.libvirtError, e:
-                if (e.get_error_domain() in (libvirt.VIR_FROM_REMOTE, libvirt.VIR_FROM_RPC)
-                    and e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR):
+                if (e.get_error_domain() in (libvirt.VIR_FROM_REMOTE,
+                                             libvirt.VIR_FROM_RPC) and
+                        e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR):
                     cif.log.error('connection to libvirt broken. '
                                   'taking vdsm down.')
                     cif.prepareForShutdown()
@@ -102,14 +107,16 @@ def get(cif=None):
         return wrapper
 
     def req(credentials, user_data):
+        passwd = file(constants.P_VDSM_LIBVIRT_PASSWD).readline().rstrip("\n")
         for cred in credentials:
             if cred[0] == libvirt.VIR_CRED_AUTHNAME:
                 cred[4] = constants.SASL_USERNAME
             elif cred[0] == libvirt.VIR_CRED_PASSPHRASE:
-                cred[4] = file(constants.P_VDSM_LIBVIRT_PASSWD).readline().rstrip("\n")
+                cred[4] = passwd
         return 0
 
-    auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE], req, None]
+    auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE],
+            req, None]
 
     with __connectionLock:
         conn = __connections.get(id(cif))
@@ -118,7 +125,7 @@ def get(cif=None):
                                                 'qemu:///system', auth, 0)
             conn = utils.retry(libvirtOpenAuth, timeout=10, sleep=0.2)
             __connections[id(cif)] = conn
-            if cif != None:
+            if cif is not None:
                 for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
                            libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
                            libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
