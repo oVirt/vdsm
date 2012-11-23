@@ -1303,6 +1303,7 @@ class LibvirtVm(vm.Vm):
         self._released = False
         self._releaseLock = threading.Lock()
         self.saveState()
+        self._watchdogEvent = {}
 
     def _buildLease(self, domainID, volumeID, leasePath, leaseOffset):
         """
@@ -2416,14 +2417,18 @@ class LibvirtVm(vm.Vm):
                              "Guest is forcibly powered off",
                              "Guest is requested to gracefully shutdown",
                              "No action, a debug message logged")
+
             try:
                 return actionStrings[action]
             except IndexError:
                 return "Received unknown watchdog action(%s)" % action
 
-        self.log.debug("Watchdog event comes from guest %s. "
-                       "Action: %s", self.conf['vmName'],
-                       actionToString(action))
+        actionEnum = ['ignore', 'pause', 'reset', 'destroy', 'shutdown', 'log']
+        self._watchdogEvent["time"] = time.time()
+        self._watchdogEvent["action"] = actionEnum(action)
+        self.log.info("Watchdog event comes from guest %s. "
+                      "Action: %s", self.conf['vmName'],
+                      actionToString(action))
 
     def changeCD(self, drivespec):
         return self._changeBlockDev('cdrom', 'hdc', drivespec)
@@ -2643,6 +2648,8 @@ class LibvirtVm(vm.Vm):
     def getStats(self):
         stats = vm.Vm.getStats(self)
         stats['hash'] = self._devXmlHash
+        if self._watchdogEvent:
+            stats["watchdogEvent"] = self._watchdogEvent
         return stats
 
     def _getBalloonInfo(self):

@@ -5014,6 +5014,42 @@
  'key': 'str', 'value': 'VmDiskStats'}
 
 ##
+# @WatchdogEventAction:
+#
+# An enumeration of action that watchdog takes when it is triggered.
+#
+# @ignore:    No action, watchdog ignored
+#
+# @pause:     Guest CPUs are paused
+#
+# @reset:     Guest CPUs are reset
+#
+# @destroy:   Guest is forcibly powered off
+#
+# @shutdown:  Guest is requested to gracefully shutdown
+#
+# @log:       No action, a debug message logged
+#
+# Since: 4.10.1
+##
+{'enum': 'WatchdogEventAction',
+ 'data': ['ignore', 'pause', 'reset', 'destroy', 'shutdown', 'log']}
+
+##
+# @WatchdogEvent:
+#
+# The message of watchdog event when it is triggered
+#
+# @time:      Time the whatchdog event is triggered in seconds since the epoch
+#
+# @action:    Action whatchdog takes when event is triggered
+#
+# Since: 4.10.1
+##
+{'type': 'WatchdogEvent',
+ 'data': {'time': 'float', 'action': 'WatchdogEventAction'}}
+
+##
 # @RunningVmStats:
 #
 # Statistics for a running virtual machine.
@@ -5076,6 +5112,8 @@
 #
 # @netIfaces:          Network device address info as reported by the agent
 #
+# @watchdogEvent:      #optional Information about the most recent watchdog event
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -5093,7 +5131,8 @@
           'appsList': ['str'], 'guestIPs': 'str',
           'memoryStats': 'GuestMemoryStats', 'balloonInfo': 'BalloonInfo',
           'disksUsage': ['GuestMountInfo'],
-          'netIfaces': ['GuestNetworkDeviceInfo']}}
+          'netIfaces': ['GuestNetworkDeviceInfo'],
+          'watchdogEvent': '*WatchdogEvent'}}
 
 ##
 # @VmStats:
