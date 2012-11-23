@@ -353,6 +353,9 @@ class VM(APIBase):
             response['status']['message'] = 'Hibernation process starting'
         return response
 
+    def vmUpdateDevice(self, params):
+        return errCode['noimpl']
+
     def hotplugNic(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'nic'))
