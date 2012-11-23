@@ -148,6 +148,9 @@ VDSM main configuration file. Use with great caution; some information about ava
 .FN /var/log/vdsm/vdsm.log
 Default log location for vdsm.
 .TP
+.FN /usr/share/doc/vdsm-<version>/vdsm-api.html
+vdsm QAPI documentation.
+.TP
 .FN /etc/pki/vdsm
 VDSM's trust store: server key, certificate, and @ENGINENAME@ CA's certificate.
 .TP

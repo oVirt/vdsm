@@ -40,6 +40,7 @@ vdsm/vdsm.conf.sample
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
 vdsm/vdsmd.init
+vdsm_api/vdsm-api.html
 vdsm-tool/load_needed_modules.py
 vdsm-tool/validate_ovirt_certs.py
 vdsm_cli/vdsClient
