@@ -1602,13 +1602,6 @@ class StoragePool(Securable):
         return domainslist
 
     @unsecured
-    def isMember(self, sdUUID, checkActive=False):
-        """
-        Check if domain is member in the pool.
-        """
-        return sdUUID in self.getDomains(activeOnly=checkActive)
-
-    @unsecured
     def isActive(self, sdUUID):
         return sdUUID in self.getDomains(activeOnly=True)
 
