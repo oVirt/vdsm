@@ -1228,13 +1228,18 @@ class HSM:
         :type sdUUID: UUID
         :param options: ?
         """
-        #getSharedLock(spUUID...)
         vars.task.getSharedLock(STORAGE, spUUID)
-        # getExclusiveLock(vmList...)
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             pool.validatePoolSD(sdUUID)
             self.validateSdUUID(sdUUID)
+        else:
+            sdUUID = pool.masterDomain.sdUUID
+
+        vmUUIDs = [vmDesc['vm'] for vmDesc in vmList]
+        vmUUIDs.sort()
+        for vmUUID in vmUUIDs:
+            vars.task.getExclusiveLock(STORAGE, "%s_%s" % (vmUUID, sdUUID))
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
     @public
@@ -1253,11 +1258,13 @@ class HSM:
         :param options: ?
         """
         vars.task.getSharedLock(STORAGE, spUUID)
-        # getExclusiveLock(vmList...)
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             pool.validatePoolSD(sdUUID)
             self.validateSdUUID(sdUUID)
+        else:
+            sdUUID = pool.masterDomain.sdUUID
+        vars.task.getExclusiveLock(STORAGE, "%s_%s" % (vmUUID, sdUUID))
         pool.removeVM(vmUUID=vmUUID, sdUUID=sdUUID)
 
     @public

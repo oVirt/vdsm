@@ -1299,7 +1299,7 @@ class StoragePool(Securable):
         sdCache.refresh()
         self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
 
-    def updateVM(self, vmList, sdUUID=None):
+    def updateVM(self, vmList, sdUUID):
         """
         Update VMs.
          'vmList' - [{'vm':vmUUID,'ovf','imglist':'imgUUID1,imgUUID2,...'},...]
@@ -1308,9 +1308,6 @@ class StoragePool(Securable):
                     If sdUUID is None, the update is on the pool, and therefore
                     the master domain will be updated.
         """
-        if sdUUID is None:
-            sdUUID = self.masterDomain.sdUUID
-
         self.log.info("spUUID=%s sdUUID=%s", self.spUUID, sdUUID)
         vms = self._getVMsPath(sdUUID)
         # We should exclude 'masterd' link from IMG_METAPATTERN globing
@@ -1334,7 +1331,7 @@ class StoragePool(Securable):
                     raise se.MiscDirCleanupFailure(str(e))
 
             try:
-                os.mkdir(vmPath)
+                fileUtils.createdir(vmPath)
                 codecs.open(os.path.join(vmPath, vmUUID + '.ovf'), 'w',
                             encoding='utf8').write(ovf)
             except OSError as ex:
@@ -1343,7 +1340,7 @@ class StoragePool(Securable):
 
                 raise
 
-    def removeVM(self, vmUUID, sdUUID=None):
+    def removeVM(self, vmUUID, sdUUID):
         """
         Remove VM.
          'vmUUID' - Virtual machine UUID
@@ -1690,16 +1687,12 @@ class StoragePool(Securable):
     @unsecured
     def _getVMsPath(self, sdUUID):
         """
-        Return general path of VMs from the pool.
-        If 'sdUUID' is given then return VMs dir within it.
+        Return VMs dir within SD with sdUUID.
         """
-        if sdUUID and sdUUID != sd.BLANK_UUID:
-            if not self.isActive(sdUUID):
-                raise se.StorageDomainNotActive(sdUUID)
-            vmPath = sdCache.produce(sdUUID).getVMsDir()
+        if not self.isActive(sdUUID):
+            raise se.StorageDomainNotActive(sdUUID)
+        vmPath = sdCache.produce(sdUUID).getVMsDir()
         # Get VMs path from the pool (from the master domain)
-        else:
-            vmPath = self.masterDomain.getVMsDir()
 
         if not os.path.exists(vmPath):
             raise se.VMPathNotExists(vmPath)
