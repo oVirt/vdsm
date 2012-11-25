@@ -278,13 +278,6 @@ class HSM:
             raise se.StorageDomainTypeNotBackup(sdUUID)
 
     @classmethod
-    def validatePoolSD(cls, spUUID, sdUUID):
-        pool = cls.getPool(spUUID)
-        if sdUUID not in pool.getDomains():
-            raise se.StorageDomainNotMemberOfPool(spUUID, sdUUID)
-        return pool
-
-    @classmethod
     def validateNonDomain(cls, sdUUID):
         """
         Validates that there is no domain with this UUID.
@@ -655,12 +648,12 @@ class HSM:
             se.VolumeExtendingError(
                 "spUUID=%s, sdUUID=%s, volumeUUID=%s, size=%s" %
                 (spUUID, sdUUID, volumeUUID, size)))
-        self.validatePoolSD(spUUID, sdUUID)
         size = misc.validateN(size, "size")
         # ExtendVolume expects size in MB
         size = math.ceil(size / 2 ** 20)
 
         pool = self.getPool(spUUID)
+        pool.validatePoolSD(sdUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
     @public
@@ -684,10 +677,10 @@ class HSM:
             se.StorageDomainActionError(
                 "sdUUID=%s, devlist=%s" % (sdUUID, devlist)))
 
-        self.validatePoolSD(spUUID, sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
         # We need to let the domain to extend itself
         pool = self.getPool(spUUID)
+        pool.validatePoolSD(sdUUID)
         pool.extendSD(sdUUID, devlist, force)
 
     @public
@@ -731,11 +724,10 @@ class HSM:
                 "sdUUID=%s, spUUID=%s, msdUUID=%s, masterVersion=%s" %
                 (sdUUID, spUUID, msdUUID, masterVersion)))
 
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
+        pool.validatePoolSD(sdUUID)
         pool.detachSD(sdUUID)
 
     @public
@@ -1121,11 +1113,11 @@ class HSM:
                 (sdUUID, spUUID, msdUUID, masterVersion)
             )
         )
-        self.validatePoolSD(spUUID, sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
+        pool.validatePoolSD(sdUUID)
         pool.deactivateSD(sdUUID, msdUUID, masterVersion)
 
     @public
@@ -1187,10 +1179,9 @@ class HSM:
         :param description: The new human readable description of the volume.
         :type description: str
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
+        pool.validatePoolSD(sdUUID)
         pool.setVolumeDescription(sdUUID, imgUUID, volUUID, description)
 
     @public
@@ -1211,11 +1202,10 @@ class HSM:
         :param description: The legality status ot the volume.?
         :type description: ?
         """
-        self.validatePoolSD(spUUID, sdUUID)
-
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         pool = self.getPool(spUUID)
+        pool.validatePoolSD(sdUUID)
         pool.setVolumeLegality(sdUUID, imgUUID, volUUID, legality)
 
     @public
@@ -1238,13 +1228,13 @@ class HSM:
         :type sdUUID: UUID
         :param options: ?
         """
-        if sdUUID and sdUUID != sd.BLANK_UUID:
-            self.validatePoolSD(spUUID, sdUUID)
-            self.validateSdUUID(sdUUID)
-        # getSharedLock(spUUID...)
+        #getSharedLock(spUUID...)
         vars.task.getSharedLock(STORAGE, spUUID)
         # getExclusiveLock(vmList...)
         pool = self.getPool(spUUID)
+        if sdUUID and sdUUID != sd.BLANK_UUID:
+            pool.validatePoolSD(sdUUID)
+            self.validateSdUUID(sdUUID)
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
     @public
@@ -1262,13 +1252,12 @@ class HSM:
         :type sdUUID: UUID
         :param options: ?
         """
-        if sdUUID and sdUUID != sd.BLANK_UUID:
-            self.validatePoolSD(spUUID, sdUUID)
-            self.validateSdUUID(sdUUID)
-        # getSharedLock(spUUID...)
         vars.task.getSharedLock(STORAGE, spUUID)
         # getExclusiveLock(vmList...)
         pool = self.getPool(spUUID)
+        if sdUUID and sdUUID != sd.BLANK_UUID:
+            pool.validatePoolSD(sdUUID)
+            self.validateSdUUID(sdUUID)
         pool.removeVM(vmUUID=vmUUID, sdUUID=sdUUID)
 
     @public
@@ -1287,7 +1276,7 @@ class HSM:
         """
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
-            self.validatePoolSD(spUUID, sdUUID)
+            pool.validatePoolSD(sdUUID)
             self.validateSdUUID(sdUUID)
         else:
             sdUUID = pool.masterDomain.sdUUID
@@ -1315,7 +1304,7 @@ class HSM:
         """
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
-            self.validatePoolSD(spUUID, sdUUID)
+            pool.validatePoolSD(sdUUID)
             # Only backup domains are allowed in this path
             self.validateBackupDom(sdUUID)
         else:
