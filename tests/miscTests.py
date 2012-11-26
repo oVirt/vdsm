@@ -31,14 +31,16 @@ import storage.misc as misc
 import storage.fileUtils as fileUtils
 from testValidation import checkSudo
 
-EXT_DD = "/bin/dd"
 EXT_CHMOD = "/bin/chmod"
 EXT_CHOWN = "/bin/chown"
+EXT_DD = "/bin/dd"
 
+EXT_CAT = "cat"
 EXT_ECHO = "echo"
-EXT_SLEEP = "sleep"
 EXT_PYTHON = "python"
+EXT_SLEEP = "sleep"
 EXT_WHOAMI = "whoami"
+
 SUDO_USER = "root"
 SUDO_GROUP = "root"
 
@@ -59,7 +61,7 @@ class PgrepTests(TestCaseBase):
     def test(self):
         sleepProcs = []
         for i in range(3):
-            sleepProcs.append(misc.execCmd(["sleep", "3"], sync=False,
+            sleepProcs.append(misc.execCmd([EXT_SLEEP, "3"], sync=False,
                               sudo=False))
 
         pids = misc.pgrep("sleep")
@@ -74,7 +76,7 @@ class PgrepTests(TestCaseBase):
 
 class GetCmdArgsTests(TestCaseBase):
     def test(self):
-        args = ["sleep", "4"]
+        args = [EXT_SLEEP, "4"]
         sproc = misc.execCmd(args, sync=False, sudo=False)
         try:
             self.assertEquals(misc.getCmdArgs(sproc.pid), tuple(args))
@@ -83,7 +85,7 @@ class GetCmdArgsTests(TestCaseBase):
             sproc.wait()
 
     def testZombie(self):
-        args = ["sleep", "0"]
+        args = [EXT_SLEEP, "0"]
         sproc = misc.execCmd(args, sync=False, sudo=False)
         sproc.kill()
         try:
@@ -96,7 +98,7 @@ class GetCmdArgsTests(TestCaseBase):
 
 class PidStatTests(TestCaseBase):
     def test(self):
-        args = ["sleep", "3"]
+        args = [EXT_SLEEP, "3"]
         sproc = misc.execCmd(args, sync=False, sudo=False)
         stats = misc.pidStat(sproc.pid)
         pid = int(stats[0])
@@ -337,7 +339,7 @@ class AsyncProcTests(TestCaseBase):
                   The Doctor: And where do you function?
                   Striker: Eternity. The endless wastes of eternity. """
                   # (C) BBC - Doctor Who
-        p = misc.execCmd(["cat"], sync=False)
+        p = misc.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data)
         p.stdin.flush()
@@ -352,7 +354,7 @@ class AsyncProcTests(TestCaseBase):
                               I'm pretty sure it wasn't the future. """
                   # (C) BBC - Doctor Who
         halfPoint = len(data) / 2
-        p = misc.execCmd(["cat"], sync=False)
+        p = misc.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data[:halfPoint])
         self.log.info("Writing more data to std out")
@@ -383,7 +385,7 @@ class AsyncProcTests(TestCaseBase):
 
         data = data * ((4096 / len(data)) * 2)
         self.assertTrue(data > 4096)
-        p = misc.execCmd(["cat"], sync=False)
+        p = misc.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data)
         p.stdin.flush()
@@ -392,7 +394,7 @@ class AsyncProcTests(TestCaseBase):
 
     def testWaitTimeout(self):
         ttl = 2
-        p = misc.execCmd(["sleep", str(ttl + 10)], sudo=False, sync=False)
+        p = misc.execCmd([EXT_SLEEP, str(ttl + 10)], sudo=False, sync=False)
         startTime = time.time()
         p.wait(ttl)
         duration = time.time() - startTime
@@ -402,7 +404,7 @@ class AsyncProcTests(TestCaseBase):
 
     def testWaitCond(self):
         ttl = 2
-        p = misc.execCmd(["sleep", str(ttl + 10)], sudo=False, sync=False)
+        p = misc.execCmd([EXT_SLEEP, str(ttl + 10)], sudo=False, sync=False)
         startTime = time.time()
         p.wait(cond=lambda: time.time() - startTime > ttl)
         duration = time.time() - startTime
@@ -413,7 +415,7 @@ class AsyncProcTests(TestCaseBase):
     def testCommunicate(self):
         data = ("The trouble with the world is that the stupid are cocksure "
                 "and the intelligent are full of doubt")
-        p = misc.execCmd(["dd"], data=data, sudo=False, sync=False)
+        p = misc.execCmd([EXT_DD], data=data, sudo=False, sync=False)
         p.stdin.close()
         self.assertEquals(p.stdout.read(len(data)).strip(), data)
 
