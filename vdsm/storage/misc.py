@@ -1346,8 +1346,8 @@ def NoIntrPoll(pollfun, timeout=-1):
     while True:
         try:
             return pollfun(timeout)
-        except (OSError, IOError), e:
-            if not e.errno in (errno.EINTR, errno.EAGAIN):
+        except (IOError, select.error), e:
+            if e.args[0] != errno.EINTR:
                 raise
         timeout = max(0, endtime - time.time())
 

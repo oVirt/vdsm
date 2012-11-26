@@ -22,8 +22,13 @@ import tempfile
 import uuid
 import time
 import threading
+import select
+import signal
+import fcntl
+import errno
 from testrunner import VdsmTestCase as TestCaseBase
 import inspect
+from multiprocessing import Process
 from vdsm import utils
 
 import storage.outOfProcess as oop
@@ -1119,3 +1124,78 @@ class FindCallerTests(TestCaseBase):
             return misc.findCaller()
 
         self.assertRaises(AssertionError, self._assertFindCaller, _foo)
+
+
+class NoIntrPollTests(TestCaseBase):
+    RETRIES = 3
+    SLEEP_INTERVAL = 0.1
+
+    def _startFakeSigchld(self):
+        def _fakeSigchld():
+            for i in range(self.RETRIES):
+                time.sleep(self.SLEEP_INTERVAL)
+                os.kill(os.getpid(), signal.SIGCHLD)
+        intrThread = threading.Thread(target=_fakeSigchld)
+        intrThread.setDaemon(True)
+        intrThread.start()
+
+    def _noIntrWatchFd(self, fd, isEpoll, mask=select.POLLERR):
+        if isEpoll:
+            poller = select.epoll()
+            pollInterval = self.SLEEP_INTERVAL * self.RETRIES * 2
+        else:
+            poller = select.poll()
+            pollInterval = self.SLEEP_INTERVAL * self.RETRIES * 2 * 1000
+
+        poller.register(fd, mask)
+        misc.NoIntrPoll(poller.poll, pollInterval)
+        poller.unregister(fd)
+
+    def testWatchFile(self):
+        tempFd, tempPath = tempfile.mkstemp()
+        os.unlink(tempPath)
+        self._startFakeSigchld()
+        # only poll can support regular file
+        self._noIntrWatchFd(tempFd, isEpoll=False)
+
+    def testWatchPipeEpoll(self):
+        myPipe, hisPipe = os.pipe()
+        self._startFakeSigchld()
+        self._noIntrWatchFd(myPipe, isEpoll=True)  # caught IOError
+
+    def testWatchPipePoll(self):
+        myPipe, hisPipe = os.pipe()
+        self._startFakeSigchld()
+        self._noIntrWatchFd(myPipe, isEpoll=False)  # caught select.error
+
+    def testClosedPipe(self):
+        def _closePipe(pipe):
+            time.sleep(self.SLEEP_INTERVAL)
+            os.close(pipe)
+
+        myPipe, hisPipe = os.pipe()
+        proc = Process(target=_closePipe, args=(hisPipe,))
+        proc.start()
+        # no exception caught
+        self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
+        proc.join()
+
+    def testPipeWriteEAGAIN(self):
+        def _raiseEAGAIN(pipe):
+            PIPE_BUF_BYTES = 65536
+            longStr = '0' * (1 + PIPE_BUF_BYTES)
+            for i in range(self.RETRIES):
+                time.sleep(self.SLEEP_INTERVAL)
+                try:
+                    os.write(pipe, longStr)
+                except OSError, e:
+                    if not e.errno in (errno.EINTR, errno.EAGAIN):
+                        raise
+
+        myPipe, hisPipe = os.pipe()
+        fcntl.fcntl(hisPipe, fcntl.F_SETFL, os.O_NONBLOCK)
+        fcntl.fcntl(myPipe, fcntl.F_SETFL, os.O_NONBLOCK)
+        proc = Process(target=_raiseEAGAIN, args=(hisPipe,))
+        proc.start()
+        self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
+        proc.join()
