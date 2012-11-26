@@ -205,6 +205,13 @@ class service:
 
         return self.ExecAndExit(self.s.create(params))
 
+    def vmUpdateDevice(self, args):
+        params = self._eqSplit(args[1:])
+        if 'portMirroring' in params:
+            params['portMirroring'] = [net for net in params['portMirroring']
+                                       .split(',') if net != '']
+        return self.ExecAndExit(self.s.vmUpdateDevice(args[0], params))
+
     def hotplugNic(self, args):
         nic = self._parseDriveSpec(args[1])
         nic['type'] = 'interface'
@@ -1737,6 +1744,24 @@ if __name__ == '__main__':
                         'http://libvirt.org/formatdomain.html'
                          '#elementsCPUTuning'
                         )),
+        'vmUpdateDevice': (serv.vmUpdateDevice,
+                           ('<vmId> <devicespec>',
+                            'Update a VM\'s device',
+                            'Example: vmUpdateDevice xxxx deviceType=interface'
+                            ' alias=net0 linkActive=false',
+                            'devicespec list: r=required, '
+                            'o=optional',
+                            'r   devicetype: interface',
+                            'o   network: network name - No chage if not '
+                            'specified. Dummy bridge and link inactive if '
+                            'empty string',
+                            'o   linkActive: bool - No change if not '
+                            'specified',
+                            'r   alias: libvirt\'s vnic alias',
+                            'o   portMirroring: net[,net] - Only networks to '
+                            'mirror. No change if not specified, no mirroring'
+                            'if empty list.'
+                            )),
         'hotplugNic':  (serv.hotplugNic,
                          ('<vmId> <nicspec>',
                           'Hotplug NIC to existing VM',
