@@ -318,6 +318,41 @@ class ConfigWriter(object):
                 open(confFile, 'w').write(content)
             logging.info('Restored %s', confFile)
 
+    def _devType(self, content):
+        if re.search('^TYPE=Bridge$', content, re.MULTILINE):
+            return "Bridge"
+        elif re.search('^VLAN=yes$', content, re.MULTILINE):
+            return "Vlan"
+        else:
+            return "Other"
+
+    def _sortModifiedIfcfgs(self):
+        devdict = {'Bridge': [],
+                   'Vlan': [],
+                   'Other': []}
+        for confFile, _ in self._backups.iteritems():
+            try:
+                content = file(confFile).read()
+            except IOError as e:
+                if e.errno == os.errno.ENOENT:
+                    continue
+                else:
+                    raise
+            dev = confFile[len(self.NET_CONF_PREF):]
+
+            devdict[self._devType(content)].append(dev)
+
+        return nicSort(devdict['Other']) + devdict['Vlan'] + \
+               devdict['Bridge']
+
+    def _stopAtomicDevices(self):
+        for dev in reversed(self._sortModifiedIfcfgs()):
+            ifdown(dev)
+
+    def _startAtomicDevices(self):
+        for dev in self._sortModifiedIfcfgs():
+            ifup(dev)
+
     @classmethod
     def _persistentBackup(cls, filename):
         """ Persistently backup ifcfg-* config files """
@@ -372,12 +407,12 @@ class ConfigWriter(object):
         if not self._backups and not self._networksBackups:
             return
 
-        execCmd(['/etc/init.d/network', 'stop'])
+        self._stopAtomicDevices()
 
         self.restoreAtomicNetworkBackup()
         self.restoreAtomicBackup()
 
-        execCmd(['/etc/init.d/network', 'start'])
+        self._startAtomicDevices()
 
     @classmethod
     def clearBackups(cls):
