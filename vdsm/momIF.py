@@ -27,11 +27,20 @@ except ImportError:
     _momAvailable = False
 
 
+class MomNotAvailableError(RuntimeError):
+    pass
+
+
+def isMomAvailable():
+    return _momAvailable
+
+
 class MomThread(threading.Thread):
 
     def __init__(self, momconf):
         if not _momAvailable:
-            raise Exception("MOM is not available")
+            raise MomNotAvailableError()
+
         self.log = logging.getLogger("MOM")
         self.log.info("Starting up MOM")
         self._mom = mom.MOM(momconf)

@@ -29,7 +29,7 @@ from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 from vdsm.config import config
 import ksm
-from momIF import MomThread
+from momIF import MomThread, isMomAvailable
 from vdsm import netinfo
 from vdsm.define import doneCode, errCode
 import libvirt
@@ -176,14 +176,20 @@ class clientIF:
                               'Please make sure it is installed.')
 
     def _prepareMOM(self):
-        try:
-            momconf = config.get("mom", "conf")
-            self.mom = MomThread(momconf)
-        except:
-            self.log.warn("MOM initialization failed and fall "
-                          "back to KsmMonitor")
-            self.log.debug("Details:", exc_info=True)
-            self.ksmMonitor = ksm.KsmMonitorThread(self)
+        momconf = config.get("mom", "conf")
+
+        if isMomAvailable():
+            try:
+                self.mom = MomThread(momconf)
+                return
+            except:
+                self.log.warn("MOM initialization failed and fall "
+                              "back to KsmMonitor", exc_info=True)
+
+        else:
+            self.log.warn("MOM is not available, fallback to KsmMonitor")
+
+        self.ksmMonitor = ksm.KsmMonitorThread(self)
 
     def _syncLibvirtNetworks(self):
         """
