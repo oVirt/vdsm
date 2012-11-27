@@ -55,7 +55,6 @@ class KsmMonitorThread(threading.Thread):
     def run(self):
         start()
         try:
-            self.state, self.pages = self.readState()
             KSM_MONITOR_INTERVAL = 60
             jiff0 = self._getKsmdJiffies()
             while True:
@@ -66,9 +65,6 @@ class KsmMonitorThread(threading.Thread):
                 jiff0 = jiff1
         except:
             self._cif.log.error("Error monitoring KSM", exc_info=True)
-
-    def readState(self):
-        return running(), npages()
 
     def adjust(self):
         """Adjust ksm's vigor
@@ -81,10 +77,9 @@ class KsmMonitorThread(threading.Thread):
         try:
             utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'retune'],
                           sudo=True)
-            self.state, self.pages = self.readState()
         finally:
             self._lock.release()
-        return self.state
+        return running()
 
     def memsharing(self):
         try:
@@ -95,16 +90,14 @@ class KsmMonitorThread(threading.Thread):
 
 def running():
     try:
-        state = int(file('/sys/kernel/mm/ksm/run').read()) & 1 == 1
-        return state
+        return int(file('/sys/kernel/mm/ksm/run').read()) & 1 == 1
     except:
         return False
 
 
 def npages():
     try:
-        npages = int(file('/sys/kernel/mm/ksm/pages_to_scan').read())
-        return npages
+        return int(file('/sys/kernel/mm/ksm/pages_to_scan').read())
     except:
         return 0
 

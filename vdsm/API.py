@@ -41,6 +41,7 @@ import vm
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
+import ksm
 
 import supervdsm
 
@@ -1145,8 +1146,8 @@ class Global(APIBase):
             stats.update(self._cif.mom.getKsmStats())
         else:
             stats['momStatus'] = 'disabled'
-            stats['ksmState'] = self._cif.ksmMonitor.state
-            stats['ksmPages'] = self._cif.ksmMonitor.pages
+            stats['ksmState'] = ksm.running()
+            stats['ksmPages'] = ksm.npages()
             stats['ksmCpu'] = self._cif.ksmMonitor.cpuUsage
             stats['memShared'] = self._memShared() / Mbytes
 
