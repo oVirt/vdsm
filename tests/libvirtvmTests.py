@@ -143,10 +143,10 @@ class TestLibvirtvm(TestCaseBase):
         cpuXML = """
           <cpu match="exact">
               <model>Opteron_G4</model>
-              <topology cores="2" sockets="2" threads="2"/>
               <feature name="sse4.1" policy="require"/>
               <feature name="sse4.2" policy="require"/>
               <feature name="svm" policy="disable"/>
+              <topology cores="2" sockets="2" threads="2"/>
           </cpu> """
         cputuneXML = """
           <cputune>

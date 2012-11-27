@@ -738,9 +738,35 @@ class _DomXML:
         model = features[0]
         cpu = self.doc.createElement('cpu')
         cpu.setAttribute('match', 'exact')
-        m = self.doc.createElement('model')
-        m.appendChild(self.doc.createTextNode(model))
-        cpu.appendChild(m)
+
+        if model == 'hostPassthrough':
+            cpu.setAttribute('mode', 'host-passthrough')
+        elif model == 'hostModel':
+            cpu.setAttribute('mode', 'host-model')
+        else:
+            m = self.doc.createElement('model')
+            m.appendChild(self.doc.createTextNode(model))
+            cpu.appendChild(m)
+
+            # This hack is for backward compatibility as the libvirt
+            # does not allow 'qemu64' guest on intel hardware
+            if model == 'qemu64' and not '+svm' in features:
+                features += ['-svm']
+
+            for feature in features[1:]:
+                # convert Linux name of feature to libvirt
+                if feature[1:6] == 'sse4_':
+                    feature = feature[0] + 'sse4.' + feature[6:]
+
+                f = self.doc.createElement('feature')
+                if feature[0] == '+':
+                    f.setAttribute('policy', 'require')
+                    f.setAttribute('name', feature[1:])
+                elif feature[0] == '-':
+                    f.setAttribute('policy', 'disable')
+                    f.setAttribute('name', feature[1:])
+                cpu.appendChild(f)
+
         if ('smpCoresPerSocket' in self.conf or
             'smpThreadsPerCore' in self.conf):
             topo = self.doc.createElement('topology')
@@ -764,24 +790,6 @@ class _DomXML:
                 cputune.appendChild(vcpupin)
             self.dom.appendChild(cputune)
 
-        # This hack is for backward compatibility as the libvirt does not allow
-        # 'qemu64' guest on intel hardware
-        if model == 'qemu64' and not '+svm' in features:
-            features += ['-svm']
-
-        for feature in features[1:]:
-            # convert Linux name of feature to libvirt
-            if feature[1:6] == 'sse4_':
-                feature = feature[0] + 'sse4.' + feature[6:]
-
-            f = self.doc.createElement('feature')
-            if feature[0] == '+':
-                f.setAttribute('policy', 'require')
-                f.setAttribute('name', feature[1:])
-            elif feature[0] == '-':
-                f.setAttribute('policy', 'disable')
-                f.setAttribute('name', feature[1:])
-            cpu.appendChild(f)
         self.dom.appendChild(cpu)
 
     def _appendAgentDevice(self, path, name):
