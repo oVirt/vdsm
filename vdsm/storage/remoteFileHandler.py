@@ -132,7 +132,7 @@ class CrabRPCProxy(object):
         try:
             res = misc.NoIntrPoll(self._poller.poll, timeout)
             for fd, event in res:
-                if event & (select.EPOLLERR | select.EPOLLHUP):
+                if event & (select.POLLERR | select.POLLHUP):
                     raise Timeout()
         finally:
             self._poller.unregister(fd)
