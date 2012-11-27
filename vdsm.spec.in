@@ -79,12 +79,24 @@ Requires: dmidecode
 %endif
 
 %if 0%{?rhel}
+%if 0%{?rhel} >= 7
+ExclusiveArch:  x86_64
+Requires: device-mapper-multipath
+Requires: e2fsprogs
+Requires: iscsi-initiator-utils
+Requires: libvirt
+Requires: lvm2
+Requires: python
+Requires: qemu-kvm
+Requires: qemu-kvm-img
+Requires: sanlock, sanlock-python
+Requires: selinux-policy-targeted
+%else
 Requires: python
 # Update the qemu-kvm requires when block_stream will be included
 Requires: qemu-kvm >= 2:0.12.1.2-2.295.el6_3.4
 Requires: qemu-img >= 2:0.12.1.2-2.295.el6_3.4
 Requires: libvirt >= 0.9.10-21.el6_3.5
-Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
@@ -93,13 +105,13 @@ Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: selinux-policy-targeted >= 3.7.19-80
 Requires: lvm2 >= 2.02.95-10.el6_3.2
+%endif
 %else
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
 Requires: libvirt >= 0.10.1-1
-Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
@@ -110,6 +122,7 @@ Requires: selinux-policy-targeted >= 3.10.0-149
 Requires: lvm2 >= 2.02.95
 %endif
 
+Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: psmisc >= 22.6-15
 Requires: fence-agents
 Requires: bridge-utils
