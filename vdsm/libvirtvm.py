@@ -2789,10 +2789,15 @@ class LibvirtVm(vm.Vm):
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             model = x.getElementsByTagName('model')[0].getAttribute('type')
-            bridge = None
+
+            network = None
             source = x.getElementsByTagName('source')
             if source:
-                bridge = source[0].getAttribute('bridge')
+                network = source[0].getAttribute('bridge')
+                if not network:
+                    network = source[0].getAttribute('network')
+                    network = network[len(netinfo.LIBVIRT_NET_PREFIX):]
+
             # Get nic address
             address = self._getUnderlyingDeviceAddress(x)
             for nic in self._devices[vm.NIC_DEVICES]:
@@ -2818,8 +2823,8 @@ class LibvirtVm(vm.Vm):
                           'address': address,
                           'alias': alias,
                           'name': name}
-                if bridge:
-                    nicDev['network'] = bridge
+                if network:
+                    nicDev['network'] = network
                 self.conf['devices'].append(nicDev)
 
     def _setWriteWatermarks(self):
