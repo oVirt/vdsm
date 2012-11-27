@@ -45,6 +45,7 @@ CONNECTIVITY_TIMEOUT_DEFAULT = 4
 MAX_VLAN_ID = 4094
 MAX_BRIDGE_NAME_LEN = 15
 ILLEGAL_BRIDGE_CHARS = frozenset(':. \t')
+DEFAULT_MTU = '1500'
 
 
 class ConfigNetworkError(Exception):
@@ -559,7 +560,8 @@ class ConfigWriter(object):
         try:
             hwlines = [line for line in open(cf).readlines()
                        if line.startswith('HWADDR=')]
-            l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n', 'MTU=1500\n'] + hwlines
+            l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
+                 'MTU=%s\n' % DEFAULT_MTU] + hwlines
             open(cf, 'w').writelines(l)
         except IOError:
             pass
@@ -1082,6 +1084,14 @@ def listNetworks():
     print "Bondings:", _netinfo.bondings.keys()
 
 
+def _removeUnusedNics(network, vlan, bonding, nics, configWriter):
+    for nic in nics:
+        if not nicOtherUsers(network, vlan, bonding, nic):
+            ifdown(nic)
+            configWriter.removeNic(nic)
+            ifup(nic)
+
+
 def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                configWriter=None, implicitBonding=True, **options):
     _netinfo = netinfo.NetInfo()
@@ -1136,6 +1146,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     nic = nics[0] if nics else None
     iface = bonding if bonding else nic
     if iface:
+        ifdown(iface)
         if vlan:
             configWriter.removeVlan(vlan, iface)
         else:
@@ -1150,25 +1161,34 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                 # we need to remove BRIDGE from the cfg file
                 configWriter._updateConfigValue(cf, 'BRIDGE', '', True)
 
+        # Now we can restart changed interface
+        ifup(iface)
+
     # The (relatively) new setupNetwork verb allows to remove a network
     # defined on top of an bonding device without break the bond itself.
     if implicitBonding:
         if bonding and not bondingOtherUsers(network, vlan, bonding):
             ifdown(bonding)
             configWriter.removeBonding(bonding)
-            iface = None if bonding == iface else iface
 
+        _removeUnusedNics(network, vlan, bonding, nics, configWriter)
+    elif not bonding:
+        _removeUnusedNics(network, vlan, bonding, nics, configWriter)
+    elif not bondingOtherUsers(network, vlan, bonding):
+        # update MTU for bond interface and underlying NICs
+        ifdown(bonding)
+        cf = configWriter.NET_CONF_PREF + bonding
+        configWriter._updateConfigValue(cf, 'MTU', DEFAULT_MTU, False)
         for nic in nics:
-            if not nicOtherUsers(network, vlan, bonding, nic):
-                ifdown(nic)
-                configWriter.removeNic(nic)
-                ifup(nic)
-                iface = None if nic == iface else iface
+            ifdown(nic)
+            cf = configWriter.NET_CONF_PREF + nic
+            configWriter._updateConfigValue(cf, 'MTU', DEFAULT_MTU, False)
 
-    # Now we can restart changed interface
-    if iface:
-        ifdown(iface)
-        ifup(iface)
+        ifup(bonding)
+        # NICs must be activated in the same order of boot time
+        # to expose the correct MAC address.
+        for nic in nicSort(nics):
+            ifup(nic)
 
 
 def clientSeen(timeout):
