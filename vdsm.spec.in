@@ -104,6 +104,7 @@ Requires: e2fsprogs >= 1.41.12-11
 Requires: kernel >= 2.6.32-279.9.1
 Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
+Requires: mom >= 0.3.0
 Requires: selinux-policy-targeted >= 3.7.19-80
 Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
@@ -118,6 +119,7 @@ Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
 Requires: kernel >= 3.6
+Requires: mom >= 0.3.0
 Requires: sanlock >= 2.4-2, sanlock-python
 Requires: sed >= 4.2.1-10
 Requires: selinux-policy-targeted >= 3.10.0-149
@@ -136,7 +138,6 @@ Requires: genisoimage
 Requires: libselinux-python
 Requires: %{name}-python = %{version}-%{release}
 Requires: pyparted
-Requires: mom >= 0.3.0
 
 Requires(pre,preun): policycoreutils-python
 Requires(post): /usr/sbin/saslpasswd2
