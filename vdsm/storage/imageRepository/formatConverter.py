@@ -90,6 +90,10 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     log = logging.getLogger('Storage.v3DomainConverter')
     log.debug("Starting conversion for domain %s", domain.sdUUID)
 
+    if domain.getStorageType() in sd.FILE_DOMAIN_TYPES:
+        log.debug("Setting permissions for domain %s", domain.sdUUID)
+        domain.setMetadataPermissions()
+
     log.debug("Initializing the new cluster lock for domain %s", domain.sdUUID)
     newClusterLock = safelease.SANLock(domain.sdUUID, domain.getIdsFilePath(),
                                        domain.getLeasesFilePath())
@@ -99,9 +103,6 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     newClusterLock.acquireHostId(hostId, async=False)
 
     V2META_SECTORSIZE = 512
-
-    if domain.getStorageType() in sd.FILE_DOMAIN_TYPES:
-        domain.setMetadataPermissions()
 
     def v3ResetMetaVolSize(vol):
         # BZ811880 Verifiying that the volume size is the same size advertised
