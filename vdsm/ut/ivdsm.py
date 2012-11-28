@@ -24,9 +24,13 @@ import logging
 import threading
 import sys
 
-def runVdsm(baseDir="/usr/share/vdsm/", configFilePath="/etc/vdsm/vdsm.conf", loggerConfigurationPath='/etc/vdsm/logger.conf'):
+
+def runVdsm(baseDir="/usr/share/vdsm/", configFilePath="/etc/vdsm/vdsm.conf",
+            loggerConfigurationPath='/etc/vdsm/logger.conf'):
     """
-    Starts a VDSM instance in a new thread and returns a tuple ``(ClientIF, Thread Running VDSM)``
+    Start a VDSM instance in a new thread.
+
+    Return a tuple ``(ClientIF, Thread Running VDSM)``
     """
     if pwd.getpwuid(os.geteuid())[0] != "vdsm":
         raise Exception("You can't run vdsm with any user other then 'vdsm'.")
@@ -45,9 +49,8 @@ def runVdsm(baseDir="/usr/share/vdsm/", configFilePath="/etc/vdsm/vdsm.conf", lo
 
     cif = clientIF.clientIF(log)
 
-    t = threading.Thread(target = cif.serve)
+    t = threading.Thread(target=cif.serve)
     t.setDaemon(True)
     t.start()
 
     return (cif, t)
-

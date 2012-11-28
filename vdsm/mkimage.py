@@ -25,13 +25,15 @@ import base64
 import errno
 import hashlib
 
-from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, DISKIMAGE_USER, DISKIMAGE_GROUP
+from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
+    DISKIMAGE_USER, DISKIMAGE_GROUP
 from vdsm.constants import P_VDSM_RUN
 from storage.fileUtils import resolveUid, resolveGid
 import storage.misc
 import storage.mount
 
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
+
 
 def _decodeFilesIntoDir(files, dirname):
     '''
@@ -46,15 +48,18 @@ def _decodeFilesIntoDir(files, dirname):
 
     for name, content in files.iteritems():
         filename = os.path.join(dirname, name)
-        with file(filename, 'w') as f: f.write(base64.b64decode(content))
+        with file(filename, 'w') as f:
+            f.write(base64.b64decode(content))
+
 
 def _commonCleanFs(dirname, media):
     if media is not None:
         os.chown(media, resolveUid(DISKIMAGE_USER),
-                resolveGid(DISKIMAGE_GROUP))
+                 resolveGid(DISKIMAGE_GROUP))
 
     if dirname is not None:
         shutil.rmtree(dirname)
+
 
 def _getFileName(vmId, files):
     if not os.path.exists(_P_PAYLOAD_IMAGES):
@@ -68,6 +73,7 @@ def _getFileName(vmId, files):
     path = os.path.join(_P_PAYLOAD_IMAGES, "%s.%s.img" % (vmId, md5))
     return path
 
+
 def mkFloppyFs(vmId, files):
     floppy = dirname = None
     try:
@@ -75,8 +81,8 @@ def mkFloppyFs(vmId, files):
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
         rc, out, err = storage.misc.execCmd(command, raw=True)
         if rc:
-            raise OSError(errno.EIO, "could not create floppy file: \
-                    code %s, out %s\nerr %s" % (rc, out, err))
+            raise OSError(errno.EIO, "could not create floppy file: "
+                          "code %s, out %s\nerr %s" % (rc, out, err))
 
         dirname = tempfile.mkdtemp()
         m = storage.mount.Mount(floppy, dirname)
@@ -90,6 +96,7 @@ def mkFloppyFs(vmId, files):
 
     return floppy
 
+
 def mkIsoFs(vmId, files):
     dirname = isopath = None
     try:
@@ -100,15 +107,17 @@ def mkIsoFs(vmId, files):
         command = [EXT_MKISOFS, '-r', '-o', isopath, dirname]
         rc, out, err = storage.misc.execCmd(command, raw=True)
         if rc:
-            raise OSError(errno.EIO, "could not create iso file: \
-                    code %s, out %s\nerr %s" % (rc, out, err))
+            raise OSError(errno.EIO, "could not create iso file: "
+                          "code %s, out %s\nerr %s" % (rc, out, err))
     finally:
         _commonCleanFs(dirname, isopath)
 
     return isopath
 
+
 def removeFs(path):
     if not os.path.abspath(path).startswith(_P_PAYLOAD_IMAGES):
-        raise Exception('Cannot remove Fs that does not exists in: ' + _P_PAYLOAD_IMAGES)
+        raise Exception('Cannot remove Fs that does not exists in: ' +
+                        _P_PAYLOAD_IMAGES)
     if os.path.exists(path):
         os.remove(path)

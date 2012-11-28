@@ -42,10 +42,11 @@ from xml.dom import minidom
 from storage.misc import execCmd
 execCmd  # make pyflakes happy
 
+
 def tobool(s):
     """Convert the argument into a boolean"""
     try:
-        if s == None:
+        if s is None:
             return False
         if type(s) == bool:
             return s
@@ -55,8 +56,10 @@ def tobool(s):
     except:
         return False
 
+
 def read_domxml():
     return minidom.parseString(file(os.environ['_hook_domxml']).read())
+
 
 def write_domxml(domxml):
     file(os.environ['_hook_domxml'], 'w').write(domxml.toxml(encoding='utf-8'))

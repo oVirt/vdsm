@@ -23,25 +23,28 @@ from utils import CommandPath, execCmd
 
 _qemuimg = CommandPath("qemu-img",
                        "/usr/bin/qemu-img",  # Fedora, RHEL
-)
+                       )
+
 
 class FORMAT:
-    QCOW2   = "qcow2"
-    QCOW    = "qcow"
-    QED     = "qed"
-    RAW     = "raw"
-    VMDK    = "vmdk"
+    QCOW2 = "qcow2"
+    QCOW = "qcow"
+    QED = "qed"
+    RAW = "raw"
+    VMDK = "vmdk"
 
 __iregex = {
     'format':       re.compile("^file format: (?P<value>\w+)$"),
     'virtualsize':  re.compile("^virtual size: "
-                                    "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
+                               "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
     'clustersize':  re.compile("^cluster_size: (?P<value>\d+)$"),
     'backingfile':  re.compile("^backing file: (?P<value>.+) \(actual path"),
 }
 
+
 def __iregexSearch(pattern, text):
     return __iregex[pattern].search(text).group("value")
+
 
 class QImgError(Exception):
     def __init__(self, ecode, stdout, stderr, message=None):
@@ -52,7 +55,8 @@ class QImgError(Exception):
 
     def __str__(self):
         return "ecode=%s, stdout=%s, stderr=%s, message=%s" % (
-                    self.ecode, self.stdout, self.stderr, self.message)
+            self.ecode, self.stdout, self.stderr, self.message)
+
 
 def info(image, format=None):
     cmd = [_qemuimg.cmd, "info"]
@@ -81,6 +85,7 @@ def info(image, format=None):
         raise QImgError(rc, out, err, "unable to parse qemu-img output")
 
     return info
+
 
 def check(image, format=None):
     cmd = [_qemuimg.cmd, "check"]

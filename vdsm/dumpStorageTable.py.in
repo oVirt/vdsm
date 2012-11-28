@@ -26,6 +26,7 @@ DC = '@VDSMREPO@'
 MASTERSD_PATH = 'mastersd/master/vms'
 CDROM_IMAGE = '11111111-1111-1111-1111-111111111111'
 
+
 class StorageTable:
 
     def __init__(self, server):
@@ -38,9 +39,11 @@ class StorageTable:
         images = []
 
         for vmUUID in vmUUIDs:
-            vm_images_links = os.listdir(os.path.join(DC, pool, MASTERSD_PATH, vmUUID))
+            vm_images_links = os.listdir(os.path.join(DC, pool, MASTERSD_PATH,
+                                                      vmUUID))
             for vm_image_link in vm_images_links:
-                ovf = open(os.path.join(DC, pool, MASTERSD_PATH, vmUUID, vm_image_link)).read()
+                ovf = open(os.path.join(DC, pool, MASTERSD_PATH, vmUUID,
+                                        vm_image_link)).read()
                 cont = ovf.split('ovf:fileRef=\"')
                 vmName = cont[-1].split('<Name>')[-1].split('</Name>')[0]
 
@@ -52,7 +55,8 @@ class StorageTable:
                 for x in range(1, len(cont)):
                     image = cont[x].split(' ')[0].split('/')[0]
                     if not image in images:
-                        sd = self.serverConncetion.getImageDomainsList(pool, image)['domainslist']
+                        s = self.serverConncetion
+                        sd = s.getImageDomainsList(pool, image)['domainslist']
                         if len(sd) > 0:
                             sd = sd[0]
                             images.append(image)
@@ -66,7 +70,8 @@ class StorageTable:
 
         if not sd in self.domainsList.keys():
             sd_info = self.serverConncetion.getStorageDomainInfo(sd)['info']
-            self.domainsList[sd] = {'Name': sd_info['name'], 'Role': sd_info['role'], 'Refs': []}
+            self.domainsList[sd] = {'Name': sd_info['name'],
+                                    'Role': sd_info['role'], 'Refs': []}
 
     def _getSds(self, pool):
 
@@ -119,19 +124,21 @@ class StorageTable:
                 leafvol = vol
                 self.volumesList[imageDomVol].append('Template')
 
-        self.imagesList[imageDom] = self._buildVolumesChain(leafvol, vollen, volParents, sd, image)
+        self.imagesList[imageDom] = self._buildVolumesChain(leafvol, vollen,
+                                                            volParents, sd,
+                                                            image)
 
     def _buildVolumesChain(self, leafvol, vollen, volParents, sd, image):
 
-        volChain = vollen*[None]
+        volChain = vollen * [None]
 
-        volChain[(vollen-1)]=leafvol
+        volChain[(vollen - 1)] = leafvol
         next = leafvol
-        for k in range(1, (vollen+1)):
+        for k in range(1, (vollen + 1)):
             prev = next
             next = volParents[prev]
             if next in volParents.keys():
-                volChain[(vollen-1-k)]=next
+                volChain[(vollen - 1 - k)] = next
             else:
                 if next == BLANK_UUID:
                     app = 'Template independent'
@@ -145,10 +152,7 @@ class StorageTable:
 
         return volChain
 
-
-
     def _buildStorageTable(self):
-
         self.domainsList = {}
         self.vmList = {}
         self.imagesList = {}
@@ -159,7 +163,6 @@ class StorageTable:
 
         pools = self.serverConncetion.getConnectedStoragePoolsList()
         self.pool = pools['poollist'][0]
-
 
         # Check if its possible to access the ovf files
         try:
@@ -188,7 +191,7 @@ class StorageTable:
         for obj, obj_data in startObj.items():
             row = 0
 
-            obj_data = dict(obj_data) # copy
+            obj_data = dict(obj_data)  # copy
             refs = obj_data.pop('Refs')
             self.tbl[colStart].append([obj] + obj_data.values())
 
@@ -203,7 +206,7 @@ class StorageTable:
                     if row == 0:
                         sd_data = dict(self.domainsList[sdUUID])
                         del sd_data['Refs']
-                        self.tbl['Domains'].append( [sdUUID] + sd_data.values() )
+                        self.tbl['Domains'].append([sdUUID] + sd_data.values())
                     else:
                         self.tbl['Vms'].append([])
                         self.tbl['Domains'].append([])
@@ -223,13 +226,12 @@ class StorageTable:
                 vol = volsToAdd[0]
                 domImageVol = '%s:%s:%s' % (sdUUID, image, vol)
 
-                templToAdd = self.volumesList.get( domImageVol, [] )
+                templToAdd = self.volumesList.get(domImageVol, [])
                 self.tbl['Template'].append(templToAdd)
                 row += 1
 
-
     def _printRowSep(self, rowSep, columnNum):
-        sepLine = '+' + ( rowSep + '+' ) * columnNum
+        sepLine = '+' + (rowSep + '+') * columnNum
         print sepLine
 
     def _printTableSegment(self, depth, alignCenter=False, printHeader=False):
@@ -238,7 +240,7 @@ class StorageTable:
 
         row = 0
         rows = 1
-        rowSep = (UUID_LEN+2) * '-'
+        rowSep = (UUID_LEN + 2) * '-'
         colStart = 0
 
         if not self.canAccessVms:
@@ -266,9 +268,9 @@ class StorageTable:
                     adding = ''
 
                 if alignCenter:
-                    adding = adding.center( UUID_LEN )
+                    adding = adding.center(UUID_LEN)
                 else:
-                    adding = adding.ljust( UUID_LEN )
+                    adding = adding.ljust(UUID_LEN)
 
                 line = line + ' %s |' % (adding)
 
@@ -276,7 +278,6 @@ class StorageTable:
             row += 1
 
         self._printRowSep(rowSep, columnNum)
-
 
     def show(self):
         '''Show the Storage Table'''

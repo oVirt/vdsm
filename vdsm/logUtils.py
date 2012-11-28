@@ -23,25 +23,31 @@ import sys
 from functools import wraps
 from inspect import ismethod
 
+
 def funcName(func):
     if ismethod(func):
         return func.im_func.func_name
 
     return func.func_name
 
-def logcall(loggerName, pattern="%s", loglevel=logging.INFO, printers={}, resPrinter=repr, resPattern="%(name)s->%(result)s"):
+
+def logcall(loggerName, pattern="%s", loglevel=logging.INFO, printers={},
+            resPrinter=repr, resPattern="%(name)s->%(result)s"):
     def phase2(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             logger = logging.getLogger(loggerName)
-            logger.log(loglevel, pattern % (call2str(f, args, kwargs, printers),))
+            logger.log(loglevel, pattern %
+                       (call2str(f, args, kwargs, printers),))
             res = f(*args, **kwargs)
-            logger.log(loglevel, resPattern % {"name": funcName(f), "result": resPrinter(res)})
+            logger.log(loglevel, resPattern %
+                       {"name": funcName(f), "result": resPrinter(res)})
             return res
 
         return wrapper
 
     return phase2
+
 
 def call2str(func, args, kwargs, printers={}):
     kwargs = kwargs.copy()
@@ -70,6 +76,7 @@ def call2str(func, args, kwargs, printers={}):
 
     return "%s(%s)" % (func.func_name, ", ".join(argsStrs))
 
+
 class SimpleLogAdapter(logging.LoggerAdapter):
     # Because of how python implements the fact that warning
     # and warn are the same. I need to reimplement it here. :(
@@ -81,6 +88,7 @@ class SimpleLogAdapter(logging.LoggerAdapter):
             result += '%s=`%s`' % (key, value)
         result += '::%s' % msg
         return (result, kwargs)
+
 
 class TracebackRepeatFilter(logging.Filter):
     """
@@ -100,6 +108,7 @@ class TracebackRepeatFilter(logging.Filter):
             ex._logged = True
 
         return 1
+
 
 class QueueHandler(logging.Handler):
     """
@@ -151,4 +160,3 @@ class QueueHandler(logging.Handler):
             raise
         except:
             self.handleError(record)
-

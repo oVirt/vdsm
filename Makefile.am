@@ -50,33 +50,8 @@ PEP8_WHITELIST = \
 	tests \
 	vds_bootstrap/miniyum.py \
 	vdsm-tool \
-	vdsm/API.py \
-	vdsm/BindingXMLRPC.py \
-	vdsm/SecureXMLRPCServer.py \
-	vdsm/blkid.py \
-	vdsm/caps.py \
-	vdsm/clientIF.py \
-	vdsm/config.py.in \
-	vdsm/configNetwork.py \
-	vdsm/constants.py.in \
-	vdsm/debugPluginClient.py \
-	vdsm/define.py \
-	vdsm/exception.py \
-	vdsm/gluster \
-	vdsm/guestIF.py \
-	vdsm/hooks.py \
-	vdsm/kaxmlrpclib.py \
-	vdsm/ksm.py \
-	vdsm/libvirtconnection.py \
-	vdsm/libvirtev.py \
-	vdsm/libvirtvm.py \
-	vdsm/lsblk.py \
-	vdsm/md_utils.py \
-	vdsm/momIF.py \
-	vdsm/neterrors.py \
-	vdsm/netinfo.py \
-	vdsm/nwfilter.py \
-	vdsm/parted_utils.py \
+	vdsm/*.py \
+	vdsm/*.py.in \
 	vdsm/storage/blockVolume.py \
 	vdsm/storage/devicemapper.py \
 	vdsm/storage/domainMonitor.py \
@@ -103,14 +78,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/task.py \
 	vdsm/storage/taskManager.py \
 	vdsm/storage/volume.py \
-	vdsm/supervdsm.py \
-	vdsm/supervdsmServer.py \
-	vdsm/tc.py \
-	vdsm/utils.py \
 	vdsm/vdsm \
-	vdsm/vdsmDebugPlugin.py \
-	vdsm/vm.py \
-	vdsm/vmChannels.py \
 	vdsm_api \
 	vdsm_cli \
 	vdsm_hooks/fileinject \
