@@ -513,7 +513,7 @@ class ConfigWriter(object):
         try:
             hwlines = [line for line in open(cf).readlines()
                        if line.startswith('HWADDR=')]
-            l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n'] + hwlines
+            l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n', 'MTU=1500\n'] + hwlines
             open(cf, 'w').writelines(l)
         except IOError:
             pass
