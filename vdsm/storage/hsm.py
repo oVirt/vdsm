@@ -387,7 +387,10 @@ class HSM:
                 except Exception:
                     self.log.error("Unexpected error", exc_info=True)
 
-        threading.Thread(target=storageRefresh).start()
+        storageRefreshThread = threading.Thread(target=storageRefresh,
+                                                name="storageRefresh")
+        storageRefreshThread.daemon = True
+        storageRefreshThread.start()
 
     def _hsmSchedule(self, name, func, *args):
         self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task,

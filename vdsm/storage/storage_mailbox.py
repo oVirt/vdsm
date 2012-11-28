@@ -236,6 +236,7 @@ class HSM_MailMonitor(threading.Thread):
         self._msgCounter = 0
         self._sendMail()  # Clear outgoing mailbox
         threading.Thread.__init__(self)
+        self.daemon = True
         self.start()
 
     def _initMailbox(self):
