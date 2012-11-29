@@ -146,6 +146,30 @@ def getMountFromTarget(target):
     raise OSError(errno.ENOENT, 'Mount target %s not found' % target)
 
 
+def findMountOfPath(path):
+    # TBD: Bind mounts, should we ignore them?
+    # Follow symlinks (if file exists)
+    path = os.path.realpath(path)
+
+    # Make sure using canonical representation
+    path = os.path.normpath(path)
+
+    # Find longest match
+    maxLen = 0
+    mountRec = None
+    for rec in _iterMountRecords():
+        mntPath = os.path.normpath(rec.fs_file)
+        if len(mntPath) > maxLen:
+            if path.startswith(mntPath):
+                maxLen = len(mntPath)
+                mountRec = rec
+
+    if mountRec is None:
+        raise OSError(errno.ENOENT, os.strerror(errno.ENOENT))
+
+    return Mount(mountRec.fs_spec, mountRec.fs_file)
+
+
 def getMountFromDevice(device):
     device = normpath(device)
     for rec in _iterMountRecords():
