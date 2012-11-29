@@ -39,6 +39,7 @@ BuildRequires: python-nose
 
 # BuildRequires needed by the tests during the build
 BuildRequires: python-ethtool
+BuildRequires: libselinux-python
 BuildRequires: libvirt-python
 BuildRequires: genisoimage
 BuildRequires: openssl
