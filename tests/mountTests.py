@@ -19,14 +19,17 @@
 #
 
 from contextlib import contextmanager
-from storage.misc import execCmd
-import storage.mount as mount
-from testValidation import checkSudo
-
-from testrunner import VdsmTestCase as TestCaseBase
+import errno
 from tempfile import mkstemp, mkdtemp
 import os
 import shutil
+
+from nose.plugins.skip import SkipTest
+
+from testrunner import VdsmTestCase as TestCaseBase
+from storage.misc import execCmd
+import storage.mount as mount
+from testValidation import checkSudo
 
 FLOPPY_SIZE = (2 ** 20) * 4
 
@@ -38,7 +41,14 @@ def createFloppyImage(size):
         f.seek(size)
         f.write('\0')
 
-    rc, out, err = execCmd(['mkfs.ext2', "-F", path])
+    try:
+        rc, out, err = execCmd(['mkfs.ext2', "-F", path])
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            raise SkipTest("cannot execute mkfs.ext2")
+
+        raise
+
     if rc != 0:
         raise Exception("Could not format image", out, err)
     try:
