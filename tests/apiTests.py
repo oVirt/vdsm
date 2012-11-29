@@ -25,6 +25,7 @@ import socket
 import errno
 import json
 import struct
+from contextlib import closing
 
 from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import constants
@@ -176,6 +177,14 @@ class APITest(TestCaseBase):
         _fakeret = {}
 
 
+class ConnectionError(Exception):
+    pass
+
+
+class ProtocolError(Exception):
+    pass
+
+
 class JsonRawTest(APITest):
     _Size = struct.Struct("!Q")
 
@@ -187,16 +196,30 @@ class JsonRawTest(APITest):
         return resp
 
     def sendMessage(self, msg):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.connect((ip, port))
-            sock.sendall(msg)
-            data = sock.recv(JsonRawTest._Size.size)
+        with closing(socket.socket(socket.AF_INET,
+                                   socket.SOCK_STREAM)) as sock:
+            try:
+                sock.connect((ip, port))
+            except socket.error, e:
+                raise ConnectionError("Unable to connect to server: %s", e)
+            try:
+                sock.sendall(msg)
+            except socket.error, e:
+                raise ProtocolError("Unable to send request: %s", e)
+            try:
+                data = sock.recv(JsonRawTest._Size.size)
+            except socket.error, e:
+                raise ProtocolError("Unable to read response length: %s", e)
+            if not data:
+                raise ProtocolError("No data received")
             msgLen = JsonRawTest._Size.unpack(data)[0]
-            data = sock.recv(msgLen)
+            try:
+                data = sock.recv(msgLen)
+            except socket.error, e:
+                raise ProtocolError("Unable to read response body: %s", e)
+            if len(data) != msgLen:
+                raise ProtocolError("Response body length mismatch")
             return json.loads(data)
-        finally:
-            sock.close()
 
     def testPing(self):
         self.clearAPI()
@@ -227,14 +250,14 @@ class JsonRawTest(APITest):
         self.assertEquals(4, reply['error']['code'])
 
     def testMissingSize(self):
-        self.assertRaises(struct.error, self.sendMessage,
+        self.assertRaises(ProtocolError, self.sendMessage,
                           "malformed message")
 
     def testClientNotJson(self):
         msg = "malformed message"
         msize = JsonRawTest._Size.pack(len(msg))
         msg = msize + msg
-        self.assertRaises(struct.error, self.sendMessage, msg)
+        self.assertRaises(ProtocolError, self.sendMessage, msg)
 
     def testSynchronization(self):
         def doPing(msg):
@@ -245,7 +268,7 @@ class JsonRawTest(APITest):
 
         msg = self.buildMessage({'id': 1, 'method': 'Host.ping'})
         # Send Truncated message
-        self.assertRaises(struct.error, doPing, msg[:-1])
+        self.assertRaises(ProtocolError, doPing, msg[:-1])
 
         # Test that the server recovers
         doPing(msg)
