@@ -289,7 +289,8 @@ sendErrno:
     safeClose(errnofd[1]);
     errnofd[1] = -1;
     if (read(errnofd[0], &childErrno, sizeof(int)) == sizeof(int)) {
-        PyErr_SetString(PyExc_OSError, strerror(childErrno));
+        errno = childErrno;
+        PyErr_SetFromErrno(PyExc_OSError);
         goto fail;
     }
 
