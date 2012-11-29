@@ -124,6 +124,9 @@ errCode = {'noVM': {'status':
             'replicaErr': {'status':
                            {'code': 55,
                             'message': 'Drive replication error'}},
+            'updateDevice': {'status':
+                             {'code': 56,
+                              'message': 'Failed to update device'}},
             'recovery': {'status':
                          {'code': 99,
                           'message':

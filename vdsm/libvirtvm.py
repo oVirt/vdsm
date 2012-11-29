@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from contextlib import contextmanager
 import libvirt
 import xml.dom.minidom
 from xml.dom.minidom import parseString as _domParseStr
@@ -26,6 +27,7 @@ import threading
 
 import vm
 from vdsm.define import ERROR, doneCode, errCode
+from dummybr import DUMMY_BRIDGE
 from vdsm import utils
 from vdsm import constants
 import guestIF
@@ -66,6 +68,14 @@ _EVENT_STRINGS = ("Defined",
 
 def eventToString(event):
     return _EVENT_STRINGS[event]
+
+
+class SetLinkAndNetworkError(Exception):
+    pass
+
+
+class UpdatePortMirroringError(Exception):
+    pass
 
 
 class VmStatsThread(utils.AdvancedStatsThread):
@@ -974,6 +984,8 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
         for attr, value in kwargs.iteritems():
             if attr == 'nicModel' and value == 'pv':
                 kwargs[attr] = 'virtio'
+            elif attr == 'network' and value == '':
+                kwargs[attr] = DUMMY_BRIDGE
         LibvirtVmDevice.__init__(self, conf, log, **kwargs)
         self.sndbufParam = False
         self._customize()
@@ -1012,6 +1024,7 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
             <source bridge="engine"/>
             [<filterref filter='filter name'/>]
             [<tune><sndbuf>0</sndbuf></tune>]
+            [<link state='up|down'/>]
         </interface>
         """
         doc = xml.dom.minidom.Document()
@@ -1028,6 +1041,11 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
         if hasattr(self, 'filter'):
             m = doc.createElement('filterref')
             m.setAttribute('filter', self.filter)
+            iface.appendChild(m)
+        if hasattr(self, 'linkActive'):
+            m = doc.createElement('link')
+            m.setAttribute('state',
+                           'up' if utils.tobool(self.linkActive) else 'down')
             iface.appendChild(m)
         if hasattr(self, 'bootOrder'):
             bootOrder = doc.createElement('boot')
@@ -1568,6 +1586,121 @@ class LibvirtVm(vm.Vm):
                          'message': e.message}}
 
         return {'status': doneCode, 'vmList': self.status()}
+
+    def _lookupDeviceByAlias(self, devType, alias):
+        for dev in self._devices[devType][:]:
+            if dev.alias == alias:
+                return dev
+        raise LookupError('Device instance for device identified by alias %s '
+                          'not found' % alias)
+
+    def _lookupConfByAlias(self, alias):
+        for devConf in self.conf['devices'][:]:
+            if devConf['type'] == vm.NIC_DEVICES and \
+                    devConf['alias'] == alias:
+                return devConf
+        raise LookupError('Configuration of device identified by alias %s not'
+                          'found' % alias)
+
+    def _updateInterfaceDevice(self, params):
+        try:
+            netDev = self._lookupDeviceByAlias(vm.NIC_DEVICES, params['alias'])
+            netConf = self._lookupConfByAlias(params['alias'])
+
+            linkValue = 'up' if utils.tobool(params.get('linkActive',
+                                             netDev.linkActive)) else 'down'
+            network = params.get('network', netDev.network)
+            if network == '':
+                network = DUMMY_BRIDGE
+                linkValue = 'down'
+
+            netsToMirror = params.get('portMirroring',
+                                      netConf.get('portMirroring', []))
+
+            with self.setLinkAndNetwork(netDev, netConf, linkValue, network):
+                with self.updatePortMirroring(netConf, netsToMirror):
+                    return {'status': doneCode, 'vmList': self.status()}
+        except (LookupError,
+                SetLinkAndNetworkError,
+                UpdatePortMirroringError) as e:
+            return {'status':
+                    {'code': errCode['updateDevice']['status']['code'],
+                     'message': e.message}}
+
+    @contextmanager
+    def setLinkAndNetwork(self, dev, conf, linkValue, networkValue):
+        vnicXML = dev.getXML()
+        vnicXMLBackup = dev.getXML()
+        source = vnicXML.getElementsByTagName('source')[0]
+        source.setAttribute('bridge', networkValue)
+        try:
+            link = vnicXML.getElementsByTagName('link')[0]
+        except IndexError:
+            link = xml.dom.minidom.Element('link')
+            vnicXML.appendChild(link)
+        link.setAttribute('state', linkValue)
+        try:
+            try:
+                self._dom.updateDeviceFlags(vnicXML.toxml(encoding='utf-8'),
+                                            libvirt.VIR_DOMAIN_AFFECT_LIVE)
+            except Exception as e:
+                self.log.debug('Request failed: %s',
+                               vnicXML.toprettyxml(encoding='utf-8'),
+                               exc_info=True)
+                raise SetLinkAndNetworkError(e.message)
+            yield
+        except Exception as e:
+            # Rollback link and network.
+            self.log.debug('Rolling back link and net for: %s', dev.alias,
+                           exc_info=True)
+            self._dom.updateDeviceFlags(vnicXMLBackup.toxml(encoding='utf-8'),
+                                        libvirt.VIR_DOMAIN_AFFECT_LIVE)
+            raise
+        else:
+            # Update the device and the configuration.
+            dev.network = conf['network'] = networkValue
+            conf['linkActive'] = linkValue == 'up'
+            setattr(dev, 'linkActive', linkValue == 'up')
+
+    @contextmanager
+    def updatePortMirroring(self, conf, networks):
+        devName = conf['name']
+        netsToDrop = [net for net in conf.get('portMirroring', [])
+                      if net not in networks]
+        netsToAdd = [net for net in networks
+                     if net not in conf.get('portMirroring', [])]
+        mirroredNetworks = []
+        droppedNetworks = []
+        try:
+            for network in netsToDrop:
+                supervdsm.getProxy().unsetPortMirroring(network, devName)
+                droppedNetworks.append(network)
+            for network in netsToAdd:
+                supervdsm.getProxy().setPortMirroring(network, devName)
+                mirroredNetworks.append(network)
+            yield
+        except Exception as e:
+            self.log.error(
+                "%s for network %s failed",
+                'setPortMirroring' if network in netsToAdd else
+                'unsetPortMirroring',
+                network,
+                exc_info=True)
+            # In case we fail, we rollback the Network mirroring.
+            for network in mirroredNetworks:
+                supervdsm.getProxy().unsetPortMirroring(network, devName)
+            for network in droppedNetworks:
+                supervdsm.getProxy().setPortMirroring(network, devName)
+            raise UpdatePortMirroringError(e.message)
+        else:
+            # Update the conf with the new mirroring.
+            conf['portMirroring'] = networks
+
+    def updateDevice(self, params):
+        if params.get('deviceType') == vm.NIC_DEVICES:
+            return self._updateInterfaceDevice(params)
+        else:
+            return errCode['noimpl']
 
     def hotunplugNic(self, params):
         if self.isMigrating():
@@ -2845,6 +2978,14 @@ class LibvirtVm(vm.Vm):
             model = x.getElementsByTagName('model')[0].getAttribute('type')
 
             network = None
+            try:
+                if x.getElementsByTagName('link')[0].getAttribute('state') == \
+                        'down':
+                    linkActive = False
+                else:
+                    linkActive = True
+            except IndexError:
+                linkActive = True
             source = x.getElementsByTagName('source')
             if source:
                 network = source[0].getAttribute('bridge')
@@ -2859,6 +3000,7 @@ class LibvirtVm(vm.Vm):
                     nic.name = name
                     nic.alias = alias
                     nic.address = address
+                    nic.linkActive = linkActive
             # Update vm's conf with address for known nic devices
             knownDev = False
             for dev in self.conf['devices']:
@@ -2867,6 +3009,7 @@ class LibvirtVm(vm.Vm):
                     dev['address'] = address
                     dev['alias'] = alias
                     dev['name'] = name
+                    dev['linkActive'] = linkActive
                     knownDev = True
             # Add unknown nic device to vm's conf
             if not knownDev:
@@ -2876,7 +3019,8 @@ class LibvirtVm(vm.Vm):
                           'nicModel': model,
                           'address': address,
                           'alias': alias,
-                          'name': name}
+                          'name': name,
+                          'linkActive': linkActive}
                 if network:
                     nicDev['network'] = network
                 self.conf['devices'].append(nicDev)

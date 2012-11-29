@@ -463,6 +463,14 @@ start() {
         return $ret_val
     fi
 
+    python @VDSMDIR@/dummybr.pyc
+    ret_val=$?
+    if [ $ret_val -ne 0 ]
+    then
+        log_failure_msg "$prog: Failed to create ephemeral dummy bridge."
+        return $ret_val
+    fi
+
     @VDSMDIR@/vdsm-restore-net-config
     /usr/bin/vdsm-tool load-needed-modules
     mk_data_center

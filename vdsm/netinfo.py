@@ -43,6 +43,7 @@ NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
+DUMMY_BRIDGE = ';vdsmdummy;'
 
 
 def _match_nic_name(nic, patterns):
@@ -74,7 +75,8 @@ def vlans():
 
 
 def bridges():
-    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bridge')]
+    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bridge')
+            if b.split('/')[-2] != DUMMY_BRIDGE]
 
 
 def networks():

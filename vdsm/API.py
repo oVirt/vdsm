@@ -37,6 +37,7 @@ import storage.safelease
 import storage.volume
 import storage.sd
 import storage.image
+import vm
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
@@ -354,7 +355,24 @@ class VM(APIBase):
         return response
 
     def vmUpdateDevice(self, params):
-        return errCode['noimpl']
+        if 'deviceType' not in params:
+            self.log.error('Missing a required parameters: deviceType')
+            return {'status': {'code': errCode['MissParam']['status']['code'],
+                               'message': 'Missing one of required '
+                                          'parameters: deviceType'}}
+        try:
+            v = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            self.log.warning("vm %s doesn't exist", self._UUID)
+            return errCode['noVM']
+
+        if params['deviceType'] == vm.NIC_DEVICES:
+            if 'alias' not in params:
+                self.log.error('Missing the required alias parameters.')
+                return {'status':
+                        {'code': errCode['MissParam']['status']['code'],
+                         'message': 'Missing the required alias parameter'}}
+        return v.updateDevice(params)
 
     def hotplugNic(self, params):
         try:
