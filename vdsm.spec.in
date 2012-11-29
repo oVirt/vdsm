@@ -63,7 +63,7 @@ BuildRequires: systemd-units
 
 Requires: which
 Requires: sudo >= 1.7.3
-Requires: logrotate >= 3.8.0
+Requires: logrotate
 Requires: xz
 Requires: ntp
 Requires: iproute
@@ -105,6 +105,7 @@ Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: selinux-policy-targeted >= 3.7.19-80
 Requires: lvm2 >= 2.02.95-10.el6_3.2
+Requires: logrotate < 3.8.0
 %endif
 %else
 # Subprocess and thread bug was found on python 2.7.2
@@ -393,6 +394,9 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 
 %prep
 %setup -q
+%if 0%{?rhel} == 6
+sed -i '/ su /d' vdsm/vdsm-logrotate.conf.in
+%endif
 
 %build
 %if 0%{?enable_autotools}
