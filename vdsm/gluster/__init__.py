@@ -20,7 +20,7 @@
 
 from functools import wraps
 
-MODULE_LIST = ('cli',)
+MODULE_LIST = ('cli', 'hooks')
 
 
 def makePublic(func):

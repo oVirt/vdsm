@@ -473,6 +473,7 @@ Requires: glusterfs >= 3.4.0
 Requires: glusterfs-server
 Requires: glusterfs-fuse
 Requires: glusterfs-rdma
+Requires: python-magic
 
 %description gluster
 Gluster plugin enables VDSM to serve Gluster functionalities.
@@ -1168,6 +1169,7 @@ exit 0
 %doc COPYING
 %{_datadir}/%{vdsm_name}/gluster/api.py*
 %{_datadir}/%{vdsm_name}/gluster/vdsmapi-gluster-schema.json
+%{_datadir}/%{vdsm_name}/gluster/hooks.py*
 %endif
 
 %changelog

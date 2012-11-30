@@ -86,8 +86,8 @@ class GlusterMissingArgumentException(GlusterGeneralException):
     code = 4104
     message = "Missing argument"
 
-    def __init__(self, *args):
-        self.message = 'Missing argument: %s' % (args,)
+    def __init__(self, *args, **kwargs):
+        self.message = 'Missing argument: args=%s, kwargs=%s' % (args, kwargs)
 
 
 class GlusterCmdExecFailedException(GlusterGeneralException):
@@ -390,3 +390,36 @@ class GlusterHostRemoveFailedException(GlusterHostException):
 class GlusterHostsListFailedException(GlusterHostException):
     code = 4407
     message = "Hosts list failed"
+
+
+# Hook
+class GlusterHookException(GlusterException):
+    code = 4500
+    message = "Gluster Hook Exception"
+
+
+class GlusterHookListException(GlusterException):
+    code = 4501
+    message = "List gluster hook failed"
+
+
+class GlusterHookEnableFailedException(GlusterHookException):
+    code = 4502
+    message = "Enable gluster hook failed"
+
+
+class GlusterHookDisableFailedException(GlusterHookException):
+    code = 4503
+    message = "Disable gluster hook failed"
+
+
+class GlusterHookNotFoundException(GlusterHookException):
+    code = 4504
+
+    def __init__(self, glusterCmd=None, level=None, hookName=None):
+        self.glusterCmd = glusterCmd
+        self.level = level
+        self.hookName = hookName
+        self.message = \
+            'Hook %s of command %s, level %s not found' % \
+            (hookName, glusterCmd, level)

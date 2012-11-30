@@ -1,0 +1,137 @@
+#
+# Copyright 2013 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+#
+# VDSM GLUSTER API Schema
+#
+
+## Category: @GlusterHook ######################################################
+##
+# @GlusterHook:
+#
+# Gluster Hook API object.
+#
+# Since: 4.10.3
+##
+{'class': 'GlusterHook'}
+
+##
+# @HookLevel:
+#
+# Possible value of hook level.
+#
+# @PRE:    Before gluster command execution
+#
+# @POST:   After gluster command execution
+#
+# Since: 4.10.3
+##
+{'enum': 'HookLevel',
+ 'data': ['PRE', 'POST']}
+
+##
+# @HookStatus:
+#
+# Possible value of hook status.
+#
+# @ENABLED:  Hook is enabled
+#
+# @DISABLED: Hook is disabled
+#
+# Since: 4.10.3
+##
+{'enum': 'HookStatus',
+ 'data': ['ENABLED', 'DISABLED']}
+
+##
+# @HookInfo:
+#
+# Hook information.
+#
+# @name:      The name of the hook
+#
+# @status:    Status of the hook
+#
+# @type:      Type of hook
+#
+# @command:   Gluster command
+#
+# @level:     Hook level
+#
+# @md5sum:    Md5sum of the hook file
+#
+# Since: 4.10.3
+##
+{'type': 'HookInfo',
+ 'data': {'name': 'str', 'status': 'HookStatus', 'type': 'str', 'command': 'str', 'level': 'HookLevel', 'md5sum': 'str'}}
+
+##
+# @GlusterHook.list:
+#
+# Provides the list of hook files
+#
+#
+# Returns:
+# List of gluster hook information
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHook', 'name': 'list'},
+ 'returns': ['HookInfo']}
+
+##
+# @GlusterHook.enable:
+#
+# Enable the hook file
+#
+# @glusterCmd:   Gluster command name
+#
+# @hookLevel:    Hook execution level
+#
+# @hookName:     Gluster hook name
+#
+# Returns:
+# success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHook', 'name': 'enable'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
+ 'returns': 'boolean'}
+
+##
+# @GlusterHook.disable:
+#
+# Disable the hook file
+#
+# @glusterCmd:   Gluster command name
+#
+# @hookLevel:    Hook execution level
+#
+# @hookName:     Gluster hook name
+#
+# Returns:
+# success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHook', 'name': 'disable'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
+ 'returns': 'boolean'}

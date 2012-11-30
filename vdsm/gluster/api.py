@@ -238,6 +238,19 @@ class GlusterApi(object):
         status = self.svdsmProxy.glusterVolumeProfileInfo(volumeName, nfs)
         return {'profileInfo': status}
 
+    @exportAsVerb
+    def hooksList(self, options=None):
+        status = self.svdsmProxy.glusterHooksList()
+        return {'hooksList': status}
+
+    @exportAsVerb
+    def hookEnable(self, glusterCmd, hookLevel, hookName, options=None):
+        self.svdsmProxy.glusterHookEnable(glusterCmd, hookLevel, hookName)
+
+    @exportAsVerb
+    def hookDisable(self, glusterCmd, hookLevel, hookName, options=None):
+        self.svdsmProxy.glusterHookDisable(glusterCmd, hookLevel, hookName)
+
 
 def getGlusterMethods(gluster):
     l = []

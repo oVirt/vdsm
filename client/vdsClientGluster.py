@@ -310,6 +310,29 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterHooksList(self, args):
+        status = self.s.glusterHooksList()
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterHookEnable(self, args):
+        params = self._eqSplit(args)
+        glusterCmd = params.get('command', '')
+        level = params.get('level', '')
+        hookName = params.get('hookName', '')
+
+        status = self.s.glusterHookEnable(glusterCmd, level, hookName)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterHookDisable(self, args):
+        params = self._eqSplit(args)
+        glusterCmd = params.get('command', '')
+        level = params.get('level', '')
+        hookName = params.get('hookName', '')
+
+        status = self.s.glusterHookDisable(glusterCmd, level, hookName)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -520,4 +543,23 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> [nfs={yes|no}]\n\t'
               '<volume_name> is existing volume name',
               'get gluster volume profile info'
+              )),
+         'glusterHooksList': (
+             serv.do_glusterHooksList,
+             ('',
+              'list hooks info'
+              )),
+         'glusterHookEnable': (
+             serv.do_glusterHookEnable,
+             ('command=<gluster_command> level={pre|post} '
+              'hookName=<hook_name>\n\t'
+              '<hook_name> is an existing hook name',
+              'Enable hook script'
+              )),
+         'glusterHookDisable': (
+             serv.do_glusterHookDisable,
+             ('command=<gluster_command> level={pre|post} '
+              'hookName=<hook_name>\n\t'
+              '<hook_name> is an existing hook name',
+              'Disable hook script'
               )), }

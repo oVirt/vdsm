@@ -1,5 +1,5 @@
 [loggers]
-keys=root,SuperVdsm
+keys=root,SuperVdsm,Gluster
 
 [handlers]
 keys=logfile
@@ -16,6 +16,12 @@ propagate=0
 level=DEBUG
 handlers=logfile
 qualname=SuperVdsm
+propagate=0
+
+[logger_Gluster]
+level=DEBUG
+handlers=logfile
+qualname=Gluster
 propagate=0
 
 [handler_logfile]

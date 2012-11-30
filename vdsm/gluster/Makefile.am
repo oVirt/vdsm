@@ -26,6 +26,7 @@ dist_vdsmgluster_PYTHON = \
 	api.py \
 	cli.py \
 	exception.py \
+	hooks.py \
 	hostname.py
 
 dist_vdsmgluster_DATA = \
