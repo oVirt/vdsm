@@ -31,11 +31,12 @@ from contextlib import closing
 import ctypes
 from contextlib import contextmanager
 import subprocess
-
 import shutil
-from vdsm import constants
 import logging
 import errno
+
+from vdsm import constants
+
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
 
 log = logging.getLogger('fileUtils')
@@ -184,10 +185,13 @@ def createdir(dirPath, mode=None):
             log.warning("Dir %s already exists", dirPath)
             if mode is not None:
                 statinfo = os.stat(dirPath)
-                if statinfo[stat.ST_MODE] != mode:
+                curMode = statinfo[stat.ST_MODE]
+                if curMode != mode:
                     raise OSError(errno.EPERM,
-                        "Existing %s permissions %s are not as requested %s" %
-                        (dirPath, oct(statinfo[stat.ST_MODE]), oct(mode)))
+                                  ("Existing %s permissions %s are not as "
+                                   "requested %s") % (dirPath,
+                                                      oct(curMode),
+                                                      oct(mode)))
 
 
 def resolveUid(user):
@@ -219,7 +223,7 @@ def chown(path, user=-1, group=-1):
     currentGid = stat.st_gid
 
     if ((uid == currentUid or user == -1) and
-        (gid == currentGid or group == -1)):
+            (gid == currentGid or group == -1)):
         return True
 
     os.chown(path, uid, gid)

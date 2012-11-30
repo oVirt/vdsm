@@ -34,14 +34,14 @@ VFS_NFS4 = "nfs4"
 VFS_EXT3 = "ext3"
 
 MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "
-                          "fs_mntops fs_freq fs_passno")
+                         "fs_mntops fs_freq fs_passno")
 
 _RE_ESCAPE = re.compile(r"\\0\d\d")
 
 
 def _parseFstabLine(line):
     (fs_spec, fs_file, fs_vfstype, fs_mntops,
-            fs_freq, fs_passno) = line.split()[:6]
+     fs_freq, fs_passno) = line.split()[:6]
     fs_mntops = fs_mntops.split(",")
     fs_freq = int(fs_freq)
     fs_passno = int(fs_passno)
@@ -50,7 +50,7 @@ def _parseFstabLine(line):
     fs_mntops = [_parseFstabPath(item) for item in fs_mntops]
 
     return MountRecord(fs_spec, fs_file, fs_vfstype, fs_mntops,
-            fs_freq, fs_passno)
+                       fs_freq, fs_passno)
 
 
 def _iterateMtab():
@@ -118,7 +118,7 @@ def _iterMountRecords():
             continue
 
         yield MountRecord(realSpec, rec.fs_file, rec.fs_vfstype,
-                rec.fs_mntops, rec.fs_freq, rec.fs_passno)
+                          rec.fs_mntops, rec.fs_freq, rec.fs_passno)
 
 
 def iterMounts():
@@ -195,7 +195,7 @@ class Mount(object):
         if not p.wait(timeout):
             p.kill()
             raise OSError(errno.ETIMEDOUT,
-                    "%s operation timed out" % os.path.basename(cmd[0]))
+                          "%s operation timed out" % os.path.basename(cmd[0]))
 
         out, err = p.communicate()
         rc = p.returncode
@@ -232,9 +232,9 @@ class Mount(object):
                 return record
 
         raise OSError(errno.ENOENT,
-                "Mount of `%s` at `%s` does not exist" %
-                (self.fs_spec, self.fs_file))
+                      "Mount of `%s` at `%s` does not exist" %
+                      (self.fs_spec, self.fs_file))
 
     def __repr__(self):
-        return "<Mount fs_spec='%s' fs_file='%s'>" % \
-                (self.fs_spec, self.fs_file)
+        return ("<Mount fs_spec='%s' fs_file='%s'>" %
+                (self.fs_spec, self.fs_file))
