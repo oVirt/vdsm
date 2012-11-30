@@ -1978,26 +1978,32 @@
 #
 # Properties of a VM network interface device.
 #
-# @deviceType:  The device type (always @interface)
+# @deviceType:    The device type (always @interface)
 #
-# @device:      The host network device type used to create the connection
+# @device:        The host network device type used to create the connection
 #
-# @nicModel:    The type of device that is exposed to the VM operating system
+# @nicModel:      The type of device that is exposed to the VM operating system
 #
-# @macAddr:     The unique ethernet hardware address of the device
+# @macAddr:       The unique ethernet hardware address of the device
 #
-# @network:     The name of the attached host bridge device
+# @network:       The name of the attached host bridge device
 #
-# @bootOrder:   #optional If specified, this device is part of the boot sequence
-#               at the specified position
+# @bootOrder:     #optional If specified, this device is part of the boot
+#                 sequence at the specified position
 #
-# @address:     Device hardware address
+# @address:       Device hardware address
 #
-# @alias:       Alias used to identify this device in commands
+# @alias:         Alias used to identify this device in commands
 #
-# @deviceId:    A unique ID for this device
+# @deviceId:      A unique ID for this device
 #
-# @specParams:  #optional Additional device parameters
+# @specParams:    #optional Additional device parameters
+#
+# @linkActive:    #optional Whether the VM network card has its link active (up)
+#                 or not (down). If omitted, the link will be active
+#
+# @portMirroring: #optional If present, indicates the traffic of which networks
+#                 should be mirrored to the interface.
 #
 # Since: 4.10.0
 ##
@@ -2006,7 +2012,8 @@
           'nicModel': 'VmInterfaceDeviceModel', 'macAddr': 'str',
           'network': 'str', '*bootOrder': 'uint',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
-          '*specParams': 'VmInterfaceDeviceSpecParams'}}
+          '*specParams': 'VmInterfaceDeviceSpecParams', '*linkActive': 'bool',
+          '*portMirroring': ['str']}}
 
 ##
 # @VmVideoDeviceType:
