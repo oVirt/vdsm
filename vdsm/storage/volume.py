@@ -751,17 +751,17 @@ class Volume(object):
         return {
             "uuid": self.volUUID,
             "type": meta.get(TYPE, ""),
-            "format":   meta.get(FORMAT, ""),
+            "format": meta.get(FORMAT, ""),
             "disktype": meta.get(DISKTYPE, ""),
-            "voltype":  meta.get(VOLTYPE, ""),
+            "voltype": meta.get(VOLTYPE, ""),
             "size": int(meta.get(SIZE, "0")),
-            "parent":   self.getParent(),
-            "description":  meta.get(DESCRIPTION, ""),
+            "parent": self.getParent(),
+            "description": meta.get(DESCRIPTION, ""),
             "pool": meta.get(sd.DMDK_POOLS, ""),
-            "domain":   meta.get(DOMAIN, ""),
-            "image":    self.getImage(),
-            "ctime":    meta.get(CTIME, ""),
-            "mtime":    meta.get(MTIME, ""),
+            "domain": meta.get(DOMAIN, ""),
+            "image": self.getImage(),
+            "ctime": meta.get(CTIME, ""),
+            "mtime": meta.get(MTIME, ""),
             "legality": meta.get(LEGALITY, ""),
         }
 
@@ -770,18 +770,18 @@ class Volume(object):
                     voltype, disktype, desc="", legality=ILLEGAL_VOL):
         meta = {
             FORMAT: str(format),
-            TYPE:   str(type),
-            VOLTYPE:    str(voltype),
-            DISKTYPE:   str(disktype),
-            SIZE:   int(size),
-            CTIME:  int(time.time()),
-            sd.DMDK_POOLS:  "",  # obsolete
+            TYPE: str(type),
+            VOLTYPE: str(voltype),
+            DISKTYPE: str(disktype),
+            SIZE: int(size),
+            CTIME: int(time.time()),
+            sd.DMDK_POOLS: "",  # obsolete
             DOMAIN: str(sdUUID),
-            IMAGE:  str(imgUUID),
-            DESCRIPTION:    str(desc),
-            PUUID:  str(puuid),
-            MTIME:  int(time.time()),
-            LEGALITY:   str(legality),
+            IMAGE: str(imgUUID),
+            DESCRIPTION: str(desc),
+            PUUID: str(puuid),
+            MTIME: int(time.time()),
+            LEGALITY: str(legality),
         }
 
         cls.createMetadata(metaId, meta)

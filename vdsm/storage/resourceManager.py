@@ -30,12 +30,22 @@ import storage_exception as se
 import misc
 from logUtils import SimpleLogAdapter
 
+
 # Errors
-class ResourceManagerError(Exception): pass
-class RequestAlreadyProcessedError(ResourceManagerError): pass
-class RequestTimedOutError(ResourceManagerError): pass
+
+class ResourceManagerError(Exception):
+    pass
+
+
+class RequestAlreadyProcessedError(ResourceManagerError):
+    pass
+
+
+class RequestTimedOutError(ResourceManagerError):
+    pass
 
 # TODO : Consider changing when we decided on a unified way of representing enums.
+
 
 class LockType:
     shared = "shared"
@@ -54,6 +64,7 @@ class LockType:
         elif lockstate == LockState.locked:
             return cls.exclusive
         raise ValueError("invalid lockstate %s" % lockstate)
+
 
 class LockState:
     free = "free"
@@ -83,6 +94,7 @@ class LockState:
         if str(locktype) == LockType.exclusive:
             return cls.locked
         raise ValueError("invalid locktype %s" % locktype)
+
     @classmethod
     def validate(cls, state):
         try:
@@ -90,6 +102,7 @@ class LockState:
                 raise ValueError
         except:
             raise ValueError("invalid lock state %s" % state)
+
 
 #TODO : Integrate all factory functionality to manager
 class SimpleResourceFactory(object):
@@ -118,6 +131,7 @@ class SimpleResourceFactory(object):
         """
         return None
 
+
 class RequestRef(object):
     """
     The request object that the user can interact with.
@@ -144,6 +158,7 @@ class RequestRef(object):
             return False
 
         return (self._realRequset == other._realRequset)
+
 
 class Request(object):
     """
@@ -219,8 +234,7 @@ class Request(object):
         except Exception:
             self._log.warn("Request callback threw an exception", exc_info=True)
 
-
-    def wait(self, timeout = None):
+    def wait(self, timeout=None):
         return self._doneEvent.wait(timeout)
 
     def granted(self):
@@ -229,6 +243,7 @@ class Request(object):
 
     def __str__(self):
         return "Request for %s - %s: %s" % (self.fullName, self.lockType, self._status())
+
 
 class ResourceRef(object):
     """
@@ -301,11 +316,12 @@ class ResourceRef(object):
                 # a deadlock. This is why I need to use a timer. It will defer the operation
                 # and use a different context.
                 ResourceManager.getInstance().releaseResource(namespace, name)
-            threading.Thread(target = release, args=(self._log, self.namespace, self.name)).start()
+            threading.Thread(target=release, args=(self._log, self.namespace, self.name)).start()
             self._isValid = False
 
     def __repr__(self):
         return "< ResourceRef '%s', isValid: '%s' obj: '%s'>" % (self.fullName, self.isValid, repr(self.__wrappedObject) if self.isValid else None)
+
 
 class ResourceManager(object):
     """
@@ -339,7 +355,7 @@ class ResourceManager(object):
         """
         def __init__(self, factory):
             self.resources = {}
-            self.lock = threading.Lock()#misc.RWLock()
+            self.lock = threading.Lock()  # misc.RWLock()
             self.factory = factory
 
     def __init__(self):
@@ -453,6 +469,7 @@ class ResourceManager(object):
                 raise TypeError("'timeout' must be number")
 
         resource = Queue()
+
         def callback(req, res):
             resource.put(res)
 
@@ -618,10 +635,11 @@ class ResourceManager(object):
                     resource.activeUsers += 1
                     self._log.debug("Request '%s' was granted (%d active users)", nextRequest, resource.activeUsers)
 
+
 class Owner(object):
     log = logging.getLogger('ResourceManager.Owner')
 
-    def __init__(self, ownerobject, raiseonfailure = False):
+    def __init__(self, ownerobject, raiseonfailure=False):
         self.ownerobject = ownerobject
         self.requests = {}
         self.resources = {}
@@ -746,7 +764,7 @@ class Owner(object):
                 raise ValueError("request %s is already requested by %s" % (fullName, self))
 
             try:
-                request =  manager.registerResource(namespace, name, locktype, self._onRequestFinished)
+                request = manager.registerResource(namespace, name, locktype, self._onRequestFinished)
             except ValueError, ex:
                 self.log.debug("%s: request for '%s' could not be processed (%s)", self, fullName, ex)
                 raise se.InvalidResourceName()
@@ -842,7 +860,6 @@ class Owner(object):
         if hasattr(self.ownerobject, "resourceReleased"):
             self.ownerobject.resourceReleased(resource.namespace, resource.name)
 
-
     def cancelAll(self):
         self.log.debug("Owner.cancelAll requests %s", self.requests)
         self.lock.acquire()
@@ -858,7 +875,7 @@ class Owner(object):
 
     def ownedResources(self):
         res = self.resources.values()
-        return [ (r.namespace, r.name, r.getStatus()) for r in res]
+        return [(r.namespace, r.name, r.getStatus()) for r in res]
 
     def requestedResources(self):
         reqs = self.requests.values()
@@ -873,5 +890,3 @@ class Owner(object):
 
     def __str__(self):
         return str(self.ownerobject)
-
-

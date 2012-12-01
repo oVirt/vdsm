@@ -51,6 +51,7 @@ _iscsiadmTransactionLock = RLock()
 
 log = logging.getLogger('Storage.ISCSI')
 
+
 def getDevIscsiInfo(dev):
     """
     Reports the iSCSI parameters of the given device 'dev'
@@ -71,8 +72,10 @@ def getDevIscsiInfo(dev):
     return IscsiSession(0, IscsiInterface(""),
             IscsiTarget(IscsiPortal("", 0), 0, ""), None)
 
+
 def getSessionInfo(sessionID):
     return supervdsm.getProxy().readSessionInfo(sessionID)
+
 
 def readSessionInfo(sessionID):
     sessionName = "session%d" % sessionID
@@ -121,6 +124,7 @@ def readSessionInfo(sessionID):
 
     return IscsiSession(sessionID, iface, target, cred)
 
+
 def addIscsiNode(iface, target, credentials=None):
     targetName = target.iqn
     portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
@@ -139,6 +143,7 @@ def addIscsiNode(iface, target, credentials=None):
             removeIscsiNode(iface, target)
             raise
 
+
 def removeIscsiNode(iface, target):
     targetName = target.iqn
     portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
@@ -149,6 +154,7 @@ def removeIscsiNode(iface, target):
             pass
 
         iscsiadm.node_delete(iface.name, portalStr, targetName)
+
 
 def addIscsiPortal(iface, portal, credentials=None):
     discoverType = "sendtargets"
@@ -177,10 +183,12 @@ def addIscsiPortal(iface, portal, credentials=None):
             deleteIscsiPortal(iface, portal)
             raise
 
+
 def deleteIscsiPortal(iface, portal):
     discoverType = "sendtargets"
     portalStr = "%s:%d" % (portal.hostname, portal.port)
     iscsiadm.discoverydb_delete(discoverType, iface.name, portalStr)
+
 
 def discoverSendTargets(iface, portal, credentials=None):
     # Because proper discovery actually has to clear the DB having multiple
@@ -203,6 +211,7 @@ def discoverSendTargets(iface, portal, credentials=None):
 
         return res
 
+
 def iterateIscsiSessions():
     for sessionDir in glob.iglob("/sys/class/iscsi_session/session*"):
         sessionID = int(os.path.basename(sessionDir)[len("session"):])
@@ -213,6 +222,7 @@ def iterateIscsiSessions():
                 raise
 
             continue
+
 
 class ChapCredentials(object):
     def __init__(self, username=None, password=None):
@@ -233,6 +243,7 @@ class ChapCredentials(object):
 
     def __hash__(self):
         return hash(self.__class__) ^ hash(self.username) ^ hash(self.password)
+
 
 # Technically there are a lot more interface properties but VDSM doesn't
 # support them at the moment
@@ -341,10 +352,12 @@ class IscsiInterface(object):
     def __repr__(self):
         return "<IscsiInterface name='%s' transport='%s'>" % (self.name, self.transport)
 
+
 def iterateIscsiInterfaces():
     names = iscsiadm.iface_list()
     for name in names:
         yield IscsiInterface(name)
+
 
 @misc.samplingmethod
 def rescan():
@@ -352,6 +365,7 @@ def rescan():
         iscsiadm.session_rescan()
     except iscsiadm.IscsiError:
         pass
+
 
 @misc.samplingmethod
 def forceIScsiScan():
@@ -403,6 +417,7 @@ def forceIScsiScan():
         log.warning("Still waiting for scsi scan of hbas: %s",
                     tuple(hba for p in processes))
 
+
 def devIsiSCSI(dev):
     hostdir = os.path.realpath(os.path.join("/sys/block", dev, "device/../../.."))
     host = os.path.basename(hostdir)
@@ -410,6 +425,7 @@ def devIsiSCSI(dev):
     scsi_host = os.path.join(hostdir, constants.STRG_SCSI_HOST, host)
     proc_name = os.path.join(scsi_host, "proc_name")
     return (os.path.exists(iscsi_host) and os.path.exists(proc_name))
+
 
 def getiScsiTarget(dev):
     # FIXME: Use the new target object instead of a string
@@ -420,12 +436,14 @@ def getiScsiTarget(dev):
     with open(os.path.join(iscsi_session, "targetname")) as f:
         return f.readline().strip()
 
+
 def getiScsiSession(dev):
     # FIXME: Use the new session object instead of a string
     device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
     sessiondir = os.path.realpath(os.path.join(device, "../.."))
     session = os.path.basename(sessiondir)
     return int(session[len('session'):])
+
 
 def getDefaultInitiatorName():
     with open("/etc/iscsi/initiatorname.iscsi", "r") as f:
@@ -451,7 +469,10 @@ def findUnderlyingStorage(devPath):
 
     return sessions
 
+
 RE_SCSI_SESSION = re.compile(r"^[Ss]ession(\d+)$")
+
+
 def disconnectFromUndelyingStorage(devPath):
     storageList = findUnderlyingStorage(devPath)
     res = []
@@ -466,6 +487,7 @@ def disconnectFromUndelyingStorage(devPath):
 
     return res
 
+
 def disconnectiScsiSession(sessionID):
     #FIXME : Should throw exception on error
     sessionID = int(sessionID)
@@ -475,4 +497,3 @@ def disconnectiScsiSession(sessionID):
         return e[0]
 
     return 0
-

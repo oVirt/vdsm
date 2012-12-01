@@ -393,7 +393,7 @@ class Image:
         used by other volumes.
         """
         # Avoid relink templates for non-NFS domains
-        if destDom.getStorageType() not in [ sd.NFS_DOMAIN ]:
+        if destDom.getStorageType() not in [sd.NFS_DOMAIN]:
             self.log.debug("Doesn't relink templates non-NFS domain %s", destDom.sdUUID)
             return
 
@@ -1111,7 +1111,7 @@ class Image:
         """
         chain = []
         accumulatedChainSize = 0
-        endVolName = vols[ancestor].getParent() # TemplateVolName or None
+        endVolName = vols[ancestor].getParent()  # TemplateVolName or None
         currVolName = successor
         while (currVolName != endVolName):
             chain.insert(0, currVolName)
@@ -1194,4 +1194,3 @@ class Image:
                            successor, imgUUID, exc_info=True)
 
         self.log.info("Merge src=%s with dst=%s was successfully finished.", srcVol.getVolumePath(), dstVol.getVolumePath())
-

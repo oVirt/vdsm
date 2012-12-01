@@ -52,6 +52,7 @@ PEP8_WHITELIST = \
 	vdsm-tool \
 	vdsm/*.py \
 	vdsm/*.py.in \
+	vdsm/storage/__init__.py \
 	vdsm/storage/blockVolume.py \
 	vdsm/storage/devicemapper.py \
 	vdsm/storage/domainMonitor.py \
@@ -71,12 +72,19 @@ PEP8_WHITELIST = \
 	vdsm/storage/nfsSD.py \
 	vdsm/storage/outOfProcess.py \
 	vdsm/storage/persistentDict.py \
+	vdsm/storage/remoteFileHandler.py \
 	vdsm/storage/resourceFactories.py \
+	vdsm/storage/safelease.py \
 	vdsm/storage/sd.py \
+	vdsm/storage/sdc.py \
 	vdsm/storage/securable.py \
+	vdsm/storage/storageConstants.py \
+	vdsm/storage/storageServer.py \
 	vdsm/storage/storage_exception.py \
+	vdsm/storage/sync.py \
 	vdsm/storage/task.py \
 	vdsm/storage/taskManager.py \
+	vdsm/storage/threadLocal.py \
 	vdsm/storage/volume.py \
 	vdsm/vdsm \
 	vdsm_api \

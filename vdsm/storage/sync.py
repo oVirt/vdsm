@@ -1,13 +1,17 @@
 from threading import Thread, Event
 from functools import wraps
 
+
 def AsyncCallStub(result):
     def stubby():
         return result
 
     return AsyncCall(stubby, [], [])
 
-class AsyncCallNotDone(RuntimeError): pass
+
+class AsyncCallNotDone(RuntimeError):
+    pass
+
 
 class AsyncCall(object):
     def __init__(self, f, args, kwargs):

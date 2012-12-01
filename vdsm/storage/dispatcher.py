@@ -27,6 +27,7 @@ from threadLocal import vars
 
 _EXPORTED_ATTRIBUTE = "__dispatcher_exported__"
 
+
 class Protect:
     STATUS_OK = {'status': {'code': 0, 'message': "OK"}}
     STATUS_ERROR = {'status': {'code': 100, 'message': "ERROR"}}
@@ -86,6 +87,7 @@ def exported(f):
     setattr(f, _EXPORTED_ATTRIBUTE, True)
     return f
 
+
 class Dispatcher:
     log = logging.getLogger('Storage.Dispatcher')
 
@@ -93,7 +95,6 @@ class Dispatcher:
         self.storage_repository = config.get('irs', 'repository')
         self._exposeFunctions(obj)
         self.log.info("Starting StorageDispatcher...")
-
 
     def _exposeFunctions(self, obj):
         for funcName in dir(obj):
@@ -104,7 +105,6 @@ class Dispatcher:
                     continue
                 # Create a new entry in instance's "dict" that will mask the original method
                 setattr(self, funcName, Protect(funcObj, funcName).run)
-
 
     def _methodHelp(self, method):
         # this method must be present for system.methodHelp

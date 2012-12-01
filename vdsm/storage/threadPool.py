@@ -18,6 +18,7 @@ except NameError:
     False = 0
     True = not False
 
+
 class ThreadPool:
 
     """Flexible thread pool class.  Creates a pool of threads, then
@@ -55,7 +56,6 @@ class ThreadPool:
             self.log.debug("Number of running tasks: %s", self.__runningTasks)
         finally:
             self.__runningTasksLock.release()
-
 
     def getRunningTasks(self):
         return self.__runningTasks
@@ -136,7 +136,7 @@ class ThreadPool:
     def stopThread(self):
         return self.__tasks.put((None, None, None, None))
 
-    def joinAll(self, waitForTasks = True, waitForThreads = True):
+    def joinAll(self, waitForTasks=True, waitForThreads=True):
 
         """ Clear the task queue and terminate all pooled threads,
         optionally allowing the tasks and threads to finish."""
@@ -168,6 +168,7 @@ class ThreadPool:
         finally:
             self.__resizeLock.release()
 
+
 class WorkerThread(threading.Thread):
 
     """ Pooled thread class. """
@@ -190,9 +191,9 @@ class WorkerThread(threading.Thread):
         while self.__isDying == False:
             try:
                 id, cmd, args, callback = self.__pool.getNextTask()
-                if id is None: #should retry.
+                if id is None:  # should retry.
                     pass
-                elif self.__isDying == True: #return the task into the queue, since we abort.
+                elif self.__isDying == True:  # return the task into the queue, since we abort.
                     self.__pool.__tasks.put((id, cmd, args, callback))
                 elif callback is None:
                     self.__pool.setRunningTask(True)

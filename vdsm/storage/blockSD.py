@@ -56,7 +56,7 @@ STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
 MASTERLV = "master"
 SPECIAL_LVS = (sd.METADATA, sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX, MASTERLV)
 
-MASTERLV_SIZE = "1024" #In MiB = 2 ** 20 = 1024 ** 2 => 1GiB
+MASTERLV_SIZE = "1024"  # In MiB = 2 ** 20 = 1024 ** 2 => 1GiB
 BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 
 log = logging.getLogger("Storage.BlockSD")
@@ -70,11 +70,11 @@ VG_MDA_MIN_THRESHOLD = 0.2
 # VG's metadata size in MiB
 VG_METADATASIZE = 128
 
-MAX_PVS_LIMIT = 10 # BZ#648051
+MAX_PVS_LIMIT = 10  # BZ#648051
 MAX_PVS = config.getint('irs', 'maximum_allowed_pvs')
 if MAX_PVS > MAX_PVS_LIMIT:
-   log.warning("maximum_allowed_pvs = %d ignored. MAX_PVS = %d", MAX_PVS, MAX_PVS_LIMIT)
-   MAX_PVS = MAX_PVS_LIMIT
+    log.warning("maximum_allowed_pvs = %d ignored. MAX_PVS = %d", MAX_PVS, MAX_PVS_LIMIT)
+    MAX_PVS = MAX_PVS_LIMIT
 
 PVS_METADATA_SIZE = MAX_PVS * 142
 
@@ -88,6 +88,7 @@ DMDK_PHYBLKSIZE = "PHYBLKSIZE"
 
 VERS_METADATA_LV = (0,)
 VERS_METADATA_TAG = (2, 3)
+
 
 def encodePVInfo(pvInfo):
     return (
@@ -117,9 +118,11 @@ BLOCK_SD_MD_FIELDS.update({
 INVALID_CHARS = re.compile(r"[^a-zA-Z0-9_+.\-/=!:#]")
 LVM_ENC_ESCAPE = re.compile("&(\d+)&")
 
+
 # Move to lvm
 def lvmTagEncode(s):
     return INVALID_CHARS.sub(lambda c: "&%s&" % ord(c.group()), s)
+
 
 def lvmTagDecode(s):
     return LVM_ENC_ESCAPE.sub(lambda c: unichr(int(c.groups()[0])), s)
@@ -142,7 +145,7 @@ def _getVolsTree(sdUUID):
         else:
             if lv.name not in SPECIAL_LVS:
                 log.warning("Ignoring Volume %s that lacks minimal tag set"
-                                         "tags %s" % (lv.name, lv.tags))
+                            "tags %s" % (lv.name, lv.tags))
     return vols
 
 
@@ -151,7 +154,7 @@ def getAllVolumes(sdUUID):
     Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
 
     imgUUIDs is a list of all images dependant on volUUID.
-    For template based volumes, the first image is the template's image. 
+    For template based volumes, the first image is the template's image.
     For other volumes, there is just a single imageUUID.
     Template self image is the 1st term in template volume entry images.
     """
@@ -183,10 +186,10 @@ def _zeroVolume(sdUUID, volUUID):
     This function requires an active LV.
     """
     dm = lvm.lvDmDev(sdUUID, volUUID)
-    size = multipath.getDeviceSize(dm) # Bytes
+    size = multipath.getDeviceSize(dm)  # Bytes
     # TODO: Change for zero 128 M chuncks and log.
     # 128 M is the vdsm extent size default
-    BS = constants.MEGAB # 1024 ** 2 = 1 MiB
+    BS = constants.MEGAB  # 1024 ** 2 = 1 MiB
     count = size / BS
     cmd = tuple(constants.CMD_LOWPRIO)
     cmd += (constants.EXT_DD, "oflag=%s" % misc.DIRECTFLAG, "if=/dev/zero",
@@ -200,7 +203,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
     ProcVol = namedtuple("ProcVol", "proc, vol")
     # Put a sensible value for dd zeroing a 128 M or 1 G chunk and lvremove
     # spent time.
-    ZEROING_TIMEOUT = 60000 # [miliseconds]
+    ZEROING_TIMEOUT = 60000  # [miliseconds]
     log.debug("sd: %s, LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
     # Prepare for zeroing
     try:
@@ -232,7 +235,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
     # Wait until all the asyncs procs return
     # Yes, this is a potentially infinite loop. Kill the vdsm task.
     while zerofds:
-        fdevents = poller.poll(ZEROING_TIMEOUT) # [(fd, event)]
+        fdevents = poller.poll(ZEROING_TIMEOUT)  # [(fd, event)]
         toDelete = []
         for fd, event in fdevents:
             proc, vol = zerofds[fd]
@@ -257,7 +260,6 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
                 log.error("Remove failed for some of VG: %s zeroed volumes: %s",
                             sdUUID, toDelete, exc_info=True)
 
-
     log.debug("finished with VG:%s LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
     return
 
@@ -266,6 +268,7 @@ class VGTagMetadataRW(object):
     log = logging.getLogger("storage.Metadata.VGTagMetadataRW")
     METADATA_TAG_PREFIX = "MDT_"
     METADATA_TAG_PREFIX_LEN = len(METADATA_TAG_PREFIX)
+
     def __init__(self, vgName):
         self._vgName = vgName
 
@@ -297,11 +300,13 @@ class VGTagMetadataRW(object):
         self.log.debug("Updating metadata adding=%s removing=%s", ", ".join(toAdd), ", ".join(toRemove))
         lvm.changeVGTags(self._vgName, delTags=toRemove, addTags=toAdd)
 
+
 class LvMetadataRW(object):
     """
     Block Storage Domain metadata implementation
     """
     log = logging.getLogger("storage.Metadata.LvMetadataRW")
+
     def __init__(self, vgName, lvName, offset, size):
         self._size = size
         self._lvName = lvName
@@ -344,6 +349,7 @@ class LvMetadataRW(object):
 LvBasedSDMetadata = lambda vg, lv: DictValidator(PersistentDict(LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)), BLOCK_SD_MD_FIELDS)
 TagBasedSDMetadata = lambda vg: DictValidator(PersistentDict(VGTagMetadataRW(vg)), BLOCK_SD_MD_FIELDS)
 
+
 def selectMetadata(sdUUID):
     mdProvider = LvBasedSDMetadata(sdUUID, sd.METADATA)
     if len(mdProvider) > 0:
@@ -351,6 +357,7 @@ def selectMetadata(sdUUID):
     else:
         metadata = TagBasedSDMetadata(sdUUID)
     return metadata
+
 
 def metadataValidity(vg):
     """
@@ -362,14 +369,14 @@ def metadataValidity(vg):
     mda_size = int(vg.vg_mda_size)
     mda_free = int(vg.vg_mda_free)
 
-
-    if mda_size < (VG_METADATASIZE * constants.MEGAB)/2:
+    if mda_size < (VG_METADATASIZE * constants.MEGAB) / 2:
         mdaStatus['mdavalid'] = False
 
     if (mda_size * VG_MDA_MIN_THRESHOLD) > mda_free:
         mdaStatus['mdathreshold'] = False
 
     return mdaStatus
+
 
 class BlockStorageDomain(sd.StorageDomain):
     mountpoint = os.path.join(sd.StorageDomain.storage_repository,
@@ -424,7 +431,6 @@ class BlockStorageDomain(sd.StorageDomain):
         except Exception:
             self.log.warn("Resource namespace %s already registered", lvmActivationNamespace)
 
-
     @classmethod
     def metaSize(cls, vgroup):
         ''' Calc the minimal meta volume size in MB'''
@@ -435,10 +441,10 @@ class BlockStorageDomain(sd.StorageDomain):
         minmetasize = (SD_METADATA_SIZE / sd.METASIZE * int(vg.extent_size) +
             (1024 * 1024 - 1)) / (1024 * 1024)
         metaratio = int(vg.extent_size) / sd.METASIZE
-        metasize = (int(vg.extent_count) * sd.METASIZE + (1024*1024-1)) / (1024*1024)
+        metasize = (int(vg.extent_count) * sd.METASIZE + (1024 * 1024 - 1)) / (1024 * 1024)
         metasize = max(minmetasize, metasize)
-        if metasize > int(vg.free) / (1024*1024):
-            raise se.VolumeGroupSizeError("volume group has not enough extents %s (Minimum %s), VG may be too small" % (vg.extent_count, (1024*1024)/sd.METASIZE))
+        if metasize > int(vg.free) / (1024 * 1024):
+            raise se.VolumeGroupSizeError("volume group has not enough extents %s (Minimum %s), VG may be too small" % (vg.extent_count, (1024 * 1024) / sd.METASIZE))
         cls.log.info("size %s MB (metaratio %s)" % (metasize, metaratio))
         return metasize
 
@@ -566,7 +572,6 @@ class BlockStorageDomain(sd.StorageDomain):
         misc.readfile(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
         return time.time() - t
 
-
     def produceVolume(self, imgUUID, volUUID):
         """
         Produce a type specific volume object
@@ -574,13 +579,11 @@ class BlockStorageDomain(sd.StorageDomain):
         repoPath = self._getRepoPath()
         return blockVolume.BlockVolume(repoPath, self.sdUUID, imgUUID, volUUID)
 
-
     def getVolumeClass(self):
         """
         Return a type specific volume generator object
         """
         return blockVolume.BlockVolume
-
 
     def volumeExists(self, imgPath, volUUID):
         """
@@ -592,7 +595,6 @@ class BlockStorageDomain(sd.StorageDomain):
             return False
         return True
 
-
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
         """
@@ -602,7 +604,6 @@ class BlockStorageDomain(sd.StorageDomain):
         'preallocate' - sparse/preallocate
         """
         blockVolume.BlockVolume.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
-
 
     def createVolume(self, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID):
         """
@@ -665,7 +666,6 @@ class BlockStorageDomain(sd.StorageDomain):
             devNum += 1
 
         return mapping
-
 
     def updateMapping(self):
         # First read existing mapping from metadata
@@ -768,8 +768,8 @@ class BlockStorageDomain(sd.StorageDomain):
             if (os.path.basename(dev) == pv["guid"] and
                 int(ext) in range(pestart, pestart + pecount)):
 
-                offs =  int(ext) + int(pv["mapoffset"])
-                if offs < SD_METADATA_SIZE/sd.METASIZE:
+                offs = int(ext) + int(pv["mapoffset"])
+                if offs < SD_METADATA_SIZE / sd.METASIZE:
                     raise se.MetaDataMappingError("domain %s: vol %s MD offset %s is bad - will overwrite SD's MD" % (self.sdUUID, vol_name, offs))
                 return offs
         raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" % (self.sdUUID, dev, ext))
@@ -860,7 +860,7 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             lvs = lvm.getLV(sdUUID)
         except se.LogicalVolumeDoesNotExistError:
-            lvs = () #No LVs in this VG (domain)
+            lvs = ()  # No LVs in this VG (domain)
 
         for lv in lvs:
             #Fix me: Should raise and get resource lock.
@@ -880,7 +880,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # First call parent getInfo() - it fills in all the common details
         info = sd.StorageDomain.getInfo(self)
         # Now add blockSD specific data
-        vg = lvm.getVG(self.sdUUID) #vg.name = self.sdUUID
+        vg = lvm.getVG(self.sdUUID)  # vg.name = self.sdUUID
         info['vguuid'] = vg.uuid
         info['state'] = vg.partial
         return info
@@ -904,7 +904,7 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             lvs = lvm.getLV(self.sdUUID)
         except se.LogicalVolumeDoesNotExistError:
-            lvs = () #No LVs in this VG (domain)
+            lvs = ()  # No LVs in this VG (domain)
 
         # Collect all the tags from all the volumes, but ignore duplicates
         # set conveniently does exactly that
@@ -913,8 +913,8 @@ class BlockStorageDomain(sd.StorageDomain):
             tags.update(lv.tags)
         # Drop non image tags and strip prefix
         taglen = len(blockVolume.TAG_PREFIX_IMAGE)
-        images = [ i[taglen:] for i in tags
-                        if i.startswith(blockVolume.TAG_PREFIX_IMAGE) ]
+        images = [i[taglen:] for i in tags
+                        if i.startswith(blockVolume.TAG_PREFIX_IMAGE)]
         return images
 
     def rmDCVolLinks(self, imgPath, volsImgs):
@@ -936,7 +936,7 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             os.rmdir(imgPath)
         except OSError:
-            self.log.warning("Can't rmdir %s. %s", imgPath, exc_info = True)
+            self.log.warning("Can't rmdir %s. %s", imgPath, exc_info=True)
         else:
             self.log.debug("removed image dir: %s", imgPath)
         return imgPath
@@ -960,7 +960,6 @@ class BlockStorageDomain(sd.StorageDomain):
         Return dict {volUUID: ([imgUUID1, imgUUID2], parentUUID)]}.
         """
         return getAllVolumes(self.sdUUID)
-
 
     def activateVolumes(self, volUUIDs):
         """
@@ -1011,8 +1010,8 @@ class BlockStorageDomain(sd.StorageDomain):
         # 32   - E2fsck canceled by user request
         # 128  - Shared library error
         if rc == 1 or rc == 2:
-           # rc is a number
-           self.log.info("fsck corrected fs errors (%s)", rc)
+            # rc is a number
+            self.log.info("fsck corrected fs errors (%s)", rc)
         if rc >= 4:
             raise se.BlockStorageDomainMasterFSCKError(masterfsdev, rc)
 
@@ -1127,14 +1126,14 @@ class BlockStorageDomain(sd.StorageDomain):
                             cls.log.debug("Trying to kill pid %d", pid)
                             os.kill(pid, signal.SIGKILL)
                         except OSError, e:
-                            if e.errno == errno.ESRCH: # No such process
+                            if e.errno == errno.ESRCH:  # No such process
                                 pass
-                            elif e.errno == errno.EPERM: # Operation not permitted
+                            elif e.errno == errno.EPERM:  # Operation not permitted
                                 cls.log.warn("Could not kill pid %d because operation was not permitted", pid)
                             else:
-                                cls.log.warn("Could not kill pid %d because an unexpected error", exc_info = True)
+                                cls.log.warn("Could not kill pid %d because an unexpected error", exc_info=True)
                         except:
-                            cls.log.warn("Could not kill pid %d because an unexpected error", exc_info = True)
+                            cls.log.warn("Could not kill pid %d because an unexpected error", exc_info=True)
 
                 # Try umount, take 2
                 try:
@@ -1156,7 +1155,6 @@ class BlockStorageDomain(sd.StorageDomain):
         # It is time to deactivate the master LV now
         lvm.deactivateLVs(self.sdUUID, MASTERLV)
 
-
     def refreshDirTree(self):
         # create domain images folder
         imagesPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES)
@@ -1176,7 +1174,7 @@ class BlockStorageDomain(sd.StorageDomain):
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         self._extendlock.acquire()
         try:
-            lvm.extendLV(self.sdUUID, volumeUUID, size) #, isShuttingDown) # FIXME
+            lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown) # FIXME
         finally:
             self._extendlock.release()
 
@@ -1207,6 +1205,7 @@ def _createVMSfs(dev):
     if rc != 0:
         raise se.MkfsError(dev)
 
+
 def _removeVMSfs(dev):
     """
     Destroy special VM data file system
@@ -1214,11 +1213,14 @@ def _removeVMSfs(dev):
     # XXX Add at least minimal sanity check:. i.e. fs not mounted
     pass
 
+
 def _isSD(vg):
     return STORAGE_DOMAIN_TAG in vg.tags
 
+
 def findDomain(sdUUID):
     return BlockStorageDomain(BlockStorageDomain.findDomainPath(sdUUID))
+
 
 def getStorageDomainsList():
     return [vg.name for vg in lvm.getAllVGs() if _isSD(vg)]
