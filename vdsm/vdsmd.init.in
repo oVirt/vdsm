@@ -54,23 +54,6 @@ SYSTEMCTL_SKIP_REDIRECT=true
 log_failure_msg() { echo -n "$@"; failure "$@"; echo; }
 log_success_msg() { echo -n "$@"; success "$@"; echo; }
 
-check_port_taken() {
-    local MANAGEMENT_PORT MANAGEMENT_IP
-    MANAGEMENT_PORT=`$GETCONFITEM $CONF_FILE addresses management_port ""`
-    if [ -z "$MANAGEMENT_PORT" ]; then
-        log_failure_msg "$prog: management_port not found in $CONF_FILE"
-        return 1
-    fi
-    MANAGEMENT_IP=`$GETCONFITEM $CONF_FILE addresses management_ip 0.0.0.0`
-    netstat -ntl | grep -q "$MANAGEMENT_IP:$MANAGEMENT_PORT"
-    RETVAL=$?
-    if [ "$RETVAL" -eq 0 ]; then
-        log_failure_msg "$prog: port $MANAGEMENT_PORT already bound"
-        return 1
-    fi
-    return 0
-}
-
 mk_data_center() {
     local dc
     dc=`$GETCONFITEM $CONF_FILE irs repository /rhev/`
@@ -495,7 +478,6 @@ start() {
     test_already_running && return 0
 
     if ! (test_space && test_lo && \
-          check_port_taken && \
           test_conflicting_conf); then
         return 1
     fi
