@@ -117,17 +117,14 @@ class SuperVdsmProxy(object):
         self._authkey = str(uuid.uuid4())
         self._log.debug("Launching Super Vdsm")
 
-        pypathCmd = "PYTHONPATH=$PYTHONPATH"
-        for path in extraPythonPathList:
-            pypathCmd = pypathCmd + ":" + str(path)
-
         # we pass to svdsm filenames and uid. Svdsm will use those filenames
         # to create its internal files and give to the passed uid the
         # permissions to read those files.
-        superVdsmCmd = [pypathCmd, constants.EXT_PYTHON, SUPERVDSM,
+        superVdsmCmd = [constants.EXT_PYTHON, SUPERVDSM,
                         self._authkey, str(os.getpid()),
                         self.pidfile, self.timestamp, self.address,
                         str(os.getuid())]
+
         misc.execCmd(superVdsmCmd, sync=False, sudo=True)
         sleep(2)
 
