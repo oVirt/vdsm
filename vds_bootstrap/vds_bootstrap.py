@@ -191,6 +191,7 @@ NEEDED_SERVICES = ['iscsid', 'multipathd', 'ntpd']
 CONFLICT_SERVICES = ['cpuspeed']
 
 if rhel6based:
+    NEEDED_SERVICES.append('messagebus')
     NEEDED_SERVICES.append('libvirtd')
     CONFLICT_SERVICES.append('libvirt-guests')
 else:
@@ -785,6 +786,7 @@ class Deploy:
         self.message = "Created management bridge."
 
         if rhel6based:
+             deployUtil.setService("messagebus", "start")
              deployUtil.setService("libvirtd", "start")
 
         if deployUtil.preventDuplicate(bridgeName=self._bridgeName):
