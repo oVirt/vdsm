@@ -47,7 +47,7 @@ from supervdsm import _SuperVdsmManager
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
-        DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS
+    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import storage.misc
 import configNetwork
@@ -61,7 +61,7 @@ _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
 _UDEV_RULE_FILE_EXT = ".rules"
 _UDEV_RULE_FILE_NAME = _UDEV_RULE_FILE_DIR + _UDEV_RULE_FILE_PREFIX + \
-        "%s-%s" + _UDEV_RULE_FILE_EXT
+    "%s-%s" + _UDEV_RULE_FILE_EXT
 
 RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
 
@@ -207,7 +207,7 @@ class _SuperVdsm(object):
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
         return self._runAs(user, groups, _validateAccess, args=args,
-                kwargs=kwargs)
+                           kwargs=kwargs)
 
     @logDecorator
     def setSafeNetworkConfig(self):
@@ -216,7 +216,7 @@ class _SuperVdsm(object):
     @logDecorator
     def udevTrigger(self, guid):
         cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
-                '--property-match=DM_NAME=%s' % guid]
+               '--property-match=DM_NAME=%s' % guid]
         rc, out, err = storage.misc.execCmd(cmd, sudo=False)
         if rc:
             raise OSError(errno.EINVAL, "Could not trigger change for device \
@@ -226,7 +226,7 @@ class _SuperVdsm(object):
     def appropriateDevice(self, guid, thiefId):
         ruleFile = _UDEV_RULE_FILE_NAME % (guid, thiefId)
         rule = 'SYMLINK=="mapper/%s", OWNER="%s", GROUP="%s"\n' % (guid,
-                DISKIMAGE_USER, DISKIMAGE_GROUP)
+               DISKIMAGE_USER, DISKIMAGE_GROUP)
         with open(ruleFile, "w") as rf:
             rf.write(rule)
 
@@ -322,7 +322,7 @@ def main():
         logging.config.fileConfig(LOG_CONF_PATH)
     except:
         logging.basicConfig(filename='/dev/stdout', filemode='w+',
-                level=logging.DEBUG)
+                            level=logging.DEBUG)
         log = logging.getLogger("SuperVdsm.Server")
         log.warn("Could not init proper logging", exc_info=True)
 
@@ -351,7 +351,7 @@ def main():
         log.debug("Setting up keep alive thread")
 
         monThread = threading.Thread(target=__pokeParent,
-                        args=[int(parentPid), address])
+                                     args=[int(parentPid), address])
         monThread.setDaemon(True)
         monThread.start()
 
