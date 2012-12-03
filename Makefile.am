@@ -98,7 +98,7 @@ PEP8_WHITELIST = \
 	vdsm_reg/define.py \
 	$(NULL)
 
-PEP8_BLACKLIST = apiData.py
+PEP8_BLACKLIST = apiData.py,config.py,constants.py
 
 check-local:
 	find . -path './.git' -prune -type f -o \
