@@ -791,6 +791,10 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.activateLVs(self.sdUUID, [sd.LEASES])
         return lvm.lvPath(self.sdUUID, sd.LEASES)
 
+    def getLeasesFileSize(self):
+        lv = lvm.getLV(self.sdUUID, sd.LEASES)
+        return int(lv.size)
+
     def selftest(self):
         """
         Run the underlying VG validation routine

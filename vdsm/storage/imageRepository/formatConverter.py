@@ -20,6 +20,7 @@
 
 import logging
 
+from vdsm import constants
 from vdsm import qemuImg
 
 from storage import sd
@@ -27,6 +28,8 @@ from storage import blockSD
 from storage import image
 from storage import safelease
 from storage import volume
+from storage import blockVolume
+from storage import storage_exception as se
 
 
 def __convertDomainMetadataToTags(domain, targetVersion):
@@ -131,6 +134,48 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         # see volume.setrw for more details.
         vol._setrw(True)
 
+    def v3ReallocateMetadataSlot(domain, allVolumes):
+        if not domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
+            log.debug("The metadata reallocation check is not needed for "
+                      "domain %s", domain.sdUUID)
+            return
+
+        leasesSize = domain.getLeasesFileSize() / constants.MEGAB
+        metaMaxSlot = leasesSize - blockVolume.RESERVED_LEASES - 1
+
+        log.debug("Starting metadata reallocation check for domain %s with "
+                  "metaMaxSlot %s (leases volume size %s)", domain.sdUUID,
+                  metaMaxSlot, leasesSize)
+
+        # Updating the volumes one by one, doesn't require activation
+        for volUUID, (imgUUIDs, parentUUID) in allVolumes.iteritems():
+            # The first imgUUID is the imgUUID of the template or the only
+            # imgUUID where the volUUID appears.
+            vol = domain.produceVolume(imgUUIDs[0], volUUID)
+            metaOffset = vol.getMetaOffset()
+
+            if metaOffset < metaMaxSlot:
+                continue
+
+            log.debug("Reallocating metadata slot %s for volume %s",
+                      metaOffset, vol.volUUID)
+            metaContent = vol.getMetadata()
+
+            with vol._tagCreateLock:
+                newMetaOffset = domain.mapMetaOffset(vol.volUUID,
+                                                 blockVolume.VOLUME_MDNUMBLKS)
+                if newMetaOffset > metaMaxSlot:
+                    raise se.NoSpaceLeftOnDomain(domain.sdUUID)
+
+                log.debug("Copying metadata for volume %s to the new slot %s",
+                          vol.volUUID, newMetaOffset)
+                vol.createMetadata((domain.sdUUID, newMetaOffset), metaContent)
+
+                log.debug("Switching the metadata slot for volume %s to %s",
+                          vol.volUUID, newMetaOffset)
+                vol.changeVolumeTag(blockVolume.TAG_PREFIX_MD,
+                                    str(newMetaOffset))
+
     try:
         if isMsd:
             log.debug("Acquiring the cluster lock for domain %s with "
@@ -139,6 +184,12 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
         allVolumes = domain.getAllVolumes()
         allImages = set()
+
+        # Few vdsm releases (4.9 prior 496c0c3, BZ#732980) generated metadata
+        # offsets higher than 1947 (LEASES_SIZE - RESERVED_LEASES - 1).
+        # This function reallocates such slots to free ones in order to use the
+        # same offsets for the volume resource leases.
+        v3ReallocateMetadataSlot(domain, allVolumes)
 
         # Updating the volumes one by one, doesn't require activation
         for volUUID, (imgUUIDs, parentUUID) in allVolumes.iteritems():
@@ -196,17 +247,26 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             #     This is safe because the upgrade process will fail (unable
             #     to read the image virtual size) and it can be restarted
             #     later.
-            volChain = img.prepare(domain.sdUUID, imgUUID)
-
             try:
-                for vol in volChain:
-                    v3ResetMetaVolSize(vol)  # BZ#811880
+                for vol in img.prepare(domain.sdUUID, imgUUID):
+                    try:
+                        v3ResetMetaVolSize(vol)  # BZ#811880
+                    except qemuImg.QImgError:
+                        log.error("It is not possible to read the volume %s "
+                                  "using qemu-img, the content looks damaged",
+                                  vol.volUUID, exc_info=True)
+
+            except se.VolumeDoesNotExist:
+                log.error("It is not possible to prepare the image %s, the "
+                          "volume chain looks damaged", imgUUID, exc_info=True)
+
             finally:
                 try:
                     img.teardown(domain.sdUUID, imgUUID)
                 except:
-                    log.debug("Unable to teardown the image: %s", imgUUID,
-                              exc_info=True)
+                    log.debug("Unable to teardown the image %s, this error is "
+                              "not critical since the volume might be in use",
+                              imgUUID, exc_info=True)
 
         targetVersion = 3
         currentVersion = domain.getVersion()
