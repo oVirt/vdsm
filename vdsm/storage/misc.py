@@ -58,6 +58,7 @@ import inspect
 from vdsm import constants
 import storage_exception as se
 from vdsm.betterPopen import BetterPopen
+import fileUtils
 import logUtils
 
 
@@ -272,7 +273,12 @@ def readfile(name, buffersize=None):
     """
     Read the content of the file using /bin/dd command
     """
-    cmd = [constants.EXT_DD, "iflag=%s" % DIRECTFLAG, "if=%s" % name]
+    cmd = [constants.EXT_DD]
+
+    if fileUtils.pathRequiresFlagForDirectIO(name):
+        cmd.append("iflag=%s" % DIRECTFLAG)
+    cmd.append("if=%s" % name)
+
     if buffersize:
         cmd.extend(["bs=%d" % buffersize, "count=1"])
     (rc, out, err) = execCmd(cmd, sudo=False)
@@ -297,8 +303,11 @@ def readblock(name, offset, size):
     while left > 0:
         (iounit, count, iooffset) = _alignData(left, offset)
 
-        cmd = [constants.EXT_DD, "iflag=%s" % DIRECTFLAG, "skip=%d" % iooffset,
-               "bs=%d" % iounit, "if=%s" % name, 'count=%s' % count]
+        cmd = [constants.EXT_DD]
+        if fileUtils.pathRequiresFlagForDirectIO(name):
+            cmd.append("iflag=%s" % DIRECTFLAG)
+        cmd.extend(["skip=%d" % iooffset, "bs=%d" % iounit, "if=%s" % name,
+                    "count=%s" % count])
 
         (rc, out, err) = execCmd(cmd, raw=True)
         if rc:
@@ -381,7 +390,8 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
         oflag = None
         conv = "notrunc"
         if (iounit % 512) == 0:
-            oflag = DIRECTFLAG
+            if fileUtils.pathRequiresFlagForDirectIO(dst):
+                oflag = DIRECTFLAG
         else:
             conv += ",%s" % DATASYNCFLAG
 

@@ -238,6 +238,13 @@ def open_ex(path, mode):
         return open(path, mode)
 
 
+def pathRequiresFlagForDirectIO(path):
+    # Memory-only file systems don't support direct IO because direct IO
+    # means "skip the page cache" and they are 100% page cache.
+    vfstype = mount.findMountOfPath(path).getRecord().fs_vfstype
+    return vfstype not in ["tmpfs", "ramfs"]
+
+
 class DirectFile(object):
     def __init__(self, path, mode):
         if not "d" in mode:
@@ -247,13 +254,10 @@ class DirectFile(object):
             raise ValueError("Invalid mode parameter")
 
         self._writable = True
-        # Memory only file systems don't support direct IO because direct IO
-        # means "skip the page cache" and they are 100% page cahce.
-        vfstype = mount.findMountOfPath(path).getRecord().fs_vfstype
-        if vfstype in ["tmpfs", "ramfs"]:
-            flags = 0
-        else:
+        if pathRequiresFlagForDirectIO(path):
             flags = os.O_DIRECT
+        else:
+            flags = 0
 
         if "r" in mode:
             if "+" in mode:
