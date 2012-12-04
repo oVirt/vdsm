@@ -93,7 +93,7 @@ SP_MD_FIELDS = {
         PMDK_LVER: (int, str),
         PMDK_SPM_ID: (int, str),
         PMDK_MASTER_VER: (int, str)
-    }
+}
 
 # Calculate how many domains can be in the pool before overflowing the Metadata
 MAX_DOMAINS = blockSD.SD_METADATA_SIZE - blockSD.METADATA_BASE_SIZE
@@ -713,11 +713,11 @@ class StoragePool(Securable):
                 raise se.UnicodeArgumentException()
 
             futurePoolMD.update({
-            PMDK_SPM_ID: SPM_ID_FREE,
-            PMDK_LVER: LVER_INVALID,
-            PMDK_MASTER_VER: masterVersion,
-            PMDK_POOL_DESCRIPTION: poolName,
-            PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS}})
+                PMDK_SPM_ID: SPM_ID_FREE,
+                PMDK_LVER: LVER_INVALID,
+                PMDK_MASTER_VER: masterVersion,
+                PMDK_POOL_DESCRIPTION: poolName,
+                PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS}})
 
     @unsecured
     def reconstructMaster(self, hostId, poolName, msdUUID, domDict,
@@ -1362,7 +1362,7 @@ class StoragePool(Securable):
                         'lastCheck': '%.1f' % (now - st.lastCheck),
                         'delay': str(st.readDelay),
                         'valid': (st.error is None)
-                        },
+                    },
                     'disktotal': disktotal,
                     'diskfree': diskfree,
 
@@ -1374,8 +1374,8 @@ class StoragePool(Securable):
                     'masterValidate': {
                         'mount': st.masterMounted,
                         'valid': st.masterValid
-                        }
                     }
+            }
         return res
 
     @unsecured

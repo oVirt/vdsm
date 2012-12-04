@@ -246,7 +246,7 @@ def pathListIter(filterGuids=None):
                 "fwrev": "",
                 "logicalblocksize": "",
                 "physicalblocksize": "",
-                }
+        }
 
         for slave in devicemapper.getSlaves(dmId):
             if not devicemapper.isBlockDevice(slave):
@@ -310,7 +310,7 @@ def pathListIter(filterGuids=None):
                             "iqn": sess.target.iqn,
                             "portal": str(sess.target.tpgt),
                             "initiatorname": sess.iface.name
-                            }
+                    }
 
                     # Note that credentials must be sent back in order for
                     # the engine to tell vdsm how to reconnect later

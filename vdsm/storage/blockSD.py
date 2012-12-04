@@ -549,7 +549,7 @@ class BlockStorageDomain(sd.StorageDomain):
                 DMDK_VGUUID: vgUUID,
                 DMDK_LOGBLKSIZE: logBlkSize,
                 DMDK_PHYBLKSIZE: phyBlkSize,
-                }
+        }
 
         initialMetadata.update(mapping)
 

@@ -255,7 +255,7 @@ class IscsiInterface(object):
             'hardwareAddress': ("iface.hwaddress", 'rw'),
             'ipAddress': ('iface.ipaddress', 'rw'),
             'initiatorName': ('iface.initiatorname', 'rw')
-            }
+    }
 
     def __getattr__(self, name):
         if name in ("_conf", "_fields", "_loaded"):

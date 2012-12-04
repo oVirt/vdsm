@@ -37,7 +37,7 @@ SPM_STATUS_ERROR = (654, "Not SPM")
 GENERAL_EXCEPTION = lambda e: (100, str(e))
 ERROR_MAP = {
         SecureError: SPM_STATUS_ERROR
-        }
+}
 
 
 def generateResponse(error, default=GENERAL_EXCEPTION):

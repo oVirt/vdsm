@@ -29,7 +29,7 @@ html_escape_table = {
     "'": "&apos;",
     ">": "&gt;",
     "<": "&lt;",
-    }
+}
 
 # Symbols of these types are considered data types
 typeKinds = ('class', 'type', 'enum', 'map', 'union', 'alias')

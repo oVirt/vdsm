@@ -580,7 +580,7 @@ class ConnectionFactory(object):
         "posixfs": MountConnection,
         "iscsi": IscsiConnection,
         "localfs": LocalDirectoryConnection,
-        }
+    }
 
     @classmethod
     def createConnection(cls, conInfo):

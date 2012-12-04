@@ -93,7 +93,7 @@ errCode = {
                               'Vds not operational. '
                               'Check logs, repair it, and restart'}},
             'tmp':          {}
-            }
+}
 doneCode = {'code': 0, 'message': 'Done'}
 nullCode = {'code': 0, 'message': ''}
 

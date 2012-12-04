@@ -175,8 +175,7 @@ class TestconfigNetwork(TestCaseBase):
                              opts), None)
 
     def _fakeNetworks():
-        return {
-                'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
+        return {'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
                 'fakenet': {'iface': 'fakeint', 'bridged': False},
                }
 
@@ -199,29 +198,29 @@ class TestconfigNetwork(TestCaseBase):
                     'fakebrnet2': {'iface': 'fakebr2', 'bridged': True,
                         'ports': ['eth7.1']},
                     'fakebrnet3': {'iface': 'eth8', 'bridged': False}
-                    },
+                },
                 'vlans': {
                     'eth3.2': {
                         'iface': 'eth3',
                         'addr': '10.10.10.10',
                         'netmask': '255.255.0.0',
                         'mtu': 1500
-                        },
+                    },
                     'eth7.1': {
                         'iface': 'eth7',
                         'addr': '192.168.100.1',
                         'netmask': '255.255.255.0',
                         'mtu': 1500
-                        }
-                    },
+                    }
+                },
                 'nics': ['eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5',
                          'eth6', 'eth7', 'eth8', 'eth9', 'eth10'],
                 'bondings': {
                     'bond00': {
                         'slaves': ['eth5', 'eth6']
-                        }
                     }
                 }
+        }
 
         netinfoIns = netinfo.NetInfo(_netinfo)
         vlan = bonding = ipaddr = netmask = gw = bondingOptions = None

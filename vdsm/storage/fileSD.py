@@ -200,7 +200,7 @@ class FileStorageDomain(sd.StorageDomain):
                 sd.DMDK_LEASE_RETRIES:
                     sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
                 REMOTE_PATH: remotePath
-                  })
+        })
 
     def getReadDelay(self):
         t = time.time()

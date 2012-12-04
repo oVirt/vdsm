@@ -283,7 +283,7 @@ SD_MD_FIELDS = {
             lambda val: intOrDefault(
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES], val),
             intEncode),
-        }
+}
 
 
 class StorageDomain:
