@@ -323,14 +323,13 @@ def get():
             else:
                 raise
 
-    d['bridges'] = dict([(bridge, {
-                              'ports': ports(bridge),
-                              'stp': bridge_stp_state(bridge),
-                              'addr': getaddr(bridge),
-                              'netmask': getnetmask(bridge),
-                              'mtu': getMtu(bridge),
-                              'cfg': getIfaceCfg(bridge),
-                              })
+    d['bridges'] = dict([(bridge, {'ports': ports(bridge),
+                                   'stp': bridge_stp_state(bridge),
+                                   'addr': getaddr(bridge),
+                                   'netmask': getnetmask(bridge),
+                                   'mtu': getMtu(bridge),
+                                   'cfg': getIfaceCfg(bridge),
+                                  })
                          for bridge in bridges()])
 
     d['nics'] = dict([(nic, {'speed': speed(nic),

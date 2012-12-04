@@ -48,8 +48,7 @@ errCode = {
                               'message':
                               'Sparse creation failed'}},
             'createErr':    {'status':
-                             {
-                              'code': 9,
+                             {'code': 9,
                               'message':
                               'Error creating the requested Desktop'}},
             'noConPeer':    {'status':

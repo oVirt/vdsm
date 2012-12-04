@@ -728,7 +728,7 @@ def validateBondingOptions(bonding, bondingOptions):
         for option in bondingOptions.split():
             key, value = option.split('=')
             if not os.path.exists(
-                   '/sys/class/net/%(bonding)s/bonding/%(key)s' % locals()):
+                    '/sys/class/net/%(bonding)s/bonding/%(key)s' % locals()):
                 raise ConfigNetworkError(ne.ERR_BAD_BONDING,
                         "%r is not a valid bonding option" % key)
     except ValueError:
@@ -1374,7 +1374,7 @@ def setupNetworks(networks={}, bondings={}, **options):
                         d['nics'] = _ni.bondings[d['bonding']]['slaves']
                         d['bondingOptions'] = \
                             _ni.bondings[d['bonding']]['cfg'].get(
-                                                         'BONDING_OPTS', None)
+                                                        'BONDING_OPTS', None)
                 else:
                     d['nics'] = [d.pop('nic')]
                 d['force'] = force

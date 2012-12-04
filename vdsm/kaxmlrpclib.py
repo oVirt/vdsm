@@ -143,9 +143,9 @@ class TcpkeepHTTPSConnection(SecureXMLRPCServer.VerifyingHTTPSConnection):
                  strict=None, timeout=CONNECTTIMEOUT,
                  ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
         SecureXMLRPCServer.VerifyingHTTPSConnection.__init__(
-                 self, host, port=port, key_file=key_file, cert_file=cert_file,
-                 strict=strict, timeout=timeout,
-                 ca_certs=ca_certs, cert_reqs=cert_reqs)
+                self, host, port=port, key_file=key_file, cert_file=cert_file,
+                strict=strict, timeout=timeout,
+                ca_certs=ca_certs, cert_reqs=cert_reqs)
 
     def connect(self):
         SecureXMLRPCServer.VerifyingHTTPSConnection.connect(self)

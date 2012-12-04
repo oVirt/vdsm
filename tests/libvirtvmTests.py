@@ -284,10 +284,10 @@ class TestLibvirtvm(TestCaseBase):
 
     def testControllerXML(self):
         devConfs = [
-               {'device': 'ide', 'index': '0', 'address': self.PCI_ADDR_DICT},
-               {'device': 'virtio-serial', 'address': self.PCI_ADDR_DICT},
-               {'device': 'usb', 'model': 'ich9-ehci1', 'index': '0',
-                'master': {'startport': '0'}, 'address': self.PCI_ADDR_DICT}]
+            {'device': 'ide', 'index': '0', 'address': self.PCI_ADDR_DICT},
+            {'device': 'virtio-serial', 'address': self.PCI_ADDR_DICT},
+            {'device': 'usb', 'model': 'ich9-ehci1', 'index': '0',
+             'master': {'startport': '0'}, 'address': self.PCI_ADDR_DICT}]
         expectedXMLs = [
             """
             <controller index="0" type="ide">
@@ -323,20 +323,20 @@ class TestLibvirtvm(TestCaseBase):
     def testDriveXML(self):
         SERIAL = '54-a672-23e5b495a9ea'
         devConfs = [
-              {'index': '2', 'propagateErrors': 'off', 'iface': 'ide',
-               'name': 'hdc', 'format': 'raw', 'device': 'cdrom',
-               'path': '/tmp/fedora.iso', 'type': 'disk', 'readonly': 'True',
-               'shared': 'False', 'serial': SERIAL},
+            {'index': '2', 'propagateErrors': 'off', 'iface': 'ide',
+             'name': 'hdc', 'format': 'raw', 'device': 'cdrom',
+             'path': '/tmp/fedora.iso', 'type': 'disk', 'readonly': 'True',
+             'shared': 'False', 'serial': SERIAL},
 
-              {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
-               'name': 'vda', 'format': 'cow', 'device': 'disk',
-               'path': '/tmp/disk1.img', 'type': 'disk', 'readonly': 'False',
-               'shared': 'True', 'serial': SERIAL},
+            {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
+             'name': 'vda', 'format': 'cow', 'device': 'disk',
+             'path': '/tmp/disk1.img', 'type': 'disk', 'readonly': 'False',
+             'shared': 'True', 'serial': SERIAL},
 
-              {'index': '0', 'propagateErrors': 'off', 'iface': 'virtio',
-               'name': 'vda', 'format': 'raw', 'device': 'disk',
-               'path': '/dev/mapper/lun1', 'type': 'disk', 'readonly': 'False',
-               'shared': 'False', 'serial': SERIAL}]
+            {'index': '0', 'propagateErrors': 'off', 'iface': 'virtio',
+             'name': 'vda', 'format': 'raw', 'device': 'disk',
+             'path': '/dev/mapper/lun1', 'type': 'disk', 'readonly': 'False',
+             'shared': 'False', 'serial': SERIAL}]
 
         expectedXMLs = [
             """
@@ -357,7 +357,7 @@ class TestLibvirtvm(TestCaseBase):
                         io="threads" name="qemu" type="qcow2"/>
             </disk>""",
 
-             """
+            """
             <disk device="disk" snapshot="no" type="block">
                 <source dev="/dev/mapper/lun1"/>
                 <target bus="virtio" dev="vda"/>

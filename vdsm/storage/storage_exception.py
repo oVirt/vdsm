@@ -1285,8 +1285,8 @@ class VolumeGroupBlockSizeError(StorageException):
     def __init__(self, domsizes, devsizes):
         self.value = "domlogblksize=%s domphyblksize=%s " \
                      "devlogblksize=%s devphyblksize=%s" % (
-                        domsizes[0], domsizes[1],
-                        devsizes[0], devsizes[1])
+                         domsizes[0], domsizes[1],
+                         devsizes[0], devsizes[1])
     code = 517
     message = "All devices in domain must have the same block size"
 

@@ -174,8 +174,8 @@ class Volume(object):
                      sdUUID, srcImg, srcVol, dstFormat, srcParent)
 
         imageResourcesNamespace = sd.getNamespace(
-                                       sdUUID,
-                                       resourceFactories.IMAGE_NAMESPACE)
+                                        sdUUID,
+                                        resourceFactories.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace,
                                       srcImg, rm.LockType.exclusive):
             try:
@@ -191,10 +191,10 @@ class Volume(object):
 
             try:
                 (rc, out, err) = qemuRebase(
-                                      vol.getVolumePath(), vol.getFormat(),
-                                      os.path.join('..', srcImg, srcParent),
-                                      int(dstFormat), misc.parseBool(unsafe),
-                                      vars.task.aborting, False)
+                                    vol.getVolumePath(), vol.getFormat(),
+                                    os.path.join('..', srcImg, srcParent),
+                                    int(dstFormat), misc.parseBool(unsafe),
+                                    vars.task.aborting, False)
                 if rc:
                     raise se.MergeVolumeRollbackError(srcVol)
 
@@ -1010,9 +1010,9 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
     if (src_fmt == "raw" and dst_fmt == "raw" and
         dstvolType == PREALLOCATED_VOL):
         (rc, out, err) = misc.ddWatchCopy(
-                                 src=src, dst=dst,
-                                 stop=stop, size=size,
-                                 recoveryCallback=baseAsyncTasksRollback)
+                                    src=src, dst=dst,
+                                    stop=stop, size=size,
+                                    recoveryCallback=baseAsyncTasksRollback)
     else:
         cmd = constants.CMD_LOWPRIO + [constants.EXT_QEMUIMG, "convert",
                                        "-t", "none", "-f", src_fmt, src,

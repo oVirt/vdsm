@@ -194,8 +194,8 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
         try:
             stats['cpuSys'] = self._usagePercentage(
-                self._diff(eInfo, sInfo, 'user_time')
-                 + self._diff(eInfo, sInfo, 'system_time'),
+                self._diff(eInfo, sInfo, 'user_time') +
+                self._diff(eInfo, sInfo, 'system_time'),
                 sampleInterval)
             stats['cpuUser'] = self._usagePercentage(
                 self._diff(eInfo, sInfo, 'cpu_time')
@@ -489,9 +489,10 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                 self._preparingMigrationEvt = False
                 if not self._migrationCanceledEvt:
                     self._vm._dom.migrateToURI2(
-                      duri, muri, None,
-                      libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER,
-                      None, maxBandwidth)
+                        duri, muri, None,
+                        libvirt.VIR_MIGRATE_LIVE |
+                            libvirt.VIR_MIGRATE_PEER2PEER,
+                        None, maxBandwidth)
             finally:
                 t.cancel()
                 if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
@@ -2306,8 +2307,8 @@ class LibvirtVm(vm.Vm):
                                     '%Y-%m-%dT%H:%M:%S'),
                       time.gmtime(time.time() + newlife))
         graphics.setAttribute(
-                  'passwdValidTo',
-                  time.strftime('%Y-%m-%dT%H:%M:%S', validto))
+                    'passwdValidTo',
+                    time.strftime('%Y-%m-%dT%H:%M:%S', validto))
         graphics.setAttribute('connected', 'keep')
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
 
@@ -2884,8 +2885,8 @@ class LibvirtVm(vm.Vm):
         self.log.debug('migration destination: waiting for VM creation')
         self._vmCreationEvent.wait()
         prepareTimeout = self._loadCorrectedTimeout(
-                          config.getint('vars', 'migration_listener_timeout'),
-                          doubler=5)
+                        config.getint('vars', 'migration_listener_timeout'),
+                        doubler=5)
         self.log.debug('migration destination: waiting %ss '
                        'for path preparation', prepareTimeout)
         self._pathsPreparedEvent.wait(prepareTimeout)
