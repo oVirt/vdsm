@@ -40,21 +40,11 @@ import os
 from xml.dom import minidom
 
 from storage.misc import execCmd
-execCmd  # make pyflakes happy
+from vdsm.utils import tobool
 
-
-def tobool(s):
-    """Convert the argument into a boolean"""
-    try:
-        if s is None:
-            return False
-        if type(s) == bool:
-            return s
-        if s.lower() == 'true':
-            return True
-        return bool(int(s))
-    except:
-        return False
+# make pyflakes happy
+execCmd
+tobool
 
 
 def read_domxml():
