@@ -38,7 +38,7 @@ class RemoteFileHandlerTests(TestCaseBase):
                   And wash it down with a cup of hot steaming rules. Eh?."""
                # (C) BBC - The Mighty Boosh
 
-        self.assertEquals(self.pool.callCrabRPCFunction(1, "echo", data), data)
+        self.assertEquals(self.pool.callCrabRPCFunction(5, "echo", data), data)
 
     def testTimeout(self):
         sleep = 5
