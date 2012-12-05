@@ -118,9 +118,9 @@ def __assertVdsmUser():
         "to run from user %s" % (constants.VDSM_USER, username)
     )
     group = grp.getgrnam(constants.VDSM_GROUP)
-    assert ((constants.VDSM_USER in group.gr_mem
-             or pwd.getpwnam(constants.VDSM_USER).pw_gid == group.gr_gid),
-                "VDSM failed to start: vdsm user is not in KVM group")
+    assert (constants.VDSM_USER in group.gr_mem
+            or pwd.getpwnam(constants.VDSM_USER).pw_gid == group.gr_gid), \
+        "VDSM failed to start: vdsm user is not in KVM group"
 
 if __name__ == '__main__':
     __assertVdsmUser()
