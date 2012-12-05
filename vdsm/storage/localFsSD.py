@@ -44,6 +44,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
             raise se.StorageDomainIllegalRemotePath(typeSpecificArg)
 
         fileSD.validateDirAccess(domPath)
+        fileSD.validateFileSystemFeatures(sdUUID, domPath)
 
         sd.validateDomainVersion(version)
 

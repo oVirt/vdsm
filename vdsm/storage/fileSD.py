@@ -61,6 +61,25 @@ def validateDirAccess(dirPath):
     return True
 
 
+def validateFileSystemFeatures(sdUUID, mountDir):
+    try:
+        # Don't unlink this file, we don't have the cluster lock yet as it
+        # requires direct IO which is what we are trying to test for. This
+        # means that unlinking the file might cause a race. Since we don't
+        # care what the content of the file is, just that we managed to
+        # open it O_DIRECT.
+        testFilePath = os.path.join(mountDir, "__DIRECT_IO_TEST__")
+        oop.getProcessPool(sdUUID).directTouch(testFilePath)
+    except OSError as e:
+        if e.errno == errno.EINVAL:
+            log = logging.getLogger("Storage.fileSD")
+            log.error("Underlying file system doesn't support"
+                      "direct IO")
+            raise se.StorageDomainTargetUnsupported()
+
+        raise
+
+
 def getDomPath(sdUUID):
     pattern = os.path.join(sd.StorageDomain.storage_repository,
                            sd.DOMAIN_MNT_POINT, '*', sdUUID)
@@ -134,6 +153,8 @@ class FileStorageDomain(sd.StorageDomain):
         self.metafile = os.path.join(domainPath, sd.DOMAIN_META_DATA,
                                      sd.METADATA)
 
+        self.validateFileSystemFeatures()
+
         metadata = FileSDMetadata(self.metafile)
         sdUUID = metadata[sd.DMDK_SDUUID]
         domaindir = os.path.join(self.mountpoint, sdUUID)
@@ -143,6 +164,9 @@ class FileStorageDomain(sd.StorageDomain):
             raise se.StorageDomainMetadataNotFound(sdUUID, self.metafile)
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
+
+    def validateFileSystemFeatures(self):
+        validateFileSystemFeatures(self.sdUUID, self.mountpoint)
 
     def setMetadataPermissions(self):
         procPool = oop.getProcessPool(self.sdUUID)

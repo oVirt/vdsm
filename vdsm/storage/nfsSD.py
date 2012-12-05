@@ -46,6 +46,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
             raise se.StorageDomainFSNotMounted(domPath)
 
         fileSD.validateDirAccess(domPath)
+        fileSD.validateFileSystemFeatures(sdUUID, domPath)
 
         # Make sure there are no remnants of other domain
         mdpat = os.path.join(domPath, "*", sd.DOMAIN_META_DATA)

@@ -901,6 +901,11 @@ class MixedSDVersionError(StorageException):
     code = 398
 
 
+class StorageDomainTargetUnsupported(StorageException):
+    code = 399
+    message = "Storage Domain target is unsupported"
+
+
 #################################################
 # Task Exceptions
 #################################################

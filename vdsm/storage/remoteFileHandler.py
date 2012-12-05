@@ -320,6 +320,11 @@ def directReadLines(path):
         return f.readlines()
 
 
+def directTouch(path):
+    fd = os.open(path, os.O_CREAT | os.O_DIRECT)
+    os.close(fd)
+
+
 def directWriteLines(path, lines):
     with fileUtils.open_ex(path, "dw") as f:
         return f.writelines(lines)
@@ -390,7 +395,8 @@ if __name__ == "__main__":
         try:
             server = CrabRPCServer(myRead, myWrite)
             for func in (writeLines, readLines, createSparseFile, echo, sleep,
-                         directWriteLines, directReadLines, simpleWalk):
+                         directWriteLines, directReadLines, simpleWalk,
+                         directTouch):
 
                 server.registerFunction(func)
 
