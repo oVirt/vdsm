@@ -855,11 +855,11 @@ def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
                                          'nic %s already used by vlans %s' %
                                          (nic, vlansForNic))
-            networksForNic = tuple(_netinfo.getNetworksForIface(nic))
-            if networksForNic:
+            networkForNic = _netinfo.getNetworkForIface(nic)
+            if networkForNic:
                 raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                         'nic %s already used by networks %s' %
-                                         (nic, networksForNic))
+                                         'nic %s already used by network %s' %
+                                         (nic, networkForNic))
         else:
             _validateInterNetworkCompatibility(_netinfo, vlan, nic, bridged)
 
@@ -1215,9 +1215,7 @@ def _editBondings(bondings, configWriter):
         logger.debug("Creating/Editing bond %s with attributes %s",
                      bond, bondAttrs)
 
-        brNets = list(_netinfo.getBridgedNetworksForIface(bond))
-        # Only one bridged-non-VLANed network allowed on same nic/bond
-        bridge = brNets[0] if brNets else None
+        bridge = _netinfo.getBridgedNetworkForIface(bond)
 
         mtu = None
         if bond in _netinfo.bondings:
