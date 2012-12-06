@@ -46,7 +46,7 @@ def serve_clients(log):
     def sigusr1Handler(signum, frame):
         if cif and cif.irs:
             cif.irs.spmStop(
-                    cif.irs.getConnectedStoragePoolsList()['poollist'][0])
+                cif.irs.getConnectedStoragePoolsList()['poollist'][0])
 
     signal.signal(signal.SIGTERM, sigtermHandler)
     signal.signal(signal.SIGUSR1, sigusr1Handler)
@@ -84,8 +84,8 @@ def run():
 
         sysname, nodename, release, version, machine = os.uname()
         log.info('I am the actual vdsm %s-%s %s (%s)',
-             dsaversion.software_version, dsaversion.software_revision,
-             nodename, release)
+                 dsaversion.software_version, dsaversion.software_revision,
+                 nodename, release)
         serve_clients(log)
     except:
         log.error("Exception raised", exc_info=True)
@@ -118,8 +118,8 @@ def __assertVdsmUser():
         "to run from user %s" % (constants.VDSM_USER, username)
     )
     group = grp.getgrnam(constants.VDSM_GROUP)
-    assert (constants.VDSM_USER in group.gr_mem
-            or pwd.getpwnam(constants.VDSM_USER).pw_gid == group.gr_gid), \
+    assert (constants.VDSM_USER in group.gr_mem or
+            pwd.getpwnam(constants.VDSM_USER).pw_gid == group.gr_gid), \
         "VDSM failed to start: vdsm user is not in KVM group"
 
 if __name__ == '__main__':
