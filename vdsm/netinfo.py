@@ -24,6 +24,8 @@ import glob
 import ethtool
 import shlex
 import logging
+import socket
+import struct
 from fnmatch import fnmatch
 from xml.dom import minidom
 from itertools import chain
@@ -164,10 +166,19 @@ def getaddr(dev):
     return addr
 
 
-def bitmask_to_address(bitmask):
-    binary = ~((1L << (32 - bitmask)) - 1)
-    return ".".join(map(lambda x: str(binary >> (x << 3) & 0xff),
-                        [3, 2, 1, 0]))
+def prefix2netmask(prefix):
+    return socket.inet_ntoa(
+        struct.pack(
+            "!I",
+            int(
+                (
+                    ''.ljust(prefix, '1') +
+                    ''.ljust(32 - prefix, '0')
+                ),
+                2
+            )
+        )
+    )
 
 
 def getnetmask(dev):
@@ -175,7 +186,7 @@ def getnetmask(dev):
     netmask = dev_info_list[0].ipv4_netmask
     if netmask == 0:
         return ''
-    return bitmask_to_address(netmask)
+    return prefix2netmask(netmask)
 
 
 def gethwaddr(dev):

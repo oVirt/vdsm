@@ -38,7 +38,7 @@ class TestNetinfo(TestCaseBase):
                 if line.startswith('#'):
                     continue
                 bitmask, address = [value.strip() for value in line.split()]
-                self.assertEqual(netinfo.bitmask_to_address(int(bitmask)),
+                self.assertEqual(netinfo.prefix2netmask(int(bitmask)),
                                  address)
 
     def testSpeedInvalidNic(self):
