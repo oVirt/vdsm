@@ -86,6 +86,17 @@ def genInitramfs(kernelVer):
     return path
 
 
+def skipNoKVM(method):
+    def wrapped(self):
+        r = self.s.getVdsCapabilities()
+        self.assertVdsOK(r)
+        if r['info']['kvmEnabled'] != 'true':
+            raise SkipTest('KVM is not enabled')
+        return method(self)
+    wrapped.func_name = method.func_name
+    return wrapped
+
+
 class XMLRPCTest(TestCaseBase):
     UPSTATES = frozenset(('Up', 'Powering up', 'Running'))
 
@@ -127,15 +138,8 @@ class XMLRPCTest(TestCaseBase):
             'error code: %s, message: %s' % (vdsResult['status']['code'],
                                              vdsResult['status']['message']))
 
-    def skipNoKVM(self):
-        r = self.s.getVdsCapabilities()
-        self.assertVdsOK(r)
-        if r['info']['kvmEnabled'] != 'true':
-            raise SkipTest('KVM is not enabled')
-
+    @skipNoKVM
     def testStartEmptyVM(self):
-        self.skipNoKVM()
-
         VMID = '66666666-ffff-4444-bbbb-333333333333'
 
         r = self.s.create({'memSize': '100', 'display': 'vnc', 'vmId': VMID,
@@ -148,9 +152,8 @@ class XMLRPCTest(TestCaseBase):
             r = self.s.destroy(VMID)
             self.assertVdsOK(r)
 
+    @skipNoKVM
     def testStartSmallVM(self):
-        self.skipNoKVM()
-
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'vmName': 'vdsm_testSmallVM'}
 
@@ -198,9 +201,8 @@ class XMLRPCTest(TestCaseBase):
         with RollbackContext() as rollback:
             self._createVdsmStorageLayout(conf, rollback)
 
+    @skipNoKVM
     def testSimpleVMoLocalfs(self):
-        self.skipNoKVM()
-
         localfs = storageLayouts['localfs']
         drives = []
         for poolid, domains in localfs['layout'].iteritems():
