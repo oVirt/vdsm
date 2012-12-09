@@ -891,7 +891,7 @@ class ReadFile(TestCaseBase):
         fd, path = tempfile.mkstemp()
         os.unlink(path)
 
-        self.assertRaises(misc.se.MiscFileReadException,  misc.readfile, path)
+        self.assertRaises(misc.se.MiscFileReadException, misc.readfile, path)
 
 
 class PidExists(TestCaseBase):

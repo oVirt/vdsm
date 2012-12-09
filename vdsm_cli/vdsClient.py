@@ -1410,7 +1410,7 @@ class service:
             vmList = args[2].split(",")
         else:
             vmList = []
-        infos = self.s.getVmsInfo(spUUID, sdUUID,  vmList)
+        infos = self.s.getVmsInfo(spUUID, sdUUID, vmList)
         if infos['status']['code'] != 0:
             return infos['status']['code'], infos['status']['message']
         else:
@@ -1668,82 +1668,82 @@ if __name__ == '__main__':
     else:
         serv = service()
     commands = {
-        'create':  (serv.do_create,
-                       ('<configFile> [parameter=value, parameter=value, '
-                           '......]',
-                        'Creates new machine with the paremeters given in the'
-                        ' command line overriding the ones in the config file',
-                        'Example with config file: vdsClient someServer create'
-                        ' myVmConfigFile',
-                        'Example with no file    : vdsClient someServer create'
-                        ' /dev/null vmId=<uuid> memSize=256 '
-                        'imageFile=someImage display=<vnc|qxl|qxlnc>',
-                        'Parameters list: r=required, o=optional',
-                        'r   vmId=<uuid> : Unique identification for the '
-                        'created VM. Any additional operation on the VM must '
-                        'refer to this ID',
-                        'o   vmType=<qemu/kvm> : Virtual machine technology - '
-                        'if not given kvm is default',
-                        'o   kvmEnable=<true/false> : run in KVM enabled mode '
-                        'or full emulation - default is according to the VDS '
-                        'capabilities',
-                        'r   memSize=<int> : Memory to allocate for this '
-                        'machine',
-                        'r   macAddr=<aa:bb:cc:dd:ee:ff> : MAC address of the '
-                        'machine',
-                        'r   display=<vnc|qxl|qxlnc> : send the machine '
-                        'display to vnc, spice, or spice with no '
-                        'image compression',
-                        'o   drive=pool:poolID,domain:domainID,image:imageID,'
-                        'volume:volumeID[,boot:true,format:cow] : disk image '
-                        'by UUIDs',
-                        'o   (deprecated) hda/b/c/d=<path> : Disk drive '
-                        'images',
-                        'o   floppy=<image> : Mount the specified Image as '
-                        'floppy',
-                        'o   cdrom=<path> : ISO image file to be mounted as '
-                        'the powerup cdrom',
-                        'o   boot=<c/d/n> : boot device - drive C or cdrom or '
-                        'network',
-                        'o   sysprepInf=/path/to/file: Launch with the '
-                        'specified file as sysprep.inf in floppy',
-                        #'o   any parmeter=<any value> : parameter that is '
-                        #'not familiar is passed as is to the VM',
-                        #'                               and displayed with '
-                        #'all other parameter. They can be used for '
-                        #'additional',
-                        #'                               information the user '
-                        #'want to reserve with the machine'
-                        'o   acpiEnable : If present will remove the default '
-                        '-no-acpi switch',
-                        'o   qgaEnable : use qemu-ga as guest agent',
-                        'o   tdf : If present will add the -rtc-td-hack '
-                        'switch',
-                        'o   irqChip : If false, add the -no-kvm-irqchip '
-                        'switch',
-                        'o   spiceSecureChannels : comma-separated list of '
-                        'spice channel that will be encrypted',
-                        'o   spiceMonitors : number of emulated screen heads',
-                        'o   soundDevice : emulated sound device',
-                        'o   launchPaused : If "true", start qemu paused',
-                        'o   vmName : human-readable name of new VM',
-                        'o   tabletEnable : If "true", enable tablet input',
-                        'o   timeOffset : guest\'s start date, relative to '
-                        'host\'s time, in seconds',
-                        'o   smp : number of vcpus',
-                        'o   smpCoresPerSocket, smpThreadsPerCore : vcpu '
-                        'topology',
-                        'o   keyboardLayout : language code of client '
-                        'keyboard',
-                        'o   cpuType : emulated cpu (with optional flags)',
-                        'o   emulatedMachine : passed as qemu\'s -M',
-                        'o   devices={name:val[, name:val, name:{name:val, '
-                        'name:val}]} : add a fully specified device',
-                        'o   cpuPinning={vcpuid:pinning} cpu pinning in '
-                        'libvirt-like format. see '
-                        'http://libvirt.org/formatdomain.html'
-                         '#elementsCPUTuning'
-                        )),
+        'create': (serv.do_create,
+                      ('<configFile> [parameter=value, parameter=value, '
+                          '......]',
+                       'Creates new machine with the paremeters given in the'
+                       ' command line overriding the ones in the config file',
+                       'Example with config file: vdsClient someServer create'
+                       ' myVmConfigFile',
+                       'Example with no file    : vdsClient someServer create'
+                       ' /dev/null vmId=<uuid> memSize=256 '
+                       'imageFile=someImage display=<vnc|qxl|qxlnc>',
+                       'Parameters list: r=required, o=optional',
+                       'r   vmId=<uuid> : Unique identification for the '
+                       'created VM. Any additional operation on the VM must '
+                       'refer to this ID',
+                       'o   vmType=<qemu/kvm> : Virtual machine technology - '
+                       'if not given kvm is default',
+                       'o   kvmEnable=<true/false> : run in KVM enabled mode '
+                       'or full emulation - default is according to the VDS '
+                       'capabilities',
+                       'r   memSize=<int> : Memory to allocate for this '
+                       'machine',
+                       'r   macAddr=<aa:bb:cc:dd:ee:ff> : MAC address of the '
+                       'machine',
+                       'r   display=<vnc|qxl|qxlnc> : send the machine '
+                       'display to vnc, spice, or spice with no '
+                       'image compression',
+                       'o   drive=pool:poolID,domain:domainID,image:imageID,'
+                       'volume:volumeID[,boot:true,format:cow] : disk image '
+                       'by UUIDs',
+                       'o   (deprecated) hda/b/c/d=<path> : Disk drive '
+                       'images',
+                       'o   floppy=<image> : Mount the specified Image as '
+                       'floppy',
+                       'o   cdrom=<path> : ISO image file to be mounted as '
+                       'the powerup cdrom',
+                       'o   boot=<c/d/n> : boot device - drive C or cdrom or '
+                       'network',
+                       'o   sysprepInf=/path/to/file: Launch with the '
+                       'specified file as sysprep.inf in floppy',
+                       #'o   any parmeter=<any value> : parameter that is '
+                       #'not familiar is passed as is to the VM',
+                       #'                               and displayed with '
+                       #'all other parameter. They can be used for '
+                       #'additional',
+                       #'                               information the user '
+                       #'want to reserve with the machine'
+                       'o   acpiEnable : If present will remove the default '
+                       '-no-acpi switch',
+                       'o   qgaEnable : use qemu-ga as guest agent',
+                       'o   tdf : If present will add the -rtc-td-hack '
+                       'switch',
+                       'o   irqChip : If false, add the -no-kvm-irqchip '
+                       'switch',
+                       'o   spiceSecureChannels : comma-separated list of '
+                       'spice channel that will be encrypted',
+                       'o   spiceMonitors : number of emulated screen heads',
+                       'o   soundDevice : emulated sound device',
+                       'o   launchPaused : If "true", start qemu paused',
+                       'o   vmName : human-readable name of new VM',
+                       'o   tabletEnable : If "true", enable tablet input',
+                       'o   timeOffset : guest\'s start date, relative to '
+                       'host\'s time, in seconds',
+                       'o   smp : number of vcpus',
+                       'o   smpCoresPerSocket, smpThreadsPerCore : vcpu '
+                       'topology',
+                       'o   keyboardLayout : language code of client '
+                       'keyboard',
+                       'o   cpuType : emulated cpu (with optional flags)',
+                       'o   emulatedMachine : passed as qemu\'s -M',
+                       'o   devices={name:val[, name:val, name:{name:val, '
+                       'name:val}]} : add a fully specified device',
+                       'o   cpuPinning={vcpuid:pinning} cpu pinning in '
+                       'libvirt-like format. see '
+                       'http://libvirt.org/formatdomain.html'
+                        '#elementsCPUTuning'
+                       )),
         'vmUpdateDevice': (serv.vmUpdateDevice,
                            ('<vmId> <devicespec>',
                             'Update a VM\'s device',
@@ -1762,47 +1762,47 @@ if __name__ == '__main__':
                             'mirror. No change if not specified, no mirroring'
                             'if empty list.'
                             )),
-        'hotplugNic':  (serv.hotplugNic,
-                         ('<vmId> <nicspec>',
-                          'Hotplug NIC to existing VM',
-                          'nicspec parameters list: r=required, o=optional',
-                          'r   device: bridge|sriov|vnlink|bridgeless.',
-                          'r   network: network name',
-                          'r   macAddr: mac address',
-                          'r   nicModel: pv|rtl8139|e1000',
-                          'o   bootOrder: <int>  - global boot order across '
-                          'all bootable devices'
-                          )),
-        'hotunplugNic':  (serv.hotunplugNic,
-                         ('<vmId> <nicspec>',
-                          'Hotunplug NIC from existing VM',
-                          'nicspec parameters list: r=required, o=optional',
-                          'r   device: bridge|sriov|vnlink|bridgeless.',
-                          'r   network: network name',
-                          'r   macAddr: mac address',
-                          'r   nicModel: pv|rtl8139|e1000',
-                          'o   bootOrder: <int>  - global boot order across '
-                          'all bootable devices'
-                          )),
-        'hotplugDisk':  (serv.hotplugDisk,
-                         ('<vmId> <drivespec>',
-                          'Hotplug disk to existing VM',
-                          'drivespec parameters list: r=required, o=optional',
-                          'r   iface:<ide|virtio> - Unique identification of '
-                          'the existing VM.',
-                          'r   index:<int> - disk index unique per interface '
-                          'virtio|ide',
-                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|'
-                          '[GUID:guid]|[UUID:uuid]',
-                          'r   format: cow|raw',
-                          'r   readonly: True|False   - default is False',
-                          'r   propagateErrors: off|on   - default is off',
-                          'o   bootOrder: <int>  - global boot order across '
-                          'all bootable devices',
-                          'o   shared: True|False',
-                          'o   optional: True|False'
-                          )),
-        'hotunplugDisk':  (serv.hotunplugDisk,
+        'hotplugNic': (serv.hotplugNic,
+                        ('<vmId> <nicspec>',
+                         'Hotplug NIC to existing VM',
+                         'nicspec parameters list: r=required, o=optional',
+                         'r   device: bridge|sriov|vnlink|bridgeless.',
+                         'r   network: network name',
+                         'r   macAddr: mac address',
+                         'r   nicModel: pv|rtl8139|e1000',
+                         'o   bootOrder: <int>  - global boot order across '
+                         'all bootable devices'
+                         )),
+        'hotunplugNic': (serv.hotunplugNic,
+                        ('<vmId> <nicspec>',
+                         'Hotunplug NIC from existing VM',
+                         'nicspec parameters list: r=required, o=optional',
+                         'r   device: bridge|sriov|vnlink|bridgeless.',
+                         'r   network: network name',
+                         'r   macAddr: mac address',
+                         'r   nicModel: pv|rtl8139|e1000',
+                         'o   bootOrder: <int>  - global boot order across '
+                         'all bootable devices'
+                         )),
+        'hotplugDisk': (serv.hotplugDisk,
+                        ('<vmId> <drivespec>',
+                         'Hotplug disk to existing VM',
+                         'drivespec parameters list: r=required, o=optional',
+                         'r   iface:<ide|virtio> - Unique identification of '
+                         'the existing VM.',
+                         'r   index:<int> - disk index unique per interface '
+                         'virtio|ide',
+                         'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|'
+                         '[GUID:guid]|[UUID:uuid]',
+                         'r   format: cow|raw',
+                         'r   readonly: True|False   - default is False',
+                         'r   propagateErrors: off|on   - default is off',
+                         'o   bootOrder: <int>  - global boot order across '
+                         'all bootable devices',
+                         'o   shared: True|False',
+                         'o   optional: True|False'
+                         )),
+        'hotunplugDisk': (serv.hotunplugDisk,
                          ('<vmId> <drivespec >',
                           'Hotunplug disk from existing VM',
                           'drivespec parameters list: r=required, o=optional',
@@ -1820,50 +1820,50 @@ if __name__ == '__main__':
                           'o   shared: True|False',
                           'o   optional: True|False'
                           )),
-        'changeCD':  (serv.do_changeCD,
-                       ('<vmId> <fileName|drivespec>',
-                        'Changes the iso image of the cdrom'
-                        )),
-        'changeFloppy':  (serv.do_changeFloppy,
+        'changeCD': (serv.do_changeCD,
+                      ('<vmId> <fileName|drivespec>',
+                       'Changes the iso image of the cdrom'
+                       )),
+        'changeFloppy': (serv.do_changeFloppy,
                        ('<vmId> <fileName|drivespec>',
                         'Changes the image of the floppy drive'
                         )),
-        'destroy':  (serv.do_destroy,
-                       ('<vmId>',
-                        'Stops the emulation and destroys the virtual machine.'
-                        ' This is not a shutdown.'
-                        )),
-        'shutdown':  (serv.do_shutdown,
-                       ('<vmId> <timeout> <message>',
-                        'Stops the emulation and graceful shutdown the virtual'
-                        ' machine.'
-                        )),
-        'list':  (serv.do_list,
-                       ('[view] [vms:vmId1,vmId2]',
-                        'Lists all available machines on the specified '
-                        'server.',
-                        "Optional vms list, should start with 'vms:' and "
-                        "follow with 'vmId1,vmId2,...'",
-                        'Optional views:',
-                        '    "long"   all available configuration info '
-                        '(Default).',
-                        '    "table"  table output with the fields: vmId, '
-                        'vmName, Status and IP.',
-                        '    "ids"    all vmIds.'
-                        )),
-        'pause':  (serv.do_pause,
-                       ('<vmId>',
-                        'Pauses the execution of the virtual machine without '
-                        'termination'
-                        )),
-        'continue':  (serv.do_continue,
-                       ('<vmId>',
-                        'Continues execution after of a paused machine'
-                        )),
-        'reset':  (serv.do_reset,
-                       ('<vmId>',
-                        'Sends reset signal to the vm'
-                        )),
+        'destroy': (serv.do_destroy,
+                      ('<vmId>',
+                       'Stops the emulation and destroys the virtual machine.'
+                       ' This is not a shutdown.'
+                       )),
+        'shutdown': (serv.do_shutdown,
+                      ('<vmId> <timeout> <message>',
+                       'Stops the emulation and graceful shutdown the virtual'
+                       ' machine.'
+                       )),
+        'list': (serv.do_list,
+                      ('[view] [vms:vmId1,vmId2]',
+                       'Lists all available machines on the specified '
+                       'server.',
+                       "Optional vms list, should start with 'vms:' and "
+                       "follow with 'vmId1,vmId2,...'",
+                       'Optional views:',
+                       '    "long"   all available configuration info '
+                       '(Default).',
+                       '    "table"  table output with the fields: vmId, '
+                       'vmName, Status and IP.',
+                       '    "ids"    all vmIds.'
+                       )),
+        'pause': (serv.do_pause,
+                      ('<vmId>',
+                       'Pauses the execution of the virtual machine without '
+                       'termination'
+                       )),
+        'continue': (serv.do_continue,
+                      ('<vmId>',
+                       'Continues execution after of a paused machine'
+                       )),
+        'reset': (serv.do_reset,
+                      ('<vmId>',
+                       'Sends reset signal to the vm'
+                       )),
         'setVmTicket': (serv.do_setVmTicket,
                         ('<vmId> <password> <sec> [disconnect|keep|fail], '
                             '[params={}]',
@@ -1874,12 +1874,12 @@ if __name__ == '__main__':
                          'Optional additional parameters in dictionary format,'
                          ' name:value,name:value'
                          )),
-        'migrate':   (serv.do_migrate,
-                       ('vmId=<id> method=<offline|online> src=<host:[port]> '
-                           'dst=<host:[port]>',
-                        'Migrate a desktop from src machine to dst host using '
-                        'the specified ports'
-                        )),
+        'migrate': (serv.do_migrate,
+                     ('vmId=<id> method=<offline|online> src=<host:[port]> '
+                         'dst=<host:[port]>',
+                      'Migrate a desktop from src machine to dst host using '
+                      'the specified ports'
+                      )),
         'migrateStatus': (serv.do_mStat,
                           ('<vmId>',
                           'Check the progress of current outgoing migration'
@@ -1888,10 +1888,10 @@ if __name__ == '__main__':
                            ('<vmId>',
                            '(not implemented) cancel machine migration'
                             )),
-        'sendkeys':  (serv.do_sendkeys,
-                       ('<vmId> <key1> ...... <keyN>',
-                        'Send the key sequence to the vm'
-                        )),
+        'sendkeys': (serv.do_sendkeys,
+                      ('<vmId> <key1> ...... <keyN>',
+                       'Send the key sequence to the vm'
+                       )),
         'getVdsCapabilities': (serv.do_getCap,
                        ('',
                         'Get Capabilities info of the VDS'
@@ -2126,15 +2126,15 @@ if __name__ == '__main__':
                             '<size>',
                         'Upload volume file into existing volume'
                          )),
-        'getVolumePath':  (serv.getVolumePath,
+        'getVolumePath': (serv.getVolumePath,
                       ('<sdUUID> <spUUID> <imgUUID> <volume uuid>',
                        'Returns the path to the requested uuid'
                        )),
-        'setVolumeDescription':   (serv.setVolumeDescription,
+        'setVolumeDescription': (serv.setVolumeDescription,
                        ('<sdUUID> <spUUID> <imgUUID> <volUUID> <Description>',
                         'Sets a new description to the volume'
                         )),
-        'setVolumeLegality':   (serv.setVolumeLegality,
+        'setVolumeLegality': (serv.setVolumeLegality,
                       ('<sdUUID> <spUUID> <imgUUID> <volUUID> <Legality>',
                        'Set volume legality (ILLEGAL/LEGAL).'
                        )),
@@ -2313,42 +2313,42 @@ if __name__ == '__main__':
                        'Get list of VMs from the pool or domain if sdUUID '
                        'given. Run only from the SPM.'
                        )),
-        'addNetwork':   (serv.do_addNetwork,
+        'addNetwork': (serv.do_addNetwork,
                        ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
                            'nics=nic[,nic]',
                         'Add a new network to this vds.'
                         )),
-        'delNetwork':   (serv.do_delNetwork,
+        'delNetwork': (serv.do_delNetwork,
                        ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
                            'nics=nic[,nic]',
                         'Remove a network (and parts thereof) from this vds.'
                         )),
-        'editNetwork':   (serv.do_editNetwork,
+        'editNetwork': (serv.do_editNetwork,
                        ('oldBridge=<bridge> newBridge=<bridge> [vlan=<number>]'
                            ' [bond=<bond>] nics=nic[,nic]',
                         'Replace a network with a new one.'
                         )),
-        'setSafeNetworkConfig':   (serv.do_setSafeNetworkConfig,
+        'setSafeNetworkConfig': (serv.do_setSafeNetworkConfig,
                        ('',
                         'declare current network configuration as "safe"'
                         )),
-        'fenceNode':   (serv.do_fenceNode,
-                       ('<addr> <port> <agent> <user> <passwd> <action> '
-                           '[<secure> [<options>]] \n\t<action> is one of '
-                           '(status, on, off, reboot),\n\t<agent> is one of '
-                           '(rsa, ilo, ipmilan, drac5, etc)\n\t<secure> '
-                           '(true|false) may be passed to some agents',
-                        'send a fencing command to a remote node'
-                        )),
-        'repoStats':  (serv.repoStats,
-                       ('',
-                       "Get the the health status of the active domains"
-                        )),
-        'snapshot':  (serv.snapshot,
-                       ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
-                        "Take a live snapshot"
-                        )),
-        'setBalloonTarget':  (serv.setBalloonTarget,
+        'fenceNode': (serv.do_fenceNode,
+                     ('<addr> <port> <agent> <user> <passwd> <action> '
+                         '[<secure> [<options>]] \n\t<action> is one of '
+                         '(status, on, off, reboot),\n\t<agent> is one of '
+                         '(rsa, ilo, ipmilan, drac5, etc)\n\t<secure> '
+                         '(true|false) may be passed to some agents',
+                      'send a fencing command to a remote node'
+                      )),
+        'repoStats': (serv.repoStats,
+                      ('',
+                      "Get the the health status of the active domains"
+                       )),
+        'snapshot': (serv.snapshot,
+                      ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
+                       "Take a live snapshot"
+                       )),
+        'setBalloonTarget': (serv.setBalloonTarget,
                        ('<vmId> <target>',
                         "Set VM's balloon target"
                         )),

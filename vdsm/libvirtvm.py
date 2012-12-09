@@ -215,10 +215,10 @@ class VmStatsThread(utils.AdvancedStatsThread):
         for nic in self._vm._devices[vm.NIC_DEVICES]:
             ifSpeed = [100, 1000][nic.nicModel in ('e1000', 'virtio')]
 
-            ifStats = {'macAddr':   nic.macAddr,
-                       'name':      nic.name,
-                       'speed':     str(ifSpeed),
-                       'state':     'unknown'}
+            ifStats = {'macAddr': nic.macAddr,
+                       'name': nic.name,
+                       'speed': str(ifSpeed),
+                       'state': 'unknown'}
 
             try:
                 ifStats['rxErrors'] = str(eInfo[nic.name][2])
@@ -247,7 +247,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
             dName = vmDrive.name
             dStats = {}
             try:
-                dStats = {'truesize':     str(vmDrive.truesize),
+                dStats = {'truesize': str(vmDrive.truesize),
                           'apparentsize': str(vmDrive.apparentsize)}
                 if vmDrive.isVdsmImage():
                     dStats['imageID'] = vmDrive.imageID
@@ -286,7 +286,7 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             dName = vmDrive.name
-            dLatency = {'readLatency':  '0',
+            dLatency = {'readLatency': '0',
                         'writeLatency': '0',
                         'flushLatency': '0'}
             try:

@@ -34,11 +34,11 @@ class FORMAT:
     VMDK = "vmdk"
 
 __iregex = {
-    'format':       re.compile("^file format: (?P<value>\w+)$"),
-    'virtualsize':  re.compile("^virtual size: "
-                               "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
-    'clustersize':  re.compile("^cluster_size: (?P<value>\d+)$"),
-    'backingfile':  re.compile("^backing file: (?P<value>.+) \(actual path"),
+    'format': re.compile("^file format: (?P<value>\w+)$"),
+    'virtualsize': re.compile("^virtual size: "
+                              "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
+    'clustersize': re.compile("^cluster_size: (?P<value>\d+)$"),
+    'backingfile': re.compile("^backing file: (?P<value>.+) \(actual path"),
 }
 
 
@@ -72,7 +72,7 @@ def info(image, format=None):
 
     try:
         info = {
-            'format':      __iregexSearch("format", out[1]),
+            'format': __iregexSearch("format", out[1]),
             'virtualsize': int(__iregexSearch("virtualsize", out[2])),
         }
 
