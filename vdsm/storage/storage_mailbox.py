@@ -217,12 +217,12 @@ class HSM_MailMonitor(threading.Thread):
         # TODO: add support for multiple paths (multiple mailboxes)
         self._spmStorageDir = config.get('irs', 'repository')
         self._inCmd = [constants.EXT_DD,
-                        'if=' + str(inbox),
-                        'iflag=direct,fullblock',
-                        'bs=' + str(BLOCK_SIZE),
-                        'count=' + str(BLOCKS_PER_MAILBOX),
-                        'skip=' + str(self._hostID * BLOCKS_PER_MAILBOX)
-                        ]
+                       'if=' + str(inbox),
+                       'iflag=direct,fullblock',
+                       'bs=' + str(BLOCK_SIZE),
+                       'count=' + str(BLOCKS_PER_MAILBOX),
+                       'skip=' + str(self._hostID * BLOCKS_PER_MAILBOX)
+                       ]
         self._outCmd = [constants.EXT_DD,
                         'of=' + str(outbox),
                         'iflag=fullblock',
@@ -476,10 +476,10 @@ class SPM_MailMonitor:
         self._outgoingMail = self._outMailLen * "\0"
         self._incomingMail = self._outgoingMail
         self._inCmd = ['dd',
-                        'if=' + str(self._inbox),
-                        'iflag=direct,fullblock',
-                        'count=1'
-                        ]
+                       'if=' + str(self._inbox),
+                       'iflag=direct,fullblock',
+                       'count=1'
+                       ]
         self._outCmd = ['dd',
                         'of=' + str(self._outbox),
                         'oflag=direct',

@@ -177,7 +177,7 @@ class TestconfigNetwork(TestCaseBase):
     def _fakeNetworks():
         return {'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
                 'fakenet': {'iface': 'fakeint', 'bridged': False},
-               }
+                }
 
     def _addNetworkWithExc(self, parameters, errCode):
         with self.assertRaises(configNetwork.ConfigNetworkError) as cneContext:
@@ -319,7 +319,7 @@ class ConfigWriterTests(TestCaseBase):
                         ('ifcfg-eth1', None, True),
                         ('ifcfg-eth2', None, False),
                         ('ifcfg-eth3', self.INITIAL_CONTENT, False),
-                       ))
+                        ))
 
     def __del__(self):
         shutil.rmtree(self._tempdir)

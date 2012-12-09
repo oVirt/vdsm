@@ -128,7 +128,7 @@ errCode = {'noVM':         {'status':
                              {'code': 99,
                               'message':
                               'Recovering from crash or Initializing'}},
-            }
+           }
 doneCode = {'code': 0, 'message': 'Done'}
 
 Kbytes = 1024

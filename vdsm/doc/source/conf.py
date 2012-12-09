@@ -173,7 +173,7 @@ htmlhelp_basename = 'vdsmdoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [('index', 'Vdsm.tex', u'VDSM Documentation',
                     u'Red Hat', 'manual'),
-]
+                   ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.

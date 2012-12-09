@@ -1819,25 +1819,25 @@ if __name__ == '__main__':
                           'all bootable devices',
                           'o   shared: True|False',
                           'o   optional: True|False'
-                         )),
+                          )),
         'changeCD':  (serv.do_changeCD,
                        ('<vmId> <fileName|drivespec>',
                         'Changes the iso image of the cdrom'
-                       )),
+                        )),
         'changeFloppy':  (serv.do_changeFloppy,
                        ('<vmId> <fileName|drivespec>',
                         'Changes the image of the floppy drive'
-                       )),
+                        )),
         'destroy':  (serv.do_destroy,
                        ('<vmId>',
                         'Stops the emulation and destroys the virtual machine.'
                         ' This is not a shutdown.'
-                       )),
+                        )),
         'shutdown':  (serv.do_shutdown,
                        ('<vmId> <timeout> <message>',
                         'Stops the emulation and graceful shutdown the virtual'
                         ' machine.'
-                       )),
+                        )),
         'list':  (serv.do_list,
                        ('[view] [vms:vmId1,vmId2]',
                         'Lists all available machines on the specified '
@@ -1850,20 +1850,20 @@ if __name__ == '__main__':
                         '    "table"  table output with the fields: vmId, '
                         'vmName, Status and IP.',
                         '    "ids"    all vmIds.'
-                       )),
+                        )),
         'pause':  (serv.do_pause,
                        ('<vmId>',
                         'Pauses the execution of the virtual machine without '
                         'termination'
-                       )),
+                        )),
         'continue':  (serv.do_continue,
                        ('<vmId>',
                         'Continues execution after of a paused machine'
-                       )),
+                        )),
         'reset':  (serv.do_reset,
                        ('<vmId>',
                         'Sends reset signal to the vm'
-                       )),
+                        )),
         'setVmTicket': (serv.do_setVmTicket,
                         ('<vmId> <password> <sec> [disconnect|keep|fail], '
                             '[params={}]',
@@ -1873,37 +1873,37 @@ if __name__ == '__main__':
                          'currently-connected client.',
                          'Optional additional parameters in dictionary format,'
                          ' name:value,name:value'
-                        )),
+                         )),
         'migrate':   (serv.do_migrate,
                        ('vmId=<id> method=<offline|online> src=<host:[port]> '
                            'dst=<host:[port]>',
                         'Migrate a desktop from src machine to dst host using '
                         'the specified ports'
-                       )),
+                        )),
         'migrateStatus': (serv.do_mStat,
                           ('<vmId>',
                           'Check the progress of current outgoing migration'
-                          )),
+                           )),
         'migrateCancel': (serv.do_mCancel,
                            ('<vmId>',
                            '(not implemented) cancel machine migration'
-                           )),
+                            )),
         'sendkeys':  (serv.do_sendkeys,
                        ('<vmId> <key1> ...... <keyN>',
                         'Send the key sequence to the vm'
-                       )),
+                        )),
         'getVdsCapabilities': (serv.do_getCap,
                        ('',
                         'Get Capabilities info of the VDS'
-                       )),
+                        )),
         'getVdsCaps': (serv.do_getCap,
                        ('',
                         'Get Capabilities info of the VDS'
-                       )),
+                        )),
         'getVdsStats': (serv.do_getVdsStats,
                        ('',
                         'Get Statistics info on the VDS'
-                       )),
+                        )),
         'getVmStats': (serv.do_getVmStats,
                       ('<vmId>',
                         'Get Statistics info on the VM'
@@ -2125,7 +2125,7 @@ if __name__ == '__main__':
                         ('<sdUUID> <spUUID> <imgUUID> <volUUID> <srcPath> '
                             '<size>',
                         'Upload volume file into existing volume'
-                        )),
+                         )),
         'getVolumePath':  (serv.getVolumePath,
                       ('<sdUUID> <spUUID> <imgUUID> <volume uuid>',
                        'Returns the path to the requested uuid'
@@ -2156,110 +2156,110 @@ if __name__ == '__main__':
                          ('<sdUUID> <spUUID> <imgUUID> <Disk Image uuid>',
                          'Returns the parent of the volume. Error if no parent'
                          ' exists'
-                        )),
+                          )),
         'getVolumesList': (serv.getVolumesList,
                          ('<sdUUID> <spUUID> [imgUUID]',
                           'Returns list of volumes of imgUUID or sdUUID if '
                           'imgUUID absent'
-                         )),
+                          )),
         'getVolumeSize': (serv.getVolumeSize,
                          ('<sdUUID> <spUUID> <imgUUID> <volUUID>',
                           'Returns the apparent size and the true size of the '
                           'volume (in bytes)'
-                         )),
+                          )),
         'getFileList': (serv.getFileList,
                          ('<sdUUID> [pattern]',
                           'Returns files list from ISO domain'
-                         )),
+                          )),
         'getIsoList': (serv.getIsoList,
                          ('<spUUID>',
                           'Returns list of all .iso images in ISO domain'
-                         )),
+                          )),
         'getFloppyList': (serv.getFloppyList,
                          ('<spUUID>',
                           'Returns list of all .vfd images in ISO domain'
-                         )),
+                          )),
         'getImagesList': (serv.getImagesList,
                          ('<sdUUID>',
                           'Get list of all images of specific domain'
-                         )),
+                          )),
         'getImageDomainsList': (serv.getImageDomainsList,
                          ('<spUUID> <imgUUID> [datadomain=True]',
                           'Get list of all data domains in the pool that '
                           'contains imgUUID'
-                         )),
+                          )),
         'getConnectedStoragePoolsList': (serv.getConnectedStoragePoolsList,
                          ('',
                           'Get storage pools list'
-                         )),
+                          )),
         'getTaskInfo': (serv.getTaskInfo,
                          ('<TaskID>',
-                         'get async task info'
-                         )),
+                          'get async task info'
+                          )),
         'getAllTasksInfo': (serv.getAllTasksInfo,
                          ('',
-                         'get info of all async tasks'
-                         )),
+                          'get info of all async tasks'
+                          )),
         'getTaskStatus': (serv.getTaskStatus,
                          ('<TaskID>',
-                         'get task status'
-                         )),
+                          'get task status'
+                          )),
         'getAllTasksStatuses': (serv.getAllTasksStatuses,
                          ('',
-                         'list statuses of all async tasks'
-                         )),
+                          'list statuses of all async tasks'
+                          )),
         'getAllTasks': (serv.getAllTasks,
                          ('[tags=\'\']',
-                         'get status and information for all async tasks'
-                         )),
+                          'get status and information for all async tasks'
+                          )),
         'stopTask': (serv.stopTask,
                          ('<TaskID>',
-                         'stop async task'
-                         )),
+                          'stop async task'
+                          )),
         'clearTask': (serv.clearTask,
                          ('<TaskID>',
-                         'clear async task'
-                         )),
+                          'clear async task'
+                          )),
         'revertTask': (serv.revertTask,
                          ('<TaskID>',
-                         'revert async task'
-                         )),
+                          'revert async task'
+                          )),
         'prepareForShutdown': (serv.prepareForShutdown,
                          ('', ''
-                         )),
+                          )),
         'setLogLevel': (serv.do_setLogLevel,
                          ('<level> [logName][,logName]...', 'set log verbosity'
-                             ' level (10=DEBUG, 50=CRITICAL'
-                         )),
+                          ' level (10=DEBUG, 50=CRITICAL'
+                          )),
         'setMOMPolicy': (serv.do_setMOMPolicy,
                           ('<policyfile>', 'set MOM policy')),
         'deleteImage': (serv.deleteImage,
                        ('<sdUUID> <spUUID> <imgUUID> [<postZero>] [<force>]',
-                       'Delete Image folder with all volumes.',
-                       )),
+                        'Delete Image folder with all volumes.',
+                        )),
         'moveImage': (serv.moveImage,
                        ('<spUUID> <srcDomUUID> <dstDomUUID> <imgUUID> <vmUUID>'
-                           ' <op = COPY_OP/MOVE_OP> [<postZero>] [ <force>]',
-                       'Move/Copy image between storage domains within same '
-                       'storage pool'
-                       )),
+                        ' <op = COPY_OP/MOVE_OP> [<postZero>] [ <force>]',
+                        'Move/Copy image between storage domains within same '
+                        'storage pool'
+                        )),
         'cloneImageStructure': (serv.cloneImageStructure,
                        ('<spUUID> <sdUUID> <imgUUID> <dstSdUUID>',
-                       'Clone an image structure from a source domain to a '
-                       'destination domain within the same pool.'
-                       )),
+                        'Clone an image structure from a source domain to a '
+                        'destination domain within the same pool.'
+                        )),
         'syncImageData': (serv.syncImageData,
                        ('<spUUID> <sdUUID> <imgUUID> <dstSdUUID> <syncType>',
-                       'Synchronize image data between storage domains within '
-                       'same pool.'
-                       )),
+                        'Synchronize image data between storage domains '
+                        'within same pool.'
+                        )),
         'moveMultiImage': (serv.moveMultiImage,
                        ('<spUUID> <srcDomUUID> <dstDomUUID> '
                            '<imgList>({imgUUID=postzero,imgUUID=postzero,...})'
                            ' <vmUUID> [<force>]',
-                       'Move multiple images between storage domains within '
-                       'same storage pool'
-                       )),
+                        'Move multiple images between storage domains within '
+                        'same storage pool'
+                        )),
         'copyImage': (serv.copyImage,
                        ('<sdUUID> <spUUID> <vmUUID> <srcImgUUID> <srcVolUUID> '
                            '<dstImgUUID> <dstVolUUID> <dstDescr> <dstSdUUID> '
@@ -2268,7 +2268,7 @@ if __name__ == '__main__':
                         'Create new template/volume from VM.',
                         'Do it by collapse and copy the whole chain '
                         '(baseVolUUID->srcVolUUID)'
-                       )),
+                        )),
         'mergeSnapshots': (serv.mergeSnapshots,
                       ('<sdUUID> <spUUID> <vmUUID> <imgUUID> <Ancestor Image '
                           'uuid> <Successor Image uuid> [<postZero>]',
@@ -2283,7 +2283,7 @@ if __name__ == '__main__':
         'desktopLogoff': (serv.desktopLogoff,
                        ('<vmId> <force>',
                          'Lock user session. force should be set to true/false'
-                       )),
+                        )),
         'desktopLock': (serv.desktopLock,
                        ('<vmId>',
                          'Logoff current user'
@@ -2317,21 +2317,21 @@ if __name__ == '__main__':
                        ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
                            'nics=nic[,nic]',
                         'Add a new network to this vds.'
-                       )),
+                        )),
         'delNetwork':   (serv.do_delNetwork,
                        ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
                            'nics=nic[,nic]',
                         'Remove a network (and parts thereof) from this vds.'
-                       )),
+                        )),
         'editNetwork':   (serv.do_editNetwork,
                        ('oldBridge=<bridge> newBridge=<bridge> [vlan=<number>]'
                            ' [bond=<bond>] nics=nic[,nic]',
                         'Replace a network with a new one.'
-                       )),
+                        )),
         'setSafeNetworkConfig':   (serv.do_setSafeNetworkConfig,
                        ('',
                         'declare current network configuration as "safe"'
-                       )),
+                        )),
         'fenceNode':   (serv.do_fenceNode,
                        ('<addr> <port> <agent> <user> <passwd> <action> '
                            '[<secure> [<options>]] \n\t<action> is one of '
@@ -2339,29 +2339,29 @@ if __name__ == '__main__':
                            '(rsa, ilo, ipmilan, drac5, etc)\n\t<secure> '
                            '(true|false) may be passed to some agents',
                         'send a fencing command to a remote node'
-                       )),
+                        )),
         'repoStats':  (serv.repoStats,
                        ('',
                        "Get the the health status of the active domains"
-                      )),
+                        )),
         'snapshot':  (serv.snapshot,
                        ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
-                       "Take a live snapshot"
-                      )),
+                        "Take a live snapshot"
+                        )),
         'setBalloonTarget':  (serv.setBalloonTarget,
                        ('<vmId> <target>',
-                       "Set VM's balloon target"
-                      )),
+                        "Set VM's balloon target"
+                        )),
         'diskReplicateStart': (serv.diskReplicateStart,
                        ('<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID> '
                            '<dstSdUUID>',
                            "Start live replication to the destination domain"
-                       )),
+                        )),
         'diskReplicateFinish': (serv.diskReplicateFinish,
                        ('<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID> '
                            '<dstSdUUID>',
                            "Start live replication to the destination domain"
-                       )),
+                        )),
     }
     if _glusterEnabled:
         commands.update(ge.getGlusterCmdDict(serv))

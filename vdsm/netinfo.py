@@ -340,16 +340,16 @@ def get():
                                    'netmask': getnetmask(bridge),
                                    'mtu': getMtu(bridge),
                                    'cfg': getIfaceCfg(bridge),
-                                  })
+                                   })
                          for bridge in bridges()])
 
     d['nics'] = dict([(nic, {'speed': speed(nic),
-                              'addr': getaddr(nic),
-                              'netmask': getnetmask(nic),
-                              'hwaddr': gethwaddr(nic),
-                              'mtu': getMtu(nic),
-                              'cfg': getIfaceCfg(nic),
-                              })
+                             'addr': getaddr(nic),
+                             'netmask': getnetmask(nic),
+                             'hwaddr': gethwaddr(nic),
+                             'mtu': getMtu(nic),
+                             'cfg': getIfaceCfg(nic),
+                             })
                         for nic in nics()])
     paddr = permAddr()
     for nic, nd in d['nics'].iteritems():
@@ -363,11 +363,11 @@ def get():
                               'mtu': getMtu(bond)})
                         for bond in bondings()])
     d['vlans'] = dict([(vlan, {'iface': vlan.split('.')[0],
-                                'addr': getaddr(vlan),
-                                'netmask': getnetmask(vlan),
-                                'mtu': getMtu(vlan),
-                                'cfg': getIfaceCfg(vlan),
-                                })
+                               'addr': getaddr(vlan),
+                               'netmask': getnetmask(vlan),
+                               'mtu': getMtu(vlan),
+                               'cfg': getIfaceCfg(vlan),
+                               })
                         for vlan in vlans()])
     return d
 
