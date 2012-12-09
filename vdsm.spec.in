@@ -945,7 +945,6 @@ exit 0
 %{_unitdir}/vdsm-reg.service
 %endif
 %{_datadir}/%{vdsm_reg}/vdsm-reg-setup
-%{_datadir}/%{vdsm_reg}/define.py*
 %{_datadir}/%{vdsm_reg}/vdsm-complete
 %{_datadir}/%{vdsm_reg}/vdsm-gen-cert
 %{_datadir}/%{vdsm_reg}/vdsm-upgrade

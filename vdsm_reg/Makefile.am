@@ -24,7 +24,6 @@ ovirtsetupdir = $(pythondir)/ovirt_config_setup
 
 dist_vdsmreg_PYTHON = \
 	createDaemon.py \
-	define.py \
 	register-to-engine.py
 
 dist_ovirtsetup_PYTHON = \

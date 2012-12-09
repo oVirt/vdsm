@@ -95,7 +95,6 @@ PEP8_WHITELIST = \
 	vdsm_hooks/sriov/before_vm_start.py \
 	vdsm_hooks/vhostmd \
 	vdsm_reg/createDaemon.py \
-	vdsm_reg/define.py \
 	$(NULL)
 
 PEP8_BLACKLIST = apiData.py,config.py,constants.py
