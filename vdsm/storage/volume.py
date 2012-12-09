@@ -718,7 +718,7 @@ class Volume(object):
                     raise se.SharedVolumeNonWritable(self)
 
             if (not chainrw and rw and self.isInternal() and setrw and
-                not self.recheckIfLeaf()):
+                    not self.recheckIfLeaf()):
                 raise se.InternalVolumeNonWritable(self)
 
         self.llPrepare(rw=rw, setrw=setrw)
@@ -830,9 +830,10 @@ class Volume(object):
         """
         vols = self.getImageVolumes(self.repoPath, self.sdUUID, self.imgUUID)
         children = []
+        dom = sdCache.produce(self.sdUUID)
         for v in vols:
-            if (sdCache.produce(self.sdUUID).
-                produceVolume(self.imgUUID, v).getParent() == self.volUUID):
+            if (dom.produceVolume(self.imgUUID, v).getParent() ==
+                    self.volUUID):
                 children.append(v)
         return children
 
@@ -1008,7 +1009,7 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
               (src, src_fmt, dst, dst_fmt))
 
     if (src_fmt == "raw" and dst_fmt == "raw" and
-        dstvolType == PREALLOCATED_VOL):
+            dstvolType == PREALLOCATED_VOL):
         (rc, out, err) = misc.ddWatchCopy(
                                     src=src, dst=dst,
                                     stop=stop, size=size,

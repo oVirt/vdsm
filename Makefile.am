@@ -104,7 +104,7 @@ check-local:
 	find . -path './.git' -prune -type f -o \
 		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES)
 	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' \
-		--ignore=E125,E126,E127,E128,E241 \
+		--ignore=E126,E127,E128,E241 \
 		$(PEP8_WHITELIST)
 	@if test -f .gitignore; then \
 	  for i in `git ls-files \*.in`; do \

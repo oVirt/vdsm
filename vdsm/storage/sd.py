@@ -167,7 +167,7 @@ def supportsUnicode(version):
 def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec,
                     ioOpTimeoutSec, leaseRetries):
     if (lockRenewalIntervalSec and leaseTimeSec and
-        ioOpTimeoutSec and leaseRetries):
+            ioOpTimeoutSec and leaseRetries):
         return {DMDK_LEASE_RETRIES: leaseRetries,
                 DMDK_LEASE_TIME_SEC: leaseTimeSec,
                 DMDK_LOCK_RENEWAL_INTERVAL_SEC: lockRenewalIntervalSec,

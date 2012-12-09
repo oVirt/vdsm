@@ -529,7 +529,7 @@ def scanDomains(pattern="*"):
 
             for metaFile in metaFiles:
                 if (os.path.basename(os.path.dirname(metaFile)) !=
-                    sd.MASTER_FS_DIR):
+                        sd.MASTER_FS_DIR):
                     sdUUID = os.path.basename(os.path.dirname(metaFile))
 
                     return (sdUUID, os.path.dirname(metaFile))

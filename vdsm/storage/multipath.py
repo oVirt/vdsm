@@ -275,7 +275,7 @@ def pathListIter(filterGuids=None):
                              slave, exc_info=True)
 
             if (not devInfo["logicalblocksize"] or
-                not devInfo["physicalblocksize"]):
+                    not devInfo["physicalblocksize"]):
                 try:
                     logBlkSize, phyBlkSize = getDeviceBlockSizes(slave)
                     devInfo["logicalblocksize"] = str(logBlkSize)

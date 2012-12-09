@@ -168,8 +168,8 @@ def getAllVolumes(sdUUID):
         if vImg not in res[vName]['imgs']:
             res[vName]['imgs'].insert(0, vImg)
         if vPar != sd.BLANK_UUID and \
-            not vName.startswith(sd.REMOVED_IMAGE_PREFIX) \
-            and vImg not in res[vPar]['imgs']:
+                not vName.startswith(sd.REMOVED_IMAGE_PREFIX) and \
+                vImg not in res[vPar]['imgs']:
             res[vPar]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
@@ -766,7 +766,7 @@ class BlockStorageDomain(sd.StorageDomain):
             pestart = int(pv["pestart"])
             pecount = int(pv["pecount"])
             if (os.path.basename(dev) == pv["guid"] and
-                int(ext) in range(pestart, pestart + pecount)):
+                    int(ext) in range(pestart, pestart + pecount)):
 
                 offs = int(ext) + int(pv["mapoffset"])
                 if offs < SD_METADATA_SIZE / sd.METASIZE:

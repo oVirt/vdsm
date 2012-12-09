@@ -401,7 +401,7 @@ class MigrationMonitorThread(threading.Thread):
              fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
 
             if (smallest_dataRemaining is None or
-                smallest_dataRemaining > dataRemaining):
+                    smallest_dataRemaining > dataRemaining):
                 smallest_dataRemaining = dataRemaining
                 lastProgressTime = time.time()
             elif (time.time() - lastProgressTime >
@@ -477,7 +477,7 @@ class MigrationSourceThread(vm.MigrationSourceThread):
 
             try:
                 if ('qxl' in self._vm.conf['display'] and
-                    self._vm.conf.get('clientIp')):
+                        self._vm.conf.get('clientIp')):
                     SPICE_MIGRATION_HANDOVER_TIME = 120
                     self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
@@ -768,7 +768,7 @@ class _DomXML:
                 cpu.appendChild(f)
 
         if ('smpCoresPerSocket' in self.conf or
-            'smpThreadsPerCore' in self.conf):
+                'smpThreadsPerCore' in self.conf):
             topo = self.doc.createElement('topology')
             vcpus = int(self.conf.get('smp', '1'))
             cores = int(self.conf.get('smpCoresPerSocket', '1'))
@@ -1194,7 +1194,7 @@ class Drive(LibvirtVmDevice):
             driver.setAttribute('cache', self.cache)
 
             if (self.propagateErrors == 'on' or
-                utils.tobool(self.propagateErrors)):
+                    utils.tobool(self.propagateErrors)):
                 driver.setAttribute('error_policy', 'enospace')
             else:
                 driver.setAttribute('error_policy', 'stop')
@@ -1341,8 +1341,8 @@ class LibvirtVm(vm.Vm):
 
             for volInfo in drive.volumeChain:
                 if ('leasePath' not in volInfo or
-                    'leaseOffset' not in volInfo or
-                    volInfo['shared']):
+                        'leaseOffset' not in volInfo or
+                        volInfo['shared']):
                     continue
 
                 leaseElem = self._buildLease(
@@ -1605,7 +1605,7 @@ class LibvirtVm(vm.Vm):
         nicDev = None
         for dev in self.conf['devices'][:]:
             if (dev['type'] == vm.NIC_DEVICES and
-                dev['macAddr'].lower() == nicParams['macAddr'].lower()):
+                    dev['macAddr'].lower() == nicParams['macAddr'].lower()):
 
                 self.conf['devices'].remove(dev)
                 nicDev = dev
@@ -1701,7 +1701,7 @@ class LibvirtVm(vm.Vm):
         diskDev = None
         for dev in self.conf['devices'][:]:
             if (dev['type'] == vm.DISK_DEVICES and
-                dev['path'] == diskParams['path']):
+                    dev['path'] == diskParams['path']):
                 self.conf['devices'].remove(dev)
                 diskDev = dev
                 break
@@ -1802,7 +1802,7 @@ class LibvirtVm(vm.Vm):
                 if not hasattr(device, "domainID"):
                     continue
                 if (device.domainID, device.imageID,
-                    device.volumeID) == tgetDrv:
+                        device.volumeID) == tgetDrv:
                     return device
 
         elif "GUID" in drive:
@@ -1837,7 +1837,7 @@ class LibvirtVm(vm.Vm):
         # Updating the VM configuration
         for device in self.conf["devices"][:]:
             if (device['type'] == vm.DISK_DEVICES and
-                device.get("name") == drive["name"]):
+                    device.get("name") == drive["name"]):
                 device.update(drive)
                 break
         else:
@@ -2428,7 +2428,7 @@ class LibvirtVm(vm.Vm):
         # delete the payload devices
         for drive in self._devices[vm.DISK_DEVICES]:
             if (hasattr(drive, 'specParams') and
-                'vmPayload' in drive.specParams):
+                    'vmPayload' in drive.specParams):
                 supervdsm.getProxy().removeFs(drive.path)
 
         with self._releaseLock:
@@ -2450,7 +2450,7 @@ class LibvirtVm(vm.Vm):
                                 libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
                     except libvirt.libvirtError, e:
                         if (e.get_error_code() ==
-                            libvirt.VIR_ERR_OPERATION_FAILED):
+                                libvirt.VIR_ERR_OPERATION_FAILED):
                             self.log.warn("Failed to destroy VM '%s' "
                                           "gracefully", self.conf['vmId'])
                             time.sleep(30)
@@ -2579,7 +2579,7 @@ class LibvirtVm(vm.Vm):
         for x in devsxml.childNodes:
             # Ignore empty nodes and devices without address
             if (x.nodeName == '#text' or
-                not x.getElementsByTagName('address')):
+                    not x.getElementsByTagName('address')):
                 continue
 
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
@@ -2618,8 +2618,8 @@ class LibvirtVm(vm.Vm):
             # are compared. Currently relevant for USB controllers.
             for ctrl in self._devices[vm.CONTROLLER_DEVICES]:
                 if ((ctrl.device == device) and
-                    (not hasattr(ctrl, 'index') or ctrl.index == index) and
-                    (not hasattr(ctrl, 'model') or ctrl.model == model)):
+                        (not hasattr(ctrl, 'index') or ctrl.index == index) and
+                        (not hasattr(ctrl, 'model') or ctrl.model == model)):
                     ctrl.alias = alias
                     ctrl.address = address
             # Update vm's conf with address for known controller devices
@@ -2628,9 +2628,9 @@ class LibvirtVm(vm.Vm):
             knownDev = False
             for dev in self.conf['devices']:
                 if ((dev['type'] == vm.CONTROLLER_DEVICES) and
-                    (dev['device'] == device) and
-                    (not 'index' in dev or dev['index'] == index) and
-                    (not 'model' in dev or dev['model'] == model)):
+                        (dev['device'] == device) and
+                        (not 'index' in dev or dev['index'] == index) and
+                        (not 'model' in dev or dev['model'] == model)):
                     dev['address'] = address
                     dev['alias'] = alias
                     knownDev = True
@@ -2663,7 +2663,7 @@ class LibvirtVm(vm.Vm):
 
             for dev in self.conf['devices']:
                 if ((dev['type'] == vm.BALLOON_DEVICES) and
-                    not dev.get('address')):
+                        not dev.get('address')):
                     dev['address'] = address
                     dev['alias'] = alias
 
@@ -2688,7 +2688,7 @@ class LibvirtVm(vm.Vm):
 
                 for dev in self.conf['devices']:
                     if ((dev['type'] == vm.WATCHDOG_DEVICES) and
-                        (not dev.get('address') or not dev.get('alias'))):
+                            (not dev.get('address') or not dev.get('alias'))):
                         dev['address'] = address
                         dev['alias'] = alias
 
@@ -2716,7 +2716,7 @@ class LibvirtVm(vm.Vm):
             # Update vm's conf with address
             for dev in self.conf['devices']:
                 if ((dev['type'] == vm.VIDEO_DEVICES) and
-                    (not dev.get('address') or not dev.get('alias'))):
+                        (not dev.get('address') or not dev.get('alias'))):
                     dev['address'] = address
                     dev['alias'] = alias
                     break
@@ -2745,7 +2745,7 @@ class LibvirtVm(vm.Vm):
             # Update vm's conf with address
             for dev in self.conf['devices']:
                 if ((dev['type'] == vm.SOUND_DEVICES) and
-                    (not dev.get('address') or not dev.get('alias'))):
+                        (not dev.get('address') or not dev.get('alias'))):
                     dev['address'] = address
                     dev['alias'] = alias
                     break
@@ -2863,7 +2863,7 @@ class LibvirtVm(vm.Vm):
             knownDev = False
             for dev in self.conf['devices']:
                 if (dev['type'] == vm.NIC_DEVICES and
-                    dev['macAddr'].lower() == mac.lower()):
+                        dev['macAddr'].lower() == mac.lower()):
                     dev['address'] = address
                     dev['alias'] = alias
                     dev['name'] = name
@@ -2893,10 +2893,10 @@ class LibvirtVm(vm.Vm):
                        eventToString(event), detail, opaque)
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
             if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
-                self.lastStatus == 'Migration Source'):
+                    self.lastStatus == 'Migration Source'):
                 hooks.after_vm_migrate_source(self._lastXMLDesc, self.conf)
             elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
-                  self.lastStatus == 'Saving State'):
+                    self.lastStatus == 'Saving State'):
                 hooks.after_vm_hibernate(self._lastXMLDesc, self.conf)
             else:
                 if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN:
@@ -2959,7 +2959,7 @@ def __hacked_writexml(self, writer, indent="", addindent="", newl=""):
     if self.childNodes:
         # added special handling of Text nodes
         if (len(self.childNodes) == 1 and
-            isinstance(self.childNodes[0], xml.dom.minidom.Text)):
+                isinstance(self.childNodes[0], xml.dom.minidom.Text)):
             writer.write(">")
             self.childNodes[0].writexml(writer)
             writer.write("</%s>%s" % (self.tagName, newl))

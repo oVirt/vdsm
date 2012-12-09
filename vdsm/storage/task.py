@@ -484,7 +484,7 @@ class Task:
         if not self.state.isDone():
             taskDir = None
             if (self.cleanPolicy == TaskCleanType.auto and
-                self.store is not None):
+                    self.store is not None):
                 taskDir = os.path.join(self.store, self.id)
             threading.Thread(target=finalize,
                              args=(self.log, self.resOwner, taskDir)).start()
@@ -900,7 +900,7 @@ class Task:
         try:
             try:
                 if (not self.state.canAbort() and
-                    (force and not self.state.canAbortRecover())):
+                        (force and not self.state.canAbortRecover())):
                     self.log.warning("Task._doAbort %s: ignoring - "
                                      "at state %s", self, self.state)
                     return
@@ -1072,7 +1072,7 @@ class Task:
             raise se.TaskPersistError("%s: cannot access/create taskdir"
                                       " %s: %s" % (self, taskDir, e))
         if (self.persistPolicy == TaskPersistType.auto and
-            self.state != State.init):
+                self.state != State.init):
             self.persist()
 
     def setRecoveryPolicy(self, clean):

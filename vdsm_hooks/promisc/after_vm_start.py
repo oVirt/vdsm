@@ -110,7 +110,7 @@ if 'promisc' in os.environ:
 
             for iface in interfaces:
                 if (iface.hasAttribute('type') and
-                    iface.attributes['type'].value == 'bridge'):
+                        iface.attributes['type'].value == 'bridge'):
 
                     ifaceName = getIfaceName(iface)
                     if mode == MODE_MIRROR:
