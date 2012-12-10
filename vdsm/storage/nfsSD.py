@@ -73,8 +73,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         # Create local path
         mntPath = fileUtils.transformPath(remotePath)
 
-        mntPoint = os.path.join(cls.storage_repository,
-                                sd.DOMAIN_MNT_POINT, mntPath)
+        mntPoint = cls.getMountPoint(mntPath)
 
         cls._preCreateValidation(sdUUID, mntPoint, remotePath, storageType,
                                  version)
@@ -96,6 +95,11 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         fsd.initSPMlease()
 
         return fsd
+
+    @classmethod
+    def getMountPoint(cls, mountPath):
+        return os.path.join(cls.storage_repository, sd.DOMAIN_MNT_POINT,
+                            mountPath)
 
     def selftest(self):
         """
