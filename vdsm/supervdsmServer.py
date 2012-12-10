@@ -295,13 +295,14 @@ class _SuperVdsm(object):
         return mkimage.removeFs(path)
 
 
-def __pokeParent(parentPid, address):
+def __pokeParent(parentPid, address, log):
     try:
         while True:
             os.kill(parentPid, 0)
             sleep(2)
     except Exception:
         utils.rmFile(address)
+        log.debug("Killing SuperVdsm Process")
         os.kill(os.getpid(), signal.SIGTERM)
 
 
@@ -354,7 +355,7 @@ def main():
         log.debug("Setting up keep alive thread")
 
         monThread = threading.Thread(target=__pokeParent,
-                                     args=[int(parentPid), address])
+                                     args=[int(parentPid), address, log])
         monThread.setDaemon(True)
         monThread.start()
 
