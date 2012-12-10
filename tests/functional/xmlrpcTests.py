@@ -24,10 +24,15 @@ import pwd
 import grp
 import shutil
 from contextlib import contextmanager
-from functools import partial
+from functools import partial, wraps
 
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import permutations, expandPermutations
 from nose.plugins.skip import SkipTest
+try:
+    import rtslib
+except ImportError:
+    pass
 
 from vdsm.config import config
 from vdsm.constants import VDSM_USER, VDSM_GROUP, QEMU_PROCESS_USER, EXT_SUDO
@@ -88,16 +93,17 @@ def genInitramfs(kernelVer):
 
 
 def skipNoKVM(method):
-    def wrapped(self):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
         r = self.s.getVdsCapabilities()
         self.assertVdsOK(r)
         if r['info']['kvmEnabled'] != 'true':
             raise SkipTest('KVM is not enabled')
-        return method(self)
-    wrapped.func_name = method.func_name
+        return method(self, *args, **kwargs)
     return wrapped
 
 
+@expandPermutations
 class XMLRPCTest(TestCaseBase):
     UPSTATES = frozenset(('Up', 'Powering up', 'Running'))
 
@@ -197,30 +203,36 @@ class XMLRPCTest(TestCaseBase):
 
         self.assertVdsOK(destroyResult)
 
-    def testLocalfs(self):
-        conf = storageLayouts['localfs']
+    @permutations([['localfs'], ['iscsi']])
+    def testStorage(self, backendType):
+        conf = storageLayouts[backendType]
         with RollbackContext() as rollback:
             self._createVdsmStorageLayout(conf, rollback)
 
-    @skipNoKVM
-    def testSimpleVMoLocalfs(self):
-        localfs = storageLayouts['localfs']
+    def _generateDriveConf(self, conf):
         drives = []
-        for poolid, domains in localfs['layout'].iteritems():
+        for poolid, domains in conf['layout'].iteritems():
             for sdid, imageList in domains.iteritems():
                 for imgid in imageList:
-                    volume = localfs['img'][imgid]
+                    volume = conf['img'][imgid]
                     drives.append({'poolID': poolid,
                                    'domainID': sdid,
                                    'imageID': imgid,
                                    'volumeID': volume['volid'],
                                    'format': volume['format']})
+        return drives
+
+    @skipNoKVM
+    @permutations([['localfs'], ['iscsi']])
+    def testSimpleVMWithStorage(self, backendType):
+        conf = storageLayouts[backendType]
+        drives = self._generateDriveConf(conf)
         customization = {'vmId': '88888888-eeee-ffff-aaaa-111111111111',
-                         'vmName': 'vdsm_testSmallVM_localfs',
+                         'vmName': 'vdsm_testSmallVM_' + backendType,
                          'drives': drives}
 
         with RollbackContext() as rollback:
-            self._createVdsmStorageLayout(localfs, rollback)
+            self._createVdsmStorageLayout(conf, rollback)
             self._runVMKernelBootTemplate(customization)
 
     def _createVdsmStorageLayout(self, conf, rollback):
@@ -409,21 +421,104 @@ class LocalFSServer(BackendServer):
 
 
 class IscsiServer(BackendServer):
-    def _createBackend(self, backends, rollback):
-        # Create iscsi target
-        pass
+    def __init__(self, vdsmServer, asserts):
+        if not "rtslib" in globals().keys():
+            raise SkipTest("python-rtslib is not installed.")
 
-    def _connectBackend(self, connections, timeout, rollback):
-        # Connect iscsi storage server
-        pass
+        super(IscsiServer, self).__init__(vdsmServer, asserts)
+        self.address = '127.0.0.1'
+
+    def _createTarget(self, iqn, imgPath, rollback):
+        '''Using LIO Python binding to configure iSCSI target.
+
+        LIO can export various types of backend storage object as LUN, and
+        support many fabric modules like iSCSI, FCoE.
+
+        The backstores/fileio/image hierachy and iscsi/target/tpg/lun
+        hierarchy are managed separately. Their lifecycles are independent.
+        Create the backstore hierachy and the iSCSI hierachy, then attach the
+        image file to the lun.
+
+        For more infomation, see http://www.linux-iscsi.org/wiki/ISCSI .
+        '''
+        fio = rtslib.FileIOStorageObject(
+            os.path.basename(imgPath), imgPath, os.path.getsize(imgPath))
+        rollback.prependDefer(fio.delete)
+
+        iscsiMod = rtslib.FabricModule('iscsi')
+        tgt = rtslib.Target(iscsiMod, iqn, mode='create')
+        # Target.delete() will delete all
+        # TPGs, ACLs, LUNs, Portals recursively
+        rollback.prependDefer(tgt.delete)
+        # TPG is a group of network portals
+        tpg = rtslib.TPG(tgt, None, mode='create')
+        rtslib.LUN(tpg, None, fio)
+        # Enable demo mode, grant all initiators to access all LUNs in the TPG
+        tpg.set_attribute('generate_node_acls', '1')
+        tpg.set_attribute('cache_dynamic_acls', '1')
+        # Do not use any authentication methods
+        tpg.set_attribute('authentication', '0')
+        # Allow writing to LUNs in demo mode
+        tpg.set_attribute('demo_mode_write_protect', '0')
+        # Activate the TPG otherwise it is not able to access the LUNs in it
+        tpg.enable = True
+        # Bind to '127.0.0.1' so it's OK to use demo mode just for testing
+        rtslib.NetworkPortal(tpg, self.address, 3260, mode='create')
+
+    def _createBackend(self, backends, rollback):
+        connections = {}
+        self.vgNames = {}
+        for uuid, conn in backends.iteritems():
+            fd, imgPath = tempfile.mkstemp()
+            rollback.prependDefer(partial(os.unlink, imgPath))
+            rollback.prependDefer(partial(os.close, fd))
+            # Create a 10GB empty disk image
+            os.ftruncate(fd, 1024 ** 3 * 10)
+            iqn = conn['iqn']
+            self._createTarget(iqn, imgPath, rollback)
+            connections[uuid] = {
+                'type': 'iscsi',
+                'params': {'portal': {'host': self.address}, 'iqn': iqn}}
+            self.vgNames[uuid] = conn['vgName']
+
+        return connections
+
+    def _createVG(self, vgName, devName, rollback):
+        r = self.s.createVG(vgName, [devName])
+        self.asserts.assertVdsOK(r)
+        vgid = r['uuid']
+        rollback.prependDefer(
+            lambda: self.asserts.assertVdsOK(
+                self.s.removeVG(vgid)))
+        return vgid
+
+    def _getIqnDevs(self, iqns):
+        '''find the related devices under iqns'''
+        r = self.s.getDeviceList()
+        devList = r['devList']
+        self.asserts.assertVdsOK(r)
+        iqnDevs = {}
+        for iqn in iqns:
+            for dev in devList:
+                if iqn in map(lambda p: p['iqn'], dev['pathlist']):
+                    iqnDevs[iqn] = dev['GUID']
+                    break
+            else:
+                raise RuntimeError(
+                    'Can not find related device of iqn %s' % iqn)
+        return iqnDevs
 
     def _genTypeSpecificArgs(self, connections, rollback):
-        # Create VG
-        # Generate UUIDs of those VG
-        pass
+        iqns = [conn['params']['iqn'] for conn in connections.itervalues()]
+        iqnDevs = self._getIqnDevs(iqns)
 
-    def prepare(self, backendDef, rollback):
-        pass
+        args = {}
+        for uuid, conn in connections.iteritems():
+            iqn = conn['params']['iqn']
+            vgid = self._createVG(self.vgNames[uuid], iqnDevs[iqn], rollback)
+            args[uuid] = vgid
+
+        return args
 
 
 storageLayouts = \
@@ -465,5 +560,42 @@ storageLayouts = \
                      "bace8f68-4c5a-43f2-acb4-fa8daf58c0f9"]}}},
      'nfs': {'server': 'blah', 'conn': 'blah', 'sd': 'blah', 'sp': 'blah',
              'img': 'blah', 'layout': 'blah'},
-     'iscsi': {'server': 'blah', 'conn': 'blah', 'sd': 'blah', 'sp': 'blah',
-               'img': 'blah', 'layout': 'blah'}}
+     'iscsi': {
+         'server': IscsiServer,
+         'conn': {
+             'backends': {
+                 '3bd3092e-096b-4409-a2de-e10313a0d8af': {
+                     'iqn': 'iqn.2012-12.org.ovirt.tests:vdsmtests0',
+                     'vgName': '3f330c2c-9b01-4167-9df5-cf665f95e3a6'},
+                 '28ba1368-9f5c-4441-a7fd-94e85435564b': {
+                     'iqn': 'iqn.2012-12.org.ovirt.tests:vdsmtests1',
+                     'vgName': 'a73a818b-3341-457a-8139-a6a71194ab7a'}},
+             'timeout': 50},
+         'sd': {
+             "3f330c2c-9b01-4167-9df5-cf665f95e3a6": {
+                 "name": "test iscsi domain0",
+                 "type": "iscsi", "class": "Data",
+                 "connUUID": "3bd3092e-096b-4409-a2de-e10313a0d8af"},
+             "a73a818b-3341-457a-8139-a6a71194ab7a": {
+                 "name": "test iscsi domain1",
+                 "type": "iscsi", "class": "Data",
+                 "connUUID": "28ba1368-9f5c-4441-a7fd-94e85435564b"}},
+         'sp': {
+             "39178935-1f2e-4cd1-8c2d-4f47097d80a3": {
+                 "name": "iscsi storage pool", "master_ver": 1, "host": 1,
+                 "master_uuid": "3f330c2c-9b01-4167-9df5-cf665f95e3a6"}},
+         'img': {
+             "a81db3fc-5586-4e35-9785-912c28ada09d": {
+                 "description": "Test iscsi volume0", "type": "leaf",
+                 "volid": "a921cdf0-b322-4ee8-84e6-8e87c65c016f",
+                 "format": "cow", "preallocate": "sparse", "size": 20971520},
+             "35c728e1-edf1-4068-8f25-02d21feb85cd": {
+                 "description": "test iscsi volume1", "type": "leaf",
+                 "volid": "eb42c709-42a2-4227-a5b6-f368df3a2613",
+                 "format": "cow", "preallocate": "sparse", "size": 20971520}},
+         'layout': {
+             "39178935-1f2e-4cd1-8c2d-4f47097d80a3": {
+                 "3f330c2c-9b01-4167-9df5-cf665f95e3a6": [
+                     "a81db3fc-5586-4e35-9785-912c28ada09d"],
+                 "a73a818b-3341-457a-8139-a6a71194ab7a": [
+                     "35c728e1-edf1-4068-8f25-02d21feb85cd"]}}}}
