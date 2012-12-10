@@ -46,7 +46,15 @@ def _parseFstabLine(line):
     fs_freq = int(fs_freq)
     fs_passno = int(fs_passno)
     fs_spec = normpath(_parseFstabPath(fs_spec))
+
     fs_file = normpath(_parseFstabPath(fs_file))
+    for suffix in (" (deleted)", ):
+        if not fs_file.endswith(suffix):
+            continue
+
+        fs_file = fs_file[:-len(suffix)]
+        break
+
     fs_mntops = [_parseFstabPath(item) for item in fs_mntops]
 
     return MountRecord(fs_spec, fs_file, fs_vfstype, fs_mntops,
