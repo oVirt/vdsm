@@ -242,13 +242,6 @@ class FileStorageDomain(sd.StorageDomain):
             filesDict[fileName] = stats
         return filesDict
 
-    def produceVolume(self, imgUUID, volUUID):
-        """
-        Produce a type specific volume object
-        """
-        repoPath = self._getRepoPath()
-        return fileVolume.FileVolume(repoPath, self.sdUUID, imgUUID, volUUID)
-
     def getVolumeClass(self):
         """
         Return a type specific volume generator object

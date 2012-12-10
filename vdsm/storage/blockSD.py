@@ -598,13 +598,6 @@ class BlockStorageDomain(sd.StorageDomain):
         misc.readfile(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
         return time.time() - t
 
-    def produceVolume(self, imgUUID, volUUID):
-        """
-        Produce a type specific volume object
-        """
-        repoPath = self._getRepoPath()
-        return blockVolume.BlockVolume(repoPath, self.sdUUID, imgUUID, volUUID)
-
     def getVolumeClass(self):
         """
         Return a type specific volume generator object
