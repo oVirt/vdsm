@@ -167,9 +167,9 @@ def getAllVolumes(sdUUID):
         res[vName]['parent'] = vPar
         if vImg not in res[vName]['imgs']:
             res[vName]['imgs'].insert(0, vImg)
-        if vPar != sd.BLANK_UUID and \
-                not vName.startswith(sd.REMOVED_IMAGE_PREFIX) and \
-                vImg not in res[vPar]['imgs']:
+        if (vPar != sd.BLANK_UUID and
+                not vName.startswith(sd.REMOVED_IMAGE_PREFIX) and
+                vImg not in res[vPar]['imgs']):
             res[vPar]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
