@@ -40,7 +40,8 @@ SUBDIRS += \
 	smartcard \
 	smbios \
 	sriov \
-	vmdisk
+	vmdisk \
+	vmfex
 endif
 
 dist_vdsmexec_SCRIPTS = \

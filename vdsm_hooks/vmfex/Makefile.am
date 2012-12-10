@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 EXTRA_DIST = \
 	before_vm_migrate_destination.py \
-	before_vm_start.py \
+	before_vm_start.py
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start

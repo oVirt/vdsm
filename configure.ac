@@ -214,6 +214,7 @@ AC_OUTPUT([
 	vdsm_hooks/sriov/Makefile
 	vdsm_hooks/vhostmd/Makefile
 	vdsm_hooks/vmdisk/Makefile
+	vdsm_hooks/vmfex/Makefile
 	vdsm/Makefile
 	vdsm_reg/Makefile
 	vdsm/betterPopen/Makefile
