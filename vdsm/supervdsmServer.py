@@ -29,14 +29,9 @@ import re
 from time import sleep
 import signal
 from multiprocessing import Pipe, Process
+from gluster import cli as gcli
 import storage.misc as misc
 from vdsm import utils
-
-try:
-    from gluster import cli as gcli
-    _glusterEnabled = True
-except ImportError:
-    _glusterEnabled = False
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 from md_utils import getMdDeviceUuidMap as _getMdDeviceUuidMap
 
@@ -318,18 +313,17 @@ def __pokeParent(parentPid, address, log):
 
 
 def main():
-    if _glusterEnabled:
-        def bind(func):
-            def wrapper(_SuperVdsm, *args, **kwargs):
-                return func(*args, **kwargs)
-            return wrapper
+    def bind(func):
+        def wrapper(_SuperVdsm, *args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
 
-        for name in dir(gcli):
-            func = getattr(gcli, name)
-            if getattr(func, 'superVdsm', False):
-                setattr(_SuperVdsm,
-                        'gluster%s%s' % (name[0].upper(), name[1:]),
-                        logDecorator(bind(func)))
+    for name in dir(gcli):
+        func = getattr(gcli, name)
+        if getattr(func, 'superVdsm', False):
+            setattr(_SuperVdsm,
+                    'gluster%s%s' % (name[0].upper(), name[1:]),
+                    logDecorator(bind(func)))
 
     try:
         logging.config.fileConfig(LOG_CONF_PATH)
