@@ -24,6 +24,7 @@ import pwd
 import grp
 import shutil
 from contextlib import contextmanager
+from functools import partial
 
 from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
@@ -336,12 +337,47 @@ class XMLRPCTest(TestCaseBase):
         self.retryAssert(assertTaskOK, timeout=20)
 
 
-class LocalFSServer(object):
+class BackendServer(object):
+    '''Super class of various backend servers'''
+
     def __init__(self, vdsmServer, asserts):
         self.s = vdsmServer
         self.asserts = asserts
 
-    def _createBackend(self, backendDef, rollback):
+    def _createBackend(self, backends, rollback):
+        raise RuntimeError("Not implemented")
+
+    def _assertBackendConnected(self, connections):
+        r = self.s.storageServer_ConnectionRefs_statuses()
+        self.asserts.assertVdsOK(r)
+        status = r['connectionslist']
+        for refid in connections:
+            self.asserts.assertEquals(status[refid]['connected'], True)
+
+    def _connectBackend(self, connections, timeout, rollback):
+        r = self.s.storageServer_ConnectionRefs_acquire(connections)
+        self.asserts.assertVdsOK(r)
+        undo = lambda: self.asserts.assertVdsOK(
+            self.s.storageServer_ConnectionRefs_release(connections.keys()))
+        rollback.prependDefer(undo)
+        for _refid, status in r['results'].iteritems():
+            self.asserts.assertEquals(status, 0)
+        self.asserts.retryAssert(
+            partial(self._assertBackendConnected, connections),
+            timeout=timeout)
+
+    def _genTypeSpecificArgs(self, connections, rollback):
+        raise RuntimeError("Not implemented")
+
+    def prepare(self, backendDef, rollback):
+        connections = self._createBackend(backendDef['backends'], rollback)
+        self._connectBackend(
+            connections, backendDef['timeout'], rollback)
+        return self._genTypeSpecificArgs(connections, rollback)
+
+
+class LocalFSServer(BackendServer):
+    def _createBackend(self, backends, rollback):
         uid = pwd.getpwnam(VDSM_USER)[2]
         gid = grp.getgrnam(VDSM_GROUP)[2]
 
@@ -352,7 +388,7 @@ class LocalFSServer(object):
         os.chmod(rootDir, 0755)
 
         connections = {}
-        for uuid, subDir in backendDef.iteritems():
+        for uuid, subDir in backends.iteritems():
             path = os.path.join(rootDir, subDir)
             os.mkdir(path)
             undo = lambda path=path: shutil.rmtree(path, ignore_errors=True)
@@ -365,36 +401,19 @@ class LocalFSServer(object):
 
         return connections
 
-    def _connectBackend(self, connections, rollback):
-        r = self.s.storageServer_ConnectionRefs_acquire(connections)
-        self.asserts.assertVdsOK(r)
-        undo = lambda: self.asserts.assertVdsOK(
-            self.s.storageServer_ConnectionRefs_release(connections.keys()))
-        rollback.prependDefer(undo)
-        for _refid, status in r['results'].iteritems():
-            self.asserts.assertEquals(status, 0)
-
     def _genTypeSpecificArgs(self, connections, rollback):
         args = {}
         for uuid, conn in connections.iteritems():
             args[uuid] = conn['params']['path']
         return args
 
-    def prepare(self, backendDef, rollback):
-        connections = self._createBackend(backendDef, rollback)
-        self._connectBackend(connections, rollback)
-        return self._genTypeSpecificArgs(connections, rollback)
 
-
-class IscsiServer(object):
-    def __init__(self, vdsmServer):
-        self.s = vdsmServer
-
-    def _createBackend(self, backendDef, rollback):
+class IscsiServer(BackendServer):
+    def _createBackend(self, backends, rollback):
         # Create iscsi target
         pass
 
-    def _connectBackend(self, connections, rollback):
+    def _connectBackend(self, connections, timeout, rollback):
         # Connect iscsi storage server
         pass
 
@@ -410,8 +429,11 @@ class IscsiServer(object):
 storageLayouts = \
     {'localfs':
         {'server': LocalFSServer,
-         'conn': {'53acd629-47e6-42d8-ba99-cd0b12ff0e1e': 'teststorage0',
-                  '87e618fe-587c-4704-a9f8-9fd9321fd907': 'teststorage1'},
+         'conn': {
+             'backends': {
+                 '53acd629-47e6-42d8-ba99-cd0b12ff0e1e': 'teststorage0',
+                 '87e618fe-587c-4704-a9f8-9fd9321fd907': 'teststorage1'},
+             'timeout': 30},
          'sd': {
              "def32ac7-1234-1234-8a8c-1c887333fe65": {
                  "name": "test domain0", "type": "localfs", "class": "Data",
