@@ -273,6 +273,7 @@ class clientIF:
 
                 volPath = res['path']
                 drive['volumeChain'] = res['chain']
+                drive['volumeInfo'] = res['info']
 
             # GUID drive format
             elif "GUID" in drive:

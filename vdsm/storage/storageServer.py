@@ -55,6 +55,9 @@ IscsiConnectionParameters = namedtuple("IscsiConnectionParameters",
 PosixFsConnectionParameters = namedtuple("PosixFsConnectionParameters",
                                          "spec, vfsType, options")
 
+GlusterFsConnectionParameters = namedtuple("GlusterFsConnectionParameters",
+                                           "spec, vfsType, options")
+
 LocaFsConnectionParameters = namedtuple("LocaFsConnectionParameters", "path")
 NfsConnectionParameters = namedtuple("NfsConnectionParameters",
                                      "export, retrans, timeout, version")
@@ -99,6 +102,8 @@ def _namedtupleAssembly(nt, d):
 
 _posixFsParameterAssembly = partial(_namedtupleAssembly,
                                     PosixFsConnectionParameters)
+_glusterFsParameterAssembly = partial(_namedtupleAssembly,
+                                      GlusterFsConnectionParameters)
 _nfsParamerterAssembly = partial(_namedtupleAssembly, NfsConnectionParameters)
 _localFsParameterAssembly = partial(_namedtupleAssembly,
                                     LocaFsConnectionParameters)
@@ -108,6 +113,7 @@ _TYPE_NT_MAPPING = {
     'iscsi': _iscsiParameterAssembly,
     'sharedfs': _posixFsParameterAssembly,
     'posixfs': _posixFsParameterAssembly,
+    'glusterfs': _glusterFsParameterAssembly,
     'nfs': _nfsParamerterAssembly,
     'localfs': _localFsParameterAssembly}
 
@@ -237,6 +243,15 @@ class MountConnection(object):
 
     def __hash__(self):
         return hash(type(self)) ^ hash(self._mount)
+
+
+class GlusterFSConnection(MountConnection):
+
+    # TODO: Can this be made more cleaner, by avoiding this override ?
+    def _getLocalPath(self):
+        return os.path.join(
+            self.localPathBase, "glusterSD",
+            self._remotePath.replace("_", "__").replace("/", "_"))
 
 
 class NFSConnection(object):
@@ -579,6 +594,7 @@ class ConnectionFactory(object):
     _registeredConnectionTypes = {
         "nfs": NFSConnection,
         "posixfs": MountConnection,
+        "glusterfs": GlusterFSConnection,
         "iscsi": IscsiConnection,
         "localfs": LocalDirectoryConnection,
     }

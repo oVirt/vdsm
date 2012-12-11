@@ -671,6 +671,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/fileUtils.py*
 %{_datadir}/%{vdsm_name}/storage/fileVolume.py*
 %{_datadir}/%{vdsm_name}/storage/fuser.py*
+%{_datadir}/%{vdsm_name}/storage/glusterSD.py*
+%{_datadir}/%{vdsm_name}/storage/glusterVolume.py*
 %{_datadir}/%{vdsm_name}/storage/hba.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
 %{_datadir}/%{vdsm_name}/storage/image.py*

@@ -131,6 +131,7 @@ class StorageDomainCache:
 
     def _findDomain(self, sdUUID):
         import blockSD
+        import glusterSD
         import localFsSD
         import nfsSD
 
@@ -140,7 +141,7 @@ class StorageDomainCache:
         # until it times out, this should affect fetching
         # of block\local domains. If for any case in the future
         # this changes, please update the order.
-        for mod in (blockSD, localFsSD, nfsSD):
+        for mod in (blockSD, glusterSD, localFsSD, nfsSD):
             try:
                 return mod.findDomain(sdUUID)
             except se.StorageDomainDoesNotExist:

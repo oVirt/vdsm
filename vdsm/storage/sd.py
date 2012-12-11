@@ -47,6 +47,8 @@ METASIZE = 512
 # Domain metadata slot size (it always takes the first slot)
 MAX_DOMAIN_DESCRIPTION_SIZE = 50
 
+GLUSTERSD_DIR = "glusterSD"
+
 BLOCKSD_DIR = "blockSD"
 LEASES = "leases"
 IDS = "ids"
@@ -66,15 +68,17 @@ ISCSI_DOMAIN = 3
 LOCALFS_DOMAIN = 4
 CIFS_DOMAIN = 5
 POSIXFS_DOMAIN = 6
+GLUSTERFS_DOMAIN = 7
 
 BLOCK_DOMAIN_TYPES = [FCP_DOMAIN, ISCSI_DOMAIN]
-FILE_DOMAIN_TYPES = [NFS_DOMAIN, LOCALFS_DOMAIN, CIFS_DOMAIN, POSIXFS_DOMAIN]
+FILE_DOMAIN_TYPES = [NFS_DOMAIN, LOCALFS_DOMAIN, CIFS_DOMAIN, POSIXFS_DOMAIN,
+                     GLUSTERFS_DOMAIN]
 
 # use only upper case for values - see storageType()
 DOMAIN_TYPES = {UNKNOWN_DOMAIN: 'UNKNOWN', NFS_DOMAIN: 'NFS',
                 FCP_DOMAIN: 'FCP', ISCSI_DOMAIN: 'ISCSI',
                 LOCALFS_DOMAIN: 'LOCALFS', CIFS_DOMAIN: 'CIFS',
-                POSIXFS_DOMAIN: 'POSIXFS'}
+                POSIXFS_DOMAIN: 'POSIXFS', GLUSTERFS_DOMAIN: 'GLUSTERFS'}
 
 # Storage Domains Statuses: keep them capitalize
 # DOM_UNINITIALIZED_STATUS = 'Uninitialized'

@@ -110,6 +110,11 @@ def name2type(name):
     return None
 
 
+class VmVolumeInfo(object):
+    TYPE_PATH = "path"
+    TYPE_NETWORK = "network"
+
+
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
 
@@ -857,6 +862,16 @@ class Volume(object):
         if not self.volumePath:
             raise se.VolumeAccessError(self.volUUID)
         return self.volumePath
+
+    def getVmVolumeInfo(self):
+        """
+        Get volume path/info as dict.
+        Derived classes can use this if they want to represent the
+        volume to the VM in a different way than the standard 'path' way.
+        """
+        # By default, send path
+        return {'volType': VmVolumeInfo.TYPE_PATH,
+                'path': self.getVolumePath()}
 
     def getMetaParam(self, key):
         """

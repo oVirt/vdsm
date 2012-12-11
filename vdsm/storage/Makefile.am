@@ -33,6 +33,8 @@ dist_vdsmstorage_PYTHON = \
 	fileUtils.py \
 	fileVolume.py \
 	fuser.py \
+	glusterSD.py \
+	glusterVolume.py \
 	hba.py \
 	hsm.py \
 	image.py \

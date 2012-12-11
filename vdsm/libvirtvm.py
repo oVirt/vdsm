@@ -1100,7 +1100,18 @@ class Drive(LibvirtVmDevice):
                 ((self.apparentsize + constants.MEGAB - 1) / constants.MEGAB))
 
     @property
+    def networkDev(self):
+        try:
+            return self.volumeInfo['volType'] == "network"
+        except AttributeError:
+            # To handle legacy and removable drives.
+            return False
+
+    @property
     def blockDev(self):
+        if self.networkDev:
+            return False
+
         if self._blockDev is None:
             try:
                 self._blockDev = utils.isBlockDevice(self.path)
@@ -1146,10 +1157,21 @@ class Drive(LibvirtVmDevice):
         """
         doc = xml.dom.minidom.Document()
         self.device = getattr(self, 'device', 'disk')
+
         source = doc.createElement('source')
         if self.blockDev:
             deviceType = 'block'
             source.setAttribute('dev', self.path)
+        elif self.networkDev:
+            deviceType = 'network'
+            source.setAttribute('protocol', self.volumeInfo['protocol'])
+            source.setAttribute('name', self.volumeInfo['path'])
+
+            host = doc.createElement('host')
+            host.setAttribute('name', self.volumeInfo['volfileServer'])
+            host.setAttribute('port', self.volumeInfo['volPort'])
+            host.setAttribute('transport', self.volumeInfo['volTransport'])
+            source.appendChild(host)
         else:
             deviceType = 'file'
             source.setAttribute('file', self.path)

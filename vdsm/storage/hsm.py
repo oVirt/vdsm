@@ -42,6 +42,7 @@ import sp
 import sd
 import blockSD
 import nfsSD
+import glusterSD
 import localFsSD
 import lvm
 import fileUtils
@@ -134,7 +135,8 @@ CON_TYPE_ID_2_CON_TYPE = {
     # FCP domain shouldn't even be on the list but VDSM use to just
     # accept this type as iscsi so we are stuck with it
     sd.FCP_DOMAIN: 'iscsi',
-    sd.POSIXFS_DOMAIN: 'posixfs'}
+    sd.POSIXFS_DOMAIN: 'posixfs',
+    sd.GLUSTERFS_DOMAIN: 'glusterfs'}
 
 
 def _BCInitiatorNameResolve(ifaceName):
@@ -203,6 +205,11 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
                 version)
     elif typeName == 'posixfs':
         params = storageServer.PosixFsConnectionParameters(
+            conDict.get('connection', None),
+            conDict.get('vfs_type', None),
+            conDict.get('mnt_options', None))
+    elif typeName == 'glusterfs':
+        params = storageServer.GlusterFsConnectionParameters(
             conDict.get('connection', None),
             conDict.get('vfs_type', None),
             conDict.get('mnt_options', None))
@@ -2426,6 +2433,10 @@ class HSM:
             newSD = nfsSD.NfsStorageDomain.create(
                 sdUUID, domainName, domClass, typeSpecificArg, storageType,
                 domVersion)
+        elif storageType == sd.GLUSTERFS_DOMAIN:
+            newSD = glusterSD.GlusterStorageDomain.create(
+                sdUUID, domainName, domClass, typeSpecificArg, storageType,
+                domVersion)
         elif storageType == sd.LOCALFS_DOMAIN:
             newSD = localFsSD.LocalFsStorageDomain.create(
                 sdUUID, domainName, domClass, typeSpecificArg, storageType,
@@ -3047,7 +3058,8 @@ class HSM:
 
         for vol in imgVolumes:
             volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
-                       'volumeID': vol.volUUID, 'path': vol.getVolumePath()}
+                       'volumeID': vol.volUUID, 'path': vol.getVolumePath(),
+                       'vmVolInfo': vol.getVmVolumeInfo()}
 
             if config.getboolean('irs', 'use_volume_leases'):
                 leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
@@ -3063,7 +3075,8 @@ class HSM:
 
             chain.append(volInfo)
 
-        return {'path': chain[-1]['path'], 'chain': chain}
+        return {'path': chain[-1]['path'], 'info': chain[-1]['vmVolInfo'],
+                'chain': chain}
 
     @public
     def teardownImage(self, sdUUID, spUUID, imgUUID, volUUID=None):
