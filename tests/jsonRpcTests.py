@@ -23,6 +23,9 @@ from contextlib import contextmanager
 from functools import partial
 from contextlib import closing
 import json
+import uuid
+
+from nose.plugins.skip import SkipTest
 
 from testrunner import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -36,6 +39,12 @@ from jsonrpc import \
     JsonRpcMethodNotFoundError, \
     JsonRpcInternalError
 
+protonReactor = None
+try:
+    import proton
+    from jsonrpc import protonReactor
+except ImportError:
+    pass
 PORT_RANGE = xrange(49152, 65535)
 
 
@@ -72,7 +81,23 @@ def _tcpServerConstructor(messageHandler):
         reactor.stop()
 
 
-REACTOR_CONSTRUCTORS = {"tcp": _tcpServerConstructor}
+@contextmanager
+def _protonServerConstructor(messageHandler):
+    if protonReactor is None:
+        raise SkipTest("qpid-proton python bindings are not installed")
+
+    port = _getFreePort()
+    serverAddress = "amqp://127.0.0.1:%d/vdsm_test" % (port,)
+    reactor = protonReactor.ProtonReactor(("127.0.0.1", port), messageHandler)
+
+    try:
+        yield reactor, partial(ProtonReactorClient, serverAddress)
+    finally:
+        reactor.stop()
+
+
+REACTOR_CONSTRUCTORS = {"tcp": _tcpServerConstructor,
+                        "proton": _protonServerConstructor}
 REACTOR_TYPE_PERMUTATIONS = [[r] for r in REACTOR_CONSTRUCTORS.iterkeys()]
 
 
@@ -159,6 +184,57 @@ class JsonRpcClient(object):
 
     def close(self):
         self._transport.close()
+
+
+class ProtonReactorClient(object):
+    def __init__(self, brokerAddress):
+        self._serverAddress = brokerAddress
+        self._msngr = proton.Messenger("client-%s" % str(uuid.uuid4()))
+
+    def connect(self):
+        self._msngr.start()
+
+    def sendMessage(self, data, timeout=None):
+        if timeout is None:
+            timeout = -1
+        else:
+            timeout *= 1000
+
+        msg = proton.Message()
+        msg.address = self._serverAddress
+        msg.body = unicode(data)
+        self._msngr.timeout = timeout
+        t = self._msngr.put(msg)
+        try:
+            self._msngr.send()
+        except:
+            self._msngr.settle(t)
+            raise
+
+    def recvMessage(self, timeout=None):
+        if timeout is None:
+            timeout = -1
+        else:
+            timeout *= 1000
+
+        self._msngr.timeout = timeout
+        self._msngr.recv(1)
+
+        if not self._msngr.incoming:
+            raise socket.timeout()
+
+        if self._msngr.incoming > 1:
+            raise Exception("Got %d repsones instead of 1" %
+                            self._msngr.incoming)
+
+        msg = proton.Message()
+        t = self._msngr.get(msg)
+        self._msngr.settle(t)
+        return msg.body
+
+    def close(self):
+        self._msngr.timeout = 1000
+        self._msngr.stop()
 
 
 @expandPermutations

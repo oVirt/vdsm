@@ -22,5 +22,6 @@ jsonrpcdir = $(vdsmdir)/jsonrpc
 dist_jsonrpc_PYTHON = \
 	__init__.py \
 	tcpReactor.py \
+	protonReactor.py \
 	$(NULL)
 
