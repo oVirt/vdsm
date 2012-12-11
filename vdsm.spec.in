@@ -131,6 +131,12 @@ Requires: selinux-policy-targeted >= 3.10.0-149
 Requires: lvm2 >= 2.02.95
 %endif
 
+# In order to avoid a policycoreutils bug (rhbz 883355) when selinux is
+# disabled we now require the version 2.1.13-44 (or newer) of Fedora.
+%if 0%{?fedora} >= 18
+Requires: policycoreutils >= 2.1.13-44
+%endif
+
 Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: psmisc >= 22.6-15
 Requires: fence-agents
@@ -479,7 +485,7 @@ export LC_ALL=C
 /usr/sbin/usermod -a -G %{qemu_group},%{vdsm_group} %{snlk_user}
 
 %post
-%{_bindir}/vdsm-tool sebool-config
+%{_bindir}/vdsm-tool sebool-config || :
 # set the vdsm "secret" password for libvirt
 %{_bindir}/vdsm-tool set-saslpasswd
 
@@ -521,7 +527,7 @@ then
     /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
         /etc/sysctl.conf
 
-    %{_bindir}/vdsm-tool sebool-unconfig
+    %{_bindir}/vdsm-tool sebool-unconfig || :
 
     /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@ovirt
 
