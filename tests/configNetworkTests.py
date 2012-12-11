@@ -189,37 +189,31 @@ class TestconfigNetwork(TestCaseBase):
     @MonkeyPatch(netinfo, 'networks', _fakeNetworks)
     def testAddNetworkValidation(self):
         _netinfo = {
-                'networks': {
-                    'fakent': {'iface': 'fakeint', 'bridged': False},
-                    'fakebrnet': {'iface': 'fakebr', 'bridged': True, 'ports':
-                        ['eth0', 'eth1']},
-                    'fakebrnet1': {'iface': 'fakebr1', 'bridged': True,
-                        'ports': ['bond00']},
-                    'fakebrnet2': {'iface': 'fakebr2', 'bridged': True,
-                        'ports': ['eth7.1']},
-                    'fakebrnet3': {'iface': 'eth8', 'bridged': False}
-                },
-                'vlans': {
-                    'eth3.2': {
-                        'iface': 'eth3',
-                        'addr': '10.10.10.10',
-                        'netmask': '255.255.0.0',
-                        'mtu': 1500
-                    },
-                    'eth7.1': {
-                        'iface': 'eth7',
-                        'addr': '192.168.100.1',
-                        'netmask': '255.255.255.0',
-                        'mtu': 1500
-                    }
-                },
-                'nics': ['eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5',
-                         'eth6', 'eth7', 'eth8', 'eth9', 'eth10'],
-                'bondings': {
-                    'bond00': {
-                        'slaves': ['eth5', 'eth6']
-                    }
-                }
+            'networks': {
+                'fakent': {'iface': 'fakeint', 'bridged': False},
+                'fakebrnet': {'iface': 'fakebr', 'bridged': True,
+                              'ports': ['eth0', 'eth1']},
+                'fakebrnet1': {'iface': 'fakebr1', 'bridged': True,
+                               'ports': ['bond00']},
+                'fakebrnet2': {'iface': 'fakebr2', 'bridged': True,
+                               'ports': ['eth7.1']},
+                'fakebrnet3': {'iface': 'eth8', 'bridged': False}
+            },
+            'vlans': {
+                'eth3.2': {'iface': 'eth3',
+                           'addr': '10.10.10.10',
+                           'netmask': '255.255.0.0',
+                           'mtu': 1500
+                           },
+                'eth7.1': {'iface': 'eth7',
+                           'addr': '192.168.100.1',
+                           'netmask': '255.255.255.0',
+                           'mtu': 1500
+                           }
+            },
+            'nics': ['eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6',
+                     'eth7', 'eth8', 'eth9', 'eth10'],
+            'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}}
         }
 
         netinfoIns = netinfo.NetInfo(_netinfo)
@@ -314,12 +308,11 @@ class ConfigWriterTests(TestCaseBase):
         TestCaseBase.__init__(self, *args, **kwargs)
         self._tempdir = tempfile.mkdtemp()
         self._files = tuple((os.path.join(self._tempdir, bn), init, makeDirty)
-                       for bn, init, makeDirty in
-                       (('ifcfg-eth0', self.INITIAL_CONTENT, True),
-                        ('ifcfg-eth1', None, True),
-                        ('ifcfg-eth2', None, False),
-                        ('ifcfg-eth3', self.INITIAL_CONTENT, False),
-                        ))
+                            for bn, init, makeDirty in
+                            (('ifcfg-eth0', self.INITIAL_CONTENT, True),
+                             ('ifcfg-eth1', None, True),
+                             ('ifcfg-eth2', None, False),
+                             ('ifcfg-eth3', self.INITIAL_CONTENT, False),))
 
     def __del__(self):
         shutil.rmtree(self._tempdir)

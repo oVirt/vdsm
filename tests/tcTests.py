@@ -96,7 +96,7 @@ class _Tap(_Interface):
     def addDevice(self):
         self._cloneDevice = open('/dev/net/tun', 'r+b')
         ifr = struct.pack('16sH', self.devName, self._IFF_TAP |
-                self._IFF_NO_PI)
+                          self._IFF_NO_PI)
         fcntl.ioctl(self._cloneDevice, self._TUNSETIFF, ifr)
         self._ifUp()
 
@@ -106,7 +106,7 @@ class _Tap(_Interface):
 
     def startListener(self, icmp):
         self._deviceListener = Process(target=_listenOnDevice,
-                args=(self._cloneDevice.fileno(), icmp))
+                                       args=(self._cloneDevice.fileno(), icmp))
         self._deviceListener.start()
 
     def isListenerAlive(self):
@@ -131,15 +131,15 @@ def _checkDependencies():
         dev.addDevice()
     except:
         raise SkipTest("'brctl' has failed. Do you have bride-utils "
-                "installed?")
+                       "installed?")
 
     null = open("/dev/null", "a")
     try:
         check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'],
-                stderr=null)
+                   stderr=null)
     except:
         raise SkipTest("'tc' has failed. Do you have Traffic Control kernel "
-                "modules installed?")
+                       "modules installed?")
     finally:
         null.close()
         dev.delDevice()
@@ -157,20 +157,20 @@ class TestQdisc(TestCaseBase):
         self._bridge.delDevice()
 
     def _showQdisc(self):
-        popen = Popen([EXT_TC, "qdisc", "show", "dev",
-            self._bridge.devName], stdout=PIPE)
+        popen = Popen([EXT_TC, "qdisc", "show", "dev", self._bridge.devName],
+                      stdout=PIPE)
         return popen.stdout.read()
 
     def _addIngress(self):
         tc.qdisc_replace_ingress(self._bridge.devName)
         self.assertTrue("qdisc ingress" in self._showQdisc(),
-                "Could not add an ingress qdisc to the device.")
+                        "Could not add an ingress qdisc to the device.")
 
     def testToggleIngress(self):
         self._addIngress()
         tc.qdisc_del(self._bridge.devName, 'ingress')
         self.assertFalse("qdisc ingress" in self._showQdisc(),
-                "Could not remove an ingress qdisc from the device.")
+                         "Could not remove an ingress qdisc from the device.")
 
     def testQdiscsOfDevice(self):
         self._addIngress()
@@ -185,15 +185,17 @@ class TestQdisc(TestCaseBase):
     def testTogglePromisc(self):
         tc.set_promisc(self._bridge.devName, True)
         self.assertTrue(ethtool.get_flags(self._bridge.devName) &
-                ethtool.IFF_PROMISC, "Could not enable promiscuous mode.")
+                        ethtool.IFF_PROMISC,
+                        "Could not enable promiscuous mode.")
 
         tc.set_promisc(self._bridge.devName, False)
         self.assertFalse(ethtool.get_flags(self._bridge.devName) &
-                ethtool.IFF_PROMISC, "Could not disable promiscuous mode.")
+                         ethtool.IFF_PROMISC,
+                         "Could not disable promiscuous mode.")
 
     def testException(self):
         self.assertRaises(tc.TrafficControlException, tc.qdisc_del,
-                self._bridge.devName + "A", 'ingress')
+                          self._bridge.devName + "A", 'ingress')
 
 
 class TestFilters(TestCaseBase):
@@ -202,13 +204,13 @@ class TestFilters(TestCaseBase):
         path = os.path.join(dirName, "tc_filter_show.out")
         out = file(path).read()
         PARSED_FILTERS = (
-                tc.Filter(prio='49149', handle='803::800',
-                    actions=[tc.MirredAction(target='tap1')]),
-                tc.Filter(prio='49150', handle='802::800',
-                    actions=[tc.MirredAction(target='tap2')]),
-                tc.Filter(prio='49152', handle='800::800',
-                    actions=[tc.MirredAction(target='target'),
-                             tc.MirredAction(target='target2')]))
+            tc.Filter(prio='49149', handle='803::800',
+                      actions=[tc.MirredAction(target='tap1')]),
+            tc.Filter(prio='49150', handle='802::800',
+                      actions=[tc.MirredAction(target='tap2')]),
+            tc.Filter(prio='49152', handle='800::800',
+                      actions=[tc.MirredAction(target='target'),
+                               tc.MirredAction(target='target2')]))
         self.assertEqual(tuple(tc.filters('bridge', 'parent', out=out)),
                          PARSED_FILTERS)
 
@@ -228,9 +230,9 @@ class TestPortMirror(TestCaseBase):
 
     #just an echo request from 192.168.0.52 to 192.168.0.3
     _ICMP = unhexlify("001cc0d044dc00215c4d4275080045000054000040004001b921c0a"
-            "80034c0a800030800dd200c1400016b52085000000000d7540500000000001011"
-            "12131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f30313"
-            "23334353637")
+                      "80034c0a800030800dd200c1400016b52085000000000d754050000"
+                      "000000101112131415161718191a1b1c1d1e1f20212223242526272"
+                      "8292a2b2c2d2e2f3031323334353637")
 
     _tap0 = _Tap()
     _tap1 = _Tap()
@@ -274,12 +276,12 @@ class TestPortMirror(TestCaseBase):
 
     def testMirroring(self):
         tc.setPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        self.assertTrue(self._sendPing(), " Bridge received no mirrored ping "
-                "requests.")
+        self.assertTrue(self._sendPing(), "Bridge received no mirrored ping "
+                        "requests.")
 
         tc.unsetPortMirroring(self._bridge0.devName, self._bridge1.devName)
-        self.assertFalse(self._sendPing(), " Bridge received mirrored ping "
-                "requests, but mirroring is unset.")
+        self.assertFalse(self._sendPing(), "Bridge received mirrored ping "
+                         "requests, but mirroring is unset.")
 
     def testMirroringWithDistraction(self):
         "setting another mirror action should not obstract the first one"

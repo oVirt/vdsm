@@ -86,36 +86,34 @@ class VmStatsThread(utils.AdvancedStatsThread):
         self._vm = vm
 
         self.highWrite = (
-                utils.AdvancedStatsFunction(
-                        self._highWrite,
-                        config.getint('vars', 'vm_watermark_interval')))
+            utils.AdvancedStatsFunction(
+                self._highWrite,
+                config.getint('vars', 'vm_watermark_interval')))
         self.updateVolumes = (
-                utils.AdvancedStatsFunction(
-                        self._updateVolumes,
-                        config.getint('irs', 'vol_size_sample_interval')))
+            utils.AdvancedStatsFunction(
+                self._updateVolumes,
+                config.getint('irs', 'vol_size_sample_interval')))
 
         self.sampleCpu = (
-                utils.AdvancedStatsFunction(
-                        self._sampleCpu,
-                        config.getint('vars', 'vm_sample_cpu_interval'),
-                        config.getint('vars', 'vm_sample_cpu_window')))
+            utils.AdvancedStatsFunction(
+                self._sampleCpu,
+                config.getint('vars', 'vm_sample_cpu_interval'),
+                config.getint('vars', 'vm_sample_cpu_window')))
         self.sampleDisk = (
-                utils.AdvancedStatsFunction(
-                        self._sampleDisk,
-                        config.getint('vars', 'vm_sample_disk_interval'),
-                        config.getint('vars', 'vm_sample_disk_window')))
+            utils.AdvancedStatsFunction(
+                self._sampleDisk,
+                config.getint('vars', 'vm_sample_disk_interval'),
+                config.getint('vars', 'vm_sample_disk_window')))
         self.sampleDiskLatency = (
-                utils.AdvancedStatsFunction(
-                        self._sampleDiskLatency,
-                        config.getint('vars',
-                                      'vm_sample_disk_latency_interval'),
-                        config.getint('vars',
-                                      'vm_sample_disk_latency_window')))
+            utils.AdvancedStatsFunction(
+                self._sampleDiskLatency,
+                config.getint('vars', 'vm_sample_disk_latency_interval'),
+                config.getint('vars', 'vm_sample_disk_latency_window')))
         self.sampleNet = (
-                utils.AdvancedStatsFunction(
-                        self._sampleNet,
-                        config.getint('vars', 'vm_sample_net_interval'),
-                        config.getint('vars', 'vm_sample_net_window')))
+            utils.AdvancedStatsFunction(
+                self._sampleNet,
+                config.getint('vars', 'vm_sample_net_interval'),
+                config.getint('vars', 'vm_sample_net_window')))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
@@ -149,8 +147,9 @@ class VmStatsThread(utils.AdvancedStatsThread):
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
             if vmDrive.device == 'disk' and vmDrive.isVdsmImage():
-                volSize = self._vm.cif.irs.getVolumeSize(vmDrive.domainID,
-                        vmDrive.poolID, vmDrive.imageID, vmDrive.volumeID)
+                volSize = self._vm.cif.irs.getVolumeSize(
+                    vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
+                    vmDrive.volumeID)
 
                 if volSize['status']['code'] != 0:
                     continue
@@ -276,10 +275,10 @@ class VmStatsThread(utils.AdvancedStatsThread):
         def _avgLatencyCalc(sData, eData):
             readLatency = (0 if not (eData['rd_operations'] -
                                      sData['rd_operations'])
-                            else (eData['rd_total_times'] -
-                                  sData['rd_total_times']) /
-                                 (eData['rd_operations'] -
-                                  sData['rd_operations']))
+                           else (eData['rd_total_times'] -
+                                 sData['rd_total_times']) /
+                                (eData['rd_operations'] -
+                                 sData['rd_operations']))
             writeLatency = (0 if not (eData['wr_operations'] -
                                       sData['wr_operations'])
                             else (eData['wr_total_times'] -
@@ -430,10 +429,9 @@ class MigrationMonitorThread(threading.Thread):
             dataProgress = calculateProgress(dataRemaining, dataTotal)
             memProgress = calculateProgress(memRemaining, memTotal)
 
-            self._vm.log.info(
-                    'Migration Progress: %s seconds elapsed, '
-                    '%s%% of data processed, %s%% of mem processed'
-                    % (timeElapsed / 1000, dataProgress, memProgress))
+            self._vm.log.info('Migration Progress: %s seconds elapsed, %s%% of'
+                              ' data processed, %s%% of mem processed' %
+                              (timeElapsed / 1000, dataProgress, memProgress))
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
@@ -501,7 +499,7 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                     self._vm._dom.migrateToURI2(
                         duri, muri, None,
                         libvirt.VIR_MIGRATE_LIVE |
-                            libvirt.VIR_MIGRATE_PEER2PEER,
+                        libvirt.VIR_MIGRATE_PEER2PEER,
                         None, maxBandwidth)
             finally:
                 t.cancel()
@@ -714,7 +712,7 @@ class _DomXML:
         """
         if utils.tobool(self.conf.get('acpiEnable', 'true')):
             self.dom.appendChild(self.doc.createElement('features')) \
-               .appendChild(self.doc.createElement('acpi'))
+                .appendChild(self.doc.createElement('acpi'))
 
     def appendCpu(self):
         """
@@ -864,7 +862,7 @@ class _DomXML:
             listen = self.doc.createElement('listen')
             listen.setAttribute('type', 'network')
             listen.setAttribute('network', netinfo.LIBVIRT_NET_PREFIX +
-                self.conf.get('displayNetwork'))
+                                self.conf.get('displayNetwork'))
             graphics.appendChild(listen)
         else:
             graphics.setAttribute('listen', '0')
@@ -1099,8 +1097,7 @@ class Drive(LibvirtVmDevice):
         for the next LV extension.
         """
         return (self.volExtensionChunk +
-                   ((self.apparentsize + constants.MEGAB - 1) /
-                    constants.MEGAB))
+                ((self.apparentsize + constants.MEGAB - 1) / constants.MEGAB))
 
     @property
     def blockDev(self):
@@ -1203,9 +1200,8 @@ class Drive(LibvirtVmDevice):
             diskelem.appendChild(driver)
         elif self.device == 'floppy':
             if (self.path and
-                not utils.getUserPermissions(
-                            constants.QEMU_PROCESS_USER,
-                            self.path)['write']):
+                not utils.getUserPermissions(constants.QEMU_PROCESS_USER,
+                                             self.path)['write']):
                 diskelem.appendChild(doc.createElement('readonly'))
 
         return diskelem
@@ -1337,13 +1333,12 @@ class LibvirtVm(vm.Vm):
         domxml.appendFeatures()
         domxml.appendCpu()
         if utils.tobool(self.conf.get('vmchannel', 'true')):
-            domxml._appendAgentDevice(
-                        self._guestSocketFile.decode('utf-8'),
-                        _VMCHANNEL_DEVICE_NAME)
+            domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
+                                      _VMCHANNEL_DEVICE_NAME)
         if utils.tobool(self.conf.get('qgaEnable', 'true')):
             domxml._appendAgentDevice(
-                        self._qemuguestSocketFile.decode('utf-8'),
-                        _QEMU_GA_DEVICE_NAME)
+                self._qemuguestSocketFile.decode('utf-8'),
+                _QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
         domxml.appendGraphics()
 
@@ -1421,9 +1416,8 @@ class LibvirtVm(vm.Vm):
         # So, run it after you have this info
         self._initVmStats()
         self.guestAgent = guestIF.GuestAgent(
-                self._guestSocketFile,
-                self.cif.channelListener, self.log,
-                connect=utils.tobool(self.conf.get('vmchannel', 'true')))
+            self._guestSocketFile, self.cif.channelListener, self.log,
+            connect=utils.tobool(self.conf.get('vmchannel', 'true')))
 
         self._guestCpuRunning = (self._dom.info()[0] ==
                                  libvirt.VIR_DOMAIN_RUNNING)
@@ -1503,8 +1497,8 @@ class LibvirtVm(vm.Vm):
             self.log.debug(domxml)
         if 'recover' in self.conf:
             self._dom = NotifyingVirDomain(
-                            self._connection.lookupByUUIDString(self.id),
-                            self._timeoutExperienced)
+                self._connection.lookupByUUIDString(self.id),
+                self._timeoutExperienced)
             # Reinitialize the merge statuses
             self._checkMerge()
         elif 'restoreState' in self.conf:
@@ -1517,8 +1511,8 @@ class LibvirtVm(vm.Vm):
                 self.cif.teardownVolumePath(self.conf['restoreState'])
 
             self._dom = NotifyingVirDomain(
-                            self._connection.lookupByUUIDString(self.id),
-                            self._timeoutExperienced)
+                self._connection.lookupByUUIDString(self.id),
+                self._timeoutExperienced)
         else:
             flags = libvirt.VIR_DOMAIN_NONE
             if 'launchPaused' in self.conf:
@@ -1526,8 +1520,8 @@ class LibvirtVm(vm.Vm):
                 self.conf['pauseCode'] = 'NOERR'
                 del self.conf['launchPaused']
             self._dom = NotifyingVirDomain(
-                            self._connection.createXML(domxml, flags),
-                            self._timeoutExperienced)
+                self._connection.createXML(domxml, flags),
+                self._timeoutExperienced)
             if self._dom.UUIDString() != self.id:
                 raise Exception('libvirt bug 603494')
             hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
@@ -1578,7 +1572,7 @@ class LibvirtVm(vm.Vm):
             # In any case we need below rollback for all kind of failures.
             except Exception, e:
                 self.log.error("setPortMirroring for network %s failed",
-                                network, exc_info=True)
+                               network, exc_info=True)
                 nicParams['portMirroring'] = mirroredNetworks
                 self.hotunplugNic({'nic': nicParams})
                 return {'status':
@@ -1887,8 +1881,8 @@ class LibvirtVm(vm.Vm):
                 # Would fail if migration isn't successful,
                 # or restart vdsm if connection to libvirt was lost
                 self._dom = NotifyingVirDomain(
-                                self._connection.lookupByUUIDString(self.id),
-                                self._timeoutExperienced)
+                    self._connection.lookupByUUIDString(self.id),
+                    self._timeoutExperienced)
             except Exception, e:
                 # Improve description of exception
                 if not self._incomingMigrationFinished.isSet():
@@ -2067,7 +2061,7 @@ class LibvirtVm(vm.Vm):
 
             try:
                 newDrives[vmDevName]["path"] = \
-                            self.cif.prepareVolumePath(newDrives[vmDevName])
+                    self.cif.prepareVolumePath(newDrives[vmDevName])
             except Exception:
                 _rollbackDrives(newDrives)
                 self.log.error("Unable to prepare the volume path "
@@ -2211,9 +2205,8 @@ class LibvirtVm(vm.Vm):
 
     def mergeStatus(self):
         def _filterInternalInfo(mergeStatus):
-            return dict(
-                (k, v) for k, v in mergeStatus.iteritems()
-                                if k not in ("path", "basePath"))
+            return dict((k, v) for k, v in mergeStatus.iteritems()
+                        if k not in ("path", "basePath"))
 
         mergeStatus = [_filterInternalInfo(x)
                        for x in self.conf.get('liveMerge', [])]
@@ -2440,8 +2433,7 @@ class LibvirtVm(vm.Vm):
 
         try:
             self._dom.updateDeviceFlags(
-                        diskelem.toxml(),
-                        libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
+                diskelem.toxml(), libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
         except:
             self.log.debug("updateDeviceFlags failed", exc_info=True)
             self.cif.teardownVolumePath(drivespec)
@@ -2454,7 +2446,7 @@ class LibvirtVm(vm.Vm):
 
     def setTicket(self, otp, seconds, connAct, params):
         graphics = _domParseStr(self._dom.XMLDesc(0)).childNodes[0]. \
-                                           getElementsByTagName('graphics')[0]
+            getElementsByTagName('graphics')[0]
         graphics.setAttribute('passwd', otp)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
@@ -2470,14 +2462,13 @@ class LibvirtVm(vm.Vm):
     def _reviveTicket(self, newlife):
         """Revive an existing ticket, if it has expired or about to expire"""
         graphics = _domParseStr(
-                        self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)). \
-                            childNodes[0].getElementsByTagName('graphics')[0]
+            self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)). \
+            childNodes[0].getElementsByTagName('graphics')[0]
         validto = max(time.strptime(graphics.getAttribute('passwdValidTo'),
                                     '%Y-%m-%dT%H:%M:%S'),
                       time.gmtime(time.time() + newlife))
         graphics.setAttribute(
-                    'passwdValidTo',
-                    time.strftime('%Y-%m-%dT%H:%M:%S', validto))
+            'passwdValidTo', time.strftime('%Y-%m-%dT%H:%M:%S', validto))
         graphics.setAttribute('connected', 'keep')
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
 
@@ -2528,7 +2519,7 @@ class LibvirtVm(vm.Vm):
     def _getUnderlyingVmInfo(self):
         self._lastXMLDesc = self._dom.XMLDesc(0)
         devxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                 getElementsByTagName('devices')[0]
+            getElementsByTagName('devices')[0]
         self._devXmlHash = str(hash(devxml.toxml()))
 
         return self._lastXMLDesc
@@ -2580,7 +2571,7 @@ class LibvirtVm(vm.Vm):
                 if self._dom:
                     try:
                         self._dom.destroyFlags(
-                                libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
+                            libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
                     except libvirt.libvirtError, e:
                         if (e.get_error_code() ==
                                 libvirt.VIR_ERR_OPERATION_FAILED):
@@ -2640,7 +2631,7 @@ class LibvirtVm(vm.Vm):
     def _getBalloonInfo(self):
         for dev in self.conf['devices']:
             if dev['type'] == vm.BALLOON_DEVICES and \
-                                  dev['specParams']['model'] != 'none':
+                    dev['specParams']['model'] != 'none':
                 max_mem = int(self.conf.get('memSize')) * 1024
                 cur_mem = dev.get('target', max_mem)
                 return {'balloon_max': max_mem, 'balloon_cur': cur_mem}
@@ -2671,7 +2662,7 @@ class LibvirtVm(vm.Vm):
         else:
             for dev in self.conf['devices']:
                 if dev['type'] == vm.BALLOON_DEVICES and \
-                                      dev['specParams']['model'] != 'none':
+                        dev['specParams']['model'] != 'none':
                     dev['target'] = target
             # persist the target value to make it consistent after recovery
             self.saveState()
@@ -2707,7 +2698,7 @@ class LibvirtVm(vm.Vm):
             return False
 
         devsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                 getElementsByTagName('devices')[0]
+            getElementsByTagName('devices')[0]
 
         for x in devsxml.childNodes:
             # Ignore empty nodes and devices without address
@@ -2732,8 +2723,8 @@ class LibvirtVm(vm.Vm):
         Obtain controller devices info from libvirt.
         """
         ctrlsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                getElementsByTagName('devices')[0]. \
-                                getElementsByTagName('controller')
+            getElementsByTagName('devices')[0]. \
+            getElementsByTagName('controller')
         for x in ctrlsxml:
             # Ignore controller devices without address
             if not x.getElementsByTagName('address'):
@@ -2779,8 +2770,8 @@ class LibvirtVm(vm.Vm):
         Obtain balloon device info from libvirt.
         """
         balloonxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                 getElementsByTagName('devices')[0]. \
-                                 getElementsByTagName('memballoon')
+            getElementsByTagName('devices')[0]. \
+            getElementsByTagName('memballoon')
         for x in balloonxml:
             # Ignore balloon devices without address.
             if not x.getElementsByTagName('address'):
@@ -2805,8 +2796,8 @@ class LibvirtVm(vm.Vm):
         Obtain watchdog device info from libvirt.
         """
         watchdogxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                   getElementsByTagName('devices')[0]. \
-                                   getElementsByTagName('watchdog')
+            getElementsByTagName('devices')[0]. \
+            getElementsByTagName('watchdog')
         for x in watchdogxml:
 
             # PCI watchdog has "address" different from ISA watchdog
@@ -2830,8 +2821,7 @@ class LibvirtVm(vm.Vm):
         Obtain video devices info from libvirt.
         """
         videosxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                    getElementsByTagName('devices')[0]. \
-                                    getElementsByTagName('video')
+            getElementsByTagName('devices')[0].getElementsByTagName('video')
         for x in videosxml:
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get video card address
@@ -2859,8 +2849,7 @@ class LibvirtVm(vm.Vm):
         Obtain sound devices info from libvirt.
         """
         soundsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                    getElementsByTagName('devices')[0]. \
-                                    getElementsByTagName('sound')
+            getElementsByTagName('devices')[0].getElementsByTagName('sound')
         for x in soundsxml:
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get sound card address
@@ -2888,8 +2877,7 @@ class LibvirtVm(vm.Vm):
         Obtain block devices info from libvirt.
         """
         disksxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                getElementsByTagName('devices')[0]. \
-                                getElementsByTagName('disk')
+            getElementsByTagName('devices')[0].getElementsByTagName('disk')
         # FIXME!  We need to gather as much info as possible from the libvirt.
         # In the future we can return this real data to management instead of
         # vm's conf
@@ -2954,7 +2942,7 @@ class LibvirtVm(vm.Vm):
         Obtain display port info from libvirt.
         """
         graphics = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                 getElementsByTagName('graphics')[0]
+            getElementsByTagName('graphics')[0]
         port = graphics.getAttribute('port')
         if port:
             self.conf['displayPort'] = port
@@ -2968,8 +2956,8 @@ class LibvirtVm(vm.Vm):
         """
         # TODO use xpath instead of parseString (here and elsewhere)
         ifsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-                                getElementsByTagName('devices')[0]. \
-                                getElementsByTagName('interface')
+            getElementsByTagName('devices')[0]. \
+            getElementsByTagName('interface')
         for x in ifsxml:
             devType = x.getAttribute('type')
             name = x.getElementsByTagName('target')[0].getAttribute('dev')
@@ -3065,8 +3053,7 @@ class LibvirtVm(vm.Vm):
         self.log.debug('migration destination: waiting for VM creation')
         self._vmCreationEvent.wait()
         prepareTimeout = self._loadCorrectedTimeout(
-                        config.getint('vars', 'migration_listener_timeout'),
-                        doubler=5)
+            config.getint('vars', 'migration_listener_timeout'), doubler=5)
         self.log.debug('migration destination: waiting %ss '
                        'for path preparation', prepareTimeout)
         self._pathsPreparedEvent.wait(prepareTimeout)

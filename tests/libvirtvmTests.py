@@ -43,7 +43,7 @@ class TestLibvirtvm(TestCaseBase):
         else:
             elem = ET.fromstring(element.toprettyxml())
             converted = re.sub(' />', '/>',
-                        ET.tostring(elem.find("./%s" % path)))
+                               ET.tostring(elem.find("./%s" % path)))
         self.assertEqual(re.sub('\n\s*', ' ', converted).strip(' '),
                          re.sub('\n\s*', ' ', expectedXML).strip(' '))
 
@@ -370,7 +370,7 @@ class TestLibvirtvm(TestCaseBase):
         vmConfs = [{}, {'custom': {'viodiskcache': 'writethrough'}}, {}]
 
         for (devConf, xml, blockDev, vmConf) in \
-                      zip(devConfs, expectedXMLs, blockDevs, vmConfs):
+                zip(devConfs, expectedXMLs, blockDevs, vmConfs):
             drive = libvirtvm.Drive(vmConf, self.log, **devConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = blockDev

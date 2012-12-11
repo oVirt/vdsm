@@ -110,7 +110,7 @@ def networks():
 
 def slaves(bonding):
     return [b.split('/')[-1].split('_', 1)[-1] for b in
-                glob.glob('/sys/class/net/' + bonding + '/slave_*')]
+            glob.glob('/sys/class/net/' + bonding + '/slave_*')]
 
 
 def ports(bridge):
@@ -295,8 +295,8 @@ def get():
             devname = netname
             try:
                 d['networks'][netname] = {'ports': ports(devname),
-                        'stp': bridge_stp_state(devname),
-                        'cfg': getIfaceCfg(devname), }
+                                          'stp': bridge_stp_state(devname),
+                                          'cfg': getIfaceCfg(devname), }
             except OSError, e:
                 # If the bridge reported by libvirt does not exist anymore, do
                 # not report it, as this already assures that the bridge is not
@@ -317,13 +317,13 @@ def get():
             d['networks'][netname]['interface'] = devname
 
         try:
-            d['networks'][netname].update({
-                        'iface': devname,
-                        'bridged': nets[netname]['bridged'],
-                        'addr': getaddr(devname),
-                        'netmask': getnetmask(devname),
-                        'gateway': routes.get(devname, '0.0.0.0'),
-                        'mtu': getMtu(devname), })
+            d['networks'][netname].update(
+                {'iface': devname,
+                 'bridged': nets[netname]['bridged'],
+                 'addr': getaddr(devname),
+                 'netmask': getnetmask(devname),
+                 'gateway': routes.get(devname, '0.0.0.0'),
+                 'mtu': getMtu(devname), })
         except OSError, e:
             if e.errno == errno.ENOENT:
                 logging.info('Obtaining info for net %s.', devname,
@@ -352,25 +352,25 @@ def get():
                              'mtu': getMtu(nic),
                              'cfg': getIfaceCfg(nic),
                              })
-                        for nic in nics()])
+                      for nic in nics()])
     paddr = permAddr()
     for nic, nd in d['nics'].iteritems():
         if paddr.get(nic):
             nd['permhwaddr'] = paddr[nic]
     d['bondings'] = dict([(bond, {'slaves': slaves(bond),
-                              'addr': getaddr(bond),
-                              'netmask': getnetmask(bond),
-                              'hwaddr': gethwaddr(bond),
-                              'cfg': getIfaceCfg(bond),
-                              'mtu': getMtu(bond)})
-                        for bond in bondings()])
+                                  'addr': getaddr(bond),
+                                  'netmask': getnetmask(bond),
+                                  'hwaddr': gethwaddr(bond),
+                                  'cfg': getIfaceCfg(bond),
+                                  'mtu': getMtu(bond)})
+                          for bond in bondings()])
     d['vlans'] = dict([(vlan, {'iface': vlan.split('.')[0],
                                'addr': getaddr(vlan),
                                'netmask': getnetmask(vlan),
                                'mtu': getMtu(vlan),
                                'cfg': getIfaceCfg(vlan),
                                })
-                        for vlan in vlans()])
+                       for vlan in vlans()])
     return d
 
 
@@ -513,4 +513,4 @@ class NetInfo(object):
         :rtype: List
         """
         return [netname for (netname, net) in networks().iteritems()
-                                           if not 'bridge' in net]
+                if not 'bridge' in net]
