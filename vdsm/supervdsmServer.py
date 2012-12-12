@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import platform
 import logging
 import logging.config
 import sys
@@ -38,6 +39,7 @@ except ImportError:
     _glusterEnabled = False
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 from md_utils import getMdDeviceUuidMap as _getMdDeviceUuidMap
+
 from lsblk import getLsBlk as _getLsBlk
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import forceIScsiScan as _forceIScsiScan
@@ -92,6 +94,15 @@ class _SuperVdsm(object):
     def ping(self, *args, **kwargs):
         # This method exists for testing purposes
         return True
+
+    @logDecorator
+    def getHardwareInfo(self, *args, **kwargs):
+        if platform.machine() in ('x86_64', 'i686'):
+            from dmidecodeUtil import getHardwareInfoStructure
+            return getHardwareInfoStructure()
+        else:
+            #  not implemented over other architecture
+            return {}
 
     @logDecorator
     def getDevicePartedInfo(self, *args, **kwargs):

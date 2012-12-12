@@ -44,6 +44,9 @@ BuildRequires: libvirt-python
 BuildRequires: genisoimage
 BuildRequires: openssl
 BuildRequires: m2crypto
+%ifarch x86_64
+BuildRequires: python-dmidecode
+%endif
 %if 0%{?rhel}
 BuildRequires: python-ordereddict
 %endif
@@ -77,6 +80,7 @@ Requires: m2crypto
 Requires: %{name}-xmlrpc = %{version}-%{release}
 
 %ifarch x86_64
+Requires: python-dmidecode
 Requires: dmidecode
 %endif
 
@@ -625,6 +629,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
+%{_datadir}/%{vdsm_name}/dmidecodeUtil.py*
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*

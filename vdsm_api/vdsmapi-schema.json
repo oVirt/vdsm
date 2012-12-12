@@ -682,6 +682,31 @@
  'data': {'release': 'str', 'version': 'str', 'name': 'OSName'}}
 
 ##
+# @HardwareInformation:
+#
+# Host hardware fields.
+#
+# @systemManufacturer:  Host manufacturer's name
+#
+# @systemProductName:   Host's hardware module
+#
+# @systemSerialNumber:  Hardware serial number
+#
+# @systemFamily:        Processor type
+#
+# @systemUUID:          Host's hardware UUID
+#
+# @systemVersion:       Host's hardware version
+#
+# Since: 4.10.3
+##
+{'type': 'HardwareInformation',
+ 'data': {'systemManufacturer': 'str',
+          'systemProductName': 'str', 'systemVersion': 'str',
+          'systemSerialNumber': 'str', 'systemUUID': 'str',
+          'systemFamily': 'str'}}
+
+##
 # @SoftwarePackage:
 #
 # An enumeration of aliases for important software components.

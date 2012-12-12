@@ -290,6 +290,10 @@ class BindingXMLRPC(object):
         ret['info'].update(self.getServerInfo())
         return ret
 
+    def getHardwareInfo(self):
+        api = API.Global()
+        return api.getHardwareInfo()
+
     def getStats(self):
         api = API.Global()
         return api.getStats()
@@ -769,6 +773,7 @@ class BindingXMLRPC(object):
                 (self.vmGetMigrationStatus, 'migrateStatus'),
                 (self.vmMigrationCancel, 'migrateCancel'),
                 (self.getCapabilities, 'getVdsCapabilities'),
+                (self.getHardwareInfo, 'getVdsHardwareInfo'),
                 (self.getStats, 'getVdsStats'),
                 (self.vmGetStats, 'getVmStats'),
                 (self.getAllVmStats, 'getAllVmStats'),

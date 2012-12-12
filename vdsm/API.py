@@ -1127,6 +1127,17 @@ class Global(APIBase):
 
         return {'status': doneCode, 'info': c}
 
+    def getHardwareInfo(self):
+        """
+        Report host hardware information
+        """
+        try:
+            hw = supervdsm.getProxy().getHardwareInfo()
+            return {'status': doneCode, 'info': hw}
+        except:
+            self.log.error("failed to retrieve hardware info", exc_info=True)
+            return errCode['hwInfoErr']
+
     def getStats(self):
         """
         Report host statistics.

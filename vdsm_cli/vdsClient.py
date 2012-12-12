@@ -411,6 +411,9 @@ class service:
     def do_getCap(self, args):
         return self.ExecAndExit(self.s.getVdsCapabilities())
 
+    def do_getHardware(self, args):
+        return self.ExecAndExit(self.s.getVdsHardwareInfo())
+
     def do_getVdsStats(self, args):
         return self.ExecAndExit(self.s.getVdsStats())
 
@@ -1900,6 +1903,10 @@ if __name__ == '__main__':
                        ('',
                         'Get Capabilities info of the VDS'
                         )),
+        'getVdsHardwareInfo': (serv.do_getHardware,
+                               ('',
+                                'Get hardware info of the VDS'
+                                )),
         'getVdsStats': (serv.do_getVdsStats,
                        ('',
                         'Get Statistics info on the VDS'
