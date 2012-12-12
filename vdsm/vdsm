@@ -17,6 +17,7 @@ import pwd
 import grp
 import threading
 import logging
+import syslog
 from logging import config as lconfig
 
 from vdsm import constants
@@ -111,19 +112,28 @@ def parse_args():
         sys.exit(1)
 
 
+def __assertLogPermission():
+    logfile = constants.P_VDSM_LOG + "vdsm.log"
+    if not os.access(logfile, os.W_OK):
+        syslog.syslog("error in accessing vdsm log file")
+        sys.exit(1)
+
+
 def __assertVdsmUser():
     username = getpass.getuser()
-    assert username == constants.VDSM_USER, (
-        "VDSM failed to start: running user is not %s, trying "
-        "to run from user %s" % (constants.VDSM_USER, username)
-    )
+    if username != constants.VDSM_USER:
+        syslog.syslog("VDSM failed to start: running user is not %s, trying "
+                      "to run from user %s" % (constants.VDSM_USER, username))
+        sys.exit(1)
     group = grp.getgrnam(constants.VDSM_GROUP)
-    assert (constants.VDSM_USER in group.gr_mem or
-            pwd.getpwnam(constants.VDSM_USER).pw_gid == group.gr_gid), \
-        "VDSM failed to start: vdsm user is not in KVM group"
+    if (constants.VDSM_USER not in group.gr_mem) and \
+       (pwd.getpwnam(constants.VDSM_USER).pw_gid != group.gr_gid):
+        syslog.syslog("VDSM failed to start: vdsm user is not in KVM group")
+        sys.exit(1)
 
 if __name__ == '__main__':
     __assertVdsmUser()
+    __assertLogPermission()
     os.setpgrp()
     parse_args()
     run()
