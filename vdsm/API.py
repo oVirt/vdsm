@@ -163,14 +163,14 @@ class VM(APIBase):
 
                         if type(pickledMachineParams) == dict:
                             self.log.debug('loaded pickledMachineParams '
-                                                   + str(pickledMachineParams))
+                                           + str(pickledMachineParams))
                             self.log.debug('former conf ' + str(vmParams))
                             vmParams.update(pickledMachineParams)
                     finally:
                         self._cif.teardownVolumePath(paramFilespec)
                 except:
                     self.log.error("Error restoring VM parameters",
-                            exc_info=True)
+                                   exc_info=True)
 
             requiredParams = ['vmId', 'memSize', 'display']
             for param in requiredParams:
@@ -192,7 +192,7 @@ class VM(APIBase):
                                    'message': 'Must specify nonzero memSize'}}
 
             if vmParams.get('boot') == 'c' and not 'hda' in vmParams \
-                                           and not vmParams.get('drives'):
+                    and not vmParams.get('drives'):
                 return {'status': {'code': errCode['MissParam']
                                                   ['status']['code'],
                                    'message': 'missing boot disk'}}
@@ -206,7 +206,7 @@ class VM(APIBase):
             if 'sysprepInf' in vmParams:
                 if not vmParams.get('floppy'):
                     vmParams['floppy'] = '%s%s.vfd' % (constants.P_VDSM_RUN,
-                                                vmParams['vmId'])
+                                                       vmParams['vmId'])
                 vmParams['volatileFloppy'] = True
 
             if caps.osversion()['name'] == caps.OSName.UNKNOWN:
@@ -216,7 +216,7 @@ class VM(APIBase):
 
             if 'sysprepInf' in vmParams:
                 if not self._createSysprepFloppyFromInf(vmParams['sysprepInf'],
-                                 vmParams['floppy']):
+                                                        vmParams['floppy']):
                     return {'status': {'code': errCode['createErr']
                                                       ['status']['code'],
                                        'message': 'Failed to create '
@@ -228,11 +228,11 @@ class VM(APIBase):
                 return {'status': {'code': errCode['createErr']
                                                   ['status']['code'],
                                    'message': 'Unknown display type %s'
-                                                % vmParams.get('display')}}
+                                              % vmParams.get('display')}}
             if 'nicModel' not in vmParams:
                 vmParams['nicModel'] = config.get('vars', 'nic_model')
             vmParams['displayIp'] = self._getNetworkIp(vmParams.get(
-                                                        'displayNetwork'))
+                                                       'displayNetwork'))
             vmParams['displayPort'] = '-1'   # selected by libvirt
             vmParams['displaySecurePort'] = '-1'
             return self._cif.createVm(vmParams)
@@ -592,8 +592,8 @@ class VM(APIBase):
     def _createSysprepFloppyFromInf(self, infFileBinary, floppyImage):
         try:
             rc, out, err = utils.execCmd([constants.EXT_MK_SYSPREP_FLOPPY,
-                                         floppyImage],
-                                        sudo=True, data=infFileBinary.data)
+                                          floppyImage],
+                                         sudo=True, data=infFileBinary.data)
             if rc:
                 return False
             else:
@@ -609,12 +609,11 @@ class VM(APIBase):
         domainID, poolID, stateImageID, stateVolumeID, \
             paramImageID, paramVolumeID = hiberVolHandle.split(',')
 
-        return dict(domainID=domainID, poolID=poolID,
-                    imageID=stateImageID, volumeID=stateVolumeID,
-                    device='disk'), \
-               dict(domainID=domainID, poolID=poolID,
-                    imageID=paramImageID, volumeID=paramVolumeID,
-                    device='disk')
+        return dict(domainID=domainID, poolID=poolID, imageID=stateImageID,
+                    volumeID=stateVolumeID, device='disk'), \
+            dict(domainID=domainID, poolID=poolID,
+                 imageID=paramImageID, volumeID=paramVolumeID,
+                 device='disk')
 
     def _getNetworkIp(self, bridge):
         try:
@@ -680,55 +679,59 @@ class Volume(APIBase):
              volFormat, preallocate, postZero, force):
         vmUUID = ''   # vmUUID is never used
         return self._irs.copyImage(self._sdUUID, self._spUUID, vmUUID,
-                self._imgUUID, self._UUID, dstImgUUID, dstVolUUID, desc,
-                dstSdUUID, volType, volFormat, preallocate, postZero,
-                force)
+                                   self._imgUUID, self._UUID, dstImgUUID,
+                                   dstVolUUID, desc, dstSdUUID, volType,
+                                   volFormat, preallocate, postZero, force)
 
     def create(self, size, volFormat, preallocate, diskType, desc,
                srcImgUUID, srcVolUUID):
         return self._irs.createVolume(self._sdUUID, self._spUUID,
-                self._imgUUID, size, volFormat, preallocate, diskType,
-                self._UUID, desc, srcImgUUID, srcVolUUID)
+                                      self._imgUUID, size, volFormat,
+                                      preallocate, diskType, self._UUID, desc,
+                                      srcImgUUID, srcVolUUID)
 
     def delete(self, postZero, force):
         return self._irs.deleteVolume(self._sdUUID, self._spUUID,
-                self._imgUUID, [self._UUID], postZero, force)
+                                      self._imgUUID, [self._UUID], postZero,
+                                      force)
 
     def extend(self, size, isShuttingDown):
         return self._irs.extendVolume(self._sdUUID, self._spUUID,
-                self._imgUUID, self._UUID, size, isShuttingDown)
+                                      self._imgUUID, self._UUID, size,
+                                      isShuttingDown)
 
     def getInfo(self):
         return self._irs.getVolumeInfo(self._sdUUID, self._spUUID,
-                self._imgUUID, self._UUID)
+                                       self._imgUUID, self._UUID)
 
     def getPath(self):
         return self._irs.getVolumePath(self._sdUUID, self._spUUID,
-                self._imgUUID, self._UUID)
+                                       self._imgUUID, self._UUID)
 
     def getSize(self):
         return self._irs.getVolumeSize(self._sdUUID, self._spUUID,
-                self._imgUUID, self._UUID)
+                                       self._imgUUID, self._UUID)
 
     def prepare(self, rw):
         return self._irs.prepareVolume(self._sdUUID, self._spUUID,
-                self._imgUUID, self._UUID, rw)
+                                       self._imgUUID, self._UUID, rw)
 
     def refresh(self):
         return self._irs.refreshVolume(self._sdUUID, self._spUUID,
-                self._imgUUID, self._UUID)
+                                       self._imgUUID, self._UUID)
 
     def setDescription(self, description):
-        return self._irs.setVolumeDescription(self._sdUUID,
-                self._spUUID, self._imgUUID, self._UUID, description)
+        return self._irs.setVolumeDescription(self._sdUUID, self._spUUID,
+                                              self._imgUUID, self._UUID,
+                                              description)
 
     def setLegality(self, legality):
-        return self._irs.setVolumeLegality(self._sdUUID,
-                self._spUUID, self._imgUUID, self._UUID, legality)
+        return self._irs.setVolumeLegality(self._sdUUID, self._spUUID,
+                                           self._imgUUID, self._UUID, legality)
 
     def tearDown(self):
         return self._irs.teardownVolume(self._sdUUID, self._spUUID,
-                self._imgUUID, self._UUID)
+                                        self._imgUUID, self._UUID)
 
 
 class Image(APIBase):
@@ -749,36 +752,37 @@ class Image(APIBase):
         self._sdUUID = sdUUID
 
     def delete(self, postZero, force):
-        return self._irs.deleteImage(self._sdUUID, self._spUUID,
-                self._UUID, postZero, force)
+        return self._irs.deleteImage(self._sdUUID, self._spUUID, self._UUID,
+                                     postZero, force)
 
     def deleteVolumes(self, volumeList, postZero=False, force=False):
-        return self._irs.deleteVolume(self._sdUUID, self._spUUID,
-                self._UUID, volumeList, postZero, force)
+        return self._irs.deleteVolume(self._sdUUID, self._spUUID, self._UUID,
+                                      volumeList, postZero, force)
 
     def getVolumes(self):
-        return self._irs.getVolumesList(self._sdUUID, self._spUUID,
-                self._UUID)
+        return self._irs.getVolumesList(self._sdUUID, self._spUUID, self._UUID)
 
     def mergeSnapshots(self, ancestor, successor, postZero):
         vmUUID = ''   # Not used
         # XXX: On success, self._sdUUID needs to be updated
-        return self._irs.mergeSnapshots(self._sdUUID, self._spUUID,
-                vmUUID, self._UUID, ancestor, successor, postZero)
+        return self._irs.mergeSnapshots(self._sdUUID, self._spUUID, vmUUID,
+                                        self._UUID, ancestor, successor,
+                                        postZero)
 
     def move(self, dstSdUUID, operation, postZero, force):
         vmUUID = ''   # Not used
         # XXX: On success, self._sdUUID needs to be updated
-        return self._irs.moveImage(self._spUUID, self._sdUUID,
-                dstSdUUID, self._UUID, vmUUID, operation, postZero, force)
+        return self._irs.moveImage(self._spUUID, self._sdUUID, dstSdUUID,
+                                   self._UUID, vmUUID, operation, postZero,
+                                   force)
 
     def cloneStructure(self, dstSdUUID):
         return self._irs.cloneImageStructure(self._spUUID, self._sdUUID,
-                self._UUID, dstSdUUID)
+                                             self._UUID, dstSdUUID)
 
     def syncData(self, dstSdUUID, syncType):
-        return self._irs.syncImageData(self._spUUID, self._sdUUID,
-                self._UUID, dstSdUUID, syncType)
+        return self._irs.syncImageData(self._spUUID, self._sdUUID, self._UUID,
+                                       dstSdUUID, syncType)
 
 
 class LVMVolumeGroup(APIBase):
@@ -853,25 +857,25 @@ class StorageDomain(APIBase):
     def create(self, type, typeArgs, name, domainClass, version=None):
         if version is None:
             version = constants.SUPPORTED_DOMAIN_VERSIONS[0]
-        return self._irs.createStorageDomain(type, self._UUID, name,
-                typeArgs, domainClass, version)
+        return self._irs.createStorageDomain(type, self._UUID, name, typeArgs,
+                                             domainClass, version)
 
     def deactivate(self, masterSdUUID, masterVersion):
-        return self._irs.deactivateStorageDomain(self._UUID,
-                self._spUUID, masterSdUUID, masterVersion)
+        return self._irs.deactivateStorageDomain(self._UUID, self._spUUID,
+                                                 masterSdUUID, masterVersion)
 
     def detach(self, masterSdUUID, masterVersion, force):
         # XXX: on success, self._spUUID should be set to None
         if force:
             return self._irs.forcedDetachStorageDomain(self._UUID,
-                    self._spUUID)
+                                                       self._spUUID)
         else:
-            return self._irs.detachStorageDomain(self._UUID,
-                    self._spUUID, masterSdUUID, masterVersion)
+            return self._irs.detachStorageDomain(self._UUID, self._spUUID,
+                                                 masterSdUUID, masterVersion)
 
     def extend(self, devlist, force=False):
-        return self._irs.extendStorageDomain(self._UUID,
-                self._spUUID, devlist, force)
+        return self._irs.extendStorageDomain(self._UUID, self._spUUID, devlist,
+                                             force)
 
     def format(self, autoDetach):
         return self._irs.formatStorageDomain(self._UUID, autoDetach)
@@ -892,12 +896,11 @@ class StorageDomain(APIBase):
         return self._irs.getVolumesList(self._UUID, self._spUUID, imgUUID)
 
     def setDescription(self, description):
-        return self._irs.setStorageDomainDescription(self._UUID,
-                description)
+        return self._irs.setStorageDomainDescription(self._UUID, description)
 
     def uploadVolume(self, imgUUID, volUUID, srcPath, size, method):
-        return self._irs.uploadVolume(self._UUID, self._spUUID,
-                imgUUID, volUUID, srcPath, size, method)
+        return self._irs.uploadVolume(self._UUID, self._spUUID, imgUUID,
+                                      volUUID, srcPath, size, method)
 
     def validate(self):
         return self._irs.validateStorageDomain(self._UUID)
@@ -911,38 +914,37 @@ class StoragePool(APIBase):
 
     def connect(self, hostID, scsiKey, masterSdUUID, masterVersion):
         return self._irs.connectStoragePool(self._UUID, hostID, scsiKey,
-                masterSdUUID, masterVersion)
+                                            masterSdUUID, masterVersion)
 
     def connectStorageServer(self, domainType, connectionParams):
-        return self._irs.connectStorageServer(domainType,
-                self._UUID, connectionParams)
+        return self._irs.connectStorageServer(domainType, self._UUID,
+                                              connectionParams)
 
     def create(self, name, masterSdUUID, masterVersion, domainList,
                lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
                leaseRetries):
         poolType = None   # Not used
         lockPolicy = None   # Not used
-        return self._irs.createStoragePool(poolType, self._UUID,
-                name, masterSdUUID, domainList, masterVersion,
-                lockPolicy, lockRenewalIntervalSec, leaseTimeSec,
-                ioOpTimeoutSec, leaseRetries)
+        return self._irs.createStoragePool(
+            poolType, self._UUID, name, masterSdUUID, domainList,
+            masterVersion, lockPolicy, lockRenewalIntervalSec, leaseTimeSec,
+            ioOpTimeoutSec, leaseRetries)
 
     def destroy(self, hostID, scsiKey):
         return self._irs.destroyStoragePool(self._UUID, hostID, scsiKey)
 
     def disconnect(self, hostID, scsiKey, remove):
-        return self._irs.disconnectStoragePool(self._UUID, hostID,
-                scsiKey, remove)
+        return self._irs.disconnectStoragePool(self._UUID, hostID, scsiKey,
+                                               remove)
 
     def disconnectStorageServer(self, domainType, connectionParams):
         return self._irs.disconnectStorageServer(domainType, self._UUID,
-                connectionParams)
+                                                 connectionParams)
 
     def fence(self):
         lastOwner = None   # Unused
         lastLver = None   # Unused
-        return self._irs.fenceSpmStorage(self._UUID, lastOwner,
-                lastLver)
+        return self._irs.fenceSpmStorage(self._UUID, lastOwner, lastLver)
 
     def getBackedUpVmsInfo(self, sdUUID, vmList):
         return self._irs.getVmsInfo(self._UUID, sdUUID, vmList)
@@ -955,7 +957,7 @@ class StoragePool(APIBase):
 
     def getDomainsContainingImage(self, imgUUID, onlyDataDomains=True):
         return self._irs.getImageDomainsList(self._UUID, imgUUID,
-                onlyDataDomains)
+                                             onlyDataDomains)
 
     def getIsoList(self, filenameExtension='iso'):
         return self._irs.getIsoList(self._UUID, filenameExtension)
@@ -969,45 +971,43 @@ class StoragePool(APIBase):
     def moveMultipleImages(self, srcSdUUID, dstSdUUID, imgDict,
                            force=False):
         vmUUID = None   # Unused parameter
-        return self._irs.moveMultipleImages(self._UUID, srcSdUUID,
-                dstSdUUID, imgDict, vmUUID, force)
+        return self._irs.moveMultipleImages(self._UUID, srcSdUUID, dstSdUUID,
+                                            imgDict, vmUUID, force)
 
     def reconstructMaster(self, hostId, name, masterSdUUID, masterVersion,
                           domainDict, lockRenewalIntervalSec, leaseTimeSec,
                           ioOpTimeoutSec, leaseRetries):
         lockPolicy = None   # Not used
-        return self._irs.reconstructMaster(self._UUID, name,
-                masterSdUUID, domainDict, masterVersion, lockPolicy,
-                lockRenewalIntervalSec, leaseTimeSec,
-                ioOpTimeoutSec, leaseRetries, hostId)
+        return self._irs.reconstructMaster(
+            self._UUID, name, masterSdUUID, domainDict, masterVersion,
+            lockPolicy, lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
+            leaseRetries, hostId)
 
     def refresh(self, masterSdUUID, masterVersion):
-        return self._irs.refreshStoragePool(self._UUID,
-                masterSdUUID, masterVersion)
+        return self._irs.refreshStoragePool(self._UUID, masterSdUUID,
+                                            masterVersion)
 
     def setDescription(self, description):
-        return self._irs.setStoragePoolDescription(self._UUID,
-                description)
+        return self._irs.setStoragePoolDescription(self._UUID, description)
 
     def spmStart(self, prevID, prevLver, enableScsiFencing,
                  maxHostID=None, domVersion=None):
         if maxHostID is None:
             maxHostID = storage.safelease.MAX_HOST_ID
         recoveryMode = None   # unused
-        return self._irs.spmStart(self._UUID, prevID, prevLver,
-                recoveryMode, enableScsiFencing, maxHostID, domVersion)
+        return self._irs.spmStart(self._UUID, prevID, prevLver, recoveryMode,
+                                  enableScsiFencing, maxHostID, domVersion)
 
     def spmStop(self):
         return self._irs.spmStop(self._UUID)
 
     def upgrade(self, targetDomVersion):
-        return self._irs.upgradeStoragePool(self._UUID,
-                targetDomVersion)
+        return self._irs.upgradeStoragePool(self._UUID, targetDomVersion)
 
     def validateStorageServerConnection(self, domainType,
                                         connectionParams):
-        return self._irs.validateStorageServerConnection(domainType,
-                self._UUID, connectionParams)
+        return self._irs.validateStorageServerConnection(
+            domainType, self._UUID, connectionParams)
 
     def updateVMs(self, vmList, sdUUID):
         return self._irs.updateVM(self._UUID, vmList, sdUUID)
@@ -1061,9 +1061,9 @@ class Global(APIBase):
                 cleantext += line
             return cleantext
 
-        self.log.debug('fenceNode(addr=%s,port=%s,agent=%s,user=%s,'
-               'passwd=%s,action=%s,secure=%s,options=%s)', addr, port, agent,
-               username, 'XXXX', action, secure, options)
+        self.log.debug('fenceNode(addr=%s,port=%s,agent=%s,user=%s,passwd=%s,'
+                       'action=%s,secure=%s,options=%s)', addr, port, agent,
+                       username, 'XXXX', action, secure, options)
 
         if action not in ('status', 'on', 'off', 'reboot'):
             raise ValueError('illegal action ' + action)
@@ -1072,8 +1072,8 @@ class Global(APIBase):
 
         try:
             p = subprocess.Popen([script], stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                close_fds=True)
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, close_fds=True)
         except OSError, e:
             if e.errno == os.errno.ENOENT:
                 return errCode['fenceAgent']
@@ -1136,11 +1136,11 @@ class Global(APIBase):
         stats['memCommitted'] = self._memCommitted() / Mbytes
         stats['swapTotal'], stats['swapFree'] = _readSwapTotalFree()
         stats['vmCount'], stats['vmActive'], stats['vmMigrating'] = \
-                self._countVms()
+            self._countVms()
         (tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec,
-             dummy, dummy, dummy) = time.gmtime(time.time())
+         dummy, dummy, dummy) = time.gmtime(time.time())
         stats['dateTime'] = '%02d-%02d-%02dT%02d:%02d:%02d GMT' % (
-                tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec)
+            tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec)
         if self._cif.mom:
             stats['momStatus'] = self._cif.mom.getStatus()
             stats.update(self._cif.mom.getKsmStats())
@@ -1187,8 +1187,8 @@ class Global(APIBase):
         vmSet = set(vmList)
         return {'status': doneCode,
                 'vmList': [reportedStatus(v, fullStatus)
-                            for v in self._cif.vmContainer.values()
-                                if not vmSet or v.id in vmSet]}
+                           for v in self._cif.vmContainer.values()
+                           if not vmSet or v.id in vmSet]}
 
     # Networking-related functions
     def setupNetworks(self, networks={}, bondings={}, options={}):
@@ -1264,8 +1264,8 @@ class Global(APIBase):
                                        (nics,
                                         _netinfo.bondings[bond]["slaves"]))
                         raise configNetwork.ConfigNetworkError(
-                                configNetwork.ne.ERR_BAD_NIC,
-                                "not all nics are enslaved")
+                            configNetwork.ne.ERR_BAD_NIC,
+                            "not all nics are enslaved")
                 except configNetwork.ConfigNetworkError, e:
                     self.log.error(e.message, exc_info=True)
                     return {'status': {'code': e.errCode,
@@ -1324,7 +1324,7 @@ class Global(APIBase):
     def getStorageDomains(self, spUUID=None, domainClass=None,
                           storageType=None, remotePath=None):
         return self._irs.getStorageDomainsList(spUUID, domainClass,
-                storageType, remotePath)
+                                               storageType, remotePath)
 
     def getConnectedStoragePools(self):
         return self._irs.getConnectedStoragePoolsList()
@@ -1386,7 +1386,7 @@ class Global(APIBase):
         freeOrCached = (meminfo['MemFree'] +
                         meminfo['Cached'] + meminfo['Buffers']) * Kbytes
         return freeOrCached + resident - memCommitted - \
-                config.getint('vars', 'host_mem_reserve') * Mbytes
+            config.getint('vars', 'host_mem_reserve') * Mbytes
 
     def _memShared(self):
         """
@@ -1432,5 +1432,5 @@ class Global(APIBase):
         for k, v in options.items():
             if k in _translationMap:
                 logging.warn("options %s is deprecated. Use %s instead" %
-                              (k, _translationMap[k]))
+                             (k, _translationMap[k]))
                 options[_translationMap[k]] = options.pop(k)
