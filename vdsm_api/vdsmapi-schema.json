@@ -4909,10 +4909,12 @@
 ##
 # @vmUpdateDeviceParams:
 #
+# A discriminated record of update parameters for a VM device.
+#
 # @deviceType: The VM device type to update. For example 'interface' for
 #              network devices or 'disk' for disk storage devices.
 #
-# Since 4.10.3
+# Since: 4.10.3
 ##
 {'type': 'vmUpdateDeviceParams',
  'data': {'deviceType': 'VmDeviceType'},
@@ -4939,11 +4941,11 @@
 #                 by alias. If omitted, it keeps the current mirroring
 #                 configuration.
 #
-# Since 4.10.3
+# Since: 4.10.3
 ##
 {'type': 'vmUpdateInterfaceDeviceParams',
  'data': {'*network': 'str', '*linkActive': 'bool',
-          'alias': 'str', '*portMirroring': '[str]'}}
+          'alias': 'str', '*portMirroring': ['str']}}
 
 ##
 # @VM.updateDevice:
@@ -4958,7 +4960,6 @@
 # The VM definition, as updated
 #
 # Since: 4.10.3
-#
 ##
 {'command': {'class': 'VM', 'name': 'updateDevice'},
  'data': {'vmId': 'UUID', 'params': 'vmUpdateDeviceParams'},
