@@ -170,17 +170,7 @@ def getaddr(dev):
 
 def prefix2netmask(prefix):
     return socket.inet_ntoa(
-        struct.pack(
-            "!I",
-            int(
-                (
-                    ''.ljust(prefix, '1') +
-                    ''.ljust(32 - prefix, '0')
-                ),
-                2
-            )
-        )
-    )
+        struct.pack("!I", int('1' * prefix + '0' * (32 - prefix), 2)))
 
 
 def getnetmask(dev):
