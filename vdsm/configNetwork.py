@@ -557,7 +557,6 @@ class ConfigWriter(object):
     def removeVlan(self, vlan, iface):
         vlandev = iface + '.' + vlan
         ifdown(vlandev)
-        execCmd([constants.EXT_IPROUTE, 'link', 'del', vlandev])
         self._backup(self.NET_CONF_PREF + iface + '.' + vlan)
         self._removeFile(self.NET_CONF_PREF + iface + '.' + vlan)
 
