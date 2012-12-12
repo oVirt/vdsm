@@ -1003,11 +1003,9 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     # Now we can run ifup for all interfaces
     if bonding:
         ifup(bonding, bondBootproto == 'dhcp' and not blockingDhcp)
-
-    # NICs must be activated in the same order of boot time
-    # to expose the correct MAC address.
-    for nic in nicSort(nics):
-        ifup(nic, options.get('bootproto') == 'dhcp' and not blockingDhcp)
+    else:
+        for nic in nics:
+            ifup(nic, options.get('bootproto') == 'dhcp' and not blockingDhcp)
 
     # Now we can ifup VLAN interface, because bond and nic already up
     if vlan:
@@ -1265,10 +1263,6 @@ def _editBondings(bondings, configWriter):
 
         # Now we can run ifup for all interfaces
         ifup(bond)
-        # NICs must be activated in the same order of boot time
-        # to expose the correct MAC address.
-        for nic in nicSort(bondAttrs['nics']):
-            ifup(nic)
 
 
 def _removeBondings(bondings, configWriter):
