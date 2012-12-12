@@ -1681,6 +1681,8 @@
 #
 # @channel:     A host-guest communication channel
 #
+# @console:     A console device
+#
 # Since: 4.10.0
 ##
 {'enum': 'VmDeviceType',
