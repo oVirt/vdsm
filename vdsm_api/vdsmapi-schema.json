@@ -3065,6 +3065,21 @@
  'returns': 'UUID'}
 
 ##
+# @syncType:
+#
+# An enumeration of possible Image synchronization types.
+#
+# @ALL:       Sync all volumes
+#
+# @INTERNAL:  Sync internal volumes only
+#
+# @LEAF:      Sync leaf volumes only
+#
+# Since: 4.11.0
+##
+{'enum': 'syncType', 'data': ['ALL', 'INTERNAL', 'LEAF']}
+
+##
 # @Image.syncData:
 #
 # Synchronize image data between storage domains within same Storage Pool.
