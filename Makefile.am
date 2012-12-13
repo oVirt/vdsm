@@ -52,6 +52,7 @@ PEP8_WHITELIST = \
 	vdsm-tool \
 	vdsm/*.py \
 	vdsm/*.py.in \
+	vdsm/sos/vdsm.py.in \
 	vdsm/storage/__init__.py \
 	vdsm/storage/blockVolume.py \
 	vdsm/storage/devicemapper.py \

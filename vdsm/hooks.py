@@ -220,7 +220,7 @@ def _getScriptInfo(path):
 
 def _getHookInfo(dir):
     return dict([(os.path.basename(script), _getScriptInfo(script))
-                  for script in _scriptsPerDir(dir)])
+                 for script in _scriptsPerDir(dir)])
 
 
 def installed():

@@ -28,7 +28,7 @@ from vdsm import constants
 def replacement(m):
     s = m.group()
     return getattr(constants, 'EXT_' + s[1:-1],
-           getattr(constants, s[1:-1], s))
+                   getattr(constants, s[1:-1], s))
 
 if len(sys.argv) <= 1:
     print """usage: %s filename...

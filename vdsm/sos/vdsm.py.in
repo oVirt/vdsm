@@ -27,8 +27,8 @@ def _importVdsmPylibModule(modName):
     import imp
     import os.path
     from distutils.sysconfig import get_python_lib
-    modFile, modPath, modDesc = imp.find_module(modName,
-            [os.path.join(get_python_lib(True), "vdsm")])
+    modFile, modPath, modDesc = imp.find_module(
+        modName, [os.path.join(get_python_lib(True), "vdsm")])
     mod = imp.load_module(modName, modFile, modPath, modDesc)
     return mod
 
@@ -43,7 +43,8 @@ class vdsm(sos.plugintools.PluginBase):
     """VDSM server related information
     """
 
-    optionList = [("logsize",  'max size (MiB) to collect per log file', '', False)]
+    optionList = [("logsize", 'max size (MiB) to collect per log file', '',
+                   False)]
 
     def __addCopySpecLogLimit(self, path, logsize=None):
         """
@@ -56,7 +57,6 @@ class vdsm(sos.plugintools.PluginBase):
             self.addCopySpecLimit(path, logsize)
         else:
             self.addCopySpec(path)
-
 
     def setup(self):
         os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"
@@ -81,8 +81,10 @@ class vdsm(sos.plugintools.PluginBase):
             self.addCopySpec("/proc/%s/status" % pid)
             self.addCopySpec("/proc/%s/mountstats" % pid)
         self.collectExtOutput("/bin/ls -l /var/log/core")
-        self.collectExtOutput("/bin/su vdsm -s /bin/sh -c '/usr/bin/tree @VDSMREPO@'")
-        self.collectExtOutput("/bin/su vdsm -s /bin/sh -c '/bin/ls -lR @VDSMREPO@'")
+        self.collectExtOutput(
+            "/bin/su vdsm -s /bin/sh -c '/usr/bin/tree @VDSMREPO@'")
+        self.collectExtOutput(
+            "/bin/su vdsm -s /bin/sh -c '/bin/ls -lR @VDSMREPO@'")
         self.collectExtOutput("/sbin/lvm vgs -v -o +tags")
         self.collectExtOutput("/sbin/lvm lvs -v -o +tags")
         self.collectExtOutput("/sbin/lvm pvs -v -o +all")
@@ -107,7 +109,8 @@ class vdsm(sos.plugintools.PluginBase):
         for line in out.splitlines()[1:-1]:
             pool = line.strip()
             self.collectExtOutput(vdsclient + "getSpmStatus " + pool)
-        self.collectExtOutput('/bin/su vdsm -s @PYTHON@ @VDSMDIR@/dumpStorageTable.pyc')
+        self.collectExtOutput(
+            '/bin/su vdsm -s @PYTHON@ @VDSMDIR@/dumpStorageTable.pyc')
 
     def _addVdsmRunDir(self):
         """Add everything under /var/run/vdsm except possibly confidential

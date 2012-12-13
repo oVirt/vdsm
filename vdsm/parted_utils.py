@@ -44,9 +44,9 @@ def getDevicePartedInfo(devPath):
     partitions = {}
     for partition in partedDisk.partitions:
         partitions.update({partition.path:
-                               (partition.getFlagsAsString().split(),
-                                partition.geometry.start,
-                                partition.geometry.end)})
+                           (partition.getFlagsAsString().split(),
+                            partition.geometry.start,
+                            partition.geometry.end)})
 
     return {'model': partedDevice.model,
             'sectorSize': partedDevice.sectorSize,

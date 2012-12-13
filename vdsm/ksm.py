@@ -50,7 +50,7 @@ class KsmMonitorThread(threading.Thread):
 
     def _getKsmdJiffies(self):
         return sum(map(int, file('/proc/%s/stat' % self._pid)
-                                    .read().split()[13:15]))
+                       .read().split()[13:15]))
 
     def run(self):
         start()
@@ -61,7 +61,7 @@ class KsmMonitorThread(threading.Thread):
                 time.sleep(KSM_MONITOR_INTERVAL)
                 jiff1 = self._getKsmdJiffies()
                 self.cpuUsage = (jiff1 - jiff0) % 2 ** 32 * 100 / \
-                                os.sysconf('SC_CLK_TCK') / KSM_MONITOR_INTERVAL
+                    os.sysconf('SC_CLK_TCK') / KSM_MONITOR_INTERVAL
                 jiff0 = jiff1
         except:
             self._cif.log.error("Error monitoring KSM", exc_info=True)

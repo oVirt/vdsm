@@ -22,9 +22,10 @@
 from collections import namedtuple
 from storage.misc import execCmd
 
-ScanOutput = namedtuple('ScanOutput',
-  ['partition_name', 'partition_start_bytes', 'partition_alignment',
-  'alignment_scan_result', 'alignment_scan_explanation'])
+ScanOutput = namedtuple(
+    'ScanOutput',
+    ['partition_name', 'partition_start_bytes', 'partition_alignment',
+     'alignment_scan_result', 'alignment_scan_explanation'])
 
 
 class VirtAlignError(Exception):
@@ -65,5 +66,5 @@ def scanImage(image_path):
         scan_result = (line[3] == "ok")  # True if aligned, otherwise False
         scan_explanation = line[3]  # optional free-text explanation
         out_list.append(ScanOutput(part_name, part_start, part_alignment,
-                                    scan_result, scan_explanation))
+                                   scan_result, scan_explanation))
     return out_list

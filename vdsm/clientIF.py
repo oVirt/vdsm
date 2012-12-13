@@ -86,8 +86,8 @@ class clientIF:
             ifids = netinfo.nics() + netinfo.bondings()
             ifrates = map(netinfo.speed, ifids)
             self._hostStats = utils.HostStatsThread(
-                                        cif=self, log=log, ifids=ifids,
-                                        ifrates=ifrates)
+                cif=self, log=log, ifids=ifids,
+                ifrates=ifrates)
             self._hostStats.start()
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
                       caps.CpuTopology().cores())
@@ -101,7 +101,7 @@ class clientIF:
             threading.Thread(target=self._recoverExistingVms,
                              name='clientIFinit').start()
             self.channelListener.settimeout(
-                    config.getint('vars', 'guest_agent_timeout'))
+                config.getint('vars', 'guest_agent_timeout'))
             self.channelListener.start()
             self.threadLocal = threading.local()
             self.threadLocal.client = ''
@@ -265,8 +265,8 @@ class clientIF:
             # PDIV drive format
             if drive['device'] == 'disk' and vm.isVdsmImage(drive):
                 res = self.irs.prepareImage(
-                                drive['domainID'], drive['poolID'],
-                                drive['imageID'], drive['volumeID'])
+                    drive['domainID'], drive['poolID'],
+                    drive['imageID'], drive['volumeID'])
 
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
@@ -300,7 +300,7 @@ class clientIF:
                             volPath = supervdsm.getProxy().mkIsoFs(vmId, files)
                         elif drive['device'] == 'floppy':
                             volPath = \
-                                   supervdsm.getProxy().mkFloppyFs(vmId, files)
+                                supervdsm.getProxy().mkFloppyFs(vmId, files)
 
             elif "path" in drive:
                 volPath = drive['path']
@@ -337,7 +337,7 @@ class clientIF:
     def createVm(self, vmParams):
         self.vmContainerLock.acquire()
         self.log.info("vmContainerLock acquired by vm %s",
-                          vmParams['vmId'])
+                      vmParams['vmId'])
         try:
             if 'recover' not in vmParams:
                 if vmParams['vmId'] in self.vmContainer:
@@ -372,8 +372,8 @@ class clientIF:
                                        vmId, exc_info=True)
 
             while (self._enabled and
-                  'WaitForLaunch' in [v.lastStatus for v in
-                                      self.vmContainer.values()]):
+                   'WaitForLaunch' in [v.lastStatus for v in
+                                       self.vmContainer.values()]):
                 time.sleep(1)
             self._cleanOldFiles()
             self._recovery = False
@@ -383,7 +383,7 @@ class clientIF:
             # Actually, we need it just to get the resources for future
             # volumes manipulations
             while self._enabled and self.vmContainer and \
-                  not self.irs.getConnectedStoragePoolsList()['poollist']:
+                    not self.irs.getConnectedStoragePoolsList()['poollist']:
                 time.sleep(5)
 
             for vmId, vmObj in self.vmContainer.items():
@@ -392,7 +392,7 @@ class clientIF:
                     # Do not prepare volumes when system goes down
                     if self._enabled:
                         vmObj.preparePaths(
-                                vmObj.getConfDevices()[vm.DISK_DEVICES])
+                            vmObj.getConfDevices()[vm.DISK_DEVICES])
                 except:
                     self.log.error("Vm %s recovery failed",
                                    vmId, exc_info=True)
@@ -421,8 +421,8 @@ class clientIF:
                     if entry.getAttribute("name") == "product":
                         prod = entry.firstChild.data
                         if prod in (caps.OSName.RHEL, caps.OSName.OVIRT,
-                                caps.OSName.RHEVH, caps.OSName.FEDORA,
-                                caps.OSName.DEBIAN):
+                                    caps.OSName.RHEVH, caps.OSName.FEDORA,
+                                    caps.OSName.DEBIAN):
                             return True
         return False
 
@@ -466,7 +466,7 @@ class clientIF:
             try:
                 vmId, fileType = f.split(".", 1)
                 if fileType in ["guest.socket", "monitor.socket", "pid",
-                                    "stdio.dump", "recovery"]:
+                                "stdio.dump", "recovery"]:
                     if vmId in self.vmContainer:
                         continue
                     if f == 'vdsmd.pid':
