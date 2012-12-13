@@ -550,6 +550,31 @@ class NotifyingVirDomain:
         return f
 
 
+class XMLElement(object):
+
+    def __init__(self, tagName, text=None, **attrs):
+        self._elem = xml.dom.minidom.Document().createElement(tagName)
+        self.setAttrs(**attrs)
+        if text is not None:
+            self.appendTextNode(text)
+
+    def __getattr__(self, name):
+        return getattr(self._elem, name)
+
+    def setAttrs(self, **attrs):
+        for attrName, attrValue in attrs.iteritems():
+            self._elem.setAttribute(attrName, attrValue)
+
+    def appendTextNode(self, text):
+        textNode = xml.dom.minidom.Document().createTextNode(text)
+        self._elem.appendChild(textNode)
+
+    def appendChildWithArgs(self, childName, text=None, **attrs):
+        child = XMLElement(childName, text, **attrs)
+        self._elem.appendChild(child)
+        return child
+
+
 class _DomXML:
     def __init__(self, conf, log):
         """
@@ -570,30 +595,22 @@ class _DomXML:
         self.log = log
 
         self.doc = xml.dom.minidom.Document()
-        self.dom = self.doc.createElement('domain')
-
         if utils.tobool(self.conf.get('kvmEnable', 'true')):
-            self.dom.setAttribute('type', 'kvm')
+            domainType = 'kvm'
         else:
-            self.dom.setAttribute('type', 'qemu')
-
+            domainType = 'qemu'
+        self.dom = XMLElement('domain', type=domainType)
         self.doc.appendChild(self.dom)
 
-        self.appendChildWithText('name', self.conf['vmName'])
-        self.appendChildWithText('uuid', self.conf['vmId'])
+        self.dom.appendChildWithArgs('name', text=self.conf['vmName'])
+        self.dom.appendChildWithArgs('uuid', text=self.conf['vmId'])
         memSizeKB = str(int(self.conf.get('memSize', '256')) * 1024)
-        self.appendChildWithText('memory', memSizeKB)
-        self.appendChildWithText('currentMemory', memSizeKB)
-        self.appendChildWithText('vcpu', self.conf['smp'])
+        self.dom.appendChildWithArgs('memory', text=memSizeKB)
+        self.dom.appendChildWithArgs('currentMemory', text=memSizeKB)
+        self.dom.appendChildWithArgs('vcpu', text=self.conf['smp'])
 
-        self._devices = self.doc.createElement('devices')
+        self._devices = XMLElement('devices')
         self.dom.appendChild(self._devices)
-
-    def appendChildWithText(self, childName, text):
-        childNode = self.doc.createElement(childName)
-        textNode = self.doc.createTextNode(text)
-        childNode.appendChild(textNode)
-        self.dom.appendChild(childNode)
 
     def appendClock(self):
         """
@@ -604,15 +621,10 @@ class _DomXML:
         </clock>
         """
 
-        m = self.doc.createElement('clock')
-        m.setAttribute('offset', 'variable')
-        m.setAttribute('adjustment', str(self.conf.get('timeOffset', 0)))
-
+        m = XMLElement('clock', offset='variable',
+                       adjustment=str(self.conf.get('timeOffset', 0)))
         if utils.tobool(self.conf.get('tdf', True)):
-            t = self.doc.createElement('timer')
-            t.setAttribute('name', 'rtc')
-            t.setAttribute('tickpolicy', 'catchup')
-            m.appendChild(t)
+            m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
 
         self.dom.appendChild(m)
 
@@ -630,39 +642,26 @@ class _DomXML:
         </os>
         """
 
-        oselem = self.doc.createElement('os')
+        oselem = XMLElement('os')
         self.dom.appendChild(oselem)
-        typeelem = self.doc.createElement('type')
-        oselem.appendChild(typeelem)
-        typeelem.setAttribute('arch', 'x86_64')
-        typeelem.setAttribute('machine',
-                              self.conf.get('emulatedMachine', 'pc'))
-        typeelem.appendChild(self.doc.createTextNode('hvm'))
+        oselem.appendChildWithArgs('type', text='hvm', arch='x86_64',
+                                   machine=self.conf.get('emulatedMachine',
+                                                         'pc'))
 
         qemu2libvirtBoot = {'a': 'fd', 'c': 'hd', 'd': 'cdrom', 'n': 'network'}
         for c in self.conf.get('boot', ''):
-            m = self.doc.createElement('boot')
-            m.setAttribute('dev', qemu2libvirtBoot[c])
-            oselem.appendChild(m)
+            oselem.appendChildWithArgs('boot', dev=qemu2libvirtBoot[c])
 
         if self.conf.get('initrd'):
-            m = self.doc.createElement('initrd')
-            m.appendChild(self.doc.createTextNode(self.conf['initrd']))
-            oselem.appendChild(m)
+            oselem.appendChildWithArgs('initrd', text=self.conf['initrd'])
 
         if self.conf.get('kernel'):
-            m = self.doc.createElement('kernel')
-            m.appendChild(self.doc.createTextNode(self.conf['kernel']))
-            oselem.appendChild(m)
+            oselem.appendChildWithArgs('kernel', text=self.conf['kernel'])
 
         if self.conf.get('kernelArgs'):
-            m = self.doc.createElement('cmdline')
-            m.appendChild(self.doc.createTextNode(self.conf['kernelArgs']))
-            oselem.appendChild(m)
+            oselem.appendChildWithArgs('cmdline', text=self.conf['kernelArgs'])
 
-        m = self.doc.createElement('smbios')
-        m.setAttribute('mode', 'sysinfo')
-        oselem.appendChild(m)
+        oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
     def appendSysinfo(self, osname, osversion, hostUUID):
         """
@@ -683,18 +682,14 @@ class _DomXML:
         </sysinfo>
         """
 
-        sysinfoelem = self.doc.createElement('sysinfo')
-        sysinfoelem.setAttribute('type', 'smbios')
+        sysinfoelem = XMLElement('sysinfo', type='smbios')
         self.dom.appendChild(sysinfoelem)
 
-        syselem = self.doc.createElement('system')
+        syselem = XMLElement('system')
         sysinfoelem.appendChild(syselem)
 
         def appendEntry(k, v):
-            m = self.doc.createElement('entry')
-            m.setAttribute('name', k)
-            m.appendChild(self.doc.createTextNode(v))
-            syselem.appendChild(m)
+            syselem.appendChildWithArgs('entry', text=v, name=k)
 
         appendEntry('manufacturer', constants.SMBIOS_MANUFACTURER)
         appendEntry('product', osname)
@@ -712,8 +707,8 @@ class _DomXML:
         <features/>
         """
         if utils.tobool(self.conf.get('acpiEnable', 'true')):
-            self.dom.appendChild(self.doc.createElement('features')) \
-                .appendChild(self.doc.createElement('acpi'))
+            features = self.dom.appendChildWithArgs('features')
+            features.appendChildWithArgs('acpi')
 
     def appendCpu(self):
         """
@@ -729,17 +724,14 @@ class _DomXML:
 
         features = self.conf.get('cpuType', 'qemu64').split(',')
         model = features[0]
-        cpu = self.doc.createElement('cpu')
-        cpu.setAttribute('match', 'exact')
+        cpu = XMLElement('cpu', match='exact')
 
         if model == 'hostPassthrough':
-            cpu.setAttribute('mode', 'host-passthrough')
+            cpu.setAttrs(mode='host-passthrough')
         elif model == 'hostModel':
-            cpu.setAttribute('mode', 'host-model')
+            cpu.setAttrs(mode='host-model')
         else:
-            m = self.doc.createElement('model')
-            m.appendChild(self.doc.createTextNode(model))
-            cpu.appendChild(m)
+            cpu.appendChildWithArgs('model', text=model)
 
             # This hack is for backward compatibility as the libvirt
             # does not allow 'qemu64' guest on intel hardware
@@ -751,36 +743,30 @@ class _DomXML:
                 if feature[1:6] == 'sse4_':
                     feature = feature[0] + 'sse4.' + feature[6:]
 
-                f = self.doc.createElement('feature')
+                featureAttrs = {'name': feature[1:]}
                 if feature[0] == '+':
-                    f.setAttribute('policy', 'require')
-                    f.setAttribute('name', feature[1:])
+                    featureAttrs['policy'] = 'require'
                 elif feature[0] == '-':
-                    f.setAttribute('policy', 'disable')
-                    f.setAttribute('name', feature[1:])
-                cpu.appendChild(f)
+                    featureAttrs['policy'] = 'disable'
+                cpu.appendChildWithArgs('feature', **featureAttrs)
 
         if ('smpCoresPerSocket' in self.conf or
                 'smpThreadsPerCore' in self.conf):
-            topo = self.doc.createElement('topology')
             vcpus = int(self.conf.get('smp', '1'))
             cores = int(self.conf.get('smpCoresPerSocket', '1'))
             threads = int(self.conf.get('smpThreadsPerCore', '1'))
-            topo.setAttribute('sockets', str(vcpus / cores / threads))
-            topo.setAttribute('cores', str(cores))
-            topo.setAttribute('threads', str(threads))
-            cpu.appendChild(topo)
+            cpu.appendChildWithArgs('topology',
+                                    sockets=str(vcpus / cores / threads),
+                                    cores=str(cores), threads=str(threads))
 
         #CPU-pinning support
         # see http://www.ovirt.org/wiki/Features/Design/cpu-pinning
         if 'cpuPinning' in self.conf:
-            cputune = self.doc.createElement('cputune')
+            cputune = XMLElement('cputune')
             cpuPinning = self.conf.get('cpuPinning')
             for cpuPin in cpuPinning.keys():
-                vcpupin = self.doc.createElement('vcpupin')
-                vcpupin.setAttribute('vcpu', cpuPin)
-                vcpupin.setAttribute('cpuset', cpuPinning[cpuPin])
-                cputune.appendChild(vcpupin)
+                cputune.appendChildWithArgs('vcpupin', vcpu=cpuPin,
+                                            cpuset=cpuPinning[cpuPin])
             self.dom.appendChild(cputune)
 
         self.dom.appendChild(cpu)
@@ -792,16 +778,9 @@ class _DomXML:
              <source mode='bind' path='/tmp/socket'/>
           </channel>
         """
-        channel = self.doc.createElement('channel')
-        channel.setAttribute('type', 'unix')
-        target = xml.dom.minidom.Element('target')
-        target.setAttribute('type', 'virtio')
-        target.setAttribute('name', name)
-        source = xml.dom.minidom.Element('source')
-        source.setAttribute('mode', 'bind')
-        source.setAttribute('path', path)
-        channel.appendChild(target)
-        channel.appendChild(source)
+        channel = XMLElement('channel', type='unix')
+        channel.appendChildWithArgs('target', type='virtio', name=name)
+        channel.appendChildWithArgs('source', mode='bind', path=path)
         self._devices.appendChild(channel)
 
     def appendInput(self):
@@ -810,14 +789,11 @@ class _DomXML:
 
         <input bus="ps2" type="mouse"/>
         """
-        input = self.doc.createElement('input')
         if utils.tobool(self.conf.get('tabletEnable')):
-            input.setAttribute('type', 'tablet')
-            input.setAttribute('bus', 'usb')
+            inputAttrs = {'type': 'tablet', 'bus': 'usb'}
         else:
-            input.setAttribute('type', 'mouse')
-            input.setAttribute('bus', 'ps2')
-        self._devices.appendChild(input)
+            inputAttrs = {'type': 'mouse', 'bus': 'ps2'}
+        self._devices.appendChildWithArgs('input', **inputAttrs)
 
     def appendGraphics(self):
         """
@@ -834,45 +810,39 @@ class _DomXML:
            <target type='virtio' name='com.redhat.spice.0'/>
         </channel>
         """
-        graphics = self.doc.createElement('graphics')
+        graphicsAttrs = {'port': self.conf['displayPort'], 'autoport': 'yes'}
         if self.conf['display'] == 'vnc':
-            graphics.setAttribute('type', 'vnc')
-            graphics.setAttribute('port', self.conf['displayPort'])
-            graphics.setAttribute('autoport', 'yes')
+            graphicsAttrs['type'] = 'vnc'
         elif 'qxl' in self.conf['display']:
-            graphics.setAttribute('type', 'spice')
-            graphics.setAttribute('port', self.conf['displayPort'])
-            graphics.setAttribute('tlsPort', self.conf['displaySecurePort'])
-            graphics.setAttribute('autoport', 'yes')
+            graphicsAttrs['type'] = 'spice'
+            graphicsAttrs['tlsPort'] = self.conf['displaySecurePort']
+
+        if self.conf.get('keyboardLayout'):
+            graphicsAttrs['keymap'] = self.conf['keyboardLayout']
+        if not 'spiceDisableTicketing' in self.conf:
+            graphicsAttrs['passwd'] = '*****'
+            graphicsAttrs['passwdValidTo'] = '1970-01-01T00:00:01'
+
+        graphics = XMLElement('graphics', **graphicsAttrs)
+
+        if 'qxl' in self.conf['display']:
             if self.conf.get('spiceSecureChannels'):
                 for channel in self.conf['spiceSecureChannels'].split(','):
-                    m = self.doc.createElement('channel')
-                    m.setAttribute('name', channel[1:])
-                    m.setAttribute('mode', 'secure')
-                    graphics.appendChild(m)
+                    graphics.appendChildWithArgs('channel', name=channel[1:],
+                                                 mode='secure')
 
-            vmc = self.doc.createElement('channel')
-            vmc.setAttribute('type', 'spicevmc')
-            m = self.doc.createElement('target')
-            m.setAttribute('type', 'virtio')
-            m.setAttribute('name', 'com.redhat.spice.0')
-            vmc.appendChild(m)
+            vmc = XMLElement('channel', type='spicevmc')
+            vmc.appendChildWithArgs('target', type='virtio',
+                                    name='com.redhat.spice.0')
             self._devices.appendChild(vmc)
 
         if self.conf.get('displayNetwork'):
-            listen = self.doc.createElement('listen')
-            listen.setAttribute('type', 'network')
-            listen.setAttribute('network', netinfo.LIBVIRT_NET_PREFIX +
-                                self.conf.get('displayNetwork'))
-            graphics.appendChild(listen)
+            graphics.appendChildWithArgs('listen', type='network',
+                                         network=netinfo.LIBVIRT_NET_PREFIX +
+                                         self.conf.get('displayNetwork'))
         else:
-            graphics.setAttribute('listen', '0')
+            graphics.setAttrs(listen='0')
 
-        if self.conf.get('keyboardLayout'):
-            graphics.setAttribute('keymap', self.conf['keyboardLayout'])
-        if not 'spiceDisableTicketing' in self.conf:
-            graphics.setAttribute('passwd', '*****')
-            graphics.setAttribute('passwdValidTo', '1970-01-01T00:00:01')
         self._devices.appendChild(graphics)
 
     def toxml(self):
@@ -884,11 +854,11 @@ class LibvirtVmDevice(vm.Device):
         """
         Create domxml device element according to passed in params
         """
-        doc = xml.dom.minidom.Document()
-        element = doc.createElement(elemType)
+        elemAttrs = {}
+        element = XMLElement(elemType)
 
         if deviceType:
-            element.setAttribute('type', deviceType)
+            elemAttrs['type'] = deviceType
 
         for attrName in attributes:
             if not hasattr(self, attrName):
@@ -896,13 +866,11 @@ class LibvirtVmDevice(vm.Device):
 
             attr = getattr(self, attrName)
             if isinstance(attr, dict):
-                child = doc.createElement(attrName)
-                for key, value in attr.iteritems():
-                    child.setAttribute(key, value)
-                element.appendChild(child)
+                element.appendChildWithArgs(attrName, **attr)
             else:
-                element.setAttribute(attrName, attr)
+                elemAttrs[attrName] = attr
 
+        element.setAttrs(**elemAttrs)
         return element
 
 
@@ -924,8 +892,7 @@ class ControllerDevice(LibvirtVmDevice):
         ctrl = self.createXmlElem('controller', self.device,
                                   ['index', 'model', 'master', 'address'])
         if self.device == 'virtio-serial':
-            ctrl.setAttribute('index', '0')
-            ctrl.setAttribute('ports', '16')
+            ctrl.setAttrs(index='0', ports='16')
 
         return ctrl
 
@@ -936,13 +903,9 @@ class VideoDevice(LibvirtVmDevice):
         """
         Create domxml for video device
         """
-        doc = xml.dom.minidom.Document()
         video = self.createXmlElem('video', None, ['address'])
-        m = doc.createElement('model')
-        m.setAttribute('type', self.device)
-        m.setAttribute('vram', self.specParams['vram'])
-        m.setAttribute('heads', '1')
-        video.appendChild(m)
+        video.appendChildWithArgs('model', type=self.device,
+                                  vram=self.specParams['vram'], heads='1')
 
         return video
 
@@ -954,7 +917,7 @@ class SoundDevice(LibvirtVmDevice):
         Create domxml for sound device
         """
         sound = self.createXmlElem('sound', None, ['address'])
-        sound.setAttribute('model', self.device)
+        sound.setAttrs(model=self.device)
         return sound
 
 
@@ -1010,40 +973,27 @@ class NetworkInterfaceDevice(LibvirtVmDevice):
             [<link state='up|down'/>]
         </interface>
         """
-        doc = xml.dom.minidom.Document()
         iface = self.createXmlElem('interface', self.device, ['address'])
-        m = doc.createElement('mac')
-        m.setAttribute('address', self.macAddr)
-        iface.appendChild(m)
-        m = doc.createElement('model')
-        m.setAttribute('type', self.nicModel)
-        iface.appendChild(m)
-        m = doc.createElement('source')
-        m.setAttribute('bridge', self.network)
-        iface.appendChild(m)
+        iface.appendChildWithArgs('mac', address=self.macAddr)
+        iface.appendChildWithArgs('model', type=self.nicModel)
+        iface.appendChildWithArgs('source', bridge=self.network)
         if hasattr(self, 'filter'):
-            m = doc.createElement('filterref')
-            m.setAttribute('filter', self.filter)
-            iface.appendChild(m)
+            iface.appendChildWithArgs('filterref', filter=self.filter)
+
         if hasattr(self, 'linkActive'):
-            m = doc.createElement('link')
-            m.setAttribute('state',
-                           'up' if utils.tobool(self.linkActive) else 'down')
-            iface.appendChild(m)
+            iface.appendChildWithArgs('link', state='up'
+                                      if utils.tobool(self.linkActive)
+                                      else 'down')
+
         if hasattr(self, 'bootOrder'):
-            bootOrder = doc.createElement('boot')
-            bootOrder.setAttribute('order', self.bootOrder)
-            iface.appendChild(bootOrder)
+            iface.appendChildWithArgs('boot', order=self.bootOrder)
+
         if self.driver:
-            m = doc.createElement('driver')
-            m.setAttribute('name', self.driver)
-            iface.appendChild(m)
+            iface.appendChildWithArgs('driver', name=self.driver)
+
         if self.sndbufParam:
-            tune = doc.createElement('tune')
-            sndbuf = doc.createElement('sndbuf')
-            sndbuf.appendChild(doc.createTextNode(self.sndbufParam))
-            tune.appendChild(sndbuf)
-            iface.appendChild(tune)
+            tune = iface.appendChildWithArgs('tune')
+            tune.appendChildWithArgs('sndbuf', text=self.sndbufParam)
 
         return iface
 
@@ -1156,76 +1106,69 @@ class Drive(LibvirtVmDevice):
           <serial>54-a672-23e5b495a9ea</serial>
         </disk>
         """
-        doc = xml.dom.minidom.Document()
         self.device = getattr(self, 'device', 'disk')
 
-        source = doc.createElement('source')
+        source = XMLElement('source')
         if self.blockDev:
             deviceType = 'block'
-            source.setAttribute('dev', self.path)
+            source.setAttrs(dev=self.path)
         elif self.networkDev:
             deviceType = 'network'
-            source.setAttribute('protocol', self.volumeInfo['protocol'])
-            source.setAttribute('name', self.volumeInfo['path'])
-
-            host = doc.createElement('host')
-            host.setAttribute('name', self.volumeInfo['volfileServer'])
-            host.setAttribute('port', self.volumeInfo['volPort'])
-            host.setAttribute('transport', self.volumeInfo['volTransport'])
-            source.appendChild(host)
+            source.setAttrs(protocol=self.volumeInfo['protocol'],
+                            name=self.volumeInfo['path'])
+            hostAttrs = {'name': self.volumeInfo['volfileServer'],
+                         'port': self.volumeInfo['volPort'],
+                         'transport': self.volumeInfo['volTransport']}
+            source.appendChildWithArgs('host', **hostAttrs)
         else:
             deviceType = 'file'
-            source.setAttribute('file', self.path)
+            sourceAttrs = {'file': self.path}
             if self.device == 'cdrom' or self.device == 'floppy':
-                source.setAttribute('startupPolicy', 'optional')
+                sourceAttrs['startupPolicy'] = 'optional'
+            source.setAttrs(**sourceAttrs)
         diskelem = self.createXmlElem('disk', deviceType,
                                       ['device', 'address'])
-        diskelem.setAttribute('snapshot', 'no')
+        diskelem.setAttrs(snapshot='no')
         diskelem.appendChild(source)
-        target = doc.createElement('target')
-        target.setAttribute('dev', self.name)
-        if self.iface:
-            target.setAttribute('bus', self.iface)
-        diskelem.appendChild(target)
-        if hasattr(self, 'shared') and utils.tobool(self.shared):
-            shareable = doc.createElement('shareable')
-            diskelem.appendChild(shareable)
-        if hasattr(self, 'readonly') and utils.tobool(self.readonly):
-            readonly = doc.createElement('readonly')
-            diskelem.appendChild(readonly)
-        if hasattr(self, 'serial'):
-            serial = doc.createElement('serial')
-            serial.appendChild(doc.createTextNode(self.serial))
-            diskelem.appendChild(serial)
-        if hasattr(self, 'bootOrder'):
-            bootOrder = doc.createElement('boot')
-            bootOrder.setAttribute('order', self.bootOrder)
-            diskelem.appendChild(bootOrder)
-        if self.device == 'disk':
-            driver = doc.createElement('driver')
-            driver.setAttribute('name', 'qemu')
-            if self.blockDev:
-                driver.setAttribute('io', 'native')
-            else:
-                driver.setAttribute('io', 'threads')
-            if self.format == 'cow':
-                driver.setAttribute('type', 'qcow2')
-            elif self.format:
-                driver.setAttribute('type', 'raw')
 
-            driver.setAttribute('cache', self.cache)
+        targetAttrs = {'dev': self.name}
+        if self.iface:
+            targetAttrs['bus'] = self.iface
+        diskelem.appendChildWithArgs('target', **targetAttrs)
+
+        if hasattr(self, 'shared') and utils.tobool(self.shared):
+            diskelem.appendChildWithArgs('shareable')
+        if hasattr(self, 'readonly') and utils.tobool(self.readonly):
+            diskelem.appendChildWithArgs('readonly')
+        if hasattr(self, 'serial'):
+            diskelem.appendChildWithArgs('serial', text=self.serial)
+        if hasattr(self, 'bootOrder'):
+            diskelem.appendChildWithArgs('boot', order=self.bootOrder)
+
+        if self.device == 'disk':
+            driverAttrs = {'name': 'qemu'}
+            if self.blockDev:
+                driverAttrs['io'] = 'native'
+            else:
+                driverAttrs['io'] = 'threads'
+            if self.format == 'cow':
+                driverAttrs['type'] = 'qcow2'
+            elif self.format:
+                driverAttrs['type'] = 'raw'
+
+            driverAttrs['cache'] = self.cache
 
             if (self.propagateErrors == 'on' or
                     utils.tobool(self.propagateErrors)):
-                driver.setAttribute('error_policy', 'enospace')
+                driverAttrs['error_policy'] = 'enospace'
             else:
-                driver.setAttribute('error_policy', 'stop')
-            diskelem.appendChild(driver)
+                driverAttrs['error_policy'] = 'stop'
+            diskelem.appendChildWithArgs('driver', **driverAttrs)
         elif self.device == 'floppy':
             if (self.path and
                 not utils.getUserPermissions(constants.QEMU_PROCESS_USER,
                                              self.path)['write']):
-                diskelem.appendChild(doc.createElement('readonly'))
+                diskelem.appendChildWithArgs('readonly')
 
         return diskelem
 
@@ -1242,7 +1185,7 @@ class BalloonDevice(LibvirtVmDevice):
         </memballoon>
         """
         m = self.createXmlElem(self.device, None, ['address'])
-        m.setAttribute('model', self.specParams['model'])
+        m.setAttrs(model=self.specParams['model'])
         return m
 
 
@@ -1257,8 +1200,8 @@ class WatchdogDevice(LibvirtVmDevice):
         </watchdog>
         """
         m = self.createXmlElem(self.type, None, ['address'])
-        m.setAttribute('model', self.specParams['model'])
-        m.setAttribute('action', self.specParams['action'])
+        m.setAttrs(model=self.specParams['model'],
+                   action=self.specParams['action'])
         return m
 
 
@@ -1272,8 +1215,8 @@ class SmartCardDevice(LibvirtVmDevice):
         </smartcard>
         """
         card = self.createXmlElem(self.device, None, ['address'])
-        card.setAttribute('mode', self.specParams['mode'])
-        card.setAttribute('type', self.specParams['type'])
+        card.setAttrs(mode=self.specParams['mode'],
+                      type=self.specParams['type'])
         return card
 
 
@@ -1298,10 +1241,8 @@ class ConsoleDevice(LibvirtVmDevice):
           <target type='virtio' port='0'/>
         </console>
         """
-        target = self.createXmlElem('target', 'virtio')
-        target.setAttribute('port', '0')
         m = self.createXmlElem('console', 'pty')
-        m.appendChild(target)
+        m.appendChildWithArgs('target', type='virtio', port='0')
         return m
 
 
@@ -1339,23 +1280,11 @@ class LibvirtVm(vm.Vm):
         </lease>
         """
 
-        doc = xml.dom.minidom.Document()
-
-        keyElem = doc.createElement('key')
-        keyElem.appendChild(doc.createTextNode(volumeID))
-
-        lksElem = doc.createElement('lockspace')
-        lksElem.appendChild(doc.createTextNode(domainID))
-
-        tgtElem = doc.createElement('target')
-        tgtElem.setAttribute('path', leasePath)
-        tgtElem.setAttribute('offset', str(leaseOffset))
-
-        leaseElem = doc.createElement('lease')
-        leaseElem.appendChild(keyElem)
-        leaseElem.appendChild(lksElem)
-        leaseElem.appendChild(tgtElem)
-
+        leaseElem = XMLElement('lease')
+        leaseElem.appendChildWithArgs('key', text=volumeID)
+        leaseElem.appendChildWithArgs('lockspace', text=domainID)
+        leaseElem.appendChildWithArgs('target', path=leasePath,
+                                      offset=str(leaseOffset))
         return leaseElem
 
     def _buildCmdLine(self):
@@ -1672,7 +1601,7 @@ class LibvirtVm(vm.Vm):
             link = vnicXML.getElementsByTagName('link')[0]
         except IndexError:
             link = xml.dom.minidom.Element('link')
-            vnicXML.appendChild(link)
+            vnicXML.appendChildWithArgs(link)
         link.setAttribute('state', linkValue)
         try:
             try:
@@ -2020,14 +1949,8 @@ class LibvirtVm(vm.Vm):
         def _diskSnapshot(vmDev, newPath):
             """Libvirt snapshot XML"""
 
-            disk = xml.dom.minidom.Element('disk')
-            disk.setAttribute('name', vmDev)
-            disk.setAttribute('snapshot', 'external')
-
-            source = xml.dom.minidom.Element('source')
-            source.setAttribute('file', newPath)
-
-            disk.appendChild(source)
+            disk = XMLElement('disk', name=vmDev, snapshot='external')
+            disk.appendChildWithArgs('source', file=newPath)
             return disk
 
         def _normSnapDriveParams(drive):
@@ -2466,15 +2389,9 @@ class LibvirtVm(vm.Vm):
             return {'status': {'code': errCode['imageErr']['status']['code'],
                                'message': errCode['imageErr']['status']
                                                  ['message'] % str(e)}}
-        diskelem = xml.dom.minidom.Element('disk')
-        diskelem.setAttribute('type', 'file')
-        diskelem.setAttribute('device', vmDev)
-        source = xml.dom.minidom.Element('source')
-        source.setAttribute('file', path)
-        diskelem.appendChild(source)
-        target = xml.dom.minidom.Element('target')
-        target.setAttribute('dev', blockdev)
-        diskelem.appendChild(target)
+        diskelem = XMLElement('disk', type='file', device=vmDev)
+        diskelem.appendChildWithArgs('source', file=path)
+        diskelem.appendChildWithArgs('target', dev=blockdev)
 
         try:
             self._dom.updateDeviceFlags(
