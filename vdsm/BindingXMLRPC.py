@@ -134,25 +134,27 @@ class BindingXMLRPC(object):
 
             def parse_request(self):
                 r = (SecureXMLRPCServer.SecureXMLRPCRequestHandler.
-                                                        parse_request(self))
+                     parse_request(self))
                 threadLocal.flowID = self.headers.get(HTTP_HEADER_FLOWID)
                 return r
 
         if self.enableSSL:
             KEYFILE, CERTFILE, CACERT = self._getKeyCertFilenames()
-            s = SecureXMLRPCServer.SecureThreadedXMLRPCServer(server_address,
-                        keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
-                        timeout=self.serverRespTimeout,
-                        requestHandler=LoggingHandler)
+            server = SecureXMLRPCServer.SecureThreadedXMLRPCServer(
+                server_address,
+                keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
+                timeout=self.serverRespTimeout,
+                requestHandler=LoggingHandler)
         else:
-            s = utils.SimpleThreadedXMLRPCServer(server_address,
-                        requestHandler=LoggingHandler, logRequests=True)
-        utils.closeOnExec(s.socket.fileno())
+            server = utils.SimpleThreadedXMLRPCServer(
+                server_address,
+                requestHandler=LoggingHandler, logRequests=True)
+        utils.closeOnExec(server.socket.fileno())
 
-        s.lastClientTime = 0
-        s.lastClient = '0.0.0.0'
+        server.lastClientTime = 0
+        server.lastClient = '0.0.0.0'
 
-        return s
+        return server
 
     def _registerFunctions(self):
         def wrapIrsMethod(f):
@@ -355,8 +357,7 @@ class BindingXMLRPC(object):
     def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
                     nics=None, options={}):
         api = API.Global()
-        return api.editNetwork(oldBridge, newBridge, vlan, bond, nics,
-                options)
+        return api.editNetwork(oldBridge, newBridge, vlan, bond, nics, options)
 
     def setupNetworks(self, networks={}, bondings={}, options={}):
         api = API.Global()
@@ -373,8 +374,8 @@ class BindingXMLRPC(object):
     def fenceNode(self, addr, port, agent, username, password, action,
                   secure=False, options=''):
         api = API.Global()
-        return api.fenceNode(addr, port, agent, username, password,
-                action, secure, options)
+        return api.fenceNode(addr, port, agent, username, password, action,
+                             secure, options)
 
     def setLogLevel(self, level):
         api = API.Global()
@@ -499,8 +500,8 @@ class BindingXMLRPC(object):
                    leaseRetries=None, options=None):
         pool = API.StoragePool(spUUID)
         return pool.create(poolName, masterDom, masterVersion, domList,
-               lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
-               leaseRetries)
+                           lockRenewalIntervalSec, leaseTimeSec,
+                           ioOpTimeoutSec, leaseRetries)
 
     def poolDestroy(self, spUUID, hostID, scsiKey, options=None):
         pool = API.StoragePool(spUUID)
@@ -561,9 +562,9 @@ class BindingXMLRPC(object):
                               ioOpTimeoutSec=None, leaseRetries=None,
                               hostId=None, options=None):
         pool = API.StoragePool(spUUID)
-        return pool.reconstructMaster(hostId, poolName, masterDom,
-            masterVersion, domDict, lockRenewalIntervalSec, leaseTimeSec,
-            ioOpTimeoutSec, leaseRetries)
+        return pool.reconstructMaster(
+            hostId, poolName, masterDom, masterVersion, domDict,
+            lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec, leaseRetries)
 
     def poolRefresh(self, spUUID, msdUUID, masterVersion, options=None):
         pool = API.StoragePool(spUUID)
@@ -609,17 +610,16 @@ class BindingXMLRPC(object):
                    preallocate=API.Volume.Types.UNKNOWN, postZero=False,
                    force=False):
         volume = API.Volume(srcVolUUID, spUUID, sdUUID, srcImgUUID)
-        return volume.copy(dstSdUUID, dstImgUUID, dstVolUUID,
-            description, volType, volFormat, preallocate, postZero,
-            force)
+        return volume.copy(dstSdUUID, dstImgUUID, dstVolUUID, description,
+                           volType, volFormat, preallocate, postZero, force)
 
     def volumeCreate(self, sdUUID, spUUID, imgUUID, size, volFormat,
                      preallocate, diskType, volUUID, desc,
                      srcImgUUID=API.Image.BLANK_UUID,
                      srcVolUUID=API.Volume.BLANK_UUID):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
-        return volume.create(size, volFormat, preallocate, diskType,
-                desc, srcImgUUID, srcVolUUID)
+        return volume.create(size, volFormat, preallocate, diskType, desc,
+                             srcImgUUID, srcVolUUID)
 
     def volumeExtend(self, sdUUID, spUUID, imgUUID, volUUID, size,
                      isShuttingDown=None):
@@ -693,8 +693,8 @@ class BindingXMLRPC(object):
         return api.getAllTasks()
 
     def iscsiDiscoverSendTargets(self, con, options=None):
-        iscsiConn = API.ISCSIConnection(con['connection'],
-            con['port'], con['user'], con['password'])
+        iscsiConn = API.ISCSIConnection(con['connection'], con['port'],
+                                        con['user'], con['password'])
         return iscsiConn.discoverSendTargets()
 
     def vgCreate(self, name, devlist, force=False):
@@ -897,8 +897,8 @@ def wrapApiMethod(f):
 
             # Logging current call
             logStr = 'client [%s]::call %s with %s %s' % \
-                             (getattr(f.im_self.cif.threadLocal, 'client', ''),
-                             f.__name__, displayArgs, kwargs)
+                (getattr(f.im_self.cif.threadLocal, 'client', ''),
+                 f.__name__, displayArgs, kwargs)
 
             # if flowID exists
             if getattr(f.im_self.cif.threadLocal, 'flowID', None) is not None:

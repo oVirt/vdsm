@@ -125,10 +125,9 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
         its self.socket member with ssl.
         """
 
-        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, addr,
-                 requestHandler,
-                 logRequests, allow_none, encoding,
-                 bind_and_activate=False)
+        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(
+            self, addr, requestHandler, logRequests, allow_none, encoding,
+            bind_and_activate=False)
         self.socket = SSLServerSocket(raw=self.socket, certfile=certfile,
                                       keyfile=keyfile, ca_certs=ca_certs)
         if timeout is not None:
@@ -151,7 +150,7 @@ class VerifyingHTTPSConnection(httplib.HTTPSConnection):
                  strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                  ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
         httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
-                      strict, timeout)
+                                         strict, timeout)
         self.ca_certs = ca_certs
         self.cert_reqs = cert_reqs
 
@@ -185,14 +184,14 @@ class VerifyingSafeTransport(xmlrpclib.SafeTransport):
         chost, self._extra_headers, x509 = self.get_host_info(host)
         if hasattr(xmlrpclib.SafeTransport, "single_request"):   # Python 2.7
             return VerifyingHTTPSConnection(
-                        chost, None, key_file=self.key_file, strict=None,
-                        cert_file=self.cert_file, ca_certs=self.ca_certs,
-                        cert_reqs=self.cert_reqs)
+                chost, None, key_file=self.key_file, strict=None,
+                cert_file=self.cert_file, ca_certs=self.ca_certs,
+                cert_reqs=self.cert_reqs)
         else:
             return VerifyingHTTPS(
-                        chost, None, key_file=self.key_file,
-                        cert_file=self.cert_file, ca_certs=self.ca_certs,
-                        cert_reqs=self.cert_reqs)
+                chost, None, key_file=self.key_file,
+                cert_file=self.cert_file, ca_certs=self.ca_certs,
+                cert_reqs=self.cert_reqs)
 
 
 class VerifyingHTTPS(httplib.HTTPS):

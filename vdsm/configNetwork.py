@@ -343,8 +343,7 @@ class ConfigWriter(object):
 
             devdict[self._devType(content)].append(dev)
 
-        return nicSort(devdict['Other']) + devdict['Vlan'] + \
-               devdict['Bridge']
+        return nicSort(devdict['Other']) + devdict['Vlan'] + devdict['Bridge']
 
     def _stopAtomicDevices(self):
         for dev in reversed(self._sortModifiedIfcfgs()):
