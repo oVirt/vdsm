@@ -117,9 +117,9 @@ def _getCpuTopology(capabilities):
     cells = host.getElementsByTagName('cells')[0]
     topology = {'cells': int(cells.getAttribute('num')),
                 'sockets': int(cpu.getElementsByTagName('topology')[0].
-                                                      getAttribute('sockets')),
+                               getAttribute('sockets')),
                 'cores': int(cpu.getElementsByTagName('topology')[0].
-                                                        getAttribute('cores')),
+                             getAttribute('cores')),
                 'threads': cells.getElementsByTagName('cpu').length}
     return topology
 
@@ -134,6 +134,7 @@ def _getEmulatedMachines(capabilities=None):
             return [m.firstChild.data for m in archTag.childNodes
                     if m.nodeName == 'machine']
     return []
+
 
 def _getAllCpuModels():
     cpu_map = minidom.parseString(
@@ -171,9 +172,8 @@ def _getCompatibleCpuModels():
         xml = '<cpu match="minimum"><model>%s</model>' \
               '<vendor>%s</vendor></cpu>' % (model, vendor)
         try:
-            return c.compareCPU(xml, 0) in (
-                                libvirt.VIR_CPU_COMPARE_SUPERSET,
-                                libvirt.VIR_CPU_COMPARE_IDENTICAL)
+            return c.compareCPU(xml, 0) in (libvirt.VIR_CPU_COMPARE_SUPERSET,
+                                            libvirt.VIR_CPU_COMPARE_IDENTICAL)
         except libvirt.libvirtError, e:
             # hack around libvirt BZ#795836
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
@@ -198,7 +198,7 @@ def _parseKeyVal(lines, delim='='):
 def _getIscsiIniName():
     try:
         return _parseKeyVal(
-                    file('/etc/iscsi/initiatorname.iscsi'))['InitiatorName']
+            file('/etc/iscsi/initiatorname.iscsi'))['InitiatorName']
     except:
         logging.error('reporting empty InitiatorName', exc_info=True)
     return ''
@@ -248,8 +248,8 @@ def get():
     caps = {}
 
     caps['kvmEnabled'] = \
-                str(config.getboolean('vars', 'fake_kvm_support') or
-                    os.path.exists('/dev/kvm')).lower()
+        str(config.getboolean('vars', 'fake_kvm_support') or
+            os.path.exists('/dev/kvm')).lower()
 
     cpuInfo = CpuInfo()
     cpuTopology = CpuTopology()
@@ -289,9 +289,8 @@ def get():
     caps['vmTypes'] = ['kvm']
 
     caps['memSize'] = str(utils.readMemInfo()['MemTotal'] / 1024)
-    caps['reservedMem'] = str(
-            config.getint('vars', 'host_mem_reserve') +
-            config.getint('vars', 'extra_mem_reserve'))
+    caps['reservedMem'] = str(config.getint('vars', 'host_mem_reserve') +
+                              config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
     return caps
@@ -301,7 +300,7 @@ def _getIfaceByIP(addr, fileName='/proc/net/route'):
     remote = struct.unpack('I', socket.inet_aton(addr))[0]
     for line in itertools.islice(file(fileName), 1, None):
         iface, dest, gateway, flags, refcnt, use, metric, \
-                mask, mtu, window, irtt = line.split()
+            mask, mtu, window, irtt = line.split()
         dest = int(dest, 16)
         mask = int(mask, 16)
         if remote & mask == dest & mask:
@@ -313,7 +312,7 @@ def _getKeyPackages():
     def kernelDict():
         try:
             ver, rel = file('/proc/sys/kernel/osrelease').read(). \
-                                strip().split('-', 1)
+                strip().split('-', 1)
         except:
             logging.error('kernel release not found', exc_info=True)
             ver, rel = '0', '0'
