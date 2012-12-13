@@ -176,7 +176,15 @@ def _getPathsStatus():
 
     res = {}
     for statusLine in out:
-        devName, statusLine = statusLine.split(":", 1)
+        try:
+            devName, statusLine = statusLine.split(":", 1)
+        except ValueError:
+            if len(out) == 1:
+                #return an empty dict when status output is: No devices found
+                return res
+            else:
+                raise
+
         for m in PATH_STATUS_RE.finditer(statusLine):
             devNum, status = m.groups()
             physdevName = findDev(*[int(i) for i in devNum.split(":")])
