@@ -299,8 +299,8 @@ def get():
 def _getIfaceByIP(addr, fileName='/proc/net/route'):
     remote = struct.unpack('I', socket.inet_aton(addr))[0]
     for line in itertools.islice(file(fileName), 1, None):
-        iface, dest, gateway, flags, refcnt, use, metric, \
-            mask, mtu, window, irtt = line.split()
+        (iface, dest, gateway, flags, refcnt, use, metric,
+         mask, mtu, window, irtt) = line.split()
         dest = int(dest, 16)
         mask = int(mask, 16)
         if remote & mask == dest & mask:
@@ -311,8 +311,8 @@ def _getIfaceByIP(addr, fileName='/proc/net/route'):
 def _getKeyPackages():
     def kernelDict():
         try:
-            ver, rel = file('/proc/sys/kernel/osrelease').read(). \
-                strip().split('-', 1)
+            with open('/proc/sys/kernel/osrelease', "r") as f:
+                ver, rel = f.read().strip().split('-', 1)
         except:
             logging.error('kernel release not found', exc_info=True)
             ver, rel = '0', '0'
