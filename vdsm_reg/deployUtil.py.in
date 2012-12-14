@@ -389,8 +389,7 @@ def getHostID():
     if os.path.exists(P_VDSM_NODE_ID):
         if isOvirt():
             ovirtfunctions.ovirt_store_config(P_VDSM_NODE_ID)
-        with open(P_VDSM_NODE_ID) as f:
-            strReturn = f.readline().replace("\n", "")
+        strReturn = open(P_VDSM_NODE_ID).readline().replace("\n", "")
     else:
         strReturn = getMachineUUID()
 
@@ -1349,11 +1348,8 @@ def instCert(random_num, confFile):
         VDSMKEY = ts + '/keys/vdsmkey.pem'
         SPICEPKIPATH = os.path.join(ts, 'libvirt-spice')
 
-        try:
+        if not os.path.exists(SPICEPKIPATH):
             os.makedirs(SPICEPKIPATH)
-        except OSError as e:
-            if e.errno != os.errno.EEXIST:
-                raise
 
         os.chown(SPICEPKIPATH, 0, nGID)
         os.chmod(SPICEPKIPATH, 0750)
