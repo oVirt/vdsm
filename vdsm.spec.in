@@ -69,7 +69,7 @@ Requires: logrotate
 Requires: xz
 Requires: ntp
 Requires: iproute
-Requires: python-ethtool
+Requires: python-ethtool >= 0.6-3
 Requires: rpm-python
 Requires: nfs-utils
 Requires: python-pthreading
