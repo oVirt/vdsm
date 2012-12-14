@@ -19,15 +19,16 @@
 #
 
 import os
-from vdsm.config import config
-import misc
-import subprocess
-import sanlock
-from contextlib import nested
-from vdsm import constants
-import storage_exception as se
 import threading
 import logging
+import subprocess
+from contextlib import nested
+import sanlock
+
+import misc
+import storage_exception as se
+from vdsm import constants
+from vdsm.config import config
 
 
 MAX_HOST_ID = 250
@@ -39,35 +40,32 @@ SDM_LEASE_NAME = 'SDM'
 SDM_LEASE_OFFSET = 512 * 2048
 
 
-class ClusterLock(object):
-    log = logging.getLogger("ClusterLock")
+class SafeLease(object):
+    log = logging.getLogger("SafeLease")
+
     lockUtilPath = config.get('irs', 'lock_util_path')
     lockCmd = config.get('irs', 'lock_cmd')
     freeLockCmd = config.get('irs', 'free_lock_cmd')
 
-    def __init__(self, sdUUID, idFile, leaseFile,
-                 lockRenewalIntervalSec,
-                 leaseTimeSec,
-                 leaseFailRetry,
-                 ioOpTimeoutSec):
-        self._lock = threading.RLock()
+    def __init__(self, sdUUID, idsPath, leasesPath, lockRenewalIntervalSec,
+                 leaseTimeSec, leaseFailRetry, ioOpTimeoutSec):
+        self._lock = threading.Lock()
         self._sdUUID = sdUUID
-        self._leaseFile = leaseFile
-        self.setParams(lockRenewalIntervalSec, leaseTimeSec,
-                       leaseFailRetry, ioOpTimeoutSec)
+        self._idsPath = idsPath
+        self._leasesPath = leasesPath
+        self.setParams(lockRenewalIntervalSec, leaseTimeSec, leaseFailRetry,
+                       ioOpTimeoutSec)
 
     def initLock(self):
         lockUtil = os.path.join(self.lockUtilPath, "safelease")
-        initCommand = [lockUtil, "release", "-f", self._leaseFile, "0"]
+        initCommand = [lockUtil, "release", "-f", self._leasesPath, "0"]
         rc, out, err = misc.execCmd(initCommand, sudo=False,
                                     cwd=self.lockUtilPath)
         if rc != 0:
             self.log.warn("could not initialise spm lease (%s): %s", rc, out)
             raise se.ClusterLockInitError()
 
-    def setParams(self, lockRenewalIntervalSec,
-                  leaseTimeSec,
-                  leaseFailRetry,
+    def setParams(self, lockRenewalIntervalSec, leaseTimeSec, leaseFailRetry,
                   ioOpTimeoutSec):
         self._lockRenewalIntervalSec = lockRenewalIntervalSec
         self._leaseTimeSec = leaseTimeSec
@@ -78,10 +76,12 @@ class ClusterLock(object):
         return 1000
 
     def acquireHostId(self, hostId, async):
-        pass
+        self.log.debug("Host id for domain %s successfully acquired (id: %s)",
+                       self._sdUUID, hostId)
 
     def releaseHostId(self, hostId, async, unused):
-        pass
+        self.log.debug("Host id for domain %s released successfully (id: %s)",
+                       self._sdUUID, hostId)
 
     def hasHostId(self, hostId):
         return True
@@ -96,9 +96,9 @@ class ClusterLock(object):
             lockUtil = self.getLockUtilFullPath()
             acquireLockCommand = subprocess.list2cmdline([
                 lockUtil, "start", self._sdUUID, str(hostID),
-                str(self._lockRenewalIntervalSec), str(self._leaseFile),
-                str(leaseTimeMs), str(ioOpTimeoutMs),
-                str(self._leaseFailRetry)])
+                str(self._lockRenewalIntervalSec), str(self._leasesPath),
+                str(leaseTimeMs), str(ioOpTimeoutMs), str(self._leaseFailRetry)
+            ])
 
             cmd = [constants.EXT_SU, misc.IOUSER, '-s', constants.EXT_SH, '-c',
                    acquireLockCommand]
