@@ -226,7 +226,7 @@ def osversion():
 
     osname = getos()
     try:
-        if osname == OSName.RHEVH:
+        if osname == OSName.RHEVH or osname == OSName.OVIRT:
             d = _parseKeyVal(file('/etc/default/version'))
             version = d.get('VERSION', '')
             release = d.get('RELEASE', '')
