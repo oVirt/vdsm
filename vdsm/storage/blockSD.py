@@ -37,7 +37,7 @@ import misc
 import fileUtils
 import sd
 import lvm
-import safelease
+import clusterlock
 import blockVolume
 import multipath
 import resourceFactories
@@ -63,7 +63,7 @@ log = logging.getLogger("Storage.BlockSD")
 
 # FIXME: Make this calculated from something logical
 RESERVED_METADATA_SIZE = 40 * (2 ** 20)
-RESERVED_MAILBOX_SIZE = MAILBOX_SIZE * safelease.MAX_HOST_ID
+RESERVED_MAILBOX_SIZE = MAILBOX_SIZE * clusterlock.MAX_HOST_ID
 METADATA_BASE_SIZE = 378
 # VG's min metadata threshold is 20%
 VG_MDA_MIN_THRESHOLD = 0.2

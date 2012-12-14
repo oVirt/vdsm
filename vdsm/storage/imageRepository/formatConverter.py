@@ -26,7 +26,7 @@ from vdsm import qemuImg
 from storage import sd
 from storage import blockSD
 from storage import image
-from storage import safelease
+from storage import clusterlock
 from storage import volume
 from storage import blockVolume
 from storage import storage_exception as se
@@ -115,8 +115,8 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         domain.setMetadataPermissions()
 
     log.debug("Initializing the new cluster lock for domain %s", domain.sdUUID)
-    newClusterLock = safelease.SANLock(domain.sdUUID, domain.getIdsFilePath(),
-                                       domain.getLeasesFilePath())
+    newClusterLock = clusterlock.SANLock(
+        domain.sdUUID, domain.getIdsFilePath(), domain.getLeasesFilePath())
     newClusterLock.initLock()
 
     log.debug("Acquiring the host id %s for domain %s", hostId, domain.sdUUID)

@@ -33,7 +33,7 @@ import configNetwork
 from vdsm import netinfo
 from vdsm import constants
 import storage.misc
-import storage.safelease
+import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
@@ -992,7 +992,7 @@ class StoragePool(APIBase):
     def spmStart(self, prevID, prevLver, enableScsiFencing,
                  maxHostID=None, domVersion=None):
         if maxHostID is None:
-            maxHostID = storage.safelease.MAX_HOST_ID
+            maxHostID = storage.clusterlock.MAX_HOST_ID
         recoveryMode = None   # unused
         return self._irs.spmStart(self._UUID, prevID, prevLver,
                 recoveryMode, enableScsiFencing, maxHostID, domVersion)

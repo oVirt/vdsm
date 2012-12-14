@@ -53,7 +53,7 @@ import iscsi
 import misc
 from misc import deprecated
 import taskManager
-import safelease
+import clusterlock
 import storage_exception as se
 from threadLocal import vars
 from vdsm import constants
@@ -528,7 +528,7 @@ class HSM:
 
     @public
     def spmStart(self, spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
-                 maxHostID=safelease.MAX_HOST_ID, domVersion=None,
+                 maxHostID=clusterlock.MAX_HOST_ID, domVersion=None,
                  options=None):
         """
         Starts an SPM.
@@ -845,7 +845,7 @@ class HSM:
         :raises: an :exc:`Storage_Exception.InvalidParameterException` if the
                  master domain is not supplied in the domain list.
         """
-        safeLease = sd.packLeaseParams(
+        leaseParams = sd.packLeaseParams(
             lockRenewalIntervalSec=lockRenewalIntervalSec,
             leaseTimeSec=leaseTimeSec,
             ioOpTimeoutSec=ioOpTimeoutSec,
@@ -853,9 +853,9 @@ class HSM:
         vars.task.setDefaultException(
             se.StoragePoolCreationError(
                 "spUUID=%s, poolName=%s, masterDom=%s, domList=%s, "
-                "masterVersion=%s, safelease params: (%s)" %
+                "masterVersion=%s, clusterlock params: (%s)" %
                 (spUUID, poolName, masterDom, domList, masterVersion,
-                 safeLease)))
+                 leaseParams)))
         misc.validateUUID(spUUID, 'spUUID')
         if masterDom not in domList:
             raise se.InvalidParameterException("masterDom", str(masterDom))
@@ -892,7 +892,7 @@ class HSM:
 
         return sp.StoragePool(
             spUUID, self.taskMng).create(poolName, masterDom, domList,
-                                         masterVersion, safeLease)
+                                         masterVersion, leaseParams)
 
     @public
     def connectStoragePool(self, spUUID, hostID, scsiKey,
@@ -1701,7 +1701,7 @@ class HSM:
         :returns: Nothing ? pool.reconstructMaster return nothing
         :rtype: ?
         """
-        safeLease = sd.packLeaseParams(
+        leaseParams = sd.packLeaseParams(
             lockRenewalIntervalSec=lockRenewalIntervalSec,
             leaseTimeSec=leaseTimeSec,
             ioOpTimeoutSec=ioOpTimeoutSec,
@@ -1710,9 +1710,9 @@ class HSM:
 
         vars.task.setDefaultException(
             se.ReconstructMasterError(
-                "spUUID=%s, masterDom=%s, masterVersion=%s, safelease "
+                "spUUID=%s, masterDom=%s, masterVersion=%s, clusterlock "
                 "params: (%s)" % (spUUID, masterDom, masterVersion,
-                                  safeLease)))
+                                  leaseParams)))
 
         self.log.info("spUUID=%s master=%s", spUUID, masterDom)
 
@@ -1738,7 +1738,7 @@ class HSM:
                 domDict[d] = sd.validateSDDeprecatedStatus(status)
 
         return pool.reconstructMaster(hostId, poolName, masterDom, domDict,
-                                      masterVersion, safeLease)
+                                      masterVersion, leaseParams)
 
     def _logResp_getDeviceList(self, response):
         logableDevs = deepcopy(response)

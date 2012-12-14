@@ -494,7 +494,7 @@ class StoragePool(Securable):
             return config.getint("irs", "maximum_domains_in_pool")
 
     @unsecured
-    def _acquireTemporaryClusterLock(self, msdUUID, safeLease):
+    def _acquireTemporaryClusterLock(self, msdUUID, leaseParams):
         try:
             # Master domain is unattached and all changes to unattached domains
             # must be performed under storage lock
@@ -504,7 +504,7 @@ class StoragePool(Securable):
             # assigned id for this pool
             self.id = msd.getReservedId()
 
-            msd.changeLeaseParams(safeLease)
+            msd.changeLeaseParams(leaseParams)
 
             msd.acquireHostId(self.id)
 
@@ -527,7 +527,7 @@ class StoragePool(Securable):
         self.id = SPM_ID_FREE
 
     @unsecured
-    def create(self, poolName, msdUUID, domList, masterVersion, safeLease):
+    def create(self, poolName, msdUUID, domList, masterVersion, leaseParams):
         """
         Create new storage pool with single/multiple image data domain.
         The command will create new storage pool meta-data attach each
@@ -537,10 +537,9 @@ class StoragePool(Securable):
          'msdUUID' - master domain of this pool (one of domList)
          'domList' - list of domains (i.e sdUUID,sdUUID,...,sdUUID)
         """
-        self.log.info("spUUID=%s poolName=%s master_sd=%s "
-                      "domList=%s masterVersion=%s %s",
-                      self.spUUID, poolName, msdUUID,
-                      domList, masterVersion, str(safeLease))
+        self.log.info("spUUID=%s poolName=%s master_sd=%s domList=%s "
+                      "masterVersion=%s %s", self.spUUID, poolName, msdUUID,
+                      domList, masterVersion, leaseParams)
 
         if msdUUID not in domList:
             raise se.InvalidParameterException("masterDomain", msdUUID)
@@ -565,7 +564,7 @@ class StoragePool(Securable):
                     raise se.StorageDomainAlreadyAttached(spUUIDs[0], sdUUID)
 
         fileUtils.createdir(self.poolPath)
-        self._acquireTemporaryClusterLock(msdUUID, safeLease)
+        self._acquireTemporaryClusterLock(msdUUID, leaseParams)
 
         try:
             self._setSafe()
@@ -573,7 +572,7 @@ class StoragePool(Securable):
             # We should do it before actually attaching this domain to the pool.
             # During 'master' marking we create pool metadata and each attached
             # domain should register there
-            self.createMaster(poolName, msd, masterVersion, safeLease)
+            self.createMaster(poolName, msd, masterVersion, leaseParams)
             self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
             # Attach storage domains to the storage pool
             # Since we are creating the pool then attach is done from the hsm and not the spm
@@ -722,10 +721,10 @@ class StoragePool(Securable):
 
     @unsecured
     def reconstructMaster(self, hostId, poolName, msdUUID, domDict,
-                          masterVersion, safeLease):
+                          masterVersion, leaseParams):
         self.log.info("spUUID=%s hostId=%s poolName=%s msdUUID=%s domDict=%s "
                       "masterVersion=%s leaseparams=(%s)", self.spUUID, hostId,
-                      poolName, msdUUID, domDict, masterVersion, str(safeLease))
+                      poolName, msdUUID, domDict, masterVersion, leaseParams)
 
         if msdUUID not in domDict:
             raise se.InvalidParameterException("masterDomain", msdUUID)
@@ -736,7 +735,7 @@ class StoragePool(Securable):
         # For backward compatibility we must support a reconstructMaster
         # that doesn't specify an hostId.
         if not hostId:
-            self._acquireTemporaryClusterLock(msdUUID, safeLease)
+            self._acquireTemporaryClusterLock(msdUUID, leaseParams)
             temporaryLock = True
         else:
             # Forcing to acquire the host id (if it's not acquired already).
@@ -749,7 +748,7 @@ class StoragePool(Securable):
 
         try:
             self.createMaster(poolName, futureMaster, masterVersion,
-                              safeLease)
+                              leaseParams)
 
             for sdUUID in domDict:
                 domDict[sdUUID] = domDict[sdUUID].capitalize()

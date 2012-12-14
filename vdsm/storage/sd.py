@@ -31,7 +31,7 @@ import resourceFactories
 from resourceFactories import IMAGE_NAMESPACE, VOLUME_NAMESPACE
 import resourceManager as rm
 from vdsm import constants
-import safelease
+import clusterlock
 import outOfProcess as oop
 from persistentDict import unicodeEncoder, unicodeDecoder
 
@@ -307,12 +307,12 @@ class StorageDomain:
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
                 DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC])
-            self._clusterLock = safelease.ClusterLock(self.sdUUID,
-                    self.getIdsFilePath(), self.getLeasesFilePath(),
-                    *leaseParams)
+            self._clusterLock = clusterlock.SafeLease(
+                self.sdUUID, self.getIdsFilePath(), self.getLeasesFilePath(),
+                *leaseParams)
         elif domversion in DOM_SANLOCK_VERS:
-            self._clusterLock = safelease.SANLock(self.sdUUID,
-                    self.getIdsFilePath(), self.getLeasesFilePath())
+            self._clusterLock = clusterlock.SANLock(
+                self.sdUUID, self.getIdsFilePath(), self.getLeasesFilePath())
         else:
             raise se.UnsupportedDomainVersion(domversion)
 

@@ -25,6 +25,7 @@ dist_vdsmstorage_PYTHON = \
 	__init__.py \
 	blockSD.py \
 	blockVolume.py \
+	clusterlock.py \
 	devicemapper.py \
 	dispatcher.py \
 	domainMonitor.py \
@@ -35,8 +36,8 @@ dist_vdsmstorage_PYTHON = \
 	hba.py \
 	hsm.py \
 	image.py \
+	iscsiadm.py \
 	iscsi.py \
-        iscsiadm.py \
 	localFsSD.py \
 	lvm.py \
 	misc.py \
@@ -48,7 +49,6 @@ dist_vdsmstorage_PYTHON = \
 	remoteFileHandler.py \
 	resourceFactories.py \
 	resourceManager.py \
-	safelease.py \
 	sdc.py \
 	sd.py \
 	securable.py \
