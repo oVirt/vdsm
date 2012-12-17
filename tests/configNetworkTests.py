@@ -355,6 +355,8 @@ class ConfigWriterTests(TestCaseBase):
             (netinfo, 'NET_CONF_BACK_DIR',
              os.path.join(self._tempdir, 'netback')),
             (netinfo, 'NET_CONF_DIR', self._tempdir),
+            (netinfo, 'NET_CONF_PREF',
+             os.path.join(self._tempdir, 'ifcfg-'))
         ]):
             #after vdsm package is installed, the 'vdsm' account will be
             #created if no 'vdsm' account, we should skip this test
