@@ -978,7 +978,7 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             os.rmdir(imgPath)
         except OSError:
-            self.log.warning("Can't rmdir %s. %s", imgPath, exc_info=True)
+            self.log.warning("Can't rmdir %s", imgPath, exc_info=True)
         else:
             self.log.debug("removed image dir: %s", imgPath)
         return imgPath
