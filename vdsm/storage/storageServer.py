@@ -461,8 +461,10 @@ class LocalDirectoryConnection(object):
                             self._path.replace("_", "__").replace("/", "_"))
 
     def checkTarget(self):
-        return (os.path.isdir(self._path) and
-                fileSD.validateDirAccess(self._path))
+        if not os.path.isdir(self._path):
+            raise se.StorageServerLocalNotDirError(self._path)
+        fileSD.validateDirAccess(self._path)
+        return True
 
     def checkLink(self):
         lnPath = self._getLocalPath()
@@ -475,10 +477,7 @@ class LocalDirectoryConnection(object):
         return False
 
     def connect(self):
-        if not self.checkTarget():
-            # TODO: Use proper exception
-            raise Exception("Could not link to directory. Path does not exist "
-                            "or isn't a directory")
+        self.checkTarget()
 
         if self.checkLink():
             return

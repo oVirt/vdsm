@@ -1136,6 +1136,14 @@ class StorageServerAccessPermissionError(StorageException):
         self.value = "path = %s" % targetPath
 
 
+class StorageServerLocalNotDirError(StorageException):
+    code = 469
+    message = "The specified local path is not a directory."
+
+    def __init__(self, targetPath):
+        self.value = "path = %s" % targetPath
+
+
 class MountTypeError(StorageException):
     code = 470
     message = "Mount type error"
