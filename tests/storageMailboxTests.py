@@ -34,7 +34,7 @@ import tempfile
 class StoragePoolStub(object):
     def __init__(self):
         self.spUUID = str(uuid4())
-        self.storage_repository = tempfile.mkdtemp()
+        self.storage_repository = tempfile.mkdtemp(dir='/var/tmp')
         self.__masterDir = os.path.join(self.storage_repository, self.spUUID,
                                         "mastersd", DOMAIN_META_DATA)
 
