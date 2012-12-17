@@ -475,7 +475,6 @@ start() {
         return $ret_val
     fi
 
-    @VDSMDIR@/vdsm-restore-net-config
     /usr/bin/vdsm-tool load-needed-modules
     mk_data_center
     mk_core_path

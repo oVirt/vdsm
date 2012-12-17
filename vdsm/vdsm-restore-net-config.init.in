@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# vdsm-restore-net-config: restore network interface configuration
+#
+# chkconfig:   2345 98 01
+# description: roll back the host network configuration to the last \
+#              known-good one.
+
+### BEGIN INIT INFO
+# Provides: vdsm-restore-net-config
+# Required-Start: $network
+# Short-Description: restore network configuration files
+# Description: roll back the host network configuration to the last \
+#              known-good one.
+#
+### END INIT INFO
+
+sysconfdir="/etc"
+
+# Source function library.
+test ! -r "$sysconfdir"/rc.d/init.d/functions ||
+    . "$sysconfdir"/rc.d/init.d/functions
+
+# usage [val]
+# Display usage string, then exit with VAL (defaults to 2).
+usage() {
+    echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+    exit ${1-2}
+}
+
+retval=0
+case "$1" in
+    # commands required in all Fedora initscripts
+    start|restart|reload|force-reload|condrestart|try-restart)
+        echo -n $"Running $prog $1: "
+        @VDSMDIR@/vdsm-restore-net-config
+        retval=$?
+        echo
+        ;;
+    stop|status)
+        snapshotdir=`python -c 'from vdsm.netinfo import NET_LOGICALNET_CONF_BACK_DIR as d;print d'`
+        if test -d "$snapshotdir"
+        then
+            echo $"There are uncommitted network configuration changes"
+        else
+            echo $"No pending network configuration changes"
+        fi
+        ;;
+
+    --help)
+        usage 0
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+exit $retval

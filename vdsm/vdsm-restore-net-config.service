@@ -1,0 +1,12 @@
+[Unit]
+Description=Restore failed Vdsm network configuration on boot
+Requires=libvirtd.service
+Before=vdsmd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/share/vdsm/vdsm-restore-net-config
+
+[Install]
+WantedBy=multi-user.target

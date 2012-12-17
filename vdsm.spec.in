@@ -446,6 +446,8 @@ install -Dm 0644 vdsm/limits.conf \
 # Install the SysV init scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
 install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
+install -Dm 0755 vdsm/vdsm-restore-net-config.init \
+    %{buildroot}%{_initrddir}/vdsm-restore-net-config
 
 # This is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps
@@ -458,6 +460,8 @@ install -Dm 0644 vdsm/vdsm.conf.sample \
 # Install the systemd scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}/lib/systemd/systemd-vdsmd
 install -Dm 0644 vdsm/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
+install -Dm 0644 vdsm/vdsm-restore-net-config.service \
+    %{buildroot}%{_unitdir}/vdsm-restore-net-config.service
 install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
@@ -507,10 +511,12 @@ fi
 %if 0%{?rhel}
 if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsmd
+    /sbin/chkconfig --add vdsm-restore-net-config
 fi
 %else
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
+    /bin/systemctl enable vdsm-restore-net-config.service >/dev/null 2>&1 || :
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
@@ -522,6 +528,7 @@ if [ "$1" -eq 0 ]
 then
     /sbin/service vdsmd stop > /dev/null 2>&1 || :
     /sbin/chkconfig --del vdsmd
+    /sbin/chkconfig --del vdsm-restore-net-config
 
     /bin/sed -i '/# by vdsm$/d' \
         /etc/libvirt/libvirtd.conf \
@@ -547,6 +554,7 @@ fi
 %else
 if [ "$1" -eq 0 ]; then
     /bin/systemctl --no-reload disable vdsmd.service > /dev/null 2>&1 || :
+    /bin/systemctl --no-reload disable vdsm-restore-net-config.service > /dev/null 2>&1 || :
     /bin/systemctl stop vdsmd.service > /dev/null 2>&1 || :
 fi
 exit 0
@@ -610,9 +618,11 @@ exit 0
 %doc COPYING README vdsm/vdsm.conf.sample vdsm_api/vdsm-api.html
 %if 0%{?rhel}
 %{_initrddir}/vdsmd
+%{_initrddir}/vdsm-restore-net-config
 %else
 /lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
+%{_unitdir}/vdsm-restore-net-config.service
 %endif
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks

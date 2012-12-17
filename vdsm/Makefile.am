@@ -89,9 +89,11 @@ nodist_noinst_DATA = \
 	mom.conf \
 	sudoers.vdsm \
 	vdsm-logrotate.conf \
+	vdsm-restore-net-config.init \
 	vdsm.conf.sample \
 	vdsm.rwtab \
-	vdsmd.init
+	vdsmd.init \
+	$(NULL)
 
 dist_vdsm_SCRIPTS = \
 	addNetwork \
@@ -137,6 +139,8 @@ EXTRA_DIST = \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf.in \
+	vdsm-restore-net-config.init.in \
+	vdsm-restore-net-config.service \
 	vdsm.rwtab.in \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf
