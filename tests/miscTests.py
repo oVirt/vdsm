@@ -1037,8 +1037,12 @@ class ExecCmd(TestCaseBase):
     def testNice(self):
         cmd = ["sleep", "10"]
         proc = misc.execCmd(cmd, sudo=False, nice=10, sync=False)
-        nice = misc.pidStat(proc.pid)[18]
-        self.assertEquals(nice, 10)
+
+        def test():
+            nice = misc.pidStat(proc.pid)[18]
+            self.assertEquals(nice, 10)
+
+        utils.retry(AssertionError, test, tries=10, sleep=0.1)
         proc.kill()
         proc.wait()
 
