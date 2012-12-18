@@ -18,6 +18,7 @@ build-aux/py-compile
 config.log
 config.status
 configure
+results.log
 tests/run_tests.sh
 tests/run_tests_local.sh
 vdsm-*.tar.gz
