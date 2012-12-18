@@ -51,7 +51,7 @@ class TestGuestIF(TestCaseBase):
             {'name': 'example.ovirt.org'},
             {'version': '2.6.32-71.el6.x86_64'},
 
-            {'interfaces':[
+            {'interfaces': [
                 {'hw': '00:21:cc:68:d7:38', 'name': 'eth0', 'inet':
                  ['9.115.122.77'], 'inet6': ['fe80::221:ccff:fe68:d738']},
                 {'hw': 'a0:88:b4:f0:ce:a0', 'name': 'wlan0', 'inet':
@@ -62,9 +62,9 @@ class TestGuestIF(TestCaseBase):
             {'applications':
                 ['kernel-2.6.32-71.7.1.el6', 'kernel-2.6.32-220.el6']},
 
-            {'disks':[
+            {'disks': [
                 {'total': 130062397440, 'path': '/', 'fs': 'ext4',
-                 'used':76402614272},
+                 'used': 76402614272},
                 {'total': 203097088, 'path': '/boot', 'fs': 'ext4',
                  'used': 153149440}]}]
 

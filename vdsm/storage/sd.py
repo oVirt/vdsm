@@ -634,7 +634,7 @@ class StorageDomain:
         """
         Get 'images' directory from Iso domain
         """
-        return  os.path.join(self.domaindir, DOMAIN_IMAGES, ISO_IMAGE_UUID)
+        return os.path.join(self.domaindir, DOMAIN_IMAGES, ISO_IMAGE_UUID)
 
     def supportsUnicode(self):
         return supportsUnicode(self.getVersion())
