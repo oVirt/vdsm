@@ -73,7 +73,8 @@ VG_METADATASIZE = 128
 MAX_PVS_LIMIT = 10  # BZ#648051
 MAX_PVS = config.getint('irs', 'maximum_allowed_pvs')
 if MAX_PVS > MAX_PVS_LIMIT:
-    log.warning("maximum_allowed_pvs = %d ignored. MAX_PVS = %d", MAX_PVS, MAX_PVS_LIMIT)
+    log.warning("maximum_allowed_pvs = %d ignored. MAX_PVS = %d", MAX_PVS,
+                MAX_PVS_LIMIT)
     MAX_PVS = MAX_PVS_LIMIT
 
 PVS_METADATA_SIZE = MAX_PVS * 142
@@ -111,8 +112,10 @@ BLOCK_SD_MD_FIELDS.update({
     # Key           dec,  enc
     DMDK_PV_REGEX: (decodePVInfo, encodePVInfo),
     DMDK_VGUUID: (str, str),
-    DMDK_LOGBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
-    DMDK_PHYBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE), str),
+    DMDK_LOGBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE),
+                      str),
+    DMDK_PHYBLKSIZE: (functools.partial(sd.intOrDefault, DEFAULT_BLOCKSIZE),
+                      str),
 })
 
 INVALID_CHARS = re.compile(r"[^a-zA-Z0-9_+.\-/=!:#]")
@@ -173,7 +176,7 @@ def getAllVolumes(sdUUID):
             res[vPar]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
-                    for k, v in res.iteritems())
+                for k, v in res.iteritems())
 
 
 def deleteVolumes(sdUUID, vols):
@@ -193,8 +196,8 @@ def _zeroVolume(sdUUID, volUUID):
     count = size / BS
     cmd = tuple(constants.CMD_LOWPRIO)
     cmd += (constants.EXT_DD, "oflag=%s" % misc.DIRECTFLAG, "if=/dev/zero",
-                    "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
-                    "count=%s" % count)
+            "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
+            "count=%s" % count)
     p = misc.execCmd(cmd, sudo=False, sync=False)
     return p
 
@@ -208,7 +211,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
     # Prepare for zeroing
     try:
         lvm.changelv(sdUUID, volUUIDs, (("-a", "y"), ("--deltag", imgUUID),
-                            ("--addtag", sd.REMOVED_IMAGE_PREFIX + imgUUID)))
+                     ("--addtag", sd.REMOVED_IMAGE_PREFIX + imgUUID)))
     except se.StorageException as e:
         log.error("Can't activate or change LV tags in SD %s. "
                   "failing Image %s pre zeroing operation for vols: %s. %s",
@@ -250,17 +253,18 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
                               proc.returncode, proc.stderr.read(1000))
                 else:
                     log.debug("%s/%s was zeroed and will be deleted",
-                                                            sdUUID, volUUID)
+                              sdUUID, volUUID)
                     toDelete.append(vol)
         if toDelete:
             try:
                 deleteVolumes(sdUUID, toDelete)
             except se.CannotRemoveLogicalVolume:
                 # TODO: Add the list of removed fail volumes to the exception.
-                log.error("Remove failed for some of VG: %s zeroed volumes: %s",
-                            sdUUID, toDelete, exc_info=True)
+                log.error("Remove failed for some of VG: %s zeroed volumes: "
+                          "%s", sdUUID, toDelete, exc_info=True)
 
-    log.debug("finished with VG:%s LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
+    log.debug("finished with VG:%s LVs: %s, img: %s", sdUUID, volUUIDs,
+              imgUUID)
     return
 
 
@@ -289,15 +293,18 @@ class VGTagMetadataRW(object):
         newMetadata = set(lines)
 
         # Remove all items that do not exist in the new metadata
-        toRemove = [self.METADATA_TAG_PREFIX + lvmTagEncode(item) for item in currentMetadata.difference(newMetadata)]
+        toRemove = [self.METADATA_TAG_PREFIX + lvmTagEncode(item) for item in
+                    currentMetadata.difference(newMetadata)]
 
         # Add all missing items that do no exist in the old metadata
-        toAdd = [self.METADATA_TAG_PREFIX + lvmTagEncode(item) for item in newMetadata.difference(currentMetadata)]
+        toAdd = [self.METADATA_TAG_PREFIX + lvmTagEncode(item) for item in
+                 newMetadata.difference(currentMetadata)]
 
         if len(toAdd) == 0 and len(toRemove) == 0:
             return
 
-        self.log.debug("Updating metadata adding=%s removing=%s", ", ".join(toAdd), ", ".join(toRemove))
+        self.log.debug("Updating metadata adding=%s removing=%s",
+                       ", ".join(toAdd), ", ".join(toRemove))
         lvm.changeVGTags(self._vgName, delTags=toRemove, addTags=toAdd)
 
 
@@ -346,8 +353,12 @@ class LvMetadataRW(object):
             f.seek(self._offset)
             f.write(data)
 
-LvBasedSDMetadata = lambda vg, lv: DictValidator(PersistentDict(LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)), BLOCK_SD_MD_FIELDS)
-TagBasedSDMetadata = lambda vg: DictValidator(PersistentDict(VGTagMetadataRW(vg)), BLOCK_SD_MD_FIELDS)
+LvBasedSDMetadata = lambda vg, lv: DictValidator(
+    PersistentDict(LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)),
+    BLOCK_SD_MD_FIELDS)
+TagBasedSDMetadata = lambda vg: DictValidator(
+    PersistentDict(VGTagMetadataRW(vg)),
+    BLOCK_SD_MD_FIELDS)
 
 
 def selectMetadata(sdUUID):
@@ -362,7 +373,8 @@ def selectMetadata(sdUUID):
 def metadataValidity(vg):
     """
     Return the metadata validity:
-     mdathreshold - False if the VG's metadata exceeded its threshold, else True
+     mdathreshold - False if the VG's metadata exceeded its threshold,
+                    else True
      mdavalid - False if the VG's metadata size too small, else True
     """
     mdaStatus = {'mdavalid': True, 'mdathreshold': True}
@@ -380,7 +392,7 @@ def metadataValidity(vg):
 
 class BlockStorageDomain(sd.StorageDomain):
     mountpoint = os.path.join(sd.StorageDomain.storage_repository,
-            sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
+                              sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
 
     def __init__(self, sdUUID):
         domaindir = os.path.join(self.mountpoint, sdUUID)
@@ -424,12 +436,16 @@ class BlockStorageDomain(sd.StorageDomain):
 
         rmanager = rm.ResourceManager.getInstance()
         # Register lvm activation resource namespace for the underlying VG
-        lvmActivationFactory = resourceFactories.LvmActivationFactory(self.sdUUID)
-        lvmActivationNamespace = sd.getNamespace(self.sdUUID, LVM_ACTIVATION_NAMESPACE)
+        lvmActivationFactory = resourceFactories.LvmActivationFactory(
+            self.sdUUID)
+        lvmActivationNamespace = sd.getNamespace(self.sdUUID,
+                                                 LVM_ACTIVATION_NAMESPACE)
         try:
-            rmanager.registerNamespace(lvmActivationNamespace, lvmActivationFactory)
+            rmanager.registerNamespace(lvmActivationNamespace,
+                                       lvmActivationFactory)
         except Exception:
-            self.log.warn("Resource namespace %s already registered", lvmActivationNamespace)
+            self.log.warn("Resource namespace %s already registered",
+                          lvmActivationNamespace)
 
     @classmethod
     def metaSize(cls, vgroup):
@@ -439,17 +455,22 @@ class BlockStorageDomain(sd.StorageDomain):
         # extent size of 128MB. In any case we compute the right size on line.
         vg = lvm.getVG(vgroup)
         minmetasize = (SD_METADATA_SIZE / sd.METASIZE * int(vg.extent_size) +
-            (1024 * 1024 - 1)) / (1024 * 1024)
+                      (1024 * 1024 - 1)) / (1024 * 1024)
         metaratio = int(vg.extent_size) / sd.METASIZE
-        metasize = (int(vg.extent_count) * sd.METASIZE + (1024 * 1024 - 1)) / (1024 * 1024)
+        metasize = (int(vg.extent_count) * sd.METASIZE +
+                    (1024 * 1024 - 1)) / (1024 * 1024)
         metasize = max(minmetasize, metasize)
         if metasize > int(vg.free) / (1024 * 1024):
-            raise se.VolumeGroupSizeError("volume group has not enough extents %s (Minimum %s), VG may be too small" % (vg.extent_count, (1024 * 1024) / sd.METASIZE))
+            raise se.VolumeGroupSizeError(
+                "volume group has not enough extents %s (Minimum %s), VG may "
+                "be too small" % (vg.extent_count,
+                                  (1024 * 1024) / sd.METASIZE))
         cls.log.info("size %s MB (metaratio %s)" % (metasize, metaratio))
         return metasize
 
     @classmethod
-    def create(cls, sdUUID, domainName, domClass, vgUUID, storageType, version):
+    def create(cls, sdUUID, domainName, domClass, vgUUID, storageType,
+               version):
         """ Create new storage domain
             'sdUUID' - Storage Domain UUID
             'domainName' - storage domain name
@@ -459,8 +480,8 @@ class BlockStorageDomain(sd.StorageDomain):
             'version' - DOMAIN_VERSIONS
         """
         cls.log.info("sdUUID=%s domainName=%s domClass=%s vgUUID=%s "
-            "storageType=%s version=%s", sdUUID, domainName, domClass, vgUUID,
-            storageType, version)
+                     "storageType=%s version=%s", sdUUID, domainName, domClass,
+                     vgUUID, storageType, version)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
@@ -534,21 +555,25 @@ class BlockStorageDomain(sd.StorageDomain):
         #         Do we really need to keep the VGUUID?
         #         no one reads it from here anyway
         initialMetadata = {
-                sd.DMDK_VERSION: version,
-                sd.DMDK_SDUUID: sdUUID,
-                sd.DMDK_TYPE: storageType,
-                sd.DMDK_CLASS: domClass,
-                sd.DMDK_DESCRIPTION: domainName,
-                sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
-                sd.DMDK_POOLS: [],
-                sd.DMDK_LOCK_POLICY: '',
-                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_LEASE_TIME_SEC: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_IO_OP_TIMEOUT_SEC: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
-                sd.DMDK_LEASE_RETRIES: sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
-                DMDK_VGUUID: vgUUID,
-                DMDK_LOGBLKSIZE: logBlkSize,
-                DMDK_PHYBLKSIZE: phyBlkSize,
+            sd.DMDK_VERSION: version,
+            sd.DMDK_SDUUID: sdUUID,
+            sd.DMDK_TYPE: storageType,
+            sd.DMDK_CLASS: domClass,
+            sd.DMDK_DESCRIPTION: domainName,
+            sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
+            sd.DMDK_POOLS: [],
+            sd.DMDK_LOCK_POLICY: '',
+            sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC: sd.DEFAULT_LEASE_PARAMS[
+                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+            sd.DMDK_LEASE_TIME_SEC: sd.DEFAULT_LEASE_PARAMS[
+                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+            sd.DMDK_IO_OP_TIMEOUT_SEC: sd.DEFAULT_LEASE_PARAMS[
+                sd.DMDK_IO_OP_TIMEOUT_SEC],
+            sd.DMDK_LEASE_RETRIES: sd.DEFAULT_LEASE_PARAMS[
+                sd.DMDK_LEASE_RETRIES],
+            DMDK_VGUUID: vgUUID,
+            DMDK_LOGBLKSIZE: logBlkSize,
+            DMDK_PHYBLKSIZE: phyBlkSize,
         }
 
         initialMetadata.update(mapping)
@@ -557,7 +582,8 @@ class BlockStorageDomain(sd.StorageDomain):
 
         # Mark VG with Storage Domain Tag
         try:
-            lvm.replaceVGTag(vgName, STORAGE_UNREADY_DOMAIN_TAG, STORAGE_DOMAIN_TAG)
+            lvm.replaceVGTag(vgName, STORAGE_UNREADY_DOMAIN_TAG,
+                             STORAGE_DOMAIN_TAG)
         except se.StorageException:
             raise se.VolumeGroupUninitialized(vgName)
 
@@ -603,16 +629,18 @@ class BlockStorageDomain(sd.StorageDomain):
         'volFormat' - volume format RAW/QCOW2
         'preallocate' - sparse/preallocate
         """
-        blockVolume.BlockVolume.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        blockVolume.BlockVolume.validateCreateVolumeParams(
+            volFormat, preallocate, srcVolUUID)
 
-    def createVolume(self, imgUUID, size, volFormat, preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+    def createVolume(self, imgUUID, size, volFormat, preallocate, diskType,
+                     volUUID, desc, srcImgUUID, srcVolUUID):
         """
         Create a new volume
         """
         repoPath = self._getRepoPath()
-        return blockVolume.BlockVolume.create(repoPath, self.sdUUID,
-                            imgUUID, size, volFormat, preallocate, diskType,
-                            volUUID, desc, srcImgUUID, srcVolUUID)
+        return blockVolume.BlockVolume.create(
+            repoPath, self.sdUUID, imgUUID, size, volFormat, preallocate,
+            diskType, volUUID, desc, srcImgUUID, srcVolUUID)
 
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
@@ -620,7 +648,8 @@ class BlockStorageDomain(sd.StorageDomain):
         firstExtent = int(firstExtent)
         if firstExtent != 0:
             cls.log.error("INTERNAL: metadata ext is not 0")
-            raise se.MetaDataMappingError("vg %s: metadata extent is not the first extent" % vgName)
+            raise se.MetaDataMappingError("vg %s: metadata extent is not the "
+                                          "first extent" % vgName)
 
         pvlist = lvm.listPVNames(vgName)
 
@@ -659,7 +688,8 @@ class BlockStorageDomain(sd.StorageDomain):
                 except KeyError:
                     prevInfo = oldMapping["PV%d" % (prevDevNum,)]
 
-                mapOffset = int(prevInfo["mapoffset"]) + int(prevInfo["pecount"])
+                mapOffset = int(prevInfo["mapoffset"]) + \
+                    int(prevInfo["pecount"])
 
             pvInfo["mapoffset"] = mapOffset
             mapping["PV%d" % devNum] = pvInfo
@@ -670,7 +700,8 @@ class BlockStorageDomain(sd.StorageDomain):
     def updateMapping(self):
         # First read existing mapping from metadata
         with self._metadata.transaction():
-            mapping = self.getMetaDataMapping(self.sdUUID, self.readMetadataMapping())
+            mapping = self.getMetaDataMapping(self.sdUUID,
+                                              self.readMetadataMapping())
             for key in set(self._metadata.keys() + mapping.keys()):
                 if DMDK_PV_REGEX.match(key):
                     if key in mapping:
@@ -725,14 +756,16 @@ class BlockStorageDomain(sd.StorageDomain):
                     offset = int(stripPrefix(tag, blockVolume.TAG_PREFIX_MD))
 
                 if tag.startswith(blockVolume.TAG_PREFIX_MDNUMBLKS):
-                    size = int(stripPrefix(tag, blockVolume.TAG_PREFIX_MDNUMBLKS))
+                    size = int(stripPrefix(tag,
+                                           blockVolume.TAG_PREFIX_MDNUMBLKS))
 
                 if offset is not None and size != blockVolume.VOLUME_MDNUMBLKS:
                     # I've found everything I need
                     break
 
             if offset is None:
-                self.log.warn("Could not find mapping for lv %s/%s", self.sdUUID, lv.name)
+                self.log.warn("Could not find mapping for lv %s/%s",
+                              self.sdUUID, lv.name)
                 continue
 
             occupiedSlots.append((offset, size))
@@ -762,7 +795,8 @@ class BlockStorageDomain(sd.StorageDomain):
         dev, ext = lvm.getFirstExt(self.sdUUID, vol_name)
         self.log.debug("vol %s dev %s ext %s" % (vol_name, dev, ext))
         for pv in self.readMetadataMapping().values():
-            self.log.debug("MAPOFFSET: pv %s -- dev %s ext %s" % (pv, dev, ext))
+            self.log.debug("MAPOFFSET: pv %s -- dev %s ext %s" %
+                           (pv, dev, ext))
             pestart = int(pv["pestart"])
             pecount = int(pv["pecount"])
             if (os.path.basename(dev) == pv["guid"] and
@@ -770,9 +804,12 @@ class BlockStorageDomain(sd.StorageDomain):
 
                 offs = int(ext) + int(pv["mapoffset"])
                 if offs < SD_METADATA_SIZE / sd.METASIZE:
-                    raise se.MetaDataMappingError("domain %s: vol %s MD offset %s is bad - will overwrite SD's MD" % (self.sdUUID, vol_name, offs))
+                    raise se.MetaDataMappingError(
+                        "domain %s: vol %s MD offset %s is bad - will "
+                        "overwrite SD's MD" % (self.sdUUID, vol_name, offs))
                 return offs
-        raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" % (self.sdUUID, dev, ext))
+        raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" %
+                                      (self.sdUUID, dev, ext))
 
     def readMetadataMapping(self):
         meta = self.getMetadata()
@@ -871,7 +908,8 @@ class BlockStorageDomain(sd.StorageDomain):
             try:
                 lvm.removeLVs(sdUUID, lv.name)
             except se.CannotRemoveLogicalVolume, e:
-                cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID, lv.name, str(e))
+                cls.log.warning("Remove logical volume failed %s/%s %s",
+                                sdUUID, lv.name, str(e))
 
         lvm.removeVG(sdUUID)
         return True
@@ -918,7 +956,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # Drop non image tags and strip prefix
         taglen = len(blockVolume.TAG_PREFIX_IMAGE)
         images = [i[taglen:] for i in tags
-                        if i.startswith(blockVolume.TAG_PREFIX_IMAGE)]
+                  if i.startswith(blockVolume.TAG_PREFIX_IMAGE)]
         return images
 
     def rmDCVolLinks(self, imgPath, volsImgs):
@@ -947,7 +985,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         toDel = tuple(vName for vName, v in volsImgs.iteritems()
-                                                    if v.imgs[0] == imgUUID)
+                      if v.imgs[0] == imgUUID)
         deleteVolumes(sdUUID, toDel)
         self.rmDCImgDir(imgUUID, volsImgs)
 
@@ -984,8 +1022,8 @@ class BlockStorageDomain(sd.StorageDomain):
         if self.hasVolumeLeases():
             # TODO: use the sanlock specific offset when present
             leaseSlot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
-            leaseOffset = ((leaseSlot + blockVolume.RESERVED_LEASES)
-                                * self.logBlkSize * sd.LEASE_BLOCKS)
+            leaseOffset = ((leaseSlot + blockVolume.RESERVED_LEASES) *
+                           self.logBlkSize * sd.LEASE_BLOCKS)
             return self.getLeasesFilePath(), leaseOffset
         return None, None
 
@@ -1024,8 +1062,8 @@ class BlockStorageDomain(sd.StorageDomain):
         # to the public the code that created ext2 file system instead of ext3.
         # In order to make up for it we are trying to add journal here, just
         # to be sure (and we have fixed the file system creation).
-        # If there is a journal already tune2fs will do nothing, indicating this
-        # condition only with exit code. However, we do not really care.
+        # If there is a journal already tune2fs will do nothing, indicating
+        # this condition only with exit code. However, we do not really care.
         cmd = [constants.EXT_TUNE2FS, "-j", masterfsdev]
         misc.execCmd(cmd, sudo=True)
 
@@ -1037,7 +1075,8 @@ class BlockStorageDomain(sd.StorageDomain):
             rc, out = ex
             raise se.BlockStorageDomainMasterMountError(masterfsdev, rc, out)
 
-        cmd = [constants.EXT_CHOWN, "%s:%s" % (constants.METADATA_USER, constants.METADATA_GROUP), masterDir]
+        cmd = [constants.EXT_CHOWN, "%s:%s" %
+               (constants.METADATA_USER, constants.METADATA_GROUP), masterDir]
         (rc, out, err) = misc.execCmd(cmd, sudo=True)
         if rc != 0:
             self.log.error("failed to chown %s", masterDir)
@@ -1088,12 +1127,14 @@ class BlockStorageDomain(sd.StorageDomain):
 
             try:
                 vgName = masterDir.rsplit("/", 2)[1]
-                masterDev = os.path.join("/dev/mapper", vgName.replace("-", "--") + "-" + MASTERLV)
+                masterDev = os.path.join(
+                    "/dev/mapper", vgName.replace("-", "--") + "-" + MASTERLV)
             except KeyError:
                 # Umount succeeded after all
                 return
 
-            cls.log.warn("master mount resource is `%s`, trying to disconnect underlying storage", masterDev)
+            cls.log.warn("master mount resource is `%s`, trying to disconnect "
+                         "underlying storage", masterDev)
             iscsi.disconnectFromUndelyingStorage(masterDev)
 
     @classmethod
@@ -1101,7 +1142,8 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         Unmount the master metadata file system. Should be called only by SPM.
         """
-        # fuser processes holding mount point and validate that the umount succeeded
+        # fuser processes holding mount point and validate that the umount
+        # succeeded
         cls.__handleStuckUmount(masterdir)
         try:
             masterMount = mount.getMountFromTarget(masterdir)
@@ -1123,7 +1165,8 @@ class BlockStorageDomain(sd.StorageDomain):
                     return
 
                 if len(pids) == 0:
-                    cls.log.warn("Unmount failed because of errors that fuser can't solve")
+                    cls.log.warn("Unmount failed because of errors that fuser "
+                                 "can't solve")
                 else:
                     for pid in pids:
                         try:
@@ -1132,12 +1175,17 @@ class BlockStorageDomain(sd.StorageDomain):
                         except OSError, e:
                             if e.errno == errno.ESRCH:  # No such process
                                 pass
-                            elif e.errno == errno.EPERM:  # Operation not permitted
-                                cls.log.warn("Could not kill pid %d because operation was not permitted", pid)
+                            elif e.errno == errno.EPERM:  # Op. not permitted
+                                cls.log.warn("Could not kill pid %d because "
+                                             "operation was not permitted",
+                                             pid)
                             else:
-                                cls.log.warn("Could not kill pid %d because an unexpected error", exc_info=True)
+                                cls.log.warn("Could not kill pid %d because an"
+                                             " unexpected error",
+                                             exc_info=True)
                         except:
-                            cls.log.warn("Could not kill pid %d because an unexpected error", exc_info=True)
+                            cls.log.warn("Could not kill pid %d because an "
+                                         "unexpected error", exc_info=True)
 
                 # Try umount, take 2
                 try:
@@ -1178,7 +1226,8 @@ class BlockStorageDomain(sd.StorageDomain):
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         self._extendlock.acquire()
         try:
-            lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown) # FIXME
+            # FIXME: following line.
+            lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
         finally:
             self._extendlock.release()
 
