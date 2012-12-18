@@ -176,5 +176,10 @@ STRG_MPATH_CONF = (
     "    getuid_callout          \"@SCSI_ID_PATH@ --whitelisted "
                                     "--replace-whitespace --device=/dev/%n\"\n"
     "}\n"
+    "device {\n"
+    "    vendor                  \"COMPELNT\"\n"
+    "    product                 \"Compellent Vol\"\n"
+    "    no_path_retry           fail\n"
+    "}\n"
     "}"
 )
