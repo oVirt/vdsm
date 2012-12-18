@@ -249,7 +249,7 @@ class XMLRPCTest(TestCaseBase):
         self._createStoragePool(storagePools, rollback)
         self._startSPM(storagePools, rollback)
         self._attachStorageDomain(storagePools, layout, rollback)
-        self._createImage(images, layout, rollback)
+        self._createVolume(images, layout, rollback)
 
     def _createStorageDomain(self, storageDomains, typeSpecificArgs, rollback):
         for sdid, domain in storageDomains.iteritems():
@@ -319,7 +319,7 @@ class XMLRPCTest(TestCaseBase):
                     r = self.s.activateStorageDomain(sdid, poolid)
                     self.assertVdsOK(r)
 
-    def _createImage(self, images, layout, rollback):
+    def _createVolume(self, images, layout, rollback):
         for poolid, domains in layout.iteritems():
             for sdid, imageList in domains.iteritems():
                 for imgid in imageList:
@@ -333,10 +333,11 @@ class XMLRPCTest(TestCaseBase):
                     self.assertVdsOK(r)
                     tid = r['uuid']
                     self._waitTask(tid)
-                    undo = lambda sdid=sdid, poolid=poolid, imgid=imgid: \
+                    undo = lambda sdid=sdid, poolid=poolid, \
+                        imgid=imgid, volid=volume['volid']: \
                         self._waitTask(
-                            self.s.deleteImage(
-                                sdid, poolid, imgid)['uuid'])
+                            self.s.deleteVolume(
+                                sdid, poolid, imgid, [volid])['uuid'])
                     rollback.prependDefer(undo)
 
     def _waitTask(self, taskId):
