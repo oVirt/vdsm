@@ -490,6 +490,8 @@ class FileVolume(volume.Volume):
         volPath = os.path.join(self.imagePath, newUUID)
         metaPath = self._getMetaVolumePath(volPath)
         prevMetaPath = self._getMetaVolumePath()
+        leasePath = self._getLeaseVolumePath(volPath)
+        prevLeasePath = self._getLeaseVolumePath()
 
         if recovery:
             name = "Rename volume rollback: " + volPath
@@ -505,6 +507,17 @@ class FileVolume(volume.Volume):
                                                  "renameVolumeRollback",
                                                  [metaPath, prevMetaPath]))
         self.oop.os.rename(prevMetaPath, metaPath)
+        if recovery:
+            name = "Rename lease-volume rollback: " + leasePath
+            vars.task.pushRecovery(task.Recovery(name, "fileVolume",
+                                                 "FileVolume",
+                                                 "renameVolumeRollback",
+                                                 [leasePath, prevLeasePath]))
+        try:
+            self.oop.os.rename(prevLeasePath, leasePath)
+        except OSError, e:
+            if e.errno != os.errno.ENOENT:
+                raise
         self.volUUID = newUUID
         self.volumePath = volPath
 
