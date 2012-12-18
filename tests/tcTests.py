@@ -38,6 +38,7 @@ from vdsm.constants import EXT_BRCTL, EXT_TC
 from nose.plugins.skip import SkipTest
 
 import tc
+import platform
 
 EXT_IP = "/sbin/ip"
 
@@ -88,8 +89,14 @@ def _listenOnDevice(fd, icmp):
 class _Tap(_Interface):
 
     _IFF_TAP = 0x0002
-    _TUNSETIFF = 0x400454ca
     _IFF_NO_PI = 0x1000
+    arch = platform.machine()
+    if arch == 'x86_64':
+        _TUNSETIFF = 0x400454ca
+    elif arch == 'ppc64':
+        _TUNSETIFF = 0x800454ca
+    else:
+        raise SkipTest("Unsupported Architecture %s" % arch)
 
     _deviceListener = None
 
