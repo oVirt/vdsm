@@ -136,8 +136,8 @@ class GuestAgent ():
             for iface in args['interfaces']:
                 iface['name'] = _filterXmlChars(iface['name'])
                 iface['hw'] = _filterXmlChars(iface['hw'])
-                iface['inet'] = map(_filterXmlChars, iface['inet'])
-                iface['inet6'] = map(_filterXmlChars, iface['inet6'])
+                iface['inet'] = map(_filterXmlChars, iface.get('inet', []))
+                iface['inet6'] = map(_filterXmlChars, iface.get('inet6', []))
                 interfaces.append(iface)
                 # Provide the old information which includes
                 # only the IP addresses.
