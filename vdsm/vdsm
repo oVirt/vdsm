@@ -113,7 +113,15 @@ def parse_args():
 
 
 def __assertLogPermission():
+    if not os.access(constants.P_VDSM_LOG, os.W_OK):
+        syslog.syslog("vdsm log directory is not accessible")
+        sys.exit(1)
+
     logfile = constants.P_VDSM_LOG + "/vdsm.log"
+    if not os.path.exists(logfile):
+        # if file not exist, and vdsm has an access to log directory- continue
+        return
+
     if not os.access(logfile, os.W_OK):
         syslog.syslog("error in accessing vdsm log file")
         sys.exit(1)
