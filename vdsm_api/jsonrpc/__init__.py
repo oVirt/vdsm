@@ -14,6 +14,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 import json
 import logging
+from Queue import Queue
 
 __all__ = ["tcpReactor"]
 
@@ -57,11 +58,13 @@ class JsonRpcInternalError(JsonRpcError):
         JsonRpcError.__init__(self, -32603, msg)
 
 
-class JsonRpcRequest(object):
-    def __init__(self, method, params, reqId):
-        self.method = method
+class _JsonRpcRequest(object):
+    def __init__(self, ctx, queue, methodName, params, reqId):
+        self.method = methodName
         self.params = params
         self.id = reqId
+        self._ctx = ctx
+        self._queue = queue
 
     def invokeFunction(self, func):
         if isinstance(self.params, list):
@@ -72,12 +75,27 @@ class JsonRpcRequest(object):
     def isNotification(self):
         return self.id is None
 
+    def sendReply(self, result, error):
+        # TBD: Should calling this for a notification raise an error or be
+        #      ignored
+        self._queue.put_nowait(_JsonRpcResponse(self._ctx, self.id, result,
+                                                error))
+
+
+class _JsonRpcResponse(object):
+    def __init__(self, ctx, reqId, result, error):
+        self.ctx = ctx
+        self.result = result
+        self.error = error
+        self.id = reqId
+
 
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
     def __init__(self, bridge):
         self._bridge = bridge
+        self._workQueue = Queue()
 
     def _parseMessage(self, msg):
         try:
@@ -85,7 +103,7 @@ class JsonRpcServer(object):
         except:
             raise JsonRpcParseError()
 
-    def _parseRequest(self, obj):
+    def _parseRequest(self, obj, ctx, queue):
         if obj.get("jsonrpc") != "2.0":
             raise JsonRpcInvalidRequestError()
 
@@ -101,7 +119,7 @@ class JsonRpcServer(object):
         if not isinstance(params, (list, dict)):
             raise JsonRpcInvalidRequestError()
 
-        return JsonRpcRequest(method, params, reqId)
+        return _JsonRpcRequest(ctx, queue, method, params, reqId)
 
     def _jsonError2Response(self, err, req):
         respId = None
@@ -112,43 +130,90 @@ class JsonRpcServer(object):
                            "error": {"code": err.code, "message": err.message},
                            "id": respId})
 
-    def _generateResponse(self, req, result):
-        return json.dumps({"jsonrpc": "2.0",
-                          "result": result,
-                          "id": req.id}, 'utf-8')
+    def _generateResponse(self, resp):
+        res = {"jsonrpc": "2.0",
+               "id": resp.id}
+        if resp.error is not None:
+            res['error'] = {'code': resp.error.code,
+                            'message': resp.error.message}
+        else:
+            res['result'] = resp.result
+
+        return json.dumps(res, 'utf-8')
+
+    def _serveRequest(self, req):
+        mangledMethod = req.method.replace(".", "_")
+        self.log.debug("Looking for method '%s' in bridge",
+                       mangledMethod)
+        try:
+            method = getattr(self._bridge, mangledMethod)
+        except AttributeError:
+            req.sendReply(None, JsonRpcMethodNotFoundError())
+        else:
+            try:
+                res = req.invokeFunction(method)
+            except JsonRpcError as e:
+                req.sendReply(None, e)
+            except Exception as e:
+                req.sendReply(None, JsonRpcInternalError(str(e)))
+            else:
+                return req.sendReply(res, None)
+
+    def _processResponse(self, resp):
+        try:
+            msg = self._generateResponse(resp)
+        except Exception as e:
+            # Probably result failed to be serialized as json
+            errResp = _JsonRpcResponse(resp.ctx,
+                                       resp.id,
+                                       None,
+                                       JsonRpcInternalError(str(e)))
+
+            msg = self._generateResponse(errResp)
+
+        resp.ctx.sendReply(msg)
+
+    def serve_requests(self):
+        while True:
+            obj = self._workQueue.get()
+            if obj is None:
+                break
+
+            if isinstance(obj, _JsonRpcRequest):
+                self._serveRequest(obj)
+            else:
+                self._processResponse(obj)
 
     def handleMessage(self, msgCtx):
         #TODO: support batch requests
         req = None
-        resp = None
+        error = None
         try:
             obj = self._parseMessage(msgCtx.data)
-            req = self._parseRequest(obj)
+            req = self._parseRequest(obj, msgCtx, self._workQueue)
 
-            mangledMethod = req.method.replace(".", "_")
-            self.log.debug("Looking for method '%s' in bridge",
-                           mangledMethod)
-            try:
-                method = getattr(self._bridge, mangledMethod)
-            except AttributeError:
-                raise JsonRpcMethodNotFoundError()
-            else:
-                res = req.invokeFunction(method)
-                resp = self._generateResponse(req, res)
+            self._workQueue.put_nowait(req)
+            return
 
         except JsonRpcError as e:
-            resp = self._jsonError2Response(e, req)
             self.log.error("Error processing request", exc_info=True)
+            error = e
         except:
-            resp = self._jsonError2Response(JsonRpcInternalError(), req)
             self.log.error("Unexpected error while processing request",
                            exc_info=True)
 
-        if resp is None:
-            return
+            error = JsonRpcInternalError()
 
-        # Notification don't respond even on errors
+        # Notification, don't respond even on errors
         if req is not None and req.isNotification():
             return
 
-        msgCtx.sendReply(resp)
+        if req is None:
+            resp = _JsonRpcResponse(msgCtx, None, None, error)
+        else:
+            resp = _JsonRpcResponse(msgCtx, req.id, None, error)
+
+        self._workQueue.put_nowait(resp)
+
+    def stop(self):
+        self._workQueue.put_nowait(None)

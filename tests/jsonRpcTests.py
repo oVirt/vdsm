@@ -117,10 +117,17 @@ def constructServer(tp, bridge):
         t.setDaemon(True)
         t.start()
 
+        t = threading.Thread(target=server.serve_requests)
+        t.setDaemon(True)
+        t.start()
+
         def jsonClientFactory():
             return JsonRpcClient(clientFactory())
 
-        yield server, jsonClientFactory
+        try:
+            yield server, jsonClientFactory
+        finally:
+            server.stop()
 
 
 class _EchoMessageHandler(object):

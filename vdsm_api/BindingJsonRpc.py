@@ -60,6 +60,12 @@ class BindingJsonRpc(object):
                 t.setDaemon(True)
                 t.start()
 
+        t = threading.Thread(target=self.server.serve_requests,
+                             name='JsonRpc (Rquest Processing)')
+        t.setDaemon(True)
+        t.start()
+
     def prepareForShutdown(self):
+        self.server.stop()
         for reactor in self._reactors:
             reactor.stop()
