@@ -362,7 +362,11 @@ EOF
 
     ovirt_store_config "$lconf" "$qconf" "$ldconf" "$llogr"
 
-    /sbin/initctl restart libvirtd 2>/dev/null || :
+    if libvirt_should_use_upstart; then
+        /sbin/initctl restart libvirtd 2>/dev/null || :
+    else
+        /bin/systemctl restart libvirtd.service
+    fi
 
     #
     # finished reconfiguration, do not trigger
