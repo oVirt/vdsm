@@ -74,7 +74,7 @@ class JsonRpcRequest(object):
 
 
 class JsonRpcServer(object):
-    log = logging.getLogger("JsonRpcServer")
+    log = logging.getLogger("jsonrpc.JsonRpcServer")
 
     def __init__(self, bridge):
         self._bridge = bridge

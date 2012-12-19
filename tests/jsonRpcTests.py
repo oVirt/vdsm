@@ -24,6 +24,7 @@ from functools import partial
 from contextlib import closing
 import json
 import uuid
+import logging
 
 from nose.plugins.skip import SkipTest
 
@@ -187,6 +188,8 @@ class JsonRpcClient(object):
 
 
 class ProtonReactorClient(object):
+    log = logging.getLogger("ProtonReactorClient")
+
     def __init__(self, brokerAddress):
         self._serverAddress = brokerAddress
         self._msngr = proton.Messenger("client-%s" % str(uuid.uuid4()))
@@ -218,7 +221,11 @@ class ProtonReactorClient(object):
             timeout *= 1000
 
         self._msngr.timeout = timeout
-        self._msngr.recv(1)
+        self.log.debug("Waiting for message")
+        try:
+            self._msngr.recv(1)
+        finally:
+            self.log.debug("Done waiting for message")
 
         if not self._msngr.incoming:
             raise socket.timeout()
