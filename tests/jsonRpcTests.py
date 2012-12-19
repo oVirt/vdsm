@@ -306,6 +306,9 @@ class _DummyBridge(object):
     def echo(self, text):
         return text
 
+    def ping(self):
+        return None
+
 
 @expandPermutations
 class JsonRpcServerTests(TestCaseBase):
@@ -361,3 +364,14 @@ class JsonRpcServerTests(TestCaseBase):
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcInternalError().code)
+
+    @permutations(REACTOR_TYPE_PERMUTATIONS)
+    def testMethodReturnsNull(self, reactorType):
+        bridge = _DummyBridge()
+        with constructServer(reactorType, bridge) as (server, clientFactory):
+            client = clientFactory()
+            client.connect()
+            with closing(client):
+                res = client.callMethod("ping", [], 10, timeout=CALL_TIMEOUT)
+
+                self.assertEquals(res, None)
