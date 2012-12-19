@@ -61,6 +61,5 @@ class BindingJsonRpc(object):
                 t.start()
 
     def prepareForShutdown(self):
-        self.server.shutdown()
         for reactor in self._reactors:
             reactor.stop()
