@@ -171,18 +171,18 @@ class JsonRpcClient(object):
     def connect(self):
         self._transport.connect()
 
-    def callMethod(self, methodName, params=(), reqId=None):
+    def callMethod(self, methodName, params=(), reqId=None, timeout=None):
         msg = {'jsonrpc': '2.0',
                'method': methodName,
                'params': params,
                'id': reqId}
 
-        self._transport.sendMessage(json.dumps(msg, 'utf-8'))
+        self._transport.sendMessage(json.dumps(msg, 'utf-8'), timeout=timeout)
         # Notifications have no repsonse
         if reqId is None:
             return
 
-        resp = self._transport.recvMessage()
+        resp = self._transport.recvMessage(timeout=timeout)
         resp = json.loads(resp)
         if resp.get('error') is not None:
             raise JsonRpcError(resp['error']['code'],
@@ -321,7 +321,8 @@ class JsonRpcServerTests(TestCaseBase):
             client = clientFactory()
             client.connect()
             with closing(client):
-                self.assertEquals(client.callMethod("echo", (data,), 10), data)
+                self.assertEquals(client.callMethod("echo", (data,), 10, 1),
+                                  data)
 
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def testMethodCallArgDict(self, reactorType):
@@ -334,7 +335,7 @@ class JsonRpcServerTests(TestCaseBase):
             with closing(client):
                 self.assertEquals(client.callMethod("echo",
                                                     {'text': data},
-                                                    10),
+                                                    10, 1),
                                   data)
 
     @permutations(REACTOR_TYPE_PERMUTATIONS)
@@ -345,7 +346,7 @@ class JsonRpcServerTests(TestCaseBase):
             client.connect()
             with closing(client):
                 with self.assertRaises(JsonRpcError) as cm:
-                    client.callMethod("I.DO.NOT.EXIST :(", [], 10)
+                    client.callMethod("I.DO.NOT.EXIST :(", [], 10, 1)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcMethodNotFoundError().code)
@@ -360,7 +361,7 @@ class JsonRpcServerTests(TestCaseBase):
             client.connect()
             with closing(client):
                 with self.assertRaises(JsonRpcError) as cm:
-                    client.callMethod("echo", [], 10)
+                    client.callMethod("echo", [], 10, timeout=1)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcInternalError().code)
