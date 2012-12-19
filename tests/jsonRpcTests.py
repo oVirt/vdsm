@@ -51,6 +51,8 @@ PORT_RANGE = xrange(49152, 65535)
 
 _distributedPorts = []
 
+CALL_TIMEOUT = 5
+
 
 def _getFreePort():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -289,12 +291,12 @@ class ReactorTests(TestCaseBase):
                     for client in clients:
                         for i in range(subRepeats):
                             self.log.info("Sending message...")
-                            client.sendMessage(data, 1)
+                            client.sendMessage(data, CALL_TIMEOUT)
 
                 for i in range(repeats * subRepeats):
                     for client in clients:
                             self.log.info("Waiting for reply...")
-                            retData = client.recvMessage(1)
+                            retData = client.recvMessage(CALL_TIMEOUT)
                             self.log.info("Asserting reply...")
                             self.assertEquals(retData, data)
             finally:
@@ -321,7 +323,8 @@ class JsonRpcServerTests(TestCaseBase):
             client = clientFactory()
             client.connect()
             with closing(client):
-                self.assertEquals(client.callMethod("echo", (data,), 10, 1),
+                self.assertEquals(client.callMethod("echo", (data,), 10,
+                                                    CALL_TIMEOUT),
                                   data)
 
     @permutations(REACTOR_TYPE_PERMUTATIONS)
@@ -335,7 +338,7 @@ class JsonRpcServerTests(TestCaseBase):
             with closing(client):
                 self.assertEquals(client.callMethod("echo",
                                                     {'text': data},
-                                                    10, 1),
+                                                    10, CALL_TIMEOUT),
                                   data)
 
     @permutations(REACTOR_TYPE_PERMUTATIONS)
@@ -346,7 +349,8 @@ class JsonRpcServerTests(TestCaseBase):
             client.connect()
             with closing(client):
                 with self.assertRaises(JsonRpcError) as cm:
-                    client.callMethod("I.DO.NOT.EXIST :(", [], 10, 1)
+                    client.callMethod("I.DO.NOT.EXIST :(", [], 10,
+                                      CALL_TIMEOUT)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcMethodNotFoundError().code)
@@ -361,7 +365,7 @@ class JsonRpcServerTests(TestCaseBase):
             client.connect()
             with closing(client):
                 with self.assertRaises(JsonRpcError) as cm:
-                    client.callMethod("echo", [], 10, timeout=1)
+                    client.callMethod("echo", [], 10, timeout=CALL_TIMEOUT)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcInternalError().code)
