@@ -21,6 +21,11 @@ _Size = struct.Struct("!Q")
 
 from jsonrpc import JsonRpcServer
 from jsonrpc.tcpReactor import TCPReactor
+ProtonReactor = None
+try:
+    from jsonrpc.protonReactor import ProtonReactor
+except ImportError:
+    pass
 
 
 class BindingJsonRpc(object):
@@ -33,6 +38,11 @@ class BindingJsonRpc(object):
         for backendType, cfg in backendConfig:
             if backendType == "tcp":
                 reactors.append(self._createTcpReactor(cfg))
+            elif backendType == "amqp":
+                if ProtonReactor is None:
+                    continue
+
+                reactors.append(self._createProtonReactor(cfg))
 
         self._reactors = reactors
 
@@ -44,6 +54,11 @@ class BindingJsonRpc(object):
             raise ValueError("cfg")
 
         return TCPReactor((address, port), self.server)
+
+    def _createProtonReactor(self, cfg):
+        address = cfg.get("host", "0.0.0.0")
+        port = cfg.get("port", 5672)
+        return ProtonReactor((address, port), self.server)
 
     def start(self):
         for reactor in self._reactors:
