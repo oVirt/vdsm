@@ -26,7 +26,10 @@ class VdsmError(Exception):
         self.message = message
 
 
-class MethodBridge(object):
+class DynamicBridge(object):
+    def __init__(self, schema):
+        self._parseSchema(schema)
+
     def dispatch(self, name, argobj):
         methodName = name.replace('.', '_')
         result = None
@@ -54,11 +57,6 @@ class MethodBridge(object):
         except KeyError:
             raise VdsmError(5, "Response is missing '%s' member" % member)
 
-
-class DynamicBridge(MethodBridge):
-    def __init__(self, schema):
-        self._parseSchema(schema)
-
     def _parseSchema(self, schema):
         self.commands = {}
         self.classes = {}
@@ -84,19 +82,51 @@ class DynamicBridge(MethodBridge):
         else:
             raise AttributeError()
 
-    def _getArgList(self, cmd):
-        return self.commands[cmd].get('data', {}).keys()
-
-    def _getObjargList(self, className):
-        return self.classes[className]['data'].keys()
-
-    def _getApiClass(self, className):
+    def _convertClassName(self, name):
+        """
+        The schema has a different name for the 'Global' namespace.  Until
+        API.py is fixed, we convert the schema name if we are looking up
+        something in API.py.
+        """
         name_map = {'Host': 'Global'}
         try:
-            className = name_map[className]
+            return name_map[name]
         except KeyError:
-            pass
-        return getattr(API, className)
+            return name
+
+    def _getMethodArgs(self, className, cmd, argObj):
+        """
+        An internal API call currently looks like:
+
+            instance = API.<className>(<*ctor_args>)
+            intance.<method>(<*method_args>)
+
+        Eventually we can remove this instancing but for now that's the way it
+        works.  Each API.py object defines its ctor_args so that we can query
+        them from here.  For any given method, the method_args are obtained by
+        chopping off the ctor_args from the beginning of argObj.
+        """
+        className = self._convertClassName(className)
+        # Get the full argument list
+        allArgs = self.commands[cmd].get('data', {}).keys()
+
+        # Get the list of ctor_args
+        ctorArgs = getattr(API, className).ctorArgs
+
+        # Determine the method arguments by subtraction
+        methodArgs = []
+        for arg in allArgs:
+            if arg not in ctorArgs:
+                methodArgs.append(arg)
+
+        return self._getArgs(argObj, methodArgs)
+
+    def _getApiInstance(self, className, argObj):
+        className = self._convertClassName(className)
+
+        apiObj = getattr(API, className)
+        ctorArgs = self._getArgs(argObj, apiObj.ctorArgs)
+        return apiObj(*ctorArgs)
 
     def _symNameFilter(self, symName):
         """
@@ -150,13 +180,9 @@ class DynamicBridge(MethodBridge):
 
     def _dynamicMethod(self, className, methodName, argobj):
         cmd = '%s_%s' % (className, methodName)
-        ctorArgObj = argobj.get('__obj__', {})
-        ctorargs = self._getArgs(ctorArgObj, self._getObjargList(className))
-        args = self._getArgs(argobj, self._getArgList(cmd))
-        apiobj = self._getApiClass(className)
-        api = apiobj(*ctorargs)
-
-        self._fixupArgs(cmd, args)
+        api = self._getApiInstance(className, argobj)
+        methodArgs = self._getMethodArgs(className, cmd, argobj)
+        self._fixupArgs(cmd, methodArgs)
 
         # Call the override function (if given).  Otherwise, just call directly
         fn = command_info.get(cmd, {}).get('call')
@@ -164,7 +190,7 @@ class DynamicBridge(MethodBridge):
             result = fn(api, argobj)
         else:
             fn = getattr(api, methodName)
-            result = fn(*args)
+            result = fn(*methodArgs)
 
         if result['status']['code']:
             code = result['status']['code']

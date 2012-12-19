@@ -38,7 +38,11 @@ _fakeret = {}
 
 apiWhitelist = ('StorageDomain.Classes', 'StorageDomain.Types',
                 'Volume.Formats', 'Volume.Types', 'Volume.Roles',
-                'Image.DiskTypes')
+                'Image.DiskTypes', 'ConnectionRefs.ctorArgs',
+                'Global.ctorArgs', 'ISCSIConnection.ctorArgs',
+                'Image.ctorArgs', 'LVMVolumeGroup.ctorArgs',
+                'StorageDomain.ctorArgs', 'StoragePool.ctorArgs',
+                'Task.ctorArgs', 'VM.ctorArgs', 'Volume.ctorArgs')
 
 
 def createFakeAPI():

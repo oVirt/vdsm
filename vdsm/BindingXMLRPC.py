@@ -386,75 +386,76 @@ class BindingXMLRPC(object):
         return api.setMOMPolicy(policy)
 
     def domainActivate(self, sdUUID, spUUID, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.activate()
+        domain = API.StorageDomain(sdUUID)
+        return domain.activate(spUUID)
 
     def domainAttach(self, sdUUID, spUUID, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID)
+        domain = API.StorageDomain(sdUUID)
         return domain.attach(spUUID)
 
     def domainCreate(self, storageType, sdUUID, domainName,
                      typeSpecificArg, domClass,
                      domVersion=None, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.create(storageType, typeSpecificArg, domainName,
                              domClass, domVersion)
 
     def domainDeactivate(self, sdUUID, spUUID, msdUUID, masterVersion,
                          options=None):
-        domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.deactivate(msdUUID, masterVersion)
+        domain = API.StorageDomain(sdUUID)
+        return domain.deactivate(spUUID, msdUUID, masterVersion)
 
     def domainDetach(self, sdUUID, spUUID, msdUUID, masterVersion,
                      options=None):
-        domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.detach(msdUUID, masterVersion, force=False)
+        domain = API.StorageDomain(sdUUID)
+        return domain.detach(spUUID, msdUUID, masterVersion, force=False)
 
     def domainDetachForced(self, sdUUID, spUUID, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.detach(None, None, force=True)
+        domain = API.StorageDomain(sdUUID)
+        return domain.detach(spUUID, None, None, force=True)
 
     def domainExtend(self, sdUUID, spUUID, devlist, force=False, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.extend(devlist, force)
+        domain = API.StorageDomain(sdUUID)
+        return domain.extend(spUUID, devlist, force)
 
     def domainFormat(self, sdUUID,
                      autoDetach=False, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.format(autoDetach)
 
     def domainGetFileList(self, sdUUID, pattern='*', options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.getFileList(pattern)
 
     def domainGetImages(self, sdUUID, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.getImages()
 
     def domainGetInfo(self, sdUUID, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.getInfo()
 
     def domainGetStats(self, sdUUID, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.getStats()
 
     def domainGetVolumes(self, sdUUID, spUUID,
                          imgUUID=API.Image.BLANK_UUID):
-        domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.getVolumes(imgUUID)
+        domain = API.StorageDomain(sdUUID)
+        return domain.getVolumes(spUUID, imgUUID)
 
     def domainSetDescription(self, sdUUID, description, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.setDescription(description)
 
     def domainUploadVolume(self, sdUUID, spUUID, imgUUID, volUUID,
                            srcPath, size, method="rsync", options=None):
-        domain = API.StorageDomain(sdUUID, spUUID)
-        return domain.uploadVolume(imgUUID, volUUID, srcPath, size, method)
+        domain = API.StorageDomain(sdUUID)
+        return domain.uploadVolume(spUUID, imgUUID, volUUID, srcPath, size,
+                                   method)
 
     def domainValidate(self, sdUUID, options=None):
-        domain = API.StorageDomain(sdUUID, spUUID=None)
+        domain = API.StorageDomain(sdUUID)
         return domain.validate()
 
     def imageDelete(self, sdUUID, spUUID,

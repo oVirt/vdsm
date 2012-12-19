@@ -52,6 +52,7 @@ PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 
 class APIBase(object):
+    ctorArgs = []
 
     def __init__(self):
         self._cif = clientIF.getInstance()
@@ -60,6 +61,7 @@ class APIBase(object):
 
 
 class ConnectionRefs(APIBase):
+    ctorArgs = []
 
     def __init__(self):
         APIBase.__init__(self)
@@ -75,6 +77,7 @@ class ConnectionRefs(APIBase):
 
 
 class Task(APIBase):
+    ctorArgs = ['taskID']
 
     def __init__(self, UUID):
         APIBase.__init__(self)
@@ -97,6 +100,7 @@ class Task(APIBase):
 
 
 class VM(APIBase):
+    ctorArgs = ['vmID']
 
     def __init__(self, UUID):
         APIBase.__init__(self)
@@ -651,6 +655,7 @@ class VM(APIBase):
 
 
 class Volume(APIBase):
+    ctorArgs = ['volumeID', 'storagepoolID', 'storagedomainID', 'imageID']
 
     class Types:
         UNKNOWN = storage.volume.UNKNOWN_VOL
@@ -735,6 +740,8 @@ class Volume(APIBase):
 
 
 class Image(APIBase):
+    ctorArgs = ['imageID', 'storagepoolID', 'storagedomainID']
+
     BLANK_UUID = storage.volume.BLANK_UUID
 
     class DiskTypes:
@@ -786,6 +793,7 @@ class Image(APIBase):
 
 
 class LVMVolumeGroup(APIBase):
+    ctorArgs = ['lvmvolumegroupID']
 
     def __init__(self, UUID=None):
         APIBase.__init__(self)
@@ -810,6 +818,7 @@ class LVMVolumeGroup(APIBase):
 
 
 class ISCSIConnection(APIBase):
+    ctorArgs = ['host', 'port', 'user', 'password']
 
     def __init__(self, host, port, user="", password=""):
         APIBase.__init__(self)
@@ -825,6 +834,7 @@ class ISCSIConnection(APIBase):
 
 
 class StorageDomain(APIBase):
+    ctorArgs = ['storagedomainID']
 
     class Types:
         UNKNOWN = storage.sd.UNKNOWN_DOMAIN
@@ -842,16 +852,14 @@ class StorageDomain(APIBase):
 
     BLANK_UUID = storage.sd.BLANK_UUID
 
-    def __init__(self, UUID, spUUID=None):
+    def __init__(self, UUID):
         APIBase.__init__(self)
         self._UUID = UUID
-        self._spUUID = spUUID
 
-    def activate(self):
-        return self._irs.activateStorageDomain(self._UUID, self._spUUID)
+    def activate(self, spUUID):
+        return self._irs.activateStorageDomain(self._UUID, spUUID)
 
     def attach(self, spUUID):
-        # XXX: on success, self._spUUID should be set
         return self._irs.attachStorageDomain(self._UUID, spUUID)
 
     def create(self, type, typeArgs, name, domainClass, version=None):
@@ -860,21 +868,19 @@ class StorageDomain(APIBase):
         return self._irs.createStorageDomain(type, self._UUID, name, typeArgs,
                                              domainClass, version)
 
-    def deactivate(self, masterSdUUID, masterVersion):
-        return self._irs.deactivateStorageDomain(self._UUID, self._spUUID,
+    def deactivate(self, spUUID, masterSdUUID, masterVersion):
+        return self._irs.deactivateStorageDomain(self._UUID, spUUID,
                                                  masterSdUUID, masterVersion)
 
-    def detach(self, masterSdUUID, masterVersion, force):
-        # XXX: on success, self._spUUID should be set to None
+    def detach(self, spUUID, masterSdUUID, masterVersion, force):
         if force:
-            return self._irs.forcedDetachStorageDomain(self._UUID,
-                                                       self._spUUID)
+            return self._irs.forcedDetachStorageDomain(self._UUID, spUUID)
         else:
-            return self._irs.detachStorageDomain(self._UUID, self._spUUID,
+            return self._irs.detachStorageDomain(self._UUID, spUUID,
                                                  masterSdUUID, masterVersion)
 
-    def extend(self, devlist, force=False):
-        return self._irs.extendStorageDomain(self._UUID, self._spUUID, devlist,
+    def extend(self, spUUID, devlist, force=False):
+        return self._irs.extendStorageDomain(self._UUID, spUUID, devlist,
                                              force)
 
     def format(self, autoDetach):
@@ -892,21 +898,22 @@ class StorageDomain(APIBase):
     def getStats(self):
         return self._irs.getStorageDomainStats(self._UUID)
 
-    def getVolumes(self, imgUUID=Image.BLANK_UUID):
-        return self._irs.getVolumesList(self._UUID, self._spUUID, imgUUID)
+    def getVolumes(self, spUUID, imgUUID=Image.BLANK_UUID):
+        return self._irs.getVolumesList(self._UUID, spUUID, imgUUID)
 
     def setDescription(self, description):
         return self._irs.setStorageDomainDescription(self._UUID, description)
 
-    def uploadVolume(self, imgUUID, volUUID, srcPath, size, method):
-        return self._irs.uploadVolume(self._UUID, self._spUUID, imgUUID,
-                                      volUUID, srcPath, size, method)
+    def uploadVolume(self, spUUID, imgUUID, volUUID, srcPath, size, method):
+        return self._irs.uploadVolume(self._UUID, spUUID, imgUUID, volUUID,
+                                      srcPath, size, method)
 
     def validate(self):
         return self._irs.validateStorageDomain(self._UUID)
 
 
 class StoragePool(APIBase):
+    ctorArgs = ['storagepoolID']
 
     def __init__(self, UUID):
         APIBase.__init__(self)
@@ -1017,6 +1024,7 @@ class StoragePool(APIBase):
 
 
 class Global(APIBase):
+    ctorArgs = []
 
     def __init__(self):
         APIBase.__init__(self)
