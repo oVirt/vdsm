@@ -26,9 +26,16 @@ import fileSD
 import fileUtils
 import storage_exception as se
 import misc
+import clusterlock
 
 
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
+    # version: (clusterLockClass, hasVolumeLeases)
+    _clusterLockTable = {
+        0: (clusterlock.SafeLease, False),
+        2: (clusterlock.SafeLease, False),
+        3: (clusterlock.LocalLock, True),
+    }
 
     @classmethod
     def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg, version):

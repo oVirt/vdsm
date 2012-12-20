@@ -1359,6 +1359,25 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
         yield respQueue.get()
 
 
+def NoIntrCall(fun, *args, **kwargs):
+    """
+    This wrapper is used to handle the interrupt exceptions that might
+    occur during a system call.
+    """
+    while True:
+        try:
+            return fun(*args, **kwargs)
+        except (IOError, select.error) as e:
+            if e.args[0] == os.errno.EINTR:
+                continue
+            raise
+        break
+
+
+# NOTE: it would be best to try and unify NoIntrCall and NoIntrPoll.
+# We could do so defining a new object that can be used as a placeholer
+# for the changing timeout value in the *args/**kwargs. This would
+# lead us to rebuilding the function arguments at each loop.
 def NoIntrPoll(pollfun, timeout=-1):
     """
     This wrapper is used to handle the interrupt exceptions that might occur

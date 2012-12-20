@@ -19,6 +19,7 @@
 #
 
 import os
+import fcntl
 import threading
 import logging
 import subprocess
@@ -128,6 +129,22 @@ class SafeLease(object):
             self.log.debug("Cluster lock released successfully")
 
 
+initSANLockLog = logging.getLogger("initSANLock")
+
+
+def initSANLock(sdUUID, idsPath, leasesPath):
+    initSANLockLog.debug("Initializing SANLock for domain %s", sdUUID)
+
+    try:
+        sanlock.init_lockspace(sdUUID, idsPath)
+        sanlock.init_resource(sdUUID, SDM_LEASE_NAME,
+                              [(leasesPath, SDM_LEASE_OFFSET)])
+    except sanlock.SanlockException:
+        initSANLockLog.error("Cannot initialize SANLock for domain %s",
+                             sdUUID, exc_info=True)
+        raise se.ClusterLockInitError()
+
+
 class SANLock(object):
     log = logging.getLogger("SANLock")
 
@@ -142,13 +159,7 @@ class SANLock(object):
         self._sanlockfd = None
 
     def initLock(self):
-        try:
-            sanlock.init_lockspace(self._sdUUID, self._idsPath)
-            sanlock.init_resource(self._sdUUID, SDM_LEASE_NAME,
-                                  [(self._leasesPath, SDM_LEASE_OFFSET)])
-        except sanlock.SanlockException:
-            self.log.warn("Cannot initialize clusterlock", exc_info=True)
-            raise se.ClusterLockInitError()
+        initSANLock(self._sdUUID, self._idsPath, self._leasesPath)
 
     def setParams(self, *args):
         pass
@@ -251,4 +262,101 @@ class SANLock(object):
 
             self._sanlockfd = None
             self.log.debug("Cluster lock for domain %s successfully released",
+                           self._sdUUID)
+
+
+class LocalLock(object):
+    log = logging.getLogger("LocalLock")
+
+    _globalLockMap = {}
+    _globalLockMapSync = threading.Lock()
+
+    def __init__(self, sdUUID, idsPath, leasesPath, *args):
+        self._sdUUID = sdUUID
+        self._idsPath = idsPath
+        self._leasesPath = leasesPath
+
+    def initLock(self):
+        # The LocalLock initialization is based on SANLock to maintain on-disk
+        # domain format consistent across all the V3 types.
+        # The advantage is that the domain can be exposed as an NFS/GlusterFS
+        # domain later on without any modification.
+        # XXX: Keep in mind that LocalLock and SANLock cannot detect each other
+        # and therefore concurrently using the same domain as local domain and
+        # NFS domain (or any other shared file-based domain) will certainly
+        # lead to disastrous consequences.
+        initSANLock(self._sdUUID, self._idsPath, self._leasesPath)
+
+    def setParams(self, *args):
+        pass
+
+    def getReservedId(self):
+        return MAX_HOST_ID
+
+    def acquireHostId(self, hostId, async):
+        self.log.debug("Host id for domain %s successfully acquired (id: %s)",
+                       self._sdUUID, hostId)
+
+    def releaseHostId(self, hostId, async, unused):
+        self.log.debug("Host id for domain %s released successfully (id: %s)",
+                       self._sdUUID, hostId)
+
+    def hasHostId(self, hostId):
+        return True
+
+    def acquire(self, hostId):
+        with self._globalLockMapSync:
+            self.log.info("Acquiring local lock for domain %s (id: %s)",
+                          self._sdUUID, hostId)
+
+            lockFile = self._globalLockMap.get(self._sdUUID, None)
+
+            if lockFile:
+                try:
+                    misc.NoIntrCall(fcntl.fcntl, lockFile, fcntl.F_GETFD)
+                except IOError as e:
+                    # We found a stale file descriptor, removing.
+                    del self._globalLockMap[self._sdUUID]
+
+                    # Raise any other unkown error.
+                    if e.errno != os.errno.EBADF:
+                        raise
+                else:
+                    self.log.debug("Local lock already acquired for domain "
+                                   "%s (id: %s)", self._sdUUID, hostId)
+                    return  # success, the lock was already acquired
+
+            lockFile = misc.NoIntrCall(os.open, self._idsPath, os.O_RDONLY)
+
+            try:
+                misc.NoIntrCall(fcntl.flock, lockFile,
+                                fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except IOError as e:
+                misc.NoIntrCall(os.close, lockFile)
+                if e.errno in (os.errno.EACCES, os.errno.EAGAIN):
+                    raise se.AcquireLockFailure(
+                        self._sdUUID, e.errno, "Cannot acquire local lock",
+                        str(e))
+                raise
+            else:
+                self._globalLockMap[self._sdUUID] = lockFile
+
+        self.log.debug("Local lock for domain %s successfully acquired "
+                       "(id: %s)", self._sdUUID, hostId)
+
+    def release(self):
+        with self._globalLockMapSync:
+            self.log.info("Releasing local lock for domain %s", self._sdUUID)
+
+            lockFile = self._globalLockMap.get(self._sdUUID, None)
+
+            if not lockFile:
+                self.log.debug("Local lock already released for domain %s",
+                               self._sdUUID)
+                return
+
+            misc.NoIntrCall(os.close, lockFile)
+            del self._globalLockMap[self._sdUUID]
+
+            self.log.debug("Local lock for domain %s successfully released",
                            self._sdUUID)
