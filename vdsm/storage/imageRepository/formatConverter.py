@@ -26,7 +26,6 @@ from vdsm import qemuImg
 from storage import sd
 from storage import blockSD
 from storage import image
-from storage import clusterlock
 from storage import volume
 from storage import blockVolume
 from storage import storage_exception as se
@@ -91,7 +90,12 @@ def v2DomainConverter(repoPath, hostId, domain, isMsd):
 
 def v3DomainConverter(repoPath, hostId, domain, isMsd):
     log = logging.getLogger('Storage.v3DomainConverter')
-    log.debug("Starting conversion for domain %s", domain.sdUUID)
+
+    targetVersion = 3
+    currentVersion = domain.getVersion()
+
+    log.debug("Starting conversion for domain %s from version %s "
+              "to version %s", domain.sdUUID, currentVersion, targetVersion)
 
     targetVersion = 3
     currentVersion = domain.getVersion()
@@ -115,8 +119,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         domain.setMetadataPermissions()
 
     log.debug("Initializing the new cluster lock for domain %s", domain.sdUUID)
-    newClusterLock = clusterlock.SANLock(
-        domain.sdUUID, domain.getIdsFilePath(), domain.getLeasesFilePath())
+    newClusterLock = domain._makeClusterLock(targetVersion)
     newClusterLock.initLock()
 
     log.debug("Acquiring the host id %s for domain %s", hostId, domain.sdUUID)
