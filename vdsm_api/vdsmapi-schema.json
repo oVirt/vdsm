@@ -848,6 +848,8 @@
 #
 # @kvmEnabled:          KVM is enabled on the host
 #
+# @cpuThreads:          The number of CPU threads present
+#
 # @cpuCores:            The number of CPU cores present
 #
 # @cpuSockets:          The numbet of CPU sockets
@@ -909,7 +911,7 @@
 #        the current API truncates @software_version to 'x.y'.
 ##
 {'type': 'VdsmCapabilities',
- 'data': {'kvmEnabled': 'bool', 'cpuCores': 'uint',
+ 'data': {'kvmEnabled': 'bool', 'cpuThreads': 'uint', 'cpuCores': 'uint',
           'cpuSockets': 'uint', 'cpuSpeed': 'float', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedENGINEs': ['str'],

@@ -261,6 +261,7 @@ def get():
     else:
         caps['cpuCores'] = str(cpuTopology.cores())
 
+    caps['cpuThreads'] = str(cpuTopology.threads())
     caps['cpuSockets'] = str(cpuTopology.sockets())
     caps['cpuSpeed'] = cpuInfo.mhz()
     if config.getboolean('vars', 'fake_kvm_support'):
