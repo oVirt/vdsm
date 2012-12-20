@@ -2411,9 +2411,15 @@ class LibvirtVm(vm.Vm):
         if graphics.getAttribute('type') == 'spice':
             graphics.setAttribute('connected', connAct)
         hooks.before_vm_set_ticket(self._lastXMLDesc, self.conf, params)
-        self._dom.updateDeviceFlags(graphics.toxml(), 0)
-        hooks.after_vm_set_ticket(self._lastXMLDesc, self.conf, params)
-        return {'status': doneCode}
+        try:
+            self._dom.updateDeviceFlags(graphics.toxml(), 0)
+        except TimeoutError as tmo:
+            res = {'status': {'code': errCode['ticketErr']['status']['code'],
+                              'message': unicode(tmo)}}
+        else:
+            hooks.after_vm_set_ticket(self._lastXMLDesc, self.conf, params)
+            res = {'status': doneCode}
+        return res
 
     def _reviveTicket(self, newlife):
         """Revive an existing ticket, if it has expired or about to expire"""
