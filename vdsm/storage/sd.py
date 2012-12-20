@@ -101,10 +101,6 @@ BACKUP_DOMAIN = 3
 DOMAIN_CLASSES = {DATA_DOMAIN: 'Data', ISO_DOMAIN: 'Iso',
                   BACKUP_DOMAIN: 'Backup'}
 
-# Lock Version
-DOM_SAFELEASE_VERS = (0, 2)
-DOM_SANLOCK_VERS = (3,)
-
 # Metadata keys
 DMDK_VERSION = "VERSION"
 DMDK_SDUUID = "SDUUID"
@@ -292,29 +288,20 @@ class StorageDomain:
     mdBackupVersions = config.get('irs', 'md_backup_versions')
     mdBackupDir = config.get('irs', 'md_backup_dir')
 
+    # version: (clusterLockClass, hasVolumeLeases)
+    _clusterLockTable = {
+        0: (clusterlock.SafeLease, False),
+        2: (clusterlock.SafeLease, False),
+        3: (clusterlock.SANLock, True),
+    }
+
     def __init__(self, sdUUID, domaindir, metadata):
         self.sdUUID = sdUUID
         self.domaindir = domaindir
         self._metadata = metadata
         self._lock = threading.Lock()
         self.stat = None
-
-        domversion = self.getVersion()
-
-        if domversion in DOM_SAFELEASE_VERS:
-            leaseParams = (
-                DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
-                DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
-                DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC])
-            self._clusterLock = clusterlock.SafeLease(
-                self.sdUUID, self.getIdsFilePath(), self.getLeasesFilePath(),
-                *leaseParams)
-        elif domversion in DOM_SANLOCK_VERS:
-            self._clusterLock = clusterlock.SANLock(
-                self.sdUUID, self.getIdsFilePath(), self.getLeasesFilePath())
-        else:
-            raise se.UnsupportedDomainVersion(domversion)
+        self._clusterLock = self._makeClusterLock()
 
     def __del__(self):
         if self.stat:
@@ -327,6 +314,25 @@ class StorageDomain:
     @property
     def oop(self):
         return oop.getProcessPool(self.sdUUID)
+
+    def _makeClusterLock(self, domVersion=None):
+        if not domVersion:
+            domVersion = self.getVersion()
+
+        leaseParams = (
+            DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
+            DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC],
+        )
+
+        try:
+            clusterLockClass = self._clusterLockTable[domVersion][0]
+        except KeyError:
+            raise se.UnsupportedDomainVersion(domVersion)
+
+        return clusterLockClass(self.sdUUID, self.getIdsFilePath(),
+                                self.getLeasesFilePath(), *leaseParams)
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version):
@@ -436,7 +442,11 @@ class StorageDomain:
         return self._clusterLock.hasHostId(hostId)
 
     def hasVolumeLeases(self):
-        return self.getVersion() in DOM_SANLOCK_VERS
+        domVersion = self.getVersion()
+        try:
+            return self._clusterLockTable[domVersion][1]
+        except KeyError:
+            raise se.UnsupportedDomainVersion(domVersion)
 
     def getVolumeLease(self, volUUID):
         """
