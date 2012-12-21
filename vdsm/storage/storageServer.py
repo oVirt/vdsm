@@ -652,6 +652,12 @@ class ConnectionMonitor(object):
             if self._stopEvent.isSet():
                 break
 
+            with self._conDictLock:
+                if conId not in self._conDict:
+                    # the connection is deleted when we were in wait for the
+                    # stop event, so skip it
+                    continue
+
             if con.isConnected():
                 continue
 
