@@ -1446,6 +1446,8 @@ class StoragePool(Securable):
                     'mount': domStatus.masterMounted,
                     'valid': domStatus.masterValid
                 },
+
+                'isoprefix': domStatus.isoPrefix,
             }
 
         return repoStats
@@ -1487,19 +1489,11 @@ class StoragePool(Securable):
             # Return statistics for active domains only
             domInfo[sdUUID] = {'status': sdStatus, 'alerts': []}
 
-            if sdStatus != sd.DOM_ACTIVE_STATUS:
+            if sdStatus != sd.DOM_ACTIVE_STATUS or sdUUID not in repoStats:
                 continue
 
-            try:
-                dom = sdCache.produce(sdUUID)
-                if dom.isISO():
-                    poolInfo['isoprefix'] = dom.getIsoDomainImagesDir()
-            except:
-                self.log.warn("Could not get full domain information, "
-                              "it is probably unavailable", exc_info=True)
-
-            if sdUUID not in repoStats:
-                continue
+            if repoStats[sdUUID]['isoprefix']:
+                poolInfo['isoprefix'] = repoStats[sdUUID]['isoprefix']
 
             # For unreachable domains repoStats will return disktotal and
             # diskfree as None.

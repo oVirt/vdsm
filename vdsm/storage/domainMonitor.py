@@ -33,6 +33,7 @@ class DomainMonitorStatus(object):
         "error", "lastCheck", "valid", "readDelay", "masterMounted",
         "masterValid", "diskUtilization", "vgMdUtilization",
         "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
+        "isoPrefix",
     )
 
     def __init__(self):
@@ -53,6 +54,11 @@ class DomainMonitorStatus(object):
         self.vgMdUtilization = (0, 0)
         self.vgMdHasEnoughFreeSpace = True
         self.vgMdFreeBelowThreashold = True
+        # The iso prefix is computed asynchronously because in any
+        # synchronous operation (e.g.: connectStoragePool, getInfo)
+        # we cannot risk to stop and wait for the iso domain to
+        # report its prefix (it might be unreachable).
+        self.isoPrefix = None
 
     def update(self, st):
         for attr in self.__slots__:
@@ -124,6 +130,7 @@ class DomainMonitorThread(object):
         self.status = DomainMonitorStatus()
         self.nextStatus = DomainMonitorStatus()
         self.isIsoDomain = None
+        self.isoPrefix = None
         self.lastRefresh = time()
         self.refreshTime = \
             config.getint("irs", "repo_stats_cache_refresh_timeout")
@@ -180,8 +187,15 @@ class DomainMonitorThread(object):
             # the domain is deactivated.
             if self.domain is None:
                 self.domain = sdCache.produce(self.sdUUID)
+
             if self.isIsoDomain is None:
-                self.isIsoDomain = self.domain.isISO()
+                # The isIsoDomain assignment is delayed because the isoPrefix
+                # discovery might fail (if the domain suddenly disappears) and
+                # we could risk to never try to set it again.
+                isIsoDomain = self.domain.isISO()
+                if isIsoDomain:
+                    self.isoPrefix = self.domain.getIsoDomainImagesDir()
+                self.isIsoDomain = isIsoDomain
 
             self.domain.selftest()
 
@@ -202,6 +216,7 @@ class DomainMonitorThread(object):
             self.nextStatus.masterMounted = masterStats['mount']
 
             self.nextStatus.hasHostId = self.domain.hasHostId(self.hostId)
+            self.nextStatus.isoPrefix = self.isoPrefix
 
         except Exception as e:
             self.log.error("Error while collecting domain %s monitoring "
