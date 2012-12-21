@@ -1407,57 +1407,56 @@ class StoragePool(Securable):
     @unsecured
     def getRepoStats(self):
         #FIXME : this should actually be  built in HSM
-        res = {}
-        now = time.time()
+        repoStats = {}
+        statsGenTime = time.time()
+
         for sdUUID in self.domainMonitor.monitoredDomains:
-            st = self.domainMonitor.getStatus(sdUUID)
-            if st.error is None:
+            domStatus = self.domainMonitor.getStatus(sdUUID)
+
+            if domStatus.error is None:
                 code = 0
-            elif isinstance(st.error, se.StorageException):
-                code = st.error.code
+            elif isinstance(domStatus.error, se.StorageException):
+                code = domStatus.error.code
             else:
                 code = se.StorageException.code
-            disktotal, diskfree = st.diskUtilization
-            vgmdtotal, vgmdfree = st.vgMdUtilization
-            res[sdUUID] = {
-                'finish': st.lastCheck,
+
+            disktotal, diskfree = domStatus.diskUtilization
+            vgmdtotal, vgmdfree = domStatus.vgMdUtilization
+            lastcheck = '%.1f' % (statsGenTime - domStatus.lastCheck)
+
+            repoStats[sdUUID] = {
+                'finish': domStatus.lastCheck,
+
                 'result': {
                     'code': code,
-                    'lastCheck': '%.1f' % (now - st.lastCheck),
-                    'delay': str(st.readDelay),
-                    'valid': (st.error is None)
+                    'lastCheck': lastcheck,
+                    'delay': str(domStatus.readDelay),
+                    'valid': (domStatus.error is None)
                 },
+
                 'disktotal': disktotal,
                 'diskfree': diskfree,
 
-                'mdavalid': st.vgMdHasEnoughFreeSpace,
-                'mdathreshold': st.vgMdFreeBelowThreashold,
+                'mdavalid': domStatus.vgMdHasEnoughFreeSpace,
+                'mdathreshold': domStatus.vgMdFreeBelowThreashold,
                 'mdasize': vgmdtotal,
                 'mdafree': vgmdfree,
 
                 'masterValidate': {
-                    'mount': st.masterMounted,
-                    'valid': st.masterValid
-                }
+                    'mount': domStatus.masterMounted,
+                    'valid': domStatus.masterValid
+                },
             }
-        return res
+
+        return repoStats
 
     @unsecured
     def getInfo(self):
         """
         Get storage pool info.
         """
-        ##self.log.info("Get info of the storage pool %s",
-        ##    self.spUUID)
-        if not self.spUUID:
-            raise se.StoragePoolInternalError
-
-        info = {'type': '', 'name': '', 'domains': '', 'master_uuid': '',
-                'master_ver': 0, 'lver': LVER_INVALID, 'spm_id': SPM_ID_FREE,
-                'isoprefix': '', 'pool_status': 'uninitialized', 'version': -1}
-        list_and_stats = {}
-
         msdUUID = self.masterDomain.sdUUID
+
         try:
             msdInfo = self.masterDomain.getInfo()
         except Exception:
@@ -1465,68 +1464,70 @@ class StoragePool(Securable):
             raise se.StoragePoolMasterNotFound(self.spUUID, msdUUID)
 
         try:
-            info['type'] = msdInfo['type']
-            info['domains'] = domainListEncoder(self.getDomains())
-            info['name'] = self.getDescription()
-            info['spm_id'] = self.getSpmId()
-            info['lver'] = self.getMetaParam(PMDK_LVER)
-            info['master_uuid'] = msdInfo['uuid']
-            info['master_ver'] = self.getMasterVersion()
-            info['version'] = str(self.getVersion())
+            poolInfo = {
+                'type': msdInfo['type'],
+                'name': self.getDescription(),
+                'domains': domainListEncoder(self.getDomains()),
+                'master_uuid': msdUUID,
+                'master_ver': self.getMasterVersion(),
+                'lver': self.getMetaParam(PMDK_LVER),
+                'spm_id': self.getSpmId(),
+                'pool_status': 'uninitialized',
+                'version': str(self.getVersion()),
+                'isoprefix': '',
+            }
         except Exception:
             self.log.error("Pool metadata error", exc_info=True)
             raise se.StoragePoolActionError(self.spUUID)
 
-        # Get info of all pool's domains
-        domDict = self.getDomains()
+        domInfo = {}
         repoStats = self.getRepoStats()
-        for item in domDict:
+
+        for sdUUID, sdStatus in self.getDomains().iteritems():
             # Return statistics for active domains only
-            stats = {}
-            alerts = []
-            if domDict[item] == sd.DOM_ACTIVE_STATUS:
-                try:
-                    dom = sdCache.produce(item)
-                    if dom.isISO():
-                        info['isoprefix'] = os.path.join(self.poolPath, item,
-                                                         sd.DOMAIN_IMAGES,
-                                                         sd.ISO_IMAGE_UUID)
-                except:
-                    self.log.warn("Could not get full domain information, it "
-                                  "is probably unavailable", exc_info=True)
+            domInfo[sdUUID] = {'status': sdStatus, 'alerts': []}
 
-                if item in repoStats:
-                    # For unreachable domains repoStats will return
-                    # disktotal/diskfree as None. We should drop these
-                    # parameters in this case
-                    if repoStats[item]['disktotal'] is not None and \
-                            repoStats[item]['diskfree'] is not None:
-                        stats['disktotal'] = repoStats[item]['disktotal']
-                        stats['diskfree'] = repoStats[item]['diskfree']
-                    if not repoStats[item]['mdavalid']:
-                        alerts.append({'code': se.SmallVgMetadata.code,
-                                       'message': se.SmallVgMetadata.message})
-                        self.log.warning("VG %s's metadata size too small %s",
-                                         dom.sdUUID,
-                                         repoStats[item]['mdasize'])
+            if sdStatus != sd.DOM_ACTIVE_STATUS:
+                continue
 
-                    if not repoStats[item]['mdathreshold']:
-                        alerts.append({
-                            'code': se.VgMetadataCriticallyFull.code,
-                            'message': se.VgMetadataCriticallyFull.message})
-                        self.log.warning("VG %s's metadata size exceeded "
-                                         "critical size: mdasize=%s "
-                                         "mdafree=%s", dom.sdUUID,
-                                         repoStats[item]['mdasize'],
-                                         repoStats[item]['mdafree'])
+            try:
+                dom = sdCache.produce(sdUUID)
+                if dom.isISO():
+                    poolInfo['isoprefix'] = dom.getIsoDomainImagesDir()
+            except:
+                self.log.warn("Could not get full domain information, "
+                              "it is probably unavailable", exc_info=True)
 
-                    stats['alerts'] = alerts
+            if sdUUID not in repoStats:
+                continue
 
-            stats['status'] = domDict[item]
-            list_and_stats[item] = stats
+            # For unreachable domains repoStats will return disktotal and
+            # diskfree as None.
+            if (repoStats[sdUUID]['disktotal'] is not None
+                    and repoStats[sdUUID]['diskfree'] is not None):
+                domInfo[sdUUID]['disktotal'] = repoStats[sdUUID]['disktotal']
+                domInfo[sdUUID]['diskfree'] = repoStats[sdUUID]['diskfree']
 
-        info["pool_status"] = "connected"
-        return dict(info=info, dominfo=list_and_stats)
+            if not repoStats[sdUUID]['mdavalid']:
+                domInfo[sdUUID]['alerts'].append({
+                    'code': se.SmallVgMetadata.code,
+                    'message': se.SmallVgMetadata.message,
+                })
+                self.log.warning("VG %s's metadata size too small %s",
+                                 sdUUID, repoStats[sdUUID]['mdasize'])
+
+            if not repoStats[sdUUID]['mdathreshold']:
+                domInfo[sdUUID]['alerts'].append({
+                    'code': se.VgMetadataCriticallyFull.code,
+                    'message': se.VgMetadataCriticallyFull.message,
+                })
+                self.log.warning("VG %s's metadata size exceeded critical "
+                                 "size: mdasize=%s mdafree=%s", sdUUID,
+                                 repoStats[sdUUID]['mdasize'],
+                                 repoStats[sdUUID]['mdafree'])
+
+        poolInfo["pool_status"] = "connected"
+        return dict(info=poolInfo, dominfo=domInfo)
 
     @unsecured
     def getIsoDomain(self):
