@@ -21,7 +21,6 @@
 import logging
 from collections import namedtuple
 import guestIF
-from vdsm.config import config
 import json
 
 from testrunner import VdsmTestCase as TestCaseBase
@@ -112,11 +111,10 @@ class TestGuestIFHandleData(TestCaseBase):
     # perform general setup tasks
     def setUp(self):
         logging.TRACE = 5
-        self.maxMessageSize = 100
-        config.set('vars', 'guest_agent_max_allowed_message_size',
-                   str(self.maxMessageSize))
         self.fakeGuestAgent = guestIF.GuestAgent(None, None, self.log,
                                                  connect=False)
+        self.fakeGuestAgent.MAX_MESSAGE_SIZE = 100
+        self.maxMessageSize = self.fakeGuestAgent.MAX_MESSAGE_SIZE
         self.fakeGuestAgent._clearReadBuffer()
         # Guest agent must not be stopped
         self.fakeGuestAgent._stopped = False
