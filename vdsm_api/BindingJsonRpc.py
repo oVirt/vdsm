@@ -28,13 +28,19 @@ except ImportError:
     pass
 
 
+def _simpleThreadFactory(func):
+    t = threading.Thread(target=func)
+    t.setDaemon(False)
+    t.start()
+
+
 class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
     def __init__(self, bridge, backendConfig):
         reactors = []
         self.bridge = bridge
-        self.server = JsonRpcServer(bridge)
+        self.server = JsonRpcServer(bridge, _simpleThreadFactory)
         for backendType, cfg in backendConfig:
             if backendType == "tcp":
                 reactors.append(self._createTcpReactor(cfg))

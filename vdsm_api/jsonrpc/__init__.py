@@ -15,6 +15,7 @@
 import json
 import logging
 from Queue import Queue
+from functools import partial
 
 __all__ = ["tcpReactor"]
 
@@ -93,9 +94,10 @@ class _JsonRpcResponse(object):
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
-    def __init__(self, bridge):
+    def __init__(self, bridge, threadFactory=None):
         self._bridge = bridge
         self._workQueue = Queue()
+        self._threadFactory = threadFactory
 
     def _parseMessage(self, msg):
         try:
@@ -180,7 +182,10 @@ class JsonRpcServer(object):
                 break
 
             if isinstance(obj, _JsonRpcRequest):
-                self._serveRequest(obj)
+                if self._threadFactory is None:
+                    self._serveRequest(obj)
+                else:
+                    self._threadFactory(partial(self._serveRequest, obj))
             else:
                 self._processResponse(obj)
 
