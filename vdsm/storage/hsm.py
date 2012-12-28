@@ -678,7 +678,7 @@ class HSM:
                 "sdUUID=%s, devlist=%s" % (sdUUID, devlist)))
 
         self.validatePoolSD(spUUID, sdUUID)
-        vars.task.getExclusiveLock(STORAGE, sdUUID)
+        vars.task.getSharedLock(STORAGE, sdUUID)
         # We need to let the domain to extend itself
         pool = self.getPool(spUUID)
         pool.extendSD(sdUUID, devlist, force)
