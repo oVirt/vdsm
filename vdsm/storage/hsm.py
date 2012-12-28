@@ -788,8 +788,22 @@ class HSM:
             se.StoragePoolActionError(
                 "spUUID=%s, msdUUID=%s, masterVersion=%s" %
                 (spUUID, msdUUID, masterVersion)))
+
         vars.task.getSharedLock(STORAGE, spUUID)
+
+        try:
+            # The refreshStoragePool command is an HSM command and
+            # should not be issued (and executed) on the SPM. At the
+            # moment we just ignore it for legacy reasons but in the
+            # future vdsm could raise an exception.
+            self.validateNotSPM(spUUID)
+        except se.IsSpm:
+            self.log.info("Ignoring the refreshStoragePool request "
+                          "(the host is the SPM)")
+            return
+
         pool = self.getPool(spUUID)
+
         try:
             self.validateSdUUID(msdUUID)
             pool.refresh(msdUUID, masterVersion)
