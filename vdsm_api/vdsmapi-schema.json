@@ -294,9 +294,9 @@
 #
 # @action:    The type of fencing operation to perform (from @FenceNodeAction)
 #
-# @secure:    Enable SSL communication
+# @secure:    #optional Enable SSL communication
 #
-# @options:   Additional agent-specific parameters in space-separated
+# @options:   #optional Additional agent-specific parameters in space-separated
 #             <var>=<val> pairs
 #
 # Returns:
@@ -2543,7 +2543,7 @@
 #
 # @acpiEnable:            Indicates if ACPI is enabled inside the VM
 #
-# @custom:                #opional A dictionary of custom, free-form properties
+# @custom:                #optional A dictionary of custom, free-form properties
 #
 # @devices:               #optional An array of VM devices requested
 #
@@ -3027,9 +3027,9 @@
 #
 # @volumeList:       A list of Volume UUIDs
 #
-# @postZero:         If True, overwrite Volume data with zeroes after deletion
+# @postZero:         #optional If True, overwrite Volume data with zeroes after deletion
 #
-# @force:            Force the operation and do not perform any validation
+# @force:            #optional Force the operation and do not perform any validation
 #
 # Returns:
 # A task UUID
@@ -4306,9 +4306,9 @@
 #
 # @enableScsiFencing:  This parameter is not used
 #
-# @maxHostID:          The maximum number of hosts that could be in the cluster
+# @maxHostID:          #optional The maximum number of hosts that could be in the cluster
 #
-# @domVersion:         The expected Storage Domain version of the master domain
+# @domVersion:         #optional The expected Storage Domain version of the master domain
 #
 # Returns:
 # A task UUID
@@ -5358,10 +5358,10 @@
 #
 # @dstparams:  Used only by the hibernate API.  Ignored for @remote migration
 #
-# @mode:       The migration mode.  Callers of this API should use @remote.  For
+# @mode:       #optional The migration mode.  Callers of this API should use @remote.  For
 #              @file migration use @VM.hibernate.
 #
-# @method:
+# @method:     #optional
 #
 # Since: 4.10.0
 ##
@@ -5544,7 +5544,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'shutdown'},
- 'data': {'vmID': 'UUID', 'delay': 'int', 'message': 'str'}}
+ 'data': {'vmID': 'UUID', '*delay': 'int', '*message': 'str'}}
 
 ##
 # @SnapshotVolumeDriveInfo:
