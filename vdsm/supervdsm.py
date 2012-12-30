@@ -144,6 +144,9 @@ class SuperVdsmProxy(object):
         self._firstLaunch = True
 
     def isRunning(self):
+        if self._firstLaunch or self._svdsm is None:
+            return False
+
         try:
             with open(self.pidfile, "r") as f:
                 spid = f.read().strip()
