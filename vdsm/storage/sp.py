@@ -37,6 +37,7 @@ import storage_mailbox
 import blockSD
 import fileSD
 import sd
+import multipath
 import misc
 import fileUtils
 from vdsm.config import config
@@ -974,7 +975,11 @@ class StoragePool(Securable):
         if len(domains) >= self.getMaximumSupportedDomains():
             raise se.TooManyDomainsInStoragePoolError()
 
-        dom = sdCache.produce(sdUUID)
+        try:
+            dom = sdCache.produce(sdUUID)
+        except se.StorageDomainDoesNotExist:
+            multipath.rescan()
+            dom = sdCache.produce(sdUUID)
         dom.acquireHostId(self.id)
 
         try:
