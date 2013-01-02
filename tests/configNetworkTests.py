@@ -65,15 +65,6 @@ class TestconfigNetwork(TestCaseBase):
         if inspect.getargspec(self.assertRaises)[3] is None:
             self.assertRaises = self._assertRaises
 
-    def testNicSort(self):
-        nics = {'nics_init': ('p33p1', 'eth1', 'lan0', 'em0', 'p331',
-                              'Lan1', 'eth0', 'em1', 'p33p2', 'p33p10'),
-                'nics_expected': ('Lan1', 'em0', 'em1', 'eth0', 'eth1',
-                                  'lan0', 'p33p1', 'p33p10', 'p33p2', 'p331')}
-
-        nics_res = configNetwork.nicSort(nics['nics_init'])
-        self.assertEqual(nics['nics_expected'], tuple(nics_res))
-
     def testIsBridgeNameValid(self):
         invalidBrName = ('-abc', 'abcdefghijklmnop', 'a:b', 'a.b')
         for i in invalidBrName:
