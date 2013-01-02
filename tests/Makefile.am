@@ -46,6 +46,7 @@ test_modules = \
 	persistentDictTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
+	schemaTests.py \
 	sslTests.py \
 	storageMailboxTests.py \
 	superVdsmTests.py \
