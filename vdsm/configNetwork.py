@@ -1180,15 +1180,10 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         cf = netinfo.NET_CONF_PREF + bonding
         configWriter._updateConfigValue(cf, 'MTU', DEFAULT_MTU, False)
         for nic in nics:
-            ifdown(nic)
             cf = netinfo.NET_CONF_PREF + nic
             configWriter._updateConfigValue(cf, 'MTU', DEFAULT_MTU, False)
 
         ifup(bonding)
-        # NICs must be activated in the same order of boot time
-        # to expose the correct MAC address.
-        for nic in nicSort(nics):
-            ifup(nic)
 
 
 def clientSeen(timeout):
