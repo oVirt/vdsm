@@ -28,11 +28,11 @@ AUTHENTICATING = 2
 class ProtonContext(object):
     log = logging.getLogger("jsonrpc.ProtonContext")
 
-    def __init__(self, reactor, messageQueue, cxtr, msg):
+    def __init__(self, reactor, messageQueue, connector, msg):
         self._reactor = reactor
         self._msg = msg
         self._mq = messageQueue
-        self._cxtr = cxtr
+        self._connector = connector
 
     @property
     def data(self):
@@ -44,7 +44,7 @@ class ProtonContext(object):
         msg.body = data
         self._mq.put_nowait(msg)
         self.log.debug("Message Queued")
-        self._reactor._activate(self._cxtr, proton.PN_CONNECTOR_WRITABLE)
+        self._reactor._activate(self._connector, proton.PN_CONNECTOR_WRITABLE)
         self._reactor._wakeup()
 
 
@@ -65,8 +65,8 @@ class ProtonReactor(object):
         self._deliveryTimeout = deliveryTimeout
         self._activationQeue = Queue()
 
-    def _activate(self, cxtr, cond):
-        self._activationQeue.put_nowait((cxtr, cond))
+    def _activate(self, connector, cond):
+        self._activationQeue.put_nowait((connector, cond))
 
     def _convertTimeout(self, timeout):
         """
@@ -89,14 +89,14 @@ class ProtonReactor(object):
         l = proton.pn_driver_listener(self._driver)
         while l:
             self.log.debug("Accepting Connection.")
-            cxtr = proton.pn_listener_accept(l)
-            proton.pn_connector_set_context(cxtr, AUTHENTICATING)
+            connector = proton.pn_listener_accept(l)
+            proton.pn_connector_set_context(connector, AUTHENTICATING)
 
             l = proton.pn_driver_listener(self._driver)
 
-    def _authenticateConnector(self, cxtr):
+    def _authenticateConnector(self, connector):
         self.log.debug("Authenticating...")
-        sasl = proton.pn_connector_sasl(cxtr)
+        sasl = proton.pn_connector_sasl(connector)
         state = proton.pn_sasl_state(sasl)
         while state == proton.PN_SASL_CONF or state == proton.PN_SASL_STEP:
             if state == proton.PN_SASL_CONF:
@@ -113,38 +113,39 @@ class ProtonReactor(object):
             state = proton.pn_sasl_state(sasl)
 
         if state == proton.PN_SASL_PASS:
-            proton.pn_connector_set_connection(cxtr, proton.pn_connection())
-            proton.pn_connector_set_context(cxtr, CONNECTED)
+            proton.pn_connector_set_connection(connector,
+                                               proton.pn_connection())
+            proton.pn_connector_set_context(connector, CONNECTED)
             self.log.debug("Authentication-PASSED")
         elif state == proton.PN_SASL_FAIL:
-            proton.pn_connector_set_context(cxtr, FAILED)
+            proton.pn_connector_set_context(connector, FAILED)
             self.log.debug("Authentication-FAILED")
         else:
             self.log.debug("Authentication-PENDING")
 
     def _processConnectors(self):
-        cxtr = proton.pn_driver_connector(self._driver)
-        while cxtr:
+        connector = proton.pn_driver_connector(self._driver)
+        while connector:
             self.log.debug("Process Connector")
 
             # releaes any connector that has been closed
-            if proton.pn_connector_closed(cxtr):
+            if proton.pn_connector_closed(connector):
                 self.log.debug("Closing connector")
-                proton.pn_connector_free(cxtr)
+                proton.pn_connector_free(connector)
             else:
-                proton.pn_connector_process(cxtr)
+                proton.pn_connector_process(connector)
 
-                state = proton.pn_connector_context(cxtr)
+                state = proton.pn_connector_context(connector)
                 if state == AUTHENTICATING:
-                    self._authenticateConnector(cxtr)
+                    self._authenticateConnector(connector)
                 elif state == CONNECTED:
-                    self._serviceConnector(cxtr)
+                    self._serviceConnector(connector)
                 else:
                     self.log.warning("Unknown Connection state '%s'" % state)
 
-                proton.pn_connector_process(cxtr)
+                proton.pn_connector_process(connector)
 
-            cxtr = proton.pn_driver_connector(self._driver)
+            connector = proton.pn_driver_connector(self._driver)
 
     def _initConnection(self, conn):
         if proton.pn_connection_state(conn) & proton.PN_LOCAL_UNINIT:
@@ -190,14 +191,14 @@ class ProtonReactor(object):
             proton.pn_link_open(link)
             link = proton.pn_link_next(link, proton.PN_LOCAL_UNINIT)
 
-    def _processDeliveries(self, conn, cxtr):
+    def _processDeliveries(self, conn, connector):
         delivery = proton.pn_work_head(conn)
         while delivery:
             self.log.debug("Process delivery %s" %
                            proton.pn_delivery_tag(delivery))
 
             if proton.pn_delivery_readable(delivery):
-                self._processIncoming(delivery, cxtr)
+                self._processIncoming(delivery, connector)
             elif proton.pn_delivery_writable(delivery):
                 self._processOutgoing(delivery)
 
@@ -292,15 +293,15 @@ class ProtonReactor(object):
                 proton.pn_delivery(sender,
                                    "response-delivery-%s" % str(uuid.uuid4()))
 
-    def _serviceConnector(self, cxtr):
+    def _serviceConnector(self, connector):
         self.log.debug("Service Connector")
-        conn = proton.pn_connector_connection(cxtr)
+        conn = proton.pn_connector_connection(connector)
 
         self._initConnection(conn)
         self._openPendingSessions(conn)
         self._openLinks(conn)
         self._queueOutgoingDeliveries(conn)
-        self._processDeliveries(conn, cxtr)
+        self._processDeliveries(conn, connector)
         self._cleanDeliveries(conn)
         self._cleanLinks(conn)
         self._cleanSessions(conn)
@@ -310,7 +311,7 @@ class ProtonReactor(object):
             self.log.debug("Connection Closed")
             proton.pn_connection_close(conn)
 
-    def _processIncoming(self, delivery, cxtr):
+    def _processIncoming(self, delivery, connector):
         link = proton.pn_delivery_link(delivery)
         ssn = proton.pn_link_session(link)
         msg = []
@@ -326,7 +327,7 @@ class ProtonReactor(object):
         msgObj.decode(msg)
         ctx = proton.pn_session_get_context(ssn)
         mq = ctx['mqueue']
-        self._messageHandler.handleMessage(ProtonContext(self, mq, cxtr,
+        self._messageHandler.handleMessage(ProtonContext(self, mq, connector,
                                                          msgObj))
 
         proton.pn_delivery_settle(delivery)
