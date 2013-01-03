@@ -63,7 +63,7 @@ class PoolHandlerTests(TestCaseBase):
         procPath = os.path.join("/proc", str(p.process.pid))
 
         # Make sure handler is running
-        self.assertTrue(p.proxy.callCrabRPCFunction(1, "os.path.exists",
+        self.assertTrue(p.proxy.callCrabRPCFunction(4, "os.path.exists",
                                                     procPath))
         p.stop()
         test = lambda: self.assertFalse(os.path.exists(procPath))
