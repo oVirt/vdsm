@@ -110,7 +110,7 @@ Requires: kernel >= 2.6.32-279.9.1
 Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: mom >= 0.3.0
-Requires: selinux-policy-targeted >= 3.7.19-80
+Requires: selinux-policy-targeted >= 3.7.19-155
 Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
 %endif
