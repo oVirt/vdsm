@@ -47,7 +47,7 @@ BuildRequires: m2crypto
 %ifarch x86_64
 BuildRequires: python-dmidecode
 %endif
-%if 0%{?rhel}
+%if 0%{?rhel} < 7
 BuildRequires: python-ordereddict
 %endif
 
@@ -186,7 +186,7 @@ Summary:        VDSM API Server
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
-%if 0%{?rhel}
+%if 0%{?rhel} < 7
 Requires: python-ordereddict
 %endif
 
