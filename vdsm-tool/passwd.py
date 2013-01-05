@@ -39,8 +39,8 @@ def set_saslpasswd():
         raise
 
     p = subprocess.Popen(
-            script, stdin=f, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, close_fds=True)
+        script, stdin=f, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, close_fds=True)
     output, err = p.communicate()
     if p.returncode != 0:
         raise Exception("Set password failed: %s" % (err, ))

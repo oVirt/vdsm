@@ -126,7 +126,7 @@ class DomainMonitorThread(object):
         self.isIsoDomain = None
         self.lastRefresh = time()
         self.refreshTime = \
-                    config.getint("irs", "repo_stats_cache_refresh_timeout")
+            config.getint("irs", "repo_stats_cache_refresh_timeout")
 
     def start(self):
         self.thread.start()
@@ -189,10 +189,10 @@ class DomainMonitorThread(object):
 
             stats = self.domain.getStats()
             self.nextStatus.diskUtilization = (stats["disktotal"],
-                                          stats["diskfree"])
+                                               stats["diskfree"])
 
             self.nextStatus.vgMdUtilization = (stats["mdasize"],
-                                          stats["mdafree"])
+                                               stats["mdafree"])
 
             self.nextStatus.vgMdHasEnoughFreeSpace = stats["mdavalid"]
             self.nextStatus.vgMdFreeBelowThreashold = stats["mdathreshold"]
@@ -217,7 +217,7 @@ class DomainMonitorThread(object):
 
             try:
                 self.domainMonitor.onDomainConnectivityStateChange.emit(
-                                        self.sdUUID, self.nextStatus.valid)
+                    self.sdUUID, self.nextStatus.valid)
             except:
                 self.log.warn("Could not emit domain state change event",
                               exc_info=True)
@@ -229,7 +229,7 @@ class DomainMonitorThread(object):
                 self.domain.acquireHostId(self.hostId, async=True)
             except:
                 self.log.debug("Unable to issue the acquire host id %s "
-                    "request for domain %s", self.hostId, self.sdUUID,
-                    exc_info=True)
+                               "request for domain %s", self.hostId,
+                               self.sdUUID, exc_info=True)
 
         self.status.update(self.nextStatus)

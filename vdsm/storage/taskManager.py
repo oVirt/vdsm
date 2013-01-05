@@ -125,7 +125,7 @@ class TaskManager:
             except se.UnknownTask:
                 # Return info for existing tasks only.
                 self.log.warn("Unknown task %s. Maybe task was already "
-                                "cleared.", taskID)
+                              "cleared.", taskID)
         self.log.debug("Return: %s", subRes)
         return subRes
 
@@ -150,7 +150,7 @@ class TaskManager:
 
     def revertTask(self, taskID):
         self.log.debug("Entry. taskID: %s", taskID)
-        #TODO: Should we stop here implicitly ???
+        # TODO: Should we stop here implicitly ???
         t = self.__getTask(taskID)
         t.rollback()
         self.log.debug("Return.")
@@ -159,7 +159,7 @@ class TaskManager:
         """ Clear a task according to given uuid.
         """
         self.log.debug("Entry. taskID: %s", taskID)
-        #TODO: Should we stop here implicitly ???
+        # TODO: Should we stop here implicitly ???
         t = self.__getTask(taskID)
         t.clean()
         del self._tasks[taskID]
@@ -205,7 +205,7 @@ class TaskManager:
         if not os.path.exists(store):
             self.log.debug("task dump path %s does not exist.", store)
             return
-        #taskID is the root part of each (root.ext) entry in the dump task dir
+        # taskID is the root part of each (root.ext) entry in the dump task dir
         tasksIDs = set(os.path.splitext(tid)[0] for tid in os.listdir(store))
         for taskID in tasksIDs:
             self.log.debug("Loading dumped task %s", taskID)

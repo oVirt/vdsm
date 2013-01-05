@@ -175,9 +175,9 @@ class SSLTests(testrunner.VdsmTestCase):
             command += args
         print("command=%s" % command)
         process = subprocess.Popen(command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+                                   stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
         out, err = process.communicate(input)
         rc = process.wait()
         print("rc=%d" % rc)

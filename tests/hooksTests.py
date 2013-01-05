@@ -41,7 +41,7 @@ class TestHooks(TestCaseBase):
 echo -n %s >> "$_hook_domxml"
         """
         scripts = [tempfile.NamedTemporaryFile(dir=dirName, delete=False)
-                    for n in xrange(Q)]
+                   for n in xrange(Q)]
         scripts.sort(key=lambda f: f.name)
         for n, script in enumerate(scripts):
             script.write(code % n)

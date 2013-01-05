@@ -51,8 +51,9 @@ class AlignmentScanTests(TestCaseBase):
         eq_(retcode, 0)
         eq_(err, [])
         out = "\n".join(out)
-        assert_not_equals(out.find("/usr/bin/virt-alignment-scan: check "
-                               "alignment of virtual machine partitions"), -1)
+        assert_not_equals(
+            out.find("/usr/bin/virt-alignment-scan: check "
+                     "alignment of virtual machine partitions"), -1)
         assert_not_equals(out.find("Usage:"), -1)
         assert_not_equals(out.find("Options:"), -1)
         assert_not_equals(out.find("-a|--add image       Add image"), -1)

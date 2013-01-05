@@ -25,8 +25,8 @@ from functools import partial
 
 from remoteFileHandler import RemoteFileHandlerPool
 
-#MAX_HELPERS = config.getint("irs", "process_pool_size")
-#GRACE_PERIOD = config.getint("irs", "process_pool_grace_period")
+# MAX_HELPERS = config.getint("irs", "process_pool_size")
+# GRACE_PERIOD = config.getint("irs", "process_pool_grace_period")
 DEFAULT_TIMEOUT = config.getint("irs", "process_pool_timeout")
 HELPERS_PER_DOMAIN = config.getint("irs", "process_pool_max_slots_per_domain")
 
@@ -41,7 +41,7 @@ def getProcessPool(clientName):
         with _poolsLock:
             if not clientName in _pools:
                 _pools[clientName] = OopWrapper(
-                        RemoteFileHandlerPool(HELPERS_PER_DOMAIN))
+                    RemoteFileHandlerPool(HELPERS_PER_DOMAIN))
 
             return _pools[clientName]
 
@@ -75,12 +75,12 @@ class _ModuleWrapper(types.ModuleType):
         fullName = ".".join(self._modName.split(".")[1:] + [name])
 
         return partial(self._procPool.callCrabRPCFunction, self._timeout,
-            fullName)
+                       fullName)
 
 
 def OopWrapper(procPool):
     return _ModuleWrapper("oop", procPool, DEFAULT_TIMEOUT,
-            (("os",
-                ("path",)),
-             "glob",
-             "fileUtils"))
+                          (("os",
+                            ("path",)),
+                           "glob",
+                           "fileUtils"))

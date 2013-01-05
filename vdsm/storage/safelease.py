@@ -46,10 +46,10 @@ class ClusterLock(object):
     freeLockCmd = config.get('irs', 'free_lock_cmd')
 
     def __init__(self, sdUUID, idFile, leaseFile,
-            lockRenewalIntervalSec,
-            leaseTimeSec,
-            leaseFailRetry,
-            ioOpTimeoutSec):
+                 lockRenewalIntervalSec,
+                 leaseTimeSec,
+                 leaseFailRetry,
+                 ioOpTimeoutSec):
         self._lock = threading.RLock()
         self._sdUUID = sdUUID
         self._leaseFile = leaseFile
@@ -60,15 +60,15 @@ class ClusterLock(object):
         lockUtil = os.path.join(self.lockUtilPath, "safelease")
         initCommand = [lockUtil, "release", "-f", self._leaseFile, "0"]
         rc, out, err = misc.execCmd(initCommand, sudo=False,
-                cwd=self.lockUtilPath)
+                                    cwd=self.lockUtilPath)
         if rc != 0:
             self.log.warn("could not initialise spm lease (%s): %s", rc, out)
             raise se.ClusterLockInitError()
 
     def setParams(self, lockRenewalIntervalSec,
-                    leaseTimeSec,
-                    leaseFailRetry,
-                    ioOpTimeoutSec):
+                  leaseTimeSec,
+                  leaseFailRetry,
+                  ioOpTimeoutSec):
         self._lockRenewalIntervalSec = lockRenewalIntervalSec
         self._leaseTimeSec = leaseTimeSec
         self._leaseFailRetry = leaseFailRetry
@@ -91,12 +91,13 @@ class ClusterLock(object):
         ioOpTimeoutMs = self._ioOpTimeoutSec * 1000
         with self._lock:
             self.log.debug("Acquiring cluster lock for domain %s" %
-                    self._sdUUID)
+                           self._sdUUID)
 
             lockUtil = self.getLockUtilFullPath()
-            acquireLockCommand = subprocess.list2cmdline([lockUtil, "start",
-                self._sdUUID, str(hostID), str(self._lockRenewalIntervalSec),
-                str(self._leaseFile), str(leaseTimeMs), str(ioOpTimeoutMs),
+            acquireLockCommand = subprocess.list2cmdline([
+                lockUtil, "start", self._sdUUID, str(hostID),
+                str(self._lockRenewalIntervalSec), str(self._leaseFile),
+                str(leaseTimeMs), str(ioOpTimeoutMs),
                 str(self._leaseFailRetry)])
 
             cmd = [constants.EXT_SU, misc.IOUSER, '-s', constants.EXT_SH, '-c',
@@ -117,12 +118,12 @@ class ClusterLock(object):
             freeLockUtil = os.path.join(self.lockUtilPath, self.freeLockCmd)
             releaseLockCommand = [freeLockUtil, self._sdUUID]
             self.log.info("Releasing cluster lock for domain %s" %
-                    self._sdUUID)
+                          self._sdUUID)
             (rc, out, err) = misc.execCmd(releaseLockCommand, sudo=False,
-                    cwd=self.lockUtilPath)
+                                          cwd=self.lockUtilPath)
             if rc != 0:
                 self.log.error("Could not release cluster lock "
-                        "rc=%s out=%s, err=%s" % (str(rc), out, err))
+                               "rc=%s out=%s, err=%s" % (str(rc), out, err))
 
             self.log.debug("Cluster lock released successfully")
 
@@ -216,8 +217,9 @@ class SANLock(object):
                     try:
                         SANLock._sanlock_fd = sanlock.register()
                     except sanlock.SanlockException, e:
-                        raise se.AcquireLockFailure(self._sdUUID, e.errno,
-                                        "Cannot register to sanlock", str(e))
+                        raise se.AcquireLockFailure(
+                            self._sdUUID, e.errno,
+                            "Cannot register to sanlock", str(e))
 
                 try:
                     sanlock.acquire(self._sdUUID, SDM_LEASE_NAME,
@@ -225,8 +227,9 @@ class SANLock(object):
                                     slkfd=SANLock._sanlock_fd)
                 except sanlock.SanlockException, e:
                     if e.errno != os.errno.EPIPE:
-                        raise se.AcquireLockFailure(self._sdUUID, e.errno,
-                                        "Cannot acquire cluster lock", str(e))
+                        raise se.AcquireLockFailure(
+                            self._sdUUID, e.errno,
+                            "Cannot acquire cluster lock", str(e))
                     SANLock._sanlock_fd = None
                     continue
 

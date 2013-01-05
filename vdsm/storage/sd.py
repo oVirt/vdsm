@@ -77,18 +77,18 @@ DOMAIN_TYPES = {UNKNOWN_DOMAIN: 'UNKNOWN', NFS_DOMAIN: 'NFS',
                 POSIXFS_DOMAIN: 'POSIXFS'}
 
 # Storage Domains Statuses: keep them capitalize
-#DOM_UNINITIALIZED_STATUS = 'Uninitialized'
-#DOM_DESTROYED_STATUS = 'Destroyed'
+# DOM_UNINITIALIZED_STATUS = 'Uninitialized'
+# DOM_DESTROYED_STATUS = 'Destroyed'
 DEPRECATED_DOM_INACTIVE_STATUS = 'Inactive'
-#DOM_ERROR_STATUS = 'Error'
-#FIXME : domain statuses are pool constants
+# DOM_ERROR_STATUS = 'Error'
+# FIXME : domain statuses are pool constants
 DOM_UNKNOWN_STATUS = 'Unknown'
 DOM_ATTACHED_STATUS = 'Attached'
 DOM_UNATTACHED_STATUS = 'Unattached'
 DOM_ACTIVE_STATUS = 'Active'
 
 DOMAIN_STATUSES = [DOM_UNKNOWN_STATUS, DOM_ATTACHED_STATUS,
-        DOM_UNATTACHED_STATUS, DOM_ACTIVE_STATUS]
+                   DOM_UNATTACHED_STATUS, DOM_ACTIVE_STATUS]
 DEPRECATED_STATUSES = {DEPRECATED_DOM_INACTIVE_STATUS: DOM_ATTACHED_STATUS}
 
 # Domain Role
@@ -122,10 +122,10 @@ DMDK_IO_OP_TIMEOUT_SEC = 'IOOPTIMEOUTSEC'
 DMDK_LEASE_RETRIES = 'LEASERETRIES'
 
 DEFAULT_LEASE_PARAMS = {DMDK_LOCK_POLICY: "ON",
-              DMDK_LEASE_RETRIES: 3,
-              DMDK_LEASE_TIME_SEC: 30,
-              DMDK_LOCK_RENEWAL_INTERVAL_SEC: 5,
-              DMDK_IO_OP_TIMEOUT_SEC: 1}
+                        DMDK_LEASE_RETRIES: 3,
+                        DMDK_LEASE_TIME_SEC: 30,
+                        DMDK_LOCK_RENEWAL_INTERVAL_SEC: 5,
+                        DMDK_IO_OP_TIMEOUT_SEC: 1}
 
 MASTER_FS_DIR = 'master'
 VMS_DIR = 'vms'
@@ -256,33 +256,33 @@ def intEncode(num):
 
 
 SD_MD_FIELDS = {
-        # Key          dec,  enc
-        DMDK_VERSION: (int, str),
-        DMDK_SDUUID: (str, str),  # one day we might just use the uuid obj
-        DMDK_TYPE: (name2type, type2name),  # They should throw exceptions
-        DMDK_ROLE: (str, str),  # should be enum as well
-        DMDK_DESCRIPTION: (unicodeDecoder, unicodeEncoder),
-        DMDK_CLASS: (name2class, class2name),
-        # one day maybe uuid
-        DMDK_POOLS: (lambda s: s.split(",") if s else [],
-                     lambda poolUUIDs: ",".join(poolUUIDs)),
-        DMDK_LOCK_POLICY: (str, str),
-        DMDK_LOCK_RENEWAL_INTERVAL_SEC: (
-            lambda val: intOrDefault(
-                DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC], val),
-            intEncode),
-        DMDK_LEASE_TIME_SEC: (
-            lambda val: intOrDefault(
-                DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC], val),
-            intEncode),
-        DMDK_IO_OP_TIMEOUT_SEC: (
-            lambda val: intOrDefault(
-                DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC], val),
-            intEncode),
-        DMDK_LEASE_RETRIES: (
-            lambda val: intOrDefault(
-                DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES], val),
-            intEncode),
+    # Key          dec,  enc
+    DMDK_VERSION: (int, str),
+    DMDK_SDUUID: (str, str),  # one day we might just use the uuid obj
+    DMDK_TYPE: (name2type, type2name),  # They should throw exceptions
+    DMDK_ROLE: (str, str),  # should be enum as well
+    DMDK_DESCRIPTION: (unicodeDecoder, unicodeEncoder),
+    DMDK_CLASS: (name2class, class2name),
+    # one day maybe uuid
+    DMDK_POOLS: (lambda s: s.split(",") if s else [],
+                 lambda poolUUIDs: ",".join(poolUUIDs)),
+    DMDK_LOCK_POLICY: (str, str),
+    DMDK_LOCK_RENEWAL_INTERVAL_SEC: (
+        lambda val: intOrDefault(
+            DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC], val),
+        intEncode),
+    DMDK_LEASE_TIME_SEC: (
+        lambda val: intOrDefault(
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC], val),
+        intEncode),
+    DMDK_IO_OP_TIMEOUT_SEC: (
+        lambda val: intOrDefault(
+            DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC], val),
+        intEncode),
+    DMDK_LEASE_RETRIES: (
+        lambda val: intOrDefault(
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES], val),
+        intEncode),
 }
 
 
@@ -307,12 +307,12 @@ class StorageDomain:
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
                 DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
                 DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC])
-            self._clusterLock = safelease.ClusterLock(self.sdUUID,
-                    self.getIdsFilePath(), self.getLeasesFilePath(),
-                    *leaseParams)
+            self._clusterLock = safelease.ClusterLock(
+                self.sdUUID, self.getIdsFilePath(), self.getLeasesFilePath(),
+                *leaseParams)
         elif domversion in DOM_SANLOCK_VERS:
-            self._clusterLock = safelease.SANLock(self.sdUUID,
-                    self.getIdsFilePath(), self.getLeasesFilePath())
+            self._clusterLock = safelease.SANLock(
+                self.sdUUID, self.getIdsFilePath(), self.getLeasesFilePath())
         else:
             raise se.UnsupportedDomainVersion(domversion)
 
@@ -478,9 +478,9 @@ class StorageDomain:
             pools.remove(spUUID)
         except ValueError:
             self.log.error(
-                    "Can't remove pool %s from domain %s pool list %s, "
-                    "it does not exist",
-                    spUUID, self.sdUUID, str(pools))
+                "Can't remove pool %s from domain %s pool list %s, "
+                "it does not exist",
+                spUUID, self.sdUUID, str(pools))
             return
         # Make sure that ROLE is not MASTER_DOMAIN (just in case)
         with self._metadata.transaction():

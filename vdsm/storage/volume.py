@@ -174,8 +174,8 @@ class Volume(object):
                      sdUUID, srcImg, srcVol, dstFormat, srcParent)
 
         imageResourcesNamespace = sd.getNamespace(
-                                        sdUUID,
-                                        resourceFactories.IMAGE_NAMESPACE)
+            sdUUID,
+            resourceFactories.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace,
                                       srcImg, rm.LockType.exclusive):
             try:
@@ -191,10 +191,10 @@ class Volume(object):
 
             try:
                 (rc, out, err) = qemuRebase(
-                                    vol.getVolumePath(), vol.getFormat(),
-                                    os.path.join('..', srcImg, srcParent),
-                                    int(dstFormat), misc.parseBool(unsafe),
-                                    vars.task.aborting, False)
+                    vol.getVolumePath(), vol.getFormat(),
+                    os.path.join('..', srcImg, srcParent),
+                    int(dstFormat), misc.parseBool(unsafe),
+                    vars.task.aborting, False)
                 if rc:
                     raise se.MergeVolumeRollbackError(srcVol)
 
@@ -223,11 +223,11 @@ class Volume(object):
 
             name = "Merge volume: " + self.volUUID
             vars.task.pushRecovery(
-                        task.Recovery(name, "volume", "Volume",
-                                      "rebaseVolumeRollback",
-                                      [self.sdUUID, self.getImage(),
-                                       self.volUUID, str(pvol.getFormat()),
-                                       pvol.volUUID, str(True)]))
+                task.Recovery(name, "volume", "Volume",
+                              "rebaseVolumeRollback",
+                              [self.sdUUID, self.getImage(),
+                                  self.volUUID, str(pvol.getFormat()),
+                                  pvol.volUUID, str(True)]))
 
         (rc, out, err) = qemuRebase(self.getVolumePath(), self.getFormat(),
                                     backingVolPath, backingFormat, unsafe,
@@ -245,9 +245,9 @@ class Volume(object):
         dst_path = None
         taskName = "parent volume rollback: " + self.volUUID
         vars.task.pushRecovery(
-                    task.Recovery(taskName, "volume", "Volume",
-                                  "parentVolumeRollback",
-                                  [self.sdUUID, self.imgUUID, self.volUUID]))
+            task.Recovery(taskName, "volume", "Volume",
+                          "parentVolumeRollback",
+                          [self.sdUUID, self.imgUUID, self.volUUID]))
         if self.isLeaf():
             wasleaf = True
             self.setInternal()
@@ -261,7 +261,7 @@ class Volume(object):
             parent_format = fmt2str(self.getFormat())
             # We should use parent's relative path instead of full path
             parent = os.path.join(os.path.basename(os.path.dirname(parent)),
-                                                   os.path.basename(parent))
+                                  os.path.basename(parent))
             createVolume(parent, parent_format, dst_path,
                          size, volFormat, preallocate)
             self.teardown(self.sdUUID, self.volUUID)
@@ -436,7 +436,7 @@ class Volume(object):
 
                 if not volParent.isLegal():
                     raise se.createIllegalVolumeSnapshotError(
-                            volParent.volUUID)
+                        volParent.volUUID)
 
                 if imgUUID != srcImgUUID:
                     volParent.share(imgPath)
@@ -450,8 +450,9 @@ class Volume(object):
             raise
         except Exception, e:
             cls.log.error("Unexpected error", exc_info=True)
-            raise se.VolumeCannotGetParent("Couldn't get parent %s for "
-                                "volume %s: %s" % (srcVolUUID, volUUID, e))
+            raise se.VolumeCannotGetParent(
+                "Couldn't get parent %s for volume %s: %s" %
+                (srcVolUUID, volUUID, e))
 
         try:
             cls.log.info("Creating volume %s", volUUID)
@@ -484,14 +485,14 @@ class Volume(object):
                 apparentSize = cls.getVSize(dom, imgUUID, volUUID)
                 if apparentSize < size:
                     cls.log.error("The volume %s apparent size %s is smaller "
-                        "than the requested size %s", volUUID, apparentSize,
-                        size)
+                                  "than the requested size %s",
+                                  volUUID, apparentSize, size)
                     raise se.VolumeCreationError()
                 if apparentSize > size:
                     cls.log.info("The requested size for volume %s doesn't "
-                        "match the granularity on domain %s, updating the "
-                        "volume size from %s to %s", volUUID, sdUUID, size,
-                        apparentSize)
+                                 "match the granularity on domain %s, "
+                                 "updating the volume size from %s to %s",
+                                 volUUID, sdUUID, size, apparentSize)
                     size = apparentSize
 
             vars.task.pushRecovery(
@@ -688,7 +689,7 @@ class Volume(object):
 
     @contextmanager
     def scopedPrepare(self, rw=True, justme=False, chainrw=False, setrw=False,
-                 force=False):
+                      force=False):
         self.prepare(rw=True, justme=False, chainrw=False, setrw=False,
                      force=False)
         try:
@@ -965,9 +966,9 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
 def baseAsyncTasksRollback(proc):
     name = "Kill-" + str(proc.pid)
     vars.task.pushRecovery(
-                task.Recovery(name, "volume", "Volume", "killProcRollback",
-                              [str(proc.pid),
-                               str(misc.getProcCtime(proc.pid))]))
+        task.Recovery(name, "volume", "Volume", "killProcRollback",
+                      [str(proc.pid),
+                       str(misc.getProcCtime(proc.pid))]))
 
 
 def qemuRebase(src, srcFormat, backingFile,
@@ -1013,9 +1014,9 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
     if (src_fmt == "raw" and dst_fmt == "raw" and
             dstvolType == PREALLOCATED_VOL):
         (rc, out, err) = misc.ddWatchCopy(
-                                    src=src, dst=dst,
-                                    stop=stop, size=size,
-                                    recoveryCallback=baseAsyncTasksRollback)
+            src=src, dst=dst,
+            stop=stop, size=size,
+            recoveryCallback=baseAsyncTasksRollback)
     else:
         cmd = [constants.EXT_QEMUIMG, "convert",
                "-t", "none", "-f", src_fmt, src,

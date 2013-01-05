@@ -55,7 +55,7 @@ VG_FIELDS = ("uuid,name,attr,size,free,extent_size,extent_count,free_count,"
 LV_FIELDS = "uuid,name,vg_name,attr,size,seg_start_pe,devices,tags"
 
 VG_ATTR_BITS = ("permission", "resizeable", "exported",
-                  "partial", "allocation", "clustered")
+                "partial", "allocation", "clustered")
 LV_ATTR_BITS = ("voltype", "permission", "allocations", "fixedminor", "state",
                 "devopen", "target", "zero")
 
@@ -73,7 +73,7 @@ class Unreadable(Stub):
                     "connections.", self.name)
         raise AttributeError("Failed reload: %s" % self.name)
 
-#VG states
+# VG states
 VG_OK = "OK"
 VG_PARTIAL = "PARTIAL"
 VG_UNKNOWN = "UNKNOWN"
@@ -84,10 +84,10 @@ LVM_FLAGS = ("--noheadings", "--units", "b", "--nosuffix", "--separator",
              SEPARATOR)
 
 PV_PREFIX = "/dev/mapper"
-#Assuming there are no spaces in the PV name
+# Assuming there are no spaces in the PV name
 re_pvName = re.compile(PV_PREFIX + '[^\s\"]+', re.MULTILINE)
 
-#operations lock
+# operations lock
 LVM_OP_INVALIDATE = "lvm invalidate operation"
 LVM_OP_RELOAD = "lvm reload operation"
 
@@ -216,14 +216,14 @@ def makePV(*args):
 
 def makeVG(*args):
     args = list(args)
-    #Convert tag string into tuple.
+    # Convert tag string into tuple.
     tags = _tags2Tuple(args[VG._fields.index("tags")])
     args[VG._fields.index("tags")] = tags
-    #Convert attr string into named tuple fields.
+    # Convert attr string into named tuple fields.
     attrs = _attr2NamedTuple(args[VG._fields.index("attr")], VG_ATTR_BITS,
                              "VG_ATTR")
     args[VG._fields.index("attr")] = attrs
-    #Add properties. Should be ordered as VG_PROPERTIES.
+    # Add properties. Should be ordered as VG_PROPERTIES.
     args.append(attrs.permission == "w")  # Writable
     args.append(VG_OK if attrs.partial == "-" else VG_PARTIAL)  # Partial
     return VG(*args)
@@ -231,14 +231,14 @@ def makeVG(*args):
 
 def makeLV(*args):
     args = list(args)
-    #Convert tag string into tuple.
+    # Convert tag string into tuple.
     tags = _tags2Tuple(args[LV._fields.index("tags")])
     args[LV._fields.index("tags")] = tags
-    #Convert attr string into named tuple fields.
+    # Convert attr string into named tuple fields.
     attrs = _attr2NamedTuple(args[LV._fields.index("attr")], LV_ATTR_BITS,
                              "LV_ATTR")
     args[LV._fields.index("attr")] = attrs
-    #Add properties. Should be ordered as VG_PROPERTIES.
+    # Add properties. Should be ordered as VG_PROPERTIES.
     args.append(attrs.permission == "w")  # writable
     args.append(attrs.devopen == "o")     # opened
     args.append(attrs.state == "a")       # active
@@ -304,7 +304,7 @@ class LVMCache(object):
         finalCmd = self._addExtraCfg(cmd)
         rc, out, err = misc.execCmd(finalCmd, sudo=True)
         if rc != 0:
-            #Filter might be stale
+            # Filter might be stale
             self.invalidateFilter()
             newCmd = self._addExtraCfg(cmd)
             # Before blindly trying again make sure
@@ -351,7 +351,7 @@ class LVMCache(object):
             # If we updated all the PVs drop stale flag
             if not pvName:
                 self._stalepv = False
-                #Remove stalePVs
+                # Remove stalePVs
                 stalePVs = [staleName for staleName in self._pvs.keys()
                             if staleName not in updatedPVs.iterkeys()]
                 for staleName in stalePVs:
@@ -388,7 +388,7 @@ class LVMCache(object):
             # If we updated all the VGs drop stale flag
             if not vgName:
                 self._stalevg = False
-                #Remove stale VGs
+                # Remove stale VGs
                 staleVGs = [staleName for staleName in self._vgs.keys()
                             if staleName not in updatedVGs.iterkeys()]
                 for staleName in staleVGs:
@@ -459,7 +459,7 @@ class LVMCache(object):
                     self._lvs[(lv.vg_name, lv.name)] = lv
                     updatedLVs.add((lv.vg_name, lv.name))
 
-            #Remove stales
+            # Remove stales
             for vgName, lvName in self._lvs.keys():
                 if (vgName, lvName) not in updatedLVs:
                     self._lvs.pop((vgName, lvName), None)
@@ -593,13 +593,13 @@ class LVMCache(object):
             # cost us around same efforts anyhow and these stale LVs can
             # be in the vg.
             # Will be better when the pvs dict will be part of the vg.
-            #Fix me: should not be more stubs
+            # Fix me: should not be more stubs
             if self._stalelv or any(isinstance(lv, Stub)
-                                     for lv in self._lvs.values()):
+                                    for lv in self._lvs.values()):
                 lvs = self._reloadlvs(vgName)
             else:
                 lvs = dict(self._lvs)
-            #lvs = self._reloadlvs()
+            # lvs = self._reloadlvs()
             lvs = [lv for lv in lvs.values()
                    if not isinstance(lv, Stub) and (lv.vg_name == vgName)]
             res = lvs
@@ -646,7 +646,7 @@ def _createpv(devices, metadataSize, options=tuple()):
     if options:
         cmd.extend(options)
     cmd.extend(("--metadatasize", metadatasize, "--metadatacopies", "2",
-           "--metadataignore", "y"))
+                "--metadataignore", "y"))
     cmd.extend(devices)
     rc, out, err = _lvminfo.cmd(cmd)
     return rc, out, err
@@ -659,7 +659,7 @@ def _initpvs(devices, metadataSize, force=False):
         for device in devices:
             try:
                 devicemapper.removeMappingsHoldingDevice(
-                                                    os.path.basename(device))
+                    os.path.basename(device))
             except OSError, e:
                 if e.errno == errno.ENODEV:
                     raise se.PhysDevInitializationError("%s: %s" %
@@ -706,8 +706,8 @@ def removeVgMapping(vgName):
             pass
 
 
-#Activation of the whole vg is assumed to be used nowhere.
-#This is a separate function just in case.
+# Activation of the whole vg is assumed to be used nowhere.
+# This is a separate function just in case.
 def _setVgAvailability(vgs, available):
     vgs = _normalizeargs(vgs)
     cmd = ["vgchange", "--available", available] + vgs
@@ -715,7 +715,7 @@ def _setVgAvailability(vgs, available):
     for vg in vgs:
         _lvminfo._invalidatelvs(vg)
     if rc != 0:
-        #During deactivation, in vg.py (sic):
+        # During deactivation, in vg.py (sic):
         # we ignore error here because we don't care about this vg anymore
         if available == "n":
             log.info("deactivate vg %s failed: rc %s - %s %s (ignored)" %
@@ -801,7 +801,7 @@ def testPVCreate(devices, metadataSize):
         unusedDevs = set(re_pvName.findall("\n".join(out)))
         usedDevs = set(devs) - set(unusedDevs)
         log.debug("rc: %s, out: %s, err: %s, unusedDevs: %s, usedDevs: %s",
-            rc, out, err, unusedDevs, usedDevs)
+                  rc, out, err, unusedDevs, usedDevs)
 
     return unusedDevs, usedDevs
 
@@ -840,7 +840,7 @@ def getVGbyUUID(vgUUID):
 
 def getLV(vgName, lvName=None):
     lv = _lvminfo.getLv(vgName, lvName)
-    #getLV() should not return None
+    # getLV() should not return None
     if not lv:
         raise se.LogicalVolumeDoesNotExistError("%s/%s" % (vgName, lvName))
     else:
@@ -857,7 +857,7 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
     _checkpvsblksize(pvs)
 
     _initpvs(pvs, metadataSize, force)
-    #Activate the 1st PV metadata areas
+    # Activate the 1st PV metadata areas
     cmd = ["pvchange", "--metadataignore", "n"]
     cmd.append(pvs[0])
     rc, out, err = _lvminfo.cmd(cmd)
@@ -905,7 +905,7 @@ def extendVG(vgName, devices, force):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs, getVGBlockSizes(vgName))
     vg = _lvminfo.getVg(vgName)
-    #Format extension PVs as all the other already in the VG
+    # Format extension PVs as all the other already in the VG
     _initpvs(pvs, int(vg.vg_mda_size) / 2 ** 20, force)
 
     cmd = ["vgextend", vgName] + pvs
@@ -1029,18 +1029,18 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
 
 def removeLVs(vgName, lvNames):
     lvNames = _normalizeargs(lvNames)
-    #Assert that the LVs are inactive before remove.
+    # Assert that the LVs are inactive before remove.
     for lvName in lvNames:
         if _isLVActive(vgName, lvName):
-            #Fix me
-            #Should not remove active LVs
-            #raise se.CannotRemoveLogicalVolume(vgName, lvName)
+            # Fix me
+            # Should not remove active LVs
+            # raise se.CannotRemoveLogicalVolume(vgName, lvName)
             log.warning("Removing active volume %s/%s" % (vgName, lvName))
 
-    #LV exists or not in cache, attempting to remove it.
-    #Removing Stubs also. Active Stubs should raise.
+    # LV exists or not in cache, attempting to remove it.
+    # Removing Stubs also. Active Stubs should raise.
     # Destroy LV
-    #Fix me:removes active LVs too. "-f" should be removed.
+    # Fix me:removes active LVs too. "-f" should be removed.
     cmd = ["lvremove", "-f"]
     cmd.extend(LVM_NOBACKUP)
     for lvName in lvNames:
@@ -1075,11 +1075,11 @@ def extendLV(vgName, lvName, size):
         _lvminfo._invalidatelvs(vgName, lvName)
 
     elif rc == 3:
-        #In LVM we trust. Hope that 3 is only for this.
+        # In LVM we trust. Hope that 3 is only for this.
         log.debug("New size (in extents) matches existing size (in extents).")
     elif rc != 0:
-        #get the free extents size
-        #YaRC
+        # get the free extents size
+        # YaRC
         vg = getVG(vgName)
         free_size = int(vg.extent_size) * int(vg.free_count)  # in B
         if free_size < int(size) * constants.MEGAB:
@@ -1117,7 +1117,7 @@ def renameLV(vg, oldlv, newlv):
 
 
 def refreshLV(vgName, lvName):
-    #If  the  logical  volume  is active, reload its metadata.
+    # If  the  logical  volume  is active, reload its metadata.
     cmd = ['lvchange', '--refresh', "%s/%s" % (vgName, lvName)]
     rc, out, err = _lvminfo.cmd(cmd)
     _lvminfo._invalidatelvs(vgName, lvName)
@@ -1125,15 +1125,15 @@ def refreshLV(vgName, lvName):
         raise se.LogicalVolumeRefreshError("%s failed" % list2cmdline(cmd))
 
 
-#Fix me: Function name should mention LV or unify with VG version.
-#may be for all the LVs in the whole VG?
+# Fix me: Function name should mention LV or unify with VG version.
+# may be for all the LVs in the whole VG?
 def addtag(vg, lv, tag):
     lvname = "%s/%s" % (vg, lv)
     cmd = ("lvchange",) + LVM_NOBACKUP + ("--addtag", tag) + (lvname,)
     rc, out, err = _lvminfo.cmd(cmd)
     _lvminfo._invalidatelvs(vg, lv)
     if rc != 0:
-        #Fix me: should be se.ChangeLogicalVolumeError but this not exists.
+        # Fix me: should be se.ChangeLogicalVolumeError but this not exists.
         raise se.MissingTagOnLogicalVolume("%s/%s" % (vg, lv), tag)
 
 
@@ -1215,8 +1215,8 @@ def changeVGTags(vgName, delTags=[], addTags=[]):
     _lvminfo._invalidatevgs(vgName)
     if rc != 0:
         raise se.VolumeGroupReplaceTagError(
-                "vg:%s del:%s add:%s (%s)" %
-                (vgName, ", ".join(delTags), ", ".join(addTags), err[-1]))
+            "vg:%s del:%s add:%s (%s)" %
+            (vgName, ", ".join(delTags), ", ".join(addTags), err[-1]))
 
 
 def addVGTag(vgName, tag):
@@ -1276,7 +1276,7 @@ def lvsByTag(vgName, tag):
     return [lv for lv in getLV(vgName) if tag in lv.tags]
 
 
-#Fix me: unify with addTag
+# Fix me: unify with addTag
 def replaceLVTag(vg, lv, deltag, addtag):
     """
     Removes and add tags atomically.

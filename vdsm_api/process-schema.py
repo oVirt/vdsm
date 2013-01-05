@@ -212,7 +212,7 @@ def write_symbol(f, s):
         f.write('<caption>%s</caption>\n' % caption)
         if not names:
             f.write('<tr><td class="attrlist">None</td>'
-                         '<td class="attrlist"></td></tr>\n')
+                    '<td class="attrlist"></td></tr>\n')
         for name, dataType, desc in zip(names, types, details):
             f.write('<tr>')
             f.write('<td class="attrlist">%s</td>' % name)
@@ -315,9 +315,9 @@ def create_doc(symbols, filename):
 
     # Sort commands by their expanded names
     cmdKey = lambda k: k.get('command', {}).get('class', '') + '.' + \
-                            k.get('command', {}).get('name', '')
+        k.get('command', {}).get('name', '')
     commands = [s for s in sorted(symbols, key=cmdKey)
-                    if 'command' in s]
+                if 'command' in s]
     # Types come after commands but they are not sorted
     types = [s for s in symbols if 'command' not in s]
     for s in commands:

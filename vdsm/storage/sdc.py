@@ -147,7 +147,7 @@ class StorageDomainCache:
                 pass
             except Exception:
                 self.log.error("Error while looking for domain `%s`", sdUUID,
-                        exc_info=True)
+                               exc_info=True)
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 

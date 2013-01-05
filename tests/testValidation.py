@@ -88,8 +88,8 @@ def brokentest(msg="Test failed but it is known to be broken"):
 
 def checkSudo(cmd):
     p = subprocess.Popen(['sudo', '-l', '-n'] + cmd,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
     out, err = p.communicate()
 
     if p.returncode != 0:

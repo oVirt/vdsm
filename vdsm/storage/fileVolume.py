@@ -47,12 +47,12 @@ def getDomUuidFromVolumePath(volPath):
 
     volList = volPath.split('/')
     sdUUID = len(normpath(config.get('irs', 'repository')).split('/')) + \
-             sdUUIDPos
+        sdUUIDPos
     return volList[sdUUID]
 
 
 def deleteMultipleVolumes(sdUUID, volumes, postZero):
-    #Posix asserts that the blocks will be zeroed before reuse
+    # Posix asserts that the blocks will be zeroed before reuse
     volPaths = []
     for vol in volumes:
         vol.setLegality(volume.ILLEGAL_VOL)
@@ -61,7 +61,7 @@ def deleteMultipleVolumes(sdUUID, volumes, postZero):
         oop.getGlobalProcPool().fileUtils.cleanupfiles(volPaths)
     except OSError:
         volume.log.error("cannot delete some volumes at paths: %s",
-                            volPaths, exc_info=True)
+                         volPaths, exc_info=True)
 
 
 class FileVolume(volume.Volume):
@@ -205,7 +205,7 @@ class FileVolume(volume.Volume):
         except Exception, e:
             eFound = e
             self.log.error("cannot delete volume %s at path: %s", self.volUUID,
-                            vol_path, exc_info=True)
+                           vol_path, exc_info=True)
 
         try:
             self.removeMetadata()
@@ -231,7 +231,7 @@ class FileVolume(volume.Volume):
         self.log.debug("Share volume lease of %s to %s", self.volUUID,
                        dstImgPath)
         dstLeasePath = self._getLeaseVolumePath(
-                                os.path.join(dstImgPath, self.volUUID))
+            os.path.join(dstImgPath, self.volUUID))
         self.oop.fileUtils.safeUnlink(dstLeasePath)
         self.oop.os.link(self._getLeaseVolumePath(), dstLeasePath)
 
@@ -390,8 +390,8 @@ class FileVolume(volume.Volume):
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
             if (sdCache.produce(sdUUID).
-                        produceVolume(imgUUID, volid).
-                        getImage() == imgUUID):
+                    produceVolume(imgUUID, volid).
+                    getImage() == imgUUID):
                 volList.append(volid)
         return volList
 
@@ -461,7 +461,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
         imagePath = image.Image(sdobj._getRepoPath()).getImageDir(
-                                                    sdobj.sdUUID, imgUUID)
+            sdobj.sdUUID, imgUUID)
         volPath = os.path.join(imagePath, volUUID)
         return int(sdobj.oop.os.stat(volPath).st_size / bs)
 

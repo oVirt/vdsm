@@ -124,9 +124,9 @@ def setupMultipath():
     """
     if os.path.exists(MPATH_CONF):
         misc.rotateFiles(
-                os.path.dirname(MPATH_CONF),
-                os.path.basename(MPATH_CONF), MAX_CONF_COPIES,
-                cp=True, persist=True)
+            os.path.dirname(MPATH_CONF),
+            os.path.basename(MPATH_CONF), MAX_CONF_COPIES,
+            cp=True, persist=True)
     with tempfile.NamedTemporaryFile() as f:
         f.write(MPATH_CONF_TEMPLATE)
         f.flush()
@@ -234,19 +234,19 @@ def pathListIter(filterGuids=None):
         devsFound += 1
 
         devInfo = {
-                "guid": guid,
-                "dm": dmId,
-                "capacity": str(getDeviceSize(dmId)),
-                "serial": svdsm.getScsiSerial(dmId),
-                "paths": [],
-                "connections": [],
-                "devtypes": [],
-                "devtype": "",
-                "vendor": "",
-                "product": "",
-                "fwrev": "",
-                "logicalblocksize": "",
-                "physicalblocksize": "",
+            "guid": guid,
+            "dm": dmId,
+            "capacity": str(getDeviceSize(dmId)),
+            "serial": svdsm.getScsiSerial(dmId),
+            "paths": [],
+            "connections": [],
+            "devtypes": [],
+            "devtype": "",
+            "vendor": "",
+            "product": "",
+            "fwrev": "",
+            "logicalblocksize": "",
+            "physicalblocksize": "",
         }
 
         for slave in devicemapper.getSlaves(dmId):
@@ -306,11 +306,11 @@ def pathListIter(filterGuids=None):
                     # numeric types and sane field names.
                     sess = iscsi.getSessionInfo(sessionID)
                     sessionInfo = {
-                            "connection": sess.target.portal.hostname,
-                            "port": str(sess.target.portal.port),
-                            "iqn": sess.target.iqn,
-                            "portal": str(sess.target.tpgt),
-                            "initiatorname": sess.iface.name
+                        "connection": sess.target.portal.hostname,
+                        "port": str(sess.target.portal.port),
+                        "iqn": sess.target.iqn,
+                        "portal": str(sess.target.tpgt),
+                        "initiatorname": sess.iface.name
                     }
 
                     # Note that credentials must be sent back in order for

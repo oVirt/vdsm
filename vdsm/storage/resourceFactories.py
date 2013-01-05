@@ -154,22 +154,22 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
             if template:
                 if len(volUUIDChain) > 0:
                     volRes = rmanager.acquireResource(
-                                        self.volumeResourcesNamespace,
-                                        template, rm.LockType.shared,
-                                        timeout=self.resource_default_timeout)
+                        self.volumeResourcesNamespace,
+                        template, rm.LockType.shared,
+                        timeout=self.resource_default_timeout)
                 else:
                     volRes = rmanager.acquireResource(
-                                        self.volumeResourcesNamespace,
-                                        template, lockType,
-                                        timeout=self.resource_default_timeout)
+                        self.volumeResourcesNamespace,
+                        template, lockType,
+                        timeout=self.resource_default_timeout)
                 volResourcesList.append(volRes)
 
             # Acquire 'lockType' volume locks
             for volUUID in volUUIDChain:
                 volRes = rmanager.acquireResource(
-                                        self.volumeResourcesNamespace,
-                                        volUUID, lockType,
-                                        timeout=self.resource_default_timeout)
+                    self.volumeResourcesNamespace,
+                    volUUID, lockType,
+                    timeout=self.resource_default_timeout)
 
                 volResourcesList.append(volRes)
         except (rm.RequestTimedOutError, se.ResourceAcqusitionFailed), e:

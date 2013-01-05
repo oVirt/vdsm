@@ -50,9 +50,9 @@ def validateDirAccess(dirPath):
     try:
         getProcPool().fileUtils.validateAccess(dirPath)
         supervdsm.getProxy().validateAccess(
-                constants.QEMU_PROCESS_USER,
-                (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
-                (os.R_OK | os.X_OK))
+            constants.QEMU_PROCESS_USER,
+            (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
+            (os.R_OK | os.X_OK))
     except OSError as e:
         if e.errno == errno.EACCES:
             raise se.StorageServerAccessPermissionError(dirPath)
@@ -63,7 +63,7 @@ def validateDirAccess(dirPath):
 
 def getDomPath(sdUUID):
     pattern = os.path.join(sd.StorageDomain.storage_repository,
-                                            sd.DOMAIN_MNT_POINT, '*', sdUUID)
+                           sd.DOMAIN_MNT_POINT, '*', sdUUID)
     # Warning! You need a global proc pool big as the number of NFS domains.
     domPaths = getProcPool().glob.glob(pattern)
     if len(domPaths) == 0:
@@ -170,7 +170,7 @@ class FileStorageDomain(sd.StorageDomain):
         for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
             try:
                 procPool.createSparseFile(
-                                os.path.join(metadataDir, metaFile), 0, 0660)
+                    os.path.join(metadataDir, metaFile), 0, 0660)
             except Exception, e:
                 raise se.StorageDomainMetadataCreationError(
                     "create meta file '%s' failed: %s" % (metaFile, str(e)))
@@ -183,23 +183,23 @@ class FileStorageDomain(sd.StorageDomain):
         #         Do we really need to keep the EXPORT_PATH?
         #         no one uses it
         md.update({
-                sd.DMDK_VERSION: version,
-                sd.DMDK_SDUUID: sdUUID,
-                sd.DMDK_TYPE: storageType,
-                sd.DMDK_CLASS: domClass,
-                sd.DMDK_DESCRIPTION: domainName,
-                sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
-                sd.DMDK_POOLS: [],
-                sd.DMDK_LOCK_POLICY: '',
-                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
-                    sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_LEASE_TIME_SEC: sd.DEFAULT_LEASE_PARAMS[
-                    sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-                sd.DMDK_IO_OP_TIMEOUT_SEC:
-                    sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
-                sd.DMDK_LEASE_RETRIES:
-                    sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
-                REMOTE_PATH: remotePath
+            sd.DMDK_VERSION: version,
+            sd.DMDK_SDUUID: sdUUID,
+            sd.DMDK_TYPE: storageType,
+            sd.DMDK_CLASS: domClass,
+            sd.DMDK_DESCRIPTION: domainName,
+            sd.DMDK_ROLE: sd.REGULAR_DOMAIN,
+            sd.DMDK_POOLS: [],
+            sd.DMDK_LOCK_POLICY: '',
+            sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
+            sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+            sd.DMDK_LEASE_TIME_SEC: sd.DEFAULT_LEASE_PARAMS[
+                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+            sd.DMDK_IO_OP_TIMEOUT_SEC:
+            sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
+            sd.DMDK_LEASE_RETRIES:
+            sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
+            REMOTE_PATH: remotePath
         })
 
     def getReadDelay(self):
@@ -271,7 +271,7 @@ class FileStorageDomain(sd.StorageDomain):
             'preallocate' - sparse/preallocate
         """
         fileVolume.FileVolume.validateCreateVolumeParams(
-                volFormat, preallocate, srcVolUUID)
+            volFormat, preallocate, srcVolUUID)
 
     def createVolume(self, imgUUID, size, volFormat, preallocate,
                      diskType, volUUID, desc, srcImgUUID, srcVolUUID):
@@ -280,9 +280,9 @@ class FileStorageDomain(sd.StorageDomain):
         """
         repoPath = self._getRepoPath()
         return fileVolume.FileVolume.create(
-                            repoPath, self.sdUUID,
-                            imgUUID, size, volFormat, preallocate, diskType,
-                            volUUID, desc, srcImgUUID, srcVolUUID)
+            repoPath, self.sdUUID,
+            imgUUID, size, volFormat, preallocate, diskType,
+            volUUID, desc, srcImgUUID, srcVolUUID)
 
     def getVolumeLease(self, imgUUID, volUUID):
         """
@@ -342,7 +342,7 @@ class FileStorageDomain(sd.StorageDomain):
                 self.oop.os.remove(volPath + '.lease')
             except OSError as e:
                 self.log.error("vol: %s can't be removed.",
-                                volPath, exc_info=True)
+                               volPath, exc_info=True)
         try:
             self.oop.os.rmdir(toDelDir)
         except OSError as e:
@@ -350,8 +350,9 @@ class FileStorageDomain(sd.StorageDomain):
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
-        raise se.SourceImageActionError(imgUUID, sdUUID, "image %s on a "
-            "fileSD %s should not be zeroed." % (imgUUID, sdUUID))
+        raise se.SourceImageActionError(
+            imgUUID, sdUUID, "image %s on a fileSD %s should not be zeroed." %
+            (imgUUID, sdUUID))
 
     def getAllVolumes(self):
         """
@@ -388,7 +389,7 @@ class FileStorageDomain(sd.StorageDomain):
                     # Add template additonal image
                     volumes[volUUID]['imgs'].append(imgUUID)
                 else:
-                    #Insert at head the template self image
+                    # Insert at head the template self image
                     volumes[volUUID]['imgs'].insert(0, imgUUID)
             else:
                 volumes[volUUID] = {'imgs': [imgUUID], 'parent': None}
@@ -409,7 +410,7 @@ class FileStorageDomain(sd.StorageDomain):
         else:
             try:
                 oop.getProcessPool(sdUUID).fileUtils.cleanupdir(
-                        domaindir, ignoreErrors=False)
+                    domaindir, ignoreErrors=False)
             except RuntimeError as e:
                 raise se.MiscDirCleanupFailure(str(e))
 
@@ -429,7 +430,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         Get storage domain info
         """
-        ##self.log.info("sdUUID=%s", self.sdUUID)
+        # self.log.info("sdUUID=%s", self.sdUUID)
         # First call parent getInfo() - it fills in all the common details
         info = sd.StorageDomain.getInfo(self)
         # Now add fileSD specific data
@@ -440,7 +441,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         Get storage domain statistics
         """
-        ##self.log.info("sdUUID=%s", self.sdUUID)
+        # self.log.info("sdUUID=%s", self.sdUUID)
         stats = {'disktotal': '',
                  'diskfree': '',
                  'mdavalid': True,
@@ -497,7 +498,7 @@ class FileStorageDomain(sd.StorageDomain):
         (on NFS mostly) due to lazy file removal
         """
         removedPattern = os.path.join(self.domaindir, sd.DOMAIN_IMAGES,
-                                            sd.REMOVED_IMAGE_PREFIX + '*')
+                                      sd.REMOVED_IMAGE_PREFIX + '*')
         removedImages = self.oop.glob.glob(removedPattern)
         self.log.debug("Removing remnants of deleted images %s" %
                        removedImages)

@@ -39,7 +39,7 @@ class SosPluginTest(TestCaseBase):
         (stdout, stderr) = p.communicate()
         if p.returncode:
             self.fail("Failed with executed sosreport, return code: %d" %
-                p.returncode)
+                      p.returncode)
 
         # When sos plugin raise exception, sosreport still exit with successful
         # and print exception to stdout. So check the keyword of exception in
@@ -47,5 +47,5 @@ class SosPluginTest(TestCaseBase):
         index = stdout.find('Traceback (most recent call last):')
         self.assertEquals(index, -1, "sosreport raised an exception")
 
-        #clean
+        # clean
         shutil.rmtree(tmpDir)

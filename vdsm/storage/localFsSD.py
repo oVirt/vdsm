@@ -58,7 +58,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
             'version' - DOMAIN_VERSIONS
         """
         cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
-            "domClass=%s", sdUUID, domainName, remotePath, domClass)
+                     "domClass=%s", sdUUID, domainName, remotePath, domClass)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
@@ -67,13 +67,13 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         mntPath = fileUtils.transformPath(remotePath)
 
         mntPoint = os.path.join(cls.storage_repository,
-            sd.DOMAIN_MNT_POINT, mntPath)
+                                sd.DOMAIN_MNT_POINT, mntPath)
 
         cls._preCreateValidation(sdUUID, mntPoint, remotePath, version)
 
         domainDir = os.path.join(mntPoint, sdUUID)
         cls._prepareMetadata(domainDir, sdUUID, domainName, domClass,
-                            remotePath, storageType, version)
+                             remotePath, storageType, version)
 
         # create domain images folder
         imagesDir = os.path.join(domainDir, sd.DOMAIN_IMAGES)

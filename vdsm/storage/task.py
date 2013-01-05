@@ -915,7 +915,7 @@ class Task:
             self.lock.acquire()
             self.ref -= 1
             self.lock.release()
-            #If something horrible went wrong. Just fail the task.
+            # If something horrible went wrong. Just fail the task.
             if not self.state.isDone():
                 self.log.warn("Task exited in non terminal state. "
                               "Setting tasks as failed.")
@@ -1284,11 +1284,11 @@ class Task:
 
     @misc.logskip("ResourceManager")
     def getExclusiveLock(
-                self,
-                namespace,
-                resName,
-                timeout=config.getint('irs',
-                                      'task_resource_default_timeout')):
+        self,
+        namespace,
+        resName,
+        timeout=config.getint('irs',
+                              'task_resource_default_timeout')):
         self.resOwner.acquire(namespace,
                               resName,
                               resourceManager.LockType.exclusive,

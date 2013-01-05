@@ -40,10 +40,10 @@ class TestBlockGetAllVolumes(TestCaseBase):
         """
         lvs = []
         lvs_out = open(os.path.join(testDir, 'lvs_%s.out' % vgName),
-                    "r").read()
+                       "r").read()
         for line in lvs_out.split():
             fields = [field.strip() for field in
-                        line.split(storage.lvm.SEPARATOR)]
+                      line.split(storage.lvm.SEPARATOR)]
             lvs.append(storage.lvm.makeLV(*fields))
         return lvs
 
@@ -67,7 +67,7 @@ class Moop(object):
             sdPath, globExp = volMetaPattern.split('/images')
             sdHead, sdName = os.path.split(sdPath)
             inp = open(os.path.join(sdHead, "glob_%s.out" % sdName),
-                        "r").read()
+                       "r").read()
             # Danger Will Robinson! Danger!
             return eval(inp)
 

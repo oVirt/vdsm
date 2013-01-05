@@ -98,18 +98,18 @@ def _namedtupleAssembly(nt, d):
     return nt(**d)
 
 _posixFsParameterAssembly = partial(_namedtupleAssembly,
-        PosixFsConnectionParameters)
+                                    PosixFsConnectionParameters)
 _nfsParamerterAssembly = partial(_namedtupleAssembly, NfsConnectionParameters)
 _localFsParameterAssembly = partial(_namedtupleAssembly,
                                     LocaFsConnectionParameters)
 
 
 _TYPE_NT_MAPPING = {
-        'iscsi': _iscsiParameterAssembly,
-        'sharedfs': _posixFsParameterAssembly,
-        'posixfs': _posixFsParameterAssembly,
-        'nfs': _nfsParamerterAssembly,
-        'localfs': _localFsParameterAssembly}
+    'iscsi': _iscsiParameterAssembly,
+    'sharedfs': _posixFsParameterAssembly,
+    'posixfs': _posixFsParameterAssembly,
+    'nfs': _nfsParamerterAssembly,
+    'localfs': _localFsParameterAssembly}
 
 
 def dict2conInfo(d):
@@ -183,7 +183,8 @@ class MountConnection(object):
 
     def _getLocalPath(self):
         return os.path.join(self.localPathBase,
-                self._remotePath.replace("_", "__").replace("/", "_"))
+                            self._remotePath.replace("_",
+                                                     "__").replace("/", "_"))
 
     def connect(self):
         if self._mount.isMounted():
@@ -442,7 +443,7 @@ class LocalDirectoryConnection(object):
 
     def _getLocalPath(self):
         return os.path.join(self.localPathBase,
-                self._path.replace("_", "__").replace("/", "_"))
+                            self._path.replace("_", "__").replace("/", "_"))
 
     def checkTarget(self):
         return (os.path.isdir(self._path) and
@@ -460,9 +461,9 @@ class LocalDirectoryConnection(object):
 
     def connect(self):
         if not self.checkTarget():
-            #TODO: Use proper exception
+            # TODO: Use proper exception
             raise Exception("Could not link to directory. Path does not exist "
-                    "or isn't a directory")
+                            "or isn't a directory")
 
         if self.checkLink():
             return

@@ -36,7 +36,7 @@ SPM_STATUS_ERROR = (654, "Not SPM")
 
 GENERAL_EXCEPTION = lambda e: (100, str(e))
 ERROR_MAP = {
-        SecureError: SPM_STATUS_ERROR
+    SecureError: SPM_STATUS_ERROR
 }
 
 
@@ -376,9 +376,9 @@ class ImageDeleteError(StorageException):
     message = "Could not remove all image's volumes"
 
 
-#REMOVED in 2.3.
-#This class was not in use in 2.2 nor in 2.3.
-#class ImageIsNotEmpty(StorageException):
+# REMOVED in 2.3.
+# This class was not in use in 2.2 nor in 2.3.
+# class ImageIsNotEmpty(StorageException):
 #    def __init__(self, image, list):
 #        self.value = "image=%s, files=%s" % (image, list)
 #    code = 257
@@ -791,7 +791,7 @@ class StorageDomainAlreadyAttached(StorageException):
     message = "Storage domain already attached to pool"
 
 
-#DEPRECATED. Should be removed.
+# DEPRECATED. Should be removed.
 class StorageDomainStateTransitionIllegal(StorageException):
     def __init__(self, sdUUID, currState, nextState):
         self.value = [sdUUID, currState, nextState]

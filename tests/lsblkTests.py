@@ -34,10 +34,10 @@ class TestLsblk(TestCaseBase):
     def testParseLsBlk(self):
         blkDict = lsblk._parseLsBlk(output.splitlines())
         expected = {'sda': {'FSTYPE': '', 'KNAME': 'sda', 'UUID': ''},
-                'sda1': {'FSTYPE': 'ext4',
+                    'sda1': {'FSTYPE': 'ext4',
                     'KNAME': 'sda1',
                     'UUID': '12345678-0c05-1111-2222-1234567890d6'},
-                'sda2': {'FSTYPE': 'swap',
+                    'sda2': {'FSTYPE': 'swap',
                     'KNAME': 'sda2',
                     'UUID': '12345678-1111-2222-3333-12345678903c'}}
         self.assertEqual(expected, blkDict)

@@ -454,7 +454,7 @@ class HSM:
             # Taking advantage of the any lazy evaluation
             return any(fnmatch(fullpath, x) for x in whiteList)
 
-        #Add mounted folders to mountlist
+        # Add mounted folders to mountlist
         for mnt in mount.iterMounts():
             mountPoint = os.path.abspath(mnt.fs_file)
             if mountPoint.startswith(self.storage_repository):
@@ -559,8 +559,8 @@ class HSM:
             domVersion = int(domVersion)
             sd.validateDomainVersion(domVersion)
 
-        #This code is repeated twice for performance reasons
-        #Avoid waiting for the lock for validate.
+        # This code is repeated twice for performance reasons
+        # Avoid waiting for the lock for validate.
         self.getPool(spUUID)
         self.validateNotSPM(spUUID)
 
@@ -942,9 +942,9 @@ class HSM:
                     hostID, scsiKey, msdUUID, masterVersion = \
                         pool.getPoolParams()
                 misc.validateN(hostID, 'hostID')
-                #getMasterDomain is called because produce is required here
-                #since the master domain can be changed by the SPM if it is the
-                #refreshPool flow.
+                # getMasterDomain is called because produce is required here
+                # since the master domain can be changed by the SPM if it is
+                # the refreshPool flow.
                 pool.getMasterDomain(msdUUID=msdUUID,
                                      masterVersion=masterVersion)
                 return
@@ -959,7 +959,7 @@ class HSM:
                     hostID, scsiKey, msdUUID, masterVersion = \
                         pool.getPoolParams()
                 misc.validateN(hostID, 'hostID')
-                #Idem. See above.
+                # Idem. See above.
                 pool.getMasterDomain(msdUUID=msdUUID,
                                      masterVersion=masterVersion)
                 return
@@ -1231,9 +1231,9 @@ class HSM:
         if sdUUID and sdUUID != sd.BLANK_UUID:
             self.validatePoolSD(spUUID, sdUUID)
             self.validateSdUUID(sdUUID)
-        #getSharedLock(spUUID...)
+        # getSharedLock(spUUID...)
         vars.task.getSharedLock(STORAGE, spUUID)
-        #getExclusiveLock(vmList...)
+        # getExclusiveLock(vmList...)
         pool = self.getPool(spUUID)
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
@@ -1255,9 +1255,9 @@ class HSM:
         if sdUUID and sdUUID != sd.BLANK_UUID:
             self.validatePoolSD(spUUID, sdUUID)
             self.validateSdUUID(sdUUID)
-        #getSharedLock(spUUID...)
+        # getSharedLock(spUUID...)
         vars.task.getSharedLock(STORAGE, spUUID)
-        #getExclusiveLock(vmList...)
+        # getExclusiveLock(vmList...)
         pool = self.getPool(spUUID)
         pool.removeVM(vmUUID=vmUUID, sdUUID=sdUUID)
 
@@ -1417,7 +1417,7 @@ class HSM:
 
         force parameter is deprecated and not evaluated.
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
+        # vars.task.setDefaultException(se.ChangeMeError("%s" % args))
         self.getPool(spUUID)  # Validates that the pool is connected. WHY?
         dom = self.validateSdUUID(sdUUID)
 
@@ -1427,7 +1427,7 @@ class HSM:
         volsByImg = sd.getVolsOfImage(allVols, imgUUID)
         if not volsByImg:
             self.log.error("Empty or not found image %s in SD %s. %s",
-                                                    imgUUID, sdUUID, allVols)
+                           imgUUID, sdUUID, allVols)
             raise se.ImageDoesNotExistInSD(imgUUID, sdUUID)
 
         # on data domains, images should not be deleted if they are templates
@@ -1579,7 +1579,7 @@ class HSM:
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException("dstDomUUID", dstDomUUID)
 
-        #Validates that the pool is connected. WHY?
+        # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
 
         srcDom = self.validateSdUUID(srcDomUUID)
@@ -1856,7 +1856,7 @@ class HSM:
         """
         vars.task.setDefaultException(
             se.BlockDeviceActionError("GUID: %s" % guid))
-        #getSharedLock(connectionsResource...)
+        # getSharedLock(connectionsResource...)
         try:
             devInfo = \
                 self._getDeviceList(
@@ -1924,7 +1924,7 @@ class HSM:
         vars.task.setDefaultException(
             se.VolumeGroupCreateError(str(vgname), str(devlist)))
         misc.validateUUID(vgname, 'vgname')
-        #getSharedLock(connectionsResource...)
+        # getSharedLock(connectionsResource...)
         knowndevs = set(multipath.getMPDevNamesIter())
         size = 0
         devices = []
@@ -1936,7 +1936,7 @@ class HSM:
             else:
                 raise se.InvalidPhysDev(dev)
 
-        #Minimal size check
+        # Minimal size check
         if size < MINIMALVGSIZE:
             raise se.VolumeGroupSizeError(
                 "VG size must be more than %s MiB" %
@@ -1962,7 +1962,7 @@ class HSM:
         :param options: ?
         """
         vars.task.setDefaultException(se.VolumeGroupActionError("%s" % vgUUID))
-        #getSharedLock(connectionsResource...)
+        # getSharedLock(connectionsResource...)
         try:
             lvm.removeVGbyUUID(vgUUID)
         except se.VolumeGroupDoesNotExist:
@@ -1983,7 +1983,7 @@ class HSM:
         :returns: a dict containing the status information of the task.
         :rtype: dict
         """
-        #getSharedLock(tasksResource...)
+        # getSharedLock(tasksResource...)
         taskStatus = self.taskMng.getTaskStatus(taskID=taskID)
         return dict(taskStatus=taskStatus)
 
@@ -1997,7 +1997,7 @@ class HSM:
         :type spUUID: UUID (deprecated)
         :options: ?
         """
-        #getSharedLock(tasksResource...)
+        # getSharedLock(tasksResource...)
         allTasksStatus = self.taskMng.getAllTasksStatuses("spm")
         return dict(allTasksStatus=allTasksStatus)
 
@@ -2018,7 +2018,7 @@ class HSM:
         :raises: :exc:`storage_exception.UnknownTask` if a task with the
                  specified taskID doesn't exist.
         """
-        #getSharedLock(tasksResource...)
+        # getSharedLock(tasksResource...)
         inf = self.taskMng.getTaskInfo(taskID=taskID)
         return dict(TaskInfo=inf)
 
@@ -2035,7 +2035,7 @@ class HSM:
         :returns: a dict of all the tasks information.
         :rtype: dict
         """
-        #getSharedLock(tasksResource...)
+        # getSharedLock(tasksResource...)
         # TODO: if spUUID passed, make sure tasks are relevant only to pool
         allTasksInfo = self.taskMng.getAllTasksInfo("spm")
         return dict(allTasksInfo=allTasksInfo)
@@ -2071,7 +2071,7 @@ class HSM:
                 force = options.get("force", False)
             except:
                 self.log.warning("options %s are ignored" % options)
-        #getExclusiveLock(tasksResource...)
+        # getExclusiveLock(tasksResource...)
         return self.taskMng.stopTask(taskID=taskID, force=force)
 
     @public
@@ -2088,7 +2088,7 @@ class HSM:
         :returns: :keyword:`True` if task was cleared successfully.
         :rtype: bool
         """
-        #getExclusiveLock(tasksResource...)
+        # getExclusiveLock(tasksResource...)
         return self.taskMng.clearTask(taskID=taskID)
 
     @public
@@ -2105,7 +2105,7 @@ class HSM:
         :returns:
         :rtype:
         """
-        #getExclusiveLock(tasksResource...)
+        # getExclusiveLock(tasksResource...)
         return self.taskMng.revertTask(taskID=taskID)
 
     @public
@@ -2413,8 +2413,8 @@ class HSM:
 
         sd.validateDomainVersion(domVersion)
 
-        #getSharedLock(connectionsResource...)
-        #getExclusiveLock(sdUUID...)
+        # getSharedLock(connectionsResource...)
+        # getExclusiveLock(sdUUID...)
         if storageType in sd.BLOCK_DOMAIN_TYPES:
             newSD = blockSD.BlockStorageDomain.create(
                 sdUUID, domainName, domClass, typeSpecificArg, storageType,
@@ -2447,7 +2447,7 @@ class HSM:
             se.StorageDomainCreationError("sdUUID=%s" % sdUUID))
         return sdCache.produce(sdUUID=sdUUID).validate()
 
-    #TODO: Remove this  function when formatStorageDomain() is removed.
+    # TODO: Remove this  function when formatStorageDomain() is removed.
     def _recycle(self, dom):
         sdUUID = dom.sdUUID
         try:
@@ -2481,7 +2481,7 @@ class HSM:
         multipath.rescan()
         vars.task.setDefaultException(
             se.StorageDomainActionError("sdUUID=%s" % sdUUID))
-        #getSharedLock(connectionsResource...)
+        # getSharedLock(connectionsResource...)
 
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         for p in self.pools.values():
@@ -2495,7 +2495,7 @@ class HSM:
         sd = sdCache.produce(sdUUID=sdUUID)
         try:
             sd.invalidateMetadata()
-            #TODO: autoDetach is True
+            # TODO: autoDetach is True
             if not misc.parseBool(autoDetach) and sd.getPools():
                 raise se.CannotFormatAttachedStorageDomain(sdUUID)
             # Allow format also for broken domain
@@ -2544,7 +2544,7 @@ class HSM:
         vars.task.setDefaultException(
             se.StorageDomainActionError("sdUUID=%s" % sdUUID))
         dom = self.validateSdUUID(sdUUID)
-        #getSharedLock(connectionsResource...)
+        # getSharedLock(connectionsResource...)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         info = dom.getInfo()
@@ -2616,7 +2616,7 @@ class HSM:
             domList = self.getPool(spUUID).getDomains()
             domains = domList.keys()
         else:
-            #getSharedLock(connectionsResource...)
+            # getSharedLock(connectionsResource...)
             domains = sdCache.getUUIDs()
 
         for sdUUID in domains[:]:
@@ -2676,7 +2676,7 @@ class HSM:
         """
         vars.task.setDefaultException(se.VolumeGroupActionError())
         sdCache.refreshStorage()
-        #getSharedLock(connectionsResource...)
+        # getSharedLock(connectionsResource...)
         vglist = []
         vgs = self.__getVGsInfo()
         for vgInfo in vgs:
@@ -2699,7 +2699,7 @@ class HSM:
             vgList = [lvm.getVGbyUUID(vgUUID) for vgUUID in vgUUIDs]
 
         for i, vg in enumerate(vgList):
-            #Should be fresh from the cache
+            # Should be fresh from the cache
             devNames.extend(imap(getGuid, lvm.listPVNames(vg.name)))
             # dict(vg.attr._asdict()) because nametuples and OrderedDict are
             # not properly marshalled
@@ -2762,7 +2762,7 @@ class HSM:
                  if no VG with the specified UUID is found
         """
         vars.task.setDefaultException(se.VolumeGroupActionError("%s" % vgUUID))
-        #getSharedLock(connectionsResource...)
+        # getSharedLock(connectionsResource...)
         return dict(info=self.__getVGsInfo([vgUUID])[0])
 
     @public(logger=logged(printers={'con': connectionPrinter}))
@@ -2814,8 +2814,8 @@ class HSM:
         .. warning::
             This method is not yet implemented.
         """
-        #vars.task.setDefaultException(se.ChangeMeError("%s" % args))
-        #getExclusiveLock(connectionsResource...)
+        # vars.task.setDefaultException(se.ChangeMeError("%s" % args))
+        # getExclusiveLock(connectionsResource...)
         # TODO: Implement
         pass
 

@@ -162,8 +162,8 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             metaContent = vol.getMetadata()
 
             with vol._tagCreateLock:
-                newMetaOffset = domain.mapMetaOffset(vol.volUUID,
-                                                 blockVolume.VOLUME_MDNUMBLKS)
+                newMetaOffset = domain.mapMetaOffset(
+                    vol.volUUID, blockVolume.VOLUME_MDNUMBLKS)
                 if newMetaOffset > metaMaxSlot:
                     raise se.NoSpaceLeftOnDomain(domain.sdUUID)
 
@@ -274,8 +274,8 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                   "version %s for domain %s", currentVersion, targetVersion,
                   domain.sdUUID)
 
-        if (currentVersion not in blockSD.VERS_METADATA_TAG
-                        and domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES):
+        if (currentVersion not in blockSD.VERS_METADATA_TAG and
+                domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES):
             __convertDomainMetadataToTags(domain, targetVersion)
         else:
             domain.setMetaParam(sd.DMDK_VERSION, targetVersion)
