@@ -23,7 +23,6 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @SERVICE_PATH@ iscsid *, \
     @SERVICE_PATH@ multipathd restart, \
     @SERVICE_PATH@ multipathd reload, \
-    @SCSI_ID_PATH@, \
     @ISCSIADM_PATH@ *, \
     @LVM_PATH@, \
     @CAT_PATH@ /sys/block/*/device/../../*, \

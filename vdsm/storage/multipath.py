@@ -30,6 +30,7 @@ import re
 from collections import namedtuple
 
 from vdsm import constants
+from vdsm import utils
 import misc
 import iscsi
 import supervdsm
@@ -50,12 +51,45 @@ MPATH_CONF = "/etc/multipath.conf"
 OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
             "# RHEV REVISION 0.4", "# RHEV REVISION 0.5",
             "# RHEV REVISION 0.6", "# RHEV REVISION 0.7",
-            "# RHEV REVISION 0.8"]
-MPATH_CONF_TAG = "# RHEV REVISION 0.9"
+            "# RHEV REVISION 0.8", "# RHEV REVISION 0.9"]
+MPATH_CONF_TAG = "# RHEV REVISION 1.0"
 MPATH_CONF_PRIVATE_TAG = "# RHEV PRIVATE"
-MPATH_CONF_TEMPLATE = MPATH_CONF_TAG + constants.STRG_MPATH_CONF
+STRG_MPATH_CONF = (
+    "\n\n"
+    "defaults {\n"
+    "    polling_interval        5\n"
+    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
+    "--replace-whitespace --device=/dev/%%n\"\n"
+    "    no_path_retry           fail\n"
+    "    user_friendly_names     no\n"
+    "    flush_on_last_del       yes\n"
+    "    fast_io_fail_tmo        5\n"
+    "    dev_loss_tmo            30\n"
+    "    max_fds                 4096\n"
+    "}\n"
+    "\n"
+    "devices {\n"
+    "device {\n"
+    "    vendor                  \"HITACHI\"\n"
+    "    product                 \"DF.*\"\n"
+    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
+    "--replace-whitespace --device=/dev/%%n\"\n"
+    "}\n"
+    "device {\n"
+    "    vendor                  \"COMPELNT\"\n"
+    "    product                 \"Compellent Vol\"\n"
+    "    no_path_retry           fail\n"
+    "}\n"
+    "}"
+)
+MPATH_CONF_TEMPLATE = MPATH_CONF_TAG + STRG_MPATH_CONF
 
 log = logging.getLogger("Storage.Multipath")
+
+_scsi_id = utils.CommandPath("scsi_id",
+                             "/sbin/scsi_id",  # EL6
+                             "/usr/lib/udev/scsi_id",  # Fedora
+                             )
 
 
 def rescan():
@@ -128,7 +162,7 @@ def setupMultipath():
             os.path.basename(MPATH_CONF), MAX_CONF_COPIES,
             cp=True, persist=True)
     with tempfile.NamedTemporaryFile() as f:
-        f.write(MPATH_CONF_TEMPLATE)
+        f.write(MPATH_CONF_TEMPLATE % {'scsi_id_path': _scsi_id.cmd})
         f.flush()
         cmd = [constants.EXT_CP, f.name, MPATH_CONF]
         rc = misc.execCmd(cmd, sudo=True)[0]
@@ -174,7 +208,7 @@ def getDeviceSize(dev):
 
 def getScsiSerial(physdev):
     blkdev = os.path.join("/dev", physdev)
-    cmd = [constants.EXT_SCSI_ID,
+    cmd = [_scsi_id.cmd,
            "--page=0x80",
            "--whitelisted",
            "--export",
