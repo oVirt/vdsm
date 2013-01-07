@@ -31,7 +31,8 @@ class ThreadPool:
 
         """Initialize the thread pool with numThreads workers."""
 
-        self.log.debug("Enter - numThreads: %s, waitTimeout: %s, maxTasks: %s", numThreads, waitTimeout, maxTasks)
+        self.log.debug("Enter - numThreads: %s, waitTimeout: %s, maxTasks: %s",
+                       numThreads, waitTimeout, maxTasks)
         self.__threads = []
         self._taskThread = {}
         self.__resizeLock = threading.Condition(threading.Lock())
@@ -108,7 +109,7 @@ class ThreadPool:
         """Insert a task into the queue.  task must be callable;
         args and taskCallback can be None."""
 
-        if self.__isJoining == True:
+        if self.__isJoining:
             return False
         if not callable(task):
             return False
@@ -127,7 +128,8 @@ class ThreadPool:
         callback = None
 
         try:
-            id, cmd, args, callback = self.__tasks.get(True, self.__waitTimeout)
+            id, cmd, args, callback = self.__tasks.get(True,
+                                                       self.__waitTimeout)
         except Empty:
             pass
 
@@ -188,17 +190,19 @@ class WorkerThread(threading.Thread):
         """ Until told to quit, retrieve the next task and execute
         it, calling the callback if any.  """
 
-        while self.__isDying == False:
+        while not self.__isDying:
             try:
                 id, cmd, args, callback = self.__pool.getNextTask()
                 if id is None:  # should retry.
                     pass
-                elif self.__isDying == True:  # return the task into the queue, since we abort.
+                elif self.__isDying:
+                    # return the task into the queue, since we abort.
                     self.__pool.__tasks.put((id, cmd, args, callback))
                 elif callback is None:
                     self.__pool.setRunningTask(True)
                     self.setName(id)
-                    self.log.debug("Task: %s running: %s with: %s" % (id, repr(cmd), repr(args)))
+                    self.log.debug("Task: %s running: %s with: %s" %
+                                   (id, repr(cmd), repr(args)))
                     cmd(args)
                     self.__pool.setRunningTask(False)
                 else:

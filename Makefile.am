@@ -53,40 +53,7 @@ PEP8_WHITELIST = \
 	vdsm/*.py \
 	vdsm/*.py.in \
 	vdsm/sos/vdsm.py.in \
-	vdsm/storage/__init__.py \
-	vdsm/storage/blockVolume.py \
-	vdsm/storage/devicemapper.py \
-	vdsm/storage/domainMonitor.py \
-	vdsm/storage/fileSD.py \
-	vdsm/storage/fileUtils.py \
-	vdsm/storage/fileVolume.py \
-	vdsm/storage/fuser.py \
-	vdsm/storage/hba.py \
-	vdsm/storage/hsm.py \
-	vdsm/storage/imageRepository \
-	vdsm/storage/iscsiadm.py \
-	vdsm/storage/localFsSD.py \
-	vdsm/storage/lvm.py \
-	vdsm/storage/misc.py \
-	vdsm/storage/mount.py \
-	vdsm/storage/multipath.py \
-	vdsm/storage/nfsSD.py \
-	vdsm/storage/outOfProcess.py \
-	vdsm/storage/persistentDict.py \
-	vdsm/storage/remoteFileHandler.py \
-	vdsm/storage/resourceFactories.py \
-	vdsm/storage/safelease.py \
-	vdsm/storage/sd.py \
-	vdsm/storage/sdc.py \
-	vdsm/storage/securable.py \
-	vdsm/storage/storageConstants.py \
-	vdsm/storage/storageServer.py \
-	vdsm/storage/storage_exception.py \
-	vdsm/storage/sync.py \
-	vdsm/storage/task.py \
-	vdsm/storage/taskManager.py \
-	vdsm/storage/threadLocal.py \
-	vdsm/storage/volume.py \
+	vdsm/storage \
 	vdsm/vdsm \
 	vdsm_api \
 	vdsm_cli \
@@ -98,7 +65,7 @@ PEP8_WHITELIST = \
 	vdsm_reg/createDaemon.py \
 	$(NULL)
 
-PEP8_BLACKLIST = apiData.py,config.py,constants.py
+PEP8_BLACKLIST = config.py,constants.py
 
 check-local:
 	find . -path './.git' -prune -type f -o \

@@ -70,7 +70,7 @@ def getDevIscsiInfo(dev):
 
     #FIXME: raise exception instead of returning an empty object
     return IscsiSession(0, IscsiInterface(""),
-            IscsiTarget(IscsiPortal("", 0), 0, ""), None)
+                        IscsiTarget(IscsiPortal("", 0), 0, ""), None)
 
 
 def getSessionInfo(sessionID):
@@ -134,11 +134,13 @@ def addIscsiNode(iface, target, credentials=None):
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "node.session." + key
-                    iscsiadm.node_update(iface.name, portalStr, targetName, key, value, hideValue=True)
+                    iscsiadm.node_update(iface.name, portalStr, targetName,
+                                         key, value, hideValue=True)
 
             iscsiadm.node_login(iface.name, portalStr, targetName)
 
-            iscsiadm.node_update(iface.name, portalStr, targetName, "node.startup", "manual")
+            iscsiadm.node_update(iface.name, portalStr, targetName,
+                                 "node.startup", "manual")
         except:
             removeIscsiNode(iface, target)
             raise
@@ -163,11 +165,12 @@ def addIscsiPortal(iface, portal, credentials=None):
     with _iscsiadmTransactionLock:
         iscsiadm.discoverydb_new(discoverType, iface.name, portalStr)
 
-        # NOTE: We are not taking for granted that iscsiadm is not going to write
-        #       the database when the discovery fails, therefore we try to set the
-        #       node startup to manual anyway.
+        # NOTE: We are not taking for granted that iscsiadm is not going to
+        #       write the database when the discovery fails, therefore we try
+        #       to set the node startup to manual anyway.
         try:
-            iscsiadm.discoverydb_update(discoverType, iface.name, portalStr, "node.startup", "manual")
+            iscsiadm.discoverydb_update(discoverType, iface.name, portalStr,
+                                        "node.startup", "manual")
         except:
             # this is just to be polite we don't really care
             pass
@@ -177,7 +180,9 @@ def addIscsiPortal(iface, portal, credentials=None):
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "discovery.sendtargets." + key
-                    iscsiadm.discoverydb_update(discoverType, iface.name, portalStr, key, value, hideValue=True)
+                    iscsiadm.discoverydb_update(discoverType, iface.name,
+                                                portalStr, key, value,
+                                                hideValue=True)
 
         except:
             deleteIscsiPortal(iface, portal)
@@ -199,7 +204,8 @@ def discoverSendTargets(iface, portal, credentials=None):
     with _iscsiadmTransactionLock:
         addIscsiPortal(iface, portal, credentials)
         try:
-            targets = iscsiadm.discoverydb_discover(discoverType, iface.name, portalStr)
+            targets = iscsiadm.discoverydb_discover(discoverType, iface.name,
+                                                    portalStr)
         finally:
             deleteIscsiPortal(iface, portal)
 
@@ -250,11 +256,11 @@ class ChapCredentials(object):
 class IscsiInterface(object):
 
     _fields = {
-            "name": ('iface.iscsi_ifacename', 'rw'),
-            'transport': ("iface.transport_name", 'r'),
-            'hardwareAddress': ("iface.hwaddress", 'rw'),
-            'ipAddress': ('iface.ipaddress', 'rw'),
-            'initiatorName': ('iface.initiatorname', 'rw')
+        "name": ('iface.iscsi_ifacename', 'rw'),
+        'transport': ("iface.transport_name", 'r'),
+        'hardwareAddress': ("iface.hwaddress", 'rw'),
+        'ipAddress': ('iface.ipaddress', 'rw'),
+        'initiatorName': ('iface.initiatorname', 'rw')
     }
 
     def __getattr__(self, name):
@@ -270,7 +276,7 @@ class IscsiInterface(object):
             raise AttributeError(name)
 
         value = self._conf[key]
-        if value == None and not self._loaded:
+        if value is None and not self._loaded:
             # Lazy load
             self._loaded = True
             self._load()
@@ -294,10 +300,8 @@ class IscsiInterface(object):
 
         self._conf[key] = value
 
-    def __init__(self, name,
-            hardwareAddress=None,
-            ipAddress=None,
-            initiatorName=None):
+    def __init__(self, name, hardwareAddress=None, ipAddress=None,
+                 initiatorName=None):
 
         # Only new tcp interfaces are supported for now
         self._conf = {'iface.transport_name': 'tcp'}
@@ -350,7 +354,8 @@ class IscsiInterface(object):
         self._conf = conf
 
     def __repr__(self):
-        return "<IscsiInterface name='%s' transport='%s'>" % (self.name, self.transport)
+        return "<IscsiInterface name='%s' transport='%s'>" % (self.name,
+                                                              self.transport)
 
 
 def iterateIscsiInterfaces():
@@ -382,13 +387,14 @@ def forceIScsiScan():
         except OSError as e:
             if p.wait(0) is False:
                 log.error("pid %s still running", p.pid)
-            log.warning("Error in rescan of hba:%s with returncode:%s and error"
-                        " message: %s", hba, p.returncode, p.stderr.read(1000))
+            log.warning("Error in rescan of hba:%s with returncode:%s and "
+                        "error message: %s", hba, p.returncode,
+                        p.stderr.read(1000))
             if e.errno != errno.EPIPE:
                 raise
             else:
                 log.warning("Ignoring error in rescan of hba %s: ",
-                                            hba, exc_info=True)
+                            hba, exc_info=True)
                 continue
         processes.append((hba, p))
     if (minTimeout > maxTimeout or minTimeout < 0):
@@ -399,7 +405,7 @@ def forceIScsiScan():
                     "scsi_rescan_maximal_timeout. Set to %s and %s seconds "
                     "respectively.", minTimeout, maxTimeout)
     log.debug("Performing SCSI scan, this will take up to %s seconds",
-                maxTimeout)
+              maxTimeout)
     time.sleep(minTimeout)
     for i in xrange(maxTimeout - minTimeout):
         for p in processes[:]:
@@ -407,7 +413,7 @@ def forceIScsiScan():
             if proc.wait(0):
                 if proc.returncode != 0:
                     log.warning('returncode for: %s is: %s', hba,
-                               proc.returncode)
+                                proc.returncode)
                 processes.remove(p)
         if not processes:
             break
@@ -419,7 +425,8 @@ def forceIScsiScan():
 
 
 def devIsiSCSI(dev):
-    hostdir = os.path.realpath(os.path.join("/sys/block", dev, "device/../../.."))
+    hostdir = os.path.realpath(os.path.join("/sys/block", dev,
+                                            "device/../../.."))
     host = os.path.basename(hostdir)
     iscsi_host = os.path.join(hostdir, constants.STRG_ISCSI_HOST, host)
     scsi_host = os.path.join(hostdir, constants.STRG_SCSI_HOST, host)
@@ -432,7 +439,8 @@ def getiScsiTarget(dev):
     device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
     sessiondir = os.path.realpath(os.path.join(device, "../.."))
     session = os.path.basename(sessiondir)
-    iscsi_session = os.path.join(sessiondir, constants.STRG_ISCSI_SESSION + session)
+    iscsi_session = os.path.join(sessiondir,
+                                 constants.STRG_ISCSI_SESSION + session)
     with open(os.path.join(iscsi_session, "targetname")) as f:
         return f.readline().strip()
 

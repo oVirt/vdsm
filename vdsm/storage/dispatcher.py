@@ -71,14 +71,15 @@ class Protect:
                 defaultException = ctask.defaultException
                 if defaultException and hasattr(defaultException, "response"):
                     resp = defaultException.response()
-                    defaultExceptionInfo = (resp['status']['code'], resp['status']['message'])
+                    defaultExceptionInfo = (resp['status']['code'],
+                                            resp['status']['message'])
                     return se.generateResponse(e, defaultExceptionInfo)
 
                 return se.generateResponse(e)
         except:
             try:
                 self.log.error("Unhandled exception in run and protect: %s, "
-                        "args: %s ", self.name, args, exc_info=True)
+                               "args: %s ", self.name, args, exc_info=True)
             finally:
                 return self.STATUS_ERROR.copy()
 
@@ -101,9 +102,11 @@ class Dispatcher:
             funcObj = getattr(obj, funcName)
             if hasattr(funcObj, _EXPORTED_ATTRIBUTE) and callable(funcObj):
                 if hasattr(self, funcName):
-                    self.log.error("StorageDispatcher: init - multiple public functions with same name: %s" % funcName)
+                    self.log.error("StorageDispatcher: init - multiple public"
+                                   " functions with same name: %s" % funcName)
                     continue
-                # Create a new entry in instance's "dict" that will mask the original method
+                # Create a new entry in instance's "dict" that will mask the
+                # original method
                 setattr(self, funcName, Protect(funcObj, funcName).run)
 
     def _methodHelp(self, method):
