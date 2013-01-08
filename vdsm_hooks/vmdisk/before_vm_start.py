@@ -14,6 +14,7 @@ syntax:
 
 driver_types = ('raw', 'qcow2')
 
+
 def indexToDiskName(i):
     s = ''
     while True:
@@ -22,6 +23,7 @@ def indexToDiskName(i):
         if i == 0:
             break
     return 'vd' + (s or 'a')
+
 
 def createDiskElement(domxml, devpath, drivertype):
     '''
@@ -74,11 +76,14 @@ if 'vmdisk' in os.environ:
             try:
                 devpath, drivertype = disk.split(':')
             except ValueError:
-                sys.stderr.write('vmdisk: input error, expected diskpath:diskformat ie /path/disk.img:qcow2\n')
+                sys.stderr.write('vmdisk: input error, expected '
+                                 'diskpath:diskformat ie '
+                                 '/path/disk.img:qcow2\n')
                 sys.exit(2)
 
             if not drivertype in driver_types:
-                sys.stderr.write('vmdisk: input error, driver type: raw or qcow2\n')
+                sys.stderr.write('vmdisk: input error, driver '
+                                 'type: raw or qcow2\n')
                 sys.exit(2)
 
             diskdev = createDiskElement(domxml, devpath, drivertype)
@@ -86,5 +91,6 @@ if 'vmdisk' in os.environ:
 
         hooking.write_domxml(domxml)
     except:
-        sys.stderr.write('vmdisk: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('vmdisk: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

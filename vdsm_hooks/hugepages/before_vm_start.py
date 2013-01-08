@@ -44,7 +44,8 @@ def addSysHugepages(pages):
     command = ['sysctl', 'vm.nr_hugepages=%d' % totalPages]
     retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
-        sys.stderr.write('hugepages: error in command: %s, err = %s\n' % (' '.join(command), err))
+        sys.stderr.write('hugepages: error in command: %s, err = %s\n' %
+                         (' '.join(command), err))
         sys.exit(2)
 
     f = file(NUMBER_OF_HUGETPAGES, 'r')
@@ -52,6 +53,7 @@ def addSysHugepages(pages):
     f.close()
 
     return (newCurrPages - currPages)
+
 
 def freeSysHugepages(pages):
     f = file(NUMBER_OF_HUGETPAGES, 'r')
@@ -63,7 +65,8 @@ def freeSysHugepages(pages):
         command = ['sysctl', 'vm.nr_hugepages=%d' % (currPages - pages)]
         retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
         if retcode != 0:
-            sys.stderr.write('hugepages: error in command: %s, err = %s\n' % (' '.join(command), err))
+            sys.stderr.write('hugepages: error in command: %s, err = %s\n' %
+                             (' '.join(command), err))
             sys.exit(2)
 
 
@@ -96,5 +99,6 @@ if 'hugepages' in os.environ:
 
         hooking.write_domxml(domxml)
     except:
-        sys.stderr.write('hugepages: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('hugepages: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

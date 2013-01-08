@@ -7,6 +7,7 @@ import traceback
 
 filtername = 'isolatedprivatevlan-vdsm'
 
+
 def addInterfaceFilter(domxml, interface, gateway, ip):
     if not ip is None:
         filterref = domxml.createElement('filterref')
@@ -45,5 +46,6 @@ if 'isolatedprivatevlan' in os.environ:
         hooking.write_domxml(domxml)
 
     except:
-        sys.stderr.write('isolated-privatevlan: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('isolated-privatevlan: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

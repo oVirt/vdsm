@@ -18,6 +18,7 @@ smbios={'serial': '1234'}^{'vendor': 'oVirt'}
 
 bios_entries = ["vendor", "version", "date", "release"]
 
+
 def addSystemEntry(domxml, sysinfo, entry):
     systems = sysinfo.getElementsByTagName('system')
     if systems.length == 0:
@@ -43,6 +44,7 @@ def addSystemEntry(domxml, sysinfo, entry):
         txt = domxml.createTextNode(entry[name])
         e.appendChild(txt)
         system.appendChild(e)
+
 
 def addBiosEntry(domxml, sysinfo, entry):
     bioses = sysinfo.getElementsByTagName('bios')
@@ -101,5 +103,6 @@ if 'smbios' in os.environ:
         hooking.write_domxml(domxml)
 
     except:
-        sys.stderr.write('smbios: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('smbios: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

@@ -57,11 +57,7 @@ PEP8_WHITELIST = \
 	vdsm/vdsm \
 	vdsm_api \
 	vdsm_cli \
-	vdsm_hooks/fileinject \
-	vdsm_hooks/promisc/after_vm_start.py \
-	vdsm_hooks/scratchpad \
-	vdsm_hooks/sriov/before_vm_start.py \
-	vdsm_hooks/vhostmd \
+	vdsm_hooks \
 	vdsm_reg \
 	$(NULL)
 

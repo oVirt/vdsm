@@ -6,6 +6,7 @@ import traceback
 
 NUMBER_OF_HUGETPAGES = '/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages'
 
+
 def removeSysHugepages(pages):
     f = file(NUMBER_OF_HUGETPAGES, 'r')
     currPages = int(f.read())
@@ -22,5 +23,6 @@ if 'hugepages' in os.environ:
 
         removeSysHugepages(pages)
     except:
-        sys.stderr.write('hugepages: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('hugepages: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

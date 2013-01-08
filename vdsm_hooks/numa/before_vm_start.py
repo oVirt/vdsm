@@ -48,5 +48,6 @@ if 'numa' in os.environ:
             sys.stderr.write('numa: numa already exists in domain xml')
             sys.exit(2)
     except:
-        sys.stderr.write('numa: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('numa: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

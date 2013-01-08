@@ -27,10 +27,13 @@ Note:
 inbound or outbound elements can be once but not mandatory
 
 syntax:
-    00:11:22:33:44:55=in{'average':'1','peek':'2','burst':'5'}^out{'average':'1'}&11:11:11:11:11:11=...
-'''
+    MAC1=in{'average':'1','peek':'2','burst':'5'}^out{'average':'1'}&MAC2=...
+where:
+    MACn should be replaced with the MAC addresses of the virtual nics to be
+    edited.'''
 
 keys = ['average', 'peek', 'burst']
+
 
 def add_attributes(node, attributes):
     data = ast.literal_eval(attributes)
@@ -40,6 +43,7 @@ def add_attributes(node, attributes):
             sys.exit(2)
 
         node.setAttribute(key, data[key])
+
 
 def update_interface(iface, data, domxml):
     bandwidth = domxml.createElement('bandwidth')
@@ -76,12 +80,14 @@ if 'qos' in os.environ:
 
             iface = find_interface(arr[0], interfaces)
             if iface is None:
-                sys.stderr.write('qos hook: %s interface is not exists in VM\n' % arr[0])
+                sys.stderr.write('qos hook: %s interface is not exists in '
+                                 'VM\n' % arr[0])
                 sys.exit(2)
 
             update_interface(iface, arr[1], domxml)
 
         hooking.write_domxml(domxml)
     except:
-        sys.stderr.write('qos hook: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('qos hook: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

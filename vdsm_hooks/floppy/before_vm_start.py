@@ -28,7 +28,8 @@ if 'floppy' in os.environ:
         floppy = os.environ['floppy']
 
         if not os.path.isfile(floppy):
-            sys.stderr.write('floppy: file not exists or not enough permissions: %s\n' % floppy)
+            sys.stderr.write('floppy: file not exists or not enough '
+                             'permissions: %s\n' % floppy)
             sys.exit(2)
 
         domxml = hooking.read_domxml()
@@ -50,5 +51,6 @@ if 'floppy' in os.environ:
         hooking.write_domxml(domxml)
 
     except:
-        sys.stderr.write('floppy: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('floppy: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

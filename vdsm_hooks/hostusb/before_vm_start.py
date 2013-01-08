@@ -40,6 +40,7 @@ Note:
 
 HOOK_HOSTUSB_PATH = '/var/run/vdsm/hooks/hostusb-permissions'
 
+
 def log_dev_owner(devpath, user, group):
     entry = devpath + ":" + str(user) + ":" + str(group)
 
@@ -56,6 +57,7 @@ def log_dev_owner(devpath, user, group):
     f = file(HOOK_HOSTUSB_PATH, 'a')
     f.writelines(entry)
     f.close()
+
 
 #!TODO:
 # merge chown with after_vm_destroy.py
@@ -85,10 +87,12 @@ def chown(vendorid, productid):
     command = ['/bin/chown', owner, devpath]
     retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
     if retcode != 0:
-        sys.stderr.write('hostusb: error chown %s to %s, err = %s\n' % (devpath, owner, err))
+        sys.stderr.write('hostusb: error chown %s to %s, err = %s\n' %
+                         (devpath, owner, err))
         sys.exit(2)
 
     log_dev_owner(devpath, stat.st_uid, stat.st_gid)
+
 
 def create_usb_device(domxml, vendorid, productid):
     hostdev = domxml.createElement('hostdev')
@@ -116,8 +120,11 @@ if 'hostusb' in os.environ:
 
         for usb in os.environ['hostusb'].split('&'):
             vendorid, productid = usb.split(':')
-            if len(regex.findall(vendorid)) != 1 or len(regex.findall(productid)) != 1:
-                sys.stderr.write('hostusb: bad input, expected 0x0000 format for vendor and product id, input: %s:%s\n' % (vendorid, productid))
+            if len(regex.findall(vendorid)) != 1 or \
+                    len(regex.findall(productid)) != 1:
+                sys.stderr.write('hostusb: bad input, expected 0x0000 format '
+                                 'for vendor and product id, input: %s:%s\n' %
+                                 (vendorid, productid))
                 sys.exit(2)
 
             hostdev = create_usb_device(domxml, vendorid, productid)
@@ -126,5 +133,6 @@ if 'hostusb' in os.environ:
 
         hooking.write_domxml(domxml)
     except:
-        sys.stderr.write('hostusb: [unexpected error]: %s\n' % traceback.format_exc())
+        sys.stderr.write('hostusb: [unexpected error]: %s\n' %
+                         traceback.format_exc())
         sys.exit(2)

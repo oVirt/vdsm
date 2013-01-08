@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -39,7 +39,7 @@ if config.getboolean('vars', 'fake_kvm_support'):
 
     devices = domxml.getElementsByTagName('devices')[0]
     if devices.getElementsByTagName('emulator'):
-        pass # TODO override emulator tag
+        pass  # TODO override emulator tag
     else:
         emulator = domxml.createElement('emulator')
         emulatorPath = domxml.createTextNode('/usr/libexec/vdsm/vdsm-faqemu')
