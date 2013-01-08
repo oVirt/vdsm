@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -55,11 +55,11 @@ import time
 import deployUtil
 
 try:
-    LOGDIR=os.environ["OVIRT_LOGDIR"]
+    LOGDIR = os.environ["OVIRT_LOGDIR"]
 except KeyError:
-    LOGDIR=tempfile.gettempdir()
-LOGFILE='%s/vdsm-bootstrap-%s-%s.log' % (LOGDIR, "phase1",
-    time.strftime("%Y%m%d%H%M%S"))
+    LOGDIR = tempfile.gettempdir()
+LOGFILE = '%s/vdsm-bootstrap-%s-%s.log' % (LOGDIR, "phase1",
+                                           time.strftime("%Y%m%d%H%M%S"))
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(module)s '
                            '%(lineno)d %(message)s',
@@ -154,27 +154,27 @@ REQ_PACK = ('SDL.x86_64', 'bridge-utils.x86_64', 'mesa-libGLU.x86_64',
 
 if rhel6based:
     DEVEL_PACK = ()
-    VDS_PACK = ('qemu-kvm', 'qemu-kvm-tools', VDSM_NAME, VDSM_NAME+'-cli',
-                'libjpeg', 'spice-server', 'pixman',
-                'seabios', 'qemu-img', 'fence-agents',
-                'libselinux-python', 'sanlock', 'sanlock-python')
+    VDS_PACK = ('qemu-kvm', 'qemu-kvm-tools', VDSM_NAME, VDSM_NAME + '-cli',
+                'libjpeg', 'spice-server', 'pixman', 'seabios', 'qemu-img',
+                'fence-agents', 'libselinux-python', 'sanlock',
+                'sanlock-python')
     # Gluster packages
     GLUSTER_PACK = ('vdsm-gluster', 'glusterfs-server', 'glusterfs-rdma',
                     'glusterfs-geo-replication')
 else:
     # Devel packages
     DEVEL_PACK = ('gdb', 'tcpdump', 'strace', 'ltrace', 'sysstat', 'ntp',
-                    'pstack', 'vim-common', 'vim-enhanced',
-                    'systemtap', 'systemtap-runtime')
+                  'pstack', 'vim-common', 'vim-enhanced',
+                  'systemtap', 'systemtap-runtime')
     # VDS packages
-    VDS_PACK = ('kvm', 'kmod-kvm', 'kvm-tools', VDSM_NAME, VDSM_NAME+'-cli', 'qcairo',
-                'qffmpeg-libs', 'qspice-libs', 'qpixman', 'log4cpp',
+    VDS_PACK = ('kvm', 'kmod-kvm', 'kvm-tools', VDSM_NAME, VDSM_NAME + '-cli',
+                'qcairo', 'qffmpeg-libs', 'qspice-libs', 'qpixman', 'log4cpp',
                 'etherboot-zroms-kvm', 'kvm-qemu-img', 'fence-agents')
     GLUSTER_PACK = ()
 
 # Conflicting packages- fail if exist
 if rhel6based:
-    CONFL_PACK = ( )
+    CONFL_PACK = ()
 else:
     CONFL_PACK = ('cman.x86_64', )
 
@@ -209,6 +209,7 @@ sys.path.append(VDSM_DIR)
 
 __SYSCONFIG_IPTABLES__ = '/etc/sysconfig/iptables'
 
+
 def _safeWrite(fname, s):
     "Write s into fname atomically"
 
@@ -239,19 +240,23 @@ def _safeWrite(fname, s):
     except OSError:
         logging.debug('trying to maintain file permissions', exc_info=True)
 
+
 def _constantTSC():
     return all(' constant_tsc ' in line
                for line in file('/proc/cpuinfo')
                if line.startswith('flags\t'))
 
+
 class Deploy:
     """
-        This class holds the relevant functionality for vdsm deployment on RHEL.
+        This class holds the relevant functionality for vdsm deployment on
+        RHEL.
     """
     def __init__(self, bridgeName=None):
         self._bridgeName = bridgeName
 
-    def _xmlOutput(self, component, status, resultKey, result, msg, test=False):
+    def _xmlOutput(self, component, status, resultKey, result, msg,
+                   test=False):
         """
             Internal: publish results to server and log.
         """
@@ -291,11 +296,13 @@ class Deploy:
             rc = bool(deployUtil.yumListPackages(VDSM_NAME))
         except:
             rc = False
-            logging.error("checkRegistration: Error searching for VDSM package!",
-                    exc_info=True)
+            logging.error("checkRegistration: Error searching for VDSM "
+                          "package!", exc_info=True)
 
         if not rc:
-            message = "Unable to fetch " + VDSM_NAME + " package. Please check if host is registered to RHN, Satellite or other yum repository"
+            message = "Unable to fetch " + VDSM_NAME + " package. Please " \
+                "check if host is registered to RHN, Satellite or other yum " \
+                "repository"
             status = "FAIL"
             logging.error(message)
         else:
@@ -316,11 +323,13 @@ class Deploy:
             rc = deployUtil.yumSearchVersion(VDSM_NAME, VDSM_MIN_VER)
         except:
             rc = False
-            logging.error("checkMajorVersion: Error searching for VDSM version!",
-                    exc_info=True)
+            logging.error("checkMajorVersion: Error searching for VDSM "
+                          "version!", exc_info=True)
 
         if not rc:
-            message = "Unable to fetch VDSM with minimal version of " + VDSM_MIN_VER + ". Please check if host is properly registered with updated yum repository"
+            message = "Unable to fetch VDSM with minimal version of " + \
+                VDSM_MIN_VER + ". Please check if host is properly registered"\
+                " with updated yum repository"
             status = "FAIL"
             logging.error(message)
         else:
@@ -375,7 +384,8 @@ class Deploy:
         if self.vt_svm is None:
             self.vt_svm = "NA"
 
-        self._xmlOutput('VT_SVM', self.vt_svm, "processor", self.res, self.message, self.test)
+        self._xmlOutput('VT_SVM', self.vt_svm, "processor", self.res,
+                        self.message, self.test)
         return self.rc
 
     def osExplorer(self):
@@ -395,7 +405,8 @@ class Deploy:
         verTest = deployUtil.versionCompare(res, MINIMAL_SUPPORTED_PLATFORM)
         if verTest == 99:
             #import error
-            os_message = "Unable to test for minimal platform version: missing python library"
+            os_message = "Unable to test for minimal platform version: " \
+                "missing python library"
             self.rc = False
         elif verTest < 0:
             self.rc = False
@@ -424,13 +435,15 @@ class Deploy:
 
         if os_name is not None:
             self._xmlOutput('OS', os_status, "type", os_name, os_message)
-        self._xmlOutput('KERNEL', kernel_status, "version", '-'.join(kernel_vr), kernel_message)
+        self._xmlOutput('KERNEL', kernel_status, "version",
+                        '-'.join(kernel_vr), kernel_message)
 
         return self.rc
 
     def kernelArgs(self):
         """
-            Add required kernel args (hoping that future kernel updates keeps them)
+            Add required kernel args (hoping that future kernel updates keeps
+            them)
         """
         self.st = "OK"
         self.message = ''
@@ -465,32 +478,38 @@ class Deploy:
 
     def _avoidPKGConflict(self):
         for pack in CONFL_PACK:
-            self.res, self.message = deployUtil.getPackageInfo("CONFL", pack, 'status')
-            res = self.res #Reverse display status
+            self.res, self.message = deployUtil.getPackageInfo("CONFL", pack,
+                                                               'status')
+            res = self.res  # Reverse display status
             if res == "WARN":
                 res = "OK"
-            self._xmlOutput('CONFLICTING PACKAGES', res, "result", pack, self.message)
+            self._xmlOutput('CONFLICTING PACKAGES', res, "result", pack,
+                            self.message)
             if self.res == "OK":
                 self.confl_pack.append(pack)
                 logging.debug('>>> Conflicting package %s installed', pack)
 
     def _delPKG(self):
         for pack in DEL_PACK:
-            self.res, self.message = deployUtil.getPackageInfo("DEL", pack, 'status')
-            res = self.res   #Reverse display status
+            self.res, self.message = deployUtil.getPackageInfo("DEL", pack,
+                                                               'status')
+            res = self.res   # Reverse display status
             if res == "WARN":
                 res = "OK"
             else:            # PKG needs to be deleted....
                 self.del_pack.append(pack)
                 logging.debug('>>> Obsolete package %s installed', pack)
                 res = "WARN"
-            self._xmlOutput('OBSOLETE PACKAGES', res, "result", pack, self.message)
+            self._xmlOutput('OBSOLETE PACKAGES', res, "result", pack,
+                            self.message)
 
     def _getAllPackages(self):
         logging.debug('Check required packages ...')
         for pack in REQ_PACK:
-            self.res, self.message = deployUtil.getPackageInfo("REQ", pack, 'status')
-            self._xmlOutput('REQ PACKAGES', self.res, "result", pack, self.message)
+            self.res, self.message = deployUtil.getPackageInfo("REQ", pack,
+                                                               'status')
+            self._xmlOutput('REQ PACKAGES', self.res, "result", pack,
+                            self.message)
             if self.res == "WARN":
                 self.req_pack.append(pack)
 
@@ -498,8 +517,10 @@ class Deploy:
             logging.debug('>>> %s should be installed', p)
         logging.debug('Check VDS packages ...')
         for pack in VDS_PACK:
-            self.res, self.message = deployUtil.getPackageInfo("VDS", pack, 'status')
-            self._xmlOutput('VDS PACKAGES', self.res, "result", pack, self.message)
+            self.res, self.message = deployUtil.getPackageInfo("VDS", pack,
+                                                               'status')
+            self._xmlOutput('VDS PACKAGES', self.res, "result", pack,
+                            self.message)
             if self.res == "WARN":
                 self.vds_pack.append(pack)
 
@@ -507,8 +528,10 @@ class Deploy:
             logging.debug('>>> %s should be installed', p)
         logging.debug('Check development packages ...')
         for pack in DEVEL_PACK:
-            self.res, self.message = deployUtil.getPackageInfo("DEVEL", pack, 'status')
-            self._xmlOutput('DEVEL PACKAGES', self.res, "result", pack, self.message)
+            self.res, self.message = deployUtil.getPackageInfo("DEVEL", pack,
+                                                               'status')
+            self._xmlOutput('DEVEL PACKAGES', self.res, "result", pack,
+                            self.message)
             if self.res == "WARN":
                 self.devel_pack.append(pack)
 
@@ -517,25 +540,29 @@ class Deploy:
 
     def _installPackage(self, pack, type, update=0):
         nReturn = 0
-        logging.debug('Installing %s %d', pack, update )
+        logging.debug('Installing %s %d', pack, update)
         if type == "REQ" or type == "DEVEL":
-            self.res, self.message = deployUtil.installAndVerify(type, pack, "install")
+            self.res, self.message = deployUtil.installAndVerify(type, pack,
+                                                                 "install")
             res = "OK"
             if not self.res:
                 res = "FAIL"
                 nReturn = 1
-            self._xmlOutput(type + ' PACKAGES', res, "result", pack, self.message)
+            self._xmlOutput(type + ' PACKAGES', res, "result", pack,
+                            self.message)
         elif type == "VDS":
             yumcmd = "install"
             if update == 1:
                 yumcmd = "update"
 
-            self.res, self.message = deployUtil.installAndVerify(type, pack, yumcmd)
+            self.res, self.message = deployUtil.installAndVerify(type, pack,
+                                                                 yumcmd)
             res = "OK"
             if not self.res:
                 res = "FAIL"
                 nReturn = 1
-            self._xmlOutput(type +' PACKAGES', res, "result", pack, self.message)
+            self._xmlOutput(type + ' PACKAGES', res, "result", pack,
+                            self.message)
         elif type == "GLUSTER":
             yumcmd = "install"
             if update == 1:
@@ -547,7 +574,7 @@ class Deploy:
             if not self.res:
                 res = "FAIL"
                 nReturn = 1
-            self._xmlOutput(type +' PACKAGES', res, "result", pack,
+            self._xmlOutput(type + ' PACKAGES', res, "result", pack,
                             self.message)
         else:
             nReturn = 1
@@ -562,14 +589,17 @@ class Deploy:
 
         while self.del_pack:
             pack = self.del_pack.pop()
-            out, err, self.rc = deployUtil.yumInstallDeleteUpdate(pack, "remove")
+            out, err, self.rc = deployUtil.yumInstallDeleteUpdate(pack,
+                                                                  "remove")
             if self.rc:
                 res = "FAIL"
                 self.message = err
-                self._xmlOutput('OBSOLETE PACKAGES', res, "result", pack, self.message)
+                self._xmlOutput('OBSOLETE PACKAGES', res, "result", pack,
+                                self.message)
                 return 1
             else:
-                self._xmlOutput('OBSOLETE PACKAGES', res, "result", pack, "Removed successfully")
+                self._xmlOutput('OBSOLETE PACKAGES', res, "result", pack,
+                                "Removed successfully")
         return 0
 
     def _installPackages(self):
@@ -610,9 +640,11 @@ class Deploy:
         if len(self.confl_pack) > 0:
             self.res = "FAIL"
             self.rc = 1
-            self.message = "Conflicting packages found: " + str(self.confl_pack)
+            self.message = "Conflicting packages found: " + \
+                str(self.confl_pack)
             logging.error(self.message)
-            self._xmlOutput('CONFL', self.res, "result", "conflict found", self.message)
+            self._xmlOutput('CONFL', self.res, "result", "conflict found",
+                            self.message)
 
         self._delPKG()
         if len(self.del_pack) > 0:
@@ -643,7 +675,8 @@ class Deploy:
             self.rc = self._installPackage(packages.pop(), "GLUSTER")
 
         if not self.rc and updates:
-            logging.debug('Update GLUSTER packages ...  %s', updates.__repr__())
+            logging.debug('Update GLUSTER packages ...  %s',
+                          updates.__repr__())
         while (not self.rc and updates):
             self.rc = self._installPackage(updates.pop(), "GLUSTER", 1)
         return self.rc
@@ -655,20 +688,24 @@ class Deploy:
         if not os.path.exists(VDSM_CONF):
             logging.debug("makeConfig: generating conf.")
             lines = []
-            lines.append ("# Auto-generated by vds_bootstrap at:" + str(datetime.datetime.now()) + "\n")
-            lines.append ("\n")
+            lines.append("# Auto-generated by vds_bootstrap at:" +
+                         str(datetime.datetime.now()) + "\n")
+            lines.append("\n")
 
-            lines.append ("[vars]\n") #Adding ts for the coming scripts.
-            lines.append ("trust_store_path = " + config.get('vars', 'trust_store_path') + "\n")
-            lines.append ("ssl = " + config.get('vars', 'ssl') + "\n")
+            lines.append("[vars]\n")  # Adding ts for the coming scripts.
+            lines.append("trust_store_path = " +
+                         config.get('vars', 'trust_store_path') + "\n")
+            lines.append("ssl = " + config.get('vars', 'ssl') + "\n")
 
             if config.getboolean('vars', 'fake_kvm_support'):
-                lines.append ("fake_kvm_support = true\n")
+                lines.append("fake_kvm_support = true\n")
 
-            lines.append ("\n")
+            lines.append("\n")
 
-            lines.append ("[addresses]\n") #Adding mgt port for the coming scripts.
-            lines.append ("management_port = " + config.get('addresses', 'management_port') + "\n")
+            # Adding mgt port for the coming scripts.
+            lines.append("[addresses]\n")
+            lines.append("management_port = " +
+                         config.get('addresses', 'management_port') + "\n")
 
             logging.debug("makeConfig: writing the following to " + VDSM_CONF)
             logging.debug(lines)
@@ -684,7 +721,8 @@ class Deploy:
 
     def createConf(self):
         """
-            Generate initial configuration file for VDSM. Must run after package installation!
+            Generate initial configuration file for VDSM. Must run after
+            package installation!
         """
         self.message = 'Basic configuration set'
         self.rc = True
@@ -713,7 +751,7 @@ class Deploy:
                 VDSM_DIR,
                 bridgeName=self._bridgeName
             )
-            if fReturn: #save current config by removing the undo files:
+            if fReturn:  # Save current config by removing the undo files:
                 if not vdcPort:
                     vdcPort = 80
                 vdcUrl = "http://%s:%s" % (vdcName, vdcPort)
@@ -726,7 +764,8 @@ class Deploy:
                 except:
                     logging.error("Error restoring route", exc_info=True)
             else:
-                self.message = "addNetwork error trying to add management bridge"
+                self.message = "addNetwork error trying to add management " \
+                    "bridge"
                 logging.error(self.message)
                 fReturn = False
         except:
@@ -779,18 +818,20 @@ class Deploy:
         """
             Create management bridge.
             This class will try to create a management bridge.
-            Note: expected input format: http://www.redhat.com/a/b/c or: ftp://10.0.0.23/d/e/f
+            Note: expected input format: http://www.redhat.com/a/b/c or:
+            ftp://10.0.0.23/d/e/f
         """
         self.status = "OK"
         self.rc = True
         self.message = "Created management bridge."
 
         if rhel6based:
-             deployUtil.setService("messagebus", "start")
-             deployUtil.setService("libvirtd", "start")
+            deployUtil.setService("messagebus", "start")
+            deployUtil.setService("libvirtd", "start")
 
         if deployUtil.preventDuplicate(bridgeName=self._bridgeName):
-            self.message = "Bridge management already exists. Skipping bridge creation."
+            self.message = "Bridge management already exists. Skipping " \
+                "bridge creation."
             logging.debug(self.message)
         else:
             url, port = deployUtil.getAddress(iurl)
@@ -817,7 +858,8 @@ class Deploy:
         strKey = None
 
         # TODO remove legacy
-        if deployUtil.getBootstrapInterfaceVersion() == 1 and engine_ssh_key == None:
+        if deployUtil.getBootstrapInterfaceVersion() == 1 and \
+                engine_ssh_key is None:
             vdcAddress = None
             vdcPort = None
 
@@ -891,7 +933,8 @@ class Deploy:
             deployUtil.setService(srv, "stop")
             out, err, ret = deployUtil.chkConfig(srv, "off")
             if ret:
-                message = "VerifyServices: Failed to unset conflicting service " + srv + "."
+                message = "VerifyServices: Failed to unset conflicting " \
+                    "service " + srv + "."
                 logging.error(self.message)
                 logging.error("Details: " + str(out) + "\n" + str(err))
                 self._xmlOutput('VerifyServices', 'WARN', None, None, message)
@@ -900,13 +943,15 @@ class Deploy:
             for srv in NEEDED_SERVICES:
                 out, err, ret = deployUtil.chkConfig(srv, "on", "345")
                 if ret:
-                    self.message = "VerifyServices: Failed to set service " + srv + "."
+                    self.message = "VerifyServices: Failed to set service " + \
+                        srv + "."
                     self.status = 'FAIL'
                     logging.error(self.message)
                     logging.error("Details: " + str(out) + "\n" + str(err))
                     break
 
-        self._xmlOutput('VerifyServices', self.status, None, None, self.message)
+        self._xmlOutput('VerifyServices', self.status, None, None,
+                        self.message)
         return self.rc
 
     def setCertificates(self, subject, random_num, orgName='Red Hat, Inc.'):
@@ -930,15 +975,22 @@ class Deploy:
 
         deployUtil.pkiCleanup(vdsmKey, vdsmCert)
         deployUtil.createCSR(orgName, subject, random_num, tsDir, vdsmKey)
-        self._xmlOutput('Encryption setup', 'OK', None, None, "Ended successfully")
+        self._xmlOutput('Encryption setup', 'OK', None, None,
+                        "Ended successfully")
 # End of deploy class.
 
+
 def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
-        firewallRulesFile, engine_ssh_key, installVirtualizationService,
-        installGlusterService, bridgeName, miniyum):
+                  firewallRulesFile, engine_ssh_key,
+                  installVirtualizationService, installGlusterService,
+                  bridgeName, miniyum):
     """ --- Check VDS Compatibility.
     """
-    logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', rev_num = '%s', installVirtualizationService = '%s', installGlusterService = '%s', bridgeName = '%s')"%(subject, random_num, rev_num, installVirtualizationService, installGlusterService, bridgeName))
+    logging.debug("Entered VdsValidation(subject = '%s', random_num = '%s', "
+                  "rev_num = '%s', installVirtualizationService = '%s', "
+                  "installGlusterService = '%s', bridgeName = '%s')" %
+                  (subject, random_num, rev_num, installVirtualizationService,
+                   installGlusterService, bridgeName))
 
     if installGlusterService:
         if not rhel6based:
@@ -994,7 +1046,8 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
                 miniyum.installUpdate(('vdsm', 'vdsm-cli'))
 
                 if installGlusterService:
-                    miniyum.install(('glusterfs-rdma', 'glusterfs-geo-replication'))
+                    miniyum.install(('glusterfs-rdma',
+                                     'glusterfs-geo-replication'))
                     miniyum.installUpdate(('vdsm-gluster',))
 
                 if miniyum.buildTransaction():
@@ -1041,6 +1094,7 @@ def VdsValidation(iurl, subject, random_num, rev_num, orgName, systime,
     oDeploy.setCertificates(subject, random_num, orgName)
 
     return True
+
 
 def main():
     """

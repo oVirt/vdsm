@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -22,12 +22,12 @@
 import os
 import sys
 from ovirtnode.ovirtfunctions import ovirt_store_config, is_valid_host_or_ip, \
-                                     is_valid_port, PluginBase, log, network_up, \
-                                     password_check, augtool, is_console, system
+    is_valid_port, PluginBase, log, network_up, \
+    password_check, augtool, is_console, system
 from ovirtnode.password import set_password
 
 from snack import ButtonChoiceWindow, Entry, Grid, Label, Checkbox, \
-                  FLAG_DISABLED, FLAGS_SET, customColorset, Textbox
+    FLAG_DISABLED, FLAGS_SET, customColorset, Textbox
 import subprocess
 
 sys.path.append('/usr/share/vdsm-reg')
@@ -46,6 +46,8 @@ PASSWORD_MATCH = 0
 PASSWORD_DOESNT_MATCH = 1
 
 fWriteConfig = 0
+
+
 def set_defaults():
     vdsm_config_file = open(VDSM_CONFIG, "w")
     vdsm_config = """[vars]
@@ -58,17 +60,18 @@ management_port = 54321
     vdsm_config_file.write(vdsm_config)
     vdsm_config_file.close()
 
-"""
-Until the version 3.0, oVirt Engine provided port 8443/8080 to oVirt Node
-download cert and others files. Since 3.1 the default port changed to 443/80.
-This function, will return the compatible port in case the VDSM
-cannot communicate with oVirt Engine.
 
-:param portNumber: port which doesn't communicate with oVirt Engine
-:returns: compatible port number (or None if there is no compatible port)
-          and if it's SSL port or not (bool)
-"""
 def compatiblePort(portNumber):
+    """
+    Until the version 3.0, oVirt Engine provided port 8443/8080 to oVirt Node
+    download cert and others files. Since 3.1 the default port changed to
+    443/80. This function, will return the compatible port in case the VDSM
+    cannot communicate with oVirt Engine.
+
+    :param portNumber: port which doesn't communicate with oVirt Engine
+    :returns: compatible port number (or None if there is no compatible port)
+              and if it's SSL port or not (bool)
+    """
 
     compatPort = {
         '443': ('8443', True),
@@ -79,18 +82,20 @@ def compatiblePort(portNumber):
 
     return compatPort.get(portNumber, (None, False))
 
-"""
-This function will try a http connection to a host with determined
-port, ssl and timeout.
 
-:param host: Host to be tested
-:param port: Which port httplib should use for the test connection
-:param ssl: if it's ssl port or not (bool)
-:param timeout: timeout for the operation, if not speficied the default
-                will be socket._GLOBAL_DEFAULT_TIMEOUT
-:returns True or False
-"""
-def isHostReachable(host, port=None, ssl=True, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+def isHostReachable(host, port=None, ssl=True,
+                    timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+    """
+    This function will try a http connection to a host with determined
+    port, ssl and timeout.
+
+    :param host: Host to be tested
+    :param port: Which port httplib should use for the test connection
+    :param ssl: if it's ssl port or not (bool)
+    :param timeout: timeout for the operation, if not speficied the default
+                    will be socket._GLOBAL_DEFAULT_TIMEOUT
+    :returns True or False
+    """
     if ssl:
         Connection = httplib.HTTPSConnection
     else:
@@ -103,6 +108,7 @@ def isHostReachable(host, port=None, ssl=True, timeout=socket._GLOBAL_DEFAULT_TI
     except socket.error:
         return False
 
+
 def write_vdsm_config(engineHost, enginePort):
     if not os.path.exists(VDSM_CONFIG):
         system("touch " + VDSM_CONFIG)
@@ -113,20 +119,23 @@ def write_vdsm_config(engineHost, enginePort):
     else:
         log("Agent configuration files already exist.")
 
-    sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name=" + engineHost + "/\" " + VDSM_REG_CONFIG
+    sed_cmd = "sed -i --copy \"s/\(^vdc_host_name=\)\(..*$\)/vdc_host_name=" +\
+        engineHost + "/\" " + VDSM_REG_CONFIG
     if system(sed_cmd):
         log("The @ENGINENAME@'s address is set: %s\n" % engineHost)
     if enginePort != "":
-        sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/vdc_host_port=" + str(enginePort) + "/\" " + VDSM_REG_CONFIG
+        sed_cmd = "sed -i --copy \"s/\(^vdc_host_port=\)\(..*$\)/" \
+            "vdc_host_port=" + str(enginePort) + "/\" " + VDSM_REG_CONFIG
         if system(sed_cmd):
             log("The @ENGINENAME@'s port set: %s\n" % enginePort)
-        fWriteConfig=1
+        fWriteConfig = 1
 
     if fWriteConfig == 1:
         log("Saving vdsm-reg.conf\n")
         if ovirt_store_config(VDSM_REG_CONFIG):
             log("vdsm-reg.conf Saved\n")
             return True
+
 
 def getEngineConfig():
     vdsm_config = open(VDSM_REG_CONFIG)
@@ -142,6 +151,7 @@ def getEngineConfig():
     vdsm_config.close()
     return vdc_server
 
+
 class Plugin(PluginBase):
     """Plugin for @ENGINENAME@ configuration.
     """
@@ -155,35 +165,43 @@ class Plugin(PluginBase):
         if is_network_up:
             header_message = "@ENGINENAME@ Configuration"
         else:
-            header_message = "Network Down, @ENGINENAME@ Configuration Disabled"
+            header_message = "Network Down, @ENGINENAME@ Configuration " \
+                "Disabled"
         heading = Label(header_message)
         if is_console():
             self.ncs.screen.setColor(customColorset(1), "black", "magenta")
             heading.setColors(customColorset(1))
-        elements.setField(heading, 0, 0, anchorLeft = 1)
+        elements.setField(heading, 0, 0, anchorLeft=1)
         engine_grid = Grid(2, 2)
-        engine_grid.setField(Label("Management Server:"), 0, 0, anchorLeft = 1)
+        engine_grid.setField(Label("Management Server:"), 0, 0, anchorLeft=1)
         self.engine_server = Entry(25, "")
         self.engine_server.setCallback(self.validEngineServerCallback)
-        engine_grid.setField(Label("Management Server Port:"), 0, 1, anchorLeft = 1)
-        self.engine_server_port = Entry(6, "", scroll = 0)
+        engine_grid.setField(Label("Management Server Port:"), 0, 1,
+                             anchorLeft=1)
+        self.engine_server_port = Entry(6, "", scroll=0)
         self.engine_server_port.setCallback(self.validEngineServerPortCallback)
-        engine_grid.setField(self.engine_server, 1, 0, anchorLeft = 1, padding=(2, 0, 0, 1))
-        engine_grid.setField(self.engine_server_port, 1, 1, anchorLeft = 1, padding=(2, 0, 0, 0))
-        elements.setField(engine_grid, 0, 1, anchorLeft = 1, padding = (0, 0, 0, 0))
-        elements.setField(Label(""), 0, 2, anchorLeft = 1)
-        self.verify_engine_cert = Checkbox("Connect to @ENGINENAME@ and Validate Certificate", isOn=True)
-        elements.setField(self.verify_engine_cert, 0, 3, anchorLeft = 1, padding = (0, 0, 0, 0))
-        elements.setField(Label(""), 0, 4, anchorLeft = 1)
+        engine_grid.setField(self.engine_server, 1, 0, anchorLeft=1,
+                             padding=(2, 0, 0, 1))
+        engine_grid.setField(self.engine_server_port, 1, 1, anchorLeft=1,
+                             padding=(2, 0, 0, 0))
+        elements.setField(engine_grid, 0, 1, anchorLeft=1,
+                          padding=(0, 0, 0, 0))
+        elements.setField(Label(""), 0, 2, anchorLeft=1)
+        self.verify_engine_cert = Checkbox("Connect to @ENGINENAME@ and "
+                                           "Validate Certificate", isOn=True)
+        elements.setField(self.verify_engine_cert, 0, 3, anchorLeft=1,
+                          padding=(0, 0, 0, 0))
+        elements.setField(Label(""), 0, 4, anchorLeft=1)
 
-        elements.setField(Label("Optional password for adding node through @ENGINENAME@ UI"), 0, 5, anchorLeft = 1)
+        elements.setField(Label("Optional password for adding node through "
+                                "@ENGINENAME@ UI"), 0, 5, anchorLeft=1)
         pw_elements = Grid(3, 3)
 
-        pw_elements.setField(Label("Password: "), 0, 1, anchorLeft = 1)
+        pw_elements.setField(Label("Password: "), 0, 1, anchorLeft=1)
         self.root_password_1 = Entry(15, password=1)
         self.root_password_1.setCallback(self.password_check_callback)
         pw_elements.setField(self.root_password_1, 1, 1)
-        pw_elements.setField(Label("Confirm Password: "), 0, 2, anchorLeft = 1)
+        pw_elements.setField(Label("Confirm Password: "), 0, 2, anchorLeft=1)
         self.root_password_2 = Entry(15, password=1)
         self.root_password_2.setCallback(self.password_check_callback)
         pw_elements.setField(self.root_password_2, 1, 2)
@@ -192,10 +210,11 @@ class Plugin(PluginBase):
         self.pw_resp = PASSWORD_MATCH
 
         elements.setField(pw_elements, 0, 6, anchorLeft=1)
-        elements.setField(self.pw_msg, 0, 7, padding = (0, 0, 0, 0))
+        elements.setField(self.pw_msg, 0, 7, padding=(0, 0, 0, 0))
 
-        inputFields = [self.engine_server, self.engine_server_port, self.verify_engine_cert,
-                       self.root_password_1, self.root_password_2]
+        inputFields = [self.engine_server, self.engine_server_port,
+                       self.verify_engine_cert, self.root_password_1,
+                       self.root_password_2]
         if not is_network_up:
             for field in inputFields:
                 field.setFlags(FLAG_DISABLED, FLAGS_SET)
@@ -214,7 +233,9 @@ class Plugin(PluginBase):
         return [Label(""), elements]
 
     def password_check_callback(self):
-        self.pw_resp, self.pw_pcheck_msg = password_check(self.root_password_1.value(), self.root_password_2.value())
+        self.pw_resp, self.pw_pcheck_msg = \
+            password_check(self.root_password_1.value(),
+                           self.root_password_2.value())
         self.pw_msg.setText(self.pw_pcheck_msg)
         return
 
@@ -231,36 +252,44 @@ class Plugin(PluginBase):
 
         if self.pw_resp == PASSWORD_MATCH:
             set_password(self.root_password_1.value(), "root")
-            augtool("set", "/files/etc/ssh/sshd_config/PasswordAuthentication", "yes")
+            augtool("set", "/files/etc/ssh/sshd_config/PasswordAuthentication",
+                    "yes")
             dn = file('/dev/null', 'w+')
-            subprocess.Popen(['/sbin/service', 'sshd', 'restart'], stdout=dn, stderr=dn)
-        # password_check() returns 1 for all situations that are failures. However, it includes
-        # the case where  password len is 0 and min_length is 1
-        # (default value of min_length as argument of function is 1).
-        # To avoid falling in such case, let's validate the len of self.root_password.value()
-        elif self.pw_resp == PASSWORD_DOESNT_MATCH and len(self.root_password_1.value()) > 0 or \
-                self.pw_resp == PASSWORD_DOESNT_MATCH and len(self.root_password_2.value()) > 0:
-            # Required since we now are verifying if the Confirm Password were filled
-            # and Password field not
+            subprocess.Popen(['/sbin/service', 'sshd', 'restart'], stdout=dn,
+                             stderr=dn)
+        # password_check() returns 1 for all situations that are failures.
+        # However, it includes the case where  password len is 0 and min_length
+        # is 1 (default value of min_length as argument of function is 1).
+        # To avoid falling in such case, let's validate the len of
+        # self.root_password.value()
+        elif self.pw_resp == PASSWORD_DOESNT_MATCH and \
+                len(self.root_password_1.value()) > 0 or \
+                self.pw_resp == PASSWORD_DOESNT_MATCH and \
+                len(self.root_password_2.value()) > 0:
+            # Required since we now are verifying if the Confirm Password were
+            # filled and Password field not
             if self.pw_pcheck_msg.strip("\n") == "":
                 self.pw_pcheck_msg = "Please check: Passwords Do Not Match!"
 
-            ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@", self.pw_pcheck_msg, buttons = ['Ok'])
+            ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
+                               self.pw_pcheck_msg, buttons=['Ok'])
             return
 
         if len(self.engine_server.value()) > 0:
             deployUtil.nodeCleanup()
             if not isHostReachable(host=self.engine_server.value(),
-                    port=enginePort, ssl=sslPort, timeout=TIMEOUT_FIND_HOST_SEC):
+                                   port=enginePort, ssl=sslPort,
+                                   timeout=TIMEOUT_FIND_HOST_SEC):
                 if compatPort is None:
                     # Try one more time with SSL=False
                     if not isHostReachable(host=self.engine_server.value(),
-                            port=enginePort, ssl=False, timeout=TIMEOUT_FIND_HOST_SEC):
-                        msgConn = "Can't connect to @ENGINENAME@ in the specific" \
-                        " port %s" % enginePort
+                                           port=enginePort, ssl=False,
+                                           timeout=TIMEOUT_FIND_HOST_SEC):
+                        msgConn = "Can't connect to @ENGINENAME@ in the " \
+                            "specific port %s" % enginePort
 
                         ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
-                                msgConn, buttons = ['Ok'])
+                                           msgConn, buttons=['Ok'])
                         return False
                 else:
                     msgConn = "Can't connect to @ENGINENAME@ port %s," \
@@ -268,45 +297,60 @@ class Plugin(PluginBase):
                         (enginePort, compatPort)
 
                     ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
-                        msgConn, buttons = ['Ok'])
+                                       msgConn, buttons=['Ok'])
 
                     if not isHostReachable(host=self.engine_server.value(),
-                            port=compatPort, ssl=sslPort, timeout=TIMEOUT_FIND_HOST_SEC):
+                                           port=compatPort, ssl=sslPort,
+                                           timeout=TIMEOUT_FIND_HOST_SEC):
                         msgConn = "Can't connect to @ENGINENAME@ using" \
                             " compatible port %s" % compatPort
                         ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@",
-                            msgConn, buttons = ['Ok'])
+                                           msgConn, buttons=['Ok'])
                         return False
                     else:
                         # compatible port found
                         enginePort = compatPort
 
             if self.verify_engine_cert.selected():
-                if deployUtil.getRhevmCert(self.engine_server.value(), enginePort):
+                if deployUtil.getRhevmCert(self.engine_server.value(),
+                                           enginePort):
                     _, _, path = deployUtil.certPaths('')
                     fp = deployUtil.generateFingerPrint(path)
                     approval = ButtonChoiceWindow(self.ncs.screen,
-                                "Certificate Fingerprint:",
-                                fp, buttons = ['Approve', 'Reject'])
+                                                  "Certificate Fingerprint:",
+                                                  fp, buttons=['Approve',
+                                                               'Reject'])
                     if 'reject' == approval:
-                        ButtonChoiceWindow(self.ncs.screen, "Fingerprint rejected", "@ENGINENAME@ Configuration Failed", buttons = ['Ok'])
+                        ButtonChoiceWindow(self.ncs.screen,
+                                           "Fingerprint rejected",
+                                           "@ENGINENAME@ Configuration Failed",
+                                           buttons=['Ok'])
                         return False
                     else:
                         ovirt_store_config(path)
                         self.ncs.reset_screen_colors()
                 else:
-                    ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@ Configuration", "Failed downloading @ENGINENAME@ certificate", buttons = ['Ok'])
+                    ButtonChoiceWindow(
+                        self.ncs.screen, "@ENGINENAME@ Configuration",
+                        "Failed downloading @ENGINENAME@ certificate",
+                        buttons=['Ok'])
                     self.ncs.reset_screen_colors()
-            # Stopping vdsm-reg may fail but its ok - its in the case when the menus are run after installation
+            # Stopping vdsm-reg may fail but its ok - its in the case when the
+            # menus are run after installation
             deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg', 'stop'])
             if write_vdsm_config(self.engine_server.value(), enginePort):
                 deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg',
-                    'start'])
-                ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@ Configuration", "@ENGINENAME@ Configuration Successfully Updated", buttons = ['Ok'])
+                                     'start'])
+                ButtonChoiceWindow(
+                    self.ncs.screen, "@ENGINENAME@ Configuration",
+                    "@ENGINENAME@ Configuration Successfully Updated",
+                    buttons=['Ok'])
                 self.ncs.reset_screen_colors()
                 retWriteConf = True
             else:
-                ButtonChoiceWindow(self.ncs.screen, "@ENGINENAME@ Configuration", "@ENGINENAME@ Configuration Failed", buttons = ['Ok'])
+                ButtonChoiceWindow(
+                    self.ncs.screen, "@ENGINENAME@ Configuration",
+                    "@ENGINENAME@ Configuration Failed", buttons=['Ok'])
                 self.ncs.reset_screen_colors()
                 retWriteConf = False
 
@@ -316,16 +360,20 @@ class Plugin(PluginBase):
         if not is_valid_host_or_ip(self.engine_server.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
-            ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid @ENGINENAME@ Hostname or Address", buttons = ['Ok'])
+            ButtonChoiceWindow(
+                self.ncs.screen, "Configuration Check",
+                "Invalid @ENGINENAME@ Hostname or Address", buttons=['Ok'])
             self.ncs.reset_screen_colors()
-
 
     def validEngineServerPortCallback(self):
         if not is_valid_port(self.engine_server_port.value()):
             self.ncs.screen.setColor("BUTTON", "black", "red")
             self.ncs.screen.setColor("ACTBUTTON", "blue", "white")
-            ButtonChoiceWindow(self.ncs.screen, "Configuration Check", "Invalid @ENGINENAME@ Server Port", buttons = ['Ok'])
+            ButtonChoiceWindow(
+                self.ncs.screen, "Configuration Check",
+                "Invalid @ENGINENAME@ Server Port", buttons=['Ok'])
             self.ncs.reset_screen_colors()
+
 
 def get_plugin(ncs):
     return Plugin(ncs)

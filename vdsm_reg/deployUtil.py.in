@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -112,6 +112,7 @@ SSH_PUBLIC_KEY_RE = re.compile(flags=re.VERBOSE, pattern=r"""
 #
 bootstrap_interface_version = 1
 
+
 def isOvirt():
     """
         This function checks if current machine runs ovirt platform.
@@ -122,6 +123,7 @@ def isOvirt():
         return True
     else:
         return False
+
 
 def _logExec(argv, input=None):
     """
@@ -136,7 +138,8 @@ def _logExec(argv, input=None):
         if input is not None:
             logging.debug(input)
             stdin = subprocess.PIPE
-        p = subprocess.Popen(argv, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(argv, stdin=stdin, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
         out, err = p.communicate(input)
         rc = p.returncode
         logging.debug(out)
@@ -144,6 +147,7 @@ def _logExec(argv, input=None):
     except:
         logging.error(traceback.format_exc())
     return (out, err, rc)
+
 
 def vdsmImport(name, vdsmDir=None):
     # Legacy import for old vdsm packages
@@ -171,14 +175,17 @@ def vdsmImport(name, vdsmDir=None):
         if fp:
             fp.close()
 
-#############################################################################################################
+
+###############################################################################
 # Host Misc functions.
-#############################################################################################################
+###############################################################################
+
 def escapeXML(message):
     """
         Escape '&', '<', '>', and '\n' in a given string.
     """
     return saxutils.escape(message, XML_QUOTES)
+
 
 def simpleDaemon(main, args=(), kwargs={}):
     # Default maximum for the number of available file descriptors.
@@ -196,7 +203,7 @@ def simpleDaemon(main, args=(), kwargs={}):
             for fd in range(0, maxfd):
                 try:
                     os.close(fd)
-                except OSError:  # ERROR, fd wasn't open to begin with (ignored)
+                except OSError:  # ERROR, fd wasn't open to begin with(ignored)
                     pass
 
             os.open(os.devnull, os.O_RDWR)  # standard input (0)
@@ -215,9 +222,11 @@ def simpleDaemon(main, args=(), kwargs={}):
     if not os.WIFEXITED(status) or os.WEXITSTATUS(status) != 0:
         raise RuntimeError("Daemon not exited properly")
 
+
 def delayedReboot(sleepTime):
     time.sleep(sleepTime)
     os.execl(EX_REBOOT, EX_REBOOT)
+
 
 def reboot():
     logging.debug("scheduling reboot")
@@ -227,6 +236,7 @@ def reboot():
     except:
         logging.error("Could not reboot.", exc_info=True)
         return False
+
 
 def setCoreDumpPath():
     logging.debug("setCoreDumpPath started.")
@@ -241,11 +251,13 @@ def setCoreDumpPath():
     logging.debug("setCoreDumpPath end:" + str(fReturn))
     return fReturn
 
+
 def _removeNoError(file):
     try:
         os.remove(file)
     except OSError:
         pass
+
 
 def cleanAll(random_num):
     """ Remove temp files.
@@ -278,6 +290,7 @@ def cleanAll(random_num):
 
     return True
 
+
 def setVdsConf(configStr, confFile):
     """
         This function changes local configuration according to the
@@ -291,7 +304,8 @@ def setVdsConf(configStr, confFile):
 
     if not os.path.exists(confFile):
         strMessage = escapeXML("File " + confFile + "does not exist.")
-        print "<BSTRAP component='VDS Configuration' status='FAIL' message='" + strMessage + "'/>"
+        print "<BSTRAP component='VDS Configuration' status='FAIL' message='" \
+            + strMessage + "'/>"
         logging.debug("setVdsConf: " + strMessage)
         return False
 
@@ -305,9 +319,11 @@ def setVdsConf(configStr, confFile):
 
         for key in new_config_params.keys():
             val = new_config_params[key]
-            logging.debug("setVdsConf: setting Key=" + str(key) + " to val=" + str(val))
+            logging.debug("setVdsConf: setting Key=" + str(key) + " to val=" +
+                          str(val))
             _updateFileLine(confFile, key, val)
-            #_logExec([EX_SED, "-i", "s:^\s*"+key+"\s*=.*:"+key+"="+val+":", confFile])
+            #_logExec([EX_SED, "-i", "s:^\s*"+key+"\s*=.*:"+key+"="+val+":",
+            #         confFile])
 
         if isOvirt():
             # save the updated file
@@ -317,34 +333,39 @@ def setVdsConf(configStr, confFile):
         print "<BSTRAP component='VDS Configuration' status='OK'/>"
     except Exception, e:
         msg = escapeXML(str(e))
-        print "<BSTRAP component='VDS Configuration' status='FAIL' message='%s'/>" % (msg)
+        print "<BSTRAP component='VDS Configuration' status='FAIL' " \
+            "message='%s'/>" % (msg)
         logging.debug("setVdsConf: exception " + msg)
         fReturn = False
 
     logging.debug("setVdsConf: ended.")
     return fReturn
 
+
 def getMachineUUID():
     """
-        This function parses the DMI data for the host's UUID. If not found, returns "None".
+        This function parses the DMI data for the host's UUID. If not found,
+        returns "None".
     """
     arch = platform.machine()
     if arch == 'x86_64':
         out, err, ret = _logExec([EX_DMIDECODE, "-s", "system-uuid"])
-        out = '\n'.join( line for line in out.splitlines()
-                         if not line.startswith('#') )
+        out = '\n'.join(line for line in out.splitlines()
+                        if not line.startswith('#'))
 
         # Avoid error string- 'Not Settable' or 'Not Present'
         if ret == 0 and "Not" not in out:
-            return out.replace ("\n", "")
+            return out.replace("\n", "")
     elif arch == "ppc64":
         if os.path.exists('/proc/device-tree/system-id'):
             #eg. output IBM,03061C14A
-            return file('/proc/device-tree/system-id').readline().replace(",", "")
+            return file('/proc/device-tree/system-id').readline().\
+                replace(",", "")
 
     logging.error("getMachineUUID: Could not find machine's UUID.")
 
     return "None"
+
 
 def getMacs():
 
@@ -371,9 +392,11 @@ def getMacs():
 
     return set(macs) - set(["", "00:00:00:00:00:00"])
 
+
 def getHostID():
     """
-        This function concatenate the first serted mac address to the machine's UUID.
+        This function concatenate the first serted mac address to the machine's
+        UUID.
     """
     strReturn = "None"
 
@@ -391,7 +414,8 @@ def getHostID():
             strMAC = sorted(macs)[0]
         else:
             strMAC = ""
-            logging.warning("getHostID: Could not find machine's MAC, returning UUID only.")
+            logging.warning("getHostID: Could not find machine's MAC, "
+                            "returning UUID only.")
 
         if strReturn != "None":
             strReturn += "_" + strMAC
@@ -400,6 +424,7 @@ def getHostID():
 
     logging.debug("getHostID: " + str(strReturn))
     return strReturn
+
 
 def _getIfaceByIP(addr):
     remote = struct.unpack('I', socket.inet_aton(addr))[0]
@@ -411,7 +436,8 @@ def _getIfaceByIP(addr):
         if remote & mask == dest & mask:
             return iface
 
-    return None # should never get here w/ default gw
+    return None  # Should never get here w/ default gw
+
 
 def _getMGTIface(vdcHostName):
     strVDCIP = "None"
@@ -427,14 +453,17 @@ def _getMGTIface(vdcHostName):
             strVDCIP = "None"
             logging.debug("_getMGTIface: error trying to figure out IP")
 
-    logging.debug("_getMGTIface: using host name " + strVDCName + " strIP= " + strVDCIP)
+    logging.debug("_getMGTIface: using host name " + strVDCName + " strIP= " +
+                  strVDCIP)
 
     # Find the interface of the management IP
     if strVDCIP != "None":
         strReturn = _getIfaceByIP(strVDCIP)
 
-    logging.debug("_getMGTIface IP=" + str(strVDCIP) + " strIface=" + str(strReturn))
+    logging.debug("_getMGTIface IP=" + str(strVDCIP) + " strIface=" +
+                  str(strReturn))
     return strReturn
+
 
 def getMGTIP(vdsmDir, vdcHostName):
     strReturn = "None"
@@ -453,6 +482,7 @@ def getMGTIP(vdsmDir, vdcHostName):
     logging.debug("getMGTIP: Host MGT IP=" + strReturn)
     return strReturn
 
+
 def preventDuplicate(bridgeName=None):
     """
       This function checks if the needed bridge (@VDSMBRIDGE@) already exist.
@@ -469,6 +499,7 @@ def preventDuplicate(bridgeName=None):
 
     return fFound
 
+
 def getOSVersion():
     """
     Return the OS release, similarly to `lsb_release -rs`
@@ -482,6 +513,7 @@ def getOSVersion():
     logging.debug("OS Release Ver = %s", osVer[1])
     return osVer[1]
 
+
 def getKernelVR():
     """Return current kernel version and release."""
 
@@ -491,11 +523,13 @@ def getKernelVR():
     else:
         return components[0], '0'
 
+
 def compareVR(vr1, vr2):
     import rpmUtils.miscutils
 
     return rpmUtils.miscutils.compareEVR((0, vr1[0], vr1[1]),
                                          (0, vr2[0], vr2[1]))
+
 
 def updateKernelArgs(arg):
     """
@@ -504,13 +538,14 @@ def updateKernelArgs(arg):
     fReturn = False
     try:
         out, err, ret = _logExec([EX_GRUBBY, "--update-kernel",
-                                    "DEFAULT", "--args", arg] )
+                                  "DEFAULT", "--args", arg])
         if not ret:
             fReturn = True
     except:
         pass
 
     return fReturn
+
 
 def getAddress(url):
     logging.debug("getAddress Entry. url=" + str(url))
@@ -524,9 +559,10 @@ def getAddress(url):
     fragment = None
 
     (scheme, netloc, path, query, fragment) = urlparse.urlsplit(url)
-    if scheme != '':      #('http', 'www.redhat.com', '/rhel/virtualization/', '', '')
+    if scheme != '':
+        # ('http', 'www.redhat.com', '/rhel/virtualization/', '', '')
         strRetAddress = netloc
-    elif path != '':      #('', '', 'www.redhat.com', '', '')
+    elif path != '':  # ('', '', 'www.redhat.com', '', '')
         strRetAddress = path
     else:
         logging.error("Unable to parse: " + str(url))
@@ -535,16 +571,19 @@ def getAddress(url):
     if strRetAddress is not None and ":" in strRetAddress:
         strRetAddress, strRetPort = strRetAddress.split(":")
 
-    logging.debug("getAddress return. address=" + str(strRetAddress) + " port=" + str(strRetPort))
+    logging.debug("getAddress return. address=" + str(strRetAddress) +
+                  " port=" + str(strRetPort))
     return strRetAddress, strRetPort
 
+
 def waitRouteRestore(maxCount, targetIP):
-    logging.debug("waitRouteRestore Entry. maxCount=" + str(maxCount) + " targetIP:" + targetIP)
+    logging.debug("waitRouteRestore Entry. maxCount=" + str(maxCount) +
+                  " targetIP:" + targetIP)
 
     fReturn = True
     count = 0
-    ret1 = ERR_NO_ROUTE #no route error code
-    while(count<maxCount and ret1 == ERR_NO_ROUTE):
+    ret1 = ERR_NO_ROUTE  # no route error code
+    while(count < maxCount and ret1 == ERR_NO_ROUTE):
         try:
             out1, err1, ret1 = _logExec([
                 '/usr/bin/curl',
@@ -558,7 +597,7 @@ def waitRouteRestore(maxCount, targetIP):
 
         count = count + 1
         logging.debug(
-            " count=" + str(count-1) +
+            " count=" + str(count - 1) +
             "\nout=" + out1 +
             "\nerr=" + str(err1) +
             "\nret=" + str(ret1)
@@ -571,6 +610,7 @@ def waitRouteRestore(maxCount, targetIP):
     logging.debug("waitRouteRestore Return. fReturn=" + str(fReturn))
     return fReturn
 
+
 def setService(srvName, action):
     """
         Perform an action (stop/start/status/...) on a service
@@ -581,7 +621,7 @@ def setService(srvName, action):
     nReturn = 0
     out = None
     err = None
-    if type(srvName) == type(None):
+    if srvName is None:
         nReturn = 1
         message = "setService: ignoring None service."
         err = message
@@ -600,6 +640,7 @@ def setService(srvName, action):
         err = "No such service: " + srvName
 
     return out, err, nReturn
+
 
 def systemCtl(srvName, action, level=None):
     """
@@ -621,10 +662,11 @@ def systemCtl(srvName, action, level=None):
         out, err, nReturn = _logExec([EX_SYSTEMCTL, "enable", srvCtlName])
 
     elif action == "reset":
-        raise Exception, \
-                "The 'reset' action is not yet implemented for systemd"
+        raise Exception("The 'reset' action is not yet implemented for "
+                        "systemd")
 
     return out, err, nReturn
+
 
 def chkConfig(srvName, action, level=None):
     """
@@ -639,7 +681,8 @@ def chkConfig(srvName, action, level=None):
 
     if os.path.exists(P_ETC_INITD + srvName):
         if level:
-            out, err, nReturn = _logExec([EX_CHKCONFIG, '--level', level, srvName, action])
+            out, err, nReturn = _logExec([EX_CHKCONFIG, '--level', level,
+                                         srvName, action])
         else:
             out, err, nReturn = _logExec([EX_CHKCONFIG, srvName, action])
     else:
@@ -647,14 +690,15 @@ def chkConfig(srvName, action, level=None):
             nReturn = 1
             err = "No such service: " + srvName
         else:
-            logging.debug("chkConfig: ignoring uninstalled service: " + str(srvName))
+            logging.debug("chkConfig: ignoring uninstalled service: " +
+                          str(srvName))
 
     return out, err, nReturn
 
 
-#############################################################################################################
+###############################################################################
 # Host SSH functions.
-#############################################################################################################
+###############################################################################
 
 def getAuthKeysFile(IP, port):
     """
@@ -663,22 +707,24 @@ def getAuthKeysFile(IP, port):
     _, _, engineWebCACert = certPaths('')
     data = None
     for key in REMOTE_SSH_KEY_FILE:
-        tmp = getRemoteFile(IP, port, key,
-                   timeout=HTTP_TIMEOUT, certPath=engineWebCACert)
-        if tmp != None and validateSSHKey(tmp):
+        tmp = getRemoteFile(IP, port, key, timeout=HTTP_TIMEOUT,
+                            certPath=engineWebCACert)
+        if tmp is not None and validateSSHKey(tmp):
             data = tmp
             break
 
     return data
+
 
 def addSSHKey(path, strKey):
     resKeys = []
 
     try:
         for key in file(path):
-            if not key.endswith('\n'): # make sure we have complete lines
+            if not key.endswith('\n'):  # make sure we have complete lines
                 key += '\n'
-            if key != '\n' and not key.endswith(" ovirt-engine\n") or key.startswith("#"):
+            if key != '\n' and not key.endswith(" ovirt-engine\n") or \
+                    key.startswith("#"):
                 resKeys.append(key)
     except IOError:
         logging.debug("Failed to read %s", path)
@@ -695,6 +741,7 @@ def addSSHKey(path, strKey):
         open(tmpFilePath, 'w').write(''.join(resKeys))
         os.rename(tmpFilePath, path)
 
+
 def silentRestoreCon(path):
     """silently ignore restorecon exceptios, when SELinux is disabled"""
     import selinux
@@ -703,13 +750,16 @@ def silentRestoreCon(path):
     except:
         logging.error('restorecon %s failed', path, exc_info=True)
 
+
 def validateSSHKey(strKey):
     """Check that the given string is a valid SSH public key"""
     if SSH_PUBLIC_KEY_RE.match(strKey) is None:
-        logging.debug("validateSSHKey: the string \"%s\" is not a valid SSH key" % strKey)
+        logging.debug("validateSSHKey: the string \"%s\" is not a valid SSH "
+                      "key" % strKey)
         return False
     else:
         return True
+
 
 def handleSSHKey(strKey):
     """
@@ -751,9 +801,10 @@ def handleSSHKey(strKey):
     logging.debug('handleSSHKey end')
     return fReturn
 
-#############################################################################################################
+
+###############################################################################
 # Host time functions.
-#############################################################################################################
+###############################################################################
 
 def setHostTime(VDCTime):
     logging.debug('setHostTime start.')
@@ -767,32 +818,39 @@ def setHostTime(VDCTime):
         try:
             ttp = time.strptime(VDCTime, '%Y-%m-%dT%H:%M:%S')
         except ValueError, e:
-            logging.debug("setHostTime: Failed to parse @ENGINENAME@ time. message= " + str(e))
+            logging.debug("setHostTime: Failed to parse @ENGINENAME@ time. "
+                          "message= " + str(e))
             fReturn = False
 
         if fReturn:
-            out, err, rc = _logExec([EX_HWCLOCK, "--set", "--utc",
-                time.strftime('--date=%Y-%m-%d %H:%M:%S UTC', ttp)])
+            out, err, rc = _logExec(
+                [EX_HWCLOCK, "--set", "--utc",
+                 time.strftime('--date=%Y-%m-%d %H:%M:%S UTC', ttp)])
             if rc:
-                logging.debug("setHostTime: Failed to set hwclock time. out=" + out + "\nerr=" + str(err) + "\nrc=" + str(rc))
+                logging.debug("setHostTime: Failed to set hwclock time. out=" +
+                              out + "\nerr=" + str(err) + "\nrc=" + str(rc))
                 fReturn = False
 
         if fReturn:
             out, err, rc = _logExec([EX_HWCLOCK, "-s"])
             if rc:
-                logging.debug("setHostTime: Failed to sync hwclock time to host. out=" + out + "\nerr=" + str(err) + "\nrc=" + str(rc))
+                logging.debug("setHostTime: Failed to sync hwclock time to "
+                              "host. out=" + out + "\nerr=" + str(err) +
+                              "\nrc=" + str(rc))
                 fReturn = False
 
     logging.debug('setHostTime end. Return:' + str(fReturn))
     return fReturn
 
-#############################################################################################################
+
+###############################################################################
 # Update configuration file functions.
-#############################################################################################################
+###############################################################################
 
 def _updateFileLine(fileName, key, value, insertIfMissing=False):
     """
-        Update a line of a configuration file. This function will replace the whole line!
+        Update a line of a configuration file. This function will replace the
+        whole line!
         The function returns success is replacment took place.
     """
     import stat
@@ -814,10 +872,14 @@ def _updateFileLine(fileName, key, value, insertIfMissing=False):
         old_file = open(fileName)
         #Iterate over the existing file, while replacing if needed.
         for line in old_file:
-            #Note: the line below must not have spaces before or after the '=', since it'll fail bash scripts !
-            newLine = re.sub('^[#\s]*%s\s*=.*' % key, '%s=%s' % (key, value), line)
-            if re.match('^%s=%s$' % (re.escape(key), re.escape(value)), newLine):
-                logging.debug("_updateFileLine: replacing " + str(line) + " with: " + newLine)
+            # Note: the line below must not have spaces before or after the '='
+            #       since it'll fail bash scripts !
+            newLine = re.sub('^[#\s]*%s\s*=.*' % key, '%s=%s' % (key, value),
+                             line)
+            if re.match('^%s=%s$' % (re.escape(key), re.escape(value)),
+                        newLine):
+                logging.debug("_updateFileLine: replacing " + str(line) +
+                              " with: " + newLine)
                 fReplaced = True
                 line = newLine
             new_file.write(line)
@@ -837,15 +899,17 @@ def _updateFileLine(fileName, key, value, insertIfMissing=False):
             old_file.close()
         except:
             pass
-        logging.error("_updateFileLine: error replacing " + str(key) + "=" + str(value))
+        logging.error("_updateFileLine: error replacing " + str(key) + "=" +
+                      str(value))
         logging.error(traceback.format_exc())
 
     logging.debug("_updateFileLine: return: " + str(fReplaced))
     return fReplaced
 
-#############################################################################################################
+
+###############################################################################
 # Host bridge functions.
-#############################################################################################################
+###############################################################################
 
 def _getBridgeParams(bridgeName):
     import shlex
@@ -870,13 +934,16 @@ def _getBridgeParams(bridgeName):
                 try:
                     line = ''.join(shlex.split(line))
                 except:
-                    logging.warn("_getBridgeParams: failed to read parse line %s", line)
+                    logging.warn("_getBridgeParams: failed to read parse line "
+                                 "%s", line)
                 lstReturn.append(line)
     except Exception, e:
-        logging.error("_getBridgeParams: failed to read params of file " + fileName + ".\n Error:" + str(e))
+        logging.error("_getBridgeParams: failed to read params of file " +
+                      fileName + ".\n Error:" + str(e))
         lstReturn = []
 
     return lstReturn, fIsBridgeDevice
+
 
 def _getOvirtBridgeParams(mgtBridge):
     """
@@ -899,6 +966,7 @@ def _getOvirtBridgeParams(mgtBridge):
         logging.error(traceback.format_exc())
 
     return vlan, bonding, nic
+
 
 def _getRHELBridgeParams(mgtIface, bridgeName=None):
     """
@@ -936,6 +1004,7 @@ def _getRHELBridgeParams(mgtIface, bridgeName=None):
 
     return vlan, bonding, nic
 
+
 def setSafeVdsmNetworkConfig():
     """consider current network configuration as safe and remove its backup"""
     if versionCompare(getOSVersion(), "6.0") < 0:
@@ -951,7 +1020,8 @@ def setSafeVdsmNetworkConfig():
 
 def makeBridge(vdcName, vdsmDir, bridgeName=None):
     """
-        Create (for RHEL) or rename (oVirt default bridge) to @VDSMBRIDGE@ bridge.
+        Create (for RHEL) or rename (oVirt default bridge) to @VDSMBRIDGE@
+        bridge.
     """
     logging.debug('makeBridge begin.')
     if bridgeName is None:
@@ -974,16 +1044,19 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
     mgtIface = _getMGTIface(vdcName)
     if mgtIface is None:
         fReturn = False
-        logging.debug("makeBridge got mgtIface None. This is a routing or resolution issue.")
+        logging.debug("makeBridge got mgtIface None. This is a routing or "
+                      "resolution issue.")
     else:
         mgtBridge = mgtIface
         if fIsOvirt and mgtIface.startswith('br'):
-            mgtIface = mgtIface.replace("br", "", 1) #oVirt naming convention: br + iface
+            # oVirt naming convention: br + iface
+            mgtIface = mgtIface.replace("br", "", 1)
 
     if fReturn:
         # Read params from current bridge (bootproto, etc)
         Iface = mgtIface
-        if fIsOvirt: Iface = mgtBridge
+        if fIsOvirt:
+            Iface = mgtBridge
         lstBridgeOptions, fIsBridgeDevice = _getBridgeParams(Iface)
 
         if len(lstBridgeOptions) == 0:
@@ -993,37 +1066,48 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
             logging.error("makeBridge found existing bridge named: " + Iface)
             fReturn = False
         else:
-            logging.debug("makeBridge found the following bridge paramaters: " + str(lstBridgeOptions))
+            logging.debug("makeBridge found the following bridge paramaters: "
+                          + str(lstBridgeOptions))
             # No more handling GATEWAYDEV.
 
     if fReturn:
         if fIsOvirt:
             vlan, bonding, nic = _getOvirtBridgeParams(mgtBridge)
         else:
-            vlan, bonding, nic = _getRHELBridgeParams(mgtIface, bridgeName=bridgeName)
+            vlan, bonding, nic = _getRHELBridgeParams(mgtIface,
+                                                      bridgeName=bridgeName)
         fReturn = (nic is not None)
 
     #Delete existing bridge in oVirt
     if fReturn and fIsOvirt:
         try:
-            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_DEL), mgtBridge, vlan, bonding, nic])
+            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_DEL),
+                                      mgtBridge, vlan, bonding, nic])
             if ret:
-                if ret == 17: #ERR_BAD_BRIDGE
-                    logging.debug("makeBridge Ignoring error of del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+                if ret == 17:  # ERR_BAD_BRIDGE
+                    logging.debug("makeBridge Ignoring error of del existing "
+                                  "bridge. out=" + out + "\nerr=" + str(err) +
+                                  "\nret=" + str(ret))
                 else:
                     fReturn = False
-                    logging.debug("makeBridge Failed to del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+                    logging.debug("makeBridge Failed to del existing bridge. "
+                                  "out=" + out + "\nerr=" + str(err) +
+                                  "\nret=" + str(ret))
             else:
-                ovirtfunctions.ovirt_safe_delete_config(IFACE_CONFIG + mgtBridge)
+                ovirtfunctions.ovirt_safe_delete_config(IFACE_CONFIG +
+                                                        mgtBridge)
         except:
             fReturn = False
-            logging.debug("makeBridge Failed to del existing bridge. out=" + out + "\nerr=" + str(err) + "\nret=" + str(ret))
+            logging.debug("makeBridge Failed to del existing bridge. out=" +
+                          out + "\nerr=" + str(err) + "\nret=" + str(ret))
 
     #Add bridge
     if fReturn:
         try:
             lstBridgeOptions.append('blockingdhcp=true')
-            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_ADD), bridgeName, vlan, bonding, nic] + lstBridgeOptions)
+            out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_ADD),
+                                      bridgeName, vlan, bonding, nic]
+                                     + lstBridgeOptions)
             if ret:
                 raise Exception('Failed to add bridge')
         except:
@@ -1054,9 +1138,10 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
     logging.debug('makeBridge return.')
     return fReturn
 
-#############################################################################################################
+
+###############################################################################
 # Host package / rpm functions.
-#############################################################################################################
+###############################################################################
 
 def getPackageInfo(pckg_type, rpm_name, op):
     """
@@ -1077,6 +1162,7 @@ def getPackageInfo(pckg_type, rpm_name, op):
         strReturn = "OK"
 
     return strReturn, out
+
 
 def versionCompare(pkg1, pkg2):
     """
@@ -1102,17 +1188,19 @@ def versionCompare(pkg1, pkg2):
 
     return nReturn
 
+
 def yumCleanCache():
     """
         Make sure that yum cache is valid. This function makes yum revalidate
         the cache for each repo next time it is used.
     """
     fReturn = False
-    out, err, ret = _logExec([EX_YUM, "clean", "expire-cache"] )
+    out, err, ret = _logExec([EX_YUM, "clean", "expire-cache"])
     if not ret:
         fReturn = True
 
     return fReturn
+
 
 def yumInstallDeleteUpdate(pckgName, action, args=None):
     """
@@ -1132,6 +1220,7 @@ def yumInstallDeleteUpdate(pckgName, action, args=None):
 
     return _logExec(execFunc)
 
+
 def installAndVerify(pckgType, pckgName, action, args=None):
     """
         This function uses other module functions to install or update
@@ -1148,6 +1237,7 @@ def installAndVerify(pckgType, pckgName, action, args=None):
 
     return fReturn, msg
 
+
 def yumListPackages(pkgName):
     """
         Returns a list of available packages exists in yum's db.
@@ -1155,8 +1245,9 @@ def yumListPackages(pkgName):
     import yum
 
     my = yum.YumBase()
-    my.preconf.debuglevel = 0 # Remove yum noise
+    my.preconf.debuglevel = 0  # Remove yum noise
     return my.pkgSack.searchNevra(name=pkgName)
+
 
 def yumSearchVersion(pkgName, ver):
     "Return True if package exists in yum's db with the given version or higer"
@@ -1169,9 +1260,10 @@ def yumSearchVersion(pkgName, ver):
     else:
         return False
 
-#############################################################################################################
+
+###############################################################################
 # Host PKI functions.
-#############################################################################################################
+###############################################################################
 
 def _tsDir(confFile):
     import ConfigParser
@@ -1184,16 +1276,19 @@ def _tsDir(confFile):
         tsDir = '/etc/pki/vdsm'
     return tsDir
 
+
 def certPaths(confFile, fAddID=False):
     tsDir = _tsDir(confFile)
 
     VDSMCERT = tsDir + "/certs/vdsmcert.pem"
     if fAddID:
-        VDSMCERT = tsDir + "/certs/vdsm-" + os.environ.get("SSH_CONNECTION").split()[2] + "-cert.pem"
+        VDSMCERT = tsDir + "/certs/vdsm-" + \
+            os.environ.get("SSH_CONNECTION").split()[2] + "-cert.pem"
     CACERT = tsDir + "/certs/cacert.pem"
     engineWebCACert = tsDir + "/certs/engine_web_ca.pem"
 
     return CACERT, VDSMCERT, engineWebCACert
+
 
 def pkiCleanup(key, cert):
     """
@@ -1211,6 +1306,7 @@ def pkiCleanup(key, cert):
         else:
             os.unlink(cert)
 
+
 def _linkOrPersist(src, dst):
     # we have to copy the key and cert since ovirt currently cannot persist
     # softlinks
@@ -1225,6 +1321,7 @@ def _linkOrPersist(src, dst):
         except:
             pass
         os.symlink(src, dst)
+
 
 def instCert(random_num, confFile):
     """ Install certificate.
@@ -1249,12 +1346,12 @@ def instCert(random_num, confFile):
         logging.debug("instCert: install new certificates")
         # install .pem files
         shutil.copy(cert_pemfile, VDSMCERT)
-        os.chown (VDSMCERT, nUID, nGID)
-        os.chmod (VDSMCERT, 0444)
+        os.chown(VDSMCERT, nUID, nGID)
+        os.chmod(VDSMCERT, 0444)
         if not os.path.exists(CACERT):
             shutil.copy(ca_pemfile, CACERT)
-        os.chown (CACERT, nUID, nGID)
-        os.chmod (CACERT, 0444)
+        os.chown(CACERT, nUID, nGID)
+        os.chmod(CACERT, 0444)
 
         if isOvirt():
             # save the certificates
@@ -1293,6 +1390,7 @@ def instCert(random_num, confFile):
 
     return fReturn
 
+
 def getSSLSocket(sock, certPath=None):
     """
         Returns ssl socket according to python version
@@ -1308,6 +1406,7 @@ def getSSLSocket(sock, certPath=None):
         # in python 2.4 importing ssl will fail
         ssl = socket.ssl(sock)
         return httplib.FakeSocket(sock, ssl)
+
 
 def createCSR(orgName, subject, random_num, tsDir, vdsmKey):
     template = """
@@ -1337,8 +1436,8 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey):
     # create private key
     _logExec([EX_OPENSSL, "genrsa", "-out", vdsmKey, str(DEF_KEY_LEN)])
     # create request for certificate
-    execfn = [EX_OPENSSL, "req", "-new", "-key", vdsmKey,
-                "-config", req_conffile, "-out", cert_reqfile]
+    execfn = [EX_OPENSSL, "req", "-new", "-key", vdsmKey, "-config",
+              req_conffile, "-out", cert_reqfile]
     _logExec(execfn)
     if versionCompare(getOSVersion(), "6.0") < 0:
         gGroup = grp.getgrnam(VDSM_GROUP)
@@ -1347,17 +1446,19 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey):
     nGID = gGroup.gr_gid
     uUserInfo = pwd.getpwnam(VDSM_USER)
     nUID = uUserInfo.pw_uid
-    os.chown (vdsmKey, nUID, nGID)
-    os.chmod (vdsmKey, 0440)
+    os.chown(vdsmKey, nUID, nGID)
+    os.chmod(vdsmKey, 0440)
 
     if isOvirt():
         # save the certificates
         ovirtfunctions.ovirt_store_config(vdsmKey)
 
+
 def _cpuid(func):
     f = file('/dev/cpu/0/cpuid')
     f.seek(func)
     return struct.unpack('IIII', f.read(16))
+
 
 def _prdmsr(cpu, index):
     f = file("/dev/cpu/%d/msr" % cpu)
@@ -1367,19 +1468,23 @@ def _prdmsr(cpu, index):
     except:
         return -1
 
+
 def _cpu_has_vmx_support():
     eax, ebx, ecx, edx = _cpuid(1)
     # CPUID.1:ECX.VMX[bit 5] -> VT
     return ecx & (1 << 5) != 0
+
 
 def _vmx_enabled_by_bios():
     MSR_IA32_FEATURE_CONTROL = 0x3a
     MSR_IA32_FEATURE_CONTROL_LOCKED = 0x1
     MSR_IA32_FEATURE_CONTROL_VMXON_ENABLED = 0x4
 
-    msr = _prdmsr(0, MSR_IA32_FEATURE_CONTROL);
+    msr = _prdmsr(0, MSR_IA32_FEATURE_CONTROL)
     return (msr & (MSR_IA32_FEATURE_CONTROL_LOCKED |
-                   MSR_IA32_FEATURE_CONTROL_VMXON_ENABLED)) != MSR_IA32_FEATURE_CONTROL_LOCKED
+                   MSR_IA32_FEATURE_CONTROL_VMXON_ENABLED)) != \
+        MSR_IA32_FEATURE_CONTROL_LOCKED
+
 
 def _cpu_has_svm_support():
     SVM_CPUID_FEATURE_SHIFT = 2
@@ -1393,6 +1498,7 @@ def _cpu_has_svm_support():
     if not (ecx & (1 << SVM_CPUID_FEATURE_SHIFT)):
         return 0
     return 1
+
 
 def _svm_enabled_by_bios():
     SVM_VM_CR_SVM_DISABLE = 4
@@ -1432,6 +1538,7 @@ def cpuVendorID():
                 return 'IBM_POWER'
     return ''
 
+
 def virtEnabledInCpuAndBios():
     try:
         vendor = cpuVendorID()
@@ -1439,14 +1546,14 @@ def virtEnabledInCpuAndBios():
 
         if vendor == 'GenuineIntel':
             bios_en = _vmx_enabled_by_bios()
-            has_cpu = _cpu_has_vmx_support();
+            has_cpu = _cpu_has_vmx_support()
         elif vendor == 'AuthenticAMD':
-            bios_en = _svm_enabled_by_bios();
-            has_cpu = _cpu_has_svm_support();
+            bios_en = _svm_enabled_by_bios()
+            has_cpu = _cpu_has_svm_support()
         elif vendor == 'IBM_POWER':
             if _check_kvm_support_on_power():
-                bios_en = 1;
-                has_cpu = 1;
+                bios_en = 1
+                has_cpu = 1
         else:
             return False
 
@@ -1456,9 +1563,10 @@ def virtEnabledInCpuAndBios():
         logging.error(traceback.format_exc())
         return False
 
+
 def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
-    logging.debug("getRemoteFile start. IP = %s port = %s fileName = \"%s\""
-            % (IP, port, fileName))
+    logging.debug("getRemoteFile start. IP = %s port = %s fileName = \"%s\"" %
+                  (IP, port, fileName))
     data = None
     response = None
     conn = None
@@ -1478,7 +1586,7 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
         response = conn.getresponse()
     except:
         logging.debug("%s failed in HTTPS. Retrying using HTTP.", fileName,
-                exc_info=True)
+                      exc_info=True)
         strPort = ":"
         if port is None:
             strPort += "80"
@@ -1491,17 +1599,18 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
             response = conn.getresponse()
         except:
             logging.error("Failed to fetch %s using http.", fileName,
-                    exc_info=True)
+                          exc_info=True)
             fOK = False
     else:
         logging.debug("%s status: %s reason: %s",
                       fileName, str(response.status), response.reason)
 
-    if response == None or response.status != 200:
+    if response is None or response.status != 200:
         status = ""
-        if response != None:
+        if response is not None:
             status = str(response.status)
-        if conn != None: conn.close()
+        if conn is not None:
+            conn.close()
         fOK = False
         logging.error("Failed to fetch %s status %s", fileName, status)
 
@@ -1512,10 +1621,12 @@ def getRemoteFile(IP, port, fileName, timeout=None, certPath=None):
             except:
                 logging.error("Failed to read %s", fileName, exc_info=True)
         finally:
-            if conn != None: conn.close()
+            if conn is not None:
+                conn.close()
 
     logging.debug('getRemoteFile end.')
     return data
+
 
 def _nodeBackupCerts(certs):
     dt = datetime.datetime.now()
@@ -1524,7 +1635,7 @@ def _nodeBackupCerts(certs):
     for pemFile in certs:
         if os.path.exists(pemFile):
             certName = os.path.basename(pemFile)
-            dirName  = os.path.dirname(pemFile)
+            dirName = os.path.dirname(pemFile)
 
             bkpCertName = dirName + "/bkp-" + backupTime + '_' + certName
 
@@ -1533,6 +1644,7 @@ def _nodeBackupCerts(certs):
             os.chown(bkpCertName, st.st_uid, st.st_gid)
             ovirtfunctions.ovirt_store_config(bkpCertName)
 
+
 def nodeCleanup():
     if isOvirt():
         CACERT, VDSMCERT, engineWebCACert = certPaths('')
@@ -1540,6 +1652,7 @@ def nodeCleanup():
         _nodeBackupCerts([CACERT, VDSMCERT, engineWebCACert])
         if os.path.exists(engineWebCACert):
             ovirtfunctions.ovirt_safe_delete_config(engineWebCACert)
+
 
 def getChainFromSSL(host):
     """Return certificate from SSL handlshake
@@ -1566,6 +1679,7 @@ def getChainFromSSL(host):
     def verify(ssl_ctx_ptr, x509_ptr, errnum, errdepth, ok):
         chain[errdepth] = X509.X509(x509=x509_ptr).as_pem()
         return True
+
     def check_ignore(*args, **kw):
         return True
 
@@ -1584,6 +1698,7 @@ def getChainFromSSL(host):
     # return sorted by depth
     # first is end certificate
     return [chain[depth] for depth in sorted(chain.keys())]
+
 
 def getRhevmCert(IP, port):
     """Aquire CA certificate from SSL handshake
@@ -1611,40 +1726,41 @@ def getRhevmCert(IP, port):
         )
         return False
 
+
 def generateFingerPrint(path):
     fp = ''
     cmd = [EX_OPENSSL, 'x509', '-fingerprint', '-in', path]
     out, err, rc = _logExec(cmd)
     if rc is 0:
         try:
-            fp = filter(lambda l: 'Fingerprint' in l, out.split())[0].split('=')[1]
+            fp = filter(lambda l: 'Fingerprint' in
+                        l, out.split())[0].split('=')[1]
         except Exception:
             logging.error("Failed generating finger print for %s", path,
-                    exc_info=True)
+                          exc_info=True)
     else:
         logging.error("Command %s failed with return value %d",
                       ' '.join(cmd), rc)
 
     return fp
 
+
 def parseOptions():
     parser = OptionParser()
 
-    parser.add_option("-s", "--server-address",
-        action="store", dest="serverIp", type="string", default=None,
-        help="IP address of @ENGINENAME@")
-    parser.add_option("-p", "--server-port",
-        action="store", dest="serverPort", default=None, type="string",
-        help="Port of @ENGINENAME@")
+    parser.add_option("-s", "--server-address", action="store",
+                      dest="serverIp", type="string", default=None,
+                      help="IP address of @ENGINENAME@")
+    parser.add_option("-p", "--server-port", action="store", dest="serverPort",
+                      default=None, type="string", help="Port of @ENGINENAME@")
 
     parser.add_option("-d", "--download-rhevm-cert", action="store_true",
                       default=False, dest="downloadRhevmCert",
                       help="Download certificate from @ENGINENAME@")
     parser.add_option("-f", "--fingerprint", action="store",
-            dest="fingerPrint", default=None, type="string",
-            help="""
-            The fingerprint to compare to the fingerprint of the downloaded
-            certificate""")
+                      dest="fingerPrint", default=None, type="string",
+                      help="The fingerprint to compare to the fingerprint of "
+                      "the downloaded certificate")
 
     parser.add_option("-c", "--node-cleanup", action="store_true",
                       default=False, dest="nodeCleanup",
@@ -1653,6 +1769,7 @@ def parseOptions():
     options, args = parser.parse_args()
 
     return (options, args)
+
 
 def main():
     options, args = parseOptions()
@@ -1672,7 +1789,8 @@ def main():
         if options.fingerPrint:
             fp = generateFingerPrint(engineWebCACert)
             if options.fingerPrint != fp:
-                print 'Expected fingerprint %s is different from recieved fingerprint %s' % (options.fingerPrint, fp)
+                print 'Expected fingerprint %s is different from recieved ' \
+                    'fingerprint %s' % (options.fingerPrint, fp)
                 return -1
 
         if isOvirt():
@@ -1682,8 +1800,10 @@ def main():
     print 'Missing arguments'
     return -1
 
+
 def getBootstrapInterfaceVersion():
     return bootstrap_interface_version
+
 
 def setBootstrapInterfaceVersion(v):
     global bootstrap_interface_version

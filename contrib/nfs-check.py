@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 
 import os
 import sys
@@ -24,31 +24,34 @@ import signal
 import socket
 
 # Constants
-TIMEOUT_NFS = 10 # seconds
+TIMEOUT_NFS = 10  # seconds
 
-EXPORTS     = "/etc/exports"
-MOUNT       = "/bin/mount"
-UMOUNT      = "/bin/umount"
-SU          = "/bin/su"
+EXPORTS = "/etc/exports"
+MOUNT = "/bin/mount"
+UMOUNT = "/bin/umount"
+SU = "/bin/su"
 
-UID         = 36
-GUID        = 36
+UID = 36
+GUID = 36
 
-USER        = "vdsm"
-GROUP       = "kvm"
+USER = "vdsm"
+GROUP = "kvm"
 
-TESTFILE    = "vdsmTest"
+TESTFILE = "vdsmTest"
+
 
 def usage():
-    print "Usage: " +  sys.argv[0] + " server:/target"
+    print "Usage: " + sys.argv[0] + " server:/target"
     print "nfs-check is a python script to validate nfs targets to use" \
-            " with oVirt project."
+        " with oVirt project."
     print "Some operations includes: mount the nfs target," \
-            " create a file as %s:%s and remove it." % (USER, GROUP)
+        " create a file as %s:%s and remove it." % (USER, GROUP)
     sys.exit(0)
+
 
 class Alarm(Exception):
     pass
+
 
 class Nfs(object):
     def handler(self, signum, frame):
@@ -57,28 +60,30 @@ class Nfs(object):
     def mount(self, server, target, pathName):
         cmd = "%s:%s" % (server, target)
         process = subprocess.Popen([MOUNT, "-t", "nfs", cmd, pathName],
-                shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                   shell=False, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
 
         signal.signal(signal.SIGALRM, self.handler)
         signal.alarm(TIMEOUT_NFS)
 
-        print "Current hostname: %s - IP addr %s" % (self.getHostName(), self.getLocalIP())
+        print "Current hostname: %s - IP addr %s" % (self.getHostName(),
+                                                     self.getLocalIP())
         print "Trying to %s -t nfs %s..." % (MOUNT, cmd)
 
         try:
-            errorMsg  = process.communicate()[1].strip()
+            errorMsg = process.communicate()[1].strip()
             signal.alarm(0)
         except Alarm:
             print "Timeout, cannot mount the nfs! Please check the status " \
-                    "of NFS service or/and the Firewall settings!"
+                "of NFS service or/and the Firewall settings!"
             self.exitCode(-1)
 
         # get return from mount cmd
         ret = process.poll()
 
         # Let`s check if the NFS Server is local machine
-        localIP      = self.getLocalIP()
-        serverIP     = self.getIP(server)
+        localIP = self.getLocalIP()
+        serverIP = self.getIP(server)
         localMachine = False
 
         # check if server (argument) IP address is the same for
@@ -87,7 +92,7 @@ class Nfs(object):
             if localIP == ip:
                 localMachine = True
 
-        if ret != 0 and localMachine == True:
+        if ret != 0 and localMachine:
             ret = self.checkLocalServer(ret, errorMsg, target)
         elif ret != 0:
             print "return = %s error %s" % (ret, errorMsg)
@@ -101,16 +106,16 @@ class Nfs(object):
             print "Access Denied: Cannot mount nfs!"
             if not os.path.isfile(EXPORTS):
                 print EXPORTS + " doesn`t exist, please create one" \
-                        " and start nfs server!"
+                    " and start nfs server!"
             else:
                 targetFound = False
                 with open(EXPORTS, 'r') as f:
                     for line in f.readlines():
                         if target in line.split(" ")[0]:
                             targetFound = True
-                    if targetFound == False:
+                    if targetFound:
                         print "Please include %s into %s and restart" \
-                                " nfs server!" % (target, EXPORTS)
+                            " nfs server!" % (target, EXPORTS)
 
         elif "does not exist" in errorMsg:
             print "return = %s error msg = %s" % (ret, errorMsg)
@@ -143,7 +148,7 @@ class Nfs(object):
             addr = socket.gethostbyname(socket.gethostname())
         except socket.gaierror, err:
             print "INFO: Cannot resolve hostname" \
-                    ": %s %s" % (socket.gethostname(), err)
+                ": %s %s" % (socket.gethostname(), err)
 
         return addr
 
@@ -155,20 +160,23 @@ class Nfs(object):
 
         try:
             if pwd.getpwnam(USER).pw_uid != UID:
-                print "WARNING: %s user has UID [%s] which is different from " \
-                   "the required [%s]" % (USER, pwd.getpwnam(USER).pw_uid, UID)
+                print "WARNING: %s user has UID [%s] which is different from "\
+                    "the required [%s]" % (USER, pwd.getpwnam(USER).pw_uid,
+                                           UID)
         except:
             print "Cannot find %s user! You must have %s user created!" % \
-                        (USER, USER)
+                (USER, USER)
             ret = -1
 
         try:
             if grp.getgrnam(GROUP).gr_gid != GUID:
-                print "WARNING: %s group has GUID [%s] which is different from " \
-                   "the required [%s]" % (GROUP, grp.getgrnam(GROUP).gr_gid, GUID)
+                print "WARNING: %s group has GUID [%s] which is different " \
+                    "from the required [%s]" % (GROUP,
+                                                grp.getgrnam(GROUP).gr_gid,
+                                                GUID)
         except:
             print "Cannot find %s group! The system must have %s group" % \
-                           (GROUP, GROUP)
+                (GROUP, GROUP)
             ret = -1
 
         if ret != -1:
@@ -184,14 +192,14 @@ class Nfs(object):
                 if ret != 0:
                     if "Permission denied" in errorMsg:
                         print "Permission denied: %s user as %s cannot " \
-                                "create a file into %s" % (USER, GROUP, pathName)
-                        print "Suggestions: please verify the permissions of " \
-                                "target (chmod or/and selinux booleans)"
+                            "create a file into %s" % (USER, GROUP, pathName)
+                        print "Suggestions: please verify the permissions of "\
+                            "target (chmod or/and selinux booleans)"
                         print "return = %s error msg = %s" % (ret, errorMsg)
                         ret = -1
                     elif "Read-only file system" in errorMsg:
-                        print "Please make sure the target NFS contain the read " \
-                                "and WRITE access"
+                        print "Please make sure the target NFS contain the " \
+                            "read and WRITE access"
                         print "return = %s error msg = %s" % (ret, errorMsg)
                         ret = -1
                     else:
@@ -210,8 +218,8 @@ class Nfs(object):
                         # get the return from the command
                         ret = process.poll()
                         if ret != 0:
-                            print "Error removing %s file, error = %s " \
-                                    % (TESTFILE, errorMsg)
+                            print "Error removing %s file, error = %s " % \
+                                (TESTFILE, errorMsg)
                             ret = -1
 
         return ret
@@ -220,13 +228,14 @@ class Nfs(object):
         ret = 0
 
         process = subprocess.Popen([SU, USER, "-c", cmd, "-s", "/bin/bash"],
-                shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                   shell=False, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
 
         signal.signal(signal.SIGALRM, self.handler)
         signal.alarm(TIMEOUT_NFS)
 
         try:
-            errorMsg  = process.communicate()[1]
+            errorMsg = process.communicate()[1]
             signal.alarm(0)
         except Alarm:
             print "Timeout, cannot execute: %s" % cmd
@@ -235,8 +244,9 @@ class Nfs(object):
         return process, errorMsg, ret
 
     def umount(self, pathName):
-        process = subprocess.Popen([UMOUNT, pathName],
-                shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen([UMOUNT, pathName], shell=False,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
 
         signal.signal(signal.SIGALRM, self.handler)
         signal.alarm(TIMEOUT_NFS)
@@ -262,7 +272,7 @@ if __name__ == "__main__":
         print "You must be root to run this script."
         sys.exit(-1)
 
-    if len(sys.argv) <> 2 or ":" not in sys.argv[1]:
+    if len(sys.argv) != 2 or ":" not in sys.argv[1]:
         usage()
 
     nfsData = sys.argv[1].split(":")
@@ -284,7 +294,7 @@ if __name__ == "__main__":
         if ret != 0:
             print "Status of tests [Failed]"
             print "For more troubleshooting tips, visit " \
-                  "http://www.ovirt.org/wiki/Troubleshooting_NFS_Storage_Issues"
+                "http://www.ovirt.org/wiki/Troubleshooting_NFS_Storage_Issues"
         else:
             print "Status of tests [OK]"
 

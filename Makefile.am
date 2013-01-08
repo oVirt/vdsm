@@ -48,7 +48,7 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	tests \
-	vds_bootstrap/miniyum.py \
+	vds_bootstrap \
 	vdsm-tool \
 	vdsm/*.py \
 	vdsm/*.py.in \
@@ -62,7 +62,7 @@ PEP8_WHITELIST = \
 	vdsm_hooks/scratchpad \
 	vdsm_hooks/sriov/before_vm_start.py \
 	vdsm_hooks/vhostmd \
-	vdsm_reg/createDaemon.py \
+	vdsm_reg \
 	$(NULL)
 
 PEP8_BLACKLIST = config.py,constants.py

@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
@@ -31,9 +31,9 @@ import deployUtil
 VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
 
 try:
-    LOGDIR=os.environ["OVIRT_LOGDIR"]
+    LOGDIR = os.environ["OVIRT_LOGDIR"]
 except KeyError:
-    LOGDIR=tempfile.gettempdir()
+    LOGDIR = tempfile.gettempdir()
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(module)s '
                            '%(lineno)d %(message)s',
@@ -41,6 +41,7 @@ logging.basicConfig(level=logging.DEBUG,
                     filename='%s/vdsm-bootstrap-%s-%s.log' %
                              (LOGDIR, "phase2", strftime("%Y%m%d%H%M%S")),
                     filemode='w')
+
 
 def Reboot(act=1):
     """
@@ -50,22 +51,25 @@ def Reboot(act=1):
     action = 'Reboot'
     message = 'Rebooting machine'
 
-    if (act==1):
+    if (act == 1):
         deployUtil.reboot()
     else:
         action = 'Restart'
         message = 'Restarting vdsmd service'
         deployUtil.setService("vdsmd", "restart")
 
-    result = "<BSTRAP component='" + action + "' status='OK' message='" + message + "' />"
+    result = "<BSTRAP component='" + action + "' status='OK' message='" + \
+        message + "' />"
     logging.debug(result)
     print result
     sys.stdout.flush()
 
     logging.debug("Reboot: ended.")
 
+
 def main():
-    """Usage: vds_bootstrap_complete.py  [-c vds_config_str] [-v <ver>] [-V] [-g] <random_num> [reboot]"""
+    """Usage: vds_bootstrap_complete.py  [-c vds_config_str] [-v <ver>] [-V]
+              [-g] <random_num> [reboot]"""
     try:
         vds_config_str = None
         #FIXME: these flags are added for near future use
@@ -76,15 +80,18 @@ def main():
             if o == "-v":
                 deployUtil.setBootstrapInterfaceVersion(int(v))
             if o == "-c":
-                # it should looks like: 'ssl=true;ksm_nice=5;images=/images/irsd'
-                # without white spaces in it.
+                # it should looks like:
+                # 'ssl=true;ksm_nice=5;images=/images/irsd' without white
+                # spaces in it.
                 vds_config_str = v
             if o == "-V":
                 installVirtualizationService = False
             if o == "-g":
                 installGlusterService = True
 
-        logging.debug("installVirtualizationService = '%s', installGlusterService = '%s'"%(installVirtualizationService, installGlusterService))
+        logging.debug("installVirtualizationService = '%s', "
+                      "installGlusterService = '%s'" %
+                      (installVirtualizationService, installGlusterService))
         rnum = args[0]
     except:
         print main.__doc__
