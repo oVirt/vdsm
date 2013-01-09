@@ -93,6 +93,23 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     log = logging.getLogger('Storage.v3DomainConverter')
     log.debug("Starting conversion for domain %s", domain.sdUUID)
 
+    targetVersion = 3
+    currentVersion = domain.getVersion()
+
+    # For block domains if we're upgrading from version 0 we need to first
+    # upgrade to version 2 and then proceed to upgrade to version 3.
+    if domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
+        if currentVersion == 0:
+            log.debug("Upgrading domain %s from version %s to version 2",
+                      domain.sdUUID, currentVersion)
+            v2DomainConverter(repoPath, hostId, domain, isMsd)
+            currentVersion = domain.getVersion()
+
+        if currentVersion != 2:
+            log.debug("Unsupported conversion from version %s to version %s",
+                      currentVersion, targetVersion)
+            raise se.UnsupportedDomainVersion(currentVersion)
+
     if domain.getStorageType() in sd.FILE_DOMAIN_TYPES:
         log.debug("Setting permissions for domain %s", domain.sdUUID)
         domain.setMetadataPermissions()
@@ -268,17 +285,10 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                               "not critical since the volume might be in use",
                               imgUUID, exc_info=True)
 
-        targetVersion = 3
-        currentVersion = domain.getVersion()
         log.debug("Finalizing the storage domain upgrade from version %s to "
                   "version %s for domain %s", currentVersion, targetVersion,
                   domain.sdUUID)
-
-        if (currentVersion not in blockSD.VERS_METADATA_TAG
-                        and domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES):
-            __convertDomainMetadataToTags(domain, targetVersion)
-        else:
-            domain.setMetaParam(sd.DMDK_VERSION, targetVersion)
+        domain.setMetaParam(sd.DMDK_VERSION, targetVersion)
 
     except:
         if isMsd:

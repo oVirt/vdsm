@@ -503,7 +503,9 @@ class Volume(object):
             cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, size,
                             type2name(volFormat), type2name(preallocate),
                             volType, diskType, desc, LEGAL_VOL)
-            cls.newVolumeLease(metaId, sdUUID, volUUID)
+
+            if dom.hasVolumeLeases():
+                cls.newVolumeLease(metaId, sdUUID, volUUID)
 
         except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
