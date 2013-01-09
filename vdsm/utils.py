@@ -896,7 +896,7 @@ class CommandPath(object):
                     break
             else:
                 raise OSError(os.errno.ENOENT,
-                              os.strerror(os.errno.ENOENT), self.name)
+                              os.strerror(os.errno.ENOENT) + ': ' + self.name)
         return self._cmd
 
     def __repr__(self):
