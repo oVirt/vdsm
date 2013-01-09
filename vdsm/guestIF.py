@@ -61,10 +61,6 @@ class GuestAgent ():
     def __init__(self, socketName, channelListener, log, user='Unknown',
                  ips='', connect=True):
         self.log = log
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        # Save the socket's fileno because a call to fileno() fails if the
-        # socket is closed before GuestAgent.stop() is called.
-        self._sock_fd = self._sock.fileno()
         self._socketName = socketName
         self._stopped = True
         self.guestStatus = None
@@ -87,7 +83,7 @@ class GuestAgent ():
                 self.log.error("Failed to prepare vmchannel", exc_info=True)
             else:
                 self._channelListener.register(
-                    self._sock_fd,
+                    self._create,
                     self._connect,
                     self._onChannelRead,
                     self._onChannelTimeout,
@@ -95,20 +91,32 @@ class GuestAgent ():
 
     def _prepare_socket(self):
         supervdsm.getProxy().prepareVmChannel(self._socketName)
+
+    @staticmethod
+    def _create(self):
+        if hasattr(self, '_sock'):
+            self._sock.close()
+        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._sock.setblocking(0)
+        return self._sock.fileno()
 
     @staticmethod
     def _connect(self):
         ret = False
         try:
+            self._stopped = True
             self.log.debug("Attempting connection to %s", self._socketName)
-            if self._sock.connect_ex(self._socketName) == 0:
+            result = self._sock.connect_ex(self._socketName)
+            if result == 0:
                 self.log.debug("Connected to %s", self._socketName)
                 self._messageState = MessageState.NORMAL
                 self._clearReadBuffer()
                 self._forward('refresh')
                 self._stopped = False
                 ret = True
+            else:
+                self.log.debug("Failed to connect to %s with %d",
+                               self._socketName, result)
         except socket.error as err:
             self.log.debug("Connection attempt failed: %s", err)
         return ret
@@ -196,8 +204,16 @@ class GuestAgent ():
 
     def stop(self):
         self._stopped = True
-        self._channelListener.unregister(self._sock_fd)
-        self._sock.close()
+        try:
+            self._channelListener.unregister(self._sock.fileno())
+        except socket.error as e:
+            if e.args[0] == errno.EBADF:
+                # socket was already closed
+                pass
+            else:
+                raise
+        else:
+            self._sock.close()
 
     def isResponsive(self):
         return time.time() - self._agentTimestamp < 120
@@ -306,13 +322,22 @@ class GuestAgent ():
 
     @staticmethod
     def _onChannelRead(self):
+        result = True
         try:
             while not self._stopped:
                 data = self._sock.recv(2 ** 16)
-                self._handleData(data)
+                # The connection is broken when recv returns no data
+                # therefore we're going to set ourself to stopped state
+                if not data:
+                    self._stopped = True
+                    result = False
+                else:
+                    self._handleData(data)
         except socket.error as err:
-            if err.errno == errno.EWOULDBLOCK:
-                pass
+            if err.errno not in (errno.EWOULDBLOCK, errno.EAGAIN):
+                raise
+
+        return result
 
     def _parseLine(self, line):
         args = json.loads(line.decode('utf8'))

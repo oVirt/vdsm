@@ -21,7 +21,13 @@
 import threading
 import time
 import select
+import logging
+import errno
 from storage.misc import NoIntrPoll
+
+# How many times a reconnect should be performed before a cooldown will be
+# applied
+COOLDOWN_RECONNECT_THRESHOLD = 5
 
 
 class Listener(threading.Thread):
@@ -43,13 +49,34 @@ class Listener(threading.Thread):
 
     def _handle_event(self, fileno, event):
         """ Handle an epoll event occurred on a specific file descriptor. """
-        if (event & select.EPOLLIN):
+        reconnect = False
+        if (event & (select.EPOLLHUP | select.EPOLLERR)):
+            self.log.error("Received EPOLLHUP on fileno %d", fileno)
+            reconnect = True
+        elif (event & select.EPOLLIN):
             obj = self._channels[fileno]
+            obj['reconnects'] = 0
             try:
-                obj['read_cb'](obj['opaque'])
-                obj['read_time'] = time.time()
+                if obj['read_cb'](obj['opaque']):
+                    obj['read_time'] = time.time()
+                else:
+                    reconnect = True
             except:
                 self.log.exception("Exception on read callback.")
+
+        if reconnect:
+            self._prepare_reconnect(fileno)
+
+    def _prepare_reconnect(self, fileno):
+            self._epoll.unregister(fileno)
+            obj = self._channels.pop(fileno)
+            try:
+                fileno = obj['create_cb'](obj['opaque'])
+            except:
+                self.log.exception("An error occurred in the create callback "
+                                   "fileno: %d.", fileno)
+            else:
+                self._unconnected[fileno] = obj
 
     def _handle_timeouts(self):
         """
@@ -80,7 +107,7 @@ class Listener(threading.Thread):
             try:
                 self._epoll.unregister(fileno)
             except IOError as err:
-                if err.errno == 2:
+                if err.errno == errno.ENOENT:
                     self.log.debug("%s (unregister was called twice?)" % err)
                 else:
                     raise
@@ -101,17 +128,36 @@ class Listener(threading.Thread):
         Scan the unconnected channels and give the registered client a chance
         to connect their channel.
         """
+        now = time.time()
         for (fileno, obj) in self._unconnected.items():
             self.log.debug("Trying to connect fileno %d.", fileno)
+            if obj.get('cooldown'):
+                if (now - obj['cooldown_time']) >= self._timeout:
+                    obj['cooldown'] = False
+                    self.log.log(logging.TRACE, "Reconnect attempt fileno "
+                                 "%d", fileno)
+                else:
+                    continue
+
             try:
-                if obj['connect_cb'](obj['opaque']):
-                    self.log.debug("Connect fileno %d was succeed.", fileno)
+                success = obj['connect_cb'](obj['opaque'])
+            except:
+                self.log.exception("Exception on connect callback.")
+            else:
+                if success:
+                    self.log.debug("Connecting to fileno %d succeeded.",
+                                   fileno)
                     del self._unconnected[fileno]
                     self._channels[fileno] = obj
                     obj['read_time'] = time.time()
                     self._epoll.register(fileno, select.EPOLLIN)
-            except:
-                self.log.exception("Exception on connect callback.")
+                else:
+                    obj['reconnects'] = obj.get('reconnects', 0) + 1
+                    if obj['reconnects'] >= COOLDOWN_RECONNECT_THRESHOLD:
+                        obj['cooldown_time'] = time.time()
+                        obj['cooldown'] = True
+                        self.log.log(logging.TRACE, "fileno %d was moved into "
+                                     "cooldown", fileno)
 
     def _wait_for_events(self):
         """ Wait for an epoll event and handle channels' timeout. """
@@ -146,15 +192,17 @@ class Listener(threading.Thread):
         self.log.info("Setting channels' timeout to %d seconds.", seconds)
         self._timeout = seconds
 
-    def register(self, fileno, connect_callback, read_callback,
+    def register(self, create_callback, connect_callback, read_callback,
                  timeout_callback, opaque):
         """ Register a new file descriptor to the listener. """
+        fileno = create_callback(opaque)
         self.log.debug("Add fileno %d to listener's channels.", fileno)
         with self._update_lock:
             self._add_channels[fileno] = {
                 'connect_cb': connect_callback,
                 'read_cb': read_callback, 'timeout_cb': timeout_callback,
-                'opaque': opaque, 'read_time': 0.0,
+                'opaque': opaque, 'create_cb': create_callback,
+                'read_time': 0.0,
             }
 
     def unregister(self, fileno):
