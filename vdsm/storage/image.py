@@ -25,6 +25,7 @@ import uuid
 from contextlib import contextmanager
 
 import volume
+from vdsm import qemuImg
 from sdc import sdCache
 import sd
 import misc
@@ -618,10 +619,21 @@ class Image:
                 try:
                     dstVol = destDom.produceVolume(imgUUID=imgUUID,
                                                    volUUID=srcVol.volUUID)
-                    srcSize = srcVol.getVolumeSize(bs=1)
-                    misc.ddWatchCopy(srcVol.getVolumePath(),
-                                     dstVol.getVolumePath(),
-                                     vars.task.aborting, size=srcSize)
+                    srcFmt = srcVol.getFormat()
+                    if srcFmt == volume.RAW_FORMAT:
+                        srcFmtStr = volume.fmt2str(srcFmt)
+                        dstFmtStr = volume.fmt2str(dstVol.getFormat())
+                        self.log.debug("start qemu convert")
+                        qemuImg.convert(srcVol.getVolumePath(),
+                                        dstVol.getVolumePath(),
+                                        vars.task.aborting,
+                                        srcFmtStr, dstFmtStr)
+                    else:
+                        srcSize = srcVol.getVolumeSize(bs=1)
+                        misc.ddWatchCopy(srcVol.getVolumePath(),
+                                         dstVol.getVolumePath(),
+                                         vars.task.aborting,
+                                         size=srcSize)
                 except se.ActionStopped:
                     raise
                 except se.StorageException:

@@ -19,10 +19,11 @@
 #
 
 import re
+from storage import misc
 from utils import CommandPath, execCmd
 
 _qemuimg = CommandPath("qemu-img",
-                       "/usr/bin/qemu-img",  # Fedora, RHEL
+                       "/usr/bin/qemu-img",  # Fedora, EL6
                        )
 
 
@@ -98,3 +99,26 @@ def check(image, format=None):
 
     if rc != 0:
         raise QImgError(rc, out, err)
+
+
+def convert(srcVolPath, dstVolPath, stop, srcFmt=None, dstFmt=None):
+    cmd = [_qemuimg.cmd, "convert", "-t", "none"]
+
+    if srcFmt:
+        cmd.extend(("-f", srcFmt))
+
+    cmd.append(srcVolPath)
+
+    if dstFmt:
+        cmd.extend(("-O", dstFmt))
+
+    cmd.append(dstVolPath)
+
+    (rc, out, err) = misc.watchCmd(cmd, stop=stop,
+                                   nice=misc.NICENESS.LOW,
+                                   ioclass=misc.IOCLASS.IDLE)
+
+    if rc != 0:
+        raise QImgError(rc, out, err)
+
+    return (rc, out, err)
