@@ -21,6 +21,7 @@
 import tempfile
 import os
 import time
+from distutils.version import StrictVersion
 
 import testValidation
 from testrunner import VdsmTestCase as TestCaseBase
@@ -39,6 +40,14 @@ FILE_SIZE_MB = 100
 PART_SIZE_MB = 50
 FREE_SIZE = 50 * ONE_MB_IN_BYTES
 PART_END_SIZE = 47 * ONE_MB_IN_BYTES
+
+# parted 3.1 improves its support for loopback devices. The 'model' string
+# returned by libparted is updated to 'Loopback device'
+parted_version = StrictVersion(putils.parted.version()['libparted'])
+if parted_version >= StrictVersion('3.1'):
+    LOOP_DEVICE_MODEL = 'Loopback device'
+else:
+    LOOP_DEVICE_MODEL = ''
 
 
 class PartedUtilsTests(TestCaseBase):
@@ -79,7 +88,7 @@ class PartedUtilsTests(TestCaseBase):
 
     def _blank_dev_test(self):
         info = putils.getDevicePartedInfo(self.devPath)
-        self.assertFalse(info['model'])
+        self.assertEquals(info['model'], LOOP_DEVICE_MODEL)
         self.assertTrue(info['sectorSize'] >= 0)
         self.assertFalse(info['type'])
         self.assertFalse(info['partitions'])
@@ -99,7 +108,7 @@ class PartedUtilsTests(TestCaseBase):
         time.sleep(1)  # wait for syncing
 
         info = putils.getDevicePartedInfo(self.devPath)
-        self.assertFalse(info['model'])
+        self.assertEquals(info['model'], LOOP_DEVICE_MODEL)
         self.assertTrue(info['sectorSize'] >= 0)
         self.assertEquals(info['type'], 'gpt')
         self.assertTrue(info['freeSpaceRegions'][0][3] >= FREE_SIZE)
