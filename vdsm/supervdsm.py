@@ -35,19 +35,23 @@ _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()
 
 
-def __supervdsmServerPath(serverFile):
+def __supervdsmServerPath():
     base = os.path.dirname(__file__)
 
-    serverPath = os.path.join(base, serverFile)
-    if os.path.exists(serverPath):
-        return os.path.abspath(serverPath)
+    # serverFile can be both the py or pyc file. In oVirt node we don't keep
+    # py files. this method looks for one of the two to calculate the absolute
+    # path of supervdsmServer
+    for serverFile in ("supervdsmServer.py", "supervdsmServer.pyc"):
+        serverPath = os.path.join(base, serverFile)
+        if os.path.exists(serverPath):
+            return os.path.abspath(serverPath)
 
     raise RuntimeError("SuperVDSM Server not found")
 
 PIDFILE = os.path.join(constants.P_VDSM_RUN, "svdsm.pid")
 TIMESTAMP = os.path.join(constants.P_VDSM_RUN, "svdsm.time")
 ADDRESS = os.path.join(constants.P_VDSM_RUN, "svdsm.sock")
-SUPERVDSM = __supervdsmServerPath("supervdsmServer.py")
+SUPERVDSM = __supervdsmServerPath()
 
 extraPythonPathList = []
 
