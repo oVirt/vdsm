@@ -49,6 +49,14 @@ except ImportError:
     python_apt = False
 
 
+try:
+    from gluster import GLUSTER_RPM_PACKAGES
+    from gluster import GLUSTER_DEB_PACKAGES
+    _glusterEnabled = True
+except ImportError:
+    _glusterEnabled = False
+
+
 class OSName:
     UNKNOWN = 'unknown'
     OVIRT = 'oVirt Node'
@@ -337,6 +345,9 @@ def _getKeyPackages():
                         'mom': 'mom',
                         }
 
+        if _glusterEnabled:
+            KEY_PACKAGES.update(GLUSTER_RPM_PACKAGES)
+
         try:
             ts = rpm.TransactionSet()
 
@@ -359,6 +370,9 @@ def _getKeyPackages():
         KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm', 'qemu-img': 'qemu-utils',
                         'vdsm': 'vdsmd', 'spice-server': 'libspice-server1',
                         'libvirt': 'libvirt0', 'mom': 'mom'}
+
+        if _glusterEnabled:
+            KEY_PACKAGES.update(GLUSTER_DEB_PACKAGES)
 
         cache = apt.Cache()
 
