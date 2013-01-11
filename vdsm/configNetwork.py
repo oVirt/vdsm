@@ -401,6 +401,20 @@ class ConfigWriter(object):
         """ Clear backup files """
         shutil.rmtree(netinfo.NET_CONF_BACK_DIR, ignore_errors=True)
 
+    @classmethod
+    def ifcfgPorts(cls, network):
+        ports = []
+        for filePath in glob.iglob(netinfo.NET_CONF_PREF + '*'):
+            with open(filePath, 'r') as confFile:
+                for line in confFile:
+                    if line.startswith('BRIDGE=' + network):
+                        port = filePath[filePath.rindex('-') + 1:]
+                        logging.debug('port %s found in ifcfg for %s', port,
+                                      network)
+                        ports.append(port)
+                        break
+        return ports
+
     def writeConfFile(self, fileName, configuration):
         '''Backs up the previous contents of the file referenced by fileName
         writes the new configuration and sets the specified access mode.'''
@@ -624,7 +638,7 @@ class ConfigWriter(object):
                 mtu = mtuval
         return mtu
 
-    def setNewMtu(self, network, bridged):
+    def setNewMtu(self, network, bridged, _netinfo=None):
         """
         Set new MTU value to network and its interfaces
 
@@ -636,10 +650,15 @@ class ConfigWriter(object):
         Update MTU to devices (vlans, bonds and nics)
         or added a new value
         """
-        _netinfo = netinfo.NetInfo()
+        if _netinfo is None:
+            _netinfo = netinfo.NetInfo()
         currmtu = None
         if bridged:
-            currmtu = int(netinfo.getMtu(network))
+            try:
+                currmtu = int(netinfo.getMtu(network))
+            except IOError as e:
+                if e.errno != os.errno.ENOENT:
+                    raise
 
         nics, delvlan, bonding = \
             _netinfo.getNicsVlanAndBondingForNetwork(network)
@@ -1044,9 +1063,22 @@ def _removeUnusedNics(network, vlan, bonding, nics, configWriter):
             ifup(nic)
 
 
-def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
-               configWriter=None, implicitBonding=True, **options):
+def  _delBrokenNetwork(network, netAttr, configWriter):
+    '''Adapts the network information of broken networks so that they can be
+    deleted via delNetwork.'''
     _netinfo = netinfo.NetInfo()
+    _netinfo.networks[network] = netAttr
+    if _netinfo.networks[network]['bridged']:
+        _netinfo.networks[network]['ports'] = ConfigWriter.ifcfgPorts(network)
+    delNetwork(network, configWriter=configWriter, force=True,
+               implicitBonding=False, _netinfo=_netinfo)
+
+
+def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
+               configWriter=None, implicitBonding=True, _netinfo=None,
+               **options):
+    if _netinfo is None:
+        _netinfo = netinfo.NetInfo()
 
     if configWriter is None:
         configWriter = ConfigWriter()
@@ -1083,7 +1115,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         if bridged:
             assertBridgeClean(network, vlan, bonding, nics)
 
-    configWriter.setNewMtu(network=network, bridged=bridged)
+    configWriter.setNewMtu(network=network, bridged=bridged, _netinfo=_netinfo)
     configWriter.removeLibvirtNetwork(network)
 
     # We need to gather NetInfo again to refresh networks info from libvirt.
@@ -1339,6 +1371,7 @@ def setupNetworks(networks={}, bondings={}, **options):
 
         logger.debug("Applying...")
         try:
+            libvirt_nets = netinfo.networks()
             # Remove edited networks and networks with 'remove' attribute
             for network, networkAttrs in networks.items():
                 if network in _netinfo.networks:
@@ -1347,6 +1380,17 @@ def setupNetworks(networks={}, bondings={}, **options):
                                implicitBonding=False)
                     if 'remove' in networkAttrs:
                         del networks[network]
+                        del libvirt_nets[network]
+                elif network in libvirt_nets:
+                    # If the network was not in _netinfo but is in the networks
+                    # returned by libvirt, it means that we are dealing with
+                    # a broken network.
+                    logger.debug('Removing broken network %r' % network)
+                    _delBrokenNetwork(network, libvirt_nets[network],
+                                      configWriter=configWriter)
+                    if 'remove' in networkAttrs:
+                        del networks[network]
+                        del libvirt_nets[network]
                 else:
                     networksAdded.add(network)
 
