@@ -67,6 +67,7 @@ import mount
 import dispatcher
 import supervdsm
 import storageServer
+from vdsm import utils
 
 GUID = "guid"
 NAME = "name"
@@ -86,6 +87,8 @@ rmanager = rm.ResourceManager.getInstance()
 SECTOR_SIZE = 512
 
 STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_RUN, "connections/")
+
+QEMU_READABLE_TIMEOUT = 30
 
 
 def public(f=None, **kwargs):
@@ -2925,6 +2928,10 @@ class HSM:
         """
         supervdsm.getProxy().appropriateDevice(guid, thiefId)
         supervdsm.getProxy().udevTrigger(guid)
+        devPath = devicemapper.DMPATH_FORMAT % guid
+        utils.retry(partial(fileUtils.validateQemuReadable, devPath),
+                    expectedException=OSError,
+                    timeout=QEMU_READABLE_TIMEOUT)
 
     @public
     def inappropriateDevices(self, thiefId):
