@@ -292,7 +292,7 @@ def volumeStatus(volumeName, brick=None, option=None):
         command.append(option)
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeStatusFailedException(rc=e.rc, err=e.err)
     try:
         if option == 'detail':
@@ -423,7 +423,7 @@ def volumeInfo(volumeName=None):
         command.append(volumeName)
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumesListFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeInfo(xmltree)
@@ -444,7 +444,7 @@ def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
     command += brickList
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeCreateFailedException(rc=e.rc, err=e.err)
     try:
         return {'uuid': xmltree.find('volCreate/volume/id').text}
@@ -472,7 +472,7 @@ def volumeStop(volumeName, force=False):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeStopFailedException(rc=e.rc, err=e.err)
 
 
@@ -482,7 +482,7 @@ def volumeDelete(volumeName):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeDeleteFailedException(rc=e.rc, err=e.err)
 
 
@@ -492,7 +492,7 @@ def volumeSet(volumeName, option, value):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeSetFailedException(rc=e.rc, err=e.err)
 
 
@@ -526,7 +526,7 @@ def volumeReset(volumeName, option='', force=False):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeResetFailedException(rc=e.rc, err=e.err)
 
 
@@ -542,7 +542,7 @@ def volumeAddBrick(volumeName, brickList,
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeBrickAddFailedException(rc=e.rc, err=e.err)
 
 
@@ -737,7 +737,7 @@ def peerProbe(hostName):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterHostAddFailedException(rc=e.rc, err=e.err)
 
 
@@ -749,7 +749,7 @@ def peerDetach(hostName, force=False):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterHostRemoveFailedException(rc=e.rc, err=e.err)
 
 
@@ -781,7 +781,7 @@ def peerStatus():
     command = _getGlusterPeerCmd() + ["status"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterHostsListFailedException(rc=e.rc, err=e.err)
     try:
         return _parsePeerStatus(xmltree,
@@ -796,7 +796,7 @@ def volumeProfileStart(volumeName):
     command = _getGlusterVolCmd() + ["profile", volumeName, "start"]
     try:
         _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeProfileStartFailedException(rc=e.rc, err=e.err)
     return True
 
@@ -806,7 +806,7 @@ def volumeProfileStop(volumeName):
     command = _getGlusterVolCmd() + ["profile", volumeName, "stop"]
     try:
         _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeProfileStopFailedException(rc=e.rc, err=e.err)
     return True
 
@@ -874,7 +874,7 @@ def volumeProfileInfo(volumeName, nfs=False):
         command += ["nfs"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeProfileInfoFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeProfileInfo(xmltree, nfs)

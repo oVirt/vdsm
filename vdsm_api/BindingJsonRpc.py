@@ -77,7 +77,7 @@ class JsonRpcTCPHandler(SocketServer.StreamRequestHandler):
                 ret = self.server.bridge.dispatch(msg['method'],
                                                   msg.get('params', {}))
                 resp = self.buildResponse(msg['id'], ret)
-            except Exception, e:
+            except Exception as e:
                 self.log.warn("Dispatch error", exc_info=True)
                 err = {'error': {'code': 5,
                                  'message': 'Dispatch error: %s' % e}}

@@ -95,7 +95,7 @@ class BlockVolume(volume.Volume):
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
         try:
             return _getDeviceSize(lvm.lvPath(sdobj.sdUUID, volUUID)) / bs
-        except Exception, e:
+        except Exception as e:
             # The volume might not be active, skip logging.
             if not (isinstance(e, IOError) and e.errno == os.errno.ENOENT):
                 cls.log.warn("Could not get size for vol %s/%s using "
@@ -116,9 +116,9 @@ class BlockVolume(volume.Volume):
             # Fix me: assert resource lock.
             lvm.getLV(sdUUID, volUUID)
             lvm.removeLVs(sdUUID, volUUID)
-        except se.LogicalVolumeDoesNotExistError, e:
+        except se.LogicalVolumeDoesNotExistError as e:
             pass  # It's OK: inexistent LV, don't try to remove.
-        except se.CannotRemoveLogicalVolume, e:
+        except se.CannotRemoveLogicalVolume as e:
             cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID,
                             volUUID, str(e))
 
@@ -224,9 +224,9 @@ class BlockVolume(volume.Volume):
                 misc.ddWatchCopy(
                     "/dev/zero", vol_path, vars.task.aborting, int(size),
                     recoveryCallback=volume.baseAsyncTasksRollback)
-            except se.ActionStopped, e:
+            except se.ActionStopped as e:
                 raise e
-            except Exception, e:
+            except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.VolumesZeroingError(vol_path)
             finally:
@@ -244,7 +244,7 @@ class BlockVolume(volume.Volume):
                 pvol = BlockVolume(self.repoPath, self.sdUUID, self.imgUUID,
                                    puuid)
                 pvol.recheckIfLeaf()
-        except Exception, e:
+        except Exception as e:
             eFound = e
             self.log.warning("cannot finalize parent volume %s", puuid,
                              exc_info=True)
@@ -258,7 +258,7 @@ class BlockVolume(volume.Volume):
                 pass
 
             self.removeMetadata([self.sdUUID, offs])
-        except Exception, e:
+        except Exception as e:
             eFound = e
             self.log.error("cannot remove volume %s/%s", self.sdUUID,
                            self.volUUID, exc_info=True)
@@ -266,7 +266,7 @@ class BlockVolume(volume.Volume):
         try:
             os.unlink(vol_path)
             return True
-        except Exception, e:
+        except Exception as e:
             eFound = e
             self.log.error("cannot delete volume's %s/%s link path: %s",
                            self.sdUUID, self.volUUID, vol_path, exc_info=True)
@@ -381,7 +381,7 @@ class BlockVolume(volume.Volume):
         if not justme:
             try:
                 pvolUUID = _getVolumeTag(sdUUID, volUUID, TAG_PREFIX_PARENT)
-            except Exception, e:
+            except Exception as e:
                 # If storage not accessible or lvm error occurred
                 # we will failure to get the parent volume.
                 # We can live with it and still succeed in volume's teardown.
@@ -516,7 +516,7 @@ class BlockVolume(volume.Volume):
         """
         try:
             self.__putMetadata(metaId, {"NONE": "#" * (sd.METASIZE - 10)})
-        except Exception, e:
+        except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
 
@@ -585,7 +585,7 @@ class BlockVolume(volume.Volume):
                 key, value = l.split("=")
                 out[key.strip()] = value.strip()
 
-        except Exception, e:
+        except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
@@ -600,7 +600,7 @@ class BlockVolume(volume.Volume):
 
         try:
             self.__putMetadata(metaId, meta)
-        except Exception, e:
+        except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
 
@@ -668,7 +668,7 @@ def _postZero(sdUUID, volumes):
     # Assert volumes are writable. (Don't do this at home.)
     try:
         lvm.changelv(sdUUID, lvNames, ("--permission", "rw"))
-    except se.StorageException, e:
+    except se.StorageException as e:
         # Hope this only means that some volumes were already writable.
         pass
 
@@ -682,9 +682,9 @@ def _postZero(sdUUID, volumes):
                     "/dev/zero", lvm.lvPath(sdUUID, lv.name),
                     vars.task.aborting, int(lv.size),
                     recoveryCallback=volume.baseAsyncTasksRollback)
-            except se.ActionStopped, e:
+            except se.ActionStopped as e:
                 raise e
-            except Exception, e:
+            except Exception as e:
                 raise se.VolumesZeroingError(lv.name)
 
 

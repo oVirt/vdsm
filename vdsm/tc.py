@@ -154,7 +154,7 @@ def qdisc_del(dev, queue):
     try:
         command = [EXT_TC, 'qdisc', 'del', 'dev', dev, queue]
         _process_request(command)
-    except TrafficControlException, e:
+    except TrafficControlException as e:
         if e.errCode != ERR_DEV_NOEXIST:
             raise
 

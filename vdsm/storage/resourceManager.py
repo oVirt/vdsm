@@ -817,14 +817,14 @@ class Owner(object):
                     self.log.debug("%s: request for '%s' timed out after '%f' "
                                    "seconds", self, fullName, timeout)
                     raise se.ResourceTimeout()
-                except ValueError, ex:
+                except ValueError as ex:
                     self.log.debug("%s: request for '%s' could not be "
                                    "processed (%s)", self, fullName, ex)
                     raise se.InvalidResourceName()
-                except KeyError, ex:
+                except KeyError:
                     self.log.debug("%s: resource '%s' does not exist", self,
                                    fullName)
-                except Exception, ex:
+                except Exception:
                     self.log.warn("Unexpected exception caught while owner "
                                   "'%s' tried to acquire '%s'", self, fullName,
                                   exc_info=True)
@@ -865,15 +865,15 @@ class Owner(object):
             try:
                 request = manager.registerResource(namespace, name, locktype,
                                                    self._onRequestFinished)
-            except ValueError, ex:
+            except ValueError as ex:
                 self.log.debug("%s: request for '%s' could not be processed "
                                "(%s)", self, fullName, ex)
                 raise se.InvalidResourceName()
-            except KeyError, ex:
+            except KeyError:
                 self.log.debug("%s: resource '%s' does not exist", self,
                                fullName)
                 raise se.ResourceDoesNotExist()
-            except Exception, ex:
+            except Exception:
                 self.log.warn("Unexpected exception caught while owner '%s' "
                               "tried to acquire '%s'", self, fullName,
                               exc_info=True)

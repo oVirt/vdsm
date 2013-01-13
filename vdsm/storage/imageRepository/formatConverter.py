@@ -50,7 +50,7 @@ def __convertDomainMetadataToTags(domain, targetVersion):
         # actually happened. We prepare the convertError exception to raise
         # later on if we discover that the upgrade didn't take place.
         oldMetadata._dict.clear()
-    except Exception, convertError:
+    except Exception as convertError:
         log.error("Could not clear the old metadata", exc_info=True)
     else:
         # We don't have any valuable information to add here

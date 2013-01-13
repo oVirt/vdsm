@@ -112,7 +112,7 @@ class FileMetadataRW(object):
         tmpFilePath = self._metafile + ".new"
         try:
             self._oop.writeLines(tmpFilePath, metadata)
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.ESTALE:
                 raise
             self._oop.writeLines(tmpFilePath, metadata)
@@ -150,7 +150,7 @@ class FileStorageDomain(sd.StorageDomain):
             try:
                 fpath = os.path.join(self.getMDPath(), metaFile)
                 procPool.os.chmod(fpath, 0660)
-            except Exception, e:
+            except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
                     "Lease permission change file '%s' failed: %s"
                     % (metaFile, e))
@@ -171,7 +171,7 @@ class FileStorageDomain(sd.StorageDomain):
             try:
                 procPool.createSparseFile(
                     os.path.join(metadataDir, metaFile), 0, 0660)
-            except Exception, e:
+            except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
                     "create meta file '%s' failed: %s" % (metaFile, str(e)))
 
@@ -445,7 +445,7 @@ class FileStorageDomain(sd.StorageDomain):
             st = self.oop.os.statvfs(self.domaindir)
             stats['disktotal'] = str(st.f_frsize * st.f_blocks)
             stats['diskfree'] = str(st.f_frsize * st.f_bavail)
-        except OSError, e:
+        except OSError as e:
             self.log.info("sdUUID=%s %s", self.sdUUID, str(e))
             if e.errno == errno.ESTALE:
                 raise se.FileStorageDomainStaleNFSHandle
@@ -472,7 +472,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         try:
             self.oop.os.statvfs(self.domaindir)
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ESTALE:
                 # In case it is "Stale NFS handle" we are taking preventive
                 # measures and unmounting this NFS resource. Chances are

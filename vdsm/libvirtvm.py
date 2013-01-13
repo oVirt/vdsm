@@ -539,7 +539,7 @@ class NotifyingVirDomain:
                 ret = attr(*args, **kwargs)
                 self._cb(False)
                 return ret
-            except libvirt.libvirtError, e:
+            except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_TIMEOUT:
                     self._cb(True)
                     toe = TimeoutError(e.get_error_message())
@@ -1559,7 +1559,7 @@ class LibvirtVm(vm.Vm):
 
         try:
             self._dom.attachDevice(nicXml)
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             self.log.error("Hotplug failed", exc_info=True)
             nicXml = hooks.after_nic_hotplug_fail(nicXml, self.conf)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
@@ -1587,7 +1587,7 @@ class LibvirtVm(vm.Vm):
             # One of such exceptions is TrafficControlException, but
             # I am not sure that we'll get it for all traffic control errors.
             # In any case we need below rollback for all kind of failures.
-            except Exception, e:
+            except Exception as e:
                 self.log.error("setPortMirroring for network %s failed",
                                network, exc_info=True)
                 nicParams['portMirroring'] = mirroredNetworks
@@ -1759,7 +1759,7 @@ class LibvirtVm(vm.Vm):
 
         try:
             self._dom.detachDevice(nicXml)
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             self.log.error("Hotunplug failed", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
@@ -1794,7 +1794,7 @@ class LibvirtVm(vm.Vm):
 
         try:
             self._dom.attachDevice(driveXml)
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             self.log.error("Hotplug failed", exc_info=True)
             self.cif.teardownVolumePath(diskParams)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
@@ -1854,7 +1854,7 @@ class LibvirtVm(vm.Vm):
 
         try:
             self._dom.detachDevice(driveXml)
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             self.log.error("Hotunplug failed", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
@@ -1900,7 +1900,7 @@ class LibvirtVm(vm.Vm):
                 self._dom = NotifyingVirDomain(
                     self._connection.lookupByUUIDString(self.id),
                     self._timeoutExperienced)
-            except Exception, e:
+            except Exception as e:
                 # Improve description of exception
                 if not self._incomingMigrationFinished.isSet():
                     newMsg = ('%s - Timed out '
@@ -2109,7 +2109,7 @@ class LibvirtVm(vm.Vm):
         while True:
             try:
                 self._dom.snapshotCreateXML(snapxml, snapFlags)
-            except Exception, e:
+            except Exception as e:
                 # If we used VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE and the
                 # snapshot failed with a libvirt specific exception, try
                 # again without the flag. At the moment libvirt is returning
@@ -2434,7 +2434,7 @@ class LibvirtVm(vm.Vm):
     def _changeBlockDev(self, vmDev, blockdev, drivespec):
         try:
             path = self.cif.prepareVolumePath(drivespec)
-        except vm.VolumeError, e:
+        except vm.VolumeError as e:
             return {'status': {'code': errCode['imageErr']['status']['code'],
                                'message': errCode['imageErr']['status']
                                                  ['message'] % str(e)}}
@@ -2589,14 +2589,14 @@ class LibvirtVm(vm.Vm):
                     try:
                         self._dom.destroyFlags(
                             libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
-                    except libvirt.libvirtError, e:
+                    except libvirt.libvirtError as e:
                         if (e.get_error_code() ==
                                 libvirt.VIR_ERR_OPERATION_FAILED):
                             self.log.warn("Failed to destroy VM '%s' "
                                           "gracefully", self.conf['vmId'])
                             time.sleep(30)
                             self._dom.destroy()
-            except libvirt.libvirtError, e:
+            except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     self.log.warning("libvirt domain not found", exc_info=True)
                 else:
@@ -2672,7 +2672,7 @@ class LibvirtVm(vm.Vm):
             self._dom.setMemory(target)
         except ValueError:
             return reportError(msg='an integer is required for target')
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return reportError(key='noVM')
             return reportError(msg=e.message)

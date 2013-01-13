@@ -147,7 +147,7 @@ class Image:
         except se.StorageException:
             self.log.error("Unexpected error", exc_info=True)
             raise
-        except Exception, e:
+        except Exception as e:
             self.log.error("Unexpected error", exc_info=True)
             raise se.ImageDeleteError("%s: %s" % (imgUUID, str(e)))
 
@@ -178,7 +178,7 @@ class Image:
                         msg = "Cannot delete image %s due to shared volume "\
                             "%s" % (imgUUID, vol.volUUID)
                         raise se.CannotDeleteSharedVolume(msg)
-            except se.MetaDataKeyNotFoundError, e:
+            except se.MetaDataKeyNotFoundError as e:
                 # In case of metadata key error, we have corrupted
                 # volume (One of metadata corruptions may be
                 # previous volume deletion failure).
@@ -515,7 +515,7 @@ class Image:
         except se.StorageException:
             self.log.error("Unexpected error", exc_info=True)
             raise
-        except Exception, e:
+        except Exception as e:
             self.log.error("Unexpected error", exc_info=True)
             raise se.SourceImageActionError(imgUUID, srcSdUUID, str(e))
 
@@ -589,7 +589,7 @@ class Image:
                 except se.StorageException:
                     self.log.error("Unexpected error", exc_info=True)
                     raise
-                except Exception, e:
+                except Exception as e:
                     self.log.error("Unexpected error", exc_info=True)
                     raise se.DestImageActionError(imgUUID, destDom.sdUUID,
                                                   str(e))
@@ -651,7 +651,7 @@ class Image:
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise
-            except Exception, e:
+            except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.DestImageActionError(imgUUID, destDom.sdUUID, str(e))
 
@@ -771,7 +771,7 @@ class Image:
                                         imgList=cleanup_candidates,
                                         postZero=postZero)
                 raise
-            except Exception, e:
+            except Exception as e:
                 self.__cleanupMultimove(sdUUID=dstSdUUID,
                                         imgList=cleanup_candidates,
                                         postZero=postZero)
@@ -846,7 +846,7 @@ class Image:
                                   srcVolUUID)
             except se.StorageException:
                 raise
-            except Exception, e:
+            except Exception as e:
                 self.log.error(e, exc_info=True)
                 raise se.SourceImageActionError(srcImgUUID, sdUUID, str(e))
 
@@ -918,10 +918,10 @@ class Image:
                 dstPath = dstVol.getVolumePath()
                 # Change destination volume metadata back to the original size.
                 dstVol.setSize(volParams['size'])
-            except se.StorageException, e:
+            except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise
-            except Exception, e:
+            except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.CopyImageError("Destination volume %s error: %s" %
                                         (dstVolUUID, str(e)))
@@ -940,9 +940,9 @@ class Image:
                     if rc:
                         raise se.StorageException("rc: %s, err: %s" %
                                                   (rc, err))
-                except se.ActionStopped, e:
+                except se.ActionStopped as e:
                     raise e
-                except se.StorageException, e:
+                except se.StorageException as e:
                     raise se.CopyImageError(str(e))
 
                 # Mark volume as SHARED
@@ -952,10 +952,10 @@ class Image:
                 if force:
                     # Now we should re-link all deleted hardlinks, if exists
                     self.__templateRelink(destDom, dstImgUUID, dstVolUUID)
-            except se.StorageException, e:
+            except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise
-            except Exception, e:
+            except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.CopyImageError("src image=%s, dst image=%s: msg=%s" %
                                         (srcImgUUID, dstImgUUID, str(e)))
@@ -1302,7 +1302,7 @@ class Image:
         except se.StorageException:
             self.log.error("Unexpected error", exc_info=True)
             raise
-        except Exception, e:
+        except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.SourceImageActionError(imgUUID, sdUUID, str(e))
 

@@ -203,7 +203,7 @@ class DomainMonitorThread(object):
 
             self.nextStatus.hasHostId = self.domain.hasHostId(self.hostId)
 
-        except Exception, e:
+        except Exception as e:
             self.log.error("Error while collecting domain %s monitoring "
                            "information", self.sdUUID, exc_info=True)
             self.nextStatus.error = e

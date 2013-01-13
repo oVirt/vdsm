@@ -102,7 +102,7 @@ def main():
                     sys.exit(INVALID_PORT_ERROR)
             elif o in ("-f", "--force"):
                 force = True
-    except getopt.GetoptError, e:
+    except getopt.GetoptError as e:
         sys.stderr.write("ERROR: %s\n" % (e.msg))
         usage()
         sys.exit(USAGE_ERROR)

@@ -2411,9 +2411,9 @@ if __name__ == '__main__':
             raise Exception("Unknown command")
         server, serverPort = vdscli.cannonizeAddrPort(server).split(':', 1)
 
-    except SystemExit, status:
+    except SystemExit as status:
         sys.exit(status)
-    except Exception, e:
+    except Exception as e:
         print "ERROR - %s" % (e)
         usage(commands)
         sys.exit(-1)
@@ -2429,15 +2429,15 @@ if __name__ == '__main__':
             code = 1
         print message
         sys.exit(code)
-    except (TypeError, IndexError, ValueError), e:
+    except (TypeError, IndexError, ValueError) as e:
         print "Error using command:", e, "\n"
         print command
         for line in commands[command][1]:
             print '\t' + line
         sys.exit(-1)
-    except SystemExit, status:
+    except SystemExit as status:
         sys.exit(status)
-    except socket.error, e:
+    except socket.error as e:
         if e[0] == 111:
             print "Connection to %s:%s refused" % (server, serverPort)
         else:

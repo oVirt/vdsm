@@ -270,7 +270,7 @@ class MigrationSourceThread(threading.Thread):
                     self._vm.saveState()
                     self._startUnderlyingMigration()
                 self._finishSuccessfully()
-            except libvirt.libvirtError, e:
+            except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                     self.status = {
                         'status': {
@@ -281,7 +281,7 @@ class MigrationSourceThread(threading.Thread):
                 if '_migrationParams' in self._vm.conf:
                     del self._vm.conf['_migrationParams']
                 MigrationSourceThread._ongoingMigrations.release()
-        except Exception, e:
+        except Exception as e:
             self._recover(str(e))
             self.log.error("Failed to migrate", exc_info=True)
 
@@ -709,7 +709,7 @@ class Vm(object):
             if 'recover' in self.conf:
                 del self.conf['recover']
             self.saveState()
-        except Exception, e:
+        except Exception as e:
             if 'recover' in self.conf:
                 self.log.info("Skipping errors on recovery", exc_info=True)
             else:
@@ -1210,7 +1210,7 @@ class Vm(object):
             self._migrationSourceThread.stop()
             return {'status': {'code': 0,
                                'message': 'Migration process stopped'}}
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
                 return errCode['migCancelErr']
             raise

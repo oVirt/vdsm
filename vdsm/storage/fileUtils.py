@@ -135,7 +135,7 @@ def safeUnlink(filename):
     """
     try:
         os.unlink(filename)
-    except OSError, e:
+    except OSError as e:
         if e.errno != os.errno.ENOENT:
             raise
 

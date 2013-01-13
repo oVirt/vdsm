@@ -251,7 +251,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
 def pidExists(pid):
     try:
         os.stat(os.path.join('/proc', str(pid)))
-    except OSError, e:
+    except OSError as e:
         # The actual exception for 'File does not exists' is ENOENT
         if e.errno == errno.ENOENT:
             return False
@@ -1165,7 +1165,7 @@ def tmap(func, iterable):
     def wrapper(f, arg, index):
         try:
             resultsDict[index] = f(arg)
-        except Exception, e:
+        except Exception as e:
             # We will throw the last error received
             # we can only throw one error, and the
             # last one is as good as any. This shouldn't
@@ -1313,7 +1313,7 @@ def killall(name, signum, group=False):
                 os.killpg(pgid, signum)
             else:
                 os.kill(pid, signum)
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ESRCH:
                 # process died in the interim, ignore
                 continue
@@ -1343,7 +1343,7 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
     def wrapper(value):
         try:
             respQueue.put(func(value))
-        except Exception, e:
+        except Exception as e:
             respQueue.put(e)
 
     threadsCount = 0
@@ -1384,7 +1384,7 @@ def NoIntrPoll(pollfun, timeout=-1):
     while True:
         try:
             return pollfun(timeout)
-        except (IOError, select.error), e:
+        except (IOError, select.error) as e:
             if e.args[0] != errno.EINTR:
                 raise
         timeout = max(0, endtime - time.time())
@@ -1420,7 +1420,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=[]):
     # left to visit.  That logic is copied here.
     try:
         names = os.listdir(top)
-    except OSError, err:
+    except OSError as err:
         if onerror is not None:
             onerror(err)
         return
@@ -1441,7 +1441,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=[]):
             # lstat which is getting stuck if the destination is unreachable
             try:
                 os.readlink(path)
-            except OSError, err:
+            except OSError as err:
                 # EINVAL is thrown when "path" is not a symlink, in such
                 # case continue normally
                 if err.errno != errno.EINVAL:

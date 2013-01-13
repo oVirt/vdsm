@@ -65,7 +65,7 @@ def _getFileName(vmId, files):
     if not os.path.exists(_P_PAYLOAD_IMAGES):
         try:
             os.mkdir(_P_PAYLOAD_IMAGES)
-        except OSError, e:
+        except OSError as e:
             if e.errno != os.errno.EEXIST:
                 raise
     content = ''.join(files.keys()) + ''.join(files.values())

@@ -348,7 +348,7 @@ class HSM_MailMonitor(threading.Thread):
                                        "message: %s, callback function: %s",
                                        repr(msg.payload), msg.callback,
                                        exc_info=True)
-            except RuntimeError, e:
+            except RuntimeError as e:
                 self.log.error("HSM_MailMonitor: exception: %s caught while "
                                "checking reply for message: %s, reply: %s",
                                str(e), repr(msg.payload), repr(newMsg))
@@ -701,7 +701,7 @@ class SPM_MailMonitor:
                     else:
                         self.log.error("SPM_MailMonitor: unknown message type "
                                        "encountered: %s", msgType)
-                except RuntimeError, e:
+                except RuntimeError as e:
                     self.log.error("SPM_MailMonitor: exception: %s caught "
                                    "while handling message: %s", str(e),
                                    newMail[msgStart:msgStart + MESSAGE_SIZE])

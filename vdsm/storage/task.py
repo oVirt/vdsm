@@ -507,7 +507,7 @@ class Task:
     def __state_queued(self, fromState):
         try:
             self.mng.queue(self)
-        except Exception, e:
+        except Exception as e:
             self._setError(e)
             self.stop()
 
@@ -730,7 +730,7 @@ class Task:
                 self._saveJobMetaFile(taskDir, jn)
             for rn in range(self.nrecoveries):
                 self._saveRecoveryMetaFile(taskDir, rn)
-        except Exception, e:
+        except Exception as e:
             self.log.error("Unexpected error", exc_info=True)
             try:
                 getProcPool().fileUtils.cleanupdir(taskDir)
@@ -773,7 +773,7 @@ class Task:
                 if not rec:
                     break
                 self._run(rec.run)
-        except Exception, e:
+        except Exception as e:
             self.log.warning("task %s: recovery failed: %s",
                              self, e, exc_info=True)
             # protect agains races with stop/abort
@@ -838,11 +838,11 @@ class Task:
         message = "Unknown Error"
         try:
             return fn(*args, **kargs)
-        except se.StorageException, e:
+        except se.StorageException as e:
             code = e.code
             message = e.message
             self._setError(e)
-        except Exception, e:
+        except Exception as e:
             message = unicode(e)
             self._setError(e)
         except:
@@ -879,7 +879,7 @@ class Task:
             self._updateState(State.finished)
             self.log.debug('Task.run: exit - success: result %s' % result)
             return result
-        except se.TaskAborted, e:
+        except se.TaskAborted as e:
             self.log.debug("aborting: %s", e)
             message = e.value
             code = e.abortedcode
@@ -1067,7 +1067,7 @@ class Task:
         taskDir = os.path.join(self.store, self.id)
         try:
             getProcPool().fileUtils.createdir(taskDir)
-        except Exception, e:
+        except Exception as e:
             self.log.error("Unexpected error", exc_info=True)
             raise se.TaskPersistError("%s: cannot access/create taskdir"
                                       " %s: %s" % (self, taskDir, e))
@@ -1130,7 +1130,7 @@ class Task:
             try:
                 if func:
                     result = self._run(func, *args, **kwargs)
-            except se.TaskAborted, e:
+            except se.TaskAborted as e:
                 self.log.info("aborting: %s", e)
                 code = e.abortedcode
                 message = e.value

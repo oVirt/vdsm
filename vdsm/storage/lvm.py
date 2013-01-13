@@ -153,7 +153,7 @@ def _updateLvmConf(conf):
         with open(VDSM_LVM_CONF, "w") as lvmconf:
             lvmconf.write(conf)
 
-    except IOError, e:
+    except IOError as e:
         # We are not interested in exceptions here, note it and
         log.warning("Cannot create %s file %s", VDSM_LVM_CONF, str(e))
 
@@ -167,7 +167,7 @@ def _setupLVMEnv():
 def _setupLVM():
     try:
         _setupLVMEnv()
-    except IOError, e:
+    except IOError as e:
         log.warning("Cannot create env file %s", e)
 
 
@@ -660,7 +660,7 @@ def _initpvs(devices, metadataSize, force=False):
             try:
                 devicemapper.removeMappingsHoldingDevice(
                     os.path.basename(device))
-            except OSError, e:
+            except OSError as e:
                 if e.errno == errno.ENODEV:
                     raise se.PhysDevInitializationError("%s: %s" %
                                                         (device, str(e)))
@@ -762,7 +762,7 @@ def changelv(vg, lvs, attrs):
 def _setLVAvailability(vg, lvs, available):
     try:
         changelv(vg, lvs, ("--available", available))
-    except se.StorageException, e:
+    except se.StorageException as e:
         error = ({"y": se.CannotActivateLogicalVolumes,
                   "n": se.CannotDeactivateLogicalVolume}
                  .get(available, se.VolumeGroupActionError))
@@ -830,7 +830,7 @@ def getVGbyUUID(vgUUID):
         try:
             if vg.uuid == vgUUID:
                 return vg
-        except AttributeError, e:
+        except AttributeError as e:
             # An unreloadable VG found but may be we are not looking for it.
             log.debug("%s" % e.message, exc_info=True)
             continue

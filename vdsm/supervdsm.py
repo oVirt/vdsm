@@ -186,7 +186,7 @@ class SuperVdsmProxy(object):
         self._log.debug("Trying to connect to Super Vdsm")
         try:
             self._manager.connect()
-        except Exception, ex:
+        except Exception as ex:
             self._log.warn("Connect to svdsm failed %s", ex)
             raise
         self._svdsm = self._manager.instance()

@@ -133,7 +133,7 @@ class InterfaceSample:
             tries -= 1
             try:
                 s = file(f).read()
-            except IOError, e:
+            except IOError as e:
                 # silently ignore missing wifi stats
                 if e.errno != errno.ENOENT:
                     logging.debug("Could not read %s", f, exc_info=True)
@@ -414,7 +414,7 @@ class AdvancedStatsThread(threading.Thread):
                 if intervalAccum % statsFunction.interval == 0:
                     try:
                         statsFunction()
-                    except Exception, e:
+                    except Exception as e:
                         if not self.handleStatsException(e):
                             self._log.error("Stats function failed: %s",
                                             statsFunction, exc_info=True)

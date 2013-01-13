@@ -54,7 +54,7 @@ class LvmActivation(object):
     def close(self):
         try:
             lvm.deactivateLVs(self._vg, self._lv)
-        except Exception, e:
+        except Exception as e:
             # If storage not accessible or lvm error occurred
             # the LV deactivation will failure.
             # We can live with it and still release the resource.
@@ -172,11 +172,11 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
                     timeout=self.resource_default_timeout)
 
                 volResourcesList.append(volRes)
-        except (rm.RequestTimedOutError, se.ResourceAcqusitionFailed), e:
+        except (rm.RequestTimedOutError, se.ResourceAcqusitionFailed) as e:
             log.debug("Cannot acquire volume resource (%s)", str(e))
             failed = True
             raise
-        except Exception, e:
+        except Exception:
             log.debug("Cannot acquire volume resource", exc_info=True)
             failed = True
             raise

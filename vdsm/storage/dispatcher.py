@@ -63,10 +63,10 @@ class Protect:
                 if type(result) == dict:
                     response.update(result)
                 return response
-            except se.GeneralException, e:
+            except se.GeneralException as e:
                 self.log.error(e.response())
                 return e.response()
-            except BaseException, e:
+            except BaseException as e:
                 self.log.error(e, exc_info=True)
                 defaultException = ctask.defaultException
                 if defaultException and hasattr(defaultException, "response"):

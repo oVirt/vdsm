@@ -730,7 +730,7 @@ class Deploy:
 
         try:
             self._makeConfig()
-        except Exception, e:
+        except Exception as e:
             logging.error('', exc_info=True)
             self.message = 'Basic configuration failed'
             if isinstance(e, ImportError):
@@ -875,7 +875,7 @@ class Deploy:
         else:
             try:
                 strKey = file(engine_ssh_key).read()
-            except Exception, e:
+            except Exception as e:
                 self.message = "Failed to read SSH key file " + str(e)
                 self.rc = False
 
@@ -897,7 +897,7 @@ class Deploy:
         try:
             rules = file(firewallRulesFile).read()
             _safeWrite(__SYSCONFIG_IPTABLES__, rules)
-        except Exception, e:
+        except Exception as e:
             self.message = str(e)
             self.rc = False
             self.st = 'FAIL'

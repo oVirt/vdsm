@@ -95,7 +95,7 @@ class CrabRPCServer(object):
         err = res = None
         try:
             res = self.callRegisteredFunction(name, args, kwargs)
-        except Exception, ex:
+        except Exception as ex:
             err = ex
 
         resp = pickle.dumps((res, err))
@@ -352,7 +352,7 @@ def parseArgs():
         myRead, myWrite = sys.argv[1:]
         myRead = int(myRead)
         myWrite = int(myWrite)
-    except ValueError, ex:
+    except ValueError as ex:
         sys.stderr.write("Error parsing args %s\n" % ex)
         sys.exit(errno.EINVAL)
 
@@ -396,13 +396,13 @@ if __name__ == "__main__":
 
             for mod in (os, glob, fileUtils):
                 server.registerModule(mod)
-        except Exception, ex:
+        except Exception:
             logging.root.error("Error creating CrabRPC server", exc_info=True)
             raise
 
         try:
             server.serve_forever()
-        except Exception, ex:
+        except Exception:
             logging.root.error("Error while serving", exc_info=True)
             raise
 

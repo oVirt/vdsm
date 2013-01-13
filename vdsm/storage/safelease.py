@@ -164,7 +164,7 @@ class SANLock(object):
             try:
                 sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
                                       async=async)
-            except sanlock.SanlockException, e:
+            except sanlock.SanlockException as e:
                 if e.errno == os.errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
                     # lockspace operation to complete
@@ -187,7 +187,7 @@ class SANLock(object):
             try:
                 sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath,
                                       async=async, unused=unused)
-            except sanlock.SanlockException, e:
+            except sanlock.SanlockException as e:
                 if e.errno != os.errno.ENOENT:
                     raise se.ReleaseHostIdFailure(self._sdUUID, e)
 
@@ -216,7 +216,7 @@ class SANLock(object):
                 if SANLock._sanlock_fd is None:
                     try:
                         SANLock._sanlock_fd = sanlock.register()
-                    except sanlock.SanlockException, e:
+                    except sanlock.SanlockException as e:
                         raise se.AcquireLockFailure(
                             self._sdUUID, e.errno,
                             "Cannot register to sanlock", str(e))
@@ -225,7 +225,7 @@ class SANLock(object):
                     sanlock.acquire(self._sdUUID, SDM_LEASE_NAME,
                                     [(self._leasesPath, SDM_LEASE_OFFSET)],
                                     slkfd=SANLock._sanlock_fd)
-                except sanlock.SanlockException, e:
+                except sanlock.SanlockException as e:
                     if e.errno != os.errno.EPIPE:
                         raise se.AcquireLockFailure(
                             self._sdUUID, e.errno,
@@ -246,7 +246,7 @@ class SANLock(object):
                 sanlock.release(self._sdUUID, SDM_LEASE_NAME,
                                 [(self._leasesPath, SDM_LEASE_OFFSET)],
                                 slkfd=SANLock._sanlock_fd)
-            except sanlock.SanlockException, e:
+            except sanlock.SanlockException as e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
             self._sanlockfd = None

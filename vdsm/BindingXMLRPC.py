@@ -66,7 +66,7 @@ class BindingXMLRPC(object):
             while self._enabled:
                 try:
                     self.server.handle_request()
-                except Exception, e:
+                except Exception as e:
                     if e[0] != EINTR:
                         self.log.error("xml-rpc handler exception",
                                        exc_info=True)
@@ -920,13 +920,13 @@ def wrapApiMethod(f):
             f.im_self.cif.log.log(logLevel, 'return %s with %s',
                                   f.__name__, res)
             return res
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             f.im_self.cif.log.error("libvirt error", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             else:
                 return errCode['unexpected']
-        except VdsmException, e:
+        except VdsmException as e:
             f.im_self.cif.log.error("vdsm exception occured", exc_info=True)
             return e.response()
         except:

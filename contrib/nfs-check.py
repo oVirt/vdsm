@@ -146,7 +146,7 @@ class Nfs(object):
         addr = "0.0.0.0"
         try:
             addr = socket.gethostbyname(socket.gethostname())
-        except socket.gaierror, err:
+        except socket.gaierror as err:
             print "INFO: Cannot resolve hostname" \
                 ": %s %s" % (socket.gethostname(), err)
 

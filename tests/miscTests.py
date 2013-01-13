@@ -210,7 +210,7 @@ class TMap(TestCaseBase):
             raise Exception(exceptionStr)
         try:
             misc.tmap(dummy, [1, 2, 3, 4])
-        except Exception, e:
+        except Exception as e:
             self.assertEquals(str(e), exceptionStr)
             return
         else:
@@ -1200,7 +1200,7 @@ class NoIntrPollTests(TestCaseBase):
                 time.sleep(self.SLEEP_INTERVAL)
                 try:
                     os.write(pipe, longStr)
-                except OSError, e:
+                except OSError as e:
                     if not e.errno in (errno.EINTR, errno.EAGAIN):
                         raise
 

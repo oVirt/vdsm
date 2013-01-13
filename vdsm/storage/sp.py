@@ -297,7 +297,7 @@ class StoragePool(Securable):
                 try:
                     # Make sure backup domain is active
                     self.checkBackupDomain(__securityOverride=True)
-                except Exception, e:
+                except Exception:
                     self.log.error("Backup domain validation failed",
                                    exc_info=True)
 
@@ -338,7 +338,7 @@ class StoragePool(Securable):
 
                 self.log.debug("ended.")
 
-            except Exception, e:
+            except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
                 self.log.error("failed: %s" % str(e))
                 self.stopSpm(force=True, __securityOverride=True)
@@ -387,7 +387,7 @@ class StoragePool(Securable):
                 cls.log.debug("unmounting %s", master)
                 try:
                     blockSD.BlockStorageDomain.doUnmountMaster(master)
-                except se.StorageDomainMasterUnmountError, e:
+                except se.StorageDomainMasterUnmountError as e:
                     misc.panic("unmount %s failed - %s" % (master, e))
             else:
                 cls.log.debug("master `%s` is not mounted, skipping", master)
@@ -1156,7 +1156,7 @@ class StoragePool(Securable):
                 masterDir = os.path.join(dom.domaindir, sd.MASTER_FS_DIR)
                 try:
                     m = mount.getMountFromTarget(masterDir)
-                except OSError, e:
+                except OSError as e:
                     if e.errno == errno.ENOENT:
                         pass  # Master is not mounted
                     else:
@@ -1177,7 +1177,7 @@ class StoragePool(Securable):
         self.log.info("Linking %s to %s", src, linkName)
         try:
             current = os.readlink(linkName)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.ENOENT:
                 self.log.error("Can't link SD %s to %s", src, linkName,
                                exc_info=True)
@@ -1333,7 +1333,7 @@ class StoragePool(Securable):
                 os.mkdir(vmPath)
                 codecs.open(os.path.join(vmPath, vmUUID + '.ovf'), 'w',
                             encoding='utf8').write(ovf)
-            except OSError, ex:
+            except OSError as ex:
                 if ex.errno == errno.ENOSPC:
                     raise se.NoSpaceLeftOnDomain(sdUUID)
 

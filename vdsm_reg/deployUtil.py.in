@@ -331,7 +331,7 @@ def setVdsConf(configStr, confFile):
             ovirtfunctions.ovirt_store_config(confFile)
 
         print "<BSTRAP component='VDS Configuration' status='OK'/>"
-    except Exception, e:
+    except Exception as e:
         msg = escapeXML(str(e))
         print "<BSTRAP component='VDS Configuration' status='FAIL' " \
             "message='%s'/>" % (msg)
@@ -817,7 +817,7 @@ def setHostTime(VDCTime):
     else:
         try:
             ttp = time.strptime(VDCTime, '%Y-%m-%dT%H:%M:%S')
-        except ValueError, e:
+        except ValueError as e:
             logging.debug("setHostTime: Failed to parse @ENGINENAME@ time. "
                           "message= " + str(e))
             fReturn = False
@@ -937,7 +937,7 @@ def _getBridgeParams(bridgeName):
                     logging.warn("_getBridgeParams: failed to read parse line "
                                  "%s", line)
                 lstReturn.append(line)
-    except Exception, e:
+    except Exception as e:
         logging.error("_getBridgeParams: failed to read params of file " +
                       fileName + ".\n Error:" + str(e))
         lstReturn = []
@@ -1365,7 +1365,7 @@ def instCert(random_num, confFile):
 
         try:
             os.makedirs(SPICEPKIPATH)
-        except OSError, e:
+        except OSError as e:
             if e.errno != os.errno.EEXIST:
                 raise
 

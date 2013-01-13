@@ -86,7 +86,7 @@ class TcpkeepHTTPConnection(httplib.HTTPConnection):
                 self.sock.settimeout(CONNECTTIMEOUT)  # added
                 self.sock.connect(sa)
                 self.sock.settimeout(oldtimeout)   # added
-            except socket.error, msg:
+            except socket.error as msg:
                 if self.debuglevel > 0:
                     print 'connect fail:', (self.host, self.port)
                 if self.sock:

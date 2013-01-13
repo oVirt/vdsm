@@ -141,9 +141,9 @@ class FileVolume(volume.Volume):
                 # ddWatchCopy expects size to be in bytes
                 misc.ddWatchCopy("/dev/zero", volPath,
                                  vars.task.aborting, sizeBytes)
-            except se.ActionStopped, e:
+            except se.ActionStopped as e:
                 raise e
-            except Exception, e:
+            except Exception as e:
                 cls.log.error("Unexpected error", exc_info=True)
                 raise se.VolumesZeroingError(volPath)
 
@@ -195,14 +195,14 @@ class FileVolume(volume.Volume):
                 pvol = FileVolume(self.repoPath, self.sdUUID,
                                   self.imgUUID, puuid)
                 pvol.recheckIfLeaf()
-        except Exception, e:
+        except Exception as e:
             eFound = e
             self.log.warning("cannot finalize parent volume %s",
                              puuid, exc_info=True)
 
         try:
             self.oop.fileUtils.cleanupfiles([vol_path, lease_path])
-        except Exception, e:
+        except Exception as e:
             eFound = e
             self.log.error("cannot delete volume %s at path: %s", self.volUUID,
                            vol_path, exc_info=True)
@@ -210,7 +210,7 @@ class FileVolume(volume.Volume):
         try:
             self.removeMetadata()
             return True
-        except Exception, e:
+        except Exception as e:
             eFound = e
             self.log.error("cannot remove volume's %s metadata",
                            self.volUUID, exc_info=True)
@@ -340,7 +340,7 @@ class FileVolume(volume.Volume):
                 key, value = l.split("=")
                 out[key.strip()] = value.strip()
 
-        except Exception, e:
+        except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
@@ -372,7 +372,7 @@ class FileVolume(volume.Volume):
 
         try:
             self.__putMetadata(metaId, meta)
-        except Exception, e:
+        except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError(str(metaId) + str(e))
 
@@ -420,7 +420,7 @@ class FileVolume(volume.Volume):
                 img = os.path.basename(os.path.dirname(vol))
                 if img.startswith(sd.REMOVED_IMAGE_PREFIX):
                     vollist.remove(vol)
-        except Exception, e:
+        except Exception as e:
             self.log.info("Volume %s does not exists." % (self.volUUID))
             raise se.VolumeDoesNotExist("%s: %s:" % (self.volUUID, e))
 
@@ -515,7 +515,7 @@ class FileVolume(volume.Volume):
                                                  [leasePath, prevLeasePath]))
         try:
             self.oop.os.rename(prevLeasePath, leasePath)
-        except OSError, e:
+        except OSError as e:
             if e.errno != os.errno.ENOENT:
                 raise
         self.volUUID = newUUID

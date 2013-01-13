@@ -241,7 +241,7 @@ class VM(APIBase):
             vmParams['displaySecurePort'] = '-1'
             return self._cif.createVm(vmParams)
 
-        except OSError, e:
+        except OSError as e:
             self.log.debug("OS Error creating VM", exc_info=True)
             return {'status': {'code': errCode['createErr']['status']['code'],
                                'message': 'Failed to create VM. '
@@ -1082,7 +1082,7 @@ class Global(APIBase):
             p = subprocess.Popen([script], stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE, close_fds=True)
-        except OSError, e:
+        except OSError as e:
             if e.errno == os.errno.ENOENT:
                 return errCode['fenceAgent']
             raise
@@ -1221,7 +1221,7 @@ class Global(APIBase):
 
             try:
                 supervdsm.getProxy().setupNetworks(networks, bondings, options)
-            except configNetwork.ConfigNetworkError, e:
+            except configNetwork.ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
             return {'status': doneCode}
@@ -1250,7 +1250,7 @@ class Global(APIBase):
 
             try:
                 supervdsm.getProxy().addNetwork(bridge, options)
-            except configNetwork.ConfigNetworkError, e:
+            except configNetwork.ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
             return {'status': doneCode}
@@ -1285,7 +1285,7 @@ class Global(APIBase):
                         raise configNetwork.ConfigNetworkError(
                             configNetwork.ne.ERR_BAD_NIC,
                             "not all nics are enslaved")
-                except configNetwork.ConfigNetworkError, e:
+                except configNetwork.ConfigNetworkError as e:
                     self.log.error(e.message, exc_info=True)
                     return {'status': {'code': e.errCode,
                                        'message': e.message}}
@@ -1294,7 +1294,7 @@ class Global(APIBase):
 
             try:
                 supervdsm.getProxy().delNetwork(bridge, options)
-            except configNetwork.ConfigNetworkError, e:
+            except configNetwork.ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
             return {'status': doneCode}
@@ -1320,7 +1320,7 @@ class Global(APIBase):
 
             try:
                 supervdsm.getProxy().editNetwork(oldBridge, newBridge, options)
-            except configNetwork.ConfigNetworkError, e:
+            except configNetwork.ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
             return {'status': doneCode}

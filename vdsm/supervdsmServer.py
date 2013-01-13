@@ -186,7 +186,7 @@ class _SuperVdsm(object):
                 os.setuid(uid)
 
                 res = func(*args, **kwargs)
-            except BaseException, e:
+            except BaseException as e:
                 ex = e
 
             pipe.send((res, ex))
@@ -200,7 +200,7 @@ class _SuperVdsm(object):
         if not pipe.poll(RUN_AS_TIMEOUT):
             try:
                 os.kill(proc.pid, signal.SIGKILL)
-            except OSError, e:
+            except OSError as e:
                 # If it didn't fail because process is already dead
                 if e.errno != errno.ESRCH:
                     raise

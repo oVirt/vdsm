@@ -42,7 +42,7 @@ class DynamicBridge(object):
             return {'result': result, 'error': error}
         try:
             result = fn(argobj)
-        except VdsmError, e:
+        except VdsmError as e:
             error = {'code': e.code, 'message': e.message}
         return {'result': result, 'error': error}
 

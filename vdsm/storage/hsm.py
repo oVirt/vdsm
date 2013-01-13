@@ -610,7 +610,7 @@ class HSM:
             # This happens when we cannot read the MD LV
             self.log.error("Can't read LV based metadata", exc_info=True)
             raise se.StorageDomainMasterError("Can't read LV based metadata")
-        except se.StorageException, e:
+        except se.StorageException as e:
             self.log.error("MD read error: %s", str(e), exc_info=True)
             raise se.StorageDomainMasterError("MD read error")
         except (KeyError, ValueError):
@@ -3302,7 +3302,7 @@ class HSM:
         lockCmd = config.get('irs', 'lock_cmd')
         try:
             misc.killall(lockCmd, signal.SIGUSR1, group=True)
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ESRCH:
                 return
             raise
@@ -3313,7 +3313,7 @@ class HSM:
 
             try:
                 misc.killall(lockCmd, 0)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == errno.ESRCH:
                     return
 

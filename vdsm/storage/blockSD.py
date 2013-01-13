@@ -538,7 +538,7 @@ class BlockStorageDomain(sd.StorageDomain):
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
             path = lvm.lvPath(vgName, sd.OUTBOX)
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
-        except se.ActionStopped, e:
+        except se.ActionStopped as e:
             raise e
         except se.StorageException:
             raise se.VolumesZeroingError(path)
@@ -900,7 +900,7 @@ class BlockStorageDomain(sd.StorageDomain):
             #Fix me: Should raise and get resource lock.
             try:
                 lvm.removeLVs(sdUUID, lv.name)
-            except se.CannotRemoveLogicalVolume, e:
+            except se.CannotRemoveLogicalVolume as e:
                 cls.log.warning("Remove logical volume failed %s/%s %s",
                                 sdUUID, lv.name, str(e))
 
@@ -1165,7 +1165,7 @@ class BlockStorageDomain(sd.StorageDomain):
                         try:
                             cls.log.debug("Trying to kill pid %d", pid)
                             os.kill(pid, signal.SIGKILL)
-                        except OSError, e:
+                        except OSError as e:
                             if e.errno == errno.ESRCH:  # No such process
                                 pass
                             elif e.errno == errno.EPERM:  # Op. not permitted

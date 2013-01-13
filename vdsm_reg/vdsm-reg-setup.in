@@ -218,7 +218,7 @@ def _createUpgradeDir(upgradeDir):
         try:
             os.makedirs(upgradeDir)
             os.chmod(upgradeDir, 0755)
-        except OSError, err:
+        except OSError as err:
             if err.errno != errno.EEXIST:
                 log.error(
                     "can not create vdsm upgrade dir: %s" % upgradeDir
@@ -312,7 +312,7 @@ if __name__ == "__main__":
                     sys.exit(1)
             elif o == "-l":
                 daemonize = False
-    except getopt.GetoptError,e:
+    except getopt.GetoptError as e:
         print "ERROR: '%s'"%(e.msg)
         usage()
         sys.exit(1)

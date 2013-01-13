@@ -401,7 +401,7 @@ class IscsiConnection(object):
     def disconnect(self):
         try:
             sid = self.getSessionInfo().id
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 return
             raise
@@ -543,7 +543,7 @@ class ConnectionAliasRegistrar(object):
 
         try:
             os.makedirs(self._persistDir)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
 

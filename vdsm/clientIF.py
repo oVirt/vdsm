@@ -421,7 +421,7 @@ class clientIF:
         try:
             vmdom = minidom.parseString(vm.XMLDesc(0))
             sysinfo = vmdom.getElementsByTagName("sysinfo")[0]
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 self.log.error("domId: %s is dead", vm.UUIDString())
             else:
@@ -450,7 +450,7 @@ class clientIF:
         for domId in domIds:
             try:
                 vm = self._libvirt.lookupByID(domId)
-            except libvirt.libvirtError, e:
+            except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     self.log.error("domId: %s is dead", domId, exc_info=True)
                 else:

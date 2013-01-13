@@ -54,7 +54,7 @@ class TaskManager:
                 del self._tasks[task.id]
                 raise se.AddTaskError()
             self.log.debug("task queued: %s", task.id)
-        except Exception, ex:
+        except Exception as ex:
             self.log.error("Could not queue task, encountered: %s", str(ex))
             raise
         return task.id

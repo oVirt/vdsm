@@ -198,7 +198,7 @@ def process_ovirt_platform(url_bs, engine_port, random_num, systime, engine_ssh_
     try:
         time_struct = time.strptime(systime, '%Y-%m-%dT%H:%M:%S')
         ticket = calendar.timegm(time_struct)
-    except ValueError, ex:
+    except ValueError as ex:
         logging.debug("setHostTime: Failed to parse ENGINE time. message= " + str(ex))
         return 1
 

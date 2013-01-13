@@ -229,7 +229,7 @@ class ConfigWriter(object):
         try:
             net = conn.networkLookupByName(netName)
             return net.XMLDesc(0)
-        except libvirt.libvirtError, e:
+        except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
                 return
 
@@ -286,7 +286,7 @@ class ConfigWriter(object):
             # to remove the old network first
             try:
                 self._removeNetwork(network)
-            except libvirt.libvirtError, e:
+            except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
                     pass
 
@@ -309,7 +309,7 @@ class ConfigWriter(object):
             try:
                 self._backups[filename] = open(filename).read()
                 logging.debug("Backed up %s", filename)
-            except IOError, e:
+            except IOError as e:
                 if e.errno == os.errno.ENOENT:
                     self._backups[filename] = None
                 else:
@@ -1433,7 +1433,7 @@ def setupNetworks(networks={}, bondings={}, **options):
             configWriter.restoreBackups()
             raise
 
-    except Exception, e:
+    except Exception as e:
         # SuperVdsm eats the error, so let's print it ourselves
         logger.error(e, exc_info=True)
         raise
@@ -1513,7 +1513,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     try:
         main()
-    except ConfigNetworkError, e:
+    except ConfigNetworkError as e:
         traceback.print_exc()
         print e.message
         sys.exit(e.errCode)

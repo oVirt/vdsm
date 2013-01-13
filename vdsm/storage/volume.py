@@ -151,7 +151,7 @@ class Volume(object):
         cls.log.info("pid=%s ctime=%s", pid, ctime)
         try:
             pidCtime = misc.getProcCtime(pid)
-        except OSError, e:
+        except OSError as e:
             cls.log.debug("pid=%s ctime=%s (%s)", pid, ctime, str(e))
             return
 
@@ -265,7 +265,7 @@ class Volume(object):
             createVolume(parent, parent_format, dst_path,
                          size, volFormat, preallocate)
             self.teardown(self.sdUUID, self.volUUID)
-        except Exception, e:
+        except Exception as e:
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
@@ -304,7 +304,7 @@ class Volume(object):
 
             self._share(dstImgPath)
 
-        except Exception, e:
+        except Exception as e:
             raise se.CannotShareVolume(self.getVolumePath(), dstPath, str(e))
 
     def refreshVolume(self):
@@ -448,7 +448,7 @@ class Volume(object):
         except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
-        except Exception, e:
+        except Exception as e:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumeCannotGetParent(
                 "Couldn't get parent %s for volume %s: %s" %
@@ -511,7 +511,7 @@ class Volume(object):
         except se.StorageException:
             cls.log.error("Unexpected error", exc_info=True)
             raise
-        except Exception, e:
+        except Exception as e:
             cls.log.error("Unexpected error", exc_info=True)
             raise se.VolumeCreationError("Volume creation %s failed: %s" %
                                          (volUUID, e))
@@ -536,7 +536,7 @@ class Volume(object):
             children = self.getChildrenList()
             if len(children) > 0:
                 raise se.VolumeImageHasChildren(self)
-        except se.MetaDataKeyNotFoundError, e:
+        except se.MetaDataKeyNotFoundError as e:
             # In case of metadata key error, we have corrupted
             # volume (One of metadata corruptions may be
             # previous volume deletion failure).
@@ -735,7 +735,7 @@ class Volume(object):
             if pvol:
                 pvol.prepare(rw=chainrw, justme=False,
                              chainrw=chainrw, setrw=setrw)
-        except Exception, e:
+        except Exception as e:
             self.log.error("Unexpected error", exc_info=True)
             self.teardown(self.sdUUID, self.volUUID)
             raise e
@@ -810,7 +810,7 @@ class Volume(object):
             info['truesize'] = str(avsize)
             info['mtime'] = self.getVolumeMtime()
             info['status'] = "OK"
-        except se.StorageException, e:
+        except se.StorageException as e:
             self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
             info['apparentsize'] = "0"
             info['truesize'] = "0"

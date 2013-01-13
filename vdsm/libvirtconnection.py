@@ -115,7 +115,7 @@ def get(cif=None):
                         if callable(method) and name[0] != '_':
                             setattr(ret, name, wrapMethod(method))
                 return ret
-            except libvirt.libvirtError, e:
+            except libvirt.libvirtError as e:
                 edom = e.get_error_domain()
                 ecode = e.get_error_code()
                 EDOMAINS = (libvirt.VIR_FROM_REMOTE,

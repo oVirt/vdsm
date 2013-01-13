@@ -287,7 +287,7 @@ def get():
                 d['networks'][netname] = {'ports': ports(devname),
                                           'stp': bridge_stp_state(devname),
                                           'cfg': getIfaceCfg(devname), }
-            except OSError, e:
+            except OSError as e:
                 # If the bridge reported by libvirt does not exist anymore, do
                 # not report it, as this already assures that the bridge is not
                 # added to d['networks']
@@ -314,7 +314,7 @@ def get():
                  'netmask': getnetmask(devname),
                  'gateway': routes.get(devname, '0.0.0.0'),
                  'mtu': getMtu(devname), })
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 logging.info('Obtaining info for net %s.', devname,
                              exc_info=True)
