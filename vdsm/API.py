@@ -166,8 +166,8 @@ class VM(APIBase):
                             pickledMachineParams = pickle.load(f)
 
                         if type(pickledMachineParams) == dict:
-                            self.log.debug('loaded pickledMachineParams '
-                                           + str(pickledMachineParams))
+                            self.log.debug('loaded pickledMachineParams ' +
+                                           str(pickledMachineParams))
                             self.log.debug('former conf ' + str(vmParams))
                             vmParams.update(pickledMachineParams)
                     finally:
@@ -231,8 +231,8 @@ class VM(APIBase):
             if vmParams.get('display') not in ('vnc', 'qxl', 'qxlnc'):
                 return {'status': {'code': errCode['createErr']
                                                   ['status']['code'],
-                                   'message': 'Unknown display type %s'
-                                              % vmParams.get('display')}}
+                                   'message': 'Unknown display type %s' %
+                                              vmParams.get('display')}}
             if 'nicModel' not in vmParams:
                 vmParams['nicModel'] = config.get('vars', 'nic_model')
             vmParams['displayIp'] = self._getNetworkIp(vmParams.get(
