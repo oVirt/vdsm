@@ -85,6 +85,10 @@ LOG_CONF_PATH = "/etc/vdsm/logger.conf"
 
 class _SuperVdsm(object):
 
+    UDEV_WITH_RELOAD_VERSION = 181
+
+    log = logging.getLogger("SuperVdsm.ServerCallback")
+
     @logDecorator
     def ping(self, *args, **kwargs):
         # This method exists for testing purposes
@@ -222,6 +226,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def udevTrigger(self, guid):
+        self.__udevReloadRules(guid)
         cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
                '--property-match=DM_NAME=%s' % guid]
         rc, out, err = misc.execCmd(cmd, sudo=False)
@@ -299,6 +304,32 @@ class _SuperVdsm(object):
     @logDecorator
     def removeFs(self, path):
         return mkimage.removeFs(path)
+
+    def __udevReloadRules(self, guid):
+        if self.__udevOperationReload():
+            reload = "--reload"
+        else:
+            reload = "--reload-rules"
+        cmd = [EXT_UDEVADM, 'control', reload]
+        rc, out, err = misc.execCmd(cmd, sudo=False)
+        if rc:
+            self.log.error("Udevadm reload-rules command failed rc=%s, "
+                           "out=\"%s\", err=\"%s\"", rc, out, err)
+            raise OSError(errno.EINVAL, "Could not reload-rules for device "
+                          "%s" % guid)
+
+    @utils.memoized
+    def __udevVersion(self):
+        cmd = [EXT_UDEVADM, '--version']
+        rc, out, err = misc.execCmd(cmd, sudo=False)
+        if rc:
+            self.log.error("Udevadm version command failed rc=%s, "
+                           " out=\"%s\", err=\"%s\"", rc, out, err)
+            raise RuntimeError("Could not get udev version number")
+        return int(out[0])
+
+    def __udevOperationReload(self):
+        return self.__udevVersion() > self.UDEV_WITH_RELOAD_VERSION
 
 
 def __pokeParent(parentPid, address, log):
