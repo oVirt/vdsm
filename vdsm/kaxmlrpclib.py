@@ -95,7 +95,7 @@ class TcpkeepHTTPConnection(httplib.HTTPConnection):
                 continue
             break
         if not self.sock:
-            raise socket.error, msg
+            raise socket.error(msg)
         #### beginning of added code
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, KEEPIDLE)

@@ -48,9 +48,9 @@ class TestconfigNetwork(TestCaseBase):
         except excName as exception:
             self._raisesContextManager.__func__.exception = exception
         except:
-            raise self.failureException, "%s not raised" % excName
+            raise self.failureException("%s not raised" % excName)
         else:
-            raise self.failureException, "%s not raised" % excName
+            raise self.failureException("%s not raised" % excName)
 
     def _assertRaises(self, excName, callableObj=None, *args, **kwargs):
         if callableObj is None:

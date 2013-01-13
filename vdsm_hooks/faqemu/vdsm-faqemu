@@ -11,7 +11,7 @@ qemu_paths = [
 for qemu_bin in qemu_paths:
     if os.path.exists(qemu_bin): break
 else:
-    raise RuntimeError, "QEMU binary not found"
+    raise RuntimeError("QEMU binary not found")
 
 qemu_argv = [ qemu_bin ]
 
