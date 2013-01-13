@@ -269,6 +269,15 @@ BuildArch:      noarch
 %description tests
 A test suite for verifying the functionality of a running vdsm instance
 
+%package hook-checkimages
+Summary:        Qcow2 disk image format check hook for VDSM
+BuildArch:      noarch
+Requires:       vdsm
+
+%description hook-checkimages
+VDSM hook used to perform consistency check on a qcow2 format disk image
+using the QEMU disk image utility.
+
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
 Requires:       vhostmd
@@ -894,6 +903,10 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qemucmdline
 
 %if 0%{?with_hooks}
+%files hook-checkimages
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
+
 %files hook-directlun
 %defattr(-, root, root, -)
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_directlun

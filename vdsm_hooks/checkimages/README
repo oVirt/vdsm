@@ -1,0 +1,21 @@
+checkimages vdsm hook
+=====================
+Hook performs consistency check on all qcow2 format disk images of a
+particular VM using the QEMU disk image utility.
+
+Accepts optional parameter 'timeout' (in seconds) to specify how long
+the hook should wait for the QEMU disk image utility operation to complete.
+
+Without 'timeout' specified, particular timeout is computed based on
+image size.
+
+syntax:
+    checkimages=true(|,timeout:\d+\.{1}\d+);
+
+example:
+    checkimages=true,timeout:1.12     # Use 1.12 seconds as timeout
+
+    checkimages=true                  # Compute timeout based on image size
+
+Note: Timeout value is taken in seconds. Check of 1GB image takes ~0.02 s.
+

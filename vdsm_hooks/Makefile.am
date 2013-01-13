@@ -25,6 +25,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 # Additional hooks
 if HOOKS
 SUBDIRS += \
+	checkimages \
 	directlun \
 	fileinject \
 	floppy \
