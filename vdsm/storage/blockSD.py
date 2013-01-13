@@ -33,6 +33,7 @@ from operator import itemgetter
 
 from vdsm.config import config
 from vdsm import constants
+from vdsm import utils
 import misc
 import fileUtils
 import sd
@@ -1087,7 +1088,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         for umountPid in umountPids:
             try:
-                state = misc.pidStat(umountPid)[2]
+                state = utils.pidStat(umountPid)[2]
                 mountPoint = misc.getCmdArgs(umountPid)[-1]
             except:
                 # Process probably exited

@@ -56,6 +56,7 @@ import fcntl
 import inspect
 
 from vdsm import constants
+from vdsm import utils
 import storage_exception as se
 from vdsm.betterPopen import BetterPopen
 import fileUtils
@@ -1117,7 +1118,7 @@ def pgrep(name):
             continue
 
         try:
-            procName = pidStat(pid)[1]
+            procName = utils.pidStat(pid)[1]
             if procName == name:
                 res.append(pid)
         except (OSError, IOError):
@@ -1136,26 +1137,12 @@ def getCmdArgs(pid):
     # Retrying seems to solve it.
     while len(res) == 0:
         # cmdline is empty for zombie processes
-        if pidStat(pid)[2] in ("Z", "z"):
+        if utils.pidStat(pid)[2] in ("Z", "z"):
             return tuple()
 
         res = _parseCmdLine(pid)
 
     return res
-
-
-def pidStat(pid):
-    res = []
-    with open("/proc/%d/stat" % pid, "r") as f:
-        statline = f.readline()
-        procNameStart = statline.find("(")
-        procNameEnd = statline.rfind(")")
-        res.append(int(statline[:procNameStart]))
-        res.append(statline[procNameStart + 1:procNameEnd])
-        args = statline[procNameEnd + 2:].split()
-        res.append(args[0])
-        res.extend([int(item) for item in args[1:]])
-        return tuple(res)
 
 
 def tmap(func, iterable):

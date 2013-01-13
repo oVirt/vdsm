@@ -194,6 +194,20 @@ class PidCpuSample:
             map(int, file('/proc/%s/stat' % pid).read().split()[13:15])
 
 
+def pidStat(pid):
+    res = []
+    with open("/proc/%d/stat" % pid, "r") as f:
+        statline = f.readline()
+        procNameStart = statline.find("(")
+        procNameEnd = statline.rfind(")")
+        res.append(int(statline[:procNameStart]))
+        res.append(statline[procNameStart + 1:procNameEnd])
+        args = statline[procNameEnd + 2:].split()
+        res.append(args[0])
+        res.extend([int(item) for item in args[1:]])
+        return tuple(res)
+
+
 class TimedSample:
     def __init__(self):
         self.timestamp = time.time()

@@ -19,6 +19,7 @@
 #
 from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import utils
+from storage import misc
 
 
 class RetryTests(TestCaseBase):
@@ -43,3 +44,17 @@ class RetryTests(TestCaseBase):
                           sleep=0, stopCallback=stopCallback)
         # Make sure we had the proper amount of iterations before failing
         self.assertEquals(counter[0], limit)
+
+
+class PidStatTests(TestCaseBase):
+    def test(self):
+        args = ["sleep", "3"]
+        sproc = misc.execCmd(args, sync=False, sudo=False)
+        stats = utils.pidStat(sproc.pid)
+        pid = int(stats[0])
+        # procName comes in the format of (procname)
+        name = stats[1]
+        self.assertEquals(pid, sproc.pid)
+        self.assertEquals(name, args[0])
+        sproc.kill()
+        sproc.wait()

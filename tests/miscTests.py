@@ -101,20 +101,6 @@ class GetCmdArgsTests(TestCaseBase):
             sproc.wait()
 
 
-class PidStatTests(TestCaseBase):
-    def test(self):
-        args = [EXT_SLEEP, "3"]
-        sproc = misc.execCmd(args, sync=False, sudo=False)
-        stats = misc.pidStat(sproc.pid)
-        pid = int(stats[0])
-        # procName comes in the format of (procname)
-        name = stats[1]
-        self.assertEquals(pid, sproc.pid)
-        self.assertEquals(name, args[0])
-        sproc.kill()
-        sproc.wait()
-
-
 class EventTests(TestCaseBase):
     def testEmit(self):
         ev = threading.Event()
@@ -1039,7 +1025,7 @@ class ExecCmd(TestCaseBase):
         proc = misc.execCmd(cmd, sudo=False, nice=10, sync=False)
 
         def test():
-            nice = misc.pidStat(proc.pid)[18]
+            nice = utils.pidStat(proc.pid)[18]
             self.assertEquals(nice, 10)
 
         utils.retry(AssertionError, test, tries=10, sleep=0.1)
