@@ -57,6 +57,10 @@ class SSLSocket(object):
     def gettimeout(self):
         return self.connection.socket.gettimeout()
 
+    def close(self):
+        self.connection.shutdown(socket.SHUT_RDWR)
+        self.connection.close()
+
     def __getattr__(self, name):
         # This is how we delegate all the rest of the methods to the
         # underlying SSL connection:
