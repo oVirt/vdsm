@@ -203,7 +203,7 @@ class XMLRPCTest(TestCaseBase):
 
         self.assertVdsOK(destroyResult)
 
-    @permutations([['localfs'], ['iscsi']])
+    @permutations([['localfs'], ['iscsi'], ['glusterfs']])
     def testStorage(self, backendType):
         conf = storageLayouts[backendType]
         with RollbackContext() as rollback:
@@ -522,6 +522,47 @@ class IscsiServer(BackendServer):
         return args
 
 
+class GlusterFSServer(BackendServer):
+    def __init__(self, vdsmServer, asserts):
+        super(GlusterFSServer, self).__init__(vdsmServer, asserts)
+
+        # Check if gluster service is operational
+        self.glusterVolInfo = self.s.glusterVolumesList()
+        if self.glusterVolInfo['status']['code'] != 0:
+            raise SkipTest(self.glusterVolInfo['status']['message'])
+
+    def _createBackend(self, backendDef, rollback):
+        connections = {}
+        for uuid, conDict in backendDef.iteritems():
+            spec = conDict['spec']
+            vfstype = conDict['vfstype']
+            options = conDict['options']
+
+            # Check if gluster volume is created & started
+            glusterVolName = spec.split(':')[1]
+            if not glusterVolName in self.glusterVolInfo['volumes']:
+                raise SkipTest("Test volume %s not found. Pls create it "
+                               "and start it" % glusterVolName)
+
+            glusterVolDict = self.glusterVolInfo['volumes'][glusterVolName]
+            if glusterVolDict['volumeStatus'] == 'OFFLINE':
+                raise SkipTest("Test volume %s is offline. \
+                                Pls start the volume" % glusterVolName)
+
+            connections[uuid] = {'type': 'glusterfs',
+                                 'params': {'spec': spec,
+                                            'vfsType': vfstype,
+                                            'options': options}}
+
+        return connections
+
+    def _genTypeSpecificArgs(self, connections, rollback):
+        args = {}
+        for uuid, conDict in connections.iteritems():
+            args[uuid] = conDict['params']['spec']
+        return args
+
+
 storageLayouts = \
     {'localfs':
         {'server': LocalFSServer,
@@ -599,4 +640,35 @@ storageLayouts = \
                  "3f330c2c-9b01-4167-9df5-cf665f95e3a6": [
                      "a81db3fc-5586-4e35-9785-912c28ada09d"],
                  "a73a818b-3341-457a-8139-a6a71194ab7a": [
-                     "35c728e1-edf1-4068-8f25-02d21feb85cd"]}}}}
+                     "35c728e1-edf1-4068-8f25-02d21feb85cd"]}}},
+     'glusterfs':
+        {'server': GlusterFSServer,
+         'conn': {
+             'backends': {
+                 '98a4b463-8e38-4b54-814e-dbf5b5fdf437': {
+                     'spec': 'localhost:testvol', 'vfstype': 'glusterfs',
+                     'options': ""}},
+             'timeout': 30},
+         'sd': {
+             '3cca273c-9fe5-4740-aad4-26a94ca13716': {
+                 'name': 'test gluster domain', 'type': 'glusterfs',
+                 'class': 'Data',
+                 'connUUID': '98a4b463-8e38-4b54-814e-dbf5b5fdf437'}},
+         'sp': {
+             '8a098016-9495-4c1b-95da-6ca3238c0cbd': {
+                 'name': 'test gluster storage pool', 'master_ver': 1,
+                 'host': 1,
+                 'master_uuid': '3cca273c-9fe5-4740-aad4-26a94ca13716'}},
+         'img': {
+             '72214f6c-f8c0-41fc-8123-df6d0d6e934d': {
+                 'description': 'test gluster volume', 'type': 'leaf',
+                 'volid': 'c0ca016f-c1a5-4d66-9428-03f7a99c16bc',
+                 'format': 'cow', 'preallocate': 'sparse',
+                 'size': 20971520}},
+         'layout': {
+             # pool
+             '8a098016-9495-4c1b-95da-6ca3238c0cbd': {
+                 # domain(s)
+                 '3cca273c-9fe5-4740-aad4-26a94ca13716': [
+                     # images(s)
+                     '72214f6c-f8c0-41fc-8123-df6d0d6e934d']}}}}
