@@ -3163,8 +3163,6 @@ class Vm(object):
             self._dom = NotifyingVirDomain(
                 self._connection.createXML(domxml, flags),
                 self._timeoutExperienced)
-            if self._dom.UUIDString() != self.id:
-                raise Exception('libvirt bug 603494')
             hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
             for dev in self._customDevices():
                 hooks.after_device_create(dev._deviceXML, self.conf,
