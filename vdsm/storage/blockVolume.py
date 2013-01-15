@@ -116,7 +116,7 @@ class BlockVolume(volume.Volume):
             # Fix me: assert resource lock.
             lvm.getLV(sdUUID, volUUID)
             lvm.removeLVs(sdUUID, volUUID)
-        except se.LogicalVolumeDoesNotExistError as e:
+        except se.LogicalVolumeDoesNotExistError:
             pass  # It's OK: inexistent LV, don't try to remove.
         except se.CannotRemoveLogicalVolume as e:
             cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID,
@@ -224,9 +224,9 @@ class BlockVolume(volume.Volume):
                 misc.ddWatchCopy(
                     "/dev/zero", vol_path, vars.task.aborting, int(size),
                     recoveryCallback=volume.baseAsyncTasksRollback)
-            except se.ActionStopped as e:
-                raise e
-            except Exception as e:
+            except se.ActionStopped:
+                raise
+            except Exception:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.VolumesZeroingError(vol_path)
             finally:
@@ -668,7 +668,7 @@ def _postZero(sdUUID, volumes):
     # Assert volumes are writable. (Don't do this at home.)
     try:
         lvm.changelv(sdUUID, lvNames, ("--permission", "rw"))
-    except se.StorageException as e:
+    except se.StorageException:
         # Hope this only means that some volumes were already writable.
         pass
 
@@ -682,9 +682,9 @@ def _postZero(sdUUID, volumes):
                     "/dev/zero", lvm.lvPath(sdUUID, lv.name),
                     vars.task.aborting, int(lv.size),
                     recoveryCallback=volume.baseAsyncTasksRollback)
-            except se.ActionStopped as e:
-                raise e
-            except Exception as e:
+            except se.ActionStopped:
+                raise
+            except Exception:
                 raise se.VolumesZeroingError(lv.name)
 
 

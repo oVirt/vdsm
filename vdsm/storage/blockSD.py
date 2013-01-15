@@ -539,8 +539,8 @@ class BlockStorageDomain(sd.StorageDomain):
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
             path = lvm.lvPath(vgName, sd.OUTBOX)
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
-        except se.ActionStopped as e:
-            raise e
+        except se.ActionStopped:
+            raise
         except se.StorageException:
             raise se.VolumesZeroingError(path)
 

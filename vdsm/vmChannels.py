@@ -82,7 +82,7 @@ class Listener(threading.Thread):
                 if err.errno == 2:
                     self.log.debug("%s (unregister was called twice?)" % err)
                 else:
-                    raise err
+                    raise
             self._add_channels.pop(fileno, None)
             self._unconnected.pop(fileno, None)
             self._channels.pop(fileno, None)

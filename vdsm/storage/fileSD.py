@@ -333,7 +333,7 @@ class FileStorageDomain(sd.StorageDomain):
                 self.oop.os.remove(volPath)
                 self.oop.os.remove(volPath + '.meta')
                 self.oop.os.remove(volPath + '.lease')
-            except OSError as e:
+            except OSError:
                 self.log.error("vol: %s can't be removed.",
                                volPath, exc_info=True)
         try:

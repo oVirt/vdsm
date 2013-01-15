@@ -1683,7 +1683,7 @@ class LibvirtVm(vm.Vm):
                                exc_info=True)
                 raise SetLinkAndNetworkError(e.message)
             yield
-        except Exception as e:
+        except Exception:
             # Rollback link and network.
             self.log.debug('Rolling back link and net for: %s', dev.alias,
                            exc_info=True)

@@ -406,5 +406,5 @@ if __name__ == "__main__":
             logging.root.error("Error while serving", exc_info=True)
             raise
 
-    except BaseException as e:
+    except BaseException:
         sys.exit(errno.ENOEXEC)

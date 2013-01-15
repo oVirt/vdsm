@@ -952,8 +952,8 @@ class Image:
                     if rc:
                         raise se.StorageException("rc: %s, err: %s" %
                                                   (rc, err))
-                except se.ActionStopped as e:
-                    raise e
+                except se.ActionStopped:
+                    raise
                 except se.StorageException as e:
                     raise se.CopyImageError(str(e))
 

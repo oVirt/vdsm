@@ -740,10 +740,10 @@ class Volume(object):
             if pvol:
                 pvol.prepare(rw=chainrw, justme=False,
                              chainrw=chainrw, setrw=setrw)
-        except Exception as e:
+        except Exception:
             self.log.error("Unexpected error", exc_info=True)
             self.teardown(self.sdUUID, self.volUUID)
-            raise e
+            raise
 
         return True
 

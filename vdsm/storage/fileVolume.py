@@ -141,9 +141,9 @@ class FileVolume(volume.Volume):
                 # ddWatchCopy expects size to be in bytes
                 misc.ddWatchCopy("/dev/zero", volPath,
                                  vars.task.aborting, sizeBytes)
-            except se.ActionStopped as e:
-                raise e
-            except Exception as e:
+            except se.ActionStopped:
+                raise
+            except Exception:
                 cls.log.error("Unexpected error", exc_info=True)
                 raise se.VolumesZeroingError(volPath)
 
