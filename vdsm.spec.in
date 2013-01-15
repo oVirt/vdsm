@@ -44,7 +44,7 @@ BuildRequires: libvirt-python
 BuildRequires: genisoimage
 BuildRequires: openssl
 BuildRequires: m2crypto
-%if 0%{?rhel}
+%if 0%{?rhel} < 7
 BuildRequires: python-ordereddict
 %endif
 
@@ -174,7 +174,7 @@ Summary:        VDSM API Server
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
-%if 0%{?rhel}
+%if 0%{?rhel} < 7
 Requires: python-ordereddict
 %endif
 
