@@ -439,6 +439,12 @@ class NetInfo(object):
         return chain(self.getBridgelessNetworksForIface(iface),
                      self.getBridgedNetworksForIface(iface))
 
+    def getBridgelessNetworks(self):
+        """ Return all bridgless networks."""
+        for network, netdict in self.networks.iteritems():
+            if not netdict['bridged']:
+                yield network
+
     def getBridgelessNetworksForIface(self, iface):
         """ Return all bridgeless networks attached to nic/bond """
         for network, netdict in self.networks.iteritems():
@@ -494,13 +500,3 @@ class NetInfo(object):
                 lnics.append(port)
 
         return lnics, vlan, bonding
-
-    def getBridgelessNetworks(self):
-        """
-        Get list of birdgeless networks
-
-        :returns: list of networks name
-        :rtype: List
-        """
-        return [netname for (netname, net) in networks().iteritems()
-                if not 'bridge' in net]
