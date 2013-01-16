@@ -274,57 +274,43 @@ def permAddr():
     return paddr
 
 
+def _getNetInfo(iface, bridged, routes):
+    '''Returns a dictionary of properties about the network's interface status.
+    Raises a KeyError if the iface does not exist.'''
+    data = {}
+    try:
+        if bridged:
+            data.update({'ports': ports(iface), 'stp': bridge_stp_state(iface),
+                         'cfg': getIfaceCfg(iface)})
+        else:
+            # ovirt-engine-3.1 expects to see the "interface" attribute iff the
+            # network is bridgeless. Please remove the attribute and this
+            # comment when the version is no longer supported.
+            data['interface'] = iface
+        data.update({'iface': iface, 'bridged': bridged,
+                     'addr': getaddr(iface), 'netmask': getnetmask(iface),
+                     'gateway': routes.get(iface, '0.0.0.0'),
+                     'mtu': getMtu(iface)})
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            logging.info('Obtaining info for net %s.', iface, exc_info=True)
+            raise KeyError('Network %s was not found' % iface)
+        else:
+            raise
+    return data
+
+
 def get():
     d = {}
     routes = getRoutes()
     d['networks'] = {}
-    nets = networks()
 
-    for netname in nets.iterkeys():
-        if nets[netname]['bridged']:
-            devname = netname
-            try:
-                d['networks'][netname] = {'ports': ports(devname),
-                                          'stp': bridge_stp_state(devname),
-                                          'cfg': getIfaceCfg(devname), }
-            except OSError as e:
-                # If the bridge reported by libvirt does not exist anymore, do
-                # not report it, as this already assures that the bridge is not
-                # added to d['networks']
-                if e.errno == errno.ENOENT:
-                    logging.info('Obtaining info for net %s.', devname,
-                                 exc_info=True)
-                    continue
-                else:
-                    raise
-        else:
-            devname = nets[netname]['iface']
-            d['networks'][netname] = {}
-
-            # ovirt-engine-3.1 expects to see "interface" iff the network is
-            # bridgeless. Please remove this line when that Engine version is
-            # no longer supported
-            d['networks'][netname]['interface'] = devname
-
+    for net, netAttr in networks().iteritems():
         try:
-            d['networks'][netname].update(
-                {'iface': devname,
-                 'bridged': nets[netname]['bridged'],
-                 'addr': getaddr(devname),
-                 'netmask': getnetmask(devname),
-                 'gateway': routes.get(devname, '0.0.0.0'),
-                 'mtu': getMtu(devname), })
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                logging.info('Obtaining info for net %s.', devname,
-                             exc_info=True)
-                # When a net is not bridged it will have left an entry in
-                # d['networks']
-                if netname in d['networks']:
-                    del d['networks'][netname]
-                continue
-            else:
-                raise
+            d['networks'][net] = _getNetInfo(netAttr.get('iface', net),
+                                             netAttr['bridged'], routes)
+        except KeyError:
+            continue  # Do not report missing libvirt networks.
 
     d['bridges'] = dict([(bridge, {'ports': ports(bridge),
                                    'stp': bridge_stp_state(bridge),
