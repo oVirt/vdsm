@@ -35,6 +35,7 @@ SUBDIRS += \
 	macspoof \
 	nestedvt \
 	numa \
+	openstacknet \
 	pincpu \
 	promisc \
 	qos \

@@ -224,6 +224,7 @@ AC_OUTPUT([
 	vdsm_hooks/macspoof/Makefile
 	vdsm_hooks/nestedvt/Makefile
 	vdsm_hooks/numa/Makefile
+	vdsm_hooks/openstacknet/Makefile
 	vdsm_hooks/pincpu/Makefile
 	vdsm_hooks/promisc/Makefile
 	vdsm_hooks/qemucmdline/Makefile

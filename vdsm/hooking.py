@@ -37,6 +37,7 @@ Return codes:
 """
 
 import os
+import sys
 from xml.dom import minidom
 
 from vdsm.utils import execCmd
@@ -53,3 +54,13 @@ def read_domxml():
 
 def write_domxml(domxml):
     file(os.environ['_hook_domxml'], 'w').write(domxml.toxml(encoding='utf-8'))
+
+
+def exit_hook(message, return_code=2):
+    """
+    Exit the hook with a given message, which will be printed to the standard
+    error stream. A newline will be printed at the end.
+    The default return code is 2 for signaling that an error occurred.
+    """
+    sys.stderr.write(message + "\n")
+    sys.exit(return_code)

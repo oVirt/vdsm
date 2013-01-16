@@ -1,0 +1,1 @@
+vdsm  ALL=(ALL) NOPASSWD: @BRCTL_PATH@
