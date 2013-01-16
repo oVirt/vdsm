@@ -1253,6 +1253,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/api.py*
 %{_datadir}/%{vdsm_name}/gluster/vdsmapi-gluster-schema.json
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*
+%{_datadir}/%{vdsm_name}/gluster/services.py*
 %endif
 
 %files python-cpopen

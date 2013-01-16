@@ -264,3 +264,111 @@
 ##
 {'command': {'class': 'GlusterHost', 'name': 'uuid'},
  'returns': 'UUID'}
+
+## Category: @GlusterService ######################################################
+##
+# @GlusterService:
+#
+# Gluster Service manage object.
+#
+# Since: 4.10.3
+##
+{'class': 'GlusterService'}
+
+##
+# @GlusterServiceStatus:
+#
+# Possible value of Gluster service status.
+#
+# @RUNNING:    Service is Running
+#
+# @STOPPED:    Service is Stopped
+#
+# @NOT_AVAILABLE:    Service is not Installed
+#
+# @NOT_SUPPORTED:    Service is not allowed to manage
+#
+# @ERROR:    Service action failed
+#
+# Since: 4.10.3
+##
+{'enum': 'GlusterServiceStatus',
+ 'data': ['RUNNING', 'STOPPED', 'NOT_AVAILABLE', 'NOT_SUPPORTED', 'ERROR']}
+
+##
+# @GlusterServiceAction:
+#
+# Possible value of Gluster service actions.
+#
+# @start:    Start the service
+#
+# @stop:    Stop the service
+#
+# @restart:    Restart the service
+#
+# Since: 4.10.3
+##
+{'enum': 'GlusterServiceAction',
+ 'data': ['start', 'stop', 'restart']}
+
+##
+# @GlusterServiceStatusInfo:
+#
+# Gluster service status information.
+#
+# @name:      The name of the service
+#
+# @status:    Status of the service
+#
+# @message:   Message if status is ERROR
+#
+# Since: 4.10.3
+##
+{'type': 'GlusterServiceStatusInfo',
+ 'data': {'name': 'str', 'status': 'GlusterServiceStatus', 'message': 'str'}}
+
+##
+# @GlusterServicesStatusInfo:
+#
+# Gluster services status information.
+#
+# @services:  List of services status information
+#
+# Since: 4.10.3
+##
+{'type': 'GlusterServicesStatusInfo',
+ 'data': {'services': ['GlusterServiceStatusInfo']}}
+
+##
+# @GlusterService.get:
+#
+# Get status information for list of services
+#
+# @serviceName:   Gluster service name
+#
+# Returns:
+# status information for list of services
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterService', 'name': 'get'},
+ 'data': {'serviceName': 'str'},
+ 'returns': 'GlusterServicesStatusInfo'}
+
+##
+# @GlusterService.action:
+#
+# start/stop/restart the list of services and get status information.
+#
+# @serviceName:   Gluster service name
+#
+# @action:   Action to perform start/stop/restart
+#
+# Returns:
+# status information for list of services
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterService', 'name': 'action'},
+ 'data': {'serviceName': 'str', 'action': 'GlusterServiceAction'},
+ 'returns': 'GlusterServicesStatusInfo'}

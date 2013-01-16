@@ -470,3 +470,17 @@ class GlusterHookAddFailedException(GlusterHookException):
 class GlusterHookRemoveFailedException(GlusterHookException):
     code = 4510
     message = "Hook remove failed"
+
+
+class GlusterServiceException(GlusterException):
+    code = 4550
+    message = "Gluster Service Exception"
+
+
+class GlusterServiceActionNotSupportedException(GlusterServiceException):
+    code = 4551
+
+    def __init__(self, action=''):
+        prefix = "%s: " % (action)
+        self.message = prefix + "Service action is not supported"
+        self.err = [self.message]

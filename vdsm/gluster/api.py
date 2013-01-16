@@ -276,6 +276,17 @@ class GlusterApi(object):
     def hostUUIDGet(self, options=None):
         return {'uuid': self.svdsmProxy.glusterHostUUIDGet()}
 
+    @exportAsVerb
+    def servicesAction(self, serviceNames, action, options=None):
+        status = self.svdsmProxy.glusterServicesAction(serviceNames,
+                                                       action)
+        return {'services': status}
+
+    @exportAsVerb
+    def servicesGet(self, serviceNames, options=None):
+        status = self.svdsmProxy.glusterServicesGet(serviceNames)
+        return {'services': status}
+
 
 def getGlusterMethods(gluster):
     l = []

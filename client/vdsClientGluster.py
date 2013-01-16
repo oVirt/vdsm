@@ -395,6 +395,35 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterServicesAction(self, args):
+        params = self._eqSplit(args)
+        try:
+            serviceNames = params.get('serviceNames', '').split(',')
+        except:
+            raise ValueError
+        action = params.get('action', '')
+
+        if not serviceNames or action == "":
+            raise ValueError
+
+        status = self.s.glusterServicesAction(serviceNames, action)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterServicesGet(self, args):
+        params = self._eqSplit(args)
+        try:
+            serviceNames = params.get('serviceNames', '').split(',')
+        except:
+            raise ValueError
+
+        if not serviceNames:
+            raise ValueError
+
+        status = self.s.glusterServicesGet(serviceNames)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -660,5 +689,20 @@ def getGlusterCmdDict(serv):
              serv.do_glusterHostUUIDGet,
              ('',
               'get gluster UUID of the host'
+              )),
+         'glusterServicesAction': (
+             serv.do_glusterServicesAction,
+             ('serviceNames=<service1[,service2,..]> action=<action>\n\t',
+              'serviceNames - list of services on which action needs '
+              'to be performed',
+              'action can be start/stop or restart',
+              'Performs start/stop/restart of gluster services'
+              )),
+         'glusterServicesGet': (
+             serv.do_glusterServicesGet,
+             ('serviceNames=<service1[,service2,..]>',
+              'Returns status of all gluster services if serviceName is '
+              'not set'
+              '(swift, glusterd, smb, memcached)'
               )),
          }

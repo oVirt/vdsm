@@ -63,6 +63,7 @@ _srvNameAlts = {
     'libvirtd': ['libvirtd', 'libvirt-bin'],
     'multipathd': ['multipathd', 'multipath-tools'],
     'network': ['network', 'networking'],
+    'smb': ['smb', 'samba']
 }
 
 _srvStartAlts = []
