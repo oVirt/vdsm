@@ -79,7 +79,6 @@ class PartedUtilsTests(TestCaseBase):
 
     def _blank_dev_test(self):
         info = putils.getDevicePartedInfo(self.devPath)
-        self.assertFalse(info['model'])
         self.assertTrue(info['sectorSize'] >= 0)
         self.assertFalse(info['type'])
         self.assertFalse(info['partitions'])
@@ -99,7 +98,6 @@ class PartedUtilsTests(TestCaseBase):
         time.sleep(1)  # wait for syncing
 
         info = putils.getDevicePartedInfo(self.devPath)
-        self.assertFalse(info['model'])
         self.assertTrue(info['sectorSize'] >= 0)
         self.assertEquals(info['type'], 'gpt')
         self.assertTrue(info['freeSpaceRegions'][0][3] >= FREE_SIZE)
