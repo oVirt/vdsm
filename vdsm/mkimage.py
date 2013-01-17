@@ -90,7 +90,7 @@ def mkFloppyFs(vmId, files):
         try:
             _decodeFilesIntoDir(files, dirname)
         finally:
-            m.umount(force=True)
+            m.umount(force=True, freeloop=True)
     finally:
         _commonCleanFs(dirname, floppy)
 

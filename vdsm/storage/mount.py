@@ -237,13 +237,16 @@ class Mount(object):
 
         raise MountError(rc, ";".join((out, err)))
 
-    def umount(self, force=False, lazy=False, timeout=None):
+    def umount(self, force=False, lazy=False, freeloop=False, timeout=None):
         cmd = [constants.EXT_UMOUNT]
         if force:
             cmd.append("-f")
 
         if lazy:
             cmd.append("-l")
+
+        if freeloop:
+            cmd.append("-d")
 
         cmd.append(self.fs_file)
 
