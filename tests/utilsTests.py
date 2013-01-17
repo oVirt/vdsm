@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import errno
+
 from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import utils
 from storage import misc
@@ -58,3 +60,18 @@ class PidStatTests(TestCaseBase):
         self.assertEquals(name, args[0])
         sproc.kill()
         sproc.wait()
+
+
+class CommandPathTests(TestCaseBase):
+    def testExisting(self):
+        cp = utils.CommandPath('sh', 'utter nonsense', '/bin/sh')
+        self.assertEquals(cp.cmd, '/bin/sh')
+
+    def testMissing(self):
+        NAME = 'nonsense'
+        try:
+            utils.CommandPath(NAME, 'utter nonsense').cmd
+        except OSError as e:
+            self.assertEquals(e.errno, errno.ENOENT)
+            self.assertTrue(NAME in e.strerror,
+                            msg='%s not in %s' % (NAME, e.strerror))
