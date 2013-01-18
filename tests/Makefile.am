@@ -33,6 +33,7 @@ test_modules = \
 	guestIFTests.py \
 	hooksTests.py \
 	jsonRpcTests.py \
+	jsonRpcUtils.py \
 	libvirtvmTests.py \
 	lsblkTests.py \
 	lvmTests.py \

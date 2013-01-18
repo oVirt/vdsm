@@ -951,6 +951,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/jsonrpc/__init__.py*
 %{_datadir}/%{vdsm_name}/jsonrpc/tcpReactor.py*
 %{_datadir}/%{vdsm_name}/jsonrpc/protonReactor.py*
+%{_datadir}/%{vdsm_name}/jsonrpc/client.py*
 
 %files bootstrap
 %defattr(-, root, root, -)

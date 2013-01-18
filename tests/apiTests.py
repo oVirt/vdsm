@@ -31,7 +31,7 @@ from vdsm import constants
 import BindingJsonRpc
 import jsonrpc
 import apiData
-from jsonRpcTests import _getFreePort
+from jsonRpcUtils import getFreePort
 
 
 ip = '127.0.0.1'
@@ -148,7 +148,7 @@ def setUpModule():
     bridge = Bridge.DynamicBridge(schema)
 
     # Support parallel testing.  Try hard to find an open port to use
-    port = _getFreePort()
+    port = getFreePort()
     server = BindingJsonRpc.BindingJsonRpc(bridge,
                                            [('tcp', {"ip": ip,
                                                      "port": port})])
