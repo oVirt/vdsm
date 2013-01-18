@@ -127,6 +127,9 @@ errCode = {'noVM': {'status':
             'updateDevice': {'status':
                              {'code': 56,
                               'message': 'Failed to update device'}},
+            'hwInfoErr': {'status':
+                          {'code': 57,
+                           'message': 'Failed to read hardware information'}},
             'recovery': {'status':
                          {'code': 99,
                           'message':

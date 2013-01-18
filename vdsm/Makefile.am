@@ -32,6 +32,7 @@ dist_vdsm_PYTHON = \
 	configNetwork.py \
 	debugPluginClient.py \
 	dummybr.py \
+	dmidecodeUtil.py \
 	guestIF.py \
 	hooking.py \
 	hooks.py \
