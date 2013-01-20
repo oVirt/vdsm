@@ -1664,7 +1664,7 @@ def getChainFromSSL(host):
     # import M2Crypto here so
     # it be done only at vdsm-reg
     # which depends on M2Crypto
-    from M2Crypto import SSL, X509
+    from M2Crypto import SSL
 
     # openssl verify callback does not
     # accept context, so we collect the chain
@@ -1676,8 +1676,8 @@ def getChainFromSSL(host):
     #   depth: certificate
     chain = {}
 
-    def verify(ssl_ctx_ptr, x509_ptr, errnum, errdepth, ok):
-        chain[errdepth] = X509.X509(x509=x509_ptr).as_pem()
+    def verify(ok, store):
+        chain[store.get_error_depth()] = store.get_current_cert().as_pem()
         return True
 
     def check_ignore(*args, **kw):
