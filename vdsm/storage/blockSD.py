@@ -704,13 +704,11 @@ class BlockStorageDomain(sd.StorageDomain):
                         del self._metadata[key]
 
     def extend(self, devlist, force):
-        mapping = self.readMetadataMapping().values()
-        if self.getVersion() in VERS_METADATA_LV:
-            if len(mapping) + len(devlist) > MAX_PVS:
-                raise se.StorageDomainIsMadeFromTooManyPVs()
-
-        self._extendlock.acquire()
-        try:
+        with self._extendlock:
+            if self.getVersion() in VERS_METADATA_LV:
+                mapping = self.readMetadataMapping().values()
+                if len(mapping) + len(devlist) > MAX_PVS:
+                    raise se.StorageDomainIsMadeFromTooManyPVs()
 
             knowndevs = list(multipath.getMPDevNamesIter())
             devices = []
@@ -725,9 +723,6 @@ class BlockStorageDomain(sd.StorageDomain):
             self.updateMapping()
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
-
-        finally:
-            self._extendlock.release()
 
     def mapMetaOffset(self, vol_name, slotSize):
         if self.getVersion() in VERS_METADATA_LV:
