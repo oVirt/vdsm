@@ -280,6 +280,11 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                 log.error("It is not possible to prepare the image %s, the "
                           "volume chain looks damaged", imgUUID, exc_info=True)
 
+            except se.MetaDataKeyNotFoundError:
+                log.error("It is not possible to prepare the image %s, the "
+                          "volume metadata looks damaged", imgUUID,
+                          exc_info=True)
+
             finally:
                 try:
                     img.teardown(domain.sdUUID, imgUUID)
