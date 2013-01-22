@@ -3543,31 +3543,31 @@
 #
 # Information about a Storage Domain.
 #
-# @uuid:        The Storage Domain UUID
+# @uuid:         The Storage Domain UUID
 #
-# @domainType:  The type of backing storage used by this domain
+# @domainType:   The type of backing storage used by this domain
 #
-# @class:       The Storage Domain class
+# @domainClass:  The Storage Domain class
 #
-# @name:        The human-readable name for this Storage Domain
+# @name:         The human-readable name for this Storage Domain
 #
-# @role:        The Storage Domain role
+# @role:         The Storage Domain role
 #
-# @pool:        The Storage Pool associated with this Storage Domain
+# @pool:         The Storage Pool associated with this Storage Domain
 #
-# @version:     The version of this Storage Domain
+# @version:      The version of this Storage Domain
 #
-# @lver:        The lock version of the associated Storage Pool
+# @lver:         The lock version of the associated Storage Pool
 #
-# @spm_id:      Contains the Host ID of the Storage Pool Manager
+# @spm_id:       Contains the Host ID of the Storage Pool Manager
 #
-# @master_ver:  The version of the master Storage Domain
+# @master_ver:   The version of the master Storage Domain
 #
 # Since: 4.10.0
 ##
 {'type': 'StorageDomainInfo',
  'data': {'uuid': 'UUID', 'domainType': 'StorageDomainType',
-          'class': 'StorageDomainImageClass', 'name': 'str',
+          'domainClass': 'StorageDomainImageClass', 'name': 'str',
           'role': 'StorageDomainRole', 'pool': ['UUID'], 'version': 'int',
           'lver': 'int', 'spm_id': 'int', 'master_ver': 'int'}}
 

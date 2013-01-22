@@ -371,4 +371,5 @@ typefixups = {
     'IscsiCredentials': partial(fieldClone, 'type', 'authType'),
     'ConnectionRefArgs': partial(fieldClone, 'type', 'connType'),
     'VolumeInfo': partial(fieldClone, 'type', 'allocType'),
+    'StorageDomainInfo': partial(fieldClone, 'class', 'domainClass'),
 }
