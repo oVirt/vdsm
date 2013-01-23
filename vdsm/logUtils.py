@@ -28,6 +28,9 @@ def funcName(func):
     if ismethod(func):
         return func.im_func.func_name
 
+    if hasattr(func, 'func'):
+        return func.func.func_name
+
     return func.func_name
 
 
