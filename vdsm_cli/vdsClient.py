@@ -2382,7 +2382,7 @@ if __name__ == '__main__':
         'diskReplicateFinish': (serv.diskReplicateFinish,
                                 ('<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID>'
                                  ' <dstSdUUID>',
-                                 'Start live replication to the destination '
+                                 'Finish live replication to the destination '
                                  'domain'
                                  )),
     }
