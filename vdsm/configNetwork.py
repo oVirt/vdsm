@@ -28,6 +28,7 @@ import logging
 import threading
 from xml.sax.saxutils import escape
 import glob
+import socket
 import shutil
 
 import libvirt
@@ -701,13 +702,8 @@ def validateBridgeName(bridgeName):
 
 def _validateIpAddress(address):
     try:
-        parts = address.split(".")
-        if len(parts) != 4:
-            return False
-        for item in parts:
-            if not 0 <= int(item) <= 255:
-                return False
-    except ValueError:
+        socket.inet_pton(socket.AF_INET, address)
+    except socket.error:
         return False
     return True
 
