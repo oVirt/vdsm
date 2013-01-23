@@ -184,22 +184,22 @@ class JsonRawTest(APITest):
             try:
                 sock.connect((ip, port))
             except socket.error as e:
-                raise ConnectionError("Unable to connect to server: %s", e)
+                raise ConnectionError("Unable to connect to server: %s" % e)
             try:
                 sock.sendall(msg)
             except (socket.error, socket.timeout), e:
-                raise ProtocolError("Unable to send request: %s", e)
+                raise ProtocolError("Unable to send request: %s" % e)
             try:
                 data = sock.recv(JsonRawTest._Size.size)
             except socket.error as e:
-                raise ProtocolError("Unable to read response length: %s", e)
+                raise ProtocolError("Unable to read response length: %s" % e)
             if not data:
                 raise ProtocolError("No data received")
             msgLen = JsonRawTest._Size.unpack(data)[0]
             try:
                 data = sock.recv(msgLen)
             except socket.error as e:
-                raise ProtocolError("Unable to read response body: %s", e)
+                raise ProtocolError("Unable to read response body: %s" % e)
             if len(data) != msgLen:
                 raise ProtocolError("Response body length mismatch")
             return json.loads(data)
