@@ -38,53 +38,66 @@ class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
     def __init__(self, bridge, backendConfig):
-        reactors = []
+        reactors = {}
         self.bridge = bridge
         self.server = JsonRpcServer(bridge, _simpleThreadFactory)
-        for backendType, cfg in backendConfig:
-            if backendType == "tcp":
-                reactors.append(self._createTcpReactor(cfg))
-            elif backendType == "amqp":
-                if ProtonReactor is None:
-                    continue
+        self._cfg = backendConfig
 
-                reactors.append(self._createProtonReactor(cfg))
+        for backendType, cfg in backendConfig:
+            if backendType not in reactors:
+                if backendType == "tcp":
+                    reactors["tcp"] = self._createTcpReactor()
+                elif backendType == "amqp":
+                    if ProtonReactor is None:
+                        continue
+
+                    reactors["amqp"] = self._createProtonReactor()
 
         self._reactors = reactors
 
-    def _createTcpReactor(self, cfg):
+    def _createTcpListener(self, cfg):
         address = cfg.get("ip", "0.0.0.0")
         try:
             port = cfg["port"]
         except KeyError:
             raise ValueError("cfg")
 
-        return TCPReactor((address, port), self.server)
+        return self._reactors["tcp"].start_listening((address, port))
 
-    def _createProtonReactor(self, cfg):
+    def _createProtonListener(self, cfg):
         address = cfg.get("host", "0.0.0.0")
         port = cfg.get("port", 5672)
-        return ProtonReactor((address, port), self.server)
+        return self._reactors["amqp"].start_listening((address, port))
+
+    def _createTcpReactor(self):
+        return TCPReactor(self.server)
+
+    def _createProtonReactor(self):
+        return ProtonReactor(self.server)
 
     def start(self):
-        for reactor in self._reactors:
-            reactorName = reactor.__class__.__name__
-            try:
-                reactor.start_listening()
-            except:
-                # TBD: propegate error and crash VDSM
-                self.log.warning("Could not listen on for rector '%s'",
-                                 reactorName)
-            else:
-                t = threading.Thread(target=reactor.process_requests,
-                                     name='JsonRpc (%s)' % reactorName)
-                t.setDaemon(True)
-                t.start()
-
         t = threading.Thread(target=self.server.serve_requests,
-                             name='JsonRpc (Rquest Processing)')
+                             name='JsonRpcServer')
         t.setDaemon(True)
         t.start()
+
+        for reactor in self._reactors.itervalues():
+            reactorName = reactor.__class__.__name__
+            t = threading.Thread(target=reactor.process_requests,
+                                 name='JsonRpc (%s)' % reactorName)
+            t.setDaemon(True)
+            t.start()
+
+        for backendType, cfg in self._cfg:
+            try:
+                if backendType == "tcp":
+                    self._createTcpListener(cfg)
+                elif backendType == "amqp":
+                    self._createProtonListener(cfg)
+            except:
+                # TBD: propegate error and crash VDSM
+                self.log.warning("Could not listen on reactor '%s'",
+                                 reactorName, exc_info=True)
 
     def prepareForShutdown(self):
         self.server.stop()

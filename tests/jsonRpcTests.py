@@ -61,12 +61,13 @@ class ReactorTests(TestCaseBase):
                 self.log.error("Server died unexpectedly", exc_info=True)
                 self.fail("Server died: (%s) %s" % (type(e), e))
 
-        with constructReactor(reactorType, msgHandler) \
-                as (reactor, clientFactory):
-            reactor.start_listening()
+        with constructReactor(reactorType, msgHandler) as (reactor,
+                                                           clientFactory,
+                                                           laddr):
             t = threading.Thread(target=serve, args=(reactor,))
             t.setDaemon(True)
             t.start()
+            reactor.start_listening(laddr)
 
             clientNum = 1
             repeats = 1

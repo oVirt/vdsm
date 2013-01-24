@@ -20,6 +20,11 @@ from functools import partial
 __all__ = ["tcpReactor"]
 
 
+_STATE_INCOMING = 1
+_STATE_OUTGOING = 2
+_STATE_ONESHOT = 4
+
+
 class JsonRpcError(RuntimeError):
     def __init__(self, code, msg):
         self.code = code
@@ -107,7 +112,7 @@ class JsonRpcResponse(object):
         self.error = error
         self.id = reqId
 
-    def encode(self):
+    def toDict(self):
         res = {'jsonrpc': '2.0',
                'id': self.id}
 
@@ -117,6 +122,10 @@ class JsonRpcResponse(object):
         else:
             res['result'] = self.result
 
+        return res
+
+    def encode(self):
+        res = self.toDict()
         return json.dumps(res, 'utf-8')
 
     @staticmethod
@@ -151,6 +160,43 @@ class _JsonRpcResponseContext(object):
     def __init__(self, ctx, response):
         self.response = response
         self.ctx = ctx
+
+
+class JsonRpcBatchRequest(object):
+    def __init__(self, requests):
+        self._requests = requests
+
+    def encode(self):
+        obj = [r.toDict() for r in self._requests]
+        return json.dumps(obj, 'utf-8')
+
+
+class JsonRpcCall(object):
+    def __init__(self, client, request):
+        self._request = request
+        self._client = client
+        self._state = _STATE_INCOMING
+
+    def fileno(self):
+        return self.client.fileno()
+
+    def state(self):
+        return
+
+
+class JsonRpcClient(object):
+    def __init__(self, transport):
+        self._transport = transport
+
+    def sendRequest(self, request):
+        request.encode()
+        self.transport.sendMessage()
+
+    def fileno(self):
+        return self._transport.fileno()
+
+    def process():
+        return None
 
 
 class JsonRpcServer(object):

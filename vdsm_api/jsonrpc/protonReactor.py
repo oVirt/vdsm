@@ -17,6 +17,8 @@ import logging
 import uuid
 from Queue import Queue, Empty
 import time
+from functools import partial
+from threading import Event
 
 import proton
 
@@ -48,14 +50,21 @@ class ProtonContext(object):
         self._reactor._wakeup()
 
 
+class ProtonListener(object):
+    def __init__(self, address, reactor):
+        self._reactor = reactor
+        self._address = address
+
+    def close(self):
+        self._reactor._scheduleOp(False, self._reactor._stop_listening,
+                                  self._address)
+
+
 class ProtonReactor(object):
     log = logging.getLogger("jsonrpc.ProtonReactor")
 
-    def __init__(self, address, messageHandler, deliveryTimeout=5):
+    def __init__(self, messageHandler, deliveryTimeout=5):
         self._messageHandler = messageHandler
-        host, port = address
-        self.host = host
-        self.port = port
 
         self._isRunning = False
 
@@ -63,10 +72,11 @@ class ProtonReactor(object):
 
         self._sessionContexts = []
         self._deliveryTimeout = deliveryTimeout
-        self._activationQeue = Queue()
+        self._commandQueue = Queue()
+        self._listeners = {}
 
     def _activate(self, connector, cond):
-        self._activationQeue.put_nowait((connector, cond))
+        self._scheduleOp(False, proton.pn_connector_activate, connector, cond)
 
     def _convertTimeout(self, timeout):
         """
@@ -354,31 +364,61 @@ class ProtonReactor(object):
                 proton.pn_delivery_set_context(delivery, time.time())
                 proton.pn_link_advance(link)
 
-    def start_listening(self):
-        self.listener = proton.pn_listener(self._driver, self.host,
-                                           str(self.port), None)
-        if self.listener is None:
-            raise RuntimeError("Could not listen on %s:%s" % (self.host,
-                                                              self.port))
+    def start_listening(self, address):
+        host, port = address
+        l = self._scheduleOp(True, proton.pn_listener, self._driver,
+                             host, str(port), None)
+        if l is None:
+            raise RuntimeError("Could not listen on %s:%s" % (host, port))
 
-    def _emptyActivationQueue(self):
+        self._listeners[address] = l
+        return ProtonListener(address, self)
+
+    def _stop_listening(self, address):
+        try:
+            l = self._listeners[address]
+        except KeyError:
+            return
+
+        proton.pn_listener_close(l)
+        del self._listeners[address]
+
+    def _emptyCommandQueue(self):
         while True:
             try:
-                args = self._activationQeue.get_nowait()
+                r = self._commandQueue.get_nowait()
             except Empty:
                 return
             else:
-                proton.pn_connector_activate(*args)
+                cmd, evt, _ = r
+                res = cmd()
+                if evt is not None:
+                    r[2] = res
+                    evt.set()
+
+    def _scheduleOp(self, sync, op, *args, **kwargs):
+        if sync:
+            r = [partial(op, *args, **kwargs), Event(), None]
+        else:
+            r = [partial(op, *args, **kwargs), None, None]
+
+        self._commandQueue.put_nowait(r)
+        self._wakeup()
+
+        if sync:
+            r[1].wait()
+            return r[2]
 
     def process_requests(self):
         self._isRunning = True
         while self._isRunning:
             self._waitDriverEvent()
-            self._emptyActivationQueue()
+            self._emptyCommandQueue()
             self._acceptConnectionRequests()
             self._processConnectors()
 
-        proton.pn_listener_close(self.listener)
+        for listener in self._listeners.keys():
+            self._stop_listening(listener)
 
     def _wakeup(self):
         proton.pn_driver_wakeup(self._driver)

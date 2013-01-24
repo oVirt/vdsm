@@ -51,10 +51,10 @@ def getFreePort():
 def _tcpServerConstructor(messageHandler):
     port = getFreePort()
     address = ("localhost", port)
-    reactor = tcpReactor.TCPReactor(address, messageHandler)
+    reactor = tcpReactor.TCPReactor(messageHandler)
 
     try:
-        yield reactor, partial(TCPReactorClient, address)
+        yield reactor, partial(TCPReactorClient, address), address
     finally:
         reactor.stop()
 
@@ -66,10 +66,12 @@ def _protonServerConstructor(messageHandler):
 
     port = getFreePort()
     serverAddress = "amqp://127.0.0.1:%d/vdsm_test" % (port,)
-    reactor = protonReactor.ProtonReactor(("127.0.0.1", port), messageHandler)
+    reactor = protonReactor.ProtonReactor(messageHandler)
 
     try:
-        yield reactor, partial(ProtonReactorClient, serverAddress)
+        yield (reactor,
+               partial(ProtonReactorClient, serverAddress),
+               ("127.0.0.1", port))
     finally:
         reactor.stop()
 
@@ -88,11 +90,11 @@ def constructReactor(tp, messageHandler):
 @contextmanager
 def constructServer(tp, bridge):
     server = JsonRpcServer(bridge)
-    with constructReactor(tp, server) as (reactor, clientFactory):
-        reactor.start_listening()
+    with constructReactor(tp, server) as (reactor, clientFactory, laddr):
         t = threading.Thread(target=reactor.process_requests)
         t.setDaemon(True)
         t.start()
+        reactor.start_listening(laddr)
 
         t = threading.Thread(target=server.serve_requests)
         t.setDaemon(True)

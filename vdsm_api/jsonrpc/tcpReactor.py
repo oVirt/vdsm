@@ -82,7 +82,6 @@ class TCPConnection(object):
 
 
 class TCPMessageContext(object):
-
     def __init__(self, server, conn, data):
         self._server = server
         self._conn = conn
@@ -96,30 +95,55 @@ class TCPMessageContext(object):
         self._server.sendReply(self, data)
 
 
+class TCPListener(object):
+    def __init__(self, address):
+        self._address = address
+        self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(address)
+        sock.listen(10)
+
+    def fileno(self):
+        return self.sock.fileno()
+
+    def close(self):
+        self.sock.close()
+
+
 class TCPReactor(object):
     log = logging.getLogger("jsonrpc.TCPReactor")
 
-    def __init__(self, address, messageHandler):
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._addr = address
+    def __init__(self, messageHandler):
         self._messageHandler = messageHandler
         self._inputEvent = utils.PollEvent()
         # TODO: Close on exec
-        self._sock.bind(self._addr)
+        self._listeners = {}
 
-    def start_listening(self):
-        sock = self._sock
-        sock.listen(10)
+    def start_listening(self, address):
+        l = TCPListener(address)
+
+        self._listeners[address] = l
+        self._inputEvent.set()
+        return l
 
     def process_requests(self):
-        sock = self._sock
         poller = poll()
-        poller.register(sock, POLLIN | POLLPRI)
-        poller.register(self._inputEvent, POLLIN | POLLPRI)
         connections = {}
         self.log.debug("Starting to accept clients")
-        sockFD = sock.fileno()
+
+        listenerFDs = {}
+        poller.register(self._inputEvent, POLLIN | POLLPRI)
+        # TODO: Exist condition
         while True:
+            for l in self._listeners.values():
+                try:
+                    fd = l.fileno()
+                except:
+                    continue
+
+                if fd not in listenerFDs:
+                    listenerFDs[fd] = l
+                    poller.register(fd, POLLIN | POLLPRI)
+
             for fd, conn in connections.iteritems():
                 if conn.hasSendData():
                     poller.modify(fd, (POLLIN | POLLPRI | POLLOUT))
@@ -128,20 +152,21 @@ class TCPReactor(object):
 
             for fd, ev in poller.poll():
                 if ev & (POLLERR | POLLHUP):
-                    if fd == sockFD:
-                        self.log.info("Listening socket closed, shutting down")
-                        return
+                    if fd in listenerFDs:
+                        self.log.info("Listening socket closed")
+                        del listenerFDs[fd]
+                    else:
+                        self.log.debug("Connection closed")
+                        del connections[fd]
 
-                    self.log.debug("Connection closed")
                     poller.unregister(fd)
-                    del connections[fd]
 
                 elif fd == self._inputEvent.fileno():
                     self._inputEvent.clear()
 
-                elif fd == sockFD:
+                elif fd in listenerFDs:
                     try:
-                        conn, addr = sock.accept()
+                        conn, addr = listenerFDs[fd].sock.accept()
                     except (OSError, IOError):
                         continue
 
@@ -165,4 +190,5 @@ class TCPReactor(object):
         self._inputEvent.set()
 
     def stop(self):
-        self._sock.close()
+        for listener in self._listeners.itervalues():
+            listener.close()
