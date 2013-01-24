@@ -94,7 +94,7 @@ def constructServer(tp, bridge):
         t = threading.Thread(target=reactor.process_requests)
         t.setDaemon(True)
         t.start()
-        reactor.start_listening(laddr)
+        reactor.createListener(laddr)
 
         t = threading.Thread(target=server.serve_requests)
         t.setDaemon(True)

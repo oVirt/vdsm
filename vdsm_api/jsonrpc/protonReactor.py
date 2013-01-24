@@ -364,7 +364,7 @@ class ProtonReactor(object):
                 proton.pn_delivery_set_context(delivery, time.time())
                 proton.pn_link_advance(link)
 
-    def start_listening(self, address):
+    def createListener(self, address):
         host, port = address
         l = self._scheduleOp(True, proton.pn_listener, self._driver,
                              host, str(port), None)

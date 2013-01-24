@@ -62,12 +62,12 @@ class BindingJsonRpc(object):
         except KeyError:
             raise ValueError("cfg")
 
-        return self._reactors["tcp"].start_listening((address, port))
+        return self._reactors["tcp"].createListener((address, port))
 
     def _createProtonListener(self, cfg):
         address = cfg.get("host", "0.0.0.0")
         port = cfg.get("port", 5672)
-        return self._reactors["amqp"].start_listening((address, port))
+        return self._reactors["amqp"].createListener((address, port))
 
     def _createTcpReactor(self):
         return TCPReactor(self.server)

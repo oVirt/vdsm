@@ -118,7 +118,7 @@ class TCPReactor(object):
         # TODO: Close on exec
         self._listeners = {}
 
-    def start_listening(self, address):
+    def createListener(self, address):
         l = TCPListener(address)
 
         self._listeners[address] = l

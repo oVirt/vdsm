@@ -67,7 +67,7 @@ class ReactorTests(TestCaseBase):
             t = threading.Thread(target=serve, args=(reactor,))
             t.setDaemon(True)
             t.start()
-            reactor.start_listening(laddr)
+            reactor.createListener(laddr)
 
             clientNum = 1
             repeats = 1
