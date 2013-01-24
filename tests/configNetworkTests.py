@@ -26,8 +26,6 @@ import subprocess
 import tempfile
 import shutil
 import pwd
-from contextlib import contextmanager
-import inspect
 
 import configNetwork
 from vdsm import netinfo
@@ -41,29 +39,6 @@ from monkeypatch import MonkeyPatchScope
 
 
 class TestconfigNetwork(TestCaseBase):
-    @contextmanager
-    def _raisesContextManager(self, excName):
-        try:
-            yield self._raisesContextManager
-        except excName as exception:
-            self._raisesContextManager.__func__.exception = exception
-        except:
-            raise self.failureException("%s not raised" % excName)
-        else:
-            raise self.failureException("%s not raised" % excName)
-
-    def _assertRaises(self, excName, callableObj=None, *args, **kwargs):
-        if callableObj is None:
-            return self._raisesContextManager(excName)
-        else:
-            with self._raisesContextManager(excName):
-                callableObj(*args, **kwargs)
-
-    def setUp(self):
-        # When assertRaises does not have a default argument it does not
-        # support being used ad context manager. Thus, we redefine it.
-        if inspect.getargspec(self.assertRaises)[3] is None:
-            self.assertRaises = self._assertRaises
 
     def testIsBridgeNameValid(self):
         invalidBrName = ('-abc', 'abcdefghijklmnop', 'a:b', 'a.b')
