@@ -159,12 +159,24 @@ class BindingXMLRPC(object):
     def _registerFunctions(self):
         def wrapIrsMethod(f):
             def wrapper(*args, **kwargs):
+                fmt = ""
+                logargs = []
+
                 if self.cif.threadLocal.client:
-                    f.im_self.log.debug('[%s]', self.cif.threadLocal.client)
+                    fmt += "client [%s]"
+                    logargs.append(self.cif.threadLocal.client)
+
+                if getattr(self.cif.threadLocal,
+                           'flowID', None) is not None:
+                    fmt += " flowID [%s]"
+                    logargs.append(self.cif.threadLocal.flowID)
+
+                self.log.debug(fmt, *logargs)
+
                 try:
                     return f(*args, **kwargs)
                 except:
-                    f.im_self.log.error("Unexpected exception", exc_info=True)
+                    self.log.error("Unexpected exception", exc_info=True)
                     return errCode['unexpected']
 
             wrapper.__name__ = f.__name__
