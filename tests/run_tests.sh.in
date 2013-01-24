@@ -1,3 +1,7 @@
 #!/bin/sh
+if [ -z "$PYTHON_EXE" ]; then
+    PYTHON_EXE="@PYTHON@"
+fi
+
 prefix="@prefix@"
-LC_ALL=C PYTHONPATH="@datarootdir@/vdsm" @PYTHON@ @top_srcdir@/tests/testrunner.py $@
+LC_ALL=C PYTHONPATH="@datarootdir@/vdsm" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py $@

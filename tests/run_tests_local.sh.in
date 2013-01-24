@@ -1,2 +1,6 @@
 #!/bin/sh
-PYTHONDONTWRITEBYTECODE=1 LC_ALL=C PYTHONPATH="@builddir@/vdsm:@top_srcdir@/vdsm:@top_srcdir@/vdsm_cli:@top_srcdir@/vdsm_api:$PYTHONPATH" @PYTHON@ @top_srcdir@/tests/testrunner.py --local-modules $@
+if [ -z "$PYTHON_EXE" ]; then
+    PYTHON_EXE="@PYTHON@"
+fi
+
+PYTHONDONTWRITEBYTECODE=1 LC_ALL=C PYTHONPATH="@builddir@/vdsm:@top_srcdir@/vdsm:@top_srcdir@/vdsm_cli:@top_srcdir@/vdsm_api:$PYTHONPATH" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules $@
