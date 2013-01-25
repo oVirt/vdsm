@@ -64,7 +64,7 @@ log = logging.getLogger('Storage.Volume')
 rmanager = rm.ResourceManager.getInstance()
 
 
-def _getDeviceSize(devPath):
+def _tellEnd(devPath):
     with open(devPath, "rb") as f:
         f.seek(0, 2)
         return f.tell()
@@ -93,17 +93,22 @@ class BlockVolume(volume.Volume):
 
     @classmethod
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
-        try:
-            return _getDeviceSize(lvm.lvPath(sdobj.sdUUID, volUUID)) / bs
-        except Exception as e:
-            # The volume might not be active, skip logging.
-            if not (isinstance(e, IOError) and e.errno == os.errno.ENOENT):
-                cls.log.warn("Could not get size for vol %s/%s using "
-                             "optimized methods", sdobj.sdUUID, volUUID,
-                             exc_info=True)
+        """ Returns size in block units.
 
-        # Fallback to the traditional way.
-        return int(int(lvm.getLV(sdobj.sdUUID, volUUID).size) / bs)
+        Returns the largest integer value less than or equal to size [blocks].
+        """
+        try:
+            size = _tellEnd(lvm.lvPath(sdobj.sdUUID, volUUID)) / bs
+        except IOError as e:
+            if e.errno == os.errno.ENOENT:
+                # Inactive volume has no /dev entry. Fallback to lvm way.
+                size = int(int(lvm.getLV(sdobj.sdUUID, volUUID).size) / bs)
+            else:
+                cls.log.warn("Could not get size for vol %s/%s",
+                             sdobj.sdUUID, volUUID, exc_info=True)
+                raise
+
+        return size
 
     getVTrueSize = getVSize
 
