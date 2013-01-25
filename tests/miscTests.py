@@ -1131,12 +1131,15 @@ class NoIntrPollTests(TestCaseBase):
     RETRIES = 3
     SLEEP_INTERVAL = 0.1
 
+    def _waitAndSigchld(self):
+        time.sleep(self.SLEEP_INTERVAL)
+        os.kill(os.getpid(), signal.SIGCHLD)
+
     def _startFakeSigchld(self):
-        def _fakeSigchld():
+        def _repeatFakeSigchld():
             for i in range(self.RETRIES):
-                time.sleep(self.SLEEP_INTERVAL)
-                os.kill(os.getpid(), signal.SIGCHLD)
-        intrThread = threading.Thread(target=_fakeSigchld)
+                self._waitAndSigchld()
+        intrThread = threading.Thread(target=_repeatFakeSigchld)
         intrThread.setDaemon(True)
         intrThread.start()
 
@@ -1168,6 +1171,26 @@ class NoIntrPollTests(TestCaseBase):
         myPipe, hisPipe = os.pipe()
         self._startFakeSigchld()
         self._noIntrWatchFd(myPipe, isEpoll=False)  # caught select.error
+
+    def testNoTimeoutPipePoll(self):
+        def _sigChldAndClose(fd):
+            self._waitAndSigchld()
+            time.sleep(self.SLEEP_INTERVAL)
+            os.close(fd)
+
+        myPipe, hisPipe = os.pipe()
+
+        poller = select.poll()
+        poller.register(myPipe, select.POLLHUP)
+
+        intrThread = threading.Thread(target=_sigChldAndClose, args=(hisPipe,))
+        intrThread.setDaemon(True)
+        intrThread.start()
+
+        try:
+            self.assertTrue(len(misc.NoIntrPoll(poller.poll, -1)) > 0)
+        finally:
+            os.close(myPipe)
 
     def testClosedPipe(self):
         def _closePipe(pipe):

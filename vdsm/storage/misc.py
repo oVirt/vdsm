@@ -1380,12 +1380,14 @@ def NoIntrCall(fun, *args, **kwargs):
 # lead us to rebuilding the function arguments at each loop.
 def NoIntrPoll(pollfun, timeout=-1):
     """
-    This wrapper is used to handle the interrupt exceptions that might occur
-    during a poll system call.  The wrapped function must be defined as
-    poll([timeout]) where the special timeout value 0 is used to return
+    This wrapper is used to handle the interrupt exceptions that might
+    occur during a poll system call. The wrapped function must be defined
+    as poll([timeout]) where the special timeout value 0 is used to return
     immediately and -1 is used to wait indefinitely.
     """
-    endtime = time.time() + timeout
+    # When the timeout < 0 we shouldn't compute a new timeout after an
+    # interruption.
+    endtime = None if timeout < 0 else time.time() + timeout
 
     while True:
         try:
@@ -1393,7 +1395,9 @@ def NoIntrPoll(pollfun, timeout=-1):
         except (IOError, select.error) as e:
             if e.args[0] != errno.EINTR:
                 raise
-        timeout = max(0, endtime - time.time())
+
+        if endtime is not None:
+            timeout = max(0, endtime - time.time())
 
 
 def isAscii(s):
