@@ -72,7 +72,7 @@ rmanager = rm.ResourceManager.getInstance()
 
 def _tellEnd(devPath):
     with open(devPath, "rb") as f:
-        f.seek(0, 2)
+        f.seek(0, os.SEEK_END)
         return f.tell()
 
 
