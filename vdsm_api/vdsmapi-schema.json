@@ -368,7 +368,7 @@
 # Since: 4.10.0
 ##
 {'enum': 'TaskState',
- 'data': ['unknown', 'running', 'finished', 'aborting', 'cleaning']}
+ 'data': ['unknown', 'init', 'running', 'finished', 'aborting', 'cleaning']}
 
 ##
 # @TaskResult:
@@ -1550,13 +1550,13 @@
            'storageDomains': 'StorageDomainVitalsMap',
            'elapsedTime': 'uint', 'memUsed': 'uint',
            'anonHugePages': 'uint', 'cpuLoad': 'float',
-           'diskStats': 'PathStatsMap', 'thpState': 'THPStates'},
+           'diskStats': 'PathStatsMap', 'thpState': 'THPStates',
            'memAvailable': 'int', 'memShared': 'int', 'memCommitted': 'int',
            'swapTotal': 'int', 'swapFree': 'int','vmCount': 'int',
            'vmActive': 'int', 'vmMigrating': 'int', 'dateTime': 'str',
            'ksmState': 'bool', 'ksmPages': 'int', 'ksmCpu': 'float',
            'netConfigDirty': 'bool', 'generationID': 'UUID',
-           'momStatus': 'MOMStatus'}
+           'momStatus': 'MOMStatus'}}
 
 ##
 # @Host.getStats:
@@ -2363,7 +2363,7 @@
 #
 # Since: 4.10.0
 ##
-{'enum': 'VmChannelDeviceType', 'data': ['unix', 'spicevmc']}
+{'enum': 'VmChannelDeviceType', 'data': ['unix', 'spicevmc', 'virtio-serial']}
 
 ##
 # @VmChannelDevice:
@@ -6281,8 +6281,6 @@
 # @storagedomainID:  The Storage Domain associated with the Volume
 #
 # @imageID:          The Image associated with the Volume
-#
-# @legality:         The new Volume legality
 #
 # Since: 4.10.0
 ##

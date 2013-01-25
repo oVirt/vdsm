@@ -140,6 +140,9 @@ def read_symbol_comment(f, symbols):
             m = re.search('^\@(.*?):\s*(.*)', line)
             if m:
                 name, desc = (m.group(1), m.group(2))
+                if name not in strip_stars(symbol['data']):
+                    raise ValueError("'%s' comment mentions '%s' which is "
+                                     "not defined" % (symbol['name'], name))
                 symbol[mode][name] = desc
                 # Track the name in case there is are multiple lines to append
                 last_arg = name
@@ -175,23 +178,24 @@ def html_escape(text):
     return "".join(html_escape_table.get(c, c) for c in text)
 
 
+def strip_stars(items):
+    """
+    A symbol prepended with '*' means the symbol is optional.  Strip this
+    when looking up the symbol documentation.
+    """
+    ret = []
+    for i in items:
+        if i.startswith('*'):
+            ret.append(i[1:])
+        else:
+            ret.append(i)
+    return ret
+
+
 def write_symbol(f, s):
     """
     Write an HTML reprentation of a symbol definition and documentation.
     """
-    def strip_stars(items):
-        """
-        A symbol prepended with '*' means the symbol is optional.  Strip this
-        when looking up the symbol documentation.
-        """
-        ret = []
-        for i in items:
-            if i.startswith('*'):
-                ret.append(i[1:])
-            else:
-                ret.append(i)
-        return ret
-
     def filter_types(items):
         """
         When creating the type crosslink, if an entity is a list container we
@@ -327,6 +331,29 @@ def create_doc(symbols, filename):
     f.write(footer)
 
 
+def verify_symbols(symbols):
+    def filter_name(name):
+        if isinstance(name, list):
+            name = name[0]
+        if name.startswith('*'):
+            name = name[1:]
+        return name
+
+    names = ['str', 'bool', 'int', 'uint', 'float']
+    names.extend([s['type'] for s in symbols if 'type' in s])
+    names.extend([s['enum'] for s in symbols if 'enum' in s])
+    names.extend([s['alias'] for s in symbols if 'alias' in s])
+    names.extend([s['map'] for s in symbols if 'map' in s])
+
+    # Make sure all type references are defined
+    for s in symbols:
+        if 'type' in s or 'command' in s:
+            for k, v in s.get('data', {}).items():
+                if filter_name(v) not in names:
+                    raise ValueError("'%s': undefined type reference '%s'" %
+                                     (s['type'], v))
+
+
 def main():
     schema = sys.argv[1]
     output = sys.argv[2]
@@ -335,6 +362,8 @@ def main():
     # First read in the progmatic schema definition
     with open(schema) as f:
         symbols = vdsmapi.parse_schema(f)
+    verify_symbols(symbols)
+
     # Now merge in the information from the comments
     with open(schema) as f:
         symbols = read_schema_doc(f, symbols)
