@@ -167,8 +167,6 @@ AC_PATH_PROG([QEMUIMG_PATH], [qemu-img], [/usr/bin/qemu-img])
 AC_PATH_PROG([REBOOT_PATH], [reboot], [/usr/bin/reboot])
 AC_PATH_PROG([RPM_PATH], [rpm], [/bin/rpm])
 AC_PATH_PROG([RSYNC_PATH], [rsync], [/usr/bin/rsync])
-AC_PATH_PROG([SCSI_ID_PATH], [scsi_id], [/sbin/scsi_id],
-             [$PATH$PATH_SEPARATOR/lib/udev])
 AC_PATH_PROG([SED_PATH], [sed], [/bin/sed])
 AC_PATH_PROG([SERVICE_PATH], [service], [/sbin/service])
 AC_PATH_PROG([SETSID_PATH], [setsid], [/usr/bin/setsid])

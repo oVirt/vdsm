@@ -127,7 +127,6 @@ EXT_QEMUIMG = '@QEMUIMG_PATH@'
 EXT_REBOOT = '@REBOOT_PATH@'
 EXT_RSYNC = '@RSYNC_PATH@'
 
-EXT_SCSI_ID = '@SCSI_ID_PATH@'  # TBD !
 EXT_SERVICE = '@SERVICE_PATH@'
 EXT_SETSID = '@SETSID_PATH@'
 EXT_SH = '/bin/sh'  # The shell path is invariable
@@ -157,26 +156,3 @@ CMD_LOWPRIO = [EXT_NICE, '-n', '19', EXT_IONICE, '-c', '3']
 STRG_ISCSI_HOST = "iscsi_host/"
 STRG_SCSI_HOST = "scsi_host/"
 STRG_ISCSI_SESSION = "iscsi_session/"
-STRG_MPATH_CONF = (
-    "\n\n"
-    "defaults {\n"
-    "    polling_interval        5\n"
-    "    getuid_callout          \"@SCSI_ID_PATH@ --whitelisted "
-                                    "--replace-whitespace --device=/dev/%n\"\n"
-    "    no_path_retry           fail\n"
-    "    user_friendly_names     no\n"
-    "    flush_on_last_del       yes\n"
-    "    fast_io_fail_tmo        5\n"
-    "    dev_loss_tmo            30\n"
-    "    max_fds                 4096\n"
-    "}\n"
-    "\n"
-    "devices {\n"
-    "device {\n"
-    "    vendor                  \"HITACHI\"\n"
-    "    product                 \"DF.*\"\n"
-    "    getuid_callout          \"@SCSI_ID_PATH@ --whitelisted "
-                                    "--replace-whitespace --device=/dev/%n\"\n"
-    "}\n"
-    "}"
-)
