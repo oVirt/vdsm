@@ -316,6 +316,7 @@ def get():
                                    'stp': bridge_stp_state(bridge),
                                    'addr': getaddr(bridge),
                                    'netmask': getnetmask(bridge),
+                                   'gateway': routes.get(bridge, '0.0.0.0'),
                                    'mtu': getMtu(bridge),
                                    'cfg': getIfaceCfg(bridge),
                                    })

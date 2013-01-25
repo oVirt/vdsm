@@ -809,6 +809,16 @@
  'key': 'str', 'value': 'NetInfoNetwork'}
 
 ##
+# @NetInfoBridgeMap:
+#
+# A mapping of NIC information indexed by device name.
+#
+# Since: 4.10.0
+##
+{'map': 'NetInfoBridgeMap',
+ 'key': 'str', 'value': 'NetInfoBridgedNetwork'}
+
+##
 # @NetInfoNicMap:
 #
 # A mapping of NIC information indexed by device name.
@@ -891,6 +901,8 @@
 #
 # @networks:            Information about configured VDSM networks
 #
+# @bridges:             Information about the network bridges on the host
+#
 # @nics:                Information about the network cards on the host
 #
 # @bondings:            Information about configured bonding devices
@@ -933,7 +945,7 @@
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedENGINEs': ['str'],
           'supportedProtocols': ['str'], 'clusterLevels': ['str'],
-          'networks': 'NetInfoNetworkMap',
+          'networks': 'NetInfoNetworkMap', 'bridges': 'NetInfoBridgeMap',
           'nics': 'NetInfoNicMap', 'bondings': 'NetInfoBondMap',
           'vlans': 'NetInfoVlanMap', '*hooks': 'HookScriptInfoMap',
           'operatingSystem': 'OsVersion', 'uuid': 'str',
