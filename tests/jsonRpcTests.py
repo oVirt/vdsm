@@ -19,6 +19,8 @@
 #
 import threading
 import socket
+import logging
+from Queue import Queue
 from contextlib import closing
 
 from testrunner import VdsmTestCase as TestCaseBase, \
@@ -45,12 +47,36 @@ class _EchoMessageHandler(object):
         msgCtx.sendReply(msgCtx.data)
 
 
+class _EchoServer(object):
+    log = logging.getLogger("EchoServer")
+
+    def __init__(self):
+        self._queue = Queue()
+
+    def accept(self, l, c):
+        c.setInbox(self._queue)
+
+    def serve(self):
+        while True:
+            try:
+                client, msg = self._queue.get()
+                if client is None:
+                    return
+
+                self.log.info("Echoing message")
+                client.send(msg)
+            except Exception:
+                self.log.error("EchoServer died unexpectedly", exc_info=True)
+
+
 @expandPermutations
 class ReactorTests(TestCaseBase):
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def test(self, reactorType):
         data = dummyTextGenerator(((2 ** 10) * 200))
-        msgHandler = _EchoMessageHandler()
+        queue = Queue()
+
+        echosrv = _EchoServer()
 
         def serve(reactor):
             try:
@@ -58,16 +84,20 @@ class ReactorTests(TestCaseBase):
             except socket.error as e:
                 pass
             except Exception as e:
-                self.log.error("Server died unexpectedly", exc_info=True)
-                self.fail("Server died: (%s) %s" % (type(e), e))
+                self.log.error("Reactor died unexpectedly", exc_info=True)
+                self.fail("Reactor died: (%s) %s" % (type(e), e))
 
-        with constructReactor(reactorType, msgHandler) as (reactor,
-                                                           clientFactory,
-                                                           laddr):
+        with constructReactor(reactorType) as \
+                (reactor, clientFactory, laddr):
             t = threading.Thread(target=serve, args=(reactor,))
             t.setDaemon(True)
             t.start()
-            reactor.createListener(laddr)
+
+            t = threading.Thread(target=echosrv.serve)
+            t.setDaemon(True)
+            t.start()
+
+            reactor.createListener(laddr, echosrv.accept)
 
             clientNum = 1
             repeats = 1
@@ -95,6 +125,8 @@ class ReactorTests(TestCaseBase):
             finally:
                 for client in clients:
                     client.close()
+
+                queue.put((None, None))
 
 
 class _DummyBridge(object):

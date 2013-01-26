@@ -27,45 +27,56 @@ CONNECTED = 1
 AUTHENTICATING = 2
 
 
-class ProtonContext(object):
-    log = logging.getLogger("jsonrpc.ProtonContext")
-
-    def __init__(self, reactor, messageQueue, connector, msg):
-        self._reactor = reactor
-        self._msg = msg
-        self._mq = messageQueue
-        self._connector = connector
-
-    @property
-    def data(self):
-        return self._msg.body
-
-    def sendReply(self, data):
-        msg = proton.Message()
-        msg.address = self._msg.reply_to
-        msg.body = data
-        self._mq.put_nowait(msg)
-        self.log.debug("Message Queued")
-        self._reactor._activate(self._connector, proton.PN_CONNECTOR_WRITABLE)
-        self._reactor._wakeup()
-
-
 class ProtonListener(object):
-    def __init__(self, address, reactor):
+    def __init__(self, listener, address, reactor, acceptHandler):
+        self._listener = listener
         self._reactor = reactor
         self._address = address
+        self._acceptHandler = acceptHandler
 
     def close(self):
-        self._reactor._scheduleOp(False, self._reactor._stop_listening,
-                                  self._address)
+        self._reactor._scheduleOp(False, proton.pn_listener_close,
+                                  self._listener)
+
+
+class ProtonClient(object):
+    def __init__(self, reactor, connection, connector, session):
+        self.connector = connector
+        self.connection = connection
+        self.session = session
+        self.sender = None
+        self.links = []
+        self._inbox = None
+        self._outbox = Queue()
+        self._reactor = reactor
+
+    def _pushIncomingMessage(self, msg):
+        try:
+            self._inbox.put_nowait((self, msg))
+        except AttributeError:
+            # Inbox not set
+            pass
+
+    def _popPendingMessage(self):
+        return self._outbox.get_nowait()
+
+    def setInbox(self, queue):
+        self._inbox = queue
+
+    def send(self, msg):
+        self._outbox.put_nowait(msg)
+        self._reactor._activate(self.connector,
+                                proton.PN_CONNECTOR_WRITABLE)
+
+    def close(self):
+        #TODO
+        pass
 
 
 class ProtonReactor(object):
     log = logging.getLogger("jsonrpc.ProtonReactor")
 
-    def __init__(self, messageHandler, deliveryTimeout=5):
-        self._messageHandler = messageHandler
-
+    def __init__(self, deliveryTimeout=5):
         self._isRunning = False
 
         self._driver = proton.pn_driver()
@@ -162,15 +173,16 @@ class ProtonReactor(object):
             self.log.debug("Connection Opened.")
             proton.pn_connection_open(conn)
 
-    def _openPendingSessions(self, conn):
+    def _openPendingSessions(self, conn, connector):
         ssn = proton.pn_session_head(conn, proton.PN_LOCAL_UNINIT)
         while ssn:
             proton.pn_session_open(ssn)
-            ctx = {'connection': conn,
-                   'session': ssn,
-                   'mqueue': Queue(),
-                   'sender': None,
-                   'links': []}
+            ctx = ProtonClient(self, conn, connector, ssn)
+            l = proton.pn_connector_listener(connector)
+            listener = proton.pn_listener_context(l)
+            listener._acceptHandler(listener, ctx)
+            self.log.debug("Found related listener")
+
             self._sessionContexts.append(ctx)
             proton.pn_session_set_context(ssn, ctx)
             self.log.debug("Session Opened.")
@@ -249,11 +261,11 @@ class ProtonReactor(object):
             self.log.debug("Closing Link")
             proton.pn_link_close(link)
             for ctx in self._sessionContexts:
-                if link in ctx['links']:
-                    ctx['links'].remove(link)
+                if link in ctx.links:
+                    ctx.links.remove(link)
 
-                if link == ctx['sender']:
-                    ctx['sender'] = None
+                if link == ctx.sender:
+                    ctx.sender = None
 
             link = proton.pn_link_next(link, (proton.PN_LOCAL_ACTIVE |
                                               proton.PN_REMOTE_CLOSED))
@@ -275,25 +287,26 @@ class ProtonReactor(object):
 
     def _queueOutgoingDeliveries(self, conn):
         ctxs = (ctx for ctx in self._sessionContexts
-                if ctx['connection'] == conn)
+                if ctx.connection == conn)
 
         for ctx in ctxs:
-            sender = ctx['sender']
+            sender = ctx.sender
 
             if sender is None:
                 # No sender link
-                sender = proton.pn_sender(ctx['session'],
+                sender = proton.pn_sender(ctx.session,
                                           "sender-%s" % str(uuid.uuid4()))
-                ctx['sender'] = sender
+                ctx.sender = sender
                 proton.pn_link_open(sender)
                 continue
 
-            mq = ctx['mqueue']
             try:
-                msg = mq.get_nowait()
+                data = ctx._popPendingMessage()
             except Empty:
                 continue
             else:
+                msg = proton.Message()
+                msg.body = data
                 self.log.debug("Creating delivery")
                 proton.pn_link_set_context(sender, msg.encode())
                 if proton.pn_link_credit(sender) == 0:
@@ -308,7 +321,7 @@ class ProtonReactor(object):
         conn = proton.pn_connector_connection(connector)
 
         self._initConnection(conn)
-        self._openPendingSessions(conn)
+        self._openPendingSessions(conn, connector)
         self._openLinks(conn)
         self._queueOutgoingDeliveries(conn)
         self._processDeliveries(conn, connector)
@@ -336,9 +349,7 @@ class ProtonReactor(object):
         msgObj = proton.Message()
         msgObj.decode(msg)
         ctx = proton.pn_session_get_context(ssn)
-        mq = ctx['mqueue']
-        self._messageHandler.handleMessage(ProtonContext(self, mq, connector,
-                                                         msgObj))
+        ctx._pushIncomingMessage(msgObj.body)
 
         proton.pn_delivery_settle(delivery)
         proton.pn_link_advance(link)
@@ -364,24 +375,20 @@ class ProtonReactor(object):
                 proton.pn_delivery_set_context(delivery, time.time())
                 proton.pn_link_advance(link)
 
-    def createListener(self, address):
+    def createListener(self, address, acceptHandler):
         host, port = address
-        l = self._scheduleOp(True, proton.pn_listener, self._driver,
-                             host, str(port), None)
+        return self._scheduleOp(True, self._createListener, address,
+                                acceptHandler)
+
+    def _createListener(self, address, acceptHandler):
+        host, port = address
+        l = proton.pn_listener(self._driver, host, str(port), None)
         if l is None:
             raise RuntimeError("Could not listen on %s:%s" % (host, port))
 
-        self._listeners[address] = l
-        return ProtonListener(address, self)
-
-    def _stop_listening(self, address):
-        try:
-            l = self._listeners[address]
-        except KeyError:
-            return
-
-        proton.pn_listener_close(l)
-        del self._listeners[address]
+        lObj = ProtonListener(l, address, self, acceptHandler)
+        proton.pn_listener_set_context(l, lObj)
+        return lObj
 
     def _emptyCommandQueue(self):
         while True:
@@ -417,8 +424,10 @@ class ProtonReactor(object):
             self._acceptConnectionRequests()
             self._processConnectors()
 
-        for listener in self._listeners.keys():
-            self._stop_listening(listener)
+        l = proton.pn_listener_head(self._driver)
+        while l:
+            proton.pn_listener_close(l)
+            l = proton.pn_listener_next(l)
 
     def _wakeup(self):
         proton.pn_driver_wakeup(self._driver)

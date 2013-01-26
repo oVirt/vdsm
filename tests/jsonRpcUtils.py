@@ -1,5 +1,6 @@
 import threading
 import socket
+from Queue import Queue
 from contextlib import closing
 from contextlib import contextmanager
 from functools import partial
@@ -34,10 +35,10 @@ def getFreePort():
 
 
 @contextmanager
-def _tcpServerConstructor(messageHandler):
+def _tcpServerConstructor():
     port = getFreePort()
     address = ("localhost", port)
-    reactor = tcpReactor.TCPReactor(messageHandler)
+    reactor = tcpReactor.TCPReactor()
 
     try:
         yield reactor, partial(TCPReactorClient, address), address
@@ -46,13 +47,13 @@ def _tcpServerConstructor(messageHandler):
 
 
 @contextmanager
-def _protonServerConstructor(messageHandler):
+def _protonServerConstructor():
     if protonReactor is None:
         raise SkipTest("qpid-proton python bindings are not installed")
 
     port = getFreePort()
     serverAddress = "amqp://127.0.0.1:%d/vdsm_test" % (port,)
-    reactor = protonReactor.ProtonReactor(messageHandler)
+    reactor = protonReactor.ProtonReactor()
 
     try:
         yield (reactor,
@@ -68,19 +69,24 @@ REACTOR_TYPE_PERMUTATIONS = [[r] for r in REACTOR_CONSTRUCTORS.iterkeys()]
 
 
 @contextmanager
-def constructReactor(tp, messageHandler):
-    with REACTOR_CONSTRUCTORS[tp](messageHandler) as res:
+def constructReactor(tp):
+    with REACTOR_CONSTRUCTORS[tp]() as res:
         yield res
 
 
 @contextmanager
 def constructServer(tp, bridge):
-    server = JsonRpcServer(bridge)
-    with constructReactor(tp, server) as (reactor, clientFactory, laddr):
+    queue = Queue()
+    server = JsonRpcServer(bridge, queue)
+    with constructReactor(tp) as (reactor, clientFactory, laddr):
         t = threading.Thread(target=reactor.process_requests)
         t.setDaemon(True)
         t.start()
-        reactor.createListener(laddr)
+
+        def _accept(listener, client):
+            client.setInbox(queue)
+
+        reactor.createListener(laddr, _accept)
 
         t = threading.Thread(target=server.serve_requests)
         t.setDaemon(True)

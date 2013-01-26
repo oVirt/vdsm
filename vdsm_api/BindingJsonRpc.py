@@ -16,6 +16,7 @@
 import threading
 import logging
 import struct
+from Queue import Queue
 
 _Size = struct.Struct("!Q")
 
@@ -40,7 +41,9 @@ class BindingJsonRpc(object):
     def __init__(self, bridge, backendConfig):
         reactors = {}
         self.bridge = bridge
-        self.server = JsonRpcServer(bridge, _simpleThreadFactory)
+        self._messageQueue = Queue()
+        self.server = JsonRpcServer(bridge, self._messageQueue,
+                                    _simpleThreadFactory)
         self._cfg = backendConfig
 
         for backendType, cfg in backendConfig:
@@ -62,7 +65,11 @@ class BindingJsonRpc(object):
         except KeyError:
             raise ValueError("cfg")
 
-        return self._reactors["tcp"].createListener((address, port))
+        return self._reactors["tcp"].createListener((address, port),
+                                                    self._onAccept)
+
+    def _onAccept(self, listener, client):
+        client.setInbox(self._messageQueue)
 
     def _createProtonListener(self, cfg):
         address = cfg.get("host", "0.0.0.0")
@@ -70,10 +77,10 @@ class BindingJsonRpc(object):
         return self._reactors["amqp"].createListener((address, port))
 
     def _createTcpReactor(self):
-        return TCPReactor(self.server)
+        return TCPReactor()
 
     def _createProtonReactor(self):
-        return ProtonReactor(self.server)
+        return ProtonReactor()
 
     def start(self):
         t = threading.Thread(target=self.server.serve_requests,

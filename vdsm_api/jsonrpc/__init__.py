@@ -14,7 +14,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 import json
 import logging
-from Queue import Queue
 from functools import partial
 
 __all__ = ["tcpReactor"]
@@ -70,21 +69,17 @@ class JsonRpcRequest(object):
         self.params = params
         self.id = reqId
 
-    def encode(self):
-        res = {'jsonrpc': '2.0',
-               'method': self.method,
-               'params': self.params,
-               'id': self.id}
-
-        return json.dumps(res, 'utf-8')
-
-    @staticmethod
-    def decode(msg):
+    @classmethod
+    def decode(cls, msg):
         try:
             obj = json.loads(msg, 'utf-8')
         except:
             raise JsonRpcParseError()
 
+        return cls.fromRawObject(obj)
+
+    @staticmethod
+    def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
             raise JsonRpcInvalidRequestError()
 
@@ -101,6 +96,14 @@ class JsonRpcRequest(object):
             raise JsonRpcInvalidRequestError()
 
         return JsonRpcRequest(method, params, reqId)
+
+    def encode(self):
+        res = {'jsonrpc': '2.0',
+               'method': self.method,
+               'params': self.params,
+               'id': self.id}
+
+        return json.dumps(res, 'utf-8')
 
     def isNotification(self):
         return (self.id is None)
@@ -138,109 +141,92 @@ class JsonRpcResponse(object):
         return JsonRpcResponse(result, error, reqId)
 
 
-class _JsonRpcRequestContext(object):
-    def __init__(self, ctx, queue, request):
-        self.request = request
-        self._ctx = ctx
-        self._queue = queue
-
-    def isNotification(self):
-        return self.id is None
-
-    def sendReply(self, result, error):
-        # TBD: Should calling this for a notification raise an error or be
-        #      ignored
-        resp = JsonRpcResponse(result,
-                               error,
-                               self.request.id)
-        self._queue.put_nowait(_JsonRpcResponseContext(self._ctx, resp))
-
-
-class _JsonRpcResponseContext(object):
-    def __init__(self, ctx, response):
-        self.response = response
-        self.ctx = ctx
-
-
-class JsonRpcBatchRequest(object):
-    def __init__(self, requests):
-        self._requests = requests
-
-    def encode(self):
-        obj = [r.toDict() for r in self._requests]
-        return json.dumps(obj, 'utf-8')
-
-
-class JsonRpcCall(object):
-    def __init__(self, client, request):
-        self._request = request
+class _JsonRpcServeRequestContext(object):
+    def __init__(self, client):
+        self._requests = []
         self._client = client
-        self._state = _STATE_INCOMING
+        self._counter = 0
+        self._requests = {}
+        self._responses = []
 
-    def fileno(self):
-        return self.client.fileno()
+    def setRequests(self, requests):
+        for request in requests:
+            if not request.isNotification():
+                self._counter += 1
+                self._requests[request.id] = request
 
-    def state(self):
-        return
+        self.sendReply()
 
+    @property
+    def counter(self):
+        return self._counter
 
-class JsonRpcClient(object):
-    def __init__(self, transport):
-        self._transport = transport
+    def sendReply(self):
+        if len(self._requests) > 0:
+            return
 
-    def sendRequest(self, request):
-        request.encode()
-        self.transport.sendMessage()
+        encodedObjects = []
+        for response in self._responses:
+            try:
+                encodedObjects.append(response.encode())
+            except:  # Error encoding data
+                response = JsonRpcResponse(None, JsonRpcInternalError,
+                                           response.id)
+                encodedObjects.append(response.encode())
 
-    def fileno(self):
-        return self._transport.fileno()
+        if len(encodedObjects) == 1:
+            data = encodedObjects[0]
+        else:
+            data = '[' + ','.join(encodedObjects) + ']'
 
-    def process():
-        return None
+        self._client.send(data.encode('utf-8'))
+
+    def addResponse(self, response):
+        self._responses.append(response)
+
+    def requestDone(self, response):
+        del self._requests[response.id]
+        self.addResponse(response)
+        self.sendReply()
 
 
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
-    def __init__(self, bridge, threadFactory=None):
+    def __init__(self, bridge, messageQueue, threadFactory=None):
         self._bridge = bridge
-        self._workQueue = Queue()
+        self._workQueue = messageQueue
         self._threadFactory = threadFactory
 
-    def _serveRequest(self, ctx):
-        req = ctx.request
+    def _serveRequest(self, ctx, req):
         mangledMethod = req.method.replace(".", "_")
         self.log.debug("Looking for method '%s' in bridge",
                        mangledMethod)
         try:
             method = getattr(self._bridge, mangledMethod)
         except AttributeError:
-            ctx.sendReply(None, JsonRpcMethodNotFoundError())
-        else:
-            try:
-                params = req.params
-                if isinstance(req.params, list):
-                    res = method(*params)
-                else:
-                    res = method(**params)
-            except JsonRpcError as e:
-                ctx.sendReply(None, e)
-            except Exception as e:
-                ctx.sendReply(None, JsonRpcInternalError(str(e)))
-            else:
-                return ctx.sendReply(res, None)
+            if req.isNotification():
+                return
 
-    def _processResponse(self, ctx):
+            ctx.requestDone(JsonRpcResponse(None,
+                                            JsonRpcMethodNotFoundError(),
+                                            req.id))
+            return
+
         try:
-            msg = ctx.response.encode()
+            params = req.params
+            if isinstance(req.params, list):
+                res = method(*params)
+            else:
+                res = method(**params)
+        except JsonRpcError as e:
+            ctx.requestDone(JsonRpcResponse(None, e, req.id))
         except Exception as e:
-            # Probably result failed to be serialized as json
-            errResp = JsonRpcResponse(error=JsonRpcInternalError(str(e)),
-                                      reqId=ctx.response.id)
-
-            msg = errResp.encode()
-
-        ctx.ctx.sendReply(msg)
+            ctx.requestDone(JsonRpcResponse(None,
+                                            JsonRpcInternalError(str(e)),
+                                            req.id))
+        else:
+            ctx.requestDone(JsonRpcResponse(res, None, req.id))
 
     def serve_requests(self):
         while True:
@@ -248,45 +234,58 @@ class JsonRpcServer(object):
             if obj is None:
                 break
 
-            if isinstance(obj, _JsonRpcRequestContext):
-                if self._threadFactory is None:
-                    self._serveRequest(obj)
-                else:
-                    self._threadFactory(partial(self._serveRequest, obj))
-            else:
-                self._processResponse(obj)
+            client, msg = obj
+            self._parseMessage(client, msg)
 
-    def handleMessage(self, msgCtx):
-        #TODO: support batch requests
-        req = None
-        error = None
+    def _parseMessage(self, client, msg):
+        ctx = _JsonRpcServeRequestContext(client)
+
         try:
-            req = JsonRpcRequest.decode(msgCtx.data)
-            ctx = _JsonRpcRequestContext(msgCtx, self._workQueue, req)
-
-            self._workQueue.put_nowait(ctx)
-            return
-
-        except JsonRpcError as e:
-            self.log.error("Error processing request", exc_info=True)
-            error = e
+            rawRequests = json.loads(msg)
         except:
-            self.log.error("Unexpected error while processing request",
-                           exc_info=True)
-
-            error = JsonRpcInternalError()
-
-        # Notification, don't respond even on errors
-        if req is not None and req.isNotification():
+            ctx.addResponse(JsonRpcResponse(None, JsonRpcParseError(), None))
+            ctx.sendReply()
             return
 
-        if req is None:
-            resp = JsonRpcResponse(None, error, None)
+        if isinstance(rawRequests, list):
+            # Empty batch request
+            if len(rawRequests) == 0:
+                ctx.addResponse(
+                    JsonRpcResponse(None, JsonRpcInvalidRequestError(),
+                                    None))
+                ctx.sendReply()
+                return
         else:
-            resp = JsonRpcResponse(None, error, req.id)
+            # From this point on we know it's always a list
+            rawRequests = [rawRequests]
 
-        ctx = _JsonRpcResponseContext(msgCtx, resp)
-        self._workQueue.put_nowait(ctx)
+        # JSON Parsed handling each request
+        requests = []
+        for rawRequest in rawRequests:
+            try:
+                req = JsonRpcRequest.fromRawObject(rawRequest)
+                requests.append(req)
+            except JsonRpcError as err:
+                ctx.addResponse(JsonRpcResponse(None, err, None))
+            except:
+                ctx.addResponse(JsonRpcResponse(None,
+                                                JsonRpcInternalError(),
+                                                None))
+
+        ctx.setRequests(requests)
+
+        # No request was built successfully or is only notifications
+        if ctx.counter == 0:
+            ctx.sendReply()
+
+        for request in requests:
+            self._runRequest(ctx, request)
+
+    def _runRequest(self, ctx, request):
+        if self._threadFactory is None:
+            self._serveRequest(ctx, request)
+        else:
+            self._threadFactory(partial(self._serveRequest, ctx, request))
 
     def stop(self):
         self._workQueue.put_nowait(None)

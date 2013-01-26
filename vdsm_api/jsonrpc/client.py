@@ -80,8 +80,6 @@ class ProtonReactorClient(object):
     log = logging.getLogger("ProtonReactorClient")
 
     def __init__(self, brokerAddress):
-        if proton is None:
-            raise ImportError("qpid-proton python bindings are not installed")
         self._serverAddress = brokerAddress
         self._msngr = proton.Messenger("client-%s" % str(uuid.uuid4()))
 

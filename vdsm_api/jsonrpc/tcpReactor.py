@@ -81,26 +81,68 @@ class TCPConnection(object):
         return res
 
 
-class TCPMessageContext(object):
-    def __init__(self, server, conn, data):
-        self._server = server
-        self._conn = conn
-        self._data = data
+class TCPClient(object):
+    def __init__(self, reactor, sock):
+        self._sock = sock
+        self._conn = TCPConnection(sock)
+        self._inbox = None
+        self._reactor = reactor
 
-    @property
-    def data(self):
-        return self._data
+    def _pushRecievedMessage(self, msg):
+        try:
+            self._inbox.put_nowait((self, msg))
+        except AttributeError:
+            # Inbox not set
+            pass
 
-    def sendReply(self, data):
-        self._server.sendReply(self, data)
+    def fileno(self):
+        return self._sock.fileno()
+
+    def setInbox(self, queue):
+        self._inbox = queue
+
+    def send(self, message):
+        self._conn.addSendData(_Size.pack(len(message)) + message)
+        self._reactor.wakeup()
+
+    def _processInput(self):
+        msg = self._conn.processInput()
+        while msg is not None:
+            self._pushRecievedMessage(msg)
+            msg = self._conn.processInput()
+
+    def _processOutput(self):
+        self._conn.processOutput()
+
+    def _hasSendData(self):
+        return self._conn.hasSendData()
+
+    def close(self):
+        self._sock.close()
 
 
 class TCPListener(object):
-    def __init__(self, address):
+    log = logging.getLogger("jsonrpc.TCPListener")
+
+    def __init__(self, reactor, address, acceptHandler):
         self._address = address
         self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(address)
         sock.listen(10)
+        self._acceptHandler = acceptHandler
+        self._reactor = reactor
+
+    def _accept(self):
+        sock, addr = self.sock.accept()
+
+        client = TCPClient(self._reactor, sock)
+        try:
+            self._acceptHandler(self, client)
+        except:
+            self.log.warning("Accept handler threw an unexpected exception",
+                             exc_info=True)
+
+        return client
 
     def fileno(self):
         return self.sock.fileno()
@@ -112,83 +154,86 @@ class TCPListener(object):
 class TCPReactor(object):
     log = logging.getLogger("jsonrpc.TCPReactor")
 
-    def __init__(self, messageHandler):
-        self._messageHandler = messageHandler
+    def __init__(self):
         self._inputEvent = utils.PollEvent()
         # TODO: Close on exec
-        self._listeners = {}
+        self._trackedObjects = set()
+        self._isRunning = False
 
-    def createListener(self, address):
-        l = TCPListener(address)
+    def createListener(self, address, acceptHandler):
+        l = TCPListener(self, address, acceptHandler)
 
-        self._listeners[address] = l
+        self._trackedObjects.add(l)
         self._inputEvent.set()
         return l
 
+    def wakeup(self):
+        self._inputEvent.set()
+
     def process_requests(self):
         poller = poll()
-        connections = {}
         self.log.debug("Starting to accept clients")
 
-        listenerFDs = {}
+        objMap = {}
         poller.register(self._inputEvent, POLLIN | POLLPRI)
         # TODO: Exist condition
         while True:
-            for l in self._listeners.values():
+            for obj in self._trackedObjects:
                 try:
-                    fd = l.fileno()
+                    fd = obj.fileno()
                 except:
                     continue
 
-                if fd not in listenerFDs:
-                    listenerFDs[fd] = l
+                if fd not in objMap:
+                    objMap[fd] = obj
                     poller.register(fd, POLLIN | POLLPRI)
 
-            for fd, conn in connections.iteritems():
-                if conn.hasSendData():
+            for fd, obj in objMap.iteritems():
+                if not isinstance(obj, TCPClient):
+                    continue
+
+                if obj._hasSendData():
                     poller.modify(fd, (POLLIN | POLLPRI | POLLOUT))
                 else:
                     poller.modify(fd, (POLLIN | POLLPRI))
 
             for fd, ev in poller.poll():
+                if fd == self._inputEvent.fileno():
+                    self._inputEvent.clear()
+                    continue
+
+                obj = objMap[fd]
                 if ev & (POLLERR | POLLHUP):
-                    if fd in listenerFDs:
+                    if isinstance(obj, TCPListener):
                         self.log.info("Listening socket closed")
-                        del listenerFDs[fd]
                     else:
                         self.log.debug("Connection closed")
-                        del connections[fd]
 
+                    self._trackedObjects.discard(obj)
+                    del objMap[fd]
                     poller.unregister(fd)
 
-                elif fd == self._inputEvent.fileno():
-                    self._inputEvent.clear()
-
-                elif fd in listenerFDs:
+                elif isinstance(obj, TCPListener):
                     try:
-                        conn, addr = listenerFDs[fd].sock.accept()
+                        client = obj._accept()
                     except (OSError, IOError):
                         continue
 
                     self.log.debug("Processing new connection")
-                    connections[conn.fileno()] = TCPConnection(conn)
-                    poller.register(conn, (POLLIN | POLLPRI))
-                else:
-                    conn = connections[fd]
-                    if ev & (POLLIN | POLLPRI):
-                        msg = conn.processInput()
-                        while msg is not None:
-                            ctx = TCPMessageContext(self, conn, msg)
-                            self._messageHandler.handleMessage(ctx)
-                            msg = conn.processInput()
-                    if ev & POLLOUT:
-                        conn.processOutput()
+                    self._trackedObjects.add(client)
+                else:  # TCPClient
+                    try:
+                        if ev & (POLLIN | POLLPRI):
+                            obj._processInput()
 
-    def sendReply(self, ctx, message):
-        conn = ctx._conn
-        conn.addSendData(_Size.pack(len(message)) + message)
-        self._inputEvent.set()
+                        if ev & POLLOUT:
+                            obj._processOutput()
+                    except:
+                        poller.unregister(fd)
+                        obj.close()
+                        self._trackedObjects.discard(obj)
+                        del objMap[fd]
 
     def stop(self):
-        for listener in self._listeners.itervalues():
-            listener.close()
+        for obj in self._trackedObjects:
+            obj.close()
