@@ -261,15 +261,10 @@ class FileVolume(volume.Volume):
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
         cls.log.info("Volume rollback for volPath=%s", volPath)
-
-        try:
-            procPool = oop.getProcessPool(getDomUuidFromVolumePath(volPath))
-            procPool.fileUtils.safeUnlink(volPath)
-            procPool.fileUtils.safeUnlink(cls.__metaVolumePath(volPath))
-            procPool.fileUtils.safeUnlink(cls.__leaseVolumePath(volPath))
-
-        except Exception:
-            cls.log.error("Unexpected error", exc_info=True)
+        procPool = oop.getProcessPool(getDomUuidFromVolumePath(volPath))
+        procPool.fileUtils.safeUnlink(volPath)
+        procPool.fileUtils.safeUnlink(cls.__metaVolumePath(volPath))
+        procPool.fileUtils.safeUnlink(cls.__leaseVolumePath(volPath))
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):

@@ -340,12 +340,7 @@ class BlockVolume(volume.Volume):
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
         cls.log.info("Volume rollback for volPath=%s", volPath)
-
-        try:
-            fileUtils.safeUnlink(volPath)
-
-        except Exception:
-            cls.log.error("Unexpected error", exc_info=True)
+        fileUtils.safeUnlink(volPath)
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):
