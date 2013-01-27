@@ -24,6 +24,7 @@ import logging
 import sanlock
 
 from vdsm.config import config
+import vdsm.utils as utils
 import storage_exception as se
 import volume
 import image
@@ -171,7 +172,7 @@ class BlockVolume(volume.Volume):
         lvm.createLV(dom.sdUUID, volUUID, volSize, activate=True,
                      initialTag=TAG_VOL_UNINIT)
 
-        fileUtils.safeUnlink(volPath)
+        utils.rmFile(volPath)
         os.symlink(lvm.lvPath(dom.sdUUID, volUUID), volPath)
 
         if not volParent:
@@ -340,7 +341,7 @@ class BlockVolume(volume.Volume):
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
         cls.log.info("Volume rollback for volPath=%s", volPath)
-        fileUtils.safeUnlink(volPath)
+        utils.rmFile(volPath)
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):

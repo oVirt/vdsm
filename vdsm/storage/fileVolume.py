@@ -262,9 +262,9 @@ class FileVolume(volume.Volume):
     def shareVolumeRollback(cls, taskObj, volPath):
         cls.log.info("Volume rollback for volPath=%s", volPath)
         procPool = oop.getProcessPool(getDomUuidFromVolumePath(volPath))
-        procPool.fileUtils.safeUnlink(volPath)
-        procPool.fileUtils.safeUnlink(cls.__metaVolumePath(volPath))
-        procPool.fileUtils.safeUnlink(cls.__leaseVolumePath(volPath))
+        procPool.utils.rmFile(volPath)
+        procPool.utils.rmFile(cls.__metaVolumePath(volPath))
+        procPool.utils.rmFile(cls.__leaseVolumePath(volPath))
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):

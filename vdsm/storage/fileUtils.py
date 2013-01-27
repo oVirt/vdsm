@@ -131,17 +131,6 @@ def pathExists(filename, writable=False):
     return os.access(filename, check)
 
 
-def safeUnlink(filename):
-    """
-    Remove a file and skip the exception if the file is missing (ENOENT)
-    """
-    try:
-        os.unlink(filename)
-    except OSError as e:
-        if e.errno != os.errno.ENOENT:
-            raise
-
-
 def cleanupfiles(filelist):
     """
     Removes the files in the list
