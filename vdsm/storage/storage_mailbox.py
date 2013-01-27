@@ -20,6 +20,7 @@
 
 import thread
 import os
+import errno
 import time
 import threading
 import Queue
@@ -725,8 +726,8 @@ class SPM_MailMonitor:
             #               "command: " + str(cmd))
             (rc, in_mail, err) = misc.execCmd(cmd, sudo=False, raw=True)
             if rc:
-                raise RuntimeError("_handleRequests._checkForMail - Could not "
-                                   "read mailbox")
+                raise IOError(errno.EIO, "_handleRequests._checkForMail - "
+                              "Could not read mailbox: %s" % self._inbox)
 
             if (len(in_mail) != (self._outMailLen)):
                 self.log.error('SPM_MailMonitor: _checkForMail - dd succeeded '
