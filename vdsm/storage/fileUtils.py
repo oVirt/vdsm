@@ -131,15 +131,6 @@ def pathExists(filename, writable=False):
     return os.access(filename, check)
 
 
-def cleanupfiles(filelist):
-    """
-    Removes the files in the list
-    """
-    for item in filelist:
-        if os.path.lexists(item):
-            os.remove(item)
-
-
 def cleanupdir(dirPath, ignoreErrors=True):
     """
     Recursively remove all the files and directories in the given directory

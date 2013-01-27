@@ -54,15 +54,14 @@ def getDomUuidFromVolumePath(volPath):
 
 def deleteMultipleVolumes(sdUUID, volumes, postZero):
     # Posix asserts that the blocks will be zeroed before reuse
-    volPaths = []
     for vol in volumes:
         vol.setLegality(volume.ILLEGAL_VOL)
-        volPaths.append(vol.getVolumePath())
-    try:
-        oop.getGlobalProcPool().fileUtils.cleanupfiles(volPaths)
-    except OSError:
-        volume.log.error("cannot delete some volumes at paths: %s",
-                         volPaths, exc_info=True)
+        volPath = vol.getVolumePath()
+        try:
+            oop.getGlobalProcPool().utils.rmFile(volPath)
+        except OSError:
+            volume.log.error("cannot delete volume at path: %s",
+                             volPath, exc_info=True)
 
 
 class FileVolume(volume.Volume):
@@ -202,7 +201,8 @@ class FileVolume(volume.Volume):
                              puuid, exc_info=True)
 
         try:
-            self.oop.fileUtils.cleanupfiles([vol_path, lease_path])
+            self.oop.utils.rmFile(vol_path)
+            self.oop.utils.rmFile(lease_path)
         except Exception as e:
             eFound = e
             self.log.error("cannot delete volume %s at path: %s", self.volUUID,
