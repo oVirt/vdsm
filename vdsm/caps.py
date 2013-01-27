@@ -24,9 +24,6 @@ import os
 from xml.dom import minidom
 import logging
 import time
-import struct
-import socket
-import itertools
 import linecache
 import glob
 
@@ -304,18 +301,6 @@ def get():
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
     return caps
-
-
-def _getIfaceByIP(addr, fileName='/proc/net/route'):
-    remote = struct.unpack('I', socket.inet_aton(addr))[0]
-    for line in itertools.islice(file(fileName), 1, None):
-        (iface, dest, gateway, flags, refcnt, use, metric,
-         mask, mtu, window, irtt) = line.split()
-        dest = int(dest, 16)
-        mask = int(mask, 16)
-        if remote & mask == dest & mask:
-            return iface
-    return ''  # should never get here w/ default gw
 
 
 def _getKeyPackages():

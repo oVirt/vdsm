@@ -23,8 +23,6 @@ import os
 from testrunner import VdsmTestCase as TestCaseBase
 
 import caps
-import platform
-from nose.plugins.skip import SkipTest
 
 
 class TestCaps(TestCaseBase):
@@ -94,16 +92,3 @@ class TestCaps(TestCaseBase):
         sign = ["=", "&"]
         for res, s in zip(expectedRes, sign):
             self.assertEqual(res, caps._parseKeyVal(lines, s))
-
-    def test_getIfaceByIP(self):
-        expectedRes = ["wlan0", "virbr0"]
-        ip = ["10.201.129.37", "192.168.122.90"]
-        arch = platform.machine()
-        if arch == 'x86_64':
-            route_file = 'route_info.out'
-        elif arch == 'ppc64':
-            route_file = 'route_info_ppc64.out'
-        else:
-            raise SkipTest("Unsupported Architecture %s" % arch)
-        for res, i in zip(expectedRes, ip):
-            self.assertEqual(res, caps._getIfaceByIP(i, route_file))

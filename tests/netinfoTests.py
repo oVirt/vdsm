@@ -21,6 +21,7 @@
 
 import os
 from testrunner import VdsmTestCase as TestCaseBase
+import ethtool
 
 from vdsm import netinfo
 from monkeypatch import MonkeyPatch
@@ -87,3 +88,15 @@ class TestNetinfo(TestCaseBase):
 
     def testMatchNicName(self):
         self.assertTrue(netinfo._match_nic_name('test1', ['test0', 'test1']))
+
+    def testIPv4toMapped(self):
+        self.assertEqual('::ffff:127.0.0.1', netinfo.IPv4toMapped('127.0.0.1'))
+
+    def testGetIfaceByIP(self):
+        for dev in ethtool.get_interfaces_info(ethtool.get_active_devices()):
+            ipaddrs = map(
+                lambda etherinfo_ipv6addr: etherinfo_ipv6addr.address,
+                dev.get_ipv6_addresses())
+            ipaddrs.append(dev.ipv4_address)
+            for ip in ipaddrs:
+                self.assertEqual(dev.device, netinfo.getIfaceByIP(ip))

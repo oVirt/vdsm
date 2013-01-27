@@ -479,6 +479,33 @@ def getIpAddresses():
     return filter(None, [getaddr(i) for i in ethtool.get_active_devices()])
 
 
+def IPv4toMapped(ip):
+    """Return an IPv6 IPv4-mapped address for the IPv4 address"""
+    mapped = None
+
+    try:
+        ipv6bin = '\x00' * 10 + '\xff\xff' + socket.inet_aton(ip)
+        mapped = socket.inet_ntop(socket.AF_INET6, ipv6bin)
+    except socket.error as e:
+        logging.debug("getIfaceByIP: %s" % str(e))
+
+    return mapped
+
+
+def getIfaceByIP(ip):
+    for info in ethtool.get_interfaces_info(ethtool.get_active_devices()):
+
+        for ipv4addr in info.get_ipv4_addresses():
+            if ip == ipv4addr.address or ip == IPv4toMapped(ipv4addr.address):
+                return info.device
+
+        for ipv6addr in info.get_ipv6_addresses():
+            if ip == ipv6addr.address:
+                return info.device
+
+    return ''
+
+
 class NetInfo(object):
     def __init__(self, _netinfo=None):
         if _netinfo is None:

@@ -26,10 +26,10 @@ import logging
 import libvirt
 import threading
 
-import caps
 from vdsm import constants
 from vdsm import utils
 from vdsm.define import doneCode, errCode
+from vdsm.netinfo import getIfaceByIP
 import API
 from vdsm.exception import VdsmException
 try:
@@ -86,9 +86,10 @@ class BindingXMLRPC(object):
         Return the IP address and last client information
         """
         last = self.server.lastClient
+        lastserver = self.server.lastServerIP
         return {'management_ip': self.serverIP,
                 'lastClient': last,
-                'lastClientIface': caps._getIfaceByIP(last)}
+                'lastClientIface': getIfaceByIP(lastserver)}
 
     def _getKeyCertFilenames(self):
         """
@@ -113,6 +114,7 @@ class BindingXMLRPC(object):
                 """Track from where client connections are coming."""
                 self.server.lastClient = self.client_address[0]
                 self.server.lastClientTime = time.time()
+                self.server.lastServerIP = self.request.getsockname()[0]
                 # FIXME: The editNetwork API uses this log file to
                 # determine if this host is still accessible.  We use a
                 # file (rather than an event) because editNetwork is
@@ -153,6 +155,7 @@ class BindingXMLRPC(object):
 
         server.lastClientTime = 0
         server.lastClient = '0.0.0.0'
+        server.lastServerIP = '0.0.0.0'
 
         return server
 

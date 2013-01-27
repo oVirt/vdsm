@@ -67,6 +67,7 @@ BuildRequires: python-dmidecode
 %if 0%{?rhel} == 6
 BuildRequires: python-ordereddict
 %endif
+BuildRequires: python-ethtool
 
 # Autotools BuildRequires
 %if 0%{?enable_autotools}
@@ -105,6 +106,7 @@ Requires: dmidecode
 %endif
 
 %if 0%{?rhel}
+Requires: python-ethtool >= 0.6-3
 %if 0%{?rhel} >= 7
 ExclusiveArch:  x86_64
 Requires: device-mapper-multipath
@@ -154,6 +156,7 @@ Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
 Requires: libvirt >= 1.0.2-1
+Requires: python-ethtool >= 0.8-1
 %if 0%{?fedora} >= 18
 Requires: initscripts >= 9.42.2-1
 %endif
@@ -1003,8 +1006,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/lvs_3386c6f2-926f-42c4-839c-38287fac8998.out
 %{_datadir}/%{vdsm_name}/tests/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
-%{_datadir}/%{vdsm_name}/tests/route_info.out
-%{_datadir}/%{vdsm_name}/tests/route_info_ppc64.out
 %{_datadir}/%{vdsm_name}/tests/tc_filter_show.out
 %if 0%{?with_gluster}
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml

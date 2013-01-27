@@ -92,8 +92,6 @@ dist_vdsmtests_DATA = \
 	glusterVolumeProfileInfoNfs.xml \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	netmaskconversions \
-	route_info.out \
-	route_info_ppc64.out \
 	tc_filter_show.out \
 	$(NULL)
 
