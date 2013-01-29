@@ -52,7 +52,6 @@ import tc
 import ksm
 import mkimage
 from storage.multipath import MPATH_CONF
-import zombieReaper
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -195,7 +194,6 @@ class _SuperVdsm(object):
         pipe, hisPipe = Pipe()
         proc = Process(target=child, args=(hisPipe,))
         proc.start()
-        zombieReaper.autoReapPID(proc.pid)
 
         if not pipe.poll(RUN_AS_TIMEOUT):
             try:
@@ -385,8 +383,6 @@ def main():
         log.debug("Cleaning old socket %s", address)
         if os.path.exists(address):
             os.unlink(address)
-
-        zombieReaper.registerSignalHandler()
 
         log.debug("Setting up keep alive thread")
 
