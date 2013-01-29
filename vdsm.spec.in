@@ -136,6 +136,7 @@ Requires: selinux-policy-targeted >= 3.11.1-71
 # In order to avoid a policycoreutils bug (rhbz 883355) when selinux is
 # disabled we now require the version 2.1.13-44 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-44
+Requires: systemd >= 197-1.fc18.2
 %endif
 
 Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
