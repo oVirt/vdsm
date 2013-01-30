@@ -207,6 +207,7 @@ BuildArch:      noarch
 
 Requires: %{name} = %{version}-%{release}
 Requires: m2crypto
+Requires: openssl
 
 %description reg
 VDSM registration package. Used to register a Linux host to a Virtualization
