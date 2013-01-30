@@ -506,12 +506,15 @@ class DdWatchCopy(TestCaseBase):
         Test that stop really stops the copying process.
         """
         try:
-            with tempfile.NamedTemporaryFile() as f:
-                ddWatchCopy("/dev/zero", f.name, lambda: True, 100)
+            with tempfile.NamedTemporaryFile() as src:
+                os.unlink(src.name)
+                os.mkfifo(src.name)
+                with tempfile.NamedTemporaryFile() as dst:
+                    ddWatchCopy(src.name, dst.name, lambda: True, 100)
         except misc.se.ActionStopped:
-            self.log.info("Looks like stopped!")
+            self.log.info("Looks like it stopped!")
         else:
-            self.fail("Copying didn't stopped!")
+            self.fail("Copying didn't stop!")
 
 
 class ValidateN(TestCaseBase):
