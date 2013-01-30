@@ -2481,14 +2481,14 @@
 #
 # @clientIp:              The IP address of the client connected to the display
 #
-# @cpuType:               The type of CPU being emulated
+# @cpuType:               #optional The type of CPU being emulated
 #                         special values 'hostPassthrough' and 'hostModel'
 #                         are reserved for host-passthrough and host-mode cpu
 #                         mode
 #
-# @custom:                A dictionary of custom, free-form properties
+# @custom:                #optional A dictionary of custom, free-form properties
 #
-# @devices:               An array of VM devices present
+# @devices:               #optional An array of VM devices present
 #
 # @display:               The type of display
 #
@@ -2498,9 +2498,9 @@
 #
 # @displaySecurePort:     The port in use for encrypted display data
 #
-# @emulatedMachine:       The specific machine specification being emulated
+# @emulatedMachine:       #optional The machine specification being emulated
 #
-# @keyboardLayout:        The keyboard layout string (eg. 'en-us')
+# @keyboardLayout:        #optional The keyboard layout string (eg. 'en-us')
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
 #
@@ -2510,7 +2510,7 @@
 #
 # @nice:                  The host scheduling priority
 #
-# @pauseCode:             Indicates the reason a VM has been paused
+# @pauseCode:             #optional Indicates the reason a VM has been paused
 #
 # @pid:                   The process ID of the underlying qemu process
 #
@@ -2533,20 +2533,26 @@
 #
 # @vmType:                The type of VM
 #
+# @exitCode:              #optional The exit code f the VM process has ended
+#
+# @exitMessage:           #optional Explains the reason that the VM process has
+#                         exited
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDefinition',
- 'data': {'acpiEnable': 'bool', 'clientIp': 'str', 'cpuType': 'str',
-          'custom': 'StringMap', 'devices': ['VmDevice'],
+ 'data': {'acpiEnable': 'bool', 'clientIp': 'str', '*cpuType': 'str',
+          '*custom': 'StringMap', '*devices': ['VmDevice'],
           'display': 'VmDisplayType', 'displayIp': 'str',
-          'displayPort': 'uint', 'displaySecurePort': 'uint',
-          'emulatedMachine': 'str', 'keyboardLayout': 'str',
+          'displayPort': 'int', 'displaySecurePort': 'int',
+          '*emulatedMachine': 'str', '*keyboardLayout': 'str',
           'kvmEnable': 'bool', 'memSize': 'uint',
-          'nicModel': 'str', 'nice': 'int', 'pauseCode': 'str',
+          'nicModel': 'str', 'nice': 'int', '*pauseCode': 'str',
           'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'status': 'VmStatus',
           'timeOffset': 'uint', 'transparentHugePages': 'bool',
-          'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType'}}
+          'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType',
+          '*exitCode': 'int', '*exitMessage': 'str'}}
 
 ##
 # @VmParameters:
