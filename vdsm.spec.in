@@ -119,7 +119,7 @@ Requires: logrotate < 3.8.0
 Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
-Requires: libvirt >= 0.10.1-1
+Requires: libvirt >= 0.10.2.4-1
 Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
