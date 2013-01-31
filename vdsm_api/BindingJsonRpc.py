@@ -21,7 +21,7 @@ from Queue import Queue
 _Size = struct.Struct("!Q")
 
 from jsonrpc import JsonRpcServer
-from jsonrpc.tcpReactor import TCPReactor
+from jsonrpc.asyncoreReactor import AsyncoreReactor
 ProtonReactor = None
 try:
     from jsonrpc.protonReactor import ProtonReactor
@@ -77,7 +77,7 @@ class BindingJsonRpc(object):
         return self._reactors["amqp"].createListener((address, port))
 
     def _createTcpReactor(self):
-        return TCPReactor()
+        return AsyncoreReactor()
 
     def _createProtonReactor(self):
         return ProtonReactor()

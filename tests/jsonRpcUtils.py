@@ -8,7 +8,7 @@ from nose.plugins.skip import SkipTest
 
 from jsonrpc import \
     JsonRpcServer, \
-    tcpReactor
+    asyncoreReactor
 from jsonrpc.client import \
     JsonRpcClient, \
     TCPReactorClient, \
@@ -38,7 +38,7 @@ def getFreePort():
 def _tcpServerConstructor():
     port = getFreePort()
     address = ("localhost", port)
-    reactor = tcpReactor.TCPReactor()
+    reactor = asyncoreReactor.AsyncoreReactor()
 
     try:
         yield reactor, partial(TCPReactorClient, address), address

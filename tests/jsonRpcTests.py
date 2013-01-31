@@ -99,9 +99,9 @@ class ReactorTests(TestCaseBase):
 
             reactor.createListener(laddr, echosrv.accept)
 
-            clientNum = 1
-            repeats = 1
-            subRepeats = 1
+            clientNum = 10
+            repeats = 10
+            subRepeats = 10
 
             clients = []
             try:

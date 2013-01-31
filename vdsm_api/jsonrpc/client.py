@@ -4,8 +4,9 @@ import logging
 import uuid
 from jsonrpc import \
     JsonRpcError, \
-    tcpReactor
+    asyncoreReactor
 
+_Size = asyncoreReactor._Size
 
 proton = None
 try:
@@ -56,7 +57,7 @@ class TCPReactorClient(object):
         self.sock.connect(self.address)
 
     def sendMessage(self, msg, timeout=None):
-        msg = tcpReactor._Size.pack(len(msg)) + msg
+        msg = _Size.pack(len(msg)) + msg
         self.sock.settimeout(timeout)
         while msg:
             sent = self.sock.send(msg)
@@ -64,8 +65,8 @@ class TCPReactorClient(object):
 
     def recvMessage(self, timeout=None):
         self.sock.settimeout(timeout)
-        rawSize = self.sock.recv(tcpReactor._Size.size)
-        size = tcpReactor._Size.unpack(rawSize)[0]
+        rawSize = self.sock.recv(_Size.size)
+        size = _Size.unpack(rawSize)[0]
         buff = ""
         while (size - len(buff)) > 0:
             buff += self.sock.recv(size)

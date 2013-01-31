@@ -975,7 +975,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/BindingJsonRpc.py*
 %{_datadir}/%{vdsm_name}/Bridge.py*
 %{_datadir}/%{vdsm_name}/jsonrpc/__init__.py*
-%{_datadir}/%{vdsm_name}/jsonrpc/tcpReactor.py*
+%{_datadir}/%{vdsm_name}/jsonrpc/asyncoreReactor.py*
 %{_datadir}/%{vdsm_name}/jsonrpc/protonReactor.py*
 %{_datadir}/%{vdsm_name}/jsonrpc/client.py*
 
