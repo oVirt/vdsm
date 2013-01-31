@@ -212,8 +212,10 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
     log.debug("sd: %s, LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
     # Prepare for zeroing
     try:
-        lvm.changelv(sdUUID, volUUIDs, (("-a", "y"), ("--deltag", imgUUID),
-                     ("--addtag", sd.REMOVED_IMAGE_PREFIX + imgUUID)))
+        lvm.changelv(sdUUID, volUUIDs, (("-a", "y"),
+                    ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
+                    ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
+                     sd.REMOVED_IMAGE_PREFIX + imgUUID)))
     except se.StorageException as e:
         log.error("Can't activate or change LV tags in SD %s. "
                   "failing Image %s pre zeroing operation for vols: %s. %s",
