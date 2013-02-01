@@ -55,7 +55,7 @@ def dummyTextGenerator(size):
             "aute irure dolor in reprehenderit in voluptate velit esse cillum "
             "dolore eu fugiat nulla pariatur. Excepteur sint occaecat "
             "cupidatat non proident, sunt in culpa qui officia deserunt "
-            "mollit anim id est laborum.")
+            "mollit anim id est laborum. ")
     d, m = divmod(size, len(text))
     return (text * d) + text[:m]
 
