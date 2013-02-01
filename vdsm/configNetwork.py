@@ -600,12 +600,10 @@ class ConfigWriter(object):
         it check if a vlan, bond that have a higher mtu value
         """
         for nic in nics:
-            cf = self.NET_CONF_PREF + nic
-            mtuval = self._getConfigValue(cf, 'MTU')
-            if not mtuval is None:
-                mtuval = int(mtuval)
-                if mtuval > mtu:
-                    mtu = mtuval
+            mtuval = int(netinfo.getMtu(nic))
+
+            if mtuval > mtu:
+                mtu = mtuval
         return mtu
 
     def setNewMtu(self, network, bridged):
@@ -623,13 +621,7 @@ class ConfigWriter(object):
         _netinfo = netinfo.NetInfo()
         currmtu = None
         if bridged:
-            cf = self.NET_CONF_PREF + network
-            currmtu = self._getConfigValue(cf, 'MTU')
-            if currmtu:
-                currmtu = int(currmtu)
-            else:
-                # Optimization: if network hasn't custom MTU, do nothing
-                return
+            currmtu = int(netinfo.getMtu(network))
 
         nics, delvlan, bonding = \
             _netinfo.getNicsVlanAndBondingForNetwork(network)
