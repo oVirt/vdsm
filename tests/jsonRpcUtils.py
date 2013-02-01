@@ -11,7 +11,6 @@ from jsonrpc import \
     asyncoreReactor
 from jsonrpc.client import \
     JsonRpcClient, \
-    TCPReactorClient, \
     ProtonReactorClient
 
 protonReactor = None
@@ -39,11 +38,20 @@ def _tcpServerConstructor():
     port = getFreePort()
     address = ("localhost", port)
     reactor = asyncoreReactor.AsyncoreReactor()
+    clientsReactor = asyncoreReactor.AsyncoreReactor()
+
+    t = threading.Thread(target=clientsReactor.process_requests)
+    t.setDaemon(True)
+    t.start()
+
+    def clientFactory(address):
+        return TestClientWrapper(clientsReactor.createClient(address))
 
     try:
-        yield reactor, partial(TCPReactorClient, address), address
+        yield reactor, partial(clientFactory, address), address
     finally:
         reactor.stop()
+        clientsReactor.stop()
 
 
 @contextmanager
@@ -70,8 +78,32 @@ REACTOR_TYPE_PERMUTATIONS = [[r] for r in REACTOR_CONSTRUCTORS.iterkeys()]
 
 @contextmanager
 def constructReactor(tp):
-    with REACTOR_CONSTRUCTORS[tp]() as res:
-        yield res
+    with REACTOR_CONSTRUCTORS[tp]() as (serverReactor, clientFactory, laddr):
+
+        t = threading.Thread(target=serverReactor.process_requests)
+        t.setDaemon(True)
+        t.start()
+
+        yield serverReactor, clientFactory, laddr
+
+
+class TestClientWrapper(object):
+    def __init__(self, client):
+        self._client = client
+        self._queue = Queue()
+        self._client.setInbox(self._queue)
+
+    def send(self, data, timeout=None):
+        self._client.send(data)
+
+    def recv(self, timeout=None):
+        return self._queue.get(timeout=timeout)[1]
+
+    def connect(self):
+        return self._client.connect()
+
+    def close(self):
+        return self._client.close()
 
 
 @contextmanager
@@ -79,10 +111,6 @@ def constructServer(tp, bridge):
     queue = Queue()
     server = JsonRpcServer(bridge, queue)
     with constructReactor(tp) as (reactor, clientFactory, laddr):
-        t = threading.Thread(target=reactor.process_requests)
-        t.setDaemon(True)
-        t.start()
-
         def _accept(listener, client):
             client.setInbox(queue)
 

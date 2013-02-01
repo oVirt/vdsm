@@ -89,9 +89,6 @@ class ReactorTests(TestCaseBase):
 
         with constructReactor(reactorType) as \
                 (reactor, clientFactory, laddr):
-            t = threading.Thread(target=serve, args=(reactor,))
-            t.setDaemon(True)
-            t.start()
 
             t = threading.Thread(target=echosrv.serve)
             t.setDaemon(True)
@@ -99,33 +96,35 @@ class ReactorTests(TestCaseBase):
 
             reactor.createListener(laddr, echosrv.accept)
 
-            clientNum = 10
-            repeats = 10
-            subRepeats = 10
+            clientNum = 4
+            repeats = 2
+            subRepeats = 4
 
             clients = []
             try:
                 for i in range(clientNum):
-                    client = clientFactory()
-                    client.connect()
-                    clients.append(client)
+                    c = clientFactory()
+                    c.connect()
+                    clients.append(c)
 
                 for i in range(repeats):
                     for client in clients:
                         for i in range(subRepeats):
                             self.log.info("Sending message...")
-                            client.sendMessage(data, CALL_TIMEOUT)
+                            client.send(data, CALL_TIMEOUT)
 
                 for i in range(repeats * subRepeats):
                     for client in clients:
                             self.log.info("Waiting for reply...")
-                            retData = client.recvMessage(CALL_TIMEOUT)
+                            retData = client.recv(CALL_TIMEOUT)
                             self.log.info("Asserting reply...")
-                            self.assertEquals(retData, data)
+                            self.assertEquals(
+                                retData, data,
+                                "Data is not as expected " +
+                                "'%s...%s' != '%s...%s'" %
+                                (retData[:10], retData[-10:],
+                                 data[:10], data[-10:]))
             finally:
-                for client in clients:
-                    client.close()
-
                 queue.put((None, None))
 
 

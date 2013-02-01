@@ -95,6 +95,9 @@ class AsyncoreClientWrapper(object):
     def __init__(self, client):
         self._client = client
 
+    def connect(self):
+        self._client.connect(self._client._addr)
+
     def setInbox(self, inbox):
         self._client.set_inbox(inbox)
 
@@ -191,6 +194,10 @@ class AsyncoreReactor(object):
         l = AsyncoreListener(self, address, acceptHandler)
         self.wakeup()
         return l
+
+    def createClient(self, address):
+        client = AsyncoreClient(None, self, address)
+        return AsyncoreClientWrapper(client)
 
     def process_requests(self):
         self._isRunning = True

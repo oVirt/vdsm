@@ -31,12 +31,12 @@ class JsonRpcClient(object):
                'params': params,
                'id': reqId}
 
-        self._transport.sendMessage(json.dumps(msg, 'utf-8'), timeout=timeout)
+        self._transport.send(json.dumps(msg, 'utf-8'), timeout=timeout)
         # Notifications have no repsonse
         if reqId is None:
             return
 
-        resp = self._transport.recvMessage(timeout=timeout)
+        resp = self._transport.recv(timeout=timeout)
         resp = json.loads(resp)
         if resp.get('error') is not None:
             raise JsonRpcError(resp['error']['code'],
@@ -46,35 +46,6 @@ class JsonRpcClient(object):
 
     def close(self):
         self._transport.close()
-
-
-class TCPReactorClient(object):
-    def __init__(self, address):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.address = address
-
-    def connect(self):
-        self.sock.connect(self.address)
-
-    def sendMessage(self, msg, timeout=None):
-        msg = _Size.pack(len(msg)) + msg
-        self.sock.settimeout(timeout)
-        while msg:
-            sent = self.sock.send(msg)
-            msg = msg[sent:]
-
-    def recvMessage(self, timeout=None):
-        self.sock.settimeout(timeout)
-        rawSize = self.sock.recv(_Size.size)
-        size = _Size.unpack(rawSize)[0]
-        buff = ""
-        while (size - len(buff)) > 0:
-            buff += self.sock.recv(size)
-
-        return buff
-
-    def close(self):
-        self.sock.close()
 
 
 class ProtonReactorClient(object):
@@ -87,7 +58,7 @@ class ProtonReactorClient(object):
     def connect(self):
         self._msngr.start()
 
-    def sendMessage(self, data, timeout=None):
+    def send(self, data, timeout=None):
         if timeout is None:
             timeout = -1
         else:
@@ -104,7 +75,7 @@ class ProtonReactorClient(object):
             self._msngr.settle(t)
             raise
 
-    def recvMessage(self, timeout=None):
+    def recv(self, timeout=None):
         if timeout is None:
             timeout = -1
         else:
