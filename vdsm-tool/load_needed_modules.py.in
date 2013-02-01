@@ -56,6 +56,6 @@ def load_needed_modules():
     Load needed modules
     """
 
-    for mod in ['tun', 'bonding', '8021q']:
+    for mod in ['bridge', 'tun', 'bonding', '8021q']:
         _exec_command([EX_MODPROBE, mod])
     _enable_bond_dev()
