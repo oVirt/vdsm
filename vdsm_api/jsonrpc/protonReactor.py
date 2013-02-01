@@ -181,7 +181,6 @@ class ProtonReactor(object):
             l = proton.pn_connector_listener(connector)
             listener = proton.pn_listener_context(l)
             listener._acceptHandler(listener, ctx)
-            self.log.debug("Found related listener")
 
             self._sessionContexts.append(ctx)
             proton.pn_session_set_context(ssn, ctx)
@@ -300,6 +299,10 @@ class ProtonReactor(object):
                 proton.pn_link_open(sender)
                 continue
 
+            if proton.pn_link_credit(sender) == 0:
+                self.log.debug("Not enough credit, waiting")
+                continue
+
             try:
                 data = ctx._popPendingMessage()
             except Empty:
@@ -309,9 +312,6 @@ class ProtonReactor(object):
                 msg.body = data
                 self.log.debug("Creating delivery")
                 proton.pn_link_set_context(sender, msg.encode())
-                if proton.pn_link_credit(sender) == 0:
-                    self.log.debug("Not enough credit, waiting")
-                    continue
 
                 proton.pn_delivery(sender,
                                    "response-delivery-%s" % str(uuid.uuid4()))
