@@ -121,13 +121,10 @@ class ProtonReactorClient(object):
         if not self._msngr.incoming:
             raise socket.timeout()
 
-        if self._msngr.incoming > 1:
-            raise Exception("Got %d repsones instead of 1" %
-                            self._msngr.incoming)
-
         msg = proton.Message()
         t = self._msngr.get(msg)
         self._msngr.settle(t)
+
         return msg.body
 
     def close(self):
