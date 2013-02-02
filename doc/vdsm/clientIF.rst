@@ -1,5 +1,5 @@
 Documentation for the clientIF module
 ******************************************
 
-.. automodule:: clientIF
+.. automodule:: vdsm.clientIF
         :members:

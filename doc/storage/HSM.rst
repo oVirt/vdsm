@@ -1,5 +1,5 @@
 Documentation for the Host Storage Manager
 ******************************************
 
-.. automodule:: storage.hsm
+.. automodule:: vdsm.storage.hsm
         :members:

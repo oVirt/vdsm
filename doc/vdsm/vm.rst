@@ -1,5 +1,5 @@
 Documentation for the vm module
 ******************************************
 
-.. automodule:: vm
+.. automodule:: vdsm.vm
         :members:
