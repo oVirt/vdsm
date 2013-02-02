@@ -54,3 +54,4 @@ vdsm_reg/engine.py
 vdsm_reg/vdsm-reg-setup
 vdsm_reg/vdsm-reg.conf
 vds_bootstrap/deployUtil.py*
+doc/build/
