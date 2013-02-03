@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+SPHINXBUILD   = PYTHONPATH=../vdsm:../:$$PYTHONPATH sphinx-build
 PAPER         =
 BUILDDIR      = build
 
@@ -32,12 +32,13 @@ clean:
 	-rm -rf $(BUILDDIR)/*
 
 html:
+	sh create_sl.sh
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 htmlstrict:
-
+	sh create_sl.sh
 	$(SPHINXBUILD) -b html -W $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

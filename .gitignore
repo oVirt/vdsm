@@ -33,6 +33,7 @@ vdsm/mom.conf
 vdsm/sos/vdsm.py
 vdsm/storage/protect/safelease
 vdsm/sudoers.vdsm
+vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-logrotate.conf
 vdsm/vdsm-sosplugin.py
