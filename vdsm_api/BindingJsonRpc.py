@@ -20,11 +20,11 @@ from Queue import Queue
 
 _Size = struct.Struct("!Q")
 
-from jsonrpc import JsonRpcServer
-from jsonrpc.asyncoreReactor import AsyncoreReactor
+from yajsonrpc import JsonRpcServer
+from yajsonrpc.asyncoreReactor import AsyncoreReactor
 ProtonReactor = None
 try:
-    from jsonrpc.protonReactor import ProtonReactor
+    from yajsonrpc.protonReactor import ProtonReactor
 except ImportError:
     pass
 

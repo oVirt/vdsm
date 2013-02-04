@@ -29,7 +29,7 @@ from contextlib import closing
 from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import constants
 import BindingJsonRpc
-import jsonrpc
+import yajsonrpc
 import apiData
 from jsonRpcUtils import getFreePort
 
@@ -249,13 +249,13 @@ class JsonRawTest(APITest):
                                  'id': 1,
                                  'method': 'Host.fake'})
         reply = self.sendMessage(msg)
-        self.assertEquals(jsonrpc.JsonRpcMethodNotFoundError().code,
+        self.assertEquals(yajsonrpc.JsonRpcMethodNotFoundError().code,
                           reply['error']['code'])
 
     def testBadMethod(self):
         msg = self.buildMessage(self._createRequest('malformed\'', 1))
         reply = self.sendMessage(msg)
-        self.assertEquals(jsonrpc.JsonRpcMethodNotFoundError().code,
+        self.assertEquals(yajsonrpc.JsonRpcMethodNotFoundError().code,
                           reply['error']['code'])
 
     def testMissingSize(self):
@@ -267,7 +267,7 @@ class JsonRawTest(APITest):
         msize = JsonRawTest._Size.pack(len(msg))
         msg = msize + msg
         reply = self.sendMessage(msg)
-        self.assertEquals(jsonrpc.JsonRpcParseError().code,
+        self.assertEquals(yajsonrpc.JsonRpcParseError().code,
                           reply['error']['code'])
 
     def testSynchronization(self):
@@ -296,5 +296,5 @@ class JsonRawTest(APITest):
         msg = self.buildMessage({'jsonrpc': '2.0',
                                  'id': 1, 'method': 'Host.ping'})
         reply = self.sendMessage(msg)
-        self.assertEquals(jsonrpc.JsonRpcInternalError().code,
+        self.assertEquals(yajsonrpc.JsonRpcInternalError().code,
                           reply['error']['code'])

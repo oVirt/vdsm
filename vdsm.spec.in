@@ -203,6 +203,15 @@ Requires: python-ordereddict
 %description jsonrpc
 A Json-based RPC interface that serves as the protocol for libvdsm.
 
+%package yajsonrpc
+Summary:        JSON RPC server and client implementation
+BuildArch:      noarch
+
+Requires:       python >= 2.6
+
+%description yajsonrpc
+A JSON RPC server and client implementation.
+
 %package bootstrap
 Summary:        VDSM bootstrapping package
 BuildArch:      noarch
@@ -974,10 +983,12 @@ exit 0
 %files jsonrpc
 %{_datadir}/%{vdsm_name}/BindingJsonRpc.py*
 %{_datadir}/%{vdsm_name}/Bridge.py*
-%{_datadir}/%{vdsm_name}/jsonrpc/__init__.py*
-%{_datadir}/%{vdsm_name}/jsonrpc/asyncoreReactor.py*
-%{_datadir}/%{vdsm_name}/jsonrpc/protonReactor.py*
-%{_datadir}/%{vdsm_name}/jsonrpc/client.py*
+
+%files yajsonrpc
+%{python_sitearch}/yajsonrpc/__init__.py*
+%{python_sitearch}/yajsonrpc/asyncoreReactor.py*
+%{python_sitearch}/yajsonrpc/protonReactor.py*
+%{python_sitearch}/yajsonrpc/client.py*
 
 %files bootstrap
 %defattr(-, root, root, -)

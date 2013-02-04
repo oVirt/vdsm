@@ -6,17 +6,17 @@ from contextlib import contextmanager
 from functools import partial
 from nose.plugins.skip import SkipTest
 
-from jsonrpc import \
+from yajsonrpc import \
     JsonRpcServer, \
     asyncoreReactor
-from jsonrpc.client import \
+from yajsonrpc.client import \
     JsonRpcClient, \
     ProtonReactorClient
 
 protonReactor = None
 try:
     import proton
-    from jsonrpc import protonReactor
+    from yajsonrpc import protonReactor
     proton         # Squash pyflakes error for
     protonReactor  # unused import
 except ImportError:

@@ -2,7 +2,7 @@ import json
 import socket
 import logging
 import uuid
-from jsonrpc import \
+from yajsonrpc import \
     JsonRpcError, \
     asyncoreReactor
 
@@ -11,7 +11,7 @@ _Size = asyncoreReactor._Size
 proton = None
 try:
     import proton
-    from jsonrpc import protonReactor
+    from yajsonrpc import protonReactor
     proton         # Squash pyflakes error for
     protonReactor  # unused import
 except ImportError:

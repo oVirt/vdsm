@@ -19,7 +19,7 @@ import vdsmapi
 import logging
 import types
 import API
-import jsonrpc
+import yajsonrpc
 
 
 class VdsmError(Exception):
@@ -38,14 +38,14 @@ class DynamicBridge(object):
         try:
             fn = getattr(self, methodName)
         except AttributeError:
-            raise jsonrpc.JsonRpcMethodNotFoundError()
+            raise yajsonrpc.JsonRpcMethodNotFoundError()
 
         try:
             result = fn(argobj)
         except VdsmError, e:
             # TBD: Do we really want to always log here
             self.log.debug("Operation failed, returning error", exc_info=True)
-            raise jsonrpc.JsonRpcError(e.code, e.message)
+            raise yajsonrpc.JsonRpcError(e.code, e.message)
 
         return result
 
@@ -210,7 +210,7 @@ class DynamicBridge(object):
         if result['status']['code']:
             code = result['status']['code']
             msg = result['status']['message']
-            raise jsonrpc.JsonRpcError(code, msg)
+            raise yajsonrpc.JsonRpcError(code, msg)
 
         retfield = command_info.get(cmd, {}).get('ret')
         if isinstance(retfield, types.FunctionType):

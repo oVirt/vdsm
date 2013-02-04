@@ -33,7 +33,7 @@ from jsonRpcUtils import \
     constructReactor, \
     constructServer
 
-from jsonrpc import \
+from yajsonrpc import \
     JsonRpcError, \
     JsonRpcMethodNotFoundError, \
     JsonRpcInternalError

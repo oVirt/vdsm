@@ -18,8 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-jsonrpcdir = $(vdsmdir)/jsonrpc
-dist_jsonrpc_PYTHON = \
+dist_yajsonrpc_PYTHON = \
 	__init__.py \
 	asyncoreReactor.py \
 	client.py \

@@ -1,5 +1,3 @@
-SUBDIRS = jsonrpc
-
 CLEANFILES = \
 	vdsm-api.html \
 	$(NULL)

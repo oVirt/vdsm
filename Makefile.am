@@ -26,6 +26,7 @@ SUBDIRS = vdsm \
 	  tests \
 	  vdsm-tool \
 	  vdsm_api \
+	  yajsonrpc \
 	  $(NULL)
 
 include $(top_srcdir)/build-aux/Makefile.subs

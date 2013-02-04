@@ -80,7 +80,7 @@ AC_SUBST([vdsmpylibdir], ['${pyexecdir}/vdsm'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
 AC_SUBST([vdsmapidir], ['${datarootdir}/vdsm_api'])
-AC_SUBST([jsonrpcdir], ['${datarootdir}/vdsm_api/jsonrpc'])
+AC_SUBST([yajsonrpcdir], ['${pyexecdir}/yajsonrpc'])
 
 # VDSM registration default paths
 AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
@@ -192,7 +192,6 @@ AC_OUTPUT([
 	tests/functional/Makefile
 	vds_bootstrap/Makefile
 	vdsm_api/Makefile
-	vdsm_api/jsonrpc/Makefile
 	vdsm_cli/Makefile
 	vdsm_hooks/directlun/Makefile
 	vdsm_hooks/faqemu/Makefile
@@ -223,6 +222,7 @@ AC_OUTPUT([
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm-tool/Makefile
+	yajsonrpc/Makefile
 ])
 
 AC_OUTPUT([
