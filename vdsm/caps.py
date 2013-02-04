@@ -329,17 +329,23 @@ def _getKeyPackages():
     pkgs = {'kernel': kernelDict()}
 
     if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL):
-        KEY_PACKAGES = ['qemu-kvm', 'qemu-img',
-                        'vdsm', 'spice-server', 'libvirt', 'mom']
+        KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm',
+                        'qemu-img': 'qemu-img',
+                        'vdsm': 'vdsm',
+                        'spice-server': 'spice-server',
+                        'libvirt': 'libvirt',
+                        'mom': 'mom',
+                        }
 
         try:
             ts = rpm.TransactionSet()
 
             for pkg in KEY_PACKAGES:
                 try:
-                    mi = ts.dbMatch('name', pkg).next()
+                    mi = ts.dbMatch('name', KEY_PACKAGES[pkg]).next()
                 except StopIteration:
-                    logging.debug("rpm package %s not found", pkg)
+                    logging.debug("rpm package %s not found",
+                                  KEY_PACKAGES[pkg])
                 else:
                     pkgs[pkg] = {
                         'version': mi['version'],
