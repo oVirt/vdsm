@@ -233,8 +233,7 @@ class FileVolume(volume.Volume):
                        dstImgPath)
         dstLeasePath = self._getLeaseVolumePath(
             os.path.join(dstImgPath, self.volUUID))
-        self.oop.fileUtils.safeUnlink(dstLeasePath)
-        self.oop.os.link(self._getLeaseVolumePath(), dstLeasePath)
+        self.oop.utils.forceLink(self._getLeaseVolumePath(), dstLeasePath)
 
     def _share(self, dstImgPath):
         """
@@ -244,15 +243,11 @@ class FileVolume(volume.Volume):
         dstMetaPath = self._getMetaVolumePath(dstVolPath)
 
         self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
-
-        self.oop.fileUtils.safeUnlink(dstVolPath)
-        self.oop.os.link(self.getVolumePath(), dstVolPath)
+        self.oop.utils.forceLink(self.getVolumePath(), dstVolPath)
 
         self.log.debug("Share volume metadata of %s to %s", self.volUUID,
                        dstImgPath)
-
-        self.oop.fileUtils.safeUnlink(dstMetaPath)
-        self.oop.os.link(self._getMetaVolumePath(), dstMetaPath)
+        self.oop.utils.forceLink(self._getMetaVolumePath(), dstMetaPath)
 
         # Link the lease file if the domain uses sanlock
         if sdCache.produce(self.sdUUID).hasVolumeLeases():

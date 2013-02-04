@@ -106,6 +106,23 @@ def readMemInfo():
             time.sleep(0.1)
 
 
+def forceLink(src, dst):
+    """ Makes or replaces a hard link.
+
+    Like os.link() but replaces the link if it exists.
+    """
+    try:
+        os.link(src, dst)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            rmFile(dst)
+            os.link(src, dst)
+        else:
+            logging.error("Linking file: %s to %s failed", src, dst,
+                          exc_info=True)
+            raise
+
+
 def pidStat(pid):
     res = []
     with open("/proc/%d/stat" % pid, "r") as f:

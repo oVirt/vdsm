@@ -82,5 +82,6 @@ def OopWrapper(procPool):
     return _ModuleWrapper("oop", procPool, DEFAULT_TIMEOUT,
                           (("os",
                             ("path",)),
+                           ("vdsm", ("utils",)),
                            "glob",
                            "fileUtils"))
