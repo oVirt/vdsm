@@ -109,7 +109,7 @@ class MigrationSourceThread(threading.Thread):
         self.status = {
             'status': {
                 'code': 0,
-                'message': 'Migration in process'},
+                'message': 'Migration in progress'},
             'progress': 0}
         threading.Thread.__init__(self)
         self._preparingMigrationEvt = False
@@ -197,7 +197,7 @@ class MigrationSourceThread(threading.Thread):
                     break
             self._vm.pause('Saving State')
         else:
-            self.log.debug("migration Process begins")
+            self.log.debug("Migration started")
             self._vm.lastStatus = 'Migration Source'
 
     def _recover(self, message):
