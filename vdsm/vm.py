@@ -216,13 +216,10 @@ class MigrationSourceThread(threading.Thread):
         self._vm.lastStatus = 'Up'
 
     def _finishSuccessfully(self):
+        self.status['progress'] = 100
         if self._mode != 'file':
             self._vm.setDownStatus(NORMAL, "Migration succeeded")
-            self.status = {
-                'status': {
-                    'code': 0,
-                    'message': 'Migration done'},
-                'progress': 100}
+            self.status['status']['message'] = 'Migration done'
         else:
             # don't pickle transient params
             for ignoreParam in ('displayIp', 'display', 'pid'):
@@ -237,10 +234,7 @@ class MigrationSourceThread(threading.Thread):
                 self._vm.cif.teardownVolumePath(self._dstparams)
 
             self._vm.setDownStatus(NORMAL, "SaveState succeeded")
-            self.status = {'status': {
-                'code': 0,
-                'message': 'SaveState done'},
-                'progress': 100}
+            self.status['status']['message'] = 'SaveState done'
 
     def _patchConfigForLegacy(self):
         """
@@ -279,10 +273,8 @@ class MigrationSourceThread(threading.Thread):
                 self._finishSuccessfully()
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
-                    self.status = {
-                        'status': {
-                            'code': errCode['migCancelErr'],
-                            'message': 'Migration canceled'}}
+                    self.status['status']['code'] = errCode['migCancelErr']
+                    self.status['status']['message'] = 'Migration canceled'
                 raise
             finally:
                 if '_migrationParams' in self._vm.conf:
@@ -1200,11 +1192,8 @@ class Vm(object):
             self._migrationSourceThread = \
                 self.MigrationSourceThreadClass(self, **params)
             self._migrationSourceThread.start()
-            check = self._migrationSourceThread.getStat()
-            if check['status']['code']:
-                return check
-            return {'status': {'code': 0,
-                               'message': 'Migration process starting'}}
+            self._migrationSourceThread.getStat()
+            return self._migrationSourceThread.status
         finally:
             self._guestCpuLock.release()
 
@@ -1215,8 +1204,9 @@ class Vm(object):
         self._acquireCpuLockWithTimeout()
         try:
             self._migrationSourceThread.stop()
-            return {'status': {'code': 0,
-                               'message': 'Migration process stopped'}}
+            self._migrationSourceThread.status['status']['message'] = \
+                'Migration process cancelled'
+            return self._migrationSourceThread.status
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
                 return errCode['migCancelErr']
