@@ -114,11 +114,17 @@ class MigrationSourceThread(threading.Thread):
         threading.Thread.__init__(self)
         self._preparingMigrationEvt = False
         self._migrationCanceledEvt = False
+        self._monitorThread = None
 
     def getStat(self):
         """
         Get the status of the migration.
         """
+        if self._monitorThread is not None:
+            # fetch migration status from the monitor thread
+            self.status['progress'] = int(
+                float(self._monitorThread.data_progress +
+                      self._monitorThread.mem_progress) / 2)
         return self.status
 
     def _setupVdsConnection(self):
@@ -259,7 +265,6 @@ class MigrationSourceThread(threading.Thread):
             self._setupVdsConnection()
             self._setupRemoteMachineParams()
             self._prepareGuest()
-            self.status['progress'] = 10
             MigrationSourceThread._ongoingMigrations.acquire()
             try:
                 self.log.debug("migration semaphore acquired")

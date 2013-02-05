@@ -378,6 +378,8 @@ class MigrationMonitorThread(threading.Thread):
         self._stop = threading.Event()
         self._vm = vm
         self.daemon = True
+        self.data_progress = 0
+        self.mem_progress = 0
 
     def run(self):
         def calculateProgress(remaining, total):
@@ -415,12 +417,14 @@ class MigrationMonitorThread(threading.Thread):
             if jobType == 0:
                 continue
 
-            dataProgress = calculateProgress(dataRemaining, dataTotal)
-            memProgress = calculateProgress(memRemaining, memTotal)
+            self.data_progress = calculateProgress(dataRemaining, dataTotal)
+            self.mem_progress = calculateProgress(memRemaining, memTotal)
 
             self._vm.log.info('Migration Progress: %s seconds elapsed, %s%% of'
                               ' data processed, %s%% of mem processed' %
-                              (timeElapsed / 1000, dataProgress, memProgress))
+                              (timeElapsed / 1000,
+                                  self.data_progress,
+                                  self.mem_progress))
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
@@ -469,8 +473,8 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                                         self._vm._migrationTimeout() / 2)
 
             if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
-                monitorThread = MigrationMonitorThread(self._vm)
-                monitorThread.start()
+                self._monitorThread = MigrationMonitorThread(self._vm)
+                self._monitorThread.start()
 
             try:
                 if ('qxl' in self._vm.conf['display'] and
@@ -495,7 +499,7 @@ class MigrationSourceThread(vm.MigrationSourceThread):
             finally:
                 t.cancel()
                 if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
-                    monitorThread.stop()
+                    self._monitorThread.stop()
 
     def stop(self):
         # if its locks we are before the migrateToURI2()
