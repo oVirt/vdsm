@@ -33,7 +33,8 @@ class AsyncoreClient(asynchat.async_chat):
     def __init__(self, sock, reactor, addr):
         asynchat.async_chat.__init__(self, sock=sock, map=reactor._map)
         if sock is None:
-            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            address_family = socket.getaddrinfo(*addr)[0][0]
+            self.create_socket(address_family, socket.SOCK_STREAM)
 
         self._addr = addr
         self._ibuff = []
@@ -117,7 +118,8 @@ class AsyncoreListener(asyncore.dispatcher):
     def __init__(self, reactor, address, acceptHandler):
         self._reactor = reactor
         asyncore.dispatcher.__init__(self, map=reactor._map)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        address_family = socket.getaddrinfo(*address)[0][0]
+        self.create_socket(address_family, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind(address)
         self.listen(5)
