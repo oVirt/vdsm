@@ -476,6 +476,7 @@ start() {
     fi
 
     /usr/bin/vdsm-tool load-needed-modules
+    /sbin/sysctl -q -p /etc/sysctl.d/vdsm
     mk_data_center
     mk_core_path
     mk_dom_backup

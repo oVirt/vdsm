@@ -505,9 +505,6 @@ if grep -q "# VDSM section begin" /etc/sysctl.conf; then
         /etc/sysctl.conf
 fi
 
-# Make the /etc/sysctl.d/vdsm take effect immediately after installation.
-/sbin/sysctl -q -p /etc/sysctl.d/vdsm
-
 %if 0%{?rhel}
 if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsmd
