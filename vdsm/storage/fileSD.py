@@ -153,10 +153,10 @@ class FileStorageDomain(sd.StorageDomain):
         self.metafile = os.path.join(domainPath, sd.DOMAIN_META_DATA,
                                      sd.METADATA)
 
-        self.validateFileSystemFeatures()
+        sdUUID = os.path.basename(domainPath)
+        validateFileSystemFeatures(sdUUID, self.mountpoint)
 
         metadata = FileSDMetadata(self.metafile)
-        sdUUID = metadata[sd.DMDK_SDUUID]
         domaindir = os.path.join(self.mountpoint, sdUUID)
         sd.StorageDomain.__init__(self, sdUUID, domaindir, metadata)
 
@@ -164,9 +164,6 @@ class FileStorageDomain(sd.StorageDomain):
             raise se.StorageDomainMetadataNotFound(sdUUID, self.metafile)
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
-
-    def validateFileSystemFeatures(self):
-        validateFileSystemFeatures(self.sdUUID, self.mountpoint)
 
     def setMetadataPermissions(self):
         procPool = oop.getProcessPool(self.sdUUID)
