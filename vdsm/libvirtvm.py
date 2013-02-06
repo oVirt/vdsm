@@ -466,8 +466,14 @@ class MigrationSourceThread(vm.MigrationSourceThread):
             else:
                 transport = 'tcp'
             duri = 'qemu+%s://%s/system' % (transport, self.remoteHost)
-            muri = 'tcp://%s' % self.remoteHost
-            self._vm.log.debug('starting migration to %s', duri)
+            if self._vm.conf['_migrationParams']['dstqemu']:
+                muri = 'tcp://%s' % \
+                       self._vm.conf['_migrationParams']['dstqemu']
+            else:
+                muri = 'tcp://%s' % self.remoteHost
+
+            self._vm.log.debug('starting migration to %s '
+                               'with miguri %s', duri, muri)
 
             t = MigrationDowntimeThread(self._vm, int(self._downtime),
                                         self._vm._migrationTimeout() / 2)

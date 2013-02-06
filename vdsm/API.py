@@ -453,6 +453,7 @@ class VM(APIBase):
             *mode* - ``remote``/``file``
             *method* - ``online``
             *downtime* - allowed down time during online migration
+            *dstqemu* - remote host address dedicated for migration
         """
         params['vmId'] = self._UUID
         self.log.debug(params)
