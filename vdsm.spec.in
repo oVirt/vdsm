@@ -520,18 +520,26 @@ exit 0
 %endif
 
 %preun
+if [ "$1" -eq 0 ]; then
+        start_conf_section="## beginning of configuration section by vdsm"
+        end_conf_section="## end of configuration section by vdsm"
+        by_vdsm="by vdsm"
+
+        /bin/sed -i -e "/${start_conf_section}/,/${end_conf_section}/d" \
+                    -e "/${by_vdsm}/d" \
+               %{_sysconfdir}/libvirt/libvirtd.conf \
+               %{_sysconfdir}/libvirt/qemu.conf \
+               %{_sysconfdir}/sysconfig/libvirtd \
+               %{_sysconfdir}/sysctl.conf \
+               %{_sysconfdir}/libvirt/qemu-sanlock.conf
+fi
+
 %if 0%{?rhel}
 if [ "$1" -eq 0 ]
 then
     /sbin/service vdsmd stop > /dev/null 2>&1 || :
     /sbin/chkconfig --del vdsmd
     /sbin/chkconfig --del vdsm-restore-net-config
-
-    /bin/sed -i '/# by vdsm$/d' \
-        /etc/libvirt/libvirtd.conf \
-        /etc/libvirt/qemu.conf \
-        /etc/sysconfig/libvirtd \
-        /etc/sysctl.conf
 
     /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
         /etc/sysctl.conf
