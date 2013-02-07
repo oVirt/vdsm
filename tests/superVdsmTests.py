@@ -15,9 +15,10 @@ from time import sleep
 def getNeededPythonPath():
     testDir = os.path.dirname(__file__)
     base = os.path.dirname(testDir)
+    vdsmModPath = os.path.join(base, 'lib')
     vdsmPath = os.path.join(base, 'vdsm')
     cliPath = os.path.join(base, 'vdsm_cli')
-    pyPath = "PYTHONPATH=" + ':'.join([base, vdsmPath, cliPath])
+    pyPath = "PYTHONPATH=" + ':'.join([base, vdsmPath, cliPath, vdsmModPath])
     return pyPath
 
 

@@ -27,27 +27,22 @@ dist_vdsm_PYTHON = \
 nodist_bin_SCRIPTS = \
 	vdsClient
 
-nodist_vdsmpylib_PYTHON = \
-	vdscli.py
-
 dist_man1_MANS = \
 	vdsClient.1
 
 CLEANFILES = \
 	config.log \
 	$(nodist_bin_SCRIPTS) \
-	$(nodist_vdsmpylib_PYTHON) \
 	$(nodist_vdsm_PYTHON)
 
 EXTRA_DIST = \
 	vdsClient.completion \
 	vdsClient.in \
-	vdscli.py.in
+	$(NULL)
 
 all-local: \
 	$(nodist_bin_SCRIPTS) \
-	$(nodist_vdsm_PYTHON) \
-	$(nodist_vdsmpylib_PYTHON)
+	$(nodist_vdsm_PYTHON)
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/bash_completion.d

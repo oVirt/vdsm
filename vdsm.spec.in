@@ -519,7 +519,7 @@ install -Dm 0755 vdsm/vdsm-restore-net-config.init \
 install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
 %else
 # Install the configuration sample
-install -Dm 0644 vdsm/vdsm.conf.sample \
+install -Dm 0644 lib/vdsm/vdsm.conf.sample \
                  %{buildroot}%{_sysconfdir}/vdsm/vdsm.conf
 
 # Install the polkit for libvirt
@@ -675,7 +675,7 @@ exit 0
 
 %files
 %defattr(-, root, root, -)
-%doc COPYING README vdsm/vdsm.conf.sample
+%doc COPYING README lib/vdsm/vdsm.conf.sample
 %if 0%{?with_systemd}
 /lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service

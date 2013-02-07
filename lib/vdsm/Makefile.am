@@ -1,4 +1,5 @@
-# Copyright 2011 Red Hat, Inc.
+#
+# Copyright 2013 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,12 +13,48 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-dist_bin_SCRIPTS = \
-	vdsm-tool
+SUBDIRS=tool
+
+dist_vdsmpylib_PYTHON = \
+	__init__.py \
+	define.py \
+	exception.py \
+	libvirtconnection.py \
+	netinfo.py \
+	qemuImg.py \
+	SecureXMLRPCServer.py \
+	utils.py \
+	$(NULL)
+
+nodist_vdsmpylib_PYTHON = \
+	config.py \
+	constants.py \
+	vdscli.py \
+	$(NULL)
+
+nodist_noinst_DATA= \
+	vdsm.conf.sample \
+	$(NULL)
+
+CLEANFILES = \
+	$(nodist_vdsmpylib_PYTHON) \
+	$(NULL)
+
+
+EXTRA_DIST = \
+	config.py.in \
+	constants.py.in \
+	vdscli.py.in \
+	$(NULL)
+
+vdsm.conf.sample: Makefile config.py
+	@echo "  CONFIG $@"; $(PYTHON) $(builddir)/config.py > $@
+
+all-local: \
+	$(nodist_vdsmpylib_PYTHON)

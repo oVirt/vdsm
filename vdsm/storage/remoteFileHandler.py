@@ -31,24 +31,28 @@ import sys
 import select
 from contextlib import contextmanager
 
-import misc
-import fileUtils
-import zombieReaper
-
-# Crabs are known for their remote process calls
-LENGTH_STRUCT_FMT = "Q"
-LENGTH_STRUCT_LENGTH = calcsize(LENGTH_STRUCT_FMT)
-
 if __name__ != "__main__":
     # If you don't have the vdsm package installed this will fail. Luckily we
     # don't need anything when the child spawns. Plus anything you don't have
     # to import is less memory taken by each helper.
-    from vdsm.betterPopen import BetterPopen
+    from betterPopen import BetterPopen
     from vdsm import constants
 else:
     # We add the parent directory so that imports that import the storage
     # package would work even though CWD is inside the storage package.
     sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../"))
+    # Path for the vdsm module
+    sys.path.append(os.path.join(os.path.dirname(sys.argv[0]),
+                                 "../../lib"))
+
+import misc
+import fileUtils
+import zombieReaper
+
+
+# Crabs are known for their remote process calls
+LENGTH_STRUCT_FMT = "Q"
+LENGTH_STRUCT_LENGTH = calcsize(LENGTH_STRUCT_FMT)
 
 
 class Timeout(RuntimeError):

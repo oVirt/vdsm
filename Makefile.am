@@ -23,10 +23,10 @@ SUBDIRS = vdsm \
 	  vds_bootstrap \
 	  vdsm_reg \
 	  vdsm_hooks \
+	  lib \
 	  tests \
 	  vdsm-tool \
 	  vdsm_api \
-	  yajsonrpc \
 	  $(NULL)
 
 include $(top_srcdir)/build-aux/Makefile.subs
@@ -56,6 +56,9 @@ PEP8_WHITELIST = \
 	vdsm/sos/vdsm.py.in \
 	vdsm/storage \
 	vdsm/vdsm \
+	lib/betterPopen/*.py \
+	lib/vdsm/*.py \
+	lib/vdsm/*.py.in \
 	vdsm_api \
 	vdsm_cli \
 	vdsm_hooks \

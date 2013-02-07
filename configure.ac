@@ -196,11 +196,24 @@ AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 # Keep sorted
 AC_OUTPUT([
 	Makefile
+	lib/Makefile
+	lib/betterPopen/Makefile
+	lib/vdsm/Makefile
+	lib/vdsm/tool/Makefile
+	lib/yajsonrpc/Makefile
 	tests/Makefile
 	tests/functional/Makefile
 	vds_bootstrap/Makefile
+	vdsm-tool/Makefile
+	vdsm/Makefile
+	vdsm/gluster/Makefile
+	vdsm/sos/Makefile
+	vdsm/storage/Makefile
+	vdsm/storage/imageRepository/Makefile
+	vdsm/storage/protect/Makefile
 	vdsm_api/Makefile
 	vdsm_cli/Makefile
+	vdsm_hooks/Makefile
 	vdsm_hooks/directlun/Makefile
 	vdsm_hooks/checkimages/Makefile
 	vdsm_hooks/faqemu/Makefile
@@ -210,29 +223,19 @@ AC_OUTPUT([
 	vdsm_hooks/hugepages/Makefile
 	vdsm_hooks/isolatedprivatevlan/Makefile
 	vdsm_hooks/macspoof/Makefile
-	vdsm_hooks/Makefile
 	vdsm_hooks/nestedvt/Makefile
 	vdsm_hooks/numa/Makefile
 	vdsm_hooks/pincpu/Makefile
 	vdsm_hooks/promisc/Makefile
-	vdsm_hooks/qos/Makefile
 	vdsm_hooks/qemucmdline/Makefile
+	vdsm_hooks/qos/Makefile
 	vdsm_hooks/scratchpad/Makefile
 	vdsm_hooks/smbios/Makefile
 	vdsm_hooks/sriov/Makefile
 	vdsm_hooks/vhostmd/Makefile
 	vdsm_hooks/vmdisk/Makefile
 	vdsm_hooks/vmfex/Makefile
-	vdsm/Makefile
 	vdsm_reg/Makefile
-	vdsm/betterPopen/Makefile
-	vdsm/gluster/Makefile
-	vdsm/sos/Makefile
-	vdsm/storage/Makefile
-	vdsm/storage/imageRepository/Makefile
-	vdsm/storage/protect/Makefile
-	vdsm-tool/Makefile
-	yajsonrpc/Makefile
 ])
 
 AC_OUTPUT([

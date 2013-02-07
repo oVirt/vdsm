@@ -58,7 +58,7 @@ import inspect
 from vdsm import constants
 from vdsm import utils
 import storage_exception as se
-from vdsm.betterPopen import BetterPopen
+from betterPopen import BetterPopen
 import fileUtils
 import logUtils
 

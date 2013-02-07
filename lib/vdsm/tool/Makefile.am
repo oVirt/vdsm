@@ -1,4 +1,5 @@
-# Copyright 2011 Red Hat, Inc.
+#
+# Copyright 2013 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,12 +13,24 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-dist_bin_SCRIPTS = \
-	vdsm-tool
+EXTRA_DIST = \
+	load_needed_modules.py.in \
+	validate_ovirt_certs.py.in \
+	$(NULL)
+
+nodist_vdsmtool_DATA = \
+	load_needed_modules.py \
+	validate_ovirt_certs.py \
+	$(NULL)
+
+dist_vdsmtool_DATA = \
+	__init__.py \
+	passwd.py \
+	seboolsetup.py \
+	$(NULL)

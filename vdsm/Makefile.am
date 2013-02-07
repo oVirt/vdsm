@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = sos storage betterPopen gluster
+SUBDIRS = sos storage gluster
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -56,20 +56,6 @@ dist_vdsm_PYTHON = \
 	zombieReaper.py \
 	$(NULL)
 
-dist_vdsmpylib_PYTHON = \
-	__init__.py \
-	define.py \
-	exception.py \
-	libvirtconnection.py \
-	netinfo.py \
-	qemuImg.py \
-	SecureXMLRPCServer.py \
-	utils.py
-
-nodist_vdsmpylib_PYTHON = \
-	config.py \
-	constants.py
-
 dist_vdsmexec_SCRIPTS = \
 	ovirt_functions.sh
 
@@ -91,7 +77,6 @@ nodist_noinst_DATA = \
 	svdsm.logger.conf \
 	vdsm-logrotate.conf \
 	vdsm-restore-net-config.init \
-	vdsm.conf.sample \
 	vdsm.rwtab \
 	vdsmd.init \
 	$(NULL)
@@ -116,12 +101,9 @@ CLEANFILES = \
 	$(nodist_noinst_DATA) \
 	$(nodist_vdsmexec_SCRIPTS) \
 	$(nodist_vdsm_PYTHON) \
-	$(nodist_vdsmpylib_PYTHON) \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	config.py.in \
-	constants.py.in \
 	dsaversion.py.in \
 	dumpStorageTable.py.in \
 	libvirt_password \
@@ -149,14 +131,10 @@ EXTRA_DIST = \
 	vdsmd.service \
 	$(NULL)
 
-vdsm.conf.sample: Makefile config.py
-	@echo "  CONFIG $@"; $(PYTHON) $(builddir)/config.py > $@
-
 all-local: \
 	$(nodist_vdsm_PYTHON) \
 	$(nodist_vdsm_SCRIPTS) \
 	$(nodist_noinst_DATA) \
-	$(nodist_vdsmpylib_PYTHON) \
 	$(nodist_man8_MANS)
 
 install-data-hook:

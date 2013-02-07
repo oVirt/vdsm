@@ -22,7 +22,7 @@ import os
 
 from testrunner import VdsmTestCase as TestCaseBase
 import zombieReaper
-from vdsm.betterPopen import BetterPopen
+from betterPopen import BetterPopen
 
 
 class zombieReaperTests(TestCaseBase):

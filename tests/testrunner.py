@@ -295,28 +295,6 @@ def run():
 
     sys.exit(not core.run(config=conf, testRunner=runner, argv=argv))
 
-# This is an ugly hack to pretend that we have the vdsm module installed.
-# Remove this when source is properly organized.
-from types import ModuleType
-
-
-class vdsm(ModuleType):
-    def __init__(self):
-        ModuleType.__init__(self, "vdsm")
-
-
-def hackVdsmModule():
-    sys.modules['vdsm'] = mod = vdsm()
-
-    for name in ('config', 'constants', 'utils', 'define', 'netinfo',
-                 'SecureXMLRPCServer', 'libvirtconnection', 'betterPopen',
-                 'exception', 'vdscli', 'qemuImg'):
-                    sub = __import__(name, globals(), locals(), [], -1)
-                    setattr(mod, name, sub)
-                    sys.modules['vdsm.%s' % name] = getattr(mod, name)
-
-    sys.modules['vdsm.constants'].P_VDSM = "../"
-
 
 def findRemove(listR, value):
     """used to test if a value exist, if it is, return true and remove it."""
@@ -333,5 +311,6 @@ if __name__ == '__main__':
               "--local-modules   use vdsm modules from source tree, "
               "instead of installed ones.\n")
     if findRemove(sys.argv, "--local-modules"):
-        hackVdsmModule()
+        from vdsm import constants
+        constants.P_VDSM = "../"
     run()
