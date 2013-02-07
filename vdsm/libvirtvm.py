@@ -489,7 +489,8 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                         duri, muri, None,
                         libvirt.VIR_MIGRATE_LIVE |
                         libvirt.VIR_MIGRATE_PEER2PEER |
-                        libvirt.VIR_MIGRATE_TUNNELLED if self._tunneled else 0,
+                        (libvirt.VIR_MIGRATE_TUNNELLED if
+                            self._tunneled else 0),
                         None, maxBandwidth)
             finally:
                 t.cancel()
