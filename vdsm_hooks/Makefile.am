@@ -81,6 +81,10 @@ VDSMHOOKS = \
 	after_nic_hotunplug \
 	after_nic_hotplug_fail \
 	after_nic_hotunplug_fail \
+	before_disk_hotplug \
+	after_disk_hotplug \
+	before_disk_hotunplug \
+	after_disk_hotunplug \
 	before_vdsm_start \
 	after_vdsm_stop
 

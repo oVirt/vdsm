@@ -201,6 +201,22 @@ def after_nic_hotunplug_fail(nicxml, vmconf={}):
                         raiseError=False)
 
 
+def before_disk_hotplug(domxml, vmconf={}):
+    return _runHooksDir(domxml, 'before_disk_hotplug', vmconf=vmconf)
+
+
+def after_disk_hotplug(domxml, vmconf={}):
+    return _runHooksDir(domxml, 'after_disk_hotplug', vmconf=vmconf)
+
+
+def before_disk_hotunplug(domxml, vmconf={}):
+    return _runHooksDir(domxml, 'before_disk_hotunplug', vmconf=vmconf)
+
+
+def after_disk_hotunplug(domxml, vmconf={}):
+    return _runHooksDir(domxml, 'after_disk_hotunplug', vmconf=vmconf)
+
+
 def before_vdsm_start():
     return _runHooksDir(None, 'before_vdsm_start', raiseError=False)
 

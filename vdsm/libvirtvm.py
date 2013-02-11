@@ -1739,6 +1739,7 @@ class LibvirtVm(vm.Vm):
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug disk xml: %s" % (driveXml))
 
+        hooks.before_disk_hotplug(driveXml, self.conf)
         try:
             self._dom.attachDevice(driveXml)
         except libvirt.libvirtError as e:
@@ -1758,6 +1759,7 @@ class LibvirtVm(vm.Vm):
             self.conf['devices'].append(diskParams)
             self.saveState()
             self._getUnderlyingDriveInfo()
+            hooks.after_disk_hotplug(driveXml, self.conf)
 
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -1799,6 +1801,7 @@ class LibvirtVm(vm.Vm):
 
         self.saveState()
 
+        hooks.before_disk_hotunplug(driveXml, self.conf)
         try:
             self._dom.detachDevice(driveXml)
         except libvirt.libvirtError as e:
@@ -1815,6 +1818,7 @@ class LibvirtVm(vm.Vm):
                 'status': {'code': errCode['hotunplugDisk']['status']['code'],
                            'message': e.message}}
         else:
+            hooks.after_disk_hotunplug(driveXml, self.conf)
             self._cleanup()
 
         return {'status': doneCode, 'vmList': self.status()}

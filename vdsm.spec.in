@@ -767,6 +767,10 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotunplug
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug_fail
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotunplug_fail
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_disk_hotplug
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_disk_hotplug
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_disk_hotunplug
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_disk_hotunplug
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vdsm_start
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
 %{_datadir}/%{vdsm_name}/addNetwork
