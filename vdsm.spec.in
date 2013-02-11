@@ -99,6 +99,7 @@ Requires: python-ethtool >= 0.6-3
 Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
+Requires: libguestfs-tools-c
 Requires: %{name}-xmlrpc = %{version}-%{release}
 
 %ifarch x86_64

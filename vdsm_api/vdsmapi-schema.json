@@ -5883,6 +5883,20 @@
  'data': {'vmID': 'UUID', 'srcDisk': 'DriveSpecVolume',
           'dstDisk': 'DriveSpecVolume'}}
 
+##
+# @VM.getDiskAlignment:
+#
+# Returns the alignment of the disk partitions.
+#
+# @vmID:     The UUID of the VM
+#
+# @disk:  A @DriveSpecVolume structure rapresenting the disk
+#
+# Since: 4.11.0
+##
+{'command': {'class': 'VM', 'name': 'getDiskAlignment'},
+ 'data': {'vmID': 'UUID', 'disk': 'DriveSpecVolume'}}
+
 ## Category: @Volume ###########################################################
 ##
 # @Volume:

@@ -365,6 +365,10 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.diskReplicateFinish(srcDisk, dstDisk)
 
+    def diskGetAlignment(self, vmId, driveSpecs):
+        api = API.VM(vmId)
+        return api.getDiskAlignment(driveSpecs)
+
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
         api = API.Global()
         return api.addNetwork(bridge, vlan, bond, nics, options)
@@ -788,6 +792,7 @@ class BindingXMLRPC(object):
                 (self.vmMigrationCancel, 'migrateCancel'),
                 (self.getCapabilities, 'getVdsCapabilities'),
                 (self.getHardwareInfo, 'getVdsHardwareInfo'),
+                (self.diskGetAlignment, 'getDiskAlignment'),
                 (self.getStats, 'getVdsStats'),
                 (self.vmGetStats, 'getVmStats'),
                 (self.getAllVmStats, 'getAllVmStats'),

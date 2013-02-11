@@ -27,6 +27,7 @@ import uuid
 
 from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
+import alignmentScan
 from vdsm.config import config
 import ksm
 from momIF import MomThread, isMomAvailable
@@ -345,6 +346,28 @@ class clientIF:
                                  drive, exc_info=True)
 
         return res['status']['code']
+
+    def getDiskAlignment(self, drive):
+        """
+        Returns the alignment of the disk partitions
+
+        param drive:
+        is either {"poolID": , "domainID": , "imageID": , "volumeID": }
+        or {"GUID": }
+
+        Return type: a dictionary with partition names as keys and
+        True for aligned partitions and False for unaligned as values
+        """
+        aligning = {}
+        volPath = self.prepareVolumePath(drive)
+        try:
+            out = alignmentScan.scanImage(volPath)
+            for line in out:
+                aligning[line.partitionName] = line.alignmentScanResult
+        finally:
+            self.teardownVolumePath(drive)
+
+        return {'status': 0, 'alignment': aligning}
 
     def createVm(self, vmParams):
         self.vmContainerLock.acquire()

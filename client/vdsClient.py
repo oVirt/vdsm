@@ -458,6 +458,25 @@ class service:
         print response['status']['message']
         sys.exit(response['status']['code'])
 
+    def getDiskAlignment(self, args):
+        driveSpecs = {}
+        driveSpecs['device'] = 'disk'
+        vmId = BLANK_UUID if args[0] == '0' else args[0]
+        if len(args) > 2:
+            driveSpecs['poolID'] = args[1]
+            driveSpecs['domainID'] = args[2]
+            driveSpecs['imageID'] = args[3]
+            driveSpecs['volumeID'] = args[4]
+        else:
+            driveSpecs['GUID'] = args[1]
+        res = self.s.getDiskAlignment(vmId, driveSpecs)
+        if res['status'] == 0:
+            for pName, aligned in res['alignment'].items():
+                print "\t%s = %s" % (pName, aligned)
+        else:
+            print "Error in scan disk alignment"
+        sys.exit(0)
+
 ######## IRS methods ####################
     def createStorageDomain(self, args):
         validateArgTypes(args, [int, str, str, str, int, int])
@@ -1953,6 +1972,11 @@ if __name__ == '__main__':
                                  ('<devlist>',
                                   'Get visibility of each device listed'
                                   )),
+        'getDiskAlignment': (serv.getDiskAlignment,
+                             ('[<vmId> <poolId> <domId> <imgId> <volId>]',
+                              '[<vmId> <GUID>]',
+                              'Get alignment of each partition on the device'
+                              )),
         'getVGInfo': (serv.getVGInfo,
                       ('<vgUUID>',
                        'Get info of VG'

@@ -102,6 +102,7 @@ class Task(APIBase):
 
 
 class VM(APIBase):
+    BLANK_UUID = '00000000-0000-0000-0000-000000000000'
     ctorArgs = ['vmID']
 
     def __init__(self, UUID):
@@ -657,6 +658,11 @@ class VM(APIBase):
         if not v:
             return errCode['noVM']
         return v.setBalloonTarget(target)
+
+    def getDiskAlignment(self, drive):
+        if self._UUID != VM.BLANK_UUID:
+            return errCode['noimpl']
+        return self._cif.getDiskAlignment(drive)
 
 
 class Volume(APIBase):

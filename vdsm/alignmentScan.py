@@ -20,12 +20,17 @@
 
 
 from collections import namedtuple
+from vdsm.utils import CommandPath
 from storage.misc import execCmd
 
 ScanOutput = namedtuple(
     'ScanOutput',
-    ['partition_name', 'partition_start_bytes', 'partition_alignment',
-     'alignment_scan_result', 'alignment_scan_explanation'])
+    ['partitionName', 'partitionStartBytes', 'partitionAlignment',
+     'alignmentScanResult', 'alignmentScanExplanation'])
+
+_virtAlignmentScan = CommandPath("virt-alignment-scan",
+                                 "/usr/bin/virt-alignment-scan",  # Fedora, EL6
+                                 )
 
 
 class VirtAlignError(Exception):
@@ -33,38 +38,38 @@ class VirtAlignError(Exception):
 
 
 def runScanArgs(*args):
-    cmd = ['/usr/bin/virt-alignment-scan']
+    cmd = [_virtAlignmentScan.cmd]
     cmd.extend(args)
     return execCmd(cmd)
 
 
 def scanImage(image_path):
     image_path = image_path.strip()
-    retcode, out, err = runScanArgs('--add', image_path)
-    if retcode == 0:
+    rc, out, err = runScanArgs('--add', image_path)
+    if rc == 0:
         pass
-    elif retcode == 1:
+    elif rc == 1:
         raise VirtAlignError("An error scanning the disk image "
                              "or guest:\n%s" % err)
-    elif retcode == 2:
+    elif rc == 2:
         # Successful exit, some partitions have alignment < 64K
         # which can result in poor performance on high end network storage.
         pass
-    elif retcode == 3:
+    elif rc == 3:
         # Successful exit, some partitions have alignment < 4K
         # which can result in poor performance on most hypervisors.
         pass
     else:
-        raise VirtAlignError("Unexpected return code from "
-                             "virt-alignment-scan: %d" % retcode)
-    out_list = []
+        raise ValueError("Unknown return code from "
+                         "virt-alignment-scan: %d" % rc)
+    outList = []
     for line in out:
         line = line.split(None, 3)
-        part_name = line[0]  # the device and partition name (eg. "/dev/sda1")
-        part_start = int(line[1])  # the start of the partition in bytes
-        part_alignment = line[2]  # in bytes or Kbytes (eg. 512 or "4K")
-        scan_result = (line[3] == "ok")  # True if aligned, otherwise False
-        scan_explanation = line[3]  # optional free-text explanation
-        out_list.append(ScanOutput(part_name, part_start, part_alignment,
-                                   scan_result, scan_explanation))
-    return out_list
+        partName = line[0]  # the device and partition name (eg. "/dev/sda1")
+        partStart = int(line[1])  # the start of the partition in bytes
+        partAlignment = line[2]  # in bytes or Kbytes (eg. 512 or "4K")
+        scanResult = (line[3] == "ok")  # True if aligned, otherwise False
+        scanExplanation = line[3]  # optional free-text explanation
+        outList.append(ScanOutput(partName, partStart, partAlignment,
+                                  scanResult, scanExplanation))
+    return outList

@@ -33,8 +33,8 @@ def mkimage(imagepath, aligned=True):
     open(imagepath, "wb").truncate(4 * 1024 ** 3)
     cmd = ["/sbin/sfdisk", "-uS", "--force", imagepath]
     cmd_input = "128,,\n" if aligned else "1,,\n"
-    r, o, e = execCmd(cmd, data=cmd_input)
-    assert r == 0
+    rc, out, err = execCmd(cmd, data=cmd_input)
+    assert rc == 0
 
 
 def validate_virtalignscan_installed():
@@ -47,8 +47,8 @@ class AlignmentScanTests(TestCaseBase):
 
     def test_help_response(self):
         validate_virtalignscan_installed()
-        retcode, out, err = runScanArgs("--help")
-        eq_(retcode, 0)
+        rc, out, err = runScanArgs("--help")
+        eq_(rc, 0)
         eq_(err, [])
 
     @raises(VirtAlignError)
