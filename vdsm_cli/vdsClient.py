@@ -83,6 +83,7 @@ def usage(cmd, full=True):
     print "-h\tDisplay this help"
     print "-m\tList supported methods and their params (Short help)"
     print "-s [--truststore path]\tConnect to server with SSL."
+    print "-o, --oneliner\tShow the key-val information in one line."
     print "\tIf truststore path is not specified, use defaults."
     print "\nCommands"
     verbs = cmd.keys()
@@ -107,11 +108,16 @@ def printConf(conf):
             print "\t%s = %s" % (element, conf[element])
 
 
-def printDict(dict):
+def printDict(dict, pretty=True):
     keys = dict.keys()
     keys.sort()
     for element in keys:
-        print "\t%s = %s" % (element, dict[element])
+        if pretty:
+            representation = pp.pformat(dict[element]).replace(
+                '\n', '\n\t' + ' ' * len(element + ' = '))
+        else:
+            representation = dict[element]
+        print "\t%s = %s" % (element, representation)
 
 
 def printStats(list):
@@ -123,6 +129,7 @@ class service:
     def __init__(self):
         self.useSSL = False
         self.truststore = None
+        self.pretty = True
 
     def do_connect(self, server, port):
         self.s = vdscli.connect(server + ':' + port,
@@ -140,9 +147,9 @@ class service:
                 else:
                     printStats(response['statsList'])
             elif 'info' in response:
-                printDict(response['info'])
+                printDict(response['info'], self.pretty)
             else:
-                printDict(response['status'])
+                printDict(response['status'], self.pretty)
         sys.exit(response['status']['code'])
 
     def do_create(self, args):
@@ -960,7 +967,7 @@ class service:
         if size['status']['code']:
             return size['status']['code'], size['status']['message']
         del size['status']
-        printDict(size)
+        printDict(size, self.pretty)
         return 0, ''
 
     def extendVolume(self, args):
@@ -2390,8 +2397,9 @@ if __name__ == '__main__':
         commands.update(ge.getGlusterCmdDict(serv))
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hms", ["help", "methods",
-                                                         "SSL", "truststore="])
+        opts, args = getopt.getopt(sys.argv[1:], "hmso", ["help", "methods",
+                                                          "SSL", "truststore=",
+                                                          "oneliner"])
 
         for o, v in opts:
             if o == "-h" or o == "--help":
@@ -2404,6 +2412,8 @@ if __name__ == '__main__':
                 serv.useSSL = True
             if o == "--truststore":
                 serv.truststore = v
+            if o == '-o' or o == '--oneliner':
+                serv.pretty = False
         if len(args) < 2:
             raise Exception("Need at least two arguments")
         server, command = args[0:2]
