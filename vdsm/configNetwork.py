@@ -540,8 +540,8 @@ class ConfigWriter(object):
     def removeVlan(self, vlan, iface):
         vlandev = iface + '.' + vlan
         ifdown(vlandev)
-        self._backup(netinfo.NET_CONF_PREF + iface + '.' + vlan)
-        self._removeFile(netinfo.NET_CONF_PREF + iface + '.' + vlan)
+        self._backup(netinfo.NET_CONF_PREF + vlandev)
+        self._removeFile(netinfo.NET_CONF_PREF + vlandev)
 
     def removeBonding(self, bonding):
         self._backup(netinfo.NET_CONF_PREF + bonding)
