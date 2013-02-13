@@ -99,6 +99,8 @@ def validateAccess(targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
     Validate the RWX access to a given path
     """
     if not os.access(targetPath, perms):
+        log.warning("Permission denied for directory: %s with permissions: %s",
+                    targetPath, perms)
         raise OSError(errno.EACCES, os.strerror(errno.EACCES))
 
 

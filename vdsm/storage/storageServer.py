@@ -31,6 +31,7 @@ import misc
 from functools import partial
 
 import mount
+import fileUtils
 import fileSD
 import iscsi
 from sync import asyncmethod, AsyncCallStub
@@ -200,30 +201,30 @@ class MountConnection(object):
         if self._mount.isMounted():
             return
 
-        try:
-            os.makedirs(self._getLocalPath())
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        fileUtils.createdir(self._getLocalPath())
 
         try:
             self._mount.mount(self.options, self._vfsType)
-        except MountError:
+        except MountError as e:
+            self.log.error("Mount failed: %s", e, exc_info=True)
             try:
                 os.rmdir(self._getLocalPath())
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
-
-        try:
-            fileSD.validateDirAccess(self.getMountObj().getRecord().fs_file)
-        except se.StorageServerAccessPermissionError:
-            try:
-                self.disconnect()
             except OSError:
-                self.log.warn("Error while disconnecting after access problem",
-                              exc_info=True)
-            raise
+                self.log.warn("Failed to remove mount point directory: %s",
+                              self._getLocalPath(), exc_info=True)
+            raise e
+
+        else:
+            try:
+                fileSD.validateDirAccess(
+                    self.getMountObj().getRecord().fs_file)
+            except se.StorageServerAccessPermissionError as e:
+                try:
+                    self.disconnect()
+                except OSError:
+                    self.log.warn("Error while disconnecting after access"
+                                  "problem", exc_info=True)
+                raise e
 
     def isConnected(self):
         return self._mount.isMounted()
