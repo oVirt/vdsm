@@ -23,28 +23,14 @@ except ImportError:
     pass
 
 
-_PORT_RANGE = xrange(49152, 65535)
-
-
-_distributedPorts = []
-
-
 def getFreePort():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     with closing(sock):
-        for port in _PORT_RANGE:
-            if port in _distributedPorts:
-                continue
-
-            try:
-                sock.bind(("0.0.0.0", port))
-            except:
-                continue
-
-            _distributedPorts.append(port)
-            return port
-        else:
+        try:
+            sock.bind(("0.0.0.0", 0))
+        except:
             raise Exception("Could not find a free port")
+        return sock.getsockname()[1]
 
 
 @contextmanager
