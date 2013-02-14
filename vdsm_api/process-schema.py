@@ -35,7 +35,7 @@ html_escape_table = {
 typeKinds = ('class', 'type', 'enum', 'map', 'union', 'alias')
 
 
-def read_symbol_comment(f, symbols):
+def read_symbol_comment(f, api):
     """
     In the VDSM API schema, each entity is preceeded by a comment that provides
     additional human-readable information about the entity.  The format of this
@@ -61,24 +61,21 @@ def read_symbol_comment(f, symbols):
     ##
     """
 
-    def find_symbol(symbols, name):
+    def find_symbol(api, name):
         """
         Find a symbol by name in the vdsmapi parsed symbol list.
         """
-        for s in symbols:
-            if '.' in name:
-                cls, member = name.split('.')
-                if member == 'init' and s.get('init') == cls:
-                    return s
-                if 'command' not in s:
-                    continue
-                if s['command']['class'] == cls and \
-                        s['command']['name'] == member:
-                    return s
-            else:
-                for k in typeKinds:
-                    if s.get(k) == name:
-                        return s
+        if '.' in name:
+            # This is a command
+            ns, method = name.split('.')
+            try:
+                return api['commands'][ns][method]
+            except KeyError:
+                pass
+        else:
+            for sType in ('types', 'enums', 'aliases', 'maps'):
+                if name in api[sType]:
+                    return api[sType][name]
         raise ValueError("symbol: %s not found" % name)
 
     # Parse one complete comment block.  Blocks begin and end with '^##'.
@@ -96,8 +93,12 @@ def read_symbol_comment(f, symbols):
     m = re.search('^\@(.*):$', line)
     name = m.group(1)
 
+    # We skip namespace definitions since there is nothing to document
+    if name in api['commands']:
+        return
+
     # Find the already processed symbol information
-    symbol = find_symbol(symbols, name)
+    symbol = find_symbol(api, name)
     symbol.update({'name': name, 'info_data': {}, 'info_return': '',
                    'xxx': []})
 
@@ -157,7 +158,7 @@ def read_symbol_comment(f, symbols):
     return symbol
 
 
-def read_schema_doc(f, symbols):
+def read_schema_doc(f, api):
     """
     Read all of the documentation information from the schema and attach it to
     the relavent symbol definitions we have already parsed.
@@ -165,9 +166,9 @@ def read_schema_doc(f, symbols):
     while True:
         line = f.readline()
         if not line:
-            return symbols
+            return api
         if line.strip() == '##':
-            read_symbol_comment(f, symbols)
+            read_symbol_comment(f, api)
             continue
 
 
@@ -287,7 +288,7 @@ def write_symbol(f, s):
     f.write('</p><br/>\n')
 
 
-def create_doc(symbols, filename):
+def create_doc(api, filename):
     f = open(filename, 'w')
 
     header = """
@@ -317,17 +318,16 @@ def create_doc(symbols, filename):
     """
     f.write(header)
 
-    # Sort commands by their expanded names
-    cmdKey = lambda k: k.get('command', {}).get('class', '') + '.' + \
-        k.get('command', {}).get('name', '')
-    commands = [s for s in sorted(symbols, key=cmdKey)
-                if 'command' in s]
-    # Types come after commands but they are not sorted
-    types = [s for s in symbols if 'command' not in s]
-    for s in commands:
-        write_symbol(f, s)
-    for s in types:
-        write_symbol(f, s)
+    # First, write out commands in sorted order
+    for ns in sorted(api['commands'].iterkeys()):
+        for cmd in sorted(api['commands'][ns].iterkeys()):
+            write_symbol(f, api['commands'][ns][cmd])
+
+    # Write out the data types
+    for sType in ('aliases', 'types', 'maps', 'enums'):
+        for name in sorted(api[sType].iterkeys()):
+            write_symbol(f, api[sType][name])
+
     f.write(footer)
 
 
@@ -358,15 +358,13 @@ def main():
     schema = sys.argv[1]
     output = sys.argv[2]
 
-    symbols = None
-    # First read in the progmatic schema definition
-    with open(schema) as f:
-        symbols = vdsmapi.parse_schema(f)
-    verify_symbols(symbols)
+    api = vdsmapi.get_api(schema)
+    #verify_symbols(symbols)
 
     # Now merge in the information from the comments
     with open(schema) as f:
-        symbols = read_schema_doc(f, symbols)
+        symbols = read_schema_doc(f, api)
+
     create_doc(symbols, output)
 
 
