@@ -183,11 +183,19 @@ Requires: %{name}-python = %{version}-%{release}
 An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
+%package api
+Summary:        VDSM API definition
+BuildArch:      noarch
+
+%description api
+Provides the VDSM API schema and documentation.
+
 %package jsonrpc
 Summary:        VDSM API Server
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-api = %{version}-%{release}
 %if 0%{?rhel} == 6
 Requires: python-ordereddict
 %endif
@@ -620,7 +628,7 @@ exit 0
 
 %files
 %defattr(-, root, root, -)
-%doc COPYING README vdsm/vdsm.conf.sample vdsm_api/vdsm-api.html
+%doc COPYING README vdsm/vdsm.conf.sample
 %if 0%{?rhel}
 %{_initrddir}/vdsmd
 %{_initrddir}/vdsm-restore-net-config
@@ -958,11 +966,14 @@ exit 0
 %defattr(-, root, root, -)
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 
+%files api
+%doc vdsm_api/vdsm-api.html
+%{_datadir}/%{vdsm_name}/vdsmapi-schema.json
+%{python_sitearch}/vdsmapi.py*
+
 %files jsonrpc
 %{_datadir}/%{vdsm_name}/BindingJsonRpc.py*
 %{_datadir}/%{vdsm_name}/Bridge.py*
-%{_datadir}/%{vdsm_name}/vdsmapi.py*
-%{_datadir}/%{vdsm_name}/vdsmapi-schema.json
 %{_datadir}/%{vdsm_name}/jsonrpc/__init__.py*
 %{_datadir}/%{vdsm_name}/jsonrpc/tcpReactor.py*
 %{_datadir}/%{vdsm_name}/jsonrpc/protonReactor.py*
