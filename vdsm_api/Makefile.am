@@ -26,8 +26,9 @@ nodist_noinst_DATA = \
 
 vdsm-api.html: process-schema.py vdsmapi-schema.json
 	@echo "  Generate $@"
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/process-schema.py \
-	    $(srcdir)/vdsmapi-schema.json $(srcdir)/$@
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(srcdir)/.. \
+	    $(PYTHON) $(srcdir)/process-schema.py \
+	              $(srcdir)/vdsmapi-schema.json $(srcdir)/$@
 
 all-local: \
 	$(nodist_noinst_DATA)
