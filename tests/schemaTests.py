@@ -18,30 +18,9 @@
 #
 
 from testrunner import VdsmTestCase as TestCaseBase
-import os.path
 import vdsmapi
-from vdsm import constants
-
-
-def findSchema():
-    """
-    Find the API schema file whether we are running tests from the source dir
-    or from the tests install location
-    """
-    scriptdir = os.path.dirname(__file__)
-    localpath = os.path.join(scriptdir, '../vdsm_api/vdsmapi-schema.json')
-    installedpath = os.path.join(constants.P_VDSM, 'vdsmapi-schema.json')
-    for f in localpath, installedpath:
-        if os.access(f, os.R_OK):
-            return f
-    raise Exception("Unable to find schema in %s or %s" % (localpath,
-                                                           installedpath))
 
 
 class SchemaTest(TestCaseBase):
-    def setUp(self):
-        self.schema = findSchema()
-
     def testSchemaParse(self):
-        with open(self.schema) as f:
-            vdsmapi.parse_schema(f)
+        self.assertTrue(isinstance(vdsmapi.get_api(), dict))
