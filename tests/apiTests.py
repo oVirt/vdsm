@@ -19,15 +19,12 @@
 #
 
 import logging
-import os
-import os.path
 import socket
 import json
 import struct
 from contextlib import closing
 
 from testrunner import VdsmTestCase as TestCaseBase
-from vdsm import constants
 import BindingJsonRpc
 import yajsonrpc
 import apiData
@@ -110,21 +107,6 @@ def createFakeAPI():
     sys.modules['API'] = _newAPI
 
 
-def findSchema():
-    """
-    Find the API schema file whether we are running tests from the source dir
-    or from the tests install location
-    """
-    scriptdir = os.path.dirname(__file__)
-    localpath = os.path.join(scriptdir, '../vdsm_api/vdsmapi-schema.json')
-    installedpath = os.path.join(constants.P_VDSM, 'vdsmapi-schema.json')
-    for f in localpath, installedpath:
-        if os.access(f, os.R_OK):
-            return f
-    raise Exception("Unable to find schema in %s or %s",
-                    localpath, installedpath)
-
-
 def setUpModule():
     """
     Set up the environment for all tests:
@@ -140,12 +122,11 @@ def setUpModule():
     handler.setLevel(logging.INFO)
     log.addHandler(handler)
 
-    schema = findSchema()
     createFakeAPI()
 
     # Bridge imports the API module so we must set up the fake API first
     import Bridge
-    bridge = Bridge.DynamicBridge(schema)
+    bridge = Bridge.DynamicBridge()
 
     # Support parallel testing.  Try hard to find an open port to use
     port = getFreePort()

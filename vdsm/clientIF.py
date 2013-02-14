@@ -153,11 +153,10 @@ class clientIF:
     def _loadBindingJsonRpc(self):
         from BindingJsonRpc import BindingJsonRpc
         from Bridge import DynamicBridge
-        schema = os.path.join(constants.P_VDSM, 'vdsmapi-schema.json')
         ip = self._getServerIP(config.get('addresses', 'management_ip'))
         port = config.getint('addresses', 'json_port')
         conf = [('tcp', {"ip": ip, "port": port})]
-        self.bindings['json'] = BindingJsonRpc(DynamicBridge(schema), conf)
+        self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf)
 
     def _prepareBindings(self):
         self.bindings = {}

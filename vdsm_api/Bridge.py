@@ -29,8 +29,8 @@ class VdsmError(Exception):
 
 
 class DynamicBridge(object):
-    def __init__(self, schema):
-        self._parseSchema(schema)
+    def __init__(self):
+        self.api = vdsmapi.get_api()
 
     def dispatch(self, name, argobj):
         methodName = name.replace('.', '_')
@@ -60,30 +60,13 @@ class DynamicBridge(object):
         except KeyError:
             raise VdsmError(5, "Response is missing '%s' member" % member)
 
-    def _parseSchema(self, schema):
-        self.commands = {}
-        self.classes = {}
-        self.types = {}
-        with open(schema) as f:
-            symbols = vdsmapi.parse_schema(f)
-            for s in symbols:
-                if 'command' in s:
-                    key = "%s_%s" % (s['command']['class'],
-                                     s['command']['name'])
-                    self.commands[key] = s
-                elif 'class' in s:
-                    cls = s['class']
-                    self.classes[cls] = s
-                elif 'type' in s:
-                    t = s['type']
-                    self.types[t] = s
-
     def __getattr__(self, attr):
-        if attr in self.commands:
+        try:
             className, methodName = attr.split('_')
-            return partial(self._dynamicMethod, className, methodName)
-        else:
+            self.api['commands'][className][methodName]
+        except (KeyError, ValueError):
             raise AttributeError("Attribute not found '%s'" % attr)
+        return partial(self._dynamicMethod, className, methodName)
 
     def _convertClassName(self, name):
         """
@@ -97,7 +80,7 @@ class DynamicBridge(object):
         except KeyError:
             return name
 
-    def _getMethodArgs(self, className, cmd, argObj):
+    def _getMethodArgs(self, className, methodName, argObj):
         """
         An internal API call currently looks like:
 
@@ -109,10 +92,11 @@ class DynamicBridge(object):
         them from here.  For any given method, the method_args are obtained by
         chopping off the ctor_args from the beginning of argObj.
         """
-        className = self._convertClassName(className)
         # Get the full argument list
-        allArgs = self.commands[cmd].get('data', {}).keys()
+        sym = self.api['commands'][className][methodName]
+        allArgs = sym.get('data', {}).keys()
 
+        className = self._convertClassName(className)
         # Get the list of ctor_args
         ctorArgs = getattr(API, className).ctorArgs
 
@@ -149,7 +133,7 @@ class DynamicBridge(object):
         symName = self._symNameFilter(symName)
 
         try:
-            symbol = self.types[symTypeName]
+            symbol = self.api['types'][symTypeName]
         except KeyError:
             return
 
@@ -167,16 +151,17 @@ class DynamicBridge(object):
                 if k in item:
                     self._typeFixup(k, v, item[k])
 
-    def _fixupArgs(self, cmd, args):
-        argInfo = zip(self.commands[cmd].get('data', {}).items(), args)
+    def _fixupArgs(self, className, methodName, args):
+        argDef = self.api['commands'][className][methodName].get('data', {})
+        argInfo = zip(argDef.items(), args)
         for typeInfo, val in argInfo:
             argName, argType = typeInfo
-            if argType not in self.types:
+            if argType not in self.api['types']:
                 continue
             self._typeFixup(argName, argType, val)
 
-    def _fixupRet(self, cmd, result):
-        retType = self.commands[cmd].get('returns', None)
+    def _fixupRet(self, className, methodName, result):
+        retType = self.api['commands'][className][methodName].get('returns')
         if retType is not None:
             self._typeFixup('return', retType, result)
         return result
@@ -189,17 +174,19 @@ class DynamicBridge(object):
 
         return kwargs
 
-    def _getArgList(self, cmd):
-        return self.commands[cmd].get('data', {}).keys()
+    def _getArgList(self, className, methodName):
+        sym = self.api['commands'][className][methodName]
+        return sym.get('data', {}).keys()
 
     def _dynamicMethod(self, className, methodName, *args, **kwargs):
-        cmd = '%s_%s' % (className, methodName)
-        argobj = self._nameArgs(args, kwargs, self._getArgList(cmd))
+        argobj = self._nameArgs(args, kwargs,
+                                self._getArgList(className, methodName))
         api = self._getApiInstance(className, argobj)
-        methodArgs = self._getMethodArgs(className, cmd, argobj)
-        self._fixupArgs(cmd, methodArgs)
+        methodArgs = self._getMethodArgs(className, methodName, argobj)
+        self._fixupArgs(className, methodName, methodArgs)
 
         # Call the override function (if given).  Otherwise, just call directly
+        cmd = '%s_%s' % (className, methodName)
         fn = command_info.get(cmd, {}).get('call')
         if fn:
             result = fn(api, argobj)
@@ -217,7 +204,7 @@ class DynamicBridge(object):
             ret = retfield(result)
         else:
             ret = self._getResult(result, retfield)
-        return self._fixupRet(cmd, ret)
+        return self._fixupRet(className, methodName, ret)
 
 
 def Host_getStorageRepoStats_Ret(ret):
