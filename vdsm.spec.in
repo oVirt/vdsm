@@ -1032,8 +1032,6 @@ exit 0
 %files hook-faqemu
 %defattr(-, root, root, -)
 %doc COPYING
-%{_libexecdir}/%{vdsm_name}/vdsm-faqemu
-%{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop/10_faqemu
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
 
 %files gluster
