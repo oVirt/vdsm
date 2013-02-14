@@ -194,7 +194,14 @@ class SuperVdsmProxy(object):
     def launch(self):
         self._firstLaunch = False
         self._start()
-        utils.retry(self._connect, Exception, timeout=60)
+        try:
+            # We retry 3 times to connect to avoid exceptions that are raised
+            # due to the process initializing. It might takes time to create
+            # the communication socket or other initialization methods take
+            # more time than expected.
+            utils.retry(self._connect, Exception, timeout=60)
+        except:
+            misc.panic("Couldn't connect to supervdsm")
 
     def __getattr__(self, name):
         return ProxyCaller(self, name)
