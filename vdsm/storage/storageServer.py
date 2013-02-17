@@ -251,11 +251,8 @@ class MountConnection(object):
 
 class GlusterFSConnection(MountConnection):
 
-    # TODO: Can this be made more cleaner, by avoiding this override ?
-    def _getLocalPath(self):
-        return os.path.join(
-            self.localPathBase, "glusterSD",
-            self._remotePath.replace("_", "__").replace("/", "_"))
+    def getLocalPathBase(cls):
+        return os.path.join(MountConnection.getLocalPathBase(), "glusterSD")
 
 
 class NFSConnection(object):
