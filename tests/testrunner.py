@@ -36,7 +36,7 @@ if sys.version_info[0] == 2:
     pthreading.monkey_patch()
 
 
-from testValidation import SlowTestsPlugin
+from testValidation import SlowTestsPlugin, StressTestsPlugin
 
 import zombieReaper
 zombieReaper.registerSignalHandler()
@@ -287,6 +287,7 @@ def run():
                          workingDir=testdir,
                          plugins=core.DefaultPluginManager())
     conf.plugins.addPlugin(SlowTestsPlugin())
+    conf.plugins.addPlugin(StressTestsPlugin())
 
     runner = VdsmTestRunner(stream=conf.stream,
                             verbosity=conf.verbosity,

@@ -27,7 +27,7 @@ from resource import getrlimit, RLIMIT_NPROC
 
 import storage.resourceManager as resourceManager
 from testrunner import VdsmTestCase as TestCaseBase
-from testValidation import slowtest
+from testValidation import slowtest, stresstest
 
 
 class NullResourceFactory(resourceManager.SimpleResourceFactory):
@@ -603,6 +603,7 @@ class ResourceManagerTests(TestCaseBase):
         resources.pop().release()  # exclusiveReq 3
 
     @slowtest
+    @stresstest
     def testStressTest(self):
         """
         This tests raises thousands of threads and tries to acquire the same

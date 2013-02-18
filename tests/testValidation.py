@@ -51,6 +51,37 @@ class SlowTestsPlugin(Plugin):
             SlowTestsPlugin.enabled = True
 
 
+class StressTestsPlugin(Plugin):
+    """
+    Denotes a test which stresses the resources of the system under test. Such
+    tests should probably not be run in parallel.  This plugin provides a
+    mechanism for parallel testing applications to skip stress tests.
+    """
+    name = 'nonparalleltests'
+    enabled = False
+
+    def add_options(self, parser, env=os.environ):
+        env_opt = 'NOSE_SKIP_STRESS_TESTS'
+        if env is None:
+            default = False
+        else:
+            default = env.get(env_opt)
+
+        parser.add_option('--without-stress-tests',
+                          action='store_true',
+                          default=default,
+                          dest='disable_stress_tests',
+                          help='Some tests stress the resources of the ' +
+                               'system under test.  Use this option to skip' +
+                               'these tests (eg. when doing parallel' +
+                               'testing [%s]' % env_opt)
+
+    def configure(self, options, conf):
+        Plugin.configure(self, options, conf)
+        if options.disable_stress_tests:
+            StressTestsPlugin.enabled = True
+
+
 def ValidateRunningAsRoot(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -84,6 +115,17 @@ def brokentest(msg="Test failed but it is known to be broken"):
         return wrapper
 
     return wrap
+
+
+def stresstest(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if StressTestsPlugin.enabled:
+            raise SkipTest("Stress tests have been disabled")
+
+        return f(*args, **kwargs)
+
+    return wrapper
 
 
 def checkSudo(cmd):
