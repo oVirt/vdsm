@@ -975,14 +975,20 @@ class BlockStorageDomain(sd.StorageDomain):
             self.log.debug("removed image dir: %s", imgPath)
         return imgPath
 
+    def _getImgExclusiveVols(self, imgUUID, volsImgs):
+        """Filter vols belonging to imgUUID only."""
+        exclusives = dict((vName, v) for vName, v in volsImgs.iteritems()
+                          if v.imgs[0] == imgUUID)
+        return exclusives
+
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
-        toDel = tuple(vName for vName, v in volsImgs.iteritems()
-                      if v.imgs[0] == imgUUID)
+        toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
         deleteVolumes(sdUUID, toDel)
         self.rmDCImgDir(imgUUID, volsImgs)
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
-        zeroImgVolumes(sdUUID, imgUUID, volsImgs)
+        toZero = self._getImgExclusiveVols(imgUUID, volsImgs)
+        zeroImgVolumes(sdUUID, imgUUID, toZero)
         self.rmDCImgDir(imgUUID, volsImgs)
 
     def getAllVolumes(self):

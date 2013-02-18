@@ -1458,7 +1458,7 @@ class HSM:
             # postZero implies block domain. Backup domains are always NFS
             # hence no need to create fake template if postZero is true.
             self._spmSchedule(spUUID, "zeroImage_%s" % imgUUID, dom.zeroImage,
-                              sdUUID, imgUUID, volsByImg.keys())
+                              sdUUID, imgUUID, volsByImg)
         else:
             dom.deleteImage(sdUUID, imgUUID, volsByImg)
             # This is a hack to keep the interface consistent
