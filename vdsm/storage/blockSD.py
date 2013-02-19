@@ -196,11 +196,11 @@ def _zeroVolume(sdUUID, volUUID):
     # 128 M is the vdsm extent size default
     BS = constants.MEGAB  # 1024 ** 2 = 1 MiB
     count = size / BS
-    cmd = tuple(constants.CMD_LOWPRIO)
-    cmd += (constants.EXT_DD, "oflag=%s" % misc.DIRECTFLAG, "if=/dev/zero",
-            "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
-            "count=%s" % count)
-    p = misc.execCmd(cmd, sudo=False, sync=False)
+    cmd = [constants.EXT_DD, "oflag=%s" % misc.DIRECTFLAG, "if=/dev/zero",
+           "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
+           "count=%s" % count]
+    p = misc.execCmd(cmd, sudo=False, sync=False,
+                     nice=misc.NICENESS.LOW, ioclass=misc.IOCLASS.IDLE)
     return p
 
 
