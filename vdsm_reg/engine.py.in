@@ -333,6 +333,7 @@ class Plugin(PluginBase):
                         "Failed downloading @ENGINENAME@ certificate",
                         buttons=['Ok'])
                     self.ncs.reset_screen_colors()
+                    return False
             # Stopping vdsm-reg may fail but its ok - its in the case when the
             # menus are run after installation
             deployUtil._logExec([constants.EXT_SERVICE, 'vdsm-reg', 'stop'])
