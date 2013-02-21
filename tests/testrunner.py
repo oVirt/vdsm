@@ -115,7 +115,7 @@ class TermColor(object):
 
 
 def colorWrite(stream, text, color):
-    if os.isatty(stream.fileno()):
+    if os.isatty(stream.fileno()) or os.environ.get("NOSE_COLOR", False):
         stream.write('\x1b[%s;1m%s\x1b[0m' % (color, text))
     else:
         stream.write(text)
