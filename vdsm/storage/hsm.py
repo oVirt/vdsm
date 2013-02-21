@@ -1026,12 +1026,12 @@ class HSM:
         self.validateNotSPM(spUUID)
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
-        self.validateNotSPM(spUUID)
-
         pool = self.getPool(spUUID)
+
         return self._disconnectPool(pool, hostID, scsiKey, remove)
 
     def _disconnectPool(self, pool, hostID, scsiKey, remove):
+        self.validateNotSPM(pool.spUUID)
         res = pool.disconnect()
         del self.pools[pool.spUUID]
         return res
