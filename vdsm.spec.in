@@ -20,13 +20,12 @@
 # Gluster
 %global with_gluster 1
 
-# Systemd macro
-%if 0%{?fedora} >= 15
+%if 0%{?fedora} >= 15 || 0%{?rhel} >= 7
 %global with_systemd 1
 %endif
 
-%if 0%{?rhel} >= 7
-%global with_systemd 1
+%if 0%{?fedora} >= 18
+%global with_systemd_macros 1
 %endif
 
 # Default to skipping autoreconf.  Distros can change just this one line
@@ -510,7 +509,7 @@ install -Dm 0644 vdsm/limits.conf \
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}/lib/systemd/systemd-vdsmd
 install -Dm 0644 vdsm/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
 install -Dm 0644 vdsm/vdsm-restore-net-config.service \
-    %{buildroot}%{_unitdir}/vdsm-restore-net-config.service
+                 %{buildroot}%{_unitdir}/vdsm-restore-net-config.service
 install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
@@ -578,12 +577,17 @@ if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsm-restore-net-config
 fi
 %else
+%if 0%{?with_systemd_macros}
+%systemd_post vdsmd.service
+%systemd_post vdsm-restore-net-config.service
+%else
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
     /bin/systemctl enable vdsm-restore-net-config.service >/dev/null 2>&1 || :
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
+%endif
 %endif
 
 %preun
@@ -624,12 +628,17 @@ then
     fi
 fi
 %else
+%if 0%{?with_systemd_macros}
+%systemd_preun vdsmd.service
+%systemd_preun vdsm-restore-net-config.service
+%else
 if [ "$1" -eq 0 ]; then
     /bin/systemctl --no-reload disable vdsmd.service > /dev/null 2>&1 || :
     /bin/systemctl --no-reload disable vdsm-restore-net-config.service > /dev/null 2>&1 || :
     /bin/systemctl stop vdsmd.service > /dev/null 2>&1 || :
 fi
 exit 0
+%endif
 %endif
 
 %postun
@@ -639,10 +648,14 @@ if [ "$1" -ge 1 ]; then
 fi
 exit 0
 %else
+%if 0%{?with_systemd_macros}
+%systemd_postun_with_restart vdsmd.service
+%else
 if [ "$1" -ge 1 ] ; then
     /bin/systemctl try-restart vdsmd.service >/dev/null 2>&1 || :
 fi
 exit 0
+%endif
 %endif
 
 %if 0%{?rhel}
@@ -663,11 +676,15 @@ if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsm-reg
 fi
 %else
+%if 0%{?with_systemd_macros}
+%systemd_post vdsm-reg.service
+%else
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsm-reg.service >/dev/null 2>&1 || :
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
+%endif
 %endif
 
 %preun reg
@@ -678,11 +695,15 @@ then
     /sbin/chkconfig --del vdsm-reg
 fi
 %else
+%if 0%{?with_systemd_macros}
+%systemd_preun vdsm-reg.service
+%else
 if [ "$1" -eq 0 ]; then
     /bin/systemctl --no-reload disable vdsm-reg.service > /dev/null 2>&1 || :
     /bin/systemctl stop vdsm-reg.service > /dev/null 2>&1 || :
 fi
 exit 0
+%endif
 %endif
 
 %files
