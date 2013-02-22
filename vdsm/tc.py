@@ -179,12 +179,13 @@ def set_flags(dev, flags):
 def set_promisc(dev, on=True):
     flags = ethtool.get_flags(dev)
 
-    if on:
-        flags |= ethtool.IFF_PROMISC
-    else:
-        flags &= ~ethtool.IFF_PROMISC
+    if bool(flags & ethtool.IFF_PROMISC) != on:
+        if on:
+            flags |= ethtool.IFF_PROMISC
+        else:
+            flags &= ~ethtool.IFF_PROMISC
 
-    set_flags(dev, flags)
+        set_flags(dev, flags)
 
 
 Filter = namedtuple('Filter', 'prio handle actions')
