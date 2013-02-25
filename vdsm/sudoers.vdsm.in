@@ -19,7 +19,6 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @MV_PATH@ /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.*, \
     @MV_PATH@ /etc/multipath.conf *, \
     @CP_PATH@ * /etc/iscsi/iscsid.conf, \
-    @CP_PATH@ * /etc/multipath.conf, \
     @SERVICE_PATH@ iscsid *, \
     @SERVICE_PATH@ multipathd restart, \
     @SERVICE_PATH@ multipathd reload, \
@@ -31,12 +30,10 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @CAT_PATH@ /etc/multipath.conf, \
     @DD_PATH@ of=/sys/class/scsi_host/host*/scan, \
     @DD_PATH@, \
-    @PERSIST_PATH@ multipath.conf, \
-    @PERSIST_PATH@ /var/log/vdsm/backup/*, \
-    @UNPERSIST_PATH@ multipath.conf, \
-    @UNPERSIST_PATH@ /var/log/vdsm/backup/*, \
-    @CP_PATH@ * multipath.conf *, \
-    @CP_PATH@ * /var/log/vdsm/backup/* *, \
+    @PERSIST_PATH@ /etc/multipath.conf, \
+    @UNPERSIST_PATH@ /etc/multipath.conf, \
+    @CP_PATH@ /etc/multipath.conf *, \
+    @CP_PATH@ * /etc/multipath.conf, \
     @MULTIPATH_PATH@, \
     @BLOCKDEV_PATH@ --getsize64 *, \
     @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
