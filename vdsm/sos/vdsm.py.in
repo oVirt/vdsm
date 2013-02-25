@@ -82,7 +82,7 @@ class vdsm(sos.plugintools.PluginBase):
             self.addCopySpec("/proc/%s/mountstats" % pid)
         self.collectExtOutput("/bin/ls -l /var/log/core")
         self.collectExtOutput(
-            "/bin/su vdsm -s /bin/sh -c '/usr/bin/tree @VDSMREPO@'")
+            "/bin/su vdsm -s /bin/sh -c '/usr/bin/tree -l @VDSMREPO@'")
         self.collectExtOutput(
             "/bin/su vdsm -s /bin/sh -c '/bin/ls -lR @VDSMREPO@'")
         self.collectExtOutput("/sbin/lvm vgs -v -o +tags")
