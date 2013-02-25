@@ -364,9 +364,9 @@ class FileStorageDomain(sd.StorageDomain):
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
-        raise se.SourceImageActionError(
-            imgUUID, sdUUID, "image %s on a fileSD %s should not be zeroed." %
-            (imgUUID, sdUUID))
+        self.log.warning("image %s on a fileSD %s won't be zeroed." %
+                         (imgUUID, sdUUID))
+        self.deleteImage(sdUUID, imgUUID, volsImgs)
 
     def getAllVolumes(self):
         """
