@@ -927,6 +927,8 @@ class Image:
                 if volType == volume.SHARED_VOL:
                     dstVol.setShared()
 
+                dstVol.setLegality(volume.LEGAL_VOL)
+
                 if force:
                     # Now we should re-link all deleted hardlinks, if exists
                     self.__templateRelink(destDom, dstImgUUID, dstVolUUID)
