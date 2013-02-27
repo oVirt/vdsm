@@ -27,7 +27,7 @@ import subprocess
 import errno
 
 import testrunner
-import SecureXMLRPCServer
+from vdsm import SecureXMLRPCServer
 
 
 class SSLServerThread(threading.Thread):
