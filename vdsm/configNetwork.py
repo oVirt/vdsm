@@ -989,20 +989,14 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
-    brifs = netinfo.ports(bridge)
-    for nic in nics:
-        try:
-            brifs.remove(nic)
-        except:
-            pass
+    ports = set(netinfo.ports(bridge))
+    ifaces = set(nics)
     if vlan:
-        brif = (bonding or nics[0]) + '.' + vlan
+        ifaces.add((bonding or nics[0]) + '.' + vlan)
     else:
-        brif = bonding
-    try:
-        brifs.remove(brif)
-    except:
-        pass
+        ifaces.add(bonding)
+
+    brifs = ports - ifaces
 
     if brifs:
         raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'bridge %s has interfaces'
