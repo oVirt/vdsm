@@ -210,17 +210,6 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
     # spent time.
     ZEROING_TIMEOUT = 60000  # [miliseconds]
     log.debug("sd: %s, LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
-    # Prepare for zeroing
-    try:
-        lvm.changelv(sdUUID, volUUIDs, (("-a", "y"),
-                    ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
-                    ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
-                     sd.REMOVED_IMAGE_PREFIX + imgUUID)))
-    except se.StorageException as e:
-        log.error("Can't activate or change LV tags in SD %s. "
-                  "failing Image %s pre zeroing operation for vols: %s. %s",
-                  sdUUID, imgUUID, volUUIDs, e)
-        raise
     # Following call to changelv is separate since setting rw permission on an
     # LV fails if the LV is already set to the same value, hence we would not
     # be able to differentiate between a real failure of deltag/addtag and one
@@ -981,13 +970,36 @@ class BlockStorageDomain(sd.StorageDomain):
                           if v.imgs[0] == imgUUID)
         return exclusives
 
+    def __markForDelVols(self, sdUUID, imgUUID, volUUIDs, opTag):
+        """
+        Mark volumes that will be zeroed or removed.
+
+        Mark for delete just in case that lvremove [lvs] success partialy.
+        Mark for zero just in case that zero process is interrupted.
+
+        Tagging is preferable to rename since it can be done in a single lvm
+        operation and is resilient to open LVs, etc.
+        """
+        try:
+            lvm.changelv(sdUUID, volUUIDs, (("-a", "y"),
+                        ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
+                        ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
+                         opTag + imgUUID)))
+        except se.StorageException as e:
+            log.error("Can't activate or change LV tags in SD %s. "
+                      "failing Image %s %s operation for vols: %s. %s",
+                      sdUUID, imgUUID, opTag, volUUIDs, e)
+            raise
+
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
+        self.__markForDelVols(sdUUID, imgUUID, toDel, sd.REMOVED_IMAGE_PREFIX)
         deleteVolumes(sdUUID, toDel)
         self.rmDCImgDir(imgUUID, volsImgs)
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
         toZero = self._getImgExclusiveVols(imgUUID, volsImgs)
+        self.__markForDelVols(sdUUID, imgUUID, toZero, sd.ZEROED_IMAGE_PREFIX)
         zeroImgVolumes(sdUUID, imgUUID, toZero)
         self.rmDCImgDir(imgUUID, volsImgs)
 
