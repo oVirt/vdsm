@@ -195,7 +195,7 @@ def gethwaddr(dev):
 def graph():
     for bridge in bridges():
         print bridge
-        for iface in os.listdir('/sys/class/net/' + bridge + '/brif'):
+        for iface in ports(bridge):
             print '\t' + iface
             if iface in vlans():
                 iface = iface.split('.')[0]
@@ -211,7 +211,7 @@ def getVlanBondingNic(bridge):
         raise ValueError('unknown bridge %s' % bridge)
     vlan = bonding = ''
     nics = []
-    for iface in os.listdir('/sys/class/net/' + bridge + '/brif'):
+    for iface in ports(bridge):
         if iface in vlans():
             iface, vlan = iface.split('.')
         if iface in bondings():

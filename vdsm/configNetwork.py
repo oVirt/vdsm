@@ -989,7 +989,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
-    brifs = os.listdir('/sys/class/net/%s/brif/' % bridge)
+    brifs = netinfo.ports(bridge)
     for nic in nics:
         try:
             brifs.remove(nic)
