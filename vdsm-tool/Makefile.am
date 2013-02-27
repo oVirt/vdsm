@@ -23,12 +23,17 @@ dist_bin_SCRIPTS = \
 	vdsm-tool
 
 EXTRA_DIST = \
-	validate_ovirt_certs.py.in
+	load_needed_modules.py.in \
+	validate_ovirt_certs.py.in \
+	$(NULL)
+
+nodist_vdsmtool_DATA = \
+	load_needed_modules.py \
+	validate_ovirt_certs.py \
+	$(NULL)
 
 dist_vdsmtool_DATA = \
 	__init__.py \
-	load_needed_modules.py \
 	passwd.py \
 	seboolsetup.py \
-	validate_ovirt_certs.py \
 	$(NULL)
