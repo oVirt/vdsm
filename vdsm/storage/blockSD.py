@@ -171,11 +171,15 @@ def getAllVolumes(sdUUID):
         res[volName]['parent'] = parentVol
         if vImg not in res[volName]['imgs']:
             res[volName]['imgs'].insert(0, vImg)
-        if (parentVol != sd.BLANK_UUID and
-                not volName.startswith(
-                    sd.REMOVED_IMAGE_PREFIX) and
-                vImg not in res[parentVol]['imgs']):
-            res[parentVol]['imgs'].append(vImg)
+        if parentVol != sd.BLANK_UUID:
+            try:
+                imgIsUnknown = vImg not in res[parentVol]['imgs']
+            except KeyError:
+                log.warning("Found broken image %s, orphan volume %s/%s, "
+                            "parent %s", vImg, sdUUID, volName, parentVol)
+            else:
+                if imgIsUnknown:
+                    res[parentVol]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
                 for k, v in res.iteritems())
@@ -1003,15 +1007,36 @@ class BlockStorageDomain(sd.StorageDomain):
         zeroImgVolumes(sdUUID, imgUUID, toZero)
         self.rmDCImgDir(imgUUID, volsImgs)
 
-    def getAllVolumes(self):
+    def getAllVolumesImages(self):
         """
         Return all the images that depend on a volume.
 
-        TODO: rename to getAllVolumeImages.
-
-        Return dict {volUUID: ([imgUUID1, imgUUID2], parentUUID)]}.
+        Return dicts:
+        vols = {volUUID: ([imgUUID1, imgUUID2], parentUUID)]}
+        for complete images.
+        remnants (same) for broken imgs, orphan volumes, etc.
         """
-        return getAllVolumes(self.sdUUID)
+        vols = {}  # The "legal" volumes: not half deleted/removed volumes.
+        remnants = {}  # Volumes which are part of failed image deletes.
+        allVols = getAllVolumes(self.sdUUID)
+        for volName, ip in allVols.iteritems():
+            if (volName.startswith(sd.REMOVED_IMAGE_PREFIX) or
+                    ip.imgs[0].startswith(sd.REMOVED_IMAGE_PREFIX)):
+                        remnants[volName] = ip
+            else:
+                # Deleted images are not dependencies of valid volumes.
+                images = [img for img in ip.imgs
+                          if not img.startswith(sd.REMOVED_IMAGE_PREFIX)]
+                vols[volName] = sd.ImgsPar(images, ip.parent)
+        return vols, remnants
+
+    def getAllVolumes(self):
+        vols, rems = self.getAllVolumesImages()
+        return vols
+
+    def getAllRemnants(self):
+        vols, rems = self.getAllVolumesImages()
+        return rems
 
     def activateVolumes(self, volUUIDs):
         """
