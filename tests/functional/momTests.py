@@ -17,24 +17,33 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import imp
 import random
 import time
+from functools import wraps
 
 import testValidation
 from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
 from vdsm import vdscli
 
-try:
-    imp.find_module('mom')
-except ImportError:
-    raise SkipTest('MOM is not installed')
+
+def skipNoMOM(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        r = self.s.getVdsCapabilities()
+        self.assertEquals(r['status']['code'], 0)
+        if not r['info']['packages2'].get('mom'):
+            raise SkipTest('MOM is not installed')
+        return method(self, *args, **kwargs)
+    return wrapped
 
 
 class MOMTest(TestCaseBase):
+    def setUp(self):
+        self.s = vdscli.connect()
 
     @testValidation.ValidateRunningAsRoot
+    @skipNoMOM
     def testKSM(self):
         run = 1
         pages_to_scan = random.randint(100, 200)
@@ -44,13 +53,12 @@ class MOMTest(TestCaseBase):
             (Host.Control "ksm_run" %d)
             (Host.Control "ksm_pages_to_scan" %d)""" % \
             (run, pages_to_scan)
-        s = vdscli.connect()
-        r = s.setMOMPolicy(testPolicyStr)
+        r = self.s.setMOMPolicy(testPolicyStr)
         self.assertEqual(r['status']['code'], 0, str(r))
 
         # Wait for the policy taking effect
         time.sleep(10)
 
-        hostStats = s.getVdsStats()['info']
+        hostStats = self.s.getVdsStats()['info']
         self.assertEqual(bool(run), hostStats['ksmState'])
         self.assertEqual(pages_to_scan, hostStats['ksmPages'])
