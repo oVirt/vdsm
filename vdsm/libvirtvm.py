@@ -414,6 +414,14 @@ class MigrationMonitorThread(threading.Thread):
                 self.stop()
                 break
 
+            if dataRemaining > smallest_dataRemaining:
+                MiB = 1024 * 1024
+                self._vm.log.warn(
+                    'Migration stalling: dataRemaining (%sMiB)'
+                    ' > smallest_dataRemaining (%sMiB).'
+                    ' Refer to RHBZ#919201.',
+                    dataRemaining / MiB, smallest_dataRemaining / MiB)
+
             if jobType == 0:
                 continue
 
