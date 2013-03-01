@@ -3118,7 +3118,17 @@ class LibvirtVm(vm.Vm):
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
             self._guestCpuRunning = True
             if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
-                hooks.after_vm_cont(self._dom.XMLDesc(0), self.conf)
+                # This is not a real solution however the safest way to handle
+                # this for now. Ultimately we need to change the way how we are
+                # creating self._dom.
+                # The event handler delivers the domain instance in the
+                # callback however we do not use it.
+                try:
+                    domxml = self._dom.XMLDesc(0)
+                except AttributeError:
+                    pass
+                else:
+                    hooks.after_vm_cont(domxml, self.conf)
             elif (detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED and
                   self.lastStatus == 'Migration Destination'):
                 self._incomingMigrationFinished.set()
