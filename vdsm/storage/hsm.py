@@ -3325,6 +3325,7 @@ class HSM:
 
         return {"results": res}
 
+    @deprecated
     @public
     def getImageDomainsList(self, spUUID, imgUUID, datadomains=True,
                             options=None):
