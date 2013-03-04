@@ -43,6 +43,8 @@ from storage.misc import RollbackContext
 from vdsm.utils import CommandPath
 from vdsm import vdscli
 
+_VARTMP = '/var/tmp'
+
 if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
 
@@ -394,7 +396,7 @@ class LocalFSServer(BackendServer):
         uid = pwd.getpwnam(VDSM_USER)[2]
         gid = grp.getgrnam(VDSM_GROUP)[2]
 
-        rootDir = tempfile.mkdtemp(prefix='localfs')
+        rootDir = tempfile.mkdtemp(prefix='localfs', dir=_VARTMP)
         undo = lambda: os.rmdir(rootDir)
         rollback.prependDefer(undo)
         os.chown(rootDir, uid, gid)
