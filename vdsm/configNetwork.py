@@ -27,6 +27,7 @@ import time
 import logging
 import threading
 from xml.sax.saxutils import escape
+from contextlib import contextmanager
 import glob
 import socket
 import shutil
@@ -48,6 +49,8 @@ MAX_VLAN_ID = 4094
 MAX_BRIDGE_NAME_LEN = 15
 ILLEGAL_BRIDGE_CHARS = frozenset(':. \t')
 DEFAULT_MTU = '1500'
+
+BONDING_MASTERS = '/sys/class/net/bonding_masters'
 
 
 class ConfigNetworkError(Exception):
@@ -509,9 +512,8 @@ class ConfigWriter(object):
                              bootproto, mtu, onboot, **kwargs)
 
         # create the bonding device to avoid initscripts noise
-        bondMastersPath = '/sys/class/net/bonding_masters'
-        if bonding not in open(bondMastersPath).read().split():
-            open(bondMastersPath, 'w').write('+%s\n' % bonding)
+        if bonding not in open(BONDING_MASTERS).read().split():
+            open(BONDING_MASTERS, 'w').write('+%s\n' % bonding)
 
     def addNic(self, nic, bonding=None, bridge=None, mtu=None,
                ipaddr=None, netmask=None, gateway=None, bootproto=None,
@@ -753,16 +755,32 @@ def validateBondingName(bonding):
 
 def validateBondingOptions(bonding, bondingOptions):
     'Example: BONDING_OPTS="mode=802.3ad miimon=150"'
+    with _validationBond(bonding) as bond:
+        try:
+            for option in bondingOptions.split():
+                key, value = option.split('=')
+                if not os.path.exists(
+                        '/sys/class/net/%s/bonding/%s' % (bond, key)):
+                    raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a '
+                                             'valid bonding option' % key)
+        except ValueError:
+            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
+                                     'bonding options: %r' % bondingOptions)
+
+
+@contextmanager
+def _validationBond(bonding):
+    bond_created = False
     try:
-        for option in bondingOptions.split():
-            key, value = option.split('=')
-            if not os.path.exists(
-                    '/sys/class/net/%(bonding)s/bonding/%(key)s' % locals()):
-                raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a '
-                                         'valid bonding option' % key)
-    except ValueError:
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing bonding '
-                                 'options: %r' % bondingOptions)
+        bonding = open(BONDING_MASTERS, 'r').read().split()[0]
+    except IndexError:
+        open(BONDING_MASTERS, 'w').write('+%s\n' % bonding)
+        bond_created = True
+    try:
+        yield bonding
+    finally:
+        if bond_created:
+            open(BONDING_MASTERS, 'w').write('-%s\n' % bonding)
 
 
 def validateVlanId(vlan):
