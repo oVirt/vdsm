@@ -20,6 +20,15 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
+# Systemd macro
+%if 0%{?fedora} >= 15
+%global with_systemd 1
+%endif
+
+%if 0%{?rhel} >= 7
+%global with_systemd 1
+%endif
+
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
@@ -66,6 +75,9 @@ BuildRequires: libtool
 %if !0%{?rhel}
 BuildRequires: pyflakes
 BuildRequires: python-pep8
+%endif
+
+%if 0%{?with_systemd}
 BuildRequires: systemd-units
 %endif
 
@@ -454,19 +466,7 @@ install -Dm 0644 vdsm/storage/12-vdsm-lvm.rules \
 install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
 
-%if 0%{?rhel}
-# Install the SysV init scripts
-install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
-install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
-
-# This is not commonplace, but we want /var/log/core to be a world-writable
-# dropbox for core dumps
-install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
-%else
-# Install the configuration sample
-install -Dm 0644 vdsm/vdsm.conf.sample \
-                 %{buildroot}%{_sysconfdir}/vdsm/vdsm.conf
-
+%if 0%{?with_systemd}
 # Install the systemd scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}/lib/systemd/systemd-vdsmd
 install -Dm 0644 vdsm/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
@@ -474,6 +474,20 @@ install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
                  %{buildroot}%{_unitdir}/vdsm-reg.service
+%else
+# Install the SysV init scripts
+install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
+install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
+%endif
+
+%if 0%{?rhel}
+# This is not commonplace, but we want /var/log/core to be a world-writable
+# dropbox for core dumps
+install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
+%else
+# Install the configuration sample
+install -Dm 0644 vdsm/vdsm.conf.sample \
+                 %{buildroot}%{_sysconfdir}/vdsm/vdsm.conf
 
 # Install the polkit for libvirt
 %if 0%{?fedora} >= 18
@@ -628,12 +642,13 @@ exit 0
 %files
 %defattr(-, root, root, -)
 %doc COPYING README vdsm/vdsm.conf.sample
-%if 0%{?rhel}
-%{_initrddir}/vdsmd
-%else
+%if 0%{?with_systemd}
 /lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
+%else
+%{_initrddir}/vdsmd
 %endif
+
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
@@ -981,11 +996,11 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/logger.conf
 %ghost %dir /data
 %ghost %dir %attr(0775, root, root) /data/updates
-%if 0%{?rhel}
-%{_initrddir}/vdsm-reg
-%else
+%if 0%{?with_systemd}
 /lib/systemd/systemd-vdsm-reg
 %{_unitdir}/vdsm-reg.service
+%else
+%{_initrddir}/vdsm-reg
 %endif
 %{_datadir}/%{vdsm_reg}/vdsm-reg-setup
 %{_datadir}/%{vdsm_reg}/vdsm-complete
