@@ -22,6 +22,7 @@ import socket
 import logging
 from Queue import Queue
 from contextlib import closing
+from testValidation import brokentest
 
 from testrunner import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -179,6 +180,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.assertEquals(cm.exception.code,
                                   JsonRpcMethodNotFoundError().code)
 
+    @brokentest()
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def testMethodBadParameters(self, reactorType):
         # Without a schema the server returns an internal error
