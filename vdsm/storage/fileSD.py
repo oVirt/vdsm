@@ -165,6 +165,14 @@ class FileStorageDomain(sd.StorageDomain):
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
 
+    @property
+    def supportsSparseness(self):
+        """
+        This property advertises whether the storage domain supports
+        sparseness or not.
+        """
+        return True
+
     def setMetadataPermissions(self):
         procPool = oop.getProcessPool(self.sdUUID)
         for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):

@@ -316,6 +316,14 @@ class StorageDomain:
         return False
 
     @property
+    def supportsSparseness(self):
+        """
+        This property advertises whether the storage domain supports
+        sparseness or not.
+        """
+        return False
+
+    @property
     def oop(self):
         return oop.getProcessPool(self.sdUUID)
 

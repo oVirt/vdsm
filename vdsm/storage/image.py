@@ -523,18 +523,20 @@ class Image:
                     # find out src volume parameters
                     volParams = srcVol.getVolumeParams(bs=1)
 
-                    # To avoid 'prezeroing' preallocated volume on NFS domain,
-                    # we create the target volume with minimal size and after
-                    # that w'll change its metadata back to the original size.
-                    if (volParams['volFormat'] == volume.COW_FORMAT
-                            or volParams['prealloc'] == volume.SPARSE_VOL):
-                        volTmpSize = volParams['size']
+                    # To avoid prezeroing preallocated volumes on NFS domains
+                    # we create the target as a sparse volume (since it will be
+                    # soon filled with the data coming from the copy) and then
+                    # we change its metadata back to the original value.
+                    if (volParams['prealloc'] == volume.PREALLOCATED_VOL
+                            and destDom.supportsSparseness):
+                        tmpVolPreallocation = volume.SPARSE_VOL
                     else:
-                        volTmpSize = TEMPORARY_VOLUME_SIZE  # in sectors (10M)
+                        tmpVolPreallocation = volParams['prealloc']
 
-                    destDom.createVolume(imgUUID=imgUUID, size=volTmpSize,
+                    destDom.createVolume(imgUUID=imgUUID,
+                                         size=volParams['size'],
                                          volFormat=volParams['volFormat'],
-                                         preallocate=volParams['prealloc'],
+                                         preallocate=tmpVolPreallocation,
                                          diskType=volParams['disktype'],
                                          volUUID=srcVol.volUUID,
                                          desc=volParams['descr'],
@@ -548,9 +550,9 @@ class Image:
                     dstVol.extend((volParams['apparentsize'] + 511) / 512)
 
                     # Change destination volume metadata back to the original
-                    # size.
-                    if volTmpSize != volParams['size']:
-                        dstVol.setSize(volParams['size'])
+                    # type.
+                    if tmpVolPreallocation != volParams['prealloc']:
+                        dstVol.setType(volParams['prealloc'])
 
                     dstChain.append(dstVol)
                 except se.StorageException:
