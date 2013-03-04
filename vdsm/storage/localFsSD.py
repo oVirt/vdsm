@@ -102,34 +102,13 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
     @staticmethod
     def findDomainPath(sdUUID):
         for tmpSdUUID, domainPath in fileSD.scanDomains("_*"):
-            if tmpSdUUID == sdUUID and isLocalFsDomain(domainPath):
+            if tmpSdUUID == sdUUID:
                 return domainPath
         else:
             raise se.StorageDomainDoesNotExist(sdUUID)
 
     def getRealPath(self):
         return os.readlink(self.mountpoint)
-
-
-def isLocalFsDomain(domainPath):
-    """This ancillary function differentiates local and mounted SD's.
-
-    Assumed that a local SD can't be mounted.
-    mounted: nfs, posixFS
-    local: a link to a local dir in the /rhev/datacenter
-    """
-    mtab = open("/etc/mtab", "r").readlines()
-    for mEntry in mtab:
-        mPoint = mEntry.split()[1]
-        if mPoint == '/':
-            continue
-        elif mPoint in domainPath:
-            # This is a mounted domain therefore not exists as a local SD.
-            isLocal = False
-            break
-    else:
-        isLocal = True
-    return isLocal
 
 
 def findDomain(sdUUID):

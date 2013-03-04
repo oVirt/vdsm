@@ -25,6 +25,7 @@ This is the Host Storage Manager module.
 import os
 import threading
 import logging
+import glob
 from fnmatch import fnmatch
 from copy import deepcopy
 from itertools import imap
@@ -47,6 +48,7 @@ import localFsSD
 import lvm
 import fileUtils
 import multipath
+import outOfProcess as oop
 from sdc import sdCache
 import image
 import volume
@@ -2220,6 +2222,52 @@ class HSM:
         vars.task.setDefaultException(se.GetFloppyListError("%s" % spUUID))
         return self.getIsoList(spUUID=spUUID, extension='vfd')
 
+    def __getSDTypeFindMethod(self, domType):
+        # TODO: make sd.domain_types a real dictionary and remove this.
+        # Storage Domain Types find methods
+        SDTypeFindMethod = {sd.NFS_DOMAIN: nfsSD.findDomain,
+                            sd.FCP_DOMAIN: blockSD.findDomain,
+                            sd.ISCSI_DOMAIN: blockSD.findDomain,
+                            sd.LOCALFS_DOMAIN: localFsSD.findDomain,
+                            sd.POSIXFS_DOMAIN: nfsSD.findDomain,
+                            sd.GLUSTERFS_DOMAIN: glusterSD.findDomain}
+        return SDTypeFindMethod.get(domType)
+
+    def __prefetchDomains(self, domType, conObj):
+        uuidPatern = "????????-????-????-????-????????????"
+
+        if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
+            uuids = tuple(blockSD.getStorageDomainsList())
+        elif domType is sd.NFS_DOMAIN:
+            lPath = conObj._mountCon._getLocalPath()
+            self.log.debug("nfs local path: %s", lPath)
+            goop = oop.getGlobalProcPool()
+            uuids = tuple(os.path.basename(d) for d in
+                          goop.glob.glob(os.path.join(lPath, uuidPatern)))
+        elif domType is sd.POSIXFS_DOMAIN:
+            lPath = conObj._getLocalPath()
+            self.log.debug("posix local path: %s", lPath)
+            goop = oop.getGlobalProcPool()
+            uuids = tuple(os.path.basename(d) for d in
+                          goop.glob.glob(os.path.join(lPath, uuidPatern)))
+        elif domType is sd.GLUSTERFS_DOMAIN:
+            glusterDomPath = os.path.join(sd.GLUSTERSD_DIR, "*")
+            self.log.debug("glusterDomPath: %s", glusterDomPath)
+            uuids = tuple(sdUUID for sdUUID, domainPath in
+                          nfsSD.fileSD.scanDomains(glusterDomPath))
+        elif domType is sd.LOCALFS_DOMAIN:
+            lPath = conObj._path
+            self.log.debug("local _path: %s", lPath)
+            uuids = tuple(os.path.basename(d) for d in
+                          glob.glob(os.path.join(lPath, uuidPatern)))
+        else:
+            uuids = tuple()
+            self.log.warn("domType %s does not support prefetch")
+
+        self.log.debug("Found SD uuids: %s", uuids)
+        findMethod = self.__getSDTypeFindMethod(domType)
+        return dict.fromkeys(uuids, findMethod)
+
     @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
     def connectStorageServer(self, domType, spUUID, conList, options=None):
@@ -2251,11 +2299,21 @@ class HSM:
             try:
                 self._connectStorageOverIser(conDef, conObj, domType)
                 conObj.connect()
-                status = 0
             except Exception as err:
                 self.log.error(
                     "Could not connect to storageServer", exc_info=True)
                 status, _ = self._translateConnectionError(err)
+            else:
+                status = 0
+                try:
+                    doms = self.__prefetchDomains(domType, conObj)
+                except:
+                    self.log.debug("prefetch failed: %s",
+                                   sdCache.knownSDs,  exc_info=True)
+                else:
+                    sdCache.knownSDs.update(doms)
+
+            self.log.debug("knownSDs: %s", sdCache.knownSDs)
 
             res.append({'id': conDef["id"], 'status': status})
 
@@ -2478,6 +2536,10 @@ class HSM:
                 domVersion)
         else:
             raise se.StorageDomainTypeError(storageType)
+
+        findMethod = self.__getSDTypeFindMethod(storageType)
+        sdCache.knownSDs[sdUUID] = findMethod
+        self.log.debug("knownSDs: %s", sdCache.knownSDs)
         sdCache.manuallyAddDomain(newSD)
 
     @public

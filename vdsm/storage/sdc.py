@@ -70,6 +70,7 @@ class StorageDomainCache:
         self.__inProgress = set()
         self.__staleStatus = self.STORAGE_STALE
         self.storage_repo = storage_repo
+        self.knownSDs = {}  # {sdUUID: mod.findDomain}
 
     def invalidateStorage(self):
         with self._syncroot:
@@ -130,10 +131,27 @@ class StorageDomainCache:
                 self._syncroot.notifyAll()
 
     def _findDomain(self, sdUUID):
+        try:
+            findMethod = self.knownSDs[sdUUID]
+        except KeyError:
+            self.log.error("looking for unfetched domain %s", sdUUID)
+            findMethod = self._findUnfetchedDomain
+
+        try:
+            dom = findMethod(sdUUID)
+        except se.StorageDomainDoesNotExist:
+            self.log.error("domain %s not found", sdUUID, exc_info=True)
+            raise
+        else:
+            return dom
+
+    def _findUnfetchedDomain(self, sdUUID):
         import blockSD
         import glusterSD
         import localFsSD
         import nfsSD
+
+        self.log.error("looking for domain %s", sdUUID)
 
         # The order is somewhat important, it's ordered
         # by how quickly get can find the domain. For instance
