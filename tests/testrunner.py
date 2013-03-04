@@ -134,7 +134,7 @@ class VdsmTestCase(unittest.TestCase):
         # hackVdsmModule() is called. Do not import it at the
         # module level.
         from vdsm.utils import retry
-        retry(expectedException=AssertionError, *args, **kwargs)
+        return retry(expectedException=AssertionError, *args, **kwargs)
 
     def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
         # FIXME: This is a forward port of the assertRaises from python

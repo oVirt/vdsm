@@ -49,6 +49,7 @@ if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
 
 _mkinitrd = CommandPath("mkinird", "/usr/bin/mkinitrd")
+_modprobe = CommandPath("modprobe", "/usr/sbin/modprobe")
 
 
 def readableBy(filePath, user):
@@ -425,8 +426,13 @@ class LocalFSServer(BackendServer):
 
 class IscsiServer(BackendServer):
     def __init__(self, vdsmServer, asserts):
+        # check if the system supports configuring iSCSI target
         if not "rtslib" in globals().keys():
             raise SkipTest("python-rtslib is not installed.")
+
+        cmd = [_modprobe.cmd, "iscsi_target_mod"]
+        rc, out, err = execCmd(cmd, sudo=True)
+        asserts.assertEquals(rc, 0)
 
         super(IscsiServer, self).__init__(vdsmServer, asserts)
         self.address = '127.0.0.1'
@@ -472,7 +478,7 @@ class IscsiServer(BackendServer):
         connections = {}
         self.vgNames = {}
         for uuid, conn in backends.iteritems():
-            fd, imgPath = tempfile.mkstemp()
+            fd, imgPath = tempfile.mkstemp(dir=_VARTMP)
             rollback.prependDefer(partial(os.unlink, imgPath))
             rollback.prependDefer(partial(os.close, fd))
             # Create a 10GB empty disk image
@@ -507,13 +513,16 @@ class IscsiServer(BackendServer):
                     iqnDevs[iqn] = dev['GUID']
                     break
             else:
-                raise RuntimeError(
+                raise AssertionError(
                     'Can not find related device of iqn %s' % iqn)
         return iqnDevs
 
     def _genTypeSpecificArgs(self, connections, rollback):
         iqns = [conn['params']['iqn'] for conn in connections.itervalues()]
-        iqnDevs = self._getIqnDevs(iqns)
+        # If two iSCSI tests are run back to back, it takes VDSM some time to
+        # refresh the iSCSI session info.
+        iqnDevs = self.asserts.retryAssert(partial(self._getIqnDevs, iqns),
+                                           timeout=30)
 
         args = {}
         for uuid, conn in connections.iteritems():
