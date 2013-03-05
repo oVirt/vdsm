@@ -105,11 +105,11 @@ class StorageTable:
     def _getVols(self, pool, sd, image):
         imageDom = '%s:%s' % (sd, image)
         volumes = self.serverConncetion.getVolumesList(sd, pool, image)
-        vollen = len(volumes['uuidlist'])
 
         volParents = {}
 
-        leafvol = ''
+        # An image may have multiple leaf volumes, eg previewing a snapshot
+        leafvols = []
 
         for vol in volumes['uuidlist']:
             res = self.serverConncetion.getVolumeInfo(sd, pool, image, vol)
@@ -118,37 +118,41 @@ class StorageTable:
             self.volumesList[imageDomVol] = []
 
             if res['info']['voltype'] == 'LEAF':
-                leafvol = vol
+                leafvols.append(vol)
 
             if res['info']['voltype'] == 'SHARED':
-                leafvol = vol
+                leafvols.append(vol)
                 self.volumesList[imageDomVol].append('Template')
 
-        self.imagesList[imageDom] = self._buildVolumesChain(leafvol, vollen,
+        self.imagesList[imageDom] = self._buildVolumesChain(leafvols,
                                                             volParents, sd,
                                                             image)
 
-    def _buildVolumesChain(self, leafvol, vollen, volParents, sd, image):
+    def _buildVolumesChain(self, leafvols, volParents, sd, image):
 
-        volChain = vollen * [None]
+        volChain = []
+        for leafvol in leafvols:
+            if volChain:
+                # insert an empty 'volume' to differentiate multiple chains
+                volChain.insert(0, '')
 
-        volChain[(vollen - 1)] = leafvol
-        next = leafvol
-        for k in range(1, (vollen + 1)):
-            prev = next
-            next = volParents[prev]
-            if next in volParents.keys():
-                volChain[(vollen - 1 - k)] = next
-            else:
-                if next == BLANK_UUID:
-                    app = 'Template independent'
+            volChain.insert(0, leafvol)
+            next = leafvol
+            while next in volParents.keys():
+                prev = next
+                next = volParents[prev]
+                if next in volParents.keys():
+                    volChain.insert(0, next)
                 else:
-                    app = '%s' % (next)
+                    if next == BLANK_UUID:
+                        app = 'Template independent'
+                    else:
+                        app = '%s' % (next)
 
-                imageDomVol = '%s:%s:%s' % (sd, image, prev)
-                templList = self.volumesList[imageDomVol]
-                if len(templList) == 0:
-                    templList.append(app)
+                    imageDomVol = '%s:%s:%s' % (sd, image, prev)
+                    templList = self.volumesList[imageDomVol]
+                    if len(templList) == 0:
+                        templList.append(app)
 
         return volChain
 
@@ -223,10 +227,14 @@ class StorageTable:
                 self.tbl['Images'].append([image])
                 volsToAdd = self.imagesList[imageDom]
                 self.tbl['Volumes'].append(volsToAdd)
-                vol = volsToAdd[0]
-                domImageVol = '%s:%s:%s' % (sdUUID, image, vol)
-
-                templToAdd = self.volumesList.get(domImageVol, [])
+                templToAdd = []
+                for vol in volsToAdd:
+                    domImageVol = '%s:%s:%s' % (sdUUID, image, vol)
+                    templ = self.volumesList.get(domImageVol, [])
+                    if templ:
+                        templToAdd.append(templ[0])
+                    else:
+                        templToAdd.append('')
                 self.tbl['Template'].append(templToAdd)
                 row += 1
 
