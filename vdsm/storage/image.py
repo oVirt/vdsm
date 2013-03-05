@@ -36,7 +36,6 @@ import task
 from threadLocal import vars
 import resourceFactories
 import resourceManager as rm
-import outOfProcess as oop
 
 log = logging.getLogger('Storage.Image')
 rmanager = rm.ResourceManager.getInstance()
@@ -368,38 +367,6 @@ class Image:
         # Do not deactivate the template yet (might be in use by an other vm)
         # TODO: reference counting to deactivate when unused
 
-    def __templateRelink(self, destDom, imgUUID, volUUID):
-        """
-        Relink all hardlinks of the template 'volUUID' in all VMs based on it.
-
-        This function assumes that dom is backup dom and that template image is
-        used by other volumes.
-        """
-        # Avoid relink templates for non-NFS domains
-        if destDom.getStorageType() not in [sd.NFS_DOMAIN]:
-            self.log.debug("Doesn't relink templates non-NFS domain %s",
-                           destDom.sdUUID)
-            return
-
-        allVols = destDom.getAllVolumes()
-        tImgs = allVols[volUUID].imgs
-        if len(tImgs) < 2:
-            self.log.debug("Volume %s is an unused template or a regular "
-                           "volume. Found  in images: %s allVols: %s", volUUID,
-                           tImgs, allVols)
-            return
-        templateImage = tImgs[0]
-        relinkImgs = tuple(tImgs[1:])
-        for rImg in relinkImgs:
-            # This function assumes that all relevant images and template
-            # namespaces are locked.
-            tLink = os.path.join(self.repoPath, destDom.sdUUID,
-                                 sd.DOMAIN_IMAGES, rImg, volUUID)
-            oop.getProcessPool(destDom.sdUUID).os.unlink(tLink)
-            oop.getProcessPool(destDom.sdUUID).os.link(os.path.join(
-                self.repoPath, destDom.sdUUID, sd.DOMAIN_IMAGES, templateImage,
-                volUUID), tLink)
-
     def createFakeTemplate(self, sdUUID, volParams):
         """
         Create fake template (relevant for Backup domain only)
@@ -431,8 +398,8 @@ class Image:
                     vol.setShared()
                     # Now we should re-link all hardlinks of this template in
                     # all VMs based on it
-                    self.__templateRelink(destDom, volParams['imgUUID'],
-                                          volParams['volUUID'])
+                    destDom.templateRelink(volParams['imgUUID'],
+                                           volParams['volUUID'])
 
                     self.log.debug("Succeeded to create fake image %s in "
                                    "domain %s", volParams['imgUUID'],
@@ -660,7 +627,7 @@ class Image:
         if force:
             leafVol = chains['dstChain'][-1]
             # Now we should re-link all deleted hardlinks, if exists
-            self.__templateRelink(destDom, imgUUID, leafVol.volUUID)
+            destDom.templateRelink(imgUUID, leafVol.volUUID)
 
         # At this point we successfully finished the 'copy' part of the
         # operation and we can clear all recoveries.
@@ -933,7 +900,7 @@ class Image:
 
                 if force:
                     # Now we should re-link all deleted hardlinks, if exists
-                    self.__templateRelink(destDom, dstImgUUID, dstVolUUID)
+                    destDom.templateRelink(dstImgUUID, dstVolUUID)
             except se.StorageException:
                 self.log.error("Unexpected error", exc_info=True)
                 raise

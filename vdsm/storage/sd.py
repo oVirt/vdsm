@@ -745,6 +745,14 @@ class StorageDomain:
     def getRemotePath(self):
         pass
 
+    def templateRelink(self, imgUUID, volUUID):
+        """
+        Relink all hardlinks of the template 'volUUID' in all VMs based on it.
+        No need to relink template for block domains.
+        """
+        self.log.debug("Skipping relink of template, domain %s is not file "
+                       "based", self.sdUUID)
+
     def changeRole(self, newRole):
         # TODO: Move to a validator?
         if newRole not in [REGULAR_DOMAIN, MASTER_DOMAIN]:

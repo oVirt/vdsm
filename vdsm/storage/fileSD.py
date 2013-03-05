@@ -527,6 +527,35 @@ class FileStorageDomain(sd.StorageDomain):
         for imageDir in removedImages:
             self.oop.fileUtils.cleanupdir(imageDir)
 
+    def templateRelink(self, imgUUID, volUUID):
+        """
+        Relink all hardlinks of the template 'volUUID' in all VMs based on it.
+
+        This function assumes that template image is used by other volumes.
+        """
+        allVols = self.getAllVolumes()
+        tImgs = allVols[volUUID].imgs
+        if len(tImgs) < 2:
+            self.log.debug("Volume %s is an unused template or a regular "
+                           "volume. Found  in images: %s allVols: %s", volUUID,
+                           tImgs, allVols)
+            return
+        templateImage = tImgs[0]
+        relinkImgs = tuple(tImgs[1:])
+        repoPath = self._getRepoPath()
+        basePath = os.path.join(repoPath, self.sdUUID, sd.DOMAIN_IMAGES)
+        volFiles = [volUUID, volUUID + fileVolume.META_FILEEXT]
+        if self.hasVolumeLeases():
+            volFiles.append(volUUID + fileVolume.LEASE_FILEEXT)
+        for rImg in relinkImgs:
+            # This function assumes that all relevant images and template
+            # namespaces are locked.
+            for volFile in volFiles:
+                tLink = os.path.join(basePath, rImg, volFile)
+                tVol = os.path.join(basePath, templateImage, volFile)
+                self.oop.fileUtils.safeUnlink(tLink)
+                self.oop.os.link(tVol, tLink)
+
 
 def getMountsList(pattern="*"):
     finalPat = os.path.join(sd.StorageDomain.storage_repository,

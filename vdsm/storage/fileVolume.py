@@ -34,6 +34,7 @@ from misc import deprecated
 import task
 from threadLocal import vars
 
+META_FILEEXT = ".meta"
 LEASE_FILEEXT = ".lease"
 LEASE_FILEOFFSET = 0
 
@@ -536,9 +537,9 @@ class FileVolume(volume.Volume):
         self.imagePath = imageDir
 
     @classmethod
-    def __metaVolumePath(cls, vol_path):
-        if vol_path:
-            return vol_path + '.meta'
+    def __metaVolumePath(cls, volPath):
+        if volPath:
+            return volPath + META_FILEEXT
         else:
             return None
 
