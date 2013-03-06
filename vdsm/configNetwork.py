@@ -1063,7 +1063,7 @@ def _removeUnusedNics(network, vlan, bonding, nics, configWriter):
             ifup(nic)
 
 
-def  _delBrokenNetwork(network, netAttr, configWriter):
+def _delBrokenNetwork(network, netAttr, configWriter):
     '''Adapts the network information of broken networks so that they can be
     deleted via delNetwork.'''
     _netinfo = netinfo.NetInfo()
