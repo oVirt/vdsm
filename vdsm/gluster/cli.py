@@ -31,6 +31,12 @@ _glusterCommandPath = utils.CommandPath("gluster",
                                         )
 
 
+if hasattr(etree, 'ParseError'):
+    _etreeExceptions = (etree.ParseError, AttributeError, ValueError)
+else:
+    _etreeExceptions = (SyntaxError, AttributeError, ValueError)
+
+
 def _getGlusterVolCmd():
     return [_glusterCommandPath.cmd, "--mode=script", "volume"]
 
@@ -85,7 +91,7 @@ def _execGlusterXml(cmd):
         tree = etree.fromstring('\n'.join(out))
         rv = int(tree.find('opRet').text)
         msg = tree.find('opErrstr').text
-    except (etree.ParseError, AttributeError, ValueError):
+    except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=out)
     if rv == 0:
         return tree
@@ -303,7 +309,7 @@ def volumeStatus(volumeName, brick=None, option=None):
             return _parseVolumeStatusMem(xmltree)
         else:
             return _parseVolumeStatus(xmltree)
-    except (etree.ParseError, AttributeError, ValueError):
+    except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -427,7 +433,7 @@ def volumeInfo(volumeName=None):
         raise ge.GlusterVolumesListFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeInfo(xmltree)
-    except (etree.ParseError, AttributeError, ValueError):
+    except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -448,7 +454,7 @@ def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
         raise ge.GlusterVolumeCreateFailedException(rc=e.rc, err=e.err)
     try:
         return {'uuid': xmltree.find('volCreate/volume/id').text}
-    except (etree.ParseError, AttributeError, ValueError):
+    except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -787,7 +793,7 @@ def peerStatus():
         return _parsePeerStatus(xmltree,
                                 _getLocalIpAddress() or _getGlusterHostName(),
                                 _getGlusterUuid(), HostStatus.CONNECTED)
-    except (etree.ParseError, AttributeError, ValueError):
+    except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
@@ -878,5 +884,5 @@ def volumeProfileInfo(volumeName, nfs=False):
         raise ge.GlusterVolumeProfileInfoFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeProfileInfo(xmltree, nfs)
-    except (etree.ParseError, AttributeError, ValueError):
+    except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
