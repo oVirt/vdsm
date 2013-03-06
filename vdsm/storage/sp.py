@@ -1074,14 +1074,14 @@ class StoragePool(Securable):
         # broken after the upgrade
         sdUUID = domain.sdUUID
         isMsd = (self.masterDomain.sdUUID == sdUUID)
-        repoPath = os.path.join(self.storage_repository, self.spUUID)
 
         if targetFormat is None:
             targetFormat = self.getFormat()
 
         try:
             self._formatConverter.convert(
-                repoPath, self.id, domain.getRealDomain(), isMsd, targetFormat)
+                self.poolPath, self.id, domain.getRealDomain(), isMsd,
+                targetFormat)
         finally:
             # For safety we remove the domain from the cache also if the
             # conversion supposedly failed.
@@ -1753,12 +1753,11 @@ class StoragePool(Securable):
                     rmanager.acquireResource(dstImageResourcesNamespace,
                                              dstImgUUID, rm.LockType.exclusive)
                     ):
-            repoPath = os.path.join(self.storage_repository, self.spUUID)
-            dstUUID = image.Image(repoPath).copy(sdUUID, vmUUID, srcImgUUID,
-                                                 srcVolUUID, dstImgUUID,
-                                                 dstVolUUID, descr, dstSdUUID,
-                                                 volType, volFormat,
-                                                 preallocate, postZero, force)
+            dstUUID = image.Image(self.poolPath).copy(
+                sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
+                dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate,
+                postZero, force)
+
         return dict(uuid=dstUUID)
 
     def moveImage(self, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero,
@@ -1801,9 +1800,8 @@ class StoragePool(Securable):
                                              imgUUID, srcLock),
                     rmanager.acquireResource(dstImageResourcesNamespace,
                                              imgUUID, rm.LockType.exclusive)):
-            repoPath = os.path.join(self.storage_repository, self.spUUID)
-            image.Image(repoPath).move(srcDomUUID, dstDomUUID, imgUUID, vmUUID,
-                                       op, postZero, force)
+            image.Image(self.poolPath).move(srcDomUUID, dstDomUUID, imgUUID,
+                                            vmUUID, op, postZero, force)
 
     def cloneImageStructure(self, sdUUID, imgUUID, dstSdUUID):
         """
@@ -1829,8 +1827,8 @@ class StoragePool(Securable):
         )))
 
         with nested(*resList):
-            repoPath = os.path.join(self.storage_repository, self.spUUID)
-            image.Image(repoPath).cloneStructure(sdUUID, imgUUID, dstSdUUID)
+            image.Image(self.poolPath).cloneStructure(
+                sdUUID, imgUUID, dstSdUUID)
 
     def syncImageData(self, sdUUID, imgUUID, dstSdUUID, syncType):
         """
@@ -1857,9 +1855,8 @@ class StoragePool(Securable):
         )))
 
         with nested(*resList):
-            repoPath = os.path.join(self.storage_repository, self.spUUID)
-            image.Image(repoPath).syncData(sdUUID, imgUUID, dstSdUUID,
-                                           syncType)
+            image.Image(self.poolPath).syncData(
+                sdUUID, imgUUID, dstSdUUID, syncType)
 
     def moveMultipleImages(self, srcDomUUID, dstDomUUID, imgDict, vmUUID,
                            force):
@@ -1896,9 +1893,8 @@ class StoragePool(Securable):
                 dstImageResourcesNamespace, imgUUID, rm.LockType.exclusive))
 
         with nested(*resourceList):
-            repoPath = os.path.join(self.storage_repository, self.spUUID)
-            image.Image(repoPath).multiMove(srcDomUUID, dstDomUUID, imgDict,
-                                            vmUUID, force)
+            image.Image(self.poolPath).multiMove(
+                srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
 
     def mergeSnapshots(self, sdUUID, vmUUID, imgUUID, ancestor, successor,
                        postZero):
@@ -1923,9 +1919,8 @@ class StoragePool(Securable):
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
-            repoPath = os.path.join(self.storage_repository, self.spUUID)
-            image.Image(repoPath).merge(sdUUID, vmUUID, imgUUID, ancestor,
-                                        successor, postZero)
+            image.Image(self.poolPath).merge(
+                sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
 
     def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate,
                      diskType, volUUID=None, desc="",
@@ -2096,8 +2091,7 @@ class StoragePool(Securable):
                 self.log.warning("SP %s SD %s img %s Vol %s - teardown failed")
 
     def validateVolumeChain(self, sdUUID, imgUUID):
-        repoPath = os.path.join(self.storage_repository, self.spUUID)
-        image.Image(repoPath).validateVolumeChain(sdUUID, imgUUID)
+        image.Image(self.poolPath).validateVolumeChain(sdUUID, imgUUID)
 
     def extendSD(self, sdUUID, devlist, force):
         sdCache.produce(sdUUID).extend(devlist, force)
