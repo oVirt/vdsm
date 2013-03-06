@@ -1,7 +1,7 @@
 [Unit]
 Description=Virtual Desktop Server Manager
 Requires=multipathd.service libvirtd.service time-sync.target
-Conflicts=libvirt-guests.service
+Conflicts=libvirt-guests.service ksmtuned.service
 
 [Service]
 Type=forking
