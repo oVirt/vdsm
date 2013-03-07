@@ -573,7 +573,7 @@ class HostStatsThread(StatsThread):
                              [''] * len(ifids))  # fake ifmacs
         self._imagesStatus = ImagePathStatus(cif)
         self._pid = os.getpid()
-        self._ncpus = len(os.listdir('/sys/class/cpuid/'))
+        self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
 
     def stop(self):
         self._imagesStatus.stop()
