@@ -291,7 +291,7 @@ class StoragePool(Securable):
                 self._upgradePool(expectedDomVersion, __securityOverride=True)
 
                 self.masterDomain.mountMaster()
-                self.masterDomain.createMasterTree(log=True)
+                self.masterDomain.createMasterTree()
                 self.tasksDir = os.path.join(self.poolPath, POOL_MASTER_DOMAIN,
                                              sd.MASTER_FS_DIR, sd.TASKS_DIR)
 
