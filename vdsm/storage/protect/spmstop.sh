@@ -61,17 +61,17 @@ if [[ -z "$spmprotect_pgrps" ]]; then
     exit 0
 else
     log "Stopping lease for pool: $spUUID pgrps: $spmprotect_pgrps"
-    $KILL -USR1 $spmprotect_pgrps >/dev/null 2>&1
+    $KILL -USR1 -- $spmprotect_pgrps >/dev/null 2>&1
 fi
 
 for ((i=0; i<10; i+=1)); do
     sleep 1
-    killed_len=$($KILL -0 $spmprotect_pgrps 2>&1 | wc -l)
+    killed_len=$($KILL -0 -- $spmprotect_pgrps 2>&1 | wc -l)
     [[ "$killed_len" == "$spmprotect_pgrps_len" ]] && break
 done
 
 if [[ "$killed_len" != "$spmprotect_pgrps_len" ]]; then
-    $KILL -9 $spmprotect_pgrps
+    $KILL -9 -- $spmprotect_pgrps
 fi
 
 exit 0
