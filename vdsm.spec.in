@@ -305,6 +305,13 @@ BuildArch:      noarch
 VDSM hook enable user to add storage LUN for VDSM
 without the sharing and storage handling of VDSM.
 
+%package hook-macspoof
+Summary:        Disables MAC spoofing filtering
+BuildArch:      noarch
+
+%description hook-macspoof
+VDSM hook that disables mac spoof filtering on all the of the VM's interfaces.
+
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
 BuildArch:      noarch
@@ -896,6 +903,10 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
+
+%files hook-macspoof
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
 
 %files hook-qemucmdline
 %defattr(-, root, root, -)

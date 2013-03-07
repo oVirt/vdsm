@@ -1,0 +1,16 @@
+macspoof vdsm hook
+=================================
+This hook goes through all of the VM's interfaces and removes
+MAC and ARP spoofing filtering.
+
+Installation:
+* Use the engine-config to append the appropriate custom property as such:
+	sudo engine-config -s UserDefinedVMProperties=
+	'previousProperties;macspoof=^(true|false)$' --cver=3.2
+
+* Verify that the macspoof custom property was properly added:
+	sudo engine-config -g UserDefinedVMProperties
+
+Usage:
+In the VM configuration window, open the custom properites tab
+and add macspoof=true

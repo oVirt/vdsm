@@ -32,6 +32,7 @@ SUBDIRS += \
 	hostusb \
 	hugepages \
 	isolatedprivatevlan \
+	macspoof \
 	nestedvt \
 	numa \
 	pincpu \
