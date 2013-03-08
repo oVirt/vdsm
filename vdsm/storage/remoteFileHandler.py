@@ -32,9 +32,8 @@ import select
 from contextlib import contextmanager
 
 if __name__ != "__main__":
-    # If you don't have the vdsm package installed this will fail. Luckily we
-    # don't need anything when the child spawns. Plus anything you don't have
-    # to import is less memory taken by each helper.
+    # The following modules are not used by the newly spawned child porcess.
+    # Do not import them in the child to save memory.
     from betterPopen import BetterPopen
     from vdsm import constants
 else:
