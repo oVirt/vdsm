@@ -64,9 +64,14 @@ PEP8_WHITELIST = \
 
 PEP8_BLACKLIST = config.py,constants.py
 
+SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
+	'lv' from line .*"
+
 check-local:
 	find . -path './.git' -prune -type f -o \
-		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES)
+		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES) | \
+		grep -w -v $(SKIP_PYFLAKES_ERR) | \
+		while read LINE; do echo "$$LINE"; false; done
 	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' \
 		$(PEP8_WHITELIST)
 	@if test -f .gitignore; then \
