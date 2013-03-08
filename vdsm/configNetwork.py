@@ -498,6 +498,7 @@ class ConfigWriter(object):
                 ipaddr = confParams.get('IPADDR', None)
                 netmask = confParams.get('NETMASK', None)
                 gateway = confParams.get('GATEWAY', None)
+                bootproto = confParams.get('BOOTPROTO', None)
             if not mtu:
                 mtu = confParams.get('MTU', None)
                 if mtu:
@@ -531,6 +532,7 @@ class ConfigWriter(object):
                 ipaddr = confParams.get('IPADDR', None)
                 netmask = confParams.get('NETMASK', None)
                 gateway = confParams.get('GATEWAY', None)
+                bootproto = confParams.get('BOOTPROTO', None)
             if not mtu:
                 mtu = confParams.get('MTU', None)
                 if mtu:
