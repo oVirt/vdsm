@@ -321,13 +321,13 @@ def _getIfaceByIP(addr, fileName='/proc/net/route'):
 def _getKeyPackages():
     def kernelDict():
         try:
-            with open('/proc/sys/kernel/osrelease', "r") as f:
-                ver, rel = f.read().strip().split('-', 1)
+            ret = os.uname()
+            ver, rel = ret[2].split('-', 1)
         except:
             logging.error('kernel release not found', exc_info=True)
             ver, rel = '0', '0'
         try:
-            t = file('/proc/sys/kernel/version').read().split()[2:]
+            t = ret[3].split()[2:]
             del t[4]  # Delete timezone
             t = time.mktime(time.strptime(' '.join(t)))
         except:
