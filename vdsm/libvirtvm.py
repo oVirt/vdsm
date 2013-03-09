@@ -1684,7 +1684,6 @@ class LibvirtVm(vm.Vm):
         else:
             self.log.error("Hotunplug NIC failed - NIC not found: %s",
                            nicParams)
-            hooks.after_nic_hotunplug_fail(nicXml, self.conf)
             return {'status': {'code': errCode['hotunplugNic']
                                               ['status']['code'],
                                'message': "NIC not found"}}
