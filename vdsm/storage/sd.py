@@ -631,12 +631,6 @@ class StorageDomain:
             self.mountMaster()
             self.createMasterTree()
 
-    def getAllImages(self):
-        """
-        Fetch the list of the Image UUIDs
-        """
-        pass
-
     def activateVolumes(self, imgUUID, volUUIDs):
         """
         Activate all the volumes listed in volUUIDs

@@ -322,7 +322,7 @@ class FileStorageDomain(sd.StorageDomain):
 
     def getAllImages(self):
         """
-        Fetch the list of the Image UUIDs
+        Fetch the set of the Image UUIDs in the SD.
         """
         # Get Volumes of an image
         pattern = os.path.join(self.storage_repository,
@@ -332,11 +332,11 @@ class FileStorageDomain(sd.StorageDomain):
                                self.sdUUID, sd.DOMAIN_IMAGES)
         pattern = os.path.join(pattern, constants.UUID_GLOB_PATTERN)
         files = self.oop.glob.glob(pattern)
-        imgList = []
+        images = set()
         for i in files:
             if self.oop.os.path.isdir(i):
-                imgList.append(os.path.basename(i))
-        return imgList
+                images.update(os.path.basename(i))
+        return images
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         currImgDir = getImagePath(sdUUID, imgUUID)

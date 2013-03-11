@@ -913,24 +913,12 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def getAllImages(self):
         """
-        Get list of all images
-
-        TODO: Remove and use getAllVolumes().
+        Get the set of all images uuids in the SD.
         """
-        try:
-            lvs = lvm.getLV(self.sdUUID)
-        except se.LogicalVolumeDoesNotExistError:
-            lvs = ()  # No LVs in this VG (domain)
-
-        # Collect all the tags from all the volumes, but ignore duplicates
-        # set conveniently does exactly that
-        tags = set()
-        for lv in lvs:
-            tags.update(lv.tags)
-        # Drop non image tags and strip prefix
-        taglen = len(blockVolume.TAG_PREFIX_IMAGE)
-        images = [i[taglen:] for i in tags
-                  if i.startswith(blockVolume.TAG_PREFIX_IMAGE)]
+        vols = self.getAllVolumes()  # {volName: ([imgs], parent)}
+        images = set()
+        for imgs, parent in vols.itervalues():
+            images.update(imgs)
         return images
 
     def rmDCVolLinks(self, imgPath, volsImgs):

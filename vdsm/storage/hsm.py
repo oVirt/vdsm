@@ -3213,7 +3213,7 @@ class HSM:
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
         if imgUUID == volume.BLANK_UUID:
-            images = dom.getAllImages()
+            images = list(dom.getAllImages())
         else:
             images = [imgUUID]
 
