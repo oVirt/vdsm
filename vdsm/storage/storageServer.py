@@ -508,7 +508,7 @@ class LocalDirectoryConnection(object):
         return hash(type(self)) ^ hash(self._path)
 
 
-class IlligalAliasError(RuntimeError):
+class IllegalAliasError(RuntimeError):
     pass
 
 
@@ -554,7 +554,7 @@ class ConnectionAliasRegistrar(object):
 
     def _getConnectionFile(self, alias):
         if "/" in alias:
-            raise IlligalAliasError(alias)
+            raise IllegalAliasError(alias)
 
         try:
             os.makedirs(self._persistDir)
