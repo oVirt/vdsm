@@ -59,8 +59,16 @@ AC_SUBST([VDSMUSER], [vdsm])
 AC_SUBST([VDSMGROUP], [kvm])
 AC_SUBST([METADATAUSER], [vdsm])
 AC_SUBST([METADATAGROUP], [kvm])
-AC_SUBST([QEMUUSER], [qemu])
-AC_SUBST([QEMUGROUP], [qemu])
+if grep -i fedora /etc/*-release; then
+  AC_SUBST([QEMUUSER], [qemu])
+  AC_SUBST([QEMUGROUP], [qemu])
+elif grep -i ubuntu /etc/*-release; then
+  AC_SUBST([QEMUUSER], [libvirt-qemu])
+  AC_SUBST([QEMUGROUP], [kvm])
+else
+  AC_SUBST([QEMUUSER], [qemu])
+  AC_SUBST([QEMUGROUP], [qemu])
+fi
 AC_SUBST([SNLKUSER], [sanlock])
 AC_SUBST([SNLKGROUP], [sanlock])
 
