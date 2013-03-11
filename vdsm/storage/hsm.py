@@ -3334,8 +3334,7 @@ class HSM:
 
     @deprecated
     @public
-    def getImageDomainsList(self, spUUID, imgUUID, datadomains=True,
-                            options=None):
+    def getImageDomainsList(self, spUUID, imgUUID, options=None):
         """
         Gets a list of all domains in the pool that contains imgUUID.
 
@@ -3361,8 +3360,7 @@ class HSM:
         for sdUUID in domList:
             vars.task.getSharedLock(STORAGE, sdUUID)
 
-        domainslist = pool.getImageDomainsList(imgUUID=imgUUID,
-                                               datadomains=datadomains)
+        domainslist = pool.getImageDomainsList(imgUUID=imgUUID)
         return dict(domainslist=domainslist)
 
     @public

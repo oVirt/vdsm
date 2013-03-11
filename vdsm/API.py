@@ -967,9 +967,8 @@ class StoragePool(APIBase):
     def getFloppyList(self):
         return self._irs.getFloppyList(self._UUID)
 
-    def getDomainsContainingImage(self, imgUUID, onlyDataDomains=True):
-        return self._irs.getImageDomainsList(self._UUID, imgUUID,
-                                             onlyDataDomains)
+    def getDomainsContainingImage(self, imgUUID):
+        return self._irs.getImageDomainsList(self._UUID, imgUUID)
 
     def getIsoList(self, filenameExtension='iso'):
         return self._irs.getIsoList(self._UUID, filenameExtension)

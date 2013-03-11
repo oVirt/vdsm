@@ -1130,11 +1130,7 @@ class service:
     def getImageDomainsList(self, args):
         spUUID = args[0]
         imgUUID = args[1]
-        if len(args) > 2:
-            sdUUID = args[2]
-            domains = self.s.getImageDomainsList(spUUID, imgUUID, sdUUID)
-        else:
-            domains = self.s.getImageDomainsList(spUUID, imgUUID)
+        domains = self.s.getImageDomainsList(spUUID, imgUUID)
         if domains['status']['code']:
             return domains['status']['code'], domains['status']['message']
         for entry in domains['domainslist']:

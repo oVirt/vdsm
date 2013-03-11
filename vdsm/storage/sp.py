@@ -1656,9 +1656,9 @@ class StoragePool(Securable):
                 dom.createMasterTree()
 
     @unsecured
-    def getImageDomainsList(self, imgUUID, datadomains=True):
+    def getImageDomainsList(self, imgUUID):
         """
-        Get list of all domains in the pool that contain imgUUID
+        Get list of all data domains in the pool that contain imgUUID
          'imgUUID' - image UUID
         """
         # TODO: get rid of this verb and let management query each domain
@@ -1676,7 +1676,7 @@ class StoragePool(Securable):
                 self.log.error("Unexpected error", exc_info=True)
                 continue
 
-            if datadomains and not d.isData():
+            if not d.isData():
                 continue
 
             imageslist = d.getAllImages()
