@@ -1656,36 +1656,6 @@ class StoragePool(Securable):
                 dom.createMasterTree()
 
     @unsecured
-    def getImageDomainsList(self, imgUUID):
-        """
-        Get list of all data domains in the pool that contain imgUUID
-         'imgUUID' - image UUID
-        """
-        # TODO: get rid of this verb and let management query each domain
-        #       separately the problem with current implementation is that when
-        #       a domain is not accessible the error must be ignored and
-        #       management can reach wrong conclusions.
-        domainsdict = self.getDomains(activeOnly=True)
-        domainslist = []
-
-        for sdUUID in domainsdict:
-            try:
-                d = sdCache.produce(sdUUID)
-            except Exception:
-                # Pass over invisible active domains
-                self.log.error("Unexpected error", exc_info=True)
-                continue
-
-            if not d.isData():
-                continue
-
-            imageslist = d.getAllImages()
-            if imgUUID in imageslist:
-                domainslist.append(sdUUID)
-
-        return domainslist
-
-    @unsecured
     def isActive(self, sdUUID):
         return sdUUID in self.getDomains(activeOnly=True)
 

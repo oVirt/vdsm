@@ -3239,8 +3239,9 @@ class HSM:
         :rtype: dict
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
-        imageslist = sdCache.produce(sdUUID=sdUUID).getAllImages()
-        return dict(imageslist=imageslist)
+        dom = sdCache.produce(sdUUID=sdUUID)
+        images = dom.getAllImages()
+        return dict(imageslist=list(images))
 
     @public
     def storageServer_ConnectionRefs_acquire(self, conRefArgs):
@@ -3333,15 +3334,12 @@ class HSM:
     @public
     def getImageDomainsList(self, spUUID, imgUUID, options=None):
         """
-        Gets a list of all domains in the pool that contains imgUUID.
+        Gets a list of all data domains in the pool that contains imgUUID.
 
         :param spUUID: The UUID of the storage pool you want to query.
         :type spUUID: UUID
         :param imgUUID: The UUID of the image you want to filter by.
         :type spUUID: UUID
-        :param datadomains: Should the search only be limited to only data
-                            domains.
-        :type datadomains: bool
         :param options: ?
 
         :returns: a dict containing the list of domains found.
@@ -3353,12 +3351,23 @@ class HSM:
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # Find out domain list from the pool metadata
-        domList = sorted(pool.getDomains().keys())
-        for sdUUID in domList:
-            vars.task.getSharedLock(STORAGE, sdUUID)
+        activeDoms = sorted(pool.getDomains(activeOnly=True).keys())
+        imgDomains = []
+        for sdUUID in activeDoms:
+            dom = sdCache.produce(sdUUID=sdUUID)
+            if dom.isData():
+                with rmanager.acquireResource(STORAGE, sdUUID,
+                                              rm.LockType.shared):
+                    try:
+                        imgs = dom.getAllImages()
+                    except se.StorageDomainDoesNotExist:
+                        self.log.error("domain %s can't be reached.",
+                                       sdUUID, exc_info=True)
+                    else:
+                        if imgUUID in imgs:
+                            imgDomains.append(sdUUID)
 
-        domainslist = pool.getImageDomainsList(imgUUID=imgUUID)
-        return dict(domainslist=domainslist)
+        return dict(domainslist=imgDomains)
 
     @public
     def prepareForShutdown(self, options=None):
