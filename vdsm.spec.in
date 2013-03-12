@@ -402,7 +402,7 @@ Summary:        Gluster Plugin for VDSM
 BuildArch:      noarch
 
 Requires: %{name} = %{version}-%{release}
-Requires: glusterfs
+Requires: glusterfs >= 3.4.0
 Requires: glusterfs-server
 Requires: glusterfs-fuse
 Requires: glusterfs-rdma
