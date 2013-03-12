@@ -21,7 +21,6 @@
 #
 
 import os
-import re
 import subprocess
 import tempfile
 import shutil
@@ -29,7 +28,6 @@ import pwd
 
 import configNetwork
 from vdsm import netinfo
-from vdsm.utils import memoized
 
 from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
@@ -107,38 +105,22 @@ class TestconfigNetwork(TestCaseBase):
         for mask in masks:
             self.assertEqual(configNetwork.validateNetmask(mask), None)
 
-    @memoized
-    def _bondingModuleOptions(self):
-        p = subprocess.Popen(['/sbin/modinfo', 'bonding'],
-                             close_fds=True, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = p.communicate()
-
-        if err:
-            raise SkipTest("bonding kernel module could not be found.")
-
-        return frozenset(re.findall(r'(\w+):', line)[1] for line in
-                         out.split('\n') if line.startswith('parm:'))
-
-    def _bondingOptExists(self, path):
-        return os.path.basename(path) in self._bondingModuleOptions()
-
     def testValidateBondingOptions(self):
         # Monkey patch os.path.exists to let validateBondingOptions logic be
         # tested when a bonding device is not present.
-        with MonkeyPatchScope([
-            (os.path, 'exists', self._bondingOptExists)
-        ]):
-            opts = 'mode=802.3ad miimon=150'
-            badOpts = 'foo=bar badopt=one'
+        if not os.path.exists(configNetwork.BONDING_MASTERS):
+            raise SkipTest("bonding kernel module could not be found.")
 
-            with self.assertRaises(configNetwork.ConfigNetworkError) as cne:
-                configNetwork.validateBondingOptions('bond0', badOpts)
-            self.assertEqual(cne.exception.errCode,
-                             configNetwork.ne.ERR_BAD_BONDING)
+        opts = 'mode=802.3ad miimon=150'
+        badOpts = 'foo=bar badopt=one'
 
-            self.assertEqual(configNetwork.validateBondingOptions('bond0',
-                             opts), None)
+        with self.assertRaises(configNetwork.ConfigNetworkError) as cne:
+            configNetwork.validateBondingOptions('bond0', badOpts)
+        self.assertEqual(cne.exception.errCode,
+                         configNetwork.ne.ERR_BAD_BONDING)
+
+        self.assertEqual(configNetwork.validateBondingOptions('bond0',
+                         opts), None)
 
     def _fakeNetworks():
         return {'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
