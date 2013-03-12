@@ -23,6 +23,7 @@ multipath module provides helper procedures for configuring multipath
 daemon and maintaining its state
 """
 import os
+import errno
 from glob import glob
 import tempfile
 import logging
@@ -324,10 +325,17 @@ def pathListIter(filterGuids=None):
             pathInfo["physdev"] = slave
             pathInfo["state"] = pathStatuses.get(slave, "failed")
             try:
-                pathInfo["hbtl"] = getHBTL(slave)
-            except Exception:
-                log.warn("Problem getting hbtl from device `%s`",
-                         slave, exc_info=True)
+                hbtl = getHBTL(slave)
+            except OSError as e:
+                if e.errno == errno.ENOENT:
+                    log.warn("Device has no hbtl: %s", slave)
+                    pathInfo["lun"] = 0
+                else:
+                    log.error("Error: %s while trying to get hbtl of device: "
+                              "%s", str(e.message), slave)
+                    raise
+            else:
+                pathInfo["lun"] = hbtl.lun
 
             pathInfo["devnum"] = DeviceNumber(*devicemapper.getDevNum(slave))
 
@@ -371,20 +379,6 @@ def pathListIter(filterGuids=None):
 
         yield devInfo
 
-
-def pathinfo(guid):
-    res = None
-    # We take the first result. There should
-    # only be 1 result.
-    for dev in pathListIter([guid]):
-        res = dev
-        break
-
-    if res is None:
-        return "", "", "", "", [], []
-
-    return (res["vendor"], res["product"], res["serial"],
-            res["devtype"], res["connections"], res["paths"])
 
 TOXIC_REGEX = re.compile(r"[%s]" % re.sub(r"[\-\\\]]",
                          lambda m: "\\" + m.group(),

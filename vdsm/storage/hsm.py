@@ -1862,9 +1862,6 @@ class HSM:
                        'logicalblocksize': dev.get("logicalblocksize", ""),
                        'physicalblocksize': dev.get("physicalblocksize", "")}
             for path in devInfo["pathstatus"]:
-                if 'hbtl' in path:
-                    path["lun"] = path["hbtl"].lun
-                    del path["hbtl"]
                 del path["devnum"]
             devices.append(devInfo)
 
@@ -2702,8 +2699,6 @@ class HSM:
         info["serial"] = devInfo["serial"]
         info["pathstatus"] = []
         for pathInfo in devInfo['paths']:
-            pathInfo["lun"] = pathInfo["hbtl"].lun
-            del pathInfo["hbtl"]
             del pathInfo["devnum"]
             info["pathstatus"].append(pathInfo)
         info["pathlist"] = devInfo["connections"]
