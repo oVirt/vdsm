@@ -112,19 +112,23 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRebalanceStart(self, args):
-        params = self._eqSplit(args[1:])
-        rebalanceType = params.get('type', 'fix-layout')
-        force = params.get('force', False)
-        status = self.s.glusterVolumeRebalanceStart(args[0],
-                                                    rebalanceType, force)
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        rebalanceType = params.get('rebalanceType', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeRebalanceStart(volumeName,
+                                                    rebalanceType,
+                                                    force)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRebalanceStop(self, args):
-        params = self._eqSplit(args[1:])
-        force = params.get('force', False)
-        status = self.s.glusterVolumeRebalanceStop(args[0], force)
-        pp.pprint(status)
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeRebalanceStop(volumeName, force)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRebalanceStatus(self, args):
@@ -338,12 +342,15 @@ def getGlusterCmdDict(serv):
               )),
          'glusterVolumeRebalanceStart': (
              serv.do_glusterVolumeRebalanceStart,
-             ('<volume_name>\n\t<volume_name> is existing volume name',
+             ('volumeName=<volume_name> [rebalanceType=fix-layout] '
+              '[force={yes|no}]\n\t'
+              '<volume_name> is existing volume name',
               'start volume rebalance'
               )),
          'glusterVolumeRebalanceStop': (
              serv.do_glusterVolumeRebalanceStop,
-             ('<volume_name>\n\t<volume_name> is existing volume name',
+             ('volumeName=<volume_name> [force={yes|no}]\n\t'
+              '<volume_name> is existing volume name',
               'stop volume rebalance'
               )),
          'glusterVolumeRebalanceStatus': (

@@ -95,9 +95,9 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeRebalanceStart(self, volumeName, rebalanceType="",
                              force=False, options=None):
-        self.svdsmProxy.glusterVolumeRebalanceStart(volumeName,
-                                                    rebalanceType,
-                                                    force)
+        return self.svdsmProxy.glusterVolumeRebalanceStart(volumeName,
+                                                           rebalanceType,
+                                                           force)
 
     @exportAsVerb
     def volumeRebalanceStop(self, volumeName, force=False, options=None):

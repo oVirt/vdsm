@@ -560,11 +560,15 @@ def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
     command.append("start")
     if force:
         command.append("force")
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeRebalanceStartFailedException(rc, out, err)
-    else:
-        return True
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRebalanceStartFailedException(rc=e.rc,
+                                                            err=e.err)
+    try:
+        return {'taskId': xmltree.find('volRebalance/task-id').text}
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @exportToSuperVdsm
@@ -572,11 +576,12 @@ def volumeRebalanceStop(volumeName, force=False):
     command = _getGlusterVolCmd() + ["rebalance", volumeName, "stop"]
     if force:
         command.append('force')
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeRebalanceStopFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRebalanceStopFailedException(rc=e.rc,
+                                                           err=e.err)
 
 
 @exportToSuperVdsm
