@@ -111,9 +111,9 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeReplaceBrickStart(self, volumeName, existingBrick, newBrick,
                                 options=None):
-        self.svdsmProxy.glusterVolumeReplaceBrickStart(volumeName,
-                                                       existingBrick,
-                                                       newBrick)
+        return self.svdsmProxy.glusterVolumeReplaceBrickStart(volumeName,
+                                                              existingBrick,
+                                                              newBrick)
 
     @exportAsVerb
     def volumeReplaceBrickAbort(self, volumeName, existingBrick, newBrick,

@@ -600,38 +600,41 @@ def volumeRebalanceStatus(volumeName):
 
 @exportToSuperVdsm
 def volumeReplaceBrickStart(volumeName, existingBrick, newBrick):
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["replace-brick",
-                                                       volumeName,
-                                                       existingBrick, newBrick,
-                                                       "start"])
-    if rc:
-        raise ge.GlusterVolumeReplaceBrickStartFailedException(rc, out, err)
-    else:
-        return True
+    command = _getGlusterVolCmd() + ["replace-brick", volumeName,
+                                     existingBrick, newBrick, "start"]
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeReplaceBrickStartFailedException(rc=e.rc,
+                                                               err=e.err)
+    try:
+        return {'taskId': xmltree.find('volReplaceBrick/task-id').text}
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @exportToSuperVdsm
 def volumeReplaceBrickAbort(volumeName, existingBrick, newBrick):
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["replace-brick",
-                                                       volumeName,
-                                                       existingBrick, newBrick,
-                                                       "abort"])
-    if rc:
-        raise ge.GlusterVolumeReplaceBrickAbortFailedException(rc, out, err)
-    else:
+    command = _getGlusterVolCmd() + ["replace-brick", volumeName,
+                                     existingBrick, newBrick, "abort"]
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeReplaceBrickAbortFailedException(rc=e.rc,
+                                                               err=e.err)
 
 
 @exportToSuperVdsm
 def volumeReplaceBrickPause(volumeName, existingBrick, newBrick):
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["replace-brick",
-                                                       volumeName,
-                                                       existingBrick, newBrick,
-                                                       "pause"])
-    if rc:
-        raise ge.GlusterVolumeReplaceBrickPauseFailedException(rc, out, err)
-    else:
+    command = _getGlusterVolCmd() + ["replace-brick", volumeName,
+                                     existingBrick, newBrick, "pause"]
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeReplaceBrickPauseFailedException(rc=e.rc,
+                                                               err=e.err)
 
 
 @exportToSuperVdsm
@@ -664,12 +667,12 @@ def volumeReplaceBrickCommit(volumeName, existingBrick, newBrick,
                                      existingBrick, newBrick, "commit"]
     if force:
         command.append('force')
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeReplaceBrickCommitFailedException(rc, out,
-                                                                err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeReplaceBrickCommitFailedException(rc=e.rc,
+                                                                err=e.err)
 
 
 @exportToSuperVdsm
