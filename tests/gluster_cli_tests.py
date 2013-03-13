@@ -1072,3 +1072,10 @@ class GlusterCliTests(TestCaseBase):
                                                              'remove-brick')
         self.assertEquals(status,
                           glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
+
+    def test_parseVolumeTasks(self):
+        with open("glusterVolumeTasks.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        status = gcli._parseVolumeTasks(tree)
+        self.assertEquals(status, glusterTestData.GLUSTER_VOLUME_TASKS)

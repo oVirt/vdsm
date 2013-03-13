@@ -286,6 +286,11 @@ class GlusterApi(object):
         status = self.svdsmProxy.glusterServicesGet(serviceNames)
         return {'services': status}
 
+    @exportAsVerb
+    def tasksList(self, taskIds=[], options=None):
+        status = self.svdsmProxy.glusterTasksList(taskIds)
+        return {'tasks': status}
+
 
 def getGlusterMethods(gluster):
     l = []

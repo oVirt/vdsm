@@ -784,3 +784,25 @@ REBALANCE_REMOVE_BRICK_STATUS = {
         'totalSizeMoved': 79872,
         'status': 'COMPLETED'
     }]}
+
+
+GLUSTER_VOLUME_TASKS = {
+    '5e7fb5b7-1e23-415c-9b3f-e7e7fd896ea1': {
+        'volumeName': 'gv1',
+        'taskType': 'REMOVE_BRICK',
+        'status': 'COMPLETED',
+        'bricks': ['bricknode1:/gfs/b3']
+    },
+    '1bea87af-d176-4044-b4a2-46724ab0f070': {
+        'volumeName': 'gv1',
+        'taskType': 'REBALANCE',
+        'status': 'IN_PROGRESS',
+        'bricks': []
+    },
+    '5e7fb5b7-1e23-415c-9b3f-e7e7fd896eae': {
+        'volumeName': 'gv2',
+        'taskType': 'REMOVE_BRICK',
+        'status': 'COMPLETED',
+        'bricks': ['bricknode1:/gfs/b3']
+    }
+}

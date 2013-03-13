@@ -29,6 +29,7 @@ dist_vdsmgluster_PYTHON = \
 	hooks.py \
 	hostname.py \
 	services.py \
+	tasks.py \
 	$(NULL)
 
 dist_vdsmgluster_DATA = \

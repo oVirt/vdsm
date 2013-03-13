@@ -73,6 +73,12 @@ class TransportType:
     RDMA = 'RDMA'
 
 
+class TaskType:
+    REBALANCE = 'REBALANCE'
+    REPLACE_BRICK = 'REPLACE_BRICK'
+    REMOVE_BRICK = 'REMOVE_BRICK'
+
+
 def _execGluster(cmd):
     return utils.execCmd(cmd)
 
@@ -944,5 +950,53 @@ def volumeProfileInfo(volumeName, nfs=False):
         raise ge.GlusterVolumeProfileInfoFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeProfileInfo(xmltree, nfs)
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+def _parseVolumeTasks(tree):
+    """
+    returns {TaskId: {'volumeName': VolumeName,
+                      'taskType': TaskType,
+                      'status': STATUS,
+                      'bricks': BrickList}, ...}
+    """
+    tasks = {}
+    for el in tree.findall('volStatus/volumes/volume'):
+        volumeName = el.find('volName').text
+        for c in el.findall('tasks/task'):
+            taskType = c.find('type').text
+            taskType = taskType.upper().replace('-', '_').replace(' ', '_')
+            taskId = c.find('id').text
+            bricks = []
+            if taskType == TaskType.REPLACE_BRICK:
+                bricks.append(c.find('params/srcBrick').text)
+                bricks.append(c.find('params/dstBrick').text)
+            elif taskType == TaskType.REMOVE_BRICK:
+                for b in c.findall('params/brick'):
+                    bricks.append(b.text)
+            elif taskType == TaskType.REBALANCE:
+                pass
+
+            statusStr = c.find('statusStr').text.upper() \
+                                                .replace('-', '_') \
+                                                .replace(' ', '_')
+
+            tasks[taskId] = {'volumeName': volumeName,
+                             'taskType': taskType,
+                             'status': statusStr,
+                             'bricks': bricks}
+    return tasks
+
+
+@makePublic
+def volumeTasks(volumeName="all"):
+    command = _getGlusterVolCmd() + ["status", volumeName, "tasks"]
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeTasksFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parseVolumeTasks(xmltree)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])

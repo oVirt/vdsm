@@ -93,6 +93,7 @@ dist_vdsmtests_DATA = \
 	glusterVolumeProfileInfoNfs.xml \
 	glusterVolumeRebalanceStatus.xml \
 	glusterVolumeRemoveBricksStatus.xml \
+	glusterVolumeTasks.xml \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	netmaskconversions \
 	tc_filter_show.out \

@@ -372,3 +372,80 @@
 {'command': {'class': 'GlusterService', 'name': 'action'},
  'data': {'serviceName': 'str', 'action': 'GlusterServiceAction'},
  'returns': 'GlusterServicesStatusInfo'}
+
+## Category: @GlusterTask ######################################################
+##
+# @GlusterTask:
+#
+# Gluster Task API object.
+#
+# Since: 4.10.3
+##
+{'class': 'GlusterTask'}
+
+##
+# @TaskSummary:
+#
+# Task Summary.
+#
+# @id:        The @UUID of the task
+#
+# @verb:      Volume name is passed
+#
+# @filesScanned:     Number of files scanned
+#
+# @filesMoved:       Number of files moved
+#
+# @filesFailed:      Number of files failed to move
+#
+# @filesSkipped:     Number of files skipped
+#
+# @totalSizeMoved:   Total size of the files moved
+#
+# @status:           Rebalance/Remove brick status
+#
+# Since: 4.10.3
+##
+{'type': 'TaskSummary',
+  'data': {
+        'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int',
+        'totalSizeMoved': 'int', 'status': 'str'}}
+##
+# @TaskInfo:
+#
+# Task information.
+#
+# @id:        The @UUID of the task
+#
+# @verb:      Volume name is passed
+#
+# @state:     Status of the task
+#
+# @code:      Type of task
+#
+# @message:   Status message of the task
+#
+# @result:    Not used.  Empty string is passed
+#
+# @tag:       String constant 'gluster' is passed
+#
+# Since: 4.10.3
+##
+{'type': 'TaskInfo',
+  'data': {'volume': 'str', 'status': 'TaskStatus', 'type': 'TaskType', 'data': 'TaskSummary', 'bricks': ['str']}}
+
+##
+# @GlusterTask.list:
+#
+# List Gluster tasks.
+#
+# @taskID:  #optional UUID of the Task
+#
+# Returns:
+# List of task information
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterTask', 'name': 'list'},
+ 'data': {'*taskID': 'UUID'},
+  'returns': ['TaskInfo']}

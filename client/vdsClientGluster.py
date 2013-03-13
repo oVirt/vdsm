@@ -429,6 +429,18 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterTasksList(self, args):
+        params = self._eqSplit(args)
+        taskIds = params.get('taskIds', '')
+        if taskIds:
+            taskIds = taskIds.split(",")
+        else:
+            taskIds = []
+
+        status = self.s.glusterTasksList(taskIds)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -711,5 +723,10 @@ def getGlusterCmdDict(serv):
               'Returns status of all gluster services if serviceName is '
               'not set'
               '(swift, glusterd, smb, memcached)'
+              )),
+         'glusterTasksList': (
+             serv.do_glusterTasksList,
+             ('[taskIds=<task_id1,task_id2,..>]',
+              'list all or given gluster tasks'
               )),
          }

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr>(null)</opErrstr>
+  <volStatus>
+    <volumes>
+      <volume>
+        <volName>gv1</volName>
+        <tasks>
+          <task>
+            <type>Remove brick</type>
+            <id>5e7fb5b7-1e23-415c-9b3f-e7e7fd896ea1</id>
+            <status>1</status>
+            <statusStr>completed</statusStr>
+            <params>
+              <brick>bricknode1:/gfs/b3</brick>
+            </params>
+          </task>
+          <task>
+            <type>Rebalance</type>
+            <id>1bea87af-d176-4044-b4a2-46724ab0f070</id>
+            <status>1</status>
+            <statusStr>in progress</statusStr>
+          </task>
+        </tasks>
+      </volume>
+      <volume>
+        <volName>gv2</volName>
+        <tasks>
+          <task>
+            <type>Remove brick</type>
+            <id>5e7fb5b7-1e23-415c-9b3f-e7e7fd896eae</id>
+            <status>1</status>
+            <statusStr>completed</statusStr>
+            <params>
+              <brick>bricknode1:/gfs/b3</brick>
+            </params>
+          </task>
+        </tasks>
+      </volume>
+      <volume>
+        <volName>gv3</volName>
+        <tasks/>
+      </volume>
+    </volumes>
+  </volStatus>
+</cliOutput>

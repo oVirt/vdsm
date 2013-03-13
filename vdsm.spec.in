@@ -202,7 +202,7 @@ Requires: systemd >= 197-1.fc18.2
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %if 0%{?with_gluster}
-Requires: glusterfs >= 3.4.0
+Requires: glusterfs >= 3.4.1
 Requires: glusterfs-cli
 Requires: glusterfs-api
 Requires: glusterfs-fuse
@@ -1074,6 +1074,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRebalanceStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRemoveBricksStatus.xml
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeTasks.xml
 %else
 %exclude %{_datadir}/%{vdsm_name}/tests/gluster*
 %endif
@@ -1290,6 +1291,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/vdsmapi-gluster-schema.json
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*
 %{_datadir}/%{vdsm_name}/gluster/services.py*
+%{_datadir}/%{vdsm_name}/gluster/tasks.py*
 %endif
 
 %files python-cpopen
