@@ -764,3 +764,23 @@ PROFILE_INFO_NFS = {'nfsServers': [
          'totalRead': '0',
          'totalWrite': '0'}}],
     'volumeName': 'music2'}
+
+
+REBALANCE_REMOVE_BRICK_STATUS = {
+    'summary': {
+        'filesScanned': 278,
+        'filesMoved': 78,
+        'filesFailed': 0,
+        'filesSkipped': 0,
+        'totalSizeMoved': 79872,
+        'status': 'COMPLETED'
+    },
+    'hosts': [{
+        'name': 'localhost',
+        'filesScanned': 278,
+        'filesMoved': 78,
+        'filesFailed': 0,
+        'filesSkipped': 0,
+        'totalSizeMoved': 79872,
+        'status': 'COMPLETED'
+    }]}

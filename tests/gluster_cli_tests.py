@@ -1055,3 +1055,20 @@ class GlusterCliTests(TestCaseBase):
     def test_parseVolumeProfileInfo(self):
         self._parseVolumeProfileInfo_test()
         self._parseVolumeProfileInfoNfs_test()
+
+    def test_parseVolumeRebalanceStatus(self):
+        with open("glusterVolumeRebalanceStatus.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        status = gcli._parseVolumeRebalanceRemoveBrickStatus(tree, 'rebalance')
+        self.assertEquals(status,
+                          glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
+
+    def test_parseVolumeRemoveBricksStatus(self):
+        with open("glusterVolumeRemoveBricksStatus.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        status = gcli._parseVolumeRebalanceRemoveBrickStatus(tree,
+                                                             'remove-brick')
+        self.assertEquals(status,
+                          glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)

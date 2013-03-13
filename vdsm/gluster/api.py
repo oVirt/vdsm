@@ -126,8 +126,7 @@ class GlusterApi(object):
 
     @exportAsVerb
     def volumeRebalanceStatus(self, volumeName, options=None):
-        st, msg = self.svdsmProxy.glusterVolumeRebalanceStatus(volumeName)
-        return {'rebalance': st, 'message': msg}
+        return self.svdsmProxy.glusterVolumeRebalanceStatus(volumeName)
 
     @exportAsVerb
     def volumeReplaceBrickStart(self, volumeName, existingBrick, newBrick,

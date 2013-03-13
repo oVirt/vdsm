@@ -1072,6 +1072,8 @@ exit 0
 %if 0%{?with_gluster}
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeRebalanceStatus.xml
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeRemoveBricksStatus.xml
 %else
 %exclude %{_datadir}/%{vdsm_name}/tests/gluster*
 %endif

@@ -585,17 +585,63 @@ def volumeRebalanceStop(volumeName, force=False):
 
 
 @makePublic
-def volumeRebalanceStatus(volumeName):
-    rc, out, err = _execGluster(_getGlusterVolCmd() + ["rebalance", volumeName,
-                                                       "status"])
-    if rc:
-        raise ge.GlusterVolumeRebalanceStatusFailedException(rc, out, err)
-    if 'in progress' in out[0]:
-        return BrickStatus.RUNNING, "\n".join(out)
-    elif 'complete' in out[0]:
-        return BrickStatus.COMPLETED, "\n".join(out)
+def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
+    """
+    returns {'hosts': [{'name': NAME,
+                       'filesScanned': INT,
+                       'filesMoved': INT,
+                       'filesFailed': INT,
+                       'filesSkipped': INT,
+                       'totalSizeMoved': INT,
+                       'status': STRING},...]
+             'summary': {'filesScanned': INT,
+                         'filesMoved': INT,
+                         'filesFailed': INT,
+                         'filesSkipped': INT,
+                         'totalSizeMoved': INT,
+                         'status': STRING}}
+    """
+    if mode == 'rebalance':
+        tree = xmltree.find('volRebalance')
+    elif mode == 'remove-brick':
+        tree = xmltree.find('volRemoveBrick')
     else:
-        return BrickStatus.UNKNOWN, "\n".join(out)
+        return
+
+    status = {
+        'summary': {
+            'filesScanned': int(tree.find('aggregate/lookups').text),
+            'filesMoved': int(tree.find('aggregate/files').text),
+            'filesFailed': int(tree.find('aggregate/failures').text),
+            'filesSkipped': int(tree.find('aggregate/failures').text),
+            'totalSizeMoved': int(tree.find('aggregate/size').text),
+            'status': tree.find('aggregate/statusStr').text.upper()},
+        'hosts': []}
+
+    for el in tree.findall('node'):
+        status['hosts'].append({'name': el.find('nodeName').text,
+                                'filesScanned': int(el.find('lookups').text),
+                                'filesMoved': int(el.find('files').text),
+                                'filesFailed': int(el.find('failures').text),
+                                'filesSkipped': int(el.find('failures').text),
+                                'totalSizeMoved': int(el.find('size').text),
+                                'status': el.find('statusStr').text.upper()})
+
+    return status
+
+
+@makePublic
+def volumeRebalanceStatus(volumeName):
+    command = _getGlusterVolCmd() + ["rebalance", volumeName, "status"]
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRebalanceStatusFailedException(rc=e.rc,
+                                                             err=e.err)
+    try:
+        return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'rebalance')
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @makePublic
@@ -712,12 +758,15 @@ def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
     command += brickList + ["status"]
-    rc, out, err = _execGluster(command)
-
-    if rc:
-        raise ge.GlusterVolumeRemoveBrickStatusFailedException(rc, out, err)
-    else:
-        return "\n".join(out)
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRemoveBrickStatusFailedException(rc=e.rc,
+                                                               err=e.err)
+    try:
+        return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'remove-brick')
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @makePublic

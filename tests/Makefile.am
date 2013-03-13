@@ -90,6 +90,8 @@ dist_vdsmtests_DATA = \
 	glob_1c60971a-8647-44ac-ae33-6520887f8843.out \
 	glusterVolumeProfileInfo.xml \
 	glusterVolumeProfileInfoNfs.xml \
+	glusterVolumeRebalanceStatus.xml \
+	glusterVolumeRemoveBricksStatus.xml \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	netmaskconversions \
 	tc_filter_show.out \
@@ -118,4 +120,3 @@ check-local:
 	@echo '*** into your environment.  Do not submit untested code!    ***'
 	$(top_srcdir)/tests/run_tests_local.sh crossImportsTests.py
 	$(top_srcdir)/tests/run_tests_local.sh $(test_modules)
-
