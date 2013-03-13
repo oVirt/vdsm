@@ -681,12 +681,15 @@ def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
     command += brickList + ["start"]
-
-    rc, out, err = _execGluster(command)
-    if rc:
-        raise ge.GlusterVolumeRemoveBrickStartFailedException(rc, out, err)
-    else:
-        return True
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRemoveBrickStartFailedException(rc=e.rc,
+                                                              err=e.err)
+    try:
+        return {'taskId': xmltree.find('volRemoveBrick/task-id').text}
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @exportToSuperVdsm
@@ -695,12 +698,12 @@ def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
     command += brickList + ["stop"]
-    rc, out, err = _execGluster(command)
-
-    if rc:
-        raise ge.GlusterVolumeRemoveBrickStopFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRemoveBrickStopFailedException(rc=e.rc,
+                                                             err=e.err)
 
 
 @exportToSuperVdsm
@@ -723,12 +726,12 @@ def volumeRemoveBrickCommit(volumeName, brickList, replicaCount=0):
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
     command += brickList + ["commit"]
-    rc, out, err = _execGluster(command)
-
-    if rc:
-        raise ge.GlusterVolumeRemoveBrickCommitFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRemoveBrickCommitFailedException(rc=e.rc,
+                                                               err=e.err)
 
 
 @exportToSuperVdsm
@@ -737,12 +740,12 @@ def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
     command += brickList + ["force"]
-    rc, out, err = _execGluster(command)
-
-    if rc:
-        raise ge.GlusterVolumeRemoveBrickForceFailedException(rc, out, err)
-    else:
+    try:
+        _execGlusterXml(command)
         return True
+    except ge.GlusterCmdFailedException, e:
+        raise ge.GlusterVolumeRemoveBrickForceFailedException(rc=e.rc,
+                                                              err=e.err)
 
 
 @exportToSuperVdsm

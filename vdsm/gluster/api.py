@@ -148,8 +148,9 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeRemoveBrickStart(self, volumeName, brickList,
                                replicaCount=0, options=None):
-        self.svdsmProxy.glusterVolumeRemoveBrickStart(volumeName, brickList,
-                                                      replicaCount)
+        return self.svdsmProxy.glusterVolumeRemoveBrickStart(volumeName,
+                                                             brickList,
+                                                             replicaCount)
 
     @exportAsVerb
     def volumeRemoveBrickStop(self, volumeName, brickList,

@@ -204,27 +204,32 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRemoveBrickStart(self, args):
-        params = self._eqSplit(args[1:])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
         try:
             brickList = params['bricks'].split(',')
         except:
             raise ValueError
         replicaCount = params.get('replica', '')
-        status = self.s.glusterVolumeRemoveBrickStart(args[0], brickList,
+
+        status = self.s.glusterVolumeRemoveBrickStart(volumeName,
+                                                      brickList,
                                                       replicaCount)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRemoveBrickStop(self, args):
-        params = self._eqSplit(args[1:])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
         try:
             brickList = params['bricks'].split(',')
         except:
             raise ValueError
         replicaCount = params.get('replica', '')
-        status = self.s.glusterVolumeRemoveBrickStop(args[0], brickList,
+
+        status = self.s.glusterVolumeRemoveBrickStop(volumeName,
+                                                     brickList,
                                                      replicaCount)
-        pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRemoveBrickStatus(self, args):
@@ -240,15 +245,17 @@ class GlusterService(service):
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRemoveBrickCommit(self, args):
-        params = self._eqSplit(args[1:])
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
         try:
             brickList = params['bricks'].split(',')
         except:
             raise ValueError
         replicaCount = params.get('replica', '')
-        status = self.s.glusterVolumeRemoveBrickCommit(args[0], brickList,
+
+        status = self.s.glusterVolumeRemoveBrickCommit(volumeName,
+                                                       brickList,
                                                        replicaCount)
-        pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRemoveBrickForce(self, args):
@@ -443,16 +450,18 @@ def getGlusterCmdDict(serv):
               )),
          'glusterVolumeRemoveBrickStart': (
              serv.do_glusterVolumeRemoveBrickStart,
-             ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
-              '<volume_name> is existing volume name\n\t<brick> is '
-              'existing brick',
+             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
+              '[replica=<count>]\n\t'
+              '<volume_name> is existing volume name\n\t'
+              '<brick[,brick, ...]> is existing brick(s)',
               'start volume remove bricks'
               )),
          'glusterVolumeRemoveBrickStop': (
              serv.do_glusterVolumeRemoveBrickStop,
-             ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
-              '<volume_name> is existing volume name\n\t<brick> is '
-              'existing brick',
+             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
+              '[replica=<count>]\n\t'
+              '<volume_name> is existing volume name\n\t'
+              '<brick[,brick, ...]> is existing brick(s)',
               'stop volume remove bricks'
               )),
          'glusterVolumeRemoveBrickStatus': (
@@ -464,9 +473,10 @@ def getGlusterCmdDict(serv):
               )),
          'glusterVolumeRemoveBrickCommit': (
              serv.do_glusterVolumeRemoveBrickCommit,
-             ('<volume_name> [replica=<count>] bricks=brick[,brick] ... \n\t'
-              '<volume_name> is existing volume name\n\t<brick> is '
-              'existing brick',
+             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
+              '[replica=<count>]\n\t'
+              '<volume_name> is existing volume name\n\t'
+              '<brick[,brick, ...]> is existing brick(s)',
               'commit volume remove bricks'
               )),
          'glusterVolumeRemoveBrickForce': (
