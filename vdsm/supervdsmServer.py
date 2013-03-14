@@ -30,7 +30,7 @@ from storage import fuser
 from time import sleep
 import signal
 from multiprocessing import Pipe, Process
-from gluster import cli as gcli
+from gluster import listPublicFunctions
 import storage.misc as misc
 from vdsm import utils
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
@@ -352,12 +352,8 @@ def main():
             return func(*args, **kwargs)
         return wrapper
 
-    for name in dir(gcli):
-        func = getattr(gcli, name)
-        if getattr(func, 'superVdsm', False):
-            setattr(_SuperVdsm,
-                    'gluster%s%s' % (name[0].upper(), name[1:]),
-                    logDecorator(bind(func)))
+    for name, func in listPublicFunctions():
+        setattr(_SuperVdsm, name, logDecorator(bind(func)))
 
     try:
         logging.config.fileConfig(LOG_CONF_PATH)

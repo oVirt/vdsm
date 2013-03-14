@@ -17,3 +17,31 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+from functools import wraps
+
+MODULE_LIST = ('cli',)
+
+
+def makePublic(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    wrapper.superVdsm = True
+    return wrapper
+
+
+def listPublicFunctions():
+    methods = []
+    for modName in MODULE_LIST:
+        try:
+            module = __import__('gluster.' + modName, fromlist=['gluster'])
+            for name in dir(module):
+                func = getattr(module, name)
+                if getattr(func, 'superVdsm', False):
+                    funcName = 'gluster%s%s' % (name[0].upper(), name[1:])
+                    methods.append((funcName, func))
+        except ImportError:
+            pass
+    return methods

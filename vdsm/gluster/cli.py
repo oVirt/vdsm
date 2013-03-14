@@ -19,12 +19,12 @@
 #
 
 import xml.etree.cElementTree as etree
-from functools import wraps
 
 from vdsm import utils
 from vdsm import netinfo
 import exception as ge
 from hostname import getHostNameFqdn, HostNameException
+from . import makePublic
 
 _glusterCommandPath = utils.CommandPath("gluster",
                                         "/usr/sbin/gluster",
@@ -43,15 +43,6 @@ def _getGlusterVolCmd():
 
 def _getGlusterPeerCmd():
     return [_glusterCommandPath.cmd, "--mode=script", "peer"]
-
-
-def exportToSuperVdsm(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    wrapper.superVdsm = True
-    return wrapper
 
 
 class BrickStatus:
@@ -227,7 +218,7 @@ def _parseVolumeStatusMem(tree):
     return status
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeStatus(volumeName, brick=None, option=None):
     """
     Get volume status
@@ -411,7 +402,7 @@ def _parseVolumeProfileInfo(tree, nfs):
     return status
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeInfo(volumeName=None):
     """
     Returns:
@@ -437,7 +428,7 @@ def volumeInfo(volumeName=None):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
                  transportList=[]):
     command = _getGlusterVolCmd() + ["create", volumeName]
@@ -458,7 +449,7 @@ def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeStart(volumeName, force=False):
     command = _getGlusterVolCmd() + ["start", volumeName]
     if force:
@@ -470,7 +461,7 @@ def volumeStart(volumeName, force=False):
         return True
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeStop(volumeName, force=False):
     command = _getGlusterVolCmd() + ["stop", volumeName]
     if force:
@@ -482,7 +473,7 @@ def volumeStop(volumeName, force=False):
         raise ge.GlusterVolumeStopFailedException(rc=e.rc, err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeDelete(volumeName):
     command = _getGlusterVolCmd() + ["delete", volumeName]
     try:
@@ -492,7 +483,7 @@ def volumeDelete(volumeName):
         raise ge.GlusterVolumeDeleteFailedException(rc=e.rc, err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeSet(volumeName, option, value):
     command = _getGlusterVolCmd() + ["set", volumeName, option, value]
     try:
@@ -513,7 +504,7 @@ def _parseVolumeSetHelpXml(out):
     return optionList
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeSetHelpXml():
     rc, out, err = _execGluster(_getGlusterVolCmd() + ["set", 'help-xml'])
     if rc:
@@ -522,7 +513,7 @@ def volumeSetHelpXml():
         return _parseVolumeSetHelpXml(out)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeReset(volumeName, option='', force=False):
     command = _getGlusterVolCmd() + ['reset', volumeName]
     if option:
@@ -536,7 +527,7 @@ def volumeReset(volumeName, option='', force=False):
         raise ge.GlusterVolumeResetFailedException(rc=e.rc, err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeAddBrick(volumeName, brickList,
                    replicaCount=0, stripeCount=0):
     command = _getGlusterVolCmd() + ["add-brick", volumeName]
@@ -552,7 +543,7 @@ def volumeAddBrick(volumeName, brickList,
         raise ge.GlusterVolumeBrickAddFailedException(rc=e.rc, err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
     command = _getGlusterVolCmd() + ["rebalance", volumeName]
     if rebalanceType:
@@ -571,7 +562,7 @@ def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRebalanceStop(volumeName, force=False):
     command = _getGlusterVolCmd() + ["rebalance", volumeName, "stop"]
     if force:
@@ -584,7 +575,7 @@ def volumeRebalanceStop(volumeName, force=False):
                                                            err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRebalanceStatus(volumeName):
     rc, out, err = _execGluster(_getGlusterVolCmd() + ["rebalance", volumeName,
                                                        "status"])
@@ -598,7 +589,7 @@ def volumeRebalanceStatus(volumeName):
         return BrickStatus.UNKNOWN, "\n".join(out)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeReplaceBrickStart(volumeName, existingBrick, newBrick):
     command = _getGlusterVolCmd() + ["replace-brick", volumeName,
                                      existingBrick, newBrick, "start"]
@@ -613,7 +604,7 @@ def volumeReplaceBrickStart(volumeName, existingBrick, newBrick):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeReplaceBrickAbort(volumeName, existingBrick, newBrick):
     command = _getGlusterVolCmd() + ["replace-brick", volumeName,
                                      existingBrick, newBrick, "abort"]
@@ -625,7 +616,7 @@ def volumeReplaceBrickAbort(volumeName, existingBrick, newBrick):
                                                                err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeReplaceBrickPause(volumeName, existingBrick, newBrick):
     command = _getGlusterVolCmd() + ["replace-brick", volumeName,
                                      existingBrick, newBrick, "pause"]
@@ -637,7 +628,7 @@ def volumeReplaceBrickPause(volumeName, existingBrick, newBrick):
                                                                err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeReplaceBrickStatus(volumeName, existingBrick, newBrick):
     rc, out, err = _execGluster(_getGlusterVolCmd() + ["replace-brick",
                                                        volumeName,
@@ -660,7 +651,7 @@ def volumeReplaceBrickStatus(volumeName, existingBrick, newBrick):
         return BrickStatus.NA, message
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeReplaceBrickCommit(volumeName, existingBrick, newBrick,
                              force=False):
     command = _getGlusterVolCmd() + ["replace-brick", volumeName,
@@ -675,7 +666,7 @@ def volumeReplaceBrickCommit(volumeName, existingBrick, newBrick,
                                                                 err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -692,7 +683,7 @@ def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -706,7 +697,7 @@ def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
                                                              err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -720,7 +711,7 @@ def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
         return "\n".join(out)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRemoveBrickCommit(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -734,7 +725,7 @@ def volumeRemoveBrickCommit(volumeName, brickList, replicaCount=0):
                                                                err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -748,7 +739,7 @@ def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
                                                               err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def peerProbe(hostName):
     command = _getGlusterPeerCmd() + ["probe", hostName]
     try:
@@ -758,7 +749,7 @@ def peerProbe(hostName):
         raise ge.GlusterHostAddFailedException(rc=e.rc, err=e.err)
 
 
-@exportToSuperVdsm
+@makePublic
 def peerDetach(hostName, force=False):
     command = _getGlusterPeerCmd() + ["detach", hostName]
     if force:
@@ -789,7 +780,7 @@ def _parsePeerStatus(tree, gHostName, gUuid, gStatus):
     return hostList
 
 
-@exportToSuperVdsm
+@makePublic
 def peerStatus():
     """
     Returns:
@@ -808,7 +799,7 @@ def peerStatus():
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeProfileStart(volumeName):
     command = _getGlusterVolCmd() + ["profile", volumeName, "start"]
     try:
@@ -818,7 +809,7 @@ def volumeProfileStart(volumeName):
     return True
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeProfileStop(volumeName):
     command = _getGlusterVolCmd() + ["profile", volumeName, "stop"]
     try:
@@ -828,7 +819,7 @@ def volumeProfileStop(volumeName):
     return True
 
 
-@exportToSuperVdsm
+@makePublic
 def volumeProfileInfo(volumeName, nfs=False):
     """
     Returns:
