@@ -174,47 +174,54 @@ def after_vm_set_ticket(domxml, vmconf={}, params={}):
                         raiseError=False, params=params)
 
 
-def before_nic_hotplug(nicxml, vmconf={}):
-    return _runHooksDir(nicxml, 'before_nic_hotplug', vmconf=vmconf)
+def before_nic_hotplug(nicxml, vmconf={}, params={}):
+    return _runHooksDir(nicxml, 'before_nic_hotplug', vmconf=vmconf,
+                        params=params)
 
 
-def after_nic_hotplug(nicxml, vmconf={}):
-    return _runHooksDir(nicxml, 'after_nic_hotplug', vmconf=vmconf)
+def after_nic_hotplug(nicxml, vmconf={}, params={}):
+    return _runHooksDir(nicxml, 'after_nic_hotplug', vmconf=vmconf,
+                        params=params)
 
 
-def before_nic_hotunplug(nicxml, vmconf={}):
-    return _runHooksDir(nicxml, 'before_nic_hotunplug', vmconf=vmconf)
+def before_nic_hotunplug(nicxml, vmconf={}, params={}):
+    return _runHooksDir(nicxml, 'before_nic_hotunplug', vmconf=vmconf,
+                        params=params)
 
 
-def after_nic_hotunplug(nicxml, vmconf={}):
+def after_nic_hotunplug(nicxml, vmconf={}, params={}):
     return _runHooksDir(nicxml, 'after_nic_hotunplug', vmconf=vmconf,
-                        raiseError=False)
+                        params=params, raiseError=False)
 
 
-def after_nic_hotplug_fail(nicxml, vmconf={}):
+def after_nic_hotplug_fail(nicxml, vmconf={}, params={}):
     return _runHooksDir(nicxml, 'after_nic_hotplug_fail', vmconf=vmconf,
-                        raiseError=False)
+                        params=params, raiseError=False)
 
 
-def after_nic_hotunplug_fail(nicxml, vmconf={}):
+def after_nic_hotunplug_fail(nicxml, vmconf={}, params={}):
     return _runHooksDir(nicxml, 'after_nic_hotunplug_fail', vmconf=vmconf,
-                        raiseError=False)
+                        params=params, raiseError=False)
 
 
-def before_disk_hotplug(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'before_disk_hotplug', vmconf=vmconf)
+def before_disk_hotplug(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'before_disk_hotplug', vmconf=vmconf,
+                        params=params)
 
 
-def after_disk_hotplug(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_disk_hotplug', vmconf=vmconf)
+def after_disk_hotplug(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'after_disk_hotplug', vmconf=vmconf,
+                        params=params)
 
 
-def before_disk_hotunplug(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'before_disk_hotunplug', vmconf=vmconf)
+def before_disk_hotunplug(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'before_disk_hotunplug', vmconf=vmconf,
+                        params=params)
 
 
-def after_disk_hotunplug(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_disk_hotunplug', vmconf=vmconf)
+def after_disk_hotunplug(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'after_disk_hotunplug', vmconf=vmconf,
+                        params=params)
 
 
 def before_vdsm_start():

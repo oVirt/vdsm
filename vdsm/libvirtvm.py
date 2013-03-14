@@ -1515,14 +1515,16 @@ class LibvirtVm(vm.Vm):
         nicParams = params['nic']
         nic = NetworkInterfaceDevice(self.conf, self.log, **nicParams)
         nicXml = nic.getXML().toprettyxml(encoding='utf-8')
-        nicXml = hooks.before_nic_hotplug(nicXml, self.conf)
+        nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
+                                          params=params.get('custom', {}))
         self.log.debug("Hotplug NIC xml: %s", nicXml)
 
         try:
             self._dom.attachDevice(nicXml)
         except libvirt.libvirtError as e:
             self.log.error("Hotplug failed", exc_info=True)
-            nicXml = hooks.after_nic_hotplug_fail(nicXml, self.conf)
+            nicXml = hooks.after_nic_hotplug_fail(
+                nicXml, self.conf, params=params.get('custom', {}))
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             return {'status': {'code': errCode['hotplugNic']['status']['code'],
@@ -1536,7 +1538,8 @@ class LibvirtVm(vm.Vm):
             self.conf['devices'].append(nicParams)
             self.saveState()
             self._getUnderlyingNetworkInterfaceInfo()
-            hooks.after_nic_hotplug(nicXml, self.conf)
+            hooks.after_nic_hotplug(nicXml, self.conf,
+                                    params=params.get('custom', {}))
 
         if hasattr(nic, 'portMirroring'):
             mirroredNetworks = []
@@ -1552,7 +1555,8 @@ class LibvirtVm(vm.Vm):
                 self.log.error("setPortMirroring for network %s failed",
                                network, exc_info=True)
                 nicParams['portMirroring'] = mirroredNetworks
-                self.hotunplugNic({'nic': nicParams})
+                self.hotunplugNic({'nic': nicParams},
+                                  params=params.get('custom', {}))
                 return {'status':
                         {'code': errCode['hotplugNic']['status']['code'],
                          'message': e.message}}
@@ -1693,7 +1697,8 @@ class LibvirtVm(vm.Vm):
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
             nicXml = nic.getXML().toprettyxml(encoding='utf-8')
-            hooks.before_nic_hotunplug(nicXml, self.conf)
+            hooks.before_nic_hotunplug(nicXml, self.conf,
+                                       params=params.get('custom', {}))
             self.log.debug("Hotunplug NIC xml: %s", nicXml)
         else:
             self.log.error("Hotunplug NIC failed - NIC not found: %s",
@@ -1729,12 +1734,14 @@ class LibvirtVm(vm.Vm):
             if nic:
                 self._devices[vm.NIC_DEVICES].append(nic)
             self.saveState()
-            hooks.after_nic_hotunplug_fail(nicXml, self.conf)
+            hooks.after_nic_hotunplug_fail(nicXml, self.conf,
+                                           params=params.get('custom', {}))
             return {
                 'status': {'code': errCode['hotunplugNic']['status']['code'],
                            'message': e.message}}
 
-        hooks.after_nic_hotunplug(nicXml, self.conf)
+        hooks.after_nic_hotunplug(nicXml, self.conf,
+                                  params=params.get('custom', {}))
         return {'status': doneCode, 'vmList': self.status()}
 
     def hotplugDisk(self, params):
@@ -1752,7 +1759,8 @@ class LibvirtVm(vm.Vm):
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug disk xml: %s" % (driveXml))
 
-        hooks.before_disk_hotplug(driveXml, self.conf)
+        hooks.before_disk_hotplug(driveXml, self.conf,
+                                  params=params.get('custom', {}))
         try:
             self._dom.attachDevice(driveXml)
         except libvirt.libvirtError as e:
@@ -1772,7 +1780,8 @@ class LibvirtVm(vm.Vm):
             self.conf['devices'].append(diskParams)
             self.saveState()
             self._getUnderlyingDriveInfo()
-            hooks.after_disk_hotplug(driveXml, self.conf)
+            hooks.after_disk_hotplug(driveXml, self.conf,
+                                     params=params.get('custom', {}))
 
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -1814,7 +1823,8 @@ class LibvirtVm(vm.Vm):
 
         self.saveState()
 
-        hooks.before_disk_hotunplug(driveXml, self.conf)
+        hooks.before_disk_hotunplug(driveXml, self.conf,
+                                    params=params.get('custom', {}))
         try:
             self._dom.detachDevice(driveXml)
         except libvirt.libvirtError as e:
@@ -1831,7 +1841,8 @@ class LibvirtVm(vm.Vm):
                 'status': {'code': errCode['hotunplugDisk']['status']['code'],
                            'message': e.message}}
         else:
-            hooks.after_disk_hotunplug(driveXml, self.conf)
+            hooks.after_disk_hotunplug(driveXml, self.conf,
+                                       params=params.get('custom', {}))
             self._cleanup()
 
         return {'status': doneCode, 'vmList': self.status()}

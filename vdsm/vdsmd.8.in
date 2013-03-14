@@ -83,6 +83,17 @@ destination will differ in various details.
 The environment of before_vm_set_ticket and after_vm_set_ticket hooks is augmented
 with a set of params passed by the caller of setVmTicket.
 
+The environment of hooks specific to devices:
+    before_nic_hotplug, after_nic_hotplug, after_nic_hotplug_fail,
+    before_nic_hotunplug, after_nic_hotunplug, after_nic_unhotplug_fail,
+    before_disk_hotplug, after_disk_hotplug,
+    before_disk_hotunplug, after_disk_hotunplug.
+
+Are all augmented by custom properties specific to those devices, 
+sent by the caller of the hook. For example if before_nic_hotplug is called
+with custom: {qos: '0.5', color: 'red'} then qos and color will be directly
+available as environment variables when before_nic_hotplug is called.
+
 .SS Hook execution
 before_vdsm_start and after_vdsm_stop scripts are executed as user
 .I root.

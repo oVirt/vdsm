@@ -103,3 +103,24 @@ echo "81212590184644762"
         os.unlink(sName)
         expectedRes = dict([(os.path.basename(sName), {'md5': md5})])
         self.assertEqual(expectedRes, info)
+
+    def test_deviceCustomProperties(self):
+        dirName = tempfile.mkdtemp()
+        script = tempfile.NamedTemporaryFile(dir=dirName, delete=False)
+        code = """#!/usr/bin/python
+
+import os
+import hooking
+
+domXMLFile = file(os.environ['_hook_domxml'], 'a')
+customProperty = os.environ['customProperty']
+domXMLFile.write(customProperty)
+        """
+
+        script.write(code)
+        os.chmod(script.name, 0775)
+        script.close()
+
+        result = hooks._runHooksDir("oVirt", dirName,
+                                    params={'customProperty': ' rocks!'})
+        self.assertEqual(result, "oVirt rocks!")
