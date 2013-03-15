@@ -121,8 +121,8 @@ CLEANFILES = \
 EXTRA_DIST = \
 	config.py.in \
 	constants.py.in \
-	dumpStorageTable.py.in \
 	dsaversion.py.in \
+	dumpStorageTable.py.in \
 	libvirt_password \
 	limits.conf \
 	logger.conf.in \
@@ -130,9 +130,6 @@ EXTRA_DIST = \
 	mom.conf.in \
 	mom.policy \
 	sudoers.vdsm.in \
-	vdsmd.8.in \
-	vdsmd.init.in \
-	vdsmd.service \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -141,9 +138,13 @@ EXTRA_DIST = \
 	vdsm-logrotate.conf.in \
 	vdsm-restore-net-config.init.in \
 	vdsm-restore-net-config.service \
-	vdsm.rwtab.in \
 	vdsm-store-net-config.in \
-	vdsm-sysctl.conf
+	vdsm-sysctl.conf \
+	vdsm.rwtab.in \
+	vdsmd.8.in \
+	vdsmd.init.in \
+	vdsmd.service \
+	$(NULL)
 
 vdsm.conf.sample: Makefile config.py
 	@echo "  CONFIG $@"; $(PYTHON) $(builddir)/config.py > $@
