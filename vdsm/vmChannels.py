@@ -21,6 +21,7 @@
 import threading
 import time
 import select
+from storage.misc import NoIntrPoll
 
 
 class Listener(threading.Thread):
@@ -114,7 +115,7 @@ class Listener(threading.Thread):
 
     def _wait_for_events(self):
         """ Wait for an epoll event and handle channels' timeout. """
-        events = self._epoll.poll(1)
+        events = NoIntrPoll(self._epoll.poll, 1)
         for (fileno, event) in events:
             self._handle_event(fileno, event)
         else:
@@ -127,8 +128,13 @@ class Listener(threading.Thread):
         """ The listener thread's function. """
         self.log.info("Starting VM channels listener thread.")
         self._quit = False
-        while not self._quit:
-            self._wait_for_events()
+        try:
+            while not self._quit:
+                self._wait_for_events()
+        except:
+            self.log.exception("Unhandled exception caught in vm channels "
+                               "listener thread")
+        self.log.info("VM channels listener thread has ended.")
 
     def stop(self):
         """" Stop the listener execution. """
