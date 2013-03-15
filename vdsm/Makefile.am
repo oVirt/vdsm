@@ -136,6 +136,7 @@ EXTRA_DIST = \
 	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf.in \
+	vdsm-modules-load.d.conf \
 	vdsm-restore-net-config.init.in \
 	vdsm-restore-net-config.service \
 	vdsm-store-net-config.in \

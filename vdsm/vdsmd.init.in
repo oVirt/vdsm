@@ -432,6 +432,11 @@ start_libvirtd() {
     fi
 }
 
+has_systemd() {
+    /bin/mountpoint -q /cgroup/systemd ||
+        /bin/mountpoint -q /sys/fs/cgroup/systemd
+}
+
 start() {
     local ret_val
     python @VDSMDIR@/hooks.pyc before_vdsm_start
@@ -475,7 +480,10 @@ start() {
         return $ret_val
     fi
 
-    /usr/bin/vdsm-tool load-needed-modules
+    if ! has_systemd; then
+        /usr/bin/vdsm-tool load-needed-modules
+    fi
+
     /sbin/sysctl -q -p /etc/sysctl.d/vdsm
     mk_data_center
     mk_core_path

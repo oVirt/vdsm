@@ -500,6 +500,8 @@ install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
                  %{buildroot}%{_unitdir}/vdsm-reg.service
+install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
+                 %{buildroot}%{_sysconfdir}/modules-load.d/vdsm.conf
 %else
 # Install the SysV init scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
@@ -719,6 +721,9 @@ exit 0
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm
+%if 0%{?with_systemd}
+%config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
+%endif
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/cron.d/vdsm-libvirt-logrotate
@@ -873,7 +878,11 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/betterPopen/__init__.py*
 %{python_sitearch}/%{vdsm_name}/betterPopen/createprocess.so
 %{python_sitearch}/%{vdsm_name}/tool/__init__.py*
+%if 0%{?with_systemd}
+%exclude %{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*
+%else
 %{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*
+%endif
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
