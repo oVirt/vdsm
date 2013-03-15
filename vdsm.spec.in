@@ -904,10 +904,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
 
-%files hook-macspoof
-%defattr(-, root, root, -)
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
-
 %files hook-qemucmdline
 %defattr(-, root, root, -)
 %doc COPYING
@@ -952,6 +948,10 @@ exit 0
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
 %config(noreplace) %{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
+
+%files hook-macspoof
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
 
 %files hook-nestedvt
 %defattr(-, root, root, -)
