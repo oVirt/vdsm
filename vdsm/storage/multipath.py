@@ -89,6 +89,7 @@ log = logging.getLogger("Storage.Multipath")
 _scsi_id = utils.CommandPath("scsi_id",
                              "/sbin/scsi_id",  # EL6
                              "/usr/lib/udev/scsi_id",  # Fedora
+                             "/lib/udev/scsi_id",  # Ubuntu
                              )
 
 
