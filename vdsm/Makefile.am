@@ -88,6 +88,7 @@ nodist_noinst_DATA = \
 	logger.conf \
 	mom.conf \
 	sudoers.vdsm \
+	svdsm.logger.conf \
 	vdsm-logrotate.conf \
 	vdsm-restore-net-config.init \
 	vdsm.conf.sample \
@@ -130,6 +131,7 @@ EXTRA_DIST = \
 	mom.conf.in \
 	mom.policy \
 	sudoers.vdsm.in \
+	svdsm.logger.conf.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -194,9 +196,12 @@ uninstall-local: \
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
 	$(INSTALL_DATA) logger.conf $(DESTDIR)$(vdsmconfdir)/logger.conf
+	$(INSTALL_DATA) svdsm.logger.conf \
+	    $(DESTDIR)$(vdsmconfdir)/svdsm.logger.conf
 
 uninstall-data-logger:
 	$(RM) $(DESTDIR)$(vdsmconfdir)/logger.conf
+	$(RM) $(DESTDIR)$(vdsmconfdir)/svdsm.logger.conf
 
 install-data-libvirtpass:
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys

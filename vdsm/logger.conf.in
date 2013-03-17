@@ -1,5 +1,5 @@
 [loggers]
-keys=root,vds,Storage,metadata,SuperVdsm
+keys=root,vds,Storage,metadata
 
 [handlers]
 keys=console,syslog,logfile,metadata
@@ -22,12 +22,6 @@ propagate=0
 level=DEBUG
 handlers=syslog,logfile
 qualname=Storage
-propagate=0
-
-[logger_SuperVdsm]
-level=DEBUG
-handlers=syslog,logfile
-qualname=SuperVdsm
 propagate=0
 
 [logger_metadata]

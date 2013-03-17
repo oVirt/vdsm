@@ -719,6 +719,7 @@ exit 0
 %attr (755,vdsm,kvm) %{_datadir}/%{vdsm_name}/dummybr.py*
 %attr (755,vdsm,kvm) %{_datadir}/%{vdsm_name}/nwfilter.py*
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
+%config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.policy
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm

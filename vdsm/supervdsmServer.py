@@ -79,7 +79,7 @@ def logDecorator(func):
 
 KB = 2 ** 10
 TEST_BUFF_LEN = 4 * KB
-LOG_CONF_PATH = "/etc/vdsm/logger.conf"
+LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
 
 
 class _SuperVdsm(object):

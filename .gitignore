@@ -28,6 +28,7 @@ vdsm/constants.py
 vdsm/dsaversion.py
 vdsm/dumpStorageTable.py
 vdsm/logger.conf
+vdsm/svdsm.logger.conf
 vdsm/mk_sysprep_floppy
 vdsm/mom.conf
 vdsm/sos/vdsm.py
