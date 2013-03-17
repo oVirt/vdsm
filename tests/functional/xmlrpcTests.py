@@ -22,7 +22,9 @@ import os
 import tempfile
 import pwd
 import grp
+import fnmatch
 import shutil
+import logging
 from contextlib import contextmanager
 from functools import partial, wraps
 
@@ -37,6 +39,7 @@ except ImportError:
 from vdsm.config import config
 from vdsm.constants import VDSM_USER, VDSM_GROUP, QEMU_PROCESS_USER, EXT_SUDO
 import storage.sd
+import storage.storage_exception as se
 import storage.volume
 from storage.misc import execCmd
 from storage.misc import RollbackContext
@@ -50,6 +53,7 @@ if not config.getboolean('vars', 'xmlrpc_enable'):
 
 _mkinitrd = CommandPath("mkinird", "/usr/bin/mkinitrd")
 _modprobe = CommandPath("modprobe", "/usr/sbin/modprobe")
+_exportfs = CommandPath("exportfs", "/usr/sbin/exportfs")
 
 
 def readableBy(filePath, user):
@@ -213,7 +217,7 @@ class XMLRPCTest(TestCaseBase):
 
         self.assertVdsOK(destroyResult)
 
-    @permutations([['localfs'], ['iscsi'], ['glusterfs']])
+    @permutations([['localfs'], ['iscsi'], ['glusterfs'], ['nfs']])
     def testStorage(self, backendType):
         conf = storageLayouts[backendType]
         with RollbackContext() as rollback:
@@ -233,7 +237,7 @@ class XMLRPCTest(TestCaseBase):
         return drives
 
     @skipNoKVM
-    @permutations([['localfs'], ['iscsi']])
+    @permutations([['localfs'], ['iscsi'], ['nfs']])
     def testSimpleVMWithStorage(self, backendType):
         conf = storageLayouts[backendType]
         drives = self._generateDriveConf(conf)
@@ -264,6 +268,15 @@ class XMLRPCTest(TestCaseBase):
     def _createStorageDomain(self, storageDomains, typeSpecificArgs, rollback):
         for sdid, domain in storageDomains.iteritems():
             specificArg = typeSpecificArgs[domain['connUUID']]
+
+            # clean up possible leftovers in the previous test run
+            r = self.s.getStorageDomainInfo(sdid)
+            if r['status']['code'] in [0, se.StorageDomainAccessError.code]:
+                self.assertVdsOK(self.s.formatStorageDomain(sdid, True))
+            else:
+                self.assertEquals(
+                    r['status']['code'], se.StorageDomainDoesNotExist.code)
+
             r = self.s.createStorageDomain(
                 storage.sd.name2type(domain['type']), sdid, domain['name'],
                 specificArg, storage.sd.name2class(domain['class']), 0)
@@ -581,6 +594,76 @@ class GlusterFSServer(BackendServer):
         return args
 
 
+def exportNFS(path):
+    rc, out, err = execCmd([_exportfs.cmd, '-o', 'rw,insecure,sync',
+                            '127.0.0.1:%s' % path])
+    return rc
+
+
+def unexportNFS(path):
+    rc, out, err = execCmd([_exportfs.cmd, '-u', '127.0.0.1:%s' % path])
+    return rc
+
+
+def listNFS():
+    rc, out, err = execCmd([_exportfs.cmd])
+    if rc != 0:
+        raise RuntimeError("Can not list NFS export: %s\n" % err)
+    return out
+
+
+def cleanNFSLeftovers(pathPrefix):
+    pathPattern = pathPrefix + "*"
+    exports = listNFS()
+    for line in exports:
+        export = line.split(" ", 1)[0]
+        if fnmatch.fnmatch(export, pathPattern):
+            if unexportNFS(export) == 0:
+                shutil.rmtree(export, ignore_errors=True)
+            else:
+                logging.warning("Failed to unexport NFS entry %s", export)
+
+
+class NFSServer(BackendServer):
+    def _createBackend(self, backends, rollback):
+        prefix = 'vdsmFunctionalTestNfs'
+
+        cleanNFSLeftovers(os.path.join(_VARTMP, prefix))
+
+        uid = pwd.getpwnam(VDSM_USER)[2]
+        gid = grp.getgrnam(VDSM_GROUP)[2]
+
+        rootDir = tempfile.mkdtemp(prefix=prefix, dir=_VARTMP)
+        undo = lambda: os.rmdir(rootDir)
+        rollback.prependDefer(undo)
+        os.chown(rootDir, uid, gid)
+        os.chmod(rootDir, 0755)
+
+        connections = {}
+        for uuid, subDir in backends.iteritems():
+            path = os.path.join(rootDir, subDir)
+            os.mkdir(path)
+            undo = lambda path=path: shutil.rmtree(path, ignore_errors=True)
+            rollback.prependDefer(undo)
+            os.chown(path, uid, gid)
+            os.chmod(path, 0775)
+            self.asserts.assertEquals(0, exportNFS(path))
+            undo = lambda path=path: self.asserts.assertEquals(
+                0, unexportNFS(path))
+            rollback.prependDefer(undo)
+
+            connections[uuid] = {'type': 'nfs',
+                                 'params': {'export': '127.0.0.1:%s' % path}}
+
+        return connections
+
+    def _genTypeSpecificArgs(self, connections, rollback):
+        args = {}
+        for uuid, conn in connections.iteritems():
+            args[uuid] = conn['params']['export']
+        return args
+
+
 storageLayouts = \
     {'localfs':
         {'server': LocalFSServer,
@@ -618,8 +701,39 @@ storageLayouts = \
                      "47bd7538-c48b-4b94-ba94-def922151d48"],
                  "9af9bd7f-6167-4ae8-aac6-95a5e5f36f60": [
                      "bace8f68-4c5a-43f2-acb4-fa8daf58c0f9"]}}},
-     'nfs': {'server': 'blah', 'conn': 'blah', 'sd': 'blah', 'sp': 'blah',
-             'img': 'blah', 'layout': 'blah'},
+     'nfs':
+        {'server': NFSServer,
+         'conn': {
+             'backends': {
+                 '7663ae6f-045e-4bfa-b3cf-7ab738ee42c9': 'nfs0',
+                 '402b9d69-d3f7-4855-87c3-95257ffc8c6a': 'nfs1'},
+             'timeout': 30},
+         'sd': {
+             "c29e3337-27c2-4fd6-8caa-9404e0455769": {
+                 "name": "test nfs domain0", "type": "nfs", "class": "Data",
+                 "connUUID": "7663ae6f-045e-4bfa-b3cf-7ab738ee42c9"},
+             "78e5e27e-833c-4977-b940-58b4f83599ac": {
+                 "name": "test nfs domain1", "type": "nfs", "class": "Data",
+                 "connUUID": "402b9d69-d3f7-4855-87c3-95257ffc8c6a"}},
+         'sp': {
+             "01da0617-2da4-4081-8ad0-60b4e18d26bb": {
+                 "name": "nfs storage pool", "master_ver": 1, "host": 1,
+                 "master_uuid": "c29e3337-27c2-4fd6-8caa-9404e0455769"}},
+         'img': {
+             "ca31643e-699b-4268-86d0-fd377bf85f3b": {
+                 "description": "Test nfs volume0", "type": "leaf",
+                 "volid": "b74f92d5-4846-4918-91ed-2028677a628c",
+                 "format": "cow", "preallocate": "sparse", "size": 20971520},
+             "a913f26d-c880-4c0b-bc21-2901b6ba912a": {
+                 "description": "test nfs volume1", "type": "leaf",
+                 "volid": "15a87231-5bab-41d3-8c74-b9f7bc1d8c46",
+                 "format": "cow", "preallocate": "sparse", "size": 20971520}},
+         'layout': {
+             "01da0617-2da4-4081-8ad0-60b4e18d26bb": {
+                 "c29e3337-27c2-4fd6-8caa-9404e0455769": [
+                     "ca31643e-699b-4268-86d0-fd377bf85f3b"],
+                 "78e5e27e-833c-4977-b940-58b4f83599ac": [
+                     "a913f26d-c880-4c0b-bc21-2901b6ba912a"]}}},
      'iscsi': {
          'server': IscsiServer,
          'conn': {
