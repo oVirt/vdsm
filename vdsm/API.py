@@ -620,14 +620,16 @@ class VM(APIBase):
                  imageID=paramImageID, volumeID=paramVolumeID,
                  device='disk')
 
-    def _getNetworkIp(self, bridge):
+    def _getNetworkIp(self, network):
         try:
-            ip = netinfo.getaddr(bridge)
+            nets = netinfo.networks()
+            device = nets[network].get('iface', network)
+            ip = netinfo.getaddr(device)
         except:
             ip = config.get('addresses', 'guests_gateway_ip')
             if ip == '':
                 ip = '0'
-            self.log.info('network %s: using %s', bridge, ip)
+            self.log.info('network %s: using %s', network, ip)
         return ip
 
     def snapshot(self, snapDrives):
