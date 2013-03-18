@@ -6,7 +6,6 @@
     compresscmd /usr/bin/xz
     uncompresscmd /usr/bin/unxz
     compressext .xz
-    create 644 @VDSMUSER@ @VDSMGROUP@
 }
 /var/log/core/*.dump {
     rotate 1
