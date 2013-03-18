@@ -64,6 +64,7 @@ from logUtils import SimpleLogAdapter
 getProcPool = oop.getGlobalProcPool
 
 KEY_SEPARATOR = "="
+KEY_SEPARATOR_ENCODED = "_eq_"
 TASK_EXT = ".task"
 JOB_EXT = ".job"
 RESOURCE_EXT = ".resource"
@@ -77,6 +78,16 @@ RESOURCE_SEP = "!"
 TASK_METADATA_VERSION = 1
 
 ROLLBACK_SENTINEL = "rollback sentinel"
+
+
+def _eq_encode(s):
+    if KEY_SEPARATOR_ENCODED in s:
+        raise ValueError("%s includes %s" % (s, KEY_SEPARATOR_ENCODED))
+    return s.replace(KEY_SEPARATOR, KEY_SEPARATOR_ENCODED)
+
+
+def _eq_decode(s):
+    return s.replace(KEY_SEPARATOR_ENCODED, KEY_SEPARATOR)
 
 
 class State:
@@ -605,8 +616,8 @@ class Task:
                                     " '%s'", filename, line)
                     continue
 
-                field = parts[0].strip()
-                value = parts[1].strip()
+                field = _eq_decode(parts[0].strip())
+                value = _eq_decode(parts[1].strip())
                 if field not in fields:
                     cls.log.warning("Task._loadMetaFile: %s - ignoring field"
                                     " %s in line '%s'", filename, field, line)
@@ -624,13 +635,19 @@ class Task:
         for field in fields:
             try:
                 value = unicode(getattr(obj, field))
-                if KEY_SEPARATOR in field or KEY_SEPARATOR in value:
-                    raise ValueError("field and value cannot include %s "
-                                     "character" % KEY_SEPARATOR)
-                lines.append("%s %s %s" % (field, KEY_SEPARATOR, value))
-            except Exception:
-                cls.log.warning("Task._dump: object %s skipping field %s" %
+            except AttributeError:
+                cls.log.warning("object %s field %s not found" %
                                 (obj, field), exc_info=True)
+            else:
+                try:
+                    field = _eq_encode(field)
+                    value = _eq_encode(value)
+                except ValueError as e:
+                    cls.log.warning("Object %s: Cannot encode field %s or "
+                                    "value %s. Skipping field. %s",
+                                    obj, field, value, e)
+                else:
+                    lines.append("%s %s %s" % (field, KEY_SEPARATOR, value))
         return lines
 
     @classmethod
