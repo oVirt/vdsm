@@ -63,7 +63,7 @@ from logUtils import SimpleLogAdapter
 
 getProcPool = oop.getGlobalProcPool
 
-KEY_SEPERATOR = "="
+KEY_SEPARATOR = "="
 TASK_EXT = ".task"
 JOB_EXT = ".job"
 RESOURCE_EXT = ".resource"
@@ -597,9 +597,9 @@ class Task:
             for line in getProcPool().readLines(filename):
                 # process current line
                 line = line.encode('utf8')
-                if line.find(KEY_SEPERATOR) < 0:
+                if line.find(KEY_SEPARATOR) < 0:
                     continue
-                parts = line.split(KEY_SEPERATOR)
+                parts = line.split(KEY_SEPARATOR)
                 if len(parts) != 2:
                     cls.log.warning("Task._loadMetaFile: %s - ignoring line"
                                     " '%s'", filename, line)
@@ -624,10 +624,10 @@ class Task:
         for field in fields:
             try:
                 value = unicode(getattr(obj, field))
-                if KEY_SEPERATOR in field or KEY_SEPERATOR in value:
+                if KEY_SEPARATOR in field or KEY_SEPARATOR in value:
                     raise ValueError("field and value cannot include %s "
-                                     "character" % KEY_SEPERATOR)
-                lines.append("%s %s %s" % (field, KEY_SEPERATOR, value))
+                                     "character" % KEY_SEPARATOR)
+                lines.append("%s %s %s" % (field, KEY_SEPARATOR, value))
             except Exception:
                 cls.log.warning("Task._dump: object %s skipping field %s" %
                                 (obj, field), exc_info=True)
@@ -970,8 +970,8 @@ class Task:
         self.defaultException = exceptionObj
 
     def setTag(self, tag):
-        if KEY_SEPERATOR in tag:
-            raise ValueError("tag cannot include %s character" % KEY_SEPERATOR)
+        if KEY_SEPARATOR in tag:
+            raise ValueError("tag cannot include %s character" % KEY_SEPARATOR)
         self.tag = unicode(tag)
 
     def isDone(self):
