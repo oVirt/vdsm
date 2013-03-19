@@ -90,12 +90,11 @@ def networks():
     """
     nets = {}
     conn = libvirtconnection.get()
-    for name in conn.listNetworks():
-        if name.startswith(LIBVIRT_NET_PREFIX):
-            # remove the LIBVIRT_NET_PREFIX from the network name
-            netname = name[len(LIBVIRT_NET_PREFIX):]
+    allNets = ((net, net.name()) for net in conn.listAllNetworks(0))
+    for net, netname in allNets:
+        if netname.startswith(LIBVIRT_NET_PREFIX):
+            netname = netname[len(LIBVIRT_NET_PREFIX):]
             nets[netname] = {}
-            net = conn.networkLookupByName(name)
             xml = minidom.parseString(net.XMLDesc(0))
             interfaces = xml.getElementsByTagName('interface')
             if len(interfaces) > 0:
