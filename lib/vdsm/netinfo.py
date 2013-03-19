@@ -537,3 +537,49 @@ class NetInfo(object):
                 lnics.append(port)
 
         return lnics, vlan, bonding
+
+    def ifaceUsers(self, iface):
+        "Returns a list of entities using the interface"
+        users = set()
+        for n, ndict in self.networks.iteritems():
+            if ndict['bridged'] and iface in ndict['ports']:
+                users.add(n)
+            elif not ndict['bridged'] and iface == ndict['iface']:
+                users.add(n)
+        for b, bdict in self.bondings.iteritems():
+            if iface in bdict['slaves']:
+                users.add(b)
+        for v, vdict in self.vlans.iteritems():
+            if iface == vdict['iface']:
+                users.add(v)
+        return users
+
+    def nicOtherUsers(self, bridge, vlan, bonding, nic):
+        """
+        Returns a list of interfaces using a nic,
+        other than the specified one.
+        """
+        if bonding:
+            owner = bonding
+        elif vlan:
+            owner = nic + '.' + vlan
+        else:
+            owner = bridge
+        users = self.ifaceUsers(nic)
+        if bonding:
+            users.update(self.bondingOtherUsers(bridge, vlan, bonding))
+        users.discard(owner)
+        return users
+
+    def bondingOtherUsers(self, bridge, vlan, bonding):
+        """
+        Return a list of nics/interfaces using a bonding,
+        other than the specified one.
+        """
+        if vlan:
+            owner = bonding + '.' + vlan
+        else:
+            owner = bridge
+        users = self.ifaceUsers(bonding)
+        users.discard(owner)
+        return users
