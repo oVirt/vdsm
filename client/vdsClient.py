@@ -1525,6 +1525,20 @@ class service:
                         for item in spec.split(',') if item)
         return spec
 
+    def do_setupNetworks(self, args):
+        params = self._eqSplit(args)
+        networks = self._parseDriveSpec(params.get('networks', '{}'))
+        bondings = self._parseDriveSpec(params.get('bondings', '{}'))
+        for k in ('networks', 'bondings'):
+            if k in params:
+                del params[k]
+        params['connectivityCheck'] = params.get('connectivityCheck', 'False')
+        for bond in bondings:
+            if 'nics' in bondings[bond]:
+                bondings[bond]['nics'] = bondings[bond]['nics'].split("+")
+        status = self.s.setupNetworks(networks, bondings, params)
+        return status['status']['code'], status['status']['message']
+
     def do_addNetwork(self, args):
         params = self._eqSplit(args)
         try:
@@ -2340,6 +2354,16 @@ if __name__ == '__main__':
                         'Get list of VMs from the pool or domain if sdUUID '
                         'given. Run only from the SPM.'
                         )),
+        'setupNetworks': (serv.do_setupNetworks,
+                          ('[connectivityCheck=False(default)|True] '
+                           '[connectivityTimeout=<seconds>] '
+                           '[<option>=<value>] '
+                           '[networks=\'{<bridge>:{nic:<nic>,vlan:<number>,'
+                           'bonding:<bond>,...}}\'] '
+                           '[bondings=\'{<bond>:{nics:<nic>[+<nic>],..}}\']',
+                           'Setup new configuration of multiple networks and '
+                           'bonds.'
+                           )),
         'addNetwork': (serv.do_addNetwork,
                        ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
                         'nics=nic[,nic]',
