@@ -21,10 +21,6 @@
 #
 
 import os
-import subprocess
-import tempfile
-import shutil
-import pwd
 
 import configNetwork
 from vdsm import netinfo
@@ -33,7 +29,6 @@ from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
 
 from monkeypatch import MonkeyPatch
-from monkeypatch import MonkeyPatchScope
 
 
 class TestconfigNetwork(TestCaseBase):
@@ -108,7 +103,7 @@ class TestconfigNetwork(TestCaseBase):
     def testValidateBondingOptions(self):
         # Monkey patch os.path.exists to let validateBondingOptions logic be
         # tested when a bonding device is not present.
-        if not os.path.exists(configNetwork.BONDING_MASTERS):
+        if not os.path.exists(netinfo.BONDING_MASTERS):
             raise SkipTest("bonding kernel module could not be found.")
 
         opts = 'mode=802.3ad miimon=150'
@@ -246,85 +241,3 @@ class TestconfigNetwork(TestCaseBase):
         self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth8'],
                                  ipaddr, netmask, gw, bondingOptions, False),
                                 configNetwork.ne.ERR_BAD_PARAMS)
-
-
-class ConfigWriterTests(TestCaseBase):
-    INITIAL_CONTENT = '123-testing'
-    SOME_GARBAGE = '456'
-
-    def __init__(self, *args, **kwargs):
-        TestCaseBase.__init__(self, *args, **kwargs)
-        self._tempdir = tempfile.mkdtemp()
-        self._files = tuple((os.path.join(self._tempdir, bn), init, makeDirty)
-                            for bn, init, makeDirty in
-                            (('ifcfg-eth0', self.INITIAL_CONTENT, True),
-                             ('ifcfg-eth1', None, True),
-                             ('ifcfg-eth2', None, False),
-                             ('ifcfg-eth3', self.INITIAL_CONTENT, False),))
-
-    def __del__(self):
-        shutil.rmtree(self._tempdir)
-
-    def _createFiles(self):
-        for fn, content, _ in self._files:
-            if content is not None:
-                file(fn, 'w').write(content)
-
-    def _makeFilesDirty(self):
-        for fn, _, makeDirty in self._files:
-            if makeDirty:
-                file(fn, 'w').write(self.SOME_GARBAGE)
-
-    def _assertFilesRestored(self):
-        for fn, content, _ in self._files:
-            if content is None:
-                self.assertFalse(os.path.exists(fn))
-            else:
-                restoredContent = file(fn).read()
-                self.assertEqual(content, restoredContent)
-
-    @MonkeyPatch(subprocess, 'Popen', lambda x: None)
-    def testAtomicRestore(self):
-        cw = configNetwork.ConfigWriter()
-        self._createFiles()
-
-        for fn, _, _ in self._files:
-            cw._atomicBackup(fn)
-
-        self._makeFilesDirty()
-
-        cw.restoreAtomicBackup()
-        self._assertFilesRestored()
-
-    @MonkeyPatch(os, 'chown', lambda *x: 0)
-    def testPersistentBackup(self):
-
-        with MonkeyPatchScope([
-            (netinfo, 'NET_CONF_BACK_DIR',
-             os.path.join(self._tempdir, 'netback')),
-            (netinfo, 'NET_CONF_DIR', self._tempdir),
-            (netinfo, 'NET_CONF_PREF',
-             os.path.join(self._tempdir, 'ifcfg-')),
-            (configNetwork, 'ifdown', lambda x: 0),
-            (configNetwork, 'ifup', lambda *x: 0),
-            (configNetwork.ConfigWriter, '_createNetwork', lambda *x: None),
-            (configNetwork.ConfigWriter, '_removeNetwork', lambda *x: None),
-        ]):
-            #after vdsm package is installed, the 'vdsm' account will be
-            #created if no 'vdsm' account, we should skip this test
-            if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
-                raise SkipTest("'vdsm' is not in user account database, "
-                               "install vdsm package to create the vdsm user")
-
-            cw = configNetwork.ConfigWriter()
-            self._createFiles()
-
-            for fn, _, _ in self._files:
-                cw._persistentBackup(fn)
-
-            self._makeFilesDirty()
-
-            cw = configNetwork.ConfigWriter()
-            cw.restorePersistentBackup()
-
-            self._assertFilesRestored()

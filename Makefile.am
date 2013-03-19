@@ -61,6 +61,7 @@ PEP8_WHITELIST = \
 	vdsm-tool \
 	vdsm/*.py \
 	vdsm/*.py.in \
+	vdsm/netconf \
 	vdsm/sos/vdsm.py.in \
 	vdsm/storage \
 	vdsm/vdsm \

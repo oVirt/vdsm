@@ -208,6 +208,7 @@ AC_OUTPUT([
 	vdsm-tool/Makefile
 	vdsm/Makefile
 	vdsm/gluster/Makefile
+	vdsm/netconf/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/12-vdsm-lvm.rules
 	vdsm/storage/Makefile

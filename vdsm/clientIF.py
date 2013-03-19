@@ -37,7 +37,7 @@ from vdsm import libvirtconnection
 import vm
 from vdsm import constants
 from vdsm import utils
-import configNetwork
+from netconf import ifcfg
 import caps
 from vmChannels import Listener
 from libvirtvm import LibvirtVm
@@ -198,7 +198,7 @@ class clientIF:
         # add libvirt networks
         nets = netinfo.networks()
         bridges = netinfo.bridges()
-        configWriter = configNetwork.ConfigWriter()
+        configWriter = ifcfg.ConfigWriter()
         for bridge in bridges:
             if not bridge in nets:
                 configWriter.createLibvirtNetwork(network=bridge,

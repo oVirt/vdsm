@@ -1,5 +1,4 @@
-#
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,22 +16,3 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
-ERR_OK = 0
-ERR_BAD_PARAMS = 21
-ERR_BAD_ADDR = 22
-ERR_BAD_NIC = 23
-ERR_USED_NIC = 24
-ERR_BAD_BONDING = 25
-ERR_BAD_VLAN = 26
-ERR_BAD_BRIDGE = 27
-ERR_USED_BRIDGE = 28
-ERR_FAILED_IFUP = 29
-ERR_LOST_CONNECTION = 10    # noConPeer
-
-
-class ConfigNetworkError(Exception):
-    def __init__(self, errCode, message):
-        self.errCode = errCode
-        self.message = message
-        Exception.__init__(self, self.errCode, self.message)

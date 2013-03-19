@@ -41,9 +41,11 @@ NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
+BONDING_MASTERS = '/sys/class/net/bonding_masters'
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DUMMY_BRIDGE = ';vdsmdummy;'
+DEFAULT_MTU = '1500'
 
 
 def _match_nic_name(nic, patterns):

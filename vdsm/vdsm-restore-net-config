@@ -22,7 +22,7 @@
 import os
 import glob
 
-import configNetwork
+from netconf import ifcfg
 
 
 def main():
@@ -35,7 +35,7 @@ def main():
     except:
         pass
 
-    configWriter = configNetwork.ConfigWriter()
+    configWriter = ifcfg.ConfigWriter()
     configWriter.restorePersistentBackup()
 
 

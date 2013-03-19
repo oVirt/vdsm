@@ -29,10 +29,11 @@ test_modules = \
 	fileUtilTests.py \
 	fuserTests.py \
 	getAllVolumesTests.py \
-	glusterTestData.py \
 	gluster_cli_tests.py \
+	glusterTestData.py \
 	guestIFTests.py \
 	hooksTests.py \
+	netconfTests.py \
 	jsonRpcTests.py \
 	jsonRpcUtils.py \
 	libvirtvmTests.py \

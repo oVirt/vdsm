@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = sos storage gluster
+SUBDIRS = netconf sos storage gluster
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -31,8 +31,8 @@ dist_vdsm_PYTHON = \
 	clientIF.py \
 	configNetwork.py \
 	debugPluginClient.py \
-	dummybr.py \
 	dmidecodeUtil.py \
+	dummybr.py \
 	guestIF.py \
 	hooking.py \
 	hooks.py \
