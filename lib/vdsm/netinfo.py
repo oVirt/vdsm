@@ -180,6 +180,17 @@ def getnetmask(dev):
     return prefix2netmask(netmask)
 
 
+def getIpInfo(dev):
+    devInfo = ethtool.get_interfaces_info(dev.encode('utf8'))[0]
+    addr = devInfo.ipv4_address
+    netmask = devInfo.ipv4_netmask
+    ipv6addrs = devInfo.get_ipv6_addresses()
+
+    return (addr if addr else '',
+            prefix2netmask(netmask) if netmask else '',
+            [addr6.address + '/' + str(addr6.netmask) for addr6 in ipv6addrs])
+
+
 def getipv6addrs(dev):
     """Return a list of IPv6 addresses in the format of 'address/prefixlen'."""
     dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
@@ -327,10 +338,12 @@ def _getNetInfo(iface, bridged, routes, ipv6routes):
             # network is bridgeless. Please remove the attribute and this
             # comment when the version is no longer supported.
             data['interface'] = iface
+
+        ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(iface)
         data.update({'iface': iface, 'bridged': bridged,
-                     'addr': getaddr(iface), 'netmask': getnetmask(iface),
+                     'addr': ipv4addr, 'netmask': ipv4netmask,
                      'gateway': routes.get(iface, '0.0.0.0'),
-                     'ipv6addrs': getipv6addrs(iface),
+                     'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
                      'mtu': getMtu(iface)})
     except OSError as e:
@@ -342,10 +355,48 @@ def _getNetInfo(iface, bridged, routes, ipv6routes):
     return data
 
 
+def _bridgeinfo(bridge, routes, ipv6routes):
+    info = _devinfo(bridge)
+    info.update({'gateway': routes.get(bridge, '0.0.0.0'),
+                'ipv6gateway': ipv6routes.get(bridge, '::'),
+                'ports': ports(bridge), 'stp': bridge_stp_state(bridge)})
+    return (bridge, info)
+
+
+def _nicinfo(nic, paddr):
+    info = _devinfo(nic)
+    info.update({'hwaddr': gethwaddr(nic), 'speed': speed(nic)})
+    if paddr.get(nic):
+        info['permhwaddr'] = paddr[nic]
+    return (nic, info)
+
+
+def _bondinfo(bond):
+    info = _devinfo(bond)
+    info.update({'hwaddr': gethwaddr(bond), 'slaves': slaves(bond)})
+    return (bond, info)
+
+
+def _vlaninfo(vlan):
+    info = _devinfo(vlan)
+    info.update({'iface': vlan.split('.')[0]})
+    return (vlan, info)
+
+
+def _devinfo(dev):
+    ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(dev)
+    return {'addr': ipv4addr,
+            'cfg': getIfaceCfg(dev),
+            'ipv6addrs': ipv6addrs,
+            'mtu': getMtu(dev),
+            'netmask': ipv4netmask}
+
+
 def get():
     d = {}
     routes = getRoutes()
     ipv6routes = getIPv6Routes()
+    paddr = permAddr()
     d['networks'] = {}
 
     for net, netAttr in networks().iteritems():
@@ -356,47 +407,11 @@ def get():
         except KeyError:
             continue  # Do not report missing libvirt networks.
 
-    d['bridges'] = dict([(bridge, {'ports': ports(bridge),
-                                   'stp': bridge_stp_state(bridge),
-                                   'addr': getaddr(bridge),
-                                   'netmask': getnetmask(bridge),
-                                   'gateway': routes.get(bridge, '0.0.0.0'),
-                                   'ipv6addrs': getipv6addrs(bridge),
-                                   'ipv6gateway': ipv6routes.get(bridge, '::'),
-                                   'mtu': getMtu(bridge),
-                                   'cfg': getIfaceCfg(bridge),
-                                   })
+    d['bridges'] = dict([_bridgeinfo(bridge, routes, ipv6routes)
                          for bridge in bridges()])
-
-    d['nics'] = dict([(nic, {'speed': speed(nic),
-                             'addr': getaddr(nic),
-                             'netmask': getnetmask(nic),
-                             'ipv6addrs': getipv6addrs(nic),
-                             'hwaddr': gethwaddr(nic),
-                             'mtu': getMtu(nic),
-                             'cfg': getIfaceCfg(nic),
-                             })
-                      for nic in nics()])
-    paddr = permAddr()
-    for nic, nd in d['nics'].iteritems():
-        if paddr.get(nic):
-            nd['permhwaddr'] = paddr[nic]
-    d['bondings'] = dict([(bond, {'slaves': slaves(bond),
-                                  'addr': getaddr(bond),
-                                  'netmask': getnetmask(bond),
-                                  'ipv6addrs': getipv6addrs(bond),
-                                  'hwaddr': gethwaddr(bond),
-                                  'cfg': getIfaceCfg(bond),
-                                  'mtu': getMtu(bond)})
-                          for bond in bondings()])
-    d['vlans'] = dict([(vlan, {'iface': vlan.split('.')[0],
-                               'addr': getaddr(vlan),
-                               'netmask': getnetmask(vlan),
-                               'ipv6addrs': getipv6addrs(vlan),
-                               'mtu': getMtu(vlan),
-                               'cfg': getIfaceCfg(vlan),
-                               })
-                       for vlan in vlans()])
+    d['nics'] = dict([_nicinfo(nic, paddr) for nic in nics()])
+    d['bondings'] = dict([_bondinfo(bond) for bond in bondings()])
+    d['vlans'] = dict([_vlaninfo(vlan) for vlan in vlans()])
     return d
 
 
