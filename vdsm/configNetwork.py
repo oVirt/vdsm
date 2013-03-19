@@ -1379,87 +1379,80 @@ def setupNetworks(networks={}, bondings={}, **options):
         a bonding, it's not necessary to specify its networks.
     """
     logger = logging.getLogger("setupNetworks")
+    _netinfo = netinfo.NetInfo()
+    configWriter = ConfigWriter()
+    networksAdded = set()
 
+    logger.debug("Setting up network according to configuration: "
+                 "networks:%r, bondings:%r, options:%r" % (networks,
+                 bondings, options))
+
+    force = options.get('force', False)
+    if not utils.tobool(force):
+        logging.debug("Validating configuration")
+        _validateNetworkSetup(dict(networks), dict(bondings))
+
+    logger.debug("Applying...")
     try:
-        _netinfo = netinfo.NetInfo()
-        configWriter = ConfigWriter()
-        networksAdded = set()
+        libvirt_nets = netinfo.networks()
+        # Remove edited networks and networks with 'remove' attribute
+        for network, networkAttrs in networks.items():
+            if network in _netinfo.networks:
+                logger.debug("Removing network %r" % network)
+                delNetwork(network, configWriter=configWriter, force=force,
+                           implicitBonding=False)
+                if 'remove' in networkAttrs:
+                    del networks[network]
+                    del libvirt_nets[network]
+            elif network in libvirt_nets:
+                # If the network was not in _netinfo but is in the networks
+                # returned by libvirt, it means that we are dealing with
+                # a broken network.
+                logger.debug('Removing broken network %r' % network)
+                _delBrokenNetwork(network, libvirt_nets[network],
+                                  configWriter=configWriter)
+                if 'remove' in networkAttrs:
+                    del networks[network]
+                    del libvirt_nets[network]
+            else:
+                networksAdded.add(network)
 
-        logger.debug("Setting up network according to configuration: "
-                     "networks:%r, bondings:%r, options:%r" % (networks,
-                     bondings, options))
+        # Remove bonds with 'remove' attribute
+        _removeBondings(bondings, configWriter)
 
-        force = options.get('force', False)
-        if not utils.tobool(force):
-            logging.debug("Validating configuration")
-            _validateNetworkSetup(dict(networks), dict(bondings))
+        # Check whether bonds should be resized
+        _editBondings(bondings, configWriter)
 
-        logger.debug("Applying...")
-        try:
-            libvirt_nets = netinfo.networks()
-            # Remove edited networks and networks with 'remove' attribute
-            for network, networkAttrs in networks.items():
-                if network in _netinfo.networks:
-                    logger.debug("Removing network %r" % network)
-                    delNetwork(network, configWriter=configWriter, force=force,
-                               implicitBonding=False)
-                    if 'remove' in networkAttrs:
-                        del networks[network]
-                        del libvirt_nets[network]
-                elif network in libvirt_nets:
-                    # If the network was not in _netinfo but is in the networks
-                    # returned by libvirt, it means that we are dealing with
-                    # a broken network.
-                    logger.debug('Removing broken network %r' % network)
-                    _delBrokenNetwork(network, libvirt_nets[network],
-                                      configWriter=configWriter)
-                    if 'remove' in networkAttrs:
-                        del networks[network]
-                        del libvirt_nets[network]
-                else:
-                    networksAdded.add(network)
+        # We need to use the newest host info
+        _ni = netinfo.NetInfo()
+        for network, networkAttrs in networks.iteritems():
+            d = dict(networkAttrs)
+            if 'bonding' in d:
+                d.update(_buildBondOptions(d['bonding'], bondings, _ni))
+            else:
+                d['nics'] = [d.pop('nic')]
+            d['force'] = force
 
-            # Remove bonds with 'remove' attribute
-            _removeBondings(bondings, configWriter)
+            logger.debug("Adding network %r" % network)
+            addNetwork(network, configWriter=configWriter,
+                       implicitBonding=True, **d)
 
-            # Check whether bonds should be resized
-            _editBondings(bondings, configWriter)
-
-            # We need to use the newest host info
-            _ni = netinfo.NetInfo()
-            for network, networkAttrs in networks.iteritems():
-                d = dict(networkAttrs)
-                if 'bonding' in d:
-                    d.update(_buildBondOptions(d['bonding'], bondings, _ni))
-                else:
-                    d['nics'] = [d.pop('nic')]
-                d['force'] = force
-
-                logger.debug("Adding network %r" % network)
-                addNetwork(network, configWriter=configWriter,
-                           implicitBonding=True, **d)
-
-            if utils.tobool(options.get('connectivityCheck', True)):
-                logger.debug('Checking connectivity...')
-                if not clientSeen(int(options.get('connectivityTimeout',
-                                      CONNECTIVITY_TIMEOUT_DEFAULT))):
-                    logger.info('Connectivity check failed, rolling back')
-                    for network in networksAdded:
-                        # If the new added network was created on top of
-                        # existing bond, we need to keep the bond on rollback
-                        # flow, else we will break the new created bond.
-                        delNetwork(network, force=True,
-                                   implicitBonding=networks[network].
-                                   get('bonding') in bondings)
-                    raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
-                                             'connectivity check failed')
-        except:
-            configWriter.restoreBackups()
-            raise
-
-    except Exception as e:
-        # SuperVdsm eats the error, so let's print it ourselves
-        logger.error(e, exc_info=True)
+        if utils.tobool(options.get('connectivityCheck', True)):
+            logger.debug('Checking connectivity...')
+            if not clientSeen(int(options.get('connectivityTimeout',
+                                  CONNECTIVITY_TIMEOUT_DEFAULT))):
+                logger.info('Connectivity check failed, rolling back')
+                for network in networksAdded:
+                    # If the new added network was created on top of
+                    # existing bond, we need to keep the bond on rollback
+                    # flow, else we will break the new created bond.
+                    delNetwork(network, force=True,
+                               implicitBonding=networks[network].
+                               get('bonding') in bondings)
+                raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
+                                         'connectivity check failed')
+    except:
+        configWriter.restoreBackups()
         raise
 
 
