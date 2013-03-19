@@ -20,6 +20,7 @@
 
 from contextlib import contextmanager
 import libvirt
+import os
 import xml.dom.minidom
 from xml.dom import Node
 from xml.dom.minidom import parseString as _domParseStr
@@ -44,6 +45,7 @@ _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 # This device name is used as default both in the qemu-guest-agent
 # service/daemon and in libvirtd (to be used with the quiesce flag).
 _QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
+_AGENT_CHANNEL_DEVICES = (_VMCHANNEL_DEVICE_NAME, _QEMU_GA_DEVICE_NAME)
 
 
 class MERGESTATUS:
@@ -1266,6 +1268,9 @@ class ConsoleDevice(LibvirtVmDevice):
 class LibvirtVm(vm.Vm):
     MigrationSourceThreadClass = MigrationSourceThread
 
+    def _makeChannelPath(self, deviceName):
+        return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + deviceName
+
     def __init__(self, cif, params):
         self._dom = None
         vm.Vm.__init__(self, cif, params)
@@ -1273,12 +1278,8 @@ class LibvirtVm(vm.Vm):
         self._connection = libvirtconnection.get(cif)
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
-        self._guestSocketFile = (constants.P_LIBVIRT_VMCHANNELS +
-                                 self.conf['vmName'].encode('utf-8') +
-                                 '.' + _VMCHANNEL_DEVICE_NAME)
-        self._qemuguestSocketFile = (constants.P_LIBVIRT_VMCHANNELS +
-                                     self.conf['vmName'].encode('utf-8') +
-                                     '.' + _QEMU_GA_DEVICE_NAME)
+        self._guestSocketFile = self._makeChannelPath(_VMCHANNEL_DEVICE_NAME)
+        self._qemuguestSocketFile = self._makeChannelPath(_QEMU_GA_DEVICE_NAME)
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
         self._devXmlHash = '0'
         self._released = False
@@ -1412,6 +1413,36 @@ class LibvirtVm(vm.Vm):
         # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
+    def _updateAgentChannels(self):
+        """
+        We moved the naming of guest agent channel sockets. To keep backwards
+        compatability we need to make symlinks from the old channel sockets, to
+        the new naming scheme.
+        This is necessary to prevent incoming migrations, restoring of VMs and
+        the upgrade of VDSM with running VMs to fail on this.
+        """
+        agentChannelXml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+            getElementsByTagName('devices')[0]. \
+            getElementsByTagName('channel')
+        for channel in agentChannelXml:
+            try:
+                name = channel.getElementsByTagName('target')[0].\
+                    getAttribute('name')
+                path = channel.getElementsByTagName('source')[0].\
+                    getAttribute('path')
+            except IndexError:
+                continue
+
+            if name not in _AGENT_CHANNEL_DEVICES:
+                continue
+
+            if os.path.islink(path):
+                os.unlink(path)
+
+            socketPath = self._makeChannelPath(name)
+            if path != socketPath:
+                os.symlink(path, socketPath)
+
     def _domDependentInit(self):
         if self.destroyed:
             # reaching here means that Vm.destroy() was called before we could
@@ -1424,6 +1455,7 @@ class LibvirtVm(vm.Vm):
 
         self._getUnderlyingVmInfo()
         self._getUnderlyingVmDevicesInfo()
+        self._updateAgentChannels()
 
         #Currently there is no protection agains mirroring a network twice,
         for nic in self._devices[vm.NIC_DEVICES]:
