@@ -1064,6 +1064,7 @@ exit 0
 %exclude %{_datadir}/%{vdsm_name}/tests/gluster*
 %endif
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
+%{_datadir}/%{vdsm_name}/tests/functional/*.policy
 
 %files hook-openstacknet
 %defattr(-, root, root, -)

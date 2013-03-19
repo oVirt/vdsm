@@ -1,0 +1,40 @@
+### Auto-Balloon ###############################################################
+
+# This policy decreases the balloon target by 5% until it reaches
+# balloon_mim which is the minimum balloon target.
+# It also ensures that the target difference is not too small.
+
+### Constants
+(defvar pressure_threshold 1)
+(defvar min_guest_memory_percent 0.9475)
+(defvar max_balloon_change_percent 0.05)
+(defvar min_balloon_change_percent 0.002)
+
+### Helper functions
+(def change_big_enough (guest new_val)
+{
+    (if (> (abs (- new_val guest.balloon_cur))
+           (* min_balloon_change_percent guest.balloon_cur))
+        1 0)
+})
+
+(def shrink_guest (guest)
+{
+    (defvar balloon_min (* min_guest_memory_percent
+                           guest.balloon_max))
+    (defvar balloon_size (* guest.balloon_cur
+                            (- 1 max_balloon_change_percent)))
+    (if (< balloon_size balloon_min)
+        (set balloon_size balloon_min)
+        0)
+    (if (and (<= balloon_size guest.balloon_cur)
+             (change_big_enough guest balloon_size))
+        (guest.Control "balloon_target" balloon_size)
+        0)
+})
+
+### Main script
+(defvar host_free_percent (/ (Host.StatAvg "mem_free") Host.mem_available))
+(if (<= host_free_percent pressure_threshold)
+    (with Guests guest (shrink_guest guest))
+    0)

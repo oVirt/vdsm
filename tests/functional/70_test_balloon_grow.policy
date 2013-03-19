@@ -1,0 +1,34 @@
+### Auto-Balloon ###############################################################
+
+# This policy increases the balloon target by 5% until it reaches
+# guest.balloon_max.
+# It also ensures that the target difference is not too small.
+
+### Constants
+(defvar pressure_threshold 0)
+(defvar max_balloon_change_percent 0.05)
+(defvar min_balloon_change_percent 0.002)
+
+(def change_big_enough (guest new_val)
+{
+    (if (> (abs (- new_val guest.balloon_cur))
+                (* min_balloon_change_percent guest.balloon_cur))
+        1 0)
+})
+
+(def grow_guest (guest)
+{
+    (if (< guest.balloon_cur guest.balloon_max) {
+        (defvar balloon_size (* guest.balloon_cur
+                                (+ 1 max_balloon_change_percent)))
+    (if (> balloon_size guest.balloon_max)
+        (set balloon_size guest.balloon_max) 0)
+    (if (change_big_enough guest balloon_size)
+        (guest.Control "balloon_target" balloon_size) 0)
+    } 0)
+})
+
+### Main script
+(defvar host_free_percent (/ (Host.StatAvg "mem_free") Host.mem_available))
+(if (> host_free_percent pressure_threshold)
+    (with Guests guest (grow_guest guest)) 0)

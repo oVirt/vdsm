@@ -29,3 +29,7 @@ dist_vdsmfunctests_PYTHON = \
 	xmlrpcTests.py \
 	$(NULL)
 
+dist_vdsmfunctests_DATA = \
+	60_test_balloon_shrink.policy \
+	70_test_balloon_grow.policy \
+	$(NULL)
