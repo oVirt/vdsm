@@ -27,6 +27,7 @@ version_name = "Snow Man"
 #        remove from vdsm.spec the sed to replace the below macros
 software_version = "@PACKAGE_VERSION@"
 software_revision = "@PACKAGE_RELEASE@"
+raw_version_revision = "@PACKAGE_VERSION@.@PACKAGE_RELEASE@"
 
 version_info = {
     'version_name': version_name,
