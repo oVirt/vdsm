@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-betterpopendir = $(vdsmpylibdir)/betterPopen
+betterpopendir = $(pyexecdir)/betterPopen
 
 dist_betterpopen_PYTHON = \
 	__init__.py
