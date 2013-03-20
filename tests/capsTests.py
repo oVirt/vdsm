@@ -50,6 +50,7 @@ class TestCaps(TestCaseBase):
                                                 arat epb dts tpr_shadow vnmi
                                                 flexpriority ept
                                                 vpid""".split()))
+
         self.assertEqual(c.mhz(), '2533.402')
         self.assertEqual(c.model(),
                          'Intel(R) Xeon(R) CPU           E5649  @ 2.53GHz')
@@ -57,20 +58,33 @@ class TestCaps(TestCaseBase):
     def testCpuTopology(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
-        path = os.path.join(dirName, "caps_libvirt.out")
+        # 2 x Intel E5649 (with Hyperthreading)
+        path = os.path.join(dirName, "caps_libvirt_intel_E5649.out")
         t = caps.CpuTopology(file(path).read())
         self.assertEqual(t.threads(), 24)
         self.assertEqual(t.cores(), 12)
         self.assertEqual(t.sockets(), 2)
+        # 2 x AMD 6272 (with Modules)
+        path = os.path.join(dirName, "caps_libvirt_amd_6274.out")
+        t = caps.CpuTopology(file(path).read())
+        self.assertEqual(t.threads(), 32)
+        self.assertEqual(t.cores(), 16)
+        self.assertEqual(t.sockets(), 2)
+        # 1 x Intel E31220 (normal Multi-core)
+        path = os.path.join(dirName, "caps_libvirt_intel_E31220.out")
+        t = caps.CpuTopology(file(path).read())
+        self.assertEqual(t.threads(), 4)
+        self.assertEqual(t.cores(), 4)
+        self.assertEqual(t.sockets(), 1)
 
     def testEmulatedMachines(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
-        path = os.path.join(dirName, "caps_libvirt.out")
+        path = os.path.join(dirName, "caps_libvirt_amd_6274.out")
         machines = caps._getEmulatedMachines(file(path).read())
-        expectedMachines = ['pc-1.2', 'none', 'pc', 'pc-1.1', 'pc-1.0',
-                            'pc-0.15', 'pc-0.14', 'pc-0.13', 'pc-0.12',
-                            'pc-0.11', 'pc-0.10', 'isapc']
+        expectedMachines = ['pc-0.15', 'pc', 'pc-1.0', 'pc-0.14',
+                            'pc-0.13', 'pc-0.12', 'pc-0.11',
+                            'pc-0.10', 'isapc']
         self.assertEqual(machines, expectedMachines)
 
     def test_parseKeyVal(self):

@@ -96,18 +96,13 @@ class CpuTopology(object):
         self._topology = _getCpuTopology(capabilities)
 
     def threads(self):
-        return (self._topology['threads'])
+        return self._topology['threads']
 
- # this assumes that all numa nodes have the same number of sockets,
- # and that all socket have the same number of cores.
     def cores(self):
-        return (self._topology['cells'] *
-                self._topology['sockets'] *
-                self._topology['cores'])
+        return self._topology['cores']
 
     def sockets(self):
-        return (self._topology['cells'] *
-                self._topology['sockets'])
+        return self._topology['sockets']
 
 
 @utils.memoized
@@ -119,16 +114,22 @@ def _getCapsXMLStr():
 def _getCpuTopology(capabilities):
     if capabilities is None:
         capabilities = _getCapsXMLStr()
+
     caps = minidom.parseString(capabilities)
     host = caps.getElementsByTagName('host')[0]
-    cpu = host.getElementsByTagName('cpu')[0]
     cells = host.getElementsByTagName('cells')[0]
-    topology = {'cells': int(cells.getAttribute('num')),
-                'sockets': int(cpu.getElementsByTagName('topology')[0].
-                               getAttribute('sockets')),
-                'cores': int(cpu.getElementsByTagName('topology')[0].
-                             getAttribute('cores')),
-                'threads': cells.getElementsByTagName('cpu').length}
+    cpus = cells.getElementsByTagName('cpu').length
+
+    sockets = set()
+    siblings = set()
+    for cpu in cells.getElementsByTagName('cpu'):
+        sockets.add(cpu.getAttribute('socket_id'))
+        siblings.add(cpu.getAttribute('siblings'))
+
+    topology = {'sockets': len(sockets),
+                'cores': len(siblings),
+                'threads': cpus}
+
     return topology
 
 

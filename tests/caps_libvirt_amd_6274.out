@@ -1,0 +1,377 @@
+<capabilities>
+
+  <host>
+    <uuid>00001111-0000-2222-0000-888800009999</uuid>
+    <cpu>
+      <arch>x86_64</arch>
+      <model>Opteron_G4</model>
+      <vendor>AMD</vendor>
+      <topology sockets='1' cores='32' threads='1'/>
+      <feature name='perfctr_nb'/>
+      <feature name='perfctr_core'/>
+      <feature name='topoext'/>
+      <feature name='nodeid_msr'/>
+      <feature name='lwp'/>
+      <feature name='wdt'/>
+      <feature name='skinit'/>
+      <feature name='ibs'/>
+      <feature name='osvw'/>
+      <feature name='cr8legacy'/>
+      <feature name='extapic'/>
+      <feature name='cmp_legacy'/>
+      <feature name='fxsr_opt'/>
+      <feature name='mmxext'/>
+      <feature name='osxsave'/>
+      <feature name='monitor'/>
+      <feature name='ht'/>
+      <feature name='vme'/>
+    </cpu>
+    <power_management>
+      <suspend_mem/>
+      <suspend_disk/>
+      <suspend_hybrid/>
+    </power_management>
+    <migration_features>
+      <live/>
+      <uri_transports>
+        <uri_transport>tcp</uri_transport>
+      </uri_transports>
+    </migration_features>
+    <topology>
+      <cells num='4'>
+        <cell id='0'>
+          <cpus num='8'>
+            <cpu id='0' socket_id='0' core_id='0' siblings='0-1'/>
+            <cpu id='1' socket_id='0' core_id='1' siblings='0-1'/>
+            <cpu id='2' socket_id='0' core_id='2' siblings='2-3'/>
+            <cpu id='3' socket_id='0' core_id='3' siblings='2-3'/>
+            <cpu id='4' socket_id='0' core_id='4' siblings='4-5'/>
+            <cpu id='5' socket_id='0' core_id='5' siblings='4-5'/>
+            <cpu id='6' socket_id='0' core_id='6' siblings='6-7'/>
+            <cpu id='7' socket_id='0' core_id='7' siblings='6-7'/>
+          </cpus>
+        </cell>
+        <cell id='1'>
+          <cpus num='8'>
+            <cpu id='8' socket_id='0' core_id='0' siblings='8-9'/>
+            <cpu id='9' socket_id='0' core_id='1' siblings='8-9'/>
+            <cpu id='10' socket_id='0' core_id='2' siblings='10-11'/>
+            <cpu id='11' socket_id='0' core_id='3' siblings='10-11'/>
+            <cpu id='12' socket_id='0' core_id='4' siblings='12-13'/>
+            <cpu id='13' socket_id='0' core_id='5' siblings='12-13'/>
+            <cpu id='14' socket_id='0' core_id='6' siblings='14-15'/>
+            <cpu id='15' socket_id='0' core_id='7' siblings='14-15'/>
+          </cpus>
+        </cell>
+        <cell id='2'>
+          <cpus num='8'>
+            <cpu id='16' socket_id='1' core_id='0' siblings='16-17'/>
+            <cpu id='17' socket_id='1' core_id='1' siblings='16-17'/>
+            <cpu id='18' socket_id='1' core_id='2' siblings='18-19'/>
+            <cpu id='19' socket_id='1' core_id='3' siblings='18-19'/>
+            <cpu id='20' socket_id='1' core_id='4' siblings='20-21'/>
+            <cpu id='21' socket_id='1' core_id='5' siblings='20-21'/>
+            <cpu id='22' socket_id='1' core_id='6' siblings='22-23'/>
+            <cpu id='23' socket_id='1' core_id='7' siblings='22-23'/>
+          </cpus>
+        </cell>
+        <cell id='3'>
+          <cpus num='8'>
+            <cpu id='24' socket_id='1' core_id='0' siblings='24-25'/>
+            <cpu id='25' socket_id='1' core_id='1' siblings='24-25'/>
+            <cpu id='26' socket_id='1' core_id='2' siblings='26-27'/>
+            <cpu id='27' socket_id='1' core_id='3' siblings='26-27'/>
+            <cpu id='28' socket_id='1' core_id='4' siblings='28-29'/>
+            <cpu id='29' socket_id='1' core_id='5' siblings='28-29'/>
+            <cpu id='30' socket_id='1' core_id='6' siblings='30-31'/>
+            <cpu id='31' socket_id='1' core_id='7' siblings='30-31'/>
+          </cpus>
+        </cell>
+      </cells>
+    </topology>
+    <secmodel>
+      <model>selinux</model>
+      <doi>0</doi>
+    </secmodel>
+    <secmodel>
+      <model>dac</model>
+      <doi>0</doi>
+    </secmodel>
+  </host>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='armv7l'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-arm</emulator>
+      <machine>integratorcp</machine>
+      <machine>collie</machine>
+      <machine>connex</machine>
+      <machine>verdex</machine>
+      <machine>mainstone</machine>
+      <machine>musicpal</machine>
+      <machine>n800</machine>
+      <machine>n810</machine>
+      <machine>sx1</machine>
+      <machine>sx1-v1</machine>
+      <machine>cheetah</machine>
+      <machine>realview-eb</machine>
+      <machine>realview-eb-mpcore</machine>
+      <machine>realview-pb-a8</machine>
+      <machine>realview-pbx-a9</machine>
+      <machine>akita</machine>
+      <machine>spitz</machine>
+      <machine>borzoi</machine>
+      <machine>terrier</machine>
+      <machine>lm3s811evb</machine>
+      <machine>lm3s6965evb</machine>
+      <machine>syborg</machine>
+      <machine>tosa</machine>
+      <machine>versatilepb</machine>
+      <machine>versatileab</machine>
+      <machine>vexpress-a9</machine>
+      <machine>z2</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-arm</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='cris'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-cris</emulator>
+      <machine>axis-dev88</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-cris</emulator>
+      </domain>
+    </arch>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='i686'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-i386</emulator>
+      <machine>pc-0.15</machine>
+      <machine canonical='pc-1.0'>pc</machine>
+      <machine>pc-1.0</machine>
+      <machine>pc-0.14</machine>
+      <machine>pc-0.13</machine>
+      <machine>pc-0.12</machine>
+      <machine>pc-0.11</machine>
+      <machine>pc-0.10</machine>
+      <machine>isapc</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-kvm</emulator>
+        <machine>pc-0.15</machine>
+        <machine canonical='pc-1.0'>pc</machine>
+        <machine>pc-1.0</machine>
+        <machine>pc-0.14</machine>
+        <machine>pc-0.13</machine>
+        <machine>pc-0.12</machine>
+        <machine>pc-0.11</machine>
+        <machine>pc-0.10</machine>
+        <machine>isapc</machine>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <acpi default='on' toggle='yes'/>
+      <apic default='on' toggle='no'/>
+      <pae/>
+      <nonpae/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='m68k'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-m68k</emulator>
+      <machine>mcf5208evb</machine>
+      <machine>an5206</machine>
+      <machine>dummy</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-m68k</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='mips'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-mips</emulator>
+      <machine>malta</machine>
+      <machine>magnum</machine>
+      <machine>pica61</machine>
+      <machine>mipssim</machine>
+      <machine>mips</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-mips</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='mipsel'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-mipsel</emulator>
+      <machine>malta</machine>
+      <machine>magnum</machine>
+      <machine>pica61</machine>
+      <machine>mipssim</machine>
+      <machine>mips</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-mipsel</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='mips64'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/bin/qemu-system-mips64</emulator>
+      <machine>malta</machine>
+      <machine>magnum</machine>
+      <machine>pica61</machine>
+      <machine>mipssim</machine>
+      <machine>mips</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-mips64</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='mips64el'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/bin/qemu-system-mips64el</emulator>
+      <machine>malta</machine>
+      <machine>fulong2e</machine>
+      <machine>magnum</machine>
+      <machine>pica61</machine>
+      <machine>mipssim</machine>
+      <machine>mips</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-mips64el</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='sh4'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-sh4</emulator>
+      <machine>shix</machine>
+      <machine>r2d</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-sh4</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='sh4eb'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/bin/qemu-system-sh4eb</emulator>
+      <machine>shix</machine>
+      <machine>r2d</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-system-sh4eb</emulator>
+      </domain>
+    </arch>
+    <features>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='x86_64'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/bin/qemu-system-x86_64</emulator>
+      <machine>pc-0.15</machine>
+      <machine canonical='pc-1.0'>pc</machine>
+      <machine>pc-1.0</machine>
+      <machine>pc-0.14</machine>
+      <machine>pc-0.13</machine>
+      <machine>pc-0.12</machine>
+      <machine>pc-0.11</machine>
+      <machine>pc-0.10</machine>
+      <machine>isapc</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-kvm</emulator>
+        <machine>pc-0.15</machine>
+        <machine canonical='pc-1.0'>pc</machine>
+        <machine>pc-1.0</machine>
+        <machine>pc-0.14</machine>
+        <machine>pc-0.13</machine>
+        <machine>pc-0.12</machine>
+        <machine>pc-0.11</machine>
+        <machine>pc-0.10</machine>
+        <machine>isapc</machine>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <acpi default='on' toggle='yes'/>
+      <apic default='on' toggle='no'/>
+    </features>
+  </guest>
+
+</capabilities>
+
+
