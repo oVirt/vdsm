@@ -105,7 +105,7 @@ def rescan():
     # First ask iSCSI to rescan all its sessions
     iscsi.rescan()
 
-    supervdsm.getProxy().forceIScsiScan()
+    supervdsm.getProxy().forceScsiScan()
 
     # Now let multipath daemon pick up new devices
     misc.execCmd([constants.EXT_MULTIPATH], sudo=True)

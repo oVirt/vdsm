@@ -373,7 +373,7 @@ def rescan():
 
 
 @misc.samplingmethod
-def forceIScsiScan():
+def forceScsiScan():
     processes = []
     minTimeout = config.getint('irs', 'scsi_rescan_minimal_timeout')
     maxTimeout = config.getint('irs', 'scsi_rescan_maximal_timeout')

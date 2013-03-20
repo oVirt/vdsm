@@ -37,7 +37,6 @@ import storage_mailbox
 import blockSD
 import fileSD
 import sd
-import multipath
 import misc
 import fileUtils
 from vdsm.config import config
@@ -978,7 +977,7 @@ class StoragePool(Securable):
         try:
             dom = sdCache.produce(sdUUID)
         except se.StorageDomainDoesNotExist:
-            multipath.rescan()
+            sdCache.invalidateStorage()
             dom = sdCache.produce(sdUUID)
         dom.acquireHostId(self.id)
 

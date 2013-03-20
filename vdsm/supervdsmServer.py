@@ -37,7 +37,7 @@ from md_utils import getMdDeviceUuidMap as _getMdDeviceUuidMap
 
 from lsblk import getLsBlk as _getLsBlk
 from storage.multipath import getScsiSerial as _getScsiSerial
-from storage.iscsi import forceIScsiScan as _forceIScsiScan
+from storage.iscsi import forceScsiScan as _forceScsiScan
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
 from supervdsm import _SuperVdsmManager
@@ -124,8 +124,8 @@ class _SuperVdsm(object):
         return _getScsiSerial(*args, **kwargs)
 
     @logDecorator
-    def forceIScsiScan(self, *args, **kwargs):
-        return _forceIScsiScan(*args, **kwargs)
+    def forceScsiScan(self, *args, **kwargs):
+        return _forceScsiScan(*args, **kwargs)
 
     @logDecorator
     def removeDeviceMapping(self, devName):
