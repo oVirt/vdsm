@@ -74,7 +74,8 @@ def ifup(iface, async=False):
         if rc != 0:
             # In /etc/sysconfig/network-scripts/ifup* the last line usually
             # contains the error reason.
-            raise ConfigNetworkError(ne.ERR_FAILED_IFUP, out[-1])
+            raise ConfigNetworkError(ne.ERR_FAILED_IFUP,
+                                     out[-1] if out else '')
         return rc, out, err
 
     if async:
