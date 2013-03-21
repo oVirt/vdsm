@@ -34,5 +34,5 @@ version_info = {
     'software_revision': software_revision,
     'supportedENGINEs': ['3.0', '3.1'],
     'supportedProtocols': ['2.2', '2.3'],
-    'clusterLevels': ['3.0', '3.1', '3.2'],
+    'clusterLevels': ['3.0', '3.1', '3.2', '3.3'],
 }
