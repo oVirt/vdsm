@@ -158,7 +158,7 @@ class Plugin(PluginBase):
         PluginBase.__init__(self, "@ENGINENAME@", ncs)
 
     def form(self):
-        elements = Grid(2, 8)
+        elements = Grid(2, 9)
         is_network_up = network_up()
         if is_network_up:
             header_message = "@ENGINENAME@ Configuration"
@@ -193,6 +193,8 @@ class Plugin(PluginBase):
 
         elements.setField(Label("Optional password for adding node through "
                                 "@ENGINENAME@ UI"), 0, 5, anchorLeft=1)
+        elements.setField(Label("Note: Setting password will enable "
+                                "SSH daemon"), 0, 6, anchorLeft=1)
         pw_elements = Grid(3, 3)
 
         pw_elements.setField(Label("Password: "), 0, 1, anchorLeft=1)
@@ -207,8 +209,8 @@ class Plugin(PluginBase):
         self.pw_msg = Textbox(60, 6, self.pw_pcheck_msg, wrap=1)
         self.pw_resp = PASSWORD_MATCH
 
-        elements.setField(pw_elements, 0, 6, anchorLeft=1)
-        elements.setField(self.pw_msg, 0, 7, padding=(0, 0, 0, 0))
+        elements.setField(pw_elements, 0, 7, anchorLeft=1)
+        elements.setField(self.pw_msg, 0, 8, padding=(0, 0, 0, 0))
 
         inputFields = [self.engine_server, self.engine_server_port,
                        self.verify_engine_cert, self.root_password_1,
