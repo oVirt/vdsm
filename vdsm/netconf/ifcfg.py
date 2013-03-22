@@ -38,9 +38,117 @@ from vdsm import utils
 import neterrors as ne
 
 
-class IfcfgConfigurator(object):
+class Ifcfg(object):
     # TODO: Do all the configWriter interaction from here.
-    pass
+    def __init__(self, configWriter=None):
+        self.configWriter = configWriter
+        self._libvirtAdded = set()
+
+    def begin(self):
+        if self.configWriter is None:
+            self.configWriter = ConfigWriter()
+            self._libvirtAdded = set()
+
+    def rollback(self):
+        if self.configWriter:
+            self.configWriter.restoreBackups()
+            for network in self._libvirtAdded:
+                # TODO: Add meaningful logging for failure to remove the added
+                # networks.
+                self.configWriter.removeLibvirtNetwork(network)
+
+            self.configWriter = None
+
+    def commit(self):
+        if self.configWriter:
+            self.configWriter = None
+            self._libvirtAdded = set()
+
+    def configureBridge(self, network, vlan=None, bonding=None, nics=None,
+                        ipaddr=None, netmask=None, mtu=None, gateway=None,
+                        bondingOptions=None, async=False, bootproto=None,
+                        **options):
+        self.configWriter.addBridge(network, ipaddr=ipaddr, netmask=netmask,
+                                    mtu=mtu, gateway=gateway,
+                                    bootproto=bootproto, **options)
+        ifdown(network)
+        bootproto = None
+        if vlan:
+            iface = self.configureVlan(None, vlan, bridge=network,
+                                       bonding=bonding, nics=nics, mtu=mtu,
+                                       bondingOptions=bondingOptions,
+                                       bootproto=bootproto, **options)
+        elif bonding:
+            iface = self.configureBond(None, bonding, nics, bridge=network,
+                                       bondingOptions=bondingOptions, mtu=mtu,
+                                       bootproto=bootproto, **options)
+        elif nics:
+            mtu = self.configWriter.getMaxMtu(nics, mtu)
+            for nic in nics:
+                iface = self.configureNic(None, nic, bridge=network, mtu=mtu,
+                                          bootproto=bootproto, **options)
+        else:
+            iface = None
+        ifup(network, async)
+        self.configWriter.createLibvirtNetwork(network, True, iface)
+
+    def configureVlan(self, network, vlan, bridge=None, bonding=None,
+                      nics=None, ipaddr=None, netmask=None, mtu=None,
+                      gateway=None, bondingOptions=None, async=False,
+                      bootproto=None, **options):
+        iface = (bonding or nics[0])
+        self.configWriter.addVlan(vlan, iface, network=bridge, mtu=mtu,
+                                  bridged=bridge is not None, ipaddr=ipaddr,
+                                  netmask=netmask, gateway=gateway,
+                                  bootproto=bootproto, **options)
+        iface += '.' + vlan
+        bootproto = None
+        if bonding:
+            self.configureBond(None, bonding, nics, bridge=None,
+                               bondingOptions=bondingOptions, mtu=mtu,
+                               bootproto=bootproto, **options)
+        elif nics:
+            mtu = self.configWriter.getMaxMtu(nics, mtu)
+            for nic in nics:
+                self.configureNic(None, nic, bridge=None, mtu=mtu,
+                                  bootproto=bootproto, **options)
+        ifup(iface, async)
+        if network:
+            self.configWriter.createLibvirtNetwork(network, False, iface)
+        return iface
+
+    def configureBond(self, network, bonding, nics, ipaddr=None,
+                      netmask=None, mtu=None, gateway=None, bridge=None,
+                      bondingOptions=None, async=False, bootproto=None,
+                      **options):
+        mtu = self.configWriter.getMaxMtu(nics, mtu)
+        self.configWriter.addBonding(bonding, bridge=bridge,
+                                     bondingOptions=bondingOptions,
+                                     mtu=mtu, ipaddr=ipaddr,
+                                     netmask=netmask, gateway=gateway,
+                                     bootproto=bootproto, **options)
+        for nic in nics:
+            self.configureNic(None, nic, bonding=bonding, mtu=mtu,
+                              bootproto=None, **options)
+
+        ifup(bonding, async)
+        if network:
+            self.configWriter.createLibvirtNetwork(network, False, bonding)
+        return bonding
+
+    def configureNic(self, network, nic, bridge=None, bonding=None,
+                     ipaddr=None, netmask=None, mtu=None, gateway=None,
+                     async=False, bootproto=None, **options):
+        self.configWriter.addNic(nic, bonding=bonding, bridge=bridge, mtu=mtu,
+                                 ipaddr=ipaddr, netmask=netmask,
+                                 gateway=gateway, bootproto=bootproto,
+                                 **options)
+        if not bonding:
+            ifup(nic, async)
+
+        if network:
+            self.configWriter.createLibvirtNetwork(network, False, nic)
+        return nic
 
 
 class ConfigWriter(object):

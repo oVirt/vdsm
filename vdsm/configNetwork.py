@@ -39,6 +39,7 @@ from vdsm.netinfo import DEFAULT_MTU
 from netconf.ifcfg import ifup
 from netconf.ifcfg import ifdown
 from netconf.ifcfg import ConfigWriter
+from netconf.ifcfg import Ifcfg
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
 MAX_VLAN_ID = 4094
@@ -275,7 +276,6 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
                                      'Both PREFIX and NETMASK supplied')
 
-    # Validation
     if not utils.tobool(force):
         logging.debug('validating network...')
         _addNetworkValidation(_netinfo, network=network, vlan=vlan,
@@ -291,14 +291,10 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     if configWriter is None:
         configWriter = ConfigWriter()
+    configurator = Ifcfg(configWriter)
 
-    prevmtu = None
-    if mtu:
-        prevmtu = configWriter.getMaxMtu(nics, mtu)
-
-    nic = nics[0] if nics else None
-    iface = bonding or nic
-    blockingDhcp = utils.tobool(options.get('blockingdhcp'))
+    async = not(utils.tobool(options.get('blockingdhcp')) and
+                options.get('bootproto') == 'dhcp')
 
     # take down nics that need to be changed
     vlanedIfaces = [v['iface'] for v in _netinfo.vlans.values()]
@@ -308,70 +304,20 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                 ifdown(nic)
 
     if bridged:
-        configWriter.addBridge(network, ipaddr=ipaddr, netmask=netmask,
-                               mtu=mtu, gateway=gateway, **options)
-        ifdown(network)
-        # We need to define (if requested) ip, mask & gateway on ifcfg-*
-        # only on most top device according to following order:
-        # bridge -> vlan -> bond -> nic
-        # For lower level devices we should ignore it.
-        # reset ip, netmask, gateway and bootproto for lower level devices
-        bridgeBootproto = options.get('bootproto')
-        ipaddr = netmask = gateway = options['bootproto'] = None
-
-    # For VLAN we should attach bridge only to the VLAN device
-    # rather than to underlying NICs or bond
-    brName = network if bridged else None
-    bridgeForNic = None if vlan else brName
-
-    # We want to create config files (ifcfg-*) in top-down order
-    # (bridge->vlan->bond->nic) to be able to handle IP/NETMASK
-    # correctly for bridgeless networks
-    if vlan:
-        # don't ifup VLAN interface here, it should be done last,
-        # after the bond and nic up
-        configWriter.addVlan(vlan, iface, network=brName,
-                             mtu=mtu, bridged=bridged,
-                             ipaddr=ipaddr, netmask=netmask,
-                             gateway=gateway, **options)
-        iface += '.' + vlan
-        vlanBootproto = options.get('bootproto')
-        # reset ip, netmask, gateway and bootproto for lower level devices
-        ipaddr = netmask = gateway = options['bootproto'] = None
-
-    # First we need to prepare all conf files
-    if bonding:
-        configWriter.addBonding(bonding, bridge=bridgeForNic,
-                                bondingOptions=bondingOptions,
-                                mtu=max(prevmtu, mtu),
-                                ipaddr=ipaddr, netmask=netmask,
-                                gateway=gateway, **options)
-        bondBootproto = options.get('bootproto')
-        # reset ip, netmask, gateway and bootproto for lower level devices
-        ipaddr = netmask = gateway = options['bootproto'] = None
-
-    for nic in nics:
-        configWriter.addNic(nic, bonding=bonding,
-                            bridge=bridgeForNic if not bonding else None,
-                            mtu=max(prevmtu, mtu), ipaddr=ipaddr,
-                            netmask=netmask, gateway=gateway, **options)
-
-    # Now we can run ifup for all interfaces
-    if bonding:
-        ifup(bonding, bondBootproto == 'dhcp' and not blockingDhcp)
-    else:
-        for nic in nics:
-            ifup(nic, options.get('bootproto') == 'dhcp' and not blockingDhcp)
-
-    # Now we can ifup VLAN interface, because bond and nic already up
-    if vlan:
-        ifup(iface, vlanBootproto == 'dhcp' and not blockingDhcp)
-
-    if bridged:
-        ifup(network, bridgeBootproto == 'dhcp' and not blockingDhcp)
-
-    # add libvirt network
-    configWriter.createLibvirtNetwork(network, bridged, iface)
+        configurator.configureBridge(network, vlan, bonding, nics, ipaddr,
+                                     netmask, mtu, gateway, bondingOptions,
+                                     async, **options)
+    elif vlan:
+        configurator.configureVlan(network, vlan, None, bonding, nics,
+                                   ipaddr, netmask, mtu, gateway,
+                                   bondingOptions, async, **options)
+    elif bonding:
+        configurator.configureBond(network, bonding, nics, ipaddr, netmask,
+                                   mtu, gateway, None, bondingOptions, async,
+                                   **options)
+    elif nics:
+        configurator.configureNic(network, nics[0], None, bonding, ipaddr,
+                                  netmask, mtu, gateway, async, **options)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
