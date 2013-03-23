@@ -101,6 +101,7 @@ Requires: dmidecode
 ExclusiveArch:  x86_64
 Requires: device-mapper-multipath
 Requires: e2fsprogs
+Requires: fence-agents-all
 Requires: iscsi-initiator-utils
 Requires: libvirt
 Requires: lvm2
@@ -118,6 +119,7 @@ Requires: libvirt >= 0.10.2-18.el6_4.2
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
+Requires: fence-agents
 Requires: kernel >= 2.6.32-279.9.1
 Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
@@ -127,6 +129,11 @@ Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
 %endif
 %else
+%if 0%{?fedora} >= 19
+Requires: fence-agents-all
+%else
+Requires: fence-agents
+%endif
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
@@ -156,7 +163,6 @@ Requires: systemd >= 197-1.fc18.2
 
 Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: psmisc >= 22.6-15
-Requires: fence-agents
 Requires: bridge-utils
 Requires: sos
 Requires: tree
