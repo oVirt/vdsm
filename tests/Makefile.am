@@ -27,6 +27,7 @@ test_modules = \
 	capsTests.py \
 	configNetworkTests.py \
 	fileUtilTests.py \
+	fuserTests.py \
 	getAllVolumesTests.py \
 	glusterTestData.py \
 	gluster_cli_tests.py \

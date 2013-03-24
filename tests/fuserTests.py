@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,22 +13,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import misc
-from vdsm import constants
+
+import os
+from storage import fuser
+
+from testrunner import VdsmTestCase
 
 
-def fuser(path, mountPoint=False):
-    cmd = [constants.EXT_FUSER]
-    if mountPoint:
-        cmd.append("-m")
+class TestFuser(VdsmTestCase):
 
-    cmd.append(path)
-    (rc, out, err) = misc.execCmd(cmd, raw=True, sudo=True)
-    if rc != 0:
-        return []
-
-    return [int(pid) for pid in out.split()]
+    def testSelfExe(self):
+        pid = os.getpid()
+        self.assertTrue(pid in fuser.fuser('/proc/%s/exe' % pid))
