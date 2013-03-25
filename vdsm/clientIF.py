@@ -271,13 +271,16 @@ class clientIF:
 
             # GUID drive format
             elif "GUID" in drive:
-                volPath = os.path.join("/dev/mapper", drive["GUID"])
-
-                if not os.path.exists(volPath):
+                visible = self.irs.scanDevicesVisibility([drive["GUID"]])
+                if visible[drive["GUID"]] is False:
+                    self.log.error("GUID: %s is not visible", drive["GUID"])
                     raise vm.VolumeError(drive)
 
+                volPath = os.path.join("/dev/mapper", drive["GUID"])
                 res = self.irs.appropriateDevice(drive["GUID"], vmId)
                 if res['status']['code']:
+                    self.log.error("Change ownership on device %s failed",
+                                   drive["GUID"])
                     raise vm.VolumeError(drive)
 
             # UUID drive format

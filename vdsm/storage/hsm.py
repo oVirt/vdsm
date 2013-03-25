@@ -1919,6 +1919,16 @@ class HSM:
             raise se.DeviceNotFound(str(guid))
 
     @public
+    def scanDevicesVisibility(self, guids):
+        visible = lambda guid: (guid, os.path.exists(
+                                os.path.join("/dev/mapper", guid)))
+        visibleDevs = map(visible, guids)
+        if not all(visibleDevs):
+            multipath.rescan()
+            visibleDevs = map(visible, guids)
+        return dict(visibleDevs)
+
+    @public
     def getDevicesVisibility(self, guids, options=None):
         """
         Check which of the luns with specified guids are visible
@@ -1931,23 +1941,11 @@ class HSM:
                   boolean
         :rtype: dict
         """
-        def _isVisible(guid):
-            try:
-                res = (os.stat('/dev/mapper/' + guid).st_mode &
-                       stat.S_IRUSR != 0)
-            except:
-                res = False
-            return res
-
-        visibility = {}
-        scanned = False
+        visibility = self.scanDevicesVisibility(guids)
         for guid in guids:
-            visible = _isVisible(guid)
-            if not scanned and not visible:
-                multipath.rescan()
-                scanned = True
-                visible = _isVisible(guid)
-            visibility[guid] = visible
+            if visibility[guid]:
+                visibility[guid] = (os.stat('/dev/mapper/' + guid).st_mode &
+                                    stat.S_IRUSR != 0)
         return {'visible': visibility}
 
     @public
