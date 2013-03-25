@@ -418,6 +418,18 @@ class FileStorageDomain(sd.StorageDomain):
         return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
                     for k, v in volumes.iteritems())
 
+    def activateVolumes(self, imgUUID, volUUIDs):
+        """
+        Activate all the volumes listed in volUUIDs
+        """
+        # Volumes leaves created in 2.2 did not have group writeable bit
+        # set. We have to set it here if we want qemu-kvm to write to old
+        # NFS volumes. In theory it is necessary to fix the permission
+        # of the leaf only but to not introduce an additional requirement
+        # (ordered volUUIDs) we fix them all.
+        for vol in [self.produceVolume(imgUUID, x) for x in volUUIDs]:
+            self.oop.fileUtils.copyUserModeToGroup(vol.getVolumePath())
+
     @classmethod
     def format(cls, sdUUID):
         """

@@ -635,13 +635,13 @@ class StorageDomain:
         """
         pass
 
-    def activateVolumes(self, volUUIDs):
+    def activateVolumes(self, imgUUID, volUUIDs):
         """
         Activate all the volumes listed in volUUIDs
         """
         pass
 
-    def deactivateVolumes(self, volUUIDs):
+    def deactivateVolumes(self, imgUUID, volUUIDs):
         """
         Deactivate all the volumes listed in volUUIDs
         """

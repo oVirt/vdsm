@@ -177,3 +177,24 @@ class ChownTests(TestCaseBase):
         fileUtils.chown(srcPath, "root", "root")
         stat = os.stat(srcPath)
         self.assertTrue(stat.st_uid == stat.st_gid == 0)
+
+
+class CopyUserModeToGroupTests(TestCaseBase):
+    MODE_MASK = 0777
+
+    # format: initialMode, expectedMode
+    modesList = [
+        (0770, 0770), (0700, 0770), (0750, 0770), (0650, 0660),
+    ]
+
+    def testCopyUserModeToGroup(self):
+        fd, path = tempfile.mkstemp()
+        try:
+            os.close(fd)
+            for initialMode, expectedMode in self.modesList:
+                os.chmod(path, initialMode)
+                fileUtils.copyUserModeToGroup(path)
+                self.assertEquals(os.stat(path).st_mode & self.MODE_MASK,
+                                  expectedMode)
+        finally:
+            os.unlink(path)

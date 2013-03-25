@@ -1038,13 +1038,13 @@ class BlockStorageDomain(sd.StorageDomain):
         vols, rems = self.getAllVolumesImages()
         return rems
 
-    def activateVolumes(self, volUUIDs):
+    def activateVolumes(self, imgUUID, volUUIDs):
         """
         Activate all the volumes listed in volUUIDs
         """
         lvm.activateLVs(self.sdUUID, volUUIDs)
 
-    def deactivateVolumes(self, volUUIDs):
+    def deactivateVolumes(self, imgUUID, volUUIDs):
         """
         Deactivate all the volumes listed in volUUIDs
         """

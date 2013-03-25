@@ -353,7 +353,7 @@ class Image:
 
         # Activating the volumes
         sdCache.produce(sdUUID).activateVolumes(
-            volUUIDs=[vol.volUUID for vol in chain])
+            imgUUID, volUUIDs=[vol.volUUID for vol in chain])
 
         return chain
 
@@ -362,7 +362,7 @@ class Image:
 
         # Deactivating the volumes
         sdCache.produce(sdUUID).deactivateVolumes(
-            volUUIDs=[vol.volUUID for vol in chain])
+            imgUUID, volUUIDs=[vol.volUUID for vol in chain])
 
         # Do not deactivate the template yet (might be in use by an other vm)
         # TODO: reference counting to deactivate when unused

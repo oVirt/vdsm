@@ -277,20 +277,12 @@ class FileVolume(volume.Volume):
         """
         Make volume accessible as readonly (internal) or readwrite (leaf)
         """
-        def copyUserModeToGroup(path):
-            # Volumes leaves created in 2.2 did not have group writeable bit
-            # set. We have to set it here if we want qemu-kvm to write to old
-            # NFS volumes.
-            mode = self.oop.os.stat(path).st_mode
-            usrmode = (mode & 0700) >> 3
-            grpmode = mode & 0070
-            if usrmode & grpmode != usrmode:
-                mode |= usrmode
-                self.oop.os.chmod(path, mode)
-
         volPath = self.getVolumePath()
 
-        copyUserModeToGroup(volPath)
+        # Volumes leaves created in 2.2 did not have group writeable bit
+        # set. We have to set it here if we want qemu-kvm to write to old
+        # NFS volumes.
+        self.oop.fileUtils.copyUserModeToGroup(volPath)
 
         if setrw:
             self.setrw(rw=rw)

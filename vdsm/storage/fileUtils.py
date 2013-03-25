@@ -389,3 +389,12 @@ def fsyncPath(path):
         os.fsync(fd)
     finally:
         os.close(fd)
+
+
+def copyUserModeToGroup(path):
+    mode = os.stat(path).st_mode
+    userMode = mode & 0700  # user mode mask
+    newGroupMode = userMode >> 3
+    if (mode & 0070) != newGroupMode:  # group mode mask
+        # setting the new group mode masking out the original one
+        os.chmod(path, (mode & 0707) | newGroupMode)
