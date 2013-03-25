@@ -622,16 +622,6 @@ class BlockStorageDomain(sd.StorageDomain):
         blockVolume.BlockVolume.validateCreateVolumeParams(
             volFormat, preallocate, srcVolUUID)
 
-    def createVolume(self, imgUUID, size, volFormat, preallocate, diskType,
-                     volUUID, desc, srcImgUUID, srcVolUUID):
-        """
-        Create a new volume
-        """
-        repoPath = self._getRepoPath()
-        return blockVolume.BlockVolume.create(
-            repoPath, self.sdUUID, imgUUID, size, volFormat, preallocate,
-            diskType, volUUID, desc, srcImgUUID, srcVolUUID)
-
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
         firstDev, firstExtent = lvm.getFirstExt(vgName, sd.METADATA)

@@ -406,7 +406,9 @@ class StorageDomain:
         """
         Create a new volume
         """
-        pass
+        return self.getVolumeClass().create(
+            self._getRepoPath(), self.sdUUID, imgUUID, size, volFormat,
+            preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID)
 
     def getMDPath(self):
         if self.domaindir:

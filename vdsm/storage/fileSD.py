@@ -299,17 +299,6 @@ class FileStorageDomain(sd.StorageDomain):
         fileVolume.FileVolume.validateCreateVolumeParams(
             volFormat, preallocate, srcVolUUID)
 
-    def createVolume(self, imgUUID, size, volFormat, preallocate,
-                     diskType, volUUID, desc, srcImgUUID, srcVolUUID):
-        """
-        Create a new volume
-        """
-        repoPath = self._getRepoPath()
-        return fileVolume.FileVolume.create(
-            repoPath, self.sdUUID,
-            imgUUID, size, volFormat, preallocate, diskType,
-            volUUID, desc, srcImgUUID, srcVolUUID)
-
     def getVolumeLease(self, imgUUID, volUUID):
         """
         Return the volume lease (leasePath, leaseOffset)
