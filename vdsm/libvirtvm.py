@@ -148,16 +148,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             return
 
         for vmDrive in self._vm._devices[vm.DISK_DEVICES]:
-            if vmDrive.device == 'disk' and vmDrive.isVdsmImage():
-                volSize = self._vm.cif.irs.getVolumeSize(
-                    vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
-                    vmDrive.volumeID)
-
-                if volSize['status']['code'] != 0:
-                    continue
-
-                vmDrive.truesize = int(volSize['truesize'])
-                vmDrive.apparentsize = int(volSize['apparentsize'])
+            self._vm.updateDriveVolume(vmDrive)
 
     def _sampleCpu(self):
         cpuStats = self._vm._dom.getCPUStats(True, 0)
@@ -1991,6 +1982,24 @@ class LibvirtVm(vm.Vm):
 
         raise LookupError("No such drive: '%s'" % drive)
 
+    def updateDriveVolume(self, vmDrive):
+        if not vmDrive.device == 'disk' or not vmDrive.isVdsmImage():
+            return
+
+        volSize = self.cif.irs.getVolumeSize(
+            vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
+            vmDrive.volumeID)
+
+        if volSize['status']['code'] != 0:
+            self.log.error(
+                "Unable to update the volume %s (domain: %s image: %s) "
+                "for the drive %s" % (vmDrive.volumeID, vmDrive.domainID,
+                                      vmDrive.imageID, vmDrive.name))
+            return
+
+        vmDrive.truesize = int(volSize['truesize'])
+        vmDrive.apparentsize = int(volSize['apparentsize'])
+
     def updateDriveParameters(self, driveParams):
         """Update the drive with the new volume information"""
 
@@ -1999,6 +2008,7 @@ class LibvirtVm(vm.Vm):
             if vmDrive.name == driveParams["name"]:
                 for k, v in driveParams.iteritems():
                     setattr(vmDrive, k, v)
+                self.updateDriveVolume(vmDrive)
                 break
         else:
             self.log.error("Unable to update the drive object for: %s",
@@ -2117,7 +2127,6 @@ class LibvirtVm(vm.Vm):
         snapxml = snap.toprettyxml()
 
         self.log.debug(snapxml)
-        self.stopDisksStatsCollection()
 
         snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
                      libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT |
@@ -2126,37 +2135,43 @@ class LibvirtVm(vm.Vm):
         if utils.tobool(self.conf.get('qgaEnable', 'true')):
             snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
 
-        while True:
+        # We need to stop the collection of the stats for two reasons, one
+        # is to prevent spurious libvirt errors about missing drive paths
+        # (since we're changing them), and also to prevent to trigger a drive
+        # extension for the new volume with the apparent size of the old one
+        # (the apparentsize is updated as last step in updateDriveParameters)
+        self.stopDisksStatsCollection()
+
+        try:
             try:
                 self._dom.snapshotCreateXML(snapxml, snapFlags)
             except Exception as e:
-                # If we used VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE and the
-                # snapshot failed with a libvirt specific exception, try
-                # again without the flag. At the moment libvirt is returning
-                # two generic errors (INTERNAL_ERROR, ARGUMENT_UNSUPPORTED)
-                # which are too broad to be caught. BZ#845635
-                if (snapFlags & libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
-                        and type(e) == libvirt.libvirtError):
+                # Trying again without VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE.
+                # At the moment libvirt is returning two generic errors
+                # (INTERNAL_ERROR, ARGUMENT_UNSUPPORTED) which are too broad
+                # to be caught (BZ#845635).
+                snapFlags &= (~libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)
+                # Here we don't need a full stacktrace (exc_info) but it's
+                # still interesting knowing what was the error
+                self.log.debug("Snapshot failed using the quiesce flag, "
+                               "trying again without it (%s)", e)
+                try:
+                    self._dom.snapshotCreateXML(snapxml, snapFlags)
+                except Exception as e:
+                    self.log.error("Unable to take snapshot", exc_info=True)
+                    return errCode['snapshotErr']
 
-                    snapFlags &= ~libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
-
-                    # Here we don't need a full stacktrace (exc_info) but
-                    # it's still interesting knowing what was the error
-                    self.log.debug("Snapshot failed using the quiesce flag, "
-                                   "trying again without it (%s)", e)
-                    continue
-
-                self.log.error("Unable to take snapshot", exc_info=True)
-                return errCode['snapshotErr']
-            else:
-                # Update the drive information
-                for drive in newDrives.values():
+            for drive in newDrives.values():  # Update the drive information
+                try:
                     self.updateDriveParameters(drive)
-            finally:
-                self.startDisksStatsCollection()
-
-            # Successful
-            break
+                except:
+                    # Here it's too late to fail, the switch already happened
+                    # and there's nothing we can do, we must to proceed anyway
+                    # to report the live snapshot success.
+                    self.log.error("Failed to update drive information for "
+                                   "'%s'", drive, exc_info=True)
+        finally:
+            self.startDisksStatsCollection()
 
         # Returning quiesce to notify the manager whether the guest agent
         # froze and flushed the filesystems or not.
