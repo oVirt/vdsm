@@ -3,4 +3,4 @@ if [ -z "$PYTHON_EXE" ]; then
     PYTHON_EXE="@PYTHON@"
 fi
 
-PYTHONDONTWRITEBYTECODE=1 LC_ALL=C PYTHONPATH="@top_srcdir@/lib:@top_srcdir@/vdsm:@top_srcdir@/vdsm_cli:@top_srcdir@/vdsm_api:$PYTHONPATH" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules $@
+PYTHONDONTWRITEBYTECODE=1 LC_ALL=C PYTHONPATH="@top_srcdir@/lib:@top_srcdir@/vdsm:@top_srcdir@/client:@top_srcdir@/vdsm_api:$PYTHONPATH" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules $@

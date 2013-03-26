@@ -196,6 +196,7 @@ AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 # Keep sorted
 AC_OUTPUT([
 	Makefile
+	client/Makefile
 	lib/Makefile
 	lib/betterPopen/Makefile
 	lib/vdsm/Makefile
@@ -213,10 +214,9 @@ AC_OUTPUT([
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm_api/Makefile
-	vdsm_cli/Makefile
 	vdsm_hooks/Makefile
-	vdsm_hooks/directlun/Makefile
 	vdsm_hooks/checkimages/Makefile
+	vdsm_hooks/directlun/Makefile
 	vdsm_hooks/faqemu/Makefile
 	vdsm_hooks/fileinject/Makefile
 	vdsm_hooks/floppy/Makefile

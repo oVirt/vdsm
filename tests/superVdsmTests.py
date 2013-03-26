@@ -17,7 +17,7 @@ def getNeededPythonPath():
     base = os.path.dirname(testDir)
     vdsmModPath = os.path.join(base, 'lib')
     vdsmPath = os.path.join(base, 'vdsm')
-    cliPath = os.path.join(base, 'vdsm_cli')
+    cliPath = os.path.join(base, 'client')
     pyPath = "PYTHONPATH=" + ':'.join([base, vdsmPath, cliPath, vdsmModPath])
     return pyPath
 

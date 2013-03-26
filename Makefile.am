@@ -18,16 +18,20 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = vdsm \
-	  vdsm_cli \
-	  vds_bootstrap \
-	  vdsm_reg \
-	  vdsm_hooks \
-	  lib \
-	  tests \
-	  vdsm-tool \
-	  vdsm_api \
-	  $(NULL)
+SUBDIRS = \
+	client \
+	lib \
+	vds_bootstrap \
+	vdsm \
+	vdsm-tool \
+	vdsm_api \
+	vdsm_hooks \
+	vdsm_reg \
+	$(NULL)
+
+# The tests should be always last as they need the rest of the source to be
+# prepared before running.
+SUBDIRS += tests
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -48,6 +52,10 @@ endif
 # When fixing a file to conform with pep8 add it to the WL here so it will be
 # checkd from now on
 PEP8_WHITELIST = \
+	client \
+	lib/betterPopen/*.py \
+	lib/vdsm/*.py \
+	lib/vdsm/*.py.in \
 	tests \
 	vds_bootstrap \
 	vdsm-tool \
@@ -56,11 +64,7 @@ PEP8_WHITELIST = \
 	vdsm/sos/vdsm.py.in \
 	vdsm/storage \
 	vdsm/vdsm \
-	lib/betterPopen/*.py \
-	lib/vdsm/*.py \
-	lib/vdsm/*.py.in \
 	vdsm_api \
-	vdsm_cli \
 	vdsm_hooks \
 	vdsm_reg \
 	$(NULL)
