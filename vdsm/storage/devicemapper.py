@@ -126,13 +126,6 @@ def getAllSlaves():
     return deps
 
 
-def getDevNum(deviceName):
-    mpName = resolveDevName(deviceName)
-    sysfsPath = getSysfsPath(mpName)
-    devFile = os.path.join(sysfsPath, "dev")
-    return _parseDevFile(devFile)
-
-
 def removeMapping(deviceName):
     return getProxy().removeDeviceMapping(deviceName)
 

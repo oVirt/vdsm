@@ -1863,8 +1863,6 @@ class HSM:
                        'pathlist': dev.get("connections", []),
                        'logicalblocksize': dev.get("logicalblocksize", ""),
                        'physicalblocksize': dev.get("physicalblocksize", "")}
-            for path in devInfo["pathstatus"]:
-                del path["devnum"]
             devices.append(devInfo)
 
         # Look for devices that will probably fail if pvcreated.
@@ -2759,7 +2757,6 @@ class HSM:
         info["serial"] = devInfo["serial"]
         info["pathstatus"] = []
         for pathInfo in devInfo['paths']:
-            del pathInfo["devnum"]
             info["pathstatus"].append(pathInfo)
         info["pathlist"] = devInfo["connections"]
         info["fwrev"] = "0000"

@@ -224,7 +224,6 @@ def getScsiSerial(physdev):
     return ""
 
 HBTL = namedtuple("HBTL", "host bus target lun")
-DeviceNumber = namedtuple("DeviceNumber", "Major Minor")
 
 
 def getVendor(physDev):
@@ -336,8 +335,6 @@ def pathListIter(filterGuids=None):
                     raise
             else:
                 pathInfo["lun"] = hbtl.lun
-
-            pathInfo["devnum"] = DeviceNumber(*devicemapper.getDevNum(slave))
 
             if iscsi.devIsiSCSI(slave):
                 devInfo["devtypes"].append(DEV_ISCSI)
