@@ -66,8 +66,5 @@ dist_vdsmstorage_PYTHON = \
 	threadPool.py \
 	volume.py
 
-EXTRA_DIST = \
-	12-vdsm-lvm.rules
-
 check-local:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/storage_exception.py

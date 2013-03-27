@@ -208,6 +208,7 @@ AC_OUTPUT([
 	vdsm/Makefile
 	vdsm/gluster/Makefile
 	vdsm/sos/Makefile
+	vdsm/storage/12-vdsm-lvm.rules
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile

@@ -38,6 +38,7 @@ vdsm/svdsm.logger.conf
 vdsm/mk_sysprep_floppy
 vdsm/mom.conf
 vdsm/sos/vdsm.py
+vdsm/storage/12-vdsm-lvm.rules
 vdsm/storage/protect/safelease
 vdsm/sudoers.vdsm
 vdsm/vdscli.py
