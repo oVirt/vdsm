@@ -91,6 +91,16 @@ def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
     return finalxml
 
 
+def before_device_create(devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'before_device_create', vmconf=vmconf,
+                        params=customProperties)
+
+
+def after_device_create(devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'after_device_create', vmconf=vmconf,
+                        params=customProperties)
+
+
 def before_vm_start(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_start', vmconf=vmconf)
 

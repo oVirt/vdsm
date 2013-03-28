@@ -59,6 +59,8 @@ EXTRA_DIST = \
 	persist-vdsm-hooks.in
 
 VDSMHOOKS = \
+	before_device_create \
+	after_device_create \
 	before_vm_start \
 	after_vm_start \
 	before_vm_cont \

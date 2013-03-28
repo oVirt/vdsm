@@ -1295,6 +1295,26 @@ class LibvirtVm(vm.Vm):
                                       offset=str(leaseOffset))
         return leaseElem
 
+    def _runBeforeDeviceCreateHooks(self, domxml):
+        """
+        Run before_device_create hook script for devices with custom properties
+
+        The resulting device xml is cached in dev._deviceXML.
+        """
+
+        for devType in self._devices:
+            for dev in self._devices[devType]:
+                deviceCustomProperties = getattr(dev, 'custom', {})
+                if not deviceCustomProperties:
+                    continue
+
+                deviceXML = dev.getXML().toxml(encoding='utf-8')
+                deviceXML = hooks.before_device_create(
+                    deviceXML, self.conf, deviceCustomProperties)
+                dev._deviceXML = deviceXML
+                domxml._devices.appendChild(
+                    xml.dom.minidom.parseString(deviceXML).firstChild)
+
     def _buildCmdLine(self):
         domxml = _DomXML(self.conf, self.log)
         domxml.appendOs()
@@ -1318,10 +1338,7 @@ class LibvirtVm(vm.Vm):
         domxml.appendInput()
         domxml.appendGraphics()
 
-        for devType in self._devices:
-            for dev in self._devices[devType]:
-                devElem = dev.getXML()
-                domxml._devices.appendChild(devElem)
+        self._runBeforeDeviceCreateHooks(domxml)
 
         for drive in self._devices[vm.DISK_DEVICES][:]:
             if not hasattr(drive, 'volumeChain'):
@@ -1503,6 +1520,16 @@ class LibvirtVm(vm.Vm):
             if self._dom.UUIDString() != self.id:
                 raise Exception('libvirt bug 603494')
             hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
+
+            for devType in self._devices:
+                for dev in self._devices[devType]:
+                    deviceCustomProperties = getattr(dev, 'custom', {})
+                    if not deviceCustomProperties:
+                        continue
+
+                    hooks.after_device_create(dev._deviceXML, self.conf,
+                                              deviceCustomProperties)
+
         if not self._dom:
             self.setDownStatus(ERROR, 'failed to start libvirt vm')
             return

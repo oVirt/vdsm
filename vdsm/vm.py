@@ -69,6 +69,7 @@ class Device(object):
                 pass
         self.conf = conf
         self.log = log
+        self._deviceXML = None
 
     def __str__(self):
         attrs = [":".join((a, str(getattr(self, a)))) for a in dir(self)
