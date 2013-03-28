@@ -101,6 +101,16 @@ def after_device_create(devicexml, vmconf={}, customProperties={}):
                         params=customProperties)
 
 
+def before_device_destroy(devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'before_device_destroy', vmconf=vmconf,
+                        params=customProperties)
+
+
+def after_device_destroy(devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'after_device_destroy', vmconf=vmconf,
+                        params=customProperties)
+
+
 def before_vm_start(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_start', vmconf=vmconf)
 

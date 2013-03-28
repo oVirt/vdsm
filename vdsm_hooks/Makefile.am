@@ -61,6 +61,8 @@ EXTRA_DIST = \
 VDSMHOOKS = \
 	before_device_create \
 	after_device_create \
+    before_device_destroy \
+    after_device_destroy \
 	before_vm_start \
 	after_vm_start \
 	before_vm_cont \

@@ -1295,25 +1295,32 @@ class LibvirtVm(vm.Vm):
                                       offset=str(leaseOffset))
         return leaseElem
 
-    def _runBeforeDeviceCreateHooks(self, domxml):
+    def _customDevices(self):
+        """
+            Get all devices that have custom properties
+        """
+
+        for devType in self._devices:
+            for dev in self._devices[devType]:
+                if not getattr(dev, 'custom', {}):
+                    continue
+
+                yield dev
+
+    def _beforeDeviceCreateHooks(self, domxml):
         """
         Run before_device_create hook script for devices with custom properties
 
         The resulting device xml is cached in dev._deviceXML.
         """
 
-        for devType in self._devices:
-            for dev in self._devices[devType]:
-                deviceCustomProperties = getattr(dev, 'custom', {})
-                if not deviceCustomProperties:
-                    continue
-
-                deviceXML = dev.getXML().toxml(encoding='utf-8')
-                deviceXML = hooks.before_device_create(
-                    deviceXML, self.conf, deviceCustomProperties)
-                dev._deviceXML = deviceXML
-                domxml._devices.appendChild(
-                    xml.dom.minidom.parseString(deviceXML).firstChild)
+        for dev in self._customDevices():
+            deviceXML = dev.getXML().toxml(encoding='utf-8')
+            deviceXML = hooks.before_device_create(
+                deviceXML, self.conf, dev.custom)
+            dev._deviceXML = deviceXML
+            domxml._devices.appendChild(
+                xml.dom.minidom.parseString(deviceXML).firstChild)
 
     def _buildCmdLine(self):
         domxml = _DomXML(self.conf, self.log)
@@ -1338,7 +1345,7 @@ class LibvirtVm(vm.Vm):
         domxml.appendInput()
         domxml.appendGraphics()
 
-        self._runBeforeDeviceCreateHooks(domxml)
+        self._beforeDeviceCreateHooks(domxml)
 
         for drive in self._devices[vm.DISK_DEVICES][:]:
             if not hasattr(drive, 'volumeChain'):
@@ -1520,15 +1527,9 @@ class LibvirtVm(vm.Vm):
             if self._dom.UUIDString() != self.id:
                 raise Exception('libvirt bug 603494')
             hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
-
-            for devType in self._devices:
-                for dev in self._devices[devType]:
-                    deviceCustomProperties = getattr(dev, 'custom', {})
-                    if not deviceCustomProperties:
-                        continue
-
-                    hooks.after_device_create(dev._deviceXML, self.conf,
-                                              deviceCustomProperties)
+            for dev in self._customDevices():
+                hooks.after_device_create(dev._deviceXML, self.conf,
+                                          dev.custom)
 
         if not self._dom:
             self.setDownStatus(ERROR, 'failed to start libvirt vm')
@@ -2609,6 +2610,9 @@ class LibvirtVm(vm.Vm):
             self.cif.irs.inappropriateDevices(self.id)
 
             hooks.after_vm_destroy(self._lastXMLDesc, self.conf)
+            for dev in self._customDevices():
+                hooks.after_device_destroy(dev._deviceXML, self.conf,
+                                           dev.custom)
 
             self._released = True
 
@@ -2628,6 +2632,9 @@ class LibvirtVm(vm.Vm):
 
     def destroy(self):
         self.log.debug('destroy Called')
+        for dev in self._customDevices():
+            hooks.before_device_destroy(dev._deviceXML, self.conf,
+                                        dev.custom)
 
         hooks.before_vm_destroy(self._lastXMLDesc, self.conf)
         self.destroyed = True
