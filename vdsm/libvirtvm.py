@@ -222,6 +222,8 @@ class VmStatsThread(utils.AdvancedStatsThread):
         sInfo, eInfo, sampleInterval = self.sampleNet.getStats()
 
         for nic in self._vm._devices[vm.NIC_DEVICES]:
+            if nic.name.startswith('hostdev'):
+                continue
             ifSpeed = [100, 1000][nic.nicModel in ('e1000', 'virtio')]
 
             ifStats = {'macAddr': nic.macAddr,
@@ -3011,10 +3013,14 @@ class LibvirtVm(vm.Vm):
             getElementsByTagName('interface')
         for x in ifsxml:
             devType = x.getAttribute('type')
-            name = x.getElementsByTagName('target')[0].getAttribute('dev')
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            model = x.getElementsByTagName('model')[0].getAttribute('type')
+            if devType == 'hostdev':
+                name = alias
+                model = 'passthrough'
+            else:
+                name = x.getElementsByTagName('target')[0].getAttribute('dev')
+                model = x.getElementsByTagName('model')[0].getAttribute('type')
 
             network = None
             try:
