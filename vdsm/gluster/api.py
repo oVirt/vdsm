@@ -25,6 +25,27 @@ import supervdsm as svdsm
 
 _SUCCESS = {'status': doneCode}
 
+GLUSTER_RPM_PACKAGES = (
+    ('glusterfs', 'glusterfs'),
+    ('glusterfs-fuse', 'glusterfs-fuse'),
+    ('glusterfs-geo-replication', 'glusterfs-geo-replication'),
+    ('glusterfs-rdma', 'glusterfs-rdma'),
+    ('glusterfs-server', 'glusterfs-server'),
+    ('gluster-swift', 'gluster-swift'),
+    ('gluster-swift-account', 'gluster-swift-account'),
+    ('gluster-swift-container', 'gluster-swift-container'),
+    ('gluster-swift-doc', 'gluster-swift-doc'),
+    ('gluster-swift-object', 'gluster-swift-object'),
+    ('gluster-swift-proxy', 'gluster-swift-proxy'),
+    ('gluster-swift-plugin', 'gluster-swift-plugin'))
+
+GLUSTER_DEB_PACKAGES = (
+    ('glusterfs', 'glusterfs-client'),
+    ('glusterfs-fuse', 'libglusterfs0'),
+    ('glusterfs-geo-replication', 'libglusterfs0'),
+    ('glusterfs-rdma', 'libglusterfs0'),
+    ('glusterfs-server', 'glusterfs-server'))
+
 
 def exportAsVerb(func):
     @wraps(func)

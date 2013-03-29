@@ -50,8 +50,8 @@ except ImportError:
 
 
 try:
-    from gluster import GLUSTER_RPM_PACKAGES
-    from gluster import GLUSTER_DEB_PACKAGES
+    from gluster.api import GLUSTER_RPM_PACKAGES
+    from gluster.api import GLUSTER_DEB_PACKAGES
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
