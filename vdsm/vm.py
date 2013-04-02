@@ -1740,8 +1740,14 @@ class Vm(object):
         if drv['device'] == 'disk':
             res = self.cif.irs.getVolumeSize(drv['domainID'], drv['poolID'],
                                              drv['imageID'], drv['volumeID'])
-            drv['truesize'] = res['truesize']
-            drv['apparentsize'] = res['apparentsize']
+            try:
+                drv['truesize'] = res['truesize']
+                drv['apparentsize'] = res['apparentsize']
+            except KeyError:
+                self.log.error("Unable to get volume size for %s",
+                               drv['volumeID'], exc_info=True)
+                raise RuntimeError("Volume %s is corrupted or missing" %
+                                   drv['volumeID'])
         else:
             drv['truesize'] = 0
             drv['apparentsize'] = 0
