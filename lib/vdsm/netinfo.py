@@ -42,6 +42,7 @@ NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
+BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DUMMY_BRIDGE = ';vdsmdummy;'
@@ -71,7 +72,13 @@ def nics():
 
 
 def bondings():
-    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bonding')]
+    try:
+        return open(BONDING_MASTERS).readline().split()
+    except IOError as e:
+        if e.errno == os.errno.ENOENT:
+            return []
+        else:
+            raise
 
 
 def vlans():
@@ -112,8 +119,7 @@ def networks():
 
 
 def slaves(bonding):
-    return [b.split('/')[-1].split('_', 1)[-1] for b in
-            glob.glob('/sys/class/net/' + bonding + '/slave_*')]
+    return open(BONDING_SLAVES % bonding).readline().split()
 
 
 def ports(bridge):
