@@ -1720,7 +1720,7 @@ def getRhevmCert(IP, port):
 
         return True
     except:
-        logging.error(
+        logging.debug(
             "Failed acquiring web certificates",
             exc_info=True
         )
@@ -1736,10 +1736,10 @@ def generateFingerPrint(path):
             fp = filter(lambda l: 'Fingerprint' in
                         l, out.split())[0].split('=')[1]
         except Exception:
-            logging.error("Failed generating finger print for %s", path,
+            logging.debug("Failed generating finger print for %s", path,
                           exc_info=True)
     else:
-        logging.error("Command %s failed with return value %d",
+        logging.debug("Command %s failed with return value %d",
                       ' '.join(cmd), rc)
 
     return fp
