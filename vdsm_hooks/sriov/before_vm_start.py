@@ -17,10 +17,10 @@ SRIOV_CACHE_FILENAME = 'sriov.cache'
 '''
 sriov vdsm hook
 ===============
-hook is getting VF via its os nic names, i.e. sriov=eth5
-and get its pci address, detach it from the os, create xml
-representation of the device for libvirt domain and adding
-it to the guest xml.
+The hook is getting the Virtual Functions via their os nic names, i.e.,
+sriov=eth5. It gets the VFs' pci address, it creates the appropriate xml
+interface definition of the devices for the libvirt domain and adds said
+definitions to the guest xml.
 '''
 
 
@@ -48,43 +48,34 @@ def getDeviceDetails(addr):
     return (bus, slot, function)
 
 
-def detachDevice(addr):
-    ''' detach device from host, enable attaching it to VM '''
-
-    connection = libvirtconnection.get(None)
-    nodeDevice = connection.nodeDeviceLookupByName(addr)
-    if nodeDevice is not None:
-        sys.stderr.write('sriov: detaching pci device: %s\n' % addr)
-        nodeDevice.dettach()
-    else:
-        sys.stderr.write('sriov: cannot detach device: %s\n' % addr)
-
-
 def createSriovElement(domxml, bus, slot, function):
     '''
     create host device element for libvirt domain xml:
 
-    <hostdev mode='subsystem' type='pci'>
+    <interface type='hostdev'>
         <source>
-            <address bus='0x1a' slot='0x10' function='0x06'/>
+            <address type='pci' domain='0x0' bus='0x1a' slot='0x10' slot='0x07'
+             function='0x06'/>
         </source>
-    </hostdev>
+    </interface>
     '''
 
-    hostdev = domxml.createElement('hostdev')
-    hostdev.setAttribute('mode', 'subsystem')
-    hostdev.setAttribute('type', 'pci')
+    interface = domxml.createElement('interface')
+    interface.setAttribute('type', 'hostdev')
+    interface.setAttribute('managed', 'yes')
 
     source = domxml.createElement('source')
-    hostdev.appendChild(source)
+    interface.appendChild(source)
 
     address = domxml.createElement('address')
+    address.setAttribute('type', 'pci')
+    address.setAttribute('domain', '0')
     address.setAttribute('bus', bus)
     address.setAttribute('slot', slot)
     address.setAttribute('function', function)
-
     source.appendChild(address)
-    return hostdev
+
+    return interface
 
 
 def deviceExists(devName):
@@ -112,7 +103,6 @@ def writeSriovCache(name, addr, devpath):
 
 
 def chown(devpath):
-
     group = grp.getgrnam('qemu')
     gid = group.gr_gid
     user = pwd.getpwnam('qemu')
@@ -131,28 +121,28 @@ def chown(devpath):
                                  (dev, owner, err))
                 sys.exit(2)
 
+
 if 'sriov' in os.environ:
     try:
-        nics = os.environ['sriov']
+        nics = os.environ['sriov'].split(',')
 
         domxml = hooking.read_domxml()
         devices = domxml.getElementsByTagName('devices')[0]
 
-        for nic in nics.split(','):
+        for nic in nics:
             if deviceExists(nic):
                 sys.stderr.write('sriov: adding VF %s\n' % nic)
 
                 devpath = os.path.realpath(SYS_NIC_PATH % nic + '/device')
                 addr = getPciAddress(devpath)
-                detachDevice(addr)
                 bus, slot, function = getDeviceDetails(addr)
 
-                hostdev = createSriovElement(domxml, bus, slot, function)
+                interface = createSriovElement(domxml, bus, slot, function)
 
                 sys.stderr.write('sriov: VF %s xml: %s\n' %
-                                 (nic, hostdev.toxml()))
-                devices.appendChild(hostdev)
+                                 (nic, interface.toxml()))
                 chown(devpath)
+                devices.appendChild(interface)
                 writeSriovCache(nic, addr, devpath)
             else:
                 sys.stderr.write('sriov: cannot find nic "%s", aborting\n' %
