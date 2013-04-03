@@ -135,6 +135,15 @@ shutdown_conflicting_srv() {
     return 0
 }
 
+syslog_available() {
+    if ! [[ -S "/dev/log" ]]; then
+        log_failure_msg "Cannot communicate with syslog deamon for reports. " \
+                        "Check rsyslog.conf"
+        return 1
+    fi
+    return 0
+}
+
 libvirt_should_use_upstart() {
     [[ -x /sbin/initctl ]]
 }
@@ -456,7 +465,8 @@ start() {
         return $ret_val
     fi
 
-    start_needed_srv && start_libvirtd
+    start_needed_srv && start_libvirtd && syslog_available
+
     ret_val=$?
     if [ $ret_val -ne 0 ]
     then
