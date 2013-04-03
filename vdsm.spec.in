@@ -17,6 +17,9 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
+# Gluster
+%global with_gluster 1
+
 # Systemd macro
 %if 0%{?fedora} >= 15
 %global with_systemd 1
@@ -454,6 +457,7 @@ BuildArch:      noarch
 %description hook-vmdisk
 Hook adds additional disk image for a VM (raw or qcow2)
 
+%if 0%{?with_gluster}
 %package gluster
 Summary:        Gluster Plugin for VDSM
 BuildArch:      noarch
@@ -466,6 +470,7 @@ Requires: glusterfs-rdma
 
 %description gluster
 Gluster plugin enables VDSM to serve Gluster functionalities.
+%endif
 
 %prep
 %setup -q
@@ -755,8 +760,12 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/fileUtils.py*
 %{_datadir}/%{vdsm_name}/storage/fileVolume.py*
 %{_datadir}/%{vdsm_name}/storage/fuser.py*
+%if 0%{?with_gluster}
 %{_datadir}/%{vdsm_name}/storage/glusterSD.py*
 %{_datadir}/%{vdsm_name}/storage/glusterVolume.py*
+%else
+%exclude %{_datadir}/%{vdsm_name}/storage/gluster*
+%endif
 %{_datadir}/%{vdsm_name}/storage/hba.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
 %{_datadir}/%{vdsm_name}/storage/image.py*
@@ -838,11 +847,15 @@ exit 0
 %{_datadir}/%{vdsm_name}/neterrors.py*
 %{_datadir}/%{vdsm_name}/respawn
 %{_datadir}/%{vdsm_name}/set-conf-item
+%if 0%{?with_gluster}
 %dir %{_datadir}/%{vdsm_name}/gluster
 %{_datadir}/%{vdsm_name}/gluster/__init__.py*
 %{_datadir}/%{vdsm_name}/gluster/cli.py*
 %{_datadir}/%{vdsm_name}/gluster/exception.py*
 %{_datadir}/%{vdsm_name}/gluster/hostname.py*
+%else
+%exclude %{_datadir}/%{vdsm_name}/gluster/*
+%endif
 %{python_sitelib}/sos/plugins/vdsm.py*
 /lib/udev/rules.d/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
@@ -917,8 +930,12 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/route_info.out
 %{_datadir}/%{vdsm_name}/tests/route_info_ppc64.out
 %{_datadir}/%{vdsm_name}/tests/tc_filter_show.out
+%if 0%{?with_gluster}
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
+%else
+%exclude %{_datadir}/%{vdsm_name}/tests/gluster*
+%endif
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
 
 %files hook-vhostmd
@@ -1106,11 +1123,13 @@ exit 0
 %doc COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
 
+%if 0%{?with_gluster}
 %files gluster
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}/gluster
 %doc COPYING
 %{_datadir}/%{vdsm_name}/gluster/api.py*
+%endif
 
 %changelog
 * Wed Oct 12 2011 Federico Simoncelli <fsimonce@redhat.com> - 4.9.0-0
