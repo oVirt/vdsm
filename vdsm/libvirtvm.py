@@ -1376,7 +1376,13 @@ class LibvirtVm(vm.Vm):
         self._guestEventTime = self._startTime
 
     def _cleanup(self):
-        vm.Vm._cleanup(self)
+        """
+        General clean up routine
+        """
+        self._cleanupDrives()
+        self._cleanupFloppy()
+        self._cleanupGuestAgent()
+        utils.rmFile(self._recoveryFile)
         utils.rmFile(self._qemuguestSocketFile)
 
     def updateGuestCpuRunning(self):
@@ -1876,7 +1882,7 @@ class LibvirtVm(vm.Vm):
         else:
             hooks.after_disk_hotunplug(driveXml, self.conf,
                                        params=params.get('custom', {}))
-            self._cleanup()
+            self._cleanupDrives(drive)
 
         return {'status': doneCode, 'vmList': self.status()}
 
