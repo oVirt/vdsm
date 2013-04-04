@@ -1026,6 +1026,9 @@ class Drive(LibvirtVmDevice):
 
         self._customize()
 
+    def isDiskReplicationInProgress(self):
+        return hasattr(self, "diskReplicate")
+
     @property
     def volExtensionChunk(self):
         """
@@ -1034,7 +1037,7 @@ class Drive(LibvirtVmDevice):
         can also dynamically change according to the VM needs (e.g. increase
         during a live storage migration).
         """
-        if hasattr(self, "diskReplicate"):
+        if self.isDiskReplicationInProgress():
             return self.VOLWM_CHUNK_MB * self.VOLWM_CHUNK_REPLICATE_MULT
         return self.VOLWM_CHUNK_MB
 
@@ -1571,7 +1574,8 @@ class LibvirtVm(vm.Vm):
             # we will gather almost all needed info about this NIC from
             # the libvirt during recovery process.
             self._devices[vm.NIC_DEVICES].append(nic)
-            self.conf['devices'].append(nicParams)
+            with self._confLock:
+                self.conf['devices'].append(nicParams)
             self.saveState()
             self._getUnderlyingNetworkInterfaceInfo()
             hooks.after_nic_hotplug(nicXml, self.conf,
@@ -1755,8 +1759,8 @@ class LibvirtVm(vm.Vm):
         for dev in self.conf['devices'][:]:
             if (dev['type'] == vm.NIC_DEVICES and
                     dev['macAddr'].lower() == nicParams['macAddr'].lower()):
-
-                self.conf['devices'].remove(dev)
+                with self._confLock:
+                    self.conf['devices'].remove(dev)
                 nicDev = dev
                 break
 
@@ -1770,7 +1774,8 @@ class LibvirtVm(vm.Vm):
                 return errCode['noVM']
             # Restore NIC device in vm's conf and _devices
             if nicDev:
-                self.conf['devices'].append(nicDev)
+                with self._confLock:
+                    self.conf['devices'].append(nicDev)
             if nic:
                 self._devices[vm.NIC_DEVICES].append(nic)
             self.saveState()
@@ -1818,7 +1823,8 @@ class LibvirtVm(vm.Vm):
             # we will gather almost all needed info about this drive from
             # the libvirt during recovery process.
             self._devices[vm.DISK_DEVICES].append(drive)
-            self.conf['devices'].append(diskParams)
+            with self._confLock:
+                self.conf['devices'].append(diskParams)
             self.saveState()
             self._getUnderlyingDriveInfo()
             hooks.after_disk_hotplug(driveXml, self.conf,
@@ -1858,7 +1864,8 @@ class LibvirtVm(vm.Vm):
         for dev in self.conf['devices'][:]:
             if (dev['type'] == vm.DISK_DEVICES and
                     dev['path'] == diskParams['path']):
-                self.conf['devices'].remove(dev)
+                with self._confLock:
+                    self.conf['devices'].remove(dev)
                 diskDev = dev
                 break
 
@@ -1872,11 +1879,12 @@ class LibvirtVm(vm.Vm):
             self.log.error("Hotunplug failed", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            # Restore disk device in vm's conf and _devices
-            if diskDev:
-                self.conf['devices'].append(diskDev)
             if drive:
                 self._devices[vm.DISK_DEVICES].append(drive)
+            # Restore disk device in vm's conf and _devices
+            if diskDev:
+                with self._confLock:
+                    self.conf['devices'].append(diskDev)
             self.saveState()
             return {
                 'status': {'code': errCode['hotunplugDisk']['status']['code'],
@@ -2292,19 +2300,21 @@ class LibvirtVm(vm.Vm):
         dictionary that is stored on disk (so that the information is not
         lost across restarts).
         """
+        if srcDrive.isDiskReplicationInProgress():
+            raise RuntimeError("Disk '%s' already has an ongoing "
+                               "replication" % srcDrive.name)
+
         for device in self.conf["devices"]:
             if (device['type'] == vm.DISK_DEVICES
                     and device.get("name") == srcDrive.name):
-                device['diskReplicate'] = dstDisk
+                with self._confLock:
+                    device['diskReplicate'] = dstDisk
+                self.saveState()
                 break
         else:
             raise LookupError("No such drive: '%s'" % srcDrive.name)
 
         srcDrive.diskReplicate = dstDisk
-        self.saveState()
-
-    def isDiskReplicationInProgress(self, srcDrive):
-        return hasattr(srcDrive, 'diskReplicate')
 
     def _delDiskReplica(self, srcDrive):
         """
@@ -2314,24 +2324,29 @@ class LibvirtVm(vm.Vm):
         for device in self.conf["devices"]:
             if (device['type'] == vm.DISK_DEVICES
                     and device.get("name") == srcDrive.name):
-                del device['diskReplicate']
+                with self._confLock:
+                    del device['diskReplicate']
+                self.saveState()
                 break
         else:
             raise LookupError("No such drive: '%s'" % srcDrive.name)
 
         del srcDrive.diskReplicate
-        self.saveState()
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
             srcDrive = self._findDriveByUUIDs(srcDisk)
         except LookupError:
+            self.log.error("Unable to find the disk for '%s'", srcDisk)
             return errCode['imageErr']
 
-        if self.isDiskReplicationInProgress(srcDrive):
+        try:
+            self._setDiskReplica(srcDrive, dstDisk)
+        except:
+            self.log.error("Unable to set the replication for disk '%s' with "
+                           "destination '%s'" % srcDrive.name, dstDisk)
             return errCode['replicaErr']
 
-        self._setDiskReplica(srcDrive, dstDisk)
         dstDiskCopy = dstDisk.copy()
 
         # The device entry is enforced because stricly required by
@@ -2372,7 +2387,7 @@ class LibvirtVm(vm.Vm):
         except LookupError:
             return errCode['imageErr']
 
-        if not self.isDiskReplicationInProgress(srcDrive):
+        if not srcDrive.isDiskReplicationInProgress():
             return errCode['replicaErr']
 
         # Looking for the replication blockJob info (checking its presence)

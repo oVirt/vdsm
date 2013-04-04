@@ -335,6 +335,7 @@ class Vm(object):
         self._monitorResponse = 0
         self.conf['clientIp'] = ''
         self.memCommitted = 0
+        self._confLock = threading.Lock()
         self._creationThread = threading.Thread(target=self._startUnderlyingVm)
         if 'migrationDest' in self.conf:
             self._lastStatus = 'Migration Destination'
@@ -481,7 +482,8 @@ class Vm(object):
         devices = {}
         # Build devices structure
         if self.conf.get('devices') is None:
-            self.conf['devices'] = []
+            with self._confLock:
+                self.conf['devices'] = []
             devices[DISK_DEVICES] = self.getConfDrives()
             devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
             devices[SOUND_DEVICES] = self.getConfSound()
@@ -615,7 +617,7 @@ class Vm(object):
         # FIXME
         # Will be better to change the self.conf but this implies an API change
         # Remove this when the API parameters will be consistent.
-        confDrives = self.conf['drives'] if self.conf.get('drives') else []
+        confDrives = self.conf.get('drives', [])
         if not confDrives:
             confDrives.extend(self.__legacyDrives())
         confDrives.extend(self.__removableDrives())
@@ -704,12 +706,14 @@ class Vm(object):
                     self.cont()
             else:
                 try:
-                    del self.conf['pauseCode']
+                    with self._confLock:
+                        del self.conf['pauseCode']
                 except:
                     pass
 
             if 'recover' in self.conf:
-                del self.conf['recover']
+                with self._confLock:
+                    del self.conf['recover']
             self.saveState()
         except Exception as e:
             if 'recover' in self.conf:
@@ -776,7 +780,8 @@ class Vm(object):
     def saveState(self):
         if self.destroyed:
             return
-        toSave = deepcopy(self.status())
+        with self._confLock:
+            toSave = deepcopy(self.status())
         toSave['startTime'] = self._startTime
         if self.lastStatus != 'Down' and self._vmStats and self.guestAgent:
             toSave['username'] = self.guestAgent.guestInfo['username']
@@ -846,7 +851,8 @@ class Vm(object):
 
     def _rtcUpdate(self, timeOffset):
         self.log.debug('new rtc offset %s', timeOffset)
-        self.conf['timeOffset'] = timeOffset
+        with self._confLock:
+            self.conf['timeOffset'] = timeOffset
 
     def extendDriveVolume(self, vmDrive):
         if not vmDrive.blockDev:
@@ -982,7 +988,8 @@ class Vm(object):
                 self.updateGuestCpuRunning()
             self._lastStatus = afterState
             try:
-                del self.conf['pauseCode']
+                with self._confLock:
+                    del self.conf['pauseCode']
             except:
                 pass
             return {'status': doneCode, 'output': ['']}
@@ -994,7 +1001,8 @@ class Vm(object):
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout()
         try:
-            self.conf['pauseCode'] = 'NOERR'
+            with self._confLock:
+                self.conf['pauseCode'] = 'NOERR'
             self._underlyingPause()
             if hasattr(self, 'updateGuestCpuRunning'):
                 self.updateGuestCpuRunning()
@@ -1092,11 +1100,13 @@ class Vm(object):
     def setDownStatus(self, code, reason):
         try:
             self.lastStatus = 'Down'
-            self.conf['exitCode'] = code
-            if 'restoreState' in self.conf:
-                self.conf['exitMessage'] = "Wake up from hibernation failed"
-            else:
-                self.conf['exitMessage'] = reason
+            with self._confLock:
+                self.conf['exitCode'] = code
+                if 'restoreState' in self.conf:
+                    self.conf['exitMessage'] = (
+                        "Wake up from hibernation failed")
+                else:
+                    self.conf['exitMessage'] = reason
             self.log.debug("Changed state to Down: " + reason)
         except DoubleDownError:
             pass
