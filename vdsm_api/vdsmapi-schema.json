@@ -1407,12 +1407,14 @@
 #
 # @valid:      Indicates if the Storage Domain is functioning properly
 #
+# @version:    Indicates the Storage Domain version
+#
 # Since: 4.10.0
 # XXX: Add an enum for return codes and their meanings
 ##
 {'type': 'StorageDomainVitals',
  'data': {'code': 'int', 'delay': 'float', 'lastCheck': 'float',
-          'valid': 'bool'}}
+          'valid': 'bool', 'version': 'int'}}
 
 ##
 # @PathStats:
@@ -4171,12 +4173,14 @@
 #
 # @status:     Current Storage Domain status
 #
+# @version:    Indicates the Storage Domain version
+#
 # Since: 4.10.0
 ##
 {'type': 'StoragePoolDomainInfo',
  'data': {'disktotal': 'int', 'diskfree': 'int',
           'alerts': ['StoragePoolDomainAlert'],
-          'status': 'StorageDomainStatus'}}
+          'status': 'StorageDomainStatus', 'version': 'int'}}
 
 ##
 # @StoragePoolDomainInfoMap:

@@ -1439,7 +1439,8 @@ class StoragePool(Securable):
                     'code': code,
                     'lastCheck': lastcheck,
                     'delay': str(domStatus.readDelay),
-                    'valid': (domStatus.error is None)
+                    'valid': (domStatus.error is None),
+                    'version': domStatus.version,
                 },
 
                 'disktotal': disktotal,
@@ -1502,6 +1503,8 @@ class StoragePool(Securable):
 
             if repoStats[sdUUID]['isoprefix']:
                 poolInfo['isoprefix'] = repoStats[sdUUID]['isoprefix']
+
+            domInfo[sdUUID]['version'] = repoStats[sdUUID]['result']['version']
 
             # For unreachable domains repoStats will return disktotal and
             # diskfree as None.

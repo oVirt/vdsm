@@ -33,7 +33,7 @@ class DomainMonitorStatus(object):
         "error", "lastCheck", "valid", "readDelay", "masterMounted",
         "masterValid", "diskUtilization", "vgMdUtilization",
         "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
-        "isoPrefix",
+        "isoPrefix", "version",
     )
 
     def __init__(self):
@@ -59,6 +59,7 @@ class DomainMonitorStatus(object):
         # we cannot risk to stop and wait for the iso domain to
         # report its prefix (it might be unreachable).
         self.isoPrefix = None
+        self.version = -1
 
     def update(self, st):
         for attr in self.__slots__:
@@ -217,6 +218,7 @@ class DomainMonitorThread(object):
 
             self.nextStatus.hasHostId = self.domain.hasHostId(self.hostId)
             self.nextStatus.isoPrefix = self.isoPrefix
+            self.nextStatus.version = self.domain.getVersion()
 
         except Exception as e:
             self.log.error("Error while collecting domain %s monitoring "
