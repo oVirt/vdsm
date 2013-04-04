@@ -440,8 +440,8 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             rmanager.registerNamespace(lvmActivationNamespace,
                                        lvmActivationFactory)
-        except Exception:
-            self.log.warn("Resource namespace %s already registered",
+        except KeyError:
+            self.log.info("Resource namespace %s already registered",
                           lvmActivationNamespace)
 
     @classmethod

@@ -369,16 +369,16 @@ class StorageDomain:
         try:
             rmanager.registerNamespace(imageResourcesNamespace,
                                        imageResourceFactory)
-        except Exception:
-            self.log.warn("Resource namespace %s already registered",
+        except KeyError:
+            self.log.info("Resource namespace %s already registered",
                           imageResourcesNamespace)
 
         volumeResourcesNamespace = getNamespace(self.sdUUID, VOLUME_NAMESPACE)
         try:
             rmanager.registerNamespace(volumeResourcesNamespace,
                                        rm.SimpleResourceFactory())
-        except Exception:
-            self.log.warn("Resource namespace %s already registered",
+        except KeyError:
+            self.log.info("Resource namespace %s already registered",
                           volumeResourcesNamespace)
 
     def produceVolume(self, imgUUID, volUUID):
