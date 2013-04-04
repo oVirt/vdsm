@@ -1030,15 +1030,29 @@ class Vm(object):
         except:
             self.log.error("_timedShutdown failed", exc_info=True)
 
-    def _cleanup(self):
+    def _cleanupDrives(self, *drives):
+        """
+        Clean up drives related stuff. Sample usage:
+
+        self._cleanupDrives()
+        self._cleanupDrives(drive)
+        self._cleanupDrives(drive1, drive2, drive3)
+        self._cleanupDrives(*drives_list)
+        """
+        drives = drives or self._devices[DISK_DEVICES]
+        # clean them up
         with self._volPrepareLock:
-            for drive in self._devices[DISK_DEVICES]:
+            for drive in drives:
                 try:
                     self.cif.teardownVolumePath(drive)
                 except:
                     self.log.error("Drive teardown failure for %s",
                                    drive, exc_info=True)
 
+    def _cleanupFloppy(self):
+        """
+        Clean up floppy drive
+        """
         if self.conf.get('volatileFloppy'):
             try:
                 self.log.debug("Floppy %s cleanup" % self.conf['floppy'])
@@ -1046,13 +1060,16 @@ class Vm(object):
             except:
                 pass
 
+    def _cleanupGuestAgent(self):
+        """
+        Try to stop the guest agent and clean up its socket
+        """
         try:
             self.guestAgent.stop()
         except:
             pass
 
         utils.rmFile(self._guestSocketFile)
-        utils.rmFile(self._recoveryFile)
 
     def setDownStatus(self, code, reason):
         try:
