@@ -1108,6 +1108,8 @@ class StoragePool(Securable):
         if domainStatuses[sdUUID] == sd.DOM_ACTIVE_STATUS:
             return True
 
+        # Domain conversion requires the links to be present
+        self._refreshDomainLinks(dom)
         if dom.getDomainClass() == sd.DATA_DOMAIN:
             self._convertDomain(dom)
 
@@ -1115,7 +1117,6 @@ class StoragePool(Securable):
         # set domains also do rebuild
         domainStatuses[sdUUID] = sd.DOM_ACTIVE_STATUS
         self.setMetaParam(PMDK_DOMAINS, domainStatuses)
-        self._refreshDomainLinks(dom)
         self.updateMonitoringThreads()
         return True
 
