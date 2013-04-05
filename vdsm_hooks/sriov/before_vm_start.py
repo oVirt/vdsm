@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import errno
 import os
 import sys
 import grp
@@ -11,8 +12,7 @@ import hooking
 from vdsm import libvirtconnection
 
 SYS_NIC_PATH = '/sys/class/net/%s'
-VDSM_VAR_HOOKS_DIR = '/var/run/vdsm/hooks'
-SRIOV_CACHE_FILENAME = 'sriov.cache'
+VDSM_VAR_HOOKS_DIR = '/var/run/vdsm/hooks/sriov'
 
 '''
 sriov vdsm hook
@@ -93,32 +93,36 @@ def getPciAddress(devPath):
     return 'pci_%s_%s_%s' % (tokens[0], tokens[1], tokens[2].replace('.', '_'))
 
 
-def writeSriovCache(name, addr, devpath):
+def writeVFReservationFile(nic, devpath):
     if not os.path.exists(VDSM_VAR_HOOKS_DIR):
         os.makedirs(VDSM_VAR_HOOKS_DIR)
+    try:
+        fd = os.open(os.path.join(VDSM_VAR_HOOKS_DIR, nic),
+                     os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+        with os.fdopen(fd, 'w') as f:
+            f.write(devpath)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            sys.stderr.write('sriov: Error. The device %s is already attached '
+                             'or in the process of attaching to a VM. Aborting'
+                             '.\n' % nic)
+        sys.stderr.write('sriov: Unexpected error creating virtual function '
+                         'reservation file for nic %s. Aborting.\n%s\n' %
+                         (nic, traceback.format_exc()))
+        sys.exit(2)
 
-    f = open(VDSM_VAR_HOOKS_DIR + '/' + SRIOV_CACHE_FILENAME, 'a')
-    f.write(name + '=' + addr + '=' + devpath + '\n')
-    f.close()
 
-
-def chown(devpath):
-    group = grp.getgrnam('qemu')
-    gid = group.gr_gid
-    user = pwd.getpwnam('qemu')
-    uid = user.pw_uid
-
+def chown(nic, devpath):
+    '''Uses sudo and chown to change the sriov ownership.'''
+    owner = ''.join([str(pwd.getpwnam('qemu').pw_uid), ':',
+                    str(grp.getgrnam('qemu').gr_gid)])
     for f in os.listdir(devpath):
-        if f.startswith('resource') or f == 'rom' or f == 'reset':
-            dev = os.path.join(devpath, f)
-
-            # we don't use os.chown because we need sudo
-            owner = str(uid) + ':' + str(gid)
-            command = ['/bin/chown', owner, dev]
+        if f.startswith('resource') or f in ('rom', 'reset'):
+            command = ['/bin/chown', owner, os.path.join(devpath, f)]
             retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
             if retcode != 0:
-                sys.stderr.write('sriov: error chown %s to %s, err = %s\n' %
-                                 (dev, owner, err))
+                sys.stderr.write('sriov: Error %s changing ownership of %s to'
+                                 'owner %s. Aborting.\n' % (err, nic, owner))
                 sys.exit(2)
 
 
@@ -141,9 +145,9 @@ if 'sriov' in os.environ:
 
                 sys.stderr.write('sriov: VF %s xml: %s\n' %
                                  (nic, interface.toxml()))
-                chown(devpath)
+                writeVFReservationFile(nic, devpath)
+                chown(nic, devpath)
                 devices.appendChild(interface)
-                writeSriovCache(nic, addr, devpath)
             else:
                 sys.stderr.write('sriov: cannot find nic "%s", aborting\n' %
                                  nic)

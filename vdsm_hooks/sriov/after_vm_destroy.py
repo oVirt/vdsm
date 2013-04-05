@@ -6,15 +6,13 @@ import traceback
 
 import hooking
 
-SYS_NIC_PATH = '/sys/class/net/%s'
-VDSM_VAR_HOOKS_DIR = '/var/run/vdsm/hooks'
-SRIOV_CACHE_FILENAME = 'sriov.cache'
+VDSM_VAR_HOOKS_DIR = '/var/run/vdsm/hooks/sriov'
 
 
-def restoreDevicePermissions(addr, devpath):
+def restoreDevicePermissions(devpath):
     owner = 'root:root'
     for f in os.listdir(devpath):
-        if f.startswith('resource') or f == 'rom' or f == 'reset':
+        if f.startswith('resource') or f in ('rom', 'reset'):
             dev = os.path.join(devpath, f)
             command = ['/bin/chown', owner, dev]
             retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
@@ -26,24 +24,16 @@ def restoreDevicePermissions(addr, devpath):
 if 'sriov' in os.environ:
     try:
         lines = ''
-        nics = os.environ['sriov'].split(',')
-        path = VDSM_VAR_HOOKS_DIR + '/' + SRIOV_CACHE_FILENAME
-
-        if os.path.exists(path):
-            with open(path, 'r') as f:
-                for line in f:
-                    nicAddr = line.split('=')
-                    if nicAddr[0] in nics:
-                        restoreDevicePermissions(nicAddr[1],
-                                                 nicAddr[2].strip('\n'))
-                    else:
-                        lines += line
-
-            with open(path, 'w') as f:
-                f.writelines(lines)
-        else:
-            sys.stderr.write('sriov after_vm_destroy: cannot find sriov cache '
-                             'file %s\n' % path)
+        for nic in os.environ['sriov'].split(','):
+            vfFilePath = os.path.join(VDSM_VAR_HOOKS_DIR, nic)
+            if os.path.exists(vfFilePath):
+                with open(vfFilePath, 'r') as vfFile:
+                    restoreDevicePermissions(vfFile.read())
+                os.unlink(vfFilePath)
+            else:
+                sys.stderr.write('sriov after_vm_destroy: cannot find the '
+                                 'virtual function reservation file of %s'
+                                 'that should be at %s\n' % (nic, vfFilePath))
 
     except:
         sys.stderr.write('sriov after_vm_destroy: [unexpected error]: %s\n' %
