@@ -1979,28 +1979,28 @@ class LibvirtVm(vm.Vm):
 
         raise LookupError("No such drive: '%s'" % drive)
 
-    def _updateDrive(self, drive):
+    def updateDriveParameters(self, driveParams):
         """Update the drive with the new volume information"""
 
-        # Updating the drive object
-        for device in self._devices[vm.DISK_DEVICES][:]:
-            if device.name == drive["name"]:
-                for k, v in drive.iteritems():
-                    setattr(device, k, v)
+        # Updating the vmDrive object
+        for vmDrive in self._devices[vm.DISK_DEVICES][:]:
+            if vmDrive.name == driveParams["name"]:
+                for k, v in driveParams.iteritems():
+                    setattr(vmDrive, k, v)
                 break
         else:
             self.log.error("Unable to update the drive object for: %s",
-                           drive["name"])
+                           driveParams["name"])
 
         # Updating the VM configuration
-        for device in self.conf["devices"][:]:
-            if (device['type'] == vm.DISK_DEVICES and
-                    device.get("name") == drive["name"]):
-                device.update(drive)
+        for vmDriveConfig in self.conf["devices"][:]:
+            if (vmDriveConfig['type'] == vm.DISK_DEVICES and
+                    vmDriveConfig.get("name") == driveParams["name"]):
+                vmDriveConfig.update(driveParams)
                 break
         else:
             self.log.error("Unable to update the device configuration ",
-                           "for: %s", drive["name"])
+                           "for: %s", driveParams["name"])
 
         self.saveState()
 
@@ -2139,7 +2139,7 @@ class LibvirtVm(vm.Vm):
             else:
                 # Update the drive information
                 for drive in newDrives.values():
-                    self._updateDrive(drive)
+                    self.updateDriveParameters(drive)
             finally:
                 self.startDisksStatsCollection()
 
@@ -2365,7 +2365,7 @@ class LibvirtVm(vm.Vm):
 
         # Updating the destination disk device and name, the device is used by
         # prepareVolumePath (required to fill the new information as the path)
-        # and the name is used by _updateDrive.
+        # and the name is used by updateDriveParameters.
         dstDiskCopy.update({'device': srcDrive.device, 'name': srcDrive.name})
         dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
 
@@ -2406,7 +2406,7 @@ class LibvirtVm(vm.Vm):
                 # There is nothing we can do at this point other than logging
                 self.log.error("Unable to teardown the previous chain: %s",
                                diskToTeardown, exc_info=True)
-            self._updateDrive(dstDiskCopy)  # Updating the drive structure
+            self.updateDriveParameters(dstDiskCopy)
         finally:
             self._delDiskReplica(srcDrive)
             self.startDisksStatsCollection()
