@@ -19,6 +19,7 @@
 #
 
 import os
+import re
 import errno
 import glob
 import ethtool
@@ -29,11 +30,14 @@ import struct
 from fnmatch import fnmatch
 from xml.dom import minidom
 from itertools import chain
+from collections import namedtuple
 
 import libvirtconnection
 
 import constants
+import neterrors as ne
 from config import config
+from storage.misc import execCmd
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
@@ -52,33 +56,61 @@ def _match_nic_name(nic, patterns):
     return any(map(lambda p: fnmatch(nic, p), patterns))
 
 
-def nics():
-    res = []
+def _parseIpLinkOutput(links):
+    interfaces = {'nic': [], 'bond': [], 'vlan': [], 'bridge': [], 'fake': []}
+    IP_LINK_RE = re.compile(r'^\d+: (?P<name>\S+):.*\n'
+                            ' {4}link/(?P<link>\w+).*\n'
+                            '( {4}(?P<type>\w+))?', re.MULTILINE)
+
+    for match in re.finditer(IP_LINK_RE, links):
+        name = match.group('name')
+        ifaceType = match.group('type')
+        link = match.group('link')
+        if ifaceType:
+            if ifaceType in ('tun', 'dummy'):
+                ifaceType = 'fake'
+            interfaces[ifaceType].append(name)
+        elif link == 'ether':
+            interfaces['nic'].append(name)
+
+    return interfaces
+
+
+def getInterfaces():
+    Interfaces = namedtuple('Interfaces', ('nics, bonds, vlans, bridges'))
     hidden_nics = config.get('vars', 'hidden_nics').split(',')
     fake_nics = config.get('vars', 'fake_nics').split(',')
 
-    for b in glob.glob('/sys/class/net/*'):
-        nic = b.split('/')[-1]
-        if not os.path.exists(os.path.join(b, 'device')):
-            if _match_nic_name(nic, fake_nics):
-                res.append(nic)
-        elif not _match_nic_name(nic, hidden_nics):
-            res.append(nic)
+    rc, out, err = execCmd([constants.EXT_IPROUTE, '--details',
+                            'link', 'show'], raw=True)
+    if rc != 0:
+        raise ne.NetInfoError(err)
+    interfaces = _parseIpLinkOutput(out)
 
-    return res
+    return Interfaces([nic for nic in interfaces['nic']
+                       if not _match_nic_name(nic, hidden_nics)] +
+                      [nic for nic in interfaces['fake']
+                       if _match_nic_name(nic, fake_nics)],
+                      interfaces['bond'],
+                      [vlan.split('@')[0] for vlan in interfaces['vlan']],
+                      [br for br in interfaces['bridge']
+                       if br != DUMMY_BRIDGE])
+
+
+def nics():
+    return getInterfaces().nics
 
 
 def bondings():
-    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bonding')]
+    return getInterfaces().bondings
 
 
 def vlans():
-    return [b.split('/')[-1] for b in glob.glob('/sys/class/net/*.*')]
+    return getInterfaces().vlans
 
 
 def bridges():
-    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bridge')
-            if b.split('/')[-2] != DUMMY_BRIDGE]
+    return getInterfaces().bridges
 
 
 def networks():
@@ -205,13 +237,14 @@ def gethwaddr(dev):
 
 
 def graph():
-    for bridge in bridges():
+    _, bondings, vlans, bridges = getInterfaces()
+    for bridge in bridges:
         print bridge
         for iface in ports(bridge):
             print '\t' + iface
-            if iface in vlans():
+            if iface in vlans:
                 iface = iface.split('.')[0]
-            if iface in bondings():
+            if iface in bondings:
                 for slave in slaves(iface):
                     print '\t\t' + slave
 
@@ -219,14 +252,15 @@ def graph():
 def getVlanBondingNic(bridge):
     """Return the (vlan, bonding, nics) tupple that belongs to bridge."""
 
-    if bridge not in bridges():
+    _, bondings, vlans, bridges = getInterfaces()
+    if bridge not in bridges:
         raise ValueError('unknown bridge %s' % bridge)
     vlan = bonding = ''
     nics = []
     for iface in ports(bridge):
-        if iface in vlans():
+        if iface in vlans:
             iface, vlan = iface.split('.')
-        if iface in bondings():
+        if iface in bondings:
             bonding = iface
             nics = slaves(iface)
         else:
@@ -314,9 +348,9 @@ def getIfaceCfg(iface):
     return d
 
 
-def permAddr():
+def permAddr(bondings):
     paddr = {}
-    for b in bondings():
+    for b in bondings:
         slave = ''
         for line in file('/proc/net/bonding/' + b):
             if line.startswith('Slave Interface: '):
@@ -398,7 +432,8 @@ def get():
     d = {}
     routes = getRoutes()
     ipv6routes = getIPv6Routes()
-    paddr = permAddr()
+    nics, bondings, vlans, bridges = getInterfaces()
+    paddr = permAddr(bondings)
     d['networks'] = {}
 
     for net, netAttr in networks().iteritems():
@@ -410,10 +445,10 @@ def get():
             continue  # Do not report missing libvirt networks.
 
     d['bridges'] = dict([_bridgeinfo(bridge, routes, ipv6routes)
-                         for bridge in bridges()])
-    d['nics'] = dict([_nicinfo(nic, paddr) for nic in nics()])
-    d['bondings'] = dict([_bondinfo(bond) for bond in bondings()])
-    d['vlans'] = dict([_vlaninfo(vlan) for vlan in vlans()])
+                         for bridge in bridges])
+    d['nics'] = dict([_nicinfo(nic, paddr) for nic in nics])
+    d['bondings'] = dict([_bondinfo(bond) for bond in bondings])
+    d['vlans'] = dict([_vlaninfo(vlan) for vlan in vlans])
     return d
 
 

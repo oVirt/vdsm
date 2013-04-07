@@ -85,3 +85,15 @@ class TestNetinfo(TestCaseBase):
 
     def testMatchNicName(self):
         self.assertTrue(netinfo._match_nic_name('test1', ['test0', 'test1']))
+
+    def testParseIpLinkOutput(self):
+        outFile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "ip_details_link.out")
+        with open(outFile) as f:
+            links = f.read()
+        interfaces = netinfo._parseIpLinkOutput(links)
+        self.assertEqual(interfaces['nic'], ['eth0', 'eth1', 'eth2'])
+        self.assertEqual(interfaces['bond'], ['bond0', 'bond4'])
+        self.assertEqual(interfaces['vlan'], ['eth0.10@eth0', 'eth2.20@eth2'])
+        self.assertEqual(interfaces['bridge'], ['ovirtmgmt', ';vdsmdummy;'])
+        self.assertEqual(interfaces['fake'], ['vnet0', 'dummy0'])

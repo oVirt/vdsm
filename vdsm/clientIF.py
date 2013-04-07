@@ -84,7 +84,8 @@ class clientIF:
             self.gluster = None
         try:
             self.vmContainer = {}
-            ifids = netinfo.nics() + netinfo.bondings()
+            nics, bondings, _, _ = netinfo.getInterfaces()
+            ifids = nics + bondings
             ifrates = map(netinfo.speed, ifids)
             self._hostStats = sampling.HostStatsThread(
                 cif=self, log=log, ifids=ifids,
