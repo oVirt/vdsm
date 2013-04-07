@@ -33,4 +33,5 @@ dist_vdsmtool_DATA = \
 	__init__.py \
 	passwd.py \
 	seboolsetup.py \
+	service.py \
 	$(NULL)

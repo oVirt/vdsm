@@ -948,6 +948,7 @@ exit 0
 %endif
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
+%{python_sitearch}/%{vdsm_name}/tool/service.py*
 %{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 
 %files tests
