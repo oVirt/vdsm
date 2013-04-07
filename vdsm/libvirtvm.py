@@ -1304,25 +1304,28 @@ class LibvirtVm(vm.Vm):
 
         for devType in self._devices:
             for dev in self._devices[devType]:
-                if not getattr(dev, 'custom', {}):
-                    continue
+                if getattr(dev, 'custom', {}):
+                    yield dev
 
-                yield dev
-
-    def _beforeDeviceCreateHooks(self, domxml):
+    def _appendDevices(self, domxml):
         """
-        Run before_device_create hook script for devices with custom properties
+        Create all devices and run before_device_create hook script for devices
+        with custom properties
 
         The resulting device xml is cached in dev._deviceXML.
         """
 
-        for dev in self._customDevices():
-            deviceXML = dev.getXML().toxml(encoding='utf-8')
-            deviceXML = hooks.before_device_create(
-                deviceXML, self.conf, dev.custom)
-            dev._deviceXML = deviceXML
-            domxml._devices.appendChild(
-                xml.dom.minidom.parseString(deviceXML).firstChild)
+        for devType in self._devices:
+            for dev in self._devices[devType]:
+                deviceXML = dev.getXML().toxml(encoding='utf-8')
+
+                if getattr(dev, "custom", {}):
+                    deviceXML = hooks.before_device_create(
+                        deviceXML, self.conf, dev.custom)
+
+                dev._deviceXML = deviceXML
+                domxml._devices.appendChild(
+                    xml.dom.minidom.parseString(deviceXML).firstChild)
 
     def _buildCmdLine(self):
         domxml = _DomXML(self.conf, self.log)
@@ -1347,7 +1350,7 @@ class LibvirtVm(vm.Vm):
         domxml.appendInput()
         domxml.appendGraphics()
 
-        self._beforeDeviceCreateHooks(domxml)
+        self._appendDevices(domxml)
 
         for drive in self._devices[vm.DISK_DEVICES][:]:
             if not hasattr(drive, 'volumeChain'):
