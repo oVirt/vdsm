@@ -33,7 +33,7 @@ CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
 QEMU_DUMP_PATH="/var/log/core"
-NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock network"
+NEEDED_SERVICES="iscsid multipathd ntpd wdmd sanlock network libvirtd"
 CONFLICTING_SERVICES="libvirt-guests"
 
 # trigger for reconfiguration
@@ -122,13 +122,13 @@ shutdown_conflicting_srv() {
 
     for srv in $CONFLICTING_SERVICES
     do
-        /sbin/chkconfig $srv off
-        if /sbin/service $srv status > /dev/null 2>&1;
+        /usr/bin/vdsm-tool service-disable "$srv"
+        if /usr/bin/vdsm-tool service-status "$srv" > /dev/null 2>&1;
         then
             if [ "$srv" == "libvirt-guests" ]; then
                 /bin/rm -f /var/lock/subsys/libvirt-guests
             else
-                /sbin/service $srv stop
+                /usr/bin/vdsm-tool service-stop "$srv"
             fi
         fi
     done
@@ -144,20 +144,16 @@ syslog_available() {
     return 0
 }
 
-libvirt_should_use_upstart() {
-    [[ -x /sbin/initctl ]]
-}
-
 start_needed_srv() {
     local srv
     local ret_val
 
     for srv in $NEEDED_SERVICES
     do
-        if ! /sbin/service $srv status > /dev/null 2>&1;
+        if ! /usr/bin/vdsm-tool service-status "$srv" > /dev/null 2>&1;
         then
             echo "Starting $srv..."
-            /sbin/service $srv start
+            /usr/bin/vdsm-tool service-start "$srv"
             ret_val=$?
             if [ $ret_val -ne 0 ]
             then
@@ -167,7 +163,7 @@ start_needed_srv() {
         fi
     done
 
-    /sbin/service iscsid force-start
+    @SERVICE_PATH@ iscsid force-start
 }
 
 test_lo() {
@@ -206,9 +202,49 @@ test_already_running()
     return 1
 }
 
+libvirtd_sysv2upstart()
+{
+    # On RHEL 6, libvirtd can be started by either SysV init or Upstart.
+    # We prefer upstart because it respawns libvirtd if when libvirtd crashed.
+
+    if ! [[ -x /sbin/initctl ]]; then
+        # We don't have Upstart, still use system default init mechanism
+        return 0
+    fi
+
+    local packaged target
+
+    packaged=`/bin/rpm -ql libvirt libvirt-daemon | \
+              /bin/grep libvirtd.upstart | /usr/bin/tail -1`
+    target=/etc/init/libvirtd.conf
+
+    if ! [[ -f "$packaged" ]]; then
+        # libvirtd package does not provide libvirtd.upstart,
+        # this could happen in Ubuntu or other distro,
+        # so continue to use system default init mechanism
+        return 0
+    fi
+
+    # Stop libvirt SysV service before configure upstart
+    if [[ ! -f "$target" ]]; then
+        @CHKCONFIG_PATH@ libvirtd off
+        @SERVICE_PATH@ libvirtd stop
+    fi
+
+    if ! diff -q "$packaged" "$target" >/dev/null;
+    then
+        /bin/cp -p "$packaged" "$target" || return 1
+        /sbin/initctl reload-configuration
+    fi
+}
+
 # configure libvirt to vdsm's needs
 configure_libvirt()
 {
+
+    # if SysV init file and Upstart job file both exist, prefer Upstart
+    libvirtd_sysv2upstart || return $?
+
     local force_reconfigure="$1"
     local by_vdsm="by vdsm"
     # The PACKAGE_VERSION macro is not used here because we do not want to
@@ -373,11 +409,7 @@ EOF
 
     ovirt_store_config "$lconf" "$qconf" "$ldconf" "$llogr"
 
-    if libvirt_should_use_upstart; then
-        /sbin/initctl restart libvirtd 2>/dev/null || :
-    else
-        /bin/systemctl restart libvirtd.service
-    fi
+    /usr/bin/vdsm-tool service-restart libvirtd
 
     #
     # finished reconfiguration, do not trigger
@@ -405,44 +437,6 @@ reconfigure() {
     configure_libvirt $args
 }
 
-stop_libvirtd_sysv() {
-    # stop libvirt SysV service if we intend to configure upstart
-
-    if libvirt_should_use_upstart && ! [[ -f /etc/init/libvirtd.conf ]]; then
-        /sbin/chkconfig libvirtd off
-        /sbin/service libvirtd stop
-    fi
-}
-
-start_libvirtd() {
-    local packaged target
-    local startout
-
-    if ! libvirt_should_use_upstart; then
-        /sbin/service libvirtd start
-        return
-    fi
-
-    packaged=`/bin/rpm -ql libvirt libvirt-daemon | \
-              /bin/grep libvirtd.upstart | /usr/bin/tail -1`
-    target=/etc/init/libvirtd.conf
-
-    if [[ -f "$packaged" ]] && ! diff -q "$packaged" "$target" >/dev/null;
-    then
-        /bin/cp -p "$packaged" "$target" || return 1
-        /sbin/initctl reload-configuration
-    fi
-
-    startout=`/sbin/initctl start libvirtd 2>&1`
-    if [[ "$?" -eq 0 || "$startout" =~ .*already\ running.* ]];
-    then
-        return 0
-    else
-        echo "$startout" >&2
-        return 1
-    fi
-}
-
 has_systemd() {
     /bin/mountpoint -q /cgroup/systemd ||
         /bin/mountpoint -q /sys/fs/cgroup/systemd
@@ -452,7 +446,7 @@ start() {
     local ret_val
     python @VDSMDIR@/hooks.pyc before_vdsm_start
 
-    shutdown_conflicting_srv && stop_libvirtd_sysv
+    shutdown_conflicting_srv
 
     if ! @LIBEXECDIR@/vdsm-gencerts.sh --check; then
         echo -n $"Configuring a self-signed VDSM host certificate: "
@@ -467,7 +461,7 @@ start() {
         return $ret_val
     fi
 
-    start_needed_srv && start_libvirtd && syslog_available
+    start_needed_srv && syslog_available
 
     ret_val=$?
     if [ $ret_val -ne 0 ]
