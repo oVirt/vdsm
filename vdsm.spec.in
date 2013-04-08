@@ -3,6 +3,9 @@
 %global vdsm_bootstrap vdsm-bootstrap
 %global vdsm_reg vdsm-reg
 
+# Gluster
+%global with_gluster 1
+
 # Required users and groups
 %global vdsm_user @VDSMUSER@
 %global vdsm_group @VDSMGROUP@
@@ -403,6 +406,7 @@ BuildArch:      noarch
 %description hook-vmdisk
 Hook adds additional disk image for a VM (raw or qcow2)
 
+%if 0%{?with_gluster}
 %package gluster
 Summary:        Gluster Plugin for VDSM
 BuildArch:      noarch
@@ -415,6 +419,7 @@ Requires: glusterfs-rdma
 
 %description gluster
 Gluster plugin enables VDSM to serve Gluster functionalities.
+%endif
 
 %prep
 %setup -q
@@ -820,8 +825,12 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/route_info.out
 %{_datadir}/%{vdsm_name}/tests/tc_filter_show.out
+%if 0%{?with_gluster}
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
+%else
+%exclude %{_datadir}/%{vdsm_name}/tests/gluster*
+%endif
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
 
 %files hook-vhostmd
@@ -994,6 +1003,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop/10_faqemu
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
 
+%if 0%{?with_gluster}
 %files gluster
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}/gluster
@@ -1003,6 +1013,10 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/cli.py*
 %{_datadir}/%{vdsm_name}/gluster/exception.py*
 %{_datadir}/%{vdsm_name}/gluster/hostname.py*
+%else
+%exclude %{_datadir}/%{vdsm_name}/gluster/*
+%endif
+
 
 %changelog
 * Wed Oct 12 2011 Federico Simoncelli <fsimonce@redhat.com> - 4.9.0-0
