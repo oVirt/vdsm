@@ -20,7 +20,7 @@ propagate=0
 
 [logger_Storage]
 level=DEBUG
-handlers=syslog,logfile
+handlers=logfile
 qualname=Storage
 propagate=0
 

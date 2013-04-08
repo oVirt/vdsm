@@ -39,7 +39,7 @@ from vdsm import constants
 import mount
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
 
-log = logging.getLogger('fileUtils')
+log = logging.getLogger('Storage.fileUtils')
 
 CharPointer = ctypes.POINTER(ctypes.c_char)
 
