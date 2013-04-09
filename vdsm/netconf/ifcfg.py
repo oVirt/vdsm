@@ -577,6 +577,9 @@ class ConfigWriter(object):
     def removeBonding(self, bonding):
         self._backup(netinfo.NET_CONF_PREF + bonding)
         self._removeFile(netinfo.NET_CONF_PREF + bonding)
+        if bonding not in netinfo.REQUIRED_BONDINGS:
+            with open(netinfo.BONDING_MASTERS, 'w') as f:
+                f.write("-%s\n" % bonding)
 
     def removeBridge(self, bridge):
         ifdown(bridge)

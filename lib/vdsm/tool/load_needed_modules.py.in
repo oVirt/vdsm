@@ -20,6 +20,7 @@
 
 import subprocess
 
+from vdsm import netinfo
 from vdsm.tool import expose
 
 
@@ -40,13 +41,11 @@ def _exec_command(argv):
 
 
 def _enable_bond_dev():
-    REQUIRED = set(['bond0', 'bond1', 'bond2', 'bond3', 'bond4'])
-    MASTER_FILE = '/sys/class/net/bonding_masters'
-
     # @ENGINENAME@ currently assumes that all bonding devices pre-exist
-    existing = set(file(MASTER_FILE).read().split())
-    for bond in REQUIRED - existing:
-        with open(MASTER_FILE, 'w') as f:
+    with open(netinfo.BONDING_MASTERS) as f:
+        existing = set(f.read().split())
+    for bond in netinfo.REQUIRED_BONDINGS - existing:
+        with open(netinfo.BONDING_MASTERS, 'w') as f:
             f.write('+%s\n' % bond)
 
 

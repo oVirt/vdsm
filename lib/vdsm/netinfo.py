@@ -51,6 +51,8 @@ LIBVIRT_NET_PREFIX = 'vdsm-'
 DUMMY_BRIDGE = ';vdsmdummy;'
 DEFAULT_MTU = '1500'
 
+REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
+
 
 def _match_nic_name(nic, patterns):
     return any(map(lambda p: fnmatch(nic, p), patterns))
