@@ -136,6 +136,12 @@ parameters = [
 
         ('report_host_threads_as_cores', 'false',
             'Count each cpu hyperthread as an individual core'),
+
+        ('libvirt_env_variable_log_filters', '',
+            'Specify the log filters to track libvirt calls'),
+
+        ('libvirt_env_variable_log_outputs', '',
+            'Specify the output to track libvirt calls'),
     ]),
 
     # Section: [ksm]

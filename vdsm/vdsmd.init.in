@@ -505,8 +505,8 @@ start() {
     echo $"Starting up vdsm daemon: "
     local vdsm_nice=`$GETCONFITEM $CONF_FILE vars vdsm_nice -5`
 
-    LIBVIRT_LOG_FILTERS=`$GETCONFITEM $CONF_FILE vars libvirt_log_filters "1:libvirt 1:remote"` \
-    LIBVIRT_LOG_OUTPUTS=`$GETCONFITEM $CONF_FILE vars libvirt_log_outputs "1:file:/var/log/vdsm/libvirt.log"` \
+    LIBVIRT_LOG_FILTERS=`$GETCONFITEM $CONF_FILE vars libvirt_env_variable_log_filters ""` \
+    LIBVIRT_LOG_OUTPUTS=`$GETCONFITEM $CONF_FILE vars libvirt_env_variable_log_outputs ""` \
     LC_ALL=C NICELEVEL=$vdsm_nice daemon --user=vdsm @VDSMDIR@/respawn --minlifetime 10 --daemon --masterpid $RESPAWNPIDFILE $VDSM_BIN
     RETVAL=$?
     [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
