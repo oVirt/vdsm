@@ -12,7 +12,6 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @FSCK_PATH@ -p *, \
     @TUNE2FS_PATH@ -j *, \
     @MKFS_PATH@ -q -j *, \
-    @FUSER_PATH@ -m *, \
     @KILL_PATH@, \
     @CHOWN_PATH@ @VDSMUSER@\:@QEMUGROUP@ *, \
     @CHOWN_PATH@ @METADATAUSER@\:@METADATAGROUP@ *, \

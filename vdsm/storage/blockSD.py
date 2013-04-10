@@ -49,7 +49,7 @@ import storage_exception as se
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
 import mount
-from fuser import fuser
+import supervdsm as svdsm
 
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
@@ -1193,7 +1193,8 @@ class BlockStorageDomain(sd.StorageDomain):
                 masterMount.umount()
             except mount.MountError:
                 # umount failed, try to kill that processes holding mount point
-                pids = fuser(masterMount.fs_file, mountPoint=True)
+                svdsmp = svdsm.getProxy()
+                pids = svdsmp.fuser(masterMount.fs_file, mountPoint=True)
 
                 # It was unmounted while I was checking no need to do anything
                 if not masterMount.isMounted():
