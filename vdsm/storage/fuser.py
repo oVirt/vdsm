@@ -27,7 +27,7 @@ def fuser(path, mountPoint=False):
         cmd.append("-m")
 
     cmd.append(path)
-    (rc, out, err) = misc.execCmd(cmd, raw=True, sudo=True)
+    (rc, out, err) = misc.execCmd(cmd, raw=True, sudo=False)
     if rc != 0:
         return []
 

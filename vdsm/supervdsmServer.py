@@ -26,6 +26,7 @@ import stat
 import errno
 import threading
 import re
+import fuser
 from time import sleep
 import signal
 from multiprocessing import Pipe, Process
@@ -306,6 +307,10 @@ class _SuperVdsm(object):
     @logDecorator
     def removeFs(self, path):
         return mkimage.removeFs(path)
+
+    @logDecorator
+    def fuser(self, *args):
+        return fuser.fuser(*args)
 
     def __udevReloadRules(self, guid):
         if self.__udevOperationReload():
