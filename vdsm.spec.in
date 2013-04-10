@@ -10,6 +10,14 @@
 %global snlk_group @SNLKGROUP@
 %global snlk_user @SNLKUSER@
 
+# Fedora official build
+%global fedora_koji_build 0
+
+# Default to skipping autoreconf.  Distros can change just this one line
+# (or provide a command-line override) if they backport any patches that
+# touch configure.ac or Makefile.am.
+%{!?enable_autotools:%define enable_autotools 0}
+
 # Required paths
 %if 0%{?fedora} >= 18
 %global _polkitdir %{_datadir}/polkit-1/rules.d
@@ -17,8 +25,9 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
-# Gluster
+%if !0%{fedora_koji_build} || 0%{?fedora} >= 19
 %global with_gluster 1
+%endif
 
 %if 0%{?fedora} >= 15 || 0%{?rhel} >= 7
 %global with_systemd 1
@@ -27,11 +36,6 @@
 %if 0%{?fedora} >= 18
 %global with_systemd_macros 1
 %endif
-
-# Default to skipping autoreconf.  Distros can change just this one line
-# (or provide a command-line override) if they backport any patches that
-# touch configure.ac or Makefile.am.
-%{!?enable_autotools:%define enable_autotools 0}
 
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
