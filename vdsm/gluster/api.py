@@ -272,6 +272,10 @@ class GlusterApi(object):
     def hookRemove(self, glusterCmd, hookLevel, hookName, options=None):
         self.svdsmProxy.glusterHookRemove(glusterCmd, hookLevel, hookName)
 
+    @exportAsVerb
+    def hostUUIDGet(self, options=None):
+        return {'uuid': self.svdsmProxy.glusterHostUUIDGet()}
+
 
 def getGlusterMethods(gluster):
     l = []

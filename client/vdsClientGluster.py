@@ -390,6 +390,11 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterHostUUIDGet(self, args):
+        status = self.s.glusterHostUUIDGet()
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -650,4 +655,10 @@ def getGlusterCmdDict(serv):
               'hookName=<hook_name>\n\t'
               '<hook_name> is an existing hook name',
               'Remove hook script'
-              )), }
+              )),
+         'glusterHostUUIDGet': (
+             serv.do_glusterHostUUIDGet,
+             ('',
+              'get gluster UUID of the host'
+              )),
+         }

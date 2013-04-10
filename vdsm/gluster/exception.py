@@ -392,6 +392,11 @@ class GlusterHostsListFailedException(GlusterHostException):
     message = "Hosts list failed"
 
 
+class GlusterHostUUIDNotFoundException(GlusterHostException):
+    code = 4408
+    message = "Host UUID not found"
+
+
 # Hook
 class GlusterHookException(GlusterException):
     code = 4500

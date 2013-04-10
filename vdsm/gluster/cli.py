@@ -45,6 +45,10 @@ def _getGlusterPeerCmd():
     return [_glusterCommandPath.cmd, "--mode=script", "peer"]
 
 
+def _getGlusterSystemCmd():
+    return [_glusterCommandPath.cmd, "system::"]
+
+
 class BrickStatus:
     PAUSED = 'PAUSED'
     COMPLETED = 'COMPLETED'
@@ -104,13 +108,16 @@ def _getGlusterHostName():
         return ''
 
 
-def _getGlusterUuid():
-    try:
-        with open('/var/lib/glusterd/glusterd.info') as f:
-            return dict(map(lambda x: x.strip().split('=', 1),
-                            f)).get('UUID', '')
-    except IOError:
-        return ''
+@makePublic
+def hostUUIDGet():
+    command = _getGlusterSystemCmd() + ["uuid", "get"]
+    rc, out, err = _execGluster(command)
+    if rc == 0:
+        for line in out:
+            if line.startswith('UUID: '):
+                return line[6:]
+
+    raise ge.GlusterHostUUIDNotFoundException()
 
 
 def _parseVolumeStatus(tree):
@@ -796,7 +803,7 @@ def peerStatus():
     try:
         return _parsePeerStatus(xmltree,
                                 _getLocalIpAddress() or _getGlusterHostName(),
-                                _getGlusterUuid(), HostStatus.CONNECTED)
+                                hostUUIDGet(), HostStatus.CONNECTED)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 

@@ -241,3 +241,26 @@
 {'command': {'class': 'GlusterHook', 'name': 'remove'},
  'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
  'returns': 'bool'}
+
+## Category: @GlusterHost ######################################################
+##
+# @GlusterHost:
+#
+# Gluster Host API object.
+#
+# Since: 4.10.3
+##
+{'class': 'GlusterHost'}
+
+##
+# @GlusterHost.uuid:
+#
+# Get Gluster Host UUID
+#
+# Returns:
+# UUID of host
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHost', 'name': 'uuid'},
+ 'returns': 'UUID'}
