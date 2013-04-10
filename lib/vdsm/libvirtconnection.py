@@ -20,6 +20,7 @@
 
 import threading
 import functools
+import logging
 
 import libvirt
 from vdsm import constants, utils
@@ -154,6 +155,7 @@ def get(cif=None):
         if not conn:
             libvirtOpenAuth = functools.partial(libvirt.openAuth,
                                                 'qemu:///system', auth, 0)
+            logging.debug('trying to connect libvirt')
             conn = utils.retry(libvirtOpenAuth, timeout=10, sleep=0.2)
             __connections[id(cif)] = conn
             if cif is not None:
