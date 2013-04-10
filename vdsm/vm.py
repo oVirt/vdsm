@@ -822,9 +822,27 @@ class Vm(object):
         if clientIp:
             self.conf['clientIp'] = clientIp
 
+    def _timedDesktopLock(self):
+        if not self.conf.get('clientIp', ''):
+            self.guestAgent.desktopLock()
+
     def onDisconnect(self, detail=None):
-        self.guestAgent.desktopLock()
         self.conf['clientIp'] = ''
+        # This is a hack to mitigate the issue of spice-gtk not respecting the
+        # configured secure channels. Spice-gtk is always connecting first to
+        # a non-secure channel and the server tells the client then to connect
+        # to a secure channel. However as a result of this we're getting events
+        # of false positive disconnects and we need to ensure that we're really
+        # having a disconnected client
+        # This timer is supposed to delay the call to lock the desktop of the
+        # guest. And only lock it, if it there was no new connect.
+        # This is detected by the clientIp being set or not.
+        #
+        # Multiple desktopLock calls won't matter if we're really disconnected
+        # It is not harmful. And the threads will exit after 2 seconds anyway.
+        _DESKTOP_LOCK_TIMEOUT = 2
+        timer = threading.Timer(_DESKTOP_LOCK_TIMEOUT, self._timedDesktopLock)
+        timer.start()
 
     def _rtcUpdate(self, timeOffset):
         self.log.debug('new rtc offset %s', timeOffset)
