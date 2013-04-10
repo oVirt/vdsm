@@ -80,7 +80,7 @@ class CrashOnCloseFactory(resourceManager.SimpleResourceFactory):
         s = StringIO("%s:%s" % (name, lockType))
         s.seek(0)
 
-        def close(self, lockType):
+        def close(self):
             raise Exception("I NEVER CLOSE!!!")
 
         s.close = types.MethodType(close, s, StringIO)
