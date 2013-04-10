@@ -55,9 +55,9 @@ parameters = [
             'Time to wait (in seconds) for migration destination to start '
             'listening before migration begins.'),
 
-        ('migration_max_bandwidth', '0',
-            'Maximum bandwidth for migration, in mbps, 0 means libvirt\'s '
-            'default (30mbps?).'),
+        ('migration_max_bandwidth', '32',
+            'Maximum bandwidth for migration, in MiBps, 0 means libvirt\'s '
+            'default, since 0.10.x default in libvirt is unlimited'),
 
         ('migration_monitor_interval', '10',
             'How often (in seconds) should the monitor thread pulse, 0 means '
