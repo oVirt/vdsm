@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 from contextlib import contextmanager
 import libvirt
 import xml.dom.minidom
+from xml.dom import Node
 from xml.dom.minidom import parseString as _domParseStr
 import time
 import threading
@@ -465,6 +466,9 @@ class MigrationSourceThread(vm.MigrationSourceThread):
                 self._vm._vmStats.cont()
                 raise
         else:
+            for dev in self._vm._customDevices():
+                hooks.before_device_migrate_source(
+                    dev._deviceXML, self._vm.conf, dev.custom)
             hooks.before_vm_migrate_source(self._vm._dom.XMLDesc(0),
                                            self._vm.conf)
             response = self.destServer.migrationCreate(self._machineParams)
@@ -1931,6 +1935,11 @@ class LibvirtVm(vm.Vm):
             del self.conf['migrationDest']
             del self.conf['afterMigrationStatus']
             hooks.after_vm_migrate_destination(self._dom.XMLDesc(0), self.conf)
+
+            for dev in self._customDevices():
+                hooks.after_device_migrate_destination(
+                    dev._deviceXML, self.conf, dev.custom)
+
         if 'guestIPs' in self.conf:
             del self.conf['guestIPs']
         if 'username' in self.conf:
@@ -3096,6 +3105,9 @@ class LibvirtVm(vm.Vm):
             if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
                     self.lastStatus == 'Migration Source'):
                 hooks.after_vm_migrate_source(self._lastXMLDesc, self.conf)
+                for dev in self._customDevices():
+                    hooks.after_device_migrate_source(
+                        dev._deviceXML, self.conf, dev.custom)
             elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
                     self.lastStatus == 'Saving State'):
                 hooks.after_vm_hibernate(self._lastXMLDesc, self.conf)
@@ -3136,6 +3148,34 @@ class LibvirtVm(vm.Vm):
                   self.lastStatus == 'Migration Destination'):
                 self._incomingMigrationFinished.set()
 
+    def _updateDevicesDomxmlCache(self, xml):
+        """
+            Devices cache their device's XML, which is used for per-device
+            hooks. The cache is lost when a VM migrates because that info
+            isn't sent, and so the cache needs to be updated at the
+            destination.
+            We update the cache by finding each device in the dom xml.
+        """
+
+        aliasToDevice = {}
+        for devType in self._devices:
+            for dev in self._devices[devType]:
+                aliasToDevice[dev.alias] = dev
+
+        devices = _domParseStr(xml).childNodes[0]. \
+            getElementsByTagName('devices')[0]
+
+        for deviceXML in devices.childNodes:
+            if deviceXML.nodeType != Node.ELEMENT_NODE:
+                continue
+
+            aliasElement = deviceXML.getElementsByTagName('alias')
+            if aliasElement:
+                alias = aliasElement[0].getAttribute('name')
+
+                if alias in aliasToDevice:
+                    aliasToDevice[alias]._deviceXML = deviceXML.toxml()
+
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""
         # Wait for the VM to start its creation. There is no reason to start
@@ -3151,6 +3191,12 @@ class LibvirtVm(vm.Vm):
             self.log.debug('Timeout while waiting for path preparation')
             return False
         srcDomXML = self.conf.pop('_srcDomXML')
+        self._updateDevicesDomxmlCache(srcDomXML)
+
+        for dev in self._customDevices():
+            hooks.before_device_migrate_destination(
+                dev._deviceXML, self.conf, dev.custom)
+
         hooks.before_vm_migrate_destination(srcDomXML, self.conf)
         return True
 

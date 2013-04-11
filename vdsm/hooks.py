@@ -138,6 +138,28 @@ def after_vm_pause(domxml, vmconf={}):
                         vmconf=vmconf, raiseError=False)
 
 
+def before_device_migrate_source(devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'before_device_migrate_source',
+                        vmconf=vmconf, params=customProperties)
+
+
+def after_device_migrate_source(devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'after_device_migrate_source',
+                        vmconf=vmconf, params=customProperties)
+
+
+def before_device_migrate_destination(
+        devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'before_device_migrate_destination',
+                        vmconf=vmconf, params=customProperties)
+
+
+def after_device_migrate_destination(
+        devicexml, vmconf={}, customProperties={}):
+    return _runHooksDir(devicexml, 'after_device_migrate_destination',
+                        vmconf=vmconf, params=customProperties)
+
+
 def before_vm_migrate_source(domxml, vmconf={}):
     return _runHooksDir(domxml, 'before_vm_migrate_source', vmconf=vmconf)
 

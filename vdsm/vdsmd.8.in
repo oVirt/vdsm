@@ -45,12 +45,14 @@ Currently-supported hooks have self-explanatory names:
     before_vm_dehibernate, after_vm_dehibernate,
     before_vm_migrate_source, after_vm_migrate_source,
     before_vm_migrate_destination, after_vm_migrate_destination,
+    before_device_migrate_source, after_device_migrate_source,
+    before_device_migrate_destination, after_device_migrate_destination,
     before_vm_destroy, after_vm_destroy,
     before_vm_set_ticket, after_vm_set_ticket,
     before_device_create, after_device_create,
     before_device_destroy, after_device_destroy,
     before_nic_hotplug, after_nic_hotplug, after_nic_hotplug_fail,
-    before_nic_hotunplug, after_nic_hotunplug, after_nic_unhotplug_fail,
+    before_nic_hotunplug, after_nic_hotunplug, after_nic_hotunplug_fail,
     before_disk_hotplug, after_disk_hotplug,
     before_disk_hotunplug, after_disk_hotunplug,
     before_vdsm_start, after_vdsm_stop.
@@ -73,6 +75,8 @@ Hooks that handle NIC hotplug and hotunplug have the _hook_domxml variable but
 it contains the representation of the NIC rather than the VM.
 Hotplug/hotunplug disk hooks also have the _hook_dom_xml variable,
 which contains the drive definition (not the VM).
+All hook points that are device specific get the xml of the device
+instead of the entire VM. Such hooks are listed below.
 
 On top of these, @ENGINENAME@ allows to set a collection of "custom parameters" for
 each virtual machine.  Each of these parameters is provided to hooks as an
@@ -87,11 +91,13 @@ with a set of params passed by the caller of setVmTicket.
 
 The environment of hooks specific to devices:
     before_nic_hotplug, after_nic_hotplug, after_nic_hotplug_fail,
-    before_nic_hotunplug, after_nic_hotunplug, after_nic_unhotplug_fail,
+    before_nic_hotunplug, after_nic_hotunplug, after_nic_hotunplug_fail,
     before_disk_hotplug, after_disk_hotplug,
     before_disk_hotunplug, after_disk_hotunplug,
     before_device_create, after_device_create,
-    before_device_destroy, after_device_destroy.
+    before_device_destroy, after_device_destroy,
+    before_device_migrate_source, after_device_migrate_source,
+    before_device_migrate_destination, after_device_migrate_destination.
 
 Are all augmented by custom properties specific to those devices, 
 sent by the caller of the hook. For example if before_nic_hotplug is called

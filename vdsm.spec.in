@@ -844,6 +844,10 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_hibernate
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_dehibernate
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_source
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_source
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vm_migrate_source
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination
