@@ -139,23 +139,19 @@ class GuestAgent ():
             # 'pageflt' and 'majflt'
             if 'memory-stat' in args:
                 for (k, v) in args['memory-stat'].iteritems():
-                    k = _filterXmlChars(k)
                     # Convert the value to string since 64-bit integer is not
                     # supported in XMLRPC
-                    v = _filterXmlChars(str(v))
-                    self.guestInfo['memoryStats'][k] = v
+                    self.guestInfo['memoryStats'][k] = str(v)
         elif message == 'host-name':
-            self.guestInfo['guestName'] = _filterXmlChars(args['name'])
+            self.guestInfo['guestName'] = args['name']
         elif message == 'os-version':
-            self.guestInfo['guestOs'] = _filterXmlChars(args['version'])
+            self.guestInfo['guestOs'] = args['version']
         elif message == 'network-interfaces':
             interfaces = []
             old_ips = ''
             for iface in args['interfaces']:
-                iface['name'] = _filterXmlChars(iface['name'])
-                iface['hw'] = _filterXmlChars(iface['hw'])
-                iface['inet'] = map(_filterXmlChars, iface.get('inet', []))
-                iface['inet6'] = map(_filterXmlChars, iface.get('inet6', []))
+                iface['inet'] = iface.get('inet', [])
+                iface['inet6'] = iface.get('inet6', [])
                 interfaces.append(iface)
                 # Provide the old information which includes
                 # only the IP addresses.
@@ -163,16 +159,15 @@ class GuestAgent ():
             self.guestInfo['netIfaces'] = interfaces
             self.guestInfo['guestIPs'] = old_ips.strip()
         elif message == 'applications':
-            self.guestInfo['appsList'] = map(_filterXmlChars,
-                                             args['applications'])
+            self.guestInfo['appsList'] = args['applications']
         elif message == 'active-user':
-            currentUser = _filterXmlChars(args['name'])
+            currentUser = args['name']
             if ((currentUser != self.guestInfo['username']) and
                 not (currentUser == 'Unknown' and
                      self.guestInfo['username'] == 'None')):
                 self.guestInfo['username'] = currentUser
                 self.guestInfo['lastLogin'] = time.time()
-            self.log.debug(repr(self.guestInfo['username']))
+            self.log.debug("username: %s", repr(self.guestInfo['username']))
         elif message == 'session-logon':
             self.guestInfo['session'] = "UserLoggedOn"
         elif message == 'session-lock':
@@ -191,12 +186,10 @@ class GuestAgent ():
         elif message == 'disks-usage':
             disks = []
             for disk in args['disks']:
-                disk['path'] = _filterXmlChars(disk['path'])
-                disk['fs'] = _filterXmlChars(disk['fs'])
                 # Converting to string because XML-RPC doesn't support 64-bit
                 # integers.
-                disk['total'] = _filterXmlChars(str(disk['total']))
-                disk['used'] = _filterXmlChars(str(disk['used']))
+                disk['total'] = str(disk['total'])
+                disk['used'] = str(disk['used'])
                 disks.append(disk)
             self.guestInfo['disksUsage'] = disks
         else:
@@ -340,6 +333,7 @@ class GuestAgent ():
         return result
 
     def _parseLine(self, line):
+        line = _filterXmlChars(line)
         args = json.loads(line.decode('utf8'))
         name = args['__name__']
         del args['__name__']

@@ -88,6 +88,10 @@ class TestGuestIF(TestCaseBase):
         self.assertEqual(ALL_LEGAL, guestIF._filterXmlChars(ALL_LEGAL))
         TM = u"\u2122".encode('utf8')
         self.assertNotEqual(TM, guestIF._filterXmlChars(TM))
+        invalid = u"\u0000"
+        self.assertEqual(u'?', guestIF._filterXmlChars(invalid))
+        invalid2 = "\x00"
+        self.assertEqual('?',  guestIF._filterXmlChars(invalid2))
 
     def test_handleMessage(self):
         logging.TRACE = 5
