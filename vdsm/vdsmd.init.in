@@ -310,7 +310,8 @@ configure_libvirt()
     set_if_default $qconf save_image_format \"lzop\"
     # FIXME until we are confident with libvirt integration, let us have a verbose log
     set_if_default $lconf log_outputs \"1:file:/var/log/libvirtd.log\"
-    set_if_default $lconf log_filters "\"1:libvirt 3:event 3:json 1:util 1:qemu\""
+    set_if_default $lconf log_filters "\"3:virobject 3:virfile 2:virnetlink \
+3:cgroup 3:event 3:json 1:libvirt 1:util 1:qemu\""
 
     # If the ssl flag is set, update the libvirt and qemu configuration files
     # with the location for certificates and permissions.
