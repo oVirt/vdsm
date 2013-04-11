@@ -26,7 +26,7 @@ import stat
 import errno
 import threading
 import re
-import fuser
+from storage import fuser
 from time import sleep
 import signal
 from multiprocessing import Pipe, Process
