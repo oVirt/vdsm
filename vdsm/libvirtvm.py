@@ -1556,6 +1556,7 @@ class LibvirtVm(vm.Vm):
         nicXml = nic.getXML().toprettyxml(encoding='utf-8')
         nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
                                           params=params.get('custom', {}))
+        nic._deviceXML = nicXml
         self.log.debug("Hotplug NIC xml: %s", nicXml)
 
         try:
@@ -1800,6 +1801,7 @@ class LibvirtVm(vm.Vm):
 
         hooks.before_disk_hotplug(driveXml, self.conf,
                                   params=params.get('custom', {}))
+        drive._deviceXML = driveXml
         try:
             self._dom.attachDevice(driveXml)
         except libvirt.libvirtError as e:
