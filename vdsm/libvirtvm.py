@@ -1844,8 +1844,8 @@ class LibvirtVm(vm.Vm):
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug disk xml: %s" % (driveXml))
 
-        hooks.before_disk_hotplug(driveXml, self.conf,
-                                  params=params.get('custom', {}))
+        driveXml = hooks.before_disk_hotplug(driveXml, self.conf,
+                                             params=params.get('custom', {}))
         drive._deviceXML = driveXml
         try:
             self._dom.attachDevice(driveXml)
