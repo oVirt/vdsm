@@ -366,7 +366,7 @@ class StatsThread(threading.Thread):
     SAMPLE_INTERVAL_SEC = 2
     MBITTOBYTES = 1000000 / 8
 
-    def __init__(self, log, ifids, ifrates, ifmacs):
+    def __init__(self, log, ifids, ifrates):
         threading.Thread.__init__(self)
         self._log = log
         self._lastCheckTime = 0
@@ -374,7 +374,6 @@ class StatsThread(threading.Thread):
         self._samples = []
         self._ifids = ifids
         self._ifrates = ifrates
-        self._ifmacs = ifmacs
         self._ncpus = 1
         # in bytes-per-second
         self._lineRate = (sum(ifrates) or 1000) * (10 ** 6) / 8
@@ -436,8 +435,7 @@ class StatsThread(threading.Thread):
 
         rx = tx = rxDropped = txDropped = 0
         stats['network'] = {}
-        for ifid, ifrate, ifmac in zip(self._ifids, self._ifrates,
-                                       self._ifmacs):
+        for ifid, ifrate in zip(self._ifids, self._ifrates):
             ifrate = ifrate or 1000
             Mbps2Bps = (10 ** 6) / 8
             thisRx = (hs1.interfaces[ifid].rx - hs0.interfaces[ifid].rx) % \
@@ -464,7 +462,6 @@ class StatsThread(threading.Thread):
                                       'state': iface.operstate,
                                       'rxRate': '%.1f' % rxRate,
                                       'txRate': '%.1f' % txRate,
-                                      'macAddr': ifmac,
                                       }
             rx += thisRx
             tx += thisTx
@@ -490,8 +487,7 @@ class HostStatsThread(StatsThread):
     """
     def __init__(self, cif, log, ifids, ifrates):
         self.startTime = time.time()
-        StatsThread.__init__(self, log, ifids, ifrates,
-                             [''] * len(ifids))  # fake ifmacs
+        StatsThread.__init__(self, log, ifids, ifrates)
         self._imagesStatus = ImagePathStatus(cif)
         self._pid = os.getpid()
         self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)

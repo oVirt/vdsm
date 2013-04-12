@@ -1403,6 +1403,36 @@
           'txDropped': 'uint', 'rxErrors': 'uint', 'txErrors': 'uint',
           'state': 'NetworkInterfaceState', 'rxRate': 'float',
           'txRate': 'float', 'macAddr': 'str'}}
+##
+# @HostNetworkInterfaceStats:
+#
+# Statistics about a single host network interface.
+#
+# @name:       The network device name
+#
+# @speed:      The interface speed (in Megabits/s)
+#
+# @rxDropped:  The number of incoming packets that have been dropped
+#
+# @txDropped:  The number of outgoing packets that have been dropped
+#
+# @rxErrors:   The number of incoming packets that have contained errors
+#
+# @txErrors:   The number of outgoing packets that have contained errors
+#
+# @state:      Indicates whether the interface is currently active
+#
+# @rxRate:     The rate of incoming packets (as a percentage of @speed)
+#
+# @txRate:     The rate of outgoing packets (as a percentage of @speed)
+#
+# Since: 4.11.1
+##
+{'type': 'HostNetworkInterfaceStats',
+ 'data': {'name': 'str', 'speed': 'uint', 'rxDropped': 'uint',
+          'txDropped': 'uint', 'rxErrors': 'uint', 'txErrors': 'uint',
+          'state': 'NetworkInterfaceState', 'rxRate': 'float',
+          'txRate': 'float'}}
 
 ##
 # @StorageDomainVitals:
@@ -1462,6 +1492,16 @@
 ##
 {'map': 'NetworkInterfaceStatsMap',
  'key': 'str', 'value': 'NetworkInterfaceStats'}
+
+##
+# @HostNetworkInterfaceStatsMap:
+#
+# A mapping of host interface stats indexed by device name.
+#
+# Since: 4.11.1
+##
+{'map': 'HostNetworkInterfaceStatsMap',
+ 'key': 'str', 'value': 'HostNetworkInterfaceStats'}
 
 ##
 # @StorageDomainVitalsMap:
@@ -1579,7 +1619,7 @@
 {'type': 'HostStats',
  'data': {'cpuUser': 'float', 'cpuSys': 'float', 'cpuIdle': 'float',
            'rxRate': 'float', 'txRate': 'float', 'statsAge': 'uint',
-           'network': 'NetworkInterfaceStatsMap',
+           'network': 'HostNetworkInterfaceStatsMap',
            'rxDropped': 'uint', 'txDropped': 'uint',
            'cpuSysVdsmd': 'float', 'cpuUserVdsmd': 'float',
            'storageDomains': 'StorageDomainVitalsMap',
