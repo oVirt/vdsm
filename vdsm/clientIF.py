@@ -43,6 +43,7 @@ from vmChannels import Listener
 from libvirtvm import LibvirtVm
 import blkid
 import supervdsm
+import sampling
 try:
     import gluster.api as gapi
     _glusterEnabled = True
@@ -85,7 +86,7 @@ class clientIF:
             self.vmContainer = {}
             ifids = netinfo.nics() + netinfo.bondings()
             ifrates = map(netinfo.speed, ifids)
-            self._hostStats = utils.HostStatsThread(
+            self._hostStats = sampling.HostStatsThread(
                 cif=self, log=log, ifids=ifids,
                 ifrates=ifrates)
             self._hostStats.start()

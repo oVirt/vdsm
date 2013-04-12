@@ -35,6 +35,7 @@ from vdsm import libvirtconnection
 from vdsm.config import config
 import hooks
 import caps
+import sampling
 from vdsm import netinfo
 import supervdsm
 
@@ -78,39 +79,39 @@ class UpdatePortMirroringError(Exception):
     pass
 
 
-class VmStatsThread(utils.AdvancedStatsThread):
+class VmStatsThread(sampling.AdvancedStatsThread):
     MBPS_TO_BPS = 10 ** 6 / 8
 
     def __init__(self, vm):
-        utils.AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
+        sampling.AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
         self._vm = vm
 
         self.highWrite = (
-            utils.AdvancedStatsFunction(
+            sampling.AdvancedStatsFunction(
                 self._highWrite,
                 config.getint('vars', 'vm_watermark_interval')))
         self.updateVolumes = (
-            utils.AdvancedStatsFunction(
+            sampling.AdvancedStatsFunction(
                 self._updateVolumes,
                 config.getint('irs', 'vol_size_sample_interval')))
 
         self.sampleCpu = (
-            utils.AdvancedStatsFunction(
+            sampling.AdvancedStatsFunction(
                 self._sampleCpu,
                 config.getint('vars', 'vm_sample_cpu_interval'),
                 config.getint('vars', 'vm_sample_cpu_window')))
         self.sampleDisk = (
-            utils.AdvancedStatsFunction(
+            sampling.AdvancedStatsFunction(
                 self._sampleDisk,
                 config.getint('vars', 'vm_sample_disk_interval'),
                 config.getint('vars', 'vm_sample_disk_window')))
         self.sampleDiskLatency = (
-            utils.AdvancedStatsFunction(
+            sampling.AdvancedStatsFunction(
                 self._sampleDiskLatency,
                 config.getint('vars', 'vm_sample_disk_latency_interval'),
                 config.getint('vars', 'vm_sample_disk_latency_window')))
         self.sampleNet = (
-            utils.AdvancedStatsFunction(
+            sampling.AdvancedStatsFunction(
                 self._sampleNet,
                 config.getint('vars', 'vm_sample_net_interval'),
                 config.getint('vars', 'vm_sample_net_window')))

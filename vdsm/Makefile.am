@@ -47,6 +47,7 @@ dist_vdsm_PYTHON = \
 	neterrors.py \
 	nwfilter.py \
 	parted_utils.py \
+	sampling.py \
 	supervdsm.py \
 	supervdsmServer.py \
 	tc.py \
