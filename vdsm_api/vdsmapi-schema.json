@@ -1751,13 +1751,15 @@
 #
 # @disk:    A hard disk drive
 #
+# @lun:     A LUN device (required for LUN passthrough)
+#
 # @cdrom:   A CD-ROM drive (always readonly)
 #
 # @floppy:  A floppy disk drive
 #
 # Since: 4.10.0
 ##
-{'enum': 'VmDiskDeviceType', 'data': ['disk', 'cdrom', 'floppy']}
+{'enum': 'VmDiskDeviceType', 'data': ['disk', 'lun', 'cdrom', 'floppy']}
 
 ##
 # @VmDiskDeviceInterface:
@@ -1766,13 +1768,15 @@
 #
 # @ide:     The device is connected via an emulated IDE bus
 #
+# @scsi:    The device uses a virtio-scsi para-virtualized interconnect
+#
 # @virtio:  The device uses a virtio para-virtualized interconnect
 #
 # @fdc:     The device is connected to an emulated floppy disk controller
 #
 # Since: 4.10.0
 ##
-{'enum': 'VmDiskDeviceInterface', 'data': ['ide', 'virtio', 'fdc']}
+{'enum': 'VmDiskDeviceInterface', 'data': ['ide', 'scsi', 'virtio', 'fdc']}
 
 ##
 # @VmDiskDeviceFormat:
@@ -2272,11 +2276,14 @@
 #
 # @deviceId:    A unique ID for this device
 #
+# @model:       The controller device model in use
+#
 # Since: 4.10.0
 ##
 {'type': 'VmControllerDevice',
  'data': {'deviceType': 'VmDeviceType', 'device': 'VmControllerDeviceType',
-          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
+          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
+          'model': 'str'}}
 
 ##
 # @VmBalloonDeviceType:

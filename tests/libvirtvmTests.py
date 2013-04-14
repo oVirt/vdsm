@@ -371,12 +371,19 @@ class TestVm(TestCaseBase):
     def testControllerXML(self):
         devConfs = [
             {'device': 'ide', 'index': '0', 'address': self.PCI_ADDR_DICT},
+            {'device': 'scsi', 'index': '0', 'model': 'virtio-scsi',
+             'address': self.PCI_ADDR_DICT},
             {'device': 'virtio-serial', 'address': self.PCI_ADDR_DICT},
             {'device': 'usb', 'model': 'ich9-ehci1', 'index': '0',
              'master': {'startport': '0'}, 'address': self.PCI_ADDR_DICT}]
         expectedXMLs = [
             """
             <controller index="0" type="ide">
+                <address %s/>
+            </controller>""",
+
+            """
+            <controller index="0" model="virtio-scsi" type="scsi">
                 <address %s/>
             </controller>""",
 
@@ -424,7 +431,17 @@ class TestVm(TestCaseBase):
             {'index': '0', 'propagateErrors': 'off', 'iface': 'virtio',
              'name': 'vda', 'format': 'raw', 'device': 'disk',
              'path': '/dev/mapper/lun1', 'type': 'disk', 'readonly': 'False',
-             'shared': 'False', 'serial': SERIAL}]
+             'shared': 'False', 'serial': SERIAL},
+
+            {'index': '0', 'propagateErrors': 'off', 'iface': 'scsi',
+             'name': 'sda', 'format': 'raw', 'device': 'disk',
+             'path': '/tmp/disk1.img', 'type': 'disk', 'readonly': 'False',
+             'shared': 'False', 'serial': SERIAL},
+
+            {'index': '0', 'propagateErrors': 'off', 'iface': 'scsi',
+             'name': 'sda', 'format': 'raw', 'device': 'lun',
+             'path': '/dev/mapper/lun1', 'type': 'disk', 'readonly': 'False',
+             'shared': 'False', 'serial': SERIAL, 'sgio': 'unfiltered'}]
 
         expectedXMLs = [
             """
@@ -456,10 +473,29 @@ class TestVm(TestCaseBase):
                 <serial>%s</serial>
                 <driver cache="none" error_policy="stop"
                         io="native" name="qemu" type="raw"/>
+            </disk>""",
+
+            """
+            <disk device="disk" snapshot="no" type="file">
+                <source file="/tmp/disk1.img"/>
+                <target bus="scsi" dev="sda"/>
+                <serial>%s</serial>
+                <driver cache="none" error_policy="stop"
+                        io="threads" name="qemu" type="raw"/>
+            </disk>""",
+
+            """
+            <disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+                <source dev="/dev/mapper/lun1"/>
+                <target bus="scsi" dev="sda"/>
+                <serial>%s</serial>
+                <driver cache="none" error_policy="stop"
+                        io="native" name="qemu" type="raw"/>
             </disk>"""]
 
-        blockDevs = [False, False, True]
-        vmConfs = [{}, {'custom': {'viodiskcache': 'writethrough'}}, {}]
+        blockDevs = [False, False, True, False, True]
+        vmConfs = [{}, {'custom': {'viodiskcache': 'writethrough'}},
+                   {}, {}, {}]
 
         for (devConf, xml, blockDev, vmConf) in \
                 zip(devConfs, expectedXMLs, blockDevs, vmConfs):

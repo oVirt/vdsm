@@ -1383,7 +1383,7 @@ class Drive(VmDevice):
             self.cache = config.get('vars', 'qemu_drive_cache')
 
     def _makeName(self):
-        devname = {'ide': 'hd', 'virtio': 'vd', 'fdc': 'fd'}
+        devname = {'ide': 'hd', 'scsi': 'sd', 'virtio': 'vd', 'fdc': 'fd'}
         devindex = ''
 
         i = int(self.index)
@@ -1461,7 +1461,7 @@ class Drive(VmDevice):
                 sourceAttrs['startupPolicy'] = 'optional'
             source.setAttrs(**sourceAttrs)
         diskelem = self.createXmlElem('disk', deviceType,
-                                      ['device', 'address'])
+                                      ['device', 'address', 'sgio'])
         diskelem.setAttrs(snapshot='no')
         diskelem.appendChild(source)
 
@@ -1479,7 +1479,13 @@ class Drive(VmDevice):
         if hasattr(self, 'bootOrder'):
             diskelem.appendChildWithArgs('boot', order=self.bootOrder)
 
-        if self.device == 'disk':
+        if self.device != 'lun' and hasattr(self, 'sgio'):
+            raise ValueError("sgio attribute can be set only for LUN devices")
+
+        if self.device == 'lun' and self.format == 'cow':
+            raise ValueError("cow format is not supported for LUN devices")
+
+        if self.device == 'disk' or self.device == 'lun':
             driverAttrs = {'name': 'qemu'}
             if self.blockDev:
                 driverAttrs['io'] = 'native'
