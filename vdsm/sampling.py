@@ -504,7 +504,7 @@ class HostStatsThread(StatsThread):
         from vdsm.netinfo import speed as nicspeed
 
         i = 0
-        for ifid in self.nics:
+        for ifid in self._ifids:
             if (hs0.interfaces[ifid].operstate !=
                     hs1.interfaces[ifid].operstate):
                 self._ifrates[i] = nicspeed(ifid)
