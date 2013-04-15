@@ -446,6 +446,10 @@ def get():
     return d
 
 
+def isVlanned(dev):
+    return any(vlan.startswith(dev + '.') for vlan in vlans())
+
+
 def getVlanDevice(vlan):
     """ Return the device of the given VLAN. """
     dev = None

@@ -44,6 +44,7 @@ dist_vdsm_PYTHON = \
 	mkimage.py \
 	momIF.py \
 	neterrors.py \
+	netmodels.py \
 	nwfilter.py \
 	parted_utils.py \
 	sampling.py \

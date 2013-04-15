@@ -19,14 +19,9 @@
 
 import sys
 import os
-import re
 import traceback
 import time
 import logging
-from contextlib import contextmanager
-import socket
-import struct
-
 
 from vdsm import constants
 from vdsm import utils
@@ -40,100 +35,77 @@ from netconf.ifcfg import ifup
 from netconf.ifcfg import ifdown
 from netconf.ifcfg import ConfigWriter
 from netconf.ifcfg import Ifcfg
+from netmodels import Bond
+from netmodels import Bridge
+from netmodels import IPv4
+from netmodels import IpConfig
+from netmodels import Nic
+from netmodels import Vlan
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
-MAX_VLAN_ID = 4094
-MAX_BRIDGE_NAME_LEN = 15
-ILLEGAL_BRIDGE_CHARS = frozenset(':. \t')
 
 
-def isBridgeNameValid(bridgeName):
-    return (bridgeName and len(bridgeName) <= MAX_BRIDGE_NAME_LEN and
-            len(set(bridgeName) & ILLEGAL_BRIDGE_CHARS) == 0 and
-            not bridgeName.startswith('-'))
+def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
+                       bondingOptions=None, nics=None, mtu=None, ipaddr=None,
+                       netmask=None, gateway=None, bootproto=None,
+                       _netinfo=None, configurator=None, blockingdhcp=None,
+                       **opts):
+    """
+    Constructs an object hierarchy that describes the network configuration
+    that is passed in the parameters.
 
+    :param bridge: name of the bridge.
+    :param vlan: vlan tag id.
+    :param bonding: name of the bond.
+    :param bondingOptions: bonding options separated by spaces.
+    :param nics: list of nic names.
+    :param mtu: the desired network maximum transmission unit.
+    :param ipaddr: IPv4 address in dotted decimal format.
+    :param netmask: IPv4 mask in dotted decimal format.
+    :param gateway: IPv4 address in dotted decimal format.
+    :param bootproto: protocol for getting IP config for the net, e.g., 'dchp'
+    :param _netinfo: network information snapshot.
+    :param configurator: instance to use to apply the network configuration.
+    :param blockingdhcp: whether to acquire dhcp IP config in a synced manner.
 
-def validateBridgeName(bridgeName):
-    if not isBridgeNameValid(bridgeName):
-        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
-                                 "Bridge name isn't valid: %r" % bridgeName)
-
-
-def _validateIpAddress(address):
-    try:
-        socket.inet_pton(socket.AF_INET, address)
-    except socket.error:
-        return False
-    return True
-
-
-def validateIpAddress(ipAddr):
-    if not _validateIpAddress(ipAddr):
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR,
-                                 "Bad IP address: %r" % ipAddr)
-
-
-def validateNetmask(netmask):
-    if not _validateIpAddress(netmask):
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR,
-                                 "Bad netmask: %r" % netmask)
-
-    num = struct.unpack('>I', socket.inet_aton(netmask))[0]
-    if num & (num - 1) != (num << 1) & 0xffffffff:
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad netmask: %r" % netmask)
-
-
-def validateGateway(gateway):
-    if not _validateIpAddress(gateway):
-        raise ConfigNetworkError(ne.ERR_BAD_ADDR,
-                                 "Bad gateway: %r" % gateway)
-
-
-def validateBondingName(bonding):
-    if not re.match('^bond[0-9]+$', bonding):
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                                 '%r is not a valid bonding device name' %
-                                 bonding)
-
-
-def validateBondingOptions(bonding, bondingOptions):
-    'Example: BONDING_OPTS="mode=802.3ad miimon=150"'
-    with _validationBond(bonding) as bond:
+    :returns: the top object of the hierarchy.
+    """
+    if configurator is None:
+        configurator = Ifcfg()
+    if _netinfo is None:
+        _netinfo = netinfo.NetInfo()
+    if bondingOptions and not bonding:
+        raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Bonding options '
+                                 'specified without bonding')
+    topNetDev = None
+    if bonding:
+        topNetDev = Bond.objectivize(bonding, configurator, bondingOptions,
+                                     nics, mtu, _netinfo)
+    elif nics:
         try:
-            for option in bondingOptions.split():
-                key, value = option.split('=')
-                if not os.path.exists(
-                        '/sys/class/net/%s/bonding/%s' % (bond, key)):
-                    raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a '
-                                             'valid bonding option' % key)
+            nic, = nics
         except ValueError:
-            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
-                                     'bonding options: %r' % bondingOptions)
-
-
-@contextmanager
-def _validationBond(bonding):
-    bond_created = False
-    try:
-        bonding = open(netinfo.BONDING_MASTERS, 'r').read().split()[0]
-    except IndexError:
-        open(netinfo.BONDING_MASTERS, 'w').write('+%s\n' % bonding)
-        bond_created = True
-    try:
-        yield bonding
-    finally:
-        if bond_created:
-            open(netinfo.BONDING_MASTERS, 'w').write('-%s\n' % bonding)
-
-
-def validateVlanId(vlan):
-    try:
-        if not 0 <= int(vlan) <= MAX_VLAN_ID:
-            raise ConfigNetworkError(
-                ne.ERR_BAD_VLAN, 'vlan id out of range: %r, must be 0..%s' %
-                (vlan, MAX_VLAN_ID))
-    except ValueError:
-        raise ConfigNetworkError(ne.ERR_BAD_VLAN, 'vlan id must be a number')
+            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Multiple nics '
+                                     'require a bonding device')
+        else:
+            bond = _netinfo.getBondingForNic(nic)
+            if bond:
+                raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already '
+                                         'enslaved to %s' % (nic, bond))
+            topNetDev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
+    if vlan:
+        topNetDev = Vlan(topNetDev, vlan, configurator, mtu=mtu)
+    if bridge:
+        topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
+                           stp=opts.get('stp'),
+                           forwardDelay=opts.get('forward_delay', 0))
+    if topNetDev is None:
+        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without'
+                                 'devices.')
+    topNetDev.ip = IpConfig(inet=IPv4(ipaddr, netmask, gateway),
+                            bootproto=bootproto,
+                            blocking=utils.tobool(blockingdhcp))
+    return topNetDev
 
 
 def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
@@ -176,117 +148,41 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
                                      'has networks' % (iface))
 
 
-def _addNetworkValidation(_netinfo, network, vlan, bonding, nics, ipaddr,
-                          netmask, gateway, bondingOptions, bridged=True,
-                          implicitBonding=False, **options):
-    # The (relatively) new setupNetwork verb allows to specify a network on
-    # top of an existing bonding device. The nics of this bonds are taken
-    # implictly from current host configuration
-    if bonding and implicitBonding:
-        pass
-    elif (vlan or bonding) and not nics:
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'vlan/bonding definition '
-                                 'requires nics. got: %r' % (nics,))
-
-    # Check bridge
-    if bridged:
-        validateBridgeName(network)
-
-    if network in _netinfo.networks:
-        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'Network already exists')
-
-    # Check vlan
-    if vlan:
-        validateVlanId(vlan)
-
-    # Check ip, netmask, gateway
-    if ipaddr:
-        if not netmask:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Must specify netmask to'
-                                     ' configure ip for network')
-        validateIpAddress(ipaddr)
-        validateNetmask(netmask)
-        if gateway:
-            validateGateway(gateway)
-    else:
-        if netmask or gateway:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR,
-                                     'Specified netmask or gateway but not ip')
-
-    # Check bonding
-    if bonding:
-        validateBondingName(bonding)
-        if bondingOptions:
-            validateBondingOptions(bonding, bondingOptions)
-
-        _validateInterNetworkCompatibility(_netinfo, vlan, bonding, bridged)
-    elif bondingOptions:
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                                 'Bonding options specified without bonding')
-    elif len(nics) > 1:
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                                 'Multiple nics require a bonding device')
-
-    # Check nics
-    for nic in nics:
-        if nic not in _netinfo.nics:
-            raise ConfigNetworkError(ne.ERR_BAD_NIC, "unknown nic: %r" % nic)
-
-        # Make sure nics don't have a different bonding
-        # still relevant if bonding is None
-        bondingForNics = _netinfo.getBondingForNic(nic)
-        if bondingForNics and bondingForNics != bonding:
-            raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                     'nic %s already enslaved to %s' %
-                                     (nic, bondingForNics))
-
-        # Make sure nics don't used by vlans if bond requested
-        if bonding:
-            vlansForNic = tuple(_netinfo.getVlansForIface(nic))
-            if vlansForNic:
-                raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                         'nic %s already used by vlans %s' %
-                                         (nic, vlansForNic))
-            networkForNic = _netinfo.getNetworkForIface(nic)
-            if networkForNic:
-                raise ConfigNetworkError(ne.ERR_USED_NIC,
-                                         'nic %s already used by network %s' %
-                                         (nic, networkForNic))
-        else:
-            _validateInterNetworkCompatibility(_netinfo, vlan, nic, bridged)
-
-
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
-               netmask=None, mtu=None, gateway=None, force=False,
+               netmask=None, prefix=None, mtu=None, gateway=None, force=False,
                configWriter=None, bondingOptions=None, bridged=True,
-               **options):
+               _netinfo=None, **options):
     nics = nics or ()
-    _netinfo = netinfo.NetInfo()
+    if _netinfo is None:
+        _netinfo = netinfo.NetInfo()
     bridged = utils.tobool(bridged)
 
     if mtu:
         mtu = int(mtu)
 
-    prefix = options.get('prefix')
-    if prefix is not None:
-        if netmask is None:
+    if prefix:
+        if netmask:
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                                     'Both PREFIX and NETMASK supplied')
+        else:
             try:
                 netmask = netinfo.prefix2netmask(int(prefix))
             except ValueError as ve:
-                raise ConfigNetworkError(ne.ERR_BAD_PARAMS, ve.message)
-            del options['prefix']
-        else:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                                     'Both PREFIX and NETMASK supplied')
+                raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad prefix: %s" %
+                                         ve)
 
     if not utils.tobool(force):
         logging.debug('validating network...')
-        _addNetworkValidation(_netinfo, network=network, vlan=vlan,
-                              bonding=bonding, nics=nics, ipaddr=ipaddr,
-                              netmask=netmask, gateway=gateway,
-                              bondingOptions=bondingOptions, bridged=bridged,
-                              **options)
-
+        if network in _netinfo.networks:
+            raise ConfigNetworkError(ne.ERR_USED_BRIDGE,
+                                     'Network already exists')
+        if bonding:
+            _validateInterNetworkCompatibility(_netinfo, vlan, bonding,
+                                               bridged)
+        else:
+            for nic in nics:
+                _validateInterNetworkCompatibility(_netinfo, vlan, nic,
+                                                   bridged)
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
                  " bondingOptions=%s, mtu=%s, bridged=%s, options=%s",
                  network, vlan, bonding, nics, bondingOptions,
@@ -296,31 +192,11 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         configWriter = ConfigWriter()
     configurator = Ifcfg(configWriter)
 
-    async = not(utils.tobool(options.get('blockingdhcp')) and
-                options.get('bootproto') == 'dhcp')
-
-    # take down nics that need to be changed
-    vlanedIfaces = [v['iface'] for v in _netinfo.vlans.values()]
-    if bonding not in vlanedIfaces:
-        for nic in nics:
-            if nic not in vlanedIfaces:
-                ifdown(nic)
-
-    if bridged:
-        configurator.configureBridge(network, vlan, bonding, nics, ipaddr,
-                                     netmask, mtu, gateway, bondingOptions,
-                                     async, **options)
-    elif vlan:
-        configurator.configureVlan(network, vlan, None, bonding, nics,
-                                   ipaddr, netmask, mtu, gateway,
-                                   bondingOptions, async, **options)
-    elif bonding:
-        configurator.configureBond(network, bonding, nics, ipaddr, netmask,
-                                   mtu, gateway, None, bondingOptions, async,
-                                   **options)
-    elif nics:
-        configurator.configureNic(network, nics[0], None, bonding, ipaddr,
-                                  netmask, mtu, gateway, async, **options)
+    netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
+                                bondingOptions, nics, mtu, ipaddr, netmask,
+                                gateway, options.get('bootproto'), _netinfo,
+                                configurator, **options)
+    netEnt.configure(network=network, **options)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
@@ -422,13 +298,13 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 
     if not utils.tobool(force):
         if bonding:
-            validateBondingName(bonding)
+            Bond.validateName(bonding)
             if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
                 raise ConfigNetworkError(ne.ERR_BAD_NIC, 'delNetwork: %s are '
                                          'not all nics enslaved to %s' %
                                          (nics, bonding))
         if vlan:
-            validateVlanId(vlan)
+            Vlan.validateTag(vlan)
         if bridged:
             assertBridgeClean(network, vlan, bonding, nics)
 
@@ -526,9 +402,9 @@ def _validateNetworkSetup(networks={}, bondings={}):
                                          'any attribute when removing')
 
     for bonding, bondingAttrs in bondings.iteritems():
-        validateBondingName(bonding)
+        Bond.validateName(bonding)
         if 'options' in bondingAttrs:
-            validateBondingOptions(bonding, bondingAttrs['options'])
+            Bond.validateOptions(bonding, bondingAttrs['options'])
 
         if bondingAttrs.get('remove', False):
             if bonding not in _netinfo.bondings:

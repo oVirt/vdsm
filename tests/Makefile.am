@@ -36,6 +36,7 @@ test_modules = \
 	guestIFTests.py \
 	hooksTests.py \
 	netconfTests.py \
+	netmodelsTests.py \
 	jsonRpcTests.py \
 	jsonRpcUtils.py \
 	libvirtvmTests.py \

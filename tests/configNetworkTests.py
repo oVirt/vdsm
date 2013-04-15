@@ -1,6 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,116 +20,48 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
-
-import configNetwork
+from netmodels import Bond
+from netmodels import Bridge
+from netmodels import Nic
+from netmodels import Vlan
 from vdsm import netinfo
+import configNetwork
+import netconf
+import neterrors
 
 from testrunner import VdsmTestCase as TestCaseBase
-from nose.plugins.skip import SkipTest
 
 from monkeypatch import MonkeyPatch
 
 
-class TestconfigNetwork(TestCaseBase):
+def _fakeNetworks():
+    return {'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
+            'fakenet': {'iface': 'fakeint', 'bridged': False}}
 
-    def testIsBridgeNameValid(self):
-        invalidBrName = ('-abc', 'abcdefghijklmnop', 'a:b', 'a.b')
-        for i in invalidBrName:
-            res = configNetwork.isBridgeNameValid(i)
-            self.assertEqual(0, res)
 
-    def testIsVlanIdValid(self):
-        vlanIds = ('badValue', configNetwork.MAX_VLAN_ID + 1)
+def _raiseInvalidOpException(*args, **kwargs):
+    return RuntimeError('Attempted to apply network configuration during unit '
+                        'testing.')
 
-        for vlanId in vlanIds:
-            with self.assertRaises(configNetwork.ConfigNetworkError) \
-                    as cneContext:
-                configNetwork.validateVlanId(vlanId)
-            self.assertEqual(cneContext.exception.errCode,
-                             configNetwork.ne.ERR_BAD_VLAN)
 
-        self.assertEqual(configNetwork.validateVlanId(0), None)
-        self.assertEqual(configNetwork.validateVlanId(configNetwork.
-                                                      MAX_VLAN_ID),
-                         None)
+class TestConfigNetwork(TestCaseBase):
 
-    def testIsBondingNameValid(self):
-        bondNames = ('badValue', ' bond14', 'bond14 ', 'bond14a', 'bond0 0')
-
-        for bondName in bondNames:
-            with self.assertRaises(configNetwork.ConfigNetworkError) \
-                    as cneContext:
-                configNetwork.validateBondingName(bondName)
-            self.assertEqual(cneContext.exception.errCode,
-                             configNetwork.ne.ERR_BAD_BONDING)
-
-        self.assertEqual(configNetwork.validateBondingName('bond11'), None)
-        self.assertEqual(configNetwork.validateBondingName('bond11128421982'),
-                         None)
-
-    def testIsIpValid(self):
-        addresses = ('10.18.1.254', '10.50.25.177', '250.0.0.1',
-                     '20.20.25.25')
-        badAddresses = ('192.168.1.256', '10.50.25.1777', '256.0.0.1',
-                        '20.20.25.25.25')
-
-        for address in badAddresses:
-            with self.assertRaises(configNetwork.ConfigNetworkError) \
-                    as cneContext:
-                configNetwork.validateIpAddress(address)
-            self.assertEqual(cneContext.exception.errCode,
-                             configNetwork.ne.ERR_BAD_ADDR)
-
-        for address in addresses:
-            self.assertEqual(configNetwork.validateIpAddress(address), None)
-
-    def testIsNetmaskValid(self):
-        masks = ('254.0.0.0', '255.255.255.0', '255.255.255.128',
-                 '255.255.255.224')
-        badMasks = ('192.168.1.0', '10.50.25.17', '255.0.255.0',
-                    '253.0.0.0')
-
-        for mask in badMasks:
-            with self.assertRaises(configNetwork.ConfigNetworkError) \
-                    as cneContext:
-                configNetwork.validateNetmask(mask)
-            self.assertEqual(cneContext.exception.errCode,
-                             configNetwork.ne.ERR_BAD_ADDR)
-
-        for mask in masks:
-            self.assertEqual(configNetwork.validateNetmask(mask), None)
-
-    def testValidateBondingOptions(self):
-        # Monkey patch os.path.exists to let validateBondingOptions logic be
-        # tested when a bonding device is not present.
-        if not os.path.exists(netinfo.BONDING_MASTERS):
-            raise SkipTest("bonding kernel module could not be found.")
-
-        opts = 'mode=802.3ad miimon=150'
-        badOpts = 'foo=bar badopt=one'
-
-        with self.assertRaises(configNetwork.ConfigNetworkError) as cne:
-            configNetwork.validateBondingOptions('bond0', badOpts)
-        self.assertEqual(cne.exception.errCode,
-                         configNetwork.ne.ERR_BAD_BONDING)
-
-        self.assertEqual(configNetwork.validateBondingOptions('bond0',
-                         opts), None)
-
-    def _fakeNetworks():
-        return {'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
-                'fakenet': {'iface': 'fakeint', 'bridged': False},
-                }
-
-    def _addNetworkWithExc(self, parameters, errCode):
-        with self.assertRaises(configNetwork.ConfigNetworkError) as cneContext:
-            configNetwork._addNetworkValidation(*parameters)
-        cne = cneContext.exception
-        self.assertEqual(cne.errCode, errCode)
+    def _addNetworkWithExc(self, netName, opts, errCode):
+        with self.assertRaises(neterrors.ConfigNetworkError) as cneContext:
+            configNetwork.addNetwork(netName, **opts)
+        self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
     @MonkeyPatch(netinfo, 'networks', _fakeNetworks)
+    @MonkeyPatch(netinfo, 'getMaxMtu', lambda *x: 1500)
+    @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
+    @MonkeyPatch(netconf.ifcfg, 'ifdown', lambda *x:
+                 _raiseInvalidOpException())
+    @MonkeyPatch(netconf.ifcfg, 'ifup', lambda *x: _raiseInvalidOpException())
+    @MonkeyPatch(Bond, 'configure', lambda *x: _raiseInvalidOpException())
+    @MonkeyPatch(Bridge, 'configure', lambda *x: _raiseInvalidOpException())
+    @MonkeyPatch(Nic, 'configure', lambda *x: _raiseInvalidOpException())
+    @MonkeyPatch(Vlan, 'configure', lambda *x: _raiseInvalidOpException())
     def testAddNetworkValidation(self):
         _netinfo = {
             'networks': {
@@ -159,85 +91,75 @@ class TestconfigNetwork(TestCaseBase):
             'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}}
         }
 
-        netinfoIns = netinfo.NetInfo(_netinfo)
-        vlan = bonding = ipaddr = netmask = gw = bondingOptions = None
+        fakeInfo = netinfo.NetInfo(_netinfo)
         nics = ['eth2']
 
         # Test for already existing bridge.
-        self._addNetworkWithExc((netinfoIns, 'fakebrnet', vlan, bonding, nics,
-                                 ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_USED_BRIDGE)
+        self._addNetworkWithExc('fakebrnet', dict(nics=nics,
+                                _netinfo=fakeInfo), neterrors.ERR_USED_BRIDGE)
 
         # Test for already existing network.
-        self._addNetworkWithExc((netinfoIns, 'fakent', vlan, bonding, nics,
-                                 ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_USED_BRIDGE)
+        self._addNetworkWithExc('fakent', dict(nics=nics, _netinfo=fakeInfo),
+                                neterrors.ERR_USED_BRIDGE)
 
         # Test for bonding opts passed without bonding specified.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, nics,
-                                 ipaddr, netmask, gw, 'mode=802.3ad'),
-                                configNetwork.ne.ERR_BAD_BONDING)
+        self._addNetworkWithExc('test', dict(nics=nics,
+                                bondingOptions='mode=802.3ad',
+                                _netinfo=fakeInfo), neterrors.ERR_BAD_BONDING)
 
         # Test IP without netmask.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, nics,
-                                 '10.10.10.10', netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_BAD_ADDR)
+        self._addNetworkWithExc('test', dict(nics=nics, ipaddr='10.10.10.10',
+                                _netinfo=fakeInfo), neterrors.ERR_BAD_ADDR)
 
         #Test netmask without IP.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, nics,
-                                 ipaddr, '255.255.255.0', gw, bondingOptions),
-                                configNetwork.ne.ERR_BAD_ADDR)
+        self._addNetworkWithExc('test', dict(nics=nics,
+                                netmask='255.255.255.0', _netinfo=fakeInfo),
+                                neterrors.ERR_BAD_ADDR)
 
         #Test gateway without IP.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, nics,
-                                 ipaddr, netmask, '10.10.0.1', bondingOptions),
-                                configNetwork.ne.ERR_BAD_ADDR)
+        self._addNetworkWithExc('test', dict(nics=nics, gateway='10.10.0.1',
+                                _netinfo=fakeInfo), neterrors.ERR_BAD_ADDR)
 
         # Test for non existing nic.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth11'],
-                                 ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_BAD_NIC)
+        self._addNetworkWithExc('test', dict(nics=['eth11'],
+                                _netinfo=fakeInfo), neterrors.ERR_BAD_NIC)
 
         # Test for nic already bound to a different network.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, 'bond0', ['eth0',
-                                 'eth1'], ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_USED_NIC)
+        self._addNetworkWithExc('test', dict(bonding='bond0', nics=['eth0',
+                                'eth1'], _netinfo=fakeInfo),
+                                neterrors.ERR_USED_NIC)
 
         # Test for bond already member of a network.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, 'bond00', ['eth5',
-                                 'eth6'], ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_BAD_PARAMS)
+        self._addNetworkWithExc('test', dict(bonding='bond00', nics=['eth5',
+                                'eth6'], _netinfo=fakeInfo),
+                                neterrors.ERR_BAD_PARAMS)
 
         # Test for multiple nics without bonding device.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth3',
-                                 'eth4'], ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_BAD_BONDING)
+        self._addNetworkWithExc('test', dict(nics=['eth3', 'eth4'],
+                                _netinfo=fakeInfo), neterrors.ERR_BAD_BONDING)
 
         # Test for nic already in a bond.
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth6'],
-                                 ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_USED_NIC)
+        self._addNetworkWithExc('test', dict(nics=['eth6'], _netinfo=fakeInfo),
+                                neterrors.ERR_USED_NIC)
 
-        # Test for adding a new VLANed bridged network
-        # when a non-VLANed bridged network exists
-        self._addNetworkWithExc((netinfoIns, 'test', '2', 'bond00', nics,
-                                 ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_BAD_PARAMS)
+        # Test for adding a new VLANed bridged network when a non-VLANed
+        # bridged network exists
+        self._addNetworkWithExc('test', dict(vlan='2', bonding='bond00',
+                                nics=nics, _netinfo=fakeInfo),
+                                neterrors.ERR_BAD_PARAMS)
 
-        # Test for adding a new VLANed bridgeless network
-        # when a non-VLANed bridged network exists
-        self._addNetworkWithExc((netinfoIns, 'test', '2', 'bond00', nics,
-                                 ipaddr, netmask, gw, bondingOptions, False),
-                                configNetwork.ne.ERR_BAD_PARAMS)
+        # Test for adding a new VLANed bridgeless network when a non-VLANed
+        # bridged network exists
+        self._addNetworkWithExc('test', dict(vlan='2', bonding='bond00',
+                                nics=nics, bridged=False, _netinfo=fakeInfo),
+                                neterrors.ERR_BAD_PARAMS)
 
-        # Test for adding a new VLANed bridged network
-        # when the interface is in use by any type of networks
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth7'],
-                                 ipaddr, netmask, gw, bondingOptions),
-                                configNetwork.ne.ERR_BAD_PARAMS)
+        # Test for adding a new VLANed bridged network when the interface is in
+        # use by any type of networks
+        self._addNetworkWithExc('test', dict(nics=['eth7'], _netinfo=fakeInfo),
+                                neterrors.ERR_BAD_PARAMS)
 
-        # Test for adding a new non-VLANed bridgeless network
-        # when a non-VLANed bridgeless network exists
-        self._addNetworkWithExc((netinfoIns, 'test', vlan, bonding, ['eth8'],
-                                 ipaddr, netmask, gw, bondingOptions, False),
-                                configNetwork.ne.ERR_BAD_PARAMS)
+        # Test for adding a new non-VLANed bridgeless network when a non-VLANed
+        # bridgeless network exists
+        self._addNetworkWithExc('test', dict(nics=['eth8'], bridged=False,
+                                _netinfo=fakeInfo), neterrors.ERR_BAD_PARAMS)

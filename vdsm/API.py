@@ -30,6 +30,8 @@ import logging
 from vdsm import utils
 from clientIF import clientIF
 import configNetwork
+from netmodels import Bond
+from netmodels import Vlan
 from vdsm import netinfo
 from vdsm import constants
 import storage.misc
@@ -1276,9 +1278,9 @@ class Global(APIBase):
                 _netinfo = netinfo.NetInfo()
                 try:
                     if bond:
-                        configNetwork.validateBondingName(bond)
+                        Bond.validateName(bond)
                     if vlan:
-                        configNetwork.validateVlanId(vlan)
+                        Vlan.validateTag(vlan)
                     if nics and bond and set(nics) != \
                             set(_netinfo.bondings[bond]["slaves"]):
                         self.log.error('delNetwork: not all nics specified '
