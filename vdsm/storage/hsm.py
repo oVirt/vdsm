@@ -1065,6 +1065,7 @@ class HSM:
         for sdUUID in domList:
             vars.task.getExclusiveLock(STORAGE, sdUUID)
 
+        pool.domainMonitor.close()
         pool.detachAllDomains()
         return self._disconnectPool(pool, hostID, scsiKey, remove=True)
 

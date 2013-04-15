@@ -1985,20 +1985,19 @@ class StoragePool(Securable):
     def detachAllDomains(self):
         """
         Detach all domains from pool before destroying pool
-        """
-        # Find out domain list from the pool metadata
-        domList = self.getDomains().keys()
 
-        for sdUUID in domList:
-            # The Master domain should be detached last, after stopping the SPM
-            if sdUUID != self.masterDomain.sdUUID:
-                self.detachSD(sdUUID)
+        Assumed cluster lock and that SPM is already stopped.
+        """
+        # Find regular (i.e. not master) domains from the pool metadata
+        regularDoms = tuple(uuid for uuid in self.getDomains()
+                            if uuid != self.masterDomain.sdUUID)
+        # The Master domain should be detached last
+        for sdUUID in regularDoms:
+            self.detachSD(sdUUID)
 
         # Forced detach master domain
         self.forcedDetachSD(self.masterDomain.sdUUID)
         self.masterDomain.detach(self.spUUID)
-
-        self.updateMonitoringThreads()
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
