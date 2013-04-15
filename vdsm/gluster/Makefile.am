@@ -27,3 +27,7 @@ dist_vdsmgluster_PYTHON = \
 	cli.py \
 	exception.py \
 	hostname.py
+
+dist_vdsmgluster_DATA = \
+	vdsmapi-gluster-schema.json \
+	$(NULL)

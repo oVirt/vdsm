@@ -1167,6 +1167,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/gluster
 %doc COPYING
 %{_datadir}/%{vdsm_name}/gluster/api.py*
+%{_datadir}/%{vdsm_name}/gluster/vdsmapi-gluster-schema.json
 %endif
 
 %changelog

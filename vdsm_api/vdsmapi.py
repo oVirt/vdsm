@@ -112,7 +112,7 @@ def parse_schema(fp):
     return exprs
 
 
-def find_schema():
+def find_schema(schema_name='vdsmapi', raiseOnError=True):
     """
     Find the API schema file whether we are running from within the source dir
     or from an installed location
@@ -120,9 +120,13 @@ def find_schema():
     localpath = os.path.dirname(__file__)
     installedpath = constants.P_VDSM
     for directory in localpath, installedpath:
-        path = os.path.join(directory, 'vdsmapi-schema.json')
+        path = os.path.join(directory, schema_name + '-schema.json')
         if os.access(path, os.R_OK):
             return path
+
+    if not raiseOnError:
+        return None
+
     raise Exception("Unable to find API schema file in %s or %s",
                     localpath, installedpath)
 
@@ -177,12 +181,22 @@ def _load_api_info(schema):
     to which the source type may be cast.
     """
     global _api_info
+    gluster_schema = None
 
     info_key = schema
     if schema is None:
         schema = find_schema()
+        gluster_schema = find_schema(schema_name='gluster/vdsmapi-gluster',
+                                     raiseOnError=False)
+
     with open(schema) as f:
         symbols = parse_schema(f)
+
+    # If gluster schema file present inside gluster directory then read and
+    # parse, append to symbols
+    if gluster_schema:
+        with open(gluster_schema) as f:
+            symbols += parse_schema(f)
 
     info = {'types': {}, 'enums': {}, 'aliases': {}, 'maps': {},
             'commands': {}, 'unions': {}}
