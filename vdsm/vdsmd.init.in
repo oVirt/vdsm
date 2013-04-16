@@ -217,7 +217,7 @@ configure_libvirt()
     # package version, so anything meaningful can be used here. Since a hard
     # coded version string has been already used, for compatibility we will
     # continue to use this string.
-    local by_vdsm_vers="4.9.11"
+    local by_vdsm_vers="4.10.3"
     local start_conf_section="## beginning of configuration section ${by_vdsm}"
     local end_conf_section="## end of configuration section ${by_vdsm}"
     local ts=/etc/pki/vdsm
@@ -297,6 +297,7 @@ configure_libvirt()
     set_if_default $lconf unix_sock_rw_perms \"0770\"
     set_if_default $lconf auth_unix_rw \"sasl\"
     set_if_default $lconf host_uuid \"$(uuidgen)\"
+    set_if_default $lconf keepalive_interval -1
     set_if_default $qconf dynamic_ownership 0
 
     if [[ "$ssl" == true ]]; then
