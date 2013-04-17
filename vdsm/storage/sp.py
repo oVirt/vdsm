@@ -502,7 +502,7 @@ class StoragePool(Securable):
         return True
 
     @unsecured
-    def validateAttachedDomain(self, dom, domainStatuses):
+    def validateAttachedDomain(self, dom):
         """
         Avoid handling domains if not owned by pool.
         """
@@ -1039,10 +1039,9 @@ class StoragePool(Securable):
         self.log.info("sdUUID=%s spUUID=%s", sdUUID, self.spUUID)
 
         dom = sdCache.produce(sdUUID)
-        domStatuses = self.getDomains()
 
         # Avoid detach domains if not owned by pool
-        self.validateAttachedDomain(dom, domStatuses)
+        self.validateAttachedDomain(dom)
 
         if sdUUID == self.masterDomain.sdUUID:
             raise se.CannotDetachMasterStorageDomain(sdUUID)
@@ -1099,12 +1098,12 @@ class StoragePool(Securable):
         """
         self.log.info("sdUUID=%s spUUID=%s", sdUUID, self.spUUID)
 
-        domainStatuses = self.getDomains()
         dom = sdCache.produce(sdUUID)
         # Avoid domain activation if not owned by pool
-        self.validateAttachedDomain(dom, domainStatuses)
+        self.validateAttachedDomain(dom)
 
         # Do nothing if already active
+        domainStatuses = self.getDomains()
         if domainStatuses[sdUUID] == sd.DOM_ACTIVE_STATUS:
             return True
 
