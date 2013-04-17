@@ -434,14 +434,14 @@ class StorageDomain:
     def getPools(self):
         try:
             pools = self.getMetaParam(key=DMDK_POOLS)
-            # This is here because someone thought it would be smart
-            # to put blank uuids in this field. Remove when you can be
-            # sure no old MD will pop up and surprise you
+        except KeyError:
+            pools = []
+        else:
+            # Old pool MD marked SDs not belonging to any pool with
+            # BLANK_UUID as the pool uuid.
             if BLANK_UUID in pools:
                 pools.remove(BLANK_UUID)
-            return pools
-        except KeyError:
-            return []
+        return pools
 
     def getIdsFilePath(self):
         return os.path.join(self.getMDPath(), IDS)
