@@ -86,6 +86,7 @@ nodist_vdsm_SCRIPTS = \
 
 nodist_noinst_DATA = \
 	logger.conf \
+	svdsm.logger.conf \
 	mom.conf \
 	sudoers.vdsm \
 	vdsm-logrotate.conf \
@@ -124,6 +125,7 @@ EXTRA_DIST = \
 	libvirt_password \
 	limits.conf \
 	logger.conf.in \
+	svdsm.logger.conf.in \
 	mk_sysprep_floppy.in \
 	mom.conf.in \
 	mom.policy \
@@ -188,9 +190,12 @@ uninstall-local: \
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
 	$(INSTALL_DATA) logger.conf $(DESTDIR)$(vdsmconfdir)/logger.conf
+	$(INSTALL_DATA) svdsm.logger.conf \
+		$(DESTDIR)$(vdsmconfdir)/svdsm.logger.conf
 
 uninstall-data-logger:
 	$(RM) $(DESTDIR)$(vdsmconfdir)/logger.conf
+	$(RM) $(DESTDIR)$(vdsmconfdir)/svdsm.logger.conf
 
 install-data-libvirtpass:
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
