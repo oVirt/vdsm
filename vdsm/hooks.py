@@ -216,6 +216,21 @@ def after_vm_set_ticket(domxml, vmconf={}, params={}):
                         raiseError=False, params=params)
 
 
+def before_update_device(devxml, vmconf={}, params={}):
+    return _runHooksDir(devxml, 'before_update_device', vmconf=vmconf,
+                        params=params)
+
+
+def after_update_device(devxml, vmconf={}, params={}):
+    return _runHooksDir(devxml, 'after_update_device', vmconf=vmconf,
+                        raiseError=False, params=params)
+
+
+def after_update_device_fail(devxml, vmconf={}, params={}):
+    return _runHooksDir(devxml, 'after_update_device_fail', vmconf=vmconf,
+                        raiseError=False, params=params)
+
+
 def before_nic_hotplug(nicxml, vmconf={}, params={}):
     return _runHooksDir(nicxml, 'before_nic_hotplug', vmconf=vmconf,
                         params=params)

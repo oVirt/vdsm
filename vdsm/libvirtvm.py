@@ -1653,12 +1653,16 @@ class LibvirtVm(vm.Vm):
         link.setAttribute('state', linkValue)
         try:
             try:
-                self._dom.updateDeviceFlags(vnicXML.toxml(encoding='utf-8'),
+                vnicXML = hooks.before_update_device(
+                    vnicXML.toprettyxml(encoding='utf-8'), self.conf)
+                self._dom.updateDeviceFlags(vnicXML,
                                             libvirt.VIR_DOMAIN_AFFECT_LIVE)
+                dev._deviceXML = vnicXML
+                self.log.debug("Nic has been updated:\n %s" % vnicXML)
+                hooks.after_update_device(vnicXML, self.conf)
             except Exception as e:
-                self.log.debug('Request failed: %s',
-                               vnicXML.toprettyxml(encoding='utf-8'),
-                               exc_info=True)
+                self.log.debug('Request failed: %s', vnicXML, exc_info=True)
+                hooks.after_update_device_fail(vnicXML, self.conf)
                 raise SetLinkAndNetworkError(e.message)
             yield
         except Exception:

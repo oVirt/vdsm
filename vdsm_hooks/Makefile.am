@@ -85,6 +85,9 @@ VDSMHOOKS = \
 	after_vm_destroy \
 	before_vm_set_ticket \
 	after_vm_set_ticket \
+	before_update_device \
+	after_update_device \
+	after_update_device_fail \
 	before_nic_hotplug \
 	after_nic_hotplug \
 	before_nic_hotunplug \
