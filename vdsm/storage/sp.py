@@ -498,7 +498,9 @@ class StoragePool(Securable):
     @unsecured
     def validatePoolSD(self, sdUUID):
         if sdUUID not in self.getDomains():
-            raise se.StorageDomainNotMemberOfPool(self.spUUID, sdUUID)
+            self._metadata.invalidate()
+            if sdUUID not in self.getDomains():
+                raise se.StorageDomainNotMemberOfPool(self.spUUID, sdUUID)
         return True
 
     @unsecured
@@ -507,9 +509,11 @@ class StoragePool(Securable):
         Avoid handling domains if not owned by pool.
         """
         self.validatePoolSD(dom.sdUUID)
-        pools = dom.getPools()
-        if self.spUUID not in pools:
-            raise se.StorageDomainNotInPool(self.spUUID, dom.sdUUID)
+        if self.spUUID not in dom.getPools():
+            dom.invalidateMetadata()
+            if self.spUUID not in dom.getPools():
+                raise se.StorageDomainNotInPool(self.spUUID, dom.sdUUID)
+        return True
 
     @unsecured
     def validatePoolMVerHigher(self, masterVersion):
