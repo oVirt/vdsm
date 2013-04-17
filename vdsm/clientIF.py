@@ -72,8 +72,6 @@ class clientIF:
         self._shutdownSemaphore = threading.Semaphore()
         self.log = log
         self._recovery = True
-        self._libvirt = libvirtconnection.get()
-        self._syncLibvirtNetworks()
         self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
         self._initIRS()
@@ -91,10 +89,6 @@ class clientIF:
                 cif=self, log=log, ifids=ifids,
                 ifrates=ifrates)
             self._hostStats.start()
-            mog = min(config.getint('vars', 'max_outgoing_migrations'),
-                      caps.CpuTopology().cores())
-            vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
-
             self.lastRemoteAccess = 0
             self._memLock = threading.Lock()
             self._enabled = True
@@ -371,9 +365,20 @@ class clientIF:
                        (vmParams['vmId'], container_len))
         return {'status': doneCode, 'vmList': vm.status()}
 
+    def _initializingLibvirt(self):
+        self._syncLibvirtNetworks()
+        mog = min(config.getint('vars', 'max_outgoing_migrations'),
+                  caps.CpuTopology().cores())
+        vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
+
     def _recoverExistingVms(self):
+        # Starting up libvirt might take long when host under high load,
+        # we prefer running this code in external thread to avoid blocking
+        # API response.
+        self._initializingLibvirt()
+
         try:
-            vdsmVms = self.getVDSMVms()
+            vdsmVms = self._getVDSMVms()
             #Recover
             for v in vdsmVms:
                 vmId = v.UUIDString()
@@ -443,15 +448,16 @@ class clientIF:
                             return True
         return False
 
-    def getVDSMVms(self):
+    def _getVDSMVms(self):
         """
         Return a list of vdsm created VM's.
         """
-        domIds = self._libvirt.listDomainsID()
+        libvirtCon = libvirtconnection.get()
+        domIds = libvirtCon.listDomainsID()
         vms = []
         for domId in domIds:
             try:
-                vm = self._libvirt.lookupByID(domId)
+                vm = libvirtCon.lookupByID(domId)
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     self.log.error("domId: %s is dead", domId, exc_info=True)
