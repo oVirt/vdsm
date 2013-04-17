@@ -119,13 +119,19 @@ def get(cif=None):
                 edom = e.get_error_domain()
                 ecode = e.get_error_code()
                 EDOMAINS = (libvirt.VIR_FROM_REMOTE,
-                            libvirt.VIR_FROM_RPC,
-                            libvirt.VIR_ERR_NO_CONNECT,
-                            libvirt.VIR_ERR_INVALID_CONN)
-                if edom in EDOMAINS and ecode == libvirt.VIR_ERR_SYSTEM_ERROR:
+                            libvirt.VIR_FROM_RPC)
+                ECODES = (libvirt.VIR_ERR_SYSTEM_ERROR,
+                          libvirt.VIR_ERR_INTERNAL_ERROR,
+                          libvirt.VIR_ERR_NO_CONNECT,
+                          libvirt.VIR_ERR_INVALID_CONN)
+                if edom in EDOMAINS and ecode in ECODES:
                     cif.log.error('connection to libvirt broken. '
-                                  'taking vdsm down.')
+                                  'taking vdsm down. ecode: %d edom: %d',
+                                  ecode, edom)
                     cif.prepareForShutdown()
+                else:
+                    cif.log.exception('Unknown libvirterror: ecode: %d '
+                                      'edom: %d', ecode, edom)
                 raise
         wrapper.__name__ = f.__name__
         wrapper.__doc__ = f.__doc__
