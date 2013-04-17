@@ -1277,12 +1277,12 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             vg = lvm.getVG(sdUUID)
         except se.VolumeGroupDoesNotExist:
-            raise se.StorageDomainDoesNotExist()
+            raise se.StorageDomainDoesNotExist(sdUUID)
 
         if _isSD(vg):
             return vg.name
 
-        raise se.StorageDomainDoesNotExist()
+        raise se.StorageDomainDoesNotExist(sdUUID)
 
 
 def _createVMSfs(dev):
