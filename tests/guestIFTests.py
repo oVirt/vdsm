@@ -93,6 +93,28 @@ class TestGuestIF(TestCaseBase):
         invalid2 = "\x00"
         self.assertEqual('?',  guestIF._filterXmlChars(invalid2))
 
+    def test_filterObject(self):
+        ILLEGAL_DATA = {"foo": "\x00data\x00test"}
+        LEGAL_DATA = {"foo": "?data?test"}
+        EXPECTED_DATA = {"foo": "?data?test"}
+        self.assertEqual(EXPECTED_DATA, guestIF._filterObject(ILLEGAL_DATA))
+        self.assertEqual(EXPECTED_DATA, guestIF._filterObject(LEGAL_DATA))
+
+    def test_StringAndObjectFiltering(self):
+        ILLEGAL_DATA = json.dumps({"foo": "\x00data\x00test"})
+        LEGAL_DATA = json.dumps({"foo": "?data?test"})
+        EXPECTED_DATA = {"foo": "?data?test"}
+
+        filtered = guestIF._filterXmlChars(ILLEGAL_DATA)
+        parsed = json.loads(filtered.decode('utf-8'))
+        filt_obj = guestIF._filterObject(parsed)
+        self.assertEqual(filt_obj, EXPECTED_DATA)
+
+        filtered = guestIF._filterXmlChars(LEGAL_DATA)
+        parsed = json.loads(filtered.decode('utf-8'))
+        filt_obj = guestIF._filterObject(parsed)
+        self.assertEqual(filt_obj, EXPECTED_DATA)
+
     def test_handleMessage(self):
         logging.TRACE = 5
         fakeGuestAgent = guestIF.GuestAgent(None,

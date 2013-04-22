@@ -50,6 +50,23 @@ def _filterXmlChars(u):
     return ''.join(maskRestricted(c) for c in u)
 
 
+def _filterObject(obj):
+    """
+    Apply _filterXmlChars on every string in the json response object
+    """
+    def filt(o):
+        if isinstance(o, dict):
+            return dict(map(filt, o.iteritems()))
+        elif isinstance(o, list):
+            return map(filt, o)
+        elif isinstance(o, tuple):
+            return tuple(map(filt, o))
+        elif isinstance(o, basestring):
+            return _filterXmlChars(o)
+        return o
+    return filt(obj)
+
+
 class MessageState:
     NORMAL = 'normal'
     TOO_BIG = 'too-big'
@@ -335,6 +352,7 @@ class GuestAgent ():
     def _parseLine(self, line):
         line = _filterXmlChars(line)
         args = json.loads(line.decode('utf8'))
+        args = _filterObject(args)
         name = args['__name__']
         del args['__name__']
         return (name, args)
