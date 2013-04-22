@@ -251,6 +251,27 @@ class GlusterApi(object):
     def hookDisable(self, glusterCmd, hookLevel, hookName, options=None):
         self.svdsmProxy.glusterHookDisable(glusterCmd, hookLevel, hookName)
 
+    @exportAsVerb
+    def hookRead(self, glusterCmd, hookLevel, hookName, options=None):
+        return self.svdsmProxy.glusterHookRead(glusterCmd, hookLevel,
+                                               hookName)
+
+    @exportAsVerb
+    def hookUpdate(self, glusterCmd, hookLevel, hookName, hookData,
+                   hookMd5Sum, options=None):
+        self.svdsmProxy.glusterHookUpdate(glusterCmd, hookLevel, hookName,
+                                          hookData, hookMd5Sum)
+
+    @exportAsVerb
+    def hookAdd(self, glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
+                enable=False, options=None):
+        self.svdsmProxy.glusterHookAdd(glusterCmd, hookLevel, hookName,
+                                       hookData, hookMd5Sum, enable)
+
+    @exportAsVerb
+    def hookRemove(self, glusterCmd, hookLevel, hookName, options=None):
+        self.svdsmProxy.glusterHookRemove(glusterCmd, hookLevel, hookName)
+
 
 def getGlusterMethods(gluster):
     l = []

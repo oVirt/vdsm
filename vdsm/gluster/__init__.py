@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os
+import tempfile
 from functools import wraps
 
 MODULE_LIST = ('cli', 'hooks')
@@ -45,3 +47,11 @@ def listPublicFunctions():
         except ImportError:
             pass
     return methods
+
+
+def safeWrite(fileName, content):
+    with tempfile.NamedTemporaryFile(dir=os.path.dirname(fileName),
+                                     delete=False) as tmp:
+        tmp.write(content)
+        tmpFileName = tmp.name
+        os.rename(tmpFileName, fileName)

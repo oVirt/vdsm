@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import hashlib
+import base64
 import pprint as pp
 
 from vdsClient import service
@@ -333,6 +335,61 @@ class GlusterService(service):
         status = self.s.glusterHookDisable(glusterCmd, level, hookName)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterHookRead(self, args):
+        params = self._eqSplit(args)
+        glusterCmd = params.get('command', '')
+        level = params.get('level', '')
+        hookName = params.get('hookName', '')
+
+        status = self.s.glusterHookRead(glusterCmd, level, hookName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterHookUpdate(self, args):
+        params = self._eqSplit(args)
+        glusterCmd = params.get('command', '')
+        level = params.get('level', '')
+        hookName = params.get('hookName', '')
+        hookFile = params.get('hookFile', '')
+        with open(hookFile, 'r') as f:
+            hookData = f.read()
+        content = base64.b64encode(hookData)
+        md5sum = hashlib.md5(hookData).hexdigest()
+
+        status = self.s.glusterHookUpdate(glusterCmd, level, hookName,
+                                          content, md5sum)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterHookAdd(self, args):
+        params = self._eqSplit(args)
+        glusterCmd = params.get('command', '')
+        level = params.get('level', '')
+        hookName = params.get('hookName', '')
+        hookFile = params.get('hookFile', '')
+        hookEnable = False
+        if params.get('enable', '').upper() == 'TRUE':
+            hookEnable = True
+        with open(hookFile, 'r') as f:
+            hookData = f.read()
+        md5sum = hashlib.md5(hookData).hexdigest()
+        content = base64.b64encode(hookData)
+
+        status = self.s.glusterHookAdd(glusterCmd, level, hookName,
+                                       content, md5sum, hookEnable)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterHookRemove(self, args):
+        params = self._eqSplit(args)
+        glusterCmd = params.get('command', '')
+        level = params.get('level', '')
+        hookName = params.get('hookName', '')
+
+        status = self.s.glusterHookRemove(glusterCmd, level, hookName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -562,4 +619,35 @@ def getGlusterCmdDict(serv):
               'hookName=<hook_name>\n\t'
               '<hook_name> is an existing hook name',
               'Disable hook script'
+              )),
+         'glusterHookRead': (
+             serv.do_glusterHookRead,
+             ('command=<gluster_command> level={pre|post} '
+              'hookName=<hook_name>\n\t'
+              '<hook_name> is an existing hook name',
+              'Read hook script'
+              )),
+         'glusterHookUpdate': (
+             serv.do_glusterHookUpdate,
+             ('command=<gluster_command> level={pre|post} '
+              'hookName=<hook_name> hookFile=<hook_file>\n\t'
+              '<hook_name> is an existing hook name',
+              '<hook_file> is the input hook file name contains hook data',
+              'Update hook script'
+              )),
+         'glusterHookAdd': (
+             serv.do_glusterHookAdd,
+             ('command=<gluster_command> level={pre|post} '
+              'hookName=<hook_name> hookFile=<hook_file> '
+              ' enable={true|false}\n\t'
+              '<hook_name> is a new hook name',
+              '<hook_file> is the input hook file name contains hook data',
+              'Add hook script'
+              )),
+         'glusterHookRemove': (
+             serv.do_glusterHookRemove,
+             ('command=<gluster_command> level={pre|post} '
+              'hookName=<hook_name>\n\t'
+              '<hook_name> is an existing hook name',
+              'Remove hook script'
               )), }

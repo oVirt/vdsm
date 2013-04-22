@@ -34,8 +34,7 @@
 
 ##
 # @HookLevel:
-#
-# Possible value of hook level.
+## Possible value of hook level.
 #
 # @PRE:    Before gluster command execution
 #
@@ -133,5 +132,111 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterHook', 'name': 'disable'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
+ 'returns': 'boolean'}
+
+##
+# @HookContent:
+#
+# Hook content information.
+#
+# @content:   Hook content
+#
+# @type:      Type of hook
+#
+# @md5sum:    Md5sum of the hook file
+#
+# Since: 4.10.3
+##
+{'type': 'HookContent',
+ 'data': {'content': 'str', 'type': 'str', 'md5sum': 'str'}}
+
+##
+# @GlusterHook.read:
+#
+# Provides the hook content
+#
+# @glusterCmd:   Gluster command name
+#
+# @hookLevel:    Hook execution level
+#
+# @hookName:     Gluster hook name
+#
+# Returns:
+# Hook content
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHook', 'name': 'read'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
+ 'returns': 'HookContent'}
+
+##
+# @GlusterHook.update:
+#
+# Update the hook file
+#
+# @glusterCmd:   Gluster command name
+#
+# @hookLevel:    Hook execution level
+#
+# @hookName:     Gluster hook name
+#
+# @hookData:     Hook content
+#
+# @hookMd5Sum:   Md5sum of the hook file
+#
+# Returns:
+# success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHook', 'name': 'update'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str', 'hookData': 'str', 'hookMd5Sum': 'str'},
+ 'returns': 'boolean'}
+
+##
+# @GlusterHook.add:
+#
+# Add a hook file
+#
+# @glusterCmd:   Gluster command name
+#
+# @hookLevel:    Hook execution level
+#
+# @hookName:     Gluster hook name
+#
+# @hookData:     Hook content
+#
+# @hookMd5Sum:   Md5sum of the hook file
+#
+# @enable:       Hook status
+#
+# Returns:
+# success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHook', 'name': 'add'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str', 'hookData': 'str', 'hookMd5Sum': 'str', 'enable': 'boolean'},
+ 'returns': 'boolean'}
+
+##
+# @GlusterHook.remove:
+#
+# Remove a hook file
+#
+# @glusterCmd:   Gluster command name
+#
+# @hookLevel:    Hook execution level
+#
+# @hookName:     Gluster hook name
+#
+# Returns:
+# success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHook', 'name': 'remove'},
  'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
  'returns': 'boolean'}

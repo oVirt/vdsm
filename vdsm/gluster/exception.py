@@ -423,3 +423,45 @@ class GlusterHookNotFoundException(GlusterHookException):
         self.message = \
             'Hook %s of command %s, level %s not found' % \
             (hookName, glusterCmd, level)
+
+
+class GlusterHookReadFailedException(GlusterHookException):
+    code = 4505
+    message = "Hook read failed"
+
+
+class GlusterHookUpdateFailedException(GlusterHookException):
+    code = 4506
+    message = "Hook update failed"
+
+
+class GlusterHookAlreadyExistException(GlusterHookException):
+    code = 4507
+
+    def __init__(self, glusterCmd=None, level=None, hookName=None):
+        self.glusterCmd = glusterCmd
+        self.level = level
+        self.hookName = hookName
+        self.message = \
+            'Hook %s of command %s, level %s already exist' % \
+            (hookName, glusterCmd, level)
+
+
+class GlusterHookCheckSumMismatchException(GlusterException):
+    code = 4508
+
+    def __init__(self, computedMd5Sum, expectedMd5Sum):
+        self.computedMd5Sum = computedMd5Sum
+        self.expectedMd5Sum = expectedMd5Sum
+        self.message = 'Hook file check sum:%s mismatch %s' % (computedMd5Sum,
+                                                               expectedMd5Sum)
+
+
+class GlusterHookAddFailedException(GlusterHookException):
+    code = 4509
+    message = "Hook add failed"
+
+
+class GlusterHookRemoveFailedException(GlusterHookException):
+    code = 4510
+    message = "Hook remove failed"
