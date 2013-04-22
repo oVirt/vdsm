@@ -2435,7 +2435,7 @@ class LibvirtVm(vm.Vm):
 
         actionEnum = ['ignore', 'pause', 'reset', 'destroy', 'shutdown', 'log']
         self._watchdogEvent["time"] = time.time()
-        self._watchdogEvent["action"] = actionEnum(action)
+        self._watchdogEvent["action"] = actionEnum[action]
         self.log.info("Watchdog event comes from guest %s. "
                       "Action: %s", self.conf['vmName'],
                       actionToString(action))
