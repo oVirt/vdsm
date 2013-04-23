@@ -36,7 +36,3 @@ class ConfigNetworkError(Exception):
         self.errCode = errCode
         self.message = message
         Exception.__init__(self, self.errCode, self.message)
-
-
-class NetInfoError(Exception):
-    pass

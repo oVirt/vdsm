@@ -74,7 +74,6 @@ dist_vdsmtests_DATA = \
 	glob_1c60971a-8647-44ac-ae33-6520887f8843.out \
 	glusterVolumeProfileInfo.xml \
 	glusterVolumeProfileInfoNfs.xml \
-	ip_details_link.out \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	netmaskconversions \
 	route_info.out \
