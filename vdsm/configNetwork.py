@@ -542,7 +542,7 @@ def _validateNetworkSetup(networks={}, bondings={}):
                                      "Unknown nics in: %r" % list(nics))
 
 
-def _editBondings(bondings, configWriter):
+def _editBondings(bondings, configurator):
     """ Add/Edit bond interface """
     logger = logging.getLogger("_editBondings")
 
@@ -554,40 +554,16 @@ def _editBondings(bondings, configWriter):
 
         bridge = _netinfo.getBridgedNetworkForIface(bond)
 
-        mtu = None
         if bond in _netinfo.bondings:
-            # Save MTU for future set on NICs
-            confParams = netinfo.getIfaceCfg(bond)
-            mtu = confParams.get('MTU', None)
-            if mtu:
-                mtu = int(mtu)
-
-            ifdown(bond)
-            # Take down all bond's NICs.
-            for nic in _netinfo.getNicsForBonding(bond):
-                ifdown(nic)
-                configWriter.removeNic(nic)
-                if nic not in bondAttrs['nics']:
-                    ifup(nic)
-
-        # Note! In case we have bridge up and connected to the bond
-        # we will get error in log:
-        #   (ifdown) bridge XXX is still up; can't delete it
-        # But, we prefer this behaviour instead of taking bridge down
-        # Anyway, we will not be able to take it down with connected VMs
-
-        # First we need to prepare all conf files
-        configWriter.addBonding(bond, bridge=bridge, mtu=mtu,
-                                bondingOptions=bondAttrs.get('options', None))
-
-        for nic in bondAttrs['nics']:
-            configWriter.addNic(nic, bonding=bond, mtu=mtu)
-
-        # Now we can run ifup for all interfaces
-        ifup(bond)
+            configurator.editBonding(bond, bondAttrs, bridge, _netinfo)
+        else:
+            configurator.configureBonding(bond, nics=bondAttrs['nics'],
+                                          bridge=bridge,
+                                          bondingOptions=
+                                          bondAttrs.get('options', None))
 
 
-def _removeBondings(bondings, configWriter):
+def _removeBondings(bondings, configurator):
     """ Remove bond interface """
     logger = logging.getLogger("_removeBondings")
 
@@ -597,14 +573,7 @@ def _removeBondings(bondings, configWriter):
         if 'remove' in bondAttrs:
             nics = _netinfo.getNicsForBonding(bond)
             logger.debug("Removing bond %r with nics = %s", bond, nics)
-            ifdown(bond)
-            configWriter.removeBonding(bond)
-
-            for nic in nics:
-                ifdown(nic)
-                configWriter.removeNic(nic)
-                ifup(nic)
-
+            configurator.removeBonding(bond, nics)
             del bondings[bond]
 
 
@@ -669,6 +638,7 @@ def setupNetworks(networks={}, bondings={}, **options):
     logger = logging.getLogger("setupNetworks")
     _netinfo = netinfo.NetInfo()
     configWriter = ConfigWriter()
+    configurator = Ifcfg(configWriter)
     networksAdded = set()
 
     logger.debug("Setting up network according to configuration: "
@@ -706,10 +676,10 @@ def setupNetworks(networks={}, bondings={}, **options):
                 networksAdded.add(network)
 
         # Remove bonds with 'remove' attribute
-        _removeBondings(bondings, configWriter)
+        _removeBondings(bondings, configurator)
 
         # Check whether bonds should be resized
-        _editBondings(bondings, configWriter)
+        _editBondings(bondings, configurator)
 
         # We need to use the newest host info
         _ni = netinfo.NetInfo()
