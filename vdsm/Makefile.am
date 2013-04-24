@@ -90,7 +90,7 @@ dist_vdsm_SCRIPTS = \
 	set-conf-item \
 	vdsm \
 	vdsm-restore-net-config \
-	write-net-config
+	$(NULL)
 
 nodist_man8_MANS = \
 	vdsmd.8

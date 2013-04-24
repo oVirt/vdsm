@@ -1,8 +1,4 @@
 Cmnd_Alias VDSM_LIFECYCLE = \
-    @VDSMDIR@/addNetwork, \
-    @VDSMDIR@/delNetwork, \
-    @VDSMDIR@/editNetwork, \
-    @VDSMDIR@/vdsm-store-net-config, \
     @DMIDECODE_PATH@, \
     @VDSMDIR@/mk_sysprep_floppy, \
     @SERVICE_PATH@ ksmtuned *, \
@@ -34,7 +30,6 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @CP_PATH@ /etc/multipath.conf *, \
     @CP_PATH@ * /etc/multipath.conf, \
     @MULTIPATH_PATH@, \
-    @BLOCKDEV_PATH@ --getsize64 *, \
     @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
     @SERVICE_PATH@ vdsmd *, \
     @REBOOT_PATH@ -f, \

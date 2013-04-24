@@ -757,7 +757,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vm.py*
-%{_datadir}/%{vdsm_name}/write-net-config
 %{_datadir}/%{vdsm_name}/zombieReaper.py*
 %attr (755,vdsm,kvm) %{_datadir}/%{vdsm_name}/dummybr.py*
 %attr (755,vdsm,kvm) %{_datadir}/%{vdsm_name}/nwfilter.py*
