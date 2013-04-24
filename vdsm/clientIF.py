@@ -40,7 +40,7 @@ from vdsm import utils
 from netconf import ifcfg
 import caps
 from vmChannels import Listener
-from libvirtvm import LibvirtVm
+from vm import Vm
 import blkid
 import supervdsm
 import sampling
@@ -360,7 +360,7 @@ class clientIF:
                     self.log.warning('vm %s already exists' %
                                      vmParams['vmId'])
                     return errCode['exist']
-            vm = LibvirtVm(self, vmParams)
+            vm = Vm(self, vmParams)
             self.vmContainer[vmParams['vmId']] = vm
         finally:
             container_len = len(self.vmContainer)

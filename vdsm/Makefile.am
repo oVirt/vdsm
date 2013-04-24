@@ -38,7 +38,6 @@ dist_vdsm_PYTHON = \
 	hooks.py \
 	kaxmlrpclib.py \
 	ksm.py \
-	libvirtvm.py \
 	logUtils.py \
 	lsblk.py \
 	md_utils.py \

@@ -19,7 +19,7 @@
 #
 import re
 import xml.etree.ElementTree as ET
-import libvirtvm
+import vm
 from vdsm import constants
 from testrunner import VdsmTestCase as TestCaseBase
 
@@ -58,7 +58,7 @@ class TestLibvirtvm(TestCaseBase):
               <devices/>
            </domain>"""
 
-        domxml = libvirtvm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log)
         self.assertXML(domxml.dom, expectedXML)
 
     def testOSXML(self):
@@ -87,7 +87,7 @@ class TestLibvirtvm(TestCaseBase):
 
         for vmConf, xml in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = libvirtvm._DomXML(vmConf, self.log)
+            domxml = vm._DomXML(vmConf, self.log)
             domxml.appendOs()
             self.assertXML(domxml.dom, xml, 'os')
 
@@ -95,7 +95,7 @@ class TestLibvirtvm(TestCaseBase):
         smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'
         dev = {'device': 'smartcard',
                'specParams': {'mode': 'passthrough', 'type': 'spicevmc'}}
-        smartcard = libvirtvm.SmartCardDevice(self.conf, self.log, **dev)
+        smartcard = vm.SmartCardDevice(self.conf, self.log, **dev)
         self.assertXML(smartcard.getXML(), smartcardXML)
 
     def testFeaturesXML(self):
@@ -103,7 +103,7 @@ class TestLibvirtvm(TestCaseBase):
             <features>
                   <acpi/>
             </features>"""
-        domxml = libvirtvm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log)
         domxml.appendFeatures()
         self.assertXML(domxml.dom, featuresXML, 'features')
 
@@ -123,7 +123,7 @@ class TestLibvirtvm(TestCaseBase):
         serial = 'A5955881-519B-11CB-8352-E78A528C28D8_00:21:cc:68:d7:38'
         sysinfoXML = sysinfoXML % (constants.SMBIOS_MANUFACTURER,
                                    product, version, serial, self.conf['vmId'])
-        domxml = libvirtvm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log)
         domxml.appendSysinfo(product, version, serial)
         self.assertXML(domxml.dom, sysinfoXML, 'sysinfo')
 
@@ -133,7 +133,7 @@ class TestLibvirtvm(TestCaseBase):
                 <target port="0" type="virtio"/>
             </console>"""
         dev = {'device': 'console'}
-        console = libvirtvm.ConsoleDevice(self.conf, self.log, **dev)
+        console = vm.ConsoleDevice(self.conf, self.log, **dev)
         self.assertXML(console.getXML(), consoleXML)
 
     def testClockXML(self):
@@ -142,7 +142,7 @@ class TestLibvirtvm(TestCaseBase):
                 <timer name="rtc" tickpolicy="catchup"/>
             </clock>"""
         self.conf['timeOffset'] = '-3600'
-        domxml = libvirtvm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log)
         domxml.appendClock()
         self.assertXML(domxml.dom, clockXML, 'clock')
 
@@ -165,7 +165,7 @@ class TestLibvirtvm(TestCaseBase):
                   'smpCoresPerSocket': 2, 'smpThreadsPerCore': 2,
                   'cpuPinning': {'0': '0-1', '1': '2-3'}}
         vmConf.update(self.conf)
-        domxml = libvirtvm._DomXML(vmConf, self.log)
+        domxml = vm._DomXML(vmConf, self.log)
         domxml.appendCpu()
         self.assertXML(domxml.dom, cpuXML, 'cpu')
         self.assertXML(domxml.dom, cputuneXML, 'cputune')
@@ -179,7 +179,7 @@ class TestLibvirtvm(TestCaseBase):
         path = '/tmp/channel-socket'
         name = 'org.linux-kvm.port.0'
         channelXML = channelXML % (name, path)
-        domxml = libvirtvm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log)
         domxml._appendAgentDevice(path, name)
         self.assertXML(domxml.dom, channelXML, 'devices/channel')
 
@@ -191,7 +191,7 @@ class TestLibvirtvm(TestCaseBase):
         vmConfs = [{}, {'tabletEnable': 'true'}]
         for vmConf, xml in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = libvirtvm._DomXML(vmConf, self.log)
+            domxml = vm._DomXML(vmConf, self.log)
             domxml.appendInput()
             self.assertXML(domxml.dom, xml, 'devices/input')
 
@@ -230,7 +230,7 @@ class TestLibvirtvm(TestCaseBase):
 
         for vmConf, xml in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = libvirtvm._DomXML(vmConf, self.log)
+            domxml = vm._DomXML(vmConf, self.log)
             domxml.appendGraphics()
             self.assertXML(domxml.dom, xml, 'devices/graphics')
             if vmConf['display'] == 'qxl':
@@ -240,20 +240,20 @@ class TestLibvirtvm(TestCaseBase):
         balloonXML = '<memballoon model="virtio"/>'
         dev = {'device': 'memballoon', 'type': 'balloon',
                'specParams': {'model': 'virtio'}}
-        balloon = libvirtvm.BalloonDevice(self.conf, self.log, **dev)
+        balloon = vm.BalloonDevice(self.conf, self.log, **dev)
         self.assertXML(balloon.getXML(), balloonXML)
 
     def testWatchdogXML(self):
         watchdogXML = '<watchdog action="none" model="i6300esb"/>'
         dev = {'device': 'watchdog', 'type': 'watchdog',
                'specParams': {'model': 'i6300esb', 'action': 'none'}}
-        watchdog = libvirtvm.WatchdogDevice(self.conf, self.log, **dev)
+        watchdog = vm.WatchdogDevice(self.conf, self.log, **dev)
         self.assertXML(watchdog.getXML(), watchdogXML)
 
     def testSoundXML(self):
         soundXML = '<sound model="ac97"/>'
         dev = {'device': 'ac97'}
-        sound = libvirtvm.SoundDevice(self.conf, self.log, **dev)
+        sound = vm.SoundDevice(self.conf, self.log, **dev)
         self.assertXML(sound.getXML(), soundXML)
 
     def testVideoXML(self):
@@ -263,7 +263,7 @@ class TestLibvirtvm(TestCaseBase):
             </video>"""
 
         dev = {'device': 'vga', 'specParams': {'vram': '8192'}}
-        video = libvirtvm.VideoDevice(self.conf, self.log, **dev)
+        video = vm.VideoDevice(self.conf, self.log, **dev)
         self.assertXML(video.getXML(), videoXML)
 
     def testInterfaceXML(self):
@@ -286,7 +286,7 @@ class TestLibvirtvm(TestCaseBase):
                'bootOrder': '1', 'filter': 'no-mac-spoofing'}
 
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
-        iface = libvirtvm.NetworkInterfaceDevice(self.conf, self.log, **dev)
+        iface = vm.NetworkInterfaceDevice(self.conf, self.log, **dev)
         self.assertXML(iface.getXML(), interfaceXML)
 
     def testControllerXML(self):
@@ -313,7 +313,7 @@ class TestLibvirtvm(TestCaseBase):
             </controller>"""]
 
         for devConf, xml in zip(devConfs, expectedXMLs):
-            dev = libvirtvm.ControllerDevice(self.conf, self.log, **devConf)
+            dev = vm.ControllerDevice(self.conf, self.log, **devConf)
             self.assertXML(dev.getXML(), xml % self.PCI_ADDR)
 
     def testRedirXML(self):
@@ -324,7 +324,7 @@ class TestLibvirtvm(TestCaseBase):
 
         dev = {'device': 'spicevmc', 'address': self.PCI_ADDR_DICT}
 
-        redir = libvirtvm.RedirDevice(self.conf, self.log, **dev)
+        redir = vm.RedirDevice(self.conf, self.log, **dev)
         self.assertXML(redir.getXML(), redirXML)
 
     def testDriveXML(self):
@@ -378,7 +378,7 @@ class TestLibvirtvm(TestCaseBase):
 
         for (devConf, xml, blockDev, vmConf) in \
                 zip(devConfs, expectedXMLs, blockDevs, vmConfs):
-            drive = libvirtvm.Drive(vmConf, self.log, **devConf)
+            drive = vm.Drive(vmConf, self.log, **devConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = blockDev
             self.assertXML(drive.getXML(), xml % SERIAL)

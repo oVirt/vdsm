@@ -394,7 +394,7 @@ class StatsThread(threading.Thread):
         pass
 
     def run(self):
-        import libvirtvm
+        import vm
         try:
             # wait a bit before starting to sample
             time.sleep(self.SAMPLE_INTERVAL_SEC)
@@ -406,7 +406,7 @@ class StatsThread(threading.Thread):
                         self._lastSampleTime = sample.timestamp
                         if len(self._samples) > self.AVERAGING_WINDOW:
                             self._samples.pop(0)
-                    except libvirtvm.TimeoutError:
+                    except vm.TimeoutError:
                         self._log.error("Timeout while sampling stats",
                                         exc_info=True)
                 self._stopEvent.wait(self.SAMPLE_INTERVAL_SEC)
