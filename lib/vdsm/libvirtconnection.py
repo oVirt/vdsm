@@ -131,8 +131,9 @@ def get(cif=None):
                                   ecode, edom)
                     cif.prepareForShutdown()
                 else:
-                    cif.log.exception('Unknown libvirterror: ecode: %d '
-                                      'edom: %d', ecode, edom)
+                    cif.log.debug('Unknown libvirterror: ecode: %d edom: %d '
+                                  'level: %d message: %s', ecode, edom,
+                                  e.get_error_level(), e.get_error_message())
                 raise
         wrapper.__name__ = f.__name__
         wrapper.__doc__ = f.__doc__
