@@ -78,7 +78,7 @@ parameters = [
         ('migration_downtime_steps', '10',
             'Incremental steps used to reach migration_downtime.'),
 
-        ('max_outgoing_migrations', '5',
+        ('max_outgoing_migrations', '3',
             'Maximum concurrent outgoing migrations'),
 
         ('sys_shutdown_timeout', '10',
