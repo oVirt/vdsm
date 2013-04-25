@@ -147,10 +147,3 @@ EXT_VDSM_STORE_NET_CONFIG = '@VDSMDIR@/vdsm-store-net-config'
 
 EXT_WGET = '@WGET_PATH@'
 EXT_WRITE_NET_CONFIG = '@VDSMDIR@/write-net-config'
-
-#
-# Storage constants
-#
-STRG_ISCSI_HOST = "iscsi_host/"
-STRG_SCSI_HOST = "scsi_host/"
-STRG_ISCSI_SESSION = "iscsi_session/"

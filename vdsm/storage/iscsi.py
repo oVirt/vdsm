@@ -428,8 +428,8 @@ def devIsiSCSI(dev):
     hostdir = os.path.realpath(os.path.join("/sys/block", dev,
                                             "device/../../.."))
     host = os.path.basename(hostdir)
-    iscsi_host = os.path.join(hostdir, constants.STRG_ISCSI_HOST, host)
-    scsi_host = os.path.join(hostdir, constants.STRG_SCSI_HOST, host)
+    iscsi_host = os.path.join(hostdir, "iscsi_host/", host)
+    scsi_host = os.path.join(hostdir, "scsi_host/", host)
     proc_name = os.path.join(scsi_host, "proc_name")
     return (os.path.exists(iscsi_host) and os.path.exists(proc_name))
 
@@ -440,7 +440,7 @@ def getiScsiTarget(dev):
     sessiondir = os.path.realpath(os.path.join(device, "../.."))
     session = os.path.basename(sessiondir)
     iscsi_session = os.path.join(sessiondir,
-                                 constants.STRG_ISCSI_SESSION + session)
+                                 "iscsi_session/" + session)
     with open(os.path.join(iscsi_session, "targetname")) as f:
         return f.readline().strip()
 
