@@ -20,9 +20,9 @@
 import os
 import pwd
 import shutil
-import subprocess
 
 from vdsm.tool import expose
+from vdsm.utils import execCmd
 
 try:
     from ovirtnode import ovirtfunctions
@@ -39,8 +39,7 @@ PATH_VDSMCERT = PATH_CERT + 'vdsmcert.pem'
 
 def is_our_cafile(cacert):
     cmd = [EX_OPENSSL, 'verify', '-CAfile', cacert, PATH_VDSMCERT]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = p.communicate()[0]
+    rc, out, err = execCmd(cmd, raw=True)
     return out.rstrip('\n') == '%s: OK' % PATH_VDSMCERT
 
 

@@ -18,10 +18,9 @@
 #
 
 
-import subprocess
-
 from vdsm import netinfo
 from vdsm.tool import expose
+from vdsm.utils import execCmd
 
 
 EX_MODPROBE = '@MODPROBE_PATH@'
@@ -31,11 +30,7 @@ def _exec_command(argv):
     """
     This function executes a given shell command.
     """
-
-    p = subprocess.Popen(argv, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out, err = p.communicate()
-    rc = p.returncode
+    rc, out, err = execCmd(argv, raw=True)
     if rc != 0:
         raise Exception("Execute command %s failed: %s" % (argv, err))
 
