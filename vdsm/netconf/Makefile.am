@@ -23,4 +23,5 @@ vdsmnetconfdir = $(vdsmdir)/netconf
 
 dist_vdsmnetconf_PYTHON = \
 	__init__.py \
-	ifcfg.py
+	ifcfg.py \
+	libvirtCfg.py

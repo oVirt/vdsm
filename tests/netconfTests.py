@@ -28,6 +28,7 @@ import tempfile
 
 from vdsm import netinfo
 from netconf import ifcfg
+from netconf import libvirtCfg
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
@@ -94,10 +95,8 @@ class ifcfgConfigWriterTests(TestCaseBase):
              os.path.join(self._tempdir, 'ifcfg-')),
             (ifcfg, 'ifdown', lambda x: 0),
             (ifcfg, 'ifup', lambda *x: 0),
-            (ifcfg.ConfigWriter, '_createNetwork',
-             lambda *x: None),
-            (ifcfg.ConfigWriter, '_removeNetwork',
-             lambda *x: None),
+            (libvirtCfg, 'createNetwork', lambda *x: None),
+            (libvirtCfg, 'removeNetwork', lambda *x: None),
         ]):
             #after vdsm package is installed, the 'vdsm' account will be
             #created if no 'vdsm' account, we should skip this test

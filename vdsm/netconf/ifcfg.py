@@ -17,7 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from xml.sax.saxutils import escape
 import glob
 import libvirt
 import logging
@@ -30,9 +29,9 @@ import shutil
 import threading
 
 from neterrors import ConfigNetworkError
+import libvirtCfg
 from storage.misc import execCmd
 from vdsm import constants
-from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import utils
 from netmodels import Nic, Bond, Bridge
@@ -204,55 +203,17 @@ class ConfigWriter(object):
         utils.rmFile(filename)
         logging.debug("Removed file %s", filename)
 
-    def _createNetwork(self, netXml):
-        conn = libvirtconnection.get()
-        net = conn.networkDefineXML(netXml)
-        net.create()
-        net.setAutostart(1)
-
     def createLibvirtNetwork(self, network, bridged=True, iface=None,
                              skipBackup=False):
-        netName = netinfo.LIBVIRT_NET_PREFIX + network
-        if bridged:
-            netXml = '''<network><name>%s</name><forward mode='bridge'/>
-                        <bridge name='%s'/></network>''' % (escape(netName),
-                                                            escape(network))
-        else:
-            netXml = (
-                '''<network><name>%s</name><forward mode='passthrough'>'''
-                '''<interface dev='%s'/></forward></network>''' %
-                (escape(netName), escape(iface)))
+        netXml = libvirtCfg.createNetworkDef(network, bridged, iface)
         if not skipBackup:
             self._networkBackup(network)
-        self._createNetwork(netXml)
-
-    def _removeNetwork(self, network):
-        netName = netinfo.LIBVIRT_NET_PREFIX + network
-        conn = libvirtconnection.get()
-
-        net = conn.networkLookupByName(netName)
-        if net.isActive():
-            net.destroy()
-        if net.isPersistent():
-            net.undefine()
+        libvirtCfg.createNetwork(netXml)
 
     def removeLibvirtNetwork(self, network, skipBackup=False):
         if not skipBackup:
             self._networkBackup(network)
-        self._removeNetwork(network)
-
-    @classmethod
-    def getLibvirtNetwork(cls, network):
-        netName = netinfo.LIBVIRT_NET_PREFIX + network
-        conn = libvirtconnection.get()
-        try:
-            net = conn.networkLookupByName(netName)
-            return net.XMLDesc(0)
-        except libvirt.libvirtError as e:
-            if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
-                return
-
-            raise
+        libvirtCfg.removeNetwork(network)
 
     @classmethod
     def writeBackupFile(cls, dirName, fileName, content):
@@ -280,13 +241,13 @@ class ConfigWriter(object):
     def _atomicNetworkBackup(self, network):
         """ In-memory backup libvirt networks """
         if network not in self._networksBackups:
-            self._networksBackups[network] = self.getLibvirtNetwork(network)
+            self._networksBackups[network] = libvirtCfg.getNetworkDef(network)
             logging.debug("Backed up %s", network)
 
     @classmethod
     def _persistentNetworkBackup(cls, network):
         """ Persistently backup libvirt networks """
-        content = cls.getLibvirtNetwork(network)
+        content = libvirtCfg.getNetworkDef(network)
         if not content:
             # For non-exists networks use predefined header
             content = cls.DELETED_HEADER + '\n'
@@ -304,13 +265,13 @@ class ConfigWriter(object):
             # To avoid libvirt errors during recreation we need
             # to remove the old network first
             try:
-                self._removeNetwork(network)
+                libvirtCfg.removeNetwork(network)
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
                     pass
 
             if content:
-                self._createNetwork(content)
+                libvirtCfg.createNetwork(content)
 
             logging.info('Restored %s', network)
 

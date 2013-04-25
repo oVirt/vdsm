@@ -912,6 +912,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/momIF.py*
 %{_datadir}/%{vdsm_name}/netconf/__init__.py*
 %{_datadir}/%{vdsm_name}/netconf/ifcfg.py*
+%{_datadir}/%{vdsm_name}/netconf/libvirtCfg.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
 %{_datadir}/%{vdsm_name}/netmodels.py*
 %{_datadir}/%{vdsm_name}/respawn
