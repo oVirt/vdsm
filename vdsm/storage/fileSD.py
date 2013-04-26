@@ -117,9 +117,13 @@ class FileMetadataRW(object):
         self._oop = oop.getProcessPool(self._sdUUID)
 
     def readlines(self):
-        if not self._oop.fileUtils.pathExists(self._metafile):
-                return []
-        return misc.stripNewLines(self._oop.directReadLines(self._metafile))
+        try:
+            return misc.stripNewLines(self._oop.directReadLines(
+                                      self._metafile))
+        except (IOError, OSError) as e:
+            if e.errno != errno.ENOENT:
+                raise
+            return []
 
     def writelines(self, metadata):
         for i, line in enumerate(metadata):
