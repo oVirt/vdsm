@@ -79,14 +79,6 @@ log = logging.getLogger('Storage.Misc')
 def namedtuple2dict(nt):
     return dict(imap(lambda f: (f, getattr(nt, f)), nt._fields))
 
-
-def enableLogSkip(logger, *args, **kwargs):
-    skipFunc = partial(findCaller, *args, **kwargs)
-    logger.findCaller = types.MethodType(lambda self: skipFunc(),
-                                         logger, logger.__class__)
-
-    return logger
-
 # Buffsize is 1K because I tested it on some use cases and 1k was fastets. If
 # you find this number to be a bottleneck in any way you are welcome to change
 # it
@@ -125,16 +117,25 @@ def logskip(var):
     return _LogSkip.wrap(var, None)
 
 
+@logskip
+def enableLogSkip(logger, *args, **kwargs):
+    skipFunc = partial(findCaller, *args, **kwargs)
+    logger.findCaller = types.MethodType(lambda self: skipFunc(),
+                                         logger, logger.__class__)
+
+    return logger
+
+
 def _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
                    logSkipName, code, filename):
     if logSkipName is not None:
         if _LogSkip.checkForSkip(id(code), logSkipName):
             return True
-    elif (skipUp > 0):
+    if (skipUp > 0):
         return True
-    elif (os.path.splitext(filename)[0] in ignoreSourceFiles):
+    if (os.path.splitext(filename)[0] in ignoreSourceFiles):
         return True
-    elif (code.co_name in ignoreMethodNames):
+    if (code.co_name in ignoreMethodNames):
         return True
 
     return False
