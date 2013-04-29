@@ -27,6 +27,7 @@ lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
 results.log
+tests/crossImportsTests.py
 tests/run_tests.sh
 tests/run_tests_local.sh
 vds_bootstrap/deployUtil.py*

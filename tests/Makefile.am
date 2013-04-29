@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+include $(top_srcdir)/build-aux/Makefile.subs
+
 SUBDIRS = functional
 
 test_modules = \
@@ -62,6 +64,18 @@ test_modules = \
 	zombieReaperTests.py \
 	$(NULL)
 
+nodist_vdsmtests_PYTHON = \
+	crossImportsTests.py \
+	$(NULL)
+
+CLEANFILES = \
+	$(nodist_vdsmtests_PYTHON) \
+	$(NULL)
+
+EXTRA_DIST = \
+	crossImportsTests.py.in \
+	$(NULL)
+
 dist_noinst_DATA = \
 	run_tests_local.sh
 
@@ -93,8 +107,15 @@ dist_vdsmtests_SCRIPTS = \
 	testValidation.py \
 	$(NULL)
 
+all-local: \
+	$(nodist_vdsmtests_PYTHON)
+
+# crossImportsTests.py has to be run separate due to different tests which
+# load modules first, making the env dirty. Unloading python modules
+# is not supported, see http://bugs.python.org/issue9072 .
 check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
 	@echo '*** into your environment.  Do not submit untested code!    ***'
+	$(top_srcdir)/tests/run_tests_local.sh crossImportsTests.py
 	$(top_srcdir)/tests/run_tests_local.sh $(test_modules)
 
