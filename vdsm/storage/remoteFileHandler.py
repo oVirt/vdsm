@@ -47,6 +47,7 @@ else:
 import misc
 import fileUtils
 import zombieReaper
+from vdsm import utils
 
 
 # Crabs are known for their remote process calls
@@ -405,6 +406,7 @@ if __name__ == "__main__":
 
             for mod in (os, glob, fileUtils):
                 server.registerModule(mod)
+            server.registerModule(utils, name="utils")
         except Exception:
             logging.root.error("Error creating CrabRPC server", exc_info=True)
             raise

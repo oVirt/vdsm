@@ -21,6 +21,7 @@
 from testrunner import VdsmTestCase as TestCaseBase
 import storage.outOfProcess as oop
 import os
+import tempfile
 
 
 class OopWrapperTests(TestCaseBase):
@@ -47,3 +48,9 @@ class OopWrapperTests(TestCaseBase):
 
     def testModuleCall(self):
         self.assertNotEquals(self.pool.os.getpid(), os.getpid())
+
+    def testUtilsFuncs(self):
+        tmpfd, tmpfile = tempfile.mkstemp()
+        self.pool.utils.rmFile(tmpfile)
+        os.close(tmpfd)
+        return True
