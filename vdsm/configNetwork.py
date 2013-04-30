@@ -559,8 +559,8 @@ def _editBondings(bondings, configurator):
         else:
             configurator.configureBonding(bond, nics=bondAttrs['nics'],
                                           bridge=bridge,
-                                          bondingOptions=
-                                          bondAttrs.get('options', None))
+                                          bondingOptions=bondAttrs.get(
+                                              'options', None))
 
 
 def _removeBondings(bondings, configurator):
