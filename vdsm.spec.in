@@ -493,7 +493,9 @@ make
 # Setting software_version and software_revision in dsaversion.py
 baserelease=`echo "%{release}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
 baseversion=`echo "%{version}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
+rawversion=%{version}-%{release}
 sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
+       -e 's/^raw_version_revision =.*/raw_version_revision = "'"${rawversion}"'"/' \
        -e 's/^software_revision =.*/software_revision = "'"${baserelease}"'"/' vdsm/dsaversion.py
 
 %install
