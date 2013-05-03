@@ -20,10 +20,13 @@
 
 import types
 import unittest
+
+from gluster import exception as gluster_exception
 from storage import storage_exception
 from storage import securable
+from vdsm.utils import GeneralException
+
 from testrunner import VdsmTestCase as TestCaseBase
-from gluster import exception as gluster_exception
 
 
 class TestSecurable(TestCaseBase):
@@ -48,7 +51,7 @@ class TestStorageExceptions(TestCaseBase):
             if not isinstance(obj, types.TypeType):
                 continue
 
-            if not issubclass(obj, storage_exception.GeneralException):
+            if not issubclass(obj, GeneralException):
                 continue
 
             self.assertFalse(obj.code in codes)

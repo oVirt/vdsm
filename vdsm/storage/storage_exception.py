@@ -32,6 +32,7 @@
 #######################################################
 
 from securable import SecureError
+from vdsm.utils import GeneralException
 SPM_STATUS_ERROR = (654, "Not SPM")
 
 GENERAL_EXCEPTION = lambda e: (100, str(e))
@@ -48,20 +49,6 @@ def generateResponse(error, default=GENERAL_EXCEPTION):
     code, msg = resp
 
     return {'status': {'code': code, 'message': msg}}
-
-
-class GeneralException(Exception):
-    code = 100
-    message = "General Exception"
-
-    def __init__(self, *value):
-        self.value = value
-
-    def __str__(self):
-        return "%s: %s" % (self.message, repr(self.value))
-
-    def response(self):
-        return {'status': {'code': self.code, 'message': str(self)}}
 
 
 #################################################
@@ -1014,11 +1001,6 @@ class TaskStateTransitionError(GeneralException):
 class TaskHasRefs(GeneralException):
     code = 442
     message = "operation cannot be performed - task has active references"
-
-
-class ActionStopped(GeneralException):
-    code = 443
-    message = "Action was stopped"
 
 
 #################################################

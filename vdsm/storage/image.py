@@ -31,6 +31,7 @@ import sd
 import misc
 import fileUtils
 from vdsm.config import config
+from vdsm.utils import ActionStopped
 import storage_exception as se
 import task
 from threadLocal import vars
@@ -569,7 +570,7 @@ class Image:
                                          dstVol.getVolumePath(),
                                          vars.task.aborting,
                                          size=srcSize)
-                except se.ActionStopped:
+                except ActionStopped:
                     raise
                 except se.StorageException:
                     self.log.error("Unexpected error", exc_info=True)
@@ -887,7 +888,7 @@ class Image:
                     if rc:
                         raise se.StorageException("rc: %s, err: %s" %
                                                   (rc, err))
-                except se.ActionStopped:
+                except ActionStopped:
                     raise
                 except se.StorageException as e:
                     raise se.CopyImageError(str(e))
@@ -1246,7 +1247,7 @@ class Image:
             vars.task.clearRecoveries()
             # mark all snapshots from 'ancestor' to 'successor' as illegal
             self.markIllegalSubChain(sdDom, imgUUID, chainToRemove)
-        except se.ActionStopped:
+        except ActionStopped:
             raise
         except se.StorageException:
             self.log.error("Unexpected error", exc_info=True)

@@ -72,10 +72,6 @@ def namedtuple2dict(nt):
     return dict(imap(lambda f: (f, getattr(nt, f)), nt._fields))
 
 
-def stripNewLines(lines):
-    return [l[:-1] if l.endswith('\n') else l for l in lines]
-
-
 class _LogSkip(object):
     _ignoreMap = defaultdict(list)
     ALL_KEY = "##ALL##"
@@ -164,19 +160,11 @@ execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'),
                               logSkipName="Storage.Misc.excCmd")
 
 
-class IOCLASS:
-    REALTIME = 1
-    BEST_EFFORT = 2
-    IDLE = 3
-
-
-class NICENESS:
-    NORMAL = 0
-    HIGH = 19
-
-
 execCmd = partial(logskip("Storage.Misc.excCmd")(utils.execCmd),
                   execCmdLogger=execCmdLogger)
+
+
+watchCmd = partial(utils.watchCmd, execCmdLogger=execCmdLogger)
 
 
 def pidExists(pid):
@@ -201,31 +189,6 @@ def getProcCtime(pid):
                       "Could not find process with pid %s" % pid)
 
     return str(ctime)
-
-
-def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None,
-             nice=None, ioclass=None):
-    """
-    Executes an external command, optionally via sudo with stop abilities.
-    """
-    proc = execCmd(command, sudo=False, cwd=cwd, data=data, sync=False,
-                   nice=nice, ioclass=ioclass)
-    if recoveryCallback:
-        recoveryCallback(proc)
-
-    if not proc.wait(cond=stop):
-        proc.kill()
-        raise se.ActionStopped()
-
-    out = stripNewLines(proc.stdout)
-    err = stripNewLines(proc.stderr)
-
-    execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
-                        {True: "SUCCESS", False: "FAILED"}
-                        [proc.returncode == 0],
-                        repr(err), proc.returncode)
-
-    return (proc.returncode, out, err)
 
 
 def readfile(name, buffersize=None):
@@ -362,12 +325,13 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
             cmd.append("oflag=%s" % oflag)
 
         if not stop:
-            (rc, out, err) = execCmd(cmd, sudo=False, nice=NICENESS.HIGH,
-                                     ioclass=IOCLASS.IDLE)
+            (rc, out, err) = execCmd(cmd, sudo=False, nice=utils.NICENESS.HIGH,
+                                     ioclass=utils.IOCLASS.IDLE)
         else:
             (rc, out, err) = watchCmd(cmd, stop=stop,
                                       recoveryCallback=recoveryCallback,
-                                      nice=NICENESS.HIGH, ioclass=IOCLASS.IDLE)
+                                      nice=utils.NICENESS.HIGH,
+                                      ioclass=utils.IOCLASS.IDLE)
 
         if rc:
             raise se.MiscBlockWriteException(dst, offset, size)

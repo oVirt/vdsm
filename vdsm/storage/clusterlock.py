@@ -30,6 +30,7 @@ import misc
 import storage_exception as se
 from vdsm import constants
 from vdsm.config import config
+from vdsm import utils
 
 
 MAX_HOST_ID = 250
@@ -105,7 +106,7 @@ class SafeLease(object):
                    acquireLockCommand]
             (rc, out, err) = misc.execCmd(cmd, cwd=self.lockUtilPath,
                                           sudo=True,
-                                          ioclass=misc.IOCLASS.REALTIME,
+                                          ioclass=utils.IOCLASS.REALTIME,
                                           ioclassdata=0, setsid=True)
             if rc != 0:
                 raise se.AcquireLockFailure(self._sdUUID, rc, out, err)

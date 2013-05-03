@@ -26,6 +26,7 @@ from contextlib import contextmanager
 
 import image
 from vdsm import constants
+from vdsm import utils
 import storage_exception as se
 import sd
 from sdc import sdCache
@@ -1012,8 +1013,8 @@ def qemuRebase(src, srcFormat, backingFile,
         recoveryCallback = baseAsyncTasksRollback
     (rc, out, err) = misc.watchCmd(cmd, stop=stop, cwd=cwd,
                                    recoveryCallback=recoveryCallback,
-                                   ioclass=misc.IOCLASS.IDLE,
-                                   nice=misc.NICENESS.HIGH)
+                                   ioclass=utils.IOCLASS.IDLE,
+                                   nice=utils.NICENESS.HIGH)
 
     log.debug('(qemuRebase): REBASE %s DONE' % (src))
     return (rc, out, err)
@@ -1040,8 +1041,8 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
                "-O", dst_fmt, dst]
         (rc, out, err) = misc.watchCmd(cmd, stop=stop,
                                        recoveryCallback=baseAsyncTasksRollback,
-                                       ioclass=misc.IOCLASS.IDLE,
-                                       nice=misc.NICENESS.HIGH)
+                                       ioclass=utils.IOCLASS.IDLE,
+                                       nice=utils.NICENESS.HIGH)
 
     log.debug('(qemuConvert): COPY %s to %s DONE' % (src, dst))
     return (rc, out, err)

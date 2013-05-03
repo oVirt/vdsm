@@ -33,6 +33,7 @@ import outOfProcess as oop
 from remoteFileHandler import Timeout
 from persistentDict import PersistentDict, DictValidator
 from vdsm import constants
+from vdsm.utils import stripNewLines
 import time
 import supervdsm
 import mount
@@ -118,8 +119,7 @@ class FileMetadataRW(object):
 
     def readlines(self):
         try:
-            return misc.stripNewLines(self._oop.directReadLines(
-                                      self._metafile))
+            return stripNewLines(self._oop.directReadLines(self._metafile))
         except (IOError, OSError) as e:
             if e.errno != errno.ENOENT:
                 raise

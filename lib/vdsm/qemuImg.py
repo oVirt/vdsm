@@ -19,12 +19,11 @@
 #
 
 import re
-from storage import misc
-from utils import CommandPath, execCmd
 
-_qemuimg = CommandPath("qemu-img",
-                       "/usr/bin/qemu-img",  # Fedora, EL6
-                       )
+import utils
+
+_qemuimg = utils.CommandPath("qemu-img",
+                             "/usr/bin/qemu-img",)  # Fedora, EL6
 
 
 class FORMAT:
@@ -66,7 +65,7 @@ def info(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -95,7 +94,7 @@ def check(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -114,9 +113,9 @@ def convert(srcVolPath, dstVolPath, stop, srcFmt=None, dstFmt=None):
 
     cmd.append(dstVolPath)
 
-    (rc, out, err) = misc.watchCmd(cmd, stop=stop,
-                                   nice=misc.NICENESS.HIGH,
-                                   ioclass=misc.IOCLASS.IDLE)
+    (rc, out, err) = utils.watchCmd(cmd, stop=stop,
+                                    nice=utils.NICENESS.HIGH,
+                                    ioclass=utils.IOCLASS.IDLE)
 
     if rc != 0:
         raise QImgError(rc, out, err)

@@ -230,7 +230,7 @@ class BlockVolume(volume.Volume):
                 misc.ddWatchCopy(
                     "/dev/zero", vol_path, vars.task.aborting, int(size),
                     recoveryCallback=volume.baseAsyncTasksRollback)
-            except se.ActionStopped:
+            except utils.ActionStopped:
                 raise
             except Exception:
                 self.log.error("Unexpected error", exc_info=True)
@@ -683,7 +683,7 @@ def _postZero(sdUUID, volumes):
                     "/dev/zero", lvm.lvPath(sdUUID, lv.name),
                     vars.task.aborting, int(lv.size),
                     recoveryCallback=volume.baseAsyncTasksRollback)
-            except se.ActionStopped:
+            except utils.ActionStopped:
                 raise
             except Exception:
                 raise se.VolumesZeroingError(lv.name)

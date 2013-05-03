@@ -56,8 +56,8 @@ def ddWatchCopy(srcPath, dstPath, callback, dataLen):
 
 
 def watchCmd(cmd, stop, cwd=None, data=None, recoveryCallback=None):
-    ret, out, err = misc.watchCmd(cmd, stop, cwd=cwd, data=data,
-                                  recoveryCallback=recoveryCallback)
+    ret, out, err = utils.watchCmd(cmd, stop, cwd=cwd, data=data,
+                                   recoveryCallback=recoveryCallback)
 
     return ret, out, err
 
@@ -511,7 +511,7 @@ class DdWatchCopy(TestCaseBase):
                 os.mkfifo(src.name)
                 with tempfile.NamedTemporaryFile() as dst:
                     ddWatchCopy(src.name, dst.name, lambda: True, 100)
-        except misc.se.ActionStopped:
+        except utils.ActionStopped:
             self.log.info("Looks like it stopped!")
         else:
             self.fail("Copying didn't stop!")
@@ -936,7 +936,7 @@ class WatchCmd(TestCaseBase):
         sleepTime = "10"
         try:
             watchCmd([EXT_SLEEP, sleepTime], lambda: True)
-        except misc.se.ActionStopped:
+        except utils.ActionStopped:
             self.log.info("Looks like task stopped!")
         else:
             self.fail("watchCmd didn't stop!")

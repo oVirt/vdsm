@@ -67,4 +67,4 @@ dist_vdsmstorage_PYTHON = \
 	volume.py
 
 check-local:
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/storage_exception.py
+	PYTHONPATH="$(top_srcdir)/lib:$$PYTHONPATH" PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/storage_exception.py

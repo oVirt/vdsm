@@ -63,6 +63,36 @@ if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 
 
+class IOCLASS:
+    REALTIME = 1
+    BEST_EFFORT = 2
+    IDLE = 3
+
+
+class NICENESS:
+    NORMAL = 0
+    HIGH = 19
+
+
+class GeneralException(Exception):
+    code = 100
+    message = "General Exception"
+
+    def __init__(self, *value):
+        self.value = value
+
+    def __str__(self):
+        return "%s: %s" % (self.message, repr(self.value))
+
+    def response(self):
+        return {'status': {'code': self.code, 'message': str(self)}}
+
+
+class ActionStopped(GeneralException):
+    code = 443
+    message = "Action was stopped"
+
+
 def isBlockDevice(path):
     path = os.path.abspath(path)
     return stat.S_ISBLK(os.stat(path).st_mode)
@@ -451,6 +481,35 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
         err = err.splitlines(False)
 
     return (p.returncode, out, err)
+
+
+def stripNewLines(lines):
+    return [l[:-1] if l.endswith('\n') else l for l in lines]
+
+
+def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None,
+             nice=None, ioclass=None, execCmdLogger=logging.root):
+    """
+    Executes an external command, optionally via sudo with stop abilities.
+    """
+    proc = execCmd(command, sudo=False, cwd=cwd, data=data, sync=False,
+                   nice=nice, ioclass=ioclass, execCmdLogger=execCmdLogger)
+    if recoveryCallback:
+        recoveryCallback(proc)
+
+    if not proc.wait(cond=stop):
+        proc.kill()
+        raise ActionStopped()
+
+    out = stripNewLines(proc.stdout)
+    err = stripNewLines(proc.stderr)
+
+    execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
+                        {True: "SUCCESS", False: "FAILED"}
+                        [proc.returncode == 0],
+                        repr(err), proc.returncode)
+
+    return (proc.returncode, out, err)
 
 
 def checkPathStat(pathToCheck):

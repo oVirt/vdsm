@@ -204,7 +204,7 @@ def _zeroVolume(sdUUID, volUUID):
            "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
            "count=%s" % count]
     p = misc.execCmd(cmd, sudo=False, sync=False,
-                     nice=misc.NICENESS.HIGH, ioclass=misc.IOCLASS.IDLE)
+                     nice=utils.NICENESS.HIGH, ioclass=utils.IOCLASS.IDLE)
     return p
 
 
@@ -535,7 +535,7 @@ class BlockStorageDomain(sd.StorageDomain):
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
             path = lvm.lvPath(vgName, sd.OUTBOX)
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
-        except se.ActionStopped:
+        except utils.ActionStopped:
             raise
         except se.StorageException:
             raise se.VolumesZeroingError(path)

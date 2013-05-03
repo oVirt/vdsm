@@ -24,6 +24,7 @@ import sanlock
 
 import storage_exception as se
 from vdsm.config import config
+from vdsm.utils import ActionStopped
 from sdc import sdCache
 import outOfProcess as oop
 import volume
@@ -141,7 +142,7 @@ class FileVolume(volume.Volume):
                 # ddWatchCopy expects size to be in bytes
                 misc.ddWatchCopy("/dev/zero", volPath,
                                  vars.task.aborting, sizeBytes)
-            except se.ActionStopped:
+            except ActionStopped:
                 raise
             except Exception:
                 cls.log.error("Unexpected error", exc_info=True)
