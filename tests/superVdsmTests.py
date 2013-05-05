@@ -6,9 +6,7 @@ from vdsm import utils
 import os
 import uuid
 from vdsm import constants
-from storage import misc
 from monkeypatch import MonkeyPatch
-from time import sleep
 
 
 @utils.memoized
@@ -31,8 +29,10 @@ def monkeyStart(self):
                     self._authkey, str(os.getpid()),
                     self.pidfile, self.timestamp, self.address,
                     str(os.getuid())]
-    misc.execCmd(superVdsmCmd, sync=False, sudo=True)
-    sleep(2)
+    p = utils.execCmd(superVdsmCmd, sync=False, sudo=True)
+    p.wait(2)
+    if p.returncode:
+        utils.panic('executing supervdsm failed')
 
 
 class TestSuperVdsm(TestCaseBase):

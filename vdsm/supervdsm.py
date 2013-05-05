@@ -25,7 +25,6 @@ from multiprocessing.managers import BaseManager
 import logging
 import threading
 import uuid
-from time import sleep
 from errno import ENOENT, ESRCH
 
 import storage.misc as misc
@@ -129,14 +128,16 @@ class SuperVdsmProxy(object):
                         self.pidfile, self.timestamp, self.address,
                         str(os.getuid())]
 
-        misc.execCmd(superVdsmCmd, sync=False, sudo=True)
-        sleep(2)
+        p = utils.execCmd(superVdsmCmd, sync=False, sudo=True)
+        p.wait(2)
+        if p.returncode:
+            utils.panic('executing supervdsm failed')
 
     def kill(self):
         try:
             with open(self.pidfile, "r") as f:
                 pid = int(f.read().strip())
-            misc.execCmd([constants.EXT_KILL, "-9", str(pid)], sudo=True)
+            utils.execCmd([constants.EXT_KILL, "-9", str(pid)], sudo=True)
         except Exception:
             self._log.error("Could not kill old Super Vdsm %s",
                             exc_info=True)
