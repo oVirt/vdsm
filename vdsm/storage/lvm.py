@@ -51,7 +51,7 @@ LVM_DEFAULT_TTL = 100
 PV_FIELDS = ("uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,"
              "pe_alloc_count,mda_count,dev_size")
 VG_FIELDS = ("uuid,name,attr,size,free,extent_size,extent_count,free_count,"
-             "tags,vg_mda_size,vg_mda_free")
+             "tags,vg_mda_size,vg_mda_free,lv_count,pv_count,pv_name")
 LV_FIELDS = "uuid,name,vg_name,attr,size,seg_start_pe,devices,tags"
 
 VG_ATTR_BITS = ("permission", "resizeable", "exported",
@@ -229,6 +229,9 @@ def makeVG(*args):
     attrs = _attr2NamedTuple(args[VG._fields.index("attr")], VG_ATTR_BITS,
                              "VG_ATTR")
     args[VG._fields.index("attr")] = attrs
+    # Convert pv_names list to tuple.
+    args[VG._fields.index("pv_name")] = \
+        tuple(args[VG._fields.index("pv_name")])
     # Add properties. Should be ordered as VG_PROPERTIES.
     args.append(attrs.permission == "w")  # Writable
     args.append(VG_OK if attrs.partial == "-" else VG_PARTIAL)  # Partial
@@ -386,9 +389,22 @@ class LVMCache(object):
                 return dict(self._vgs)
 
             updatedVGs = {}
+            vgsFields = {}
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
+                uuid = fields[VG._fields.index("uuid")]
+                pvNameIdx = VG._fields.index("pv_name")
+                pv_name = fields[pvNameIdx]
+                if uuid not in vgsFields:
+                    fields[pvNameIdx] = [pv_name]  # Make a pv_names list
+                    vgsFields[uuid] = fields
+                else:
+                    vgsFields[uuid][pvNameIdx].append(pv_name)
+            for fields in vgsFields.itervalues():
                 vg = makeVG(*fields)
+                if vg.pv_count != len(vg.pv_name):
+                    log.error("vg %s has pv_count %d but pv_names %s",
+                              vg.name, vg.pv_count, vg.pv_name)
                 self._vgs[vg.name] = vg
                 updatedVGs[vg.name] = vg
             # If we updated all the VGs drop stale flag
@@ -1260,13 +1276,11 @@ def getFirstExt(vg, lv):
 
 
 def listPVNames(vgName):
-    pvs = getAllPVs()
-    vgPVs = [pv.name for pv in pvs if pv.vg_name == vgName]
-    if vgPVs == []:
-        _lvminfo._invalidateAllPvs()
-        pvs = getAllPVs()
-        vgPVs = [pv.name for pv in pvs if pv.vg_name == vgName]
-    return vgPVs
+    try:
+        pvNames = _lvminfo._vgs[vgName].pv_name
+    except (KeyError, AttributeError):
+        pvNames = getVG(vgName).pv_name
+    return pvNames
 
 
 def setrwLV(vg, lv, rw=True):

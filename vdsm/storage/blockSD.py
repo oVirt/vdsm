@@ -630,7 +630,7 @@ class BlockStorageDomain(sd.StorageDomain):
             raise se.MetaDataMappingError("vg %s: metadata extent is not the "
                                           "first extent" % vgName)
 
-        pvlist = lvm.listPVNames(vgName)
+        pvlist = list(lvm.listPVNames(vgName))
 
         pvlist.remove(firstDev)
         pvlist.insert(0, firstDev)
