@@ -1401,9 +1401,6 @@ class Global(APIBase):
     def getDeviceList(self, storageType=None):
         return self._irs.getDeviceList(storageType)
 
-    def getDeviceInfo(self, guid):
-        return self._irs.getDeviceInfo(guid)
-
     def getDevicesVisibility(self, guidList):
         return self._irs.getDevicesVisibility(guidList)
 

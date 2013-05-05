@@ -1147,23 +1147,6 @@
           'physicalblocksize': 'uint', 'partitioned': 'bool'}}
 
 ##
-# @Host.getDeviceInfo:
-#
-# Get information about a block device.
-#
-# @guid:  The globally unique identifier of the block device
-#
-# Returns:
-# Block device information
-#
-# Since: 4.10.0
-# XXX: Possibly missing 'options' parameter
-##
-{'command': {'class': 'Host', 'name': 'getDeviceInfo'},
- 'data': {'guid': 'UUID'},
- 'returns': 'BlockDeviceInfo'}
-
-##
 # @Host.getDeviceList:
 #
 # Get information about all block devices.

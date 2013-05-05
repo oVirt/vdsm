@@ -594,14 +594,6 @@ class service:
         pp.pprint(devices['devList'])
         return 0, ''
 
-    def getDeviceInfo(self, args):
-        guid = args[0]
-        info = self.s.getDeviceInfo(guid)
-        if info['status']['code']:
-            return info['status']['code'], info['status']['message']
-        pp.pprint(info["info"])
-        return 0, ''
-
     def getDevicesVisibility(self, args):
         devList = args[0].split(',')
         res = self.s.getDevicesVisibility(devList, {})
@@ -2010,10 +2002,6 @@ if __name__ == '__main__':
                           ('[storageType]',
                            'List of all block devices (optionally - matching '
                            'storageType).'
-                           )),
-        'getDeviceInfo': (serv.getDeviceInfo,
-                          ('<dev-guid>',
-                           'Get block storage device info.'
                            )),
         'getDevicesVisibility': (serv.getDevicesVisibility,
                                  ('<devlist>',

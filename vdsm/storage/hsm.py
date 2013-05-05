@@ -1977,38 +1977,6 @@ class HSM:
         return devices
 
     @public
-    def getDeviceInfo(self, guid, options={}):
-        """
-        Get info of block device.
-
-        :param guid: The GUID of the device you want to get info on.
-        :type guid: UUID
-        :param options: ?
-
-        :returns: Dict of all the info on the device.
-        :rtype: dict
-
-        :raises: :exc:`storage_exception.DeviceNotFound` if a device with that
-                 GUID doesn't exist.
-        """
-        vars.task.setDefaultException(
-            se.BlockDeviceActionError("GUID: %s" % guid))
-        # getSharedLock(connectionsResource...)
-        try:
-            devInfo = \
-                self._getDeviceList(
-                    guids=[guid],
-                    includePartitioned=options.get('includePartitioned',
-                                                   False))[0]
-            for p in devInfo["pathstatus"]:
-                if p.get("state", "error") == "active":
-                    return {"info": devInfo}
-
-            raise se.DeviceNotFound(str(guid))
-        except KeyError:
-            raise se.DeviceNotFound(str(guid))
-
-    @public
     def scanDevicesVisibility(self, guids):
         visible = lambda guid: (guid, os.path.exists(
                                 os.path.join("/dev/mapper", guid)))

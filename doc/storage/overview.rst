@@ -6,7 +6,6 @@ File Based
 ==========
 Device
 ------
-.. automethod:: vdsm.storage.hsm.HSM.getDeviceInfo
 .. automethod:: vdsm.storage.hsm.HSM.getDeviceList
 
 Volume

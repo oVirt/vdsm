@@ -1092,15 +1092,14 @@ class iSCSILoginError(StorageServeriSCSIError):
     message = "Failed to login to iSCSI node"
 
 
-# Not in use anymore
 class iSCSISetupError(StorageServeriSCSIError):
     code = 465
     message = "Failed to setup iSCSI subsystem"
 
 
-class DeviceNotFound(StorageException):
-    code = 466
-    message = "Device not found or not accessible"
+#class DeviceNotFound(StorageException):
+#    code = 466
+#    message = "Device not found or not accessible"
 
 
 class MultipathSetupError(StorageException):

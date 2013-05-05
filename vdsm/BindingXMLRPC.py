@@ -799,10 +799,6 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getDevicesVisibility(guids)
 
-    def deviceGetInfo(self, guid, options=None):
-        api = API.Global()
-        return api.getDeviceInfo(guid)
-
     def storageServerConnectionRefsAcquire(self, conRefArgs):
         return API.ConnectionRefs().acquire(conRefArgs)
 
@@ -944,7 +940,6 @@ class BindingXMLRPC(object):
                 (self.vgsGetList, 'getVGList'),
                 (self.devicesGetList, 'getDeviceList'),
                 (self.devicesGetVisibility, 'getDevicesVisibility'),
-                (self.deviceGetInfo, 'getDeviceInfo'),
                 (self.storageServerConnectionRefsAcquire,
                  'storageServer_ConnectionRefs_acquire'),
                 (self.storageServerConnectionRefsRelease,

@@ -285,7 +285,6 @@ command_info = {
     'Host_getAllTasksStatuses': {'ret': 'allTasksStatus'},
     'Host_getCapabilities': {'ret': 'info'},
     'Host_getConnectedStoragePools': {'ret': 'poollist'},
-    'Host_getDeviceInfo': {'ret': 'info'},
     'Host_getDeviceList': {'ret': 'devList'},
     'Host_getDevicesVisibility': {'ret': 'visibility'},
     'Host_getLVMVolumeGroups': {'ret': 'vglist'},
