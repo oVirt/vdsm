@@ -80,12 +80,13 @@ def run():
         log.handlers.append(logging.StreamHandler())
 
         pidfile = constants.P_VDSM_RUN + 'vdsmd.pid'
-        file(pidfile, 'w').write(str(os.getpid()) + "\n")
+        pid = str(os.getpid())
+        file(pidfile, 'w').write(pid + "\n")
         os.chmod(pidfile, 0664)
 
         sysname, nodename, release, version, machine = os.uname()
-        log.info('I am the actual vdsm %s %s (%s)',
-                 dsaversion.raw_version_revision, nodename, release)
+        log.info('(PID: %s) I am the actual vdsm %s %s (%s)',
+                 pid, dsaversion.raw_version_revision, nodename, release)
         serve_clients(log)
     except:
         log.error("Exception raised", exc_info=True)
