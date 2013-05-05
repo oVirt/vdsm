@@ -46,8 +46,7 @@ import subprocess
 import threading
 import time
 
-
-from betterPopen import BetterPopen
+from cpopen import CPopen as BetterPopen
 from config import config
 import constants
 

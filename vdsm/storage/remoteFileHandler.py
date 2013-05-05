@@ -34,7 +34,7 @@ from contextlib import contextmanager
 if __name__ != "__main__":
     # The following modules are not used by the newly spawned child porcess.
     # Do not import them in the child to save memory.
-    from betterPopen import BetterPopen
+    from cpopen import CPopen as BetterPopen
     from vdsm import constants
 else:
     # We add the parent directory so that imports that import the storage

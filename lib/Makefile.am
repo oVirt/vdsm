@@ -19,4 +19,4 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = vdsm betterPopen yajsonrpc
+SUBDIRS = vdsm cpopen yajsonrpc

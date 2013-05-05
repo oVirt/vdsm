@@ -21,20 +21,27 @@ import os
 import sys
 import subprocess
 from nose.plugins.skip import SkipTest
+import signal
+import threading
+import time
 
-from testrunner import VdsmTestCase as TestCaseBase
+from unittest import TestCase
 
 EXT_ECHO = "/bin/echo"
 
 if __name__ != "__main__":
     # This will not be available when we use this module as a subprocess
-    from cpopen import CPopen as BetterPopen
+    import glob
+    for p in glob.glob("build/*/"):
+        sys.path.append(p)
+
+    from cpopen import CPopen
 
 
-class TestBetterPopen(TestCaseBase):
+class TestCPopen(TestCase):
     def testEcho(self):
         data = "Hello"
-        p = BetterPopen([EXT_ECHO, "-n", data])
+        p = CPopen([EXT_ECHO, "-n", data])
         p.wait()
         self.assertTrue(p.returncode == 0,
                         "Process failed: %s" % os.strerror(p.returncode))
@@ -42,7 +49,7 @@ class TestBetterPopen(TestCaseBase):
 
     def testCat(self):
         path = "/etc/passwd"
-        p = BetterPopen(["cat", path])
+        p = CPopen(["cat", path])
         p.wait()
         self.assertTrue(p.returncode == 0,
                         "Process failed: %s" % os.strerror(p.returncode))
@@ -50,8 +57,8 @@ class TestBetterPopen(TestCaseBase):
             self.assertEquals(p.stdout.read(), f.read())
 
     def _subTest(self, name, params, *args, **kwargs):
-        p = BetterPopen(["python", __file__, name] + params,
-                        *args, **kwargs)
+        p = CPopen(["python", __file__, name] + params,
+                   *args, **kwargs)
         p.wait()
         self.assertTrue(p.returncode == 0,
                         "Process failed: %s" % os.strerror(p.returncode))
@@ -80,25 +87,25 @@ class TestBetterPopen(TestCaseBase):
 
     def testCwd(self):
         cwd = "/proc"
-        p = BetterPopen(["python", "-c", "import os; print os.getcwd()"],
-                        cwd=cwd)
+        p = CPopen(["python", "-c", "import os; print os.getcwd()"],
+                   cwd=cwd)
         p.wait()
         self.assertTrue(p.returncode == 0,
                         "Process failed: %s" % os.strerror(p.returncode))
         self.assertEquals(p.stdout.read().strip(), cwd)
 
     def testRunNonExecutable(self):
-        self.assertRaises(OSError, BetterPopen, ["/tmp"])
+        self.assertRaises(OSError, CPopen, ["/tmp"])
 
     def testBadCwd(self):
-        self.assertRaises(OSError, BetterPopen, ["echo", "hello"],
+        self.assertRaises(OSError, CPopen, ["echo", "hello"],
                           cwd="/~~~~~dasdas~~~~")
 
     def testUnicodeArg(self):
         data = u'hello'
         cmd = [EXT_ECHO, "-n", data]
 
-        p = BetterPopen(cmd)
+        p = CPopen(cmd)
         p.wait()
         p2 = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -114,7 +121,7 @@ class TestBetterPopen(TestCaseBase):
 
         cmd = [EXT_ECHO, "-n", data]
 
-        p = BetterPopen(cmd)
+        p = CPopen(cmd)
         p.wait()
         p2 = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -123,7 +130,7 @@ class TestBetterPopen(TestCaseBase):
 
     def testStdin(self):
         data = "Hello World"
-        p = BetterPopen(["cat"])
+        p = CPopen(["cat"])
         p.stdin.write(data)
         p.stdin.flush()
         p.stdin.close()
@@ -137,7 +144,7 @@ class TestBetterPopen(TestCaseBase):
         import select
 
         data = "Hello World"
-        p = BetterPopen(["cat"])
+        p = CPopen(["cat"])
         ep = select.epoll()
         ep.register(p.stdin, select.EPOLLOUT)
         fd, ev = ep.poll(1)[0]
@@ -149,6 +156,21 @@ class TestBetterPopen(TestCaseBase):
                         "Process failed: %s" % os.strerror(p.returncode))
 
         self.assertEquals(p.stdout.read(), data)
+
+    def testDeathSignal(self):
+        # This is done because assignment in python doesn't cross scopes
+        procPtr = [None]
+
+        def spawn():
+            procPtr[0] = CPopen(["sleep", "10"],
+                                deathSignal=signal.SIGKILL)
+
+        t = threading.Thread(target=spawn)
+        t.start()
+        t.join()
+        start = time.time()
+        procPtr[0].wait()
+        self.assertTrue(time.time() - start < 1)
 
 
 if __name__ == "__main__":

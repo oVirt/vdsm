@@ -195,7 +195,7 @@ AC_OUTPUT([
 	Makefile
 	client/Makefile
 	lib/Makefile
-	lib/betterPopen/Makefile
+	lib/cpopen/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/tool/Makefile
 	lib/yajsonrpc/Makefile

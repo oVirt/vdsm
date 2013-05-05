@@ -42,12 +42,14 @@ def createFloppyImage(size):
         f.write('\0')
 
     try:
-        rc, out, err = execCmd(['mkfs.ext2', "-F", path])
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            raise SkipTest("cannot execute mkfs.ext2")
-
-        raise
+        rc, out, err = execCmd(['/sbin/mkfs.ext2', "-F", path])
+    except OSError:
+        try:
+            rc, out, err = execCmd(['/usr/sbin/mkfs.ext2', "-F", path])
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                raise SkipTest("cannot execute mkfs.ext2")
+            raise
 
     if rc != 0:
         raise Exception("Could not format image", out, err)

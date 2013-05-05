@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/prctl.h>
 
 static PyObject *createProcess(PyObject *self, PyObject *args);
 static PyMethodDef CreateProcessMethods[];
@@ -38,13 +39,13 @@ CreateProcessMethods[] = {
 };
 
 PyMODINIT_FUNC
-initcreateprocess(void)
+initcpopen(void)
 {
     PyObject *m;
 
-    m = Py_InitModule("createprocess", CreateProcessMethods);
+    m = Py_InitModule("cpopen", CreateProcessMethods);
 
-    // In the future put other init code after this condition.
+    /* In the future put other init code after this condition. */
     if (m == NULL)
         return;
 }
@@ -183,6 +184,8 @@ static PyObject *
 createProcess(PyObject *self, PyObject *args)
 {
     int cpid;
+    int deathSignal = 0;
+    int rv;
 
     int outfd[2] = {-1, -1};
     int in1fd[2] = {-1, -1};
@@ -199,12 +202,12 @@ createProcess(PyObject *self, PyObject *args)
     char** argv = NULL;
     char** envp = NULL;
 
-    if (!PyArg_ParseTuple(args, "O!iiiiiiizO:createProcess;",
+    if (!PyArg_ParseTuple(args, "O!iiiiiiizOi:createProcess;",
                 &PyList_Type, &pyArgList, &close_fds,
                 &outfd[0], &outfd[1],
                 &in1fd[0], &in1fd[1],
                 &in2fd[0], &in2fd[1],
-                &cwd, &pyEnvList)) {
+                &cwd, &pyEnvList, &deathSignal)) {
         return NULL;
     }
 
@@ -253,6 +256,23 @@ try_fork:
         safeClose(in2fd[0]);
         safeClose(in2fd[1]);
         safeClose(errnofd[0]);
+
+        if (deathSignal) {
+            childErrno = prctl(PR_SET_PDEATHSIG, deathSignal);
+            if (childErrno < 0) {
+                childErrno = errno;
+            }
+            /* Check that parent did not already die between fork and us
+             * setting the death signal */
+            if (write(errnofd[1], &childErrno, sizeof(int)) < sizeof(int)) {
+                exit(-1);
+            }
+
+            if (childErrno != 0) {
+                exit(-1);
+            }
+        }
+
         if (setCloseOnExec(errnofd[1]) < 0) {
             goto sendErrno;
         }
@@ -288,9 +308,37 @@ sendErrno:
 
     safeClose(errnofd[1]);
     errnofd[1] = -1;
+
+    if (deathSignal) {
+        /* death signal sync point */
+        while (1) {
+            rv = read(errnofd[0], &childErrno, sizeof(int));
+            if (rv < 0) {
+                switch (errno) {
+                    case EINTR:
+                    case EAGAIN:
+                        break;
+                    default:
+                        PyErr_SetString(PyExc_OSError, strerror(childErrno));
+                        goto fail;
+
+                }
+            } else if (rv < sizeof(int)) {
+                PyErr_SetString(PyExc_OSError, strerror(childErrno));
+                goto fail;
+            }
+            break;
+        }
+
+        if (childErrno != 0) {
+            PyErr_SetString(PyExc_OSError, strerror(childErrno));
+            goto fail;
+        }
+    }
+
+    /* error sync point */
     if (read(errnofd[0], &childErrno, sizeof(int)) == sizeof(int)) {
-        errno = childErrno;
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_SetString(PyExc_OSError, strerror(childErrno));
         goto fail;
     }
 

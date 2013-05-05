@@ -53,7 +53,7 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	client \
-	lib/betterPopen/*.py \
+	lib/cpopen/*.py \
 	lib/vdsm/*.py \
 	lib/vdsm/*.py.in \
 	tests \

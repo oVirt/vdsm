@@ -200,6 +200,7 @@ BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-xmlrpc = %{version}-%{release}
+Requires: %{name}-python-cpopen
 
 %description cli
 Call VDSM commands from the command line. Used for testing and debugging.
@@ -209,6 +210,8 @@ Summary:        VDSM xmlrpc API
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-python-cpopen
+
 
 %description xmlrpc
 An XMLRPC interface for interacting with vdsmd. Primary control interface for
@@ -262,6 +265,15 @@ Requires: openssl
 %description reg
 VDSM registration package. Used to register a Linux host to a Virtualization
 Manager.
+
+%package python-cpopen
+Summary: Creates a sub-process in simpler safer manner.
+
+BuildRequires: python2-devel
+
+%description python-cpopen
+Python package for creating sub-process in simpler and safer manner by using C
+code.
 
 %package python
 Summary:        VDSM python libraries
@@ -940,8 +952,6 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{python_sitearch}/%{vdsm_name}/utils.py*
 %{python_sitearch}/%{vdsm_name}/vdscli.py*
-%{python_sitearch}/betterPopen/__init__.py*
-%{python_sitearch}/betterPopen/createprocess.so
 %{python_sitearch}/%{vdsm_name}/tool/__init__.py*
 %if 0%{?with_systemd}
 %exclude %{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*
@@ -1171,7 +1181,16 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*
 %endif
 
+%files python-cpopen
+%{python_sitearch}/cpopen/cpopen.so*
+%{python_sitearch}/cpopen/__init__.py*
+
+%attr(755, root, root) %{python_sitearch}/cpopen/cpopen.so*
+
 %changelog
+* Sun Apr 07 2013 Yaniv Bronhaim <ybronhei@redhat.com> - 4.9.0-1
+- Adding cpopen package
+
 * Wed Oct 12 2011 Federico Simoncelli <fsimonce@redhat.com> - 4.9.0-0
 - Initial upstream release
 

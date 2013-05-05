@@ -18,26 +18,29 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-betterpopendir = $(pyexecdir)/betterPopen
+cpopendir = $(pyexecdir)/cpopen
 
-dist_betterpopen_PYTHON = \
-	__init__.py
+dist_cpopen_PYTHON = \
+	__init__.py \
+	cpopen.so \
+	$(NULL)
 
-createprocess.so:
+cpopen.so: cpopen.c setup.py
 	(cd $(srcdir); $(PYTHON) setup.py build \
 		--build-temp $(abs_builddir) --build-lib $(abs_builddir))
 
-all-local: createprocess.so
+all-local: \
+        $(dist_cpopen_PYTHON)
 
-install-data-local:
-	$(MKDIR_P) $(DESTDIR)$(betterpopendir)
-	$(INSTALL_PROGRAM) createprocess.so \
-		$(DESTDIR)$(betterpopendir)/createprocess.so
+install-data:
+	$(MKDIR_P) $(DESTDIR)$(cpopendir)
+	$(INSTALL_PROGRAM) cpopen.so \
+		$(DESTDIR)$(cpopendir)/cpopen.so
 
 EXTRA_DIST = \
-	createprocess.c \
+	cpopen.c \
 	setup.py
 
 CLEANFILES = \
-	createprocess.o \
-	createprocess.so
+	cpopen.o \
+	cpopen.so
