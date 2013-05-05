@@ -296,50 +296,36 @@ def setVdsConf(configStr, confFile):
         This function changes local configuration according to the
         given 'key=value;' string.
     """
-    fReturn = True
     logging.debug("setVdsConf: started. config:" + str(configStr))
     if not configStr:
         logging.debug("setVdsConf: nothing to set.")
-        return True
+        return
 
     if not os.path.exists(confFile):
-        strMessage = escapeXML("File " + confFile + "does not exist.")
-        print "<BSTRAP component='VDS Configuration' status='FAIL' message='" \
-            + strMessage + "'/>"
-        logging.debug("setVdsConf: " + strMessage)
-        return False
+        logging.debug("setVdsConf does not exist: " + confFile)
+        raise RuntimeError("File " + confFile + "does not exist.")
 
-    try:
-        new_config_params = {}
-        config_params = configStr.split(';')
-        for item in config_params:
-            key = item.split('=')[0].strip()
-            val = item.split('=')[1].strip()
-            new_config_params[key] = val
+    new_config_params = {}
+    config_params = configStr.split(';')
+    for item in config_params:
+        key = item.split('=')[0].strip()
+        val = item.split('=')[1].strip()
+        new_config_params[key] = val
 
-        for key in new_config_params.keys():
-            val = new_config_params[key]
-            logging.debug("setVdsConf: setting Key=" + str(key) + " to val=" +
-                          str(val))
-            _updateFileLine(confFile, key, val)
-            #_logExec([EX_SED, "-i", "s:^\s*"+key+"\s*=.*:"+key+"="+val+":",
-            #         confFile])
+    for key in new_config_params.keys():
+        val = new_config_params[key]
+        logging.debug("setVdsConf: setting Key=" + str(key) + " to val=" +
+                      str(val))
+        _updateFileLine(confFile, key, val)
+        #_logExec([EX_SED, "-i", "s:^\s*"+key+"\s*=.*:"+key+"="+val+":",
+        #         confFile])
 
-        if isOvirt():
-            # save the updated file
-            logging.debug("setVdsConf: saving new config file")
-            ovirtfunctions.ovirt_store_config(confFile)
-
-        print "<BSTRAP component='VDS Configuration' status='OK'/>"
-    except Exception as e:
-        msg = escapeXML(str(e))
-        print "<BSTRAP component='VDS Configuration' status='FAIL' " \
-            "message='%s'/>" % (msg)
-        logging.debug("setVdsConf: exception " + msg)
-        fReturn = False
+    if isOvirt():
+        # save the updated file
+        logging.debug("setVdsConf: saving new config file")
+        ovirtfunctions.ovirt_store_config(confFile)
 
     logging.debug("setVdsConf: ended.")
-    return fReturn
 
 
 def getMachineUUID():

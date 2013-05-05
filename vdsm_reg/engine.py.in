@@ -119,9 +119,13 @@ def write_vdsm_config(engineHost, enginePort):
     else:
         log("Agent configuration files already exist.")
 
-    if deployUtil.setVdsConf(
-            "vdc_host_name=%s" % engineHost, VDSM_REG_CONFIG):
+    try:
+        deployUtil.setVdsConf(
+            "vdc_host_name=%s" % engineHost, VDSM_REG_CONFIG)
         log("The @ENGINENAME@'s address is set: %s\n" % engineHost)
+    except Exception, err:
+        log("deployUtil.setVdsConf() failed, err %s\n" % err)
+
     if enginePort != "":
         if deployUtil.setVdsConf(
                 "vdc_host_port=%s" % str(enginePort), VDSM_REG_CONFIG):

@@ -71,7 +71,13 @@ def main():
             fOK = deployUtil.cleanAll(rnum)
 
         if fOK:
-            fOK = deployUtil.setVdsConf(vds_config_str, VDSM_CONF_FILE)
+            try:
+                deployUtil.setVdsConf(vds_config_str, VDSM_CONF_FILE)
+                print "<BSTRAP component='VDS Configuration' status='OK'/>"
+            except Exception, err:
+                fOK = False
+                print "<BSTRAP component='VDS Configuration' status='FAIL' " \
+                        "message='%s'/>" % deployUtil.escapeXML(str(err))
 
         if fOK:
             deployUtil.setService("vdsmd", "reconfigure")
