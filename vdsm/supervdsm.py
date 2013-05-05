@@ -202,7 +202,7 @@ class SuperVdsmProxy(object):
             # more time than expected.
             utils.retry(self._connect, Exception, timeout=60, tries=3)
         except:
-            misc.panic("Couldn't connect to supervdsm")
+            utils.panic("Couldn't connect to supervdsm")
 
     def __getattr__(self, name):
         return ProxyCaller(self, name)

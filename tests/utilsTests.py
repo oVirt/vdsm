@@ -75,3 +75,8 @@ class CommandPathTests(TestCaseBase):
             self.assertEquals(e.errno, errno.ENOENT)
             self.assertTrue(NAME in e.strerror,
                             msg='%s not in %s' % (NAME, e.strerror))
+
+
+class GeneralUtilsTests(TestCaseBase):
+    def testPanic(self):
+        self.assertRaises(AssertionError, utils.panic, "panic test")

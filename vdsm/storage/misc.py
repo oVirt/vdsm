@@ -159,12 +159,6 @@ def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[],
     return result
 
 
-def panic(msg):
-    log.error("Panic: %s", msg, exc_info=True)
-    os.killpg(0, 9)
-    sys.exit(-3)
-
-
 execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'),
                               ignoreSourceFiles=[__file__],
                               logSkipName="Storage.Misc.excCmd")

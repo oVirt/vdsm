@@ -36,6 +36,7 @@ import functools
 import glob
 import io
 import logging
+import sys
 import os
 import pwd
 import select
@@ -813,3 +814,9 @@ def retry(func, expectedException=Exception, tries=None,
                 raise
 
             time.sleep(sleep)
+
+
+def panic(msg):
+    logging.error("Panic: %s", msg, exc_info=True)
+    os.killpg(0, 9)
+    sys.exit(-3)

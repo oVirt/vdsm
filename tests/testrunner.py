@@ -24,6 +24,8 @@ import unittest
 from functools import wraps
 import re
 
+from vdsm import utils
+
 from nose import config
 from nose import core
 from nose import result
@@ -305,6 +307,11 @@ def findRemove(listR, value):
         return False
 
 
+def panicMock(msg):
+    msg = "Panic: %s" % (msg)
+    raise AssertionError(msg)
+
+
 if __name__ == '__main__':
     if "--help" in sys.argv:
         print("testrunner options:\n"
@@ -313,4 +320,7 @@ if __name__ == '__main__':
     if findRemove(sys.argv, "--local-modules"):
         from vdsm import constants
         constants.P_VDSM = "../"
+
+    # Mock panic() calls for tests
+    utils.panic = panicMock
     run()
