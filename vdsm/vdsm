@@ -42,10 +42,12 @@ def serve_clients(log):
 
     def sigtermHandler(signum, frame):
         if cif:
+            log.debug("Received signal %s" % signum)
             cif.prepareForShutdown()
 
     def sigusr1Handler(signum, frame):
         if cif and cif.irs:
+            log.debug("Received signal %s" % signum)
             cif.irs.spmStop(
                 cif.irs.getConnectedStoragePoolsList()['poollist'][0])
 
