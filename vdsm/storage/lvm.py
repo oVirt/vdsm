@@ -628,13 +628,6 @@ def invalidateCache():
     _lvminfo.invalidateCache()
 
 
-def _vgmknodes(vg):
-    cmd = ["vgmknodes", vg]
-    rc, out, err = _lvminfo.cmd(cmd)
-    if rc != 0:
-        raise se.VolumeGroupActionError("vgmknodes %s failed" % (vg))
-
-
 def _fqpvname(pv):
     if pv and not pv.startswith(PV_PREFIX):
         pv = os.path.join(PV_PREFIX, pv)
