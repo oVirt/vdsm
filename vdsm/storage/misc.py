@@ -172,7 +172,7 @@ class IOCLASS:
 
 class NICENESS:
     NORMAL = 0
-    LOW = 19
+    HIGH = 19
 
 
 execCmd = partial(logskip("Storage.Misc.excCmd")(utils.execCmd),
@@ -362,12 +362,12 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
             cmd.append("oflag=%s" % oflag)
 
         if not stop:
-            (rc, out, err) = execCmd(cmd, sudo=False, nice=NICENESS.LOW,
+            (rc, out, err) = execCmd(cmd, sudo=False, nice=NICENESS.HIGH,
                                      ioclass=IOCLASS.IDLE)
         else:
             (rc, out, err) = watchCmd(cmd, stop=stop,
                                       recoveryCallback=recoveryCallback,
-                                      nice=NICENESS.LOW, ioclass=IOCLASS.IDLE)
+                                      nice=NICENESS.HIGH, ioclass=IOCLASS.IDLE)
 
         if rc:
             raise se.MiscBlockWriteException(dst, offset, size)

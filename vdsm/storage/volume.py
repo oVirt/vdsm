@@ -1013,7 +1013,7 @@ def qemuRebase(src, srcFormat, backingFile,
     (rc, out, err) = misc.watchCmd(cmd, stop=stop, cwd=cwd,
                                    recoveryCallback=recoveryCallback,
                                    ioclass=misc.IOCLASS.IDLE,
-                                   nice=misc.NICENESS.LOW)
+                                   nice=misc.NICENESS.HIGH)
 
     log.debug('(qemuRebase): REBASE %s DONE' % (src))
     return (rc, out, err)
@@ -1041,7 +1041,7 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
         (rc, out, err) = misc.watchCmd(cmd, stop=stop,
                                        recoveryCallback=baseAsyncTasksRollback,
                                        ioclass=misc.IOCLASS.IDLE,
-                                       nice=misc.NICENESS.LOW)
+                                       nice=misc.NICENESS.HIGH)
 
     log.debug('(qemuConvert): COPY %s to %s DONE' % (src, dst))
     return (rc, out, err)

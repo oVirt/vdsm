@@ -204,7 +204,7 @@ def _zeroVolume(sdUUID, volUUID):
            "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
            "count=%s" % count]
     p = misc.execCmd(cmd, sudo=False, sync=False,
-                     nice=misc.NICENESS.LOW, ioclass=misc.IOCLASS.IDLE)
+                     nice=misc.NICENESS.HIGH, ioclass=misc.IOCLASS.IDLE)
     return p
 
 

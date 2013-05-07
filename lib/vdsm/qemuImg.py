@@ -115,7 +115,7 @@ def convert(srcVolPath, dstVolPath, stop, srcFmt=None, dstFmt=None):
     cmd.append(dstVolPath)
 
     (rc, out, err) = misc.watchCmd(cmd, stop=stop,
-                                   nice=misc.NICENESS.LOW,
+                                   nice=misc.NICENESS.HIGH,
                                    ioclass=misc.IOCLASS.IDLE)
 
     if rc != 0:
