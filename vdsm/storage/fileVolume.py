@@ -39,6 +39,8 @@ META_FILEEXT = ".meta"
 LEASE_FILEEXT = ".lease"
 LEASE_FILEOFFSET = 0
 
+BLOCK_SIZE = volume.BLOCK_SIZE
+
 
 def getDomUuidFromVolumePath(volPath):
     # Volume path has pattern:
@@ -120,7 +122,7 @@ class FileVolume(volume.Volume):
         properly handled and logged in volume.create()
         """
 
-        sizeBytes = int(size) * 512
+        sizeBytes = int(size) * BLOCK_SIZE
 
         if preallocate == volume.SPARSE_VOL:
             # Sparse = regular file
@@ -403,14 +405,14 @@ class FileVolume(volume.Volume):
         self.setMetaParam(volume.IMAGE, imgUUID)
 
     @classmethod
-    def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
+    def getVSize(cls, sdobj, imgUUID, volUUID, bs=BLOCK_SIZE):
         imagePath = image.Image(sdobj._getRepoPath()).getImageDir(
             sdobj.sdUUID, imgUUID)
         volPath = os.path.join(imagePath, volUUID)
         return int(sdobj.oop.os.stat(volPath).st_size / bs)
 
     @classmethod
-    def getVTrueSize(cls, sdobj, imgUUID, volUUID, bs=512):
+    def getVTrueSize(cls, sdobj, imgUUID, volUUID, bs=BLOCK_SIZE):
         return sdobj.produceVolume(imgUUID, volUUID).getVolumeTrueSize(bs)
 
     @classmethod
@@ -535,20 +537,20 @@ class FileVolume(volume.Volume):
         if not self.oop.fileUtils.pathExists(metaVolumePath):
             raise se.VolumeDoesNotExist(self.volUUID)
 
-    def getVolumeSize(self, bs=512):
+    def getVolumeSize(self, bs=BLOCK_SIZE):
         """
         Return the volume size in blocks
         """
         volPath = self.getVolumePath()
         return int(int(self.oop.os.stat(volPath).st_size) / bs)
 
-    def getVolumeTrueSize(self, bs=512):
+    def getVolumeTrueSize(self, bs=BLOCK_SIZE):
         """
         Return the size of the storage allocated for this volume
         on underlying storage
         """
         volPath = self.getVolumePath()
-        return int(int(self.oop.os.stat(volPath).st_blocks) * 512 / bs)
+        return int(int(self.oop.os.stat(volPath).st_blocks) * BLOCK_SIZE / bs)
 
     def getVolumeMtime(self):
         """

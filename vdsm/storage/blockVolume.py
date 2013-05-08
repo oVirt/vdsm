@@ -50,9 +50,10 @@ VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_MD,
                TAG_PREFIX_MDNUMBLKS]
 
+BLOCK_SIZE = volume.BLOCK_SIZE
 
 # volume meta data block size
-VOLUME_METASIZE = 512
+VOLUME_METASIZE = BLOCK_SIZE
 VOLUME_MDNUMBLKS = 1
 
 # Reserved leases for special purposes:
@@ -93,7 +94,7 @@ class BlockVolume(volume.Volume):
         lvm.refreshLV(self.sdUUID, self.volUUID)
 
     @classmethod
-    def getVSize(cls, sdobj, imgUUID, volUUID, bs=512):
+    def getVSize(cls, sdobj, imgUUID, volUUID, bs=BLOCK_SIZE):
         """ Returns size in block units.
 
         Returns the largest integer value less than or equal to size [blocks].
@@ -587,7 +588,7 @@ class BlockVolume(volume.Volume):
 
         sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
 
-    def getVolumeSize(self, bs=512):
+    def getVolumeSize(self, bs=BLOCK_SIZE):
         """
         Return the volume size in blocks
         """

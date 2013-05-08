@@ -92,6 +92,11 @@ log = logging.getLogger('Storage.Volume')
 
 FMT2STR = {COW_FORMAT: 'qcow2', RAW_FORMAT: 'raw'}
 
+# At the moment this is static and it has been introduced to group all the
+# previous implicit references to the block size in FileVolume. In the future
+# it will depend on the storage domain.
+BLOCK_SIZE = 512
+
 
 def fmt2str(format):
     return FMT2STR[format]
@@ -320,7 +325,7 @@ class Volume(object):
         pass
 
     @classmethod
-    def getVSize(cls, sdUUID, imgUUID, volUUID, bs=512):
+    def getVSize(cls, sdUUID, imgUUID, volUUID, bs=BLOCK_SIZE):
         """
         Return volume size
         """
@@ -328,7 +333,7 @@ class Volume(object):
         return mysd.getVolumeClass().getVSize(mysd, imgUUID, volUUID, bs)
 
     @classmethod
-    def getVTrueSize(cls, sdUUID, imgUUID, volUUID, bs=512):
+    def getVTrueSize(cls, sdUUID, imgUUID, volUUID, bs=BLOCK_SIZE):
         """
         Return allocated volume size
         """
@@ -807,7 +812,7 @@ class Volume(object):
         try:
             meta = self.getMetadata()
             info = self.metadata2info(meta)
-            info["capacity"] = str(int(info["size"]) * 512)
+            info["capacity"] = str(int(info["size"]) * BLOCK_SIZE)
             del info["size"]
             # Get the image actual size on disk
             vsize = self.getVolumeSize(bs=1)
@@ -897,14 +902,14 @@ class Volume(object):
                            (self.volUUID, key, value))
             raise
 
-    def getVolumeTrueSize(self, bs=512):
+    def getVolumeTrueSize(self, bs=BLOCK_SIZE):
         """
         Return the size of the storage allocated for this volume
         on underlying storage
         """
         pass
 
-    def getVolumeParams(self, bs=512):
+    def getVolumeParams(self, bs=BLOCK_SIZE):
         volParams = {}
         volParams['volUUID'] = self.volUUID
         volParams['imgUUID'] = self.getImage()
