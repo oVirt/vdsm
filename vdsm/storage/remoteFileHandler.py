@@ -334,7 +334,7 @@ def directWriteLines(path, lines):
         return f.writelines(lines)
 
 
-def createSparseFile(path, size, mode=None):
+def truncateFile(path, size, mode=None):
     with open(path, "w") as f:
         if mode is not None:
             os.chmod(path, mode)
@@ -398,7 +398,7 @@ if __name__ == "__main__":
 
         try:
             server = CrabRPCServer(myRead, myWrite)
-            for func in (writeLines, readLines, createSparseFile, echo, sleep,
+            for func in (writeLines, readLines, truncateFile, echo, sleep,
                          directWriteLines, directReadLines, simpleWalk,
                          directTouch):
 

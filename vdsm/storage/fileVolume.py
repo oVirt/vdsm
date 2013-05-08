@@ -136,7 +136,7 @@ class FileVolume(volume.Volume):
 
         if preallocate == volume.SPARSE_VOL:
             # Sparse = regular file
-            oop.getProcessPool(dom.sdUUID).createSparseFile(volPath, sizeBytes)
+            oop.getProcessPool(dom.sdUUID).truncateFile(volPath, sizeBytes)
         else:
             try:
                 # ddWatchCopy expects size to be in bytes
@@ -385,8 +385,7 @@ class FileVolume(volume.Volume):
                       "metaId=%s", volUUID, sdUUID, metaId)
         volPath, = metaId
         leasePath = cls.__leaseVolumePath(volPath)
-        oop.getProcessPool(sdUUID).createSparseFile(leasePath,
-                                                    LEASE_FILEOFFSET)
+        oop.getProcessPool(sdUUID).truncateFile(leasePath, LEASE_FILEOFFSET)
         cls.file_setrw(leasePath, rw=True)
         sanlock.init_resource(sdUUID, volUUID, [(leasePath,
                                                  LEASE_FILEOFFSET)])

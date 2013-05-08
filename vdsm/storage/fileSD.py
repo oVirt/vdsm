@@ -202,7 +202,7 @@ class FileStorageDomain(sd.StorageDomain):
 
         for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
             try:
-                procPool.createSparseFile(
+                procPool.truncateFile(
                     os.path.join(metadataDir, metaFile), 0, 0660)
             except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
