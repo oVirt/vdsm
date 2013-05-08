@@ -52,8 +52,6 @@ TIMESTAMP = os.path.join(constants.P_VDSM_RUN, "svdsm.time")
 ADDRESS = os.path.join(constants.P_VDSM_RUN, "svdsm.sock")
 SUPERVDSM = __supervdsmServerPath()
 
-extraPythonPathList = []
-
 
 class _SuperVdsmManager(BaseManager):
     pass
@@ -100,6 +98,7 @@ class SuperVdsmProxy(object):
         # Declaration of public variables that keep files' names that svdsm
         # uses. We need to be able to change these variables so that running
         # tests doesn't disturb and already running VDSM on the host.
+        self.extraCmd = None
         self.setIPCPaths(PIDFILE, TIMESTAMP, ADDRESS)
 
     def setIPCPaths(self, pidfile, timestamp, address):
@@ -127,6 +126,9 @@ class SuperVdsmProxy(object):
                         self._authkey, str(os.getpid()),
                         self.pidfile, self.timestamp, self.address,
                         str(os.getuid())]
+
+        if self.extraCmd:
+            superVdsmCmd.insert(0, self.extraCmd)
 
         p = utils.execCmd(superVdsmCmd, sync=False, sudo=True)
         p.wait(2)

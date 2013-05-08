@@ -4,9 +4,6 @@ import testValidation
 import tempfile
 from vdsm import utils
 import os
-import uuid
-from vdsm import constants
-from monkeypatch import MonkeyPatch
 
 
 @utils.memoized
@@ -20,21 +17,6 @@ def getNeededPythonPath():
     return pyPath
 
 
-def monkeyStart(self):
-    self._authkey = str(uuid.uuid4())
-    self._log.debug("Launching Super Vdsm")
-
-    superVdsmCmd = [getNeededPythonPath(), constants.EXT_PYTHON,
-                    supervdsm.SUPERVDSM,
-                    self._authkey, str(os.getpid()),
-                    self.pidfile, self.timestamp, self.address,
-                    str(os.getuid())]
-    p = utils.execCmd(superVdsmCmd, sync=False, sudo=True)
-    p.wait(2)
-    if p.returncode:
-        utils.panic('executing supervdsm failed')
-
-
 class TestSuperVdsm(TestCaseBase):
     def setUp(self):
         testValidation.checkSudo(['python', supervdsm.SUPERVDSM])
@@ -46,6 +28,7 @@ class TestSuperVdsm(TestCaseBase):
         self.addfd, address = tempfile.mkstemp()
 
         self._proxy.setIPCPaths(pidfile, timestamp, address)
+        self._proxy.extraCmd = getNeededPythonPath()
 
     def tearDown(self):
         supervdsm.extraPythonPathList = []
@@ -53,12 +36,10 @@ class TestSuperVdsm(TestCaseBase):
             os.close(fd)
         self._proxy.kill()  # cleanning old temp files
 
-    @MonkeyPatch(supervdsm.SuperVdsmProxy, '_start', monkeyStart)
     def testIsSuperUp(self):
         self._proxy.ping()  # this call initiate svdsm
         self.assertTrue(self._proxy.isRunning())
 
-    @MonkeyPatch(supervdsm.SuperVdsmProxy, '_start', monkeyStart)
     def testKillSuper(self):
         self._proxy.ping()
         self._proxy.kill()
@@ -66,7 +47,6 @@ class TestSuperVdsm(TestCaseBase):
         self._proxy.ping()  # Launching vdsm after kill
         self.assertTrue(self._proxy.isRunning())
 
-    @MonkeyPatch(supervdsm.SuperVdsmProxy, '_start', monkeyStart)
     def testNoPidFile(self):
         self._proxy.ping()  # svdsm is up
         self.assertTrue(self._proxy.isRunning())
