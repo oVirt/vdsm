@@ -455,7 +455,11 @@ class ConfigWriter(object):
     @classmethod
     def clearBackups(cls):
         """ Clear backup files """
-        shutil.rmtree(netinfo.NET_CONF_BACK_DIR, ignore_errors=True)
+        for fpath in glob.iglob(netinfo.NET_CONF_BACK_DIR + "*"):
+            if os.path.isdir(fpath):
+                shutil.rmtree(fpath)
+            else:
+                os.remove(fpath)
 
     @classmethod
     def ifcfgPorts(cls, network):
