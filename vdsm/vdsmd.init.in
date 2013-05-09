@@ -162,8 +162,6 @@ start_needed_srv() {
             fi
         fi
     done
-
-    @SERVICE_PATH@ iscsid force-start
 }
 
 test_lo() {
