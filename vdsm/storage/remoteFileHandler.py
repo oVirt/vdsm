@@ -227,7 +227,9 @@ class PoolHandler(object):
             # Some imports in vdsm assume /usr/share/vdsm is in your PYTHONPATH
             env = os.environ.copy()
             env['PYTHONPATH'] = "%s:%s" % (
-                constants.P_VDSM, env.get("PYTHONPATH", ""))
+                env.get("PYTHONPATH", ""), constants.P_VDSM)
+            env['PYTHONPATH'] = ":".join(map(os.path.abspath,
+                                             env['PYTHONPATH'].split(":")))
             self.process = BetterPopen([constants.EXT_PYTHON, __file__,
                                        str(hisRead), str(hisWrite)],
                                        close_fds=False, env=env)
