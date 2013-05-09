@@ -72,6 +72,9 @@ class _EchoServer(object):
 
 @expandPermutations
 class ReactorTests(TestCaseBase):
+    @brokentest("We sometime see: "
+                "AssertionError: Data is not as expected "
+                "'Lorem ipsu...o eiusmod ' != 'Lorem ipsu... eiusmod t'")
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def test(self, reactorType):
         data = dummyTextGenerator(((2 ** 10) * 200))
