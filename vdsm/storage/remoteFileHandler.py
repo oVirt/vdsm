@@ -217,6 +217,8 @@ class CrabRPCProxy(object):
 
 
 class PoolHandler(object):
+    log = logging.getLogger("RepoFileHelper.PoolHandler")
+
     def __init__(self):
         myRead, hisWrite = os.pipe()
         hisRead, myWrite = os.pipe()
@@ -245,6 +247,15 @@ class PoolHandler(object):
             os.kill(self.process.pid, signal.SIGKILL)
         except:
             pass
+
+        self.process.poll()
+        # Don't try to read if the process is in D state
+        if (self.process.returncode is not None and
+                self.process.returncode != 0):
+            err = self.process.stderr.read()
+            out = self.process.stdout.read()
+            self.log.debug("Pool handler existed, OUT: '%s' ERR: '%s'",
+                           out, err)
 
         try:
             zombieReaper.autoReapPID(self.process.pid)
