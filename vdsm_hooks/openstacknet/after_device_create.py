@@ -29,7 +29,9 @@ import hooking
 from openstacknet_consts import DEV_MAX_LENGTH
 from openstacknet_consts import DUMMY_BRIDGE
 from openstacknet_consts import OPENSTACK_NET_PROVIDER_TYPE
+from openstacknet_consts import PLUGIN_TYPE_KEY
 from openstacknet_consts import PROVIDER_TYPE_KEY
+from openstacknet_consts import PT_BRIDGE
 from openstacknet_consts import VNIC_ID_KEY
 from vdsm.constants import EXT_BRCTL
 
@@ -49,7 +51,9 @@ def main():
         return
 
     providerType = os.environ[PROVIDER_TYPE_KEY]
-    if providerType == OPENSTACK_NET_PROVIDER_TYPE:
+    pluginType = os.environ[PLUGIN_TYPE_KEY]
+    if (providerType == OPENSTACK_NET_PROVIDER_TYPE and
+       pluginType == PT_BRIDGE):
         vNicId = os.environ[VNIC_ID_KEY]
         sys.stderr.write('Removing vNIC %s from %s for provider type %s'
                          % (vNicId, DUMMY_BRIDGE, providerType))

@@ -6,6 +6,9 @@ from vdsm.netinfo import DUMMY_BRIDGE
 PROVIDER_TYPE_KEY = 'provider_type'
 OPENSTACK_NET_PROVIDER_TYPE = 'OPENSTACK_NETWORK'
 VNIC_ID_KEY = 'vnic_id'
+PLUGIN_TYPE_KEY = 'plugin_type'
+PT_BRIDGE = 'LINUX_BRIDGE'
+PT_OVS = 'OPEN_VSWITCH'
 
 # The maximum device name length in Linux
 DEV_MAX_LENGTH = 14
