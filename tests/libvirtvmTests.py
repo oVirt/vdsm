@@ -338,7 +338,9 @@ class TestLibvirtvm(TestCaseBase):
             {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
              'name': 'vda', 'format': 'cow', 'device': 'disk',
              'path': '/tmp/disk1.img', 'type': 'disk', 'readonly': 'False',
-             'shared': 'True', 'serial': SERIAL},
+             'shared': 'True', 'serial': SERIAL,
+             'specParams': {'ioTune': {'read_bytes_sec': 6120000,
+                                       'total_iops_sec': 800}}},
 
             {'index': '0', 'propagateErrors': 'off', 'iface': 'virtio',
              'name': 'vda', 'format': 'raw', 'device': 'disk',
@@ -362,6 +364,10 @@ class TestLibvirtvm(TestCaseBase):
                 <serial>%s</serial>
                 <driver cache="writethrough" error_policy="enospace"
                         io="threads" name="qemu" type="qcow2"/>
+                <iotune>
+                    <read_bytes_sec>6120000</read_bytes_sec>
+                    <total_iops_sec>800</total_iops_sec>
+                </iotune>
             </disk>""",
 
             """
@@ -382,3 +388,39 @@ class TestLibvirtvm(TestCaseBase):
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = blockDev
             self.assertXML(drive.getXML(), xml % SERIAL)
+
+    def testIoTuneException(self):
+        SERIAL = '54-a672-23e5b495a9ea'
+        basicConf = {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
+                     'name': 'vda', 'format': 'cow', 'device': 'disk',
+                     'path': '/tmp/disk1.img', 'type': 'disk',
+                     'readonly': 'False', 'shared': 'True', 'serial': SERIAL}
+        tuneConfs = [
+            {'read_iops_sec': 1000, 'total_iops_sec': 2000},
+            {'read_bytes_sec': -5},
+            {'aaa': 100},
+            {'read_iops_sec': 'aaa'}]
+
+        devConfs = [dict(specParams=dict(ioTune=tuneConf), **basicConf)
+                    for tuneConf in tuneConfs]
+
+        expectedExceptMsgs = [
+            'A non-zero total value and non-zero read/write value for'
+            ' iops_sec can not be set at the same time',
+            'parameter read_bytes_sec value should be equal or greater'
+            ' than zero',
+            'parameter aaa name is invalid',
+            'an integer is required for ioTune parameter read_iops_sec']
+
+        vmConf = {'custom': {'viodiskcache': 'writethrough'}}
+
+        for (devConf, exceptionMsg) in \
+                zip(devConfs, expectedExceptMsgs):
+            drive = vm.Drive(vmConf, self.log, **devConf)
+            # Patch Drive.blockDev to skip the block device checking.
+            drive._blockDev = False
+
+            with self.assertRaises(Exception) as cm:
+                drive.getXML()
+
+            self.assertEquals(cm.exception.args[0], exceptionMsg)

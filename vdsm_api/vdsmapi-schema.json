@@ -1879,15 +1879,43 @@
           'VmDeviceVirtioSerialAddress']}
 
 ##
+# @VmDiskDeviceIoTuneParams:
+#
+# I/O tune parameters for the VM disk device.
+#
+# @total_bytes_sec: #optional Total throughput limit in bytes per second.
+#
+# @read_bytes_sec:  #optional Read throughput limit in bytes per second.
+#
+# @write_bytes_sec: #optional Write throughput limit in bytes per second.
+#
+# @total_iops_sec:  #optional Total I/O operations limit per second.
+#
+# @read_iops_sec:   #optional Read I/O operations limit per second.
+#
+# @write_iops_sec:  #optional Write I/O operations limit per second.
+#
+# Since: 4.10.0
+##
+{'type': 'VmDiskDeviceIoTuneParams',
+ 'data': {'*total_bytes_sec': 'uint', '*read_bytes_sec': 'uint',
+          '*write_bytes_sec': 'uint', '*total_iops_sec': 'uint',
+          '*read_iops_sec': 'uint', '*write_iops_sec': 'uint'}}
+
+##
 # @VmDiskDeviceSpecParams:
 #
 # Extra parameters for VM disk devices.
 #
-# @path:  #optional The filesystem path to the disk image
+# @path:    #optional The filesystem path to the disk image
+#
+# @ioTune:  #optional Additional IO tune parameters
 #
 # Since: 4.10.0
 ##
-{'type': 'VmDiskDeviceSpecParams', 'data': {'*path': 'str'}}
+{'type': 'VmDiskDeviceSpecParams',
+ 'data': {'*path': 'str'
+          '*ioTune': 'VmDiskDeviceIoTuneParams'}}
 
 ##
 # @VmDiskDeviceVolumeChainEntry:

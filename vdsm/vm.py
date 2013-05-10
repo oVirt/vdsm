@@ -1381,6 +1381,39 @@ class Drive(VmDevice):
     def isVdsmImage(self):
         return getattr(self, 'poolID', False)
 
+    def _checkIoTuneCategories(self):
+        categories = ("bytes", "iops")
+        ioTuneParamsInfo = self.specParams['ioTune']
+        for category in categories:
+            if ioTuneParamsInfo.get('total_' + category + '_sec', 0) and \
+                    (ioTuneParamsInfo.get('read_' + category + '_sec', 0) or
+                     ioTuneParamsInfo.get('write_' + category + '_sec', 0)):
+                raise ValueError('A non-zero total value and non-zero'
+                                 ' read/write value for %s_sec can not be'
+                                 ' set at the same time' % category)
+
+    def _validateIoTuneParams(self):
+        ioTuneParams = ('total_bytes_sec', 'read_bytes_sec',
+                        'write_bytes_sec', 'total_iops_sec',
+                        'write_iops_sec', 'read_iops_sec')
+        for key, value in self.specParams['ioTune'].iteritems():
+            try:
+                if key in ioTuneParams:
+                    self.specParams['ioTune'][key] = int(value)
+                    if self.specParams['ioTune'][key] >= 0:
+                        continue
+                else:
+                    raise Exception('parameter %s name is invalid' % key)
+            except ValueError as e:
+                e.args = ('an integer is required for ioTune'
+                          ' parameter %s' % key,) + e.args[1:]
+                raise
+            else:
+                raise ValueError('parameter %s value should be'
+                                 ' equal or greater than zero' % key)
+
+        self._checkIoTuneCategories()
+
     def getXML(self):
         """
         Create domxml for disk/cdrom/floppy.
@@ -1455,6 +1488,13 @@ class Drive(VmDevice):
                 not utils.getUserPermissions(constants.QEMU_PROCESS_USER,
                                              self.path)['write']):
                 diskelem.appendChildWithArgs('readonly')
+
+        if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
+            self._validateIoTuneParams()
+            iotune = XMLElement('iotune')
+            for key, value in self.specParams['ioTune'].iteritems():
+                iotune.appendChildWithArgs(key, text=str(value))
+            diskelem.appendChild(iotune)
 
         return diskelem
 
