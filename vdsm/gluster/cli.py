@@ -403,7 +403,7 @@ def _parseVolumeProfileInfo(tree, nfs):
 
 
 @makePublic
-def volumeInfo(volumeName=None):
+def volumeInfo(volumeName=None, remoteServer=None):
     """
     Returns:
         {VOLUMENAME: {'brickCount': BRICKCOUNT,
@@ -416,6 +416,8 @@ def volumeInfo(volumeName=None):
                       'volumeType': TYPE}, ...}
     """
     command = _getGlusterVolCmd() + ["info"]
+    if remoteServer:
+        command += ['--remote-host=%s' % remoteServer]
     if volumeName:
         command.append(volumeName)
     try:

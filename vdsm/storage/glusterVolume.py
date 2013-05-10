@@ -2,6 +2,7 @@ from volume import VmVolumeInfo
 import fileVolume
 from sdc import sdCache
 import supervdsm as svdsm
+from gluster.exception import GlusterException
 
 
 class GlusterVolume(fileVolume.FileVolume):
@@ -24,8 +25,17 @@ class GlusterVolume(fileVolume.FileVolume):
 
         # Extract the volume's transport using gluster cli
         svdsmProxy = svdsm.getProxy()
-        volInfo = svdsmProxy.glusterVolumeInfo(volname)
-        volTrans = VOLUME_TRANS_MAP[volInfo[volname]['transportType'][0]]
+
+        try:
+            volInfo = svdsmProxy.glusterVolumeInfo(volname, volfileServer)
+            volTrans = VOLUME_TRANS_MAP[volInfo[volname]['transportType'][0]]
+        except GlusterException:
+            # In case of issues with finding transport type, default to tcp
+            self.log.warning("Unable to find transport type for GlusterFS"
+                             " volume %s. GlusterFS server = %s."
+                             "Defaulting to tcp",
+                             (volname, volfileServer), exc_info=True)
+            volTrans = VOLUME_TRANS_MAP['TCP']
 
         # Use default port
         volPort = "0"
