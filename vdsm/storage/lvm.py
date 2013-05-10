@@ -1259,7 +1259,12 @@ def getFirstExt(vg, lv):
 
 def listPVNames(vgName):
     pvs = getAllPVs()
-    return [pv.name for pv in pvs if pv.vg_name == vgName]
+    vgPVs = [pv.name for pv in pvs if pv.vg_name == vgName]
+    if vgPVs == []:
+        _lvminfo._invalidateAllPvs()
+        pvs = getAllPVs()
+        vgPVs = [pv.name for pv in pvs if pv.vg_name == vgName]
+    return vgPVs
 
 
 def setrwLV(vg, lv, rw=True):
