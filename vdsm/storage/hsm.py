@@ -2540,7 +2540,18 @@ class HSM:
         vars.task.setDefaultException(
             se.StoragePoolActionError("spUUID=%s" % spUUID))
         vars.task.getSharedLock(STORAGE, spUUID)
-        return self.getPool(spUUID).getInfo()
+        pool = self.getPool(spUUID)
+        poolInfo = pool.getInfo()
+        doms = pool.getDomains()
+        domInfo = self._getDomsStats(pool.domainMonitor, doms)
+        for sdUUID in doms.iterkeys():
+            if domInfo[sdUUID]['isoprefix']:
+                    poolInfo['isoprefix'] = domInfo[sdUUID]['isoprefix']
+                    break
+        else:
+            poolInfo['isoprefix'] = ''  # No ISO domain found
+
+        return dict(info=poolInfo, dominfo=domInfo)
 
     @public
     def createStorageDomain(self, storageType, sdUUID, domainName,
@@ -3559,6 +3570,97 @@ class HSM:
         pool._upgradePool(targetDomVersion)
         return {"upgradeStatus": "started"}
 
+    def _getDomsStats(self, domainMonitor, doms):
+        domInfo = {}
+        repoStats = self._getRepoStats(domainMonitor)
+
+        for sdUUID, sdStatus in doms.iteritems():
+            # Return statistics for active domains only
+            domInfo[sdUUID] = {'status': sdStatus, 'alerts': []}
+
+            if sdStatus != sd.DOM_ACTIVE_STATUS or sdUUID not in repoStats:
+                continue
+
+            domInfo[sdUUID]['version'] = repoStats[sdUUID]['result']['version']
+
+            # For unreachable domains repoStats will return disktotal and
+            # diskfree as None.
+            if (repoStats[sdUUID]['disktotal'] is not None
+                    and repoStats[sdUUID]['diskfree'] is not None):
+                domInfo[sdUUID]['disktotal'] = repoStats[sdUUID]['disktotal']
+                domInfo[sdUUID]['diskfree'] = repoStats[sdUUID]['diskfree']
+
+            if not repoStats[sdUUID]['mdavalid']:
+                domInfo[sdUUID]['alerts'].append({
+                    'code': se.SmallVgMetadata.code,
+                    'message': se.SmallVgMetadata.message,
+                })
+                self.log.warning("VG %s's metadata size too small %s",
+                                 sdUUID, repoStats[sdUUID]['mdasize'])
+
+            if not repoStats[sdUUID]['mdathreshold']:
+                domInfo[sdUUID]['alerts'].append({
+                    'code': se.VgMetadataCriticallyFull.code,
+                    'message': se.VgMetadataCriticallyFull.message,
+                })
+                self.log.warning("VG %s's metadata size exceeded critical "
+                                 "size: mdasize=%s mdafree=%s", sdUUID,
+                                 repoStats[sdUUID]['mdasize'],
+                                 repoStats[sdUUID]['mdafree'])
+
+            isoprefix = repoStats[sdUUID]['isoprefix']
+            domInfo[sdUUID]['isoprefix'] = \
+                isoprefix if isoprefix is not None else ''
+
+        return domInfo
+
+    def _getRepoStats(self, domainMonitor):
+        repoStats = {}
+        statsGenTime = time.time()
+
+        for sdUUID in domainMonitor.monitoredDomains:
+            domStatus = domainMonitor.getStatus(sdUUID)
+
+            if domStatus.error is None:
+                code = 0
+            elif isinstance(domStatus.error, se.StorageException):
+                code = domStatus.error.code
+            else:
+                code = se.StorageException.code
+
+            disktotal, diskfree = domStatus.diskUtilization
+            vgmdtotal, vgmdfree = domStatus.vgMdUtilization
+            lastcheck = '%.1f' % (statsGenTime - domStatus.lastCheck)
+
+            repoStats[sdUUID] = {
+                'finish': domStatus.lastCheck,
+
+                'result': {
+                    'code': code,
+                    'lastCheck': lastcheck,
+                    'delay': str(domStatus.readDelay),
+                    'valid': (domStatus.error is None),
+                    'version': domStatus.version,
+                },
+
+                'disktotal': disktotal,
+                'diskfree': diskfree,
+
+                'mdavalid': domStatus.vgMdHasEnoughFreeSpace,
+                'mdathreshold': domStatus.vgMdFreeBelowThreashold,
+                'mdasize': vgmdtotal,
+                'mdafree': vgmdfree,
+
+                'masterValidate': {
+                    'mount': domStatus.masterMounted,
+                    'valid': domStatus.masterValid
+                },
+
+                'isoprefix': domStatus.isoPrefix,
+            }
+
+        return repoStats
+
     @public
     def repoStats(self, options=None):
         """
@@ -3571,7 +3673,7 @@ class HSM:
         result = {}
 
         for p in self.pools.values():
-            repo_stats = p.getRepoStats()
+            repo_stats = self._getRepoStats(p.domainMonitor)
 
             for d in repo_stats:
                 result[d] = repo_stats[d]['result']
