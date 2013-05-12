@@ -1712,7 +1712,7 @@
 ##
 # @Host.getStorageRepoStats:
 #
-# Get statistics and liveness of currently attached Storage Domains.
+# Get statistics and liveness of currently monitored Storage Domains.
 #
 # Returns:
 # Statistics for all storage domains
@@ -1721,6 +1721,40 @@
 ##
 {'command': {'class': 'Host', 'name': 'getStorageRepoStats'},
  'returns': 'StorageDomainVitalsMap'}
+
+##
+# @Host.startMonitoringDomain:
+#
+# Start SD monitoring with hostID
+#
+# @SdUUID:        The Storage Domain UUID
+#
+# @HostID:        A host ID number in the Storage Domain Lockspace
+#
+# Returns:
+# None
+#
+# Since: 4.12.2
+##
+{'command': {'class': 'Host', 'name': 'startMonitoringDomain'},
+ 'data': {'SdUUID': 'UUID', 'HostID': 'int' }
+ 'returns': ''}
+
+##
+# @Host.stopMonitoringDomain:
+#
+# Stop SD monitoring with hostID
+#
+# @SdUUID:        The Storage Domain UUID
+#
+# Returns:
+# None
+#
+# Since: 4.12.2
+##
+{'command': {'class': 'Host', 'name': 'stopMonitoringDomain'},
+ 'data': {'SdUUID': 'UUID' }
+ 'returns': ''}
 
 ##
 # @VmStatus:

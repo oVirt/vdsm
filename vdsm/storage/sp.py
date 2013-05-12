@@ -51,7 +51,6 @@ from storageConstants import STORAGE
 import resourceManager as rm
 import volume
 import mount
-from domainMonitor import DomainMonitor
 
 POOL_MASTER_DOMAIN = 'mastersd'
 
@@ -112,9 +111,8 @@ class StoragePool(Securable):
     storage_repository = config.get('irs', 'repository')
     _poolsTmpDir = config.get('irs', 'pools_data_dir')
     lvExtendPolicy = config.get('irs', 'vol_extend_policy')
-    monitorInterval = config.getint('irs', 'sd_health_check_delay')
 
-    def __init__(self, spUUID, taskManager):
+    def __init__(self, spUUID, domainMonitor, taskManager):
         Securable.__init__(self)
 
         self._formatConverter = DefaultFormatConverter()
@@ -131,7 +129,7 @@ class StoragePool(Securable):
         self.spmMailer = None
         self.masterDomain = None
         self.spmRole = SPM_FREE
-        self.domainMonitor = DomainMonitor(self.monitorInterval)
+        self.domainMonitor = domainMonitor
         self._upgradeCallback = partial(StoragePool._upgradePoolDomain,
                                         proxy(self))
 
@@ -702,7 +700,8 @@ class StoragePool(Securable):
 
     @unsecured
     def stopMonitoringDomains(self):
-        self.domainMonitor.close()
+        for sdUUID in self.getDomains():
+            self.domainMonitor.stopMonitoring(sdUUID)
         return True
 
     @unsecured
@@ -1542,13 +1541,15 @@ class StoragePool(Securable):
     @unsecured
     @misc.samplingmethod
     def updateMonitoringThreads(self):
-        # domain list it's list of sdUUID:status
-        # sdUUID1:status1,sdUUID2:status2,...
+        # getDomains() returns a dict of {sdUUID:status}
+        # {sdUUID1: status1, sdUUID2: status2, ...}
         self.invalidateMetadata()
-        activeDomains = self.getDomains(activeOnly=True)
+        poolDoms = self.getDomains()
+        activeDomains = tuple(sdUUID for sdUUID in poolDoms
+                              if poolDoms[sdUUID] == sd.DOM_ACTIVE_STATUS)
         monitoredDomains = self.domainMonitor.monitoredDomains
 
-        for sdUUID in monitoredDomains:
+        for sdUUID in poolDoms:
             if sdUUID not in activeDomains:
                 try:
                     self.domainMonitor.stopMonitoring(sdUUID)

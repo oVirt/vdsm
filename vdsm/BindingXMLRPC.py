@@ -787,6 +787,14 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getStorageRepoStats()
 
+    def startMonitoringDomain(self, sdUUID, hostID, options=None):
+        api = API.Global()
+        return api.startMonitoringDomain(sdUUID, hostID)
+
+    def stopMonitoringDomain(self, sdUUID, options=None):
+        api = API.Global()
+        return api.stopMonitoringDomain(sdUUID)
+
     def vgsGetList(self, storageType=None, options=None):
         api = API.Global()
         return api.getLVMVolumeGroups(storageType)
@@ -937,6 +945,8 @@ class BindingXMLRPC(object):
                 (self.domainsGetList, 'getStorageDomainsList'),
                 (self.poolsGetConnectedList, 'getConnectedStoragePoolsList'),
                 (self.storageRepoGetStats, 'repoStats'),
+                (self.startMonitoringDomain, 'startMonitoringDomain'),
+                (self.stopMonitoringDomain, 'stopMonitoringDomain'),
                 (self.vgsGetList, 'getVGList'),
                 (self.devicesGetList, 'getDeviceList'),
                 (self.devicesGetVisibility, 'getDevicesVisibility'),

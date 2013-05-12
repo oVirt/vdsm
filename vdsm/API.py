@@ -1396,6 +1396,12 @@ class Global(APIBase):
     def getStorageRepoStats(self):
         return self._irs.repoStats()
 
+    def startMonitoringDomain(self, sdUUID, hostID):
+        return self._irs.startMonitoringDomain(sdUUID, hostID)
+
+    def stopMonitoringDomain(self, sdUUID):
+        return self._irs.stopMonitoringDomain(sdUUID)
+
     def getLVMVolumeGroups(self, storageType=None):
         return self._irs.getVGList(storageType)
 

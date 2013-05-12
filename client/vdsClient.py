@@ -1692,6 +1692,16 @@ class service:
             print 'Domain %s %s' % (d, str(stats[d]))
         return 0, ''
 
+    def startMonitoringDomain(self, args):
+        sdUUID, hostID = args
+        status = self.s.startMonitoringDomain(sdUUID, hostID)
+        return status['status']['code'], status['status']['message']
+
+    def stopMonitoringDomain(self, args):
+        sdUUID, = args
+        status = self.s.stopMonitoringDomain(sdUUID)
+        return status['status']['code'], status['status']['message']
+
     def snapshot(self, args):
         vmUUID, sdUUID, imgUUID, baseVolUUID, volUUID = args
 
@@ -2466,8 +2476,16 @@ if __name__ == '__main__':
                       )),
         'repoStats': (serv.repoStats,
                       ('',
-                       'Get the the health status of the active domains'
+                       'Get the health status of the monitored domains'
                        )),
+        'startMonitoringDomain': (serv.startMonitoringDomain,
+                                  ('<sdUUID> <hostID>',
+                                   'Start SD: sdUUID monitoring with hostID'
+                                   )),
+        'stopMonitoringDomain': (serv.stopMonitoringDomain,
+                                 ('<sdUUID>',
+                                  'Stop monitoring SD: sdUUID'
+                                  )),
         'snapshot': (serv.snapshot,
                      ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
                       'Take a live snapshot'

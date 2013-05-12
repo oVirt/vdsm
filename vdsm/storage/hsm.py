@@ -40,6 +40,7 @@ import stat
 
 from vdsm.config import config
 import sp
+import domainMonitor
 import sd
 import blockSD
 import nfsSD
@@ -93,6 +94,8 @@ SECTOR_SIZE = 512
 STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_LIB, "connections/")
 
 QEMU_READABLE_TIMEOUT = 30
+
+HSM_DOM_MON_LOCK = "HsmDomainMonitorLock"
 
 
 def public(f=None, **kwargs):
@@ -398,6 +401,9 @@ class HSM:
                                                 name="storageRefresh")
         storageRefreshThread.daemon = True
         storageRefreshThread.start()
+
+        monitorInterval = config.getint('irs', 'sd_health_check_delay')
+        self.domainMonitor = domainMonitor.DomainMonitor(monitorInterval)
 
     @public
     def registerDomainStateChangeCallback(self, callbackFunc):
@@ -971,9 +977,8 @@ class HSM:
         for dom in sorted(domList):
             vars.task.getExclusiveLock(STORAGE, dom)
 
-        return sp.StoragePool(
-            spUUID, self.taskMng).create(poolName, masterDom, domList,
-                                         masterVersion, leaseParams)
+        return sp.StoragePool(spUUID, self.domainMonitor, self.taskMng).create(
+            poolName, masterDom, domList, masterVersion, leaseParams)
 
     @public
     def connectStoragePool(self, spUUID, hostID, scsiKey,
@@ -1003,8 +1008,10 @@ class HSM:
                 "spUUID=%s, msdUUID=%s, masterVersion=%s, hostID=%s, "
                 "scsiKey=%s" % (spUUID, msdUUID, masterVersion,
                                 hostID, scsiKey)))
-        return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID,
-                                        masterVersion, options)
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
+                                      rm.LockType.exclusive):
+            return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID,
+                                            masterVersion, options)
 
     def _connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID,
                             masterVersion, options=None):
@@ -1048,7 +1055,7 @@ class HSM:
                                      masterVersion=masterVersion)
                 return
 
-            pool = sp.StoragePool(spUUID, self.taskMng)
+            pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
             if not hostID or not scsiKey or not msdUUID or not masterVersion:
                 hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
             res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
@@ -1103,8 +1110,10 @@ class HSM:
 
     def _disconnectPool(self, pool, hostID, scsiKey, remove):
         self.validateNotSPM(pool.spUUID)
-        res = pool.disconnect()
-        del self.pools[pool.spUUID]
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
+                                      rm.LockType.exclusive):
+            res = pool.disconnect()
+            del self.pools[pool.spUUID]
         return res
 
     @public
@@ -1854,7 +1863,7 @@ class HSM:
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
-            pool = sp.StoragePool(spUUID, self.taskMng)
+            pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
         else:
             raise se.StoragePoolConnected(spUUID)
 
@@ -3494,14 +3503,12 @@ class HSM:
                 if self.pools[spUUID].hsmMailer:
                     self.pools[spUUID].hsmMailer.stop()
 
-                # Stop repoStat threads
-                for pool in self.pools.values():
-                    try:
-                        pool.stopMonitoringDomains()
-                    except Exception:
-                        self.log.warning("Failed to stop RepoStats thread",
-                                         exc_info=True)
-                        continue
+            # Stop repoStat threads
+            try:
+                self.domainMonitor.close()
+            except Exception:
+                self.log.warning("Failed to stop RepoStats thread",
+                                 exc_info=True)
 
             self.taskMng.prepareForShutdown()
         except:
@@ -3672,10 +3679,23 @@ class HSM:
         """
         result = {}
 
-        for p in self.pools.values():
-            repo_stats = self._getRepoStats(p.domainMonitor)
+        repo_stats = self._getRepoStats(self.domainMonitor)
 
-            for d in repo_stats:
-                result[d] = repo_stats[d]['result']
+        for d in repo_stats:
+            result[d] = repo_stats[d]['result']
 
         return result
+
+    @deprecated
+    @public
+    def startMonitoringDomain(self, sdUUID, hostID, options=None):
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
+                                      rm.LockType.exclusive):
+            self.domainMonitor.startMonitoring(sdUUID, int(hostID))
+
+    @deprecated
+    @public
+    def stopMonitoringDomain(self, sdUUID, options=None):
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
+                                      rm.LockType.exclusive):
+            self.domainMonitor.stopMonitoring(sdUUID)
