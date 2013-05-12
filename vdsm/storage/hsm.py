@@ -330,9 +330,6 @@ class HSM:
         self.storage_repository = config.get('irs', 'repository')
         self.sd_validate_timeout = config.getint('irs', 'sd_validate_timeout')
         self.taskMng = taskManager.TaskManager()
-        self._domstats = {}
-        self._cachedStats = {}
-        self._statslock = threading.Lock()
 
         mountBasePath = os.path.join(self.storage_repository,
                                      sd.DOMAIN_MNT_POINT)
