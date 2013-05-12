@@ -1496,26 +1496,28 @@ class StoragePool(Securable):
             raise se.StoragePoolMasterNotFound(self.spUUID, msdUUID)
 
         try:
-            poolInfo = {
-                'type': msdInfo['type'],
-                'name': self.getDescription(),
-                'domains': domainListEncoder(self.getDomains()),
-                'master_uuid': msdUUID,
-                'master_ver': self.getMasterVersion(),
-                'lver': self.getMetaParam(PMDK_LVER),
-                'spm_id': self.getSpmId(),
-                'pool_status': 'uninitialized',
-                'version': str(self.getVersion()),
-                'isoprefix': '',
-            }
+            pmd = self._getPoolMD(self.masterDomain)
         except Exception:
             self.log.error("Pool metadata error", exc_info=True)
             raise se.StoragePoolActionError(self.spUUID)
 
+        poolInfo = {
+            'type': msdInfo['type'],
+            'name': pmd[PMDK_POOL_DESCRIPTION],
+            'domains': domainListEncoder(pmd[PMDK_DOMAINS]),
+            'master_uuid': self.masterDomain.sdUUID,
+            'master_ver': pmd[PMDK_MASTER_VER],
+            'lver': pmd[PMDK_LVER],
+            'spm_id': pmd[PMDK_SPM_ID],
+            'pool_status': 'uninitialized',
+            'version': str(msdInfo['version']),
+            'isoprefix': '',
+        }
+
         domInfo = {}
         repoStats = self.getRepoStats()
 
-        for sdUUID, sdStatus in self.getDomains().iteritems():
+        for sdUUID, sdStatus in pmd[PMDK_DOMAINS].iteritems():
             # Return statistics for active domains only
             domInfo[sdUUID] = {'status': sdStatus, 'alerts': []}
 
