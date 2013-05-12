@@ -2737,17 +2737,29 @@ class HSM:
         # BC) so it's not that horrible. In any case please
         # remove this when we can stop supporting this API.
         info.update({'lver': -1, 'spm_id': -1, 'master_ver': 0})
-        if dom.getDomainRole() == sd.MASTER_DOMAIN:
-            # make sure it's THE master
+        if info['role'] == sd.MASTER_DOMAIN:
             try:
-                pool = self.getPool(dom.getPools()[0])
-                if pool.masterDomain.sdUUID == sdUUID:
-                    poolInfo = pool.getInfo()
-                    for key in ['lver', 'spm_id', 'master_ver']:
-                        info[key] = poolInfo['info'][key]
+                # Verify that the host is connected to the same pool which
+                # the SD is attached to.
+                pool = self.getPool(info['pool'][0])
+            except IndexError:
+                self.log.error("Domain %s is marked as master but is not "
+                               "attached to any pool", sdUUID)
             except se.StoragePoolUnknown:
-                # Its pool is not connected
-                pass
+                current = self.pools.keys()[0].spUUID if self.pools else None
+                self.log.error("Domain %s, marked as master, is attached to "
+                               "pool %s but this host is connected to pool %s",
+                               sdUUID, info['pool'], current, exc_info=True)
+            else:
+                # make sure it's THE master of this pool
+                if pool.masterDomain.sdUUID != sdUUID:
+                    self.log.warn("Domain %s is marked as master but actual "
+                                  "master is %s",
+                                  sdUUID, pool.masterDomain.sdUUID)
+                else:
+                    poolInfo = pool.getInfo()
+                    for key in ('lver', 'spm_id', 'master_ver'):
+                        info[key] = poolInfo[key]
 
         return dict(info=info)
 
