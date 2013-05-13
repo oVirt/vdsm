@@ -62,13 +62,6 @@ def getSysfsPath(devName):
     return sysfsPath
 
 
-def _parseDevFile(devFilePath):
-    with open(devFilePath, "r") as f:
-        mj, mn = f.readline().split(":")
-
-    return (int(mj), int(mn))
-
-
 def getSlaves(deviceName):
     mpName = resolveDevName(deviceName)
     sysfsPath = getSysfsPath(mpName)
@@ -77,12 +70,6 @@ def getSlaves(deviceName):
 
 def getDevName(dmId):
     nameFilePath = os.path.join(getSysfsPath(dmId), "dm", "name")
-    with open(nameFilePath, "r") as f:
-        return f.readline().rstrip("\n")
-
-
-def getDevUuid(dmId):
-    nameFilePath = os.path.join(getSysfsPath(dmId), "dm", "uuid")
     with open(nameFilePath, "r") as f:
         return f.readline().rstrip("\n")
 
