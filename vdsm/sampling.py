@@ -34,6 +34,7 @@ import errno
 import ethtool
 
 from vdsm import utils
+from vdsm import netinfo
 from vdsm.constants import P_VDSM_RUN
 from vdsm.config import config
 
@@ -500,14 +501,11 @@ class HostStatsThread(StatsThread):
         StatsThread.stop(self)
 
     def _updateIfRates(self, hs0, hs1):
-        # from vdsm import netinfo only after it imported utils
-        from vdsm.netinfo import speed as nicspeed
-
         i = 0
         for ifid in self._ifids:
             if (hs0.interfaces[ifid].operstate !=
                     hs1.interfaces[ifid].operstate):
-                self._ifrates[i] = nicspeed(ifid)
+                self._ifrates[i] = netinfo.speed(ifid)
             i += 1
 
     def sample(self):
