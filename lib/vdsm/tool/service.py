@@ -61,6 +61,7 @@ _srvStartAlts = []
 _srvStopAlts = []
 _srvStatusAlts = []
 _srvRestartAlts = []
+_srvReloadAlts = []
 _srvDisableAlts = []
 
 
@@ -107,6 +108,11 @@ else:
         return execCmd(cmd)
 
     @_systemctlNative
+    def _systemctlReload(srvName):
+        cmd = [_SYSTEMCTL.cmd, "reload", srvName]
+        return execCmd(cmd)
+
+    @_systemctlNative
     def _systemctlDisable(srvName):
         cmd = [_SYSTEMCTL.cmd, "disable", srvName]
         return execCmd(cmd)
@@ -115,6 +121,7 @@ else:
     _srvStopAlts.append(_systemctlStop)
     _srvStatusAlts.append(_systemctlStatus)
     _srvRestartAlts.append(_systemctlRestart)
+    _srvReloadAlts.append(_systemctlReload)
     _srvDisableAlts.append(_systemctlDisable)
 
 
@@ -161,6 +168,11 @@ else:
         _initctlStop(srvName)
         return _initctlStart(srvName)
 
+    def _initctlReload(srvName):
+        cmd = [_INITCTL.cmd, "reload", srvName]
+        rc, out, err = execCmd(cmd)
+        return (rc, out, err)
+
     def _initctlDisable(srvName):
         if not os.path.isfile("/etc/init/%s.conf" % srvName):
             return 1, "", ""
@@ -172,6 +184,7 @@ else:
     _srvStopAlts.append(_initctlStop)
     _srvStatusAlts.append(_initctlStatus)
     _srvRestartAlts.append(_initctlRestart)
+    _srvReloadAlts.append(_initctlReload)
     _srvDisableAlts.append(_initctlDisable)
 
 
@@ -200,9 +213,14 @@ else:
         cmd = [_SERVICE.cmd, srvName, "restart"]
         return execCmd(cmd)
 
+    def _serviceReload(srvName):
+        cmd = [_SERVICE.cmd, srvName, "reload"]
+        return execCmd(cmd)
+
     _srvStartAlts.append(_serviceStart)
     _srvStopAlts.append(_serviceStop)
     _srvRestartAlts.append(_serviceRestart)
+    _srvReloadAlts.append(_serviceReload)
     _srvStatusAlts.append(_serviceStatus)
 
 
@@ -279,6 +297,14 @@ def service_restart(srvName):
     Restart a system service
     """
     return _runAlts(_srvRestartAlts, srvName)
+
+
+@expose("service-reload")
+def service_reload(srvName):
+    """
+    Notify a system service to reload configurations
+    """
+    return _runAlts(_srvReloadAlts, srvName)
 
 
 @expose("service-disable")
