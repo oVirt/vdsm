@@ -15,8 +15,8 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @MV_PATH@ /etc/multipath.conf *, \
     @CP_PATH@ * /etc/iscsi/iscsid.conf, \
     @SERVICE_PATH@ iscsid *, \
-    @SERVICE_PATH@ multipathd restart, \
-    @SERVICE_PATH@ multipathd reload, \
+    @BINDIR@/vdsm-tool service-restart multipathd, \
+    @BINDIR@/vdsm-tool service-reload multipathd, \
     @ISCSIADM_PATH@ *, \
     @LVM_PATH@, \
     @CAT_PATH@ /sys/block/*/device/../../*, \

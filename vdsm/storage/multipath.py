@@ -175,11 +175,11 @@ def setupMultipath():
     # Flush all unused multipath device maps
     misc.execCmd([constants.EXT_MULTIPATH, "-F"], sudo=True)
 
-    cmd = [constants.EXT_SERVICE, "multipathd", "restart"]
+    cmd = [constants.EXT_VDSM_TOOL, "service-restart", "multipathd"]
     rc = misc.execCmd(cmd, sudo=True)[0]
     if rc != 0:
         # No dice - try to reload instead of restart
-        cmd = [constants.EXT_SERVICE, "multipathd", "reload"]
+        cmd = [constants.EXT_VDSM_TOOL, "service-reload", "multipathd"]
         rc = misc.execCmd(cmd, sudo=True)[0]
         if rc != 0:
             raise se.MultipathRestartError()
