@@ -695,12 +695,9 @@ class ConfigWriter(object):
         getMaxMtu return the highest value in a connection tree,
         it check if a vlan, bond that have a higher mtu value
         """
-        for nic in nics:
-            mtuval = int(netinfo.getMtu(nic))
 
-            if mtuval > mtu:
-                mtu = mtuval
-        return mtu
+        nics_mtu = [int(netinfo.getMtu(nic)) for nic in nics]
+        return max(mtu, *nics_mtu)
 
     def setNewMtu(self, network, bridged, _netinfo=None):
         """
