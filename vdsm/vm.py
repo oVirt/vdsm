@@ -1752,6 +1752,7 @@ class Vm(object):
         self.id = self.conf['vmId']
         self._volPrepareLock = threading.Lock()
         self._initTimePauseCode = None
+        self._initTimeRTC = long(self.conf.get('timeOffset', 0))
         self.guestAgent = None
         self._guestEvent = 'Powering up'
         self._guestEventTime = 0
@@ -2278,9 +2279,10 @@ class Vm(object):
         timer.start()
 
     def _rtcUpdate(self, timeOffset):
-        self.log.debug('new rtc offset %s', timeOffset)
+        newTimeOffset = str(self._initTimeRTC + long(timeOffset))
+        self.log.debug('new rtc offset %s', newTimeOffset)
         with self._confLock:
-            self.conf['timeOffset'] = timeOffset
+            self.conf['timeOffset'] = newTimeOffset
 
     def extendDrivesIfNeeded(self):
         extend = []
