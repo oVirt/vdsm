@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright 2006-2010 Red Hat, Inc. and/or its affiliates.
 #
@@ -8,7 +8,7 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-function isOvirt() {
+isOvirt() {
     for f in /etc/ovirt-node-*-release; do
         [ -f "$f" ] && return 0
     done

@@ -45,14 +45,14 @@ LDCONF=/etc/sysconfig/libvirtd
 QLCONF=/etc/libvirt/qemu-sanlock.conf
 
 is_coredump=`$GETCONFITEM $CONF_FILE vars core_dump_enable false | tr A-Z a-z`
-[ $is_coredump != true ] && is_coredump=false
+[ "$is_coredump" != "true" ] && is_coredump=false
 
 SYSTEMCTL_SKIP_REDIRECT=true
 
 . /etc/init.d/functions
 
-log_failure_msg() { echo -n "$@"; failure "$@"; echo; }
-log_success_msg() { echo -n "$@"; success "$@"; echo; }
+log_failure_msg() { printf "$@"; failure "$@"; echo; }
+log_success_msg() { printf "$@"; success "$@"; echo; }
 
 mk_data_center() {
     local dc
@@ -87,7 +87,8 @@ mk_run_path() {
 }
 
 get_libvirt_conf_item() {
-    local cfile key
+    local cfile
+    local key
 
     cfile=$1
     key=$2
@@ -96,16 +97,18 @@ get_libvirt_conf_item() {
 }
 
 test_conflicting_conf() {
-    local listen_tcp auth_tcp ssl
+    local listen_tcp
+    local auth_tcp
+    local ssl
 
     ssl=`$GETCONFITEM $CONF_FILE vars ssl true | tr A-Z a-z`
-    [ "$ssl" == true ] && return 0
+    [ "$ssl" = "true" ] && return 0
 
     listen_tcp="`get_libvirt_conf_item $LCONF listen_tcp`"
     auth_tcp="`get_libvirt_conf_item $LCONF auth_tcp`"
     spice_tls="`get_libvirt_conf_item $QCONF spice_tls`"
 
-    if [ "$listen_tcp" == 1 -a "$auth_tcp" == '"none"' -a "$spice_tls" == 0 ];
+    if [ "$listen_tcp" = "1" -a "$auth_tcp" = '"none"' -a "$spice_tls" = "0" ];
     then
         return 0
     else
@@ -125,7 +128,7 @@ shutdown_conflicting_srv() {
         /usr/bin/vdsm-tool service-disable "$srv"
         if /usr/bin/vdsm-tool service-status "$srv" > /dev/null 2>&1;
         then
-            if [ "$srv" == "libvirt-guests" ]; then
+            if [ "$srv" = "libvirt-guests" ]; then
                 /bin/rm -f /var/lock/subsys/libvirt-guests
             else
                 /usr/bin/vdsm-tool service-stop "$srv"
@@ -136,7 +139,7 @@ shutdown_conflicting_srv() {
 }
 
 syslog_available() {
-    if ! [[ -S "/dev/log" ]]; then
+    if ! [ -S "/dev/log" ]; then
         log_failure_msg "Cannot communicate with syslog deamon for reports. " \
                         "Check rsyslog.conf"
         return 1
@@ -175,7 +178,7 @@ test_lo() {
 }
 
 free_space() {
-    local path=$1
+    local path="$1"
     df -P "$path" | awk '{print $4}'| tail -1
 }
 
@@ -205,18 +208,19 @@ libvirtd_sysv2upstart()
     # On RHEL 6, libvirtd can be started by either SysV init or Upstart.
     # We prefer upstart because it respawns libvirtd if when libvirtd crashed.
 
-    if ! [[ -x /sbin/initctl ]]; then
+    if ! [ -x /sbin/initctl ]; then
         # We don't have Upstart, still use system default init mechanism
         return 0
     fi
 
-    local packaged target
+    local packaged
+    local target
 
     packaged=`/bin/rpm -ql libvirt libvirt-daemon | \
               /bin/grep libvirtd.upstart | /usr/bin/tail -1`
     target=/etc/init/libvirtd.conf
 
-    if ! [[ -f "$packaged" ]]; then
+    if ! [ -f "$packaged" ]; then
         # libvirtd package does not provide libvirtd.upstart,
         # this could happen in Ubuntu or other distro,
         # so continue to use system default init mechanism
@@ -224,7 +228,7 @@ libvirtd_sysv2upstart()
     fi
 
     # Stop libvirt SysV service before configure upstart
-    if [[ ! -f "$target" ]]; then
+    if [ ! -f "$target" ]; then
         @CHKCONFIG_PATH@ libvirtd off
         @SERVICE_PATH@ libvirtd stop
     fi
@@ -264,7 +268,9 @@ configure_libvirt()
     }
 
     set_if_default() {
-        local cfile key val
+        local cfile
+        local key
+        local val
         cfile="$1"
         key="$2"
         val="$3"
@@ -280,7 +286,9 @@ configure_libvirt()
         ovirt_store_config() { :; }
     fi
 
-    local lconf qconf ldconf
+    local lconf
+    local qconf
+    local ldconf
     local ssl=`$GETCONFITEM $CONF_FILE vars ssl true | tr A-Z a-z`
 
     lconf="$2"
@@ -334,7 +342,7 @@ configure_libvirt()
     set_if_default $lconf keepalive_interval -1
     set_if_default $qconf dynamic_ownership 0
 
-    if [[ "$ssl" == true ]]; then
+    if [ "$ssl" = "true" ]; then
         set_if_default $qconf spice_tls 1
     else
         set_if_default $qconf spice_tls 0
@@ -352,7 +360,7 @@ configure_libvirt()
     if [ -f $ts/certs/cacert.pem -a \
          -f $ts/certs/vdsmcert.pem -a \
          -f $ts/keys/vdsmkey.pem -a \
-         "$ssl" == true ];
+         "$ssl" = "true" ];
     then
         set_if_default $lconf ca_file \"$ts/certs/cacert.pem\"
         set_if_default $lconf cert_file \"$ts/certs/vdsmcert.pem\"
@@ -447,7 +455,7 @@ start() {
     shutdown_conflicting_srv
 
     if ! @LIBEXECDIR@/vdsm-gencerts.sh --check; then
-        echo -n $"Configuring a self-signed VDSM host certificate: "
+        printf $"Configuring a self-signed VDSM host certificate: "
         @LIBEXECDIR@/vdsm-gencerts.sh && success || failure ; echo
     fi
 
@@ -494,7 +502,7 @@ start() {
     mk_dom_backup
     mk_run_path
     /bin/chmod 1777 /dev/shm
-    if [ $is_coredump == true ]; then
+    if [ "$is_coredump" = "true" ]; then
         export DAEMON_COREFILE_LIMIT=unlimited
         echo $CORE_DUMP_PATH > $CORE_PATTERN
     fi
@@ -550,7 +558,7 @@ case "$1" in
 	if [ "$RETVAL" -eq 0 ]; then
 	    echo "VDS daemon server is running"
 	else
-	    echo -n "VDS daemon is not running"
+	    printf "VDS daemon is not running"
             if pidofproc -p $RESPAWNPIDFILE >/dev/null; then
                 echo ", but its watchdog is"
             else
