@@ -5392,7 +5392,7 @@
           'memoryStats': 'GuestMemoryStats', 'balloonInfo': 'BalloonInfo',
           'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo'],
-          'watchdogEvent': '*WatchdogEvent', 'guestFQDN': 'str'}}
+          '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str'}}
 
 ##
 # @VmStats:
