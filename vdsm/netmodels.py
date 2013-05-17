@@ -34,6 +34,7 @@ class NetDevice(object):
         self.ip = ipconfig
         self.mtu = mtu
         self.configurator = configurator
+        self.master = None
 
     def __str__(self):
         return self.name
@@ -78,6 +79,7 @@ class Vlan(NetDevice):
         if device is None:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required vlan'
                                      ' underlying device definition.')
+        device.master = self
         self.device = device
         self.tag = tag
         super(Vlan, self).__init__(device.name + '.' + tag, configurator,
@@ -113,6 +115,8 @@ class Bridge(NetDevice):
     def __init__(self, name, configurator, ipconfig=None, mtu=None, port=None,
                  forwardDelay=0, stp=None):
         self.validateName(name)
+        if port:
+            port.master = self
         self.port = port
         self.forwardDelay = forwardDelay
         self.stp = stp
@@ -141,6 +145,8 @@ class Bond(NetDevice):
     def __init__(self, name, configurator, ipconfig=None, mtu=None, slaves=(),
                  options=None):
         self.validateName(name)
+        for slave in slaves:
+            slave.master = self
         self.slaves = slaves
         if options is None:
             self.options = 'mode=802.3ad miimon=150'
