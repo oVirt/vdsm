@@ -354,14 +354,8 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     elif not bonding:
         _removeUnusedNics(network, vlan, bonding, nics, configWriter)
     elif not _netinfo.bondingOtherUsers(network, vlan, bonding):
-        # update MTU for bond interface and underlying NICs
         ifdown(bonding)
-        cf = netinfo.NET_CONF_PREF + bonding
-        configWriter._updateConfigValue(cf, 'MTU', DEFAULT_MTU, False)
-        for nic in nics:
-            cf = netinfo.NET_CONF_PREF + nic
-            configWriter._updateConfigValue(cf, 'MTU', DEFAULT_MTU, False)
-
+        configWriter.setBondingMtu(bonding, DEFAULT_MTU)
         ifup(bonding)
 
 

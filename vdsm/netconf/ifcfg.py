@@ -646,6 +646,16 @@ class ConfigWriter(object):
             f.writelines(entries)
             f.close()
 
+    def setIfaceMtu(self, iface, newmtu):
+        cf = netinfo.NET_CONF_PREF + iface
+        self._updateConfigValue(cf, 'MTU', str(newmtu), False)
+
+    def setBondingMtu(self, bonding, newmtu):
+        self.setIfaceMtu(bonding, newmtu)
+        slaves = netinfo.slaves(bonding)
+        for slave in slaves:
+            self.setIfaceMtu(slave, newmtu)
+
     def setNewMtu(self, network, bridged, _netinfo=None):
         """
         Set new MTU value to network and its interfaces
@@ -695,16 +705,9 @@ class ConfigWriter(object):
         # Optimization: if network hasn't custom MTU (currmtu), do nothing
         if currmtu and newmtu != currmtu:
             if bonding:
-                cf = netinfo.NET_CONF_PREF + bonding
-                self._updateConfigValue(cf, 'MTU', str(newmtu), newmtu is None)
-                slaves = netinfo.slaves(bonding)
-                for slave in slaves:
-                    cf = netinfo.NET_CONF_PREF + slave
-                    self._updateConfigValue(cf, 'MTU', str(newmtu),
-                                            newmtu is None)
+                self.setBondingMtu(bonding, newmtu)
             else:
-                cf = netinfo.NET_CONF_PREF + nics[0]
-                self._updateConfigValue(cf, 'MTU', str(newmtu), newmtu is None)
+                self.setIfaceMtu(nics[0], newmtu)
 
 
 def ifdown(iface):
