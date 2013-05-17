@@ -40,6 +40,8 @@ class TestNetinfo(TestCaseBase):
                 bitmask, address = [value.strip() for value in line.split()]
                 self.assertEqual(netinfo.prefix2netmask(int(bitmask)),
                                  address)
+        self.assertRaises(ValueError, netinfo.prefix2netmask, -1)
+        self.assertRaises(ValueError, netinfo.prefix2netmask, 33)
 
     def testSpeedInvalidNic(self):
         nicName = 'DUMMYNICDEVNAME'

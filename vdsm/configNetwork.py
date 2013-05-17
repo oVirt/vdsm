@@ -270,7 +270,10 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     prefix = options.get('prefix')
     if prefix is not None:
         if netmask is None:
-            netmask = netinfo.prefix2netmask(int(prefix))
+            try:
+                netmask = netinfo.prefix2netmask(int(prefix))
+            except ValueError as ve:
+                raise ConfigNetworkError(ne.ERR_BAD_PARAMS, ve.message)
             del options['prefix']
         else:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
