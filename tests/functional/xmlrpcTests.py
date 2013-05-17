@@ -52,7 +52,10 @@ if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
 
 _mkinitrd = CommandPath("mkinird", "/usr/bin/mkinitrd")
-_modprobe = CommandPath("modprobe", "/usr/sbin/modprobe")
+_modprobe = CommandPath("modprobe",
+                        "/usr/sbin/modprobe",  # Fedora, Ubuntu
+                        "/sbin/modprobe",  # RHEL6
+                        )
 _exportfs = CommandPath("exportfs", "/usr/sbin/exportfs")
 
 
@@ -217,11 +220,14 @@ class XMLRPCTest(TestCaseBase):
 
         self.assertVdsOK(destroyResult)
 
-    @permutations([['localfs'], ['iscsi'], ['glusterfs'], ['nfs']])
-    def testStorage(self, backendType):
+    @permutations(
+        [[backend, ver]
+         for backend in ['localfs', 'iscsi', 'glusterfs', 'nfs']
+         for ver in [0, 3]])
+    def testStorage(self, backendType, domVersion):
         conf = storageLayouts[backendType]
         with RollbackContext() as rollback:
-            self._createVdsmStorageLayout(conf, rollback)
+            self._createVdsmStorageLayout(conf, domVersion, rollback)
 
     def _generateDriveConf(self, conf):
         drives = []
@@ -246,10 +252,10 @@ class XMLRPCTest(TestCaseBase):
                          'drives': drives}
 
         with RollbackContext() as rollback:
-            self._createVdsmStorageLayout(conf, rollback)
+            self._createVdsmStorageLayout(conf, 3, rollback)
             self._runVMKernelBootTemplate(customization)
 
-    def _createVdsmStorageLayout(self, conf, rollback):
+    def _createVdsmStorageLayout(self, conf, domVersion, rollback):
         backendServer = conf['server'](self.s, self)
         connDef = conf['conn']
         storageDomains = conf['sd']
@@ -258,14 +264,16 @@ class XMLRPCTest(TestCaseBase):
         layout = conf['layout']
 
         typeSpecificArgs = backendServer.prepare(connDef, rollback)
-        self._createStorageDomain(storageDomains, typeSpecificArgs, rollback)
+        self._createStorageDomain(storageDomains, typeSpecificArgs, domVersion,
+                                  rollback)
         self._detachExistingStoragePool(rollback)
         self._createStoragePool(storagePools, rollback)
         self._startSPM(storagePools, rollback)
         self._attachStorageDomain(storagePools, layout, rollback)
         self._createVolume(images, layout, rollback)
 
-    def _createStorageDomain(self, storageDomains, typeSpecificArgs, rollback):
+    def _createStorageDomain(self, storageDomains, typeSpecificArgs,
+                             domVersion, rollback):
         for sdid, domain in storageDomains.iteritems():
             specificArg = typeSpecificArgs[domain['connUUID']]
 
@@ -279,7 +287,8 @@ class XMLRPCTest(TestCaseBase):
 
             r = self.s.createStorageDomain(
                 storage.sd.name2type(domain['type']), sdid, domain['name'],
-                specificArg, storage.sd.name2class(domain['class']), 0)
+                specificArg, storage.sd.name2class(domain['class']),
+                domVersion)
             self.assertVdsOK(r)
             undo = lambda sdid=sdid: \
                 self.assertVdsOK(self.s.formatStorageDomain(sdid, True))
@@ -370,7 +379,7 @@ class XMLRPCTest(TestCaseBase):
             state = r['taskStatus']['taskState']
             self.assertEquals(state, 'finished')
 
-        self.retryAssert(assertTaskOK, timeout=20)
+        self.retryAssert(assertTaskOK, timeout=60)
 
 
 class BackendServer(object):
