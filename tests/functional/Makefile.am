@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,10 @@ vdsmfunctestsdir = ${vdsmtestsdir}/functional
 
 dist_vdsmfunctests_PYTHON = \
 	momTests.py \
+	networkTests.py \
 	sosPluginTests.py \
 	supervdsmFuncTests.py \
+	utils.py \
 	xmlrpcTests.py \
 	$(NULL)
 
