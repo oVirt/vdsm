@@ -83,7 +83,7 @@ class Ifcfg(object):
                                        bondingOptions=bondingOptions, mtu=mtu,
                                        bootproto=bootproto, **options)
         elif nics:
-            mtu = self.configWriter.getMaxMtu(nics, mtu)
+            mtu = netinfo.getMaxMtu(nics, mtu)
             for nic in nics:
                 iface = self.configureNic(None, nic, bridge=network, mtu=mtu,
                                           bootproto=bootproto, **options)
@@ -108,7 +108,7 @@ class Ifcfg(object):
                                bondingOptions=bondingOptions, mtu=mtu,
                                bootproto=bootproto, **options)
         elif nics:
-            mtu = self.configWriter.getMaxMtu(nics, mtu)
+            mtu = netinfo.getMaxMtu(nics, mtu)
             for nic in nics:
                 self.configureNic(None, nic, bridge=None, mtu=mtu,
                                   bootproto=bootproto, **options)
@@ -121,7 +121,7 @@ class Ifcfg(object):
                       netmask=None, mtu=None, gateway=None, bridge=None,
                       bondingOptions=None, async=False, bootproto=None,
                       **options):
-        mtu = self.configWriter.getMaxMtu(nics, mtu)
+        mtu = netinfo.getMaxMtu(nics, mtu)
         self.configWriter.addBonding(bonding, bridge=bridge,
                                      bondingOptions=bondingOptions,
                                      mtu=mtu, ipaddr=ipaddr,
@@ -681,23 +681,6 @@ class ConfigWriter(object):
         with open(conffile, 'w') as f:
             f.writelines(entries)
             f.close()
-
-    def getMaxMtu(self, nics, mtu):
-        """
-        Get the max MTU value from configuration/parameter
-
-        :param nics: list of nics
-        :type nics: list
-
-        :param mtu: mtu value
-        :type mtu: integer
-
-        getMaxMtu return the highest value in a connection tree,
-        it check if a vlan, bond that have a higher mtu value
-        """
-
-        nics_mtu = [int(netinfo.getMtu(nic)) for nic in nics]
-        return max(mtu, *nics_mtu)
 
     def setNewMtu(self, network, bridged, _netinfo=None):
         """

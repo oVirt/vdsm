@@ -131,6 +131,24 @@ def getMtu(iface):
     return mtu
 
 
+def getMaxMtu(devs, mtu):
+    """
+    Get the max MTU value from current state/parameter
+
+    :param devs: list of network devices
+    :type devs: list
+
+    :param mtu: mtu value
+    :type mtu: integer
+
+    getMaxMtu return the highest value in a connection tree,
+    it check if a vlan, bond that have a higher mtu value
+    """
+
+    devs_mtu = [int(getMtu(dev)) for dev in devs]
+    return max(mtu, *devs_mtu)
+
+
 def bridge_stp_state(bridge):
     stp = file('/sys/class/net/%s/bridge/stp_state' % bridge).readline()
     if stp == '1\n':
