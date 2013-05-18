@@ -135,8 +135,8 @@ def getMaxMtu(devs, mtu):
     """
     Get the max MTU value from current state/parameter
 
-    :param devs: list of network devices
-    :type devs: list
+    :param devs: iterable of network devices
+    :type devs: iterable
 
     :param mtu: mtu value
     :type mtu: integer
@@ -144,9 +144,11 @@ def getMaxMtu(devs, mtu):
     getMaxMtu return the highest value in a connection tree,
     it check if a vlan, bond that have a higher mtu value
     """
-
-    devs_mtu = [getMtu(dev) for dev in devs]
-    return max(mtu, *devs_mtu)
+    if devs:
+        devs_mtu = [getMtu(dev) for dev in devs]
+        return max(mtu, *devs_mtu)
+    else:
+        return mtu
 
 
 def bridge_stp_state(bridge):
@@ -516,9 +518,13 @@ class NetInfo(object):
                     yield (network, netdict['iface'].split('.', 1)[1])
 
     def getVlansForIface(self, iface):
+        for vlanDevName in self.getVlanDevsForIface(iface):
+            yield vlanDevName.split('.', 1)[1]
+
+    def getVlanDevsForIface(self, iface):
         for v, vdict in self.vlans.iteritems():
             if iface == vdict['iface']:
-                yield v.split('.', 1)[1]
+                yield v
 
     def getNetworkForIface(self, iface):
         """ Return the network attached to nic/bond """

@@ -35,7 +35,7 @@ from vdsm import constants
 from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import utils
-from netmodels import Bridge
+from netmodels import Bond, Bridge
 import neterrors as ne
 
 
@@ -170,15 +170,15 @@ class Ifcfg(object):
         self.configWriter.removeVlan(vlan.name)
         vlan.device.remove()
 
-    def _ifaceDownAndCleanup(self, iface):
+    def _ifaceDownAndCleanup(self, iface, _netinfo):
         """Returns True iff the iface is to be removed."""
-        _netinfo = netinfo.NetInfo()
         ifdown(iface.name)
         self.configWriter.removeIfaceCleanup(iface.name)
         return not _netinfo.ifaceUsers(iface.name)
 
     def removeBond(self, bonding):
-        to_be_removed = self._ifaceDownAndCleanup(bonding)
+        _netinfo = netinfo.NetInfo()
+        to_be_removed = self._ifaceDownAndCleanup(bonding, _netinfo)
         if to_be_removed:
             if bonding.destroyOnMasterRemoval:
                 self.configWriter.removeBonding(bonding.name)
@@ -187,15 +187,36 @@ class Ifcfg(object):
             else:
                 self.configWriter.setBondingMtu(bonding.name,
                                                 netinfo.DEFAULT_MTU)
-        if not to_be_removed or not bonding.destroyOnMasterRemoval:
+                ifup(bonding.name)
+        else:
+            self._setNewMtu(bonding, _netinfo)
             ifup(bonding.name)
 
     def removeNic(self, nic):
-        to_be_removed = self._ifaceDownAndCleanup(nic)
+        _netinfo = netinfo.NetInfo()
+        to_be_removed = self._ifaceDownAndCleanup(nic, _netinfo)
         if to_be_removed:
             self.configWriter.removeNic(nic.name)
         else:
-            ifup(nic.name)
+            self._setNewMtu(nic, _netinfo)
+        ifup(nic.name)
+
+    def _setNewMtu(self, iface, _netinfo):
+        """
+        Update an interface's MTU when one of its users is removed.
+
+        :param iface: interface object (bond or nic device)
+        :type iface: NetDevice instance
+
+        """
+        ifaceMtu = netinfo.getMtu(iface.name)
+        maxMtu = netinfo.getMaxMtu(_netinfo.getVlanDevsForIface(iface.name),
+                                   None)
+        if maxMtu and maxMtu < ifaceMtu:
+            if isinstance(iface, Bond):
+                self.configWriter.setBondingMtu(iface.name, maxMtu)
+            else:
+                self.configWriter.setIfaceMtu(iface.name, maxMtu)
 
 
 class ConfigWriter(object):
@@ -702,59 +723,6 @@ class ConfigWriter(object):
         slaves = netinfo.slaves(bonding)
         for slave in slaves:
             self.setIfaceMtu(slave, newmtu)
-
-    def setNewMtu(self, network, bridged, _netinfo=None):
-        """
-        Set new MTU value to network and its interfaces
-
-        :param network: network name
-        :type network: string
-        :param bridged: network type (bridged or bridgeless)
-        :type bridged: bool
-
-        Update MTU to devices (vlans, bonds and nics)
-        or added a new value
-        """
-        if _netinfo is None:
-            _netinfo = netinfo.NetInfo()
-        currmtu = None
-        if bridged:
-            try:
-                currmtu = netinfo.getMtu(network)
-            except IOError as e:
-                if e.errno != os.errno.ENOENT:
-                    raise
-
-        nics, delvlan, bonding = \
-            _netinfo.getNicsVlanAndBondingForNetwork(network)
-        if delvlan is None:
-            return
-
-        iface = bonding if bonding else nics[0]
-        vlans = _netinfo.getVlansForIface(iface)
-
-        newmtu = None
-        for vlan in vlans:
-            cf = netinfo.NET_CONF_PREF + iface + '.' + vlan
-            mtu = self._getConfigValue(cf, 'MTU')
-            if mtu:
-                mtu = int(mtu)
-
-            if vlan == delvlan:
-                # For VLANed bridgeless networks use MTU of delvlan
-                # as current MTU
-                if not bridged and mtu:
-                    currmtu = mtu
-                continue
-
-            newmtu = max(newmtu, mtu)
-
-        # Optimization: if network hasn't custom MTU (currmtu), do nothing
-        if currmtu and newmtu != currmtu:
-            if bonding:
-                self.setBondingMtu(bonding, newmtu)
-            else:
-                self.setIfaceMtu(nics[0], newmtu)
 
 
 def ifdown(iface):
