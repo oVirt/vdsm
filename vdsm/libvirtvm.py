@@ -1026,6 +1026,14 @@ class Drive(LibvirtVmDevice):
 
         self._customize()
 
+    def __getitem__(self, key):
+        try:
+            value = getattr(self, str(key))
+        except AttributeError:
+            raise KeyError(key)
+        else:
+            return value
+
     def isDiskReplicationInProgress(self):
         return hasattr(self, "diskReplicate")
 

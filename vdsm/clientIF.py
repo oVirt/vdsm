@@ -337,13 +337,16 @@ class clientIF:
 
     def teardownVolumePath(self, drive):
         res = {'status': doneCode}
-        if type(drive) == dict:
-            try:
-                res = self.irs.teardownImage(drive['domainID'],
-                                             drive['poolID'], drive['imageID'])
-            except KeyError:
-                #This drive is not a vdsm image (quartet)
-                self.log.info("Avoiding tear down drive %s", str(drive))
+        try:
+            res = self.irs.teardownImage(drive['domainID'],
+                                         drive['poolID'], drive['imageID'])
+        except KeyError:
+            self.log.warning("Drive is not a vdsm image: %s",
+                             drive, exc_info=True)
+        except TypeError:
+            if not isinstance(drive, basestring):
+                raise
+            # paths (strings) are not deactivated
 
         return res['status']['code']
 
