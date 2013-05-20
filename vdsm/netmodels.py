@@ -59,10 +59,9 @@ class Nic(NetDevice):
         super(Nic, self).__init__(name, configurator, ipconfig,
                                   mtu=max(mtu, int(netinfo.getMtu(name))))
 
-    def configure(self, network=None, bridge=None, bonding=None, vlan=None,
-                  **opts):
-        self.configurator.configureNic(self, network=network, bridge=bridge,
-                                       bonding=bonding, **opts)
+    def configure(self, bridge=None, bonding=None, **opts):
+        self.configurator.configureNic(self, bridge=bridge, bonding=bonding,
+                                       **opts)
 
     def remove(self, network=None, bond=None):
         self.configurator.removeNic(self, network=network, bond=bond)
@@ -87,9 +86,8 @@ class Vlan(NetDevice):
     def __repr__(self):
         return 'Vlan(%s: %r)' % (self.name, self.device)
 
-    def configure(self, network=None, bridge=None, **opts):
-        self.configurator.configureVlan(self, network=network, bridge=bridge,
-                                        **opts)
+    def configure(self, bridge=None, **opts):
+        self.configurator.configureVlan(self, bridge=bridge, **opts)
 
     def remove(self, force=False):
         self.configurator.removeVlan(self.name)
@@ -123,8 +121,8 @@ class Bridge(NetDevice):
     def __repr__(self):
         return 'Bridge(%s: %r)' % (self.name, self.port)
 
-    def configure(self, network, **opts):
-        self.configurator.configureBridge(self, network=network, **opts)
+    def configure(self, **opts):
+        self.configurator.configureBridge(self, **opts)
 
     def remove(self, force=False):
         logging.debug('Removing bridge %r', self)
@@ -154,8 +152,8 @@ class Bond(NetDevice):
     def __repr__(self):
         return 'Bond(%s: %r)' % (self.name, self.slaves)
 
-    def configure(self, network=None, **opts):
-        self.configurator.configureBond(self, network, **opts)
+    def configure(self, **opts):
+        self.configurator.configureBond(self, **opts)
 
     def remove(self, force=False):
         logging.debug('Removing bond %r', self)

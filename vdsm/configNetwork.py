@@ -196,7 +196,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, options.get('bootproto'), _netinfo,
                                 configurator, **options)
-    netEnt.configure(network=network, **options)
+    netEnt.configure(**options)
+    configurator.configureLibvirtNetwork(network, netEnt)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
