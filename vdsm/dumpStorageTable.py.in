@@ -162,10 +162,14 @@ class StorageTable:
         self.imagesList = {}
         self.volumesList = {}
         self.tbl = {}
+        self.canAccessVms = False
         for header in self.columns:
             self.tbl[header] = []
 
         pools = self.serverConncetion.getConnectedStoragePoolsList()
+        if not pools['poollist']:
+            return
+
         self.pool = pools['poollist'][0]
 
         # Check if its possible to access the ovf files
