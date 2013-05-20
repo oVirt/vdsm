@@ -78,8 +78,7 @@ class Ifcfg(object):
 
     def configureVlan(self, vlan, bridge=None, **opts):
         ipaddr, netmask, gateway, bootproto, async = vlan.getIpConfig()
-        self.configWriter.addVlan(vlan.tag, vlan.device.name, network=bridge,
-                                  mtu=vlan.mtu, bridged=bridge is not None,
+        self.configWriter.addVlan(vlan.name, bridge=bridge, mtu=vlan.mtu,
                                   ipaddr=ipaddr, netmask=netmask,
                                   gateway=gateway, bootproto=bootproto, **opts)
         vlan.device.configure(**opts)
@@ -495,16 +494,15 @@ class ConfigWriter(object):
         self._createConfFile(conf, name, ipaddr, netmask, gateway,
                              bootproto, mtu, onboot, **kwargs)
 
-    def addVlan(self, vlanId, iface, network, mtu=None, bridged=True,
-                ipaddr=None, netmask=None, gateway=None, bootproto=None,
+    def addVlan(self, vlan, bridge=None, mtu=None, ipaddr=None,
+                netmask=None, gateway=None, bootproto=None,
                 onboot='yes', **kwargs):
         """ Create ifcfg-* file with proper fields for VLAN """
-        name = '%s.%s' % (pipes.quote(iface), vlanId)
         conf = 'VLAN=yes\n'
-        if bridged:
-            conf += 'BRIDGE=%s\n' % pipes.quote(network)
+        if bridge:
+            conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
 
-        self._createConfFile(conf, name, ipaddr, netmask, gateway,
+        self._createConfFile(conf, vlan, ipaddr, netmask, gateway,
                              bootproto, mtu, onboot, **kwargs)
 
     def addBonding(self, bonding, bridge=None, bondingOptions=None, mtu=None,
