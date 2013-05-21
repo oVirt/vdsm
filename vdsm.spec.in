@@ -1182,9 +1182,7 @@ exit 0
 %endif
 
 %files python-cpopen
-%{python_sitearch}/cpopen/cpopen.so*
 %{python_sitearch}/cpopen/__init__.py*
-
 %attr(755, root, root) %{python_sitearch}/cpopen/cpopen.so*
 
 %changelog
