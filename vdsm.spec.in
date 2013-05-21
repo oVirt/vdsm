@@ -17,6 +17,9 @@
 
 # RHEV build - overridable using rpmbuild --define "rhev_build 1"
 %{!?rhev_build: %global rhev_build 0}
+%if %{rhev_build}
+%global rhev_build_config_opt     --enable-rhev
+%endif
 
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
@@ -688,6 +691,7 @@ autoreconf -if
 %endif
 %configure %{?with_hooks:--enable-hooks} \
         %{?with_chown_hack:--enable-chown-hack} \
+        %{rhev_build_config_opt}
 
 make
 # Setting software_version and software_revision in dsaversion.py
@@ -1273,6 +1277,11 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virtsparsify.py*
 %{python_sitelib}/%{vdsm_name}/xmlrpc.py*
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*
+%if 0%{?rhev_build}
+#compat
+%{_datadir}/%{vdsm_name}/config.py*
+%{_datadir}/%{vdsm_name}/netinfo.py*
+%endif
 %if 0%{?with_systemd}
 %exclude %{python_sitelib}/%{vdsm_name}/tool/load_needed_modules.py*
 %else
