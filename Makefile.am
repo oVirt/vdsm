@@ -43,7 +43,9 @@ EXTRA_DIST = \
 	vdsm.spec.in
 
 CLEANFILES = \
-	$(DIST_ARCHIVES)
+	vdsm.spec \
+	$(DIST_ARCHIVES) \
+	$(NULL)
 
 if HOOKS
 WITH_HOOKS = --define="with_hooks 1"
