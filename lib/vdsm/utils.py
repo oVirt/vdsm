@@ -602,15 +602,15 @@ def _getAllMacs():
 
     return set(macs) - set(["", "00:00:00:00:00:00"])
 
-__hostUUID = ''
+__hostUUID = None
 
 
-def getHostUUID():
+def getHostUUID(legacy=True):
     global __hostUUID
     if __hostUUID:
         return __hostUUID
 
-    __hostUUID = 'None'
+    __hostUUID = None
 
     try:
         if os.path.exists(constants.P_VDSM_NODE_ID):
@@ -633,19 +633,24 @@ def getHostUUID():
             else:
                 logging.warning('Could not find host UUID.')
 
-            try:
-                mac = sorted(_getAllMacs())[0]
-            except:
-                mac = ""
-                logging.warning('Could not find host MAC.', exc_info=True)
+            if legacy:
+                try:
+                    mac = sorted(_getAllMacs())[0]
+                except:
+                    mac = ""
+                    logging.warning('Could not find host MAC.', exc_info=True)
 
-            if __hostUUID != "None":
-                __hostUUID += "_" + mac
-            else:
-                __hostUUID = "_" + mac
+                # __hostUUID might contain the string 'None' returned
+                # from dmidecode call
+                if __hostUUID and __hostUUID is not 'None':
+                    __hostUUID += "_" + mac
+                else:
+                    __hostUUID = "_" + mac
     except:
         logging.error("Error retrieving host UUID", exc_info=True)
 
+    if legacy and not __hostUUID:
+        return 'None'
     return __hostUUID
 
 symbolerror = {}

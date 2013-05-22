@@ -1,5 +1,4 @@
-#
-# Copyright 2013 Hat, Inc.
+# Copyright 2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,22 +16,19 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-EXTRA_DIST = \
-	load_needed_modules.py.in \
-	validate_ovirt_certs.py.in \
-	$(NULL)
+from vdsm.utils import getHostUUID
+from vdsm.tool import expose
+import sys
 
-nodist_vdsmtool_DATA = \
-	load_needed_modules.py \
-	validate_ovirt_certs.py \
-	$(NULL)
 
-dist_vdsmtool_DATA = \
-	__init__.py \
-	passwd.py \
-	seboolsetup.py \
-	service.py \
-	vdsm-id.py \
-	$(NULL)
+@expose("vdsm-id")
+def getUUID():
+    """
+    Printing host uuid
+    """
+    hostUUID = getHostUUID(False)
+    if hostUUID is None:
+        raise RuntimeError('Cannot retrieve host UUID')
+    sys.stdout.write(hostUUID)
+    return 0
