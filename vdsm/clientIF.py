@@ -340,13 +340,11 @@ class clientIF:
         try:
             res = self.irs.teardownImage(drive['domainID'],
                                          drive['poolID'], drive['imageID'])
-        except KeyError:
-            self.log.warning("Drive is not a vdsm image: %s",
-                             drive, exc_info=True)
-        except TypeError:
-            if not isinstance(drive, basestring):
-                raise
+        except (KeyError, TypeError):
             # paths (strings) are not deactivated
+            if not isinstance(drive, basestring):
+                self.log.warning("Drive is not a vdsm image: %s",
+                                 drive, exc_info=True)
 
         return res['status']['code']
 
