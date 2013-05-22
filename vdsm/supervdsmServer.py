@@ -379,7 +379,7 @@ def main():
         with open(pidfile, "w") as f:
             f.write(str(spid) + "\n")
         with open(timestamp, "w") as f:
-            f.write(str(misc.getProcCtime(spid) + "\n"))
+            f.write(str(utils.pidStat(int(spid))[21]) + "\n")
 
         log.debug("Cleaning old socket %s", address)
         if os.path.exists(address):

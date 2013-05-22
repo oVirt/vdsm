@@ -27,7 +27,6 @@ import threading
 import uuid
 from errno import ENOENT, ESRCH
 
-import storage.misc as misc
 from vdsm import constants, utils
 
 _g_singletonSupervdsmInstance = None
@@ -168,7 +167,7 @@ class SuperVdsmProxy(object):
                 raise
 
         try:
-            pTime = str(misc.getProcCtime(spid))
+            pTime = str(utils.pidStat(int(spid))[21])
         except OSError as e:
             if e.errno == ESRCH:
                 # Means pid is not exist, svdsm was killed
