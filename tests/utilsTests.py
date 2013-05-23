@@ -53,9 +53,9 @@ class PidStatTests(TestCaseBase):
         args = ["sleep", "3"]
         sproc = misc.execCmd(args, sync=False, sudo=False)
         stats = utils.pidStat(sproc.pid)
-        pid = int(stats[0])
+        pid = int(stats.pid)
         # procName comes in the format of (procname)
-        name = stats[1]
+        name = stats.comm
         self.assertEquals(pid, sproc.pid)
         self.assertEquals(name, args[0])
         sproc.kill()

@@ -801,7 +801,7 @@ def pgrep(name):
             continue
 
         try:
-            procName = utils.pidStat(pid)[1]
+            procName = utils.pidStat(pid).comm
             if procName == name:
                 res.append(pid)
         except (OSError, IOError):
@@ -820,7 +820,7 @@ def getCmdArgs(pid):
     # Retrying seems to solve it.
     while len(res) == 0:
         # cmdline is empty for zombie processes
-        if utils.pidStat(pid)[2] in ("Z", "z"):
+        if utils.pidStat(pid).state in ("Z", "z"):
             return tuple()
 
         res = _parseCmdLine(pid)

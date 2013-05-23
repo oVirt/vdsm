@@ -26,6 +26,7 @@ plentifuly around vdsm.
 
     Contains a reverse dictionary pointing from error string to its error code.
 """
+from collections import namedtuple
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from StringIO import StringIO
 from weakref import proxy
@@ -168,6 +169,17 @@ def forceLink(src, dst):
 
 def pidStat(pid):
     res = []
+    fields = ('pid', 'comm', 'state', 'ppid', 'pgrp', 'session',
+              'tty_nr', 'tpgid', 'flags', 'minflt', 'cminflt',
+              'majflt', 'cmajflt', 'utime', 'stime', 'cutime',
+              'cstime', 'priority', 'nice', 'num_threads',
+              'itrealvalue', 'starttime', 'vsize', 'rss', 'rsslim',
+              'startcode', 'endcode', 'startstack', 'kstkesp',
+              'kstkeip', 'signal', 'blocked', 'sigignore', 'sigcatch',
+              'wchan', 'nswap', 'cnswap', 'exit_signal', 'processor',
+              'rt_priority', 'policy', 'delayacct_blkio_ticks',
+              'guest_time', 'cguest_time')
+    stat = namedtuple('stat', fields)
     with open("/proc/%d/stat" % pid, "r") as f:
         statline = f.readline()
         procNameStart = statline.find("(")
@@ -177,7 +189,10 @@ def pidStat(pid):
         args = statline[procNameEnd + 2:].split()
         res.append(args[0])
         res.extend([int(item) for item in args[1:]])
-        return tuple(res)
+        # Only 44 feilds are documented in man page while /proc/pid/stat has 52
+        # The rest of the fields contain the process memory layout and
+        # exit_code, which are not relevant for our use.
+        return stat._make(res[:len(fields)])
 
 
 def convertToStr(val):

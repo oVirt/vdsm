@@ -1119,7 +1119,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         for umountPid in umountPids:
             try:
-                state = utils.pidStat(umountPid)[2]
+                state = utils.pidStat(umountPid).state
                 mountPoint = misc.getCmdArgs(umountPid)[-1]
             except:
                 # Process probably exited
