@@ -191,10 +191,7 @@ def getProcCtime(pid):
     return str(ctime)
 
 
-def readfile(name, buffersize=None):
-    """
-    Read the content of the file using /bin/dd command
-    """
+def _readfile(name, buffersize=None):
     cmd = [constants.EXT_DD]
 
     if fileUtils.pathRequiresFlagForDirectIO(name):
@@ -206,7 +203,47 @@ def readfile(name, buffersize=None):
     (rc, out, err) = execCmd(cmd, sudo=False)
     if rc:
         raise se.MiscFileReadException(name)
+
+    return rc, out, err
+
+
+def readfile(name, buffersize=None):
+    """
+    Read the content of the file using /bin/dd command
+    """
+    _rc, out, _err = _readfile(name, buffersize)
     return out
+
+
+_readspeed_regex = re.compile(
+    "(?P<bytes>\d+) bytes? \([\d.]+ [kMGT]*B\) copied, "
+    "(?P<seconds>[\d.]+) s, "
+    "[\d.]+ [kMGT]*B/s"
+)
+
+
+def readspeed(path, buffersize=None):
+    """
+    Measures the amount of bytes transferred and the time elapsed
+    reading the content of the file/device
+    """
+    rc, out, err = _readfile(path, buffersize)
+
+    try:
+        # The statistics are located in the last line:
+        m = _readspeed_regex.match(err[-1])
+    except IndexError:
+        log.error("Unable to find dd statistics to parse")
+        raise se.MiscFileReadException(path)
+
+    if m is None:
+        log.error("Unable to parse dd output: '%s'", err[-1])
+        raise se.MiscFileReadException(path)
+
+    return {
+        'bytes': int(m.group('bytes')),
+        'seconds': float(m.group('seconds')),
+    }
 
 
 def readblock(name, offset, size):

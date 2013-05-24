@@ -34,7 +34,6 @@ from remoteFileHandler import Timeout
 from persistentDict import PersistentDict, DictValidator
 from vdsm import constants
 from vdsm.utils import stripNewLines
-import time
 import supervdsm
 import mount
 
@@ -236,9 +235,8 @@ class FileStorageDomain(sd.StorageDomain):
         })
 
     def getReadDelay(self):
-        t = time.time()
-        oop.getProcessPool(self.sdUUID).directReadLines(self.metafile)
-        return time.time() - t
+        stats = misc.readspeed(self.metafile, 4096)
+        return stats['seconds']
 
     def getFileList(self, pattern, caseSensitive):
         """

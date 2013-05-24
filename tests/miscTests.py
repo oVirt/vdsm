@@ -883,6 +883,24 @@ class ReadFile(TestCaseBase):
         self.assertRaises(misc.se.MiscFileReadException, misc.readfile, path)
 
 
+class ReadSpeed(TestCaseBase):
+    STATS_TEMPLATE = "%s byte%s (%s %sB) copied, %s s, %s %sB/s"
+    STATS_TESTS = (
+        ("1", "", "1", "", "1", "1", ""),
+        ("1024", "s", "1", "k", "1", "1", "k"),
+        ("1572864", "s", "1.5", "M", "1.5", "1", "M"),
+        ("1610612736", "s", "1.5", "G", "1000.5", "1.53", "M"),
+    )
+
+    def testReadSpeedRegExp(self):
+        for stats in self.STATS_TESTS:
+            m = misc._readspeed_regex.match(self.STATS_TEMPLATE % stats)
+            self.assertNotEqual(m, None)
+
+            self.assertEqual(m.group("bytes"), stats[0])
+            self.assertEqual(m.group("seconds"), stats[4])
+
+
 class PidExists(TestCaseBase):
     def testPidExists(self):
         """

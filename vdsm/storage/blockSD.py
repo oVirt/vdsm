@@ -591,9 +591,8 @@ class BlockStorageDomain(sd.StorageDomain):
         return bsd
 
     def getReadDelay(self):
-        t = time.time()
-        misc.readfile(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
-        return time.time() - t
+        stats = misc.readspeed(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
+        return stats['seconds']
 
     def getVolumeClass(self):
         """
