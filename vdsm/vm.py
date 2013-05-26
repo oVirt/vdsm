@@ -44,6 +44,9 @@ from vdsm import vdscli
 from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.netinfo import DUMMY_BRIDGE
+from storage import outOfProcess as oop
+from storage import sd
+from storage import fileUtils
 
 # local imports
 from logUtils import SimpleLogAdapter
@@ -53,7 +56,6 @@ import hooks
 import kaxmlrpclib
 import sampling
 import supervdsm
-
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 # This device name is used as default both in the qemu-guest-agent
@@ -79,6 +81,12 @@ SMARTCARD_DEVICES = 'smartcard'
 def isVdsmImage(drive):
     return all(k in drive.keys() for k in ('volumeID', 'domainID', 'imageID',
                                            'poolID'))
+
+
+def _filterSnappableDiskDevices(diskDeviceXmlElements):
+        return filter(lambda(x): not(x.getAttribute('device')) or
+                      x.getAttribute('device') in ['disk', 'lun'],
+                      diskDeviceXmlElements)
 
 
 class Device(object):
@@ -2857,11 +2865,19 @@ class Vm(object):
             # Reinitialize the merge statuses
             self._checkMerge()
         elif 'restoreState' in self.conf:
-            hooks.before_vm_dehibernate(self.conf.pop('_srcDomXML'), self.conf)
+            fromSnapshot = self.conf.get('restoreFromSnapshot', False)
+            srcDomXML = self.conf.pop('_srcDomXML')
+            if fromSnapshot:
+                srcDomXML = self._correctDiskVolumes(srcDomXML)
+            hooks.before_vm_dehibernate(srcDomXML, self.conf,
+                                        {'FROM_SNAPSHOT': str(fromSnapshot)})
 
             fname = self.cif.prepareVolumePath(self.conf['restoreState'])
             try:
-                self._connection.restore(fname)
+                if fromSnapshot:
+                    self._connection.restoreFlags(fname, srcDomXML)
+                else:
+                    self._connection.restore(fname)
             finally:
                 self.cif.teardownVolumePath(self.conf['restoreState'])
 
@@ -2888,6 +2904,55 @@ class Vm(object):
             self.setDownStatus(ERROR, 'failed to start libvirt vm')
             return
         self._domDependentInit()
+
+    def _correctDiskVolumes(self, srcDomXML):
+        """
+        Replace each volume in the given XML with the latest volume
+        that the image has.
+        Each image has a newer volume than the one that appears in the
+        XML, which was the latest volume of the image at the time the
+        snapshot was taken, since we create new volume when we preview
+        or revert to snapshot.
+        """
+        parsedSrcDomXML = _domParseStr(srcDomXML)
+
+        allDiskDeviceXmlElements = parsedSrcDomXML.childNodes[0]. \
+            getElementsByTagName('devices')[0].getElementsByTagName('disk')
+
+        snappableDiskDeviceXmlElements = \
+            _filterSnappableDiskDevices(allDiskDeviceXmlElements)
+
+        for snappableDiskDeviceXmlElement in snappableDiskDeviceXmlElements:
+            self._changeDisk(snappableDiskDeviceXmlElement)
+
+        return parsedSrcDomXML.toxml()
+
+    def _changeDisk(self, diskDeviceXmlElement):
+        diskType = diskDeviceXmlElement.getAttribute('type')
+
+        if diskType not in ['file', 'block']:
+            return
+
+        diskSerial = diskDeviceXmlElement. \
+            getElementsByTagName('serial')[0].childNodes[0].nodeValue
+
+        for vmDrive in self._devices[DISK_DEVICES]:
+            if vmDrive.serial == diskSerial:
+                # update the type
+                diskDeviceXmlElement.setAttribute(
+                    'type', 'block' if vmDrive.blockDev else 'file')
+
+                # update the path
+                diskDeviceXmlElement.getElementsByTagName('source')[0]. \
+                    setAttribute('dev' if vmDrive.blockDev else 'file',
+                                 vmDrive.path)
+
+                # update the format (the disk might have been collapsed)
+                diskDeviceXmlElement.getElementsByTagName('driver')[0]. \
+                    setAttribute('type',
+                                 'qcow2' if vmDrive.format == 'cow' else 'raw')
+
+                break
 
     def hotplugNic(self, params):
         if self.isMigrating():
@@ -3261,7 +3326,9 @@ class Vm(object):
         if 'restoreState' in self.conf:
             self.cont()
             del self.conf['restoreState']
-            hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf)
+            fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
+            hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
+                                       {'FROM_SNAPSHOT': fromSnapshot})
         elif 'migrationDest' in self.conf:
             timeout = config.getint('vars', 'migration_timeout')
             self.log.debug("Waiting %s seconds for end of migration" % timeout)
@@ -3386,7 +3453,7 @@ class Vm(object):
 
         self.saveState()
 
-    def snapshot(self, snapDrives):
+    def snapshot(self, snapDrives, memoryParams):
         """Live snapshot command"""
 
         def _diskSnapshot(vmDev, newPath):
@@ -3429,6 +3496,28 @@ class Vm(object):
                 except:
                     self.log.error("Unable to teardown drive: %s", vmDevName,
                                    exc_info=True)
+
+        def _memorySnapshot(memoryVolumePath):
+            """Libvirt snapshot XML"""
+
+            memory = xml.dom.minidom.Element('memory')
+            memory.setAttribute('snapshot', 'external')
+            memory.setAttribute('file', memoryVolumePath)
+            return memory
+
+        def _vmConfForMemorySnapshot():
+            """Returns the needed vm configuration with the memory snapshot"""
+
+            return {'restoreFromSnapshot':   True,
+                    '_srcDomXML':            self._dom.XMLDesc(0),
+                    'elapsedTimeOffset':     time.time() - self._startTime}
+
+        def _padMemoryVolume(memoryVolPath, spType, sdUUId):
+            if spType == sd.NFS_DOMAIN:
+                oop.getProcessPool(sdUUID).fileUtils. \
+                    padToBlockSize(memoryVolPath)
+            else:
+                fileUtils.padToBlockSize(memoryVolPath)
 
         snap = xml.dom.minidom.Element('domainsnapshot')
         disks = xml.dom.minidom.Element('disks')
@@ -3484,16 +3573,35 @@ class Vm(object):
             return {'status': doneCode}
 
         snap.appendChild(disks)
-        snapxml = snap.toprettyxml()
 
-        self.log.debug(snapxml)
-
-        snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
-                     libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT |
+        snapFlags = (libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT |
                      libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA)
 
-        if utils.tobool(self.conf.get('qgaEnable', 'true')):
-            snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
+        if memoryParams:
+            # Save the needed vm configuration
+            # TODO: this, as other places that use pickle.dump
+            # directly to files, should be done with outOfProcess
+            vmConfVol = memoryParams['dstparams']
+            vmConfVolPath = self.cif.prepareVolumePath(vmConfVol)
+            vmConf = _vmConfForMemorySnapshot()
+            try:
+                with file(vmConfVolPath, "w") as f:
+                    pickle.dump(vmConf, f)
+            finally:
+                self.cif.teardownVolumePath(vmConfVol)
+
+            # Adding the memory volume to the snapshot xml
+            memoryVol = memoryParams['dst']
+            memoryVolPath = self.cif.prepareVolumePath(memoryVol)
+            snap.appendChild(_memorySnapshot(memoryVolPath))
+        else:
+            snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
+
+            if utils.tobool(self.conf.get('qgaEnable', 'true')):
+                snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
+
+        snapxml = snap.toprettyxml()
+        self.log.debug(snapxml)
 
         # We need to stop the collection of the stats for two reasons, one
         # is to prevent spurious libvirt errors about missing drive paths
@@ -3519,7 +3627,23 @@ class Vm(object):
                     self._dom.snapshotCreateXML(snapxml, snapFlags)
                 except Exception as e:
                     self.log.error("Unable to take snapshot", exc_info=True)
+                    if memoryParams:
+                        self.cif.teardownVolumePath(memoryVol)
                     return errCode['snapshotErr']
+
+            # We are padding the memory volume with block size of zeroes
+            # because qemu-img truncates files such that their size is
+            # round down to the closest multiple of block size (bz 970559).
+            # This code should be removed once qemu-img will handle files
+            # with size that is not multiple of block size correctly.
+            if memoryParams:
+                sdUUID = memoryVol['domainID']
+                spUUID = memoryVol['poolID']
+                spType = sd.name2type(
+                    self.cif.irs.getStoragePoolInfo(spUUID)['info']['type'])
+                if spType in sd.FILE_DOMAIN_TYPES:
+                    _padMemoryVolume(memoryVolPath, spType, sdUUID)
+                self.cif.teardownVolumePath(memoryVol)
 
             for drive in newDrives.values():  # Update the drive information
                 try:

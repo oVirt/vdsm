@@ -5775,10 +5775,14 @@
 #
 # @snapDrives:  A list of disk snapshot creation instructions
 #
+# @snapMemory:  #optional str representation of the volumes in which
+#               the memory dump and vm configuration should be saved
+#
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'snapshot'},
- 'data': {'vmID': 'UUID', 'snapDrives': ['SnapshotDriveInfo']}}
+ 'data': {'vmID': 'UUID', 'snapDrives': ['SnapshotDriveInfo'],
+          '*snapMemory': 'str'}}
 
 ##
 # @VM.merge:

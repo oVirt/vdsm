@@ -90,6 +90,9 @@ destination will differ in various details.
 The environment of before_vm_set_ticket and after_vm_set_ticket hooks is augmented
 with a set of params passed by the caller of setVmTicket.
 
+The environment of before_vm_dehibernate and after_vm_dehibernate hooks have
+FROM_SNAPSHOT variable set to True if the VM is being restored from a live snapshot.
+
 The environment of hooks specific to devices:
     before_nic_hotplug, after_nic_hotplug, after_nic_hotplug_fail,
     before_nic_hotunplug, after_nic_hotunplug, after_nic_hotunplug_fail,

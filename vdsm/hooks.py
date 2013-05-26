@@ -199,13 +199,14 @@ def after_vm_hibernate(domxml, vmconf={}):
                         raiseError=False)
 
 
-def before_vm_dehibernate(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'before_vm_dehibernate', vmconf=vmconf)
+def before_vm_dehibernate(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'before_vm_dehibernate', vmconf=vmconf,
+                        params=params)
 
 
-def after_vm_dehibernate(domxml, vmconf={}):
+def after_vm_dehibernate(domxml, vmconf={}, params={}):
     return _runHooksDir(domxml, 'after_vm_dehibernate', vmconf=vmconf,
-                        raiseError=False)
+                        raiseError=False, params=params)
 
 
 def before_vm_destroy(domxml, vmconf={}):

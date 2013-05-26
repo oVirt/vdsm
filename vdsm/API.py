@@ -635,11 +635,15 @@ class VM(APIBase):
             self.log.info('network %s: using %s', network, ip)
         return ip
 
-    def snapshot(self, snapDrives):
+    def snapshot(self, snapDrives, snapMemVolHandle):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
-        return v.snapshot(snapDrives)
+        memoryParams = {}
+        if snapMemVolHandle:
+            memoryParams['dst'], memoryParams['dstparams'] = \
+                self._getHibernationPaths(snapMemVolHandle)
+        return v.snapshot(snapDrives, memoryParams)
 
     def merge(self, mergeDrives):
         v = self._cif.vmContainer.get(self._UUID)

@@ -283,9 +283,20 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.vmUpdateDevice(params)
 
-    def vmSnapshot(self, vmId, snapDrives):
+    def vmSnapshot(self, vmId, snapDrives, snapMemVolHandle=''):
+        """
+        Take snapshot of VM
+
+        :param snapMemVolHandle:
+            memory snapshots are not supported in cluster level: default value.
+            vm snapshot should contain memory: a comma-separated string of IDs:
+             domain,pool,image1,volume1,image2,volume2 (hibernation volumes
+             representation).
+            vm snapshot should not contain memory: empty string
+        :type snapMemVolHandle: string
+        """
         vm = API.VM(vmId)
-        return vm.snapshot(snapDrives)
+        return vm.snapshot(snapDrives, snapMemVolHandle)
 
     def vmMerge(self, vmId, mergeDrives):
         vm = API.VM(vmId)

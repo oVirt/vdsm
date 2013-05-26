@@ -398,3 +398,9 @@ def copyUserModeToGroup(path):
     if (mode & 0070) != newGroupMode:  # group mode mask
         # setting the new group mode masking out the original one
         os.chmod(path, (mode & 0707) | newGroupMode)
+
+
+def padToBlockSize(path):
+    with file(path, 'a') as f:
+        size = os.fstat(f.fileno()).st_size
+        os.ftruncate(f.fileno(), 512 * ((size + 511) / 512))
