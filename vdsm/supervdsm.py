@@ -20,36 +20,16 @@
 #
 
 import os
-from multiprocessing import AuthenticationError
 from multiprocessing.managers import BaseManager
 import logging
 import threading
-import uuid
-from errno import ENOENT, ESRCH
-
 from vdsm import constants, utils
 
 _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()
 
 
-def __supervdsmServerPath():
-    base = os.path.dirname(__file__)
-
-    # serverFile can be both the py or pyc file. In oVirt node we don't keep
-    # py files. this method looks for one of the two to calculate the absolute
-    # path of supervdsmServer
-    for serverFile in ("supervdsmServer.py", "supervdsmServer.pyc"):
-        serverPath = os.path.join(base, serverFile)
-        if os.path.exists(serverPath):
-            return os.path.abspath(serverPath)
-
-    raise RuntimeError("SuperVDSM Server not found")
-
-PIDFILE = os.path.join(constants.P_VDSM_RUN, "svdsm.pid")
-TIMESTAMP = os.path.join(constants.P_VDSM_RUN, "svdsm.time")
 ADDRESS = os.path.join(constants.P_VDSM_RUN, "svdsm.sock")
-SUPERVDSM = __supervdsmServerPath()
 
 
 class _SuperVdsmManager(BaseManager):
@@ -66,22 +46,7 @@ class ProxyCaller(object):
         callMethod = lambda: \
             getattr(self._supervdsmProxy._svdsm, self._funcName)(*args,
                                                                  **kwargs)
-        if not self._supervdsmProxy.isRunning():
-            # getting inside only when svdsm is down. its rare case so we
-            # don't care that isRunning will run twice
-            with self._supervdsmProxy.proxyLock:
-                if not self._supervdsmProxy.isRunning():
-                    self._supervdsmProxy.launch()
-
-        try:
-            return callMethod()
-        # handling internal exception that we raise to identify supervdsm
-        # validation. only this exception can cause kill!
-        except AuthenticationError:
-            with self._supervdsmProxy.proxyLock:
-                self._supervdsmProxy.kill()
-                self._supervdsmProxy.launch()
-            return callMethod()
+        return callMethod()
 
 
 class SuperVdsmProxy(object):
@@ -92,118 +57,25 @@ class SuperVdsmProxy(object):
 
     def __init__(self):
         self.proxyLock = threading.Lock()
-        self._firstLaunch = True
-
-        # Declaration of public variables that keep files' names that svdsm
-        # uses. We need to be able to change these variables so that running
-        # tests doesn't disturb and already running VDSM on the host.
-        self.extraCmd = None
-        self.setIPCPaths(PIDFILE, TIMESTAMP, ADDRESS)
-
-    def setIPCPaths(self, pidfile, timestamp, address):
-        self.pidfile = pidfile
-        self.timestamp = timestamp
-        self.address = address
+        self._manager = None
+        self._svdsm = None
+        self._connect()
 
     def open(self, *args, **kwargs):
         return self._manager.open(*args, **kwargs)
 
-    def _cleanOldFiles(self):
-        self._log.debug("Cleanning svdsm old files: %s, %s, %s",
-                        self.pidfile, self.timestamp, self.address)
-        for f in (self.pidfile, self.timestamp, self.address):
-            utils.rmFile(f)
-
-    def _start(self):
-        self._authkey = str(uuid.uuid4())
-        self._log.debug("Launching Super Vdsm")
-
-        # we pass to svdsm filenames and uid. Svdsm will use those filenames
-        # to create its internal files and give to the passed uid the
-        # permissions to read those files.
-        superVdsmCmd = [constants.EXT_PYTHON, SUPERVDSM,
-                        self._authkey, str(os.getpid()),
-                        self.pidfile, self.timestamp, self.address,
-                        str(os.getuid())]
-
-        if self.extraCmd:
-            superVdsmCmd.insert(0, self.extraCmd)
-
-        p = utils.execCmd(superVdsmCmd, sync=False, sudo=True)
-        p.wait(2)
-        if p.returncode:
-            utils.panic('executing supervdsm failed')
-
-    def kill(self):
-        try:
-            with open(self.pidfile, "r") as f:
-                pid = int(f.read().strip())
-            utils.execCmd([constants.EXT_KILL, "-9", str(pid)], sudo=True)
-        except Exception:
-            self._log.error("Could not kill old Super Vdsm %s",
-                            exc_info=True)
-
-        self._cleanOldFiles()
-        self._authkey = None
-        self._manager = None
-        self._svdsm = None
-        self._firstLaunch = True
-
-    def isRunning(self):
-        if self._firstLaunch or self._svdsm is None:
-            return False
-
-        try:
-            with open(self.pidfile, "r") as f:
-                spid = f.read().strip()
-            with open(self.timestamp, "r") as f:
-                createdTime = f.read().strip()
-        except IOError as e:
-            # pid file and timestamp file must be exist after first launch,
-            # otherwise excpetion will be raised to svdsm caller
-            if e.errno == ENOENT and self._firstLaunch:
-                return False
-            else:
-                raise
-
-        try:
-            pTime = str(utils.pidStat(int(spid))[21])
-        except OSError as e:
-            if e.errno == ESRCH:
-                # Means pid is not exist, svdsm was killed
-                return False
-            else:
-                raise
-
-        if pTime == createdTime:
-            return True
-        else:
-            return False
-
     def _connect(self):
-        self._manager = _SuperVdsmManager(address=self.address,
-                                          authkey=self._authkey)
+        self._manager = _SuperVdsmManager(address=ADDRESS, authkey='')
         self._manager.register('instance')
         self._manager.register('open')
         self._log.debug("Trying to connect to Super Vdsm")
         try:
-            self._manager.connect()
+            utils.retry(self._manager.connect, Exception, timeout=60, tries=3)
         except Exception as ex:
-            self._log.warn("Connect to svdsm failed %s", ex)
-            raise
-        self._svdsm = self._manager.instance()
+            msg = "Connect to supervdsm service failed: %s" % ex
+            utils.panic(msg)
 
-    def launch(self):
-        self._firstLaunch = False
-        self._start()
-        try:
-            # We retry 3 times to connect to avoid exceptions that are raised
-            # due to the process initializing. It might takes time to create
-            # the communication socket or other initialization methods take
-            # more time than expected.
-            utils.retry(self._connect, Exception, timeout=60, tries=3)
-        except:
-            utils.panic("Couldn't connect to supervdsm")
+        self._svdsm = self._manager.instance()
 
     def __getattr__(self, name):
         return ProxyCaller(self, name)

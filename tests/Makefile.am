@@ -56,7 +56,6 @@ test_modules = \
 	schemaTests.py \
 	sslTests.py \
 	storageMailboxTests.py \
-	superVdsmTests.py \
 	tcTests.py \
 	utilsTests.py \
 	vdsClientTests.py \

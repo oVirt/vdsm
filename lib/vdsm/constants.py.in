@@ -136,3 +136,5 @@ EXT_UNPERSIST = '@UNPERSIST_PATH@'
 EXT_VDSM_STORE_NET_CONFIG = '@VDSMDIR@/vdsm-store-net-config'
 
 EXT_WGET = '@WGET_PATH@'
+
+EXT_VDSM_TOOL = os.path.join('@BINDIR@', 'vdsm-tool')

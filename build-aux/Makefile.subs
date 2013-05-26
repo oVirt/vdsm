@@ -24,6 +24,7 @@ SUFFIXES: .in
 # http://www.gnu.org/software/automake/manual/html_node/Scripts.html
 PATHSUBST = sed \
 	-e "s,[@]BACKUPDIR[@],$(vdsmbackupdir),g" \
+	-e "s,[@]BINDIR[@],$(bindir),g" \
 	-e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
 	-e "s,[@]HOOKSDIR[@],$(vdsmhooksdir),g" \
 	-e "s,[@]LIBEXECDIR[@],$(vdsmexecdir),g" \

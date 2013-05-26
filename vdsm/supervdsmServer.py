@@ -16,7 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
+from pwd import getpwnam
 import platform
 import logging
 import logging.config
@@ -27,7 +27,6 @@ import errno
 import threading
 import re
 from storage import fuser
-from time import sleep
 import signal
 from multiprocessing import Pipe, Process
 from gluster import listPublicFunctions
@@ -45,7 +44,7 @@ from supervdsm import _SuperVdsmManager
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
-    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS
+    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import configNetwork
 from vdsm.config import config
@@ -335,17 +334,6 @@ class _SuperVdsm(object):
         return self.__udevVersion() > self.UDEV_WITH_RELOAD_VERSION
 
 
-def __pokeParent(parentPid, address, log):
-    try:
-        while True:
-            os.kill(parentPid, 0)
-            sleep(2)
-    except Exception:
-        utils.rmFile(address)
-        log.debug("Killing SuperVdsm Process")
-        os.kill(os.getpid(), signal.SIGTERM)
-
-
 def main():
     def bind(func):
         def wrapper(_SuperVdsm, *args, **kwargs):
@@ -366,20 +354,12 @@ def main():
     log = logging.getLogger("SuperVdsm.Server")
 
     try:
-        log.debug("Making sure I'm root")
+        log.debug("Making sure I'm root - SuperVdsm")
         if os.geteuid() != 0:
             sys.exit(errno.EPERM)
 
         log.debug("Parsing cmd args")
-        authkey, parentPid, pidfile, timestamp, address, uid = sys.argv[1:]
-
-        log.debug("Creating PID and TIMESTAMP files: %s, %s",
-                  pidfile, timestamp)
-        spid = os.getpid()
-        with open(pidfile, "w") as f:
-            f.write(str(spid) + "\n")
-        with open(timestamp, "w") as f:
-            f.write(str(utils.pidStat(int(spid))[21]) + "\n")
+        address = sys.argv[1]
 
         log.debug("Cleaning old socket %s", address)
         if os.path.exists(address):
@@ -387,14 +367,9 @@ def main():
 
         log.debug("Setting up keep alive thread")
 
-        monThread = threading.Thread(target=__pokeParent,
-                                     args=[int(parentPid), address, log])
-        monThread.setDaemon(True)
-        monThread.start()
-
         try:
             log.debug("Creating remote object manager")
-            manager = _SuperVdsmManager(address=address, authkey=authkey)
+            manager = _SuperVdsmManager(address=address, authkey='')
             manager.register('instance', callable=_SuperVdsm)
 
             server = manager.get_server()
@@ -402,8 +377,7 @@ def main():
             servThread.setDaemon(True)
             servThread.start()
 
-            for f in (address, timestamp, pidfile):
-                chown(f, int(uid), METADATA_GROUP)
+            chown(address, getpwnam(VDSM_USER).pw_uid, METADATA_GROUP)
 
             log.debug("Started serving super vdsm object")
 

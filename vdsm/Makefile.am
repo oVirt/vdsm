@@ -79,6 +79,8 @@ nodist_noinst_DATA = \
 	vdsm-restore-net-config.init \
 	vdsm.rwtab \
 	vdsmd.init \
+	supervdsmd.init \
+	supervdsmd.service \
 	$(NULL)
 
 dist_vdsm_SCRIPTS = \
@@ -114,6 +116,8 @@ EXTRA_DIST = \
 	mom.policy \
 	sudoers.vdsm.in \
 	svdsm.logger.conf.in \
+	supervdsmd.init.in \
+	supervdsmd.service.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \

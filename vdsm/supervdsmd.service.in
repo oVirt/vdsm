@@ -1,0 +1,7 @@
+[Unit]
+Description="Auxiliary vdsm service for running helper functions as root"
+
+[Service]
+Type=simple
+ExecStart=@PYTHON@ @VDSMDIR@/supervdsmServer.pyc @VDSMRUNDIR@/svdsm.sock
+Restart=on-abort

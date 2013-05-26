@@ -505,6 +505,8 @@ class clientIF:
                         continue
                     if f == 'svdsm.sock':
                         continue
+                    if f == 'supervdsm_respawn.pid':
+                        continue
                 else:
                     continue
                 self.log.debug("removing old file " + f)

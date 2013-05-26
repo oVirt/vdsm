@@ -1,0 +1,111 @@
+#! /bin/sh
+#
+# Copyright 2006-2013 Red Hat, Inc. and/or its affiliates.
+#
+# Licensed to you under the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.  See the files README and
+# LICENSE_GPL_v2 which accompany this distribution.
+#
+
+# chkconfig: 2345 99 00
+#
+### BEGIN INIT INFO
+# Provides: supervdsmd
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Description: init script for the Super VDS management server
+# Short-Description: init script for the Super VDS management server
+### END INIT INFO
+
+SUPERVDSM_BIN=@VDSMDIR@/supervdsmServer.pyc
+PIDFILE=@VDSMRUNDIR@/supervdsmd.pid
+RESPAWNPIDFILE=@VDSMRUNDIR@/supervdsm_respawn.pid
+SOCKFILE=@VDSMRUNDIR@/svdsm.sock
+prog=supervdsm
+
+. /etc/init.d/functions
+
+log_failure_msg() { echo -n "$@"; failure "$@"; echo; }
+log_success_msg() { echo -n "$@"; success "$@"; echo; }
+
+RETVAL=0
+
+start(){
+        test_already_running && return 0
+
+        LC_ALL=C @VDSMDIR@/respawn --minlifetime 10 --daemon --masterpid "$RESPAWNPIDFILE" @PYTHON@ "$SUPERVDSM_BIN" "$SOCKFILE"
+        RETVAL=$?
+        [ "$RETVAL" -eq 0 ] && log_success_msg "$prog start" || log_failure_msg "$prog start"
+}
+
+test_already_running()
+{
+    if pidofproc -p $RESPAWNPIDFILE >/dev/null || \
+       pidofproc -p $PIDFILE $SUPERVDSM_BIN >/dev/null; then
+        log_success_msg "$prog: already running"
+        return 0
+    fi
+    return 1
+}
+
+stop(){
+    echo "Shutting down supervdsm daemon: "
+    if killproc -p "$RESPAWNPIDFILE"; then
+        log_success_msg "$prog watchdog stop"
+    fi
+    if ! pidofproc -p "$PIDFILE" >/dev/null; then
+        log_failure_msg "$prog: not running"
+        RETVAL=0
+    else
+        killproc -p "$PIDFILE" -d 2
+        RETVAL=$?
+        [ "$RETVAL" -eq 0 ] && log_success_msg "$prog stop" || log_failure_msg "$prog stop"
+    fi
+    return "$RETVAL"
+}
+
+case "$1" in
+     start)
+        start
+        RETVAL=$?
+        ;;
+     stop)
+        stop
+        RETVAL=$?
+        ;;
+     status)
+        pidofproc -p "$PIDFILE" "$SUPERVDSM_BIN" >/dev/null
+        RETVAL=$?
+        if [ "$RETVAL" -eq 0 ]; then
+            echo "Super VDSM daemon server is running"
+        else
+            echo -n "Super VDSM daemon is not running"
+            if pidofproc -p "$RESPAWNPIDFILE" >/dev/null; then
+                echo ", but its watchdog is"
+            else
+                echo
+            fi
+        fi
+        ;;
+     condrestart)
+        pidofproc -p "$PIDFILE" "$SUPERVDSM_BIN" >/dev/null
+        RETVAL=$?
+        if [ "$RETVAL" -eq 0 ]; then
+            $0 stop && $0 start;
+            RETVAL=$?;
+        fi;
+        ;;
+     try-restart|restart|force-reload)
+        $0 stop && $0 start
+        RETVAL=$?
+        ;;
+     *)
+        echo "Usage: $0 {start|stop|status|restart|condrestart|force-reload|try-restart}"
+        RETVAL=2
+esac
+
+exit "$RETVAL"
+
+
+

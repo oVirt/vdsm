@@ -52,6 +52,8 @@ vdsm/vdsm-store-net-config
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
 vdsm/vdsmd.init
+vdsm/supervdsmd.init
+vdsm/supervdsmd.service
 vdsm_api/vdsm-api.html
 vdsm_hooks/persist-vdsm-hooks
 vdsm_reg/config.py
