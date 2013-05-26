@@ -77,8 +77,8 @@ class DomainMonitor(object):
     def __init__(self, interval):
         self._domains = {}
         self._interval = interval
-        self.onDomainConnectivityStateChange = misc.Event(
-            "Storage.DomainMonitor.onDomainConnectivityStateChange")
+        self.onDomainStateChange = misc.Event(
+            "Storage.DomainMonitor.onDomainStateChange")
 
     @property
     def monitoredDomains(self):
@@ -233,7 +233,7 @@ class DomainMonitorThread(object):
                            "Valid" if self.nextStatus.valid else "Invalid")
 
             try:
-                self.domainMonitor.onDomainConnectivityStateChange.emit(
+                self.domainMonitor.onDomainStateChange.emit(
                     self.sdUUID, self.nextStatus.valid)
             except:
                 self.log.warn("Could not emit domain state change event",

@@ -156,7 +156,7 @@ class StoragePool(Securable):
         self.spmRole = SPM_FREE
 
     def _upgradePoolDomain(self, sdUUID, isValid):
-        # This method is called everytime the onDomainConnectivityStateChange
+        # This method is called everytime the onDomainStateChange
         # event is emitted, this event is emitted even when a domain goes
         # INVALID if this happens there is nothing for us to do no matter what
         # the domain is
@@ -210,7 +210,7 @@ class StoragePool(Securable):
                     self.log.debug("All domains are upgraded, unregistering "
                                    "from state change event")
                     try:
-                        self.domainMonitor.onDomainConnectivityStateChange.\
+                        self.domainMonitor.onDomainStateChange.\
                             unregister(self._upgradeCallback)
                     except KeyError:
                         pass
@@ -351,7 +351,7 @@ class StoragePool(Securable):
                                       rm.LockType.exclusive):
             domains = self._domainsToUpgrade[:]
             try:
-                self.domainMonitor.onDomainConnectivityStateChange.unregister(
+                self.domainMonitor.onDomainStateChange.unregister(
                     self._upgradeCallback)
             except KeyError:
                 pass
@@ -454,7 +454,7 @@ class StoragePool(Securable):
                 pass
 
             self.log.debug("Registering with state change event")
-            self.domainMonitor.onDomainConnectivityStateChange.register(
+            self.domainMonitor.onDomainStateChange.register(
                 self._upgradeCallback)
             self.log.debug("Running initial domain upgrade threads")
             for sdUUID in self._domainsToUpgrade:

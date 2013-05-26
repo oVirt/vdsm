@@ -353,6 +353,8 @@ class HSM:
 
         self.__validateLvmLockingType()
 
+        self.domainStateChangeCallbacks = set()
+
         # cleanStorageRepoitory uses tasksDir value, this must be assigned
         # before calling it
         self.tasksDir = config.get('irs', 'hsm_tasks')
@@ -396,6 +398,18 @@ class HSM:
                                                 name="storageRefresh")
         storageRefreshThread.daemon = True
         storageRefreshThread.start()
+
+    @public
+    def registerDomainStateChangeCallback(self, callbackFunc):
+        """
+        Currently this method assumes that all registrations
+        are done *prior* to connecting to pool.
+        """
+        self.domainStateChangeCallbacks.add(callbackFunc)
+
+    def _hsmSchedule(self, name, func, *args):
+        self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task,
+                                 name, func, *args)
 
     def __validateLvmLockingType(self):
         """
@@ -1038,6 +1052,9 @@ class HSM:
             res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
             if res:
                 self.pools[spUUID] = pool
+                for callback in self.domainStateChangeCallbacks:
+                    self.pools[spUUID].domainMonitor.\
+                        onDomainStateChange.register(callback)
             return res
 
     @public

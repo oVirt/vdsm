@@ -75,6 +75,8 @@ class clientIF:
         self._recovery = True
         self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
+        self.domainVmIds = {}
+        self.domainVmIdsLock = threading.Lock()
         self._initIRS()
         self.mom = None
         if _glusterEnabled:
@@ -110,6 +112,49 @@ class clientIF:
                 self.mom.stop()
             raise
         self._prepareBindings()
+
+    def addVmToMonitoredDomains(self, vmId, domains):
+        with self.domainVmIdsLock:
+            for dom in domains:
+                try:
+                    self.domainVmIds[dom].add(vmId)
+                except KeyError:
+                    self.domainVmIds[dom] = set([vmId])
+
+    def removeVmFromMonitoredDomains(self, vmId):
+        for dom in self.domainVmIds:
+            #only take lock here to allow runVm to take the lock in-between
+            with self.domainVmIdsLock:
+                try:
+                    self.domainVmIds[dom].remove(vmId)
+                except ValueError:
+                    pass
+                else:
+                    if not self.domainVmIds[dom]:
+                        del self.domainVmIds[dom]
+
+    def contEIOVms(self, sdUUID, isDomainStateValid):
+        # This method is called everytime the onDomainStateChange
+        # event is emitted, this event is emitted even when a domain goes
+        # INVALID if this happens there is nothing to do
+        if not isDomainStateValid:
+            return
+
+        libvirtCon = libvirtconnection.get()
+        libvirtVms = libvirtCon.listAllDomains(
+            libvirt.VIR_CONNECT_LIST_DOMAINS_PAUSED)
+
+        if sdUUID in self.domainVmIds:
+            with self.vmContainerLock:
+                self.log.info("vmContainerLock acquired")
+                for libvirtVm in libvirtVms:
+                    state = libvirtVm.state(0)
+                    if state[1] == libvirt.VIR_DOMAIN_PAUSED_IOERROR:
+                        vmId = libvirtVm.UUIDString()
+                        if vmId in self.domainVmIds[sdUUID]:
+                            vmObj = self.vmContainer[vmId]
+                            self.log.info("Cont vm %s in EIO", vmId)
+                            vmObj.cont()
 
     @classmethod
     def getInstance(cls, log=None):
@@ -236,6 +281,8 @@ class clientIF:
                 self.irs = Dispatcher(HSM())
             except:
                 self.log.error("Error initializing IRS", exc_info=True)
+            else:
+                self.irs.registerDomainStateChangeCallback(self.contEIOVms)
 
     def _getUUIDSpecPath(self, uuid):
         try:
@@ -361,20 +408,19 @@ class clientIF:
         return {'status': 0, 'alignment': aligning}
 
     def createVm(self, vmParams):
-        self.vmContainerLock.acquire()
-        self.log.info("vmContainerLock acquired by vm %s",
-                      vmParams['vmId'])
-        try:
-            if 'recover' not in vmParams:
-                if vmParams['vmId'] in self.vmContainer:
-                    self.log.warning('vm %s already exists' %
-                                     vmParams['vmId'])
-                    return errCode['exist']
-            vm = Vm(self, vmParams)
-            self.vmContainer[vmParams['vmId']] = vm
-        finally:
-            container_len = len(self.vmContainer)
-            self.vmContainerLock.release()
+        with self.vmContainerLock:
+            self.log.info("vmContainerLock acquired by vm %s",
+                          vmParams['vmId'])
+            try:
+                if 'recover' not in vmParams:
+                    if vmParams['vmId'] in self.vmContainer:
+                        self.log.warning('vm %s already exists' %
+                                         vmParams['vmId'])
+                        return errCode['exist']
+                vm = Vm(self, vmParams)
+                self.vmContainer[vmParams['vmId']] = vm
+            finally:
+                container_len = len(self.vmContainer)
         vm.run()
         self.log.debug("Total desktops after creation of %s is %d" %
                        (vmParams['vmId'], container_len))
