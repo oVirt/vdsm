@@ -24,6 +24,7 @@ System service management utlities.
 import os
 import functools
 import re
+import sys
 
 from vdsm.tool import expose
 from vdsm.utils import CommandPath
@@ -61,6 +62,11 @@ _srvStopAlts = []
 _srvStatusAlts = []
 _srvRestartAlts = []
 _srvDisableAlts = []
+
+
+class ServiceError(RuntimeError):
+    pass
+
 
 try:
     _SYSTEMCTL.cmd
@@ -233,10 +239,10 @@ def _runAlts(alts, *args, **kwarg):
             errors[alt.func_name] = e
         else:
             if rc == 0:
-                return
+                return 0
             else:
                 errors[alt.func_name] = (rc, out, err)
-    raise RuntimeError("Tried all alternatives but failed:\n%s" % errors)
+    raise ServiceError("Tried all alternatives but failed:\n%s" % errors)
 
 
 @expose("service-start")
@@ -244,8 +250,7 @@ def service_start(srvName):
     """
     Start a system service
     """
-    _runAlts(_srvStartAlts, srvName)
-    return 0
+    return _runAlts(_srvStartAlts, srvName)
 
 
 @expose("service-stop")
@@ -253,8 +258,7 @@ def service_stop(srvName):
     """
     Stop a system service
     """
-    _runAlts(_srvStopAlts, srvName)
-    return 0
+    return _runAlts(_srvStopAlts, srvName)
 
 
 @expose("service-status")
@@ -262,8 +266,11 @@ def service_status(srvName):
     """
     Get status of a system service
     """
-    _runAlts(_srvStatusAlts, srvName)
-    return 0
+    try:
+        return _runAlts(_srvStatusAlts, srvName)
+    except ServiceError as e:
+        sys.stderr.write('service-status: %s\n' % e)
+        return 1
 
 
 @expose("service-restart")
@@ -271,8 +278,7 @@ def service_restart(srvName):
     """
     Get status of a system service
     """
-    _runAlts(_srvRestartAlts, srvName)
-    return 0
+    return _runAlts(_srvRestartAlts, srvName)
 
 
 @expose("service-disable")
@@ -280,5 +286,4 @@ def service_disable(srvName):
     """
     Disable a system service
     """
-    _runAlts(_srvDisableAlts, srvName)
-    return 0
+    return _runAlts(_srvDisableAlts, srvName)
