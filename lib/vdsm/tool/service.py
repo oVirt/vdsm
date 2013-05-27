@@ -63,6 +63,7 @@ _srvStatusAlts = []
 _srvRestartAlts = []
 _srvReloadAlts = []
 _srvDisableAlts = []
+_srvIsManagedAlts = []
 
 
 class ServiceError(RuntimeError):
@@ -138,12 +139,17 @@ else:
         cmd = [_SYSTEMCTL.cmd, "disable", srvName]
         return execCmd(cmd)
 
+    @_systemctlNative
+    def _systemctlIsManaged(srvName):
+        return (0, '', '')
+
     _srvStartAlts.append(_systemctlStart)
     _srvStopAlts.append(_systemctlStop)
     _srvStatusAlts.append(_systemctlStatus)
     _srvRestartAlts.append(_systemctlRestart)
     _srvReloadAlts.append(_systemctlReload)
     _srvDisableAlts.append(_systemctlDisable)
+    _srvIsManagedAlts.append(_systemctlIsManaged)
 
 
 def _isStopped(message):
@@ -219,12 +225,17 @@ else:
             f.write("manual\n")
         return 0, "", ""
 
+    @_initctlNative
+    def _initctlIsManaged(srvName):
+        return (0, '', '')
+
     _srvStartAlts.append(_initctlStart)
     _srvStopAlts.append(_initctlStop)
     _srvStatusAlts.append(_initctlStatus)
     _srvRestartAlts.append(_initctlRestart)
     _srvReloadAlts.append(_initctlReload)
     _srvDisableAlts.append(_initctlDisable)
+    _srvIsManagedAlts.append(_initctlIsManaged)
 
 
 def _sysvNative(sysvFun):
@@ -274,11 +285,16 @@ else:
         cmd = [_SERVICE.cmd, srvName, "reload"]
         return _execSysvEnv(cmd)
 
+    @_sysvNative
+    def _serviceIsManaged(srvName):
+        return (0, '', '')
+
     _srvStartAlts.append(_serviceStart)
     _srvStopAlts.append(_serviceStop)
     _srvRestartAlts.append(_serviceRestart)
     _srvReloadAlts.append(_serviceReload)
     _srvStatusAlts.append(_serviceStatus)
+    _srvIsManagedAlts.append(_serviceIsManaged)
 
 
 try:
@@ -376,3 +392,15 @@ def service_disable(srvName):
     Disable a system service
     """
     return _runAlts(_srvDisableAlts, srvName)
+
+
+@expose("service-is-managed")
+def service_is_managed(srvName):
+    """
+    Check the existence of a service
+    """
+    try:
+        return _runAlts(_srvIsManagedAlts, srvName)
+    except ServiceError as e:
+        sys.stderr.write('service-is-managed: %s\n' % e)
+        return 1
