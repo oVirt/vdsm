@@ -25,6 +25,7 @@ import os
 import functools
 import re
 import sys
+from collections import defaultdict
 
 from vdsm.tool import expose
 from vdsm.utils import CommandPath
@@ -56,6 +57,13 @@ _CHKCONFIG = CommandPath("chkconfig",
 _UPDATERC = CommandPath("update-rc.d",
                         "/usr/sbin/update-rc.d",
                         )
+
+_srvNameAlts = {
+    'iscsid': ['iscsid', 'open-iscsi'],
+    'libvirtd': ['libvirtd', 'libvirt-bin'],
+    'multipathd': ['multipathd', 'multipath-tools'],
+    'network': ['network', 'networking'],
+}
 
 _srvStartAlts = []
 _srvStopAlts = []
@@ -323,23 +331,24 @@ else:
     _srvDisableAlts.append(_updatercDisable)
 
 
-def _runAlts(alts, *args, **kwarg):
-    errors = {}
+def _runAlts(alts, srvName, *args, **kwarg):
+    errors = defaultdict(list)
     for alt in alts:
-        try:
-            rc, out, err = alt(*args, **kwarg)
-        except ServiceNotExistError as e:
-            errors[alt.func_name] = e
-            continue
-        else:
-            if rc == 0:
-                return 0
+        for srv in _srvNameAlts.get(srvName, [srvName]):
+            try:
+                rc, out, err = alt(srv, *args, **kwarg)
+            except ServiceNotExistError as e:
+                errors[alt.func_name].append(e)
+                continue
             else:
-                raise ServiceOperationError(
-                    "%s failed" % alt.func_name, out, err)
+                if rc == 0:
+                    return 0
+                else:
+                    raise ServiceOperationError(
+                        "%s failed" % alt.func_name, out, err)
     raise ServiceNotExistError(
-        "Tried all alternatives but failed:\n%s" %
-        ('\n'.join(str(e) for e in errors.values())))
+        'Tried all alternatives but failed:\n%s' %
+        ('\n'.join(str(e) for errs in errors.values() for e in errs)))
 
 
 @expose("service-start")
