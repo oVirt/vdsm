@@ -52,6 +52,18 @@ _iscsiadmTransactionLock = RLock()
 log = logging.getLogger('Storage.ISCSI')
 
 
+def getDevIscsiSessionId(dev):
+    device = os.path.realpath(os.path.join("/sys", "block", dev, "device"))
+    if not os.path.exists(device):
+        return None
+    # Path format example:
+    #   device  = "/sys/devices/platform/host1/session1/target1:0:0/1:0:0:1"
+    #   session = "/sys/devices/platform/host1/session1"
+    session = os.path.realpath(os.path.join(device, "../.."))
+    # Returning the session id from the session string (e.g. "session1")
+    return int(os.path.basename(session)[7:])
+
+
 def getDevIscsiInfo(dev):
     """
     Reports the iSCSI parameters of the given device 'dev'
@@ -62,11 +74,8 @@ def getDevIscsiInfo(dev):
 
     """
 
-    device = os.path.realpath(os.path.join("/sys/block", dev, "device"))
-    if os.path.exists(device) and devIsiSCSI(dev):
-        sessiondir = os.path.realpath(os.path.join(device, "../.."))
-        sessionID = int(os.path.basename(sessiondir)[7:])
-        return getSessionInfo(sessionID)
+    if devIsiSCSI(dev):
+        return getSessionInfo(getDevIscsiSessionId(dev))
 
     #FIXME: raise exception instead of returning an empty object
     return IscsiSession(0, IscsiInterface(""),
@@ -77,11 +86,20 @@ def getSessionInfo(sessionID):
     return supervdsm.getProxy().readSessionInfo(sessionID)
 
 
+def getIscsiSessionPath(sessionId):
+    return os.path.join("/sys", "class", "iscsi_session",
+                        "session%d" % sessionId)
+
+
+def getIscsiConnectionPath(sessionId):
+    return os.path.join("/sys", "class", "iscsi_connection",
+                        "connection%d:0" % sessionId)
+
+
 def readSessionInfo(sessionID):
-    sessionName = "session%d" % sessionID
-    connectionName = "connection%d:0" % sessionID
-    iscsi_session = "/sys/class/iscsi_session/%s/" % sessionName
-    iscsi_connection = "/sys/class/iscsi_connection/%s/" % connectionName
+    iscsi_session = getIscsiSessionPath(sessionID)
+    iscsi_connection = getIscsiConnectionPath(sessionID)
+
     if not os.path.isdir(iscsi_session) or not os.path.isdir(iscsi_connection):
         raise OSError(errno.ENOENT, "No such session")
 
@@ -431,7 +449,24 @@ def devIsiSCSI(dev):
     iscsi_host = os.path.join(hostdir, "iscsi_host/", host)
     scsi_host = os.path.join(hostdir, "scsi_host/", host)
     proc_name = os.path.join(scsi_host, "proc_name")
-    return (os.path.exists(iscsi_host) and os.path.exists(proc_name))
+
+    if not os.path.exists(iscsi_host) or not os.path.exists(proc_name):
+        return False
+
+    # This second part of the validation is to make sure that if the
+    # iscsi connection is handled by an HBA (e.g. qlogic in bz967605)
+    # the device is reported as fiber channel to avoid unmanageable
+    # commands (dis/connectStorageServer).
+    session_id = getDevIscsiSessionId(dev)
+
+    if session_id is None:
+        return False
+
+    iscsi_connection = getIscsiConnectionPath(session_id)
+    pers_addr = os.path.join(iscsi_connection, "persistent_address")
+    pers_port = os.path.join(iscsi_connection, "persistent_port")
+
+    return os.path.exists(pers_addr) and os.path.exists(pers_port)
 
 
 def getiScsiTarget(dev):
