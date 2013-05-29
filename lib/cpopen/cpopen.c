@@ -64,6 +64,32 @@ retry:
     return rv;
 }
 
+/* Just like read() but retries on interrupt and tries to fill the buffer */
+static int
+safeRead(int fd, void *buff, size_t count) {
+    size_t bread = 0;
+    char* cbuff = buff;
+    int rv = 0;
+    while (bread < count) {
+        rv = read(fd, cbuff + bread, count - bread);
+        if (rv == 0) { /* EOF */
+            return bread;
+        } else if (rv < 0) { /* ERROR */
+            switch (errno) {
+            case EINTR:
+            case EAGAIN:
+                break;
+            default:
+                return rv;
+            }
+        } else { /* Success */
+                bread += rv;
+        }
+    }
+
+    return bread;
+}
+
 static int
 setCloseOnExec(int fd) {
     int flags;
@@ -311,34 +337,23 @@ sendErrno:
 
     if (deathSignal) {
         /* death signal sync point */
-        while (1) {
-            rv = read(errnofd[0], &childErrno, sizeof(int));
-            if (rv < 0) {
-                switch (errno) {
-                    case EINTR:
-                    case EAGAIN:
-                        break;
-                    default:
-                        PyErr_SetString(PyExc_OSError, strerror(childErrno));
-                        goto fail;
-
-                }
-            } else if (rv < sizeof(int)) {
-                PyErr_SetString(PyExc_OSError, strerror(childErrno));
-                goto fail;
-            }
-            break;
-        }
-
-        if (childErrno != 0) {
+        rv = safeRead(errnofd[0], &childErrno, sizeof(int));
+        if (rv != sizeof(int)) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto fail;
+        } else if (childErrno != 0) {
             PyErr_SetString(PyExc_OSError, strerror(childErrno));
             goto fail;
         }
     }
 
     /* error sync point */
-    if (read(errnofd[0], &childErrno, sizeof(int)) == sizeof(int)) {
+    rv = safeRead(errnofd[0], &childErrno, sizeof(int));
+    if (rv == sizeof(int)) {
         PyErr_SetString(PyExc_OSError, strerror(childErrno));
+        goto fail;
+    } else if (rv < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
         goto fail;
     }
 
