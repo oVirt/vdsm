@@ -36,9 +36,12 @@ install-data:
 	$(MKDIR_P) $(DESTDIR)$(cpopendir)
 	$(INSTALL_PROGRAM) cpopen.so \
 		$(DESTDIR)$(cpopendir)/cpopen.so
+check-local: tests.py
+	nosetests tests.py
 
 EXTRA_DIST = \
 	cpopen.c \
+	tests.py \
 	setup.py
 
 CLEANFILES = \
