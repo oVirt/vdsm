@@ -35,7 +35,7 @@ if __name__ != "__main__":
     for p in glob.glob("build/*/"):
         sys.path.append(p)
 
-    from cpopen import CPopen
+    from . import CPopen
 
 
 class TestCPopen(TestCase):
