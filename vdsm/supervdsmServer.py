@@ -44,7 +44,8 @@ from supervdsm import _SuperVdsmManager
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
-    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER
+    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER, \
+    P_VDSM_RUN
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import configNetwork
 from vdsm.config import config
@@ -357,6 +358,11 @@ def main():
         log.debug("Making sure I'm root - SuperVdsm")
         if os.geteuid() != 0:
             sys.exit(errno.EPERM)
+
+        pidfile = P_VDSM_RUN + 'supervdsmd.pid'
+        pid = str(os.getpid())
+        with open(pidfile, 'w') as f:
+            f.write(pid + "\n")
 
         log.debug("Parsing cmd args")
         address = sys.argv[1]

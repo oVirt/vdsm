@@ -501,7 +501,7 @@ class clientIF:
                         continue
                     if f == 'respawn.pid':
                         continue
-                    if f == 'svdsm.pid':
+                    if f == 'supervdsmd.pid':
                         continue
                     if f == 'svdsm.sock':
                         continue
