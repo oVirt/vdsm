@@ -945,7 +945,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/pki/%{vdsm_name}/keys/libvirt_password
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
-%ghost %dir %{_localstatedir}/run/%{vdsm_name}
+%dir %{_localstatedir}/run/%{vdsm_name}
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}/pools
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}/payload
 %dir %{_localstatedir}/log/%{vdsm_name}
