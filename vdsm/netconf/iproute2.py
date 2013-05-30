@@ -1,4 +1,4 @@
-# Copyright 20013 Red Hat, Inc.
+# Copyright 2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,13 +17,26 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetconfdir = $(vdsmdir)/netconf
+from ipwrapper import routeAdd
+from ipwrapper import routeDel
+from ipwrapper import ruleAdd
+from ipwrapper import ruleDel
 
-dist_vdsmnetconf_PYTHON = \
-	__init__.py \
-	ifcfg.py \
-	iproute2.py \
-	libvirtCfg.py \
-	$(NULL)
+
+class Iproute2(object):
+    @staticmethod
+    def configureSourceRoute(sourceRoute, device):
+        for route in sourceRoute.routes:
+            routeAdd(route)
+
+        for rule in sourceRoute.rules:
+            ruleAdd(rule)
+
+    @staticmethod
+    def removeSourceRoute(sourceRoute, device):
+        for route in sourceRoute.routes:
+            routeDel(route)
+
+        for rule in sourceRoute.rules:
+            ruleDel(rule)

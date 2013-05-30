@@ -66,6 +66,7 @@ BuildRequires: python-dmidecode
 %endif
 %if 0%{?rhel} == 6
 BuildRequires: python-ordereddict
+BuildRequires: python-argparse
 %endif
 BuildRequires: python-ethtool
 
@@ -139,6 +140,7 @@ Requires: mom >= 0.3.0
 Requires: policycoreutils >= 2.0.83-19.30
 Requires: policycoreutils-python >= 2.0.83-19.30
 Requires: python-pthreading
+Requires: python-argparse
 Requires: selinux-policy-targeted >= 3.7.19-155
 Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
@@ -786,6 +788,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
+%{_datadir}/%{vdsm_name}/sourceRoute.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
 %{_datadir}/%{vdsm_name}/vmChannels.py*
@@ -919,6 +922,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/netconf/__init__.py*
 %{_datadir}/%{vdsm_name}/netconf/ifcfg.py*
 %{_datadir}/%{vdsm_name}/netconf/libvirtCfg.py*
+%{_datadir}/%{vdsm_name}/netconf/iproute2.py*
 %{_datadir}/%{vdsm_name}/neterrors.py*
 %{_datadir}/%{vdsm_name}/netmodels.py*
 %{_datadir}/%{vdsm_name}/respawn

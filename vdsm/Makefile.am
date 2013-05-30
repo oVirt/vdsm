@@ -47,6 +47,7 @@ dist_vdsm_PYTHON = \
 	netmodels.py \
 	parted_utils.py \
 	sampling.py \
+	sourceRoute.py \
 	supervdsm.py \
 	supervdsmServer.py \
 	tc.py \
