@@ -83,7 +83,8 @@ def run():
 
         pidfile = constants.P_VDSM_RUN + 'vdsmd.pid'
         pid = str(os.getpid())
-        file(pidfile, 'w').write(pid + "\n")
+        with open(pidfile, 'w') as f:
+            f.write(pid + "\n")
         os.chmod(pidfile, 0664)
 
         sysname, nodename, release, version, machine = os.uname()
