@@ -167,20 +167,31 @@ class Bond(NetDevice):
         self.configurator.removeBond(self)
 
     @classmethod
+    def _objectivizeSlaves(cls, name, configurator, nics, mtu, _netinfo):
+        slaves = []
+        for nic in nics:
+            nicVlans = tuple(_netinfo.getVlansForIface(nic))
+            nicNet = _netinfo.getNetworkForIface(nic)
+            nicBond = _netinfo.getBondingForNic(nic)
+            if nicVlans or nicNet or nicBond and nicBond != name:
+                raise ConfigNetworkError(
+                    ne.ERR_USED_NIC, 'nic %s already used by %s' %
+                    (nic, nicVlans or nicNet or nicBond))
+            slaves.append(Nic(nic, configurator, mtu=mtu,
+                              _netinfo=_netinfo))
+        return slaves
+
+    @classmethod
     def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
                     destroyOnMasterRemoval=None):
-        if name and nics:
-            slaves = []
-            for nic in nics:
-                nicVlans = tuple(_netinfo.getVlansForIface(nic))
-                nicNet = _netinfo.getNetworkForIface(nic)
-                nicBond = _netinfo.getBondingForNic(nic)
-                if nicVlans or nicNet or nicBond and nicBond != name:
-                    raise ConfigNetworkError(
-                        ne.ERR_USED_NIC, 'nic %s already used by %s' %
-                        (nic, nicVlans or nicNet or nicBond))
-                slaves.append(Nic(nic, configurator, mtu=mtu,
-                                  _netinfo=_netinfo))
+        if name and nics:  # New bonding or edit bonding.
+            slaves = cls._objectivizeSlaves(name, configurator, nics, mtu,
+                                            _netinfo)
+            if name in _netinfo.bondings:
+                mtu = max(netinfo.getMtu(name), mtu)
+                if not options:
+                    options = _netinfo.bondings[name]['cfg'].get(
+                        'BONDING_OPTS')
         elif name in _netinfo.bondings:  # Implicit bonding.
             mtu = max(netinfo.getMtu(name), mtu)
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)

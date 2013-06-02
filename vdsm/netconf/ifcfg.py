@@ -35,7 +35,7 @@ from vdsm import constants
 from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import utils
-from netmodels import Bond, Bridge
+from netmodels import Nic, Bond, Bridge
 import neterrors as ne
 
 
@@ -98,6 +98,13 @@ class Ifcfg(object):
             slave.configure(bonding=bond.name, **opts)
         ifup(bond.name, async)
 
+    def editBonding(self, bond, _netinfo):
+        ifdown(bond.name)
+        for nic in _netinfo.getNicsForBonding(bond.name):
+            Nic(nic, self, _netinfo=_netinfo).remove()
+        bridge = _netinfo.getBridgedNetworkForIface(bond.name)
+        self.configureBond(bond, bridge)
+
     def configureNic(self, nic, bridge=None, bonding=None, **opts):
         ipaddr, netmask, gateway, bootproto, async = nic.getIpConfig()
         self.configWriter.addNic(nic.name, bonding=bonding, bridge=bridge,
@@ -115,48 +122,8 @@ class Ifcfg(object):
                                                iface.name)
         self._libvirtAdded.add(network)
 
-    def configureBonding(self, bond, nics, bridge=None, mtu=None,
-                         bondingOptions=None):
-        self.configWriter.addBonding(bond, bridge=bridge, mtu=mtu,
-                                     bondingOptions=bondingOptions)
-        for nic in nics:
-            self.configWriter.addNic(nic, bonding=bond, mtu=mtu)
-        ifup(bond)
-
-    def editBonding(self, bond, bondAttrs, bridge, _netinfo):
-        # Save MTU for future set on NICs
-        confParams = netinfo.getIfaceCfg(bond)
-        mtu = confParams.get('MTU', None)
-        if mtu:
-            mtu = int(mtu)
-
-        ifdown(bond)
-        # Take down all bond's NICs.
-        for nic in _netinfo.getNicsForBonding(bond):
-            ifdown(nic)
-            self.configWriter.removeNic(nic)
-            if nic not in bondAttrs['nics']:
-                ifup(nic)
-
-        # Note! In case we have bridge up and connected to the bond
-        # we will get error in log:
-        #   (ifdown) bridge XXX is still up; can't delete it
-        # But, we prefer this behaviour instead of taking bridge down
-        # Anyway, we will not be able to take it down with connected VMs
-        self.configureBonding(bond, bondAttrs['nics'], bridge, mtu,
-                              bondAttrs.get('options', None))
-
     def removeLibvirtNetwork(self, network):
         self.configWriter.removeLibvirtNetwork(network)
-
-    def removeBonding(self, bond, nics):
-        ifdown(bond)
-        self.configWriter.removeBonding(bond)
-
-        for nic in nics:
-            ifdown(nic)
-            self.configWriter.removeNic(nic)
-            ifup(nic)
 
     def removeBridge(self, bridge):
         ifdown(bridge.name)

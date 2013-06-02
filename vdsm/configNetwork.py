@@ -381,39 +381,32 @@ def _validateNetworkSetup(networks={}, bondings={}):
                                      "Unknown nics in: %r" % list(nics))
 
 
-def _editBondings(bondings, configurator):
-    """ Add/Edit bond interface """
-    logger = logging.getLogger("_editBondings")
+def _handleBondings(bondings, configurator):
+    """ Add/Edit/Remove bond interface """
+    logger = logging.getLogger("_handleBondings")
 
     _netinfo = netinfo.NetInfo()
 
-    for bond, bondAttrs in bondings.iteritems():
-        logger.debug("Creating/Editing bond %s with attributes %s",
-                     bond, bondAttrs)
-
-        bridge = _netinfo.getBridgedNetworkForIface(bond)
-
-        if bond in _netinfo.bondings:
-            configurator.editBonding(bond, bondAttrs, bridge, _netinfo)
-        else:
-            configurator.configureBonding(bond, nics=bondAttrs['nics'],
-                                          bridge=bridge,
-                                          bondingOptions=bondAttrs.get(
-                                              'options', None))
-
-
-def _removeBondings(bondings, configurator):
-    """ Remove bond interface """
-    logger = logging.getLogger("_removeBondings")
-
-    _netinfo = netinfo.NetInfo()
-
-    for bond, bondAttrs in bondings.items():
+    for bondName, bondAttrs in bondings.items():
+        bond = Bond.objectivize(bondName, configurator,
+                                bondAttrs.get('options'),
+                                bondAttrs.get('nics'), mtu=None,
+                                _netinfo=_netinfo,
+                                destroy='remove' in bondAttrs)
         if 'remove' in bondAttrs:
-            nics = _netinfo.getNicsForBonding(bond)
-            logger.debug("Removing bond %r with nics = %s", bond, nics)
-            configurator.removeBonding(bond, nics)
-            del bondings[bond]
+            logger.debug("Removing bond %s with attributes %s", bondName,
+                         bondAttrs)
+            configurator.removeBond(bond)
+            del bondings[bondName]
+            del _netinfo.bondings[bondName]
+        elif bondName in _netinfo.bondings:
+            logger.debug("Editing bond %s with attributes %s", bondName,
+                         bondAttrs)
+            configurator.editBonding(bond, _netinfo)
+        else:
+            logger.debug("Creating bond %s with attributes %s", bondName,
+                         bondAttrs)
+            configurator.configureBond(bond)
 
 
 def _buildBondOptions(bondName, bondings, _netinfo):
@@ -514,11 +507,7 @@ def setupNetworks(networks={}, bondings={}, **options):
             else:
                 networksAdded.add(network)
 
-        # Remove bonds with 'remove' attribute
-        _removeBondings(bondings, configurator)
-
-        # Check whether bonds should be resized
-        _editBondings(bondings, configurator)
+        _handleBondings(bondings, configurator)
 
         # We need to use the newest host info
         _ni = netinfo.NetInfo()
