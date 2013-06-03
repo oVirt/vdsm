@@ -81,9 +81,9 @@ else:
             if rc != 0:
                 return (rc, out, err)
             for line in out:
-                if srvName + ".service" == line.split(" ", 1):
+                if srvName + ".service" == line.split(" ", 1)[0]:
                     return systemctlFun(srvName)
-            return (1, "", "%s is not native systemctl service")
+            return (1, "", "%s is not native systemctl service" % srvName)
         return wrapper
 
     @_systemctlNative
@@ -276,7 +276,7 @@ def service_status(srvName):
 @expose("service-restart")
 def service_restart(srvName):
     """
-    Get status of a system service
+    Restart a system service
     """
     return _runAlts(_srvRestartAlts, srvName)
 
