@@ -84,7 +84,7 @@ def hooksList():
     Returns:
         [{'name': HOOK-NAME,
           'status': STATUS,
-          'type': MIME_TYPE,
+          'mimetype': MIME_TYPE,
           'command': GLUSTERCOMMAND,
           'level': HOOK-LEVEL,
           'md5sum': MD5SUM}]
@@ -105,7 +105,7 @@ def hooksList():
                     md5sum = ''
                 hooks.append({'name': hookFile[1:],
                               'status': status,
-                              'type': hookType,
+                              'mimetype': hookType,
                               'command': gCmd,
                               'level': hookLevel,
                               'md5sum': md5sum})
@@ -178,7 +178,7 @@ def hookRead(glusterCmd, hookLevel, hookName):
     """
     Returns:
         {'content': HOOK_CONTENT,
-        'type': MIME_TYPE,
+        'mimetype': MIME_TYPE,
         'md5sum': MD5SUM}
     """
     enabledFile, disabledFile = _getHookFileNames(glusterCmd,
@@ -193,7 +193,7 @@ def hookRead(glusterCmd, hookLevel, hookName):
         with open(hookFile, 'r') as f:
             encodedString = base64.b64encode(f.read())
         return {'content': encodedString,
-                'type': _getMimeType(hookFile),
+                'mimetype': _getMimeType(hookFile),
                 'md5sum': _computeMd5Sum(hookFile)}
     except IOError, e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)

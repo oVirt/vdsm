@@ -34,7 +34,8 @@
 
 ##
 # @HookLevel:
-## Possible value of hook level.
+#
+# Possible value of hook level.
 #
 # @PRE:    Before gluster command execution
 #
@@ -68,7 +69,7 @@
 #
 # @status:    Status of the hook
 #
-# @type:      Type of hook
+# @mimetype:  Type of hook
 #
 # @command:   Gluster command
 #
@@ -79,7 +80,7 @@
 # Since: 4.10.3
 ##
 {'type': 'HookInfo',
- 'data': {'name': 'str', 'status': 'HookStatus', 'type': 'str', 'command': 'str', 'level': 'HookLevel', 'md5sum': 'str'}}
+ 'data': {'name': 'str', 'status': 'HookStatus', 'mimetype': 'str', 'command': 'str', 'level': 'HookLevel', 'md5sum': 'str'}}
 
 ##
 # @GlusterHook.list:
@@ -113,7 +114,7 @@
 ##
 {'command': {'class': 'GlusterHook', 'name': 'enable'},
  'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
- 'returns': 'boolean'}
+ 'returns': 'bool'}
 
 ##
 # @GlusterHook.disable:
@@ -133,7 +134,7 @@
 ##
 {'command': {'class': 'GlusterHook', 'name': 'disable'},
  'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
- 'returns': 'boolean'}
+ 'returns': 'bool'}
 
 ##
 # @HookContent:
@@ -142,14 +143,14 @@
 #
 # @content:   Hook content
 #
-# @type:      Type of hook
+# @mimetype:  Type of hook
 #
 # @md5sum:    Md5sum of the hook file
 #
 # Since: 4.10.3
 ##
 {'type': 'HookContent',
- 'data': {'content': 'str', 'type': 'str', 'md5sum': 'str'}}
+ 'data': {'content': 'str', 'mimetype': 'str', 'md5sum': 'str'}}
 
 ##
 # @GlusterHook.read:
@@ -193,7 +194,7 @@
 ##
 {'command': {'class': 'GlusterHook', 'name': 'update'},
  'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str', 'hookData': 'str', 'hookMd5Sum': 'str'},
- 'returns': 'boolean'}
+ 'returns': 'bool'}
 
 ##
 # @GlusterHook.add:
@@ -218,8 +219,8 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterHook', 'name': 'add'},
- 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str', 'hookData': 'str', 'hookMd5Sum': 'str', 'enable': 'boolean'},
- 'returns': 'boolean'}
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str', 'hookData': 'str', 'hookMd5Sum': 'str', 'enable': 'bool'},
+ 'returns': 'bool'}
 
 ##
 # @GlusterHook.remove:
@@ -239,4 +240,4 @@
 ##
 {'command': {'class': 'GlusterHook', 'name': 'remove'},
  'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
- 'returns': 'boolean'}
+ 'returns': 'bool'}
