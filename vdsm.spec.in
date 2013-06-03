@@ -51,6 +51,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python
 BuildRequires: python-devel
 BuildRequires: python-nose
+BuildRequires: python-netaddr
 
 # BuildRequires needed by the tests during the build
 BuildRequires: python-ethtool
@@ -91,6 +92,7 @@ Requires: rsyslog
 Requires: xz
 Requires: ntp
 Requires: iproute
+Requires: python-netaddr
 Requires: python-ethtool >= 0.6-3
 Requires: rpm-python
 Requires: nfs-utils
@@ -775,6 +777,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
+%{_datadir}/%{vdsm_name}/ipwrapper.py*
 %{_datadir}/%{vdsm_name}/lsblk.py*
 %{_datadir}/%{vdsm_name}/md_utils.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy

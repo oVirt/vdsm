@@ -35,6 +35,7 @@ dist_vdsm_PYTHON = \
 	guestIF.py \
 	hooking.py \
 	hooks.py \
+	ipwrapper.py \
 	kaxmlrpclib.py \
 	ksm.py \
 	logUtils.py \

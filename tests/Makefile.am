@@ -35,6 +35,7 @@ test_modules = \
 	glusterTestData.py \
 	guestIFTests.py \
 	hooksTests.py \
+	ipwrapperTests.py \
 	netconfTests.py \
 	netmodelsTests.py \
 	jsonRpcTests.py \
