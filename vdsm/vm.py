@@ -753,7 +753,7 @@ class MigrationMonitorThread(threading.Thread):
         self._vm.log.debug('starting migration monitor thread')
 
         lastProgressTime = time.time()
-        smallest_dataRemaining = None
+        lowmark = None
 
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
@@ -762,9 +762,9 @@ class MigrationMonitorThread(threading.Thread):
              memTotal, memProcessed, memRemaining,
              fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
 
-            if (smallest_dataRemaining is None or
-                    smallest_dataRemaining > dataRemaining):
-                smallest_dataRemaining = dataRemaining
+            remaining = dataRemaining + memRemaining
+            if (lowmark is None) or (lowmark > remaining):
+                lowmark = remaining
                 lastProgressTime = time.time()
             elif (time.time() - lastProgressTime >
                   config.getint('vars', 'migration_timeout')):
@@ -776,13 +776,13 @@ class MigrationMonitorThread(threading.Thread):
                 self.stop()
                 break
 
-            if dataRemaining > smallest_dataRemaining:
+            if remaining > lowmark:
                 MiB = 1024 * 1024
                 self._vm.log.warn(
-                    'Migration stalling: dataRemaining (%sMiB)'
-                    ' > smallest_dataRemaining (%sMiB).'
+                    'Migration stalling: remaining (%sMiB)'
+                    ' > lowmark (%sMiB).'
                     ' Refer to RHBZ#919201.',
-                    dataRemaining / MiB, smallest_dataRemaining / MiB)
+                    remaining / MiB, lowmark / MiB)
 
             if jobType == 0:
                 continue
