@@ -2041,7 +2041,11 @@ class HSM:
         :options: ?
         """
         # getSharedLock(tasksResource...)
-        allTasksStatus = self.taskMng.getAllTasksStatuses("spm")
+        try:
+            sp = self.pools.values()[0]
+        except IndexError:
+            raise se.SpmStatusError()
+        allTasksStatus = sp.getAllTasksStatuses()
         return dict(allTasksStatus=allTasksStatus)
 
     @public
@@ -2079,8 +2083,11 @@ class HSM:
         :rtype: dict
         """
         # getSharedLock(tasksResource...)
-        # TODO: if spUUID passed, make sure tasks are relevant only to pool
-        allTasksInfo = self.taskMng.getAllTasksInfo("spm")
+        try:
+            sp = self.pools.values()[0]
+        except IndexError:
+            raise se.SpmStatusError()
+        allTasksInfo = sp.getAllTasksInfo()
         return dict(allTasksInfo=allTasksInfo)
 
     @public
