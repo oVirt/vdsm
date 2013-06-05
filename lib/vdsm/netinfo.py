@@ -127,8 +127,8 @@ def ports(bridge):
 
 
 def getMtu(iface):
-    mtu = file('/sys/class/net/%s/mtu' % iface).readline().rstrip()
-    return mtu
+    mtu = open('/sys/class/net/%s/mtu' % iface).readline().rstrip()
+    return int(mtu)
 
 
 def getMaxMtu(devs, mtu):
@@ -145,7 +145,7 @@ def getMaxMtu(devs, mtu):
     it check if a vlan, bond that have a higher mtu value
     """
 
-    devs_mtu = [int(getMtu(dev)) for dev in devs]
+    devs_mtu = [getMtu(dev) for dev in devs]
     return max(mtu, *devs_mtu)
 
 
@@ -376,7 +376,7 @@ def _getNetInfo(iface, bridged, routes, ipv6routes):
                      'gateway': routes.get(iface, '0.0.0.0'),
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
-                     'mtu': getMtu(iface)})
+                     'mtu': str(getMtu(iface))})
     except OSError as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
@@ -419,7 +419,7 @@ def _devinfo(dev):
     return {'addr': ipv4addr,
             'cfg': getIfaceCfg(dev),
             'ipv6addrs': ipv6addrs,
-            'mtu': getMtu(dev),
+            'mtu': str(getMtu(dev)),
             'netmask': ipv4netmask}
 
 

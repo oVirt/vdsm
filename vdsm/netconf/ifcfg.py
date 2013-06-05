@@ -673,7 +673,7 @@ class ConfigWriter(object):
         currmtu = None
         if bridged:
             try:
-                currmtu = int(netinfo.getMtu(network))
+                currmtu = netinfo.getMtu(network)
             except IOError as e:
                 if e.errno != os.errno.ENOENT:
                     raise

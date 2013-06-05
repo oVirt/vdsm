@@ -58,7 +58,7 @@ class Nic(NetDevice):
         if name not in _netinfo.nics:
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'unknown nic: %s' % name)
         super(Nic, self).__init__(name, configurator, ipconfig,
-                                  mtu=max(mtu, int(netinfo.getMtu(name))))
+                                  mtu=max(mtu, netinfo.getMtu(name)))
 
     def configure(self, bridge=None, bonding=None, **opts):
         self.configurator.configureNic(self, bridge=bridge, bonding=bonding,
@@ -180,7 +180,7 @@ class Bond(NetDevice):
                 slaves.append(Nic(nic, configurator, mtu=mtu,
                                   _netinfo=_netinfo))
         elif name in _netinfo.bondings:  # Implicit bonding.
-            mtu = max(int(netinfo.getMtu(name)), mtu)
+            mtu = max(netinfo.getMtu(name), mtu)
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
                       for nic in _netinfo.getNicsForBonding(name)]
             options = _netinfo.bondings[name]['cfg'].get('BONDING_OPTS')
