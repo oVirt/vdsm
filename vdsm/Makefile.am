@@ -32,7 +32,6 @@ dist_vdsm_PYTHON = \
 	configNetwork.py \
 	debugPluginClient.py \
 	dmidecodeUtil.py \
-	dummybr.py \
 	guestIF.py \
 	hooking.py \
 	hooks.py \
@@ -45,7 +44,6 @@ dist_vdsm_PYTHON = \
 	momIF.py \
 	neterrors.py \
 	netmodels.py \
-	nwfilter.py \
 	parted_utils.py \
 	sampling.py \
 	supervdsm.py \

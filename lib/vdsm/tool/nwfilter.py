@@ -24,8 +24,10 @@ import logging
 import libvirt
 
 from vdsm import libvirtconnection
+from vdsm.tool import expose
 
 
+@expose('nwfilter')
 def main():
     """
     Defines network filters on libvirt

@@ -31,6 +31,8 @@ nodist_vdsmtool_DATA = \
 
 dist_vdsmtool_DATA = \
 	__init__.py \
+	dummybr.py \
+	nwfilter.py \
 	passwd.py \
 	seboolsetup.py \
 	service.py \

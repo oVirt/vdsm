@@ -43,9 +43,9 @@ from vdsm import utils
 from vdsm import vdscli
 from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.netinfo import DUMMY_BRIDGE
 
 # local imports
-from dummybr import DUMMY_BRIDGE
 from logUtils import SimpleLogAdapter
 import caps
 import guestIF

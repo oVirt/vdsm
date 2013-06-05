@@ -23,6 +23,7 @@ import os
 
 from vdsm.netinfo import DUMMY_BRIDGE
 from vdsm import libvirtconnection, utils, constants
+from vdsm.tool import expose
 
 
 def createEphemeralBridge(bridgeName):
@@ -39,7 +40,15 @@ def addBridgeToLibvirt(bridgeName):
             '''<network><name>%s</name><forward mode='bridge'/><bridge '''
             '''name='%s'/></network>''' % (bridgeName, bridgeName))
 
-if __name__ == '__main__':
+@expose('dummybr')
+def main():
+    """
+    Defines dummy bridge on libvirt network.
+    """
     if not os.path.exists('/sys/class/net/%s' % DUMMY_BRIDGE):
         createEphemeralBridge(DUMMY_BRIDGE)
     addBridgeToLibvirt(DUMMY_BRIDGE)
+
+
+if __name__ == '__main__':
+    main()

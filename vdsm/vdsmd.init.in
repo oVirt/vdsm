@@ -477,7 +477,7 @@ start() {
        return $ret_val
     fi
 
-    python @VDSMDIR@/nwfilter.pyc
+    vdsm-tool nwfilter
     ret_val=$?
     if [ $ret_val -ne 0 ]
     then
@@ -485,7 +485,7 @@ start() {
         return $ret_val
     fi
 
-    python @VDSMDIR@/dummybr.pyc
+    vdsm-tool dummybr
     ret_val=$?
     if [ $ret_val -ne 0 ]
     then

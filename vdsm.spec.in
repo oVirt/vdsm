@@ -786,8 +786,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vm.py*
 %{_datadir}/%{vdsm_name}/zombieReaper.py*
-%attr (755,vdsm,kvm) %{_datadir}/%{vdsm_name}/dummybr.py*
-%attr (755,vdsm,kvm) %{_datadir}/%{vdsm_name}/nwfilter.py*
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf
@@ -975,6 +973,8 @@ exit 0
 %else
 %{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*
 %endif
+%{python_sitearch}/%{vdsm_name}/tool/dummybr.py*
+%{python_sitearch}/%{vdsm_name}/tool/nwfilter.py*
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitearch}/%{vdsm_name}/tool/service.py*
