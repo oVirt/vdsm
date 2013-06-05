@@ -164,8 +164,15 @@ class XMLRPCTest(TestCaseBase):
 
     @skipNoKVM
     def testStartSmallVM(self):
+        pciAddress = {'slot': '0x03', 'bus': '0x00', 'domain': '0x0000',
+                      'function': '0x0', 'type': 'pci'}
+        interfaceDev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+                        'network': '', 'address': pciAddress,
+                        'device': 'bridge', 'type': 'interface',
+                        'linkActive': True, 'filter': 'no-mac-spoofing'}
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
-                         'vmName': 'vdsm_testSmallVM'}
+                         'vmName': 'vdsm_testSmallVM',
+                         'devices': [interfaceDev]}
 
         self._runVMKernelBootTemplate(customization)
 
