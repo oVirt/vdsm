@@ -22,7 +22,6 @@ import threading
 import time
 import select
 import logging
-import errno
 from storage.misc import NoIntrPoll
 
 # How many times a reconnect should be performed before a cooldown will be
@@ -51,8 +50,12 @@ class Listener(threading.Thread):
         """ Handle an epoll event occurred on a specific file descriptor. """
         reconnect = False
         if (event & (select.EPOLLHUP | select.EPOLLERR)):
-            self.log.error("Received EPOLLHUP on fileno %d", fileno)
-            reconnect = True
+            self.log.error("Received %.08X on fileno %d", event, fileno)
+            if fileno in self._channels:
+                reconnect = True
+            else:
+                self.log.debug("Received %.08X. On fd removed by epoll.",
+                               event)
         elif (event & select.EPOLLIN):
             obj = self._channels[fileno]
             obj['reconnects'] = 0
@@ -68,7 +71,6 @@ class Listener(threading.Thread):
             self._prepare_reconnect(fileno)
 
     def _prepare_reconnect(self, fileno):
-            self._epoll.unregister(fileno)
             obj = self._channels.pop(fileno)
             try:
                 fileno = obj['create_cb'](obj['opaque'])
@@ -104,13 +106,6 @@ class Listener(threading.Thread):
     def _do_del_channels(self):
         """ Remove requested channels from listener. """
         for fileno in self._del_channels:
-            try:
-                self._epoll.unregister(fileno)
-            except IOError as err:
-                if err.errno == errno.ENOENT:
-                    self.log.debug("%s (unregister was called twice?)" % err)
-                else:
-                    raise
             self._add_channels.pop(fileno, None)
             self._unconnected.pop(fileno, None)
             self._channels.pop(fileno, None)
