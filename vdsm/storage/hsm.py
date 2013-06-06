@@ -2316,7 +2316,9 @@ class HSM:
                 else:
                     sdCache.knownSDs.update(doms)
 
-            self.log.debug("knownSDs: %s", sdCache.knownSDs)
+            self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
+                           (k, v.__module__, v.__name__)
+                           for k, v in sdCache.knownSDs.iteritems()))
 
             res.append({'id': conDef["id"], 'status': status})
 
@@ -2542,7 +2544,10 @@ class HSM:
 
         findMethod = self.__getSDTypeFindMethod(storageType)
         sdCache.knownSDs[sdUUID] = findMethod
-        self.log.debug("knownSDs: %s", sdCache.knownSDs)
+        self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
+                       (k, v.__module__, v.__name__)
+                       for k, v in sdCache.knownSDs.iteritems()))
+
         sdCache.manuallyAddDomain(newSD)
 
     @public
