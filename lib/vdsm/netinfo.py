@@ -604,33 +604,3 @@ class NetInfo(object):
             if iface == vdict['iface']:
                 users.add(v)
         return users
-
-    def nicOtherUsers(self, bridge, vlan, bonding, nic):
-        """
-        Returns a list of interfaces using a nic,
-        other than the specified one.
-        """
-        if bonding:
-            owner = bonding
-        elif vlan:
-            owner = nic + '.' + vlan
-        else:
-            owner = bridge
-        users = self.ifaceUsers(nic)
-        if bonding:
-            users.update(self.bondingOtherUsers(bridge, vlan, bonding))
-        users.discard(owner)
-        return users
-
-    def bondingOtherUsers(self, bridge, vlan, bonding):
-        """
-        Return a list of nics/interfaces using a bonding,
-        other than the specified one.
-        """
-        if vlan:
-            owner = bonding + '.' + vlan
-        else:
-            owner = bridge
-        users = self.ifaceUsers(bonding)
-        users.discard(owner)
-        return users

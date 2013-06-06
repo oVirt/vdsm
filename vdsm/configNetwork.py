@@ -253,7 +253,7 @@ def listNetworks():
 def _removeUnusedNics(network, vlan, bonding, nics, configWriter):
     _netinfo = netinfo.NetInfo()
     for nic in nics:
-        if not _netinfo.nicOtherUsers(network, vlan, bonding, nic):
+        if not _netinfo.ifaceUsers(nic):
             ifdown(nic)
             configWriter.removeNic(nic)
             ifup(nic)
@@ -347,15 +347,16 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 
     # The (relatively) new setupNetwork verb allows to remove a network
     # defined on top of an bonding device without break the bond itself.
+    _netinfo = netinfo.NetInfo()
     if implicitBonding:
-        if bonding and not _netinfo.bondingOtherUsers(network, vlan, bonding):
+        if bonding and not _netinfo.ifaceUsers(bonding):
             ifdown(bonding)
             configWriter.removeBonding(bonding)
 
         _removeUnusedNics(network, vlan, bonding, nics, configWriter)
     elif not bonding:
         _removeUnusedNics(network, vlan, bonding, nics, configWriter)
-    elif not _netinfo.bondingOtherUsers(network, vlan, bonding):
+    elif not _netinfo.ifaceUsers(bonding):
         ifdown(bonding)
         configWriter.setBondingMtu(bonding, DEFAULT_MTU)
         ifup(bonding)
