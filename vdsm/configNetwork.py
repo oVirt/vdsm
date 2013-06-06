@@ -309,7 +309,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
 
     configWriter.setNewMtu(network=network, bridged=bridged, _netinfo=_netinfo)
-    configWriter.removeLibvirtNetwork(network)
+    configurator.removeLibvirtNetwork(network)
 
     # We need to gather NetInfo again to refresh networks info from libvirt.
     # The deleted bridge should never be up at this stage.

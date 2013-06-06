@@ -146,6 +146,9 @@ class Ifcfg(object):
         self.configureBonding(bond, bondAttrs['nics'], bridge, mtu,
                               bondAttrs.get('options', None))
 
+    def removeLibvirtNetwork(self, network):
+        self.configWriter.removeLibvirtNetwork(network)
+
     def removeBonding(self, bond, nics):
         ifdown(bond)
         self.configWriter.removeBonding(bond)
