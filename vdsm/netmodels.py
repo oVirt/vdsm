@@ -64,8 +64,8 @@ class Nic(NetDevice):
         self.configurator.configureNic(self, bridge=bridge, bonding=bonding,
                                        **opts)
 
-    def remove(self, network=None, bond=None):
-        self.configurator.removeNic(self, network=network, bond=bond)
+    def remove(self):
+        self.configurator.removeNic(self)
 
     def __repr__(self):
         return 'Nic(%s)' % self.name
@@ -92,7 +92,7 @@ class Vlan(NetDevice):
         self.configurator.configureVlan(self, bridge=bridge, **opts)
 
     def remove(self, force=False):
-        self.configurator.removeVlan(self.name)
+        self.configurator.removeVlan(self)
 
     @classmethod
     def validateTag(cls, tag):
@@ -143,7 +143,7 @@ class Bridge(NetDevice):
 
 class Bond(NetDevice):
     def __init__(self, name, configurator, ipconfig=None, mtu=None, slaves=(),
-                 options=None):
+                 options=None, destroyOnMasterRemoval=None):
         self.validateName(name)
         for slave in slaves:
             slave.master = self
@@ -153,6 +153,7 @@ class Bond(NetDevice):
         else:
             self.validateOptions(name, options)
             self.options = options
+        self.destroyOnMasterRemoval = destroyOnMasterRemoval
         super(Bond, self).__init__(name, configurator, ipconfig, mtu)
 
     def __repr__(self):
@@ -163,10 +164,11 @@ class Bond(NetDevice):
 
     def remove(self, force=False):
         logging.debug('Removing bond %r', self)
-        self.configurator.removeBond(self.name, self.slaves)
+        self.configurator.removeBond(self)
 
     @classmethod
-    def objectivize(cls, name, configurator, options, nics, mtu, _netinfo):
+    def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
+                    destroyOnMasterRemoval=None):
         if name and nics:
             slaves = []
             for nic in nics:
@@ -192,7 +194,8 @@ class Bond(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required nics'
                                      ' for bonding device.')
 
-        return cls(name, configurator, slaves=slaves, options=options, mtu=mtu)
+        return cls(name, configurator, slaves=slaves, options=options, mtu=mtu,
+                   destroyOnMasterRemoval=destroyOnMasterRemoval)
 
     @staticmethod
     def validateName(name):

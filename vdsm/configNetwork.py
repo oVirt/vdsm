@@ -30,9 +30,6 @@ import neterrors as ne
 from neterrors import ConfigNetworkError
 from vdsm import define
 from vdsm import netinfo
-from vdsm.netinfo import DEFAULT_MTU
-from netconf.ifcfg import ifup
-from netconf.ifcfg import ifdown
 from netconf.ifcfg import ConfigWriter
 from netconf.ifcfg import Ifcfg
 from netmodels import Bond
@@ -49,7 +46,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                        bondingOptions=None, nics=None, mtu=None, ipaddr=None,
                        netmask=None, gateway=None, bootproto=None,
                        _netinfo=None, configurator=None, blockingdhcp=None,
-                       **opts):
+                       implicitBonding=None, **opts):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -67,6 +64,8 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     :param _netinfo: network information snapshot.
     :param configurator: instance to use to apply the network configuration.
     :param blockingdhcp: whether to acquire dhcp IP config in a synced manner.
+    :param implicitBonding: whether the bond's existance is tied to it's
+                            master's.
 
     :returns: the top object of the hierarchy.
     """
@@ -80,7 +79,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     topNetDev = None
     if bonding:
         topNetDev = Bond.objectivize(bonding, configurator, bondingOptions,
-                                     nics, mtu, _netinfo)
+                                     nics, mtu, _netinfo, implicitBonding)
     elif nics:
         try:
             nic, = nics
@@ -250,15 +249,6 @@ def listNetworks():
     print "Bondings:", _netinfo.bondings.keys()
 
 
-def _removeUnusedNics(network, vlan, bonding, nics, configWriter):
-    _netinfo = netinfo.NetInfo()
-    for nic in nics:
-        if not _netinfo.ifaceUsers(nic):
-            ifdown(nic)
-            configWriter.removeNic(nic)
-            ifup(nic)
-
-
 def _delBrokenNetwork(network, netAttr, configWriter):
     '''Adapts the network information of broken networks so that they can be
     deleted via delNetwork.'''
@@ -270,6 +260,29 @@ def _delBrokenNetwork(network, netAttr, configWriter):
                implicitBonding=False, _netinfo=_netinfo)
 
 
+def _validateDelNetwork(network, vlan, bonding, nics, bridged,  _netinfo):
+    if bonding:
+        if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
+            raise ConfigNetworkError(ne.ERR_BAD_NIC, 'delNetwork: %s are '
+                                     'not all nics enslaved to %s' %
+                                     (nics, bonding))
+    if bridged:
+        assertBridgeClean(network, vlan, bonding, nics)
+
+
+def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
+    if network in netinfo.bridges():
+        netEnt = objectivizeNetwork(bridge=network, vlan=vlan, bonding=bonding,
+                                    nics=nics, _netinfo=_netinfo,
+                                    configurator=configurator,
+                                    implicitBonding=False)
+        netEnt.remove()
+    else:
+        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network"
+                                 " %r: It doesn't exist in the system" %
+                                 network)
+
+
 def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                configWriter=None, implicitBonding=True, _netinfo=None,
                **options):
@@ -278,19 +291,12 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 
     if configWriter is None:
         configWriter = ConfigWriter()
+    configurator = Ifcfg(configWriter)
 
     if network not in _netinfo.networks:
         logging.info("Network %r: doesn't exist in libvirt database", network)
-        if network in netinfo.bridges():
-            configWriter.removeBridge(network)
-        else:
-            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network"
-                                     " %r: It doesn't exist in the system" %
-                                     network)
-
-        if vlan:
-            configWriter.removeVlan(vlan, bonding or nics[0])
-
+        _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo,
+                           configurator)
         return
 
     nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
@@ -300,16 +306,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                  "options=%s" % (network, vlan, bonding, nics, options))
 
     if not utils.tobool(force):
-        if bonding:
-            Bond.validateName(bonding)
-            if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
-                raise ConfigNetworkError(ne.ERR_BAD_NIC, 'delNetwork: %s are '
-                                         'not all nics enslaved to %s' %
-                                         (nics, bonding))
-        if vlan:
-            Vlan.validateTag(vlan)
-        if bridged:
-            assertBridgeClean(network, vlan, bonding, nics)
+        _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
 
     configWriter.setNewMtu(network=network, bridged=bridged, _netinfo=_netinfo)
     configWriter.removeLibvirtNetwork(network)
@@ -321,45 +318,11 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'delNetwork: bridge %s '
                                  'still exists' % network)
 
-    if network and bridged:
-        configWriter.removeBridge(network)
-
-    nic = nics[0] if nics else None
-    iface = bonding if bonding else nic
-    if iface:
-        ifdown(iface)
-        if vlan:
-            configWriter.removeVlan(vlan, iface)
-        else:
-            cf = netinfo.NET_CONF_PREF + iface
-            if not bridged:
-                # When removing bridgeless non-VLANed network
-                # we need to remove IP/NETMASK from the cfg file
-                for key in ('IPADDR', 'NETMASK', 'GATEWAY', 'BOOTPROTO'):
-                    configWriter._updateConfigValue(cf, key, '', True)
-            else:
-                # When removing bridged non-VLANed network
-                # we need to remove BRIDGE from the cfg file
-                configWriter._updateConfigValue(cf, 'BRIDGE', '', True)
-
-        # Now we can restart changed interface
-        ifup(iface)
-
-    # The (relatively) new setupNetwork verb allows to remove a network
-    # defined on top of an bonding device without break the bond itself.
-    _netinfo = netinfo.NetInfo()
-    if implicitBonding:
-        if bonding and not _netinfo.ifaceUsers(bonding):
-            ifdown(bonding)
-            configWriter.removeBonding(bonding)
-
-        _removeUnusedNics(network, vlan, bonding, nics, configWriter)
-    elif not bonding:
-        _removeUnusedNics(network, vlan, bonding, nics, configWriter)
-    elif not _netinfo.ifaceUsers(bonding):
-        ifdown(bonding)
-        configWriter.setBondingMtu(bonding, DEFAULT_MTU)
-        ifup(bonding)
+    netEnt = objectivizeNetwork(bridge=network if bridged else None, vlan=vlan,
+                                bonding=bonding, nics=nics, _netinfo=_netinfo,
+                                configurator=configurator,
+                                implicitBonding=implicitBonding)
+    netEnt.remove()
 
 
 def clientSeen(timeout):
