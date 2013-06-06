@@ -30,6 +30,7 @@ from sdc import sdCache
 import sd
 import misc
 import fileUtils
+import imageSharing
 from vdsm.config import config
 from vdsm.utils import ActionStopped
 import storage_exception as se
@@ -1154,3 +1155,35 @@ class Image:
 
         self.log.info("Merge src=%s with dst=%s was successfully finished.",
                       srcVol.getVolumePath(), dstVol.getVolumePath())
+
+    def _activateVolumeForImportExport(self, domain, imgUUID, volUUID=None):
+        chain = self.getChain(domain.sdUUID, imgUUID, volUUID)
+        template = chain[0].getParentVolume()
+
+        if template or len(chain) > 1:
+            self.log.error("Importing and exporting an image with more "
+                           "than one volume is not supported")
+            raise se.CopyImageError()
+
+        domain.activateVolumes(imgUUID, volUUIDs=[chain[0].volUUID])
+        return chain[0]
+
+    def upload(self, methodArgs, sdUUID, imgUUID, volUUID=None):
+        domain = sdCache.produce(sdUUID)
+
+        vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
+        try:
+            imageSharing.upload(vol.getVolumePath(), methodArgs)
+        finally:
+            domain.deactivateVolumes(imgUUID, volUUIDs=[vol.volUUID])
+
+    def download(self, methodArgs, sdUUID, imgUUID, volUUID=None):
+        domain = sdCache.produce(sdUUID)
+
+        vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
+        try:
+            # Extend the volume (if relevant) to the image size
+            vol.extend(imageSharing.getSize(methodArgs) / volume.BLOCK_SIZE)
+            imageSharing.download(vol.getVolumePath(), methodArgs)
+        finally:
+            domain.deactivateVolumes(imgUUID, volUUIDs=[vol.volUUID])

@@ -26,6 +26,7 @@ dist_vdsmstorage_PYTHON = \
 	blockSD.py \
 	blockVolume.py \
 	clusterlock.py \
+	curlImgWrap.py \
 	devicemapper.py \
 	dispatcher.py \
 	domainMonitor.py \
@@ -38,6 +39,7 @@ dist_vdsmstorage_PYTHON = \
 	hba.py \
 	hsm.py \
 	image.py \
+	imageSharing.py \
 	iscsiadm.py \
 	iscsi.py \
 	localFsSD.py \
@@ -65,6 +67,9 @@ dist_vdsmstorage_PYTHON = \
 	threadLocal.py \
 	threadPool.py \
 	volume.py
+
+dist_vdsmexec_SCRIPTS = \
+	curl-img-wrap
 
 check-local:
 	PYTHONPATH="$(top_srcdir)/lib:$$PYTHONPATH" PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/storage_exception.py

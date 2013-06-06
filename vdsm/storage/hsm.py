@@ -1652,6 +1652,31 @@ class HSM:
         self._spmSchedule(spUUID, "syncImageData", pool.syncImageData,
                           sdUUID, imgUUID, dstSdUUID, syncType)
 
+    @public
+    def uploadImage(self, methodArgs, spUUID, sdUUID, imgUUID, volUUID=None):
+        """
+        Upload an image to a remote endpoint using the specified method and
+        methodArgs.
+        """
+        self.validateSdUUID(sdUUID)
+        pool = self.getPool(spUUID)
+        # NOTE: this could become an hsm task
+        self._spmSchedule(spUUID, "uploadImage", pool.uploadImage,
+                          methodArgs, sdUUID, imgUUID, volUUID)
+
+    @public
+    def downloadImage(self, methodArgs, spUUID, sdUUID, imgUUID, volUUID=None):
+        """
+        Download an image from a remote endpoint using the specified method
+        and methodArgs.
+        """
+        self.validateSdUUID(sdUUID)
+        pool = self.getPool(spUUID)
+        # NOTE: this could become an hsm task, in such case the LV extension
+        # required to prepare the destination should go through the mailbox.
+        self._spmSchedule(spUUID, "downloadImage", pool.downloadImage,
+                          methodArgs, sdUUID, imgUUID, volUUID)
+
     @deprecated
     @public
     def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict,

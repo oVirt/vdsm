@@ -539,6 +539,14 @@ class BindingXMLRPC(object):
         image = API.Image(imgUUID, spUUID, sdUUID)
         return image.syncData(dstSdUUID, syncType)
 
+    def imageUpload(self, methodArgs, spUUID, sdUUID, imgUUID, volUUID=None):
+        image = API.Image(imgUUID, spUUID, sdUUID)
+        return image.upload(methodArgs, volUUID)
+
+    def imageDownload(self, methodArgs, spUUID, sdUUID, imgUUID, volUUID=None):
+        image = API.Image(imgUUID, spUUID, sdUUID)
+        return image.download(methodArgs, volUUID)
+
     def poolConnect(self, spUUID, hostID, scsiKey, msdUUID, masterVersion,
                     options=None):
         pool = API.StoragePool(spUUID)
@@ -879,6 +887,8 @@ class BindingXMLRPC(object):
                 (self.imageMove, 'moveImage'),
                 (self.imageCloneStructure, 'cloneImageStructure'),
                 (self.imageSyncData, 'syncImageData'),
+                (self.imageUpload, 'uploadImage'),
+                (self.imageDownload, 'downloadImage'),
                 (self.poolConnect, 'connectStoragePool'),
                 (self.poolConnectStorageServer, 'connectStorageServer'),
                 (self.poolCreate, 'createStoragePool'),

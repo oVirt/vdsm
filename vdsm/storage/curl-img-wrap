@@ -1,0 +1,141 @@
+#!/usr/bin/python
+#
+# Copyright 2013 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+# README
+# ======
+# The purpose of this utility is to improve curl flexibility in order to
+# upload and download images to/from http servers.
+# One example is the provide the ability to read from block devices that at
+# the moment is unsupported in curl: BZ#622520.
+# Other future possible improvements are: image streaming to raw (collapse a
+# qcow chain to raw using e.g. qemu-img), image compressing (gzip), etc.
+# This utility is not using any particular advanced multi-process tool (e.g.
+# CPopen) because its only scope is to pipe and launch the processes and at
+# the end collect the statuses. The reliability is demanded to the calling
+# process (e.g. execCmd in curlImgWrap.py).
+
+
+import os
+import sys
+import signal
+import argparse
+import ctypes
+
+from vdsm.utils import CommandPath
+
+
+LIBC = ctypes.CDLL("libc.so.6", use_errno=True)
+PR_SET_PDEATHSIG = 1
+
+PARSER = argparse.ArgumentParser(description="VDSM curl and dd wrapper.")
+PARSER.add_argument("--download", dest="do_download",
+                    action="store_const", const=True, default=False)
+PARSER.add_argument("--upload", dest="do_upload",
+                    action="store_const", const=True, default=False)
+PARSER.add_argument("--header", dest="headers", action="append")
+PARSER.add_argument("path")
+PARSER.add_argument("url")
+
+DD = CommandPath("dd", "/bin/dd")
+CURL = CommandPath("curl", "/usr/bin/curl")
+
+
+def fork_exec(*args, **kwargs):
+    sys.stderr.write("fork_exec%s\n" % (args,))
+    pid = os.fork()
+
+    if pid == 0:
+        # Setting the default signal to receive in case curl-img-wrap
+        # dies. The processes (curl and dd) should be terminated.
+        LIBC.prctl(PR_SET_PDEATHSIG, signal.SIGKILL)
+        if "dup2args" in kwargs:
+            os.dup2(*(kwargs["dup2args"]))
+        if "closefd" in kwargs:
+            for fd in kwargs["closefd"]:
+                os.close(fd)
+        os.execl(*args)
+
+    return pid
+
+
+def get_curl_options(headers):
+    curl_opt = ["-q", "--silent", "--fail", "--show-error"]
+    for h in headers if headers is not None else []:
+        curl_opt.extend(("-H", h))
+    return curl_opt
+
+
+def do_download(pids, path, url, headers):
+    data_r, data_w = os.pipe()
+    curl_opt = get_curl_options(headers) + [url]
+
+    pids.add(fork_exec(
+        CURL.cmd, CURL.name, *curl_opt, dup2args=(data_w, 1),
+        closefd=(data_r,)))
+    pids.add(fork_exec(
+        DD.cmd, DD.name, "bs=2M", "of=%s" % path, dup2args=(data_r, 0),
+        closefd=(data_w,)))
+
+    os.close(data_r)
+    os.close(data_w)
+
+
+def do_upload(pids, path, url, headers):
+    data_r, data_w = os.pipe()
+    curl_opt = get_curl_options(headers) + ["--upload-file", "-", url]
+
+    pids.add(fork_exec(
+        DD.cmd, DD.name, "bs=2M", "if=%s" % path, dup2args=(data_w, 1),
+        closefd=(data_r,)))
+    pids.add(fork_exec(
+        CURL.cmd, CURL.name, *curl_opt, dup2args=(data_r, 0),
+        closefd=(data_w,)))
+
+    os.close(data_r)
+    os.close(data_w)
+
+
+def main(args):
+    if args.do_download and args.do_upload:
+        raise RuntimeError("Multiple actions defined")
+
+    pids = set()
+
+    if args.do_download:
+        do_download(pids, args.path, args.url, args.headers)
+    elif args.do_upload:
+        do_upload(pids, args.path, args.url, args.headers)
+    else:
+        raise RuntimeError("No action defined")
+
+    all_success = True
+
+    while len(pids):
+        pid, status = os.wait()
+        pids.remove(pid)
+        if status != 0:
+            all_success = False
+
+    sys.exit(0 if all_success else 1)
+
+
+if __name__ == "__main__":
+    main(PARSER.parse_args(sys.argv[1:]))

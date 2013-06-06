@@ -18,6 +18,7 @@
 #
 
 import sys
+import ast
 import getopt
 import traceback
 import xmlrpclib
@@ -1309,6 +1310,30 @@ class service:
 
         return 0, image['uuid']
 
+    def downloadImage(self, args):
+        methodArgs, spUUID, sdUUID, imgUUID, volUUID = args
+        methodArgsValue = ast.literal_eval(methodArgs)
+
+        image = self.s.downloadImage(
+            methodArgsValue, spUUID, sdUUID, imgUUID, volUUID)
+
+        if image['status']['code']:
+            return image['status']['code'], image['status']['message']
+
+        return 0, image['uuid']
+
+    def uploadImage(self, args):
+        methodArgs, spUUID, sdUUID, imgUUID, volUUID = args
+        methodArgsValue = ast.literal_eval(methodArgs)
+
+        image = self.s.uploadImage(
+            methodArgsValue, spUUID, sdUUID, imgUUID, volUUID)
+
+        if image['status']['code']:
+            return image['status']['code'], image['status']['message']
+
+        return 0, image['uuid']
+
     def moveMultiImage(self, args):
         spUUID = args[0]
         srcDomUUID = args[1]
@@ -2337,6 +2362,16 @@ if __name__ == '__main__':
                            'Synchronize image data between storage domains '
                            'within same pool.'
                            )),
+        'uploadImage': (serv.uploadImage, (
+            '<methodArgs> <spUUID> <sdUUID> <imgUUID> [<volUUID>]',
+            'Upload an image to a remote endpoint using the specified'
+            'methodArgs.'
+        )),
+        'downloadImage': (serv.downloadImage, (
+            '<methodArgs> <spUUID> <sdUUID> <imgUUID> [<volUUID>]',
+            'Download an image from a remote endpoint using the specified',
+            'methodArgs.'
+        )),
         'moveMultiImage': (serv.moveMultiImage,
                            ('<spUUID> <srcDomUUID> <dstDomUUID> '
                             '<imgList>({imgUUID=postzero,'

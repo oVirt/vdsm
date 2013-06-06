@@ -1846,6 +1846,32 @@ class StoragePool(Securable):
             image.Image(self.poolPath).syncData(
                 sdUUID, imgUUID, dstSdUUID, syncType)
 
+    def uploadImage(self, methodArgs, sdUUID, imgUUID, volUUID=None):
+        """
+        Upload an image to a remote endpoint using the specified method and
+        methodArgs.
+        """
+        imgResourceLock = rmanager.acquireResource(
+            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            rm.LockType.shared)
+
+        with imgResourceLock:
+            return image.Image(self.poolPath) \
+                .upload(methodArgs, sdUUID, imgUUID, volUUID)
+
+    def downloadImage(self, methodArgs, sdUUID, imgUUID, volUUID=None):
+        """
+        Download an image from a remote endpoint using the specified method
+        and methodArgs.
+        """
+        imgResourceLock = rmanager.acquireResource(
+            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            rm.LockType.exclusive)
+
+        with imgResourceLock:
+            return image.Image(self.poolPath) \
+                .download(methodArgs, sdUUID, imgUUID, volUUID)
+
     def moveMultipleImages(self, srcDomUUID, dstDomUUID, imgDict, vmUUID,
                            force):
         """

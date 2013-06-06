@@ -3365,6 +3365,97 @@
           'dstSdUUID': 'UUID', 'syncType': 'syncType'},
  'returns': 'UUID'}
 
+##
+# @ImageSharingMethod:
+#
+# Specifies the method used to share (upload/download) an image.
+#
+# @http:        Upload or download an image using http
+#
+# Since: 4.12.0
+##
+{'enum': 'ImageSharingMethod', 'data': ['http']}
+
+##
+# @ImageSharingMethodArgsHttp:
+#
+# Specific arguments used to to share (upload/download) an image using http.
+#
+# @url:         Url where upload or download the image
+#
+# @headers:     Additional http headers to be used in the request
+#
+# Since: 4.12.0
+##
+{'type': 'ImageSharingMethodArgsHttp',
+ 'data': {'url': 'str', 'headers': 'StringMap'}}
+
+##
+# @ImageSharingMethodArgs:
+#
+# A discriminated record to store the arguments used by the sharing method.
+#
+# @method:      Relevant method for the provided arguments
+#
+# Since: 4.12.0
+##
+{'type': 'ImageSharingMethodArgs',
+ 'data': {'method': 'ImageSharingMethod'},
+ 'union': ['ImageSharingMethodArgsHttp']}
+
+##
+# @Image.download:
+#
+# Download an image to a remote endpoint using the specified method
+# and methodArgs.
+#
+# @methodArgs:       Download method and map of arguments
+#
+# @storagepoolID:    The UUID of the Storage Pool associated with the Image
+#
+# @storagedomainID:  The UUID of the Storage Domain associated with the Image
+#
+# @imageID:          The UUID of the Image
+#
+# @volumeID:         #optional The UUID of the Volume
+#
+# Returns:
+# A task UUID
+#
+# Since: 4.12.0
+##
+{'command': {'class': 'Image', 'name': 'download'},
+ 'data': {'methodArgs': 'ImageSharingMethodArgs', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'imageID': 'UUID', '*volumeID': 'UUID'},
+ 'returns': 'UUID'}
+
+##
+# @Image.upload:
+#
+# Upload an image to a remote endpoint using the specified method and
+# methodArgs.
+#
+# @methodArgs:       Upload method and map of arguments
+#
+# @storagepoolID:    The UUID of the Storage Pool associated with the Image
+#
+# @storagedomainID:  The UUID of the Storage Domain associated with the Image
+#
+# @imageID:          The UUID of the Image
+#
+# @volumeID:         #optional The UUID of the Volume (optional)
+#
+# Returns:
+# A task UUID
+#
+# Since: 4.12.0
+##
+{'command': {'class': 'Image', 'name': 'upload'},
+ 'data': {'methodArgs': 'ImageSharingMethodArgs', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'imageID': 'UUID', '*volumeID': 'UUID'},
+ 'returns': 'UUID'}
+
+
 ## Category: @LVMVolumeGroup ###################################################
 ##
 # @LVMVolumeGroup:

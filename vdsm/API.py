@@ -819,6 +819,14 @@ class Image(APIBase):
         return self._irs.syncImageData(self._spUUID, self._sdUUID, self._UUID,
                                        dstSdUUID, syncType)
 
+    def upload(self, methodArgs, volUUID=None):
+        return self._irs.uploadImage(
+            methodArgs, self._spUUID, self._sdUUID, self._UUID, volUUID)
+
+    def download(self, methodArgs, volUUID=None):
+        return self._irs.downloadImage(
+            methodArgs, self._spUUID, self._sdUUID, self._UUID, volUUID)
+
 
 class LVMVolumeGroup(APIBase):
     ctorArgs = ['lvmvolumegroupID']

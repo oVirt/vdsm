@@ -846,6 +846,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/guestIF.py*
 %{_datadir}/%{vdsm_name}/logUtils.py*
 %{_datadir}/%{vdsm_name}/dsaversion.py*
+%{_libexecdir}/%{vdsm_name}/curl-img-wrap
 %{_libexecdir}/%{vdsm_name}/persist-vdsm-hooks
 %{_libexecdir}/%{vdsm_name}/unpersist-vdsm-hook
 %{_libexecdir}/%{vdsm_name}/ovirt_functions.sh
@@ -853,6 +854,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*
+%{_datadir}/%{vdsm_name}/storage/curlImgWrap.py*
 %{_datadir}/%{vdsm_name}/storage/devicemapper.py*
 %{_datadir}/%{vdsm_name}/storage/dispatcher.py*
 %{_datadir}/%{vdsm_name}/storage/domainMonitor.py*
@@ -869,6 +871,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/hba.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
 %{_datadir}/%{vdsm_name}/storage/image.py*
+%{_datadir}/%{vdsm_name}/storage/imageSharing.py*
 %{_datadir}/%{vdsm_name}/storage/iscsiadm.py*
 %{_datadir}/%{vdsm_name}/storage/iscsi.py*
 %{_datadir}/%{vdsm_name}/storage/localFsSD.py*
