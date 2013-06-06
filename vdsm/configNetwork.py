@@ -192,10 +192,12 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         configWriter = ConfigWriter()
     configurator = Ifcfg(configWriter)
 
+    bootproto = options.pop('bootproto', None)
+
     netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
-                                gateway, options.get('bootproto'), _netinfo,
-                                configurator, **options)
+                                gateway, bootproto, _netinfo, configurator,
+                                **options)
     netEnt.configure(**options)
     configurator.configureLibvirtNetwork(network, netEnt)
 
