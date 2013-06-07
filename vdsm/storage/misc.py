@@ -211,14 +211,14 @@ def readfile(name, buffersize=None):
     """
     Read the content of the file using /bin/dd command
     """
-    _rc, out, _err = _readfile(name, buffersize)
+    _, out, _ = _readfile(name, buffersize)
     return out
 
 
 _readspeed_regex = re.compile(
-    "(?P<bytes>\d+) bytes? \([\d.]+ [kMGT]*B\) copied, "
-    "(?P<seconds>[\d.]+) s, "
-    "[\d.]+ [kMGT]*B/s"
+    "(?P<bytes>\d+) bytes? \([\de\-.]+ [kMGT]*B\) copied, "
+    "(?P<seconds>[\de\-.]+) s, "
+    "[\de\-.]+ [kMGT]*B/s"
 )
 
 
@@ -227,7 +227,11 @@ def readspeed(path, buffersize=None):
     Measures the amount of bytes transferred and the time elapsed
     reading the content of the file/device
     """
-    rc, out, err = _readfile(path, buffersize)
+    rc, _, err = _readfile(path, buffersize)
+
+    if rc != 0:
+        log.error("Unable to read file '%s'", path)
+        raise se.MiscFileReadException(path)
 
     try:
         # The statistics are located in the last line:
