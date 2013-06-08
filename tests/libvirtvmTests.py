@@ -350,12 +350,19 @@ class TestVm(TestCaseBase):
                 <tune>
                     <sndbuf>0</sndbuf>
                 </tune>
+                <bandwidth>
+                    <inbound average="1000" burst="1024" peak="5000"/>
+                    <outbound average="128" burst="256"/>
+                </bandwidth>
             </interface>""" % self.PCI_ADDR
 
         dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
                'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
                'device': 'bridge', 'type': 'interface',
-               'bootOrder': '1', 'filter': 'no-mac-spoofing'}
+               'bootOrder': '1', 'filter': 'no-mac-spoofing',
+               'specParams': {'inbound': {'average': '1000', 'peak': '5000',
+                                          'burst': '1024'},
+                              'outbound': {'average': '128', 'burst': '256'}}}
 
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
         iface = vm.NetworkInterfaceDevice(self.conf, self.log, **dev)

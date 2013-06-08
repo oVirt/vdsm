@@ -2050,13 +2050,35 @@
           'rtl8139', 'e1000', 'pcnet']}
 
 ##
+# @VmInterfaceDeviceBandwidthParams:
+#
+# Bandwidth traffic shape parameters for VM Interface device expressed as integers.
+#
+# @average: Average bit rate of the interface being shaped in kB/sec.
+#
+# @burst:   #optional Amount of data that can be burst at peak speed in kB.
+#
+# @peak:    #optional Maximum rate at which interface can send data in kB/sec.
+#
+# Since: 4.12.0
+##
+{'type': 'VmInterfaceDeviceBandwidthParams',
+ 'data': {'average': 'uint', '*burst': 'uint', '*peak': 'uint'}}
+
+##
 # @VmInterfaceDeviceSpecParams:
 #
 # Additional VM interface device parameters.
 #
+# @inbound:   #optional Bandwidth parameters for shaping incoming traffic.
+#
+# @outbound:  #optional Bandwidth parameters for shaping outgoing traffic.
+#
 # Since: 4.10.0
 ##
-{'type': 'VmInterfaceDeviceSpecParams', 'data': {}}
+{'type': 'VmInterfaceDeviceSpecParams',
+ 'data': {'*inbound': 'VmInterfaceBandwidthParams',
+          '*outbound': 'VmInterfaceBandwidthParams'}}
 
 ##
 # @VmInterfaceDevice:

@@ -1246,6 +1246,10 @@ class NetworkInterfaceDevice(VmDevice):
             [<filterref filter='filter name'/>]
             [<tune><sndbuf>0</sndbuf></tune>]
             [<link state='up|down'/>]
+            [<bandwidth>
+              [<inbound average="int" [burst="int"]  [peak="int"]/>]
+              [<outbound average="int" [burst="int"]  [peak="int"]/>]
+             </bandwidth>]
         </interface>
         """
         iface = self.createXmlElem('interface', self.device, ['address'])
@@ -1270,6 +1274,17 @@ class NetworkInterfaceDevice(VmDevice):
             tune = iface.appendChildWithArgs('tune')
             tune.appendChildWithArgs('sndbuf', text=self.sndbufParam)
 
+        if hasattr(self, 'specParams'):
+            if 'inbound' in self.specParams or 'outbound' in self.specParams:
+                bandwidth = self.createXmlElem('bandwidth', None)
+                # Inbound and Outbound traffic can be indipendently shaped.
+                inbound = self.specParams.get('inbound')
+                outbound = self.specParams.get('outbound')
+                if inbound:
+                    bandwidth.appendChildWithArgs('inbound', **inbound)
+                if outbound:
+                    bandwidth.appendChildWithArgs('outbound', **outbound)
+                iface.appendChild(bandwidth)
         return iface
 
 
