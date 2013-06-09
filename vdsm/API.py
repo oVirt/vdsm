@@ -1220,7 +1220,7 @@ class Global(APIBase):
                            if not vmSet or v.id in vmSet]}
 
     # Networking-related functions
-    def setupNetworks(self, networks={}, bondings={}, options={}):
+    def setupNetworks(self, networks, bondings, options):
         """Add a new network to this vds, replacing an old one."""
 
         if not self._cif._networkSemaphore.acquire(blocking=False):
@@ -1238,12 +1238,15 @@ class Global(APIBase):
         finally:
             self._cif._networkSemaphore.release()
 
-    def addNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
+    def addNetwork(self, bridge, vlan=None, bond=None, nics=None,
+                   options=None):
         """Add a new network to this vds.
 
         Network topology is bridge--[vlan--][bond--]nics.
         vlan(number) and bond are optional - pass the empty string to discard
         them.  """
+        if options is None:
+            options = {}
 
         self.translateNetOptionsToNew(options)
         if not self._cif._networkSemaphore.acquire(blocking=False):
@@ -1267,8 +1270,11 @@ class Global(APIBase):
         finally:
             self._cif._networkSemaphore.release()
 
-    def delNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
+    def delNetwork(self, bridge, vlan=None, bond=None, nics=None,
+                   options=None):
         """Delete a network from this vds."""
+        if options is None:
+            options = {}
         self.translateNetOptionsToNew(options)
 
         try:
@@ -1312,8 +1318,10 @@ class Global(APIBase):
             self._cif._networkSemaphore.release()
 
     def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
-                    nics=None, options={}):
+                    nics=None, options=None):
         """Add a new network to this vds, replacing an old one."""
+        if options is None:
+            options = {}
 
         self.translateNetOptionsToNew(options)
         if not self._cif._networkSemaphore.acquire(blocking=False):

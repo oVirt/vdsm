@@ -170,7 +170,7 @@ class _SuperVdsm(object):
         return configNetwork.editNetwork(oldBridge, newBridge, **options)
 
     @logDecorator
-    def setupNetworks(self, networks={}, bondings={}, options={}):
+    def setupNetworks(self, networks, bondings, options):
         return configNetwork.setupNetworks(networks, bondings, **options)
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):

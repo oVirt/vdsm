@@ -356,7 +356,7 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
             return define.errCode['noConPeer']['status']['code']
 
 
-def _validateNetworkSetup(networks={}, bondings={}):
+def _validateNetworkSetup(networks, bondings):
     _netinfo = netinfo.NetInfo()
 
     for network, networkAttrs in networks.iteritems():
@@ -434,7 +434,7 @@ def _buildBondOptions(bondName, bondings, _netinfo):
     return bond
 
 
-def setupNetworks(networks={}, bondings={}, **options):
+def setupNetworks(networks, bondings, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
     Params:

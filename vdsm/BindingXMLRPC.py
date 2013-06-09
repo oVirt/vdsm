@@ -369,20 +369,22 @@ class BindingXMLRPC(object):
         api = API.VM(vmId)
         return api.getDiskAlignment(driveSpecs)
 
-    def addNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
+    def addNetwork(self, bridge, vlan=None, bond=None, nics=None,
+                   options=None):
         api = API.Global()
         return api.addNetwork(bridge, vlan, bond, nics, options)
 
-    def delNetwork(self, bridge, vlan=None, bond=None, nics=None, options={}):
+    def delNetwork(self, bridge, vlan=None, bond=None, nics=None,
+                   options=None):
         api = API.Global()
         return api.delNetwork(bridge, vlan, bond, nics, options)
 
     def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
-                    nics=None, options={}):
+                    nics=None, options=None):
         api = API.Global()
         return api.editNetwork(oldBridge, newBridge, vlan, bond, nics, options)
 
-    def setupNetworks(self, networks={}, bondings={}, options={}):
+    def setupNetworks(self, networks, bondings, options):
         api = API.Global()
         return api.setupNetworks(networks, bondings, options)
 
