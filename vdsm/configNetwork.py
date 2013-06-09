@@ -197,8 +197,11 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, bootproto, _netinfo, configurator,
                                 **options)
-    netEnt.configure(**options)
+
+    # libvirt net addition must be done before creation so that on dhcp ifup
+    # the dhcp hook will already see the network as belonging to vdsm.
     configurator.configureLibvirtNetwork(network, netEnt)
+    netEnt.configure(**options)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
@@ -308,6 +311,13 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if not utils.tobool(force):
         _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
 
+    netEnt = objectivizeNetwork(bridge=network if bridged else None, vlan=vlan,
+                                bonding=bonding, nics=nics, _netinfo=_netinfo,
+                                configurator=configurator,
+                                implicitBonding=implicitBonding)
+    netEnt.remove()
+    # libvirt net removal must be done after removal so that on dhcp ifdown
+    # the dhcp hook still sees the network as belonging to vdsm.
     configurator.removeLibvirtNetwork(network)
 
     # We need to gather NetInfo again to refresh networks info from libvirt.
@@ -316,12 +326,6 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if network in _netinfo.networks:
         raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'delNetwork: bridge %s '
                                  'still exists' % network)
-
-    netEnt = objectivizeNetwork(bridge=network if bridged else None, vlan=vlan,
-                                bonding=bonding, nics=nics, _netinfo=_netinfo,
-                                configurator=configurator,
-                                implicitBonding=implicitBonding)
-    netEnt.remove()
 
 
 def clientSeen(timeout):

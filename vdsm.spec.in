@@ -808,6 +808,7 @@ exit 0
 %if 0%{?with_systemd}
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
 %endif
+%{_sysconfdir}/dhcp/dhclient.d/sourceRoute.sh
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/cron.d/vdsm-libvirt-logrotate

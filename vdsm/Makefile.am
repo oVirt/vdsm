@@ -115,10 +115,14 @@ EXTRA_DIST = \
 	mk_sysprep_floppy.in \
 	mom.conf.in \
 	mom.policy \
+	sourceRoute.sh \
 	sudoers.vdsm.in \
-	svdsm.logger.conf.in \
 	supervdsmd.init.in \
 	supervdsmd.service.in \
+	svdsm.logger.conf.in \
+	vdsmd.8.in \
+	vdsmd.init.in \
+	vdsmd.service \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -128,12 +132,9 @@ EXTRA_DIST = \
 	vdsm-modules-load.d.conf \
 	vdsm-restore-net-config.init.in \
 	vdsm-restore-net-config.service \
+	vdsm.rwtab.in \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
-	vdsm.rwtab.in \
-	vdsmd.8.in \
-	vdsmd.init.in \
-	vdsmd.service \
 	$(NULL)
 
 all-local: \
@@ -147,6 +148,7 @@ install-data-hook:
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
+		install-data-dhclient-hooks \
 		install-data-libvirtpass \
 		install-data-logger \
 		install-data-logrotate \
@@ -168,6 +170,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 uninstall-local: \
+		uninstall-data-dhclient-hooks \
 		uninstall-data-libvirtpass \
 		uninstall-data-logger \
 		uninstall-data-logrotate \
@@ -240,5 +243,15 @@ install-data-sysctl:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sysctl.d
 	$(INSTALL_DATA) $(srcdir)/vdsm-sysctl.conf \
 		$(DESTDIR)$(sysconfdir)/sysctl.d/vdsm
+
 uninstall-data-sysctl:
 	$(RM) $(DESTDIR)$(sysconfdir)/sysctl.d/vdsm
+
+install-data-dhclient-hooks:
+	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d
+	$(INSTALL_DATA) sourceRoute.sh \
+		$(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/sourceRoute.sh
+	chmod 755 $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/sourceRoute.sh
+
+uninstall-data-dhclient-hooks:
+	$(RM) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/sourceRoute.sh

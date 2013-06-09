@@ -28,9 +28,6 @@ from ipwrapper import routeLinkNetForDevice
 from ipwrapper import routeShowTable
 from ipwrapper import Rule
 from ipwrapper import ruleList
-from netconf.ifcfg import ConfigWriter
-from netconf.ifcfg import Ifcfg
-from netconf.iproute2 import Iproute2
 from vdsm import netinfo
 
 
@@ -228,4 +225,11 @@ def main():
 
 
 if __name__ == "__main__":
+    # This imports are here due to the fact that we only need to create
+    # configurators if being used as a standalone script and because otherwise
+    # when importing SourceRoute from the configurators, we'd get a circular
+    # dependency.
+    from netconf.ifcfg import ConfigWriter
+    from netconf.ifcfg import Ifcfg
+    from netconf.iproute2 import Iproute2
     main()

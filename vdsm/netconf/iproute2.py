@@ -26,17 +26,17 @@ from ipwrapper import ruleDel
 
 class Iproute2(object):
     @staticmethod
-    def configureSourceRoute(sourceRoute, device):
-        for route in sourceRoute.routes:
+    def configureSourceRoute(routes, rules, device):
+        for route in routes:
             routeAdd(route)
 
-        for rule in sourceRoute.rules:
+        for rule in rules:
             ruleAdd(rule)
 
     @staticmethod
-    def removeSourceRoute(sourceRoute, device):
-        for route in sourceRoute.routes:
+    def removeSourceRoute(routes, rules, device):
+        for route in routes:
             routeDel(route)
 
-        for rule in sourceRoute.rules:
+        for rule in rules:
             ruleDel(rule)
