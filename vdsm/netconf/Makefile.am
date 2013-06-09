@@ -23,6 +23,7 @@ vdsmnetconfdir = $(vdsmdir)/netconf
 
 dist_vdsmnetconf_PYTHON = \
 	__init__.py \
+	dhclient.py \
 	ifcfg.py \
 	iproute2.py \
 	libvirtCfg.py \

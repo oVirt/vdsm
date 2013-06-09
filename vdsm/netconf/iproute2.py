@@ -21,6 +21,7 @@ import logging
 
 import libvirtCfg
 from netconf import Configurator
+from netconf.dhclient import DhcpClient
 from neterrors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from netmodels import Nic
 from vdsm import netinfo
@@ -202,9 +203,14 @@ class ConfigApplier(object):
 
     def ifup(self, iface):
         ipwrapper.linkSet(iface.name, ['up'])
+        if iface.ipConfig.bootproto == 'dhcp':
+            dhclient = DhcpClient(iface.name)
+            dhclient.start(iface.ipConfig.async)
 
     def ifdown(self, iface):
         ipwrapper.linkSet(iface.name, ['down'])
+        dhclient = DhcpClient(iface.name)
+        dhclient.shutdown()
 
     def setIfaceConfigAndUp(self, iface):
         if iface.ip:
