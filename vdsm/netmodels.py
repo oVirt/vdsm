@@ -91,7 +91,7 @@ class Vlan(NetDevice):
     def configure(self, bridge=None, **opts):
         self.configurator.configureVlan(self, bridge=bridge, **opts)
 
-    def remove(self, force=False):
+    def remove(self):
         self.configurator.removeVlan(self)
 
     @classmethod
@@ -128,7 +128,7 @@ class Bridge(NetDevice):
     def configure(self, **opts):
         self.configurator.configureBridge(self, **opts)
 
-    def remove(self, force=False):
+    def remove(self):
         logging.debug('Removing bridge %r', self)
         self.configurator.removeBridge(self)
 
@@ -162,7 +162,7 @@ class Bond(NetDevice):
     def configure(self, **opts):
         self.configurator.configureBond(self, **opts)
 
-    def remove(self, force=False):
+    def remove(self):
         logging.debug('Removing bond %r', self)
         self.configurator.removeBond(self)
 
@@ -221,7 +221,7 @@ class Bond(NetDevice):
         with cls._validationBond(bonding) as bond:
             try:
                 for option in bondingOptions.split():
-                    key, value = option.split('=')
+                    key, _ = option.split('=')
                     if not os.path.exists('/sys/class/net/%s/bonding/%s' %
                                           (bond, key)):
                         raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is '
