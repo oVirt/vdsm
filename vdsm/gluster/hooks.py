@@ -119,7 +119,7 @@ def hooksList():
             hooks += _getHooks(gCmd, HookLevel.PRE)
             hooks += _getHooks(gCmd, HookLevel.POST)
         return hooks
-    except OSError, e:
+    except OSError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
         raise ge.GlusterHookListException(err=[errMsg])
 
@@ -144,7 +144,7 @@ def hookEnable(glusterCmd, hookLevel, hookName):
         os.rename(disabledFile, enabledFile)
         st = os.stat(enabledFile)
         os.chmod(enabledFile, st.st_mode | stat.S_IEXEC)
-    except OSError, e:
+    except OSError as e:
         if errno.ENOENT == e.errno:
             raise ge.GlusterHookNotFoundException(glusterCmd, hookLevel,
                                                   hookName)
@@ -160,7 +160,7 @@ def hookDisable(glusterCmd, hookLevel, hookName):
                                                   hookLevel.lower(), hookName)
     try:
         os.rename(enabledFile, disabledFile)
-    except OSError, e:
+    except OSError as e:
         if errno.ENOENT == e.errno:
             if os.path.exists(disabledFile):
                 log.warn("Disabled hook file:%s already exists" % disabledFile)
@@ -195,7 +195,7 @@ def hookRead(glusterCmd, hookLevel, hookName):
         return {'content': encodedString,
                 'mimetype': _getMimeType(hookFile),
                 'md5sum': _computeMd5Sum(hookFile)}
-    except IOError, e:
+    except IOError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
         raise ge.GlusterHookReadException(err=[errMsg])
 
@@ -232,7 +232,7 @@ def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum):
     try:
         return _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData,
                                 hookMd5Sum)
-    except IOError, e:
+    except IOError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
         raise ge.GlusterHookUpdateFailedException(err=[errMsg])
 
@@ -244,7 +244,7 @@ def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
     try:
         return _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData,
                                 hookMd5Sum, update=False, enable=enable)
-    except IOError, e:
+    except IOError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
         raise ge.GlusterHookAddFailedException(err=[errMsg])
 
@@ -257,13 +257,13 @@ def hookRemove(glusterCmd, hookLevel, hookName):
                                                   hookName)
     try:
         os.remove(enabledFile)
-    except OSError, e:
+    except OSError as e:
         if errno.ENOENT != e.errno:
             errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
             raise ge.GlusterHookRemoveFailedException(err=[errMsg])
     try:
         os.remove(disabledFile)
-    except OSError:
+    except OSError as e:
         if errno.ENOENT != e.errno:
             errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
             raise ge.GlusterHookRemoveFailedException(err=[errMsg])
