@@ -499,6 +499,8 @@ class TestVm(TestCaseBase):
 
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
+    @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
+    @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
     @MonkeyPatch(libvirtconnection, 'get', lambda x: 0)
     @MonkeyPatch(utils,  'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
