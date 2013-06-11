@@ -1375,7 +1375,19 @@ class StoragePool(Securable):
         self.setMetaParam(PMDK_POOL_DESCRIPTION, descr)
 
     def extendVolume(self, sdUUID, volumeUUID, size, isShuttingDown=None):
+        # This method is not exposed through the remote API but it's called
+        # directly from the mailbox to implement the thin provisioning on
+        # block devices. The scope of this method is to extend only the
+        # volume apparent size; the virtual disk size seen by the guest is
+        # unchanged.
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
+
+    def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
+                                      rm.LockType.exclusive):
+            return sdCache.produce(sdUUID) \
+                .produceVolume(imgUUID, volUUID).extendSize(int(newSize))
 
     @classmethod
     def _getPoolMD(cls, domain):

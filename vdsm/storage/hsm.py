@@ -652,6 +652,16 @@ class HSM:
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
     @public
+    def extendVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
+        pool = self.getPool(spUUID)
+        newSizeBytes = misc.validateN(newSize, "newSize")
+        newSizeBlocks = (newSizeBytes + SECTOR_SIZE - 1) / SECTOR_SIZE
+        vars.task.getSharedLock(STORAGE, sdUUID)
+        self._spmSchedule(
+            spUUID, "extendVolumeSize", pool.extendVolumeSize, sdUUID,
+            imgUUID, volUUID, newSizeBlocks)
+
+    @public
     def extendStorageDomain(self, sdUUID, spUUID, devlist,
                             force=False, options=None):
         """

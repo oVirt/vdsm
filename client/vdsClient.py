@@ -989,13 +989,10 @@ class service:
         printDict(size, self.pretty)
         return 0, ''
 
-    def extendVolume(self, args):
-        sdUUID = args[0]
-        spUUID = args[1]
-        imgUUID = args[2]
-        volUUID = args[3]
-        newSize = args[4]
-        status = self.s.extendVolume(sdUUID, spUUID, imgUUID, volUUID, newSize)
+    def extendVolumeSize(self, args):
+        spUUID, sdUUID, imgUUID, volUUID, newSize = args
+        status = self.s.extendVolumeSize(
+            spUUID, sdUUID, imgUUID, volUUID, newSize)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         return 0, ''
@@ -2171,11 +2168,10 @@ if __name__ == '__main__':
                           '<srcImgUUID> <srcVolUUID>',
                           'Creates new volume or snapshot'
                           )),
-        'extendVolume': (serv.extendVolume,
-                         ('<sdUUID> <spUUID> <imgUUID> <volUUID> '
-                          '<new disk size>',
-                          'Extend volume (SAN only)'
-                          )),
+        'extendVolumeSize': (serv.extendVolumeSize, (
+            '<spUUID> <sdUUID> <imgUUID> <volUUID> <newSize>',
+            'Extend the volume size (virtual disk size seen by the guest).',
+        )),
         'uploadVolume': (serv.uploadVolume,
                          ('<sdUUID> <spUUID> <imgUUID> <volUUID> <srcPath> '
                           '<size>',

@@ -715,10 +715,9 @@ class Volume(APIBase):
                                       self._imgUUID, [self._UUID], postZero,
                                       force)
 
-    def extend(self, size, isShuttingDown):
-        return self._irs.extendVolume(self._sdUUID, self._spUUID,
-                                      self._imgUUID, self._UUID, size,
-                                      isShuttingDown)
+    def extendSize(self, newSize):
+        return self._irs.extendVolumeSize(
+            self._spUUID, self._sdUUID, self._imgUUID, self._UUID, newSize)
 
     def getInfo(self):
         return self._irs.getVolumeInfo(self._sdUUID, self._spUUID,

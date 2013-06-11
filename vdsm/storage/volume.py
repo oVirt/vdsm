@@ -557,9 +557,77 @@ class Volume(object):
 
     def extend(self, newsize):
         """
-        Extend a logical volume
+        Extend the apparent size of logical volume (thin provisioning)
         """
         pass
+
+    def syncMetadata(self):
+        volFormat = self.getFormat()
+        if volFormat != RAW_FORMAT:
+            self.log.error("impossible to update metadata for volume %s ",
+                           "its format is not RAW", self.volUUID)
+            return
+
+        newVolSize = self.getVolumeSize()
+        oldVolSize = self.getSize()
+
+        if oldVolSize == newVolSize:
+            self.log.debug("size metadata %s is up to date for volume %s",
+                           oldVolSize, self.volUUID)
+        else:
+            self.log.debug("updating metadata for volume %s changing the "
+                           "size %s to %s", self.volUUID, oldVolSize,
+                           newVolSize)
+            self.setSize(newVolSize)
+
+    @classmethod
+    def extendSizeFinalize(cls, taskObj, sdUUID, imgUUID, volUUID):
+        cls.log.debug("finalizing size extension for volume %s on domain "
+                      "%s", volUUID, sdUUID)
+        # The rollback consists in just updating the metadata to be
+        # consistent with the volume real/virtual size.
+        sdCache.produce(sdUUID) \
+               .produceVolume(imgUUID, volUUID).syncMetadata()
+
+    def extendSize(self, newSize):
+        """
+        Extend the size (virtual disk size seen by the guest) of the volume.
+        """
+        if not self.isLeaf() or self.isShared():
+            raise se.VolumeNonWritable(self.volUUID)
+
+        volFormat = self.getFormat()
+
+        if volFormat == COW_FORMAT:
+            self.log.debug("skipping cow size extension for volume %s to "
+                           "size %s", self.volUUID, newSize)
+            return
+        elif volFormat != RAW_FORMAT:
+            raise se.IncorrectFormat(self.volUUID)
+
+        curRawSize = self.getVolumeSize()
+
+        if (newSize < curRawSize):
+            self.log.error("current size of volume %s is larger than the "
+                           "size requested in the extension (%s > %s)",
+                           self.volUUID, curRawSize, newSize)
+            raise se.VolumeResizeValueError(newSize)
+
+        if (newSize == curRawSize):
+            self.log.debug("the requested size %s is equal to the current "
+                           "size %s, skipping extension", newSize,
+                           curRawSize)
+        else:
+            self.log.info("executing a raw size extension for volume %s "
+                          "from size %s to size %s", self.volUUID,
+                          curRawSize, newSize)
+            vars.task.pushRecovery(task.Recovery(
+                "Extend size for volume: " + self.volUUID, "volume",
+                "Volume", "extendSizeFinalize",
+                [self.sdUUID, self.imgUUID, self.volUUID]))
+            self._extendSizeRaw(newSize)
+
+        self.syncMetadata()  # update the metadata
 
     def setDescription(self, descr):
         """

@@ -657,10 +657,9 @@ class BindingXMLRPC(object):
         return volume.create(size, volFormat, preallocate, diskType, desc,
                              srcImgUUID, srcVolUUID)
 
-    def volumeExtend(self, sdUUID, spUUID, imgUUID, volUUID, size,
-                     isShuttingDown=None):
+    def volumeExtendSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
-        return volume.extend(size, isShuttingDown)
+        return volume.extendSize(newSize)
 
     def volumeGetInfo(self, sdUUID, spUUID, imgUUID, volUUID):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
@@ -889,7 +888,7 @@ class BindingXMLRPC(object):
                 (self.taskStop, 'stopTask'),
                 (self.volumeCopy, 'copyImage'),
                 (self.volumeCreate, 'createVolume'),
-                (self.volumeExtend, 'extendVolume'),
+                (self.volumeExtendSize, 'extendVolumeSize'),
                 (self.volumeGetInfo, 'getVolumeInfo'),
                 (self.volumeGetPath, 'getVolumePath'),
                 (self.volumeGetSize, 'getVolumeSize'),

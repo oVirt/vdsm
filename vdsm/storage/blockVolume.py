@@ -56,6 +56,8 @@ BLOCK_SIZE = volume.BLOCK_SIZE
 VOLUME_METASIZE = BLOCK_SIZE
 VOLUME_MDNUMBLKS = 1
 
+SECTORS_TO_MB = 2048
+
 # Reserved leases for special purposes:
 #  - 0       SPM (Backward comapatibility with V0 and V2)
 #  - 1       SDM (SANLock V3)
@@ -289,7 +291,7 @@ class BlockVolume(volume.Volume):
                       newSize)
         # we should return: Success/Failure
         # Backend APIs:
-        sizemb = (newSize + 2047) / 2048
+        sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
     @classmethod
@@ -610,6 +612,13 @@ class BlockVolume(volume.Volume):
             mtime = 0
 
         return mtime
+
+    def _extendSizeRaw(self, newSize):
+        # Since this method relies on lvm.extendLV (lvextend) when the
+        # requested size is equal or smaller than the current size, the
+        # request is siliently ignored.
+        newSizeMb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
+        lvm.extendLV(self.sdUUID, self.volUUID, newSizeMb)
 
 
 def _getVolumeTag(sdUUID, volUUID, tagPrefix):

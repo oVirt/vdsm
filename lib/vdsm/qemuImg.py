@@ -100,24 +100,36 @@ def check(image, format=None):
         raise QImgError(rc, out, err)
 
 
-def convert(srcVolPath, dstVolPath, stop, srcFmt=None, dstFmt=None):
+def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None):
     cmd = [_qemuimg.cmd, "convert", "-t", "none"]
 
-    if srcFmt:
-        cmd.extend(("-f", srcFmt))
+    if srcFormat:
+        cmd.extend(("-f", srcFormat))
 
-    cmd.append(srcVolPath)
+    cmd.append(srcImage)
 
-    if dstFmt:
-        cmd.extend(("-O", dstFmt))
+    if dstFormat:
+        cmd.extend(("-O", dstFormat))
 
-    cmd.append(dstVolPath)
+    cmd.append(dstImage)
 
-    (rc, out, err) = utils.watchCmd(cmd, stop=stop,
-                                    nice=utils.NICENESS.HIGH,
-                                    ioclass=utils.IOCLASS.IDLE)
+    (rc, out, err) = utils.watchCmd(
+        cmd, stop=stop, nice=utils.NICENESS.HIGH, ioclass=utils.IOCLASS.IDLE)
 
     if rc != 0:
         raise QImgError(rc, out, err)
 
     return (rc, out, err)
+
+
+def resize(image, newSize, format=None):
+    cmd = [_qemuimg.cmd, "resize"]
+
+    if format:
+        cmd.extend(("-f", format))
+
+    cmd.extend((image, str(newSize)))
+    rc, out, err = utils.execCmd(cmd)
+
+    if rc != 0:
+        raise QImgError(rc, out, err)

@@ -6118,30 +6118,25 @@
  'returns': 'UUID'}
 
 ##
-# @Volume.extend:
+# @Volume.extendSize:
 #
-# Increase the size of a Volume.
+# Extends the virtual size of a volume.
 #
-# @volumeID:         The UUID of the Volume
+# @spUUID:   The Storage Pool associated with the Volume
 #
-# @storagepoolID:    The Storage Pool associated with the Volume
+# @sdUUID:   The Storage Domain associated with the Volume
 #
-# @storagedomainID:  The Storage Domain associated with the Volume
+# @imgUUID:  The Image associated with the Volume
 #
-# @imageID:          The Image associated with the Volume
+# @volUUID:  The UUID of the Volume
 #
-# @size:             The new desired size (in sectors)
+# @newSize:  The new desired size (in bytes)
 #
-# @isShuttingDown:   (Unused)
-#
-# Since: 4.10.0
-#
-# Notes:  Valid for block-based Volumes only
+# Since: 4.12.0
 ##
-{'command': {'class': 'Volume', 'name': 'extend'},
- 'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
-          'storagedomainID': 'UUID', 'imageID': 'UUID',
-          'size': 'int', 'isShuttingDown': 'bool'}}
+{'command': {'class': 'Volume', 'name': 'extendSize'},
+ 'data': {'spUUID': 'UUID', 'sdUUID': 'UUID', 'imgUUID': 'UUID',
+          'volUUID': 'UUID', 'newSize': 'str'}}
 
 ##
 # @VolumeLegality:

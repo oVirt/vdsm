@@ -324,6 +324,11 @@ class IncorrectType(StorageException):
     message = "Incorrect Volume Preallocate Type"
 
 
+class VolumeResizeValueError(StorageException):
+    code = 232
+    message = "Incorrect size value for volume resize"
+
+
 #################################################
 #  Images Exceptions
 #################################################
