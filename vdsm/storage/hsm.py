@@ -71,6 +71,7 @@ import dispatcher
 import supervdsm
 import storageServer
 from vdsm import utils
+from vdsm import qemuImg
 
 GUID = "guid"
 NAME = "name"
@@ -655,11 +656,57 @@ class HSM:
     def extendVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
         pool = self.getPool(spUUID)
         newSizeBytes = misc.validateN(newSize, "newSize")
-        newSizeBlocks = (newSizeBytes + SECTOR_SIZE - 1) / SECTOR_SIZE
+        newSizeSectors = (newSizeBytes + SECTOR_SIZE - 1) / SECTOR_SIZE
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(
             spUUID, "extendVolumeSize", pool.extendVolumeSize, sdUUID,
-            imgUUID, volUUID, newSizeBlocks)
+            imgUUID, volUUID, newSizeSectors)
+
+    @public
+    def updateVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
+        """
+        Update the volume size with the given newSize (in bytes).
+
+        This synchronous method is intended to be used only with COW volumes
+        where the size can be updated simply changing the qcow2 header.
+        """
+        newSizeBytes = int(newSize)
+        domain = self.validateSdUUID(sdUUID)
+        volToExtend = domain.produceVolume(imgUUID, volUUID)
+        volPath = volToExtend.getVolumePath()
+        volFormat = volToExtend.getFormat()
+
+        if not volToExtend.isLeaf():
+            raise se.VolumeNonWritable(self.volUUID)
+
+        if volFormat != volume.COW_FORMAT:
+            # This method is used only with COW volumes (see docstring),
+            # for RAW volumes we just return the volume size.
+            return dict(size=str(self.getVolumeSize(bs=1)))
+
+        qemuImgFormat = volume.fmt2str(volume.COW_FORMAT)
+
+        volToExtend.prepare()
+        try:
+            imgInfo = qemuImg.info(volPath, qemuImgFormat)
+            if imgInfo['virtualsize'] > newSizeBytes:
+                self.log.error(
+                    "volume %s size %s is larger than the size requested "
+                    "for the extension %s", volUUID, imgInfo['virtualsize'],
+                    newSizeBytes)
+                raise se.VolumeResizeValueError(str(newSizeBytes))
+            # Uncommit the current size
+            volToExtend.setSize(0)
+            qemuImg.resize(volPath, newSizeBytes, qemuImgFormat)
+            roundedSizeBytes = qemuImg.info(volPath,
+                                            qemuImgFormat)['virtualsize']
+        finally:
+            volToExtend.teardown(sdUUID, volUUID)
+
+        volToExtend.setSize(
+            (roundedSizeBytes + SECTOR_SIZE - 1) / SECTOR_SIZE)
+
+        return dict(size=str(roundedSizeBytes))
 
     @public
     def extendStorageDomain(self, sdUUID, spUUID, devlist,
@@ -2983,6 +3030,18 @@ class HSM:
         truesize = str(volume.Volume.getVTrueSize(sdUUID, imgUUID,
                                                   volUUID, bs=1))
         return dict(apparentsize=apparentsize, truesize=truesize)
+
+    @public
+    def setVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, capacity):
+        capacity = int(capacity)
+        vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
+        # Values lower than 1 are used to uncommit (marking as inconsisent
+        # during a transaction) the volume size.
+        if capacity > 0:
+            sectors = (capacity + SECTOR_SIZE - 1) / SECTOR_SIZE
+        else:
+            sectors = capacity
+        vol.setSize(sectors)
 
     @public
     def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options=None):

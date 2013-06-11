@@ -242,6 +242,7 @@ class Image:
         # Activating the volumes
         sdCache.produce(sdUUID).activateVolumes(
             imgUUID, volUUIDs=[vol.volUUID for vol in chain])
+        chain[-1].updateInvalidatedSize()
 
         return chain
 

@@ -27,6 +27,7 @@ from contextlib import contextmanager
 import image
 from vdsm import constants
 from vdsm import utils
+from vdsm import qemuImg
 import storage_exception as se
 import sd
 from sdc import sdCache
@@ -704,10 +705,26 @@ class Volume(object):
         return self.voltype
 
     def getSize(self):
-        return int(self.getMetaParam(SIZE))
+        size = int(self.getMetaParam(SIZE))
+        if size < 1:  # Size stored in the metadata is not valid
+            raise se.MetaDataValidationError()
+        return size
 
     def setSize(self, size):
         self.setMetaParam(SIZE, size)
+
+    def updateInvalidatedSize(self):
+        # During some complex flows the volume size might have been marked as
+        # invalidated (e.g. during a transaction). Here we are checking
+        # NOTE: the prerequisite to run this is that the volume is accessible
+        # (e.g. lv active) and not in use by another process (e.g. dd, qemu).
+        # Going directly to the metadata parameter as we should skip the size
+        # validation in getSize.
+        if int(self.getMetaParam(SIZE)) < 1:
+            volInfo = qemuImg.info(
+                self.getVolumePath(), fmt2str(self.getFormat()))
+            # qemu/qemu-img rounds down
+            self.setSize(volInfo['virtualsize'] / BLOCK_SIZE)
 
     def getType(self):
         return name2type(self.getMetaParam(TYPE))
@@ -804,6 +821,8 @@ class Volume(object):
                 raise se.InternalVolumeNonWritable(self)
 
         self.llPrepare(rw=rw, setrw=setrw)
+        self.updateInvalidatedSize()
+
         try:
             # Mtime is the time of the last prepare for RW
             if rw:

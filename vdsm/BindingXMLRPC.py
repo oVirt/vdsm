@@ -380,6 +380,19 @@ class BindingXMLRPC(object):
         api = API.VM(vmId)
         return api.getDiskAlignment(driveSpecs)
 
+    def diskSizeExtend(self, vmId, driveSpecs, newSize):
+        if vmId == API.VM.BLANK_UUID:
+            try:
+                volume = API.Volume(
+                    driveSpecs['volumeID'], driveSpecs['poolID'],
+                    driveSpecs['domainID'], driveSpecs['imageID'])
+            except KeyError:
+                return errCode['imageErr']
+            return volume.updateSize(newSize)
+        else:
+            vm = API.VM(vmId)
+            return vm.diskSizeExtend(driveSpecs, newSize)
+
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None,
                    options=None):
         api = API.Global()
@@ -673,6 +686,10 @@ class BindingXMLRPC(object):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.getSize()
 
+    def volumeSetSize(self, sdUUID, spUUID, imgUUID, volUUID, newSize):
+        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
+        return volume.setSize(newSize)
+
     def volumePrepare(self, sdUUID, spUUID, imgUUID, volUUID, rw=True):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.prepare(rw)
@@ -817,6 +834,7 @@ class BindingXMLRPC(object):
                 (self.vmMonitorCommand, 'monitorCommand'),
                 (self.vmDiskReplicateStart, 'diskReplicateStart'),
                 (self.vmDiskReplicateFinish, 'diskReplicateFinish'),
+                (self.diskSizeExtend, 'diskSizeExtend'),
                 (self.addNetwork, 'addNetwork'),
                 (self.delNetwork, 'delNetwork'),
                 (self.editNetwork, 'editNetwork'),
@@ -892,6 +910,7 @@ class BindingXMLRPC(object):
                 (self.volumeGetInfo, 'getVolumeInfo'),
                 (self.volumeGetPath, 'getVolumePath'),
                 (self.volumeGetSize, 'getVolumeSize'),
+                (self.volumeSetSize, 'volumeSetSize'),
                 (self.volumePrepare, 'prepareVolume'),
                 (self.volumeRefresh, 'refreshVolume'),
                 (self.volumeSetDescription, 'setVolumeDescription'),

@@ -534,6 +534,12 @@ class VM(APIBase):
             return errCode['noVM']
         return v.diskReplicateFinish(srcDisk, dstDisk)
 
+    def diskSizeExtend(self, driveSpecs, newSize):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.diskSizeExtend(driveSpecs, newSize)
+
     def pause(self):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
@@ -719,6 +725,10 @@ class Volume(APIBase):
         return self._irs.extendVolumeSize(
             self._spUUID, self._sdUUID, self._imgUUID, self._UUID, newSize)
 
+    def updateSize(self, newSize):
+        return self._irs.updateVolumeSize(
+            self._spUUID, self._sdUUID, self._imgUUID, self._UUID, newSize)
+
     def getInfo(self):
         return self._irs.getVolumeInfo(self._sdUUID, self._spUUID,
                                        self._imgUUID, self._UUID)
@@ -730,6 +740,10 @@ class Volume(APIBase):
     def getSize(self):
         return self._irs.getVolumeSize(self._sdUUID, self._spUUID,
                                        self._imgUUID, self._UUID)
+
+    def setSize(self, newSize):
+        return self._irs.setVolumeSize(self._sdUUID, self._spUUID,
+                                       self._imgUUID, self._UUID, newSize)
 
     def prepare(self, rw):
         return self._irs.prepareVolume(self._sdUUID, self._spUUID,

@@ -39,6 +39,7 @@ import libvirt
 from vdsm import constants
 from vdsm import libvirtconnection
 from vdsm import netinfo
+from vdsm import qemuImg
 from vdsm import utils
 from vdsm import vdscli
 from vdsm.config import config
@@ -3936,6 +3937,94 @@ class Vm(object):
             self.startDisksStatsCollection()
 
         return {'status': doneCode}
+
+    def _diskSizeExtendCow(self, drive, newSizeBytes):
+        # Apparently this is what libvirt would do anyway, except that
+        # it would fail on NFS when root_squash is enabled, see BZ#963881
+        # Patches have been submitted to avoid this behavior, the virtual
+        # and apparent sizes will be returned by the qemu process and
+        # through the libvirt blockInfo call.
+        currentSize = qemuImg.info(drive.path, "qcow2")['virtualsize']
+
+        if currentSize > newSizeBytes:
+            self.log.error(
+                "Requested extension size %s for disk %s is smaller "
+                "than the current size %s", newSizeBytes, drive.name,
+                currentSize)
+            return errCode['resizeErr']
+
+        # Uncommit the current volume size (mark as in transaction)
+        self.cif.irs.setVolumeSize(drive.domainID, drive.poolID,
+                                   drive.imageID, drive.volumeID, 0)
+
+        try:
+            self._dom.blockResize(drive.name, newSizeBytes,
+                                  libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
+        except libvirt.libvirtError:
+            self.log.error(
+                "An error occurred while trying to extend the disk %s "
+                "to size %s", drive.name, newSizeBytes, exc_info=True)
+            return errCode['updateDevice']
+        finally:
+            # In all cases we want to try and fix the size in the metadata.
+            # Same as above, this is what libvirt would do, see BZ#963881
+            sizeRoundedBytes = qemuImg.info(drive.path, "qcow2")['virtualsize']
+            self.cif.irs.setVolumeSize(
+                drive.domainID, drive.poolID, drive.imageID, drive.volumeID,
+                sizeRoundedBytes)
+
+        return {'status': doneCode, 'size': str(sizeRoundedBytes)}
+
+    def _diskSizeExtendRaw(self, drive, newSizeBytes):
+        volumeInfo = self.cif.irs.getVolumeSize(
+            drive.domainID, drive.poolID, drive.imageID, drive.volumeID)
+
+        sizeRoundedBytes = int(volumeInfo['apparentsize'])
+
+        # For the RAW device we use the volumeInfo apparentsize rather
+        # than the (possibly) wrong size provided in the request.
+        if sizeRoundedBytes != newSizeBytes:
+            self.log.info(
+                "The requested extension size %s is different from "
+                "the RAW device size %s", newSizeBytes, sizeRoundedBytes)
+
+        # At the moment here there's no way to fetch the previous size
+        # to compare it with the new one. In the future blockInfo will
+        # be able to return the value (fetched from qemu).
+
+        try:
+            self._dom.blockResize(drive.name, sizeRoundedBytes,
+                                  libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
+        except libvirt.libvirtError:
+            self.log.warn(
+                "Libvirt failed to notify the new size %s to the "
+                "running VM, the change will be available at the ",
+                "reboot", sizeRoundedBytes, exc_info=True)
+            return errCode['updateDevice']
+
+        return {'status': doneCode, 'size': str(sizeRoundedBytes)}
+
+    def diskSizeExtend(self, driveSpecs, newSizeBytes):
+        try:
+            newSizeBytes = int(newSizeBytes)
+        except ValueError:
+            return errCode['resizeErr']
+
+        try:
+            drive = self._findDriveByUUIDs(driveSpecs)
+        except LookupError:
+            return errCode['imageErr']
+
+        try:
+            if drive.format == "cow":
+                return self._diskSizeExtendCow(drive, newSizeBytes)
+            else:
+                return self._diskSizeExtendRaw(drive, newSizeBytes)
+        except:
+            self.log.error("Unable to extend disk %s to size %s",
+                           drive.name, newSizeBytes, exc_info=True)
+
+        return errCode['updateDevice']
 
     def _onWatchdogEvent(self, action):
         def actionToString(action):

@@ -1703,6 +1703,20 @@ class service:
 
         return status['status']['code'], status['status']['message']
 
+    def diskSizeExtend(self, args):
+        vmUUID, spUUID, sdUUID, imgUUID, volUUID, newSize = args
+
+        status = self.s.diskSizeExtend(
+            vmUUID, {
+                'poolID': spUUID, 'domainID': sdUUID, 'imageID': imgUUID,
+                'volumeID': volUUID, 'device': 'disk'
+            }, newSize)
+
+        if status['status']['code'] == 0:
+            print "New disk size:", status.get('size', None)
+
+        return status['status']['code'], status['status']['message']
+
 if __name__ == '__main__':
     if _glusterEnabled:
         serv = ge.GlusterService()
@@ -2433,6 +2447,11 @@ if __name__ == '__main__':
                                  'Finish live replication to the destination '
                                  'domain'
                                  )),
+        'diskSizeExtend': (
+            serv.diskSizeExtend, (
+                '<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID> <newSize>',
+                'Extends the virtual size of a disk'
+            )),
     }
     if _glusterEnabled:
         commands.update(ge.getGlusterCmdDict(serv))

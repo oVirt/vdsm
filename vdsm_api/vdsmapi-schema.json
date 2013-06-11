@@ -5920,6 +5920,26 @@
 {'command': {'class': 'VM', 'name': 'getDiskAlignment'},
  'data': {'vmID': 'UUID', 'disk': 'DriveSpecVolume'}}
 
+##
+# @VM.diskSizeExtend:
+#
+# Extends the virtual size of a disk through the running VM.
+#
+# @vmID:        The UUID of the VM
+#
+# @driveSpecs:  A @DriveSpecVolume structure rapresenting the disk
+#
+# @newSize:     The new desired size (in bytes)
+#
+# Returns:
+# The new size of the disk (might have been rounded)
+#
+# Since: 4.12.0
+##
+{'command': {'class': 'VM', 'name': 'diskSizeExtend'},
+ 'data': {'vmID': 'UUID', 'driveSpecs': 'DriveSpecVolume', 'newSize': 'str'},
+ 'returns': 'str'}
+
 ## Category: @Volume ###########################################################
 ##
 # @Volume:

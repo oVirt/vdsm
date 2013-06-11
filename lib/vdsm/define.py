@@ -126,6 +126,9 @@ errCode = {
     'hwInfoErr': {'status': {
         'code': 57,
         'message': 'Failed to read hardware information'}},
+    'resizeErr': {'status': {
+        'code': 58,
+        'message': 'Wrong resize disk parameter'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},
