@@ -23,6 +23,8 @@
 
 . @LIBEXECDIR@/ovirt_functions.sh
 
+[ -f /etc/default/vdsmd ] && . /etc/default/vdsmd
+
 VDSM_BIN=@VDSMDIR@/vdsm
 CONF_FILE=@CONFDIR@/vdsm.conf
 GETCONFITEM=@VDSMDIR@/get-conf-item
