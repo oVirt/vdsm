@@ -76,6 +76,15 @@ def run():
         # plugin and we would like to print that out.
         pass
 
+    # Used to enable code coverage. On production machines
+    # "coverage" should not exists and COVERAGE_PROCESS_START should not be
+    # set.
+    try:
+        import coverage
+        coverage.process_startup()
+    except ImportError:
+        pass
+
     log = logging.getLogger('vds')
     try:
         logging.root.handlers.append(logging.StreamHandler())

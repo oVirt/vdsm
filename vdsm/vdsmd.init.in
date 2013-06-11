@@ -50,6 +50,7 @@ is_coredump=`$GETCONFITEM $CONF_FILE vars core_dump_enable false | tr A-Z a-z`
 
 SYSTEMCTL_SKIP_REDIRECT=true
 
+[ -f /etc/sysconfig/vdsm ] && . /etc/sysconfig/vdsm
 . /etc/init.d/functions
 
 log_failure_msg() { printf "$@"; failure "$@"; echo; }
