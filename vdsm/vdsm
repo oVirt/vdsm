@@ -76,6 +76,15 @@ def run():
         # plugin and we would like to print that out.
         pass
 
+    # Used to enable code coverage. on production machines
+    # codeCoveragePlugin.py should not exists
+    try:
+        import codeCoveragePlugin
+    except ImportError:
+        # This is OK, it just means the file isn't
+        # there and we are not running in coverage mode.
+        pass
+
     log = logging.getLogger('vds')
     try:
         logging.root.handlers.append(logging.StreamHandler())

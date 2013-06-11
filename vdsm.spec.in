@@ -293,6 +293,14 @@ BuildArch:      noarch
 %description debug-plugin
 Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
 
+%package coverage-plugin
+Summary:        VDSM Code Coverage Plugin
+Requires:       python-coverage >= 3.5.3
+BuildArch:      noarch
+
+%description coverage-plugin
+Used by automation tests to measure code coverage.
+
 %package tests
 Summary:        VDSM Test Suite
 Requires:       vdsm = %{version}-%{release}
@@ -1122,6 +1130,10 @@ exit 0
 %defattr(-, root, root, -)
 %{_datadir}/%{vdsm_name}/vdsmDebugPlugin.py*
 %{_datadir}/%{vdsm_name}/debugPluginClient.py*
+
+%files coverage-plugin
+%defattr(-, root, root, -)
+%{_datadir}/%{vdsm_name}/codeCoveragePlugin.py*
 
 %files cli
 %defattr(-, root, root, -)
