@@ -192,7 +192,7 @@ def before_vm_dehibernate(domxml, vmconf={}):
 
 
 def after_vm_dehibernate(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'after_vm_hibernate', vmconf=vmconf,
+    return _runHooksDir(domxml, 'after_vm_dehibernate', vmconf=vmconf,
                         raiseError=False)
 
 
