@@ -93,7 +93,6 @@ Requires: iproute
 Requires: python-ethtool
 Requires: rpm-python
 Requires: nfs-utils
-Requires: python-pthreading
 Requires: m2crypto
 Requires: %{name}-xmlrpc = %{version}-%{release}
 
@@ -112,6 +111,7 @@ Requires: iscsi-initiator-utils
 Requires: libvirt
 Requires: lvm2
 Requires: python
+Requires: python-pthreading >= 0.1.2
 Requires: qemu-kvm
 Requires: qemu-kvm-img
 Requires: sanlock, sanlock-python
@@ -130,14 +130,17 @@ Requires: kernel >= 2.6.32-279.9.1
 Requires: sanlock >= 2.3-4, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: mom >= 0.3.0
+Requires: python-pthreading
 Requires: selinux-policy-targeted >= 3.7.19-80
 Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
 %endif
 %else
 %if 0%{?fedora} >= 19
+Requires: python-pthreading >= 0.1.2
 Requires: fence-agents-all
 %else
+Requires: python-pthreading
 Requires: fence-agents
 %endif
 # Subprocess and thread bug was found on python 2.7.2
