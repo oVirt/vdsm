@@ -150,7 +150,7 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, prefix=None, mtu=None, gateway=None, force=False,
                configWriter=None, bondingOptions=None, bridged=True,
-               _netinfo=None, **options):
+               _netinfo=None, qosInbound=None, qosOutbound=None, **options):
     nics = nics or ()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
@@ -200,7 +200,9 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     # libvirt net addition must be done before creation so that on dhcp ifup
     # the dhcp hook will already see the network as belonging to vdsm.
-    configurator.configureLibvirtNetwork(network, netEnt)
+    configurator.configureLibvirtNetwork(network, netEnt,
+                                         qosInbound=qosInbound,
+                                         qosOutbound=qosOutbound)
     netEnt.configure(**options)
 
 

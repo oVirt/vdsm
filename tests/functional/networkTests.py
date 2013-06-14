@@ -188,3 +188,17 @@ class NetworkTest(TestCaseBase):
                                                bond=BONDING_NAME,
                                                opts={'bridged': bridged})
         self.assertEqual(status, neterrors.ERR_BAD_PARAMS, msg)
+
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testQosNetwork(self):
+        with dummyIf(1) as nics:
+            qos = {'qosInbound': {'average': '1024', 'burst': '2048'},
+                   'qosOutbound': {'average': '2400', 'burst': '2048',
+                                   'peak': '100'}}
+
+            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
+                                                   nics=nics,
+                                                   opts=qos)
+
+            self.assertEqual(status, SUCCESS, msg)

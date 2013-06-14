@@ -22,9 +22,11 @@
 
 import os
 import pwd
+import re
 import shutil
 import subprocess
 import tempfile
+from xml.dom.minidom import parseString
 
 from vdsm import netinfo
 from netconf import ifcfg
@@ -71,17 +73,30 @@ class ifcfgConfigWriterTests(TestCaseBase):
                 restoredContent = file(fn).read()
                 self.assertEqual(content, restoredContent)
 
+    def assertEqualXml(self, a, b, msg=None):
+        """
+        Compare two xml strings for equality.
+        """
+
+        aXml = parseString(a).toprettyxml()
+        bXml = parseString(b).toprettyxml()
+        aXmlNrml = re.sub('\n\s*', ' ', aXml).strip()
+        bXmlNrml = re.sub('\n\s*', ' ', bXml).strip()
+        self.assertEqual(aXmlNrml, bXmlNrml, msg)
+
+    def setUp(self):
+        self._cw = ifcfg.ConfigWriter()
+
     @MonkeyPatch(subprocess, 'Popen', lambda x: None)
     def testAtomicRestore(self):
-        cw = ifcfg.ConfigWriter()
         self._createFiles()
 
         for fn, _, _ in self._files:
-            cw._atomicBackup(fn)
+            self._cw._atomicBackup(fn)
 
         self._makeFilesDirty()
 
-        cw.restoreAtomicBackup()
+        self._cw.restoreAtomicBackup()
         self._assertFilesRestored()
 
     @MonkeyPatch(os, 'chown', lambda *x: 0)
@@ -104,15 +119,57 @@ class ifcfgConfigWriterTests(TestCaseBase):
                 raise SkipTest("'vdsm' is not in user account database, "
                                "install vdsm package to create the vdsm user")
 
-            cw = ifcfg.ConfigWriter()
             self._createFiles()
 
             for fn, _, _ in self._files:
-                cw._persistentBackup(fn)
+                self._cw._persistentBackup(fn)
 
             self._makeFilesDirty()
 
-            cw = ifcfg.ConfigWriter()
-            cw.restorePersistentBackup()
+            self._cw.restorePersistentBackup()
 
             self._assertFilesRestored()
+
+    def testCreateNetXmlBridged(self):
+        expectedDoc = """<network>
+                           <name>vdsm-awesome_net</name>
+                           <forward mode='bridge'/>
+                           <bridge name='awesome_net'/>
+                         </network>"""
+        actualDoc = libvirtCfg.createNetworkDef('awesome_net', bridged=True)
+
+        self.assertEqualXml(expectedDoc, actualDoc)
+
+    def testCreateNetXml(self):
+        iface = "dummy"
+        expectedDoc = ("""<network>
+                            <name>vdsm-awesome_net</name>
+                            <forward mode='passthrough'/>
+                            <interface dev='%s'/>
+                          </network>""" % iface)
+        actualDoc = libvirtCfg.createNetworkDef('awesome_net', bridged=False,
+                                                iface=iface)
+
+        self.assertEqualXml(expectedDoc, actualDoc)
+
+    def testCreateNetXmlBridgedQos(self):
+        inbound = {'average': '1024', 'burst': '5000'}
+        outbound = {'average': '666', 'burst': '666',
+                    'peak': '400'}
+        expectedDoc = ("""<network>
+                            <name>vdsm-awesome_net</name>
+                            <forward mode='bridge'/>
+                            <bridge name='awesome_net'/>
+                            <bandwidth>
+                                <inbound average='%s' burst='%s' />
+                                <outbound average='%s' burst='%s' peak='%s' />
+                            </bandwidth>
+                          </network>"""
+                       % (inbound['average'], inbound['burst'],
+                          outbound['average'], outbound['burst'],
+                          outbound['peak']))
+        actualDoc = libvirtCfg.createNetworkDef('awesome_net',
+                                                qosInbound=inbound,
+                                                qosOutbound=outbound)
+
+        self.assertEqualXml(expectedDoc, actualDoc)

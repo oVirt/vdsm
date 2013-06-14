@@ -16,8 +16,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from xml.sax.saxutils import escape
 import libvirt
+from xml.dom.minidom import Document
+from xml.sax.saxutils import escape
 
 from vdsm import libvirtconnection
 from vdsm import netinfo
@@ -36,17 +37,59 @@ def getNetworkDef(network):
         raise
 
 
-def createNetworkDef(network, bridged=True, iface=None):
+def createNetworkDef(network, bridged=True, iface=None,
+                     qosInbound=None, qosOutbound=None):
+    """
+    Creates Network Xml e.g.:
+    <network>
+        <name>vdsm-awesome_net</name>
+        <forward mode='bridge' || 'passthrough'/>
+        <bridge name='awesome_net'/> || <interface dev='incredible'/>
+        [<bandwidth>]
+            [<inbound average='1000' [peak='5000'] [burst='1024']/>]
+            [<outbound average='1000' [burst='1024']/>]
+        [</bandwidth>]
+    </network>
+
+    Forward mode can be either bridge or passthrough,
+    according to net if bridged or bridgeless this
+    determines respectively the presence of bridge
+    or interface element. Inbound or outbound element
+    can be optionally defined.
+    """
+
     netName = netinfo.LIBVIRT_NET_PREFIX + network
-    if bridged:
-        return '''<network><name>%s</name><forward mode='bridge'/>
-                    <bridge name='%s'/></network>''' % (escape(netName),
-                                                        escape(network))
-    else:
-        return (
-            '''<network><name>%s</name><forward mode='passthrough'>'''
-            '''<interface dev='%s'/></forward></network>''' %
-            (escape(netName), escape(iface)))
+
+    def XmlElement(tagName, text=None, **attrs):
+        elem = Document().createElement(tagName)
+        if text:
+            textNode = Document().createTextNode(escape(text))
+            elem.appendChild(textNode)
+        if attrs:
+            for attr, value in attrs.iteritems():
+                elem.setAttribute(attr, escape(str(value)))
+        return elem
+
+    root = XmlElement('network')
+    nameElem = XmlElement('name', netName)
+    forwardElem = XmlElement('forward',
+                             mode='bridge' if bridged else 'passthrough')
+    root.appendChild(nameElem)
+    root.appendChild(forwardElem)
+    root.appendChild(XmlElement('bridge', name=network)
+                     if bridged else
+                     XmlElement('interface', dev=iface))
+
+    if qosInbound or qosOutbound:
+        bandwidthElem = XmlElement('bandwidth')
+        if qosInbound:
+            bandwidthElem.appendChild(XmlElement('inbound', **qosInbound))
+        if qosOutbound:
+            bandwidthElem.appendChild(XmlElement('outbound',
+                                                 **qosOutbound))
+        root.appendChild(bandwidthElem)
+
+    return root.toxml()
 
 
 def createNetwork(netXml):

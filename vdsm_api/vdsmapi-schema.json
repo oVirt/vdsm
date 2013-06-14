@@ -63,27 +63,33 @@
 #
 # @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
 #
+# @qosInbound:      #optional BandwidthParams for incoming traffic.
+#
+# @qosOutbound:     #optional BandwidthParams for outgoing traffic.
+#
 # Since: 4.10.0
 ##
 {'type': 'NetworkOptions',
  'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
           '*bootproto': 'str', '*delay': 'uint', '*onboot': 'str',
-          '*bondingOptions', 'str'}}
+          '*bondingOptions', 'str',
+          '*qosInbound': 'BandwidthParams',
+          '*qosOutbound': 'BandwidthParams'}}
 
 ##
 # @Host.addNetwork:
 #
 # Add a new network to this host.
 #
-# @bridge:   The name of the bridge device
+# @bridge:  The name of the bridge device
 #
-# @vlan:     #optional The name of a VLAN to create on the device
+# @vlan:    #optional The name of a VLAN to create on the device
 #
-# @bond:     #optional The name of a bond device to create from @nics
+# @bond:    #optional The name of a bond device to create from @nics
 #
-# @nics:     #optional A list of network device names
+# @nics:    #optional A list of network device names
 #
-# @options:  #optional A @NetworkOptions structure
+# @options: #optional A @NetworkOptions structure
 #
 # Since: 4.10.0
 ##
@@ -141,35 +147,40 @@
 #
 # Configuration attributes for a single host network.
 #
-# @vlan:       #optional The name of an associated vlan
+# @vlan:          #optional The name of an associated vlan
 #
-# @bonding:    #optional If the network is bonded, the name of the bond device
+# @bonding:       #optional If the network is bonded, the name of the bond device
 #
-# @nic:        #optional If the network is not bonded, an array containing a
-#              single network device name
+# @nic:           #optional If the network is not bonded, an array containing a
+#                 single network device name
 #
-# @ipaddr:     #optional Assign this static IP address to the network
+# @ipaddr:        #optional Assign this static IP address to the network
 #
-# @netmask:    #optional Assign this netmask to the network
+# @netmask:       #optional Assign this netmask to the network
 #
-# @gateway:    #optional Assign this gateway to the network
+# @gateway:       #optional Assign this gateway to the network
 #
-# @bootproto:  #optional Interface autoconfiguration protocol (typically 'dhcp'
-#              or 'static')
+# @bootproto:     #optional Interface autoconfiguration protocol (typically 'dhcp'
+#                 or 'static')
 #
-# @delay:      #optional The time to wait before starting the network device
+# @delay:         #optional The time to wait before starting the network device
 #
-# @onboot:     #optional Start the network device automatically during boot
+# @onboot:        #optional Start the network device automatically during boot
 #
-# @remove:     #optional If True, remove existing network only
+# @remove:        #optional If True, remove existing network only
+#
+# @qosInbound:    #optional BandwidthParams for incoming traffic.
+#
+# @qosOutbound:   #optional BandwidthParams for outgoing traffic.
 #
 # Since: 4.10.0
 ##
 {'type': 'SetupNetworkNetAttributes',
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
-          '*delay': 'uint', '*onboot': 'bool', '*remove': 'bool'}}
-
+          '*delay': 'uint', '*onboot': 'bool', '*remove': 'bool',
+          '*qosInbound': 'BandwidthParams',
+          '*qosOutbound': 'BandwidthParams'}}
 ##
 # @SetupNetworkBondAttributes:
 #
@@ -2054,7 +2065,7 @@
           'rtl8139', 'e1000', 'pcnet']}
 
 ##
-# @VmInterfaceDeviceBandwidthParams:
+# @BandwidthParams:
 #
 # Bandwidth traffic shape parameters for VM Interface device expressed as integers.
 #
@@ -2066,7 +2077,7 @@
 #
 # Since: 4.12.0
 ##
-{'type': 'VmInterfaceDeviceBandwidthParams',
+{'type': 'BandwidthParams',
  'data': {'average': 'uint', '*burst': 'uint', '*peak': 'uint'}}
 
 ##
@@ -2081,8 +2092,8 @@
 # Since: 4.10.0
 ##
 {'type': 'VmInterfaceDeviceSpecParams',
- 'data': {'*inbound': 'VmInterfaceDeviceBandwidthParams',
-          '*outbound': 'VmInterfaceDeviceBandwidthParams'}}
+ 'data': {'*inbound': 'BandwidthParams',
+          '*outbound': 'BandwidthParams'}}
 
 ##
 # @VmInterfaceDevice:
