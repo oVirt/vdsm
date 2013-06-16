@@ -107,6 +107,21 @@ Requires: python-dmidecode
 Requires: dmidecode
 %endif
 
+%if 0%{?rhel} >= 7 || 0%{?fedora} >= 18
+Requires: libvirt-daemon >= 1.0.2-1
+Requires: libvirt-daemon-config-nwfilter
+Requires: libvirt-daemon-driver-network
+Requires: libvirt-daemon-driver-nwfilter
+Requires: libvirt-daemon-driver-qemu
+%else
+%if 0%{?rhel}
+Requires: libvirt >= 0.10.2-18.el6_4.4
+%else
+Requires: libvirt >= 1.0.2-1
+%endif
+%endif
+Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
+
 %if 0%{?rhel}
 Requires: python-ethtool >= 0.6-3
 %if 0%{?rhel} >= 7
@@ -115,7 +130,6 @@ Requires: device-mapper-multipath
 Requires: e2fsprogs
 Requires: fence-agents-all
 Requires: iscsi-initiator-utils
-Requires: libvirt
 Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
@@ -129,7 +143,6 @@ Requires: python
 # Update the qemu-kvm requires when block_stream will be included
 Requires: qemu-kvm >= 2:0.12.1.2-2.295.el6_3.4
 Requires: qemu-img >= 2:0.12.1.2-2.295.el6_3.4
-Requires: libvirt >= 0.10.2-18.el6_4.4
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
@@ -158,7 +171,6 @@ Requires: fence-agents
 Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
-Requires: libvirt >= 1.0.2-1
 Requires: python-ethtool >= 0.8-1
 %if 0%{?fedora} >= 18
 Requires: initscripts >= 9.42.2-1
@@ -183,7 +195,6 @@ Requires: policycoreutils >= 2.1.13-55
 Requires: systemd >= 197-1.fc18.2
 %endif
 
-Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 Requires: psmisc >= 22.6-15
 Requires: bridge-utils
 Requires: sos
@@ -473,6 +484,7 @@ such as: vendor, version, date and release
 
 %package hook-sriov
 Summary:        sr-iov support for VDSM
+Requires:       libvirt-daemon-driver-nodedev
 BuildArch:      noarch
 
 %description hook-sriov
