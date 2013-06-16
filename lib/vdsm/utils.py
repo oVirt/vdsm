@@ -164,6 +164,19 @@ def readMemInfo():
             time.sleep(0.1)
 
 
+def grepCmd(pattern, paths):
+    cmd = [constants.EXT_GREP, '-E', '-H', pattern]
+    cmd.extend(paths)
+    rc, out, err = execCmd(cmd)
+    if rc == 0:
+        matches = out  # A list of matching lines
+    elif rc == 1:
+        matches = []  # pattern not found
+    else:
+        raise ValueError("rc: %s, out: %s, err: %s" % (rc, out, err))
+    return matches
+
+
 def forceLink(src, dst):
     """ Makes or replaces a hard link.
 

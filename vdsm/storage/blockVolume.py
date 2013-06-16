@@ -522,6 +522,15 @@ class BlockVolume(volume.Volume):
         lvs = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_IMAGE, imgUUID))
         return [lv.name for lv in lvs]
 
+    def getChildren(self):
+        """ Return children volume UUIDs.
+
+        Children can be found in any image of the volume SD.
+        """
+        lvs = lvm.lvsByTag(self.sdUUID,
+                           "%s%s" % (TAG_PREFIX_PARENT, self.volUUID))
+        return tuple(lv.name for lv in lvs)
+
     def removeMetadata(self, metaId):
         """
         Just wipe meta.

@@ -523,9 +523,6 @@ class Volume(object):
             if self.isShared():
                 raise se.CannotDeleteSharedVolume("img %s vol %s" %
                                                   (self.imgUUID, self.volUUID))
-            children = self.getChildrenList()
-            if len(children) > 0:
-                raise se.VolumeImageHasChildren(self)
         except se.MetaDataKeyNotFoundError as e:
             # In case of metadata key error, we have corrupted
             # volume (One of metadata corruptions may be
@@ -533,6 +530,8 @@ class Volume(object):
             # So, there is no reasons to avoid its deletion
             self.log.warn("Volume %s metadata error (%s)",
                           self.volUUID, str(e))
+        if self.getChildren():
+            raise se.VolumeImageHasChildren(self)
 
     def extend(self, newsize):
         """
@@ -760,7 +759,7 @@ class Volume(object):
             return False
 
         type = self.getVolType()
-        childrenNum = len(self.getChildrenList())
+        childrenNum = len(self.getChildren())
 
         if childrenNum == 0 and type != LEAF_VOL:
             self.setLeaf()
@@ -899,7 +898,9 @@ class Volume(object):
             info['mtime'] = "0"
             info['status'] = "INVALID"
 
-        info['children'] = self.getChildrenList()
+        # Both engine and dumpStorageTable don't use this option so
+        # only keeping it to not break existing scripts that look for the key
+        info['children'] = []
 
         # If image was set to illegal, mark the status same
         # (because of VDC constraints)
@@ -908,19 +909,6 @@ class Volume(object):
         self.log.info("%s/%s/%s info is %s",
                       self.sdUUID, self.imgUUID, self.volUUID, str(info))
         return info
-
-    def getChildrenList(self):
-        """
-        Fetch the list of children volumes (in single image)
-        """
-        vols = self.getImageVolumes(self.repoPath, self.sdUUID, self.imgUUID)
-        children = []
-        dom = sdCache.produce(self.sdUUID)
-        for v in vols:
-            if (dom.produceVolume(self.imgUUID, v).getParent() ==
-                    self.volUUID):
-                children.append(v)
-        return children
 
     def getParentVolume(self):
         """

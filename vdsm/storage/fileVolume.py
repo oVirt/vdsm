@@ -25,7 +25,7 @@ import sanlock
 
 import storage_exception as se
 from vdsm.config import config
-from vdsm.utils import ActionStopped
+from vdsm.utils import ActionStopped, grepCmd
 from sdc import sdCache
 import outOfProcess as oop
 import volume
@@ -375,6 +375,26 @@ class FileVolume(volume.Volume):
                     getImage() == imgUUID):
                 volList.append(volid)
         return volList
+
+    def getChildren(self):
+        """ Return children volume UUIDs.
+
+        Children can be found in any image of the volume SD.
+        """
+        domPath = self.imagePath.split('images')[0]
+        metaPattern = os.path.join(domPath, 'images', '*', '*.meta')
+        metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
+        pattern = "%s.*%s" % (volume.PUUID, self.volUUID)
+        matches = grepCmd(pattern, metaPaths)
+        if matches:
+            children = []
+            for line in matches:
+                volMeta = os.path.basename(line.split(':')[0])
+                children.append(os.path.splitext(volMeta)[0])  # volUUID
+        else:
+            children = tuple()
+
+        return tuple(children)
 
     @classmethod
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
