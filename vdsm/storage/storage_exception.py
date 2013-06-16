@@ -304,9 +304,9 @@ class prepareIllegalVolumeError(StorageException):
     message = "Cannot prepare illegal volume"
 
 
-class createVolumeRollbackError(StorageException):
-    code = 228
-    message = "Failure create volume rollback"
+# class createVolumeRollbackError(StorageException):
+#     code = 228
+#     message = "Failure create volume rollback"
 
 
 class createVolumeSizeError(StorageException):

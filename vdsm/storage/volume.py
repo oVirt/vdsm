@@ -362,9 +362,6 @@ class Volume(object):
                      "volUUID=%s imageDir=%s" %
                      (repoPath, sdUUID, imgUUID, volUUID, imageDir))
         vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
-        # Avoid rollback if volume has children
-        if len(vol.getChildrenList()):
-            raise se.createVolumeRollbackError(volUUID)
         pvol = vol.getParentVolume()
         # Remove volume
         vol.delete(postZero=False, force=True)
