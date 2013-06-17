@@ -142,6 +142,8 @@ class _DummyBridge(object):
 
 @expandPermutations
 class JsonRpcServerTests(TestCaseBase):
+    @brokentest('we sometime see this fail with '
+                '"error: [Errno 9] Bad file descriptor"')
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def testMethodCallArgList(self, reactorType):
         data = dummyTextGenerator(1024)
