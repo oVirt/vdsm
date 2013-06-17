@@ -2081,8 +2081,8 @@
 # Since: 4.10.0
 ##
 {'type': 'VmInterfaceDeviceSpecParams',
- 'data': {'*inbound': 'VmInterfaceBandwidthParams',
-          '*outbound': 'VmInterfaceBandwidthParams'}}
+ 'data': {'*inbound': 'VmInterfaceDeviceBandwidthParams',
+          '*outbound': 'VmInterfaceDeviceBandwidthParams'}}
 
 ##
 # @VmInterfaceDevice:
