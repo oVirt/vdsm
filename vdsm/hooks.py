@@ -22,9 +22,10 @@ import os.path
 from vdsm import utils
 import glob
 import os
+import sys
 import tempfile
 import logging
-
+import itertools
 import hashlib
 
 from vdsm.constants import P_VDSM_HOOKS, P_VDSM
@@ -58,16 +59,27 @@ def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
         os.close(xmlfd)
 
         scriptenv = os.environ.copy()
-        scriptenv.update(vmconf.get('custom', {}))
-        if len(params) > 0:
-            scriptenv.update(params)
+
+        # Update the environment using params and custom configuration
+        env_update = [params.iteritems(),
+                      vmconf.get('custom', {}).iteritems()]
+
+        # Encode custom properties to UTF-8 and save them to scriptenv
+        # Pass str objects (byte-strings) without any conversion
+        for k, v in itertools.chain(*env_update):
+            try:
+                if isinstance(v, unicode):
+                    scriptenv[k] = v.encode('utf-8')
+                else:
+                    scriptenv[k] = v
+            except UnicodeDecodeError:
+                pass
+
         if vmconf.get('vmId'):
             scriptenv['vmId'] = vmconf.get('vmId')
         ppath = scriptenv.get('PYTHONPATH', '')
         scriptenv['PYTHONPATH'] = ':'.join(ppath.split(':') + [P_VDSM])
         scriptenv['_hook_domxml'] = xmlname
-        for k, v in scriptenv.iteritems():
-            scriptenv[k] = unicode(v).encode('utf-8')
 
         errorSeen = False
         for s in scripts:
@@ -312,8 +324,6 @@ def installed():
     return res
 
 if __name__ == '__main__':
-    import sys
-
     def usage():
         print 'Usage: %s hook_name' % sys.argv[0]
         sys.exit(1)

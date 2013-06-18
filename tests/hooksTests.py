@@ -1,4 +1,5 @@
 import os.path
+# encoding: utf-8
 #
 # Copyright 2012 Red Hat, Inc.
 #
@@ -63,6 +64,10 @@ echo -n %s >> "$_hook_domxml"
         self.destroyTempScripts(scripts, dirName)
 
     def test_runHooksDir(self):
+        # Add an unicode value to the environment variables
+        # to test whether the utf-8 recoding works properly
+        os.environ["FAKE_GERRIT_USERNAME"] = "Pěkný žluťoučký kůň"
+
         dirName, scripts = self.createTempScripts()
         Q = 3
         DOMXML = "algo"
@@ -104,7 +109,7 @@ echo "81212590184644762"
         expectedRes = dict([(os.path.basename(sName), {'md5': md5})])
         self.assertEqual(expectedRes, info)
 
-    def test_deviceCustomProperties(self):
+    def _deviceCustomPropertiesTestFile(self):
         dirName = tempfile.mkdtemp()
         script = tempfile.NamedTemporaryFile(dir=dirName, delete=False)
         code = """#!/usr/bin/python
@@ -116,11 +121,26 @@ domXMLFile = file(os.environ['_hook_domxml'], 'a')
 customProperty = os.environ['customProperty']
 domXMLFile.write(customProperty)
         """
-
         script.write(code)
         os.chmod(script.name, 0775)
         script.close()
+        return dirName
+
+    def test_deviceCustomProperties(self):
+        dirName = self._deviceCustomPropertiesTestFile()
 
         result = hooks._runHooksDir("oVirt", dirName,
                                     params={'customProperty': ' rocks!'})
         self.assertEqual(result, "oVirt rocks!")
+
+    def test_deviceVmConfProperties(self):
+        dirName = self._deviceCustomPropertiesTestFile()
+
+        vmconf = {'custom':
+                      {'customProperty': ' rocks more!'}
+                 }
+
+        result = hooks._runHooksDir("oVirt", dirName,
+                                    params={'customProperty': ' rocks!'},
+                                    vmconf=vmconf)
+        self.assertEqual(result, "oVirt rocks more!")
