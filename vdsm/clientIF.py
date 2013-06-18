@@ -290,7 +290,8 @@ class clientIF:
                     'vmPayload' in drive['specParams']:
                 '''
                 vmPayload is a key in specParams
-                'vmPayload': {'file': {'filename': 'content', ...}}
+                'vmPayload': {'volId': 'volume id',   # volId is optional
+                              'file': {'filename': 'content', ...}}
                 '''
                 mkFsNames = {'cdrom': 'mkIsoFs', 'floppy': 'mkFloppyFs'}
                 try:
@@ -301,7 +302,8 @@ class clientIF:
                                          "drive: %" % (drive['device'], drive))
                 else:
                     files = drive['specParams']['vmPayload']['file']
-                    volPath = mkFsFunction(vmId, files)
+                    volId = drive['specParams']['vmPayload'].get('volId')
+                    volPath = mkFsFunction(vmId, files, volId)
 
             elif "path" in drive:
                 volPath = drive['path']

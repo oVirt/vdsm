@@ -31,13 +31,15 @@ import os
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from testrunner import VdsmTestCase
+from nose.plugins.skip import SkipTest
+from testrunner import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 
 import storage
 import mkimage
 
 
+@expandPermutations
 class MkimageTestCase(VdsmTestCase):
     """
     Tests for mkimage module.
@@ -103,6 +105,23 @@ class MkimageTestCase(VdsmTestCase):
                 content = fd.read()
                 self.assertEqual(content, self.expected_results[filename])
 
+    def _check_label(self, imgPath, label):
+        """
+        Ensures filesystem contains the desired label
+        """
+        if label is None:
+            return
+        cmd = ['blkid', '-s', 'LABEL', imgPath]
+        try:
+            (ret, out, err) = storage.misc.execCmd(cmd, raw=True)
+        except OSError:
+            raise SkipTest("cannot execute blkid")
+
+        self.assertEqual(ret, 0)
+        partitions = out.rpartition('LABEL=')
+        self.assertEqual(len(partitions), 3)
+        self.assertEqual(partitions[2].strip(), '"' + label + '"')
+
     def test__decodeFilesIntoDir(self):
         """
         Tests mkimage._decodeFilesIntoDir
@@ -112,33 +131,37 @@ class MkimageTestCase(VdsmTestCase):
         self._check_content()
 
     @ValidateRunningAsRoot
-    def test_mkFloppyFs(self):
+    @permutations([[None], ['fslabel']])
+    def test_mkFloppyFs(self, label):
         """
         Tests mkimage.mkFloppyFs creating an image and checking its content.
         Requires root permissions for writing into the floppy image.
         """
-        floppy = mkimage.mkFloppyFs("vmId_floppy", self.files)
+        floppy = mkimage.mkFloppyFs("vmId_floppy", self.files, label)
         self.assertTrue(os.path.exists(floppy))
         m = storage.mount.Mount(floppy, self.workdir)
         m.mount(mntOpts='loop')
         try:
             self._check_content()
+            self._check_label(floppy, label)
         finally:
             m.umount(force=True)
             os.unlink(floppy)
 
-    def test_mkIsoFs(self):
+    @permutations([[None], ['fslabel']])
+    def test_mkIsoFs(self, label):
         """
         Tests mkimage.mkIsoFs creating an image and checking its content
         """
         checkSudo(["mount", "-o", "loop", "somefile", "target"])
         checkSudo(["umount", "target"])
-        iso_img = mkimage.mkIsoFs("vmId_iso", self.files)
+        iso_img = mkimage.mkIsoFs("vmId_iso", self.files, label)
         self.assertTrue(os.path.exists(iso_img))
         m = storage.mount.Mount(iso_img, self.workdir)
         m.mount(mntOpts='loop')
         try:
             self._check_content()
+            self._check_label(iso_img, label)
         finally:
             m.umount(force=True)
             os.unlink(iso_img)

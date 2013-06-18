@@ -293,12 +293,12 @@ class _SuperVdsm(object):
         tc.unsetPortMirroring(networkName, target)
 
     @logDecorator
-    def mkFloppyFs(self, vmId, files):
-        return mkimage.mkFloppyFs(vmId, files)
+    def mkFloppyFs(self, vmId, files, volId):
+        return mkimage.mkFloppyFs(vmId, files, volId)
 
     @logDecorator
-    def mkIsoFs(self, vmId, files):
-        return mkimage.mkIsoFs(vmId, files)
+    def mkIsoFs(self, vmId, files, volId):
+        return mkimage.mkIsoFs(vmId, files, volId)
 
     @logDecorator
     def removeFs(self, path):

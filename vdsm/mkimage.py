@@ -81,11 +81,13 @@ def _getFileName(vmId, files):
     return path
 
 
-def mkFloppyFs(vmId, files):
+def mkFloppyFs(vmId, files, volumeName=None):
     floppy = dirname = None
     try:
         floppy = _getFileName(vmId, files)
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
+        if volumeName is not None:
+            command.extend(['-n', volumeName])
         rc, out, err = storage.misc.execCmd(command, raw=True)
         if rc:
             raise OSError(errno.EIO, "could not create floppy file: "
@@ -104,14 +106,17 @@ def mkFloppyFs(vmId, files):
     return floppy
 
 
-def mkIsoFs(vmId, files):
+def mkIsoFs(vmId, files, volumeName=None):
     dirname = isopath = None
     try:
         dirname = tempfile.mkdtemp()
         _decodeFilesIntoDir(files, dirname)
         isopath = _getFileName(vmId, files)
 
-        command = [EXT_MKISOFS, '-r', '-o', isopath, dirname]
+        command = [EXT_MKISOFS, '-r', '-o', isopath]
+        if volumeName is not None:
+            command.extend(['-V', volumeName])
+        command.extend([dirname])
         rc, out, err = storage.misc.execCmd(command, raw=True)
         if rc:
             raise OSError(errno.EIO, "could not create iso file: "
