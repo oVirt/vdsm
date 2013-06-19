@@ -144,11 +144,7 @@ def getMaxMtu(devs, mtu):
     getMaxMtu return the highest value in a connection tree,
     it check if a vlan, bond that have a higher mtu value
     """
-    if devs:
-        devs_mtu = [getMtu(dev) for dev in devs]
-        return max(mtu, *devs_mtu)
-    else:
-        return mtu
+    return max([getMtu(dev) for dev in devs] + [mtu])
 
 
 def bridge_stp_state(bridge):
