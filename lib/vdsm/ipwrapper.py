@@ -21,8 +21,8 @@ from netaddr.core import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
-from vdsm.utils import CommandPath
-from vdsm.utils import execCmd
+from utils import CommandPath
+from utils import execCmd
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 
@@ -50,6 +50,26 @@ class Route(object):
         self.table = table
 
     @classmethod
+    def parse(cls, text):
+        """
+        Returns a dictionary populated with the route attributes found in the
+        textual representation.
+        """
+        route = text.split()
+        """
+        The network / first column is required, followed by key+value pairs.
+        Thus, the length of a route must be odd.
+        """
+        if len(route) % 2 == 0:
+            raise ValueError('The length of the textual representation of a '
+                             'route must be odd')
+
+        network, params = route[0], route[1:]
+        data = dict(params[i:i + 2] for i in range(0, len(params), 2))
+        data['network'] = '0.0.0.0/0' if network == 'default' else network
+        return data
+
+    @classmethod
     def fromText(cls, text):
         """
             Creates a Route object from a textual representation. For the vdsm
@@ -61,21 +81,7 @@ class Route(object):
             '0.0.0.0/0 via 192.168.99.254 dev eth0 table foo':
             '200.100.50.0/16 via 11.11.11.11 dev eth2 table foo':
         """
-        route = text.split()
-
-        '''
-        The network / first column is required, followed by key+value pairs.
-        Thus, the length of a route must be odd.
-        '''
-        if len(route) % 2 == 0:
-            raise ValueError('The length of the textual representation of a '
-                             'route must be odd')
-
-        network, parameters = route[0], route[1:]
-        if network == 'default':
-            network = '0.0.0.0/0'
-
-        data = dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
+        data = cls.parse(text)
         try:
             ipaddr = data['via']
         except KeyError:
@@ -86,7 +92,7 @@ class Route(object):
             raise ValueError('Routes require a device.')
         table = data.get('table')
 
-        return cls(network, ipaddr=ipaddr, device=device, table=table)
+        return cls(data['network'], ipaddr=ipaddr, device=device, table=table)
 
     def __str__(self):
         str = '%s via %s dev %s' % (self.network, self.ipaddr, self.device)
@@ -191,6 +197,12 @@ def _execCmd(command):
 
 def routeList():
     command = [_IP_BINARY.cmd, 'route']
+    return _execCmd(command)
+
+
+def routeShowAllDefaultGateways():
+    command = [_IP_BINARY.cmd, 'route', 'show', 'to', '0.0.0.0/0', 'table',
+               'all']
     return _execCmd(command)
 
 

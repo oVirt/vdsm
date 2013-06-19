@@ -18,8 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from ipwrapper import Route
-from ipwrapper import Rule
+from vdsm.ipwrapper import Route
+from vdsm.ipwrapper import Rule
 
 from testrunner import VdsmTestCase as TestCaseBase
 

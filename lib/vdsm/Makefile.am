@@ -25,6 +25,7 @@ dist_vdsmpylib_PYTHON = \
 	__init__.py \
 	define.py \
 	exception.py \
+	ipwrapper.py \
 	libvirtconnection.py \
 	netinfo.py \
 	qemuImg.py \

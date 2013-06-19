@@ -30,10 +30,11 @@ from fnmatch import fnmatch
 from xml.dom import minidom
 from itertools import chain
 
-import libvirtconnection
-
-import constants
 from config import config
+from ipwrapper import Route
+from ipwrapper import routeShowAllDefaultGateways
+import constants
+import libvirtconnection
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
@@ -273,21 +274,10 @@ def intToAddress(ip_num):
 
 
 def getRoutes():
-    """Return the interface default gateway or None if not found."""
-
-    gateways = dict()
-
-    with open("/proc/net/route") as route_file:
-        route_file.readline()  # skip header line
-
-        for route_line in route_file.xreadlines():
-            route_parm = route_line.rstrip().split('\t')
-
-            if route_parm[1] == '00000000' and route_parm[2] != '00000000':
-                ip_num = int(route_parm[2], 16)
-                gateways[route_parm[0]] = intToAddress(ip_num)
-
-    return gateways
+    """Return the default gateway for each interface that has one."""
+    default_routes = (Route.fromText(text) for text in
+                      routeShowAllDefaultGateways())
+    return dict((route.device, route.ipaddr) for route in default_routes)
 
 
 def ipv6StrToAddress(ipv6_str):

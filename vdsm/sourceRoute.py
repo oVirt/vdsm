@@ -23,12 +23,12 @@ from libvirt import libvirtError
 import logging
 import netaddr
 
-from ipwrapper import Route
-from ipwrapper import routeLinkNetForDevice
-from ipwrapper import routeShowTable
-from ipwrapper import Rule
-from ipwrapper import ruleList
 from vdsm import netinfo
+from vdsm.ipwrapper import Route
+from vdsm.ipwrapper import routeLinkNetForDevice
+from vdsm.ipwrapper import routeShowTable
+from vdsm.ipwrapper import Rule
+from vdsm.ipwrapper import ruleList
 
 
 class StaticSourceRoute(object):
@@ -158,11 +158,8 @@ class DynamicSourceRoute(StaticSourceRoute):
         output = routeLinkNetForDevice(device)
 
         if output:
-            try:
-                route = Route.fromText(output[0])
-                return route.network
-            except ValueError:
-                pass
+            route = Route.parse(output[0])
+            return route['network']
         logging.error("Network for given device name not found.")
         return None
 

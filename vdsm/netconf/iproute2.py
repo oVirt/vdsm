@@ -18,10 +18,10 @@
 #
 
 
-from ipwrapper import routeAdd
-from ipwrapper import routeDel
-from ipwrapper import ruleAdd
-from ipwrapper import ruleDel
+from vdsm.ipwrapper import routeAdd
+from vdsm.ipwrapper import routeDel
+from vdsm.ipwrapper import ruleAdd
+from vdsm.ipwrapper import ruleDel
 
 
 class Iproute2(object):
