@@ -392,7 +392,7 @@ def _handleBondings(bondings, configurator):
                                 bondAttrs.get('options'),
                                 bondAttrs.get('nics'), mtu=None,
                                 _netinfo=_netinfo,
-                                destroy='remove' in bondAttrs)
+                                destroyOnMasterRemoval='remove' in bondAttrs)
         if 'remove' in bondAttrs:
             logger.debug("Removing bond %s with attributes %s", bondName,
                          bondAttrs)

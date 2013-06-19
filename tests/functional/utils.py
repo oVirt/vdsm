@@ -19,6 +19,8 @@
 from contextlib import contextmanager
 from functools import wraps
 import random
+import time
+import threading
 
 from nose.plugins.skip import SkipTest
 
@@ -147,6 +149,34 @@ class VdsProxy(object):
                                                             opts))
         return result['status']['code'], result['status']['message']
 
-    def networkExists(self, network_name):
+    def setupNetworks(self, networks, bonds, options):
+        result = self.vdscli.setupNetworks(networks, bonds, options)
+        return result['status']['code'], result['status']['message']
+
+    def networkExists(self, network_name, bridged=None):
         info = netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
-        return network_name in info.networks
+        return network_name in info.networks and \
+            (bridged is None or info.networks[network_name]['bridged'] ==
+             bridged)
+
+    def bondExists(self, bond_name, nics=None):
+        info = netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
+        return bond_name in info.bondings and \
+            (not nics or set(nics) == set(info.bondings[bond_name]['slaves']))
+
+    @contextmanager
+    def pinger(self):
+        """Keeps pinging vdsm for operations that need it"""
+        def ping():
+            while not done:
+                self.vdscli.ping()
+                time.sleep(1)
+        try:
+            done = False
+            pinger_thread = threading.Thread(target=ping)
+            pinger_thread.start()
+            yield
+        except Exception:
+            raise
+        finally:
+            done = True
