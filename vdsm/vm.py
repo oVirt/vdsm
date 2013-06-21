@@ -3056,7 +3056,6 @@ class Vm(object):
     @contextmanager
     def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom):
         vnicXML = dev.getXML()
-        vnicXMLBackup = dev.getXML()
         source = vnicXML.getElementsByTagName('source')[0]
         source.setAttribute('bridge', networkValue)
         try:
@@ -3065,25 +3064,26 @@ class Vm(object):
             link = xml.dom.minidom.Element('link')
             vnicXML.appendChildWithArgs(link)
         link.setAttribute('state', linkValue)
+        vnicStrXML = vnicXML.toprettyxml(encoding='utf-8')
         try:
             try:
-                vnicXML = hooks.before_update_device(
-                    vnicXML.toprettyxml(encoding='utf-8'), self.conf, custom)
-                self._dom.updateDeviceFlags(vnicXML,
+                vnicStrXML = hooks.before_update_device(vnicStrXML, self.conf,
+                                                        custom)
+                self._dom.updateDeviceFlags(vnicStrXML,
                                             libvirt.VIR_DOMAIN_AFFECT_LIVE)
-                dev._deviceXML = vnicXML
-                self.log.debug("Nic has been updated:\n %s" % vnicXML)
-                hooks.after_update_device(vnicXML, self.conf, custom)
+                dev._deviceXML = vnicStrXML
+                self.log.debug("Nic has been updated:\n %s" % vnicStrXML)
+                hooks.after_update_device(vnicStrXML, self.conf, custom)
             except Exception as e:
-                self.log.debug('Request failed: %s', vnicXML, exc_info=True)
-                hooks.after_update_device_fail(vnicXML, self.conf, custom)
+                self.log.debug('Request failed: %s', vnicStrXML, exc_info=True)
+                hooks.after_update_device_fail(vnicStrXML, self.conf, custom)
                 raise SetLinkAndNetworkError(e.message)
             yield
         except Exception:
             # Rollback link and network.
             self.log.debug('Rolling back link and net for: %s', dev.alias,
                            exc_info=True)
-            self._dom.updateDeviceFlags(vnicXMLBackup.toxml(encoding='utf-8'),
+            self._dom.updateDeviceFlags(vnicXML.toxml(encoding='utf-8'),
                                         libvirt.VIR_DOMAIN_AFFECT_LIVE)
             raise
         else:
