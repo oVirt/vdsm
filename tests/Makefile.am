@@ -40,7 +40,8 @@ test_modules = \
 	netmodelsTests.py \
 	jsonRpcTests.py \
 	jsonRpcUtils.py \
-	libvirtvmTests.py \
+	vmTests.py \
+	vmTestsData.py \
 	lsblkTests.py \
 	lvmTests.py \
 	main.py \
