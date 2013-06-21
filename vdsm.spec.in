@@ -1102,8 +1102,12 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_consts.py
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_consts.py
+%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/50_openstacknet
+%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/openstacknet_consts.py
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/openstacknet_consts.py
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_consts.py
 
 %files hook-pincpu
 %defattr(-, root, root, -)
