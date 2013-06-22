@@ -2116,6 +2116,8 @@
 # @portMirroring: #optional If present, indicates the traffic of which networks
 #                 should be mirrored to the interface.
 #
+# @custom:        #optional A dictionary of custom, free-form properties for device.
+#
 # Since: 4.10.0
 ##
 {'type': 'VmInterfaceDevice',
@@ -2124,7 +2126,7 @@
           'network': 'str', '*bootOrder': 'uint',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
           '*specParams': 'VmInterfaceDeviceSpecParams', '*linkActive': 'bool',
-          '*portMirroring': ['str']}}
+          '*portMirroring': ['str'], '*custom': 'StringMap'}}
 
 ##
 # @VmVideoDeviceType:
