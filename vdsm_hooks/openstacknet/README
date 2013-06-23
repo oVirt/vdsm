@@ -1,0 +1,25 @@
+openstacknet vdsm hook
+======================
+This hook will treat vNICs that need to be handled by an OpenStack Network
+provider.
+The hook receives a plugin type + id for the vNIC and chages the libvirt XML
+according to the plugin type:
+o   Linux Bridge: Due to libvirt's missing feature [1], prior to the device
+        creation we connect the hook to a dummy bridge and disconnect it from
+        this bridge after the device has been created.
+        At this point, the Linux Bridge Agent will take the created tap device
+        (identified by it's name) and connect it to the correct bridge.
+o   Open vSwitch: The hook adds the correct information to the vNIC XML to
+        connect correctly to the vSwitch.
+        Currently the hook connects to the 'br-int' bridge by default.
+
+syntax:
+device: { ...,
+          'custom': { 'provider_type': 'OPENSTACK_NETWORK',
+                      'plugin_type': one of ('LINUX_BRIDGE', 'OPEN_VSWITCH'),
+                      'vnic_id': 'some id'}
+        }
+
+[1] https://bugzilla.redhat.com/878481
+
+-- End of README
