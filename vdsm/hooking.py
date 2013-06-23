@@ -39,7 +39,7 @@ Return codes:
 import os
 from xml.dom import minidom
 
-from storage.misc import execCmd
+from vdsm.utils import execCmd
 from vdsm.utils import tobool
 
 # make pyflakes happy
