@@ -300,7 +300,7 @@ class clientIF:
                     'vmPayload' in drive['specParams']:
                 '''
                 vmPayload is a key in specParams
-                'vmPayload': {'file': {'filename': 'content'}}
+                'vmPayload': {'file': {'filename': 'content', ...}}
                 '''
                 mkFsNames = {'cdrom': 'mkIsoFs', 'floppy': 'mkFloppyFs'}
                 try:
@@ -310,10 +310,8 @@ class clientIF:
                     raise vm.VolumeError("Unsupported 'device': %s in "
                                          "drive: %" % (drive['device'], drive))
                 else:
-                    # the only reason for adding this variable is that
-                    # you can not write this without breaking PEP8
-                    file_name = drive['specParams']['vmPayload']['file']
-                    volPath = mkFsFunction(vmId, file_name)
+                    files = drive['specParams']['vmPayload']['file']
+                    volPath = mkFsFunction(vmId, files)
 
             elif "path" in drive:
                 volPath = drive['path']
