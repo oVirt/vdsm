@@ -28,7 +28,6 @@
 
 """SecureXMLRPCServer.py - simple XML RPC server supporting SSL."""
 
-import SimpleXMLRPCServer
 import xmlrpclib
 import ssl
 import httplib
@@ -38,7 +37,9 @@ import logging
 
 from M2Crypto import SSL, X509
 
-SecureXMLRPCRequestHandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
+from vdsm.utils import IPXMLRPCRequestHandler, IPXMLRPCServer
+
+SecureXMLRPCRequestHandler = IPXMLRPCRequestHandler
 
 
 class SSLSocket(object):
@@ -118,9 +119,9 @@ class SSLServerSocket(SSLSocket):
         return client, address
 
 
-class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
+class SecureXMLRPCServer(IPXMLRPCServer):
     def __init__(self, addr,
-                 requestHandler=SimpleXMLRPCServer.SimpleXMLRPCRequestHandler,
+                 requestHandler=IPXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None,
                  bind_and_activate=True,
                  keyfile=None, certfile=None, ca_certs=None,
@@ -129,7 +130,7 @@ class SecureXMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
         its self.socket member with ssl.
         """
 
-        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(
+        IPXMLRPCServer.__init__(
             self, addr, requestHandler, logRequests, allow_none, encoding,
             bind_and_activate=False)
         self.socket = SSLServerSocket(raw=self.socket, certfile=certfile,

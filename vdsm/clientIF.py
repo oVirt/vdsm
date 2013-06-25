@@ -122,20 +122,9 @@ class clientIF:
                     cls._instance = clientIF(log)
         return cls._instance
 
-    def _getServerIP(self, addr=None):
-        """Return the IP address we should listen on"""
-
-        if addr:
-            return addr
-        try:
-            addr = netinfo.getaddr(self.defaultBridge)
-        except:
-            pass
-        return addr
-
     def _loadBindingXMLRPC(self):
         from BindingXMLRPC import BindingXMLRPC
-        ip = self._getServerIP(config.get('addresses', 'management_ip'))
+        ip = config.get('addresses', 'management_ip')
         xmlrpc_port = config.get('addresses', 'management_port')
         use_ssl = config.getboolean('vars', 'ssl')
         resp_timeout = config.getint('vars', 'vds_responsiveness_timeout')
@@ -149,7 +138,7 @@ class clientIF:
     def _loadBindingJsonRpc(self):
         from BindingJsonRpc import BindingJsonRpc
         from Bridge import DynamicBridge
-        ip = self._getServerIP(config.get('addresses', 'management_ip'))
+        ip = config.get('addresses', 'management_ip')
         port = config.getint('addresses', 'json_port')
         conf = [('tcp', {"ip": ip, "port": port})]
         self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf)

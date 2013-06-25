@@ -28,6 +28,7 @@ plentifuly around vdsm.
 """
 from collections import namedtuple
 from SimpleXMLRPCServer import SimpleXMLRPCServer
+from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from StringIO import StringIO
 from weakref import proxy
 import SocketServer
@@ -42,6 +43,7 @@ import os
 import pwd
 import select
 import signal
+import socket
 import stat
 import subprocess
 import threading
@@ -114,10 +116,22 @@ def rmFile(fileToRemove):
                           exc_info=True)
             raise
 
+IPXMLRPCRequestHandler = SimpleXMLRPCRequestHandler
+
+
+class IPXMLRPCServer(SimpleXMLRPCServer):
+    def __init__(self, addr, requestHandler=IPXMLRPCRequestHandler,
+                 logRequests=True, allow_none=False, encoding=None,
+                 bind_and_activate=True):
+        self.address_family = socket.getaddrinfo(*addr)[0][0]
+        SimpleXMLRPCServer.__init__(self, addr, requestHandler,
+                                    logRequests, allow_none, encoding,
+                                    bind_and_activate)
+
 
 #Threaded version of SimpleXMLRPCServer
 class SimpleThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
-                                 SimpleXMLRPCServer):
+                                 IPXMLRPCServer):
     allow_reuse_address = True
 
 
