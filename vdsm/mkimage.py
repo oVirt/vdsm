@@ -35,7 +35,7 @@ import storage.mount
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
 
 
-def _decodeFilesIntoDir(files, dirname):
+def _decodeFilesIntoDir(files, parentdir):
     '''
     create temp files from files list
 
@@ -47,7 +47,14 @@ def _decodeFilesIntoDir(files, dirname):
     '''
 
     for name, content in files.iteritems():
-        filename = os.path.join(dirname, name)
+        filename = os.path.join(parentdir, name)
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            try:
+                os.makedirs(dirname)
+            except OSError as e:
+                if e.errno != os.errno.EEXIST:
+                    raise
         with file(filename, 'w') as f:
             f.write(base64.b64decode(content))
 

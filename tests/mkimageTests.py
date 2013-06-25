@@ -64,10 +64,15 @@ class MkimageTestCase(VdsmTestCase):
         mkimage._P_PAYLOAD_IMAGES = self.img_dir
         self.files = {}
         self.expected_results = {}
-        for i in range(10):
+        self.subdir = os.path.join('a', 'subdirectory', 'for', 'testing')
+        for i in range(5):
             content = os.urandom(1024)
-            self.expected_results["test_%d" % i] = content
-            self.files["test_%d" % i] = b64encode(content)
+            filename = "test_%d" % i
+            longpath = os.path.join(self.subdir, filename)
+            self.expected_results[filename] = content
+            self.files[filename] = b64encode(content)
+            self.expected_results[longpath] = content
+            self.files[longpath] = b64encode(content)
 
     def tearDown(self):
         """
@@ -86,9 +91,14 @@ class MkimageTestCase(VdsmTestCase):
         Ensure that the workdir contains what we want
         """
         out_dir = os.listdir(self.workdir)
-        self.assertEqual(len(out_dir), len(self.expected_results))
+        out_subdir = os.listdir(os.path.join(self.workdir, self.subdir))
+        self.assertEqual(len(out_dir) - 1, len(self.expected_results) / 2)
+        self.assertEqual(len(out_subdir), len(self.expected_results) / 2)
         for filename in self.expected_results:
-            self.assertTrue(filename in out_dir)
+            if os.path.basename(filename) == filename:
+                self.assertTrue(filename in out_dir)
+            else:
+                self.assertTrue(os.path.basename(filename) in out_subdir)
             with open(os.path.join(self.workdir, filename), "r") as fd:
                 content = fd.read()
                 self.assertEqual(content, self.expected_results[filename])
