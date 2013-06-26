@@ -365,7 +365,7 @@ def _getNetInfo(iface, bridged, routes, ipv6routes):
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
                      'mtu': str(getMtu(iface))})
-    except OSError as e:
+    except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
             raise KeyError('Network %s was not found' % iface)
