@@ -509,7 +509,7 @@ class ConfigWriter(object):
 
         if netinfo.NetInfo().ifaceUsers(bonding):
             confParams = netinfo.getIfaceCfg(bonding)
-            if not ipaddr:
+            if not ipaddr and bootproto != 'dhcp':
                 ipaddr = confParams.get('IPADDR', None)
                 netmask = confParams.get('NETMASK', None)
                 gateway = confParams.get('GATEWAY', None)
@@ -542,7 +542,7 @@ class ConfigWriter(object):
 
         if _netinfo.ifaceUsers(nic):
             confParams = netinfo.getIfaceCfg(nic)
-            if not ipaddr:
+            if not ipaddr and bootproto != 'dhcp':
                 ipaddr = confParams.get('IPADDR', None)
                 netmask = confParams.get('NETMASK', None)
                 gateway = confParams.get('GATEWAY', None)
