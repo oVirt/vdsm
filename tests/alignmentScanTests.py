@@ -21,7 +21,7 @@
 
 import os
 import tempfile
-from nose.tools import eq_, raises, assert_not_equals
+from nose.tools import eq_, raises
 from nose.plugins.skip import SkipTest
 from testrunner import VdsmTestCase as TestCaseBase
 from testValidation import slowtest
@@ -50,14 +50,6 @@ class AlignmentScanTests(TestCaseBase):
         retcode, out, err = runScanArgs("--help")
         eq_(retcode, 0)
         eq_(err, [])
-        out = "\n".join(out)
-        assert_not_equals(
-            out.find("/usr/bin/virt-alignment-scan: check "
-                     "alignment of virtual machine partitions"), -1)
-        assert_not_equals(out.find("Usage:"), -1)
-        assert_not_equals(out.find("Options:"), -1)
-        assert_not_equals(out.find("-a|--add image       Add image"), -1)
-        assert_not_equals(out.find("--help"), -1)
 
     @raises(VirtAlignError)
     def test_bad_path(self):
