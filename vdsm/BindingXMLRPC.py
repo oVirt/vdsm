@@ -554,10 +554,9 @@ class BindingXMLRPC(object):
         pool = API.StoragePool(spUUID)
         return pool.getFloppyList()
 
-    def poolGetDomainsContainingImage(self, spUUID, imgUUID, datadomains=True,
-                                      options=None):
+    def poolGetDomainsContainingImage(self, spUUID, imgUUID, options=None):
         pool = API.StoragePool(spUUID)
-        return pool.getDomainsContainingImage(imgUUID, datadomains)
+        return pool.getDomainsContainingImage(imgUUID)
 
     def poolGetIsoList(self, spUUID, extension='iso', options=None):
         pool = API.StoragePool(spUUID)

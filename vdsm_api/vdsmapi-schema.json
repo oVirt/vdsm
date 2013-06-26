@@ -4085,22 +4085,19 @@
 ##
 # @StoragePool.getDomainsContainingImage:
 #
-# Get a list of Storage Domains that contain an Image.
+# Get a list of Data Storage Domains that contain an Image.
 #
 # @storagepoolID:    The UUID of the Storage Pool
 #
 # @imageID:          The UUID of the Image to search for
 #
-# @onlyDataDomains:  #optional Only include Data Storage Domains
-#
 # Returns:
-# A list of UUIDs of Storage Domains that contain the Image
+# A list of UUIDs of Data Storage Domains that contain the Image
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'getDomainsContainingImage'},
- 'data': {'storagepoolID': 'UUID', 'imageID': 'UUID',
-          '*onlyDataDomains': 'bool'},
+ 'data': {'storagepoolID': 'UUID', 'imageID': 'UUID'},
  'returns': ['UUID']}
 
 ##
