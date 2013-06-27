@@ -132,9 +132,8 @@ class service:
         self.truststore = None
         self.pretty = True
 
-    def do_connect(self, server, port):
-        self.s = vdscli.connect(server + ':' + port,
-                                self.useSSL, self.truststore)
+    def do_connect(self, hostPort):
+        self.s = vdscli.connect(hostPort, self.useSSL, self.truststore)
 
     def ExecAndExit(self, response, parameterName='none'):
         if response['status']['code'] != 0:
@@ -2529,7 +2528,7 @@ if __name__ == '__main__':
         server, command = args[0:2]
         if command not in commands:
             raise Exception("Unknown command")
-        server, serverPort = vdscli.cannonizeAddrPort(server).split(':', 1)
+        hostPort = vdscli.cannonizeHostPort(server)
 
     except SystemExit as status:
         sys.exit(status)
@@ -2539,7 +2538,7 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     try:
-        serv.do_connect(server, serverPort)
+        serv.do_connect(hostPort)
         try:
             commandArgs = args[2:]
         except:
@@ -2559,7 +2558,7 @@ if __name__ == '__main__':
         sys.exit(status)
     except socket.error as e:
         if e[0] == 111:
-            print "Connection to %s:%s refused" % (server, serverPort)
+            print "Connection to %s refused" % hostPort
         else:
             traceback.print_exc()
         sys.exit(-1)

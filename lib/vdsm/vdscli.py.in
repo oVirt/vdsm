@@ -22,6 +22,7 @@
 import xmlrpclib
 import subprocess
 import os
+import re
 from vdsm import SecureXMLRPCServer
 
 d_useSSL = False
@@ -103,18 +104,24 @@ def __getLocalVdsName(tsPath):
 __guessDefaults()
 
 
-def cannonizeAddrPort(addrport=None):
-    if addrport is None or addrport == '0':
-        return d_addr + ':' + d_port
-    elif ':' in addrport:
-        return addrport
+def cannonizeHostPort(hostPort=None, port=d_port):
+    if hostPort is None or hostPort == '0':
+        addr = d_addr
+        if ':' in addr:
+            # __guessDefaults() might set an IPv6 address, cannonize it
+            addr = '[%s]' % addr
     else:
-        return addrport + ':' + d_port
+        # hostPort is in rfc3986 'host [ ":" port ]' format
+        hostPort = re.match(r'(?P<Host>.+?)(:(?P<Port>\d+))?$', hostPort)
+        addr = hostPort.group('Host')
+        port = hostPort.group('Port') or port
+
+    return addr + ':' + port
 
 
-def connect(addrport=None, useSSL=None, tsPath=None,
+def connect(hostPort=None, useSSL=None, tsPath=None,
             TransportClass=SecureXMLRPCServer.VerifyingSafeTransport):
-    addrport = cannonizeAddrPort(addrport)
+    hostPort = cannonizeHostPort(hostPort)
     if useSSL is None:
         useSSL = d_useSSL
     if tsPath is None:
@@ -135,10 +142,10 @@ def connect(addrport=None, useSSL=None, tsPath=None,
 
         transport = TransportClass(key_file=KEYFILE,
                                    cert_file=CERTFILE, ca_certs=CACERT)
-        server = xmlrpclib.ServerProxy('https://%s' % addrport,
+        server = xmlrpclib.ServerProxy('https://%s' % hostPort,
                                        transport=transport)
     else:
-        server = xmlrpclib.Server('http://%s' % addrport,
+        server = xmlrpclib.Server('http://%s' % hostPort,
                                   transport=SingleRequestTransport())
     return server
 

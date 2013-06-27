@@ -163,23 +163,21 @@ class MigrationSourceThread(threading.Thread):
     def _setupVdsConnection(self):
         if self._mode == 'file':
             return
-        self.remoteHost = self._dst.split(':')[0]
+
         # FIXME: The port will depend on the binding being used.
         # This assumes xmlrpc
-        self.remotePort = self._vm.cif.bindings['xmlrpc'].serverPort
-        try:
-            self.remotePort = self._dst.split(':')[1]
-        except:
-            pass
-        serverAddress = self.remoteHost + ':' + self.remotePort
+        hostPort = vdscli.cannonizeHostPort(
+            self._dst, self._vm.cif.bindings['xmlrpc'].serverPort)
+        self.remoteHost, self.remotePort = hostPort.rsplit(':', 1)
+
         if config.getboolean('vars', 'ssl'):
             self.destServer = vdscli.connect(
-                serverAddress,
+                hostPort,
                 useSSL=True,
                 TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
         else:
-            self.destServer = kaxmlrpclib.Server('http://' + serverAddress)
-        self.log.debug('Destination server is: ' + serverAddress)
+            self.destServer = kaxmlrpclib.Server('http://' + hostPort)
+        self.log.debug('Destination server is: ' + hostPort)
         try:
             self.log.debug('Initiating connection with destination')
             status = self.destServer.getVmStats(self._vm.id)
