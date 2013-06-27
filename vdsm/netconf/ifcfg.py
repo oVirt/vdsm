@@ -28,9 +28,9 @@ import selinux
 import shutil
 import threading
 
+from netconf import Configurator
 from neterrors import ConfigNetworkError
-from netmodels import Nic, Bond, Bridge
-from sourceRoute import StaticSourceRoute
+from netmodels import Nic, Bridge
 from storage.misc import execCmd
 from vdsm import constants
 from vdsm import netinfo
@@ -39,35 +39,35 @@ import libvirtCfg
 import neterrors as ne
 
 
-class Ifcfg(object):
-    # TODO: Do all the configWriter interaction from here.
-    def __init__(self, configWriter=None):
-        self.configWriter = configWriter
+class Ifcfg(Configurator):
+    # TODO: Do all the configApplier interaction from here.
+    def __init__(self, configApplier=None):
+        self.configApplier = configApplier
         self._libvirtAdded = set()
 
     def begin(self):
-        if self.configWriter is None:
-            self.configWriter = ConfigWriter()
+        if self.configApplier is None:
+            self.configApplier = ConfigWriter()
             self._libvirtAdded = set()
 
     def rollback(self):
-        if self.configWriter:
-            self.configWriter.restoreBackups()
+        if self.configApplier:
+            self.configApplier.restoreBackups()
             for network in self._libvirtAdded:
                 # TODO: Add meaningful logging for failure to remove the added
                 # networks.
-                self.configWriter.removeLibvirtNetwork(network)
+                self.configApplier.removeLibvirtNetwork(network)
 
-            self.configWriter = None
+            self.configApplier = None
 
     def commit(self):
-        if self.configWriter:
-            self.configWriter = None
+        if self.configApplier:
+            self.configApplier = None
             self._libvirtAdded = set()
 
     def configureBridge(self, bridge, **opts):
         ipaddr, netmask, gateway, bootproto, async = bridge.getIpConfig()
-        self.configWriter.addBridge(bridge, **opts)
+        self.configApplier.addBridge(bridge, **opts)
         ifdown(bridge.name)
         if bridge.port:
             bridge.port.configure(**opts)
@@ -76,14 +76,14 @@ class Ifcfg(object):
 
     def configureVlan(self, vlan, **opts):
         ipaddr, netmask, gateway, bootproto, async = vlan.getIpConfig()
-        self.configWriter.addVlan(vlan, **opts)
+        self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan, ipaddr, netmask, gateway, bootproto)
         ifup(vlan.name, async)
 
     def configureBond(self, bond, **opts):
         ipaddr, netmask, gateway, bootproto, async = bond.getIpConfig()
-        self.configWriter.addBonding(bond, **opts)
+        self.configApplier.addBonding(bond, **opts)
         if not netinfo.isVlanned(bond.name):
             for slave in bond.slaves:
                 ifdown(slave.name)
@@ -103,41 +103,32 @@ class Ifcfg(object):
 
     def configureNic(self, nic, **opts):
         ipaddr, netmask, gateway, bootproto, async = nic.getIpConfig()
-        self.configWriter.addNic(nic, **opts)
+        self.configApplier.addNic(nic, **opts)
         self._addSourceRoute(nic, ipaddr, netmask, gateway, bootproto)
         if nic.bond is None:
             if not netinfo.isVlanned(nic.name):
                 ifdown(nic.name)
             ifup(nic.name, async)
 
-    def configureLibvirtNetwork(self, network, iface):
-        self.configWriter.createLibvirtNetwork(network,
-                                               isinstance(iface, Bridge),
-                                               iface.name)
-        self._libvirtAdded.add(network)
-
-    def removeLibvirtNetwork(self, network):
-        self.configWriter.removeLibvirtNetwork(network)
-
     def removeBridge(self, bridge):
         ifdown(bridge.name)
         self._removeSourceRoute(bridge)
         execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
-        self.configWriter.removeBridge(bridge.name)
+        self.configApplier.removeBridge(bridge.name)
         if bridge.port:
             bridge.port.remove()
 
     def removeVlan(self, vlan):
         ifdown(vlan.name)
         self._removeSourceRoute(vlan)
-        self.configWriter.removeVlan(vlan.name)
+        self.configApplier.removeVlan(vlan.name)
         vlan.device.remove()
 
     def _ifaceDownAndCleanup(self, iface, _netinfo):
         """Returns True iff the iface is to be removed."""
         ifdown(iface.name)
         self._removeSourceRoute(iface)
-        self.configWriter.removeIfaceCleanup(iface.name)
+        self.configApplier.removeIfaceCleanup(iface.name)
         return not _netinfo.ifaceUsers(iface.name)
 
     def removeBond(self, bonding):
@@ -145,64 +136,34 @@ class Ifcfg(object):
         to_be_removed = self._ifaceDownAndCleanup(bonding, _netinfo)
         if to_be_removed:
             if bonding.destroyOnMasterRemoval:
-                self.configWriter.removeBonding(bonding.name)
+                self.configApplier.removeBonding(bonding.name)
                 for slave in bonding.slaves:
                     slave.remove()
             else:
-                self.configWriter.setBondingMtu(bonding.name,
-                                                netinfo.DEFAULT_MTU)
+                self.configApplier.setBondingMtu(bonding.name,
+                                                 netinfo.DEFAULT_MTU)
                 ifup(bonding.name)
         else:
-            self._setNewMtu(bonding, _netinfo)
+            self._setNewMtu(bonding,
+                            _netinfo.getVlanDevsForIface(bonding.name))
             ifup(bonding.name)
 
     def removeNic(self, nic):
         _netinfo = netinfo.NetInfo()
         to_be_removed = self._ifaceDownAndCleanup(nic, _netinfo)
         if to_be_removed:
-            self.configWriter.removeNic(nic.name)
+            self.configApplier.removeNic(nic.name)
         else:
-            self._setNewMtu(nic, _netinfo)
+            self._setNewMtu(nic, _netinfo.getVlanDevsForIface(nic.name))
         ifup(nic.name)
-
-    def _addSourceRoute(self, netEnt, ipaddr, netmask, gateway, bootproto):
-        # bootproto is None for both static and no bootproto
-        if bootproto != 'dhcp' and netEnt.master is None:
-            logging.debug("Adding source route %s, %s, %s, %s" %
-                          (netEnt.name, ipaddr, netmask, gateway))
-            StaticSourceRoute(netEnt.name, self).\
-                configure(ipaddr, netmask, gateway)
-
-    def _removeSourceRoute(self, netEnt):
-        _, _, _, bootproto, _ = netEnt.getIpConfig()
-        if bootproto != 'dhcp' and netEnt.master is None:
-            logging.debug("Removing source route for device %s" % netEnt.name)
-            StaticSourceRoute(netEnt.name, self).remove()
-
-    def _setNewMtu(self, iface, _netinfo):
-        """
-        Update an interface's MTU when one of its users is removed.
-
-        :param iface: interface object (bond or nic device)
-        :type iface: NetDevice instance
-
-        """
-        ifaceMtu = netinfo.getMtu(iface.name)
-        maxMtu = netinfo.getMaxMtu(_netinfo.getVlanDevsForIface(iface.name),
-                                   None)
-        if maxMtu and maxMtu < ifaceMtu:
-            if isinstance(iface, Bond):
-                self.configWriter.setBondingMtu(iface.name, maxMtu)
-            else:
-                self.configWriter.setIfaceMtu(iface.name, maxMtu)
 
     def _getFilePath(self, fileType, device):
         return os.path.join(netinfo.NET_CONF_DIR, '%s-%s' % (fileType, device))
 
     def _removeSourceRouteFile(self, fileType, device):
         filePath = self._getFilePath(fileType, device)
-        self.configWriter._backup(filePath)
-        self.configWriter._removeFile(filePath)
+        self.configApplier._backup(filePath)
+        self.configApplier._removeFile(filePath)
 
     def _writeConfFile(self, contents, fileType, device):
         filePath = self._getFilePath(fileType, device)
@@ -211,7 +172,7 @@ class Ifcfg(object):
         for entry in contents:
             configuration += str(entry) + '\n'
 
-        self.configWriter.writeConfFile(filePath, configuration)
+        self.configApplier.writeConfFile(filePath, configuration)
 
     def configureSourceRoute(self, routes, rules, device):
         self._writeConfFile(routes, 'route', device)
