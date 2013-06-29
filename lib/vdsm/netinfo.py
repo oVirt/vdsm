@@ -42,6 +42,7 @@ NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
+NET_FN_MATCH = '/sys/class/net/*'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 
@@ -61,7 +62,7 @@ def nics():
     hidden_nics = config.get('vars', 'hidden_nics').split(',')
     fake_nics = config.get('vars', 'fake_nics').split(',')
 
-    for b in glob.glob('/sys/class/net/*'):
+    for b in glob.glob(NET_FN_MATCH):
         nic = b.split('/')[-1]
         if not os.path.exists(os.path.join(b, 'device')):
             if _match_nic_name(nic, fake_nics):

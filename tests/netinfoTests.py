@@ -18,13 +18,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
 import os
-from testrunner import VdsmTestCase as TestCaseBase
+from shutil import rmtree
+import tempfile
+
 import ethtool
 
 from vdsm import netinfo
-from monkeypatch import MonkeyPatch
+
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from testrunner import VdsmTestCase as TestCaseBase
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -100,3 +103,46 @@ class TestNetinfo(TestCaseBase):
             ipaddrs.append(dev.ipv4_address)
             for ip in ipaddrs:
                 self.assertEqual(dev.device, netinfo.getIfaceByIP(ip))
+
+    def _dev_dirs_setup(self, dir_fixture):
+        """
+        Creates test fixture which is a dir structure:
+        /tmp/.../em/device
+        /tmp/.../me/device
+        /tmp/.../fake0
+        /tmp/.../fake1
+        /tmp/.../hid0/device
+        /tmp/.../hideous/device
+        returns related fn-match pattern.
+        """
+        dev_dirs = [os.path.join(dir_fixture, dev) for dev in
+                    ('em/device', 'me/device', 'fake0', 'fake',
+                     'hid/device', 'hideous/device')]
+        for dev_dir in dev_dirs:
+            os.makedirs(dev_dir)
+
+        return dir_fixture + '/*'
+
+    def _config_setup(self):
+        """
+        Returns an instance of a config stub.
+        """
+        class Config(object):
+            def get(self, unused_vars, key):
+                if key == 'hidden_nics':
+                    return 'hid*'
+                else:
+                    return 'fake*'
+
+        return Config()
+
+    def testNics(self):
+        temp_dir = tempfile.mkdtemp()
+        with MonkeyPatchScope([(netinfo, 'NET_FN_MATCH',
+                                self._dev_dirs_setup(temp_dir)),
+                               (netinfo, 'config', self._config_setup())]):
+            try:
+                self.assertEqual(set(netinfo.nics()),
+                                 set(['em', 'me', 'fake0', 'fake']))
+            finally:
+                rmtree(temp_dir)
