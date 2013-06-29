@@ -68,6 +68,10 @@ parameters = [
             'Comma-separated list of fnmatch-patterns for host nics to be '
             'hidden from vdsm.'),
 
+        ('hidden_bonds', '',
+            'Comma-separated list of fnmatch-patterns for host bonds to be '
+            'hidden from vdsm.'),
+
         ('default_bridge', 'engine', None),
 
         ('migration_downtime', '500',

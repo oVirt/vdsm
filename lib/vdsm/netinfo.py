@@ -21,6 +21,7 @@
 import os
 import errno
 import glob
+from glob import iglob
 import ethtool
 import shlex
 import logging
@@ -42,7 +43,7 @@ NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
-NET_FN_MATCH = '/sys/class/net/*'
+NET_PATH = '/sys/class/net'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 
@@ -53,34 +54,86 @@ DEFAULT_MTU = '1500'
 REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
 
 
-def _match_nic_name(nic, patterns):
-    return any(map(lambda p: fnmatch(nic, p), patterns))
+def _match_name(name, patterns):
+    return any(map(lambda p: fnmatch(name, p), patterns))
+
+
+def nic_devices():
+    """
+    Returns a list of nic devices real or fakes,
+    available on the host.
+    """
+
+    devices = []
+    fake_nics = config.get('vars', 'fake_nics').split(',')
+
+    for dev_path in iglob(NET_PATH + '/*'):
+        if os.path.exists(os.path.join(dev_path, 'device')):
+            devices.append(os.path.basename(dev_path))
+        else:
+            dev_name = os.path.basename(dev_path)
+            if _match_name(dev_name, fake_nics):
+                devices.append(dev_name)
+    return devices
 
 
 def nics():
+    """
+    Returns a list of nics devices available to be used by vdsm.
+    The list of nics is built by filtering out nics defined
+    as hidden, fake or hidden bonds (with related nics'slaves).
+    """
     res = []
-    hidden_nics = config.get('vars', 'hidden_nics').split(',')
-    fake_nics = config.get('vars', 'fake_nics').split(',')
 
-    for b in glob.glob(NET_FN_MATCH):
-        nic = b.split('/')[-1]
-        if not os.path.exists(os.path.join(b, 'device')):
-            if _match_nic_name(nic, fake_nics):
-                res.append(nic)
-        elif not _match_nic_name(nic, hidden_nics):
-            res.append(nic)
+    def isHiddenNic(device):
+        """
+        Returns boolean given the device name stating
+        if the device is a hidden nic.
+        """
+        hidden_nics = config.get('vars', 'hidden_nics').split(',')
+        return _match_name(device, hidden_nics)
 
+    def isEnslavedByHiddenBond(device):
+        """
+        Returns boolean stating if a nic device is enslaved to an hidden bond.
+        """
+        hidden_bonds = config.get('vars', 'hidden_bonds').split(',')
+        valid_bonds_fn = (bond_fn for bond_fn in hidden_bonds if bond_fn)
+
+        for bond_fn in valid_bonds_fn:
+            for bond_path in iglob(NET_PATH + '/' + bond_fn):
+                bond = os.path.basename(bond_path)
+                if device in slaves(bond):
+                    return True
+        return False
+
+    def isManagedByVdsm(device):
+        """Returns boolean stating if a device should be managed by vdsm."""
+        return (not isHiddenNic(device) and
+                not isEnslavedByHiddenBond(device))
+
+    res = [dev for dev in nic_devices() if isManagedByVdsm(dev)]
     return res
 
 
 def bondings():
+    """
+    Returns list of available bonds managed by vdsm.
+    """
+
+    hidden_bonds = config.get('vars', 'hidden_bonds').split(',')
+    res = []
     try:
-        return open(BONDING_MASTERS).readline().split()
+        for bond in open(BONDING_MASTERS).readline().split():
+            if not _match_name(bond, hidden_bonds):
+                res.append(bond)
     except IOError as e:
         if e.errno == os.errno.ENOENT:
-            return []
+            return res
         else:
             raise
+
+    return res
 
 
 def vlans():

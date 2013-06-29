@@ -90,7 +90,7 @@ class TestNetinfo(TestCaseBase):
         netinfo.get()
 
     def testMatchNicName(self):
-        self.assertTrue(netinfo._match_nic_name('test1', ['test0', 'test1']))
+        self.assertTrue(netinfo._match_name('test1', ['test0', 'test1']))
 
     def testIPv4toMapped(self):
         self.assertEqual('::ffff:127.0.0.1', netinfo.IPv4toMapped('127.0.0.1'))
@@ -107,42 +107,64 @@ class TestNetinfo(TestCaseBase):
     def _dev_dirs_setup(self, dir_fixture):
         """
         Creates test fixture which is a dir structure:
+        em, me, fake0, fake1 devices that should managed by vdsm.
+        hid0, hideons not managed by being hidden nics.
+        jbond not managed by being hidden bond.
+        me0, me1 not managed by being nics enslaved to jbond hidden bond.
         /tmp/.../em/device
         /tmp/.../me/device
         /tmp/.../fake0
-        /tmp/.../fake1
+        /tmp/.../fake
         /tmp/.../hid0/device
         /tmp/.../hideous/device
-        returns related fn-match pattern.
+        /tmp/.../me0/device
+        /tmp/.../me1/device
+        returns related containing dir.
         """
+
         dev_dirs = [os.path.join(dir_fixture, dev) for dev in
-                    ('em/device', 'me/device', 'fake0', 'fake',
-                     'hid/device', 'hideous/device')]
+                    ('em/device', 'me/device', 'fake', 'fake0',
+                     'hid/device', 'hideous/device',
+                     'me0/device', 'me1/device')]
+
         for dev_dir in dev_dirs:
             os.makedirs(dev_dir)
 
-        return dir_fixture + '/*'
+        bonding_path = os.path.join(dir_fixture, 'jbond/bonding')
+        os.makedirs(bonding_path)
+        with open(os.path.join(bonding_path, 'slaves'), 'w') as f:
+            f.write('me0 me1')
+
+        return dir_fixture
 
     def _config_setup(self):
         """
         Returns an instance of a config stub.
+        With patterns:
+            * hid* for hidden nics.
+            * fake* for fake nics.
+            * jb* for hidden bonds.
         """
         class Config(object):
             def get(self, unused_vars, key):
                 if key == 'hidden_nics':
                     return 'hid*'
-                else:
+                elif key == 'fake_nics':
                     return 'fake*'
+                else:
+                    return 'jb*'
 
         return Config()
 
     def testNics(self):
         temp_dir = tempfile.mkdtemp()
-        with MonkeyPatchScope([(netinfo, 'NET_FN_MATCH',
+        with MonkeyPatchScope([(netinfo, 'BONDING_SLAVES',
+                                temp_dir + '/%s/bonding/slaves'),
+                               (netinfo, 'NET_PATH',
                                 self._dev_dirs_setup(temp_dir)),
                                (netinfo, 'config', self._config_setup())]):
             try:
                 self.assertEqual(set(netinfo.nics()),
-                                 set(['em', 'me', 'fake0', 'fake']))
+                                 set(['em', 'me', 'fake', 'fake0']))
             finally:
                 rmtree(temp_dir)
