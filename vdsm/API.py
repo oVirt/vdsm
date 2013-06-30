@@ -1163,6 +1163,7 @@ class Global(APIBase):
             stats[var] = utils.convertToStr(decStats[var])
         stats['memAvailable'] = self._memAvailable() / Mbytes
         stats['memCommitted'] = self._memCommitted() / Mbytes
+        stats['memFree'] = self._memFree() / Mbytes
         stats['swapTotal'], stats['swapFree'] = _readSwapTotalFree()
         stats['vmCount'], stats['vmActive'], stats['vmMigrating'] = \
             self._countVms()
@@ -1424,6 +1425,14 @@ class Global(APIBase):
                         meminfo['Cached'] + meminfo['Buffers']) * Kbytes
         return freeOrCached + resident - memCommitted - \
             config.getint('vars', 'host_mem_reserve') * Mbytes
+
+    def _memFree(self):
+        """
+        Return the actual free mem on host.
+        """
+        meminfo = utils.readMemInfo()
+        return (meminfo['MemFree'] +
+                meminfo['Cached'] + meminfo['Buffers']) * Kbytes
 
     def _memShared(self):
         """

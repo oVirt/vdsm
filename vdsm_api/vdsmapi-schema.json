@@ -1540,7 +1540,9 @@
 #
 # @thpState:        Current mode of the Transparent Huge Pages feature
 #
-# @memAvailable:    Amount of memory available to run virtual machines (bytes)
+# @memAvailable:    Amount of memory available to run virtual machines (in MB)
+#
+# @memFree:         Amount of free memory on host (in MB)
 #
 # @memShared:       Approximate amount of memory that is shared by VMs due to
 #                   the KSM feature (in bytes)
@@ -1584,11 +1586,11 @@
            'elapsedTime': 'uint', 'memUsed': 'uint',
            'anonHugePages': 'uint', 'cpuLoad': 'float',
            'diskStats': 'PathStatsMap', 'thpState': 'THPStates',
-           'memAvailable': 'int', 'memShared': 'int', 'memCommitted': 'int',
-           'swapTotal': 'int', 'swapFree': 'int','vmCount': 'int',
-           'vmActive': 'int', 'vmMigrating': 'int', 'dateTime': 'str',
-           'ksmState': 'bool', 'ksmPages': 'int', 'ksmCpu': 'float',
-           'netConfigDirty': 'bool', 'generationID': 'UUID',
+           'memAvailable': 'int', 'memFree': 'int', 'memShared': 'int',
+           'memCommitted': 'int', 'swapTotal': 'int', 'swapFree': 'int',
+           'vmCount': 'int', 'vmActive': 'int', 'vmMigrating': 'int',
+           'dateTime': 'str', 'ksmState': 'bool', 'ksmPages': 'int',
+           'ksmCpu': 'float', 'netConfigDirty': 'bool', 'generationID': 'UUID',
            'momStatus': 'MOMStatus'}}
 
 ##
