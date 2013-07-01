@@ -41,8 +41,8 @@ import neterrors as ne
 
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
-    def __init__(self, configApplier=None):
-        self.configApplier = configApplier
+    def __init__(self):
+        self.configApplier = ConfigWriter()
         self._libvirtAdded = set()
 
     def begin(self):
@@ -51,14 +51,7 @@ class Ifcfg(Configurator):
             self._libvirtAdded = set()
 
     def rollback(self):
-        if self.configApplier:
-            self.configApplier.restoreBackups()
-            for network in self._libvirtAdded:
-                # TODO: Add meaningful logging for failure to remove the added
-                # networks.
-                self.configApplier.removeLibvirtNetwork(network)
-
-            self.configApplier = None
+        self.configApplier.restoreBackups()
 
     def commit(self):
         if self.configApplier:

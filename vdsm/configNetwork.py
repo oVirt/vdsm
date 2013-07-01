@@ -149,7 +149,7 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
 
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, prefix=None, mtu=None, gateway=None, force=False,
-               configWriter=None, bondingOptions=None, bridged=True,
+               configurator=None, bondingOptions=None, bridged=True,
                _netinfo=None, qosInbound=None, qosOutbound=None, **options):
     nics = nics or ()
     if _netinfo is None:
@@ -187,9 +187,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                  network, vlan, bonding, nics, bondingOptions,
                  mtu, bridged, options)
 
-    if configWriter is None:
-        configWriter = ConfigWriter()
-    configurator = Ifcfg(configWriter)
+    if configurator is None:
+        configurator = Ifcfg()
 
     bootproto = options.pop('bootproto', None)
 
@@ -254,14 +253,14 @@ def listNetworks():
     print "Bondings:", _netinfo.bondings.keys()
 
 
-def _delBrokenNetwork(network, netAttr, configWriter):
+def _delBrokenNetwork(network, netAttr, configurator):
     '''Adapts the network information of broken networks so that they can be
     deleted via delNetwork.'''
     _netinfo = netinfo.NetInfo()
     _netinfo.networks[network] = netAttr
     if _netinfo.networks[network]['bridged']:
         _netinfo.networks[network]['ports'] = ConfigWriter.ifcfgPorts(network)
-    delNetwork(network, configWriter=configWriter, force=True,
+    delNetwork(network, configurator=configurator, force=True,
                implicitBonding=False, _netinfo=_netinfo)
 
 
@@ -289,14 +288,13 @@ def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
 
 
 def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
-               configWriter=None, implicitBonding=True, _netinfo=None,
+               configurator=None, implicitBonding=True, _netinfo=None,
                **options):
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
 
-    if configWriter is None:
-        configWriter = ConfigWriter()
-    configurator = Ifcfg(configWriter)
+    if configurator is None:
+        configurator = Ifcfg()
 
     if network not in _netinfo.networks:
         logging.info("Network %r: doesn't exist in libvirt database", network)
@@ -342,19 +340,19 @@ def clientSeen(timeout):
 
 def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
                 **options):
-    configWriter = ConfigWriter()
+    configurator = Ifcfg()
     try:
-        delNetwork(oldBridge, configWriter=configWriter, **options)
+        delNetwork(oldBridge, configurator=configurator, **options)
         addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
-                   configWriter=configWriter, **options)
+                   configurator=configurator, **options)
     except:
-        configWriter.restoreBackups()
+        configurator.rollback()
         raise
     if utils.tobool(options.get('connectivityCheck', False)):
         if not clientSeen(int(options.get('connectivityTimeout',
                                           CONNECTIVITY_TIMEOUT_DEFAULT))):
             delNetwork(newBridge, force=True)
-            configWriter.restoreBackups()
+            configurator.rollback()
             return define.errCode['noConPeer']['status']['code']
 
 
@@ -475,8 +473,7 @@ def setupNetworks(networks, bondings, **options):
     """
     logger = logging.getLogger("setupNetworks")
     _netinfo = netinfo.NetInfo()
-    configWriter = ConfigWriter()
-    configurator = Ifcfg(configWriter)
+    configurator = Ifcfg()
     networksAdded = set()
 
     logger.debug("Setting up network according to configuration: "
@@ -495,7 +492,7 @@ def setupNetworks(networks, bondings, **options):
         for network, networkAttrs in networks.items():
             if network in _netinfo.networks:
                 logger.debug("Removing network %r" % network)
-                delNetwork(network, configWriter=configWriter, force=force,
+                delNetwork(network, configurator=configurator, force=force,
                            implicitBonding=False)
                 if 'remove' in networkAttrs:
                     del networks[network]
@@ -506,7 +503,7 @@ def setupNetworks(networks, bondings, **options):
                 # a broken network.
                 logger.debug('Removing broken network %r' % network)
                 _delBrokenNetwork(network, libvirt_nets[network],
-                                  configWriter=configWriter)
+                                  configurator=configurator)
                 if 'remove' in networkAttrs:
                     del networks[network]
                     del libvirt_nets[network]
@@ -526,7 +523,7 @@ def setupNetworks(networks, bondings, **options):
             d['force'] = force
 
             logger.debug("Adding network %r" % network)
-            addNetwork(network, configWriter=configWriter,
+            addNetwork(network, configurator=configurator,
                        implicitBonding=True, **d)
 
         if utils.tobool(options.get('connectivityCheck', True)):
@@ -544,7 +541,7 @@ def setupNetworks(networks, bondings, **options):
                 raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                          'connectivity check failed')
     except:
-        configWriter.restoreBackups()
+        configurator.rollback()
         raise
 
 
