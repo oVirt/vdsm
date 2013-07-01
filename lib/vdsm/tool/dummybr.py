@@ -34,7 +34,7 @@ def createEphemeralBridge(bridgeName):
 
 
 def addBridgeToLibvirt(bridgeName):
-    conn = libvirtconnection.get()
+    conn = libvirtconnection.get(None, False)
     if bridgeName not in conn.listNetworks():
         conn.networkCreateXML(
             '''<network><name>%s</name><forward mode='bridge'/><bridge '''

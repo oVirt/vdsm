@@ -521,3 +521,46 @@ class clientIF:
                 utils.rmFile(constants.P_VDSM_RUN + f)
             except:
                 pass
+
+    def dispatchLibvirtEvents(self, conn, dom, *args):
+        try:
+            eventid = args[-1]
+            vmid = dom.UUIDString()
+            v = self.vmContainer.get(vmid)
+
+            if not v:
+                self.log.debug('unknown vm %s eventid %s args %s',
+                               vmid, eventid, args)
+                return
+
+            if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
+                event, detail = args[:-1]
+                v._onLibvirtLifecycleEvent(event, detail, None)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_REBOOT:
+                v.onReboot()
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE:
+                utcoffset, = args[:-1]
+                v._rtcUpdate(utcoffset)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON:
+                srcPath, devAlias, action, reason = args[:-1]
+                v._onAbnormalStop(devAlias, reason)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS:
+                phase, localAddr, remoteAddr, authScheme, subject = args[:-1]
+                v.log.debug('graphics event phase '
+                            '%s localAddr %s remoteAddr %s'
+                            'authScheme %s subject %s',
+                            phase, localAddr, remoteAddr, authScheme, subject)
+                if phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_INITIALIZE:
+                    v.onConnect(remoteAddr['node'])
+                elif phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_DISCONNECT:
+                    v.onDisconnect()
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB:
+                path, type, status = args[:-1]
+                v._onBlockJobEvent(path, type, status)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
+                action, = args[:-1]
+                v._onWatchdogEvent(action)
+            else:
+                v.log.warning('unknown eventid %s args %s', eventid, args)
+        except:
+            self.log.error("Error running VM callback", exc_info=True)

@@ -32,7 +32,7 @@ def main():
     """
     Defines network filters on libvirt
     """
-    conn = libvirtconnection.get()
+    conn = libvirtconnection.get(None, False)
     NoMacSpoofingFilter().defineNwFilter(conn)
     conn.close()
 

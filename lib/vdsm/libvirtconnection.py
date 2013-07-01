@@ -21,9 +21,13 @@
 import threading
 import functools
 import logging
+import os
+import signal
 
 import libvirt
 from vdsm import constants, utils
+
+log = logging.getLogger("libvirtconnection")
 
 
 class EventLoop:
@@ -53,58 +57,18 @@ def stop_event_loop():
     __event_loop.stop()
 
 
-def __eventCallback(conn, dom, *args):
-    try:
-        cif, eventid = args[-1]
-        vmid = dom.UUIDString()
-        v = cif.vmContainer.get(vmid)
-
-        if not v:
-            cif.log.debug('unknown vm %s eventid %s args %s',
-                          vmid, eventid, args)
-            return
-
-        if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
-            event, detail = args[:-1]
-            v._onLibvirtLifecycleEvent(event, detail, None)
-        elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_REBOOT:
-            v.onReboot()
-        elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE:
-            utcoffset, = args[:-1]
-            v._rtcUpdate(utcoffset)
-        elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON:
-            srcPath, devAlias, action, reason = args[:-1]
-            v._onAbnormalStop(devAlias, reason)
-        elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS:
-            phase, localAddr, remoteAddr, authScheme, subject = args[:-1]
-            v.log.debug('graphics event phase %s localAddr %s remoteAddr %s'
-                        'authScheme %s subject %s',
-                        phase, localAddr, remoteAddr, authScheme, subject)
-            if phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_INITIALIZE:
-                v.onConnect(remoteAddr['node'])
-            elif phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_DISCONNECT:
-                v.onDisconnect()
-        elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB:
-            path, type, status = args[:-1]
-            v._onBlockJobEvent(path, type, status)
-        elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
-            action, = args[:-1]
-            v._onWatchdogEvent(action)
-        else:
-            v.log.warning('unknown eventid %s args %s', eventid, args)
-    except:
-        cif.log.error("Error running VM callback", exc_info=True)
-
-
 __connections = {}
 __connectionLock = threading.Lock()
 
 
-def get(cif=None):
+def get(target=None, killOnFailure=True):
     """Return current connection to libvirt or open a new one.
+    Use target to get/create the connection object linked to that object.
+    target must have a callable attribute named 'dispatchLibvirtEvents' which
+    will be registered as a callback on libvirt events.
 
     Wrap methods of connection object so that they catch disconnection, and
-    take vdsm down.
+    take the current process down.
     """
     def wrapMethod(f):
         def wrapper(*args, **kwargs):
@@ -126,14 +90,15 @@ def get(cif=None):
                           libvirt.VIR_ERR_NO_CONNECT,
                           libvirt.VIR_ERR_INVALID_CONN)
                 if edom in EDOMAINS and ecode in ECODES:
-                    cif.log.error('connection to libvirt broken. '
-                                  'taking vdsm down. ecode: %d edom: %d',
-                                  ecode, edom)
-                    cif.prepareForShutdown()
+                    log.error('connection to libvirt broken.'
+                              '  ecode: %d edom: %d', ecode, edom)
+                    if killOnFailure:
+                        log.error('taking calling process down.')
+                        os.kill(os.getpid(), signal.SIGTERM)
                 else:
-                    cif.log.debug('Unknown libvirterror: ecode: %d edom: %d '
-                                  'level: %d message: %s', ecode, edom,
-                                  e.get_error_level(), e.get_error_message())
+                    log.debug('Unknown libvirterror: ecode: %d edom: %d '
+                              'level: %d message: %s', ecode, edom,
+                              e.get_error_level(), e.get_error_message())
                 raise
         wrapper.__name__ = f.__name__
         wrapper.__doc__ = f.__doc__
@@ -152,14 +117,19 @@ def get(cif=None):
             req, None]
 
     with __connectionLock:
-        conn = __connections.get(id(cif))
+        conn = __connections.get(id(target))
         if not conn:
             libvirtOpenAuth = functools.partial(libvirt.openAuth,
                                                 'qemu:///system', auth, 0)
-            logging.debug('trying to connect libvirt')
+            log.debug('trying to connect libvirt')
             conn = utils.retry(libvirtOpenAuth, timeout=10, sleep=0.2)
-            __connections[id(cif)] = conn
-            if cif is not None:
+            __connections[id(target)] = conn
+
+            for name in dir(libvirt.virConnect):
+                method = getattr(conn, name)
+                if callable(method) and name[0] != '_':
+                    setattr(conn, name, wrapMethod(method))
+            if target is not None:
                 for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
                            libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
                            libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
@@ -167,12 +137,10 @@ def get(cif=None):
                            libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS,
                            libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB,
                            libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG):
-                    conn.domainEventRegisterAny(None, ev,
-                                                __eventCallback, (cif, ev))
-                for name in dir(libvirt.virConnect):
-                    method = getattr(conn, name)
-                    if callable(method) and name[0] != '_':
-                        setattr(conn, name, wrapMethod(method))
+                    conn.domainEventRegisterAny(None,
+                                                ev,
+                                                target.dispatchLibvirtEvents,
+                                                ev)
             # In case we're running into troubles with keeping the connections
             # alive we should place here:
             # conn.setKeepAlive(interval=5, count=3)
