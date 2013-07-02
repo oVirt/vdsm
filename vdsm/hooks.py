@@ -1,4 +1,3 @@
-import os.path
 #
 # Copyright 2010-2011 Red Hat, Inc.
 #
@@ -22,6 +21,7 @@ import os.path
 from vdsm import utils
 import glob
 import os
+import os.path
 import sys
 import tempfile
 import logging

@@ -1,4 +1,3 @@
-import os.path
 # encoding: utf-8
 #
 # Copyright 2012 Red Hat, Inc.
@@ -23,6 +22,7 @@ import os.path
 
 import tempfile
 import os
+import os.path
 from testrunner import VdsmTestCase as TestCaseBase
 
 import hooks
