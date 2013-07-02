@@ -1376,8 +1376,8 @@ class HSM:
                    "preallocate=%s, diskType=%s, volUUID=%s, desc=%s, "
                    "srcImgUUID=%s, srcVolUUID=%s" %
                    (sdUUID, spUUID, imgUUID, size, volFormat, preallocate,
-                   diskType, volUUID, desc,
-                   srcImgUUID, srcVolUUID))
+                    diskType, volUUID, desc,
+                    srcImgUUID, srcVolUUID))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
@@ -2949,8 +2949,8 @@ class HSM:
         :returns: Nothing ? Stuff not implemented
         """
         return sdCache.produce(
-            sdUUID=sdUUID).produceVolume(
-                imgUUID=imgUUID, volUUID=volUUID).refreshVolume()
+            sdUUID=sdUUID).produceVolume(imgUUID=imgUUID,
+                                         volUUID=volUUID).refreshVolume()
 
     @public
     def getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
@@ -2997,8 +2997,8 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
         info = sdCache.produce(
-            sdUUID=sdUUID).produceVolume(
-                imgUUID=imgUUID, volUUID=volUUID).getInfo()
+            sdUUID=sdUUID).produceVolume(imgUUID=imgUUID,
+                                         volUUID=volUUID).getInfo()
         return dict(info=info)
 
     @public
@@ -3025,8 +3025,8 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
         path = sdCache.produce(
-            sdUUID=sdUUID).produceVolume(
-                imgUUID=imgUUID, volUUID=volUUID).getVolumePath()
+            sdUUID=sdUUID).produceVolume(imgUUID=imgUUID,
+                                         volUUID=volUUID).getVolumePath()
         return dict(path=path)
 
     @public

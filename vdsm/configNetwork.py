@@ -479,7 +479,7 @@ def setupNetworks(networks, bondings, **options):
 
     logger.debug("Setting up network according to configuration: "
                  "networks:%r, bondings:%r, options:%r" % (networks,
-                 bondings, options))
+                                                           bondings, options))
 
     force = options.get('force', False)
     if not utils.tobool(force):
