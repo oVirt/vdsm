@@ -22,7 +22,7 @@ from testrunner import (VdsmTestCase as TestCaseBase,
                         expandPermutations, permutations)
 from testValidation import RequireDummyMod, ValidateRunningAsRoot
 
-from utils import cleanupNet, dummyIf, VdsProxy, SUCCESS
+from utils import cleanupNet, dummyIf, restoreNetConfig, SUCCESS, VdsProxy
 
 
 NETWORK_NAME = 'test-network'
@@ -34,6 +34,10 @@ def setupModule():
     """Persists network configuration."""
     vdsm = VdsProxy()
     vdsm.save_config()
+
+def tearDownModule():
+    """Restores the network configuration previous to running tests."""
+    restoreNetConfig()
 
 
 @expandPermutations

@@ -108,10 +108,14 @@ def cleanupNet(func):
             func(*args, **kwargs)
         except Exception:
             # cleanup
-            cmd_service = [service.cmd, "vdsm-restore-net-config", "start"]
-            utils.execCmd(cmd_service, sudo=True)
+            restoreNetConfig()
             raise
     return wrapper
+
+
+def restoreNetConfig():
+    cmd_service = [service.cmd, "vdsm-restore-net-config", "start"]
+    utils.execCmd(cmd_service, sudo=True)
 
 
 class VdsProxy(object):
