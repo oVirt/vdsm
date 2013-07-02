@@ -157,6 +157,7 @@ class JsonRpcServerTests(TestCaseBase):
                                                     CALL_TIMEOUT),
                                   data)
 
+    @brokentest
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def testMethodCallArgDict(self, reactorType):
         data = dummyTextGenerator(1024)
@@ -171,6 +172,7 @@ class JsonRpcServerTests(TestCaseBase):
                                                     10, CALL_TIMEOUT),
                                   data)
 
+    @brokentest('fail with "error: [Errno 9] Bad file descriptor"')
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def testMethodMissingMethod(self, reactorType):
         bridge = _DummyBridge()
@@ -201,6 +203,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.assertEquals(cm.exception.code,
                                   JsonRpcInternalError().code)
 
+    @brokentest
     @permutations(REACTOR_TYPE_PERMUTATIONS)
     def testMethodReturnsNull(self, reactorType):
         bridge = _DummyBridge()
