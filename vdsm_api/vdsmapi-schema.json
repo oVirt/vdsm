@@ -2598,6 +2598,8 @@
 #
 # @memSize:               The amount of memory assigned to the VM in MB
 #
+# @memGuaranteedSize:     The amount of memory guaranteed to the VM in MB
+#
 # @nicModel:              A comma-separated list of NIC models in use by the VM
 #
 # @nice:                  The host scheduling priority
@@ -2638,7 +2640,7 @@
           'display': 'VmDisplayType', 'displayIp': 'str',
           'displayPort': 'int', 'displaySecurePort': 'int',
           '*emulatedMachine': 'str', '*keyboardLayout': 'str',
-          'kvmEnable': 'bool', 'memSize': 'uint',
+          'kvmEnable': 'bool', 'memSize': 'uint', 'memGuaranteedSize': 'uint',
           'nicModel': 'str', 'nice': 'int', '*pauseCode': 'str',
           'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'status': 'VmStatus',
@@ -5051,10 +5053,12 @@
 #
 # @balloon_cur:  The current amount of memory available to the guest (in KiB)
 #
+# @balloon_min:  The minimum amount of memory guaranteed to the guest (in KiB)
+#
 # Since: 4.10.0
 ##
 {'type': 'BalloonInfo',
- 'data': {'balloon_max': 'uint', 'balloon_cur': 'uint'}}
+ 'data': {'balloon_max': 'uint', 'balloon_cur': 'uint', 'balloon_min': 'uint'}}
 
 ##
 # @GuestMountInfo:

@@ -20,7 +20,7 @@
 
 CONF_TO_DOMXML = [({
     'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-    'smp': '8', 'memSize': '1024',
+    'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512',
     'displayPort': '-1', 'vmName': 'testVm',
     'display': 'vnc', 'emulatedMachine': 'pc',
     'boot': '', 'timeOffset': 0, 'tdf': True,
@@ -38,6 +38,9 @@ CONF_TO_DOMXML = [({
             <memory>1048576</memory>
             <currentMemory>1048576</currentMemory>
             <vcpu>1</vcpu>
+            <memtune>
+                <min_guarantee>524288</min_guarantee>
+            </memtune>
             <devices>
                 <channel type="unix">
                     <target name="com.redhat.rhevm.vdsm" type="virtio"/>

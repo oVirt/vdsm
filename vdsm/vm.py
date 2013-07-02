@@ -844,6 +844,9 @@ class XMLElement(object):
         textNode = xml.dom.minidom.Document().createTextNode(text)
         self._elem.appendChild(textNode)
 
+    def appendChild(self, element):
+        self._elem.appendChild(element)
+
     def appendChildWithArgs(self, childName, text=None, **attrs):
         child = XMLElement(childName, text, **attrs)
         self._elem.appendChild(child)
@@ -863,6 +866,9 @@ class _DomXML:
             <vcpu>smp</vcpu>
             <devices>
             </devices>
+            <memtune>
+                <min_guarantee>0</min_guarantee>
+            </memtune>
         </domain>
 
         """
@@ -883,6 +889,16 @@ class _DomXML:
         self.dom.appendChildWithArgs('memory', text=memSizeKB)
         self.dom.appendChildWithArgs('currentMemory', text=memSizeKB)
         self.dom.appendChildWithArgs('vcpu', text=self.conf['smp'])
+
+        memSizeGuaranteedKB = str(1024 * int(
+            self.conf.get('memGuaranteedSize', '0')
+        ))
+
+        memtune = XMLElement('memtune')
+        self.dom.appendChild(memtune)
+
+        memtune.appendChildWithArgs('min_guarantee',
+                                    text=memSizeGuaranteedKB)
 
         self._devices = XMLElement('devices')
         self.dom.appendChild(self._devices)
@@ -4036,8 +4052,10 @@ class Vm(object):
             if dev['type'] == BALLOON_DEVICES and \
                     dev['specParams']['model'] != 'none':
                 max_mem = int(self.conf.get('memSize')) * 1024
+                min_mem = int(self.conf.get('memGuaranteedSize', '0')) * 1024
                 cur_mem = dev.get('target', max_mem)
-                return {'balloon_max': max_mem, 'balloon_cur': cur_mem}
+                return {'balloon_max': max_mem, 'balloon_cur': cur_mem,
+                        'balloon_min': min_mem}
         return {}
 
     def setBalloonTarget(self, target):

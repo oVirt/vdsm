@@ -43,7 +43,7 @@ class TestVm(TestCaseBase):
         TestCaseBase.__init__(self, *args, **kwargs)
         self.conf = {'vmName': 'testVm',
                      'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-                     'smp': '8', 'memSize': '1024'}
+                     'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512'}
 
     def assertXML(self, element, expectedXML, path=None):
         if path is None:
@@ -63,6 +63,9 @@ class TestVm(TestCaseBase):
               <memory>1048576</memory>
               <currentMemory>1048576</currentMemory>
               <vcpu>8</vcpu>
+              <memtune>
+                  <min_guarantee>524288</min_guarantee>
+              </memtune>
               <devices/>
            </domain>"""
 
