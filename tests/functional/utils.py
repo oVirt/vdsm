@@ -121,7 +121,7 @@ class VdsProxy(object):
     """
 
     def __init__(self):
-        self.vdscli = vdscli.connect(useSSL=False)
+        self.vdscli = vdscli.connect()
 
     def _get_net_args(self, vlan, bond, nics, opts):
         if vlan is None:
