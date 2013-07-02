@@ -49,6 +49,18 @@ class NetDevice(object):
             ipaddr = netmask = gateway = bootproto = async = None
         return ipaddr, netmask, gateway, bootproto, async
 
+    @property
+    def bridge(self):
+        if isinstance(self.master, Bridge):
+            return self.master
+        return None
+
+    @property
+    def bond(self):
+        if isinstance(self.master, Bond):
+            return self.master
+        return None
+
 
 class Nic(NetDevice):
     def __init__(self, name, configurator, ipconfig=None, mtu=None,
@@ -60,9 +72,8 @@ class Nic(NetDevice):
         super(Nic, self).__init__(name, configurator, ipconfig,
                                   mtu=max(mtu, netinfo.getMtu(name)))
 
-    def configure(self, bridge=None, bonding=None, **opts):
-        self.configurator.configureNic(self, bridge=bridge, bonding=bonding,
-                                       **opts)
+    def configure(self, **opts):
+        self.configurator.configureNic(self, **opts)
 
     def remove(self):
         self.configurator.removeNic(self)
@@ -88,8 +99,8 @@ class Vlan(NetDevice):
     def __repr__(self):
         return 'Vlan(%s: %r)' % (self.name, self.device)
 
-    def configure(self, bridge=None, **opts):
-        self.configurator.configureVlan(self, bridge=bridge, **opts)
+    def configure(self, **opts):
+        self.configurator.configureVlan(self, **opts)
 
     def remove(self):
         self.configurator.removeVlan(self)

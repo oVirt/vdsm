@@ -67,37 +67,28 @@ class Ifcfg(object):
 
     def configureBridge(self, bridge, **opts):
         ipaddr, netmask, gateway, bootproto, async = bridge.getIpConfig()
-        self.configWriter.addBridge(bridge.name, ipaddr=ipaddr,
-                                    netmask=netmask, mtu=bridge.mtu,
-                                    gateway=gateway, bootproto=bootproto,
-                                    **opts)
+        self.configWriter.addBridge(bridge, **opts)
         ifdown(bridge.name)
         if bridge.port:
-            bridge.port.configure(bridge=bridge.name, **opts)
+            bridge.port.configure(**opts)
         self._addSourceRoute(bridge, ipaddr, netmask, gateway, bootproto)
         ifup(bridge.name, async)
 
-    def configureVlan(self, vlan, bridge=None, **opts):
+    def configureVlan(self, vlan, **opts):
         ipaddr, netmask, gateway, bootproto, async = vlan.getIpConfig()
-        self.configWriter.addVlan(vlan.name, bridge=bridge, mtu=vlan.mtu,
-                                  ipaddr=ipaddr, netmask=netmask,
-                                  gateway=gateway, bootproto=bootproto, **opts)
+        self.configWriter.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan, ipaddr, netmask, gateway, bootproto)
         ifup(vlan.name, async)
 
-    def configureBond(self, bond, bridge=None, **opts):
+    def configureBond(self, bond, **opts):
         ipaddr, netmask, gateway, bootproto, async = bond.getIpConfig()
-        self.configWriter.addBonding(bond.name, bridge=bridge,
-                                     bondingOptions=bond.options,
-                                     mtu=bond.mtu, ipaddr=ipaddr,
-                                     netmask=netmask, gateway=gateway,
-                                     bootproto=bootproto, **opts)
+        self.configWriter.addBonding(bond, **opts)
         if not netinfo.isVlanned(bond.name):
             for slave in bond.slaves:
                 ifdown(slave.name)
         for slave in bond.slaves:
-            slave.configure(bonding=bond.name, **opts)
+            slave.configure(**opts)
         self._addSourceRoute(bond, ipaddr, netmask, gateway, bootproto)
         ifup(bond.name, async)
 
@@ -105,17 +96,16 @@ class Ifcfg(object):
         ifdown(bond.name)
         for nic in _netinfo.getNicsForBonding(bond.name):
             Nic(nic, self, _netinfo=_netinfo).remove()
-        bridge = _netinfo.getBridgedNetworkForIface(bond.name)
-        self.configureBond(bond, bridge)
+        bridgeName = _netinfo.getBridgedNetworkForIface(bond.name)
+        if bridgeName:
+            bond.master = Bridge(bridgeName, self, port=bond)
+        self.configureBond(bond)
 
-    def configureNic(self, nic, bridge=None, bonding=None, **opts):
+    def configureNic(self, nic, **opts):
         ipaddr, netmask, gateway, bootproto, async = nic.getIpConfig()
-        self.configWriter.addNic(nic.name, bonding=bonding, bridge=bridge,
-                                 mtu=nic.mtu, ipaddr=ipaddr,
-                                 netmask=netmask, gateway=gateway,
-                                 bootproto=bootproto, **opts)
+        self.configWriter.addNic(nic, **opts)
         self._addSourceRoute(nic, ipaddr, netmask, gateway, bootproto)
-        if not bonding:
+        if nic.bond is None:
             if not netinfo.isVlanned(nic.name):
                 ifdown(nic.name)
             ifup(nic.name, async)
@@ -524,83 +514,71 @@ class ConfigWriter(object):
 
         self.writeConfFile(netinfo.NET_CONF_PREF + name, cfg)
 
-    def addBridge(self, name, ipaddr=None, netmask=None, mtu=None,
-                  gateway=None, bootproto=None, delay='0', onboot='yes',
-                  **kwargs):
+    def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
-        conf = 'TYPE=Bridge\nDELAY=%s\n' % pipes.quote(delay)
-        self._createConfFile(conf, name, ipaddr, netmask, gateway,
-                             bootproto, mtu, onboot, **kwargs)
+        ipaddr, netmask, gateway, bootproto, _ = bridge.getIpConfig()
+        conf = 'TYPE=Bridge\nDELAY=%s\n' % bridge.forwardDelay
+        self._createConfFile(conf, bridge.name, ipaddr, netmask, gateway,
+                             bootproto, bridge.mtu, **opts)
 
-    def addVlan(self, vlan, bridge=None, mtu=None, ipaddr=None,
-                netmask=None, gateway=None, bootproto=None,
-                onboot='yes', **kwargs):
+    def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
+        ipaddr, netmask, gateway, bootproto, _ = vlan.getIpConfig()
         conf = 'VLAN=yes\n'
-        if bridge:
-            conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
+        if vlan.bridge:
+            conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
 
-        self._createConfFile(conf, vlan, ipaddr, netmask, gateway,
-                             bootproto, mtu, onboot, **kwargs)
+        self._createConfFile(conf, vlan.name, ipaddr, netmask, gateway,
+                             bootproto, vlan.mtu, **opts)
 
-    def addBonding(self, bonding, bridge=None, bondingOptions=None, mtu=None,
-                   ipaddr=None, netmask=None, gateway=None, bootproto=None,
-                   onboot='yes', **kwargs):
+    def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
-        if not bondingOptions:
-            bondingOptions = 'mode=802.3ad miimon=150'
+        conf = 'BONDING_OPTS=%s\n' % pipes.quote(bond.options or '')
+        if bond.bridge:
+            conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
 
-        conf = 'BONDING_OPTS=%s\n' % pipes.quote(bondingOptions or '')
-        if bridge:
-            conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
-
-        if netinfo.NetInfo().ifaceUsers(bonding):
-            confParams = netinfo.getIfaceCfg(bonding)
-            if not ipaddr and bootproto != 'dhcp':
-                ipaddr = confParams.get('IPADDR', None)
-                netmask = confParams.get('NETMASK', None)
-                gateway = confParams.get('GATEWAY', None)
-                bootproto = confParams.get('BOOTPROTO', None)
-            if not mtu:
-                mtu = confParams.get('MTU', None)
-                if mtu:
-                    mtu = int(mtu)
-
-        self._createConfFile(conf, bonding, ipaddr, netmask, gateway,
-                             bootproto, mtu, onboot, **kwargs)
+        ipaddr, netmask, gateway, bootproto, mtu = \
+            self._getIfaceConfValues(bond, netinfo.NetInfo())
+        self._createConfFile(conf, bond.name, ipaddr, netmask, gateway,
+                             bootproto, mtu, **opts)
 
         # create the bonding device to avoid initscripts noise
-        if bonding not in open(netinfo.BONDING_MASTERS).read().split():
-            open(netinfo.BONDING_MASTERS, 'w').write('+%s\n' % bonding)
+        if bond.name not in open(netinfo.BONDING_MASTERS).read().split():
+            open(netinfo.BONDING_MASTERS, 'w').write('+%s\n' % bond.name)
 
-    def addNic(self, nic, bonding=None, bridge=None, mtu=None,
-               ipaddr=None, netmask=None, gateway=None, bootproto=None,
-               onboot='yes', **kwargs):
+    def addNic(self, nic, **opts):
         """ Create ifcfg-* file with proper fields for NIC """
         _netinfo = netinfo.NetInfo()
-        hwaddr = (_netinfo.nics[nic].get('permhwaddr') or
-                  _netinfo.nics[nic]['hwaddr'])
+        hwaddr = (_netinfo.nics[nic.name].get('permhwaddr') or
+                  _netinfo.nics[nic.name]['hwaddr'])
 
         conf = 'HWADDR=%s\n' % pipes.quote(hwaddr)
-        if bridge:
-            conf += 'BRIDGE=%s\n' % pipes.quote(bridge)
-        if bonding:
-            conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(bonding)
+        if nic.bridge:
+            conf += 'BRIDGE=%s\n' % pipes.quote(nic.bridge.name)
+        if nic.bond:
+            conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(nic.bond.name)
 
-        if _netinfo.ifaceUsers(nic):
-            confParams = netinfo.getIfaceCfg(nic)
+        ipaddr, netmask, gateway, bootproto, mtu = \
+            self._getIfaceConfValues(nic, _netinfo)
+        self._createConfFile(conf, nic.name, ipaddr, netmask, gateway,
+                             bootproto, mtu, **opts)
+
+    @staticmethod
+    def _getIfaceConfValues(iface, _netinfo):
+        ipaddr, netmask, gateway, bootproto, _ = iface.getIpConfig()
+        mtu = iface.mtu
+        if _netinfo.ifaceUsers(iface.name):
+            confParams = netinfo.getIfaceCfg(iface.name)
             if not ipaddr and bootproto != 'dhcp':
                 ipaddr = confParams.get('IPADDR', None)
                 netmask = confParams.get('NETMASK', None)
                 gateway = confParams.get('GATEWAY', None)
                 bootproto = confParams.get('BOOTPROTO', None)
-            if not mtu:
+            if not iface.mtu:
                 mtu = confParams.get('MTU', None)
                 if mtu:
                     mtu = int(mtu)
-
-        self._createConfFile(conf, nic, ipaddr, netmask, gateway,
-                             bootproto, mtu, onboot, **kwargs)
+        return ipaddr, netmask, gateway, bootproto, mtu
 
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic

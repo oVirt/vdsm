@@ -97,7 +97,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     if bridge:
         topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
                            stp=opts.get('stp'),
-                           forwardDelay=opts.get('forward_delay', 0))
+                           forwardDelay=int(opts.get('forward_delay', 0)))
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without'
                                  'devices.')
