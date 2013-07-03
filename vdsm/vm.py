@@ -2923,8 +2923,7 @@ class Vm(object):
                 self.log.error("setPortMirroring for network %s failed",
                                network, exc_info=True)
                 nicParams['portMirroring'] = mirroredNetworks
-                self.hotunplugNic({'nic': nicParams},
-                                  params=customProps)
+                self.hotunplugNic({'nic': nicParams})
                 return {'status':
                         {'code': errCode['hotplugNic']['status']['code'],
                          'message': e.message}}
