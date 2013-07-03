@@ -631,18 +631,6 @@ class StorageDomain:
             self.mountMaster()
             self.createMasterTree()
 
-    def activateVolumes(self, imgUUID, volUUIDs):
-        """
-        Activate all the volumes listed in volUUIDs
-        """
-        pass
-
-    def deactivateVolumes(self, imgUUID, volUUIDs):
-        """
-        Deactivate all the volumes listed in volUUIDs
-        """
-        pass
-
     def _getRepoPath(self):
         # This is here to make sure no one tries to get a repo
         # path from an ISO domain.
