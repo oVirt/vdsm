@@ -2972,11 +2972,13 @@ class Vm(object):
             if network == '':
                 network = DUMMY_BRIDGE
                 linkValue = 'down'
+            custom = params.get('custom')
 
             netsToMirror = params.get('portMirroring',
                                       netConf.get('portMirroring', []))
 
-            with self.setLinkAndNetwork(netDev, netConf, linkValue, network):
+            with self.setLinkAndNetwork(netDev, netConf, linkValue, network,
+                                        custom):
                 with self.updatePortMirroring(netConf, netsToMirror):
                     return {'status': doneCode, 'vmList': self.status()}
         except (LookupError,
@@ -2987,7 +2989,7 @@ class Vm(object):
                      'message': e.message}}
 
     @contextmanager
-    def setLinkAndNetwork(self, dev, conf, linkValue, networkValue):
+    def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom):
         vnicXML = dev.getXML()
         vnicXMLBackup = dev.getXML()
         source = vnicXML.getElementsByTagName('source')[0]
@@ -3001,15 +3003,15 @@ class Vm(object):
         try:
             try:
                 vnicXML = hooks.before_update_device(
-                    vnicXML.toprettyxml(encoding='utf-8'), self.conf)
+                    vnicXML.toprettyxml(encoding='utf-8'), self.conf, custom)
                 self._dom.updateDeviceFlags(vnicXML,
                                             libvirt.VIR_DOMAIN_AFFECT_LIVE)
                 dev._deviceXML = vnicXML
                 self.log.debug("Nic has been updated:\n %s" % vnicXML)
-                hooks.after_update_device(vnicXML, self.conf)
+                hooks.after_update_device(vnicXML, self.conf, custom)
             except Exception as e:
                 self.log.debug('Request failed: %s', vnicXML, exc_info=True)
-                hooks.after_update_device_fail(vnicXML, self.conf)
+                hooks.after_update_device_fail(vnicXML, self.conf, custom)
                 raise SetLinkAndNetworkError(e.message)
             yield
         except Exception:
@@ -3024,6 +3026,7 @@ class Vm(object):
             dev.network = conf['network'] = networkValue
             conf['linkActive'] = linkValue == 'up'
             setattr(dev, 'linkActive', linkValue == 'up')
+            dev.custom = custom
 
     @contextmanager
     def updatePortMirroring(self, conf, networks):
