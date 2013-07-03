@@ -1,9 +1,11 @@
+*.iml
 *.o
 *.pyc
 *.swp
 *.tmp
 *~
 .deps
+.idea
 .project
 .pydevproject
 INSTALL
