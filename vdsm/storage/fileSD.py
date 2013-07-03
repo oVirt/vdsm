@@ -367,6 +367,14 @@ class FileStorageDomain(sd.StorageDomain):
                          (imgUUID, sdUUID))
         self.deleteImage(sdUUID, imgUUID, volsImgs)
 
+    def deactivateImage(self, imgUUID):
+        """
+        Deactivate all the volumes belonging to the image.
+
+        imgUUID: the image to be deactivated.
+        """
+        pass
+
     def getAllVolumes(self):
         """
         Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
@@ -420,12 +428,6 @@ class FileStorageDomain(sd.StorageDomain):
         # (ordered volUUIDs) we fix them all.
         for vol in [self.produceVolume(imgUUID, x) for x in volUUIDs]:
             self.oop.fileUtils.copyUserModeToGroup(vol.getVolumePath())
-
-    def deactivateVolumes(self, imgUUID, volUUIDs):
-        """
-        Deactivate all the volumes listed in volUUIDs
-        """
-        pass
 
     @classmethod
     def format(cls, sdUUID):

@@ -3298,8 +3298,8 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
 
-        img = image.Image(os.path.join(self.storage_repository, spUUID))
-        img.teardown(sdUUID, imgUUID, volUUID)
+        dom = sdCache.produce(sdUUID)
+        dom.deactivateImage(imgUUID)
 
     @public
     def getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID,

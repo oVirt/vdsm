@@ -984,6 +984,19 @@ class BlockStorageDomain(sd.StorageDomain):
         zeroImgVolumes(sdUUID, imgUUID, toZero)
         self.rmDCImgDir(imgUUID, volsImgs)
 
+    def deactivateImage(self, imgUUID):
+        """
+        Deactivate all the volumes belonging to the image.
+
+        imgUUID: the image to be deactivated.
+
+        If the image is based on a template image it should be expressly
+        deactivated.
+        """
+        allVols = self.getAllVolumes()
+        volUUIDs = self._getImgExclusiveVols(imgUUID, allVols)
+        lvm.deactivateLVs(self.sdUUID, volUUIDs)
+
     def getAllVolumesImages(self):
         """
         Return all the images that depend on a volume.
@@ -1020,12 +1033,6 @@ class BlockStorageDomain(sd.StorageDomain):
         Activate all the volumes listed in volUUIDs
         """
         lvm.activateLVs(self.sdUUID, volUUIDs)
-
-    def deactivateVolumes(self, imgUUID, volUUIDs):
-        """
-        Deactivate all the volumes listed in volUUIDs
-        """
-        lvm.deactivateLVs(self.sdUUID, volUUIDs)
 
     def getVolumeLease(self, imgUUID, volUUID):
         """

@@ -203,7 +203,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             newClusterLock.acquire(hostId)
 
         allVolumes = domain.getAllVolumes()
-        allImages = set()
+        allImages = {}  # {images: parent_image}
 
         # Few vdsm releases (4.9 prior 496c0c3, BZ#732980) generated metadata
         # offsets higher than 1947 (LEASES_SIZE - RESERVED_LEASES - 1).
@@ -215,7 +215,8 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         for volUUID, (imgUUIDs, parentUUID) in allVolumes.iteritems():
             log.debug("Converting volume: %s", volUUID)
 
-            allImages.update(imgUUIDs)  # Maintaining a set of images
+            # Maintaining a dict of {images: parent_image}
+            allImages.update((i, None) for i in imgUUIDs)
 
             # The first imgUUID is the imgUUID of the template or the
             # only imgUUID where the volUUID appears.
@@ -230,6 +231,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             # volume's permissions and share the volume lease (at the moment
             # of this writing this is strictly needed only on file domains).
             for imgUUID in imgUUIDs[1:]:
+                allImages[imgUUID] = imgUUIDs[0]
                 dstVol = domain.produceVolume(imgUUID, volUUID)
 
                 v3UpgradeVolumePermissions(dstVol)
@@ -287,11 +289,11 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
             finally:
                 try:
-                    img.teardown(domain.sdUUID, imgUUID)
-                except:
-                    log.debug("Unable to teardown the image %s, this error is "
-                              "not critical since the volume might be in use",
-                              imgUUID, exc_info=True)
+                    domain.deactivateImage(imgUUID)
+                except se.CannotDeactivateLogicalVolume:
+                    log.warning("Unable to teardown the image %s, this error "
+                                "is not critical since the volume might be in"
+                                " use", imgUUID, exc_info=True)
 
         log.debug("Finalizing the storage domain upgrade from version %s to "
                   "version %s for domain %s", currentVersion, targetVersion,

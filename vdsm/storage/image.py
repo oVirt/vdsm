@@ -247,16 +247,6 @@ class Image:
 
         return chain
 
-    def teardown(self, sdUUID, imgUUID, volUUID=None):
-        chain = self.getChain(sdUUID, imgUUID, volUUID)
-
-        # Deactivating the volumes
-        sdCache.produce(sdUUID).deactivateVolumes(
-            imgUUID, volUUIDs=[vol.volUUID for vol in chain])
-
-        # Do not deactivate the template yet (might be in use by an other vm)
-        # TODO: reference counting to deactivate when unused
-
     def createFakeTemplate(self, sdUUID, volParams):
         """
         Create fake template (relevant for Backup domain only)
