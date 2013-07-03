@@ -110,9 +110,10 @@ else:
             if rc != 0:
                 raise ServiceOperationError(
                     "Error listing unit files", '\n'.join(out), '\n'.join(err))
+            fullName = srvName + ".service"
             for line in out:
-                if srvName + ".service" == line.split(" ", 1)[0]:
-                    return systemctlFun(srvName)
+                if fullName == line.split(" ", 1)[0]:
+                    return systemctlFun(fullName)
             raise ServiceNotExistError("%s is not native systemctl service" %
                                        srvName)
         return wrapper
