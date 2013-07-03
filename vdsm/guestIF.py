@@ -27,7 +27,7 @@ import supervdsm
 
 __RESTRICTED_CHARS = set(range(8 + 1)).union(
     set(range(0xB, 0xC + 1))).union(set(range(0xE, 0x1F + 1))).union(
-        set(range(0x7F, 0x84 + 1))).union(set(range(0x86, 0x9F + 1)))
+    set(range(0x7F, 0x84 + 1))).union(set(range(0x86, 0x9F + 1)))
 
 
 def _filterXmlChars(u):
