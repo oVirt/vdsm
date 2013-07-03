@@ -1107,6 +1107,7 @@ class service:
         return 0, ''
 
     def getFileList(self, args):
+        assert args
         validateArgTypes(args, [str, str])
         response = self.s.getFileList(*args)
         if response['status']['code']:
@@ -2483,7 +2484,7 @@ if __name__ == '__main__':
             code = 1
         print message
         sys.exit(code)
-    except (TypeError, IndexError, ValueError) as e:
+    except (TypeError, IndexError, ValueError, AssertionError) as e:
         print "Error using command:", e, "\n"
         print command
         for line in commands[command][1]:
