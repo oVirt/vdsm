@@ -396,10 +396,6 @@ class HSM:
         storageRefreshThread.daemon = True
         storageRefreshThread.start()
 
-    def _hsmSchedule(self, name, func, *args):
-        self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task,
-                                 name, func, *args)
-
     def __validateLvmLockingType(self):
         """
         Check lvm locking type.
