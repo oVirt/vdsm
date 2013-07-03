@@ -48,7 +48,8 @@ parameters = [
             'NIC per device will be created.'),
 
         ('migration_timeout', '300',
-            'Maximum time the destination waits for migration to end. '
+            'Maximum time the destination waits since migration is stalled. '
+            'Please note, that this is not overall migration timeout. '
             'Source waits twice as long (to avoid races).'),
 
         ('migration_listener_timeout', '30',
