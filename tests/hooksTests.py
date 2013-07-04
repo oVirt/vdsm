@@ -136,9 +136,9 @@ domXMLFile.write(customProperty)
     def test_deviceVmConfProperties(self):
         dirName = self._deviceCustomPropertiesTestFile()
 
-        vmconf = {'custom':
-                      {'customProperty': ' rocks more!'}
-                 }
+        vmconf = {
+            'custom': {
+                'customProperty': ' rocks more!'}}
 
         result = hooks._runHooksDir("oVirt", dirName,
                                     params={'customProperty': ' rocks!'},
