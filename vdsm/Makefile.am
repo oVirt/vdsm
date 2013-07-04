@@ -47,6 +47,7 @@ dist_vdsm_PYTHON = \
 	parted_utils.py \
 	sampling.py \
 	sourceRoute.py \
+	sourceRouteThread.py \
 	supervdsm.py \
 	supervdsmServer.py \
 	tc.py \
@@ -162,6 +163,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/sourceRoutes
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
 	$(MKDIR_P) $(DESTDIR)$(vdsmpoolsdir)

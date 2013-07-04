@@ -53,6 +53,7 @@ import tc
 import ksm
 import mkimage
 from storage.multipath import MPATH_CONF
+import sourceRouteThread
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -386,6 +387,9 @@ def main():
             chown(address, getpwnam(VDSM_USER).pw_uid, METADATA_GROUP)
 
             log.debug("Started serving super vdsm object")
+
+            threading.Thread(target=sourceRouteThread.subscribeToInotifyLoop(),
+                             name='sourceRoute').start()
 
             # Python bug of thread.join() will block signal
             # http://bugs.python.org/issue1167930

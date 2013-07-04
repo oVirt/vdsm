@@ -1,10 +1,13 @@
 #!/bin/bash
 
+timeStamp=`date +%s`
+
 sourceRoute_config() {
-    python /usr/share/vdsm/sourceRoute.pyc "configure" "dhcp" $new_ip_address \
-        $new_subnet_mask $new_routers $interface
+    echo "configure" "$new_ip_address" "$new_subnet_mask" "$new_routers" \
+        "$interface" > /var/run/vdsm/sourceRoutes/$timeStamp
 }
 
 sourceRoute_restore() {
-    python /usr/share/vdsm/sourceRoute.pyc "remove" "dhcp" $interface
+    echo "remove" "$interface" > \
+        /var/run/vdsm/sourceRoutes/$timeStamp
 }

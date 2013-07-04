@@ -17,7 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from argparse import ArgumentParser
 from glob import iglob
 from libvirt import libvirtError
 import logging
@@ -175,58 +174,3 @@ class DynamicSourceRoute(StaticSourceRoute):
                     self.configurator.removeSourceRoute(
                         self._getRoutes(table, self.device), rules,
                         self.device)
-
-
-def main():
-    parser = ArgumentParser()
-    subparsers = parser.add_subparsers(
-        title='actions', description='available source routing actions.',
-        help='configure will set the source routing and remove will unset it',
-        dest='action')
-
-    configure_parser = subparsers.add_parser('configure')
-    configure_parser.add_argument('bootproto',
-                                  choices=('none', 'dhcp'),
-                                  help='whether the IP information was '
-                                  'acquired statically or via DHCP')
-    configure_parser.add_argument('ip', help='base IP address of the network')
-    configure_parser.add_argument('mask', help='Mask of the network either in '
-                                  'prefix or in dot decimal notation')
-    configure_parser.add_argument('gateway', help='IP address of the gateway')
-    configure_parser.add_argument('device', help='Device to use for routing')
-
-    remove_parser = subparsers.add_parser('remove')
-    remove_parser.add_argument('bootproto', choices=('none', 'dhcp'),
-                               help='whether the IP information was acquired '
-                               'statically or via DHCP')
-    remove_parser.add_argument('device', help='Device for which to unset the '
-                               'routing')
-
-    args = parser.parse_args()
-    if args.bootproto == 'none':
-        configurator = Ifcfg(ConfigWriter())
-        sourceRoute = StaticSourceRoute(args.device, configurator)
-    else:
-        configurator = Iproute2()
-        sourceRoute = DynamicSourceRoute(args.device, configurator)
-
-    if not sourceRoute.isLibvirtInterface():
-        logging.info("interface %s is not a libvirt interface" %
-                     sourceRoute.device)
-        return
-
-    if args.action == 'configure':
-        sourceRoute.configure(args.ip, args.mask, args.gateway)
-    else:
-        sourceRoute.remove()
-
-
-if __name__ == "__main__":
-    # This imports are here due to the fact that we only need to create
-    # configurators if being used as a standalone script and because otherwise
-    # when importing SourceRoute from the configurators, we'd get a circular
-    # dependency.
-    from netconf.ifcfg import ConfigWriter
-    from netconf.ifcfg import Ifcfg
-    from netconf.iproute2 import Iproute2
-    main()

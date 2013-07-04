@@ -66,7 +66,6 @@ BuildRequires: python-dmidecode
 %endif
 %if 0%{?rhel} == 6
 BuildRequires: python-ordereddict
-BuildRequires: python-argparse
 %endif
 BuildRequires: python-ethtool
 
@@ -95,6 +94,7 @@ Requires: xz
 Requires: ntp
 Requires: iproute
 Requires: python-netaddr
+Requires: python-inotify
 Requires: python-ethtool >= 0.6-3
 Requires: rpm-python
 Requires: nfs-utils
@@ -154,7 +154,6 @@ Requires: mom >= 0.3.0
 Requires: policycoreutils >= 2.0.83-19.30
 Requires: policycoreutils-python >= 2.0.83-19.30
 Requires: python-pthreading
-Requires: python-argparse
 Requires: selinux-policy-targeted >= 3.7.19-155
 Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
@@ -812,6 +811,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/sourceRoute.py*
+%{_datadir}/%{vdsm_name}/sourceRouteThread.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer.py*
 %{_datadir}/%{vdsm_name}/vmChannels.py*
@@ -986,6 +986,7 @@ exit 0
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/run/%{vdsm_name}
+%dir %{_localstatedir}/run/%{vdsm_name}/sourceRoutes
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}/pools
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}/payload
 %dir %{_localstatedir}/log/%{vdsm_name}
