@@ -78,6 +78,7 @@ SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 	'lv' from line .*"
 
 check-local:
+	echo 'checking style: pep8 version' `pep8 --version` 'pyflakes version' `pyflakes --version`
 	find . -path './.git' -prune -type f -o \
 		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES) | \
 		grep -w -v $(SKIP_PYFLAKES_ERR) | \
