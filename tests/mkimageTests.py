@@ -131,7 +131,7 @@ class MkimageTestCase(VdsmTestCase):
         self._check_content()
 
     @ValidateRunningAsRoot
-    @permutations([[None], ['fslabel']])
+    @permutations([[None], ['FSLABEL']])
     def test_mkFloppyFs(self, label):
         """
         Tests mkimage.mkFloppyFs creating an image and checking its content.
