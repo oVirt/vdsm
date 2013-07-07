@@ -108,7 +108,7 @@ class Route(object):
 
 
 class Rule(object):
-    def __init__(self, table, source=None, destination=None):
+    def __init__(self, table, source=None, destination=None, srcDevice=None):
         if source:
             if not (_isValid(source, IPAddress) or
                     _isValid(source, IPNetwork)):
@@ -124,6 +124,7 @@ class Rule(object):
         self.table = table
         self.source = source
         self.destination = destination
+        self.srcDevice = srcDevice
 
     @classmethod
     def fromText(cls, text):
@@ -161,8 +162,10 @@ class Rule(object):
             source = None
         if destination == 'all':
             destination = None
+        srcDevice = data.get('dev') or data.get('iif')
 
-        return cls(table, source=source, destination=destination)
+        return cls(table, source=source, destination=destination,
+                   srcDevice=srcDevice)
 
     def __str__(self):
         str = 'from '
@@ -172,6 +175,8 @@ class Rule(object):
             str += 'all'
         if self.destination:
             str += ' to %s' % self.destination
+        if self.srcDevice:
+            str += ' dev %s' % self.srcDevice
 
         str += ' table %s' % self.table
 
@@ -221,12 +226,6 @@ def routeDel(route):
     command = [_IP_BINARY.cmd, 'route', 'del']
     command += route
     _execCmd(command)
-
-
-def routeLinkNetForDevice(device):
-    command = [_IP_BINARY.cmd, 'route', 'show', 'dev', device, 'scope', 'link',
-               'proto', 'kernel']
-    return _execCmd(command)
 
 
 def ruleList():

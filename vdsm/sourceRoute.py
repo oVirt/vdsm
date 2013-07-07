@@ -24,7 +24,6 @@ import netaddr
 
 from vdsm import netinfo
 from vdsm.ipwrapper import Route
-from vdsm.ipwrapper import routeLinkNetForDevice
 from vdsm.ipwrapper import routeShowTable
 from vdsm.ipwrapper import Rule
 from vdsm.ipwrapper import ruleList
@@ -54,7 +53,8 @@ class StaticSourceRoute(object):
 
     def _buildRules(self):
         return [Rule(source=self.network, table=self.table),
-                Rule(destination=self.network, table=self.table)]
+                Rule(destination=self.network, table=self.table,
+                     srcDevice=self.device)]
 
     def configure(self, ipaddr, mask, gateway):
         if gateway in (None, '0.0.0.0') or not ipaddr or not mask:
@@ -142,35 +142,40 @@ class DynamicSourceRoute(StaticSourceRoute):
             return None
 
     @staticmethod
-    def _getRules(network):
+    def _getRules(device):
+        """
+            32764:	from all to 10.35.0.0/23 iif ovirtmgmt lookup 170066094
+            32765:	from 10.35.0.0/23 lookup 170066094
+
+            The first rule we'll find directly via the interface name
+            We'll then use that rule's destination network, and use it
+            to find the second rule via its source network
+        """
         allRules = [Rule.fromText(entry) for entry in ruleList()]
-        rules = [rule for rule in allRules if rule.source == network or
-                 rule.destination == network]
+
+        # Find the rule we put in place with 'device' as its 'srcDevice'
+        rules = [rule for rule in allRules if rule.srcDevice == device]
 
         if not rules:
-            logging.error("Rules not found for network %s" % network)
+            logging.error("Rules not found for device %s" % device)
+            return
+
+        # Extract its destination network
+        network = rules[0].destination
+
+        # Find the other rule we put in place - It'll have 'network' as
+        # its source
+        rules += [rule for rule in allRules if rule.source == network]
 
         return rules
-
-    @staticmethod
-    def _getNetwork(device):
-        output = routeLinkNetForDevice(device)
-
-        if output:
-            route = Route.parse(output[0])
-            return route['network']
-        logging.error("Network for given device name not found.")
-        return None
 
     def remove(self):
         logging.info("Removing gateway - device: %s" % self.device)
 
-        network = self._getNetwork(self.device)
-        if network:
-            rules = self._getRules(network)
-            if rules:
-                table = self._getTable(rules)
-                if table:
-                    self.configurator.removeSourceRoute(
-                        self._getRoutes(table, self.device), rules,
-                        self.device)
+        rules = self._getRules(self.device)
+        if rules:
+            table = self._getTable(rules)
+            if table:
+                self.configurator.removeSourceRoute(
+                    self._getRoutes(table, self.device), rules,
+                    self.device)
