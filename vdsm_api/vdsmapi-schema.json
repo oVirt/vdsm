@@ -5377,6 +5377,9 @@
 #
 # @watchdogEvent:      #optional Information about the most recent watchdog event
 #
+# @guestFQDN:          Fully qualified domain name of the guest OS. (Reported
+#                      by the guest agent)
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -5395,7 +5398,7 @@
           'memoryStats': 'GuestMemoryStats', 'balloonInfo': 'BalloonInfo',
           'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo'],
-          'watchdogEvent': '*WatchdogEvent'}}
+          'watchdogEvent': '*WatchdogEvent', 'guestFQDN': 'str'}}
 
 ##
 # @VmStats:

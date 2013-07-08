@@ -205,6 +205,8 @@ class MigrationSourceThread(threading.Thread):
             self._machineParams['username'] = vmStats['username']
         if 'guestIPs' in vmStats:
             self._machineParams['guestIPs'] = vmStats['guestIPs']
+        if 'guestFQDN' in vmStats:
+            self._machineParams['guestFQDN'] = vmStats['guestFQDN']
         for k in ('_migrationParams', 'pid'):
             if k in self._machineParams:
                 del self._machineParams[k]
@@ -2126,9 +2128,11 @@ class Vm(object):
         if self.lastStatus != 'Down' and self._vmStats and self.guestAgent:
             toSave['username'] = self.guestAgent.guestInfo['username']
             toSave['guestIPs'] = self.guestAgent.guestInfo['guestIPs']
+            toSave['guestFQDN'] = self.guestAgent.guestInfo['guestFQDN']
         else:
             toSave['username'] = ""
             toSave['guestIPs'] = ""
+            toSave['guestFQDN'] = ""
         if 'sysprepInf' in toSave:
             del toSave['sysprepInf']
             if 'floppy' in toSave:
@@ -3367,6 +3371,8 @@ class Vm(object):
 
         if 'guestIPs' in self.conf:
             del self.conf['guestIPs']
+        if 'guestFQDN' in self.conf:
+            del self.conf['guestFQDN']
         if 'username' in self.conf:
             del self.conf['username']
         self.saveState()

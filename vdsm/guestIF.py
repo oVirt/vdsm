@@ -26,6 +26,7 @@ import json
 import supervdsm
 import unicodedata
 
+
 __REPLACEMENT_CHAR = u'\ufffd'
 __RESTRICTED_CHARS = set(range(8 + 1)). \
     union(set(range(0xB, 0xC + 1))). \
@@ -105,6 +106,7 @@ class GuestAgent ():
             'username': user,
             'memUsage': 0,
             'guestIPs': ips,
+            'guestFQDN': '',
             'session': 'Unknown',
             'appsList': [],
             'disksUsage': [],
@@ -218,6 +220,8 @@ class GuestAgent ():
             self.guestInfo['appsList'] = []
         elif message == 'session-startup':
             self.log.debug("Guest system is started or restarted.")
+        elif message == 'fqdn':
+            self.guestInfo['guestFQDN'] = args['fqdn']
         elif message == 'session-shutdown':
             self.log.debug("Guest system shuts down.")
         elif message == 'disks-usage':
@@ -260,7 +264,8 @@ class GuestAgent ():
                 'session': 'Unknown',
                 'memUsage': 0,
                 'appsList': self.guestInfo['appsList'],
-                'guestIPs': self.guestInfo['guestIPs']}
+                'guestIPs': self.guestInfo['guestIPs'],
+                'guestFQDN': self.guestInfo['guestFQDN']}
 
     def onReboot(self):
         self.guestStatus = 'RebootInProgress'
