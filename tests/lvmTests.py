@@ -27,13 +27,13 @@ import storage.lvm as lvm
 class LvmTests(TestCaseBase):
     def test_buildFilter(self):
         chars = [' ', '$', '|', '"', '(']
-        dev = 'a'
+        dev = "/dev/mapper/a"
+        signedDev = dev
         for c in chars:
-            dev += '\\' + hex(ord(c))[1:4]
-        devs = [dev]
+            signedDev += '\\' + hex(ord(c))[1:4]
+        devs = [signedDev]
         filter = lvm._buildFilter(devs)
-        expectedFilter = ("filter = "
-                          "[ \'a%a\\\\x20\\\\x24\\\\x7c\\\\x22\\\\x28%\',"
-                          " \'r%.*%\' ]"
+        expectedFilter = ("filter = [ \'a|" + dev + "\\\\x20\\\\x24\\\\x7c"
+                          "\\\\x22\\\\x28|\', \'r|.*|\' ]"
                           )
         self.assertEqual(expectedFilter, filter)

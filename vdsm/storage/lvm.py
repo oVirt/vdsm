@@ -134,12 +134,13 @@ def _buildFilter(devList):
     for dev in devList:
         strippedDev = dev.strip()
         if strippedDev:
-            devs.append(strippedDev.replace(r'\x', r'\\x'))
+            prefixedDev = os.path.join(PV_PREFIX, strippedDev)
+            devs.append(prefixedDev.replace(r'\x', r'\\x'))
     filt = '|'.join(devs)
     if len(filt) > 0:
-        filt = "'a%" + filt + "%', "
+        filt = "'a|" + filt + "|', "
 
-    filt = "filter = [ " + filt + "'r%.*%' ]"
+    filt = "filter = [ " + filt + "'r|.*|' ]"
     return filt
 
 
