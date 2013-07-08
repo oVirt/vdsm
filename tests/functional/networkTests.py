@@ -35,6 +35,7 @@ def setupModule():
     vdsm = VdsProxy()
     vdsm.save_config()
 
+
 def tearDownModule():
     """Restores the network configuration previous to running tests."""
     restoreNetConfig()
