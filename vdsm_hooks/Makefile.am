@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = faqemu vhostmd qemucmdline
+SUBDIRS = faqemu vhostmd qemucmdline openstacknet
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -35,7 +35,6 @@ SUBDIRS += \
 	macspoof \
 	nestedvt \
 	numa \
-	openstacknet \
 	pincpu \
 	promisc \
 	qos \
