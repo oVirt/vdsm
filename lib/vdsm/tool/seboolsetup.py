@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import seobject
 from vdsm.tool import expose
 
 SEBOOL_ENABLED = "on"
@@ -36,6 +35,9 @@ VDSM_SEBOOL_LIST = [
 
 
 def setup_booleans(status):
+    # loading seobject is slow. Deferring its loading can reduce VDSM starting
+    # time, because most utilities are and will be moved to vdsm-tool.
+    import seobject
     sebool_obj = seobject.booleanRecords()
     sebool_status = sebool_obj.get_all()
 
