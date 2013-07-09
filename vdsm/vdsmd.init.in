@@ -393,7 +393,7 @@ configure_libvirt()
     local llogr=/etc/logrotate.d/libvirtd
     local stanza=`mktemp`
     /bin/cat > "$stanza" <<EOF
-# vdsm
+## beginning of configuration section by vdsm
 /var/log/libvirt/libvirtd.log {
     rotate 100
     missingok
@@ -404,8 +404,10 @@ configure_libvirt()
     uncompresscmd /usr/bin/unxz
     compressext .xz
 }
-# end vdsm
+## end of configuration section by vdsm
 EOF
+    # Backup (comment) original logrotate.d/libvirtd
+    /bin/sed -i 's/^/# VDSM backup/' "$llogr"
     /bin/sed -e "/# vdsm/,/# end vdsm/d" "$llogr" >> "$stanza"
     local oldmod=`/usr/bin/stat --format=%a "$llogr"`
     /bin/mv "$stanza" "$llogr"
