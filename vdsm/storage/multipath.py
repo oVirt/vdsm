@@ -108,7 +108,8 @@ def rescan():
     supervdsm.getProxy().forceScsiScan()
 
     # Now let multipath daemon pick up new devices
-    misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
+    cmd = [constants.EXT_MULTIPATH, "-r"]
+    misc.execCmd(cmd, sudo=True)
 
 
 def isEnabled():
