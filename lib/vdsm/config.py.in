@@ -55,9 +55,18 @@ parameters = [
             'NIC per device will be created.'),
 
         ('migration_timeout', '300',
-            'Maximum time the destination waits since migration is stalled. '
-            'Please note, that this is not overall migration timeout. '
-            'Source waits twice as long (to avoid races).'),
+            'Migration Source Host: Uses at least 1/2 of this value for VMs '
+            'with less than 2 GiB of RAM otherwise 1/4 of this value per GiB '
+            'RAM for calculating the delay before setting/increasing the '
+            'migration_downtime.'
+            'Migration Destination Host: Maximum time the destination waits '
+            'before it tries to finalize the VM intialization. '
+            'NOTE: This value is not used as an overall migration timeout.'),
+
+        ('migration_progress_timeout', '150',
+            'Maximum time the source host waits during a migration in case '
+            'that there is no progress. If the time has passed, the migration '
+            'will be aborted.'),
 
         ('migration_listener_timeout', '30',
             'Time to wait (in seconds) for migration destination to start '

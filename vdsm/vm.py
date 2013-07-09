@@ -757,6 +757,7 @@ class MigrationMonitorThread(threading.Thread):
 
         lastProgressTime = time.time()
         lowmark = None
+        progress_timeout = config.getint('vars', 'migration_progress_timeout')
 
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
@@ -769,8 +770,7 @@ class MigrationMonitorThread(threading.Thread):
             if (lowmark is None) or (lowmark > remaining):
                 lowmark = remaining
                 lastProgressTime = time.time()
-            elif (time.time() - lastProgressTime >
-                  config.getint('vars', 'migration_timeout')):
+            elif (time.time() - lastProgressTime) > progress_timeout:
                 # Migration is stuck, abort
                 self._vm.log.warn(
                     'Migration is stuck: Hasn\'t progressed in %s seconds. '
