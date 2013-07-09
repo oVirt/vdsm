@@ -633,6 +633,8 @@ if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsm-restore-net-config
 fi
 %else
+%if 0%{?with_systemd}
+/bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
 %if 0%{?with_systemd_macros}
 %systemd_post vdsmd.service
 %systemd_post supervdsmd.service
@@ -645,6 +647,7 @@ if [ "$1" -eq 1 ] ; then
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
+%endif
 %endif
 %endif
 
