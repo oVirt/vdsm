@@ -158,7 +158,6 @@ start_needed_srv() {
         fi
     done
 
-    /sbin/service iscsid force-start
 }
 
 test_lo() {

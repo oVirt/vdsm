@@ -1,6 +1,6 @@
 [Unit]
 Description=Virtual Desktop Server Manager
-Requires=multipathd.service libvirtd.service time-sync.target
+Requires=multipathd.service libvirtd.service time-sync.target iscsid.service
 Conflicts=libvirt-guests.service
 
 [Service]
