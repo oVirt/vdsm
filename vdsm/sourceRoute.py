@@ -23,6 +23,7 @@ import logging
 import netaddr
 
 from vdsm import netinfo
+from vdsm.ipwrapper import IPRoute2Error
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import routeShowTable
 from vdsm.ipwrapper import Rule
@@ -76,8 +77,12 @@ class StaticSourceRoute(object):
         self.routes = self._buildRoutes()
         self.rules = self._buildRules()
 
-        self.configurator.configureSourceRoute(self.routes, self.rules,
-                                               self.device)
+        try:
+            self.configurator.configureSourceRoute(self.routes, self.rules,
+                                                   self.device)
+        except IPRoute2Error:
+            logging.error('ip binary failed during source route configuration',
+                          exc_info=True)
 
     def _isLibvirtInterfaceFallback(self):
         """
@@ -176,6 +181,10 @@ class DynamicSourceRoute(StaticSourceRoute):
         if rules:
             table = self._getTable(rules)
             if table:
-                self.configurator.removeSourceRoute(
-                    self._getRoutes(table, self.device), rules,
-                    self.device)
+                try:
+                    self.configurator.removeSourceRoute(
+                        self._getRoutes(table, self.device), rules,
+                        self.device)
+                except IPRoute2Error:
+                    logging.error('ip binary failed during source route '
+                                  'removal', exc_info=True)
