@@ -10,7 +10,7 @@
 
 HOOKS_DIR=/usr/libexec/vdsm/hooks
 
-if isOvirt
+if isOvirtNode
 then
     . /usr/libexec/ovirt-functions
     for hook in "$HOOKS_DIR"/*/*

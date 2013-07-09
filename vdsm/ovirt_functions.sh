@@ -8,20 +8,13 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-isOvirt() {
-    for f in /etc/ovirt-node-*-release; do
-        [ -f "$f" ] && return 0
-    done
-
-    if [ -f /etc/rhev-hypervisor-release ]; then
-        return 0
-    else
-        return 1
-    fi
+isOvirtNode() {
+    [ "$(echo /etc/ovirt-node-*-release)" != "/etc/ovirt-node-*-release" ] || \
+        [ -f /etc/rhev-hypervisor-release ]
 }
 
 # execute a function if called as a script, e.g.
-# vdsm-bash-functions isOvirt
+# vdsm-bash-functions isOvirtNode
 
 if [ "$(basename -- "$0")" = "vdsm-bash-functions" ]; then
     "$@"

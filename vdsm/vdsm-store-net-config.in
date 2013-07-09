@@ -9,7 +9,7 @@ NET_CONF_DIR='/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR=@VDSMLIBDIR@/netconfback
 DELETE_HEADER='# original file did not exist'
 
-if isOvirt
+if isOvirtNode
 then
     # for ovirt, persist the changed configuration files
 
