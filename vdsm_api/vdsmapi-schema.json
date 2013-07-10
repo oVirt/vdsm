@@ -455,6 +455,20 @@
  'data': {'policy': 'str'}}
 
 ##
+# @Host.setMOMPolicyParameters:
+#
+# Set variables for MOM policy fine tuning.
+#
+# @key_value_store:  This argument contains a dictionary where keys
+#                    represent policy variable names and values
+#                    contain the values.
+#
+# Since: 4.11.0
+##
+{'command': {'class': 'Host', 'name': 'setMOMPolicyParameters'},
+ 'data': {'key_value_store': 'dict'}}
+
+##
 # @TaskDetails:
 #
 # A collection of information about a task.

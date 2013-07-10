@@ -20,6 +20,8 @@
 
 import logging
 import threading
+from vdsm.config import config
+
 try:
     import mom
     _momAvailable = True
@@ -59,6 +61,15 @@ class MomThread(threading.Thread):
     def setPolicy(self, policyStr):
         # mom.setPolicy will raise an exception on failure.
         self._mom.setPolicy(policyStr)
+
+    def setPolicyParameters(self, key_value_store):
+        # mom.setNamedPolicy will raise an exception on failure.
+        # Prepare in-memory policy file with tuning variables
+        policy_string = "\n".join(["(defvar %s %r)" % (k, v)
+                                   for k, v in key_value_store.iteritems()])
+
+        self._mom.setNamedPolicy(config.get("mom", "tuning_policy"),
+                                 policy_string)
 
     def stop(self):
         if self._mom is not None:

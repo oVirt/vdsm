@@ -157,6 +157,10 @@ parameters = [
 
         ('conf', '@CONFDIR@/mom.conf', 'mom configuration file'),
 
+        ('tuning_policy', '00-parameters',
+            'name of the mom policy to be updated from '
+            'updatePolicyParameters API call'),
+
     ]),
 
     # Section: [irs]

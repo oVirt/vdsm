@@ -1415,6 +1415,13 @@ class Global(APIBase):
         except:
             return errCode['momErr']
 
+    def setMOMPolicyParameters(self, key_value_store):
+        try:
+            self._cif.mom.setPolicyParameters(key_value_store)
+            return dict(status=doneCode)
+        except:
+            return errCode['momErr']
+
     # take a rough estimate on how much free mem is available for new vm
     # memTotal = memFree + memCached + mem_used_by_non_qemu + resident  .
     # simply returning (memFree + memCached) is not good enough, as the

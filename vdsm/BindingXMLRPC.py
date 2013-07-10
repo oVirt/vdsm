@@ -434,6 +434,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.setMOMPolicy(policy)
 
+    def setMOMPolicyParameters(self, key_value_store):
+        api = API.Global()
+        return api.setMOMPolicyParameters(key_value_store)
+
     def domainActivate(self, sdUUID, spUUID, options=None):
         domain = API.StorageDomain(sdUUID)
         return domain.activate(spUUID)
@@ -845,6 +849,7 @@ class BindingXMLRPC(object):
                 (self.prepareForShutdown, 'prepareForShutdown'),
                 (self.setLogLevel, 'setLogLevel'),
                 (self.setMOMPolicy, 'setMOMPolicy'),
+                (self.setMOMPolicyParameters, 'setMOMPolicyParameters'),
                 (self.vmHotplugDisk, 'hotplugDisk'),
                 (self.vmHotunplugDisk, 'hotunplugDisk'),
                 (self.vmHotplugNic, 'hotplugNic'),

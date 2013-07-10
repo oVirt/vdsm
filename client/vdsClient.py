@@ -1423,6 +1423,17 @@ class service:
             return stats['status']['code'], stats['status']['message']
         return 0, ''
 
+    def do_setMOMPolicyParameters(self, args):
+        # convert arguments in the form of key=value to a dictionary
+        expand = lambda pair: (pair[0], eval(pair[1]))
+        key_value_store = dict([expand(arg.split("=", 1))
+                                for arg in args
+                                if "=" in arg])
+        stats = self.s.setMOMPolicyParameters(key_value_store)
+        if stats['status']['code']:
+            return stats['status']['code'], stats['status']['message']
+        return 0, ''
+
     def do_getVmsInfo(self, args):
         spUUID = args[0]
         if len(args) >= 2:
@@ -2300,6 +2311,10 @@ if __name__ == '__main__':
                          )),
         'setMOMPolicy': (serv.do_setMOMPolicy,
                          ('<policyfile>', 'set MOM policy')),
+        'setMOMPolicyParameters': (serv.do_setMOMPolicyParameters,
+                                   ('key=python_code [key=python_code] ...',
+                                    'set variables for MOM policy fine '
+                                    'tuning')),
         'deleteImage': (serv.deleteImage,
                         ('<sdUUID> <spUUID> <imgUUID> [<postZero>] [<force>]',
                          'Delete Image folder with all volumes.',
