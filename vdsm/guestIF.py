@@ -24,7 +24,9 @@ import socket
 import errno
 import json
 import supervdsm
+import unicodedata
 
+__REPLACEMENT_CHAR = u'\ufffd'
 __RESTRICTED_CHARS = set(range(8 + 1)). \
     union(set(range(0xB, 0xC + 1))). \
     union(set(range(0xE, 0x1F + 1))). \
@@ -34,20 +36,38 @@ __RESTRICTED_CHARS = set(range(8 + 1)). \
 
 def _filterXmlChars(u):
     """
-    Filter out restarted xml chars from unicode string. Not using
-    Python's xmlcharrefreplace because it accepts '\x01', which
-    the spec frown upon.
+    The set of characters allowed in XML documents is described in
+    http://www.w3.org/TR/xml11/#charsets
 
-    Set taken from http://www.w3.org/TR/xml11/#NT-RestrictedChar
+    "Char" is defined as any unicode character except the surrogate blocks,
+    \ufffe and \uffff.
+    "RestrictedChar" is defiend as the code points in __RESTRICTED_CHARS above
+
+    It's a little hard to follow, but the upshot is an XML document
+    must contain only characters in Char that are not in
+    RestrictedChar.
+
+    Note that Python's xmlcharrefreplace option is not relevant here -
+    that's about handling characters which can't be encoded in a given
+    charset encoding, not which aren't permitted in XML.
     """
 
-    def maskRestricted(c):
-        if ord(c) in __RESTRICTED_CHARS:
-            return '?'
+    if not isinstance(u, unicode):
+        raise TypeError
+
+    def filterXmlChar(c):
+        if ord(c) > 0x10ffff:
+            return __REPLACEMENT_CHAR  # Outside Unicode range
+        elif unicodedata.category(c) == 'Cs':
+            return __REPLACEMENT_CHAR  # Surrogate pair code point
+        elif (ord(c) == 0xFFFE) or (ord(c) == 0xFFFF):
+            return __REPLACEMENT_CHAR  # Specifically excluded code points
+        elif ord(c) in __RESTRICTED_CHARS:
+            return __REPLACEMENT_CHAR  # Restricted character
         else:
             return c
 
-    return ''.join(maskRestricted(c) for c in u)
+    return ''.join(filterXmlChar(c) for c in u)
 
 
 def _filterObject(obj):
@@ -350,8 +370,14 @@ class GuestAgent ():
         return result
 
     def _parseLine(self, line):
-        line = _filterXmlChars(line)
-        args = json.loads(line.decode('utf8'))
+        # Deal with any bad UTF8 encoding from the (untrusted) guest,
+        # by replacing them with the Unicode replacement character
+        uniline = line.decode('utf8', 'replace')
+        args = json.loads(uniline)
+        # Filter out any characters in the untrusted guest response
+        # that aren't permitted in XML.  This must be done _after_ the
+        # JSON decoding, since otherwise JSON's \u escape decoding
+        # could be used to generate the bad characters
         args = _filterObject(args)
         name = args['__name__']
         del args['__name__']

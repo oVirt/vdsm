@@ -84,36 +84,28 @@ _OUTPUTS = [
 
 class TestGuestIF(TestCaseBase):
     def testfilterXmlChars(self):
-        ALL_LEGAL = "Hello World"
+        ALL_LEGAL = u"Hello World"
         self.assertEqual(ALL_LEGAL, guestIF._filterXmlChars(ALL_LEGAL))
-        TM = u"\u2122".encode('utf8')
-        self.assertNotEqual(TM, guestIF._filterXmlChars(TM))
+        TM = u"\u2122"
+        self.assertEqual(TM, guestIF._filterXmlChars(TM))
         invalid = u"\u0000"
-        self.assertEqual(u'?', guestIF._filterXmlChars(invalid))
-        invalid2 = "\x00"
-        self.assertEqual('?',  guestIF._filterXmlChars(invalid2))
+        self.assertEqual(u'\ufffd', guestIF._filterXmlChars(invalid))
+        invalid2 = u"\uffff"
+        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid2))
+        invalid3 = u"\ufffe"
+        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid3))
+        invalid4 = u"\ud800"
+        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid4))
+        invalid5 = u"\udc79"
+        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid5))
 
     def test_filterObject(self):
-        ILLEGAL_DATA = {"foo": "\x00data\x00test"}
-        LEGAL_DATA = {"foo": "?data?test"}
-        EXPECTED_DATA = {"foo": "?data?test"}
+        ILLEGAL_DATA = {u"foo": u"\x00data\x00test\uffff\ufffe\ud800\udc79"}
+        LEGAL_DATA = {u"foo": u"?data?test\U00010000"}
+        EXPECTED_DATA = {
+            u"foo": u"\ufffddata\ufffdtest\ufffd\ufffd\ufffd\ufffd"}
         self.assertEqual(EXPECTED_DATA, guestIF._filterObject(ILLEGAL_DATA))
-        self.assertEqual(EXPECTED_DATA, guestIF._filterObject(LEGAL_DATA))
-
-    def test_StringAndObjectFiltering(self):
-        ILLEGAL_DATA = json.dumps({"foo": "\x00data\x00test"})
-        LEGAL_DATA = json.dumps({"foo": "?data?test"})
-        EXPECTED_DATA = {"foo": "?data?test"}
-
-        filtered = guestIF._filterXmlChars(ILLEGAL_DATA)
-        parsed = json.loads(filtered.decode('utf-8'))
-        filt_obj = guestIF._filterObject(parsed)
-        self.assertEqual(filt_obj, EXPECTED_DATA)
-
-        filtered = guestIF._filterXmlChars(LEGAL_DATA)
-        parsed = json.loads(filtered.decode('utf-8'))
-        filt_obj = guestIF._filterObject(parsed)
-        self.assertEqual(filt_obj, EXPECTED_DATA)
+        self.assertEqual(LEGAL_DATA, guestIF._filterObject(LEGAL_DATA))
 
     def test_handleMessage(self):
         logging.TRACE = 5
