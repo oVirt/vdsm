@@ -21,6 +21,7 @@ import logging
 
 from netmodels import Bond, Bridge
 from sourceRoute import StaticSourceRoute
+from sourceRoute import DynamicSourceRoute
 from vdsm import netinfo
 
 
@@ -77,6 +78,7 @@ class Configurator(object):
                           (netEnt.name, ipaddr, netmask, gateway))
             StaticSourceRoute(netEnt.name, self).\
                 configure(ipaddr, netmask, gateway)
+        DynamicSourceRoute.addInterfaceTracking(netEnt)
 
     def _removeSourceRoute(self, netEnt):
         _, _, _, bootproto, _ = netEnt.getIpConfig()

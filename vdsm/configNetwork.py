@@ -196,13 +196,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, bootproto, _netinfo, configurator,
                                 **options)
-
-    # libvirt net addition must be done before creation so that on dhcp ifup
-    # the dhcp hook will already see the network as belonging to vdsm.
-    configurator.configureLibvirtNetwork(network, netEnt,
-                                         qosInbound=qosInbound,
-                                         qosOutbound=qosOutbound)
     netEnt.configure(**options)
+    configurator.configureLibvirtNetwork(network, netEnt)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
@@ -316,10 +311,13 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                                 configurator=configurator,
                                 implicitBonding=implicitBonding)
     netEnt.ip.bootproto = netinfo.getBootProtocol(netEnt.name)
-    netEnt.remove()
-    # libvirt net removal must be done after removal so that on dhcp ifdown
-    # the dhcp hook still sees the network as belonging to vdsm.
+
+    # We must first remove the libvirt network and then the network entity.
+    # Otherwise if we first remove the network entity while the libvirt
+    # network is still up, the network entity (In some flows) thinks that
+    # it still has users and thus does not allow its removal
     configurator.removeLibvirtNetwork(network)
+    netEnt.remove()
 
     # We need to gather NetInfo again to refresh networks info from libvirt.
     # The deleted bridge should never be up at this stage.

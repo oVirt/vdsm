@@ -164,6 +164,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/sourceRoutes
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/trackedInterfaces
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
 	$(MKDIR_P) $(DESTDIR)$(vdsmpoolsdir)

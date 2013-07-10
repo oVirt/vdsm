@@ -22,7 +22,7 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
             device = sourceRouteContents[-1]
             sourceRoute = DynamicSourceRoute(device, configurator)
 
-            if not sourceRoute.isLibvirtInterface():
+            if not sourceRoute.isVDSMInterface():
                 logging.info("interface %s is not a libvirt interface" %
                              sourceRoute.device)
                 return
@@ -34,6 +34,8 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
                 sourceRoute.configure(ip, mask, gateway)
             else:
                 sourceRoute.remove()
+
+            DynamicSourceRoute.removeInterfaceTracking(device)
 
         os.remove(sourceRouteFilePath)
 

@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import os
 
 from glob import iglob
 from libvirt import libvirtError
@@ -23,11 +24,16 @@ import logging
 import netaddr
 
 from vdsm import netinfo
+from vdsm.constants import P_VDSM_RUN
 from vdsm.ipwrapper import IPRoute2Error
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import routeShowTable
 from vdsm.ipwrapper import Rule
 from vdsm.ipwrapper import ruleList
+from vdsm.utils import rmFile
+
+
+TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
 
 
 class StaticSourceRoute(object):
@@ -84,41 +90,26 @@ class StaticSourceRoute(object):
             logging.error('ip binary failed during source route configuration',
                           exc_info=True)
 
-    def _isLibvirtInterfaceFallback(self):
-        """
-        Checks whether the device belongs to libvirt when libvirt is not yet
-        running (network.service runs before libvirtd is started). To do so,
-        it must check if there is an autostart network that uses the device.
-        """
-        bridged_name = "bridge name='%s'" % self.device
-        bridgeless_name = "interface dev='%s'" % self.device
-        for filename in iglob('/etc/libvirt/qemu/networks/autostart/'
-                              'vdsm-*'):
-            with open(filename, 'r') as xml_file:
-                xml_content = xml_file.read()
-                if bridged_name in xml_content or \
-                        bridgeless_name in xml_content:
-                    return True
-        return False
-
-    def isLibvirtInterface(self):
-        try:
-            networks = netinfo.networks()
-        except libvirtError:  # libvirt might not be started or it just fails
-            logging.error('Libvirt failed to answer. It might be the case that'
-                          ' this script is being run before libvirt startup. '
-                          ' Thus, check if vdsm owns %s an alternative way' %
-                          self.device)
-            return self._isLibvirtInterfaceFallback()
-        trackedInterfaces = [network.get('bridge') or network.get('iface')
-                             for network in networks.itervalues()]
-        return self.device in trackedInterfaces
-
     def remove(self):
         self.configurator.removeSourceRoute(None, None, self.device)
 
 
 class DynamicSourceRoute(StaticSourceRoute):
+    @staticmethod
+    def getTrackingFilePath(device):
+        return os.path.join(TRACKED_INTERFACES_FOLDER, device)
+
+    @staticmethod
+    def addInterfaceTracking(device):
+        _, _, _, bootproto, _ = device.getIpConfig()
+        if bootproto == 'dhcp':
+            open(DynamicSourceRoute.getTrackingFilePath(device.name), 'a').\
+                close()
+
+    @staticmethod
+    def removeInterfaceTracking(device):
+        rmFile(DynamicSourceRoute.getTrackingFilePath(device))
+
     @staticmethod
     def _getRoutes(table, device):
         routes = []
@@ -188,3 +179,39 @@ class DynamicSourceRoute(StaticSourceRoute):
                 except IPRoute2Error:
                     logging.error('ip binary failed during source route '
                                   'removal', exc_info=True)
+
+    def _isLibvirtInterfaceFallback(self):
+        """
+        Checks whether the device belongs to libvirt when libvirt is not yet
+        running (network.service runs before libvirtd is started). To do so,
+        it must check if there is an autostart network that uses the device.
+        """
+        bridged_name = "bridge name='%s'" % self.device
+        bridgeless_name = "interface dev='%s'" % self.device
+        for filename in iglob('/etc/libvirt/qemu/networks/autostart/'
+                              'vdsm-*'):
+            with open(filename, 'r') as xml_file:
+                xml_content = xml_file.read()
+                if bridged_name in xml_content or \
+                        bridgeless_name in xml_content:
+                    return True
+        return False
+
+    def _isLibvirtInterface(self):
+        try:
+            networks = netinfo.networks()
+        except libvirtError:  # libvirt might not be started or it just fails
+            logging.error('Libvirt failed to answer. It might be the case that'
+                          ' this script is being run before libvirt startup. '
+                          ' Thus, check if vdsm owns %s an alternative way' %
+                          self.device)
+            return self._isLibvirtInterfaceFallback()
+        trackedInterfaces = [network.get('bridge') or network.get('iface')
+                             for network in networks.itervalues()]
+        return self.device in trackedInterfaces
+
+    def isVDSMInterface(self):
+        if os.path.exists(DynamicSourceRoute.getTrackingFilePath(self.device)):
+            return True
+        else:
+            return self._isLibvirtInterface()

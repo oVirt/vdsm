@@ -31,6 +31,7 @@ import threading
 from netconf import Configurator
 from neterrors import ConfigNetworkError
 from netmodels import Nic, Bridge
+from sourceRoute import DynamicSourceRoute
 from storage.misc import execCmd
 from vdsm import constants
 from vdsm import netinfo
@@ -104,6 +105,7 @@ class Ifcfg(Configurator):
             ifup(nic.name, async)
 
     def removeBridge(self, bridge):
+        DynamicSourceRoute.addInterfaceTracking(bridge)
         ifdown(bridge.name)
         self._removeSourceRoute(bridge)
         execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
@@ -112,6 +114,7 @@ class Ifcfg(Configurator):
             bridge.port.remove()
 
     def removeVlan(self, vlan):
+        DynamicSourceRoute.addInterfaceTracking(vlan)
         ifdown(vlan.name)
         self._removeSourceRoute(vlan)
         self.configApplier.removeVlan(vlan.name)
@@ -119,6 +122,7 @@ class Ifcfg(Configurator):
 
     def _ifaceDownAndCleanup(self, iface, _netinfo):
         """Returns True iff the iface is to be removed."""
+        DynamicSourceRoute.addInterfaceTracking(iface)
         ifdown(iface.name)
         self._removeSourceRoute(iface)
         self.configApplier.removeIfaceCleanup(iface.name)
