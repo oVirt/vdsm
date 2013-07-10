@@ -126,6 +126,19 @@ class VdsProxy(object):
 
     def __init__(self):
         self.vdscli = vdscli.connect()
+        self.netinfo = \
+            netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
+
+    def netinfo_altering(func):
+        """Updates the cached information that might have been altered by an
+        api call that has side-effects on the server."""
+        @wraps(func)
+        def call_and_update(self, *args, **kwargs):
+            ret = func(self, *args, **kwargs)
+            self.netinfo = \
+                netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
+            return ret
+        return call_and_update
 
     def _get_net_args(self, vlan, bond, nics, opts):
         if vlan is None:
@@ -141,32 +154,37 @@ class VdsProxy(object):
     def save_config(self):
         self.vdscli.setSafeNetworkConfig()
 
+    @netinfo_altering
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None, opts=None):
         result = self.vdscli.addNetwork(bridge,
                                         *self._get_net_args(vlan, bond, nics,
                                                             opts))
         return result['status']['code'], result['status']['message']
 
+    @netinfo_altering
     def delNetwork(self, bridge, vlan=None, bond=None, nics=None, opts=None):
         result = self.vdscli.delNetwork(bridge,
                                         *self._get_net_args(vlan, bond, nics,
                                                             opts))
         return result['status']['code'], result['status']['message']
 
+    @netinfo_altering
     def setupNetworks(self, networks, bonds, options):
         result = self.vdscli.setupNetworks(networks, bonds, options)
         return result['status']['code'], result['status']['message']
 
     def networkExists(self, network_name, bridged=None):
-        info = netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
-        return network_name in info.networks and \
-            (bridged is None or info.networks[network_name]['bridged'] ==
-             bridged)
+        return network_name in self.netinfo.networks and \
+            (bridged is None or
+             self.netinfo.networks[network_name]['bridged'] == bridged)
 
     def bondExists(self, bond_name, nics=None):
-        info = netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
-        return bond_name in info.bondings and \
-            (not nics or set(nics) == set(info.bondings[bond_name]['slaves']))
+        return bond_name in self.netinfo.bondings and \
+            (not nics or set(nics) ==
+             set(self.netinfo.bondings[bond_name]['slaves']))
+
+    def vlanExists(self, vlan_name):
+        return vlan_name in self.netinfo.vlans
 
     @contextmanager
     def pinger(self):
