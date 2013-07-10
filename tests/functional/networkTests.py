@@ -51,6 +51,37 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
+    def testSetupNetworksAddBondWithManyVlans(self, bridged):
+        VLAN_COUNT = 5
+        network_names = [NETWORK_NAME + str(tag) for tag in range(VLAN_COUNT)]
+        with dummyIf(2) as nics:
+            networks = dict((vlan_net,
+                             {'vlan': str(tag), 'bonding': BONDING_NAME,
+                              'bridged': bridged})
+                            for tag, vlan_net in enumerate(network_names))
+            bondings = {BONDING_NAME: {'nics': nics}}
+
+            with self.vdsm_net.pinger():
+                status, msg = self.vdsm_net.setupNetworks(networks, bondings,
+                                                          {})
+            self.assertEqual(status, SUCCESS, msg)
+            for vlan_net in network_names:
+                self.assertTrue(self.vdsm_net.networkExists(vlan_net, bridged))
+                self.assertTrue(self.vdsm_net.bondExists(BONDING_NAME, nics))
+                self.assertTrue(self.vdsm_net.vlanExists(BONDING_NAME + '.' +
+                                networks[vlan_net]['vlan']))
+
+            with self.vdsm_net.pinger():
+                for vlan_net in network_names:
+                    status, msg = self.vdsm_net.setupNetworks(
+                        {vlan_net: {'remove': True}}, {}, {})
+                    self.assertEqual(status, SUCCESS, msg)
+                    self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME))
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
     def testSetupNetworksAddDelBondedNetwork(self, bridged):
         with dummyIf(2) as nics:
             with self.vdsm_net.pinger():
@@ -110,7 +141,8 @@ class NetworkTest(TestCaseBase):
                                                    nics=nics,
                                                    opts={'bridged': bridged})
             self.assertEqual(status, SUCCESS, msg)
-            self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME))
+
+            self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME, bridged))
             self.assertTrue(self.vdsm_net.bondExists(BONDING_NAME, nics))
 
             status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
