@@ -332,6 +332,10 @@ def getIfaceCfg(iface):
     return d
 
 
+def getBootProtocol(iface):
+    return getIfaceCfg(iface).get('BOOTPROTO')
+
+
 def permAddr():
     paddr = {}
     for b in bondings():

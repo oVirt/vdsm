@@ -60,7 +60,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     :param ipaddr: IPv4 address in dotted decimal format.
     :param netmask: IPv4 mask in dotted decimal format.
     :param gateway: IPv4 address in dotted decimal format.
-    :param bootproto: protocol for getting IP config for the net, e.g., 'dchp'
+    :param bootproto: protocol for getting IP config for the net, e.g., 'dhcp'
     :param _netinfo: network information snapshot.
     :param configurator: instance to use to apply the network configuration.
     :param blockingdhcp: whether to acquire dhcp IP config in a synced manner.
@@ -315,6 +315,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                                 bonding=bonding, nics=nics, _netinfo=_netinfo,
                                 configurator=configurator,
                                 implicitBonding=implicitBonding)
+    netEnt.ip.bootproto = netinfo.getBootProtocol(netEnt.name)
     netEnt.remove()
     # libvirt net removal must be done after removal so that on dhcp ifdown
     # the dhcp hook still sees the network as belonging to vdsm.
