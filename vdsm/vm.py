@@ -1205,7 +1205,8 @@ class VideoDevice(VmDevice):
         """
         video = self.createXmlElem('video', None, ['address'])
         video.appendChildWithArgs('model', type=self.device,
-                                  vram=self.specParams['vram'], heads='1')
+                                  vram=self.specParams['vram'],
+                                  heads=self.specParams.get('heads', '1'))
 
         return video
 

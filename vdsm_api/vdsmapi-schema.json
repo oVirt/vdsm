@@ -2223,9 +2223,12 @@
 # @vram:  #optional Specify the amount of video RAM available to the device
 #         in KB.  Currently relevant for @qxl devices only
 #
+# @heads:  #optional Specify the amount of monitors that will use single
+#          pci device.  Currently relevant for @qxl devices only
+#
 # Since: 4.10.0
 ##
-{'type': 'VmVideoDeviceSpecParams', 'data': {'*vram': 'uint'}}
+{'type': 'VmVideoDeviceSpecParams', 'data': {'*vram': 'uint', '*heads': 'uint'}}
 
 ##
 # @VmVideoDevice:
