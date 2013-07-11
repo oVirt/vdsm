@@ -80,6 +80,7 @@ nodist_noinst_DATA = \
 	vdsm-restore-net-config.init \
 	vdsm.rwtab \
 	vdsmd.init \
+	vdsm-tmpfiles.d.conf \
 	supervdsmd.init \
 	supervdsmd.service \
 	$(NULL)
@@ -135,6 +136,7 @@ EXTRA_DIST = \
 	vdsm.rwtab.in \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
+	vdsm-tmpfiles.d.conf.in \
 	$(NULL)
 
 all-local: \

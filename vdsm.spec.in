@@ -569,6 +569,8 @@ install -Dm 0644 vdsm_reg/vdsm-reg.service \
                  %{buildroot}%{_unitdir}/vdsm-reg.service
 install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
                  %{buildroot}%{_sysconfdir}/modules-load.d/vdsm.conf
+install -Dm 0644 vdsm/vdsm-tmpfiles.d.conf \
+                 %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
 %else
 # Install the SysV init scripts
 install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
@@ -833,6 +835,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm
 %if 0%{?with_systemd}
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
+%config(noreplace) %{_tmpfilesdir}/%{vdsm_name}.conf
 %endif
 %{_sysconfdir}/dhcp/dhclient.d/sourceRoute.sh
 %{_sysconfdir}/sudoers.d/50_vdsm

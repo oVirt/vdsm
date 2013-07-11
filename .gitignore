@@ -52,6 +52,7 @@ vdsm/vdsm-logrotate.conf
 vdsm/vdsm-restore-net-config.init
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
+vdsm/vdsm-tmpfiles.d.conf
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
 vdsm/vdsmd.init
