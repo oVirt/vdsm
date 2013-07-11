@@ -1025,6 +1025,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/tool/libvirt_configure.py*
 %{_libexecdir}/%{vdsm_name}/libvirt_configure.sh
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
+%{python_sitearch}/%{vdsm_name}/tool/sanlock.py*
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitearch}/%{vdsm_name}/tool/service.py*
 %{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*

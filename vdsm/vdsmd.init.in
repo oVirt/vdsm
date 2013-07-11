@@ -170,6 +170,19 @@ reconfigure_libvirt() {
     fi
 }
 
+reconfigure_sanlock() {
+    # If sanlock was started before the *first* installation of vdsm
+    # then it is probably missing the supplementary groups.
+    # Here we attempt to restart the service (when needed) to refresh
+    # the groups.
+    "$VDSM_TOOL" sanlock-check-service
+    if [ $? != 0 ]; then
+        echo -n "Attempting to restart sanlock service:"
+        "$VDSM_TOOL" service-restart sanlock && success || failure
+        echo
+    fi
+}
+
 has_systemd() {
     /bin/mountpoint -q /cgroup/systemd ||
         /bin/mountpoint -q /sys/fs/cgroup/systemd
@@ -185,6 +198,8 @@ start() {
         printf $"Configuring a self-signed VDSM host certificate: "
         @LIBEXECDIR@/vdsm-gencerts.sh && success || failure ; echo
     fi
+
+    reconfigure_sanlock
 
     reconfigure_libvirt noforce
     ret_val=$?
@@ -313,6 +328,7 @@ case "$1" in
     reconfigure)
         # Jump over 'reconfigure'
         shift 1
+        reconfigure_sanlock
         reconfigure_libvirt "$@"
 	RETVAL=$?
     ;;
