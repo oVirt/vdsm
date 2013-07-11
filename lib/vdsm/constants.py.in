@@ -72,6 +72,7 @@ P_VDSM_CLIENT_LOG = '@VDSMRUNDIR@/client.log'
 P_VDSM_LOG = '@VDSMLOGDIR@'
 P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
 
+P_VDSM_EXEC = '@LIBEXECDIR@'
 
 #
 # External programs (sorted, please keep in order).

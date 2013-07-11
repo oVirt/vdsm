@@ -21,6 +21,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 EXTRA_DIST = \
 	load_needed_modules.py.in \
+	libvirt_configure.sh.in \
 	validate_ovirt_certs.py.in \
 	$(NULL)
 
@@ -29,12 +30,23 @@ nodist_vdsmtool_DATA = \
 	validate_ovirt_certs.py \
 	$(NULL)
 
+nodist_vdsmexec_SCRIPTS = \
+	libvirt_configure.sh \
+	$(NULL)
+
 dist_vdsmtool_DATA = \
 	__init__.py \
 	dummybr.py \
 	nwfilter.py \
+	libvirt_configure.py \
 	passwd.py \
 	seboolsetup.py \
 	service.py \
 	vdsm-id.py \
+	$(NULL)
+
+CLEANFILES = \
+	config.log \
+	$(nodist_vdsmtool_DATA) \
+	$(nodist_vdsmtool_SCRIPTS) \
 	$(NULL)

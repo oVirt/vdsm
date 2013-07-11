@@ -1,0 +1,298 @@
+#! /bin/sh
+# Copyright 2013 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+. @LIBEXECDIR@/ovirt_functions.sh
+
+GETCONFITEM="@VDSMDIR@/get-conf-item"
+VDSM_CONF_FILE="@CONFDIR@/vdsm.conf"
+QEMU_DUMP_PATH="/var/log/core"
+LCONF="@sysconfdir@/libvirt/libvirtd.conf"
+QCONF="@sysconfdir@/libvirt/qemu.conf"
+LDCONF="@sysconfdir@/sysconfig/libvirtd"
+QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
+
+# trigger for reconfiguration
+FORCE_RECONFIGURE="@VDSMLIBDIR@/reconfigure"
+
+get_libvirt_conf_item() {
+    local cfile="$1"
+    local key="$2"
+    /bin/grep "^\s*"${key}"\s*=" "${cfile}" | \
+            /usr/bin/tail -1 | /bin/sed "s/\s*$key\s*=\s*//;s/\s*\(#.*\)\?$//"
+}
+
+test_conflicting_conf() {
+    local lconf="$1"
+    local qconf="$2"
+
+    local ssl=`"${GETCONFITEM}" "${VDSM_CONF_FILE}" vars ssl true | tr A-Z a-z`
+    if [ -z "${ssl}" ]; then
+        echo 'FAILED: Could not read SSL configuration' 1>&2
+        return 3
+    fi
+
+    if [ "${ssl}" = "true" ]; then
+        echo "SUCCESS: ssl configured to true. No conflicts"
+        return 0
+    fi
+
+    local listen_tcp="$(get_libvirt_conf_item "${lconf}" listen_tcp)"
+    local auth_tcp="$(get_libvirt_conf_item "${lconf}" auth_tcp)"
+    local spice_tls="$(get_libvirt_conf_item "${qconf}" spice_tls)"
+
+    if [ "${listen_tcp}" = "1" -a \
+         "${auth_tcp}" = '"none"' -a \
+         "${spice_tls}" = "0" ]; then
+        echo "SUCCESS: No conflicts between configuration files"
+        return 0
+    else
+        echo "FAILED: conflicting vdsm and libvirt-qemu tls configuration."
+        echo "vdsm.conf with ssl=False requires the following changed: "
+        echo "libvirtd.conf: listen_tcp=1, auth_tcp=\"none\", "
+        echo "qemu.conf: spice_tls=0."
+        return 1
+    fi
+}
+
+libvirtd_sysv2upstart() {
+    # On RHEL 6, libvirtd can be started by either SysV init or Upstart.
+    # We prefer upstart because it respawns libvirtd if when libvirtd crashed.
+
+    if ! [ -x /sbin/initctl ]; then
+        # We don't have Upstart, still use system default init mechanism
+        return 0
+    fi
+
+    local packaged=$(/bin/rpm -ql libvirt libvirt-daemon | \
+                     /bin/grep libvirtd.upstart | /usr/bin/tail -1)
+    local target="/etc/init/libvirtd.conf"
+
+    if ! [ -f "${packaged}" ]; then
+        # libvirtd package does not provide libvirtd.upstart,
+        # this could happen in Ubuntu or other distro,
+        # so continue to use system default init mechanism
+        return 0
+    fi
+
+    # Stop libvirt SysV service before configure upstart
+    if [ ! -f "${target}" ]; then
+        "@CHKCONFIG_PATH@" libvirtd off
+        "@SERVICE_PATH@" libvirtd stop
+    fi
+
+    if ! diff -q "${packaged}" "${target}" >/dev/null;
+    then
+        /bin/cp -p "${packaged}" "${target}" || return 1
+        /sbin/initctl reload-configuration
+    fi
+}
+
+# Remove configuration created by vdsm (old "# by vdsm" and the new format)
+# Argument: configuration file that will be inspected
+remove_vdsm_conf() {
+    sed -i --copy -e "/${start_conf_section}/,/${end_conf_section}/d" \
+        -e "/${by_vdsm}/d" "$@"
+}
+
+set_if_default() {
+    local cfile="$1"
+    local key="$2"
+    local val="$3"
+
+    /bin/grep -q "^\s*${key}\s*=" "${cfile}" || \
+      echo "${key}=${val}" >> "${cfile}"
+}
+
+configure() {
+    # if SysV init file and Upstart job file both exist, prefer Upstart
+    libvirtd_sysv2upstart || return $?
+
+    local lconf="$1"
+    local qconf="$2"
+    local ldconf="$3"
+    local qlconf="$4"
+    local force_reconfigure="$5"
+    local by_vdsm="by vdsm"
+    # The PACKAGE_VERSION macro is not used here because we do not want to
+    # update the libvirt configure file every time we change vdsm package
+    # version. In fact the configure generated here is almost unrelated to the
+    # package version, so anything meaningful can be used here. Since a hard
+    # coded version string has been already used, for compatibility we will
+    # continue to use this string.
+    local by_vdsm_vers="4.10.3"
+    local start_conf_section="## beginning of configuration section ${by_vdsm}"
+    local end_conf_section="## end of configuration section ${by_vdsm}"
+
+    local ts=/etc/pki/vdsm
+    local ssl=`"${GETCONFITEM}" "${VDSM_CONF_FILE}" vars ssl true | tr A-Z a-z`
+    if [ "${ssl}" = '' ]; then
+        echo 'FAILED: Could not read configuration' 1>&2
+        return 3
+    fi
+
+    # do not configure ovirt nodes before registration
+    if isOvirtNode; then
+        if [ ! -f /etc/pki/vdsm/certs/vdsmcert.pem ]; then
+            echo "${prog}: Missing certificates, ${prog} not registered" 1>&2
+            return 6
+        fi
+        /usr/bin/vdsm-tool validate-ovirt-certs
+    fi
+
+    #
+    # reconfigure if:
+    # - force specified or
+    # - we have the FORCE_RECONFIGURE trigger file
+    # - not configured
+    #
+    if [ "${force_reconfigure}" != "--force" ] && \
+      ! [ -f "${FORCE_RECONFIGURE}" ] && \
+        grep -q "${by_vdsm_vers}" "${lconf}" && \
+        grep -q "${by_vdsm_vers}" "${qconf}" && \
+        grep -q "${by_vdsm_vers}" "${ldconf}" && \
+        grep -q "${by_vdsm_vers}" "${qlconf}"; then
+        echo "libvirt is already configured for vdsm"
+        return 0
+    fi
+
+    # Remove a previous configuration (if present)
+    remove_vdsm_conf "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"
+
+    # Write to all conf files the *initial* message of vdsm changes
+    for arg in "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"; do
+        echo "${start_conf_section}-${by_vdsm_vers}" >> "${arg}"
+    done
+
+    # Set the default values for libvirt and qemu
+    set_if_default "${lconf}" listen_addr \"0.0.0.0\"
+    set_if_default "${lconf}" unix_sock_group \"kvm\"
+    set_if_default "${lconf}" unix_sock_rw_perms \"0770\"
+    set_if_default "${lconf}" auth_unix_rw \"sasl\"
+    set_if_default "${lconf}" host_uuid "\"$(uuidgen)\""
+    set_if_default "${lconf}" keepalive_interval -1
+    set_if_default "${qconf}" dynamic_ownership 0
+
+    if [ "${ssl}" = "true" ]; then
+        set_if_default "${qconf}" spice_tls 1
+    else
+        set_if_default "${qconf}" spice_tls 0
+    fi
+    set_if_default "${ldconf}" LIBVIRTD_ARGS --listen
+    set_if_default "${ldconf}" DAEMON_COREFILE_LIMIT unlimited
+    set_if_default "${qconf}" save_image_format \"lzop\"
+    # FIXME until we are confident with libvirt integration, let us have a verbose log
+    set_if_default "${lconf}" log_outputs \"1:file:/var/log/libvirt/libvirtd.log\"
+    set_if_default "${lconf}" log_filters "\"3:virobject 3:virfile 2:virnetlink \
+    3:cgroup 3:event 3:json 1:libvirt 1:util 1:qemu\""
+
+    # If the ssl flag is set, update the libvirt and qemu configuration files
+    # with the location for certificates and permissions.
+    if [ -f $ts/certs/cacert.pem -a \
+         -f $ts/certs/vdsmcert.pem -a \
+         -f $ts/keys/vdsmkey.pem -a \
+         "${ssl}" = "true" ]; then
+        set_if_default "${lconf}" ca_file \"$ts/certs/cacert.pem\"
+        set_if_default "${lconf}" cert_file \"$ts/certs/vdsmcert.pem\"
+        set_if_default "${lconf}" key_file \"$ts/keys/vdsmkey.pem\"
+        set_if_default "${qconf}" spice_tls_x509_cert_dir \"$ts/libvirt-spice\"
+    else
+        set_if_default "${lconf}" auth_tcp \"none\"
+        set_if_default "${lconf}" listen_tcp 1
+        set_if_default "${lconf}" listen_tls 0
+    fi
+
+    # Configuring sanlock
+    set_if_default "${qconf}" lock_manager \"sanlock\"
+    set_if_default "${qlconf}" auto_disk_leases 0
+    set_if_default "${qlconf}" require_lease_for_disks 0
+
+    # Configuring auto dump path
+    set_if_default "${qconf}" auto_dump_path \"${QEMU_DUMP_PATH}\"
+
+    # Write to all conf files the *end* message of vdsm changes
+    for arg in "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"
+    do
+        echo "${end_conf_section}-${by_vdsm_vers}" >> "${arg}"
+    done
+
+    local lnetwork=/etc/libvirt/qemu/networks/autostart/default.xml
+    rm -f "${lnetwork}"
+
+    local llogr=/etc/logrotate.d/libvirtd
+    local stanza=`mktemp`
+    /bin/cat > "${stanza}" <<EOF
+## beginning of configuration section by vdsm
+/var/log/libvirt/libvirtd.log {
+    rotate 100
+    missingok
+    copytruncate
+    size 15M
+    compress
+    compresscmd /usr/bin/xz
+    uncompresscmd /usr/bin/unxz
+    compressext .xz
+}
+## end of configuration section by vdsm
+EOF
+    # Backup (comment) original logrotate.d/libvirtd
+    /bin/sed -i 's/^/# VDSM backup/' "$llogr"
+    /bin/sed -e "/# vdsm/,/# end vdsm/d" "${llogr}" >> "${stanza}"
+    local oldmod=`/usr/bin/stat --format=%a "${llogr}"`
+    /bin/mv "${stanza}" "${llogr}"
+    if [ -n "${oldmod}" ]; then
+        /bin/chmod "${oldmod}" "${llogr}"
+    fi
+    restorecon "${llogr}"
+
+    if isOvirtNode; then
+        . /usr/libexec/ovirt-functions
+        ovirt_store_config "${lconf}" "${qconf}" "${ldconf}" "${llogr}"
+    fi
+
+    /usr/bin/vdsm-tool service-restart libvirtd
+
+    #
+    # finished reconfiguration, do not trigger
+    # next time
+    #
+    if [ -f "${FORCE_RECONFIGURE}" ]; then
+        rm -f "${FORCE_RECONFIGURE}"
+    fi
+}
+
+case "$1" in
+     reconfigure)
+        echo "Starting configure libvirt to VDSM ..."
+        configure "$LCONF" "$QCONF" "$LDCONF" "$QLCONF" "$2"
+        echo "=Done configuring libvirt="
+        RETVAL=$?
+        ;;
+     test_conflict_configurations)
+        echo "Checking conflicts ..."
+        test_conflicting_conf "$LCONF" "$QCONF"
+        RETVAL=$?
+    ;;
+     *)
+        echo "Usage: $0 {reconfigure *conf-files [--force] | test_conflict_configurations *conf-files}"
+        RETVAL=2
+esac
+
+exit $RETVAL
+
