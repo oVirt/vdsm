@@ -1,0 +1,4 @@
+# This file defines python constans that make it easier to convert data
+# received by setMOMPolicyParameters
+(defvar False 0)
+(defvar True 1)

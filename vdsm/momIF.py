@@ -65,6 +65,11 @@ class MomThread(threading.Thread):
     def setPolicyParameters(self, key_value_store):
         # mom.setNamedPolicy will raise an exception on failure.
         # Prepare in-memory policy file with tuning variables
+        # this might need to convert certain python types to proper MoM
+        # policy language
+
+        # Python bool values are defined in 00-python.policy so need no
+        # conversion here
         policy_string = "\n".join(["(defvar %s %r)" % (k, v)
                                    for k, v in key_value_store.iteritems()])
 

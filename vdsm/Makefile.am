@@ -115,7 +115,10 @@ EXTRA_DIST = \
 	logger.conf.in \
 	mk_sysprep_floppy.in \
 	mom.conf.in \
-	mom.policy \
+	mom.d/00-python.policy \
+	mom.d/01-parameters.policy \
+	mom.d/02-balloon.policy \
+	mom.d/03-ksm.policy \
 	sourceRoute.sh \
 	sudoers.vdsm.in \
 	supervdsmd.init.in \
@@ -226,13 +229,14 @@ uninstall-data-logrotate:
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
 
 install-data-mom:
-		$(INSTALL_DATA) mom.policy \
-			$(DESTDIR)$(vdsmconfdir)/mom.policy
-		$(INSTALL_DATA) mom.conf \
-			$(DESTDIR)$(vdsmconfdir)/mom.conf
+	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/mom.d
+	$(INSTALL_DATA) mom.d/*.policy \
+		$(DESTDIR)$(vdsmconfdir)/mom.d
+	$(INSTALL_DATA) mom.conf \
+		$(DESTDIR)$(vdsmconfdir)/mom.conf
 
 uninstall-data-mom:
-		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.policy
+		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.d/*.policy
 		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.conf
 
 install-data-sudoers:

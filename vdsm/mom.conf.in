@@ -41,8 +41,8 @@ plot-dir:
 # disabled by default until authentication is added to the protocol.
 rpc-port: -1
 
-# At startup, load a policy from the given file.  If empty, no policy is loaded
-policy: @CONFDIR@/mom.policy
+# At startup, load a policy from the given directory.  If empty, no policy is loaded
+policy-dir: @CONFDIR@/mom.d
 
 [logging]
 # Set the destination for program log messages.  This can be either 'stdio' or
@@ -71,4 +71,4 @@ collectors: HostMemory, HostKSM
 
 [guest]
 # A comma-separated list of Collector plugins to use for Guest data collection.
-collectors: GuestQemuProc, GuestMemory
+collectors: GuestQemuProc, GuestMemory, GuestBalloon
