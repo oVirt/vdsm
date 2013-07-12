@@ -818,6 +818,7 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
+%dir %{_datadir}/%{vdsm_name}/netconf
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %{_datadir}/%{vdsm_name}/alignmentScan.py*
@@ -924,6 +925,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/safelease
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
+%dir %{_libexecdir}/%{vdsm_name}/hooks
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_create
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_device_create
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_device_destroy
@@ -1033,6 +1035,8 @@ exit 0
 %if !0%{?rhel}
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %endif
+%dir %{python_sitearch}/%{vdsm_name}
+%dir %{python_sitearch}/%{vdsm_name}/tool
 %{python_sitearch}/%{vdsm_name}/__init__.py*
 %{python_sitearch}/%{vdsm_name}/config.py*
 %{python_sitearch}/%{vdsm_name}/constants.py*
@@ -1067,6 +1071,8 @@ exit 0
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
 %defattr(-, root, root, -)
+%dir %{_datadir}/%{vdsm_name}/tests
+%dir %{_datadir}/%{vdsm_name}/tests/functional
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_E5649.out
@@ -1229,6 +1235,7 @@ exit 0
 
 %files xmlrpc
 %defattr(-, root, root, -)
+%dir %{_datadir}/%{vdsm_name}
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 
 %files api
@@ -1241,6 +1248,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/Bridge.py*
 
 %files yajsonrpc
+%dir %{python_sitelib}/yajsonrpc
 %{python_sitelib}/yajsonrpc/__init__.py*
 %{python_sitelib}/yajsonrpc/asyncoreReactor.py*
 %{python_sitelib}/yajsonrpc/protonReactor.py*
