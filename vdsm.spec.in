@@ -640,11 +640,6 @@ fi
 %else
 %if 0%{?with_systemd}
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
-%if 0%{?with_systemd_macros}
-%systemd_post vdsmd.service
-%systemd_post supervdsmd.service
-%systemd_post vdsm-restore-net-config.service
-%else
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
     /bin/systemctl enable supervdsmd.service >/dev/null 2>&1 || :
@@ -652,7 +647,6 @@ if [ "$1" -eq 1 ] ; then
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
-%endif
 %endif
 %endif
 
