@@ -25,7 +25,7 @@ EXTRA_DIST = \
 	validate_ovirt_certs.py.in \
 	$(NULL)
 
-nodist_vdsmtool_DATA = \
+nodist_vdsmtool_PYTHON = \
 	load_needed_modules.py \
 	validate_ovirt_certs.py \
 	$(NULL)
@@ -34,7 +34,7 @@ nodist_vdsmexec_SCRIPTS = \
 	libvirt_configure.sh \
 	$(NULL)
 
-dist_vdsmtool_DATA = \
+dist_vdsmtool_PYTHON = \
 	__init__.py \
 	dummybr.py \
 	nwfilter.py \
@@ -47,6 +47,6 @@ dist_vdsmtool_DATA = \
 
 CLEANFILES = \
 	config.log \
-	$(nodist_vdsmtool_DATA) \
-	$(nodist_vdsmtool_SCRIPTS) \
+	$(nodist_vdsmtool_PYTHON) \
+	$(nodist_vdsmexec_SCRIPTS) \
 	$(NULL)
