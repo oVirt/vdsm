@@ -27,15 +27,16 @@ GETCONFITEM="@VDSMDIR@/get-conf-item"
 prog=vdsm
 PIDFILE=@VDSMRUNDIR@/vdsmd.pid
 RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
-CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
-DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
-CORE_PATTERN=/proc/sys/kernel/core_pattern
+CORE_DUMP_PATH="/var/log/core/core.%p.%t.dump"
+CORE_PATTERN="/proc/sys/kernel/core_pattern"
 # lock_file is needed only with sysv
 LOCK_FILE="/var/lock/subsys/vdsmd"
 NEEDED_SERVICES="iscsid multipathd rpcbind ntpd wdmd sanlock network libvirtd
                  supervdsmd"
 CONFLICTING_SERVICES="libvirt-guests ksmtuned"
 VDSM_TOOL="@BINDIR@/vdsm-tool"
+NICE_LOWEST=-20
+VDSMD_INIT_COMMON="@LIBEXECDIR@/vdsmd_init_common.sh"
 RETVAL=0
 
 is_coredump="$("${GETCONFITEM}" "${CONF_FILE}" vars core_dump_enable false | tr A-Z a-z)"
@@ -49,60 +50,25 @@ SYSTEMCTL_SKIP_REDIRECT=true
 log_failure_msg() { printf "$@"; failure "$@"; echo; }
 log_success_msg() { printf "$@"; success "$@"; echo; }
 
-mk_data_center() {
-    local dc
-    dc="$("${GETCONFITEM}" "${CONF_FILE}" irs repository /rhev/)"
-    @MKDIR_P@ "$dc"
-    "@CHOWN_PATH@" vdsm.kvm "$dc"
-}
-
-mk_dom_backup() {
-    @MKDIR_P@ "${DOM_METADATA_BACKUP_DIR}" > /dev/null 2>&1
-    "@CHOWN_PATH@" vdsm.kvm "$(dirname "${DOM_METADATA_BACKUP_DIR}")" > /dev/null 2>&1
-    "@CHOWN_PATH@" vdsm.kvm "${DOM_METADATA_BACKUP_DIR}" > /dev/null 2>&1
-}
-
-mk_core_path() {
-    core_path=/var/log/core
-    if ! [ -d "$core_path" ]; then
-        @MKDIR_P@ "$core_path" > /dev/null 2>&1
-    fi
-    "@CHMOD_PATH@" a+tw "$core_path" > /dev/null 2>&1
-}
-
-mk_run_path() {
-    local run_path
-
-    for run_path in "@VDSMRUNDIR@" "@POOLSDIR@"; do
-        @MKDIR_P@ "$run_path"
-        "@CHMOD_PATH@" 755 "$run_path"
-        "@CHOWN_PATH@" vdsm:kvm "$run_path"
-        "@RESTORECON_PATH@" "$run_path"
-    done
-}
-
 shutdown_conflicting_srv() {
     local srv
+    local ret_val
+    local conflicting_services="$1"
 
-    for srv in ${CONFLICTING_SERVICES}; do
-        "$VDSM_TOOL" service-disable "$srv"
-        if "$VDSM_TOOL" service-status "$srv" > /dev/null 2>&1; then
-            if [ "$srv" = "libvirt-guests" ]; then
-                "@RM_PATH@" -f /var/lock/subsys/libvirt-guests
-            else
-                "$VDSM_TOOL" service-stop "$srv"
-            fi
+    for srv in ${conflicting_services}; do
+        if initctl status "${srv}" >/dev/null 2>&1; then
+            # When srv is Upstart service, status srv always returns 0
+            initctl stop "${srv}" || : # stop fails when already down
+            initctl status "${srv}" | grep -q stop/waiting
+        else
+            (! service "${srv}" status >/dev/null 2>&1) || service "${srv}" stop
+        fi
+        ret_val=$?
+        if [ "${ret_val}" -ne 0 ]; then
+            log_failure_msg "${prog}: Stop conflicting ${srv}"
+            return "${ret_val}"
         fi
     done
-    return 0
-}
-
-syslog_available() {
-    if ! [ -S "/dev/log" ]; then
-        log_failure_msg "Cannot communicate with syslog deamon for reports. " \
-                        "Check rsyslog.conf"
-        return 1
-    fi
     return 0
 }
 
@@ -122,44 +88,23 @@ release_lock() {
 start_needed_srv() {
     local srv
     local ret_val
+    local needed_services="$1"
 
-    for srv in ${NEEDED_SERVICES}; do
-        if ! "$VDSM_TOOL" service-status "$srv" > /dev/null 2>&1; then
-            echo "Starting $srv..."
-            "$VDSM_TOOL" service-start "$srv"
-            ret_val=$?
-            if [ "$ret_val" -ne 0 ]; then
-                log_failure_msg "$prog: Dependent $srv failed to start"
-                return "$ret_val"
-            fi
+    for srv in ${needed_services}; do
+        if initctl status "${srv}" >/dev/null 2>&1; then
+            # When srv is Upstart service, status srv always returns 0
+            initctl start "${srv}" || : # start fails when already running
+            initctl status "${srv}" | grep -q start/running
+        else
+            service "${srv}" status >/dev/null 2>&1 || service "${srv}" start
+        fi
+        ret_val=$?
+        if [ "${ret_val}" -ne 0 ]; then
+            log_failure_msg "${prog}: Start dependent ${srv}"
+            return "${ret_val}"
         fi
     done
 }
-
-test_lo() {
-    if ! LC_ALL=C "@IP_PATH@" link show lo | "@GREP_PATH@" -q UP; then
-        log_failure_msg "VDSMD: lo interface is down, can't run !"
-        echo "VDSMD: lo interface is down, can't run !" > /dev/kmsg
-        return 1
-    fi
-    return 0
-}
-
-free_space() {
-    local path="$1"
-    df -P "$path" | awk '{print $4}'| tail -1
-}
-
-test_space() {
-    local MIN_SPACE_KB=10000
-
-    if [ "$(free_space /var/log/vdsm)" -lt "$MIN_SPACE_KB" ]; then
-        log_failure_msg "$prog: low log space"
-        return 1
-    fi
-    return 0
-}
-
 
 test_already_running()
 {
@@ -179,94 +124,26 @@ reconfigure_libvirt() {
     fi
 }
 
-reconfigure_sanlock() {
-    # If sanlock was started before the *first* installation of vdsm
-    # then it is probably missing the supplementary groups.
-    # Here we attempt to restart the service (when needed) to refresh
-    # the groups.
-    "$VDSM_TOOL" sanlock-check-service
-    if [ $? != 0 ]; then
-        echo -n "Attempting to restart sanlock service:"
-        "$VDSM_TOOL" service-restart sanlock && success || failure
-        echo
-    fi
-}
-
-has_systemd() {
-    "@MOUNTPOINT_PATH@" -q /cgroup/systemd ||
-        "@MOUNTPOINT_PATH@" -q /sys/fs/cgroup/systemd
-}
-
 start() {
     local ret_val
-    "@PYTHON@" "@VDSMDIR@/hooks.pyc" before_vdsm_start
 
-    shutdown_conflicting_srv
+    test_already_running && return 0
 
-    if ! "@LIBEXECDIR@/vdsm-gencerts.sh" --check; then
-        printf $"Configuring a self-signed VDSM host certificate: "
-        "@LIBEXECDIR@/vdsm-gencerts.sh" && success || failure ; echo
-    fi
-
-    reconfigure_sanlock
-
-    reconfigure_libvirt noforce
-    ret_val=$?
-    if [ "$ret_val" -ne 0 ]; then
-        log_failure_msg "$prog: failed to reconfigure libvirt"
-        return "$ret_val"
-    fi
-
-    start_needed_srv && syslog_available
-
-    ret_val=$?
-    if [ "$ret_val" -ne 0 ]; then
-       log_failure_msg "$prog: one of the dependent services did not start, error code $ret_val"
-       return "$ret_val"
-    fi
-
-    "$VDSM_TOOL" nwfilter
-    ret_val=$?
-    if [ "$ret_val" -ne 0 ]; then
-        log_failure_msg "$prog: Failed to define network filters on libvirt"
-        return "$ret_val"
-    fi
-
-    "$VDSM_TOOL" dummybr
-    ret_val=$?
-    if [ "$ret_val" -ne 0 ]; then
-        log_failure_msg "$prog: Failed to create ephemeral dummy bridge."
-        return "$ret_val"
-    fi
-
-    if ! has_systemd; then
-        "$VDSM_TOOL" load-needed-modules
-    fi
-
-    "@SYSCTL_PATH@" -q -p /etc/sysctl.d/vdsm
-    mk_data_center
-    mk_core_path
-    mk_dom_backup
-    mk_run_path
-    "@CHMOD_PATH@" 1777 /dev/shm
     if [ "${is_coredump}" = "true" ]; then
         export DAEMON_COREFILE_LIMIT=unlimited
         echo "${CORE_DUMP_PATH}" > "${CORE_PATTERN}"
     fi
 
-    test_already_running && return 0
+    shutdown_conflicting_srv "${CONFLICTING_SERVICES}"
 
-    if ! (test_space && test_lo && \
-          "$VDSM_TOOL" libvirt-test-conflicts); then
-        return 1
-    fi
+    start_needed_srv "${NEEDED_SERVICES}"
+
+    "${VDSMD_INIT_COMMON}" --pre-start
 
     echo $"Starting up vdsm daemon: "
-    local vdsm_nice="$("${GETCONFITEM}" "${CONF_FILE}" vars vdsm_nice -5)"
-
-    LIBVIRT_LOG_FILTERS="$("${GETCONFITEM}" "${CONF_FILE}" vars libvirt_env_variable_log_filters "")" \
-    LIBVIRT_LOG_OUTPUTS="$("${GETCONFITEM}" "${CONF_FILE}" vars libvirt_env_variable_log_outputs "")" \
-    LC_ALL=C NICELEVEL="$vdsm_nice" daemon --user=vdsm "@VDSMDIR@/respawn" --minlifetime 10 --daemon --masterpid "$RESPAWNPIDFILE" "$VDSM_BIN"
+    NICELEVEL="${NICE_LOWEST}" daemon --user=vdsm "@VDSMDIR@/daemonAdapter" \
+        -0 /dev/null -1 /dev/null -2 /dev/null "@VDSMDIR@/respawn" --minlifetime 10 \
+        --daemon --masterpid "${RESPAWNPIDFILE}" "${VDSM_BIN}" --pidfile "${PIDFILE}"
     RETVAL=$?
     [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
 }
@@ -306,7 +183,7 @@ kill_instance() {
         RETVAL=$?
         [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog stop" || log_failure_msg $"$prog stop"
     fi
-    "@PYTHON@" "@VDSMDIR@/hooks.pyc" after_vdsm_stop
+    "${VDSMD_INIT_COMMON}" --post-stop
 }
 
 cleanup() {

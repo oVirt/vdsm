@@ -25,6 +25,7 @@ import errno
 from functools import wraps
 import threading
 import re
+import getopt
 import signal
 import logging
 import logging.config
@@ -56,8 +57,7 @@ from supervdsm import _SuperVdsmManager
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
-    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER, \
-    P_VDSM_RUN
+    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER
 from storage.devicemapper import _removeMapping, _getPathsStatus
 import configNetwork
 from vdsm.config import config
@@ -353,7 +353,7 @@ class _SuperVdsm(object):
         return self.__udevVersion() > self.UDEV_WITH_RELOAD_VERSION
 
 
-def main():
+def main(sockfile, pidfile=None):
     log = logging.getLogger("SuperVdsm.Server")
 
     def bind(func):
@@ -369,13 +369,13 @@ def main():
         if os.geteuid() != 0:
             sys.exit(errno.EPERM)
 
-        pidfile = P_VDSM_RUN + 'supervdsmd.pid'
-        pid = str(os.getpid())
-        with open(pidfile, 'w') as f:
-            f.write(pid + "\n")
+        if pidfile:
+            pid = str(os.getpid())
+            with open(pidfile, 'w') as f:
+                f.write(pid + "\n")
 
         log.debug("Parsing cmd args")
-        address = sys.argv[1]
+        address = sockfile
 
         log.debug("Cleaning old socket %s", address)
         if os.path.exists(address):
@@ -412,5 +412,30 @@ def main():
         log.error("Could not start Super Vdsm", exc_info=True)
         sys.exit(1)
 
+
+def _usage():
+    print "Usage:  supervdsmServer --sockfile=fullPath [--pidfile=fullPath]"
+
+
+def _parse_args():
+    argDict = {}
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["sockfile=", "pidfile="])
+    for o, v in opts:
+        o = o.lower()
+        if o == "--sockfile":
+            argDict['sockfile'] = v
+        elif o == "--pidfile":
+            argDict['pidfile'] = v
+        else:
+            _usage()
+            sys.exit(1)
+    if 'sockfile' not in argDict:
+        _usage()
+        sys.exit(1)
+
+    return argDict
+
+
 if __name__ == '__main__':
-    main()
+    argDict = _parse_args()
+    main(**argDict)

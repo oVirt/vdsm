@@ -46,6 +46,7 @@ vdsm/storage/12-vdsm-lvm.rules
 vdsm/storage/protect/safelease
 vdsm/sudoers.vdsm
 vdsm/svdsm.logger.conf
+vdsm/systemd-vdsmd
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-logrotate.conf
@@ -56,6 +57,8 @@ vdsm/vdsm-tmpfiles.d.conf
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
 vdsm/vdsmd.init
+vdsm/vdsmd.service
+vdsm/vdsmd_init_common.sh
 vdsm/supervdsmd.init
 vdsm/supervdsmd.service
 vdsm_api/vdsm-api.html

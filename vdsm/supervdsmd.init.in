@@ -34,7 +34,10 @@ RETVAL=0
 start(){
         test_already_running && return 0
 
-        LC_ALL=C @VDSMDIR@/respawn --minlifetime 10 --daemon --masterpid "$RESPAWNPIDFILE" @PYTHON@ "$SUPERVDSM_BIN" "$SOCKFILE"
+        "@VDSMDIR@/daemonAdapter" -0 /dev/null -1 /dev/null -2 /dev/null \
+            "@VDSMDIR@/respawn" --minlifetime 10 --daemon \
+            --masterpid "${RESPAWNPIDFILE}" "@PYTHON@" "${SUPERVDSM_BIN}" \
+            --sockfile "${SOCKFILE}" --pidfile "${PIDFILE}"
         RETVAL=$?
         [ "$RETVAL" -eq 0 ] && log_success_msg "$prog start" || log_failure_msg "$prog start"
 }

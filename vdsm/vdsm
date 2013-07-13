@@ -60,7 +60,7 @@ def serve_clients(log):
     cif.serve()
 
 
-def run():
+def run(pidfile=None):
     lconfig.fileConfig(loggerConfFile)
     logging.addLevelName(5, 'TRACE')
     logging.TRACE = 5  # impolite but helpful
@@ -90,11 +90,11 @@ def run():
         logging.root.handlers.append(logging.StreamHandler())
         log.handlers.append(logging.StreamHandler())
 
-        pidfile = constants.P_VDSM_RUN + 'vdsmd.pid'
         pid = str(os.getpid())
-        with open(pidfile, 'w') as f:
-            f.write(pid + "\n")
-        os.chmod(pidfile, 0664)
+        if pidfile:
+            with open(pidfile, 'w') as f:
+                f.write(pid + "\n")
+            os.chmod(pidfile, 0664)
 
         sysname, nodename, release, version, machine = os.uname()
         log.info('(PID: %s) I am the actual vdsm %s %s (%s)',
@@ -112,16 +112,21 @@ def run():
 
 
 def parse_args():
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    argDict = {}
+    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "pidfile="])
     for o, v in opts:
         o = o.lower()
         if o == "-h" or o == "--help":
             usage()
             sys.exit(0)
+        if o == "--pidfile":
+            argDict['pidfile'] = v
 
     if len(args) >= 1:
         usage()
         sys.exit(1)
+
+    return argDict
 
 
 def __assertLogPermission():
@@ -154,6 +159,10 @@ def __assertVdsmUser():
 if __name__ == '__main__':
     __assertVdsmUser()
     __assertLogPermission()
-    os.setpgrp()
-    parse_args()
-    run()
+    if os.getsid(0) != os.getpid():
+        # Modern init systems such as systemd can provide us a clean daemon
+        # environment. So we setpgrp only when run by traditional init system
+        # that does not prepare the environment.
+        os.setpgrp()
+    argDict = parse_args()
+    run(**argDict)

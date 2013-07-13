@@ -1,0 +1,87 @@
+#!/usr/bin/python
+# Copyright 2013 IBM, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import argparse
+import os
+import sys
+from stat import S_IRUSR, S_IWUSR
+
+from vdsm.config import config
+
+
+def getArgs():
+    parser = argparse.ArgumentParser(
+        description='Start daemon process with various daemon options')
+    parser.add_argument(
+        '-0', '--stdin', dest='stdin', default=None,
+        metavar='dest', help='Redirect stdin to new destination')
+    parser.add_argument(
+        '-1', '--stdout', dest='stdout', default=None,
+        metavar='dest', help='Redirect stdout to new destination')
+    parser.add_argument(
+        '-2', '--stderr', dest='stderr', default=None,
+        metavar='dest', help='Redirect stderr to new destination')
+    parser.add_argument(
+        'target', action='store', nargs=1, metavar='targetFullPath',
+        help='Full path of the target binary to start')
+    parser.add_argument(
+        'targetOptions', default=list(), nargs=argparse.REMAINDER,
+        metavar='target_opt0 target_opt1 ...', action='store',
+        help='Add options to be passed to target')
+    args = parser.parse_args(sys.argv[1:])
+    return args
+
+
+if __name__ == '__main__':
+    args = getArgs()
+
+    os.nice(config.getint('vars', 'vdsm_nice'))
+
+    env = os.environ.copy()
+    env.update({
+        'LIBVIRT_LOG_FILTERS': config.get(
+            'vars', 'libvirt_env_variable_log_filters'),
+        'LIBVIRT_LOG_OUTPUTS': config.get(
+            'vars', 'libvirt_env_variable_log_outputs'),
+        'LC_ALL': 'C',
+    })
+
+    cmd = [args.target[0]] + args.targetOptions
+
+    if args.stdin:
+        fdin = os.open(args.stdin, os.O_RDONLY)
+        os.dup2(fdin, sys.stdin.fileno())
+        os.close(fdin)
+
+    # stdout and stderr redirection should be in last minute, otherwise it
+    # swallows error messages from daemonAdapter when redirected to /dev/null.
+    if args.stdout:
+        fdout = os.open(args.stdout, os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+                        S_IRUSR | S_IWUSR)
+        os.dup2(fdout, sys.stdout.fileno())
+        os.close(fdout)
+
+    if args.stderr:
+        fderr = os.open(args.stderr, os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+                        S_IRUSR | S_IWUSR)
+        os.dup2(fderr, sys.stderr.fileno())
+        os.close(fderr)
+
+    os.execve(cmd[0], cmd, env)

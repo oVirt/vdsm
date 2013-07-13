@@ -1,0 +1,20 @@
+[Unit]
+Description=Virtual Desktop Server Manager
+Requires=multipathd.service libvirtd.service time-sync.target \
+         iscsid.service rpcbind.service supervdsmd.service sanlock
+Conflicts=libvirt-guests.service ksmtuned.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/sysconfig/vdsm
+ExecStartPre=@LIBEXECDIR@/vdsmd_init_common.sh --pre-start
+ExecStart=@VDSMDIR@/daemonAdapter -0 /dev/null -1 /dev/null -2 /dev/null "@VDSMDIR@/vdsm"
+ExecStopPost=@LIBEXECDIR@/vdsmd_init_common.sh --post-stop
+Restart=always
+Nice=-20
+User=@VDSMUSER@
+Group=@VDSMGROUP@
+PermissionsStartOnly=true
+
+[Install]
+WantedBy=multi-user.target

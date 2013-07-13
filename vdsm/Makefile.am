@@ -61,7 +61,9 @@ dist_vdsmexec_SCRIPTS = \
 	ovirt_functions.sh
 
 nodist_vdsmexec_SCRIPTS = \
-	vdsm-gencerts.sh
+	vdsm-gencerts.sh \
+	vdsmd_init_common.sh \
+	$(NULL)
 
 nodist_vdsm_PYTHON = \
 	dsaversion.py \
@@ -75,18 +77,21 @@ nodist_noinst_DATA = \
 	logger.conf \
 	mom.conf \
 	sudoers.vdsm \
-	svdsm.logger.conf \
-	vdsm-logrotate.conf \
-	vdsm-restore-net-config.init \
-	vdsm.rwtab \
-	vdsmd.init \
-	vdsm-tmpfiles.d.conf \
 	supervdsmd.init \
 	supervdsmd.service \
+	svdsm.logger.conf \
+	systemd-vdsmd \
+	vdsm-logrotate.conf \
+	vdsm-restore-net-config.init \
+	vdsm-tmpfiles.d.conf \
+	vdsm.rwtab \
+	vdsmd.init \
+	vdsmd.service \
 	$(NULL)
 
 dist_vdsm_SCRIPTS = \
 	addNetwork \
+	daemonAdapter \
 	delNetwork \
 	get-conf-item \
 	respawn \
@@ -124,9 +129,7 @@ EXTRA_DIST = \
 	supervdsmd.init.in \
 	supervdsmd.service.in \
 	svdsm.logger.conf.in \
-	vdsmd.8.in \
-	vdsmd.init.in \
-	vdsmd.service \
+	systemd-vdsmd.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -136,10 +139,14 @@ EXTRA_DIST = \
 	vdsm-modules-load.d.conf \
 	vdsm-restore-net-config.init.in \
 	vdsm-restore-net-config.service \
-	vdsm.rwtab.in \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
 	vdsm-tmpfiles.d.conf.in \
+	vdsm.rwtab.in \
+	vdsmd.8.in \
+	vdsmd.init.in \
+	vdsmd.service.in \
+	vdsmd_init_common.sh.in \
 	$(NULL)
 
 all-local: \
