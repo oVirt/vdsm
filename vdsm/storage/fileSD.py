@@ -335,7 +335,7 @@ class FileStorageDomain(sd.StorageDomain):
         images = set()
         for i in files:
             if self.oop.os.path.isdir(i):
-                images.update(os.path.basename(i))
+                images.add(os.path.basename(i))
         return images
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
