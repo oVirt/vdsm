@@ -685,7 +685,7 @@ class HSM:
         where the size can be updated simply changing the qcow2 header.
         """
         newSizeBytes = int(newSize)
-        domain = self.validateSdUUID(sdUUID)
+        domain = sdCache.produce(sdUUID=sdUUID)
         volToExtend = domain.produceVolume(imgUUID, volUUID)
         volPath = volToExtend.getVolumePath()
         volFormat = volToExtend.getFormat()
@@ -1315,7 +1315,6 @@ class HSM:
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             pool.validatePoolSD(sdUUID)
-            self.validateSdUUID(sdUUID)
         else:
             sdUUID = pool.masterDomain.sdUUID
 
@@ -1344,7 +1343,6 @@ class HSM:
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             pool.validatePoolSD(sdUUID)
-            self.validateSdUUID(sdUUID)
         else:
             sdUUID = pool.masterDomain.sdUUID
         vars.task.getExclusiveLock(STORAGE, "%s_%s" % (vmUUID, sdUUID))
@@ -1367,7 +1365,6 @@ class HSM:
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
             pool.validatePoolSD(sdUUID)
-            self.validateSdUUID(sdUUID)
         else:
             sdUUID = pool.masterDomain.sdUUID
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1451,7 +1448,7 @@ class HSM:
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
-        sdDom = self.validateSdUUID(sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
         # TODO: For backwards compatibility, we need to support accepting
@@ -1466,7 +1463,7 @@ class HSM:
         if srcVolUUID:
             misc.validateUUID(srcVolUUID, 'srcVolUUID')
         # Validate volume type and format
-        sdDom.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        dom.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
@@ -1485,14 +1482,14 @@ class HSM:
         vars.task.setDefaultException(se.CannotDeleteVolume(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
-        sdDom = self.validateSdUUID(sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         # Do not validate if forced.
         if not misc.parseBool(force):
             for volUUID in volumes:
-                sdDom.produceVolume(imgUUID, volUUID).validateDelete()
+                dom.produceVolume(imgUUID, volUUID).validateDelete()
 
         self._spmSchedule(spUUID, "deleteVolume", pool.deleteVolume, sdUUID,
                           imgUUID, volumes, misc.parseBool(postZero),
@@ -1508,7 +1505,7 @@ class HSM:
         """
         # vars.task.setDefaultException(se.ChangeMeError("%s" % args))
         self.getPool(spUUID)  # Validates that the pool is connected. WHY?
-        dom = self.validateSdUUID(sdUUID)
+        dom = sdCache.produce(sdUUID=sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, imgUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
@@ -1608,8 +1605,8 @@ class HSM:
             raise se.InvalidParameterException(
                 "srcDom", "must be different from dstDom: %s" % argsStr)
 
-        srcDom = self.validateSdUUID(srcDomUUID)
-        dstDom = self.validateSdUUID(dstDomUUID)
+        srcDom = sdCache.produce(sdUUID=srcDomUUID)
+        dstDom = sdCache.produce(sdUUID=dstDomUUID)
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
         try:
@@ -1643,8 +1640,8 @@ class HSM:
         Clone an image structure (volume chain) to a destination domain within
         the same pool.
         """
-        self.validateSdUUID(sdUUID)
-        self.validateSdUUID(dstSdUUID)
+        sdCache.produce(sdUUID=sdUUID)
+        sdCache.produce(sdUUID=dstSdUUID)
 
         for dom in sorted((sdUUID, dstSdUUID)):
             vars.task.getSharedLock(STORAGE, dom)
@@ -1659,8 +1656,8 @@ class HSM:
         Copy the internal data between image structures (volume chain) within
         the same pool.
         """
-        self.validateSdUUID(sdUUID)
-        self.validateSdUUID(dstSdUUID)
+        sdCache.produce(sdUUID=sdUUID)
+        sdCache.produce(sdUUID=dstSdUUID)
 
         for dom in sorted((sdUUID, dstSdUUID)):
             vars.task.getSharedLock(STORAGE, dom)
@@ -1675,7 +1672,7 @@ class HSM:
         Upload an image to a remote endpoint using the specified method and
         methodArgs.
         """
-        self.validateSdUUID(sdUUID)
+        sdCache.produce(sdUUID)
         pool = self.getPool(spUUID)
         # NOTE: this could become an hsm task
         self._spmSchedule(spUUID, "uploadImage", pool.uploadImage,
@@ -1687,7 +1684,7 @@ class HSM:
         Download an image from a remote endpoint using the specified method
         and methodArgs.
         """
-        self.validateSdUUID(sdUUID)
+        sdCache.produce(sdUUID)
         pool = self.getPool(spUUID)
         # NOTE: this could become an hsm task, in such case the LV extension
         # required to prepare the destination should go through the mailbox.
@@ -1712,8 +1709,8 @@ class HSM:
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
 
-        srcDom = self.validateSdUUID(srcDomUUID)
-        dstDom = self.validateSdUUID(dstDomUUID)
+        srcDom = sdCache.produce(sdUUID=srcDomUUID)
+        dstDom = sdCache.produce(sdUUID=dstDomUUID)
         images = {}
         for (imgUUID, pZero) in imgDict.iteritems():
             images[imgUUID.strip()] = misc.parseBool(pZero)
@@ -1762,7 +1759,7 @@ class HSM:
             if srcImgUUID == dstImgUUID:
                 raise se.InvalidParameterException("dstImgUUID", dstImgUUID)
         pool = self.getPool(spUUID)
-        self.validateSdUUID(sdUUID)
+        sdCache.produce(sdUUID=sdUUID)
 
         # Avoid VM copy if one of its volume (including template if exists)
         # ILLEGAL/FAKE
@@ -1778,7 +1775,7 @@ class HSM:
         # If dstSdUUID defined, means we copy image to it
         domains = [sdUUID]
         if dstSdUUID not in [sdUUID, sd.BLANK_UUID]:
-            self.validateSdUUID(dstSdUUID)
+            sdCache.produce(sdUUID=dstSdUUID)
             domains.append(dstSdUUID)
             domains.sort()
 
@@ -1803,7 +1800,7 @@ class HSM:
                     postZero))
         vars.task.setDefaultException(se.MergeSnapshotsError("%s" % argsStr))
         pool = self.getPool(spUUID)
-        self.validateSdUUID(sdUUID)
+        sdCache.produce(sdUUID=sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(
             spUUID, "mergeSnapshots", pool.mergeSnapshots, sdUUID, vmUUID,
