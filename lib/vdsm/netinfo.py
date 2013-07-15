@@ -19,23 +19,23 @@
 #
 
 from collections import namedtuple
-import os
 import errno
-import glob
+from fnmatch import fnmatch
 from glob import iglob
-import ethtool
-import shlex
+from itertools import chain
 import logging
+import os
+import shlex
 import socket
 import struct
-from fnmatch import fnmatch
 from xml.dom import minidom
-from itertools import chain
+
+import ethtool
 
 from config import config
+import constants
 from ipwrapper import Route
 from ipwrapper import routeShowAllDefaultGateways
-import constants
 import libvirtconnection
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -140,11 +140,11 @@ def bondings():
 
 
 def vlans():
-    return [b.split('/')[-1] for b in glob.glob('/sys/class/net/*.*')]
+    return [b.split('/')[-1] for b in iglob('/sys/class/net/*.*')]
 
 
 def bridges():
-    return [b.split('/')[-2] for b in glob.glob('/sys/class/net/*/bridge')
+    return [b.split('/')[-2] for b in iglob('/sys/class/net/*/bridge')
             if b.split('/')[-2] != DUMMY_BRIDGE]
 
 
