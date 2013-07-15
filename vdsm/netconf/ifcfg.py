@@ -43,8 +43,7 @@ import neterrors as ne
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self):
-        self.configApplier = ConfigWriter()
-        self._libvirtAdded = set()
+        super(Ifcfg, self).__init__(ConfigWriter())
 
     def begin(self):
         if self.configApplier is None:

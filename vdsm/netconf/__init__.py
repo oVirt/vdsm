@@ -26,6 +26,10 @@ from vdsm import netinfo
 
 
 class Configurator(object):
+    def __init__(self, configApplier):
+        self.configApplier = configApplier
+        self._libvirtAdded = set()
+
     def configureBridge(self, bridge, **opts):
         raise NotImplementedError
 
