@@ -19,22 +19,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
-import glob
-
 from netconf import ifcfg
 
 
 def main():
-    # this should NOT be used in ovirt-node, where configuration persistence is
-    # handled otherwise.
-    try:
-        if os.path.exists('/etc/rhev-hypervisor-release') or \
-           not len(glob.glob('/etc/ovirt-node-*-release')) == 0:
-                return
-    except:
-        pass
-
     configWriter = ifcfg.ConfigWriter()
     configWriter.restorePersistentBackup()
 
