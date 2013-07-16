@@ -25,7 +25,7 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
-%if !0%{fedora_koji_build} || 0%{?fedora} >= 19
+%if 0%{?fedora} >= 17 || 0%{?rhel} >= 6
 %global with_gluster 1
 %endif
 
