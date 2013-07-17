@@ -24,6 +24,17 @@ from vdsm import libvirtconnection
 from vdsm import netinfo
 
 
+def flush():
+    conn = libvirtconnection.get()
+    allNets = ((net, net.name()) for net in conn.listAllNetworks(0))
+    for net, netname in allNets:
+        if netname.startswith(netinfo.LIBVIRT_NET_PREFIX):
+            if net.isActive():
+                net.destroy()
+            if net.isPersistent():
+                net.undefine()
+
+
 def getNetworkDef(network):
     netName = netinfo.LIBVIRT_NET_PREFIX + network
     conn = libvirtconnection.get()

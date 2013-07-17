@@ -46,8 +46,6 @@ override_dh_auto_install:
 		$(destdir)/etc/init/vdsmd.conf
 	install -Dm 0644 init/upstart/supervdsmd.upstart \
 		$(destdir)/etc/init/supervdsmd.conf
-	install -Dm 0644 init/upstart/vdsm-restore-net-config.upstart \
-		$(destdir)/etc/init/vdsm-restore-net-config.conf
 	install -Dm 0644 init/upstart/vdsm-tmpfiles.upstart \
 		$(destdir)/etc/init/vdsm-tmpfiles.conf
 	install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf $(destdir)/etc/vdsm/vdsm-tmpfiles.conf

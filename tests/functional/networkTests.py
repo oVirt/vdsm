@@ -17,9 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from contextlib import contextmanager
+from functools import wraps
 import os.path
 
 import neterrors
+from storage.misc import RollbackContext
 
 from hookValidation import ValidatesHook
 from testrunner import (VdsmTestCase as TestCaseBase,
@@ -27,7 +29,7 @@ from testrunner import (VdsmTestCase as TestCaseBase,
 from testValidation import RequireDummyMod, ValidateRunningAsRoot
 
 import dummy
-from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy, cleanupRules
+from utils import SUCCESS, VdsProxy, cleanupRules
 
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush)
@@ -64,7 +66,8 @@ def setupModule():
 
 def tearDownModule():
     """Restores the network configuration previous to running tests."""
-    restoreNetConfig()
+    vdsm = VdsProxy()
+    vdsm.restoreNetConfig()
     for nic in dummyPool:
         dummy.remove(nic)
 
@@ -109,6 +112,20 @@ class NetworkTest(TestCaseBase):
 
     def setUp(self):
         self.vdsm_net = VdsProxy()
+
+    def cleanupNet(func):
+        """
+        Instance method decorator. Restores a previously persisted network
+        config in case of a test failure, traceback is kept. Assumes root
+        privileges.
+        """
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with RollbackContext() as rollback:
+                rollback.prependDefer(args[0].vdsm_net.restoreNetConfig)
+                func(*args, **kwargs)
+        return wrapper
 
     @cleanupNet
     @permutations([[True], [False]])

@@ -27,10 +27,8 @@ init/systemd/systemd-vdsmd
 init/systemd/vdsm-tmpfiles.d.conf
 init/systemd/vdsmd.service
 init/sysvinit/supervdsmd.init
-init/sysvinit/vdsm-restore-net-config.init
 init/sysvinit/vdsmd.init
 init/upstart/supervdsmd.upstart
-init/upstart/vdsm-restore-net-config.upstart
 init/upstart/vdsm-tmpfiles.upstart
 init/upstart/vdsmd.upstart
 init/vdsmd_init_common.sh

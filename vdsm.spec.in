@@ -568,8 +568,6 @@ install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/lib/systemd/systemd-vds
 install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
 install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
 
-install -Dm 0644 init/systemd/vdsm-restore-net-config.service \
-                 %{buildroot}%{_unitdir}/vdsm-restore-net-config.service
 install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
@@ -582,8 +580,6 @@ install -Dm 0755 init/sysvinit/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
 install -Dm 0755 init/sysvinit/supervdsmd.init %{buildroot}%{_initrddir}/supervdsmd
 
 install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
-install -Dm 0755 init/sysvinit/vdsm-restore-net-config.init \
-    %{buildroot}%{_initrddir}/vdsm-restore-net-config
 %endif
 
 %if 0%{?with_tmpfiles_macro}
@@ -642,7 +638,6 @@ fi
 if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsmd
     /sbin/chkconfig --add supervdsmd
-    /sbin/chkconfig --add vdsm-restore-net-config
 fi
 %else
 %if 0%{?with_systemd}
@@ -650,7 +645,6 @@ fi
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
     /bin/systemctl enable supervdsmd.service >/dev/null 2>&1 || :
-    /bin/systemctl enable vdsm-restore-net-config.service >/dev/null 2>&1 || :
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
@@ -683,7 +677,6 @@ then
     /sbin/chkconfig --del vdsmd
     /sbin/service supervdsmd stop > /dev/null 2>&1 || :
     /sbin/chkconfig --del supervdsmd
-    /sbin/chkconfig --del vdsm-restore-net-config
 
     /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
         /etc/sysctl.conf
@@ -704,12 +697,10 @@ fi
 %if 0%{?with_systemd_macros}
 %systemd_preun vdsmd.service
 %systemd_preun supervdsmd.service
-%systemd_preun vdsm-restore-net-config.service
 %else
 if [ "$1" -eq 0 ]; then
     /bin/systemctl --no-reload disable vdsmd.service > /dev/null 2>&1 || :
     /bin/systemctl --no-reload disable supervdsmd.service > /dev/null 2>&1 || :
-    /bin/systemctl --no-reload disable vdsm-restore-net-config.service > /dev/null 2>&1 || :
     /bin/systemctl stop vdsmd.service > /dev/null 2>&1 || :
     /bin/systemctl stop supervdsmd.service > /dev/null 2>&1 || :
 fi
@@ -798,11 +789,9 @@ exit 0
 /lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
 %{_unitdir}/supervdsmd.service
-%{_unitdir}/vdsm-restore-net-config.service
 %else
 %{_initrddir}/vdsmd
 %{_initrddir}/supervdsmd
-%{_initrddir}/vdsm-restore-net-config
 %endif
 
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
@@ -1052,6 +1041,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/tool/libvirt_configure.py*
 %{_libexecdir}/%{vdsm_name}/libvirt_configure.sh
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
+%{python_sitearch}/%{vdsm_name}/tool/restore_nets.py*
 %{python_sitearch}/%{vdsm_name}/tool/sanlock.py*
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitearch}/%{vdsm_name}/tool/service.py*

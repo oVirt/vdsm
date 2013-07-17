@@ -19,13 +19,59 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
+import logging.config
+
 from netconf import ifcfg
+from vdsm.config import config
+from vdsm.netconfpersistence import RunningConfig, PersistentConfig
+from configNetwork import setupNetworks
 
 
-def main():
+def ifcfg_restoration():
     configWriter = ifcfg.ConfigWriter()
     configWriter.restorePersistentBackup()
 
 
+def unified_restoration():
+    """
+    Builds a setupNetworks command from the persistent configuration to set it
+    as running configuration.
+    """
+    configurator = ifcfg.Ifcfg()  # TODO: get configurator from config.
+    runningConfig = RunningConfig()
+    removeNetworks = {}
+    removeBonds = {}
+    for network in runningConfig.networks:
+        removeNetworks[network] = {'remove': True}
+    for bond in runningConfig.bonds:
+        removeBonds[bond] = {'remove': True}
+    logging.debug('Removing all networks (%s) and bonds (%s) in running '
+                  'config.', removeNetworks, removeBonds)
+    setupNetworks(removeNetworks, removeBonds, connectivityCheck=False)
+
+    configurator.flush()
+    persistentConfig = PersistentConfig()
+    nets = persistentConfig.networks
+    bonds = persistentConfig.bonds
+    logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
+                  nets, bonds)
+    setupNetworks(nets, bonds, connectivityCheck=False)
+
+
+def restore():
+    if config.get('vars', 'persistence') == 'unified':
+        unified_restoration()
+    else:
+        ifcfg_restoration()
+
+
 if __name__ == '__main__':
-    main()
+    try:
+        logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf')
+    except:
+        logging.basicConfig(filename='/dev/stdout', filemode='w+',
+                            level=logging.DEBUG)
+        logging.error('Could not init proper logging', exc_info=True)
+
+    restore()

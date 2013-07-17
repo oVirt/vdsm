@@ -2,7 +2,6 @@
 ./etc/cron.hourly/vdsm-logrotate
 ./etc/dhcp/dhclient.d/sourceRoute.sh
 ./etc/init/supervdsmd.conf
-./etc/init/vdsm-restore-net-config.conf
 ./etc/init/vdsm-tmpfiles.conf
 ./etc/init/vdsmd.conf
 ./etc/logrotate.d/vdsm

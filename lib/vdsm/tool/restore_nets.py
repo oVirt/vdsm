@@ -1,5 +1,4 @@
-#
-# Copyright 2008-2012 Red Hat, Inc.
+# Copyright 2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,27 +17,22 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+import os
+import sys
 
-nodist_noinst_DATA = \
-	supervdsmd.service \
-	systemd-vdsmd \
-	vdsm-tmpfiles.d.conf \
-	vdsmd.service \
-	$(NULL)
+from vdsm import utils
+import vdsm.tool
+from vdsm.constants import P_VDSM
 
-CLEANFILES = \
-	config.log \
-	$(nodist_noinst_DATA) \
-	$(NULL)
 
-EXTRA_DIST = \
-	supervdsmd.service.in \
-	systemd-vdsmd.in \
-	vdsm-tmpfiles.d.conf.in \
-	vdsmd.service.in \
-	$(NULL)
-
-all-local: \
-	$(nodist_noinst_DATA) \
-	$(NULL)
+@vdsm.tool.expose('restore-nets')
+def restore(*args, **kwargs):
+    """
+    Restores the networks to what was previously persisted via vdsm.
+    """
+    rc, out, err = utils.execCmd([os.path.join(
+        P_VDSM, 'vdsm-restore-net-config')], raw=True)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    if rc != 0:
+        raise Exception('Failed to restore the persisted networks')

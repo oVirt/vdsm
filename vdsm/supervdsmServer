@@ -46,6 +46,7 @@ from multiprocessing import Pipe, Process
 from gluster import listPublicFunctions
 import storage.misc as misc
 from vdsm import utils
+from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 from md_utils import getMdDeviceUuidMap as _getMdDeviceUuidMap
 
@@ -175,6 +176,10 @@ class _SuperVdsm(object):
             os.chmod(socketFile, mode)
         else:
             raise Exception("Incorporate socketFile")
+
+    @logDecorator
+    def restoreNetworks(self):
+        return restore_nets.restore()
 
     @logDecorator
     def addNetwork(self, bridge, options):

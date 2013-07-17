@@ -25,42 +25,13 @@ import threading
 from vdsm.config import config
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm import utils
 from vdsm import vdscli
 from vdsm.netconfpersistence import RunningConfig
+import supervdsm
 
 
 SUCCESS = 0
 Qos = namedtuple('Qos', 'inbound outbound')
-
-
-service = utils.CommandPath("service",
-                            "/sbin/service",      # EL6
-                            "/usr/sbin/service",  # Fedora
-                            )
-
-
-def cleanupNet(func):
-    """
-    Restored a previously persisted network config
-    in case of a test failure, traceback is kept.
-    Assumes root privileges.
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception:
-            # cleanup
-            restoreNetConfig()
-            raise
-    return wrapper
-
-
-def restoreNetConfig():
-    cmd_service = [service.cmd, "vdsm-restore-net-config", "restart"]
-    utils.execCmd(cmd_service, sudo=True)
 
 
 def cleanupRules(func):
@@ -148,7 +119,7 @@ class VdsProxy(object):
 
     @netinfo_altering
     def restoreNetConfig(self):
-        restoreNetConfig()
+        supervdsm.getProxy().restoreNetworks()
 
     @netinfo_altering
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None, opts=None):

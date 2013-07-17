@@ -40,6 +40,7 @@ dist_vdsmtool_PYTHON = \
 	nwfilter.py \
 	libvirt_configure.py \
 	passwd.py \
+	restore_nets.py \
 	sanlock.py \
 	seboolsetup.py \
 	service.py \

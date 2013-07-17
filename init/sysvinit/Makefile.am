@@ -22,7 +22,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 nodist_noinst_DATA = \
 	supervdsmd.init \
-	vdsm-restore-net-config.init \
 	vdsmd.init \
 	$(NULL)
 
@@ -37,7 +36,6 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	supervdsmd.init.in \
-	vdsm-restore-net-config.init.in \
 	vdsmd.init.in \
 	$(NULL)
 

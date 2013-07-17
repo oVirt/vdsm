@@ -24,6 +24,7 @@ import logging
 import os
 
 from config import config
+from tool.restore_nets import restore
 import constants
 import utils
 
@@ -168,5 +169,5 @@ class PersistentConfig(Config):
         super(PersistentConfig, self).__init__(CONF_PERSIST_DIR)
 
     def restore(self):
-        # Do work in patch set 3
+        restore()
         return RunningConfig()
