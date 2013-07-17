@@ -26,6 +26,10 @@ import json
 import supervdsm
 import unicodedata
 
+_MAX_SUPPORTED_API_VERSION = 0
+_IMPLICIT_API_VERSION_ZERO = 0
+
+_MESSAGE_API_VERSION_LOOKUP = {}
 
 __REPLACEMENT_CHAR = u'\ufffd'
 __RESTRICTED_CHARS = set(range(8 + 1)). \
@@ -93,11 +97,19 @@ class MessageState:
     TOO_BIG = 'too-big'
 
 
+class GuestAgentUnsupportedMessage(Exception):
+    def __init__(self, cmd, requiredVersion, currentVersion):
+        message = "Guest Agent command '%s' requires version '%d'. Current " \
+                  "version is '%d'" % (cmd, requiredVersion, currentVersion)
+        Exception.__init__(self, message)
+
+
 class GuestAgent ():
     MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
 
     def __init__(self, socketName, channelListener, log, user='Unknown',
                  ips='', connect=True):
+        self.effectiveApiVersion = _IMPLICIT_API_VERSION_ZERO
         self.log = log
         self._socketName = socketName
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -129,6 +141,40 @@ class GuestAgent ():
                     self._onChannelTimeout,
                     self)
 
+    def _handleAPIVersion(self, version):
+        """ Handles the API version value from the heartbeat
+
+            If the value `version` is an valid int the highest possible
+            API version in common will be determined and set to the
+            attribute `self.effectiveApiVersion` if the value has changed. If
+            the value changed the `api-version` message will  be sent to the
+            guest agent to notify it about the changed common API version.
+
+            If the value of `version` is not an int, the API version support
+            will be disabled by assigning _IMPLICIT_API_VERSION_ZERO to
+            `self.effectiveApiVersion`
+
+        Args:
+        version - the api version reported by the guest agent
+        """
+        try:
+            commonVersion = int(version)
+        except ValueError:
+            self.log.warning("Received invalid version value: %s", version)
+            commonVersion = _IMPLICIT_API_VERSION_ZERO
+        else:
+            commonVersion = max(commonVersion, _IMPLICIT_API_VERSION_ZERO)
+            commonVersion = min(commonVersion, _MAX_SUPPORTED_API_VERSION)
+
+        if commonVersion != self.effectiveApiVersion:
+            # Only update if the value changed
+            self.log.info("Guest API version changed from %d to %d",
+                          self.effectiveApiVersion, commonVersion)
+            self.effectiveApiVersion = version
+            if commonVersion != _IMPLICIT_API_VERSION_ZERO:
+                # Only notify the guest agent if the API was not disabled
+                self._forward('api-version', {'apiVersion': commonVersion})
+
     def _prepare_socket(self):
         supervdsm.getProxy().prepareVmChannel(self._socketName)
 
@@ -150,7 +196,10 @@ class GuestAgent ():
                 self.log.debug("Connected to %s", self._socketName)
                 self._messageState = MessageState.NORMAL
                 self._clearReadBuffer()
-                self._forward('refresh')
+                # Report the _MAX_SUPPORTED_API_VERSION on refresh to enable
+                # the other side to see that we support API versioning
+                self._forward('refresh',
+                              {'apiVersion': _MAX_SUPPORTED_API_VERSION})
                 self._stopped = False
                 ret = True
             else:
@@ -161,6 +210,10 @@ class GuestAgent ():
         return ret
 
     def _forward(self, cmd, args={}):
+        ver = _MESSAGE_API_VERSION_LOOKUP.get(cmd, _IMPLICIT_API_VERSION_ZERO)
+        if ver > self.effectiveApiVersion:
+            raise GuestAgentUnsupportedMessage(cmd, ver,
+                                               self.effectiveApiVersion)
         args['__name__'] = cmd
         message = (json.dumps(args) + '\n').encode('utf8')
         self._sock.send(message)
@@ -181,6 +234,17 @@ class GuestAgent ():
                     # Convert the value to string since 64-bit integer is not
                     # supported in XMLRPC
                     self.guestInfo['memoryStats'][k] = str(v)
+
+            if 'apiVersion' in args:
+                # The guest agent supports API Versioning
+                self._handleAPIVersion(args['apiVersion'])
+            elif self.effectiveApiVersion != _IMPLICIT_API_VERSION_ZERO:
+                # Older versions of the guest agent (before the introduction
+                # of API versioning) do not report this field
+                # Disable the API if not already disabled (e.g. after
+                # downgrade of the guest agent)
+                self.log.debug("API versioning no longer reported by guest.")
+                self.effectiveApiVersion = _IMPLICIT_API_VERSION_ZERO
         elif message == 'host-name':
             self.guestInfo['guestName'] = args['name']
         elif message == 'os-version':
