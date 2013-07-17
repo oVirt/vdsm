@@ -72,6 +72,7 @@ class vdsm(sos.plugintools.PluginBase):
         self.addCopySpec("@TRUSTSTORE@")
         self.addCopySpec("@HOOKSDIR@")
         self.addCopySpec("/var/log/ovirt.log")
+        self.addCopySpec("/var/log/sanlock.log")
         p = subprocess.Popen(['/usr/bin/pgrep', 'qemu-kvm'],
                              stdout=subprocess.PIPE)
         out, err = p.communicate()
