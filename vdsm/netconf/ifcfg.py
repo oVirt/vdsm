@@ -28,14 +28,16 @@ import selinux
 import shutil
 import threading
 
-import dsaversion
 from netconf import Configurator
 from neterrors import ConfigNetworkError
 from netmodels import Nic, Bridge, IpConfig
 from sourceRoute import DynamicSourceRoute
+from vdsm.config import config
 from vdsm import constants
 from vdsm import netinfo
 from vdsm import utils
+from vdsm.netconfpersistence import RunningConfig
+import dsaversion
 import libvirtCfg
 import neterrors as ne
 
@@ -48,13 +50,20 @@ class Ifcfg(Configurator):
     def begin(self):
         if self.configApplier is None:
             self.configApplier = ConfigWriter()
+        if self.unifiedPersistence and self.runningConfig is None:
+            self.runningConfig = RunningConfig()
 
     def rollback(self):
         self.configApplier.restoreBackups()
         self.configApplier = None
+        if self.unifiedPersistence:
+            self.runningConfig = None
 
     def commit(self):
         self.configApplier = None
+        if self.unifiedPersistence:
+            self.runningConfig.save()
+            self.runningConfig = None
 
     def configureBridge(self, bridge, **opts):
         self.configApplier.addBridge(bridge, **opts)
@@ -79,6 +88,10 @@ class Ifcfg(Configurator):
             slave.configure(**opts)
         self._addSourceRoute(bond)
         ifup(bond.name, bond.ipConfig.async)
+        if self.unifiedPersistence:
+            self.runningConfig.setBonding(
+                bond.name, {'options': bond.options,
+                            'nics': [slave.name for slave in bond.slaves]})
 
     def editBonding(self, bond, _netinfo):
         """
@@ -116,6 +129,10 @@ class Ifcfg(Configurator):
         if bondIfcfgWritten:
             ifdown(bond.name)
             ifup(bond.name)
+        if self.unifiedPersistence:
+            self.runningConfig.setBonding(
+                bond.name, {'options': bond.options,
+                            'nics': [slave.name for slave in bond.slaves]})
 
     def configureNic(self, nic, **opts):
         self.configApplier.addNic(nic, **opts)
@@ -156,6 +173,8 @@ class Ifcfg(Configurator):
                 self.configApplier.removeBonding(bonding.name)
                 for slave in bonding.slaves:
                     slave.remove()
+                if self.unifiedPersistence:
+                    self.runningConfig.removeBonding(bonding.name)
             else:
                 self.configApplier.setBondingMtu(bonding.name,
                                                  netinfo.DEFAULT_MTU)
@@ -255,7 +274,8 @@ class ConfigWriter(object):
 
     def _networkBackup(self, network):
         self._atomicNetworkBackup(network)
-        self._persistentNetworkBackup(network)
+        if config.get('vars', 'persistence') != 'unified':
+            self._persistentNetworkBackup(network)
 
     def _atomicNetworkBackup(self, network):
         """ In-memory backup libvirt networks """
@@ -296,7 +316,8 @@ class ConfigWriter(object):
 
     def _backup(self, filename):
         self._atomicBackup(filename)
-        self._persistentBackup(filename)
+        if config.get('vars', 'persistence') != 'unified':
+            self._persistentBackup(filename)
 
     def _atomicBackup(self, filename):
         """
@@ -418,7 +439,7 @@ class ConfigWriter(object):
         self._loadBackupFiles(netinfo.NET_CONF_BACK_DIR, netinfo.NET_CONF_DIR)
 
     def restoreBackups(self):
-        """ Restore network backups """
+        """ Restore network backups from memory."""
         if not self._backups and not self._networksBackups:
             return
 

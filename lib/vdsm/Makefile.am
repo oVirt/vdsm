@@ -27,6 +27,7 @@ dist_vdsmpylib_PYTHON = \
 	exception.py \
 	ipwrapper.py \
 	libvirtconnection.py \
+	netconfpersistence.py \
 	netinfo.py \
 	qemuImg.py \
 	SecureXMLRPCServer.py \

@@ -17,12 +17,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from functools import wraps
+import inspect
 import sys
 import os
 import traceback
 import time
 import logging
 
+from vdsm.config import config
 from vdsm import constants
 from vdsm import utils
 from storage.misc import execCmd
@@ -148,6 +151,51 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
                                      'has networks' % (iface))
 
 
+def _alterRunningConfig(func):
+    """Wrapper for addNetwork and delNetwork that abstracts away all current
+    configuration handling from the wrapped methods."""
+    spec = inspect.getargspec(func)
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        if not config.get('vars', 'persistence') == 'unified':
+            return func(*args, **kwargs)
+
+        # Get args and kwargs in a single dictionary
+        attrs = kwargs.copy()
+        attrs.update(dict(zip(spec.args, args)))
+
+        isolatedCommand = attrs.get('configurator') is None
+        # Detect if we are running an isolated command, i.e., a command that is
+        # not called as part of composed API operation like setupNetworks or
+        # editNetwork, but rather as its own API verb. This is necessary in
+        # order to maintain behavior of the addNetwork and delNetwork API verbs
+        if isolatedCommand:
+            attrs['configurator'] = configurator = Ifcfg()
+            configurator.begin()
+        else:
+            configurator = attrs['configurator']
+
+        ret = func(**attrs)
+
+        nics = attrs.pop('nics', None)
+        # Bond config handled in configurator so that operations only touching
+        # bonds don't need special casing and the logic of this remains simpler
+        if not attrs.get('bonding'):
+            if nics:
+                attrs['nic'], = nics
+
+        if func.__name__ == 'delNetwork':
+            configurator.runningConfig.removeNetwork(attrs.pop('network'))
+        else:
+            configurator.runningConfig.setNetwork(attrs.pop('network'), attrs)
+        if isolatedCommand:  # Commit the no-rollback transaction.
+            configurator.commit()
+        return ret
+    return wrapped
+
+
+@_alterRunningConfig
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, prefix=None, mtu=None, gateway=None, force=False,
                configurator=None, bondingOptions=None, bridged=True,
@@ -290,6 +338,7 @@ def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
                                  network)
 
 
+@_alterRunningConfig
 def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                configurator=None, implicitBonding=True, _netinfo=None,
                **options):

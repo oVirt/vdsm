@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ import libvirtconnection
 from ipwrapper import linkShowDev
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
+# ifcfg persistence directories
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
 NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 

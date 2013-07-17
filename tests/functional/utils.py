@@ -22,10 +22,12 @@ from functools import wraps
 import time
 import threading
 
+from vdsm.config import config
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm import vdscli
 from vdsm import utils
+from vdsm import vdscli
+from vdsm.netconfpersistence import RunningConfig
 
 
 SUCCESS = 0
@@ -97,6 +99,10 @@ class VdsProxy(object):
         self.vdscli = vdscli.connect()
         self.netinfo = \
             netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
+        if config.get('vars', 'persistence') == 'unified':
+            self.config = RunningConfig()
+        else:
+            self.config = None
 
     def __getattr__(self, attr):
         """
@@ -121,6 +127,8 @@ class VdsProxy(object):
             ret = func(self, *args, **kwargs)
             self.netinfo = \
                 netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
+            if self.config is not None:
+                self.config = RunningConfig()
             return ret
         return call_and_update
 
@@ -172,18 +180,34 @@ class VdsProxy(object):
     def networkExists(self, network_name, bridged=None):
         return network_name in self.netinfo.networks and \
             (bridged is None or
-             self.netinfo.networks[network_name]['bridged'] == bridged)
+             self.netinfo.networks[network_name]['bridged'] == bridged) and \
+            (self.config is None or
+             (network_name in self.config.networks and
+              (bridged is None or (
+               self.config.networks[network_name].get('bridged') == bridged))))
 
     def bondExists(self, bond_name, nics=None):
         return bond_name in self.netinfo.bondings and \
             (not nics or set(nics) ==
-             set(self.netinfo.bondings[bond_name]['slaves']))
+             set(self.netinfo.bondings[bond_name]['slaves'])) and \
+            (self.config is None or
+             (bond_name in self.config.bonds and
+              self.config.bonds[bond_name].get('nics') == nics))
 
-    def vlanExists(self, vlan_name):
-        dev = vlan_name.split('.')[0]
-        return vlan_name in self.netinfo.vlans and \
-            (not dev or dev ==
-             self.netinfo.vlans[vlan_name]['iface'])
+    def _vlanInRunningConfig(self, devName, vlanId):
+        for net, attrs in self.config.networks.iteritems():
+            if (vlanId == attrs.get('vlan') and
+                    (attrs.get('bonding') == devName or
+                     attrs.get('nic') == devName)):
+                return True
+        return False
+
+    def vlanExists(self, vlanName):
+        devName, vlanId = vlanName.split('.')
+        return vlanName in self.netinfo.vlans and \
+            (not devName or devName ==
+             self.netinfo.vlans[vlanName]['iface']) and \
+            (self.config is None or self._vlanInRunningConfig(devName, vlanId))
 
     def getMtu(self, name):
         if name in self.netinfo.networks:

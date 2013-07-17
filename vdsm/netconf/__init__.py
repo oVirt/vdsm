@@ -20,15 +20,21 @@
 import logging
 
 from netmodels import Bond, Bridge
-from sourceRoute import StaticSourceRoute
 from sourceRoute import DynamicSourceRoute
+from sourceRoute import StaticSourceRoute
 from vdsm import netinfo
+from vdsm.config import config
+from vdsm.netconfpersistence import RunningConfig
 
 
 class Configurator(object):
     def __init__(self, configApplier):
         self.configApplier = configApplier
         self._libvirtAdded = set()
+        self.unifiedPersistence = \
+            config.get('vars', 'persistence') == 'unified'
+        if self.unifiedPersistence:
+            self.runningConfig = RunningConfig()
 
     def __enter__(self):
         self.begin()
