@@ -5,16 +5,18 @@
 
 . @LIBEXECDIR@/ovirt_functions.sh
 
+# ifcfg persistence directories
 NET_CONF_DIR='/etc/sysconfig/network-scripts/'
-NET_CONF_BACK_DIR=@VDSMLIBDIR@/netconfback
-DELETE_HEADER='# original file did not exist'
+NET_CONF_BACK_DIR='@VDSMLIBDIR@/netconfback'
 
-if isOvirtNode
-then
-    # for ovirt, persist the changed configuration files
+# Unified persistence directories
+RUN_CONF_DIR='@VDSMRUNDIR@/netconf'
+PERS_CONF_PATH='@VDSMLIBDIR@/persistence'
+PERS_NET_CONF_PATH="$PERS_CONF_PATH/netconf"
 
-    . /usr/libexec/ovirt-functions
+PERSISTENCE=$1
 
+ifcfg_node_persist() {
     for f in "$NET_CONF_BACK_DIR"/*;
     do
         [ ! -f "$f" ] && continue
@@ -27,9 +29,54 @@ then
         fi
         rm "$NET_CONF_BACK_DIR/$bf"
     done
-else
-    # for rhel, remove the backed up configuration files, and thus mark the
-    # ones under /etc/sysconfig as "safe".
+}
 
+ifcfg_nonnode_persist() {
+    # Remove the backed up configuration files thus marking the ones under
+    # /etc/sysconfig as "safe".
     rm -rf "$NET_CONF_BACK_DIR"/*
+}
+
+unified_node_persist() {
+    unified_nonnode_persist
+
+    # oVirt node ovirt_store_config puts the dir in persistent storage and
+    # bind mounts it in the original place. So that's all we really need to do.
+    ovirt_store_config "$PERS_CONF_PATH"
+}
+
+unified_nonnode_persist() {
+    # Atomic directory copy by using the atomicity of overwriting a link
+    # (rename syscall).
+    TIMESTAMP=$(date +%s)
+    PERS_CONF_SYMLINK=$PERS_NET_CONF_PATH
+    PERS_CONF_DIR_ROOTNAME="$PERS_CONF_SYMLINK."
+    PERS_CONF_NEW_DIR="$PERS_CONF_DIR_ROOTNAME$TIMESTAMP"
+    PERS_CONF_NEW_SYMLINK="$PERS_CONF_SYMLINK.link.$TIMESTAMP"
+
+    cp -r "$RUN_CONF_DIR" "$PERS_CONF_NEW_DIR"
+    ln -s "$PERS_CONF_NEW_DIR" "$PERS_CONF_NEW_SYMLINK"
+    mv -fT "$PERS_CONF_NEW_SYMLINK" "$PERS_CONF_SYMLINK"
+    find "$PERS_CONF_PATH" -type d -path "$PERS_CONF_DIR_ROOTNAME*" | \
+        grep -v "$PERS_CONF_NEW_DIR" | xargs rm -fr
+}
+
+
+if isOvirtNode
+then
+    # for node, persist the changed configuration files
+
+    . /usr/libexec/ovirt-functions
+
+    if [ "$PERSISTENCE" == "unified" ]; then
+        unified_node_persist
+    else
+        ifcfg_node_persist
+    fi
+else
+    if [ "$PERSISTENCE" == "unified" ]; then
+        unified_nonnode_persist
+    else
+        ifcfg_nonnode_persist
+    fi
 fi

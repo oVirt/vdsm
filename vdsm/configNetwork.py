@@ -616,7 +616,8 @@ def _vlanToInternalRepresentation(vlan):
 
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
-    execCmd([constants.EXT_VDSM_STORE_NET_CONFIG])
+    execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
+             config.get('vars', 'persistence')])
 
 
 def usage():

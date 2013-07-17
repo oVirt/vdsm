@@ -1013,6 +1013,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/pki/%{vdsm_name}/keys/libvirt_password
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
+%dir %{_localstatedir}/lib/%{vdsm_name}/persistence
 %dir %{_localstatedir}/run/%{vdsm_name}
 %dir %{_localstatedir}/run/%{vdsm_name}/sourceRoutes
 %dir %{_localstatedir}/run/%{vdsm_name}/trackedInterfaces

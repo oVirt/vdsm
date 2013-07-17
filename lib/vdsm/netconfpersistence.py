@@ -23,12 +23,16 @@ import json
 import logging
 import os
 
+from config import config
 import constants
 import utils
 
 
 CONF_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
-CONF_PERSIST_DIR = ''  # Defined in patch set 2
+# The persistent path is inside of an extra "persistence" dir in order to get
+# oVirt Node to persist the symbolic links that are necessary for the
+# atomic storage of running config into persistent config.
+CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
 
 
 class Config(object):
@@ -154,7 +158,8 @@ class RunningConfig(Config):
         super(RunningConfig, self).__init__(CONF_RUN_DIR)
 
     def store(self):
-        # Do work in patch set 2
+        utils.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
+                       config.get('vars', 'persistence')])
         return PersistentConfig()
 
 
