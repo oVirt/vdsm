@@ -114,7 +114,7 @@ def cleanupNet(func):
 
 
 def restoreNetConfig():
-    cmd_service = [service.cmd, "vdsm-restore-net-config", "start"]
+    cmd_service = [service.cmd, "vdsm-restore-net-config", "restart"]
     utils.execCmd(cmd_service, sudo=True)
 
 
