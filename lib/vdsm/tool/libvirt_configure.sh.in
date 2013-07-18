@@ -37,7 +37,7 @@ QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
 # package version, so anything meaningful can be used here. Since a hard
 # coded version string has been already used, for compatibility we will
 # continue to use this string.
-BY_VDSM_VERS="4.10.3"
+BY_VDSM_VERS="4.13.0"
 
 [ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ] || QLCONF="/dev/null"
 
@@ -241,6 +241,10 @@ configure() {
         set_if_default "${lconf}" listen_tcp 1
         set_if_default "${lconf}" listen_tls 0
     fi
+
+    # Configure remote display port range
+    set_if_default "${qconf}" remote_display_port_min 5900
+    set_if_default "${qconf}" remote_display_port_max 6923
 
     # Configuring sanlock
     if [ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ]; then
