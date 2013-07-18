@@ -100,6 +100,7 @@ class GuestAgent ():
                  ips='', connect=True):
         self.log = log
         self._socketName = socketName
+        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._stopped = True
         self.guestStatus = None
         self.guestInfo = {
@@ -133,8 +134,7 @@ class GuestAgent ():
 
     @staticmethod
     def _create(self):
-        if hasattr(self, '_sock'):
-            self._sock.close()
+        self._sock.close()
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._sock.setblocking(0)
         return self._sock.fileno()
