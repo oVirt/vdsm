@@ -5169,11 +5169,11 @@
 #
 # Memory statistics as reported by the guest agent.
 #
-# @mem_total:   The total amount of memory available to the OS (in KB)
+# @mem_total:   The total amount of memory available to the OS (in KiB)
 #
-# @mem_unused:  The amount of memory that is completely unused (in KB)
+# @mem_unused:  The amount of memory that is completely unused (in KiB)
 #
-# @mem_free:    The amount of memory available for allocation in KB (includes
+# @mem_free:    The amount of memory available for allocation in KiB (includes
 #               easily reclaimable memory)
 #
 # @swap_in:     The number of memory pages swapped in since the last collection
@@ -5187,7 +5187,7 @@
 # Since: 4.10.0
 ##
 {'type': 'GuestMemoryStats',
- 'data': {'mem_total': 'uint', 'mem_unused': 'uint', 'mem_free': 'uint',
+ 'data': {'mem_total': 'str', 'mem_unused': 'str', 'mem_free': 'str',
           'swap_in': 'uint', 'swap_out': 'uint', 'pageflt': 'uint',
           'majflt': 'uint'}}
 
@@ -5207,8 +5207,8 @@
 # Since: 4.10.0
 ##
 {'type': 'BalloonInfo',
- 'data': {'balloon_max': 'uint', 'balloon_cur': 'uint', 'balloon_min': 'uint',
-          'balloon_target': 'uint'}}
+ 'data': {'balloon_max': 'str', 'balloon_cur': 'str', 'balloon_min': 'str',
+          'balloon_target': 'str'}}
 
 ##
 # @GuestMountInfo:
