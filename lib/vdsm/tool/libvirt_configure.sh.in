@@ -156,7 +156,7 @@ configure() {
     # package version, so anything meaningful can be used here. Since a hard
     # coded version string has been already used, for compatibility we will
     # continue to use this string.
-    local by_vdsm_vers="4.10.3"
+    local by_vdsm_vers="4.13.0"
     local start_conf_section="## beginning of configuration section ${by_vdsm}"
     local end_conf_section="## end of configuration section ${by_vdsm}"
 
@@ -240,6 +240,10 @@ configure() {
         set_if_default "${lconf}" listen_tcp 1
         set_if_default "${lconf}" listen_tls 0
     fi
+
+    # Configure remote display port range
+    set_if_default "${qconf}" remote_display_port_min 5900
+    set_if_default "${qconf}" remote_display_port_max 6923
 
     # Configuring sanlock
     if [ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ]; then
