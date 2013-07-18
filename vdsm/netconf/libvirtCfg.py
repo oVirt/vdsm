@@ -43,8 +43,10 @@ def createNetworkDef(network, bridged=True, iface=None,
     Creates Network Xml e.g.:
     <network>
         <name>vdsm-awesome_net</name>
-        <forward mode='bridge' || 'passthrough'/>
-        <bridge name='awesome_net'/> || <interface dev='incredible'/>
+
+        <forward mode='bridge'/><bridge name='awesome_net'/> ||
+        <forward mode='passthrough'><interface dev='incredible'/></forward>
+
         [<bandwidth>]
             [<inbound average='1000' [peak='5000'] [burst='1024']/>]
             [<outbound average='1000' [burst='1024']/>]
@@ -53,8 +55,8 @@ def createNetworkDef(network, bridged=True, iface=None,
 
     Forward mode can be either bridge or passthrough,
     according to net if bridged or bridgeless this
-    determines respectively the presence of bridge
-    or interface element. Inbound or outbound element
+    determines respectively the presence of bridge element
+    or interface subelement. Inbound or outbound element
     can be optionally defined.
     """
 
@@ -76,9 +78,10 @@ def createNetworkDef(network, bridged=True, iface=None,
                              mode='bridge' if bridged else 'passthrough')
     root.appendChild(nameElem)
     root.appendChild(forwardElem)
-    root.appendChild(XmlElement('bridge', name=network)
-                     if bridged else
-                     XmlElement('interface', dev=iface))
+    if bridged:
+        root.appendChild(XmlElement('bridge', name=network))
+    else:
+        forwardElem.appendChild(XmlElement('interface', dev=iface))
 
     if qosInbound or qosOutbound:
         bandwidthElem = XmlElement('bandwidth')

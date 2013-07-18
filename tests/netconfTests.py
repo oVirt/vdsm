@@ -144,8 +144,9 @@ class ifcfgConfigWriterTests(TestCaseBase):
         iface = "dummy"
         expectedDoc = ("""<network>
                             <name>vdsm-awesome_net</name>
-                            <forward mode='passthrough'/>
+                            <forward mode='passthrough'>
                             <interface dev='%s'/>
+                            </forward>
                           </network>""" % iface)
         actualDoc = libvirtCfg.createNetworkDef('awesome_net', bridged=False,
                                                 iface=iface)
