@@ -30,7 +30,7 @@ CDROM_IMAGE = '11111111-1111-1111-1111-111111111111'
 class StorageTable:
 
     def __init__(self, server):
-        self.serverConncetion = server
+        self.serverConnection = server
         self.columns = ['Vms', 'Domains', 'Images', 'Volumes', 'Template']
         self._buildStorageTable()
 
@@ -55,7 +55,7 @@ class StorageTable:
                 for x in range(1, len(cont)):
                     image = cont[x].split(' ')[0].split('/')[0]
                     if not image in images:
-                        s = self.serverConncetion
+                        s = self.serverConnection
                         sd = s.getImageDomainsList(pool, image)['domainslist']
                         if len(sd) > 0:
                             sd = sd[0]
@@ -69,17 +69,17 @@ class StorageTable:
     def _setSdInfo(self, sd):
 
         if not sd in self.domainsList.keys():
-            sd_info = self.serverConncetion.getStorageDomainInfo(sd)['info']
+            sd_info = self.serverConnection.getStorageDomainInfo(sd)['info']
             self.domainsList[sd] = {'Name': sd_info['name'],
                                     'Role': sd_info['role'], 'Refs': []}
 
     def _getSds(self, pool):
 
         disks = []
-        sds = self.serverConncetion.getStorageDomainsList(pool)
+        sds = self.serverConnection.getStorageDomainsList(pool)
         for sd in sds['domlist']:
             images = []
-            imagesList = self.serverConncetion.getImagesList(sd)['imageslist']
+            imagesList = self.serverConnection.getImagesList(sd)['imageslist']
             self._setSdInfo(sd)
 
             for image in imagesList:
@@ -104,7 +104,7 @@ class StorageTable:
 
     def _getVols(self, pool, sd, image):
         imageDom = '%s:%s' % (sd, image)
-        volumes = self.serverConncetion.getVolumesList(sd, pool, image)
+        volumes = self.serverConnection.getVolumesList(sd, pool, image)
 
         volParents = {}
 
@@ -112,7 +112,7 @@ class StorageTable:
         leafvols = []
 
         for vol in volumes['uuidlist']:
-            res = self.serverConncetion.getVolumeInfo(sd, pool, image, vol)
+            res = self.serverConnection.getVolumeInfo(sd, pool, image, vol)
             volParents[vol] = res['info']['parent']
             imageDomVol = '%s:%s:%s' % (sd, image, vol)
             self.volumesList[imageDomVol] = []
@@ -166,7 +166,7 @@ class StorageTable:
         for header in self.columns:
             self.tbl[header] = []
 
-        pools = self.serverConncetion.getConnectedStoragePoolsList()
+        pools = self.serverConnection.getConnectedStoragePoolsList()
         if not pools['poollist']:
             return
 
