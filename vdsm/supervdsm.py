@@ -20,7 +20,7 @@
 #
 
 import os
-from multiprocessing.managers import BaseManager
+from multiprocessing.managers import BaseManager, RemoteError
 import logging
 import threading
 from vdsm import constants, utils
@@ -46,7 +46,13 @@ class ProxyCaller(object):
         callMethod = lambda: \
             getattr(self._supervdsmProxy._svdsm, self._funcName)(*args,
                                                                  **kwargs)
-        return callMethod()
+        try:
+            return callMethod()
+        except RemoteError:
+            self._supervdsmProxy._connect()
+            raise RuntimeError(
+                "Broken communication with supervdsm. Failed call to %s"
+                % self._funcName)
 
 
 class SuperVdsmProxy(object):
