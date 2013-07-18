@@ -990,7 +990,7 @@ class Image:
             # destination volume's parent parameters
             newUUID = srcVol.volUUID + "_MERGE"
             sdDom.createVolume(
-                imgUUID=srcVolParams['imgUUID'], size=volParams['size'],
+                imgUUID=srcVolParams['imgUUID'], size=srcVolParams['size'],
                 volFormat=volParams['volFormat'],
                 preallocate=volParams['prealloc'],
                 diskType=volParams['disktype'], volUUID=newUUID,
@@ -1101,6 +1101,11 @@ class Image:
         reqSize = min(accSize, imageApparentSize) * 1.1
         try:
             # Start the actual merge image procedure
+            # IMPORTANT NOTE: volumes in the same image chain might have
+            # different capacity since the introduction of the disk resize
+            # feature. This means that when we merge volumes the ancestor
+            # should get the new size from the successor (in order to be
+            # able to contain the additional data that we are collapsing).
             if dstParentUUID != sd.BLANK_UUID:
                 # The ancestor isn't a base volume of the chain.
                 self.log.info("Internal volume merge: src = %s dst = %s",
