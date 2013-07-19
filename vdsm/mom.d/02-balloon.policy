@@ -64,6 +64,16 @@
 
 (def grow_guest (guest)
 {
+    # Determine the degree of host memory pressure
+    (if (<= host_free_percent pressure_critical)
+        # Pressure is critical:
+        #   Force guest to swap by making free memory negative
+        (defvar guest_free_percent (+ -0.05 host_free_percent))
+        # Normal pressure situation
+        #   Scale the guest free memory back according to host pressure
+        (defvar guest_free_percent (* min_guest_free_percent
+                                    (/ host_free_percent pressure_threshold))))
+
     # There is only work to do if the guest is ballooned
     (if (< guest.balloon_cur guest.balloon_max) {
         # Minimally, increase so the guest has its desired free memory
@@ -109,7 +119,7 @@
 (def guest_qos (quest)
 {
     (if (< guest.balloon_cur guest.balloon_min)
-        (guest.Control "balloon_target" balloon_min) 0)
+        (guest.Control "balloon_target" guest.balloon_min) 0)
 })
 
 (with Guests guest (guest_qos guest))
