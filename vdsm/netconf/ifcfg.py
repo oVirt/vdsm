@@ -314,12 +314,14 @@ class ConfigWriter(object):
         else:
             return "Other"
 
-    def _sortModifiedIfcfgs(self):
+    def _sortModifiedDeviceIfcfgs(self):
         devdict = {'Bridge': [],
                    'Vlan': [],
                    'Slave': [],
                    'Other': []}
         for confFile, _ in self._backups.iteritems():
+            if not confFile.startswith(netinfo.NET_CONF_PREF):
+                continue
             try:
                 content = file(confFile).read()
             except IOError as e:
@@ -334,11 +336,11 @@ class ConfigWriter(object):
         return devdict['Other'] + devdict['Vlan'] + devdict['Bridge']
 
     def _stopAtomicDevices(self):
-        for dev in reversed(self._sortModifiedIfcfgs()):
+        for dev in reversed(self._sortModifiedDeviceIfcfgs()):
             ifdown(dev)
 
     def _startAtomicDevices(self):
-        for dev in self._sortModifiedIfcfgs():
+        for dev in self._sortModifiedDeviceIfcfgs():
             try:
                 ifup(dev)
             except ConfigNetworkError:
