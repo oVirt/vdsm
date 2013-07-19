@@ -4275,9 +4275,10 @@ class Vm(object):
                     dev['specParams']['model'] != 'none':
                 max_mem = int(self.conf.get('memSize')) * 1024
                 min_mem = int(self.conf.get('memGuaranteedSize', '0')) * 1024
-                cur_mem = dev.get('target', max_mem)
+                target_mem = dev.get('target', max_mem)
+                cur_mem = self._dom.info()[2]
                 return {'balloon_max': max_mem, 'balloon_cur': cur_mem,
-                        'balloon_min': min_mem}
+                        'balloon_min': min_mem, 'balloon_target': target_mem}
         return {}
 
     def setBalloonTarget(self, target):

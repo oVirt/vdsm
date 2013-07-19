@@ -5202,10 +5202,13 @@
 #
 # @balloon_min:  The minimum amount of memory guaranteed to the guest (in KiB)
 #
+# @balloon_target:  The amount of memory requested (in KiB)
+#
 # Since: 4.10.0
 ##
 {'type': 'BalloonInfo',
- 'data': {'balloon_max': 'uint', 'balloon_cur': 'uint', 'balloon_min': 'uint'}}
+ 'data': {'balloon_max': 'uint', 'balloon_cur': 'uint', 'balloon_min': 'uint',
+          'balloon_target': 'uint'}}
 
 ##
 # @GuestMountInfo:
