@@ -49,7 +49,6 @@ dist_vdsm_PYTHON = \
 	sourceRoute.py \
 	sourceRouteThread.py \
 	supervdsm.py \
-	supervdsmServer.py \
 	tc.py \
 	vdsmDebugPlugin.py \
 	vmChannels.py \
@@ -96,6 +95,7 @@ dist_vdsm_SCRIPTS = \
 	get-conf-item \
 	respawn \
 	set-conf-item \
+	supervdsmServer \
 	vdsm \
 	vdsm-restore-net-config \
 	$(NULL)

@@ -836,7 +836,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/sourceRoute.py*
 %{_datadir}/%{vdsm_name}/sourceRouteThread.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
-%{_datadir}/%{vdsm_name}/supervdsmServer.py*
+%{_datadir}/%{vdsm_name}/supervdsmServer
 %{_datadir}/%{vdsm_name}/vmChannels.py*
 %{_datadir}/%{vdsm_name}/tc.py*
 %{_datadir}/%{vdsm_name}/vdsm

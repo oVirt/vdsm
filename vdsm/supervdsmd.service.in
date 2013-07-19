@@ -4,5 +4,6 @@ Requires=libvirtd.service
 
 [Service]
 Type=simple
-ExecStart=@VDSMDIR@/daemonAdapter "@PYTHON@" "@VDSMDIR@/supervdsmServer.pyc" --sockfile "@VDSMRUNDIR@/svdsm.sock"
+EnvironmentFile=-/etc/sysconfig/supervdsmd
+ExecStart=@VDSMDIR@/daemonAdapter "@VDSMDIR@/supervdsmServer" --sockfile "@VDSMRUNDIR@/svdsm.sock"
 Restart=on-abort

@@ -18,12 +18,13 @@
 # Short-Description: init script for the Super VDS management server
 ### END INIT INFO
 
-SUPERVDSM_BIN=@VDSMDIR@/supervdsmServer.pyc
+SUPERVDSM_BIN=@VDSMDIR@/supervdsmServer
 PIDFILE=@VDSMRUNDIR@/supervdsmd.pid
 RESPAWNPIDFILE=@VDSMRUNDIR@/supervdsm_respawn.pid
 SOCKFILE=@VDSMRUNDIR@/svdsm.sock
 prog=supervdsm
 
+[ -f /etc/sysconfig/supervdsmd ] && . /etc/sysconfig/supervdsmd
 . /etc/init.d/functions
 
 log_failure_msg() { echo -n "$@"; failure "$@"; echo; }
@@ -36,7 +37,7 @@ start(){
 
         "@VDSMDIR@/daemonAdapter" -0 /dev/null -1 /dev/null -2 /dev/null \
             "@VDSMDIR@/respawn" --minlifetime 10 --daemon \
-            --masterpid "${RESPAWNPIDFILE}" "@PYTHON@" "${SUPERVDSM_BIN}" \
+            --masterpid "${RESPAWNPIDFILE}" "${SUPERVDSM_BIN}" \
             --sockfile "${SOCKFILE}" --pidfile "${PIDFILE}"
         RETVAL=$?
         [ "$RETVAL" -eq 0 ] && log_success_msg "$prog start" || log_failure_msg "$prog start"
