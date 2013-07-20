@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+yajsonrpcdir = $(pythondir)/yajsonrpc
+
 dist_yajsonrpc_PYTHON = \
 	__init__.py \
 	asyncoreReactor.py \

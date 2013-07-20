@@ -1215,10 +1215,10 @@ exit 0
 %{_datadir}/%{vdsm_name}/Bridge.py*
 
 %files yajsonrpc
-%{python_sitearch}/yajsonrpc/__init__.py*
-%{python_sitearch}/yajsonrpc/asyncoreReactor.py*
-%{python_sitearch}/yajsonrpc/protonReactor.py*
-%{python_sitearch}/yajsonrpc/client.py*
+%{python_sitelib}/yajsonrpc/__init__.py*
+%{python_sitelib}/yajsonrpc/asyncoreReactor.py*
+%{python_sitelib}/yajsonrpc/protonReactor.py*
+%{python_sitelib}/yajsonrpc/client.py*
 
 %files bootstrap
 %defattr(-, root, root, -)
