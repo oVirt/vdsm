@@ -562,8 +562,7 @@ class FileStorageDomain(sd.StorageDomain):
             for volFile in volFiles:
                 tLink = os.path.join(basePath, rImg, volFile)
                 tVol = os.path.join(basePath, templateImage, volFile)
-                self.oop.fileUtils.safeUnlink(tLink)
-                self.oop.os.link(tVol, tLink)
+                self.oop.utils.forceLink(tVol, tLink)
 
 
 def getMountsList(pattern="*"):
