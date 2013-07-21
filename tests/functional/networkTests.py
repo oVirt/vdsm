@@ -76,7 +76,11 @@ class NetworkTest(TestCaseBase):
                     status, msg = self.vdsm_net.setupNetworks(
                         {vlan_net: {'remove': True}}, {}, {})
                     self.assertEqual(status, SUCCESS, msg)
-                    self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME))
+                    self.assertFalse(self.vdsm_net.networkExists(vlan_net,
+                                                                 bridged))
+                    self.assertFalse(
+                        self.vdsm_net.vlanExists(BONDING_NAME + '.' +
+                                                 networks[vlan_net]['vlan']))
 
     @cleanupNet
     @permutations([[True], [False]])
