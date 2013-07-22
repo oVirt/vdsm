@@ -18,16 +18,27 @@
 #
 from pwd import getpwnam
 import platform
-import logging
-import logging.config
 import sys
 import os
 import stat
 import errno
 import threading
 import re
-from storage import fuser
 import signal
+import logging
+import logging.config
+
+LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
+
+try:
+    logging.config.fileConfig(LOG_CONF_PATH)
+except:
+    logging.basicConfig(filename='/dev/stdout', filemode='w+',
+                        level=logging.DEBUG)
+    log = logging.getLogger("SuperVdsm.Server")
+    log.warn("Could not init proper logging", exc_info=True)
+
+from storage import fuser
 from multiprocessing import Pipe, Process
 from gluster import listPublicFunctions
 import storage.misc as misc
@@ -73,6 +84,8 @@ def logDecorator(func):
 
     def wrapper(*args, **kwargs):
         try:
+            callbackLogger.debug('calling to %s with %s %s',
+                                 func.__name__, args[1:], kwargs)
             return func(*args, **kwargs)
         except:
             callbackLogger.error("Error in %s", func.__name__, exc_info=True)
@@ -81,7 +94,6 @@ def logDecorator(func):
 
 KB = 2 ** 10
 TEST_BUFF_LEN = 4 * KB
-LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
 
 
 class _SuperVdsm(object):
@@ -337,6 +349,8 @@ class _SuperVdsm(object):
 
 
 def main():
+    log = logging.getLogger("SuperVdsm.Server")
+
     def bind(func):
         def wrapper(_SuperVdsm, *args, **kwargs):
             return func(*args, **kwargs)
@@ -344,16 +358,6 @@ def main():
 
     for name, func in listPublicFunctions():
         setattr(_SuperVdsm, name, logDecorator(bind(func)))
-
-    try:
-        logging.config.fileConfig(LOG_CONF_PATH)
-    except:
-        logging.basicConfig(filename='/dev/stdout', filemode='w+',
-                            level=logging.DEBUG)
-        log = logging.getLogger("SuperVdsm.Server")
-        log.warn("Could not init proper logging", exc_info=True)
-
-    log = logging.getLogger("SuperVdsm.Server")
 
     try:
         log.debug("Making sure I'm root - SuperVdsm")
