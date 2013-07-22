@@ -22,20 +22,19 @@ cpopendir = $(pyexecdir)/cpopen
 
 dist_cpopen_PYTHON = \
 	__init__.py \
-	cpopen.so \
 	$(NULL)
 
 cpopen.so: cpopen.c setup.py
 	(cd $(srcdir); $(PYTHON) setup.py build \
 		--build-temp $(abs_builddir) --build-lib $(abs_builddir))
 
-all-local: \
-        $(dist_cpopen_PYTHON)
+all-local: cpopen.so
 
-install-data:
+install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(cpopendir)
 	$(INSTALL_PROGRAM) cpopen.so \
 		$(DESTDIR)$(cpopendir)/cpopen.so
+
 check-local: tests.py
 	nosetests tests.py
 
