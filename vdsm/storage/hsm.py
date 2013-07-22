@@ -2704,8 +2704,11 @@ class HSM:
             se.StorageDomainActionError(
                 "sdUUID=%s, description=%s" % (sdUUID, description)))
         dom = sdCache.produce(sdUUID=sdUUID)
-        vars.task.getExclusiveLock(STORAGE, sdUUID)
-        dom.setDescription(descr=description)
+        vars.task.getSharedLock(STORAGE, sdUUID)
+
+        pool = self.getPool(dom.getPools()[0])
+        pool.validatePoolSD(sdUUID)
+        pool.setSDDescription(dom, description)
 
     @public
     def getStorageDomainInfo(self, sdUUID, options=None):

@@ -2112,6 +2112,9 @@ class StoragePool(Securable):
     def extendSD(self, sdUUID, devlist, force):
         sdCache.produce(sdUUID).extend(devlist, force)
 
+    def setSDDescription(self, sd, description):
+        sd.setDescription(descr=description)
+
     def getAllTasksStatuses(self):
         return self.taskMng.getAllTasksStatuses("spm")
 
