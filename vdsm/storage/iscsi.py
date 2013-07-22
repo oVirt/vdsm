@@ -183,16 +183,6 @@ def addIscsiPortal(iface, portal, credentials=None):
     with _iscsiadmTransactionLock:
         iscsiadm.discoverydb_new(discoverType, iface.name, portalStr)
 
-        # NOTE: We are not taking for granted that iscsiadm is not going to
-        #       write the database when the discovery fails, therefore we try
-        #       to set the node startup to manual anyway.
-        try:
-            iscsiadm.discoverydb_update(discoverType, iface.name, portalStr,
-                                        "node.startup", "manual")
-        except:
-            # this is just to be polite we don't really care
-            pass
-
         try:
             # Push credentials
             if credentials is not None:
