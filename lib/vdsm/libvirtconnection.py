@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import atexit
 import threading
 import functools
 import logging
@@ -170,3 +171,10 @@ def get(target=None, killOnFailure=True):
             # hosts which are hosting a lot of virtual machines
 
         return conn
+
+
+def __close_connections():
+    for conn in __connections.values():
+        conn.close()
+
+atexit.register(__close_connections)
