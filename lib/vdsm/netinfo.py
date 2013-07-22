@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from collections import namedtuple
 import os
 import errno
 import glob
@@ -52,6 +53,8 @@ DUMMY_BRIDGE = ';vdsmdummy;'
 DEFAULT_MTU = '1500'
 
 REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
+
+_Qos = namedtuple('Qos', 'inbound outbound')
 
 
 def _match_name(name, patterns):
@@ -151,8 +154,13 @@ def networks():
 
     :returns: dict of networkname={properties}
     :rtype: dict of dict
-            { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True },
-              'red': { 'iface': 'red', 'bridged': False } }
+            { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True,
+                            'qosInbound': {'average': '1024', 'burst': '',
+                                           'peak': ''},
+                            'qosOutbound': {'average': '1024', 'burst': '2048',
+                                           'peak': ''}},
+              'red': { 'iface': 'red', 'bridged': False
+                        'qosInbound': '', 'qosOutbound': ''} }
     """
     nets = {}
     conn = libvirtconnection.get()
@@ -162,6 +170,9 @@ def networks():
             netname = netname[len(LIBVIRT_NET_PREFIX):]
             nets[netname] = {}
             xml = minidom.parseString(net.XMLDesc(0))
+            qos = _parseBandwidthQos(xml)
+            nets[netname]['qosInbound'] = qos.inbound
+            nets[netname]['qosOutbound'] = qos.outbound
             interfaces = xml.getElementsByTagName('interface')
             if len(interfaces) > 0:
                 nets[netname]['iface'] = interfaces[0].getAttribute('dev')
@@ -171,6 +182,33 @@ def networks():
                     xml.getElementsByTagName('bridge')[0].getAttribute('name')
                 nets[netname]['bridged'] = True
     return nets
+
+
+def _parseBandwidthQos(networkXml):
+    """
+    Extract the Qos information
+    :param networkXml: instance of xml.dom.minidom.Document
+    :return: _Qos namedtuple containing inbound and outbound qos dicts.
+    """
+
+    qos = _Qos("", "")
+
+    def extractQos(bandWidthElem, trafficType):
+        qos = ""
+        elem = bandWidthElem.getElementsByTagName(trafficType)
+        if elem:
+            qos = {'average': elem[0].getAttribute('average'),
+                   'burst': elem[0].getAttribute('burst'),
+                   'peak': elem[0].getAttribute('peak')}
+        return qos
+
+    bandwidthElem = networkXml.getElementsByTagName('bandwidth')
+    if bandwidthElem:
+        inbound = extractQos(bandwidthElem[0], "inbound")
+        outbound = extractQos(bandwidthElem[0], "outbound")
+        qos = _Qos(inbound, outbound)
+
+    return qos
 
 
 def slaves(bonding):
@@ -402,7 +440,7 @@ def permAddr():
     return paddr
 
 
-def _getNetInfo(iface, bridged, routes, ipv6routes):
+def _getNetInfo(iface, bridged, routes, ipv6routes, qosInbound, qosOutbound):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -422,7 +460,9 @@ def _getNetInfo(iface, bridged, routes, ipv6routes):
                      'gateway': routes.get(iface, '0.0.0.0'),
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
-                     'mtu': str(getMtu(iface))})
+                     'mtu': str(getMtu(iface)),
+                     'qosInbound': qosInbound,
+                     'qosOutbound': qosOutbound})
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
@@ -480,7 +520,9 @@ def get():
         try:
             d['networks'][net] = _getNetInfo(netAttr.get('iface', net),
                                              netAttr['bridged'], routes,
-                                             ipv6routes)
+                                             ipv6routes,
+                                             netAttr.get('qosInbound'),
+                                             netAttr.get('qosOutbound'))
         except KeyError:
             continue  # Do not report missing libvirt networks.
 

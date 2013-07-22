@@ -239,6 +239,6 @@ class NetworkTest(TestCaseBase):
                                                    opts=qos)
             self.assertEqual(status, SUCCESS, msg)
 
-            networkQos = self.vdsm_net.networkQos(NETWORK_NAME)
-            self.assertEqual(qos['qosInbound'], networkQos.inbound)
-            self.assertEqual(qos['qosOutbound'], networkQos.outbound)
+            qosInbound, qosOutbound = self.vdsm_net.networkQos(NETWORK_NAME)
+            self.assertEqual(qos['qosInbound'], qosInbound)
+            self.assertEqual(qos['qosOutbound'], qosOutbound)

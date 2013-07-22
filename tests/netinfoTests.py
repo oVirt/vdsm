@@ -21,6 +21,7 @@
 import os
 from shutil import rmtree
 import tempfile
+from xml.dom import minidom
 
 import ethtool
 
@@ -168,3 +169,21 @@ class TestNetinfo(TestCaseBase):
                                  set(['em', 'me', 'fake', 'fake0']))
             finally:
                 rmtree(temp_dir)
+
+    def testGetBandwidthQos(self):
+        notEmptyDoc = minidom.parseString("""<bandwidth>
+                            <inbound average='4500' burst='5400' />
+                            <outbound average='4500' burst='5400' peak='101' />
+                          </bandwidth>""")
+        expectedQosNotEmpty = netinfo._Qos(inbound={'average': '4500',
+                                                    'burst': '5400',
+                                                    'peak': ''},
+                                           outbound={'average': '4500',
+                                                     'burst': '5400',
+                                                     'peak': '101'})
+        emptyDoc = minidom.parseString("<whatever></whatever>")
+
+        self.assertEqual(expectedQosNotEmpty,
+                         netinfo._parseBandwidthQos(notEmptyDoc))
+        self.assertEqual(netinfo._Qos('', ''),
+                         netinfo._parseBandwidthQos(emptyDoc))
