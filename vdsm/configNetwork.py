@@ -508,6 +508,10 @@ def setupNetworks(networks, bondings, **options):
                 if 'remove' in networkAttrs:
                     del networks[network]
                     del libvirt_nets[network]
+            elif 'remove' in networkAttrs:
+                raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
+                                         "network %r: It doesn't exist in the "
+                                         "system" % network)
             else:
                 networksAdded.add(network)
 
