@@ -16,20 +16,24 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from collections import namedtuple
 from contextlib import contextmanager
 from functools import wraps
 import random
 import time
 import threading
+from xml.dom import minidom
 
 from nose.plugins.skip import SkipTest
 
+from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import vdscli
 from vdsm import utils
 
 
 SUCCESS = 0
+Qos = namedtuple('Qos', 'inbound outbound')
 
 
 ip = utils.CommandPath('ip',
@@ -202,3 +206,33 @@ class VdsProxy(object):
             raise
         finally:
             done = True
+
+    def networkQos(self, network):
+        cn = libvirtconnection.get()
+        networkXml = cn.networkLookupByName(netinfo.LIBVIRT_NET_PREFIX
+                                            + network).XMLDesc(0)
+
+        def createQosDict(elem):
+            qos_dict = {'average': elem.getAttribute('average'),
+                        'burst': elem.getAttribute('burst'),
+                        'peak': elem.getAttribute('peak')}
+            return qos_dict
+
+        qos = Qos(None, None)
+
+        doc = minidom.parseString(networkXml)
+        bandwidthElem = doc.getElementsByTagName('bandwidth')
+        if bandwidthElem:
+            inboundElem = bandwidthElem[0].getElementsByTagName('inbound')
+            outboundElem = bandwidthElem[0].getElementsByTagName('outbound')
+            if inboundElem:
+                inbound = createQosDict(inboundElem[0])
+            else:
+                inbound = None
+            if outboundElem:
+                outbound = createQosDict(outboundElem[0])
+            else:
+                outbound = None
+            qos = Qos(inbound, outbound)
+
+        return qos

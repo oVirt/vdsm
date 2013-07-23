@@ -229,12 +229,16 @@ class NetworkTest(TestCaseBase):
     @ValidateRunningAsRoot
     def testQosNetwork(self):
         with dummyIf(1) as nics:
-            qos = {'qosInbound': {'average': '1024', 'burst': '2048'},
+            qos = {'qosInbound': {'average': '1024', 'burst': '2048',
+                                  'peak': '42'},
                    'qosOutbound': {'average': '2400', 'burst': '2048',
                                    'peak': '100'}}
 
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
                                                    nics=nics,
                                                    opts=qos)
-
             self.assertEqual(status, SUCCESS, msg)
+
+            networkQos = self.vdsm_net.networkQos(NETWORK_NAME)
+            self.assertEqual(qos['qosInbound'], networkQos.inbound)
+            self.assertEqual(qos['qosOutbound'], networkQos.outbound)

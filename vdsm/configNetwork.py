@@ -197,7 +197,9 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 gateway, bootproto, _netinfo, configurator,
                                 **options)
     netEnt.configure(**options)
-    configurator.configureLibvirtNetwork(network, netEnt)
+    configurator.configureLibvirtNetwork(network, netEnt,
+                                         qosInbound=qosInbound,
+                                         qosOutbound=qosOutbound)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
