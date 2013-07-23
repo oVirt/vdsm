@@ -16,7 +16,7 @@ dist_vdsm_DATA = \
 	vdsmapi-schema.json \
 	$(NULL)
 
-dist_pyexec_PYTHON = \
+dist_python_PYTHON = \
 	vdsmapi.py \
 	$(NULL)
 
