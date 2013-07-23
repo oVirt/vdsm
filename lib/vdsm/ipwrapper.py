@@ -39,10 +39,10 @@ def _isValid(ip, verifier):
 class Route(object):
     def __init__(self, network, ipaddr=None, device=None, table=None):
         if not _isValid(network, IPNetwork):
-            raise ValueError('network is not properly defined')
+            raise ValueError('network %s is not properly defined' % network)
 
         if ipaddr and not _isValid(ipaddr, IPAddress):
-            raise ValueError('ipaddr is not properly defined')
+            raise ValueError('ipaddr %s is not properly defined' % ipaddr)
 
         self.network = network
         self.ipaddr = ipaddr
@@ -61,8 +61,8 @@ class Route(object):
         Thus, the length of a route must be odd.
         """
         if len(route) % 2 == 0:
-            raise ValueError('The length of the textual representation of a '
-                             'route must be odd')
+            raise ValueError('Route %s: The length of the textual '
+                             'representation of a route must be odd.' % route)
 
         network, params = route[0], route[1:]
         data = dict(params[i:i + 2] for i in range(0, len(params), 2))
@@ -85,11 +85,11 @@ class Route(object):
         try:
             ipaddr = data['via']
         except KeyError:
-            raise ValueError('Routes require an IP address.')
+            raise ValueError('Route %s: Routes require an IP address.' % data)
         try:
             device = data['dev']
         except KeyError:
-            raise ValueError('Routes require a device.')
+            raise ValueError('Route %s: Routes require a device.' % data)
         table = data.get('table')
 
         return cls(data['network'], ipaddr=ipaddr, device=device, table=table)
@@ -112,14 +112,14 @@ class Rule(object):
         if source:
             if not (_isValid(source, IPAddress) or
                     _isValid(source, IPNetwork)):
-                raise ValueError('Invalid source: Not an ip address '
-                                 'or network')
+                raise ValueError('Source %s invalid: Not an ip address '
+                                 'or network.' % source)
 
         if destination:
             if not (_isValid(destination, IPAddress) or
                     _isValid(destination, IPNetwork)):
-                raise ValueError('Invalid destination: Not an ip address '
-                                 'or network')
+                raise ValueError('Destination %s invalid: Not an ip address '
+                                 'or network.' % destination)
 
         self.table = table
         self.source = source
@@ -144,18 +144,20 @@ class Rule(object):
         parameters = rule[1:]
 
         if len(rule) % 2 == 0:
-            raise ValueError('The length of a textual representation of a '
-                             'rule must be odd')
+            raise ValueError('Rule %s: The length of a textual representation '
+                             'of a rule must be odd. ' % rule)
 
         data = dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
         try:
             table = data['lookup']
         except KeyError:
-            raise ValueError('Rules require "lookup" information.')
+            raise ValueError('Rule %s: Rules require "lookup" information. ' %
+                             rule)
         try:
             source = data['from']
         except KeyError:
-            raise ValueError('Rules require "from" information.')
+            raise ValueError('Rule %s: Rules require "from" information. ' %
+                             rule)
 
         destination = data.get('to')
         if source == 'all':
