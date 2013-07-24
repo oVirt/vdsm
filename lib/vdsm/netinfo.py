@@ -58,7 +58,7 @@ def _match_name(name, patterns):
     return any(map(lambda p: fnmatch(name, p), patterns))
 
 
-def nic_devices():
+def _nic_devices():
     """
     Returns a list of nic devices real or fakes,
     available on the host.
@@ -112,7 +112,7 @@ def nics():
         return (not isHiddenNic(device) and
                 not isEnslavedByHiddenBond(device))
 
-    res = [dev for dev in nic_devices() if isManagedByVdsm(dev)]
+    res = [dev for dev in _nic_devices() if isManagedByVdsm(dev)]
     return res
 
 
