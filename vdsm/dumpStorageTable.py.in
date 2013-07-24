@@ -17,8 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
+import errno
 import os
+import socket
 import traceback
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
@@ -309,7 +310,14 @@ if __name__ == '__main__':
     from vdsm import vdscli
     import sys
 
-    rc, msg = StorageTable(vdscli.connect()).show()
+    try:
+        rc, msg = StorageTable(vdscli.connect()).show()
+    except socket.error as se:
+        if se.errno != errno.ECONNREFUSED:
+            raise se
+        else:
+            msg = 'Unable to connect to vdsmd ' + str(se)
+            rc = 1
     if rc:
         print >>sys.stderr, msg
     sys.exit(rc)
