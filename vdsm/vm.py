@@ -2882,7 +2882,7 @@ class Vm(object):
             fname = self.cif.prepareVolumePath(self.conf['restoreState'])
             try:
                 if fromSnapshot:
-                    self._connection.restoreFlags(fname, srcDomXML)
+                    self._connection.restoreFlags(fname, srcDomXML, 0)
                 else:
                     self._connection.restore(fname)
             finally:
