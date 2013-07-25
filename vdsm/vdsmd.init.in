@@ -32,7 +32,7 @@ DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
 NEEDED_SERVICES="iscsid multipathd rpcbind ntpd wdmd sanlock network libvirtd
                  supervdsmd"
-CONFLICTING_SERVICES="libvirt-guests"
+CONFLICTING_SERVICES="libvirt-guests ksmtuned"
 VDSM_TOOL="@BINDIR@/vdsm-tool"
 RETVAL=0
 
