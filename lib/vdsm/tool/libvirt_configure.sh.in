@@ -275,17 +275,15 @@ EOF
     if [ -f "${FORCE_RECONFIGURE}" ]; then
         rm -f "${FORCE_RECONFIGURE}"
     fi
+    echo "Done configuring"
 }
 
 case "$1" in
      reconfigure)
-        echo "Starting configure libvirt to VDSM ..."
         configure "$LCONF" "$QCONF" "$LDCONF" "$QLCONF" "$2"
-        echo "=Done configuring libvirt="
         RETVAL=$?
         ;;
      test_conflict_configurations)
-        echo "Checking conflicts ..."
         test_conflicting_conf "$LCONF" "$QCONF"
         RETVAL=$?
     ;;
