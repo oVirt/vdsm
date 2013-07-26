@@ -22,6 +22,7 @@ import sys
 import os
 import stat
 import errno
+from functools import wraps
 import threading
 import re
 import signal
@@ -82,14 +83,18 @@ class Timeout(RuntimeError):
 def logDecorator(func):
     callbackLogger = logging.getLogger("SuperVdsm.ServerCallback")
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
+        callbackLogger.debug('call %s with %s %s',
+                             func.__name__, args[1:], kwargs)
         try:
-            callbackLogger.debug('calling to %s with %s %s',
-                                 func.__name__, args[1:], kwargs)
-            return func(*args, **kwargs)
+            res = func(*args, **kwargs)
         except:
             callbackLogger.error("Error in %s", func.__name__, exc_info=True)
             raise
+        callbackLogger.debug('return %s with %s',
+                             func.__name__, res)
+        return res
     return wrapper
 
 KB = 2 ** 10
