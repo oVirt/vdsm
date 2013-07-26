@@ -64,7 +64,7 @@ parameters = [
             'How often (in seconds) should the monitor thread pulse, 0 means '
             'the thread is disabled.'),
 
-        ('hidden_nics', 'wlan*,usb*',
+        ('hidden_nics', 'w*,usb*',
             'Comma-separated list of fnmatch-patterns for host nics to be '
             'hidden from vdsm.'),
 
