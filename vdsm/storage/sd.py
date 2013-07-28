@@ -149,7 +149,7 @@ mountBasePath = os.path.join(storage_repository, DOMAIN_MNT_POINT)
 def getVolsOfImage(allVols, imgUUID):
     """ Filter allVols dict for volumes related to imgUUID.
 
-    Returns {volName: (([templateImge], imgUUID, [otherImg]), volPar)
+    Returns {volName: (([templateImage], imgUUID, [otherImg]), volPar)
     For a template volume will be more than one image entry.
 
     allVols: The getAllVols() return dict.

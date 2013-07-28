@@ -1518,20 +1518,16 @@ class HSM:
 
         # on data domains, images should not be deleted if they are templates
         # being used by other images.
-        isTemplateWithChildren = False
-        for v in volsByImg.itervalues():
+        fakeTUUID = None
+        for k, v in volsByImg.iteritems():
             if len(v.imgs) > 1 and v.imgs[0] == imgUUID:
-                isTemplateWithChildren = True
+                if dom.isBackup():
+                    fakeTUUID = k
+                else:
+                    raise se.CannotDeleteSharedVolume("Cannot delete shared "
+                                                      "image %s. volImgs: %s" %
+                                                      (imgUUID, volsByImg))
                 break
-
-        if not isTemplateWithChildren:
-            needFake = False
-        elif dom.isBackup():
-            needFake = True
-        else:
-            raise se.CannotDeleteSharedVolume("Cannot delete shared image %s. "
-                                              "volImgs: %s" % (imgUUID,
-                                                               volsByImg))
 
         # zeroImage will delete zeroed volumes at the end.
         if misc.parseBool(postZero):
@@ -1540,6 +1536,9 @@ class HSM:
             self._spmSchedule(spUUID, "zeroImage_%s" % imgUUID, dom.zeroImage,
                               sdUUID, imgUUID, volsByImg)
         else:
+            if fakeTUUID:
+                tParams = dom.produceVolume(imgUUID, fakeTUUID).\
+                    getVolumeParams()
             dom.deleteImage(sdUUID, imgUUID, volsByImg)
             # This is a hack to keep the interface consistent
             # We currently have race conditions in delete image, to quickly fix
@@ -1548,11 +1547,9 @@ class HSM:
             # intended to quickly fix the integration issue with Engine. In 2.3
             # we should use the new resource system to synchronize the process
             # an eliminate all race conditions
-            if needFake:
+            if fakeTUUID:
                 img = image.Image(os.path.join(self.storage_repository,
                                                spUUID))
-                tName = volsByImg.iterkeys()[0]
-                tParams = dom.produceVolume(imgUUID, tName).getVolumeParams()
                 img.createFakeTemplate(sdUUID=sdUUID, volParams=tParams)
             self._spmSchedule(spUUID, "deleteImage_%s" % imgUUID, lambda: True)
 
