@@ -225,6 +225,51 @@ class NetworkTest(TestCaseBase):
                                                opts={'bridged': bridged})
         self.assertEqual(status, neterrors.ERR_BAD_PARAMS, msg)
 
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testAddNetworkManyVlans(self, bridged):
+        with dummyIf(1) as nics:
+            VLAN_COUNT = 5
+            NET_VLANS = [(NETWORK_NAME + str(index), str(index))
+                         for index in range(VLAN_COUNT)]
+            for net_vlan, vlan_id in NET_VLANS:
+                opts = {'bridged': bridged}
+                status, msg = self.vdsm_net.addNetwork(net_vlan,
+                                                       vlan=vlan_id,
+                                                       nics=nics,
+                                                       opts=opts)
+                self.assertEquals(status, SUCCESS, msg)
+
+            for net_vlan, vlan_id in NET_VLANS:
+                self.assertTrue(self.vdsm_net.networkExists(net_vlan,
+                                                            bridged=bridged))
+                self.assertTrue(self.vdsm_net.vlanExists(nics[0] + '.' +
+                                                         str(vlan_id)))
+
+                self.vdsm_net.delNetwork(net_vlan)
+                self.assertEquals(status, SUCCESS, msg)
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testAddNetworkVlan(self, bridged):
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, vlan=VLAN_ID,
+                                                   nics=nics,
+                                                   opts={'bridged': bridged,
+                                                         'STP': 'off'})
+            self.assertEquals(status, SUCCESS, msg)
+
+            self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME,
+                                                        bridged=bridged))
+            self.assertTrue(self.vdsm_net.vlanExists(nics[0] + '.' + VLAN_ID))
+
+            self.vdsm_net.delNetwork(NETWORK_NAME)
+            self.assertEquals(status, SUCCESS, msg)
+
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testQosNetwork(self):
