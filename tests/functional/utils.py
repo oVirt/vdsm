@@ -171,6 +171,14 @@ class VdsProxy(object):
         return result['status']['code'], result['status']['message']
 
     @netinfo_altering
+    def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
+                    nics=None, opts=None):
+        result = self.vdscli.editNetwork(oldBridge, newBridge,
+                                         *self._get_net_args(vlan, bond, nics,
+                                                             opts))
+        return result['status']['code'], result['status']['message']
+
+    @netinfo_altering
     def setupNetworks(self, networks, bonds, options):
         result = self.vdscli.setupNetworks(networks, bonds, options)
         return result['status']['code'], result['status']['message']

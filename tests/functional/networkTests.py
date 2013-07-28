@@ -264,3 +264,37 @@ class NetworkTest(TestCaseBase):
 
             status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
             self.assertEqual(status, SUCCESS, msg)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testTwiceAdd(self, bridged):
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, nics=nics,
+                                                   opts={'bridged': bridged})
+            self.assertEqual(status, SUCCESS, msg)
+
+            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, nics=nics)
+            self.assertEqual(status, neterrors.ERR_USED_BRIDGE, msg)
+
+            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
+            self.assertEqual(status, SUCCESS, msg)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testDelWithoutAdd(self, bridged):
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME, nics=nics,
+                                                   opts={'bridged': bridged})
+            self.assertEqual(status, neterrors.ERR_BAD_BRIDGE, msg)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testEditWithoutAdd(self, bridged):
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.editNetwork(NETWORK_NAME, NETWORK_NAME,
+                                                    nics=nics,
+                                                    opts={'bridged': bridged})
+            self.assertEqual(status, neterrors.ERR_BAD_BRIDGE, msg)
