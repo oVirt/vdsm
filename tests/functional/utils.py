@@ -194,7 +194,10 @@ class VdsProxy(object):
              set(self.netinfo.bondings[bond_name]['slaves']))
 
     def vlanExists(self, vlan_name):
-        return vlan_name in self.netinfo.vlans
+        dev = vlan_name.split('.')[0]
+        return vlan_name in self.netinfo.vlans and \
+            (not dev or dev ==
+             self.netinfo.vlans[vlan_name]['iface'])
 
     def getMtu(self, name):
         if name in self.netinfo.networks:
