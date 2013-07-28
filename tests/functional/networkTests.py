@@ -242,3 +242,25 @@ class NetworkTest(TestCaseBase):
             qosInbound, qosOutbound = self.vdsm_net.networkQos(NETWORK_NAME)
             self.assertEqual(qos['qosInbound'], qosInbound)
             self.assertEqual(qos['qosOutbound'], qosOutbound)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testDelNetworkWithMTU(self, bridged):
+        MTU = '1234'
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, vlan=VLAN_ID,
+                                                   bond=BONDING_NAME,
+                                                   nics=nics,
+                                                   opts={'MTU': MTU,
+                                                         'bridged': bridged})
+            vlan_name = '%s.%s' % (BONDING_NAME, VLAN_ID)
+
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertEquals(MTU, self.vdsm_net.getMtu(NETWORK_NAME))
+            self.assertEquals(MTU, self.vdsm_net.getMtu(vlan_name))
+            self.assertEquals(MTU, self.vdsm_net.getMtu(BONDING_NAME))
+            self.assertEquals(MTU, self.vdsm_net.getMtu(nics[0]))
+
+            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
+            self.assertEqual(status, SUCCESS, msg)

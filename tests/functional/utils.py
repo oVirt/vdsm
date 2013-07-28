@@ -188,6 +188,17 @@ class VdsProxy(object):
     def vlanExists(self, vlan_name):
         return vlan_name in self.netinfo.vlans
 
+    def getMtu(self, name):
+        if name in self.netinfo.networks:
+            return self.netinfo.networks[name]['mtu']
+        elif name in self.netinfo.vlans:
+            return self.netinfo.vlans[name]['mtu']
+        elif name in self.netinfo.bondings:
+            return self.netinfo.bondings[name]['mtu']
+        elif name in self.netinfo.nics:
+            return self.netinfo.nics[name]['mtu']
+        return None
+
     @contextmanager
     def pinger(self):
         """Keeps pinging vdsm for operations that need it"""
