@@ -346,7 +346,7 @@ def getMachineUUID():
         if os.path.exists('/proc/device-tree/system-id'):
             #eg. output IBM,03061C14A
             return file('/proc/device-tree/system-id').readline().\
-                replace(",", "")
+                rstrip('\0').replace(",", "")
 
     logging.error("getMachineUUID: Could not find machine's UUID.")
 
