@@ -86,9 +86,9 @@ class StaticSourceRoute(object):
         try:
             self.configurator.configureSourceRoute(self.routes, self.rules,
                                                    self.device)
-        except IPRoute2Error:
+        except IPRoute2Error as e:
             logging.error('ip binary failed during source route configuration',
-                          exc_info=True)
+                          ': %s' % e.message)
 
     def remove(self):
         self.configurator.removeSourceRoute(None, None, self.device)
@@ -114,17 +114,17 @@ class DynamicSourceRoute(StaticSourceRoute):
     def _getRoutes(table, device):
         routes = []
         for entry in routeShowTable(table):
-            """
-            When displaying routes from a table, the table is omitted, so add
-            it back again
-            """
             try:
                 route = Route.fromText(entry)
             except ValueError:
-                pass
+                logging.debug("Could not parse route %s" % entry)
             else:
-                route.table = table
                 if route.device == device:
+                    """
+                    When displaying routes from a table, the table is omitted,
+                    so add it back again
+                    """
+                    route.table = table
                     routes.append(route)
 
         return routes
@@ -147,13 +147,20 @@ class DynamicSourceRoute(StaticSourceRoute):
             We'll then use that rule's destination network, and use it
             to find the second rule via its source network
         """
-        allRules = [Rule.fromText(entry) for entry in ruleList()]
+        allRules = []
+        for entry in ruleList():
+            try:
+                rule = Rule.fromText(entry)
+            except ValueError:
+                logging.debug("Could not parse rule %s" % entry)
+            else:
+                allRules.append(rule)
 
         # Find the rule we put in place with 'device' as its 'srcDevice'
         rules = [rule for rule in allRules if rule.srcDevice == device]
 
         if not rules:
-            logging.error("Rules not found for device %s" % device)
+            logging.error("Routing rules not found for device %s" % device)
             return
 
         # Extract its destination network
@@ -176,9 +183,9 @@ class DynamicSourceRoute(StaticSourceRoute):
                     self.configurator.removeSourceRoute(
                         self._getRoutes(table, self.device), rules,
                         self.device)
-                except IPRoute2Error:
+                except IPRoute2Error as e:
                     logging.error('ip binary failed during source route '
-                                  'removal', exc_info=True)
+                                  'removal: %s' % e.message)
 
     def _isLibvirtInterfaceFallback(self):
         """

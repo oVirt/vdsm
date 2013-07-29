@@ -62,7 +62,7 @@ class Route(object):
         """
         if len(route) % 2 == 0:
             raise ValueError('Route %s: The length of the textual '
-                             'representation of a route must be odd.' % route)
+                             'representation of a route must be odd.' % text)
 
         network, params = route[0], route[1:]
         data = dict(params[i:i + 2] for i in range(0, len(params), 2))
@@ -85,11 +85,11 @@ class Route(object):
         try:
             ipaddr = data['via']
         except KeyError:
-            raise ValueError('Route %s: Routes require an IP address.' % data)
+            raise ValueError('Route %s: Routes require an IP address.' % text)
         try:
             device = data['dev']
         except KeyError:
-            raise ValueError('Route %s: Routes require a device.' % data)
+            raise ValueError('Route %s: Routes require a device.' % text)
         table = data.get('table')
 
         return cls(data['network'], ipaddr=ipaddr, device=device, table=table)
@@ -127,6 +127,17 @@ class Rule(object):
         self.srcDevice = srcDevice
 
     @classmethod
+    def parse(cls, text):
+        rule = text.split()
+        parameters = rule[1:]
+
+        if len(rule) % 2 == 0:
+            raise ValueError('Rule %s: The length of a textual representation '
+                             'of a rule must be odd. ' % text)
+
+        return dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
+
+    @classmethod
     def fromText(cls, text):
         """
             Creates a Rule object from a textual representation. Since it is
@@ -139,25 +150,17 @@ class Rule(object):
             32767:    from 10.0.0.0/8 to 20.0.0.0/8 lookup table_100
             32768:    from all to 8.8.8.8 lookup table_200
         """
-
-        rule = text.split()
-        parameters = rule[1:]
-
-        if len(rule) % 2 == 0:
-            raise ValueError('Rule %s: The length of a textual representation '
-                             'of a rule must be odd. ' % rule)
-
-        data = dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
+        data = cls.parse(text)
         try:
             table = data['lookup']
         except KeyError:
             raise ValueError('Rule %s: Rules require "lookup" information. ' %
-                             rule)
+                             text)
         try:
             source = data['from']
         except KeyError:
             raise ValueError('Rule %s: Rules require "from" information. ' %
-                             rule)
+                             text)
 
         destination = data.get('to')
         if source == 'all':
