@@ -127,7 +127,7 @@ class MigrationSourceThread(threading.Thread):
 
     def __init__(self, vm, dst='', dstparams='',
                  mode='remote', method='online',
-                 tunneled=False, dstqemu='', **kwargs):
+                 tunneled=False, dstqemu='', abortOnError=False, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dst = dst
@@ -136,6 +136,7 @@ class MigrationSourceThread(threading.Thread):
         self._dstparams = dstparams
         self._machineParams = {}
         self._tunneled = utils.tobool(tunneled)
+        self._abortOnError = utils.tobool(abortOnError)
         self._dstqemu = dstqemu
         self._downtime = kwargs.get('downtime') or \
             config.get('vars', 'migration_downtime')
@@ -381,7 +382,9 @@ class MigrationSourceThread(threading.Thread):
                         libvirt.VIR_MIGRATE_LIVE |
                         libvirt.VIR_MIGRATE_PEER2PEER |
                         (libvirt.VIR_MIGRATE_TUNNELLED if
-                            self._tunneled else 0),
+                            self._tunneled else 0) |
+                        (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
+                            self._abortOnError else 0),
                         None, maxBandwidth)
             finally:
                 t.cancel()

@@ -5726,6 +5726,9 @@
 #
 # @tunneled:   #optional use libvirt's tunneled migration. default it False.
 #
+# @abortOnError:  #optional Abort migration on I/O errors and refuse to migrate
+#                 VMs, paused due to EIO
+#
 # @dstqemu:    #optional The destination's host address dedicated for migration.
 #
 # Since: 4.10.0
@@ -5733,7 +5736,7 @@
 {'type': 'MigrateParams',
  'data': {'vmId': 'UUID', 'dst': 'str', 'dstparams': 'str',
           '*mode': 'MigrateMode', '*method': 'MigrateMethod',
-          '*tunneled': 'bool', 'dstqemu': 'str'}}
+          '*tunneled': 'bool', '*abortOnError': 'bool', 'dstqemu': 'str'}}
 
 ##
 # @VM.migrate:
