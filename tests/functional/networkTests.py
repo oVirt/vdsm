@@ -393,3 +393,60 @@ class NetworkTest(TestCaseBase):
                                                     nics=nics,
                                                     opts={'bridged': bridged})
             self.assertEqual(status, neterrors.ERR_BAD_BRIDGE, msg)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksAddVlan(self, bridged):
+        with dummyIf(1) as nics:
+            with self.vdsm_net.pinger():
+                nic, = nics
+                attrs = dict(vlan=VLAN_ID, nic=nic, bridged=bridged)
+                status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
+                                                           attrs}, {}, {})
+
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME))
+                self.assertTrue(self.vdsm_net.vlanExists('%s.%s' %
+                                                         (nic, VLAN_ID)))
+
+                status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
+                                                           dict(remove=True)},
+                                                          {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksAddManyVlans(self, bridged):
+        VLAN_COUNT = 5
+        NET_VLANS = [(NETWORK_NAME + str(index), str(index))
+                     for index in range(VLAN_COUNT)]
+
+        with dummyIf(1) as nics:
+            nic, = nics
+            networks = dict((vlan_net,
+                             {'vlan': str(tag), 'nic': nic,
+                              'bridged': bridged})
+                            for vlan_net, tag in NET_VLANS)
+
+            with self.vdsm_net.pinger():
+                status, msg = self.vdsm_net.setupNetworks(networks, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+
+                for vlan_net, tag in NET_VLANS:
+                    self.assertTrue(self.vdsm_net.networkExists(vlan_net,
+                                                                bridged))
+                    self.assertTrue(self.vdsm_net.vlanExists(nic + '.' + tag))
+
+                networks = dict((vlan_net, {'remove': True})
+                                for vlan_net, _ in NET_VLANS)
+                status, msg = self.vdsm_net.setupNetworks(networks, {}, {})
+
+                self.assertEqual(status, SUCCESS, msg)
+
+                for vlan_net, tag in NET_VLANS:
+                    self.assertFalse(self.vdsm_net.networkExists(vlan_net,
+                                                                 bridged))
+                    self.assertFalse(
+                        self.vdsm_net.vlanExists(nic + '.' + tag))
