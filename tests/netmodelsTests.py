@@ -59,6 +59,20 @@ class TestNetmodels(TestCaseBase):
             self.assertEqual(cneContext.exception.errCode,
                              neterrors.ERR_BAD_BRIDGE)
 
+    def testIsNicValid(self):
+        invalidNicName = ('toni', 'livnat', 'dan')
+
+        class FakeNetInfo(object):
+            def __init__(self):
+                self.nics = ['eth0', 'eth1']
+
+        for nic in invalidNicName:
+            with self.assertRaises(neterrors.ConfigNetworkError) \
+                    as cneContext:
+                Nic(nic, None, _netinfo=FakeNetInfo())
+            self.assertEqual(cneContext.exception.errCode,
+                             neterrors.ERR_BAD_NIC)
+
     def testIsBondingNameValid(self):
         bondNames = ('badValue', ' bond14', 'bond14 ', 'bond14a', 'bond0 0')
 

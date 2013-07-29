@@ -163,3 +163,12 @@ class TestConfigNetwork(TestCaseBase):
         # bridgeless network exists
         self._addNetworkWithExc('test', dict(nics=['eth8'], bridged=False,
                                 _netinfo=fakeInfo), neterrors.ERR_BAD_PARAMS)
+
+    def testBuildBondOptionsBadParams(self):
+        class FakeNetInfo(object):
+            def __init__(self):
+                self.bondings = ['god', 'bless', 'potatoes']
+        with self.assertRaises(neterrors.ConfigNetworkError) as cne:
+            configNetwork._buildBondOptions('jamesbond', {},
+                                            _netinfo=FakeNetInfo())
+        self.assertEquals(cne.exception.errCode, neterrors.ERR_BAD_PARAMS)

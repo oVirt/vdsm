@@ -962,3 +962,11 @@ class NetworkTest(TestCaseBase):
                                                            dict(remove=True)},
                                                           {})
                 self.assertEquals(status, SUCCESS, msg)
+
+    @permutations([[True], [False]])
+    def testSetupNetworksAddBadParams(self, bridged):
+        attrs = dict(vlan=VLAN_ID, bridged=bridged)
+        status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME: attrs},
+                                                  {}, {})
+
+        self.assertNotEqual(status, SUCCESS, msg)
