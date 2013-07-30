@@ -1042,9 +1042,9 @@ class StorageServeriSCSIError(StorageException):
     message = "iSCSI connection error"
 
 
-class MultipathRestartError(StorageException):
+class MultipathReloadError(StorageException):
     code = 455
-    message = "Multipath service restart error"
+    message = "Multipath service reload error"
 
 
 class GetiSCSISessionListError(StorageServeriSCSIError):
