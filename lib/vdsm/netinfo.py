@@ -48,6 +48,7 @@ PROC_NET_VLAN = '/proc/net/vlan/'
 NET_PATH = '/sys/class/net'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
+BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DUMMY_BRIDGE = ';vdsmdummy;'
@@ -56,6 +57,8 @@ DEFAULT_MTU = '1500'
 REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
 
 _Qos = namedtuple('Qos', 'inbound outbound')
+
+OPERSTATE_UP = 'up'
 
 
 def _match_name(name, patterns):
@@ -218,6 +221,21 @@ def slaves(bonding):
     return open(BONDING_SLAVES % bonding).readline().split()
 
 
+def bondOpts(bond, keys=None):
+    """ Returns a dictionary of bond option name and a values iterable. E.g.,
+    {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
+    """
+    if keys is None:
+        paths = iglob(BONDING_OPT % (bond, '*'))
+    else:
+        paths = (BONDING_OPT % (bond, key) for key in keys)
+    opts = {}
+    for path in paths:
+        with open(path) as optFile:
+            opts[os.path.basename(path)] = optFile.read().rstrip().split(' ')
+    return opts
+
+
 def ports(bridge):
     return os.listdir('/sys/class/net/' + bridge + '/brif')
 
@@ -260,7 +278,8 @@ def isbonding(dev):
 
 
 def operstate(dev):
-    return file('/sys/class/net/%s/operstate' % dev).read().strip()
+    with open('/sys/class/net/%s/operstate' % dev) as operstateFile:
+        return operstateFile.read().strip()
 
 
 def speed(dev):
@@ -269,7 +288,8 @@ def speed(dev):
         # nics() filters out OS devices (bonds, vlans, bridges)
         # operstat() filters out down/disabled nics
         # virtio is a valid device, but doesn't support speed
-        if dev in nics() and operstate(dev) == 'up' and not isvirtio(dev):
+        if (dev in nics() and operstate(dev) == OPERSTATE_UP and
+                not isvirtio(dev)):
             # the device may have been disabled/downed after checking
             # so we validate the return value as sysfs may return
             # special values to indicate the device is down/disabled

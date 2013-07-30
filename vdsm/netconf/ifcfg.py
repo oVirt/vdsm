@@ -83,13 +83,41 @@ class Ifcfg(Configurator):
         ifup(bond.name, bond.ipConfig.async)
 
     def editBonding(self, bond, _netinfo):
-        ifdown(bond.name)
-        for nic in _netinfo.getNicsForBonding(bond.name):
+        """
+        Modifies the bond so that the bond in the system ends up with the
+        same slave and options configuration that are requested. Makes a
+        best effort not to interrupt connectivity.
+        """
+        nicsToSet = frozenset(nic.name for nic in bond.slaves)
+        currentNics = frozenset(_netinfo.getNicsForBonding(bond.name))
+        nicsToAdd = nicsToSet - currentNics
+
+        for nic in currentNics - nicsToSet:
+            ifdown(nic)  # So that no users will be detected for it.
             Nic(nic, self, _netinfo=_netinfo).remove()
-        bridgeName = _netinfo.getBridgedNetworkForIface(bond.name)
-        if bridgeName:
-            bond.master = Bridge(bridgeName, self, port=bond)
-        self.configureBond(bond)
+
+        # Create bond configuration in case it was a non ifcfg controlled bond.
+        # Needed to be before slave configuration for initscripts to add slave
+        # to bond.
+        bondIfcfgWritten = False
+        isIfcfgControlled = os.path.isfile(netinfo.NET_CONF_PREF + bond.name)
+        areOptionsApplied = bond.areOptionsApplied()
+        if not isIfcfgControlled or not areOptionsApplied:
+            bridgeName = _netinfo.getBridgedNetworkForIface(bond.name)
+            if isIfcfgControlled and bridgeName:
+                bond.master = Bridge(bridgeName, self, port=bond)
+            self.configApplier.addBonding(bond)
+            bondIfcfgWritten = True
+
+        for slave in bond.slaves:
+            if slave.name in nicsToAdd:
+                ifdown(slave.name)  # nics must be down to join a bond
+                self.configApplier.addNic(slave)
+                ifup(slave.name)
+
+        if bondIfcfgWritten:
+            ifdown(bond.name)
+            ifup(bond.name)
 
     def configureNic(self, nic, **opts):
         self.configApplier.addNic(nic, **opts)

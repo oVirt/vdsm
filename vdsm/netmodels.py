@@ -69,6 +69,12 @@ class NetDevice(object):
             return self.master
         return None
 
+    @property
+    def vlan(self):
+        if isinstance(self.master, Vlan):
+            return self.master
+        return None
+
 
 class Nic(NetDevice):
     def __init__(self, name, configurator, ipconfig=None, mtu=None,
@@ -81,7 +87,9 @@ class Nic(NetDevice):
                                   mtu=max(mtu, netinfo.getMtu(name)))
 
     def configure(self, **opts):
-        self.configurator.configureNic(self, **opts)
+        if (not self.vlan or
+                netinfo.operstate(self.name) != netinfo.OPERSTATE_UP):
+            self.configurator.configureNic(self, **opts)
 
     def remove(self):
         self.configurator.removeNic(self)
@@ -179,7 +187,21 @@ class Bond(NetDevice):
         return 'Bond(%s: %r)' % (self.name, self.slaves)
 
     def configure(self, **opts):
-        self.configurator.configureBond(self, **opts)
+        # When the bond is up and we are not changing the configuration that
+        # is already applied in any way, we can skip the configuring.
+        if not(self.vlan and
+               self.name in netinfo.bondings() and
+               netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
+               self.areOptionsApplied() and
+               frozenset(slave.name for slave in self.slaves) ==
+               frozenset(netinfo.slaves(self.name))):
+            self.configurator.configureBond(self, **opts)
+
+    def areOptionsApplied(self):
+        confOpts = [option.split('=', 1) for option in self.options.split(' ')]
+        activeOpts = netinfo.bondOpts(self.name,
+                                      (name for name, value in confOpts))
+        return all(value in activeOpts[name] for name, value in confOpts)
 
     def remove(self):
         logging.debug('Removing bond %r', self)

@@ -16,6 +16,10 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from contextlib import contextmanager
+from threading import Thread
+import time
+
 import neterrors
 
 from testrunner import (VdsmTestCase as TestCaseBase,
@@ -23,6 +27,8 @@ from testrunner import (VdsmTestCase as TestCaseBase,
 from testValidation import RequireDummyMod, ValidateRunningAsRoot
 
 from utils import cleanupNet, dummyIf, restoreNetConfig, SUCCESS, VdsProxy
+
+from vdsm.netinfo import operstate
 
 
 NETWORK_NAME = 'test-network'
@@ -39,6 +45,45 @@ def setupModule():
 def tearDownModule():
     """Restores the network configuration previous to running tests."""
     restoreNetConfig()
+
+
+class OperStateChangedError(ValueError):
+    pass
+
+
+@contextmanager
+def nonChangingOperstate(device):
+    """Raises an exception if it detects that the device operstate changes."""
+    # The current implementation is raceful (but empirically tested to work)
+    # due to the fact that two changes could happen between iterations and no
+    # exception would be raised.
+    def changed(dev, changes):
+        status = operstate(dev)
+        while not done:
+            try:
+                newState = operstate(dev)
+                time.sleep(0.1)
+            except IOError as ioe:
+                _, message = ioe.args
+                changes.append(message)
+                break
+            if status != newState:
+                changes.append(newState)
+                status = newState
+
+    try:
+        done = False
+        changes = []
+        monitoring_t = Thread(target=changed, name='operstate_mon',
+                              args=(device, changes))
+        monitoring_t.start()
+        yield
+    finally:
+        time.sleep(3)  # So that the last action in yield gets to kernel
+        done = True
+        if changes:
+            raise OperStateChangedError('%s operstate changed: %r' %
+                                        (device, changes))
 
 
 @expandPermutations
@@ -115,11 +160,12 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertTrue(self.vdsm_net.bondExists(BONDING_NAME, nics))
 
-            status, msg = self.vdsm_net.setupNetworks(
-                {NETWORK_NAME:
-                    {'bonding': BONDING_NAME, 'bridged': bridged,
-                     'vlan': VLAN_ID}},
-                {}, {'connectivityCheck': False})
+            with nonChangingOperstate(BONDING_NAME):
+                status, msg = self.vdsm_net.setupNetworks(
+                    {NETWORK_NAME:
+                        {'bonding': BONDING_NAME, 'bridged': bridged,
+                         'vlan': VLAN_ID}},
+                    {}, {'connectivityCheck': False})
             self.assertEqual(status, SUCCESS, msg)
             self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME, bridged))
 
@@ -230,25 +276,30 @@ class NetworkTest(TestCaseBase):
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testAddNetworkManyVlans(self, bridged):
+        opts = {'bridged': bridged}
+        VLAN_COUNT = 5
+        NET_VLANS = [(NETWORK_NAME + str(index), str(index))
+                     for index in range(VLAN_COUNT)]
         with dummyIf(1) as nics:
-            VLAN_COUNT = 5
-            NET_VLANS = [(NETWORK_NAME + str(index), str(index))
-                         for index in range(VLAN_COUNT)]
-            for net_vlan, vlan_id in NET_VLANS:
-                opts = {'bridged': bridged}
-                status, msg = self.vdsm_net.addNetwork(net_vlan,
-                                                       vlan=vlan_id,
-                                                       nics=nics,
-                                                       opts=opts)
-                self.assertEquals(status, SUCCESS, msg)
+            firstVlan, firstVlanId = NET_VLANS[0]
+            status, msg = self.vdsm_net.addNetwork(firstVlan, vlan=firstVlanId,
+                                                   nics=nics, opts=opts)
+            self.assertEquals(status, SUCCESS, msg)
+            with nonChangingOperstate(nics[0]):
+                for netVlan, vlanId in NET_VLANS[1:]:
+                    status, msg = self.vdsm_net.addNetwork(netVlan,
+                                                           vlan=vlanId,
+                                                           nics=nics,
+                                                           opts=opts)
+                    self.assertEquals(status, SUCCESS, msg)
 
-            for net_vlan, vlan_id in NET_VLANS:
-                self.assertTrue(self.vdsm_net.networkExists(net_vlan,
+            for netVlan, vlanId in NET_VLANS:
+                self.assertTrue(self.vdsm_net.networkExists(netVlan,
                                                             bridged=bridged))
                 self.assertTrue(self.vdsm_net.vlanExists(nics[0] + '.' +
-                                                         str(vlan_id)))
+                                                         str(vlanId)))
 
-                self.vdsm_net.delNetwork(net_vlan)
+                self.vdsm_net.delNetwork(netVlan)
                 self.assertEquals(status, SUCCESS, msg)
 
     @cleanupNet
@@ -275,27 +326,32 @@ class NetworkTest(TestCaseBase):
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testAddNetworkBondWithManyVlans(self, bridged):
+        opts = dict(bridged=bridged)
+        VLAN_COUNT = 5
+        NET_VLANS = [(NETWORK_NAME + str(index), str(index))
+                     for index in range(VLAN_COUNT)]
         with dummyIf(1) as nics:
-            VLAN_COUNT = 5
-            NET_VLANS = [(NETWORK_NAME + str(index), str(index))
-                         for index in range(VLAN_COUNT)]
-            for net_vlan, vlan_id in NET_VLANS:
-                opts = dict(bridged=bridged)
-                status, msg = self.vdsm_net.addNetwork(net_vlan,
-                                                       vlan=vlan_id,
-                                                       bond=BONDING_NAME,
-                                                       nics=nics,
-                                                       opts=opts)
-                self.assertEquals(status, SUCCESS, msg)
-                self.assertTrue(self.vdsm_net.networkExists(net_vlan,
-                                                            bridged=bridged))
-            for _, vlan_id in NET_VLANS:
-                msg = "vlan %s doesn't exist" % vlan_id
-                vlan_name = '%s.%s' % (BONDING_NAME, vlan_id)
-                self.assertTrue(self.vdsm_net.vlanExists(vlan_name), msg)
+            firstVlan, firstVlanId = NET_VLANS[0]
+            status, msg = self.vdsm_net.addNetwork(firstVlan, vlan=firstVlanId,
+                                                   bond=BONDING_NAME,
+                                                   nics=nics, opts=opts)
+            with nonChangingOperstate(BONDING_NAME):
+                for netVlan, vlanId in NET_VLANS[1:]:
+                    status, msg = self.vdsm_net.addNetwork(netVlan,
+                                                           vlan=vlanId,
+                                                           bond=BONDING_NAME,
+                                                           nics=nics,
+                                                           opts=opts)
+                    self.assertEquals(status, SUCCESS, msg)
+                    self.assertTrue(
+                        self.vdsm_net.networkExists(netVlan, bridged=bridged))
+            for _, vlanId in NET_VLANS:
+                msg = "vlan %s doesn't exist" % vlanId
+                vlanName = '%s.%s' % (BONDING_NAME, vlanId)
+                self.assertTrue(self.vdsm_net.vlanExists(vlanName), msg)
 
-            for net_vlan, vlan_id in NET_VLANS:
-                status, msg = self.vdsm_net.delNetwork(net_vlan, vlan=vlan_id,
+            for netVlan, vlanId in NET_VLANS:
+                status, msg = self.vdsm_net.delNetwork(netVlan, vlan=vlanId,
                                                        bond=BONDING_NAME,
                                                        nics=nics)
                 self.assertEqual(status, SUCCESS, msg)
@@ -479,21 +535,22 @@ class NetworkTest(TestCaseBase):
                                 BONDING_NAME, nics))
 
                 # Reduce bond size and create Network on detached NIC
-                netName = NETWORK_NAME + '-2'
-                networks = {netName: dict(nic=nics[0],
-                                          bridged=bridged)}
-                bondings = {BONDING_NAME: dict(nics=nics[1:3])}
-                status, msg = self.vdsm_net.setupNetworks(networks,
-                                                          bondings, {})
+                with nonChangingOperstate(BONDING_NAME):
+                    netName = NETWORK_NAME + '-2'
+                    networks = {netName: dict(nic=nics[0],
+                                              bridged=bridged)}
+                    bondings = {BONDING_NAME: dict(nics=nics[1:3])}
+                    status, msg = self.vdsm_net.setupNetworks(networks,
+                                                              bondings, {})
 
-                self.assertEquals(status, SUCCESS, msg)
+                    self.assertEquals(status, SUCCESS, msg)
 
-                self.assertTrue(self.vdsm_net.networkExists(
-                    NETWORK_NAME, bridged=bridged))
-                self.assertTrue(self.vdsm_net.networkExists(
-                    netName, bridged=bridged))
-                self.assertTrue(self.vdsm_net.bondExists(
-                    BONDING_NAME, nics[1:3]))
+                    self.assertTrue(self.vdsm_net.networkExists(
+                        NETWORK_NAME, bridged=bridged))
+                    self.assertTrue(self.vdsm_net.networkExists(
+                        netName, bridged=bridged))
+                    self.assertTrue(self.vdsm_net.bondExists(
+                        BONDING_NAME, nics[1:3]))
 
                 # Clean up
                 networks = {NETWORK_NAME: dict(remove=True),
@@ -557,16 +614,69 @@ class NetworkTest(TestCaseBase):
                 self.vdsm_net.bondExists(BONDING_NAME, nics[:2])
 
                 # Increase bond size
-                status, msg = self.vdsm_net.setupNetworks({}, {BONDING_NAME:
-                                                          dict(nics=nics)}, {})
+                with nonChangingOperstate(BONDING_NAME):
+                    status, msg = self.vdsm_net.setupNetworks(
+                        {}, {BONDING_NAME: dict(nics=nics)}, {})
 
-                self.assertEquals(status, SUCCESS, msg)
+                    self.assertEquals(status, SUCCESS, msg)
 
-                self.vdsm_net.networkExists(NETWORK_NAME, bridged=bridged)
-                self.vdsm_net.bondExists(BONDING_NAME, nics)
+                    self.vdsm_net.networkExists(NETWORK_NAME, bridged=bridged)
+                    self.vdsm_net.bondExists(BONDING_NAME, nics)
 
                 status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
                                                            dict(remove=True)},
+                                                          {BONDING_NAME:
+                                                           dict(remove=True)},
+                                                          {})
+                self.assertEquals(status, SUCCESS, msg)
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksStableBond(self, bridged):
+        def createBondedNetAndCheck(netNum, bondDict):
+            netName = NETWORK_NAME + str(netNum)
+            networks = {netName: dict(bonding=BONDING_NAME, bridged=bridged,
+                                      vlan=str(int(VLAN_ID) + netNum))}
+            status, msg = self.vdsm_net.setupNetworks(networks,
+                                                      {BONDING_NAME: bondDict},
+                                                      {})
+            self.assertEquals(status, SUCCESS, msg)
+            self.vdsm_net.networkExists(netName, bridged=bridged)
+            self.vdsm_net.bondExists(BONDING_NAME, bondDict['nics'])
+
+        with dummyIf(3) as nics:
+            with self.vdsm_net.pinger():
+                # Add initial vlanned net over bond
+                createBondedNetAndCheck(0, {'nics': nics[:2],
+                                            'options': 'mode=3 miimon=250'})
+
+                with nonChangingOperstate(BONDING_NAME):
+                    # Add additional vlanned net over the bond
+                    createBondedNetAndCheck(1,
+                                            {'nics': nics[:2],
+                                             'options': 'mode=3 miimon=250'})
+                    # Add additional vlanned net over the increasing bond
+                    createBondedNetAndCheck(2,
+                                            {'nics': nics,
+                                             'options': 'mode=3 miimon=250'})
+                    # Add additional vlanned net over the changing bond
+                    createBondedNetAndCheck(3,
+                                            {'nics': nics[1:],
+                                             'options': 'mode=3 miimon=250'})
+
+                # Add a network changing bond options
+                with self.assertRaises(OperStateChangedError):
+                    with nonChangingOperstate(BONDING_NAME):
+                        createBondedNetAndCheck(4,
+                                                {'nics': nics[1:],
+                                                 'options': 'mode=4 miimon=9'})
+
+                # cleanup
+                networks = dict((NETWORK_NAME + str(num), {'remove': True}) for
+                                num in range(5))
+                status, msg = self.vdsm_net.setupNetworks(networks,
                                                           {BONDING_NAME:
                                                            dict(remove=True)},
                                                           {})
