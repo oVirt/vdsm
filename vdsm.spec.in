@@ -102,7 +102,7 @@ Requires: nfs-utils
 Requires: m2crypto
 Requires: libguestfs-tools-c
 Requires: %{name}-xmlrpc = %{version}-%{release}
-Requires: mom >= 0.3.2-2
+Requires: mom >= 0.3.2-3
 
 %ifarch x86_64
 Requires: python-dmidecode
