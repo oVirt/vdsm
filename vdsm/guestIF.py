@@ -381,7 +381,7 @@ class GuestAgent ():
     @staticmethod
     def _onChannelTimeout(self):
         self.guestInfo['memUsage'] = 0
-        if self.guestStatus not in ("Powered down", "RebootInProgress"):
+        if self.guestStatus not in ("Powering down", "RebootInProgress"):
             self.log.log(logging.TRACE, "Guest connection timed out")
             self.guestStatus = None
 
