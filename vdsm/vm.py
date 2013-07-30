@@ -4763,7 +4763,12 @@ class Vm(object):
         aliasToDevice = {}
         for devType in self._devices:
             for dev in self._devices[devType]:
-                aliasToDevice[dev.alias] = dev
+                if hasattr(dev, 'alias'):
+                    aliasToDevice[dev.alias] = dev
+                else:
+                    self.log.error("Alias not found for device type %s "
+                                   "during migration at destination host" %
+                                   devType)
 
         devices = _domParseStr(xml).childNodes[0]. \
             getElementsByTagName('devices')[0]
