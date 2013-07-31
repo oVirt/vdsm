@@ -41,6 +41,7 @@ import storage.storage_exception as se
 import storage.volume
 from storage.misc import execCmd
 from storage.misc import RollbackContext
+from storage.mount import Mount
 
 from vdsm.config import config
 from vdsm.constants import VDSM_USER, VDSM_GROUP
@@ -309,6 +310,11 @@ class IscsiServer(BackendServer):
         cmd = [_modprobe.cmd, "iscsi_target_mod"]
         rc, out, err = execCmd(cmd, sudo=True)
         asserts.assertEquals(rc, 0)
+
+        # mount the configfs for rtslib if it is not mounted
+        m = Mount('configfs', '/sys/kernel/config')
+        if not m.isMounted():
+            m.mount(mntOpts='rw', vfstype='configfs')
 
         super(IscsiServer, self).__init__(vdsmServer, asserts)
         self.address = '127.0.0.1'
