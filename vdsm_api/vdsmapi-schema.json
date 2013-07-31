@@ -2632,6 +2632,10 @@
 #
 # @clientIp:              The IP address of the client connected to the display
 #
+# @cpuShares:             #optional The host scheduling priority (relative to
+#                         other VMs). In case both cpuShares and nice are
+#                         present, cpuShares will be used.
+#
 # @cpuType:               #optional The type of CPU being emulated
 #                         special values 'hostPassthrough' and 'hostModel'
 #                         are reserved for host-passthrough and host-mode cpu
@@ -2694,8 +2698,8 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDefinition',
- 'data': {'acpiEnable': 'bool', 'clientIp': 'str', '*cpuType': 'str',
-          '*custom': 'StringMap', '*devices': ['VmDevice'],
+ 'data': {'acpiEnable': 'bool', 'clientIp': 'str', 'cpuShares': 'str',
+          '*cpuType': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
           'display': 'VmDisplayType', 'displayIp': 'str',
           'displayPort': 'int', 'displaySecurePort': 'int',
           '*emulatedMachine': 'str', '*keyboardLayout': 'str',
@@ -2713,6 +2717,10 @@
 # Parameters for creating a new virtual machine
 #
 # @acpiEnable:            Indicates if ACPI is enabled inside the VM
+#
+# @cpuShares:             #optional The host scheduling priority (relative to
+#                         other VMs). In case both cpuShares and nice are
+#                         present, cpuShares will be used.
 #
 # @custom:                #optional A dictionary of custom, free-form properties
 #
@@ -2747,7 +2755,7 @@
 ##
 {'type': 'VmParameters',
  'data': {'acpiEnable': 'bool',
-          '*custom': 'StringMap', '*devices': ['VmDevice'],
+          'cpuShares': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
           'display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
