@@ -406,14 +406,15 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=BLOCK_SIZE):
-        imagePath = image.Image(sdobj._getRepoPath()).getImageDir(
-            sdobj.sdUUID, imgUUID)
-        volPath = os.path.join(imagePath, volUUID)
+        volPath = os.path.join(sdobj.mountpoint, sdobj.sdUUID, 'images',
+                               imgUUID, volUUID)
         return int(sdobj.oop.os.stat(volPath).st_size / bs)
 
     @classmethod
     def getVTrueSize(cls, sdobj, imgUUID, volUUID, bs=BLOCK_SIZE):
-        return sdobj.produceVolume(imgUUID, volUUID).getVolumeTrueSize(bs)
+        volPath = os.path.join(sdobj.mountpoint, sdobj.sdUUID, 'images',
+                               imgUUID, volUUID)
+        return int(int(sdobj.oop.os.stat(volPath).st_blocks) * BLOCK_SIZE / bs)
 
     @classmethod
     def renameVolumeRollback(cls, taskObj, oldPath, newPath):
