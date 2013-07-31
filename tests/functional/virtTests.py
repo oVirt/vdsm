@@ -35,14 +35,16 @@ from storage.misc import RollbackContext
 
 from utils import VdsProxy, SUCCESS
 
-_mkinitrd = CommandPath("mkinird", "/usr/bin/mkinitrd")
+_mkinitrd = CommandPath("mkinitrd", "/usr/bin/mkinitrd")
 _modprobe = CommandPath("modprobe",
                         "/usr/sbin/modprobe",  # Fedora, Ubuntu
                         "/sbin/modprobe")  # RHEL6
 _kernelVer = os.uname()[2]
 _kernelPath = "/boot/vmlinuz-" + _kernelVer
-_initramfsPath = ("/boot/initramfs-"
-                  "%s.img" % _kernelVer)
+_initramfsPath = None
+_initramfsPaths = ["/boot/initramfs-%s.img" % _kernelVer,  # Fedora, RHEL
+                   "/boot/initrd.img-" + _kernelVer,  # Ubuntu
+                   ]
 _tmpinitramfs = False
 
 
@@ -51,7 +53,8 @@ def setUpModule():
     # different VM tests
     global _initramfsPath
     global _tmpinitramfs
-    if _missingBootImages(_initramfsPath):
+    _initramfsPath = _detectBootImages(_initramfsPaths)
+    if _initramfsPath is None:
         _initramfsPath = _genInitramfs()
         _tmpinitramfs = True
 
@@ -61,7 +64,7 @@ def tearDownModule():
         os.unlink(_initramfsPath)
 
 
-def _missingBootImages(initramfsPath):
+def _detectBootImages(initramfsPaths):
     if not os.path.isfile(_kernelPath):
         raise SkipTest("Can not locate kernel image for release %s" %
                        _kernelVer)
@@ -69,10 +72,11 @@ def _missingBootImages(initramfsPath):
         raise SkipTest("qemu process can not read the file "
                        "%s" % _kernelPath)
 
-    isfile = os.path.isfile(initramfsPath)
-    isreadable = os.access(initramfsPath, os.R_OK)
-
-    return not (isfile and isreadable)
+    initramfsPaths = filter(os.path.isfile, initramfsPaths)
+    if len(initramfsPaths) > 0:
+        if os.access(initramfsPaths[0], os.R_OK):
+            return initramfsPaths[0]
+    return None
 
 
 def _genInitramfs():
