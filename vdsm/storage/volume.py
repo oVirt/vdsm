@@ -326,22 +326,6 @@ class Volume(object):
         pass
 
     @classmethod
-    def getVSize(cls, sdUUID, imgUUID, volUUID, bs=BLOCK_SIZE):
-        """
-        Return volume size
-        """
-        mysd = sdCache.produce(sdUUID=sdUUID)
-        return mysd.getVolumeClass().getVSize(mysd, imgUUID, volUUID, bs)
-
-    @classmethod
-    def getVTrueSize(cls, sdUUID, imgUUID, volUUID, bs=BLOCK_SIZE):
-        """
-        Return allocated volume size
-        """
-        mysd = sdCache.produce(sdUUID=sdUUID)
-        return mysd.getVolumeClass().getVTrueSize(mysd, imgUUID, volUUID, bs)
-
-    @classmethod
     def parentVolumeRollback(cls, taskObj, sdUUID, pimgUUID, pvolUUID):
         cls.log.info("parentVolumeRollback: sdUUID=%s pimgUUID=%s"
                      " pvolUUID=%s" % (sdUUID, pimgUUID, pvolUUID))
@@ -994,13 +978,6 @@ class Volume(object):
             self.log.error("Volume.setMetaParam: %s: %s=%s" %
                            (self.volUUID, key, value))
             raise
-
-    def getVolumeTrueSize(self, bs=BLOCK_SIZE):
-        """
-        Return the size of the storage allocated for this volume
-        on underlying storage
-        """
-        pass
 
     def getVolumeParams(self, bs=BLOCK_SIZE):
         volParams = {}

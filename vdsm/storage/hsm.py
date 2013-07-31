@@ -3034,10 +3034,10 @@ class HSM:
         :rtype: dict
         """
         # Return string because xmlrpc's "int" is very limited
-        apparentsize = str(volume.Volume.getVSize(sdUUID, imgUUID,
-                                                  volUUID, bs=1))
-        truesize = str(volume.Volume.getVTrueSize(sdUUID, imgUUID,
-                                                  volUUID, bs=1))
+        dom = sdCache.produce(sdUUID=sdUUID)
+        volClass = dom.getVolumeClass()
+        apparentsize = str(volClass.getVSize(dom, imgUUID, volUUID, bs=1))
+        truesize = str(volClass.getVTrueSize(dom, imgUUID, volUUID, bs=1))
         return dict(apparentsize=apparentsize, truesize=truesize)
 
     @public
