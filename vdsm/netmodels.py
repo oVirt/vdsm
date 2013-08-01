@@ -44,10 +44,12 @@ class NetDevice(object):
 
     def getIpConfig(self):
         try:
-            ipaddr, netmask, gateway, bootproto, async = self.ip.getConfig()
+            ipaddr, netmask, gateway, bootproto, async, defaultRoute = \
+                self.ip.getConfig()
         except AttributeError:
-            ipaddr = netmask = gateway = bootproto = async = None
-        return ipaddr, netmask, gateway, bootproto, async
+            ipaddr = netmask = gateway = bootproto = async = defaultRoute = \
+                None
+        return ipaddr, netmask, gateway, bootproto, async, defaultRoute
 
     @property
     def bridge(self):
@@ -260,7 +262,8 @@ class Bond(NetDevice):
 
 
 class IPv4(object):
-    def __init__(self, address=None, netmask=None, gateway=None):
+    def __init__(self, address=None, netmask=None, gateway=None,
+                 defaultRoute=None):
         if address:
             if not netmask:
                 raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Must specify '
@@ -277,9 +280,11 @@ class IPv4(object):
         self.address = address
         self.netmask = netmask
         self.gateway = gateway
+        self.defaultRoute = defaultRoute
 
     def __repr__(self):
-        return 'IPv4(%s, %s, %s)' % (self.address, self.netmask, self.gateway)
+        return 'IPv4(%s, %s, %s, %s)' % (self.address, self.netmask,
+                                         self.gateway, self.defaultRoute)
 
     @classmethod
     def validateAddress(cls, address):
@@ -328,6 +333,8 @@ class IpConfig(object):
             ipaddr = self.inet.address
             netmask = self.inet.netmask
             gateway = self.inet.gateway
+            defaultRoute = self.inet.defaultRoute
         except AttributeError:
-            ipaddr = netmask = gateway = None
-        return ipaddr, netmask, gateway, self.bootproto, self.async
+            ipaddr = netmask = gateway = defaultRoute = None
+        return ipaddr, netmask, gateway, self.bootproto, self.async, \
+            defaultRoute

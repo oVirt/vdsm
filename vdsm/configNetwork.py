@@ -46,7 +46,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                        bondingOptions=None, nics=None, mtu=None, ipaddr=None,
                        netmask=None, gateway=None, bootproto=None,
                        _netinfo=None, configurator=None, blockingdhcp=None,
-                       implicitBonding=None, **opts):
+                       implicitBonding=None, defaultRoute=None, **opts):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -66,6 +66,8 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     :param blockingdhcp: whether to acquire dhcp IP config in a synced manner.
     :param implicitBonding: whether the bond's existance is tied to it's
                             master's.
+    :param defaultRoute: Should this network's gateway be set in the main
+                         routing table?
 
     :returns: the top object of the hierarchy.
     """
@@ -101,7 +103,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without'
                                  'devices.')
-    topNetDev.ip = IpConfig(inet=IPv4(ipaddr, netmask, gateway),
+    topNetDev.ip = IpConfig(inet=IPv4(ipaddr, netmask, gateway, defaultRoute),
                             bootproto=bootproto,
                             blocking=utils.tobool(blockingdhcp))
     return topNetDev
@@ -182,6 +184,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
             for nic in nics:
                 _validateInterNetworkCompatibility(_netinfo, vlan, nic,
                                                    bridged)
+
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
                  " bondingOptions=%s, mtu=%s, bridged=%s, options=%s",
                  network, vlan, bonding, nics, bondingOptions,
@@ -192,10 +195,13 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     bootproto = options.pop('bootproto', None)
 
+    defaultRoute = network == constants.MANAGEMENT_NETWORK
+
     netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, bootproto, _netinfo, configurator,
-                                **options)
+                                defaultRoute=defaultRoute, **options)
+
     netEnt.configure(**options)
     configurator.configureLibvirtNetwork(network, netEnt,
                                          qosInbound=qosInbound,

@@ -85,7 +85,7 @@ class Configurator(object):
         DynamicSourceRoute.addInterfaceTracking(netEnt)
 
     def _removeSourceRoute(self, netEnt):
-        _, _, _, bootproto, _ = netEnt.getIpConfig()
+        _, _, _, bootproto, _, _ = netEnt.getIpConfig()
         if bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s" % netEnt.name)
             StaticSourceRoute(netEnt.name, self).remove()
