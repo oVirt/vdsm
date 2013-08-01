@@ -1,0 +1,12 @@
+# vdsm-restore-net-config - Restore failed Vdsm network configuration on boot
+#
+
+description "Restore failed Vdsm network configuration on boot"
+
+start on runlevel [2345] and started libvirt-bin
+chdir "@VDSMDIR@"
+console log
+
+task
+
+exec "@VDSMDIR@/vdsm-restore-net-config"

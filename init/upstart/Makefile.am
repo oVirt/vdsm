@@ -18,27 +18,27 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = systemd sysvinit upstart
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-nodist_vdsmexec_SCRIPTS = \
-	vdsmd_init_common.sh \
-	$(NULL)
-
-dist_vdsm_SCRIPTS = \
-	daemonAdapter \
+nodist_noinst_DATA = \
+	supervdsmd.upstart \
+	vdsm-restore-net-config.upstart \
+	vdsm-tmpfiles.upstart \
+	vdsmd.upstart \
 	$(NULL)
 
 CLEANFILES = \
 	config.log \
-	$(nodist_vdsmexec_SCRIPTS) \
+	$(nodist_noinst_DATA) \
 	$(NULL)
 
 EXTRA_DIST = \
-	vdsmd_init_common.sh.in \
+	supervdsmd.upstart.in \
+	vdsm-restore-net-config.upstart.in \
+	vdsm-tmpfiles.upstart.in \
+	vdsmd.upstart.in \
 	$(NULL)
 
 all-local: \
-	$(nodist_vdsm_SCRIPTS) \
+	$(nodist_noinst_DATA) \
 	$(NULL)

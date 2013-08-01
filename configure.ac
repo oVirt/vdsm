@@ -203,6 +203,7 @@ AC_OUTPUT([
 	init/Makefile
 	init/systemd/Makefile
 	init/sysvinit/Makefile
+	init/upstart/Makefile
 	lib/Makefile
 	lib/cpopen/Makefile
 	lib/vdsm/Makefile

@@ -1,0 +1,36 @@
+# vdsmd - Virtual Desktop Server Manager
+#
+
+description "Virtual Desktop Server Manager"
+
+start on runlevel [2345] and started networking and started portmap and started libvirt-bin and started supervdsmd
+stop on runlevel [!2345]
+chdir "@VDSMDIR@"
+console log
+nice -20
+respawn
+
+pre-start script
+    for srv in networking ntp open-iscsi multipath-tools wdmd sanlock portmap libvirt-bin supervdsmd; do
+        if status "${srv}" >/dev/null 2>&1; then
+            # When srv is Upstart service, status srv always returns 0
+            start "${srv}" || true
+            status "${srv}" | grep -q start/running
+        else
+            service "${srv}" status >/dev/null 2>&1 || service "${srv}" start
+        fi
+    done
+    "@LIBEXECDIR@/vdsmd_init_common.sh" --pre-start
+end script
+
+# All commands called inside this script section except the daemon itself
+# should not fork, otherwise Upstart traces the wrong pid.
+# ".", "[", "&&" are built-in command or key-word, no fork.
+# bash exec does not fork, just execve the target binary.
+# So no "expect" stanza is needed.
+script
+    [ -f "/etc/default/vdsmd" ] && . "/etc/default/vdsmd"
+    exec start-stop-daemon --chuid @VDSMUSER@:@VDSMGROUP@ --start --exec "@VDSMDIR@/daemonAdapter" -- -0 /dev/null -1 /dev/null -2 /dev/null "@VDSMDIR@/vdsm"
+end script
+
+post-stop exec "@LIBEXECDIR@/vdsmd_init_common.sh" --post-stop

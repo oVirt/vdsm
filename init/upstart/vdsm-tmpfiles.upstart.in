@@ -1,0 +1,24 @@
+# vdsm-tmpfiles - Automatically create tempfiles under /var/run for vdsm
+#
+
+description "Automatically create tempfiles under /var/run for vdsm"
+
+start on startup
+console log
+
+task
+
+script
+while read fileType filePath fileMode fileUser fileGroup ; do
+    if [ ! -e "$filePath" ]; then
+        if [ "$fileType" = "d" ]; then
+            @MKDIR_P@ "$filePath"
+        else
+            echo "Type $fileType handling is not implemented"
+            exit 1
+        fi
+    fi
+    "@CHOWN_PATH@" $fileUser:$fileGroup "$filePath"
+    "@CHMOD_PATH@" $fileMode "$filePath"
+done < "@CONFDIR@/vdsm-tmpfiles.conf"
+end script
