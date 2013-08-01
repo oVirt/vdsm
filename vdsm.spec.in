@@ -483,7 +483,9 @@ such as: vendor, version, date and release
 
 %package hook-sriov
 Summary:        sr-iov support for VDSM
+%if 0%{?rhel} >= 7 || 0%{?fedora} >= 18
 Requires:       libvirt-daemon-driver-nodedev
+%endif
 BuildArch:      noarch
 
 %description hook-sriov
