@@ -11,6 +11,8 @@ nice -20
 respawn
 
 pre-start script
+    "@BINDIR@/vdsm-tool" load-needed-modules
+    service wdmd restart
     for srv in networking ntp open-iscsi multipath-tools wdmd sanlock portmap libvirt-bin supervdsmd; do
         if status "${srv}" >/dev/null 2>&1; then
             # When srv is Upstart service, status srv always returns 0

@@ -18,6 +18,8 @@
 #
 
 
+import os.path
+
 from vdsm import netinfo
 from vdsm.tool import expose
 from vdsm.utils import execCmd
@@ -44,6 +46,11 @@ def _enable_bond_dev():
             f.write('+%s\n' % bond)
 
 
+def _enable_softdog():
+    if not os.path.exists('/dev/watchdog'):
+        _exec_command([EX_MODPROBE, 'softdog'])
+
+
 @expose('load-needed-modules')
 def load_needed_modules():
     """
@@ -53,3 +60,4 @@ def load_needed_modules():
     for mod in ['bridge', 'tun', 'bonding', '8021q']:
         _exec_command([EX_MODPROBE, mod])
     _enable_bond_dev()
+    _enable_softdog()
