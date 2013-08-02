@@ -2735,6 +2735,7 @@ class Vm(object):
         self._getUnderlyingBalloonDeviceInfo()
         self._getUnderlyingWatchdogDeviceInfo()
         self._getUnderlyingSmartcardDeviceInfo()
+        self._getUnderlyingConsoleDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
@@ -4442,20 +4443,41 @@ class Vm(object):
         for x in balloonxml:
             # Ignore balloon devices without address.
             if not x.getElementsByTagName('address'):
-                continue
-
-            address = self._getUnderlyingDeviceAddress(x)
+                address = None
+            else:
+                address = self._getUnderlyingDeviceAddress(x)
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
             for dev in self._devices[BALLOON_DEVICES]:
-                if not hasattr(dev, 'address'):
+                if address and not hasattr(dev, 'address'):
                     dev.address = address
+                if not hasattr(dev, 'alias'):
                     dev.alias = alias
 
             for dev in self.conf['devices']:
-                if ((dev['type'] == BALLOON_DEVICES) and
-                        not dev.get('address')):
-                    dev['address'] = address
+                if dev['type'] == BALLOON_DEVICES:
+                    if address and not dev.get('address'):
+                        dev['address'] = address
+                    if not dev.get('alias'):
+                        dev['alias'] = alias
+
+    def _getUnderlyingConsoleDeviceInfo(self):
+        """
+        Obtain the alias for the console device from libvirt
+        """
+        consolexml = _domParseStr(self._lastXMLDesc).childNodes[0].\
+            getElementsByTagName('devices')[0].\
+            getElementsByTagName('console')
+        for x in consolexml:
+            # All we care about is the alias
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            for dev in self._devices[CONSOLE_DEVICES]:
+                if not hasattr(dev, 'alias'):
+                    dev.alias = alias
+
+            for dev in self.conf['devices']:
+                if dev['device'] == CONSOLE_DEVICES and \
+                        not dev.get('alias'):
                     dev['alias'] = alias
 
     def _getUnderlyingSmartcardDeviceInfo(self):
