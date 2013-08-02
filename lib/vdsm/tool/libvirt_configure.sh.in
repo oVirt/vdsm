@@ -107,8 +107,24 @@ libvirtd_sysv2upstart() {
 # Remove configuration created by vdsm (old "# by vdsm" and the new format)
 # Argument: configuration file that will be inspected
 remove_vdsm_conf() {
-    sed -i --copy -e "/${start_conf_section}/,/${end_conf_section}/d" \
-        -e "/${by_vdsm}/d" "$@"
+    local confFile
+    for confFile in "$@" ; do
+        # ed considers empty address ranges as error and exits on error.
+        # If there is no old "# by vdsm", ed quits without saving the
+        # edited file. We put each expression in a seperate ed invocation to
+        # have all commands exectuded even if any one of them fails.
+        # TODO: If system or ed crashed when editing the file, the file would
+        # remain in a inconsistent state. Implement atomic file editing in
+        # future.
+        ed -s "${confFile}" >/dev/null 2>&1 <<EOF
+/${start_conf_section}/,/${end_conf_section}/d
+wq
+EOF
+        ed -s "${confFile}" >/dev/null 2>&1 <<EOF
+g/${by_vdsm}/d
+wq
+EOF
+    done
 }
 
 set_if_default() {
