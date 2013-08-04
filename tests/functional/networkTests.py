@@ -1133,3 +1133,77 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.vdsm_net.setupNetworks({}, bondings, {})
 
                 self.assertEquals(status, SUCCESS, msg)
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testBondHwAddress(self, bridged=True):
+        """
+        Test that bond mac address is independent of the ordering of nics arg
+        """
+        with dummyIf(2) as nics:
+            def _getBondHwAddress(*nics):
+                status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
+                                                       bond=BONDING_NAME,
+                                                       nics=nics,
+                                                       opts={'bridged':
+                                                             bridged})
+                self.assertEquals(status, SUCCESS, msg)
+
+                status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
+                self.assertEquals(status, SUCCESS, msg)
+
+                return self.vdsm_net.netinfo.bondings[BONDING_NAME]['hwaddr']
+
+            macAddress1 = _getBondHwAddress(nics[0], nics[1])
+            macAddress2 = _getBondHwAddress(nics[1], nics[0])
+            self.assertEquals(macAddress1, macAddress2)
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSafeNetworkConfig(self, bridged):
+        """
+        Checks that setSafeNetworkConfig saves
+        the configuration between restart.
+        """
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, nics=nics,
+                                                   opts={'bridged': bridged})
+            self.assertEquals(status, SUCCESS, msg)
+
+            self.vdsm_net.networkExists(NETWORK_NAME, bridged=bridged)
+
+            self.vdsm_net.save_config()
+
+            self.vdsm_net.restoreNetConfig()
+
+            self.vdsm_net.networkExists(NETWORK_NAME, bridged=bridged)
+
+            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
+            self.assertEquals(status, SUCCESS, msg)
+
+            self.vdsm_net.save_config()
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testVolatileConfig(self, bridged):
+        """
+        Checks that the network doesn't persist over restart
+        """
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, nics=nics,
+                                                   opts={'bridged':
+                                                         bridged})
+            self.assertEquals(status, SUCCESS, msg)
+
+            self.vdsm_net.networkExists(NETWORK_NAME, bridged=bridged)
+
+            self.vdsm_net.restoreNetConfig()
+
+            self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME,
+                                                         bridged=bridged))

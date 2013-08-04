@@ -229,3 +229,11 @@ class VdsProxy(object):
     def hotunplugDisk(self, params):
         result = self.vdscli.hotunplugDisk(params)
         return result['status']['code'], result['status']['message']
+
+    @netinfo_altering
+    def restoreNetConfig(self):
+        restoreNetConfig()
+
+    def ping(self):
+        result = self.vdscli.ping()
+        return result['status']['code']
