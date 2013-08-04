@@ -170,6 +170,7 @@ task_validate_configuration(){
     "$VDSM_TOOL" validate-config
 }
 
+
 task_restore_nets(){
     local restoration_file="@VDSMRUNDIR@/nets_restored"
     if [ ! -f "${restoration_file}" ]; then
@@ -177,6 +178,11 @@ task_restore_nets(){
         touch "${restoration_file}"
     fi
     return 0
+}
+
+
+task_unified_network_persistence_upgrade(){
+    "$VDSM_TOOL" upgrade-to-unified-persistence
 }
 #### pre-start tasks end ####
 
@@ -224,6 +230,7 @@ case "$1" in
             test_space \
             test_lo \
             restore_nets \
+            unified_network_persistence_upgrade \
             "
         ;;
     --post-stop)

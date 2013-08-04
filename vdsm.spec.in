@@ -1082,6 +1082,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitearch}/%{vdsm_name}/tool/service.py*
 %{python_sitearch}/%{vdsm_name}/tool/transient.py*
+%{python_sitearch}/%{vdsm_name}/tool/unified_persistence.py*
 %{python_sitearch}/%{vdsm_name}/tool/upgrade.py*
 %{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 %{python_sitearch}/%{vdsm_name}/tool/vdsm-id.py*
