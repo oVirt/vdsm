@@ -457,3 +457,117 @@ class NetworkTest(TestCaseBase):
                                                                  bridged))
                     self.assertFalse(
                         self.vdsm_net.vlanExists(nic + '.' + tag))
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksAddNetworkToNicAfterBondResizing(self, bridged):
+        with dummyIf(3) as nics:
+            with self.vdsm_net.pinger():
+                networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
+                                               bridged=bridged)}
+                status, msg = self.vdsm_net.setupNetworks(networks,
+                                                          {BONDING_NAME:
+                                                           dict(nics=nics)},
+                                                          {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.assertTrue(self.vdsm_net.networkExists(
+                                NETWORK_NAME, bridged=bridged))
+                self.assertTrue(self.vdsm_net.bondExists(
+                                BONDING_NAME, nics))
+
+                # Reduce bond size and create Network on detached NIC
+                netName = NETWORK_NAME + '-2'
+                networks = {netName: dict(nic=nics[0],
+                                          bridged=bridged)}
+                bondings = {BONDING_NAME: dict(nics=nics[1:3])}
+                status, msg = self.vdsm_net.setupNetworks(networks,
+                                                          bondings, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.assertTrue(self.vdsm_net.networkExists(
+                    NETWORK_NAME, bridged=bridged))
+                self.assertTrue(self.vdsm_net.networkExists(
+                    netName, bridged=bridged))
+                self.assertTrue(self.vdsm_net.bondExists(
+                    BONDING_NAME, nics[1:3]))
+
+                # Clean up
+                networks = {NETWORK_NAME: dict(remove=True),
+                            netName: dict(remove=True)}
+                bondings = {BONDING_NAME: dict(remove=True)}
+                status, msg = self.vdsm_net.setupNetworks(networks,
+                                                          bondings, {})
+                self.assertEquals(status, SUCCESS, msg)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksAddNetworkToNicAfterBondBreaking(self, bridged):
+        with dummyIf(2) as nics:
+            with self.vdsm_net.pinger():
+                networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
+                                               bridged=bridged)}
+                status, msg = self.vdsm_net.setupNetworks(networks,
+                                                          {BONDING_NAME:
+                                                           dict(nics=nics)},
+                                                          {})
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.assertTrue(self.vdsm_net.networkExists(
+                                NETWORK_NAME, bridged=bridged))
+                self.assertTrue(self.vdsm_net.bondExists(
+                                BONDING_NAME, nics))
+
+                # Break the bond and create Network on detached NIC
+                networks = {NETWORK_NAME: dict(nic=nics[0], bridged=bridged)}
+                status, msg = self.vdsm_net.setupNetworks(networks,
+                                                          {BONDING_NAME:
+                                                           dict(remove=True)},
+                                                          {})
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.assertTrue(self.vdsm_net.networkExists(
+                                NETWORK_NAME, bridged=bridged))
+                self.assertFalse(self.vdsm_net.bondExists(
+                                 BONDING_NAME, nics))
+
+                status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
+                                                           dict(remove=True)},
+                                                          {}, {})
+                self.assertEquals(status, SUCCESS, msg)
+
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksKeepNetworkOnBondAfterBondResizing(self, bridged):
+        with dummyIf(3) as nics:
+            with self.vdsm_net.pinger():
+                networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
+                                               bridged=bridged)}
+                bondings = {BONDING_NAME: dict(nics=nics[:2])}
+                status, msg = self.vdsm_net.setupNetworks(networks,
+                                                          bondings, {})
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.vdsm_net.networkExists(NETWORK_NAME, bridged=bridged)
+                self.vdsm_net.bondExists(BONDING_NAME, nics[:2])
+
+                # Increase bond size
+                status, msg = self.vdsm_net.setupNetworks({}, {BONDING_NAME:
+                                                          dict(nics=nics)}, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.vdsm_net.networkExists(NETWORK_NAME, bridged=bridged)
+                self.vdsm_net.bondExists(BONDING_NAME, nics)
+
+                status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
+                                                           dict(remove=True)},
+                                                          {BONDING_NAME:
+                                                           dict(remove=True)},
+                                                          {})
+                self.assertEquals(status, SUCCESS, msg)
