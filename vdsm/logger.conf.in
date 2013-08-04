@@ -1,8 +1,8 @@
 [loggers]
-keys=root,vds,Storage,metadata
+keys=root,vds,Storage,metadata,upgrade
 
 [handlers]
-keys=console,syslog,logfile,metadata
+keys=console,syslog,logfile,metadata,upgrade
 
 [formatters]
 keys=long,simple,none,sysform
@@ -30,6 +30,12 @@ handlers=metadata
 qualname=irs.metadata
 propagate=0
 
+[logger_upgrade]
+level=DEBUG
+handlers=upgrade
+qualname=upgrade
+propagate=0
+
 [handler_syslog]
 level=WARNING
 class=handlers.SysLogHandler
@@ -47,6 +53,12 @@ formatter=long
 class=logging.handlers.WatchedFileHandler
 args=('@VDSMLOGDIR@/metadata.log',)
 level=WARNING
+formatter=long
+
+[handler_upgrade]
+class=logging.handlers.WatchedFileHandler
+args=('@VDSMLOGDIR@/upgrade.log',)
+level=DEBUG
 formatter=long
 
 [handler_console]

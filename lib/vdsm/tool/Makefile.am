@@ -44,6 +44,7 @@ dist_vdsmtool_PYTHON = \
 	seboolsetup.py \
 	service.py \
 	transient.py \
+	upgrade.py \
 	vdsm-id.py \
 	$(NULL)
 

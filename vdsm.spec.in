@@ -1037,6 +1037,7 @@ exit 0
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/lib/%{vdsm_name}/persistence
+%dir %{_localstatedir}/lib/%{vdsm_name}/upgrade
 %dir %{_localstatedir}/run/%{vdsm_name}
 %dir %{_localstatedir}/run/%{vdsm_name}/sourceRoutes
 %dir %{_localstatedir}/run/%{vdsm_name}/trackedInterfaces
@@ -1081,6 +1082,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitearch}/%{vdsm_name}/tool/service.py*
 %{python_sitearch}/%{vdsm_name}/tool/transient.py*
+%{python_sitearch}/%{vdsm_name}/tool/upgrade.py*
 %{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 %{python_sitearch}/%{vdsm_name}/tool/vdsm-id.py*
 
