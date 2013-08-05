@@ -1356,7 +1356,7 @@ class Drive(VmDevice):
         can also dynamically change according to the VM needs (e.g. increase
         during a live storage migration).
         """
-        if hasattr(self, "diskReplicate"):
+        if self.isDiskReplicationInProgress():
             return self.VOLWM_CHUNK_MB * self.VOLWM_CHUNK_REPLICATE_MULT
         return self.VOLWM_CHUNK_MB
 
@@ -3290,7 +3290,8 @@ class Vm(object):
         for dev in self.conf['devices'][:]:
             if (dev['type'] == DISK_DEVICES and
                     dev['path'] == diskParams['path']):
-                self.conf['devices'].remove(dev)
+                with self._confLock:
+                    self.conf['devices'].remove(dev)
                 diskDev = dev
                 break
 
@@ -3801,10 +3802,6 @@ class Vm(object):
             raise LookupError("No such drive: '%s'" % srcDrive.name)
 
         srcDrive.diskReplicate = dstDisk
-        self.saveState()
-
-    def isDiskReplicationInProgress(self, srcDrive):
-        return hasattr(srcDrive, 'diskReplicate')
 
     def _delDiskReplica(self, srcDrive):
         """
@@ -3822,7 +3819,6 @@ class Vm(object):
             raise LookupError("No such drive: '%s'" % srcDrive.name)
 
         del srcDrive.diskReplicate
-        self.saveState()
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
@@ -3838,7 +3834,6 @@ class Vm(object):
                            "destination '%s'" % srcDrive.name, dstDisk)
             return errCode['replicaErr']
 
-        self._setDiskReplica(srcDrive, dstDisk)
         dstDiskCopy = dstDisk.copy()
 
         # The device entry is enforced because stricly required by
