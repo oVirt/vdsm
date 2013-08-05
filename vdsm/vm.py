@@ -1703,6 +1703,7 @@ class Vm(object):
         self._releaseLock = threading.Lock()
         self.saveState()
         self._watchdogEvent = {}
+        self.sdIds = []
 
     def _get_lastStatus(self):
         PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -2074,7 +2075,7 @@ class Vm(object):
         return self._volumesPrepared
 
     def preparePaths(self, drives):
-        domains = set()
+        domains = []
         for drive in drives:
             with self._volPrepareLock:
                 if self.destroyed:
@@ -2082,9 +2083,9 @@ class Vm(object):
                     break
                 drive['path'] = self.cif.prepareVolumePath(drive, self.id)
             if drive['device'] == 'disk' and isVdsmImage(drive):
-                domains.add(drive['domainID'])
+                domains.append(drive['domainID'])
         else:
-            self.cif.addVmToMonitoredDomains(self.id, domains)
+            self.sdIds.extend(domains)
             # Now we got all the resources we needed
             self.startDisksStatsCollection()
 
@@ -3260,7 +3261,7 @@ class Vm(object):
             # the libvirt during recovery process.
             self._devices[DISK_DEVICES].append(drive)
             if vdsmImg:
-                self.addVmToMonitoredDomains(self.id, diskParams['domainID'])
+                self.sdIds.append(diskParams['domainID'])
             with self._confLock:
                 self.conf['devices'].append(diskParams)
             self.saveState()
@@ -3297,6 +3298,8 @@ class Vm(object):
 
         # Remove found disk from vm's drives list
         if drive:
+            if isVdsmImage(drive):
+                self.sdIds.remove(drive['domainID'])
             self._devices[DISK_DEVICES].remove(drive)
         # Find and remove disk device from vm's conf
         diskDev = None
@@ -4245,8 +4248,6 @@ class Vm(object):
             self._cleanup()
 
             self.cif.irs.inappropriateDevices(self.id)
-
-            self.cif.removeVmFromMonitoredDomains(self.id)
 
             hooks.after_vm_destroy(self._lastXMLDesc, self.conf)
             for dev in self._customDevices():

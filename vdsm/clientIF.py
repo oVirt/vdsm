@@ -75,8 +75,6 @@ class clientIF:
         self._recovery = True
         self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
-        self.domainVmIds = {}
-        self.domainVmIdsLock = threading.Lock()
         self._initIRS()
         self.mom = None
         if _glusterEnabled:
@@ -113,26 +111,6 @@ class clientIF:
             raise
         self._prepareBindings()
 
-    def addVmToMonitoredDomains(self, vmId, domains):
-        with self.domainVmIdsLock:
-            for dom in domains:
-                try:
-                    self.domainVmIds[dom].add(vmId)
-                except KeyError:
-                    self.domainVmIds[dom] = set([vmId])
-
-    def removeVmFromMonitoredDomains(self, vmId):
-        for dom in self.domainVmIds:
-            #only take lock here to allow runVm to take the lock in-between
-            with self.domainVmIdsLock:
-                try:
-                    self.domainVmIds[dom].remove(vmId)
-                except ValueError:
-                    pass
-                else:
-                    if not self.domainVmIds[dom]:
-                        del self.domainVmIds[dom]
-
     def contEIOVms(self, sdUUID, isDomainStateValid):
         # This method is called everytime the onDomainStateChange
         # event is emitted, this event is emitted even when a domain goes
@@ -144,17 +122,16 @@ class clientIF:
         libvirtVms = libvirtCon.listAllDomains(
             libvirt.VIR_CONNECT_LIST_DOMAINS_PAUSED)
 
-        if sdUUID in self.domainVmIds:
-            with self.vmContainerLock:
-                self.log.info("vmContainerLock acquired")
-                for libvirtVm in libvirtVms:
-                    state = libvirtVm.state(0)
-                    if state[1] == libvirt.VIR_DOMAIN_PAUSED_IOERROR:
-                        vmId = libvirtVm.UUIDString()
-                        if vmId in self.domainVmIds[sdUUID]:
-                            vmObj = self.vmContainer[vmId]
-                            self.log.info("Cont vm %s in EIO", vmId)
-                            vmObj.cont()
+        with self.vmContainerLock:
+            self.log.info("vmContainerLock acquired")
+            for libvirtVm in libvirtVms:
+                state = libvirtVm.state(0)
+                if state[1] == libvirt.VIR_DOMAIN_PAUSED_IOERROR:
+                    vmId = libvirtVm.UUIDString()
+                    vmObj = self.vmContainer[vmId]
+                    if sdUUID in vmObj.sdIds:
+                        self.log.info("Cont vm %s in EIO", vmId)
+                        vmObj.cont()
 
     @classmethod
     def getInstance(cls, log=None):
