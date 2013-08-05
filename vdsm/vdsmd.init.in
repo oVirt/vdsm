@@ -30,6 +30,7 @@ RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
 CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
+LOCK_FILE="/var/lock/subsys/vdsmd"
 NEEDED_SERVICES="iscsid multipathd rpcbind ntpd wdmd sanlock network libvirtd
                  supervdsmd"
 CONFLICTING_SERVICES="libvirt-guests ksmtuned"
@@ -102,6 +103,18 @@ syslog_available() {
         return 1
     fi
     return 0
+}
+
+acquire_lock() {
+    # todo: add additional flock on free fd
+    if [ -f "$LOCK_FILE" ]; then
+        return 1
+    fi
+    touch "$LOCK_FILE"
+}
+
+release_lock() {
+    "@RM_PATH@" -f "$LOCK_FILE"
 }
 
 start_needed_srv() {
@@ -254,11 +267,28 @@ start() {
     LC_ALL=C NICELEVEL="$vdsm_nice" daemon --user=vdsm "@VDSMDIR@/respawn" --minlifetime 10 --daemon --masterpid "$RESPAWNPIDFILE" "$VDSM_BIN"
     RETVAL=$?
     [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
-    [ "$RETVAL" -eq 0 ] && touch /var/lock/subsys/vdsmd
 }
 
 stop() {
     echo $"Shutting down vdsm daemon: "
+    if [ -f "$LOCK_FILE" ]; then
+       if ! [ -f "$RESPAWNPIDFILE" ]; then
+           log_failure_msg "$prog during another start, cannot stop yet"
+           return 1
+       else
+           kill_instance
+           "@RM_PATH@" -f "$RESPAWNPIDFILE"
+           release_lock
+       fi
+    else
+       kill_instance
+       log_failure_msg "$prog already stopped"
+    fi
+
+    return 0
+}
+
+kill_instance() {
     if killproc -p "$RESPAWNPIDFILE"; then
         log_success_msg $"$prog watchdog stop"
     fi
@@ -269,20 +299,27 @@ stop() {
         killproc -p "$PIDFILE" -d 2
         RETVAL=$?
         [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog stop" || log_failure_msg $"$prog stop"
-        [ "$RETVAL" -eq 0 ] && "@RM_PATH@" -f /var/lock/subsys/vdsmd
     fi
     "@PYTHON@" "@VDSMDIR@/hooks.pyc" after_vdsm_stop
-    return "$RETVAL"
+}
+
+locked_start() {
+    if ! acquire_lock; then
+        log_failure_msg "cannot start VDS daemon when another instance runs"
+        return 1
+    else
+        start || release_lock && return 1
+    fi
 }
 
 case "$1" in
      start)
-        start
-    RETVAL=$?
+         locked_start
+         RETVAL=$?
     ;;
      stop)
         stop
-    RETVAL=$?
+        RETVAL=$?
     ;;
      status)
     pidofproc -p "$PIDFILE" "$VDSM_BIN" >/dev/null
@@ -290,12 +327,16 @@ case "$1" in
     if [ "$RETVAL" -eq 0 ]; then
         echo "VDS daemon server is running"
     else
-        printf "VDS daemon is not running"
-            if pidofproc -p "$RESPAWNPIDFILE" >/dev/null; then
-                echo ", but its watchdog is"
-            else
-                echo
-            fi
+        if [ -f "$LOCK_FILE" ]; then
+            printf "VDS daemon dead but subsys locked"
+        else
+            printf "VDS daemon is not running"
+        fi
+        if pidofproc -p "$RESPAWNPIDFILE" >/dev/null; then
+            echo ", and its watchdog is running"
+        else
+            echo
+        fi
     fi
     ;;
      condrestart)
