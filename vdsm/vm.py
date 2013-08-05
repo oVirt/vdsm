@@ -3279,16 +3279,10 @@ class Vm(object):
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
         # Find disk object in vm's drives list
-        drive = None
         for drv in self._devices[DISK_DEVICES][:]:
             if drv.path == diskParams['path']:
                 drive = drv
                 break
-
-        if drive:
-            customProps = getattr(drive, 'custom', {})
-            driveXml = drive.getXML().toprettyxml(encoding='utf-8')
-            self.log.debug("Hotunplug disk xml: %s", driveXml)
         else:
             self.log.error("Hotunplug disk failed - Disk not found: %s",
                            diskParams)
@@ -3296,11 +3290,13 @@ class Vm(object):
                                               ['status']['code'],
                                'message': "Disk not found"}}
 
+        customProps = getattr(drive, 'custom', {})
+        driveXml = drive.getXML().toprettyxml(encoding='utf-8')
+        self.log.debug("Hotunplug disk xml: %s", driveXml)
         # Remove found disk from vm's drives list
-        if drive:
-            if isVdsmImage(drive):
-                self.sdIds.remove(drive['domainID'])
-            self._devices[DISK_DEVICES].remove(drive)
+        if isVdsmImage(drive):
+            self.sdIds.remove(drive['domainID'])
+        self._devices[DISK_DEVICES].remove(drive)
         # Find and remove disk device from vm's conf
         diskDev = None
         for dev in self.conf['devices'][:]:
@@ -3321,8 +3317,7 @@ class Vm(object):
             self.log.error("Hotunplug failed", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            if drive:
-                self._devices[DISK_DEVICES].append(drive)
+            self._devices[DISK_DEVICES].append(drive)
             # Restore disk device in vm's conf and _devices
             if diskDev:
                 with self._confLock:
