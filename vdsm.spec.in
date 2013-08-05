@@ -187,7 +187,11 @@ Requires: lvm2 >= 2.02.95
 %endif
 
 %if 0%{?fedora} >= 18
-Requires: selinux-policy-targeted >= 3.11.1-71
+%if 0%{?fedora} >= 19
+Requires: selinux-policy-targeted >= 3.12.1-69
+%else
+Requires: selinux-policy-targeted >= 3.11.1-100
+%endif
 # In order to avoid a policycoreutils bug (rhbz 889698) when selinux is
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-55
