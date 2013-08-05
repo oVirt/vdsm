@@ -1,16 +1,31 @@
 macspoof vdsm hook
 =================================
-This hook goes through all of the VM's interfaces and removes
-MAC and ARP spoofing filtering.
+These hooks allow to remove MAC and ARP spoofing filtering
+from all of the VM's interfaces or for a specific vnic.
 
 Installation:
-* Use the engine-config to append the appropriate custom property as such:
+* Use the engine-config to append the appropriate custom properties
+  as such:
+
+Custom property which removes MAC and ARP spoofing filtering
+for all interfaces in a VM:
+
 	sudo engine-config -s UserDefinedVMProperties=
 	'previousProperties;macspoof=^(true|false)$' --cver=3.2
 
-* Verify that the macspoof custom property was properly added:
-	sudo engine-config -g UserDefinedVMProperties
+Custom property which removes MAC and ARP spoofing filtering
+for a specific vnic in a VM:
+
+  sudo engine-config -s CustomDeviceProperties=
+  '{type=interface;prop={ifacemacspoof=true}}'
+
+* Verify that the macspoof custom propertes were properly added:
+	sudo engine-config -g CustomDeviceProperties
 
 Usage:
 In the VM configuration window, open the custom properites tab
-and add macspoof=true
+and add macspoof=true for applying filtering to all VM's interfaces.
+
+In the vnic profiles configuration window, open the custom properties
+tab and add ifacemacspoof=true for applying filtering to the specific
+interface.

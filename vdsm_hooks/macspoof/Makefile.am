@@ -19,13 +19,22 @@
 #
 
 EXTRA_DIST = \
-	before_vm_start.py
+	before_vm_start.py \
+	macspoof_vnic.py
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_start
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_start.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_macspoof
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_device_create
+	$(INSTALL_SCRIPT) $(srcdir)/macspoof_vnic.py \
+		$(DESTDIR)$(vdsmhooksdir)/before_device_create/50_macspoof
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug
+	$(INSTALL_SCRIPT) $(srcdir)/macspoof_vnic.py \
+		$(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/50_macspoof
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_macspoof
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_device_create/50_macspoof
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/50_macspoof
 

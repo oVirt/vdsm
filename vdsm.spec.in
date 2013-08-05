@@ -367,7 +367,9 @@ Summary:        Disables MAC spoofing filtering
 BuildArch:      noarch
 
 %description hook-macspoof
-VDSM hook that disables mac spoof filtering on all the of the VM's interfaces.
+VDSM hooks which allow to disable mac spoof filtering
+either on all the of the VM's interfaces or on
+specific vnics.
 
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
@@ -1138,6 +1140,8 @@ exit 0
 %files hook-macspoof
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_macspoof
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_macspoof
 
 %files hook-nestedvt
 %defattr(-, root, root, -)
