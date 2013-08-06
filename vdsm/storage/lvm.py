@@ -127,16 +127,12 @@ VDSM_LVM_CONF = os.path.join(VDSM_LVM_SYSTEM_DIR, "lvm.conf")
 USER_DEV_LIST = filter(None, config.get("irs", "lvm_dev_whitelist").split(","))
 
 
-def _buildFilter(devList):
-    devList = list(devList)
-    devList.sort()
-    devs = []
-    for dev in devList:
-        strippedDev = dev.strip()
-        if strippedDev:
-            prefixedDev = os.path.join(PV_PREFIX, strippedDev)
-            devs.append(prefixedDev.replace(r'\x', r'\\x'))
-    filt = '|'.join(devs)
+def _buildFilter(devices):
+    strippeds = set(d.strip() for d in devices)
+    strippeds.discard('')  # Who has put a blank here?
+    strippeds = sorted(strippeds)
+    dmPaths = [dev.replace(r'\x', r'\\x') for dev in strippeds]
+    filt = '|'.join(dmPaths)
     if len(filt) > 0:
         filt = "'a|" + filt + "|', "
 
@@ -273,12 +269,10 @@ class LVMCache(object):
 
             return self._extraCfg
 
-    def _addExtraCfg(self, cmd, devList=None):
+    def _addExtraCfg(self, cmd, devices=tuple()):
         newcmd = [constants.EXT_LVM, cmd[0]]
-        if devList is not None:
-            devList = list(set(devList))
-            devList.sort()
-            conf = _buildConfig(devList)
+        if devices:
+            conf = _buildConfig(devices)
         else:
             conf = self._getCachedExtraCfg()
 
