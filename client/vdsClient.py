@@ -1879,7 +1879,7 @@ if __name__ == '__main__':
                          'r   propagateErrors: off|on   - default is off',
                          'o   bootOrder: <int>  - global boot order across '
                          'all bootable devices',
-                         'o   shared: True|False',
+                         'o   shared: exclusive|shared|none',
                          'o   optional: True|False'
                          )),
         'hotunplugDisk': (serv.hotunplugDisk,
@@ -1897,7 +1897,7 @@ if __name__ == '__main__':
                           'r   propagateErrors: off|on   - default is off',
                           'o   bootOrder: <int>  - global boot order across '
                           'all bootable devices',
-                          'o   shared: True|False',
+                          'o   shared: exclusive|shared|none',
                           'o   optional: True|False'
                           )),
         'changeCD': (serv.do_changeCD,

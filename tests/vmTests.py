@@ -357,35 +357,50 @@ class TestVm(TestCaseBase):
         redir = vm.RedirDevice(self.conf, self.log, **dev)
         self.assertXML(redir.getXML(), redirXML)
 
+    def testDriveSharedBackwardCompatibility(self):
+        driveConfigs = [
+            {'shared': True}, {'shared': 'True'}, {'shared': 'true'},
+            {'shared': False}, {'shared': 'False'}, {'shared': 'false'},
+        ]
+
+        expectedConfigs = [
+            {'shared': 'shared'}, {'shared': 'shared'}, {'shared': 'shared'},
+            {'shared': 'none'}, {'shared': 'none'}, {'shared': 'none'},
+        ]
+
+        for driveInput, driveOutput in zip(driveConfigs, expectedConfigs):
+            vm.Vm._normalizeDriveSharedAttribute(driveInput)
+            self.assertEqual(driveInput, driveOutput)
+
     def testDriveXML(self):
         SERIAL = '54-a672-23e5b495a9ea'
         devConfs = [
             {'index': '2', 'propagateErrors': 'off', 'iface': 'ide',
              'name': 'hdc', 'format': 'raw', 'device': 'cdrom',
              'path': '/tmp/fedora.iso', 'type': 'disk', 'readonly': 'True',
-             'shared': 'False', 'serial': SERIAL},
+             'shared': 'none', 'serial': SERIAL},
 
             {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
              'name': 'vda', 'format': 'cow', 'device': 'disk',
              'path': '/tmp/disk1.img', 'type': 'disk', 'readonly': 'False',
-             'shared': 'True', 'serial': SERIAL,
+             'shared': 'shared', 'serial': SERIAL,
              'specParams': {'ioTune': {'read_bytes_sec': 6120000,
                                        'total_iops_sec': 800}}},
 
             {'index': '0', 'propagateErrors': 'off', 'iface': 'virtio',
              'name': 'vda', 'format': 'raw', 'device': 'disk',
              'path': '/dev/mapper/lun1', 'type': 'disk', 'readonly': 'False',
-             'shared': 'False', 'serial': SERIAL},
+             'shared': 'none', 'serial': SERIAL},
 
             {'index': '0', 'propagateErrors': 'off', 'iface': 'scsi',
              'name': 'sda', 'format': 'raw', 'device': 'disk',
              'path': '/tmp/disk1.img', 'type': 'disk', 'readonly': 'False',
-             'shared': 'False', 'serial': SERIAL},
+             'shared': 'exclusive', 'serial': SERIAL},
 
             {'index': '0', 'propagateErrors': 'off', 'iface': 'scsi',
              'name': 'sda', 'format': 'raw', 'device': 'lun',
              'path': '/dev/mapper/lun1', 'type': 'disk', 'readonly': 'False',
-             'shared': 'False', 'serial': SERIAL, 'sgio': 'unfiltered'}]
+             'shared': 'none', 'serial': SERIAL, 'sgio': 'unfiltered'}]
 
         expectedXMLs = [
             """

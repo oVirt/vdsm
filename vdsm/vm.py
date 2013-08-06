@@ -422,6 +422,13 @@ class MERGESTATUS:
     UNKNOWN = "Unknown"
     DRIVE_NOT_FOUND = "Drive Not Found"
     BASE_NOT_FOUND = "Base Not Found"
+    DRIVE_NOT_SUPPORTED = "Drive Not Supported"
+
+
+class DRIVE_SHARED_TYPE:
+    NONE = "none"
+    EXCLUSIVE = "exclusive"
+    SHARED = "shared"
 
 
 # These strings are representing libvirt virDomainEventType values
@@ -1336,6 +1343,17 @@ class Drive(VmDevice):
 
         self._customize()
 
+    @property
+    def hasVolumeLeases(self):
+        if self.shared != DRIVE_SHARED_TYPE.EXCLUSIVE:
+            return False
+
+        for volInfo in getattr(self, "volumeChain", []):
+            if "leasePath" in volInfo and "leaseOffset" in volInfo:
+                return True
+
+        return False
+
     def __getitem__(self, key):
         try:
             value = getattr(self, str(key))
@@ -1455,6 +1473,31 @@ class Drive(VmDevice):
 
         self._checkIoTuneCategories()
 
+    def getLeasesXML(self):
+        """
+        Create domxml for the drive lease.
+
+        <lease>
+            <key>volumeID</key>
+            <lockspace>domainID</lockspace>
+            <target offset="0" path="/path/to/lease"/>
+        </lease>
+        """
+        if not self.hasVolumeLeases:
+            return  # empty items generator
+
+        # NOTE: at the moment we are generating the lease only for the leaf,
+        # when libvirt will support shared leases this will loop over all the
+        # volumes
+        for volInfo in self.volumeChain[-1:]:
+            lease = XMLElement('lease')
+            lease.appendChildWithArgs('key', text=volInfo['volumeID'])
+            lease.appendChildWithArgs('lockspace',
+                                      text=volInfo['domainID'])
+            lease.appendChildWithArgs('target', path=volInfo['leasePath'],
+                                      offset=str(volInfo['leaseOffset']))
+            yield lease
+
     def getXML(self):
         """
         Create domxml for disk/cdrom/floppy.
@@ -1496,7 +1539,7 @@ class Drive(VmDevice):
             targetAttrs['bus'] = self.iface
         diskelem.appendChildWithArgs('target', **targetAttrs)
 
-        if hasattr(self, 'shared') and utils.tobool(self.shared):
+        if self.shared == DRIVE_SHARED_TYPE.SHARED:
             diskelem.appendChildWithArgs('shareable')
         if hasattr(self, 'readonly') and utils.tobool(self.readonly):
             diskelem.appendChildWithArgs('readonly')
@@ -1756,6 +1799,28 @@ class Vm(object):
             drv['truesize'] = 0
             drv['apparentsize'] = 0
 
+    @classmethod
+    def _normalizeDriveSharedAttribute(self, drive):
+        # We cannot use tobool here as shared can take several values
+        # (e.g. none, exclusive) that would be all mapped to False.
+        shared = str(drive['shared']).lower()
+
+        # Backward compatibility with the old values (true, false)
+        if shared == 'true':
+            drive['shared'] = DRIVE_SHARED_TYPE.SHARED
+        elif shared == 'false':
+            if config.getboolean('irs', 'use_volume_leases'):
+                drive['shared'] = DRIVE_SHARED_TYPE.EXCLUSIVE
+            else:
+                drive['shared'] = DRIVE_SHARED_TYPE.NONE
+
+        # Filtering the values, current default is "none", in the future
+        # we might want to switch this to "exclusive".
+        if drive['shared'] not in (
+                DRIVE_SHARED_TYPE.SHARED, DRIVE_SHARED_TYPE.EXCLUSIVE,
+                DRIVE_SHARED_TYPE.NONE):
+            drive['shared'] = DRIVE_SHARED_TYPE.NONE
+
     def __legacyDrives(self):
         """
         Backward compatibility for qa scripts that specify direct paths.
@@ -1855,8 +1920,9 @@ class Vm(object):
         if len(devices[CONSOLE_DEVICES]) > 1:
             raise ValueError("Only a single console device is supported")
 
-        # Normalize vdsm images
+        # Normalize shared attribute and vdsm images
         for drv in devices[DISK_DEVICES]:
+            self._normalizeDriveSharedAttribute(drv)
             if isVdsmImage(drv):
                 self._normalizeVdsmImg(drv)
 
@@ -2615,24 +2681,6 @@ class Vm(object):
         finally:
             self._guestCpuLock.release()
 
-    def _buildLease(self, domainID, volumeID, leasePath, leaseOffset):
-        """
-        Add a single SANLock lease.
-
-        <lease>
-          <key>imgUUID</key>
-          <lockspace>sdUUID</lockspace>
-          <target path='/dev/sdUUID/leases' offset='0'/>
-        </lease>
-        """
-
-        leaseElem = XMLElement('lease')
-        leaseElem.appendChildWithArgs('key', text=volumeID)
-        leaseElem.appendChildWithArgs('lockspace', text=domainID)
-        leaseElem.appendChildWithArgs('target', path=leasePath,
-                                      offset=str(leaseOffset))
-        return leaseElem
-
     def _customDevices(self):
         """
             Get all devices that have custom properties
@@ -2689,20 +2737,8 @@ class Vm(object):
         self._appendDevices(domxml)
 
         for drive in self._devices[DISK_DEVICES][:]:
-            if not hasattr(drive, 'volumeChain'):
-                continue
-
-            for volInfo in drive.volumeChain:
-                if ('leasePath' not in volInfo or
-                        'leaseOffset' not in volInfo or
-                        volInfo['shared']):
-                    continue
-
-                leaseElem = self._buildLease(
-                    drive.domainID, volInfo['volumeID'], volInfo['leasePath'],
-                    volInfo['leaseOffset'])
-
-                domxml._devices.appendChild(leaseElem)
+            for leaseElement in drive.getLeasesXML():
+                domxml._devices.appendChild(leaseElement)
 
         return domxml.toxml()
 
@@ -3239,6 +3275,10 @@ class Vm(object):
 
         self.updateDriveIndex(diskParams)
         drive = Drive(self.conf, self.log, **diskParams)
+
+        if drive.hasVolumeLeases:
+            return errCode['noimpl']
+
         customProps = getattr(drive, 'custom', {})
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug disk xml: %s" % (driveXml))
@@ -3291,6 +3331,9 @@ class Vm(object):
             return {'status': {'code': errCode['hotunplugDisk']
                                               ['status']['code'],
                                'message': "Disk not found"}}
+
+        if drive.hasVolumeLeases:
+            return errCode['noimpl']
 
         customProps = getattr(drive, 'custom', {})
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
@@ -3576,6 +3619,9 @@ class Vm(object):
                 self.log.error("The base volume doesn't exist: %s", baseDrv)
                 return errCode['snapshotErr']
 
+            if vmDrive.hasVolumeLeases:
+                return errCode['noimpl']
+
             vmDevName = vmDrive.name
 
             newDrives[vmDevName] = tgetDrv.copy()
@@ -3745,6 +3791,8 @@ class Vm(object):
 
             if not mergeDrive or not hasattr(mergeDrive, 'volumeChain'):
                 mergeStatus['status'] = MERGESTATUS.DRIVE_NOT_FOUND
+            elif mergeDrive.hasVolumeLeases:
+                mergeStatus['status'] = MERGESTATUS.DRIVE_NOT_SUPPORTED
             else:
                 for volume in mergeDrive.volumeChain:
                     # qemu-kvm looks up for the backing file path looking at
@@ -3840,6 +3888,9 @@ class Vm(object):
             self.log.error("Unable to find the disk for '%s'", srcDisk)
             return errCode['imageErr']
 
+        if srcDrive.hasVolumeLeases:
+            return errCode['noimpl']
+
         try:
             self._setDiskReplica(srcDrive, dstDisk)
         except:
@@ -3886,6 +3937,9 @@ class Vm(object):
             srcDrive = self._findDriveByUUIDs(srcDisk)
         except LookupError:
             return errCode['imageErr']
+
+        if srcDrive.hasVolumeLeases:
+            return errCode['noimpl']
 
         if not srcDrive.isDiskReplicationInProgress():
             return errCode['replicaErr']

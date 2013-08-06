@@ -3235,17 +3235,16 @@ class HSM:
                        'volumeID': vol.volUUID, 'path': vol.getVolumePath(),
                        'vmVolInfo': vol.getVmVolumeInfo()}
 
-            if config.getboolean('irs', 'use_volume_leases'):
-                leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
-                                                            vol.volUUID)
+            leasePath, leaseOffset = dom.getVolumeLease(vol.imgUUID,
+                                                        vol.volUUID)
 
-                if leasePath and leaseOffset is not None:
-                    volInfo.update({
-                        'leasePath': leasePath,
-                        'leaseOffset': leaseOffset,
-                        'shared': (vol.getVolType() ==
-                                   volume.type2name(volume.SHARED_VOL)),
-                    })
+            if leasePath and type(leaseOffset) in (int, long):
+                volInfo.update({
+                    'leasePath': leasePath,
+                    'leaseOffset': leaseOffset,
+                    'shared': (vol.getVolType() ==
+                               volume.type2name(volume.SHARED_VOL)),
+                })
 
             chain.append(volInfo)
 

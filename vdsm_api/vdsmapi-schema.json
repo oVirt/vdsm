@@ -1993,6 +1993,31 @@
           'volumeID': 'UUID'}}
 
 ##
+# @SharedDriveType:
+#
+# Specifies the share policy for a VM disk drive.
+#
+# @shared:    The disk is shared between multiple VMs
+#
+# @exclusive: The disk is used exclusively by this VM
+#
+# @none:      Same as exclusive but no locking mechanism is used
+#
+# Since: 4.12.0
+##
+{'enum': 'SharedDriveType', 'data': ['shared', 'exclusive', 'none']}
+
+##
+# @VmSharedDriveType:
+#
+# Specifies the share policy for a VM disk drive.
+#
+# Since: 4.12.0
+##
+{'type': 'VmSharedDriveType',
+ 'union': ['bool', 'SharedDriveType']}
+
+##
 # @VmDiskDevice:
 #
 # Properties of a VM disk device.
@@ -2061,8 +2086,8 @@
           'address': 'VmDeviceAddress', 'alias': 'str',
           'deviceId': 'UUID', '*specParams': 'VmDiskDeviceSpecParams',
           'apparentsize': 'uint', 'index': 'int', 'name': 'str',
-          'optional': 'bool', 'shared': 'bool', 'truesize': 'uint',
-          'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
+          'optional': 'bool', 'shared': 'VmSharedDriveType',
+          'truesize': 'uint', 'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
           '*baseVolumeID': 'UUID'}}
 
 ##
