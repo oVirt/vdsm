@@ -29,12 +29,9 @@ from storage.fileVolume import FileVolume
 
 
 class FileDomainMockObject(object):
-    def __init__(self, repoPath, sdUUID):
-        self.repoPath = repoPath
+    def __init__(self, mountpoint, sdUUID):
+        self.mountpoint = mountpoint
         self.sdUUID = sdUUID
-
-    def _getRepoPath(self):
-        return self.repoPath
 
     @property
     def oop(self):
@@ -46,22 +43,22 @@ class FileVolumeGetVSizeTest(TestCaseBase):
     SDBLKSZ = 512
 
     def setUp(self):
-        self.repoPath = tempfile.mkdtemp()
+        self.mountpoint = tempfile.mkdtemp()
 
         self.sdUUID = str(uuid.uuid4())
         self.imgUUID = str(uuid.uuid4())
         self.volUUID = str(uuid.uuid4())
 
-        imgPath = os.path.join(self.repoPath, self.sdUUID, "images",
+        imgPath = os.path.join(self.mountpoint, self.sdUUID, "images",
                                self.imgUUID)
         volPath = os.path.join(imgPath, self.volUUID)
 
         os.makedirs(imgPath)
         open(volPath, "w").truncate(self.VOLSIZE * self.SDBLKSZ)
-        self.sdobj = FileDomainMockObject(self.repoPath, self.sdUUID)
+        self.sdobj = FileDomainMockObject(self.mountpoint, self.sdUUID)
 
     def tearDown(self):
-        shutil.rmtree(self.repoPath)
+        shutil.rmtree(self.mountpoint)
 
     def test(self):
         volSize = FileVolume.getVSize(self.sdobj, self.imgUUID,
