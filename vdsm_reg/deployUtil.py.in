@@ -1056,7 +1056,7 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
             # No more handling GATEWAYDEV.
 
     if fReturn:
-        if fIsOvirt:
+        if fIsOvirt and fIsBridgeDevice:
             vlan, bonding, nic = _getOvirtBridgeParams(mgtBridge)
         else:
             vlan, bonding, nic = _getRHELBridgeParams(mgtIface,
@@ -1064,7 +1064,7 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
         fReturn = (nic is not None)
 
     #Delete existing bridge in oVirt
-    if fReturn and fIsOvirt:
+    if fReturn and fIsOvirt and fIsBridgeDevice:
         try:
             out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_DEL),
                                       mgtBridge, vlan, bonding, nic])
