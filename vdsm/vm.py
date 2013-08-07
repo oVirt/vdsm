@@ -175,7 +175,7 @@ class MigrationSourceThread(threading.Thread):
             if not status['status']['code']:
                 self.log.error("Machine already exists on the destination")
                 self.status = errCode['exist']
-        except:
+        except Exception:
             self.log.error("Error initiating connection", exc_info=True)
             self.status = errCode['noConPeer']
 
@@ -230,7 +230,7 @@ class MigrationSourceThread(threading.Thread):
         if self._mode != 'file':
             try:
                 self.destServer.destroy(self._vm.id)
-            except:
+            except Exception:
                 self.log.error("Failed to destroy remote VM", exc_info=True)
         # if the guest was stopped before migration, we need to cont it
         if self._mode == 'file' or self._method != 'online':
@@ -336,7 +336,7 @@ class MigrationSourceThread(threading.Thread):
                     self._vm._dom.save(fname)
                 finally:
                     self._vm.cif.teardownVolumePath(self._dst)
-            except:
+            except Exception:
                 self._vm._vmStats.cont()
                 raise
         else:
@@ -1546,7 +1546,7 @@ class Drive(VmDevice):
         if self._blockDev is None:
             try:
                 self._blockDev = utils.isBlockDevice(self.path)
-            except:
+            except Exception:
                 self.log.debug("Unable to determine if the path '%s' is a "
                                "block device", self.path, exc_info=True)
         return self._blockDev
@@ -2259,7 +2259,7 @@ class Vm(object):
                 try:
                     with self._confLock:
                         del self.conf['pauseCode']
-                except:
+                except KeyError:
                     pass
 
             if 'recover' in self.conf:
@@ -2334,7 +2334,7 @@ class Vm(object):
         self._saveStateInternal()
         try:
             self._getUnderlyingVmInfo()
-        except:
+        except Exception:
             # we do not care if _dom suddenly died now
             pass
 
@@ -2379,7 +2379,7 @@ class Vm(object):
             if self.conf.get('volatileFloppy'):
                 self._ejectFloppy()
                 self.log.debug('ejected volatileFloppy')
-        except:
+        except Exception:
             self.log.error("Reboot event failed", exc_info=True)
 
     def onShutdown(self):
@@ -2591,7 +2591,7 @@ class Vm(object):
             try:
                 with self._confLock:
                     del self.conf['pauseCode']
-            except:
+            except KeyError:
                 pass
             return {'status': doneCode, 'output': ['']}
         finally:
@@ -2645,7 +2645,7 @@ class Vm(object):
                         'code': errCode['exist']['status']['code'],
                         'message': 'VM without ACPI or active SolidICE tools. '
                                    'Try Forced Shutdown.'}}
-        except:
+        except Exception:
             self.log.error("Shutdown failed", exc_info=True)
             return {'status': {'code': errCode['exist']['status']['code'],
                     'message': 'Failed to shutdown VM. Try Forced Shutdown.'}}
@@ -2661,7 +2661,7 @@ class Vm(object):
                 self.destroy()
             else:
                 self._acpiShutdown()
-        except:
+        except Exception:
             self.log.error("_timedShutdown failed", exc_info=True)
 
     def _cleanupDrives(self, *drives):
@@ -2679,14 +2679,14 @@ class Vm(object):
             for drive in drives:
                 try:
                     self._removeTransientDisk(drive)
-                except:
+                except Exception:
                     self.log.warning("Drive transient volume deletion failed "
                                      "for drive %s", drive, exc_info=True)
                     # Skip any exception as we don't want to interrupt the
                     # teardown process for any reason.
                 try:
                     self.cif.teardownVolumePath(drive)
-                except:
+                except Exception:
                     self.log.error("Drive teardown failure for %s",
                                    drive, exc_info=True)
 
@@ -2698,7 +2698,7 @@ class Vm(object):
             try:
                 self.log.debug("Floppy %s cleanup" % self.conf['floppy'])
                 utils.rmFile(self.conf['floppy'])
-            except:
+            except Exception:
                 pass
 
     def _cleanupGuestAgent(self):
@@ -2707,7 +2707,7 @@ class Vm(object):
         """
         try:
             self.guestAgent.stop()
-        except:
+        except Exception:
             pass
 
         utils.rmFile(self._guestSocketFile)
@@ -2727,11 +2727,11 @@ class Vm(object):
             pass
         try:
             self.guestAgent.stop()
-        except:
+        except Exception:
             pass
         try:
             self._vmStats.stop()
-        except:
+        except Exception:
             pass
         self.saveState()
 
@@ -2796,7 +2796,7 @@ class Vm(object):
                     and decStats['statsAge'] >
                         config.getint('vars', 'vm_command_timeout')):
                     stats['monitorResponse'] = '-1'
-        except:
+        except Exception:
             self.log.error("Error fetching vm stats", exc_info=True)
         for var in decStats:
             if type(decStats[var]) is not dict:
@@ -2809,7 +2809,7 @@ class Vm(object):
                     for value in decStats[var]:
                         stats['disks'][var][value] = \
                             utils.convertToStr(decStats[var][value])
-                except:
+                except Exception:
                     self.log.error("Error setting vm disk stats",
                                    exc_info=True)
 
@@ -2833,7 +2833,7 @@ class Vm(object):
             stats['pauseCode'] = self.conf['pauseCode']
         try:
             stats.update(self.guestAgent.getGuestInfo())
-        except:
+        except Exception:
             return stats
         memUsage = 0
         realMemUsage = int(stats['memUsage'])
@@ -3039,7 +3039,7 @@ class Vm(object):
             # handle it. We must handle it now
             try:
                 self._dom.destroy()
-            except:
+            except Exception:
                 pass
             raise Exception('destroy() called before Vm started')
 
@@ -3084,7 +3084,7 @@ class Vm(object):
 
         try:
             self._dom.setSchedulerParameters({'cpu_shares': cpuShares})
-        except:
+        except Exception:
             self.log.warning('failed to set Vm niceness', exc_info=True)
 
     def _run(self):
@@ -3524,7 +3524,7 @@ class Vm(object):
                            backing=diskParams['path'],
                            backingFormat=driveFormat)
             os.fchmod(transientHandle, 0o660)
-        except:
+        except Exception:
             os.unlink(transientPath)  # Closing after deletion is correct
             self.log.error("Failed to create the transient disk for "
                            "volume %s", diskParams['volumeID'], exc_info=True)
@@ -3852,7 +3852,7 @@ class Vm(object):
             for vmDevName, drive in newDrives.iteritems():
                 try:
                     self.cif.teardownVolumePath(drive)
-                except:
+                except Exception:
                     self.log.error("Unable to teardown drive: %s", vmDevName,
                                    exc_info=True)
 
@@ -4013,7 +4013,7 @@ class Vm(object):
             for drive in newDrives.values():  # Update the drive information
                 try:
                     self.updateDriveParameters(drive)
-                except:
+                except Exception:
                     # Here it's too late to fail, the switch already happened
                     # and there's nothing we can do, we must to proceed anyway
                     # to report the live snapshot success.
@@ -4036,7 +4036,7 @@ class Vm(object):
             try:
                 self._dom.blockRebase(mergeStatus['path'],
                                       mergeStatus['basePath'], 0, 0)
-            except:
+            except Exception:
                 mergeStatus['status'] = MERGESTATUS.FAILED
                 self.log.error("Live merge failed for %s",
                                mergeStatus['path'], exc_info=True)
@@ -4052,7 +4052,7 @@ class Vm(object):
 
             try:
                 jobInfo = self._dom.blockJobInfo(mergeStatus['path'], 0)
-            except:
+            except Exception:
                 jobInfo = None
 
             if not jobInfo:
@@ -4187,7 +4187,7 @@ class Vm(object):
 
         try:
             self._setDiskReplica(srcDrive, dstDisk)
-        except:
+        except Exception:
             self.log.error("Unable to set the replication for disk '%s' with "
                            "destination '%s'" % srcDrive.name, dstDisk)
             return errCode['replicaErr']
@@ -4207,12 +4207,12 @@ class Vm(object):
                     libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
                     libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW
                 ))
-            except:
+            except Exception:
                 self.log.error("Unable to start the replication for %s to %s",
                                srcDrive.name, dstDiskCopy, exc_info=True)
                 self.cif.teardownVolumePath(dstDiskCopy)
                 raise
-        except:
+        except Exception:
             self.log.error("Cannot complete the disk replication process",
                            exc_info=True)
             self._delDiskReplica(srcDrive)
@@ -4220,7 +4220,7 @@ class Vm(object):
 
         try:
             self.extendDriveVolume(srcDrive)
-        except:
+        except Exception:
             self.log.error("Initial extension request failed for %s",
                            srcDrive.name, exc_info=True)
 
@@ -4286,12 +4286,12 @@ class Vm(object):
         try:
             # Stopping the replication
             self._dom.blockJobAbort(srcDrive.name, blockJobFlags)
-        except:
+        except Exception:
             self.log.error("Unable to stop the replication for the drive: %s",
                            srcDrive.name, exc_info=True)
             try:
                 self.cif.teardownVolumePath(srcDrive.diskReplicate)
-            except:
+            except Exception:
                 # There is nothing we can do at this point other than logging
                 self.log.error("Unable to teardown the replication "
                                "destination disk", exc_info=True)
@@ -4299,7 +4299,7 @@ class Vm(object):
         else:
             try:
                 self.cif.teardownVolumePath(diskToTeardown)
-            except:
+            except Exception:
                 # There is nothing we can do at this point other than logging
                 self.log.error("Unable to teardown the previous chain: %s",
                                diskToTeardown, exc_info=True)
@@ -4401,7 +4401,7 @@ class Vm(object):
                 return self._diskSizeExtendCow(drive, newSizeBytes)
             else:
                 return self._diskSizeExtendRaw(drive, newSizeBytes)
-        except:
+        except Exception:
             self.log.error("Unable to extend disk %s to size %s",
                            drive.name, newSizeBytes, exc_info=True)
 
@@ -4454,7 +4454,7 @@ class Vm(object):
         try:
             self._dom.updateDeviceFlags(
                 diskelem.toxml(), libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
-        except:
+        except Exception:
             self.log.debug("updateDeviceFlags failed", exc_info=True)
             self.cif.teardownVolumePath(drivespec)
             return {'status': {'code': errCode['changeDisk']['status']['code'],
@@ -4521,7 +4521,7 @@ class Vm(object):
         try:
             vmName = self.conf['vmName'].encode('utf-8')
             pid = supervdsm.getProxy().getVmPid(vmName)
-        except:
+        except Exception:
             pass
         return pid
 
