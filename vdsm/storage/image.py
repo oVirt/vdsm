@@ -1170,7 +1170,7 @@ class Image:
         try:
             imageSharing.upload(vol.getVolumePath(), methodArgs)
         finally:
-            domain.deactivateVolumes(imgUUID, volUUIDs=[vol.volUUID])
+            domain.deactivateImage(imgUUID)
 
     def download(self, methodArgs, sdUUID, imgUUID, volUUID=None):
         domain = sdCache.produce(sdUUID)
@@ -1181,4 +1181,4 @@ class Image:
             vol.extend(imageSharing.getSize(methodArgs) / volume.BLOCK_SIZE)
             imageSharing.download(vol.getVolumePath(), methodArgs)
         finally:
-            domain.deactivateVolumes(imgUUID, volUUIDs=[vol.volUUID])
+            domain.deactivateImage(imgUUID)
