@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+# pylint: disable=R0904
 
 import os
 import signal
