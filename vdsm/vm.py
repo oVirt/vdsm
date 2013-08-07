@@ -3294,8 +3294,8 @@ class Vm(object):
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotunplug disk xml: %s", driveXml)
         # Remove found disk from vm's drives list
-        if isVdsmImage(drive):
-            self.sdIds.remove(drive['domainID'])
+        if drive.isVdsmImage():
+            self.sdIds.remove(drive.domainID)
         self._devices[DISK_DEVICES].remove(drive)
         # Find and remove disk device from vm's conf
         diskDev = None
