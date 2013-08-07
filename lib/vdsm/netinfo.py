@@ -270,11 +270,12 @@ def speed(dev):
             # the device may have been disabled/downed after checking
             # so we validate the return value as sysfs may return
             # special values to indicate the device is down/disabled
-            s = int(file('/sys/class/net/%s/speed' % dev).read())
+            with open('/sys/class/net/%s/speed' % dev) as speedFile:
+                s = int(speedFile.read())
             if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
                 return s
-    except:
-        logging.error('cannot read %s speed', dev, exc_info=True)
+    except Exception:
+        logging.exception('cannot read %s speed', dev)
     return 0
 
 
@@ -407,20 +408,14 @@ def getIPv6Routes():
 
 
 def getIfaceCfg(iface):
-    d = {}
+    ifaceCfg = {}
     try:
-        for line in open(NET_CONF_PREF + iface).readlines():
-            line = line.strip()
-            if line.startswith('#'):
-                continue
-            try:
-                k, v = line.split('=', 1)
-                d[k] = ''.join(shlex.split(v))
-            except:
-                pass
-    except:
+        with open(NET_CONF_PREF + iface) as f:
+            ifaceCfg = dict(
+                l.split('=', 1) for l in shlex.split(f, comments=True))
+    except Exception:
         pass
-    return d
+    return ifaceCfg
 
 
 def getBootProtocol(iface):
