@@ -548,15 +548,15 @@ def getVlanDevice(vlan):
 
 def getVlanID(vlan):
     """ Return the ID of the given VLAN. """
-    id = None
+    vlanId = None
 
     if os.path.exists(PROC_NET_VLAN):
         for line in file(PROC_NET_VLAN + vlan).readlines():
             if "VID" in line:
-                id = line.split()[2]
+                vlanId = line.split()[2]
                 break
 
-    return id
+    return vlanId
 
 
 def getIpAddresses():
