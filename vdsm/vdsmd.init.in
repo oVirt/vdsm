@@ -308,7 +308,7 @@ locked_start() {
         log_failure_msg "cannot start VDS daemon when another instance runs"
         return 1
     else
-        start || release_lock && return 1
+        start || (release_lock && return 1)
     fi
 }
 
