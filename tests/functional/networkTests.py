@@ -488,6 +488,31 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksConvertVlanNetBridgeness(self):
+        "Convert a bridged networks to a bridgeless one and viceversa"
+        opts = {'connectivityCheck': False}
+
+        def setupNetworkBridged(nic, bridged, opts=opts):
+            networks = {NETWORK_NAME: dict(vlan=VLAN_ID,
+                                           nic=nic, bridged=bridged)}
+            status, msg = self.vdsm_net.setupNetworks(networks, {},
+                                                      opts)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME, bridged))
+
+        with dummyIf(1) as nics:
+            setupNetworkBridged(nics[0], True)
+            setupNetworkBridged(nics[0], False)
+            setupNetworkBridged(nics[0], True)
+
+        status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
+                                                   dict(remove=True)},
+                                                  {}, opts)
+
+        self.assertEqual(status, SUCCESS, msg)
+
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
@@ -838,6 +863,82 @@ class NetworkTest(TestCaseBase):
                 bondings = {BONDING_NAME: dict(remove=True)}
                 status, msg = self.vdsm_net.setupNetworks(networks,
                                                           bondings, {})
+                self.assertEquals(status, SUCCESS, msg)
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksMtus(self, bridged):
+        JUMBO = '9000'
+        MIDI = '4000'
+
+        def assertMtu(mtu, *elems):
+            for elem in elems:
+                self.assertEquals(mtu, self.vdsm_net.getMtu(elem))
+
+        with dummyIf(3) as nics:
+            with self.vdsm_net.pinger():
+                networks = {NETWORK_NAME + '1':
+                            dict(bonding=BONDING_NAME, bridged=bridged,
+                                 vlan='100'),
+                            NETWORK_NAME + '2':
+                            dict(bonding=BONDING_NAME, bridged=bridged,
+                                 vlan='200', mtu=MIDI)
+                            }
+                bondings = {BONDING_NAME: dict(nics=nics[:2])}
+                status, msg = self.vdsm_net.setupNetworks(networks, bondings,
+                                                          {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                assertMtu(MIDI, NETWORK_NAME + '2', BONDING_NAME, nics[0],
+                          nics[1])
+
+                network = {NETWORK_NAME + '3':
+                           dict(bonding=BONDING_NAME, vlan='300', mtu=JUMBO,
+                                bridged=bridged)}
+                status, msg = self.vdsm_net.setupNetworks(network, {}, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME + '3',
+                                                            bridged=bridged))
+                assertMtu(JUMBO, NETWORK_NAME + '3', BONDING_NAME, nics[0],
+                          nics[1])
+
+                status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME + '3':
+                                                           dict(remove=True)},
+                                                          {}, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                assertMtu(MIDI, NETWORK_NAME + '2', BONDING_NAME, nics[0],
+                          nics[1])
+
+                # Keep last custom MTU on the interfaces
+                status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME + '2':
+                                                           dict(remove=True)},
+                                                          {}, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                assertMtu(MIDI, BONDING_NAME, nics[0], nics[1])
+
+                # Add additional nic to the bond
+                status, msg = self.vdsm_net.setupNetworks({}, {BONDING_NAME:
+                                                          dict(nics=nics)}, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                assertMtu(MIDI, BONDING_NAME, nics[0], nics[1], nics[2])
+
+                status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME + '1':
+                                                           dict(remove=True)},
+                                                          {BONDING_NAME:
+                                                           dict(remove=True)},
+                                                          {})
+
                 self.assertEquals(status, SUCCESS, msg)
 
     @cleanupNet
