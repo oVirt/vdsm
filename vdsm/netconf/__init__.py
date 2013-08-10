@@ -75,7 +75,8 @@ class Configurator(object):
     def removeLibvirtNetwork(self, network):
         self.configApplier.removeLibvirtNetwork(network)
 
-    def _addSourceRoute(self, netEnt, ipaddr, netmask, gateway, bootproto):
+    def _addSourceRoute(self, netEnt):
+        ipaddr, netmask, gateway, bootproto, _, _ = netEnt.ipConfig
         # bootproto is None for both static and no bootproto
         if bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Adding source route %s, %s, %s, %s" %

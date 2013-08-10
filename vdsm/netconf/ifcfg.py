@@ -60,31 +60,28 @@ class Ifcfg(Configurator):
             self._libvirtAdded = set()
 
     def configureBridge(self, bridge, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = bridge.ipConfig
         self.configApplier.addBridge(bridge, **opts)
         ifdown(bridge.name)
         if bridge.port:
             bridge.port.configure(**opts)
-        self._addSourceRoute(bridge, ipaddr, netmask, gateway, bootproto)
-        ifup(bridge.name, async)
+        self._addSourceRoute(bridge)
+        ifup(bridge.name, bridge.ipConfig.async)
 
     def configureVlan(self, vlan, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = vlan.ipConfig
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
-        self._addSourceRoute(vlan, ipaddr, netmask, gateway, bootproto)
-        ifup(vlan.name, async)
+        self._addSourceRoute(vlan)
+        ifup(vlan.name, vlan.ipConfig.async)
 
     def configureBond(self, bond, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = bond.ipConfig
         self.configApplier.addBonding(bond, **opts)
         if not netinfo.isVlanned(bond.name):
             for slave in bond.slaves:
                 ifdown(slave.name)
         for slave in bond.slaves:
             slave.configure(**opts)
-        self._addSourceRoute(bond, ipaddr, netmask, gateway, bootproto)
-        ifup(bond.name, async)
+        self._addSourceRoute(bond)
+        ifup(bond.name, bond.ipConfig.async)
 
     def editBonding(self, bond, _netinfo):
         ifdown(bond.name)
@@ -96,13 +93,12 @@ class Ifcfg(Configurator):
         self.configureBond(bond)
 
     def configureNic(self, nic, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = nic.ipConfig
         self.configApplier.addNic(nic, **opts)
-        self._addSourceRoute(nic, ipaddr, netmask, gateway, bootproto)
+        self._addSourceRoute(nic)
         if nic.bond is None:
             if not netinfo.isVlanned(nic.name):
                 ifdown(nic.name)
-            ifup(nic.name, async)
+            ifup(nic.name, nic.ipConfig.async)
 
     def removeBridge(self, bridge):
         DynamicSourceRoute.addInterfaceTracking(bridge)
