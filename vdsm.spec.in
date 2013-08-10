@@ -25,7 +25,7 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
-%if 0%{?fedora} >= 17 || 0%{?rhel} >= 6
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 6
 %global with_gluster 1
 %endif
 
@@ -197,6 +197,15 @@ Requires: selinux-policy-targeted >= 3.11.1-100
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-55
 Requires: systemd >= 197-1.fc18.2
+%endif
+
+# GlusterFS client-side RPMs needed for Gluster SD
+%if 0%{?with_gluster}
+Requires: glusterfs >= 3.4.0
+Requires: glusterfs-cli
+Requires: glusterfs-api
+Requires: glusterfs-fuse
+Requires: glusterfs-rdma
 %endif
 
 Requires: psmisc >= 22.6-15
