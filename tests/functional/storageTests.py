@@ -25,24 +25,25 @@ import grp
 import fnmatch
 import shutil
 import logging
-from contextlib import contextmanager
-from functools import partial, wraps
+from functools import partial
+
+from nose.plugins.skip import SkipTest
 
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import permutations, expandPermutations
-from nose.plugins.skip import SkipTest
 try:
     import rtslib
 except ImportError:
     pass
 
-from vdsm.config import config
-from vdsm.constants import VDSM_USER, VDSM_GROUP, QEMU_PROCESS_USER, EXT_SUDO
 import storage.sd
 import storage.storage_exception as se
 import storage.volume
 from storage.misc import execCmd
 from storage.misc import RollbackContext
+
+from vdsm.config import config
+from vdsm.constants import VDSM_USER, VDSM_GROUP
 from vdsm.utils import CommandPath
 from vdsm import vdscli
 
@@ -51,7 +52,6 @@ _VARTMP = '/var/tmp'
 if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
 
-_mkinitrd = CommandPath("mkinird", "/usr/bin/mkinitrd")
 _modprobe = CommandPath("modprobe",
                         "/usr/sbin/modprobe",  # Fedora, Ubuntu
                         "/sbin/modprobe",  # RHEL6
@@ -59,94 +59,18 @@ _modprobe = CommandPath("modprobe",
 _exportfs = CommandPath("exportfs", "/usr/sbin/exportfs")
 
 
-def readableBy(filePath, user):
-    rc, out, err = execCmd([EXT_SUDO, '-u', user, 'head', '-c', '0', filePath])
-    return rc == 0
-
-
-@contextmanager
-def kernelBootImages():
-    kernelVer = os.uname()[2]
-    kernelPath = "/boot/vmlinuz-" + kernelVer
-    initramfsPath = "/boot/initramfs-%s.img" % kernelVer
-
-    if not os.path.isfile(kernelPath):
-        raise SkipTest("Can not locate kernel image for release %s" %
-                       kernelVer)
-    if not readableBy(kernelPath, QEMU_PROCESS_USER):
-        raise SkipTest("qemu process can not read the file %s" % kernelPath)
-
-    if os.path.isfile(initramfsPath):
-        # There is an initramfs shipped with the distro, try use it
-        if not readableBy(initramfsPath, QEMU_PROCESS_USER):
-            raise SkipTest("qemu process can not read the file %s" %
-                           initramfsPath)
-        try:
-            yield (kernelPath, initramfsPath)
-        finally:
-            pass
-    else:
-        # Generate an initramfs on demand, use it, delete it
-        initramfsPath = genInitramfs(kernelVer)
-        try:
-            yield (kernelPath, initramfsPath)
-        finally:
-            os.unlink(initramfsPath)
-
-
-def genInitramfs(kernelVer):
-    fd, path = tempfile.mkstemp()
-    cmd = [_mkinitrd.cmd, "-f", path, kernelVer]
-    rc, out, err = execCmd(cmd, sudo=False)
-    os.chmod(path, 0644)
-    return path
-
-
-def skipNoKVM(method):
-    @wraps(method)
-    def wrapped(self, *args, **kwargs):
-        r = self.s.getVdsCapabilities()
-        self.assertVdsOK(r)
-        if r['info']['kvmEnabled'] != 'true':
-            raise SkipTest('KVM is not enabled')
-        return method(self, *args, **kwargs)
-    return wrapped
-
-
 @expandPermutations
-class XMLRPCTest(TestCaseBase):
+class StorageTest(TestCaseBase):
     UPSTATES = frozenset(('Up', 'Powering up', 'Running'))
+
+    def runTest(self):
+        pass
 
     def setUp(self):
         isSSL = config.getboolean('vars', 'ssl')
         if isSSL and os.geteuid() != 0:
             raise SkipTest("Must be root to use SSL connection to server")
         self.s = vdscli.connect(useSSL=isSSL)
-
-    def testGetCaps(self):
-        r = self.s.getVdsCapabilities()
-        self.assertVdsOK(r)
-
-    def assertVmUp(self, vmid):
-        r = self.s.getVmStats(vmid)
-        self.assertVdsOK(r)
-        self.myAssertIn(r['statsList'][0]['status'], self.UPSTATES)
-
-    def assertGuestUp(self, vmid):
-        r = self.s.getVmStats(vmid)
-        self.assertVdsOK(r)
-        self.assertEquals(r['statsList'][0]['status'], 'Up')
-
-    def myAssertIn(self, member, container, msg=None):
-        "Poor man's reimplementation of Python2.7's unittest.assertIn"
-
-        if hasattr(self, 'assertIn'):
-            return self.assertIn(member, container, msg)
-
-        if msg is None:
-            msg = '%r not found in %r' % (member, container)
-
-        self.assertTrue(member in container, msg)
 
     def assertVdsOK(self, vdsResult):
         # code == 0 means OK
@@ -155,71 +79,6 @@ class XMLRPCTest(TestCaseBase):
             'error code: %s, message: %s' % (vdsResult['status']['code'],
                                              vdsResult['status']['message']))
 
-    @skipNoKVM
-    def testStartEmptyVM(self):
-        VMID = '66666666-ffff-4444-bbbb-333333333333'
-
-        r = self.s.create({'memSize': '100', 'display': 'vnc', 'vmId': VMID,
-                           'vmName': 'foo'})
-        self.assertVdsOK(r)
-        try:
-            self.retryAssert(lambda: self.assertVmUp(VMID), timeout=20)
-        finally:
-            # FIXME: if the server dies now, we end up with a leaked VM.
-            r = self.s.destroy(VMID)
-            self.assertVdsOK(r)
-
-    @skipNoKVM
-    def testStartSmallVM(self):
-        pciAddress = {'slot': '0x03', 'bus': '0x00', 'domain': '0x0000',
-                      'function': '0x0', 'type': 'pci'}
-        interfaceDev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
-                        'network': '', 'address': pciAddress,
-                        'device': 'bridge', 'type': 'interface',
-                        'linkActive': True, 'filter': 'no-mac-spoofing'}
-        customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
-                         'vmName': 'vdsm_testSmallVM',
-                         'devices': [interfaceDev]}
-
-        self._runVMKernelBootTemplate(customization)
-
-    def _runVMKernelBootTemplate(self, vmDef={}, distro='fedora'):
-        kernelArgsDistro = {
-            # Fedora: The initramfs is generated by dracut. The following
-            # arguments will be interpreted by init scripts created by dracut.
-            'fedora': 'rd.break=cmdline rd.shell rd.skipfsck'}
-        kernelArgsDistro['rhel'] = kernelArgsDistro['fedora']
-        if distro.lower() not in kernelArgsDistro:
-            raise SkipTest("Don't know how to perform direct kernel boot for "
-                           "%s" % distro)
-
-        template = {'vmId': '11111111-abcd-2222-ffff-333333333333',
-                    'vmName': 'vdsmKernelBootVM',
-                    'display': 'vnc',
-                    'kvmEnable': 'true',
-                    'memSize': '256',
-                    'vmType': 'kvm',
-                    'kernelArgs': kernelArgsDistro[distro]}
-        template.update(vmDef)
-        vmid = template['vmId']
-
-        def assertVMAndGuestUp():
-            self.assertVmUp(vmid)
-            self.assertGuestUp(vmid)
-
-        with kernelBootImages() as (kernelPath, initramfsPath):
-            template.update(
-                {'kernel': kernelPath,
-                 'initrd': initramfsPath})
-            try:
-                self.assertVdsOK(self.s.create(template))
-                # wait 65 seconds for VM to come up until timeout
-                self.retryAssert(assertVMAndGuestUp, timeout=65)
-            finally:
-                destroyResult = self.s.destroy(vmid)
-
-        self.assertVdsOK(destroyResult)
-
     @permutations(
         [[backend, ver]
          for backend in ['localfs', 'iscsi', 'glusterfs', 'nfs']
@@ -227,9 +86,10 @@ class XMLRPCTest(TestCaseBase):
     def testStorage(self, backendType, domVersion):
         conf = storageLayouts[backendType]
         with RollbackContext() as rollback:
-            self._createVdsmStorageLayout(conf, domVersion, rollback)
+            self.createVdsmStorageLayout(conf, domVersion, rollback)
 
-    def _generateDriveConf(self, conf):
+    @staticmethod
+    def generateDriveConf(conf):
         drives = []
         for poolid, domains in conf['layout'].iteritems():
             for sdid, imageList in domains.iteritems():
@@ -242,20 +102,7 @@ class XMLRPCTest(TestCaseBase):
                                    'format': volume['format']})
         return drives
 
-    @skipNoKVM
-    @permutations([['localfs'], ['iscsi'], ['nfs']])
-    def testSimpleVMWithStorage(self, backendType):
-        conf = storageLayouts[backendType]
-        drives = self._generateDriveConf(conf)
-        customization = {'vmId': '88888888-eeee-ffff-aaaa-111111111111',
-                         'vmName': 'vdsm_testSmallVM_' + backendType,
-                         'drives': drives}
-
-        with RollbackContext() as rollback:
-            self._createVdsmStorageLayout(conf, 3, rollback)
-            self._runVMKernelBootTemplate(customization)
-
-    def _createVdsmStorageLayout(self, conf, domVersion, rollback):
+    def createVdsmStorageLayout(self, conf, domVersion, rollback):
         backendServer = conf['server'](self.s, self)
         connDef = conf['conn']
         storageDomains = conf['sd']

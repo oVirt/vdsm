@@ -261,3 +261,27 @@ class VdsProxy(object):
         result = self.vdscli.getVdsCapabilities()
         return result['status']['code'], result['status']['message'],\
             result['info']
+
+    def create(self, vmParams):
+        result = self.vdscli.create(vmParams)
+        return result['status']['code'], result['status']['message']
+
+    def destroy(self, vmId):
+        result = self.vdscli.destroy(vmId)
+        return result['status']['code'], result['status']['message']
+
+    def hotplugNic(self, params):
+        result = self.vdscli.hotplugNic(params)
+        return result['status']['code'], result['status']['message']
+
+    def hotunplugNic(self, params):
+        result = self.vdscli.hotunplugNic(params)
+        return result['status']['code'], result['status']['message']
+
+    def hotplugDisk(self, params):
+        result = self.vdscli.hotplugDisk(params)
+        return result['status']['code'], result['status']['message']
+
+    def hotunplugDisk(self, params):
+        result = self.vdscli.hotunplugDisk(params)
+        return result['status']['code'], result['status']['message']

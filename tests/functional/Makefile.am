@@ -26,7 +26,8 @@ dist_vdsmfunctests_PYTHON = \
 	sosPluginTests.py \
 	supervdsmFuncTests.py \
 	utils.py \
-	xmlrpcTests.py \
+	virtTests.py \
+	storageTests.py \
 	$(NULL)
 
 dist_vdsmfunctests_DATA = \
