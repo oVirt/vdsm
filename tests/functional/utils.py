@@ -150,6 +150,10 @@ class VdsProxy(object):
             return self.netinfo.nics[name]['mtu']
         return None
 
+    def getBondMode(self, bond, keys=None):
+        MODE_ID = 1
+        return netinfo.bondOpts(bond, keys)['mode'][MODE_ID]
+
     @contextmanager
     def pinger(self):
         """Keeps pinging vdsm for operations that need it"""

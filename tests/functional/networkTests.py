@@ -1092,3 +1092,44 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
 
                 self.assertFalse(self.vdsm_net.bondExists(bigBond, nics))
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksResizeBond(self, bridged):
+        with dummyIf(3) as nics:
+            with self.vdsm_net.pinger():
+                bondings = {BONDING_NAME: dict(nics=nics[:1],
+                                               bridged=bridged)}
+                status, msg = self.vdsm_net.setupNetworks({}, bondings, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.vdsm_net.bondExists(BONDING_NAME, nics=nics[:1])
+
+                # Increase bond size
+                bondings[BONDING_NAME]['nics'] = nics
+                status, msg = self.vdsm_net.setupNetworks({}, bondings, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.vdsm_net.bondExists(BONDING_NAME, nics)
+
+                # Reduce bond size
+                REQMODE_BROADCAST = '3'
+                bondings[BONDING_NAME]['nics'] = nics[:2]
+                bondings[BONDING_NAME]['options'] = ('mode=%s' %
+                                                     REQMODE_BROADCAST)
+                status, msg = self.vdsm_net.setupNetworks({}, bondings, {})
+
+                self.assertEquals(status, SUCCESS, msg)
+
+                self.vdsm_net.bondExists(BONDING_NAME, nics[:2])
+                self.assertEquals(self.vdsm_net.getBondMode(BONDING_NAME),
+                                  REQMODE_BROADCAST)
+
+                bondings = {BONDING_NAME: dict(remove=True)}
+                status, msg = self.vdsm_net.setupNetworks({}, bondings, {})
+
+                self.assertEquals(status, SUCCESS, msg)

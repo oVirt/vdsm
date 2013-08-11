@@ -172,3 +172,13 @@ class TestConfigNetwork(TestCaseBase):
             configNetwork._buildBondOptions('jamesbond', {},
                                             _netinfo=FakeNetInfo())
         self.assertEquals(cne.exception.errCode, neterrors.ERR_BAD_PARAMS)
+
+    @MonkeyPatch(netinfo, 'NetInfo', lambda: None)
+    def testValidateNetSetupRemoveParamValidation(self):
+        attrs = dict(nic='dummy', remove=True,
+                     bridged=True)
+        networks = {'test-netowrk': attrs}
+        with self.assertRaises(neterrors.ConfigNetworkError) as cneContext:
+            configNetwork._validateNetworkSetup(networks, {})
+        self.assertEqual(cneContext.exception.errCode,
+                         neterrors.ERR_BAD_PARAMS)
