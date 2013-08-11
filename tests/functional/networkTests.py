@@ -964,6 +964,7 @@ class NetworkTest(TestCaseBase):
                                                           {})
                 self.assertEquals(status, SUCCESS, msg)
 
+    @cleanupNet
     @permutations([[True], [False]])
     def testSetupNetworksAddBadParams(self, bridged):
         attrs = dict(vlan=VLAN_ID, bridged=bridged)
@@ -971,3 +972,22 @@ class NetworkTest(TestCaseBase):
                                                   {}, {})
 
         self.assertNotEqual(status, SUCCESS, msg)
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testDelNetworkBondAccumulation(self):
+        with dummyIf(1) as nics:
+            for bigBond in ('bond555', 'bond666', 'bond777'):
+                status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, VLAN_ID,
+                                                       bigBond, nics)
+
+                self.assertEqual(status, SUCCESS, msg)
+
+                self.assertTrue(self.vdsm_net.bondExists(bigBond, nics))
+
+                status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
+
+                self.assertEqual(status, SUCCESS, msg)
+
+                self.assertFalse(self.vdsm_net.bondExists(bigBond, nics))
