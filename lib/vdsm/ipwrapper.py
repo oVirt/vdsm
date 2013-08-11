@@ -36,6 +36,14 @@ def _isValid(ip, verifier):
     return True
 
 
+def equals(cls):
+    def __eq__(self, other):
+        return type(other) == cls and self.__dict__ == other.__dict__
+    cls.__eq__ = __eq__
+    return cls
+
+
+@equals
 class Route(object):
     def __init__(self, network, ipaddr=None, device=None, table=None):
         if not _isValid(network, IPNetwork):
@@ -107,8 +115,10 @@ class Route(object):
             yield word
 
 
+@equals
 class Rule(object):
-    def __init__(self, table, source=None, destination=None, srcDevice=None):
+    def __init__(self, table, source=None, destination=None, srcDevice=None,
+                 detached=False):
         if source:
             if not (_isValid(source, IPAddress) or
                     _isValid(source, IPNetwork)):
@@ -125,17 +135,22 @@ class Rule(object):
         self.source = source
         self.destination = destination
         self.srcDevice = srcDevice
+        self.detached = detached
 
     @classmethod
     def parse(cls, text):
-        rule = text.split()
+        isDetached = '[detached]' in text
+        rule = [entry for entry in text.split() if entry != '[detached]']
         parameters = rule[1:]
 
         if len(rule) % 2 == 0:
             raise ValueError('Rule %s: The length of a textual representation '
                              'of a rule must be odd. ' % text)
 
-        return dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
+        values = \
+            dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
+        values['detached'] = isDetached
+        return values
 
     @classmethod
     def fromText(cls, text):
@@ -168,9 +183,10 @@ class Rule(object):
         if destination == 'all':
             destination = None
         srcDevice = data.get('dev') or data.get('iif')
+        detached = data['detached']
 
         return cls(table, source=source, destination=destination,
-                   srcDevice=srcDevice)
+                   srcDevice=srcDevice, detached=detached)
 
     def __str__(self):
         str = 'from '
@@ -233,6 +249,19 @@ def routeDel(route):
     _execCmd(command)
 
 
+def _getValidEntries(constructor, iterable):
+    for entry in iterable:
+        try:
+            yield constructor(entry)
+        except ValueError:
+            pass
+
+
+def routeExists(route):
+    return route in _getValidEntries(constructor=Route.fromText,
+                                     iterable=routeShowTable('all'))
+
+
 def ruleList():
     command = [_IP_BINARY.cmd, 'rule']
     return _execCmd(command)
@@ -248,6 +277,11 @@ def ruleDel(rule):
     command = [_IP_BINARY.cmd, 'rule', 'del']
     command += rule
     _execCmd(command)
+
+
+def ruleExists(rule):
+    return rule in _getValidEntries(constructor=Rule.fromText,
+                                    iterable=ruleList())
 
 
 def linkShowDev(dev):

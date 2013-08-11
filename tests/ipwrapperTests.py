@@ -46,14 +46,19 @@ class TestIpwrapper(TestCaseBase):
             self.assertRaises(ValueError, Route.fromText, text)
 
     def testRuleFromText(self):
-        _getRuleAttrs = lambda x: (x.table, x.source, x.destination)
+        _getRuleAttrs = lambda x: (x.table, x.source, x.destination,
+                                   x.srcDevice, x.detached)
         good_rules = {
-            '32766:    from all lookup main':
-            ('main', None, None),
-            '32767:    from 10.0.0.0/8 to 20.0.0.0/8 lookup table_100':
-            ('table_100', '10.0.0.0/8', '20.0.0.0/8'),
-            '32768:    from all to 8.8.8.8 lookup table_200':
-            ('table_200', None, '8.8.8.8')}
+            '1:    from all lookup main':
+            ('main', None, None, None, False),
+            '2:    from 10.0.0.0/8 to 20.0.0.0/8 lookup table_100':
+            ('table_100', '10.0.0.0/8', '20.0.0.0/8', None, False),
+            '3:    from all to 8.8.8.8 lookup table_200':
+            ('table_200', None, '8.8.8.8', None, False),
+            '4:    from all to 5.0.0.0/8 iif dummy0 [detached] lookup 500':
+            ('500', None, '5.0.0.0/8', 'dummy0', True),
+            '5:    from all to 5.0.0.0/8 dev dummy0 lookup 500':
+            ('500', None, '5.0.0.0/8', 'dummy0', False)}
         for text, attributes in good_rules.iteritems():
             rule = Rule.fromText(text)
             self.assertEqual(_getRuleAttrs(rule), attributes)

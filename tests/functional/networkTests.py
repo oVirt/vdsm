@@ -26,8 +26,12 @@ from testrunner import (VdsmTestCase as TestCaseBase,
                         expandPermutations, permutations)
 from testValidation import RequireDummyMod, ValidateRunningAsRoot
 
+import dummy
 from dummy import dummyIf
-from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy
+from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy, cleanupRules
+
+from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
+                            ruleExists, Route, Rule)
 
 from vdsm.netinfo import operstate
 
@@ -35,6 +39,13 @@ from vdsm.netinfo import operstate
 NETWORK_NAME = 'test-network'
 VLAN_ID = '27'
 BONDING_NAME = 'bond0'
+IP_ADDRESS = '240.0.0.1'
+IP_NETWORK = '240.0.0.0'
+IP_CIDR = '24'
+IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
+IP_GATEWAY = '240.0.0.254'
+IP_TABLE = '4026531841'  # Current implementation converts ip to its 32 bit int
+                         # representation
 
 
 def setupModule():
@@ -1207,3 +1218,41 @@ class NetworkTest(TestCaseBase):
 
             self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME,
                                                          bridged=bridged))
+
+    @cleanupRules
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testRuleExists(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
+            dummy.setLinkUp(nic)
+
+            rules = [Rule(source=IP_NETWORK_AND_CIDR, table=IP_TABLE),
+                     Rule(destination=IP_NETWORK_AND_CIDR, table=IP_TABLE,
+                          srcDevice=nic)]
+            for rule in rules:
+                self.assertFalse(ruleExists(rule))
+                ruleAdd(rule)
+                self.assertTrue(ruleExists(rule))
+                ruleDel(rule)
+                self.assertFalse(ruleExists(rule))
+
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testRouteExists(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
+            dummy.setLinkUp(nic)
+
+            routes = [Route(network='0.0.0.0/0', ipaddr=IP_GATEWAY,
+                            device=nic, table=IP_TABLE),
+                      Route(network=IP_NETWORK_AND_CIDR,
+                            ipaddr=IP_ADDRESS, device=nic, table=IP_TABLE)]
+            for route in routes:
+                self.assertFalse(routeExists(route))
+                routeAdd(route)
+                self.assertTrue(routeExists(route))
+                routeDel(route)
+                self.assertFalse(routeExists(route))

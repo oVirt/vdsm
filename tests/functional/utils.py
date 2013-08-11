@@ -22,6 +22,7 @@ from functools import wraps
 import time
 import threading
 
+from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import vdscli
 from vdsm import utils
@@ -58,6 +59,32 @@ def cleanupNet(func):
 def restoreNetConfig():
     cmd_service = [service.cmd, "vdsm-restore-net-config", "restart"]
     utils.execCmd(cmd_service, sudo=True)
+
+
+def cleanupRules(func):
+    """
+    Restores previous routing rules
+    in case of a test failure, traceback is kept.
+    Assumes root privileges.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            base = ipwrapper.ruleList()
+            func(*args, **kwargs)
+        except Exception:
+            restoreRules(base)
+            raise
+
+    return wrapper
+
+
+def restoreRules(base):
+    current = ipwrapper.ruleList()
+    added = set(current) - set(base)
+    for rule in added:
+        ipwrapper.ruleDel(ipwrapper.Rule.fromText(rule))
 
 
 class VdsProxy(object):
