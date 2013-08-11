@@ -1,0 +1,32 @@
+macbind vdsm hook:
+==================
+This hook goes through all of the VM's interfaces and manipulate its
+XML file acccording to the input. This can be used to attach a VM nic
+to a specific bridge which is available in the hypervisor.
+
+One specific use case being attach a virtual network interface to an
+openvswitch bridge. Other being, attach  vm nic to a different bridge
+than the defined/default bridge for that NIC.
+
+
+Syntax:
+    macbind={'mac': 'bridgename'}
+
+Where:
+    mac: specify the mac address of the vNIC to be attached to the bridge
+    bridgename: Bridge Name available on hypervisor
+
+Example:
+    macbind={'00:1a:4a:41:d2:5f':'br0'}
+    macbind={'00:1a:4a:41:d2:5f':'br0', '00:1a:4a:41:d2:60':'br1'}
+
+Installation:
+    - Use the engine-config to append the proper custom property:
+        $ sudo engine-config -s \
+        UserDefinedVMProperties='previousProperties;macbind=^.*$'
+    - Verify that the macbind custom property was properly added:
+        $ sudo engine-config -g UserDefinedVMProperties
+
+Usage:
+    In the VM configuration window, open the custom properites tab, select
+    macbind and add proper value. i.e. {'00:1a:4a:41:d2:5f':'br0'}

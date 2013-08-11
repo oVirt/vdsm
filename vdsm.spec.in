@@ -405,6 +405,14 @@ BuildArch:      noarch
 VDSM hook enable user to add storage LUN for VDSM
 without the sharing and storage handling of VDSM.
 
+%package hook-macbind
+Summary:        Bind a vNIC to a Bridge
+BuildArch:      noarch
+Requires:       %{name} >= 4.14
+
+%description hook-macbind
+VDSM hooks which allow to bind a vNIC to a Bridge, managed or not by engine.
+
 %package hook-macspoof
 Summary:        Disables MAC spoofing filtering
 BuildArch:      noarch
@@ -1303,6 +1311,10 @@ exit 0
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
 %config(noreplace) %{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
+
+%files hook-macbind
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macbind
 
 %files hook-macspoof
 %defattr(-, root, root, -)

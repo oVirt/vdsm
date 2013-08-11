@@ -34,6 +34,7 @@ SUBDIRS += \
 	hostusb \
 	hugepages \
 	isolatedprivatevlan \
+	macbind \
 	macspoof \
 	nestedvt \
 	numa \
