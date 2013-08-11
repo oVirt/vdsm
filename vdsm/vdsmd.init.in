@@ -30,6 +30,7 @@ RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
 CORE_DUMP_PATH=/var/log/core/core.%p.%t.dump
 DOM_METADATA_BACKUP_DIR=/var/log/vdsm/backup
 CORE_PATTERN=/proc/sys/kernel/core_pattern
+# lock_file is needed only with sysv
 LOCK_FILE="/var/lock/subsys/vdsmd"
 NEEDED_SERVICES="iscsid multipathd rpcbind ntpd wdmd sanlock network libvirtd
                  supervdsmd"
@@ -111,10 +112,11 @@ acquire_lock() {
         return 1
     fi
     touch "$LOCK_FILE"
+    trap cleanup SIGINT SIGHUP SIGTERM
 }
 
 release_lock() {
-    "@RM_PATH@" -f "$LOCK_FILE"
+    "@RM_PATH@" -f "$LOCK_FILE" > /dev/null 2>&1
 }
 
 start_needed_srv() {
@@ -271,17 +273,21 @@ start() {
 
 stop() {
     echo $"Shutting down vdsm daemon: "
+    if has_systemd; then
+        kill_instance
+        return 0
+    fi
+
+    trap cleanup SIGINT SIGHUP SIGTERM
     if [ -f "$LOCK_FILE" ]; then
-       if ! [ -f "$RESPAWNPIDFILE" ]; then
+       if ! pidofproc -p "$RESPAWNPIDFILE" >/dev/null; then
            log_failure_msg "$prog during another start, cannot stop yet"
            return 1
        else
            kill_instance
-           "@RM_PATH@" -f "$RESPAWNPIDFILE"
            release_lock
        fi
     else
-       kill_instance
        log_failure_msg "$prog already stopped"
     fi
 
@@ -303,6 +309,16 @@ kill_instance() {
     "@PYTHON@" "@VDSMDIR@/hooks.pyc" after_vdsm_stop
 }
 
+cleanup() {
+    echo "Unexpected signal received, cleaning locks"
+    if pidofproc -p "$RESPAWNPIDFILE" >/dev/null ||
+       pidofproc -p "$PIDFILE" >/dev/null; then
+        kill_instance
+    fi
+    release_lock
+    exit 0
+}
+
 locked_start() {
     if ! acquire_lock; then
         log_failure_msg "cannot start VDS daemon when another instance runs"
@@ -314,7 +330,11 @@ locked_start() {
 
 case "$1" in
      start)
-         locked_start
+         if has_systemd; then
+             start
+         else
+             locked_start
+         fi
          RETVAL=$?
     ;;
      stop)
@@ -327,7 +347,7 @@ case "$1" in
     if [ "$RETVAL" -eq 0 ]; then
         echo "VDS daemon server is running"
     else
-        if [ -f "$LOCK_FILE" ]; then
+        if ! has_systemd && [ -f "$LOCK_FILE" ]; then
             printf "VDS daemon dead but subsys locked"
         else
             printf "VDS daemon is not running"
