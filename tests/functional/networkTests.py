@@ -320,6 +320,7 @@ class NetworkTest(TestCaseBase):
                                                    nics=nics)
             self.assertEqual(status, SUCCESS, msg)
 
+    @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testQosNetwork(self):
@@ -338,6 +339,11 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(qos['qosInbound'], qosInbound)
             self.assertEqual(qos['qosOutbound'], qosOutbound)
 
+            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
+
+            self.assertEqual(status, SUCCESS, msg)
+
+    @cleanupNet
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
@@ -360,6 +366,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
             self.assertEqual(status, SUCCESS, msg)
 
+    @cleanupNet
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
