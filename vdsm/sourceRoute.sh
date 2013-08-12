@@ -11,7 +11,7 @@ sourceRoute_config() {
 }
 
 sourceRoute_restore() {
-    if [ -n "$interface" ]; then
+    if [ -n "$interface" ] && [ "$reason" == "STOP" ]; then
       echo "remove" "$interface" > \
           /var/run/vdsm/sourceRoutes/$timeStamp
     fi
