@@ -309,8 +309,8 @@ class LVMCache(object):
         self._vgs = {}
         self._lvs = {}
 
-    def cmd(self, cmd):
-        finalCmd = self._addExtraCfg(cmd)
+    def cmd(self, cmd, devices=tuple()):
+        finalCmd = self._addExtraCfg(cmd, devices)
         rc, out, err = misc.execCmd(finalCmd, sudo=True)
         if rc != 0:
             # Filter might be stale
@@ -369,13 +369,27 @@ class LVMCache(object):
 
         return updatedPVs
 
+    def _getVGDevs(self, vgNames):
+        devices = []
+        for name in vgNames:
+            try:
+                pvs = self._vgs[name].pv_name  # pv_names tuple
+            except (KeyError, AttributeError):  # Yet unknown VG, stub
+                devices = tuple()
+                break  # unknownVG = True
+            else:
+                devices.extend(pvs)
+        else:  # All known VGs
+            devices = tuple(devices)
+        return devices
+
     def _reloadvgs(self, vgName=None):
         cmd = list(VGS_CMD)
         vgNames = _normalizeargs(vgName)
         cmd.extend(vgNames)
 
         with self._oplock.acquireContext(LVM_OP_RELOAD):
-            rc, out, err = self.cmd(cmd)
+            rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
 
             if rc != 0:
                 log.warning("lvm vgs failed: %s %s %s", str(rc), str(out),
@@ -429,7 +443,7 @@ class LVMCache(object):
             cmd.append(vgName)
 
         with self._oplock.acquireContext(LVM_OP_RELOAD):
-            rc, out, err = self.cmd(cmd)
+            rc, out, err = self.cmd(cmd, self._getVGDevs((vgName, )))
 
             if rc != 0:
                 log.warning("lvm lvs failed: %s %s %s", str(rc), str(out),
@@ -638,7 +652,6 @@ class LVMCache(object):
             lvs = dict(self._lvs)
         return lvs.values()
 
-
 _lvminfo = LVMCache()
 
 
@@ -665,7 +678,7 @@ def _createpv(devices, metadataSize, options=tuple()):
     cmd.extend(("--metadatasize", metadatasize, "--metadatacopies", "2",
                 "--metadataignore", "y"))
     cmd.extend(devices)
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, devices)
     return rc, out, err
 
 
@@ -728,7 +741,7 @@ def removeVgMapping(vgName):
 def _setVgAvailability(vgs, available):
     vgs = _normalizeargs(vgs)
     cmd = ["vgchange", "--available", available] + vgs
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs(vgs))
     for vg in vgs:
         _lvminfo._invalidatelvs(vg)
     if rc != 0:
@@ -770,7 +783,7 @@ def changelv(vg, lvs, attrs):
         for attr in attrs:
             cmd.extend(attr)
     cmd.extend(lvnames)
-    rc, out, err = _lvminfo.cmd(tuple(cmd))
+    rc, out, err = _lvminfo.cmd(tuple(cmd), _lvminfo._getVGDevs((vg, )))
     _lvminfo._invalidatelvs(vg, lvs)
     if rc != 0 and len(out) < 1:
         raise se.StorageException("%d %s %s\n%s/%s" % (rc, out, err, vg, lvs))
@@ -877,7 +890,7 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
     # Activate the 1st PV metadata areas
     cmd = ["pvchange", "--metadataignore", "n"]
     cmd.append(pvs[0])
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs))
     if rc != 0:
         raise se.PhysDevInitializationError(pvs[0])
 
@@ -885,7 +898,7 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, tuple(pvs))
     if rc == 0:
         _lvminfo._invalidatepvs(pvs)
         _lvminfo._invalidatevgs(vgName)
@@ -896,7 +909,7 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
 
 def removeVG(vgName):
     cmd = ["vgremove", "-f", vgName]
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     pvs = tuple(pvName for pvName, pv in _lvminfo._pvs.iteritems()
                 if not isinstance(pv, Stub) and pv.vg_name == vgName)
     # PVS needs to be reloaded anyhow: if vg is removed they are staled,
@@ -926,7 +939,8 @@ def extendVG(vgName, devices, force):
     _initpvs(pvs, int(vg.vg_mda_size) / 2 ** 20, force)
 
     cmd = ["vgextend", vgName] + pvs
-    rc, out, err = _lvminfo.cmd(cmd)
+    devs = tuple(_lvminfo._getVGDevs((vgName, )) + tuple(pvs))
+    rc, out, err = _lvminfo.cmd(cmd, devs)
     if rc == 0:
         _lvminfo._invalidatepvs(pvs)
         _lvminfo._invalidatevgs(vgName)
@@ -937,7 +951,7 @@ def extendVG(vgName, devices, force):
 
 def chkVG(vgName):
     cmd = ["vgck", vgName]
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     if rc != 0:
         _lvminfo._invalidatevgs(vgName)
         _lvminfo._invalidatelvs(vgName)
@@ -1019,7 +1033,7 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     if initialTag is not None:
         cmd.extend(("--addtag", initialTag))
     cmd.extend(("--name", lvName, vgName))
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
 
     if rc == 0:
         _lvminfo._invalidatevgs(vgName)
@@ -1062,7 +1076,7 @@ def removeLVs(vgName, lvNames):
     cmd.extend(LVM_NOBACKUP)
     for lvName in lvNames:
         cmd.append("%s/%s" % (vgName, lvName))
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     if rc == 0:
         for lvName in lvNames:
             # Remove the LV from the cache
@@ -1086,7 +1100,7 @@ def _resizeLV(op, vgName, lvName, size):
     # Capitalise to use multiples of 1000 (S.I.) instead of 1024.
     cmd = (op,) + LVM_NOBACKUP
     cmd += ("--size", "%sm" % (size,), "%s/%s" % (vgName, lvName))
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     if rc == 0:
         _lvminfo._invalidatevgs(vgName)
         _lvminfo._invalidatelvs(vgName, lvName)
@@ -1133,7 +1147,7 @@ def deactivateLVs(vgName, lvNames):
 
 def renameLV(vg, oldlv, newlv):
     cmd = ("lvrename",) + LVM_NOBACKUP + (vg, oldlv, newlv)
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
     if rc != 0:
         raise se.LogicalVolumeRenameError("%s %s %s" % (vg, oldlv, newlv))
 
@@ -1144,7 +1158,7 @@ def renameLV(vg, oldlv, newlv):
 def refreshLV(vgName, lvName):
     # If  the  logical  volume  is active, reload its metadata.
     cmd = ['lvchange', '--refresh', "%s/%s" % (vgName, lvName)]
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     _lvminfo._invalidatelvs(vgName, lvName)
     if rc != 0:
         raise se.LogicalVolumeRefreshError("%s failed" % list2cmdline(cmd))
@@ -1155,7 +1169,7 @@ def refreshLV(vgName, lvName):
 def addtag(vg, lv, tag):
     lvname = "%s/%s" % (vg, lv)
     cmd = ("lvchange",) + LVM_NOBACKUP + ("--addtag", tag) + (lvname,)
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
     _lvminfo._invalidatelvs(vg, lv)
     if rc != 0:
         # Fix me: should be se.ChangeLogicalVolumeError but this not exists.
@@ -1182,7 +1196,7 @@ def changeLVTags(vg, lv, delTags=[], addTags=[]):
 
     cmd.append(lvname)
 
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
     _lvminfo._invalidatelvs(vg, lv)
     if rc != 0:
         raise se.LogicalVolumeReplaceTagError(
@@ -1236,7 +1250,7 @@ def changeVGTags(vgName, delTags=[], addTags=[]):
         cmd.extend(("--addtag", tag))
 
     cmd.append(vgName)
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     _lvminfo._invalidatevgs(vgName)
     if rc != 0:
         raise se.VolumeGroupReplaceTagError(
@@ -1247,7 +1261,7 @@ def changeVGTags(vgName, delTags=[], addTags=[]):
 def addVGTag(vgName, tag):
     _lvminfo._invalidatevgs(vgName)
     cmd = ["vgchange", "--addtag", tag, vgName]
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     if rc != 0:
         raise se.VolumeGroupAddTagError("Failed adding tag %s to VG %s." %
                                         (tag, vgName))
@@ -1256,7 +1270,7 @@ def addVGTag(vgName, tag):
 def remVGTag(vgName, tag):
     _lvminfo._invalidatevgs(vgName)
     cmd = ["vgchange", "--deltag", tag, vgName]
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     if rc != 0:
         raise se.VolumeGroupRemoveTagError(vgName)
 
@@ -1312,7 +1326,7 @@ def replaceLVTag(vg, lv, deltag, addtag):
     lvname = "%s/%s" % (vg, lv)
     cmd = (("lvchange",) + LVM_NOBACKUP + ("--deltag", deltag) +
            ("--addtag", addtag) + (lvname,))
-    rc, out, err = _lvminfo.cmd(cmd)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
     _lvminfo._invalidatelvs(vg, lv)
     if rc != 0:
         raise se.LogicalVolumeReplaceTagError("%s/%s" % (vg, lv),
