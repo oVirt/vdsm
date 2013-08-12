@@ -33,7 +33,7 @@ from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy, cleanupRules
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule)
 
-from vdsm.netinfo import operstate
+from vdsm.netinfo import operstate, prefix2netmask
 
 
 NETWORK_NAME = 'test-network'
@@ -1256,3 +1256,46 @@ class NetworkTest(TestCaseBase):
                 self.assertTrue(routeExists(route))
                 routeDel(route)
                 self.assertFalse(routeExists(route))
+
+    @permutations([[True], [False]])
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testStaticSourceRouting(self, bridged=True):
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME:
+                    {'nic': nics[0], 'bridged': bridged, 'ipaddr': IP_ADDRESS,
+                     'netmask': prefix2netmask(int(IP_CIDR)),
+                     'gateway': IP_GATEWAY}},
+                {}, {'connectivityCheck': False})
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME, bridged))
+
+            deviceName = NETWORK_NAME if bridged else nics[0]
+
+            # Assert that routes and rules exist
+            routes = [Route(network='0.0.0.0/0', ipaddr=IP_GATEWAY,
+                            device=deviceName, table=IP_TABLE),
+                      Route(network=IP_NETWORK_AND_CIDR,
+                            ipaddr=IP_ADDRESS, device=deviceName,
+                            table=IP_TABLE)]
+            rules = [Rule(source=IP_NETWORK_AND_CIDR, table=IP_TABLE),
+                     Rule(destination=IP_NETWORK_AND_CIDR, table=IP_TABLE,
+                          srcDevice=deviceName)]
+
+            for route in routes:
+                self.assertTrue(routeExists(route))
+            for rule in rules:
+                self.assertTrue(ruleExists(rule))
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'remove': True}},
+                {}, {'connectivityCheck': False})
+            self.assertEqual(status, SUCCESS, msg)
+
+            # Assert that routes and rules don't exist
+            for route in routes:
+                self.assertFalse(routeExists(route))
+            for rule in rules:
+                self.assertFalse(ruleExists(rule))
