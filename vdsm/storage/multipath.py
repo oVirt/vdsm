@@ -381,7 +381,7 @@ TOXIC_REGEX = re.compile(r"[%s]" % re.sub(r"[\-\\\]]",
 
 def getMPDevNamesIter():
     for _, name in getMPDevsIter():
-        yield name
+        yield os.path.join(devicemapper.DMPATH_PREFIX, name)
 
 
 def getMPDevsIter():

@@ -2022,7 +2022,8 @@ class HSM:
             se.VolumeGroupCreateError(str(vgname), str(devlist)))
         misc.validateUUID(vgname, 'vgname')
         # getSharedLock(connectionsResource...)
-        knowndevs = set(multipath.getMPDevNamesIter())
+        knowndevs = set(os.path.basename(p) for p
+                        in multipath.getMPDevNamesIter())
         size = 0
         devices = []
 
@@ -3110,7 +3111,7 @@ class HSM:
         """
         supervdsm.getProxy().appropriateDevice(guid, thiefId)
         supervdsm.getProxy().udevTrigger(guid)
-        devPath = devicemapper.DMPATH_FORMAT % guid
+        devPath = os.path.join(devicemapper.DMPATH_PREFIX, guid)
         utils.retry(partial(fileUtils.validateQemuReadable, devPath),
                     expectedException=OSError,
                     timeout=QEMU_READABLE_TIMEOUT)

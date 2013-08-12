@@ -27,11 +27,11 @@ import re
 from supervdsm import getProxy
 from vdsm.constants import EXT_DMSETUP
 
-DMPATH_FORMAT = "/dev/mapper/%s"
+DMPATH_PREFIX = "/dev/mapper/"
 
 
 def getDmId(deviceMultipathName):
-    devlinkPath = DMPATH_FORMAT % deviceMultipathName
+    devlinkPath = os.path.join(DMPATH_PREFIX, deviceMultipathName)
     try:
         devStat = os.stat(devlinkPath)
     except OSError:
