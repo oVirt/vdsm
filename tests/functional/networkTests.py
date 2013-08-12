@@ -26,7 +26,8 @@ from testrunner import (VdsmTestCase as TestCaseBase,
                         expandPermutations, permutations)
 from testValidation import RequireDummyMod, ValidateRunningAsRoot
 
-from utils import cleanupNet, dummyIf, restoreNetConfig, SUCCESS, VdsProxy
+from dummy import dummyIf
+from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy
 
 from vdsm.netinfo import operstate
 

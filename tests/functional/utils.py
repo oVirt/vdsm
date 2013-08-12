@@ -19,11 +19,8 @@
 from collections import namedtuple
 from contextlib import contextmanager
 from functools import wraps
-import random
 import time
 import threading
-
-from nose.plugins.skip import SkipTest
 
 from vdsm import netinfo
 from vdsm import vdscli
@@ -34,67 +31,10 @@ SUCCESS = 0
 Qos = namedtuple('Qos', 'inbound outbound')
 
 
-ip = utils.CommandPath('ip',
-                       '/sbin/ip',      # EL6
-                       '/usr/sbin/ip',  # Fedora
-                       )
-
-
 service = utils.CommandPath("service",
                             "/sbin/service",      # EL6
                             "/usr/sbin/service",  # Fedora
                             )
-
-
-def createDummy():
-    """
-    Creates a dummy interface, in a fixed number of attempts (100).
-    The dummy interface created has a pseudo-random name (e.g. dummy_85
-    in the format dummy_Number). Assumes root privileges.
-    """
-
-    rc = -1
-    dummy_name = None
-    for i in random.sample(xrange(100), 100):
-        dummy_name = 'dummy_%s' % i
-        ip_add_dummy = [ip.cmd, 'link', 'add', dummy_name,
-                        'type', 'dummy']
-        rc, out, err = utils.execCmd(ip_add_dummy, sudo=True)
-        if rc == SUCCESS:
-            return dummy_name
-
-    if rc != SUCCESS:
-        raise SkipTest('Failed to load a dummy interface')
-
-
-def removeDummy(dummyName):
-    """
-    Removes dummy interface dummyName. Assumes root privileges.
-    """
-
-    ip_rm_dummy = [ip.cmd, 'link', 'delete',
-                   dummyName, 'type', 'dummy']
-    rc, out, err = utils.execCmd(ip_rm_dummy, sudo=True)
-    if rc != SUCCESS:
-        raise SkipTest("Unable to delete dummy interface:"
-                       " %s see %s %s" % (dummyName, out, err))
-
-
-@contextmanager
-def dummyIf(num):
-    """
-    Manages a list of num dummy interfaces. Assumes root privileges.
-    """
-
-    dummies = []
-    try:
-        dummies = [createDummy() for _ in range(num)]
-        yield dummies
-    except Exception:
-        raise
-    finally:
-        for dummy in dummies:
-            removeDummy(dummy)
 
 
 def cleanupNet(func):

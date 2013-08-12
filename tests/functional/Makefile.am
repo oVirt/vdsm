@@ -21,6 +21,7 @@
 vdsmfunctestsdir = ${vdsmtestsdir}/functional
 
 dist_vdsmfunctests_PYTHON = \
+	dummy.py \
 	momTests.py \
 	networkTests.py \
 	sosPluginTests.py \
