@@ -3293,8 +3293,7 @@ class HSM:
         """
         Gets a list of all volumes.
 
-        :param spUUID: The UUID of the storage pool that manages the storage
-                       domain you want to query.
+        :param spUUID: Unused.
         :type spUUID: UUID
         :param sdUUID: The UUID of the storage domain you want to query.
         :type sdUUID: UUID
@@ -3305,18 +3304,12 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
+        vols = dom.getAllVolumes()
         if imgUUID == volume.BLANK_UUID:
-            images = list(dom.getAllImages())
+            volUUIDs = vols.keys()
         else:
-            images = [imgUUID]
-
-        uuidlist = []
-        repoPath = os.path.join(self.storage_repository, spUUID)
-        for img in images:
-            uuidlist += (dom.getVolumeClass().
-                         getImageVolumes(repoPath, sdUUID, img))
-        self.log.info("List of volumes is %s", uuidlist)
-        return dict(uuidlist=uuidlist)
+            volUUIDs = [k for k, v in vols.iteritems() if imgUUID in v.imgs]
+        return dict(uuidlist=volUUIDs)
 
     @public
     def getImagesList(self, sdUUID, options=None):
