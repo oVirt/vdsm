@@ -1924,12 +1924,7 @@ class Vm(object):
         else:
             devices = self.getConfDevices()
 
-        # libvirt only support one watchdog device
-        if len(devices[WATCHDOG_DEVICES]) > 1:
-            raise ValueError("only a single watchdog device is supported")
-
-        if len(devices[CONSOLE_DEVICES]) > 1:
-            raise ValueError("Only a single console device is supported")
+        self._checkDeviceLimits(devices)
 
         # Normalize vdsm images
         for drv in devices[DISK_DEVICES]:
@@ -1955,6 +1950,13 @@ class Vm(object):
 
         if not balloonDevices:
             balloonDevices.append(EMPTY_BALLOON)
+
+    def _checkDeviceLimits(self, devices):
+        # libvirt only support one watchdog and one console device
+        for device in (WATCHDOG_DEVICES, CONSOLE_DEVICES):
+            if len(devices[device]) > 1:
+                raise ValueError("only a single %s device is "
+                                 "supported" % device)
 
     def getConfController(self):
         """
