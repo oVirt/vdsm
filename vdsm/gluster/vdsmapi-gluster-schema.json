@@ -302,9 +302,9 @@
 #
 # @start:    Start the service
 #
-# @stop:    Stop the service
+# @stop:     Stop the service
 #
-# @restart:    Restart the service
+# @restart:  Restart the service
 #
 # Since: 4.10.3
 ##
@@ -347,7 +347,7 @@
 # @serviceName:   Gluster service name
 #
 # Returns:
-# status information for list of services
+# Status information for list of services
 #
 # Since: 4.10.3
 ##
@@ -360,18 +360,19 @@
 #
 # start/stop/restart the list of services and get status information.
 #
-# @serviceName:   Gluster service name
+# @serviceName:  Gluster service name
 #
-# @action:   Action to perform start/stop/restart
+# @action:       Action to perform start/stop/restart
 #
 # Returns:
-# status information for list of services
+# Status information for list of services
 #
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterService', 'name': 'action'},
  'data': {'serviceName': 'str', 'action': 'GlusterServiceAction'},
  'returns': 'GlusterServicesStatusInfo'}
+
 
 ## Category: @GlusterTask ######################################################
 ##
@@ -449,3 +450,530 @@
 {'command': {'class': 'GlusterTask', 'name': 'list'},
  'data': {'*taskID': 'UUID'},
   'returns': ['TaskInfo']}
+
+## Category: @GlusterVolume ######################################################
+##
+# @GlusterVolume:
+#
+# Gluster Volume object.
+#
+# Since: 4.10.3
+##
+{'class': 'GlusterVolume'}
+
+##
+# @volumeType:
+#
+# Possible type of volume.
+#
+# @ENABLED:  volume is enabled
+#
+# @DISABLED: volume is disabled
+#
+# Since: 4.10.3
+##
+{'enum': 'volumeType',
+ 'data': ['ENABLED', 'DISABLED']}
+
+##
+# @volumeStatus:
+#
+# Possible value of volume status.
+#
+# @ONLINE:   volume is online
+#
+# @OFFLINE:  volume is offline
+#
+# Since: 4.10.3
+##
+{'enum': 'volumeStatus',
+ 'data': ['ONLINE', 'OFFLINE']}
+
+##
+# @transType:
+#
+# Possible value of transport type.
+#
+# @TCP:    Transport type is TCP
+#
+# @RDMA:   Transport type is RDMA
+#
+# Since: 4.10.3
+##
+{'enum': 'transType',
+ 'data': ['TCP', 'RDMA']}
+
+##
+# @VolumeInfo:
+#
+# volume information.
+#
+# @brickCount:    The number of bricks
+#
+# @bricks:        List of bricks
+#
+# @options:       List of options
+#
+# @transportType: Type of transport protocol
+#
+# @uuid:          Id of the volume
+#
+# @volumeName:    Name of the volume
+#
+# @status:        Status of the volume
+#
+# @volumeType:    Type of the volume
+#
+# Since: 4.10.3
+##
+{'type': 'VolumeInfo',
+ 'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'], 'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str', 'status': 'volumeStatus', 'volumeType': 'str'}}
+
+##
+# @GlusterVolume.list:
+#
+# Get the list of Gluster volumes
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# List of Gluster volumes
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'list'},
+ 'data': {'volumeName': 'str'},
+ 'returns': ['VolumeInfo']}
+
+##
+# @GlusterVolume.create:
+#
+# Create a Gluster volume
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# uuid of the volume
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'create'},
+ 'data': {'volumeName': 'str', 'bricklist': ['str'], 'replicaCount': 'int', 'stripeCount': 'int', 'transportList': ['transType']},
+ 'returns': 'UUID'}
+
+##
+# @GlusterVolume.start:
+#
+# Start Gluster volume
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'start'},
+ 'data': {'volumeName': 'str', 'force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.stop:
+#
+# Stop Gluster volume
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'stop'},
+ 'data': {'volumeName': 'str', 'force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.delete:
+#
+# Deletes Gluster volume
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'delete'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.set:
+#
+# Set Gluster volume options
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'set'},
+ 'data': {'volumeName': 'str', 'option': 'str', 'value': 'str'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.reset:
+#
+# Reset Gluster volume options
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'reset'},
+ 'data': {'volumeName': 'str', 'option': 'str', 'force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.addBrick:
+#
+# Add Gluster volume brick
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'addBrick'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int', 'stripeCount': 'int'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.removeBrickStart:
+#
+# Start Gluster volume brick remove
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Task id of the operation
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'removeBrickStart'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int'},
+ 'returns': 'UUID'}
+
+##
+# @Summary:
+#
+# Summary of the process
+#
+# @runtime:        Runtime of the operation
+#
+# @filesScanned:   Number of files scanned
+#
+# @filesMoved:     Number of files moved
+#
+# @filesFailed:    Number of files failed
+#
+# @filesSkipped:   Numbers of files skipped
+#
+# @totalSizeMoved: Total size of data moved
+#
+# @status:         Status of the operation
+#
+# Since: 4.10.3
+##
+{'type': 'Summary',
+ 'data': {'runtime': 'float', 'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int', 'totalSizeMoved': 'int', 'status': 'str'}}
+
+##
+# @GlusterVolume.removeBrickStop:
+#
+# Stop Gluster volume brick remove
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'removeBrickStop'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int'},
+ 'returns': 'bool'}
+
+##
+# @TaskStatus:
+#
+# Possible value of task status.
+#
+# @NOT_STARTED: Process not Started
+#
+# @STARTED:     Process Started
+#
+# @STOPPED:     Process not Stopped
+#
+# @COMPLETED:   Process completed
+#
+# @FAILED:      Process failed
+#
+# @UNKNOWN:     Status unknown
+#
+# Since: 4.10.3
+##
+{'enum': 'TaskStatus',
+ 'data': ['NOT_STARTED', 'STARTED','STOPPED', 'COMPLETED', 'FAILED', 'UNKNOWN']}
+
+##
+# @HostInfo:
+#
+# Info about Host
+#
+# @name:           Name of the host
+#
+# @id:             id of the host
+#
+# @runtime:        Runtime of the operation
+#
+# @filesScanned:   Number of files scanned
+#
+# @filesMoved:     Number of files moved
+#
+# @filesFailed:    Number of files failed
+#
+# @filesSkipped:   Numbers of files skipped
+#
+# @totalSizeMoved: Total size of data moved
+#
+# @status:         Status of task
+#
+# Since: 4.10.3
+##
+{'type': 'HostInfo',
+ 'data': {'name': 'str', 'id': 'UUID', 'runtime': 'float', 'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int', 'totalSizeMoved': 'int', 'status': 'TaskStatus'}}
+
+##
+# @RebalanceRemoveStatus:
+#
+# status of volume rebalance and brick removal.
+#
+# @hosts:      Information about hosts.
+#
+# @summary:    Summary of the operation.
+#
+# Since: 4.10.3
+##
+{'type': 'RebalanceRemoveStatus',
+ 'data': {'hosts': 'HostInfo', 'summary': 'Summary'}}
+
+##
+# @GlusterVolume.removeBrickStatus:
+#
+# Get status of Gluster volume brick remove
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Status information of remove brick operation
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'removeBrickStatus'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int'},
+ 'returns': 'RebalanceRemoveStatus'}
+
+##
+# @GlusterVolume.removeBrickCommit:
+#
+# Commit Gluster volume brick remove
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'removeBrickCommit'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.removeBrickForce:
+#
+# Force remove Gluster volume brick
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'removeBrickForce'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.profileStart:
+#
+# Start Gluster volume Profile
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'profileStart'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.profileStop:
+#
+# Stop Gluster volume Profile
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'profileStop'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.rebalanceStart:
+#
+# Start Gluster volume rebalance
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Task id of the operation
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'rebalanceStart'},
+ 'data': {'volumeName': 'str', 'rebalanceType': 'str', 'force': 'bool'},
+ 'returns': 'UUID'}
+
+##
+# @GlusterVolume.rebalanceStop:
+#
+# Stop Gluster volume rebalance
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'rebalanceStop'},
+ 'data': {'volumeName': 'str', 'force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.rebalanceStatus:
+#
+# Get Gluster volume Rebalance status
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Gluster volume rebalance status
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'rebalanceStatus'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'RebalanceRemoveStatus'}
+
+##
+# @GlusterHost.add:
+#
+# Add Gluster Host
+#
+# Returns:
+# Success or Failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHost', 'name': 'add'},
+ 'data': {'hostName': 'str'},
+ 'returns': 'bool'}
+
+##
+# @GlusterHost.remove:
+#
+# Remove Gluster Host
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHost', 'name': 'remove'},
+ 'data': {'hostName': 'str', 'force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @HostStatus:
+#
+# Possible value of host status.
+#
+# @UNKNOWN:  Host status is unknown
+#
+# @CONNECTED: Host is connected
+#
+# @DISCONNECTED: host is disconnected
+#
+# Since: 4.10.3
+##
+{'enum': 'HostStatus',
+ 'data': ['UNKNOWN', 'CONNECTED','DISCONNECTED']}
+
+##
+# @HostList:
+#
+# List of hosts.
+#
+# @hostname:  The name of the host
+#
+# @uuid:      Id of the host
+#
+# @status:    Status of the host
+#
+# Since: 4.10.3
+##
+{'type': 'HostList',
+ 'data': {'hostname': 'str', 'uuid': 'UUID', 'status': 'HostStatus'}}
+
+##
+# @GlusterHost.list:
+#
+# List Gluster Hosts
+#
+# Returns:
+# List of gluster host
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterHost', 'name': 'list'},
+ 'returns': ['HostList']}
