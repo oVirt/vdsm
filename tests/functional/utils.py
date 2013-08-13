@@ -230,3 +230,34 @@ class VdsProxy(object):
     def networkQos(self, networkName):
         network = self.netinfo.networks[networkName]
         return network['qosInbound'], network['qosOutbound']
+
+    def setMOMPolicy(self, policyStr):
+        result = self.vdscli.setMOMPolicy(policyStr)
+        return result['status']['code'], result['status']['message']
+
+    def setBalloonTarget(self, vmId, target):
+        result = self.vdscli.setBalloonTarget(vmId, target)
+        return result['status']['code'], result['status']['message']
+
+    def getVdsStats(self):
+        result = self.vdscli.getVdsStats()
+        return result['status']['code'], result['status']['message'],\
+            result['info']
+
+    def getAllVmStats(self):
+        result = self.vdscli.getAllVmStats()
+        return result['status']['code'], result['status']['message'],\
+            result['statsList']
+
+    def getVmStats(self, vmId):
+        result = self.vdscli.getVmStats(vmId)
+        if 'statsList' in result:
+            return result['status']['code'], result['status']['message'],\
+                result['statsList'][0]
+        else:
+            return result['status']['code'], result['status']['message']
+
+    def getVdsCapabilities(self):
+        result = self.vdscli.getVdsCapabilities()
+        return result['status']['code'], result['status']['message'],\
+            result['info']

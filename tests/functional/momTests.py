@@ -29,17 +29,16 @@ from math import ceil
 import testValidation
 from testrunner import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
-from vdsm import vdscli
 from vdsm.define import errCode
-from utils import SUCCESS
+from utils import VdsProxy, SUCCESS
 
 
 def skipNoMOM(method):
     @wraps(method)
     def wrapped(self, *args, **kwargs):
-        r = self.s.getVdsCapabilities()
-        self.assertEquals(r['status']['code'], 0)
-        if not r['info']['packages2'].get('mom'):
+        status, msg, info = self.s.getVdsCapabilities()
+        self.assertEquals(status, SUCCESS)
+        if not info['packages2'].get('mom'):
             raise SkipTest('MOM is not installed')
         return method(self, *args, **kwargs)
     return wrapped
@@ -56,11 +55,7 @@ class MOMTest(TestCaseBase):
     BalloonRatio = namedtuple('BalloonRatio', 'initial, low, high')
 
     def setUp(self):
-        self.s = vdscli.connect()
-
-    def assertOK(self, result):
-        self.assertEquals(
-            result['status']['code'], SUCCESS, str(result))
+        self.s = VdsProxy()
 
     @testValidation.ValidateRunningAsRoot
     @skipNoMOM
@@ -73,13 +68,13 @@ class MOMTest(TestCaseBase):
             (Host.Control "ksm_run" %d)
             (Host.Control "ksm_pages_to_scan" %d)""" % \
             (run, pages_to_scan)
-        r = self.s.setMOMPolicy(testPolicyStr)
-        self.assertOK(r)
+        status, msg = self.s.setMOMPolicy(testPolicyStr)
+        self.assertEqual(status, SUCCESS, msg)
 
         # Wait for the policy taking effect
         time.sleep(10)
 
-        hostStats = self.s.getVdsStats()['info']
+        status, msg, hostStats = self.s.getVdsStats()
         self.assertEqual(bool(run), hostStats['ksmState'])
         self.assertEqual(pages_to_scan, hostStats['ksmPages'])
 
@@ -92,11 +87,11 @@ class MOMTest(TestCaseBase):
 
     def _prepare(self, balloonRatio):
         # Get vms' statistics before the operation.
-        r = self.s.getAllVmStats()
-        self.assertOK(r)
+        status, msg, statsList = self.s.getAllVmStats()
+        self.assertEqual(status, SUCCESS, msg)
 
         # Filter all vms' statistics to get balloon operation candidates.
-        candidateStats = filter(self._statsOK, r['statsList'])
+        candidateStats = filter(self._statsOK, statsList)
 
         # Set the balloon target to initial value before shrink
         # or grow operation.
@@ -106,10 +101,10 @@ class MOMTest(TestCaseBase):
             initial = int(stats['balloonInfo']['balloon_max']) * \
                 balloonRatio.initial
             if int(stats['balloonInfo']['balloon_cur']) != initial:
-                r = self.s.setBalloonTarget(
+                status, msg = self.s.setBalloonTarget(
                     stats['vmId'],
                     initial)
-                self.assertOK(r)
+                self.assertEqual(status, SUCCESS, msg)
         return [stats['vmId'] for stats in candidateStats]
 
     def _setPolicy(self, policy):
@@ -125,19 +120,23 @@ class MOMTest(TestCaseBase):
             else:
                 raise SkipTest(e.message)
 
-        r = self.s.setMOMPolicy(testPolicyStr)
-        self.assertOK(r)
+        status, msg = self.s.setMOMPolicy(testPolicyStr)
+        self.assertEqual(status, SUCCESS, msg)
 
     def _checkResult(self, vmCandidates, balloonRatio):
         # Check the new balloon_cur in the proper range.
         for vmId in vmCandidates:
             r = self.s.getVmStats(vmId)
+            if len(r) == 2:
+                status, msg = r
+            else:
+                status, msg, vmNewStats = r
+
             # Vm doesn't exist.
-            if r['status']['code'] == errCode['noVM']['status']['code']:
+            if status == errCode['noVM']['status']['code']:
                 continue
             else:
-                self.assertOK(r)
-                vmNewStats = r['statsList'][0]
+                self.assertEqual(status, SUCCESS, msg)
                 if self._statsOK(vmNewStats):
                     balloonMax = int(vmNewStats['balloonInfo']['balloon_max'])
                     balloonCur = int(vmNewStats['balloonInfo']['balloon_cur'])
