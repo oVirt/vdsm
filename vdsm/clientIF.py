@@ -94,7 +94,7 @@ class clientIF:
             self._enabled = True
             self._netConfigDirty = False
             self._prepareMOM()
-            threading.Thread(target=self._recoverExistingVms,
+            threading.Thread(target=self._recoverThread,
                              name='clientIFinit').start()
             self.channelListener.settimeout(
                 config.getint('vars', 'guest_agent_timeout'))
@@ -409,13 +409,19 @@ class clientIF:
                   caps.CpuTopology().cores())
         vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
 
-    def _recoverExistingVms(self):
-        # Starting up libvirt might take long when host under high load,
-        # we prefer running this code in external thread to avoid blocking
-        # API response.
-        self._initializingLibvirt()
+    def _recoverThread(self):
+        # Trying to run recover process until it works. During that time vdsm
+        # stays in recovery mode (_recover=True), means all api requests
+        # returns with "vdsm is in initializing process" message.
+        utils.retry(self._recoverExistingVms, sleep=5)
 
+    def _recoverExistingVms(self):
         try:
+            # Starting up libvirt might take long when host under high load,
+            # we prefer running this code in external thread to avoid blocking
+            # API response.
+            self._initializingLibvirt()
+
             vdsmVms = self._getVDSMVms()
             #Recover
             for v in vdsmVms:
@@ -458,6 +464,7 @@ class clientIF:
                                    vmId, exc_info=True)
         except:
             self.log.error("Vm's recovery failed", exc_info=True)
+            raise
 
     def isVDSMVm(self, vm):
         """
