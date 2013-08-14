@@ -26,6 +26,7 @@ import threading
 import errno
 import uuid
 import codecs
+import signal
 from contextlib import nested
 from functools import partial
 from weakref import proxy
@@ -2077,7 +2078,8 @@ class StoragePool(Securable):
         try:
             if method.lower() == "wget":
                 cmd = [constants.EXT_WGET, "-O", targetPath, srcPath]
-                (rc, out, err) = misc.execCmd(cmd, sudo=False)
+                (rc, out, err) = misc.execCmd(cmd, sudo=False,
+                                              deathSignal=signal.SIGKILL)
 
                 if rc:
                     self.log.error("uploadVolume - error while trying to "
@@ -2086,7 +2088,8 @@ class StoragePool(Securable):
                     raise se.VolumeCopyError(vol, err)
             elif method.lower() == "rsync":
                 cmd = [constants.EXT_RSYNC, "-aq", srcPath, targetPath]
-                (rc, out, err) = misc.execCmd(cmd, sudo=False)
+                (rc, out, err) = misc.execCmd(cmd, sudo=False,
+                                              deathSignal=signal.SIGKILL)
 
                 if rc:
                     self.log.error("uploadVolume - error while trying to copy:"

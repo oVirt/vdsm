@@ -204,7 +204,8 @@ def _zeroVolume(sdUUID, volUUID):
            "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
            "count=%s" % count]
     p = misc.execCmd(cmd, sudo=False, sync=False,
-                     nice=utils.NICENESS.HIGH, ioclass=utils.IOCLASS.IDLE)
+                     nice=utils.NICENESS.HIGH, ioclass=utils.IOCLASS.IDLE,
+                     deathSignal=signal.SIGKILL)
     return p
 
 
@@ -1059,7 +1060,8 @@ class BlockStorageDomain(sd.StorageDomain):
 
         masterfsdev = lvm.lvPath(self.sdUUID, MASTERLV)
         cmd = [constants.EXT_FSCK, "-p", masterfsdev]
-        (rc, out, err) = misc.execCmd(cmd, sudo=True)
+        (rc, out, err) = misc.execCmd(cmd, sudo=True,
+                                      deathSignal=signal.SIGKILL)
         # fsck exit codes
         # 0    - No errors
         # 1    - File system errors corrected
@@ -1084,7 +1086,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # If there is a journal already tune2fs will do nothing, indicating
         # this condition only with exit code. However, we do not really care.
         cmd = [constants.EXT_TUNE2FS, "-j", masterfsdev]
-        misc.execCmd(cmd, sudo=True)
+        misc.execCmd(cmd, sudo=True, deathSignal=signal.SIGKILL)
 
         masterMount = mount.Mount(masterfsdev, masterDir)
 
@@ -1274,7 +1276,7 @@ def _createVMSfs(dev):
     Create a special file system to store VM data
     """
     cmd = [constants.EXT_MKFS, "-q", "-j", "-E", "nodiscard", dev]
-    rc = misc.execCmd(cmd, sudo=True)[0]
+    rc = misc.execCmd(cmd, sudo=True, deathSignal=signal.SIGKILL)[0]
     if rc != 0:
         raise se.MkfsError(dev)
 

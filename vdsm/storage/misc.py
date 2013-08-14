@@ -39,6 +39,7 @@ import os
 import Queue
 import random
 import re
+import signal
 import select
 import string
 import struct
@@ -367,7 +368,8 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
 
         if not stop:
             (rc, out, err) = execCmd(cmd, sudo=False, nice=utils.NICENESS.HIGH,
-                                     ioclass=utils.IOCLASS.IDLE)
+                                     ioclass=utils.IOCLASS.IDLE,
+                                     deathSignal=signal.SIGKILL)
         else:
             (rc, out, err) = watchCmd(cmd, stop=stop,
                                       recoveryCallback=recoveryCallback,

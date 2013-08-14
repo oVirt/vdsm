@@ -1057,7 +1057,8 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
         # +1 is so that odd numbers will round upwards.
         cmd += [volume, "%uK" % ((size + 1) / 2)]
 
-    (rc, out, err) = misc.execCmd(cmd, sudo=False, cwd=cwd)
+    (rc, out, err) = misc.execCmd(cmd, sudo=False, cwd=cwd,
+                                  deathSignal=signal.SIGKILL)
     if rc:
         raise se.VolumeCreationError(out)
     return True

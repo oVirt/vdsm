@@ -458,9 +458,12 @@ class AsyncProc(object):
 
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
             printable=None, env=None, sync=True, nice=None, ioclass=None,
-            ioclassdata=None, setsid=False, execCmdLogger=logging.root):
+            ioclassdata=None, setsid=False, execCmdLogger=logging.root,
+            deathSignal=0):
     """
     Executes an external command, optionally via sudo.
+
+    IMPORTANT NOTE: don't define a deathSignal when sync=False
     """
     if ioclass is not None:
         cmd = command
@@ -485,7 +488,8 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     cmdline = repr(subprocess.list2cmdline(printable))
     execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
 
-    p = BetterPopen(command, close_fds=True, cwd=cwd, env=env)
+    p = BetterPopen(command, close_fds=True, cwd=cwd, env=env,
+                    deathSignal=deathSignal)
     p = AsyncProc(p)
     if not sync:
         if data is not None:
@@ -516,12 +520,14 @@ def stripNewLines(lines):
 
 
 def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None,
-             nice=None, ioclass=None, execCmdLogger=logging.root):
+             nice=None, ioclass=None, execCmdLogger=logging.root,
+             deathSignal=signal.SIGKILL):
     """
     Executes an external command, optionally via sudo with stop abilities.
     """
     proc = execCmd(command, sudo=False, cwd=cwd, data=data, sync=False,
-                   nice=nice, ioclass=ioclass, execCmdLogger=execCmdLogger)
+                   nice=nice, ioclass=ioclass, execCmdLogger=execCmdLogger,
+                   deathSignal=deathSignal)
     if recoveryCallback:
         recoveryCallback(proc)
 

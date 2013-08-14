@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import signal
+
 from vdsm import utils, constants
 
 _curl = utils.CommandPath("curl",
@@ -63,7 +65,7 @@ def download(url, path, headers={}):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--download"]
     cmd.extend(_headersToOptions(headers) + [path, url])
 
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise CurlError(rc, out, err)
@@ -73,7 +75,7 @@ def upload(url, path, headers={}):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--upload"]
     cmd.extend(_headersToOptions(headers) + [path, url])
 
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise CurlError(rc, out, err)
