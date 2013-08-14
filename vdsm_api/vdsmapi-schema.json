@@ -2203,15 +2203,15 @@
 #
 # Additional parameters for VM video devices.
 #
-# @vram:  #optional Specify the amount of video RAM available to the device
-#         in KB.  Currently relevant for @qxl devices only
+# @vram:  Specify the amount of video RAM available to the device
+#         in KB. Passed to any driver, currently has effect on @qxl devices only
 #
 # @heads:  #optional Specify the amount of monitors that will use single
 #          pci device.  Currently relevant for @qxl devices only
 #
 # Since: 4.10.0
 ##
-{'type': 'VmVideoDeviceSpecParams', 'data': {'*vram': 'uint', '*heads': 'uint'}}
+{'type': 'VmVideoDeviceSpecParams', 'data': {'vram': 'uint', '*heads': 'uint'}}
 
 ##
 # @VmVideoDevice:
@@ -2228,14 +2228,14 @@
 #
 # @deviceId:    A unique ID for this device
 #
-# @specParams:  #optional Additional device parameters
+# @specParams:  Additional device parameters
 #
 # Since: 4.10.0
 ##
 {'type': 'VmVideoDevice',
  'data': {'deviceType': 'VmDeviceType', 'device': 'VmVideoDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
-          '*specParams': 'VmVideoDeviceSpecParams'}}
+          'specParams': 'VmVideoDeviceSpecParams'}}
 
 ##
 # @VmSoundDeviceType:
@@ -2521,13 +2521,44 @@
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
 
 ##
+# @VmSmartcardDeviceProtocol:
+#
+# An enumeration of VM smartcard device protocols.
+#
+# @spicevmc:    Use smartcard channel of SPICE
+#
+# Since: 4.10.3
+##
+{'enum': 'VmSmartcardDeviceProtocol', 'data': ['spicevmc']}
+
+##
+# @VmSmartcardDeviceMode:
+#
+# An enumeration of VM smartcard device modes.
+#
+# @host:        Direct request to host
+#
+# @passthrough: Third party provider (requires @spicevmc)
+#
+# Since: 4.10.3
+##
+{'enum': 'VmSmartcardDeviceMode', 'data': ['host', 'passthrough']}
+
+##
 # @VmSmartcardDeviceSpecParams:
 #
 # Additional VM smartcard device parameters.
 #
+# @type:      #optional Protocol used by smartcard device
+#             (@spicevmc required for @passthrough mode)
+#
+# @mode:      Operation mode of smartcard device
+#
 # Since: 4.10.3
 ##
-{'type': 'VmSmartcardDeviceSpecParams', 'data': {}}
+{'type': 'VmSmartcardDeviceSpecParams',
+ 'data': {'mode': 'VmSmartcardDeviceMode',
+          '*type': 'VmSmartcardDeviceProtocol'}}
 
 ##
 # @VmSmartcardDeviceType:
@@ -2553,14 +2584,14 @@
 #
 # @alias:       Alias used to identify this device in commands
 #
-# @specParams:  #optional Additional device parameters
+# @specParams:  Additional device parameters
 #
 # Since: 4.10.3
 ##
 {'type': 'VmSmartcardDevice',
  'data': {'deviceType': 'VmDeviceType', 'device': 'VmSmartcardDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str',
-          '*specParams': 'VmSmartcardDeviceSpecParams'}}
+          'specParams': 'VmSmartcardDeviceSpecParams'}}
 
 ##
 # @VmConsoleDevice:

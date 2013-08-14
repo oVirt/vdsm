@@ -1588,8 +1588,10 @@ class SmartCardDevice(VmDevice):
         </smartcard>
         """
         card = self.createXmlElem(self.device, None, ['address'])
-        card.setAttrs(mode=self.specParams['mode'],
-                      type=self.specParams['type'])
+        sourceAttrs = {'mode': self.specParams['mode']}
+        if sourceAttrs['mode'] != 'host':
+            sourceAttrs['type'] = self.specParams['type']
+        card.setAttrs(**sourceAttrs)
         return card
 
 
