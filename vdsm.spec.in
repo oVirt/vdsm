@@ -563,7 +563,7 @@ rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 
 # Install the respawn utility
-install -Dm 0755 vdsm/respawn \
+install -Dm 0755 init/sysvinit/respawn \
                  %{buildroot}%{_datadir}/%{vdsm_name}/respawn
 
 # Install the lvm rules
@@ -574,12 +574,11 @@ install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
 
 %if 0%{?with_systemd}
-# old version of ovirt-host-deploy needs systemd-vdsmd to reconfigure libvirt
-install -Dm 0755 vdsm/systemd-vdsmd %{buildroot}/lib/systemd/systemd-vdsmd
-install -Dm 0644 vdsm/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
-install -Dm 0644 vdsm/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
+install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/lib/systemd/systemd-vdsmd
+install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
+install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
 
-install -Dm 0644 vdsm/vdsm-restore-net-config.service \
+install -Dm 0644 init/systemd/vdsm-restore-net-config.service \
                  %{buildroot}%{_unitdir}/vdsm-restore-net-config.service
 install -Dm 0755 vdsm_reg/vdsm-reg.init \
                  %{buildroot}/lib/systemd/systemd-vdsm-reg
@@ -589,16 +588,16 @@ install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
                  %{buildroot}%{_sysconfdir}/modules-load.d/vdsm.conf
 %else
 # Install the SysV init scripts
-install -Dm 0755 vdsm/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
-install -Dm 0755 vdsm/supervdsmd.init %{buildroot}%{_initrddir}/supervdsmd
+install -Dm 0755 init/sysvinit/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
+install -Dm 0755 init/sysvinit/supervdsmd.init %{buildroot}%{_initrddir}/supervdsmd
 
 install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
-install -Dm 0755 vdsm/vdsm-restore-net-config.init \
+install -Dm 0755 init/sysvinit/vdsm-restore-net-config.init \
     %{buildroot}%{_initrddir}/vdsm-restore-net-config
 %endif
 
 %if 0%{?with_tmpfiles_macro}
-install -Dm 0644 vdsm/vdsm-tmpfiles.d.conf \
+install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
 %endif
 

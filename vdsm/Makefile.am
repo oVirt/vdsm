@@ -61,7 +61,6 @@ dist_vdsmexec_SCRIPTS = \
 
 nodist_vdsmexec_SCRIPTS = \
 	vdsm-gencerts.sh \
-	vdsmd_init_common.sh \
 	$(NULL)
 
 nodist_vdsm_PYTHON = \
@@ -76,24 +75,15 @@ nodist_noinst_DATA = \
 	logger.conf \
 	mom.conf \
 	sudoers.vdsm \
-	supervdsmd.init \
-	supervdsmd.service \
 	svdsm.logger.conf \
-	systemd-vdsmd \
 	vdsm-logrotate.conf \
-	vdsm-restore-net-config.init \
-	vdsm-tmpfiles.d.conf \
 	vdsm.rwtab \
-	vdsmd.init \
-	vdsmd.service \
 	$(NULL)
 
 dist_vdsm_SCRIPTS = \
 	addNetwork \
-	daemonAdapter \
 	delNetwork \
 	get-conf-item \
-	respawn \
 	set-conf-item \
 	supervdsmServer \
 	vdsm \
@@ -126,10 +116,7 @@ EXTRA_DIST = \
 	mom.d/03-ksm.policy \
 	sourceRoute.sh \
 	sudoers.vdsm.in \
-	supervdsmd.init.in \
-	supervdsmd.service.in \
 	svdsm.logger.conf.in \
-	systemd-vdsmd.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -137,16 +124,10 @@ EXTRA_DIST = \
 	vdsm-logrotate \
 	vdsm-logrotate.conf.in \
 	vdsm-modules-load.d.conf \
-	vdsm-restore-net-config.init.in \
-	vdsm-restore-net-config.service \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
-	vdsm-tmpfiles.d.conf.in \
 	vdsm.rwtab.in \
 	vdsmd.8.in \
-	vdsmd.init.in \
-	vdsmd.service.in \
-	vdsmd_init_common.sh.in \
 	$(NULL)
 
 all-local: \

@@ -200,6 +200,9 @@ AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 AC_OUTPUT([
 	Makefile
 	client/Makefile
+	init/Makefile
+	init/systemd/Makefile
+	init/sysvinit/Makefile
 	lib/Makefile
 	lib/cpopen/Makefile
 	lib/vdsm/Makefile

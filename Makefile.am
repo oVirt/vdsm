@@ -20,6 +20,7 @@
 
 SUBDIRS = \
 	client \
+	init \
 	lib \
 	vds_bootstrap \
 	vdsm \
