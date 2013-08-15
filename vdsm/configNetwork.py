@@ -34,7 +34,6 @@ from netconf import libvirtCfg
 from neterrors import ConfigNetworkError
 from vdsm import netinfo
 from netconf.ifcfg import ConfigWriter
-from netconf.ifcfg import Ifcfg
 from netmodels import Bond
 from netmodels import Bridge
 from netmodels import IPv4
@@ -45,6 +44,21 @@ from netmodels import Vlan
 import hooks
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
+
+
+def _getConfiguratorClass():
+    configurator = config.get('vars', 'net_configurator')
+    if configurator == 'iproute2':
+        from netconf.iproute2 import Iproute2
+        return Iproute2
+    else:
+        if configurator != 'ifcfg':
+            logging.warn('Invalid config for network configruator: %s. '
+                         'Use ifcfg instead.', configurator)
+        from netconf.ifcfg import Ifcfg
+        return Ifcfg
+
+ConfiguratorClass = _getConfiguratorClass()
 
 
 def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
@@ -83,7 +97,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     :returns: the top object of the hierarchy.
     """
     if configurator is None:
-        configurator = Ifcfg()
+        configurator = ConfiguratorClass()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
     if bondingOptions and not bonding:
@@ -181,7 +195,7 @@ def _alterRunningConfig(func):
         # editNetwork, but rather as its own API verb. This is necessary in
         # order to maintain behavior of the addNetwork and delNetwork API verbs
         if isolatedCommand:
-            attrs['configurator'] = configurator = Ifcfg()
+            attrs['configurator'] = configurator = ConfiguratorClass()
             configurator.begin()
         else:
             configurator = attrs['configurator']
@@ -250,7 +264,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                  mtu, bridged, options)
 
     if configurator is None:
-        configurator = Ifcfg()
+        configurator = ConfiguratorClass()
 
     bootproto = options.pop('bootproto', None)
 
@@ -362,7 +376,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         _netinfo = netinfo.NetInfo()
 
     if configurator is None:
-        configurator = Ifcfg()
+        configurator = ConfiguratorClass()
 
     if network not in _netinfo.networks:
         logging.info("Network %r: doesn't exist in libvirt database", network)
@@ -413,7 +427,7 @@ def clientSeen(timeout):
 
 def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
                 **options):
-    with Ifcfg() as configurator:
+    with ConfiguratorClass() as configurator:
         delNetwork(oldBridge, configurator=configurator, **options)
         addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
                    configurator=configurator, **options)
@@ -566,7 +580,7 @@ def setupNetworks(networks, bondings, **options):
     hooks.before_network_setup()
 
     logger.debug("Applying...")
-    with Ifcfg(options.get('_inRollback', False)) as configurator:
+    with ConfiguratorClass(options.get('_inRollback', False)) as configurator:
         libvirt_nets = netinfo.networks()
         # Remove edited networks and networks with 'remove' attribute
         for network, networkAttrs in networks.items():

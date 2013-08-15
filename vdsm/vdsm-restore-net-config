@@ -25,7 +25,7 @@ import logging.config
 from netconf import ifcfg
 from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig
-from configNetwork import setupNetworks
+from configNetwork import setupNetworks, ConfiguratorClass
 
 
 def ifcfg_restoration():
@@ -38,7 +38,7 @@ def unified_restoration():
     Builds a setupNetworks command from the persistent configuration to set it
     as running configuration.
     """
-    configurator = ifcfg.Ifcfg()  # TODO: get configurator from config.
+    configurator = ConfiguratorClass()
     runningConfig = RunningConfig()
     removeNetworks = {}
     removeBonds = {}

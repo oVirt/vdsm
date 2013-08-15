@@ -42,6 +42,10 @@ parameters = [
             'Comma-separated list of fnmatch-patterns for dummy hosts nics to '
             'be shown to vdsm.'),
 
+        ('net_configurator', 'ifcfg',
+            'Whether to use "ifcfg" or "iproute2" to configure networks. '
+            'iproute2 configurator is not ready yet for genral usage.'),
+
         ('persistence', 'ifcfg',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
 
