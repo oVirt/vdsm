@@ -37,6 +37,7 @@ import constants
 from ipwrapper import Route
 from ipwrapper import routeShowAllDefaultGateways
 import libvirtconnection
+from ipwrapper import linkShowDev
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
@@ -535,26 +536,22 @@ def isVlanned(dev):
 
 def getVlanDevice(vlan):
     """ Return the device of the given VLAN. """
-    dev = None
+    out = linkShowDev(vlan)
 
-    if os.path.exists(PROC_NET_VLAN + vlan):
-        for line in file(PROC_NET_VLAN + vlan).readlines():
-            if "Device:" in line:
-                dummy, dev = line.split()
-                break
-
-    return dev
+    # out example:
+    # 6: eth0.10@eth0: <BROADCAST,MULTICAST> mtu 1500...
+    return str(out).split(':')[1].strip().split('@')[1]
 
 
 def getVlanID(vlan):
     """ Return the ID of the given VLAN. """
     vlanId = None
+    out = linkShowDev(vlan)
 
-    if os.path.exists(PROC_NET_VLAN):
-        for line in file(PROC_NET_VLAN + vlan).readlines():
-            if "VID" in line:
-                vlanId = line.split()[2]
-                break
+    for item in out:
+        if "vlan id" in item:
+            vlanId = item.split()[2]
+            break
 
     return vlanId
 

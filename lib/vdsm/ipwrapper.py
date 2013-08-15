@@ -248,3 +248,8 @@ def ruleDel(rule):
     command = [_IP_BINARY.cmd, 'rule', 'del']
     command += rule
     _execCmd(command)
+
+
+def linkShowDev(dev):
+    command = [_IP_BINARY.cmd, '-d', 'link', 'show', 'dev', dev]
+    return _execCmd(command)
