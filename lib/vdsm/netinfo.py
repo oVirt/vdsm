@@ -334,7 +334,7 @@ def graph():
         for iface in ports(bridge):
             print '\t' + iface
             if iface in vlans():
-                iface = iface.split('.')[0]
+                iface = getVlanDevice(iface)
             if iface in bondings():
                 for slave in slaves(iface):
                     print '\t\t' + slave
@@ -349,7 +349,8 @@ def getVlanBondingNic(bridge):
     nics = []
     for iface in ports(bridge):
         if iface in vlans():
-            iface, vlan = iface.split('.')
+            iface = getVlanDevice(iface)
+            vlan = getVlanID(iface)
         if iface in bondings():
             bonding = iface
             nics = slaves(iface)
@@ -494,7 +495,7 @@ def _bondinfo(bond):
 
 def _vlaninfo(vlan):
     info = _devinfo(vlan)
-    info.update({'iface': vlan.split('.')[0], 'vlanid': getVlanID(vlan)})
+    info.update({'iface': getVlanDevice(vlan), 'vlanid': getVlanID(vlan)})
     return (vlan, info)
 
 
@@ -622,11 +623,11 @@ class NetInfo(object):
                 if iface == netdict['iface']:
                     yield (network, None)
                 elif netdict['iface'].startswith(iface + '.'):
-                    yield (network, netdict['iface'].split('.', 1)[1])
+                    yield (network, getVlanID(netdict['iface']))
 
     def getVlansForIface(self, iface):
         for vlanDevName in self.getVlanDevsForIface(iface):
-            yield vlanDevName.split('.', 1)[1]
+            yield getVlanID(vlanDevName)
 
     def getVlanDevsForIface(self, iface):
         for v, vdict in self.vlans.iteritems():
@@ -690,7 +691,8 @@ class NetInfo(object):
         for port in ports:
             if port in self.vlans:
                 assert vlan is None
-                nic, vlan = port.split('.', 1)
+                nic = getVlanDevice(port)
+                vlan = getVlanID(port)
                 assert self.vlans[port]['iface'] == nic
                 port = nic
             if port in self.bondings:
