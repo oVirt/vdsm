@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from collections import namedtuple
 from contextlib import contextmanager
 import logging
 import os
@@ -29,6 +30,9 @@ import neterrors as ne
 
 
 class NetDevice(object):
+    _ipConfig = namedtuple('ipConfig', ['ipaddr', 'netmask', 'gateway',
+                                        'bootproto', 'async', 'defaultRoute'])
+
     def __init__(self, name, configurator, ipconfig=None, mtu=None):
         self.name = name
         self.ip = ipconfig
@@ -42,14 +46,16 @@ class NetDevice(object):
     def configure(self, **opts):
         raise NotImplementedError
 
-    def getIpConfig(self):
+    @property
+    def ipConfig(self):
         try:
             ipaddr, netmask, gateway, bootproto, async, defaultRoute = \
                 self.ip.getConfig()
         except AttributeError:
             ipaddr = netmask = gateway = bootproto = async = defaultRoute = \
                 None
-        return ipaddr, netmask, gateway, bootproto, async, defaultRoute
+        return self._ipConfig(ipaddr, netmask, gateway, bootproto, async,
+                              defaultRoute)
 
     @property
     def bridge(self):

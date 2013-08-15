@@ -60,7 +60,7 @@ class Ifcfg(Configurator):
             self._libvirtAdded = set()
 
     def configureBridge(self, bridge, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = bridge.getIpConfig()
+        ipaddr, netmask, gateway, bootproto, async, _ = bridge.ipConfig
         self.configApplier.addBridge(bridge, **opts)
         ifdown(bridge.name)
         if bridge.port:
@@ -69,14 +69,14 @@ class Ifcfg(Configurator):
         ifup(bridge.name, async)
 
     def configureVlan(self, vlan, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = vlan.getIpConfig()
+        ipaddr, netmask, gateway, bootproto, async, _ = vlan.ipConfig
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan, ipaddr, netmask, gateway, bootproto)
         ifup(vlan.name, async)
 
     def configureBond(self, bond, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = bond.getIpConfig()
+        ipaddr, netmask, gateway, bootproto, async, _ = bond.ipConfig
         self.configApplier.addBonding(bond, **opts)
         if not netinfo.isVlanned(bond.name):
             for slave in bond.slaves:
@@ -96,7 +96,7 @@ class Ifcfg(Configurator):
         self.configureBond(bond)
 
     def configureNic(self, nic, **opts):
-        ipaddr, netmask, gateway, bootproto, async, _ = nic.getIpConfig()
+        ipaddr, netmask, gateway, bootproto, async, _ = nic.ipConfig
         self.configApplier.addNic(nic, **opts)
         self._addSourceRoute(nic, ipaddr, netmask, gateway, bootproto)
         if nic.bond is None:
@@ -490,7 +490,7 @@ class ConfigWriter(object):
     def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
         ipaddr, netmask, gateway, bootproto, _, defaultRoute = \
-            bridge.getIpConfig()
+            bridge.ipConfig
         conf = 'TYPE=Bridge\nDELAY=%s\n' % bridge.forwardDelay
         self._createConfFile(conf, bridge.name, ipaddr, netmask, gateway,
                              bootproto, bridge.mtu,
@@ -499,7 +499,7 @@ class ConfigWriter(object):
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
         ipaddr, netmask, gateway, bootproto, _, defaultRoute = \
-            vlan.getIpConfig()
+            vlan.ipConfig
         conf = 'VLAN=yes\n'
         if vlan.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
@@ -543,7 +543,7 @@ class ConfigWriter(object):
     @staticmethod
     def _getIfaceConfValues(iface, _netinfo):
         ipaddr, netmask, gateway, bootproto, _, defaultRoute = \
-            iface.getIpConfig()
+            iface.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(defaultRoute)
         mtu = iface.mtu
         if _netinfo.ifaceUsers(iface.name):
