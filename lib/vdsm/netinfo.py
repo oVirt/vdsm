@@ -494,7 +494,7 @@ def _bondinfo(bond):
 
 def _vlaninfo(vlan):
     info = _devinfo(vlan)
-    info.update({'iface': vlan.split('.')[0]})
+    info.update({'iface': vlan.split('.')[0], 'vlanid': getVlanID(vlan)})
     return (vlan, info)
 
 
@@ -555,7 +555,7 @@ def getVlanID(vlan):
             vlanId = item.split()[2]
             break
 
-    return vlanId
+    return int(vlanId)
 
 
 def getIpAddresses():

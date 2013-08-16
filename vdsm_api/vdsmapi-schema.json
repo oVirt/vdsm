@@ -669,11 +669,13 @@
 #
 # @mtu:         The Maximum Transmission Unit size for the vlan
 #
+# @vlanid:      The vlan ID assigned to the vlan device
+#
 # Since: 4.10.0
 ##
 {'type': 'NetInfoVlan',
  'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str',
-          'ipv6addrs': ['str'], 'mtu': 'uint'}}
+          'ipv6addrs': ['str'], 'mtu': 'uint', 'vlanid': 'uint'}}
 
 ##
 # @HookScriptInfo:
