@@ -74,7 +74,7 @@ TEMPORARY_VOLUME_SIZE = 20480  # in sectors (10M)
 def _deleteImage(dom, imgUUID, postZero):
     """This ancillary function will be removed.
 
-    Replaces Image.delete() in Image.[copy(), move(),multimove()].
+    Replaces Image.delete() in Image.[copyCollapsed(), move(), multimove()].
     """
     allVols = dom.getAllVolumes()
     imgVols = sd.getVolsOfImage(allVols, imgUUID)
@@ -629,9 +629,9 @@ class Image:
             if not pvol.isLegal() or pvol.isFake():
                 raise se.ImageIsNotLegalChain(imgUUID)
 
-    def copy(self, sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
-             dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate,
-             postZero, force):
+    def copyCollapsed(self, sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
+                      dstVolUUID, descr, dstSdUUID, volType, volFormat,
+                      preallocate, postZero, force):
         """
         Create new template/volume from VM.
         Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)

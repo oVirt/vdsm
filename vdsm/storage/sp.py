@@ -1661,7 +1661,7 @@ class StoragePool(Securable):
                     rmanager.acquireResource(dstImageResourcesNamespace,
                                              dstImgUUID, rm.LockType.exclusive)
                     ):
-            dstUUID = image.Image(self.poolPath).copy(
+            dstUUID = image.Image(self.poolPath).copyCollapsed(
                 sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                 dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate,
                 postZero, force)
