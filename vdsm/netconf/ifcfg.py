@@ -33,7 +33,6 @@ from netconf import Configurator
 from neterrors import ConfigNetworkError
 from netmodels import Nic, Bridge
 from sourceRoute import DynamicSourceRoute
-from storage.misc import execCmd
 from vdsm import constants
 from vdsm import netinfo
 from vdsm import utils
@@ -104,7 +103,7 @@ class Ifcfg(Configurator):
         DynamicSourceRoute.addInterfaceTracking(bridge)
         ifdown(bridge.name)
         self._removeSourceRoute(bridge)
-        execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
+        utils.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
         self.configApplier.removeBridge(bridge.name)
         if bridge.port:
             bridge.port.remove()
@@ -191,7 +190,7 @@ class ConfigWriter(object):
 
         mounts = open('/proc/mounts').read()
         if ' /config ext3' in mounts and ' %s ext3' % filename in mounts:
-            execCmd([constants.EXT_UMOUNT, '-n', filename])
+            utils.execCmd([constants.EXT_UMOUNT, '-n', filename])
         utils.rmFile(filename)
         logging.debug("Removed file %s", filename)
 
@@ -348,8 +347,8 @@ class ConfigWriter(object):
     def _persistentBackup(cls, filename):
         """ Persistently backup ifcfg-* config files """
         if os.path.exists('/usr/libexec/ovirt-functions'):
-            execCmd([constants.EXT_SH, '/usr/libexec/ovirt-functions',
-                    'unmount_config', filename])
+            utils.execCmd([constants.EXT_SH, '/usr/libexec/ovirt-functions',
+                           'unmount_config', filename])
             logging.debug("unmounted %s using ovirt", filename)
 
         (dummy, basename) = os.path.split(filename)
@@ -657,14 +656,14 @@ class ConfigWriter(object):
 
 def ifdown(iface):
     "Bring down an interface"
-    rc, out, err = execCmd([constants.EXT_IFDOWN, iface], raw=True)
+    rc, out, err = utils.execCmd([constants.EXT_IFDOWN, iface], raw=True)
     return rc
 
 
 def ifup(iface, async=False):
     "Bring up an interface"
     def _ifup(netIf):
-        rc, out, err = execCmd([constants.EXT_IFUP, netIf], raw=False)
+        rc, out, err = utils.execCmd([constants.EXT_IFUP, netIf], raw=False)
 
         if rc != 0:
             # In /etc/sysconfig/network-scripts/ifup* the last line usually
