@@ -1927,8 +1927,9 @@ class StoragePool(Securable):
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
+            dom = sdCache.produce(sdUUID)
             for volUUID in volumes:
-                sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).delete(
+                dom.produceVolume(imgUUID, volUUID).delete(
                     postZero=postZero, force=force)
 
     def deleteImage(self, domain, imgUUID, volsByImg):
