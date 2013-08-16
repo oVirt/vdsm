@@ -472,7 +472,7 @@ class Volume(object):
             # we need to update the size value so that the metadata reflects
             # the correct state.
             if volFormat == RAW_FORMAT:
-                apparentSize = cls.getVSize(dom, imgUUID, volUUID)
+                apparentSize = int(dom.getVSize(imgUUID, volUUID) / BLOCK_SIZE)
                 if apparentSize < size:
                     cls.log.error("The volume %s apparent size %s is smaller "
                                   "than the requested size %s",

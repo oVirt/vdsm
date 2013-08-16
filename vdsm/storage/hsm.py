@@ -3072,9 +3072,8 @@ class HSM:
         """
         # Return string because xmlrpc's "int" is very limited
         dom = sdCache.produce(sdUUID=sdUUID)
-        volClass = dom.getVolumeClass()
-        apparentsize = str(volClass.getVSize(dom, imgUUID, volUUID, bs=1))
-        truesize = str(volClass.getVTrueSize(dom, imgUUID, volUUID, bs=1))
+        apparentsize = str(dom.getVSize(imgUUID, volUUID))
+        truesize = str(dom.getVAllocSize(imgUUID, volUUID))
         return dict(apparentsize=apparentsize, truesize=truesize)
 
     @public

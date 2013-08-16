@@ -132,6 +132,16 @@ def lvmTagDecode(s):
     return LVM_ENC_ESCAPE.sub(lambda c: unichr(int(c.groups()[0])), s)
 
 
+def _tellEnd(devPath):
+    """Size in bytes of a block device.
+
+    stat.st_size of block devices is identically 0.
+    """
+    with open(devPath, "rb") as f:
+        f.seek(0, os.SEEK_END)
+        return f.tell()
+
+
 def _getVolsTree(sdUUID):
     lvs = lvm.getLV(sdUUID)
     vols = {}
@@ -610,6 +620,23 @@ class BlockStorageDomain(sd.StorageDomain):
         except se.LogicalVolumeDoesNotExistError:
             return False
         return True
+
+    def getVSize(self, imgUUID, volUUID):
+        """ Return the block volume size in bytes. """
+        try:
+            size = _tellEnd(lvm.lvPath(self.sdUUID, volUUID))
+        except IOError as e:
+            if e.errno == os.errno.ENOENT:
+                # Inactive volume has no /dev entry. Fallback to lvm way.
+                size = lvm.getLV(self.sdUUID, volUUID).size
+            else:
+                self.log.warn("Could not get size for vol %s/%s",
+                              self.sdUUID, volUUID, exc_info=True)
+                raise
+
+        return int(size)
+
+    getVAllocSize = getVSize
 
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):

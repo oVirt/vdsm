@@ -70,12 +70,6 @@ log = logging.getLogger('Storage.Volume')
 rmanager = rm.ResourceManager.getInstance()
 
 
-def _tellEnd(devPath):
-    with open(devPath, "rb") as f:
-        f.seek(0, os.SEEK_END)
-        return f.tell()
-
-
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
@@ -96,27 +90,6 @@ class BlockVolume(volume.Volume):
 
     def refreshVolume(self):
         lvm.refreshLV(self.sdUUID, self.volUUID)
-
-    @classmethod
-    def getVSize(cls, sdobj, imgUUID, volUUID, bs=BLOCK_SIZE):
-        """ Returns size in block units.
-
-        Returns the largest integer value less than or equal to size [blocks].
-        """
-        try:
-            size = _tellEnd(lvm.lvPath(sdobj.sdUUID, volUUID)) / bs
-        except IOError as e:
-            if e.errno == os.errno.ENOENT:
-                # Inactive volume has no /dev entry. Fallback to lvm way.
-                size = int(int(lvm.getLV(sdobj.sdUUID, volUUID).size) / bs)
-            else:
-                cls.log.warn("Could not get size for vol %s/%s",
-                             sdobj.sdUUID, volUUID, exc_info=True)
-                raise
-
-        return size
-
-    getVTrueSize = getVSize
 
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, sdUUID, volUUID, volPath):
@@ -642,11 +615,11 @@ class BlockVolume(volume.Volume):
         """
         Return the volume size in blocks
         """
-        # Just call the class method getVSize() - apparently it does what
+        # Just call the SD method getVSize() - apparently it does what
         # we need. We consider incurred overhead of producing the SD object
         # to be a small price for code de-duplication.
         sdobj = sdCache.produce(sdUUID=self.sdUUID)
-        return self.getVSize(sdobj, self.imgUUID, self.volUUID, bs)
+        return int(sdobj.getVSize(self.imgUUID, self.volUUID) / bs)
 
     getVolumeTrueSize = getVolumeSize
 

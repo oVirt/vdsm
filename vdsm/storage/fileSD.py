@@ -287,6 +287,19 @@ class FileStorageDomain(sd.StorageDomain):
         volPath = os.path.join(imgPath, volUUID)
         return self.oop.fileUtils.pathExists(volPath)
 
+    def getVSize(self, imgUUID, volUUID):
+        """ Returns file volume size in bytes. """
+        volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',
+                               imgUUID, volUUID)
+        return self.oop.os.stat(volPath).st_size
+
+    def getVAllocSize(self, imgUUID, volUUID):
+        """ Returns file volume allocated size in bytes. """
+        volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',
+                               imgUUID, volUUID)
+        stat = self.oop.os.stat(volPath)
+        return stat.st_blocks * stat.st_blksize
+
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
         """

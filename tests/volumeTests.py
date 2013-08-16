@@ -24,11 +24,10 @@ import uuid
 
 from testrunner import VdsmTestCase as TestCaseBase
 
-from storage import outOfProcess
-from storage.fileVolume import FileVolume
+from storage import outOfProcess, fileSD
 
 
-class FileDomainMockObject(object):
+class FileDomainMockObject(fileSD.FileStorageDomain):
     def __init__(self, mountpoint, sdUUID):
         self.mountpoint = mountpoint
         self.sdUUID = sdUUID
@@ -61,6 +60,6 @@ class FileVolumeGetVSizeTest(TestCaseBase):
         shutil.rmtree(self.mountpoint)
 
     def test(self):
-        volSize = FileVolume.getVSize(self.sdobj, self.imgUUID,
-                                      self.volUUID)
+        volSize = int(self.sdobj.getVSize(self.imgUUID, self.volUUID) /
+                      self.SDBLKSZ)
         assert volSize == self.VOLSIZE
