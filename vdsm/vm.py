@@ -4078,10 +4078,8 @@ class Vm(object):
     def _changeBlockDev(self, vmDev, blockdev, drivespec):
         try:
             path = self.cif.prepareVolumePath(drivespec)
-        except VolumeError as e:
-            return {'status': {'code': errCode['imageErr']['status']['code'],
-                               'message': errCode['imageErr']['status']
-                                                 ['message'] % str(e)}}
+        except VolumeError:
+            return errCode['imageErr']
         diskelem = XMLElement('disk', type='file', device=vmDev)
         diskelem.appendChildWithArgs('source', file=path)
         diskelem.appendChildWithArgs('target', dev=blockdev)

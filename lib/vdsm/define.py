@@ -54,7 +54,7 @@ errCode = {
         'message': 'Fatal error during migration'}},
     'imageErr': {'status': {
         'code': 13,
-        'message': 'Drive image file %s could not be found'}},
+        'message': 'Drive image file could not be found'}},
     'outOfMem': {'status': {
         'code': 14,
         'message': 'Not enough free memory to create VM'}},
