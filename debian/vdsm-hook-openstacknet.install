@@ -1,0 +1,11 @@
+etc/sudoers.d/50_vdsm_hook_openstacknet
+usr/libexec/vdsm/hooks/after_device_create/50_openstacknet
+usr/libexec/vdsm/hooks/after_device_create/openstacknet_consts.py
+usr/libexec/vdsm/hooks/after_device_migrate_destination/50_openstacknet
+usr/libexec/vdsm/hooks/after_device_migrate_destination/openstacknet_consts.py
+usr/libexec/vdsm/hooks/after_nic_hotplug/50_openstacknet
+usr/libexec/vdsm/hooks/after_nic_hotplug/openstacknet_consts.py
+usr/libexec/vdsm/hooks/before_device_create/50_openstacknet
+usr/libexec/vdsm/hooks/before_device_create/openstacknet_consts.py
+usr/libexec/vdsm/hooks/before_nic_hotplug/50_openstacknet
+usr/libexec/vdsm/hooks/before_nic_hotplug/openstacknet_consts.py

@@ -1,0 +1,303 @@
+Source: vdsm
+Section: admin
+Priority: extra
+Maintainer: Zheng Sheng, Zhou <zhshzhou@linux.vnet.ibm.com>
+Build-Depends: debhelper (>= 8.0.0),
+ autoconf,
+ automake,
+ genisoimage,
+ gettext,
+ libasprintf-dev,
+ libgettextpo-dev,
+ libtool,
+ openssl,
+ pep8,
+ psmisc (>= 22.6),
+ pyflakes,
+ python (>=2.7.3),
+ python-dev,
+ python-dmidecode,
+ python-ethtool (>=0.8),
+ python-libvirt (>= 1.0.2),
+ python-m2crypto,
+ python-netaddr,
+ python-nose,
+ python-pthreading (>=0.1.2),
+ python-rpm,
+ python-selinux,
+ sudo (>= 1.7.3)
+Standards-Version: 3.9.4
+Homepage: http://www.ovirt.org/wiki/Vdsm
+Vcs-Git: git://gerrit.ovirt.org/vdsm
+Vcs-Browser: http://gerrit.ovirt.org/gitweb?p=vdsm.git
+
+Package: vdsm-python-cpopen
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.7.3)
+Description: Creates a sub-process in simpler safer manner
+ Python package for creating sub-process in simpler and safer manner by using
+ C code.
+
+Package: vdsm-yajsonrpc
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3),
+Description: JSON RPC server and client implementation
+ A JSON RPC server and client implementation.
+
+Package: vdsm-python
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.7.3)
+Description: VDSM python libraries
+ Shared libraries between the various VDSM packages.
+
+Package: vdsm-client
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ python (>=2.7.3),
+ vdsm-python-cpopen (>= ${source:Version}),
+ vdsm-python (= ${source:Version})
+Description: VDSM command line interface
+ Call VDSM commands from the command line. Used for testing and debugging.
+
+Package: vdsm
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ debianutils,
+ bridge-utils,
+ dmidecode,
+ dosfstools,
+ e2fsprogs (>= 1.41.14),
+ ed,
+ fence-agents,
+ genisoimage,
+ glusterfs-client,
+ glusterfs-common (>= 3.4.0),
+ gnutls-bin,
+ hostname,
+ ifupdown,
+ initscripts (>= 2.88),
+ iproute,
+ libguestfs-tools,
+ libsanlock-client1 (>= 2.4),
+ libsanlock-dev (>= 2.4),
+ libvirt-bin (>= 1.0.2),
+ libvirt0 (>= 1.0.2),
+ linux-image-generic (>= 3.6),
+ logrotate,
+ lvm2 (>= 2.02.95),
+ multipath-tools (>= 0.4.9),
+ nfs-client,
+ nfs-server,
+ ntp,
+ open-iscsi (>= 2.0.873),
+ policycoreutils (>= 2.1.10),
+ psmisc (>= 22.6),
+ python (>= 2.7.3),
+ vdsm-python-cpopen (= ${binary:Version}),
+ python-dmidecode,
+ python-ethtool (>= 0.8),
+ python-ethtool (>= 0.8),
+ python-libvirt (>= 1.0.2),
+ python-m2crypto,
+ python-netaddr,
+ python-parted,
+ python-pthreading (>= 0.1.2),
+ python-pyinotify,
+ python-rpm,
+ python-selinux,
+ python-sepolgen,
+ qemu-kvm (>= 1.4.0),
+ qemu-utils (>= 1.4.0),
+ rsyslog,
+ sanlock (>= 2.4),
+ sanlock-python (>= 2.4),
+ sasl2-bin,
+ sed (>= 4.2.1),
+ selinux-policy-default (>= 2.20110726),
+ sosreport,
+ sudo (>= 1.7.3),
+ sysv-rc,
+ sysvinit-utils,
+ tree,
+ vdsm-python (= ${source:Version}),
+ xz-utils,
+ vdsm-yajsonrpc (= ${source:Version})
+Conflicts: apparmor
+Description: VDSM: Virtual Desktop Server Manager
+ The VDSM service is required by a Virtualization Manager to manage the
+ Linux hosts. VDSM manages and monitors the host's storage, memory and
+ networks as well as virtual machine creation, other host administration
+ tasks, statistics gathering, and log collection.
+
+Package: vdsm-gluster
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
+ glusterfs-common (>= 3.4.0),
+ glusterfs-server,
+ python (>=2.7.3),
+ python-magic,
+ vdsm (>= ${source:Version})
+Description: Gluster Plugin for VDSM
+ Gluster plugin enables VDSM to serve Gluster functionalities.
+
+Package: vdsm-tests
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version}), python-nose
+Description: Unit and functional tests for vdsm
+ A test suite for verifying the functionality of a running vdsm instance
+
+Package: vdsm-hook-checkimages
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Qcow2 disk image format check hook for VDSM
+ VDSM hook used to perform consistency check on a qcow2 format disk image
+ using the QEMU disk image utility.
+
+Package: vdsm-hook-vhostmd
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: VDSM hook set for interaction with vhostmd
+ VDSM hook to use vhostmd per VM according to Virtualization Manager requests.
+
+Package: vdsm-hook-faqemu
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Fake qemu process for VDSM quality assurance
+ VDSM hook used for testing VDSM with multiple fake virtual machines without
+ running real guests.
+ To enable this hook on your host, set vars.fake_kvm_support=True in your
+ /etc/vdsm/vdsm.conf before adding the host to ovirt-Engine.
+
+Package: vdsm-hook-directlun
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Direct LUN support for VDSM
+ VDSM hook enable user to add storage LUN for VDSM
+ without the sharing and storage handling of VDSM.
+
+Package: vdsm-hook-macspoof
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Disables MAC spoofing filtering
+ VDSM hooks which allow to disable mac spoof filtering
+ either on all the of the VM's interfaces or on
+ specific vnics.
+
+Package: vdsm-hook-fileinject
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version}), python-libguestfs
+Description: Allow uploading file to VMs disk
+ Hook is getting target file name and its content and
+ create that file in target machine.
+
+Package: vdsm-hook-floppy
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Allow adding floppy to VM
+ Allow adding floppy to VM
+
+Package: vdsm-hook-hostusb
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version}), usbutils
+Description: Allow attaching USB device from host
+ Hook is getting vendor and product id of USB device
+ disconnect it from host and attach it to VM
+
+Package: vdsm-hook-hugepages
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Huge pages enable user to handle VM with 2048KB page files.
+ Hook is getting number of huge pages reserve them for the VM,
+ and enable user to handle VM with 2048KB page files.
+
+Package: vdsm-hook-isolatedprivatevlan
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Isolated network environment for VMs
+ limit VM traffic to a specific gateway by its mac address,
+ hook prevent VM from spoofing its mac or  ip address
+ by using <filterref filter='clean-traffic'/> libvirt filter
+ and by adding custom filter: isolatedprivatevlan-vdsm.xml
+
+Package: vdsm-hook-nestedvt
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Nested Virtualization support for VDSM
+ If the nested virtualization is enabled in your kvm module
+ this hook will expose it to the guests.
+
+Package: vdsm-hook-numa
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: NUMA support for VDSM
+ Hooks is getting number/rage of NUMA nodes and NUMA mode,
+ and update the VM xml.
+
+Package: vdsm-hook-openstacknet
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: OpenStack Network vNICs support for VDSM
+ Hook for OpenStack Network vNICs.
+
+Package: vdsm-hook-pincpu
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Hook pin VM so specific CPUs
+ pincpu is hook for VDSM.
+ pincpu enable to pin virtual machine to a specific CPUs.
+
+Package: vdsm-hook-promisc
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Network interface promiscuous mode support for VDSM
+ VDSM promiscuous mode let user define a VM interface that will capture
+ all network traffic.
+
+Package: vdsm-hook-qemucmdline
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: QEMU cmdline hook for VDSM
+ Provides support for injecting QEMU cmdline via VDSM hook.
+ It exploits libvirt's qemu:commandline facility available in the
+ qemu xml namespace.
+
+Package: vdsm-hook-qos
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: QoS network in/out traffic support for VDSM
+ Hook adds QoS in/out traffic to VMs interfaces
+
+Package: vdsm-hook-scratchpad
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: One time disk creation for VDSM
+ scratchpad hook for VDSM
+ Hook creates a disk for a VM onetime usage,
+ the disk will be erased when the VM destroyed.
+ VM cannot be migrated when using scratchpad hook
+
+Package: vdsm-hook-smbios
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Adding custom smbios entries to libvirt domain via VDSM
+ Adding custom smbios entries to libvirt domain via VDSM
+ such as: vendor, version, date and release
+
+Package: vdsm-hook-sriov
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version}), libvirt-bin (>= 1.0.2-1)
+Description: sr-iov support for VDSM
+ sr-iov hook enable to add virtual functions exposed by the device
+ directly to a virtual machine.
+
+Package: vdsm-hook-vmfex
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: vmfex support for VDSM
+ Hook for vmfex.
+
+Package: vdsm-hook-vmdisk
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: External disk support for VDSM
+ Hook adds additional disk image for a VM (raw or qcow2)

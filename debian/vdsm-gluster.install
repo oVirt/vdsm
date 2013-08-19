@@ -1,0 +1,4 @@
+./usr/share/vdsm/gluster/api.py
+./usr/share/vdsm/gluster/hooks.py
+./usr/share/vdsm/gluster/services.py
+./usr/share/vdsm/gluster/vdsmapi-gluster-schema.json

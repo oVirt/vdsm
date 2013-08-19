@@ -1,0 +1,5 @@
+etc/sudoers.d/50_vdsm_hook_vhostmd
+usr/libexec/vdsm/hooks/before_vm_start/50_vhostmd
+usr/libexec/vdsm/hooks/before_vm_migrate_destination/50_vhostmd
+usr/libexec/vdsm/hooks/before_vm_dehibernate/50_vhostmd
+usr/libexec/vdsm/hooks/after_vm_destroy/50_vhostmd

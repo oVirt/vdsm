@@ -1,0 +1,4 @@
+etc/sudoers.d/50_vdsm_hook_hostusb
+usr/libexec/vdsm/hooks/before_vm_start/50_hostusb
+usr/libexec/vdsm/hooks/before_vm_migrate_source/50_hostusb
+usr/libexec/vdsm/hooks/after_vm_destroy/50_hostusb

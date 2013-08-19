@@ -1,0 +1,3 @@
+version=3
+
+http://pkgs.fedoraproject.org/repo/pkgs/vdsm/vdsm-(.*)\.tar\.gz

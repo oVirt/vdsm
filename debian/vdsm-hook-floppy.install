@@ -1,0 +1,2 @@
+usr/libexec/vdsm/hooks/before_vm_start/50_floppy
+usr/libexec/vdsm/hooks/before_vm_migrate_source/50_floppy

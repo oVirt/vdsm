@@ -1,0 +1,4 @@
+etc/sudoers.d/50_vdsm_hook_hugepages
+usr/libexec/vdsm/hooks/before_vm_start/50_hugepages
+usr/libexec/vdsm/hooks/before_vm_migrate_destination/50_hugepages
+usr/libexec/vdsm/hooks/after_vm_destroy/50_hugepages

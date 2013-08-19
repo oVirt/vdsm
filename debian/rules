@@ -1,0 +1,65 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+override_dh_auto_configure:
+	autoreconf -ivf
+	dh_auto_configure -- \
+		--disable-libvirt-sanlock \
+		--disable-libvirt-selinux \
+		--enable-hooks \
+		--libdir=/usr/lib \
+		--libexecdir=/usr/libexec \
+		--localstatedir=/var \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--with-libvirt-service-default='/etc/default/libvirt-bin' \
+		--with-qemu-group=kvm \
+		--with-qemu-user=libvirt-qemu \
+		BRCTL_PATH=/sbin/brctl \
+		FUSER_PATH=/bin/fuser \
+		HWCLOCK_PATH=/sbin/hwclock \
+		ISCSIADM_PATH=/usr/bin/iscsiadm \
+		NICE_PATH=/usr/bin/nice \
+		NTPQ_PATH=/usr/bin/ntpq \
+		REBOOT_PATH=/sbin/reboot \
+		SERVICE_PATH=/usr/sbin/service
+
+
+destdir = debian/tmp
+
+override_dh_auto_install:
+	dh_auto_install
+	# Install the lvm rules
+	install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
+		$(destdir)/lib/udev/rules.d/61-vdsm-lvm.rules
+	install -Dm 0644 vdsm/limits.conf \
+		$(destdir)/etc/security/limits.d/99-vdsm.conf
+	install -Dm 0644 init/upstart/vdsmd.upstart \
+		$(destdir)/etc/init/vdsmd.conf
+	install -Dm 0644 init/upstart/supervdsmd.upstart \
+		$(destdir)/etc/init/supervdsmd.conf
+	install -Dm 0644 init/upstart/vdsm-restore-net-config.upstart \
+		$(destdir)/etc/init/vdsm-restore-net-config.conf
+	install -Dm 0644 init/upstart/vdsm-tmpfiles.upstart \
+		$(destdir)/etc/init/vdsm-tmpfiles.conf
+	install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf $(destdir)/etc/vdsm/vdsm-tmpfiles.conf
+	# This is not commonplace, but we want /var/log/core to be a world-writable
+	# dropbox for core dumps
+	install -dDm 1777 $(destdir)/var/log/core
+	# Install the polkit for libvirt
+	install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
+		$(destdir)/var/lib/polkit-1/localauthority/10-vendor.d/10-vdsm-libvirt-access.pkla
+	# Install the configuration sample
+	install -Dm 0644 lib/vdsm/vdsm.conf.sample \
+		$(destdir)/etc/vdsm/vdsm.conf
+
+%:
+	dh $@ --with python2

@@ -1,0 +1,2 @@
+etc/modprobe.d/vdsm-nestedvt.conf
+usr/libexec/vdsm/hooks/before_vm_start/50_nestedvt

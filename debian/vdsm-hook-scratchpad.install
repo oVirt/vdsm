@@ -1,0 +1,3 @@
+usr/libexec/vdsm/hooks/before_vm_start/50_scratchpad
+usr/libexec/vdsm/hooks/before_vm_migrate_source/50_scratchpad
+usr/libexec/vdsm/hooks/after_vm_destroy/50_scratchpad

@@ -1,0 +1,84 @@
+Fedora/RHEL/CentOS	Ubuntu
+/bin/hostname	hostname
+/usr/sbin/saslpasswd2	sasl2-bin
+autoconf	autoconf
+automake	automake
+bridge-utils	bridge-utils
+device-mapper-multipath >= 0.4.9-52	multipath-tools
+dmidecode	dmidecode
+dosfstools	dosfstools
+dracut	initramfs-tools
+e2fsprogs >= 1.41.14	e2fsprogs
+fence-agents	fence-agents
+genisoimage	genisoimage
+gettext-devel	libgettextpo-dev libasprintf-dev gettext
+glusterfs >= 3.4.0	glusterfs-common
+glusterfs-fuse	glusterfs-client
+glusterfs-rdma	glusterfs-common
+glusterfs-server	glusterfs-server
+initscripts >= 9.42.2-1	initscripts ifupdown sysvinit-utils sysv-rc
+iproute	iproute
+iscsi-initiator-utils >= 6.2.0.872-15	open-iscsi
+kernel >= 3.6	linux-image-generic
+libguestfs-tools	libguestfs-tools
+libguestfs-tools-c	?
+libselinux-python	python-selinux
+libtool	libtool
+libvirt >= 1.0.2-1	libvirt-bin libvirt0
+libvirt-client	libvirt-bin libvirt0
+libvirt-daemon >= 1.0.2-1	libvirt-bin libvirt0
+libvirt-daemon-config-nwfilter	libvirt-bin
+libvirt-daemon-driver-network	libvirt-bin
+libvirt-daemon-driver-nwfilter	libvirt-bin
+libvirt-daemon-driver-qemu	libvirt-bin
+libvirt-lock-sanlock	sid:libvirt-sanlock
+libvirt-python	python-libvirt
+logrotate	logrotate
+lvm2 >= 2.02.95	lvm2
+m2crypto	python-m2crypto
+mom >= 0.3.2-2	?
+nfs-utils	nfs-client nfs-server
+ntp	ntp
+openssl	openssl
+policycoreutils >= 2.1.13-55	policycoreutils
+policycoreutils-python >= 2.0.83-19.30	policycoreutils python-sepolgen missing:sepolicy
+psmisc >= 22.6-15	psmisc
+pyflakes	pyflakes
+pyparted	python-parted
+python >= 2.7.3	python
+python-devel	python-dev
+python-dmidecode	python-dmidecode
+python-ethtool >= 0.8-1	python-ethtool
+python-inotify	python-pyinotify
+python-libguestfs	python-libguestfs
+python-magic	python-magic
+python-netaddr	python-netaddr
+python-nose	python-nose
+python-ordereddict	pip:ordereddict (python 2.7 do not need this)
+python-pep8	pep8
+python-pthreading >= 0.1.2	pip:pthreading
+python2-devel	python-dev
+qemu-img >= 2:0.15.0-4	qemu-utils
+qemu-kvm >= 2:0.15.0-4	qemu-kvm
+rpm-python	python-rpm
+rsyslog	rsyslog
+sanlock >= 2.4-2	TooOld:sanlock libsanlock-dev libsanlock-client1
+sanlock-python	self packaged:sanlock-python
+sed >= 4.2.1-10	sed
+selinux-policy-targeted >= 3.11.1-71	selinux-policy-default
+sos	sid:sosreport
+sudo >= 1.7.3	sudo
+systemd >= 197-1.fc18.2	?
+systemd-units	?
+tree	tree
+usbutils	usbutils
+vhostmd	?
+which	debianutils
+xz	xz-utils
+
+extra
+build-essential
+python-pip
+pip:rtslib-fb (python-rtslib is not compatible)
+gnutls-bin
+augeas-tools
