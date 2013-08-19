@@ -360,7 +360,7 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.desktopSendHcCommand(message)
 
-    def vmHibernate(self, vmId, hiberVolHandle=None):
+    def vmHibernate(self, vmId, hiberVolHandle):
         vm = API.VM(vmId)
         return vm.hibernate(hiberVolHandle)
 

@@ -382,8 +382,8 @@ class service:
         return self.ExecAndExit(self.s.sendkeys(vmId, args[1:]))
 
     def hibernate(self, args):
-        vmId = args[0]
-        response = self.s.hibernate(vmId)
+        vmId, hiberVolHandle = args[0], args[1]
+        response = self.s.hibernate(vmId, hiberVolHandle)
         print response['status']['message']
         sys.exit(response['status']['code'])
 
@@ -2407,7 +2407,7 @@ if __name__ == '__main__':
                        'channel'
                        )),
         'hibernate': (serv.hibernate,
-                      ('<vmId>',
+                      ('<vmId> <hiberVolHandle>',
                        'Hibernates the desktop'
                        )),
         'monitorCommand': (serv.monitorCommand,
