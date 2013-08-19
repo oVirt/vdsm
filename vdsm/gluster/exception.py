@@ -539,6 +539,11 @@ class GlusterVolumeGeoRepSessionResumeFailedException(GlusterGeoRepException):
     message = "Volume geo-replication session resume failed"
 
 
+class GlusterGeoRepConfigFailedException(GlusterGeoRepException):
+    code = 4206
+    message = "Volume geo-replication config failed"
+
+
 # Volume Snapshot
 class GlusterSnapshotException(GlusterException):
     code = 4700

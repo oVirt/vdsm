@@ -516,6 +516,48 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeGeoRepConfigList(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+
+        status = self.s.glusterVolumeGeoRepConfigList(volumeName,
+                                                      remoteHost,
+                                                      remoteVolumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeGeoRepConfigSet(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+        optionName = params.get('optionName', '')
+        optionValue = params.get('optionValue', '')
+
+        status = self.s.glusterVolumeGeoRepConfigSet(volumeName,
+                                                     remoteHost,
+                                                     remoteVolumeName,
+                                                     optionName,
+                                                     optionValue)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeGeoRepConfigReset(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+        optionName = params.get('optionName', '')
+
+        status = self.s.glusterVolumeGeoRepConfigReset(volumeName,
+                                                       remoteHost,
+                                                       remoteVolumeName,
+                                                       optionName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
     def do_glusterVolumeSnapshotCreate(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
@@ -911,6 +953,36 @@ def getGlusterCmdDict(serv):
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'resume the geo-replication session'
+              )),
+         'glusterVolumeGeoRepConfigList': (
+             serv.do_glusterVolumeGeoRepConfigList,
+             ('volumeName=<volume_name> '
+              'remoteHost=<remote_host> '
+              'remoteVolumeName=<remote_volume_name> '
+              '<remote_host> is IP/dns name of host in remote Gluster cluster.'
+              '<remote_volume_name> volume name in remote gluster cluster.',
+              'Get the list of geo-replication configuration for a session'
+              )),
+         'glusterVolumeGeoRepConfigSet': (
+             serv.do_glusterVolumeGeoRepConfigSet,
+             ('volumeName=<volume_name> '
+              'remoteHost=<remote_host> '
+              'remoteVolumeName=<remote_volume_name> '
+              'optionName=<option_name>'
+              'optionValue=<option_value>'
+              '<remote_host> is IP/dns name of host in remote Gluster cluster.'
+              '<remote_volume_name> volume name in remote gluster cluster.',
+              'set a geo-replication configuration for a session'
+              )),
+         'glusterVolumeGeoRepConfigReset': (
+             serv.do_glusterVolumeGeoRepConfigReset,
+             ('volumeName=<volume_name> '
+              'remoteHost=<remote_host> '
+              'remoteVolumeName=<remote_volume_name> '
+              'optionName=<option_name>'
+              '<remote_host> is IP/dns name of host in remote Gluster cluster.'
+              '<remote_volume_name> volume name in remote gluster cluster.',
+              'Reset a geo-replication configuration to its default value'
               )),
          'glusterVolumeSnapshotCreate': (
              serv.do_glusterVolumeSnapshotCreate,

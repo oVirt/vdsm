@@ -130,6 +130,7 @@ dist_vdsmtests_DATA = \
 	caps_lscpu_ppc64_2_4_8.out \
 	caps_numactl_4_nodes.out \
 	glusterGeoRepStatus.xml \
+	glusterVolumeGeoRepConfigList.xml \
 	glusterVolumeProfileInfo.xml \
 	glusterVolumeProfileInfoNfs.xml \
 	glusterVolumeRebalanceStatus.xml \

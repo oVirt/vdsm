@@ -385,6 +385,35 @@ class GlusterApi(object):
                                                          force)
 
     @exportAsVerb
+    def volumeGeoRepConfigList(self, volumeName, remoteHost, remoteVolumeName,
+                               options=None):
+        status = self.svdsmProxy.glusterVolumeGeoRepConfig(
+            volumeName,
+            remoteHost,
+            remoteVolumeName
+        )
+        return {'sessionConfig': status}
+
+    @exportAsVerb
+    def volumeGeoRepConfigSet(self, volumeName, remoteHost, remoteVolumeName,
+                              optionName, optionValue, options=None):
+        self.svdsmProxy.glusterVolumeGeoRepConfig(volumeName,
+                                                  remoteHost,
+                                                  remoteVolumeName,
+                                                  optionName,
+                                                  optionValue)
+
+    @exportAsVerb
+    def volumeGeoRepConfigReset(self, volumeName, remoteHost,
+                                remoteVolumeName,
+                                optionName, options=None):
+        self.svdsmProxy.glusterVolumeGeoRepConfig(
+            volumeName,
+            remoteHost,
+            remoteVolumeName,
+            optionName)
+
+    @exportAsVerb
     def volumeSnapshotCreate(self, volumeName, snapName,
                              snapDescription=None, force=False,
                              options=None):
