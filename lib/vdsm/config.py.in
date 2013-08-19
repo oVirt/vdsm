@@ -72,6 +72,13 @@ parameters = [
             'Comma-separated list of fnmatch-patterns for host bonds to be '
             'hidden from vdsm.'),
 
+        ('hidden_vlans', '',
+            'Comma-separated list of fnmatch-patterns for host vlans to be '
+            'hidden from vdsm. vlan names must be in the format "dev.VLANID" '
+            '(e.g. eth0.100, em1.20, eth2.200). '
+            'vlans with alternative names must be hidden from vdsm '
+            '(e.g. eth0.10-fcoe, em1.myvlan100, vlan200)'),
+
         ('default_bridge', 'engine', None),
 
         ('migration_downtime', '500',

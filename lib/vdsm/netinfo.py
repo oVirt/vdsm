@@ -141,7 +141,9 @@ def bondings():
 
 
 def vlans():
-    return [b.split('/')[-1] for b in iglob('/sys/class/net/*.*')]
+    hidden_vlans = config.get('vars', 'hidden_vlans').split(',')
+    return [os.path.basename(b) for b in iglob('/sys/class/net/*.*')
+            if not _match_name(os.path.basename(b), hidden_vlans)]
 
 
 def bridges():
