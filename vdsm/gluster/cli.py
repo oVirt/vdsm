@@ -1206,6 +1206,42 @@ def volumeGeoRepSessionResume(volumeName, remoteHost, remoteVolumeName,
                                                                  err=e.err)
 
 
+def _parseVolumeGeoRepConfig(tree):
+    """
+    Returns:
+    {geoRepConfig:{'optionName': 'optionValue',...}
+    }
+    """
+    conf = tree.find('geoRep/config')
+    config = {}
+    for child in conf.getchildren():
+        config[child.tag] = child.text
+    return {'geoRepConfig': config}
+
+
+@makePublic
+def volumeGeoRepConfig(volumeName, remoteHost,
+                       remoteVolumeName, optionName=None,
+                       optionValue=None):
+    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
+        remoteHost, remoteVolumeName), "config"]
+    if optionName and optionValue:
+        command += [optionName, optionValue]
+    elif optionName:
+        command += ["!%s" % optionName]
+
+    try:
+        xmltree = _execGlusterXml(command)
+        if optionName:
+            return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterGeoRepConfigFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parseVolumeGeoRepConfig(xmltree)
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
 @makePublic
 def snapshotCreate(volumeName, snapName,
                    snapDescription=None,

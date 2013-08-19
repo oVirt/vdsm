@@ -1138,3 +1138,10 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         status = gcli._parseGeoRepStatus(tree, detail=True)
         self.assertEquals(status, glusterTestData.GLUSTER_GEOREP_STATUS)
+
+    def test_parseVolumeGeoRepConfig(self):
+        with open("glusterVolumeGeoRepConfigList.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        status = gcli._parseVolumeGeoRepConfig(tree)
+        self.assertEquals(status, glusterTestData.GLUSTER_GEOREP_CONFIG_LIST)

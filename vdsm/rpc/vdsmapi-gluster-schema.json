@@ -1500,6 +1500,98 @@
  'returns': 'bool'}
 
 ##
+# @GeoRepConfigMap:
+#
+# A mapping of geo replication config indexed by option name.
+#
+# Since: 4.17.0
+##
+{'map': 'GeoRepConfigMap',
+ 'key': 'str', 'value': 'str'}
+
+# @GeoRepConfig:
+#
+# Geo replication config details.
+#
+# @optionName:   Config option name
+#
+# @optionValue:  Value of the config option
+#
+# Since: 4.17.0
+##
+{'type': 'GeoRepConfig',
+ 'data': {'gepRepConfig': 'GeoRepConfigMap'}}
+
+##
+# @Glustervolume.geoRepConfigList:
+#
+# List Geo Replication configuration
+#
+# @volumeName:         Is an existing volume name in the local node
+#
+# @remoteHost:         Is remote host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the remote node
+#
+# Returns:
+# List of geo replication configurations
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepConfigList'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str'},
+ 'returns': 'GeoRepConfig'}
+
+##
+# @GlusterVolume.geoRepConfigSet:
+#
+# Set Geo Replication config option
+#
+# @volumeName:         Is an existing volume name in the local node
+#
+# @remoteHost:         Is remote host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the remote node
+#
+# @optionName:         Valid configuration option name
+#
+# @optionValue:        Value to the option
+#
+# Returns:
+# True if it sets value to the option successfully
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepConfigSet'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str',
+          'remoteVolumeName': 'str', 'optionName': 'str',
+          'optionValue': 'str'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.geoRepConfigReset:
+#
+# Resets the the config option to default value
+#
+# @volumeName:         Is an existing volume name in the local node
+#
+# @remoteHost:         Is remote host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the remote node
+#
+# @optionName:         Valid configuration option name
+#
+# Returns:
+# True if default value is set successfully
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepConfigReset'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
+          'optionName': 'str'},
+ 'returns': 'bool'}
+
+##
 # @GlusterVolume.snapshotCreate:
 #
 # Create a Gluster volume snapshot

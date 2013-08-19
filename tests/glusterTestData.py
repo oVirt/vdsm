@@ -1074,3 +1074,48 @@ GLUSTER_GEOREP_STATUS = {
         ]
     }
 }
+
+GLUSTER_GEOREP_CONFIG_LIST = {
+    'geoRepConfig': {
+        'special_sync_mode': 'partial',
+        'state_socket_unencoded': '/var/lib/glusterd/geo-replication'
+        '/master2_10.70.43.63_slave3/ssh%3A%2F%2Froot%4010'
+        '.70.43.63%3Agluster%3A%2F%2F127.0.0.1%3Aslave3.socket',
+        'gluster_log_file': '/var/log/glusterfs/geo-replication/'
+        'master2/ssh%3A%2F%2Froot%4010.70.43.63%3Agluster%3'
+        'A%2F%2F127.0.0.1%3Aslave3.gluster.log',
+        'ssh_command': 'ssh -oPasswordAuthentication=no '
+        '-oStrictHostKeyChecking=no -i /var/lib/glusterd'
+        '/geo-replication/secret.pem',
+        'ignore_deletes': 'true',
+        'change_detector': 'changelog',
+        'ssh_command_tar': 'ssh -oPasswordAuthentication=no -oStrict'
+        'HostKeyChecking=no -i /var/lib/glusterd/geo-replication'
+        '/tar_ssh.pem',
+        'state_file': '/var/lib/glusterd/geo-replication/master2'
+        '_10.70.43.63_slave3/ssh%3A%2F%2Froot%4010.70.43.63%3Aglu'
+        'ster%3A%2F%2F127.0.0.1%3Aslave3.status',
+        'remote_gsyncd': '/nonexistent/gsyncd',
+        'log_file': '/var/log/glusterfs/geo-replication/master2'
+        '/ssh%3A%2F%2Froot%4010.70.43.63%3Agluster%3A%2F%2F127.0.0'
+        '.1%3Aslave3.log',
+        'changelog_log_file': '/var/log/glusterfs/geo-replication/master2/'
+        'ssh%3A%2F%2Froot%4010.70.43.63%3Agluster%3A%2F%2F127.0.0.1'
+        '%3Aslave3-changes.log',
+        'socketdir': '/var/run',
+        'working_dir': '/var/lib/misc/glusterfsd/master2/ssh%3A%2F%2'
+        'Froot%4010.70.43.63%3Agluster%3A%2F%2F127.0.0.1%3Aslave3',
+        'state_detail_file': '/var/lib/glusterd/geo-replication/master2_10.'
+        '70.43.63_slave3/ssh%3A%2F%2Froot%4010.70.43.63%3Agluster%3A%2'
+        'F%2F127.0.0.1%3Aslave3-detail.status',
+        'session_owner': '67186261-91a7-4930-b681-9f127f485a0e',
+        'gluster_command_dir': '/usr/sbin/',
+        'pid_file': '/var/lib/glusterd/geo-replication/master2_10.70.'
+        '43.63_slave3/ssh%3A%2F%2Froot%4010.70.43.63%3Agluster%3A%2F%2F1'
+        '27.0.0.1%3Aslave3.pid',
+        'georep_session_working_dir': '/var/lib/glusterd/geo-replication/'
+        'master2_10.70.43.63_slave3/',
+        'gluster_params': 'aux-gfid-mount',
+        'volume_id': '67186261-91a7-4930-b681-9f127f485a0e'
+    }
+}

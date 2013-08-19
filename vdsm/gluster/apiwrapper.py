@@ -222,6 +222,23 @@ class GlusterVolume(GlusterApiBase):
                                                        remoteVolumeName,
                                                        force)
 
+    def geoRepConfigList(self, volumeName, remoteHost, remoteVolumeName):
+        return self._gluster.volumeGeoRepConfigList(volumeName, remoteHost,
+                                                    remoteVolumeName)
+
+    def geoRepConfigSet(self, volumeName, remoteHost, remoteVolumeName,
+                        optionName, optionValue):
+        return self._gluster.volumeGeoRepConfigSet(volumeName, remoteHost,
+                                                   remoteVolumeName,
+                                                   optionName, optionValue)
+
+    def geoRepConfigReset(self, volumeName, remoteHost,
+                          remoteVolumeName, optionName):
+        return self._gluster.volumeGeoRepConfigReset(volumeName,
+                                                     remoteHost,
+                                                     remoteVolumeName,
+                                                     optionName)
+
     def snapshotCreate(self, volumeName,
                        snapName, snapDescription=None,
                        force=False):
