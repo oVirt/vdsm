@@ -273,22 +273,20 @@ class MigrationSourceThread(threading.Thread):
 
     def run(self):
         try:
-            mstate = ''
             self._setupVdsConnection()
             self._setupRemoteMachineParams()
             self._prepareGuest()
             MigrationSourceThread._ongoingMigrations.acquire()
             try:
                 self.log.debug("migration semaphore acquired")
-                if not mstate:
-                    self._vm.conf['_migrationParams'] = {
-                        'dst': self._dst,
-                        'mode': self._mode,
-                        'method': self._method,
-                        'dstparams': self._dstparams,
-                        'dstqemu': self._dstqemu}
-                    self._vm.saveState()
-                    self._startUnderlyingMigration()
+                self._vm.conf['_migrationParams'] = {
+                    'dst': self._dst,
+                    'mode': self._mode,
+                    'method': self._method,
+                    'dstparams': self._dstparams,
+                    'dstqemu': self._dstqemu}
+                self._vm.saveState()
+                self._startUnderlyingMigration()
                 self._finishSuccessfully()
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
