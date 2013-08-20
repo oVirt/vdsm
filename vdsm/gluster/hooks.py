@@ -25,6 +25,7 @@ import base64
 import hashlib
 import magic
 import logging
+import selinux
 import exception as ge
 from functools import wraps
 from . import makePublic
@@ -92,6 +93,8 @@ def hooksList():
     def _getHooks(gCmd, hookLevel):
         hooks = []
         path = os.path.join(_glusterHooksPath, gCmd, hookLevel.lower())
+        if not os.path.isdir(path):
+            return hooks
         for hookFile in os.listdir(path):
             status = getattr(HookStatus, hookFile[0], None)
             if status:
@@ -241,6 +244,19 @@ def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum):
 @makePublic
 def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
             enable=False):
+    hookPath = os.path.join(_glusterHooksPath, glusterCmd, hookLevel)
+    try:
+        os.makedirs(hookPath)
+        if selinux.is_selinux_enabled():
+            try:
+                selinux.restorecon(hookPath, recursive=True)
+            except OSError:
+                logging.error('restorecon %s failed', hookPath, exc_info=True)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
+            raise ge.GlusterHookAddFailedException(err=[errMsg])
+
     try:
         return _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData,
                                 hookMd5Sum, update=False, enable=enable)
