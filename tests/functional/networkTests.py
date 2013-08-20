@@ -46,6 +46,10 @@ IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
 IP_GATEWAY = '240.0.0.254'
 # Current implementation converts ip to its 32 bit int representation
 IP_TABLE = '4026531841'
+
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
+IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ff'
+
 dummyPool = set()
 DUMMY_POOL_SIZE = 5
 
@@ -1424,3 +1428,33 @@ class NetworkTest(TestCaseBase):
                 delete_networks = {NETWORK_NAME: {'remove': True}}
                 self.vdsm_net.setupNetworks(delete_networks,
                                             {}, {})
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testIPv6ConfigNetwork(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            networks = {
+                NETWORK_NAME + '1':
+                {'nic': nic, 'bootproto': 'static', 'ipv6addr': IPv6_ADDRESS,
+                 'ipv6gateway': IPv6_GATEWAY},
+                NETWORK_NAME + '2':
+                {'nic': nic, 'bootproto': 'static', 'ipv6addr': IPv6_ADDRESS,
+                 'ipv6gateway': IPv6_GATEWAY, 'ipaddr': IP_ADDRESS,
+                 'gateway': IP_GATEWAY,
+                 'netmask': prefix2netmask(int(IP_CIDR))}}
+            for network, netdict in networks.iteritems():
+                with self.vdsm_net.pinger():
+                    status, msg = self.vdsm_net.setupNetworks(
+                        {network: netdict}, {}, {})
+                    self.assertEqual(status, SUCCESS, msg)
+                    self.assertTrue(self.vdsm_net.networkExists(network))
+                    status, msg, info = self.vdsm_net.getVdsCapabilities()
+                    self.assertTrue(IPv6_ADDRESS in info[
+                                    'networks'][network]['ipv6addrs'])
+                    self.assertEqual(IPv6_GATEWAY,
+                                     info['networks'][network]['ipv6gateway'])
+                    delete = {network: {'remove': True}}
+                    status, msg = self.vdsm_net.setupNetworks(delete, {}, {})
+                    self.assertEqual(status, SUCCESS, msg)

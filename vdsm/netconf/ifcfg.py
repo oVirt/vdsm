@@ -520,6 +520,19 @@ class ConfigWriter(object):
         if ipconfig.defaultRoute:
             cfg = cfg + 'DEFROUTE=%s\n' % ipconfig.defaultRoute
         cfg += 'NM_CONTROLLED=no\n'
+        if ipconfig.ipv6addr or ipconfig.ipv6autoconf or ipconfig.dhcpv6:
+            cfg += 'IPV6INIT=yes\n'
+            if ipconfig.ipv6addr is not None:
+                cfg += 'IPV6ADDR=%s\n' % pipes.quote(ipconfig.ipv6addr)
+                if ipconfig.ipv6gateway is not None:
+                    cfg += 'IPV6_DEFAULTGW=%s\n' % \
+                        pipes.quote(ipconfig.ipv6gateway)
+            elif ipconfig.dhcpv6:
+                cfg += 'DHCPV6C=yes\n'
+            if ipconfig.ipv6autoconf:
+                cfg += 'IPV6_AUTOCONF=%s\n' % 'yes'
+            else:
+                cfg += 'IPV6_AUTOCONF=%s\n' % 'no'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
                      'force', 'blockingdhcp',
                      'connectivityCheck', 'connectivityTimeout',
@@ -582,7 +595,8 @@ class ConfigWriter(object):
 
     @staticmethod
     def _getIfaceConfValues(iface, _netinfo):
-        ipaddr, netmask, gateway, bootproto, async, defaultRoute = \
+        ipaddr, netmask, gateway, defaultRoute, ipv6addr, ipv6gateway, \
+            ipv6defaultRoute, bootproto, async, ipv6autoconf, dhcpv6 = \
             iface.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(defaultRoute)
         mtu = iface.mtu
@@ -594,12 +608,18 @@ class ConfigWriter(object):
                 gateway = confParams.get('GATEWAY', None)
                 bootproto = bootproto or confParams.get('BOOTPROTO', None)
             defaultRoute = defaultRoute or confParams.get('DEFROUTE', None)
+            if confParams.get('IPV6INIT', 'no') == 'yes':
+                ipv6addr = confParams.get('IPV6ADDR', None)
+                ipv6gateway = confParams.get('IPV6_DEFAULTGW', None)
+                ipv6autoconf = (confParams.get('IPV6_AUTOCONF', 'no') == 'yes')
+                dhcpv6 = (confParams.get('DHCPV6C', 'no') == 'yes')
             if not iface.mtu:
                 mtu = confParams.get('MTU', None)
                 if mtu:
                     mtu = int(mtu)
-        ipconfig = IpConfig.ipConfig(ipaddr, netmask, gateway, bootproto,
-                                     async, defaultRoute)
+        ipconfig = IpConfig.ipConfig(ipaddr, netmask, gateway, defaultRoute,
+                                     ipv6addr, ipv6gateway, ipv6defaultRoute,
+                                     bootproto, async, ipv6autoconf, dhcpv6)
         return ipconfig, mtu
 
     def removeNic(self, nic):

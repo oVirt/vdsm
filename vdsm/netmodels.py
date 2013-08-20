@@ -356,31 +356,100 @@ class IPv4(object):
             raise
 
 
-class IpConfig(object):
-    ipConfig = namedtuple('ipConfig', ['ipaddr', 'netmask', 'gateway',
-                                       'bootproto', 'async', 'defaultRoute'])
-
-    def __init__(self, inet, bootproto=None, blocking=False):
-        if inet.address and bootproto == 'dhcp':
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Static and dynamic ip '
-                                     'configurations are mutually exclusive.')
-        self.inet = inet
-        self.bootproto = bootproto
-        self.async = bootproto == 'dhcp' and blocking
+class IPv6(object):
+    def __init__(self, address=None, gateway=None, defaultRoute=None):
+        if address:
+            self.validateAddress(address)
+            if gateway:
+                self.validateGateway(gateway)
+        elif gateway:
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified prefixlen '
+                                     'or gateway but not ip address.')
+        self.address = address
+        self.gateway = gateway
+        self.defaultRoute = defaultRoute
 
     def __repr__(self):
-        return 'IpConfig(%r, %s)' % (self.inet, self.bootproto)
+        return 'IPv6(%s, %s, %s)' % (self.address, self.gateway,
+                                     self.defaultRoute)
+
+    @classmethod
+    def validateAddress(cls, address):
+        addr = address.split('/', 1)
+        try:
+            socket.inet_pton(socket.AF_INET6, addr[0])
+        except socket.error:
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, '%r is not a valid IPv6 '
+                                     'address.' % address)
+        if len(addr) == 2:
+            cls.validatePrefixlen(addr[1])
+
+    @classmethod
+    def validatePrefixlen(cls, prefixlen):
+        try:
+            prefixlen = int(prefixlen)
+            if prefixlen < 0 or prefixlen > 127:
+                raise ConfigNetworkError(ne.ERR_BAD_ADDR, '%r is not valid '
+                                         'IPv6 prefixlen.' % prefixlen)
+        except ValueError:
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, '%r is not valid '
+                                     'IPv6 prefixlen.' % prefixlen)
+
+    @classmethod
+    def validateGateway(cls, gateway):
+        try:
+            cls.validateAddress(gateway)
+        except ConfigNetworkError as cne:
+            cne.message = '%r is not a valid IPv6 gateway.'
+            raise
+
+
+class IpConfig(object):
+    ipConfig = namedtuple('ipConfig', ['ipaddr', 'netmask', 'gateway',
+                                       'defaultRoute', 'ipv6addr',
+                                       'ipv6gateway', 'ipv6defaultRoute',
+                                       'bootproto', 'async', 'ipv6autoconf',
+                                       'dhcpv6'])
+
+    def __init__(self, inet4=None, inet6=None, bootproto=None, blocking=False,
+                 ipv6autoconf=None, dhcpv6=None):
+        if inet4 is None and inet6 is None:
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'You need to specify '
+                                     'IPv4 or IPv6 or both address.')
+        if ((inet4 and inet4.address and bootproto == 'dhcp') or
+           (inet6 and inet6.address and (ipv6autoconf or dhcpv6))):
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Static and dynamic ip '
+                                     'configurations are mutually exclusive.')
+        self.inet4 = inet4
+        self.inet6 = inet6
+        self.bootproto = bootproto
+        self.async = bootproto == 'dhcp' and blocking
+        self.ipv6autoconf = ipv6autoconf
+        self.dhcpv6 = dhcpv6
+
+    def __repr__(self):
+        return 'IpConfig(%r, %r, %s, %s, %s)' % (self.inet4, self.inet6,
+                                                 self.bootproto,
+                                                 self.ipv6autoconf,
+                                                 self.dhcpv6)
 
     def getConfig(self):
         try:
-            ipaddr = self.inet.address
-            netmask = self.inet.netmask
-            gateway = self.inet.gateway
-            defaultRoute = self.inet.defaultRoute
+            ipaddr = self.inet4.address
+            netmask = self.inet4.netmask
+            gateway = self.inet4.gateway
+            defaultRoute = self.inet4.defaultRoute
         except AttributeError:
             ipaddr = netmask = gateway = defaultRoute = None
-        return self.ipConfig(ipaddr, netmask, gateway, self.bootproto,
-                             self.async, defaultRoute)
+        try:
+            ipv6addr = self.inet6.address
+            ipv6gateway = self.inet6.gateway
+            ipv6defaultRoute = self.inet6.defaultRoute
+        except AttributeError:
+            ipv6addr = ipv6gateway = ipv6defaultRoute = None
+        return self.ipConfig(ipaddr, netmask, gateway, defaultRoute, ipv6addr,
+                             ipv6gateway, ipv6defaultRoute, self.bootproto,
+                             self.async, self.ipv6autoconf, self.dhcpv6)
 
 
 def _nicSort(nics):

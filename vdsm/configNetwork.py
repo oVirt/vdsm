@@ -37,6 +37,7 @@ from netconf.ifcfg import Ifcfg
 from netmodels import Bond
 from netmodels import Bridge
 from netmodels import IPv4
+from netmodels import IPv6
 from netmodels import IpConfig
 from netmodels import Nic
 from netmodels import Vlan
@@ -48,8 +49,10 @@ CONNECTIVITY_TIMEOUT_DEFAULT = 4
 def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                        bondingOptions=None, nics=None, mtu=None, ipaddr=None,
                        netmask=None, gateway=None, bootproto=None,
-                       _netinfo=None, configurator=None, blockingdhcp=None,
-                       implicitBonding=None, defaultRoute=None, **opts):
+                       ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
+                       dhcpv6=None, _netinfo=None, configurator=None,
+                       blockingdhcp=None, implicitBonding=None,
+                       defaultRoute=None, **opts):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -64,6 +67,10 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     :param netmask: IPv4 mask in dotted decimal format.
     :param gateway: IPv4 address in dotted decimal format.
     :param bootproto: protocol for getting IP config for the net, e.g., 'dhcp'
+    :param ipv6addr: IPv6 address in format address[/prefixlen].
+    :param ipv6gateway: IPv6 address in format address[/prefixlen].
+    :param ipv6autoconf: whether to use IPv6's stateless autoconfiguration.
+    :param dhcpv6: whether to use DHCPv6.
     :param _netinfo: network information snapshot.
     :param configurator: instance to use to apply the network configuration.
     :param blockingdhcp: whether to acquire dhcp IP config in a synced manner.
@@ -106,9 +113,11 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
-    topNetDev.ip = IpConfig(inet=IPv4(ipaddr, netmask, gateway, defaultRoute),
-                            bootproto=bootproto,
-                            blocking=utils.tobool(blockingdhcp))
+    ipv6 = IPv6(ipv6addr, ipv6gateway, defaultRoute)
+    ipv4 = IPv4(ipaddr, netmask, gateway, defaultRoute)
+    topNetDev.ip = IpConfig(inet4=ipv4, inet6=ipv6, bootproto=bootproto,
+                            blocking=utils.tobool(blockingdhcp),
+                            ipv6autoconf=ipv6autoconf, dhcpv6=dhcpv6)
     return topNetDev
 
 
@@ -198,7 +207,8 @@ def _alterRunningConfig(func):
 
 @_alterRunningConfig
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
-               netmask=None, prefix=None, mtu=None, gateway=None, force=False,
+               netmask=None, prefix=None, mtu=None, gateway=None,
+               ipv6addr=None, ipv6gateway=None, force=False,
                configurator=None, bondingOptions=None, bridged=True,
                _netinfo=None, qosInbound=None, qosOutbound=None, **options):
     nics = nics or ()
@@ -248,7 +258,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
-                                gateway, bootproto, _netinfo, configurator,
+                                gateway, bootproto, ipv6addr, ipv6gateway,
+                                _netinfo=_netinfo, configurator=configurator,
                                 defaultRoute=defaultRoute, **options)
 
     netEnt.configure(**options)
@@ -504,10 +515,14 @@ def setupNetworks(networks, bondings, **options):
                         vlan=<id>
                         bonding="<name>" | nic="<name>"
                         (bonding and nics are mutually exclusive)
-                        ipaddr="<ip>"
-                        netmask="<ip>"
-                        gateway="<ip>"
+                        ipaddr="<ipv4>"
+                        netmask="<ipv4>"
+                        gateway="<ipv4>"
                         bootproto="..."
+                        ipv6addr="<ipv6>[/<prefixlen>]"
+                        ipv6gateway="<ipv6>"
+                        ipv6autoconf="0|1"
+                        dhcpv6="0|1"
                         delay="..."
                         onboot="yes"|"no"
                         (other options will be passed to the config file AS-IS)

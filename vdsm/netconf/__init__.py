@@ -92,13 +92,13 @@ class Configurator(object):
         self.configApplier.removeLibvirtNetwork(network)
 
     def _addSourceRoute(self, netEnt):
-        ipaddr, netmask, gateway, bootproto, _, _ = netEnt.ipConfig
+        ip = netEnt.ipConfig
         # bootproto is None for both static and no bootproto
-        if bootproto != 'dhcp' and netEnt.master is None:
+        if ip.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Adding source route %s, %s, %s, %s" %
-                          (netEnt.name, ipaddr, netmask, gateway))
+                          (netEnt.name, ip.ipaddr, ip.netmask, ip.gateway))
             StaticSourceRoute(netEnt.name, self).\
-                configure(ipaddr, netmask, gateway)
+                configure(ip.ipaddr, ip.netmask, ip.gateway)
         DynamicSourceRoute.addInterfaceTracking(netEnt)
 
     def _removeSourceRoute(self, netEnt):
