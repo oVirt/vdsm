@@ -30,9 +30,6 @@ import neterrors as ne
 
 
 class NetDevice(object):
-    _ipConfig = namedtuple('ipConfig', ['ipaddr', 'netmask', 'gateway',
-                                        'bootproto', 'async', 'defaultRoute'])
-
     def __init__(self, name, configurator, ipconfig=None, mtu=None):
         self.name = name
         self.ip = ipconfig
@@ -49,13 +46,11 @@ class NetDevice(object):
     @property
     def ipConfig(self):
         try:
-            ipaddr, netmask, gateway, bootproto, async, defaultRoute = \
-                self.ip.getConfig()
+            config = self.ip.getConfig()
         except AttributeError:
-            ipaddr = netmask = gateway = bootproto = async = defaultRoute = \
-                None
-        return self._ipConfig(ipaddr, netmask, gateway, bootproto, async,
-                              defaultRoute)
+            config = IpConfig.ipConfig(*(len(IpConfig.ipConfig._fields) *
+                                       [None]))
+        return config
 
     @property
     def bridge(self):
@@ -362,6 +357,9 @@ class IPv4(object):
 
 
 class IpConfig(object):
+    ipConfig = namedtuple('ipConfig', ['ipaddr', 'netmask', 'gateway',
+                                       'bootproto', 'async', 'defaultRoute'])
+
     def __init__(self, inet, bootproto=None, blocking=False):
         if inet.address and bootproto == 'dhcp':
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Static and dynamic ip '
@@ -381,5 +379,5 @@ class IpConfig(object):
             defaultRoute = self.inet.defaultRoute
         except AttributeError:
             ipaddr = netmask = gateway = defaultRoute = None
-        return ipaddr, netmask, gateway, self.bootproto, self.async, \
-            defaultRoute
+        return self.ipConfig(ipaddr, netmask, gateway, self.bootproto,
+                             self.async, defaultRoute)

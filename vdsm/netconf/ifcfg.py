@@ -31,7 +31,7 @@ import threading
 import dsaversion
 from netconf import Configurator
 from neterrors import ConfigNetworkError
-from netmodels import Nic, Bridge
+from netmodels import Nic, Bridge, IpConfig
 from sourceRoute import DynamicSourceRoute
 from vdsm import constants
 from vdsm import netinfo
@@ -471,30 +471,29 @@ class ConfigWriter(object):
             return None
         return 'yes' if defaultRoute else 'no'
 
-    def _createConfFile(self, conf, name, ipaddr=None, netmask=None,
-                        gateway=None, bootproto=None, mtu=None,
-                        defaultRoute=None, onboot='yes', **kwargs):
+    def _createConfFile(self, conf, name, ipconfig, mtu=None,
+                        onboot='yes', **kwargs):
         """ Create ifcfg-* file with proper fields per device """
         cfg = self.CONFFILE_HEADER + '\n'
 
         cfg += """DEVICE=%s\nONBOOT=%s\n""" % (pipes.quote(name),
                                                pipes.quote(onboot))
         cfg += conf
-        if ipaddr:
-            cfg = cfg + 'IPADDR=%s\nNETMASK=%s\n' % (pipes.quote(ipaddr),
-                                                     pipes.quote(netmask))
-            if gateway:
-                cfg = cfg + 'GATEWAY=%s\n' % pipes.quote(gateway)
+        if ipconfig.ipaddr:
+            cfg = cfg + 'IPADDR=%s\n' % pipes.quote(ipconfig.ipaddr)
+            cfg = cfg + 'NETMASK=%s\n' % pipes.quote(ipconfig.netmask)
+            if ipconfig.gateway:
+                cfg = cfg + 'GATEWAY=%s\n' % pipes.quote(ipconfig.gateway)
             # According to manual the BOOTPROTO=none should be set
             # for static IP
             cfg = cfg + 'BOOTPROTO=none\n'
-        else:
-            if bootproto:
-                cfg = cfg + 'BOOTPROTO=%s\n' % pipes.quote(bootproto)
+        elif ipconfig.bootproto:
+            cfg = cfg + 'BOOTPROTO=%s\n' % pipes.quote(ipconfig.bootproto)
+
         if mtu:
             cfg = cfg + 'MTU=%d\n' % mtu
-        if defaultRoute:
-            cfg = cfg + 'DEFROUTE=%s\n' % defaultRoute
+        if ipconfig.defaultRoute:
+            cfg = cfg + 'DEFROUTE=%s\n' % ipconfig.defaultRoute
         cfg += 'NM_CONTROLLED=no\n'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
                      'force', 'blockingdhcp',
@@ -510,24 +509,22 @@ class ConfigWriter(object):
 
     def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
-        ipaddr, netmask, gateway, bootproto, _, defaultRoute = \
-            bridge.ipConfig
         conf = 'TYPE=Bridge\nDELAY=%s\n' % bridge.forwardDelay
-        self._createConfFile(conf, bridge.name, ipaddr, netmask, gateway,
-                             bootproto, bridge.mtu,
-                             self._toIfcfgFormat(defaultRoute), **opts)
+        ipconfig = bridge.ipConfig
+        defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
+        ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
+        self._createConfFile(conf, bridge.name, ipconfig, bridge.mtu,
+                             **opts)
 
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
-        ipaddr, netmask, gateway, bootproto, _, defaultRoute = \
-            vlan.ipConfig
         conf = 'VLAN=yes\n'
         if vlan.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
-
-        self._createConfFile(conf, vlan.name, ipaddr, netmask, gateway,
-                             bootproto, vlan.mtu,
-                             self._toIfcfgFormat(defaultRoute), **opts)
+        ipconfig = vlan.ipConfig
+        defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
+        ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
+        self._createConfFile(conf, vlan.name, ipconfig, vlan.mtu, **opts)
 
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
@@ -535,10 +532,8 @@ class ConfigWriter(object):
         if bond.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
 
-        ipaddr, netmask, gateway, bootproto, mtu, defaultRoute = \
-            self._getIfaceConfValues(bond, netinfo.NetInfo())
-        self._createConfFile(conf, bond.name, ipaddr, netmask, gateway,
-                             bootproto, mtu, defaultRoute, **opts)
+        ipconfig, mtu = self._getIfaceConfValues(bond, netinfo.NetInfo())
+        self._createConfFile(conf, bond.name, ipconfig, mtu, **opts)
 
         # create the bonding device to avoid initscripts noise
         if bond.name not in open(netinfo.BONDING_MASTERS).read().split():
@@ -556,14 +551,12 @@ class ConfigWriter(object):
         if nic.bond:
             conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(nic.bond.name)
 
-        ipaddr, netmask, gateway, bootproto, mtu, defaultRoute = \
-            self._getIfaceConfValues(nic, _netinfo)
-        self._createConfFile(conf, nic.name, ipaddr, netmask, gateway,
-                             bootproto, mtu, defaultRoute, **opts)
+        ipconfig, mtu = self._getIfaceConfValues(nic, _netinfo)
+        self._createConfFile(conf, nic.name, ipconfig, mtu, **opts)
 
     @staticmethod
     def _getIfaceConfValues(iface, _netinfo):
-        ipaddr, netmask, gateway, bootproto, _, defaultRoute = \
+        ipaddr, netmask, gateway, bootproto, async, defaultRoute = \
             iface.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(defaultRoute)
         mtu = iface.mtu
@@ -580,7 +573,9 @@ class ConfigWriter(object):
                 mtu = confParams.get('MTU', None)
                 if mtu:
                     mtu = int(mtu)
-        return ipaddr, netmask, gateway, bootproto, mtu, defaultRoute
+        ipconfig = IpConfig.ipConfig(ipaddr, netmask, gateway, bootproto,
+                                     async, defaultRoute)
+        return ipconfig, mtu
 
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic
