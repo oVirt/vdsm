@@ -90,24 +90,6 @@ def _filterSnappableDiskDevices(diskDeviceXmlElements):
                       diskDeviceXmlElements)
 
 
-class Device(object):
-    def __init__(self, conf, log, **kwargs):
-        for attr, value in kwargs.iteritems():
-            try:
-                setattr(self, attr, value)
-            except AttributeError:
-                # skip read-only properties
-                pass
-        self.conf = conf
-        self.log = log
-        self._deviceXML = None
-
-    def __str__(self):
-        attrs = [":".join((a, str(getattr(self, a)))) for a in dir(self)
-                 if not a.startswith('__')]
-        return " ".join(attrs)
-
-
 class _MigrationError(RuntimeError):
     pass
 
@@ -1163,7 +1145,22 @@ class _DomXML:
         return self.doc.toprettyxml(encoding='utf-8')
 
 
-class VmDevice(Device):
+class VmDevice(object):
+    def __init__(self, conf, log, **kwargs):
+        for attr, value in kwargs.iteritems():
+            try:
+                setattr(self, attr, value)
+            except AttributeError:  # skip read-only properties
+                pass
+        self.conf = conf
+        self.log = log
+        self._deviceXML = None
+
+    def __str__(self):
+        attrs = [':'.join((a, str(getattr(self, a)))) for a in dir(self)
+                 if not a.startswith('__')]
+        return ' '.join(attrs)
+
     def createXmlElem(self, elemType, deviceType, attributes=[]):
         """
         Create domxml device element according to passed in params
