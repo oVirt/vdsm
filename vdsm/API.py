@@ -1243,7 +1243,7 @@ class Global(APIBase):
         return dict(status=doneCode)
 
     # VM-related functions
-    def getVMList(self, fullStatus=False, vmList=[]):
+    def getVMList(self, fullStatus=False, vmList=()):
         """ return a list of known VMs with full (or partial) config each """
 
         def reportedStatus(v, full):

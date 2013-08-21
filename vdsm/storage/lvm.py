@@ -1171,7 +1171,7 @@ def addtag(vg, lv, tag):
         raise se.MissingTagOnLogicalVolume("%s/%s" % (vg, lv), tag)
 
 
-def changeLVTags(vg, lv, delTags=[], addTags=[]):
+def changeLVTags(vg, lv, delTags=(), addTags=()):
     lvname = '%s/%s' % (vg, lv)
     delTags = set(delTags)
     addTags = set(addTags)
@@ -1229,7 +1229,7 @@ def _isLVActive(vgName, lvName):
     return os.path.exists(lvPath(vgName, lvName))
 
 
-def changeVGTags(vgName, delTags=[], addTags=[]):
+def changeVGTags(vgName, delTags=(), addTags=()):
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):

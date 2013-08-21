@@ -214,7 +214,7 @@ class BindingXMLRPC(object):
         vm = API.VM(vmParams['vmId'])
         return vm.create(vmParams)
 
-    def getVMList(self, fullStatus=False, vmList=[]):
+    def getVMList(self, fullStatus=False, vmList=()):
         api = API.Global()
         return api.getVMList(fullStatus, vmList)
 

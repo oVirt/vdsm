@@ -36,11 +36,8 @@ from vdsm.exception import VdsmException
 class GlusterException(VdsmException):
     code = 4100
     message = "Gluster Exception"
-    rc = 0
-    out = []
-    err = []
 
-    def __init__(self, rc=0, out=[], err=[]):
+    def __init__(self, rc=0, out=(), err=()):
         self.rc = rc
         self.out = out
         self.err = err

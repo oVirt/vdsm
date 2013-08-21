@@ -51,7 +51,7 @@ def getGlobalProcPool():
 
 
 class _ModuleWrapper(types.ModuleType):
-    def __init__(self, modName, procPool, timeout, subModNames=[]):
+    def __init__(self, modName, procPool, timeout, subModNames=()):
         self._modName = modName
         self._procPool = procPool
         self._timeout = timeout

@@ -1145,7 +1145,7 @@ class VmDevice(object):
                  if not a.startswith('__')]
         return ' '.join(attrs)
 
-    def createXmlElem(self, elemType, deviceType, attributes=[]):
+    def createXmlElem(self, elemType, deviceType, attributes=()):
         """
         Create domxml device element according to passed in params
         """

@@ -125,15 +125,15 @@ def _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
     return False
 
 
-def findCaller(skipUp=0, ignoreSourceFiles=[], ignoreMethodNames=[],
+def findCaller(skipUp=0, ignoreSourceFiles=(), ignoreMethodNames=(),
                logSkipName=None):
     """
     Find the stack frame of the caller so that we can note the source
     file name, line number and function name.
     """
     # Ignore file extension can be either py or pyc
-    ignoreSourceFiles = ignoreSourceFiles + [logging._srcfile]
-    ignoreSourceFiles = [os.path.splitext(sf)[0] for sf in ignoreSourceFiles]
+    ignoreSourceFiles = [os.path.splitext(sf)[0] for sf in
+                         chain(ignoreSourceFiles, [logging._srcfile])]
     frame = inspect.currentframe().f_back
 
     result = "(unknown file)", 0, "(unknown function)"
@@ -1118,7 +1118,7 @@ except:
     pass
 
 
-def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=[]):
+def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
     """Directory tree generator.
 
     Custom implementation of os.walk that doesn't block if the destination of

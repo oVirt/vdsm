@@ -51,7 +51,7 @@ class TarCopyFailed(RuntimeError):
     pass
 
 
-def tarCopy(src, dst, exclude=[]):
+def tarCopy(src, dst, exclude=()):
     excludeArgs = ["--exclude=%s" % path for path in exclude]
 
     tsrc = subprocess.Popen([constants.EXT_TAR, "cf", "-"] +
