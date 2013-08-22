@@ -353,7 +353,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, vlan=VLAN_ID,
                                                    bond=BONDING_NAME,
                                                    nics=nics,
-                                                   opts={'MTU': MTU,
+                                                   opts={'mtu': MTU,
                                                          'bridged': bridged})
             vlan_name = '%s.%s' % (BONDING_NAME, VLAN_ID)
 
