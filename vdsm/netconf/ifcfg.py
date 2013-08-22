@@ -48,15 +48,13 @@ class Ifcfg(Configurator):
     def begin(self):
         if self.configApplier is None:
             self.configApplier = ConfigWriter()
-            self._libvirtAdded = set()
 
     def rollback(self):
         self.configApplier.restoreBackups()
+        self.configApplier = None
 
     def commit(self):
-        if self.configApplier:
-            self.configApplier = None
-            self._libvirtAdded = set()
+        self.configApplier = None
 
     def configureBridge(self, bridge, **opts):
         self.configApplier.addBridge(bridge, **opts)

@@ -28,7 +28,6 @@ from vdsm import utils
 from storage.misc import execCmd
 import neterrors as ne
 from neterrors import ConfigNetworkError
-from vdsm import define
 from vdsm import netinfo
 from netconf.ifcfg import ConfigWriter
 from netconf.ifcfg import Ifcfg
@@ -349,20 +348,16 @@ def clientSeen(timeout):
 
 def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
                 **options):
-    configurator = Ifcfg()
-    try:
+    with Ifcfg() as configurator:
         delNetwork(oldBridge, configurator=configurator, **options)
         addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
                    configurator=configurator, **options)
-    except:
-        configurator.rollback()
-        raise
-    if utils.tobool(options.get('connectivityCheck', False)):
-        if not clientSeen(int(options.get('connectivityTimeout',
-                                          CONNECTIVITY_TIMEOUT_DEFAULT))):
-            delNetwork(newBridge, force=True)
-            configurator.rollback()
-            return define.errCode['noConPeer']['status']['code']
+        if utils.tobool(options.get('connectivityCheck', False)):
+            if not clientSeen(int(options.get('connectivityTimeout',
+                                              CONNECTIVITY_TIMEOUT_DEFAULT))):
+                delNetwork(newBridge, force=True)
+                raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
+                                         'connectivity check failed')
 
 
 def _validateNetworkSetup(networks, bondings):
@@ -489,7 +484,6 @@ def setupNetworks(networks, bondings, **options):
     """
     logger = logging.getLogger("setupNetworks")
     _netinfo = netinfo.NetInfo()
-    configurator = Ifcfg()
     networksAdded = set()
 
     logger.debug("Setting up network according to configuration: "
@@ -502,7 +496,7 @@ def setupNetworks(networks, bondings, **options):
         _validateNetworkSetup(dict(networks), dict(bondings))
 
     logger.debug("Applying...")
-    try:
+    with Ifcfg() as configurator:
         libvirt_nets = netinfo.networks()
         # Remove edited networks and networks with 'remove' attribute
         for network, networkAttrs in networks.items():
@@ -560,9 +554,6 @@ def setupNetworks(networks, bondings, **options):
                                get('bonding') in bondings)
                 raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                          'connectivity check failed')
-    except:
-        configurator.rollback()
-        raise
 
 
 def _vlanToInternalRepresentation(vlan):

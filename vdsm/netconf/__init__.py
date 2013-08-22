@@ -30,6 +30,16 @@ class Configurator(object):
         self.configApplier = configApplier
         self._libvirtAdded = set()
 
+    def __enter__(self):
+        self.begin()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            self.commit()
+        else:
+            self.rollback()
+
     def configureBridge(self, bridge, **opts):
         raise NotImplementedError
 
