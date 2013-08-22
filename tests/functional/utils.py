@@ -98,6 +98,21 @@ class VdsProxy(object):
         self.netinfo = \
             netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
 
+    def __getattr__(self, attr):
+        """
+        When accessing nonexistant attribute it is looked up in self.vdscli
+        and usual tuple
+            (result['status']['code'], result['status']['message'])
+        is returned
+        """
+        if hasattr(self.vdscli, attr):
+            def wrapper(*args, **kwargs):
+                result = getattr(self.vdscli, attr)(*args, **kwargs)
+                return result['status']['code'], result['status']['message']
+            return wrapper
+
+        raise AttributeError(attr)
+
     def netinfo_altering(func):
         """Updates the cached information that might have been altered by an
         api call that has side-effects on the server."""
@@ -202,14 +217,6 @@ class VdsProxy(object):
         network = self.netinfo.networks[networkName]
         return network['qosInbound'], network['qosOutbound']
 
-    def setMOMPolicy(self, policyStr):
-        result = self.vdscli.setMOMPolicy(policyStr)
-        return result['status']['code'], result['status']['message']
-
-    def setBalloonTarget(self, vmId, target):
-        result = self.vdscli.setBalloonTarget(vmId, target)
-        return result['status']['code'], result['status']['message']
-
     def getVdsStats(self):
         result = self.vdscli.getVdsStats()
         return result['status']['code'], result['status']['message'],\
@@ -232,35 +239,3 @@ class VdsProxy(object):
         result = self.vdscli.getVdsCapabilities()
         return result['status']['code'], result['status']['message'],\
             result['info']
-
-    def create(self, vmParams):
-        result = self.vdscli.create(vmParams)
-        return result['status']['code'], result['status']['message']
-
-    def destroy(self, vmId):
-        result = self.vdscli.destroy(vmId)
-        return result['status']['code'], result['status']['message']
-
-    def hotplugNic(self, params):
-        result = self.vdscli.hotplugNic(params)
-        return result['status']['code'], result['status']['message']
-
-    def hotunplugNic(self, params):
-        result = self.vdscli.hotunplugNic(params)
-        return result['status']['code'], result['status']['message']
-
-    def hotplugDisk(self, params):
-        result = self.vdscli.hotplugDisk(params)
-        return result['status']['code'], result['status']['message']
-
-    def hotunplugDisk(self, params):
-        result = self.vdscli.hotunplugDisk(params)
-        return result['status']['code'], result['status']['message']
-
-    @netinfo_altering
-    def restoreNetConfig(self):
-        restoreNetConfig()
-
-    def ping(self):
-        result = self.vdscli.ping()
-        return result['status']['code']
