@@ -1088,3 +1088,85 @@ def volumeGeoRepSessionStop(volumeName, remoteHost, remoteVolumeName,
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeGeoRepSessionStopFailedException(rc=e.rc,
                                                                err=e.err)
+
+
+def _parseGeoRepStatus(tree, detail=False):
+    """
+    Returns:
+    {volume-name: [{sessionKey: 'key to identify the session',
+                    remoteVolumeName: 'volume in remote gluster cluster'
+                    bricks: [{host: 'local node',
+                              hostUuid: 'uuid of brick host',
+                              brickName: 'brick in the local volume',
+                              remoteHost: 'slave',
+                              status: 'status'
+                              checkpointStatus: 'checkpoint status'
+                              crawlStatus: 'crawlStatus'
+                              *filesSynced: 'nos of files syncd'
+                              *filesPending: 'nos of files Pending'
+                              *bytesPending: 'nos of bytes pending'
+                              *deletesPending: 'Nos of deletes pending'
+                              *filesSkipped: 'Nos of files skipped'}]...
+               ]....
+    }
+    """
+    status = {}
+    for volume in tree.findall('geoRep/volume'):
+        sessions = []
+        volumeDetail = {}
+        for session in volume.findall('sessions/session'):
+            pairs = []
+            sessionDetail = {}
+            sessionDetail['sessionKey'] = session.find('session_slave').text
+            sessionDetail['remoteVolumeName'] = sessionDetail[
+                'sessionKey'].split("::")[-1]
+            for pair in session.findall('pair'):
+                pairDetail = {}
+                pairDetail['host'] = pair.find('master_node').text
+                pairDetail['hostUuid'] = pair.find(
+                    'master_node_uuid').text
+                pairDetail['brickName'] = pair.find('master_brick').text
+                pairDetail['remoteHost'] = pair.find(
+                    'slave').text.split("::")[0]
+                pairDetail['status'] = pair.find('status').text
+                pairDetail['checkpointStatus'] = pair.find(
+                    'checkpoint_status').text
+                pairDetail['crawlStatus'] = pair.find('crawl_status').text
+                if detail:
+                    pairDetail['filesSynced'] = pair.find('files_syncd').text
+                    pairDetail['filesPending'] = pair.find(
+                        'files_pending').text
+                    pairDetail['bytesPending'] = pair.find(
+                        'bytes_pending').text
+                    pairDetail['deletesPending'] = pair.find(
+                        'deletes_pending').text
+                    pairDetail['filesSkipped'] = pair.find(
+                        'files_skipped').text
+                pairs.append(pairDetail)
+            sessionDetail['bricks'] = pairs
+            sessions.append(sessionDetail)
+        volumeDetail['sessions'] = sessions
+        status[volume.find('name').text] = volumeDetail
+    return status
+
+
+@makePublic
+def volumeGeoRepStatus(volumeName=None, remoteHost=None,
+                       remoteVolumeName=None, detail=False):
+    command = _getGlusterVolGeoRepCmd()
+    if volumeName:
+        command.append(volumeName)
+    if remoteHost and remoteVolumeName:
+        command.append("%s::%s" % (remoteHost, remoteVolumeName))
+    command.append("status")
+    if detail:
+        command.append("detail")
+
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterGeoRepStatusFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parseGeoRepStatus(xmltree, detail)
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])

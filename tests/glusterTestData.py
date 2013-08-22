@@ -810,7 +810,6 @@ GLUSTER_VOLUME_TASKS = {
     }
 }
 
-
 GLUSTER_STORAGE_DEVICES = [{'createBrick': True,
                             'devPath': '/dev/vdd',
                             'devUuid': '',
@@ -1052,3 +1051,26 @@ def glusterStorageDevData():
     device.format.type = None
     devices.append(device)
     return devices
+
+GLUSTER_GEOREP_STATUS = {
+    'vol1': {
+        'sessions': [
+            {'bricks': [
+                {'status': 'Stopped',
+                 'bytesPending': '0',
+                 'brickName': '/root/b1_vol1',
+                 'crawlStatus': 'N/A',
+                 'filesPending': '0',
+                 'filesSynced': '0',
+                 'hostUuid': '6a2f7584-05a8-4651-8786-1cd6ae87b896',
+                 'remoteHost': '192.168.122.145',
+                 'checkpointStatus': 'N/A',
+                 'host': 'localhost.localdomain',
+                 'filesSkipped': '0',
+                 'deletesPending': '0'}],
+             'remoteVolumeName': 'vol2',
+             'sessionKey': '6a2f7584-05a8-4651-8786-1cd6ae87b896'
+             ':ssh://192.168.122.145::vol2'}
+        ]
+    }
+}

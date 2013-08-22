@@ -195,3 +195,15 @@ class GlusterVolume(GlusterApiBase):
                                                      remoteHost,
                                                      remoteVolumeName,
                                                      force)
+
+    def geoRepSessionStatus(self, masterVolumeName, remoteHost,
+                            remoteVolumeName):
+        return self._gluster.volumeGeoRepSessionStatus(masterVolumeName,
+                                                       remoteHost,
+                                                       remoteVolumeName)
+
+    def geoRepSessionList(self, masterVolumeName=None, remoteHost=None,
+                          remoteVolumeName=None):
+        return self._gluster.volumeGeoRepSessionList(masterVolumeName,
+                                                     remoteHost,
+                                                     remoteVolumeName)
