@@ -1334,3 +1334,124 @@
  'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
           'force': 'bool'},
  'returns': 'bool'}
+
+# @geoRepPairInfo:
+#
+# Gluster geo-replication pair information.
+#
+# @host:               Host of the local volume
+#
+# @hostUuid:           Uuid of host for local volume brick
+#
+# @brickName:          Local volume brick involved in session
+#
+# @remoteHost:         The remote host involved in the session
+#
+# @status:             Status of geo replication
+#
+# @checkpointStatus:   Status of checkpoint
+#
+# @crawlStatus:        Crawl status
+#
+# @filesSynced:        #optional Number of files that are synced
+#
+# @filesPending:       #optional Number of files that are pending to be synced
+#
+# @bytesPending:       #optional Number of bytes that are pending to be synced
+#
+# @deletesPending:     #optional Number of deletes that are pending
+#
+# @filesSkipped:       #optional Number of files skipped
+#
+# Since: 4.17.0
+##
+{'type': 'geoRepPairInfo',
+ 'data': {'host': 'str', 'hostUuid': 'UUID', 'brickName': 'str',
+          'remoteHost': 'str', 'status': 'str', 'checkpointStatus': 'str',
+          'crawlStatus': 'str', '*filesSynced': 'str', '*filesPending': 'str',
+          '*bytesPending': 'str', '*deletesPending': 'str',
+          '*filesSkipped': 'str'}}
+
+##
+# @geoRepSessionInfo:
+#
+# Gluster geo-replication session information.
+#
+# @sessionKey:       Unique identification for session
+#
+# @remoteVolumeName: Name of the remote volume participating in the session
+#
+# @bricks:           Brick pair info of all pairs
+#
+# Since: 4.17.0
+##
+{'type': 'geoRepSessionInfo',
+ 'data': {'sessionKey': 'str','remoteVolumeName': 'str',
+          'bricks': ['geoRepPairInfo']}}
+
+##
+# @GlusterGeoRepSessionList:
+#
+# Gluster geo-replication session list.
+#
+# @volumeName:   Master volume name
+#
+# @sessions:     The session details of all sessions
+#
+# Since: 4.17.0
+##
+{'type': 'GlusterGeoRepSessionList',
+ 'data': {'sessions': ['geoRepSessionInfo']}}
+
+##
+# @GlusterGeoRepSessionMap:
+#
+# A mapping of sessions info indexed by volume name.
+#
+# Since: 4.17.0
+##
+{'map': 'GlusterGeoRepSessionMap',
+ 'key': 'str', 'value': 'GlusterGeoRepSessionList'}
+
+##
+# @GlusterVolume.geoRepSessionList:
+#
+# Gets the list of geo-Replication sessions
+#
+# @volumeName:         #optional Is an existing volume name in the local node
+#
+# @remoteHost:         #optional Is remote remote host name or ip
+#
+# @remoteVolumeName:   #optional Is an available existing volume name in the
+#                      remote node
+#
+# Returns:
+# list of geo-replicaion sessions
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionList'},
+ 'data': {'*volumeName': 'str', '*remoteHost': 'str',
+          '*remoteVolumeName': 'str'},
+ 'returns': 'GlusterGeoRepSessionMap'}
+
+##
+# @GlusterVolume.geoRepSessionStatus:
+#
+# Gets the detailed status of geo-Replication session
+#
+# @volumeName:         Is an existing volume name in the master node
+#
+# @remoteHost:         Is remote host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the remote node
+#
+# Returns:
+# Detailed information of geo-replication session
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStatus'},
+ 'data': {'VolumeName': 'str', 'remoteHost': 'str',
+          'remoteVolumeName': 'str'},
+ 'returns': 'GlusterGeoRepSessionMap'}

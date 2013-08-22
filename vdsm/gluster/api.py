@@ -345,6 +345,27 @@ class GlusterApi(object):
                                                        remoteVolumeName,
                                                        force)
 
+    @exportAsVerb
+    def volumeGeoRepSessionList(self, volumeName=None, remoteHost=None,
+                                remoteVolumeName=None, options=None):
+        status = self.svdsmProxy.glusterVolumeGeoRepStatus(
+            volumeName,
+            remoteHost,
+            remoteVolumeName
+        )
+        return {'sessions': status}
+
+    @exportAsVerb
+    def volumeGeoRepSessionStatus(self, volumeName, remoteHost,
+                                  remoteVolumeName, options=None):
+        status = self.svdsmProxy.glusterVolumeGeoRepStatus(
+            volumeName,
+            remoteHost,
+            remoteVolumeName,
+            detail=True
+        )
+        return {'sessionStatus': status}
+
 
 def getGlusterMethods(gluster):
     l = []

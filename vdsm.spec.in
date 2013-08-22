@@ -1375,6 +1375,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/toolTests_qemu_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_vdsm_no_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_vdsm_ssl.conf
+%{_datadir}/%{vdsm_name}/tests/glusterGeoRepStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRebalanceStatus.xml

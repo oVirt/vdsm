@@ -464,6 +464,29 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeGeoRepSessionList(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+
+        status = self.s.glusterVolumeGeoRepSessionList(volumeName, remoteHost,
+                                                       remoteVolumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeGeoRepSessionStatus(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+
+        status = self.s.glusterVolumeGeoRepSessionStatus(volumeName,
+                                                         remoteHost,
+                                                         remoteVolumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -791,5 +814,24 @@ def getGlusterCmdDict(serv):
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'stop the geo-replication session'
+              )),
+         'glusterVolumeGeoRepSessionList': (
+             serv.do_glusterVolumeGeoRepSessionList,
+             ('volumeName=<volume_name> '
+              'remoteHost=<remote_host> '
+              'remoteVolumeName=<remote_volume_name> '
+              '<remote_host> is IP/dns name of host in remote Gluster cluster.'
+              '<remote_volume_name> volume name in remote gluster cluster.',
+              'list the geo-replication sessions'
+              )),
+         'glusterVolumeGeoRepSessionStatus': (
+             serv.do_glusterVolumeGeoRepSessionStatus,
+             ('volumeName=<volume_name> '
+              'remoteHost=<remote_host> '
+              'remoteVolumeName=<remote_volume_name> '
+              '[force={yes|no}]\n\t'
+              '<remote_host> is IP/dns name of host in remote Gluster cluster.'
+              '<remote_volume_name> volume name in remote gluster cluster.',
+              'get the geo-replication session status'
               )),
          }
