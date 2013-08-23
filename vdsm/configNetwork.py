@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Red Hat, Inc.
+# Copyright 2011-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                 raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already '
                                          'enslaved to %s' % (nic, bond))
             topNetDev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
-    if vlan:
+    if vlan is not None:
         topNetDev = Vlan(topNetDev, vlan, configurator, mtu=mtu)
     if bridge:
         topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
@@ -136,7 +136,7 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
 
     # Multiple VLANed networks (bridged/bridgeless) with only one
     # non-VLANed bridgeless network permited
-    if not vlan:
+    if vlan is None:
         # Want to add non-VLANed bridgeless network,
         # check whether interface already has such network.
         # Only one non-VLANed bridgeless network permited
@@ -157,6 +157,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
     bridged = utils.tobool(bridged)
+    vlan = _vlanToInternalRepresentation(vlan)
 
     if mtu:
         mtu = int(mtu)
@@ -211,8 +212,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 def assertBridgeClean(bridge, vlan, bonding, nics):
     ports = set(netinfo.ports(bridge))
     ifaces = set(nics)
-    if vlan:
-        ifaces.add((bonding or nics[0]) + '.' + vlan)
+    if vlan is not None:
+        ifaces.add('%s.%s' % ((bonding or nics[0]), vlan))
     else:
         ifaces.add(bonding)
 
@@ -301,6 +302,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 
     if network not in _netinfo.networks:
         logging.info("Network %r: doesn't exist in libvirt database", network)
+        vlan = _vlanToInternalRepresentation(vlan)
         _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo,
                            configurator)
         return
@@ -554,6 +556,15 @@ def setupNetworks(networks, bondings, **options):
     except:
         configurator.rollback()
         raise
+
+
+def _vlanToInternalRepresentation(vlan):
+    if vlan is None or vlan == '':
+        vlan = None
+    else:
+        Vlan.validateTag(vlan)
+        vlan = int(vlan)
+    return vlan
 
 
 def setSafeNetworkConfig():

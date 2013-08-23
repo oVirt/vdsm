@@ -109,7 +109,7 @@ class Vlan(NetDevice):
         device.master = self
         self.device = device
         self.tag = tag
-        super(Vlan, self).__init__(device.name + '.' + tag, configurator,
+        super(Vlan, self).__init__('%s.%s' % (device.name, tag), configurator,
                                    ipconfig, mtu)
 
     def __repr__(self):
