@@ -63,6 +63,12 @@ task_check_libvirt_configure() {
 }
 
 
+task_prepare_transient_repository() {
+    "$VDSM_TOOL" setup-transient-repository
+    "$VDSM_TOOL" cleanup-transient-repository
+}
+
+
 task_syslog_available() {
     if ! [ -S "/dev/log" ]; then
         echo "Cannot communicate with syslog deamon for reports. " \
@@ -209,6 +215,7 @@ case "$1" in
             run_init_hooks \
             gencerts \
             check_libvirt_configure \
+            prepare_transient_repository \
             reconfigure_sanlock \
             syslog_available \
             nwfilter dummybr \

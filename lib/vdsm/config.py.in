@@ -157,6 +157,9 @@ parameters = [
 
         ('libvirt_env_variable_log_outputs', '',
             'Specify the output to track libvirt calls'),
+
+        ('transient_disks_repository', '@VDSMLIBDIR@/transient',
+            'Local path to the transient disks repository.'),
     ]),
 
     # Section: [ksm]

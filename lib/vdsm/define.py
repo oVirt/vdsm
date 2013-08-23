@@ -129,6 +129,9 @@ errCode = {
     'resizeErr': {'status': {
         'code': 58,
         'message': 'Wrong resize disk parameter'}},
+    'transientErr': {'status': {
+        'code': 59,
+        'message': 'Action not permitted on a VM with transient disks'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

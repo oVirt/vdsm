@@ -413,11 +413,12 @@ class DRIVE_SHARED_TYPE:
     NONE = "none"
     EXCLUSIVE = "exclusive"
     SHARED = "shared"
+    TRANSIENT = "transient"
 
     @classmethod
     def getAllValues(cls):
         # TODO: use introspection
-        return (cls.NONE, cls.EXCLUSIVE, cls.SHARED)
+        return (cls.NONE, cls.EXCLUSIVE, cls.SHARED, cls.TRANSIENT)
 
 
 # These strings are representing libvirt virDomainEventType values
@@ -1341,6 +1342,7 @@ class Drive(VmDevice):
         self.truesize = int(kwargs.get('truesize', '0'))
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
         self.name = self._makeName()
+        self.cache = config.get('vars', 'qemu_drive_cache')
 
         if self.device in ("cdrom", "floppy"):
             self._blockDev = False
@@ -1441,15 +1443,25 @@ class Drive(VmDevice):
                                "block device", self.path, exc_info=True)
         return self._blockDev
 
+    @property
+    def transientDisk(self):
+        # Using getattr to handle legacy and removable drives.
+        return getattr(self, 'shared', None) == DRIVE_SHARED_TYPE.TRANSIENT
+
     def _customize(self):
-        # Customize disk device
-        if self.iface == 'virtio':
+        if self.transientDisk:
+            # Force the cache to be writethrough, which is qemu's default.
+            # This is done to ensure that we don't ever use cache=none for
+            # transient disks, since we create them in /var/run/vdsm which
+            # may end up on tmpfs and don't support O_DIRECT, and qemu uses
+            # O_DIRECT when cache=none and hence hotplug might fail with
+            # error that one can take eternity to debug the reason behind it!
+            self.cache = "writethrough"
+        elif self.iface == 'virtio':
             try:
                 self.cache = self.conf['custom']['viodiskcache']
             except KeyError:
-                self.cache = config.get('vars', 'qemu_drive_cache')
-        else:
-            self.cache = config.get('vars', 'qemu_drive_cache')
+                pass  # Ignore if custom disk cache is missing
 
     def _makeName(self):
         devname = {'ide': 'hd', 'scsi': 'sd', 'virtio': 'vd', 'fdc': 'fd'}
@@ -2159,6 +2171,10 @@ class Vm(object):
             # Now we got all the resources we needed
             self.startDisksStatsCollection()
 
+    def _prepareTransientDisks(self, drives):
+        for drive in drives:
+            self._createTransientDisk(drive)
+
     def _onQemuDeath(self):
         self.log.info('underlying process disconnected')
         # Try release VM resources first, if failed stuck in 'Powering Down'
@@ -2482,6 +2498,13 @@ class Vm(object):
         with self._volPrepareLock:
             for drive in drives:
                 try:
+                    self._removeTransientDisk(drive)
+                except:
+                    self.log.warning("Drive transient volume deletion failed "
+                                     "for drive %s", drive, exc_info=True)
+                    # Skip any exception as we don't want to interrupt the
+                    # teardown process for any reason.
+                try:
                     self.cif.teardownVolumePath(drive)
                 except:
                     self.log.error("Drive teardown failure for %s",
@@ -2644,12 +2667,20 @@ class Vm(object):
     def isMigrating(self):
         return self._migrationSourceThread.isAlive()
 
+    def hasTransientDisks(self):
+        for drive in self._devices[DISK_DEVICES]:
+            if drive.transientDisk:
+                return True
+        return False
+
     def migrate(self, params):
         self._acquireCpuLockWithTimeout()
         try:
             if self.isMigrating():
                 self.log.warning('vm already migrating')
                 return errCode['exist']
+            if self.hasTransientDisks():
+                return errCode['transientErr']
             # while we were blocking, another migrationSourceThread could have
             # taken self Down
             if self._lastStatus == 'Down':
@@ -2871,6 +2902,7 @@ class Vm(object):
         if not 'recover' in self.conf:
             devices = self.buildConfDevices()
             self.preparePaths(devices[DISK_DEVICES])
+            self._prepareTransientDisks(devices[DISK_DEVICES])
             # Update self.conf with updated devices
             # For old type vmParams, new 'devices' key will be
             # created with all devices info
@@ -3266,6 +3298,40 @@ class Vm(object):
                                   params=customProps)
         return {'status': doneCode, 'vmList': self.status()}
 
+    def _createTransientDisk(self, diskParams):
+        if diskParams.get('shared', None) != DRIVE_SHARED_TYPE.TRANSIENT:
+            return
+
+        # FIXME: This should be replaced in future the support for transient
+        # disk in libvirt (BZ#832194)
+        driveFormat = (
+            qemuImg.FORMAT.QCOW2 if diskParams['format'] == 'cow' else
+            qemuImg.FORMAT.RAW
+        )
+
+        transientHandle, transientPath = tempfile.mkstemp(
+            dir=config.get('vars', 'transient_disks_repository'),
+            prefix="%s-%s." % (diskParams['domainID'], diskParams['volumeID']))
+
+        try:
+            qemuImg.create(transientPath, format=qemuImg.FORMAT.QCOW2,
+                           backing=diskParams['path'],
+                           backingFormat=driveFormat)
+            os.fchmod(transientHandle, 0660)
+        except:
+            os.unlink(transientPath)  # Closing after deletion is correct
+            self.log.error("Failed to create the transient disk for "
+                           "volume %s", diskParams['volumeID'], exc_info=True)
+        finally:
+            os.close(transientHandle)
+
+        diskParams['path'] = transientPath
+        diskParams['format'] = 'cow'
+
+    def _removeTransientDisk(self, drive):
+        if drive.transientDisk:
+            os.unlink(drive.path)
+
     def hotplugDisk(self, params):
         if self.isMigrating():
             return errCode['migInProgress']
@@ -3276,6 +3342,7 @@ class Vm(object):
 
         if vdsmImg:
             self._normalizeVdsmImg(diskParams)
+            self._createTransientDisk(diskParams)
 
         self.updateDriveIndex(diskParams)
         drive = Drive(self.conf, self.log, **diskParams)
@@ -3324,17 +3391,15 @@ class Vm(object):
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
-        # Find disk object in vm's drives list
-        for drv in self._devices[DISK_DEVICES][:]:
-            if drv.path == diskParams['path']:
-                drive = drv
-                break
-        else:
+        try:
+            drive = self._findDriveByUUIDs(diskParams)
+        except LookupError:
             self.log.error("Hotunplug disk failed - Disk not found: %s",
                            diskParams)
-            return {'status': {'code': errCode['hotunplugDisk']
-                                              ['status']['code'],
-                               'message': "Disk not found"}}
+            return {'status': {
+                'code': errCode['hotunplugDisk']['status']['code'],
+                'message': "Disk not found"
+            }}
 
         if drive.hasVolumeLeases:
             return errCode['noimpl']
@@ -3350,7 +3415,7 @@ class Vm(object):
         diskDev = None
         for dev in self.conf['devices'][:]:
             if (dev['type'] == DISK_DEVICES and
-                    dev['path'] == diskParams['path']):
+                    dev['path'] == drive.path):
                 with self._confLock:
                     self.conf['devices'].remove(dev)
                 diskDev = dev
@@ -3600,6 +3665,9 @@ class Vm(object):
         if self.isMigrating():
             return errCode['migInProgress']
 
+        if self.hasTransientDisks():
+            return errCode['transientErr']
+
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)
 
@@ -3794,7 +3862,7 @@ class Vm(object):
 
             if not mergeDrive or not hasattr(mergeDrive, 'volumeChain'):
                 mergeStatus['status'] = MERGESTATUS.DRIVE_NOT_FOUND
-            elif mergeDrive.hasVolumeLeases:
+            elif mergeDrive.hasVolumeLeases or mergeDrive.transientDisk:
                 mergeStatus['status'] = MERGESTATUS.DRIVE_NOT_SUPPORTED
             else:
                 for volume in mergeDrive.volumeChain:
@@ -3894,6 +3962,9 @@ class Vm(object):
         if srcDrive.hasVolumeLeases:
             return errCode['noimpl']
 
+        if srcDrive.transientDisk:
+            return errCode['transientErr']
+
         try:
             self._setDiskReplica(srcDrive, dstDisk)
         except:
@@ -3943,6 +4014,9 @@ class Vm(object):
 
         if srcDrive.hasVolumeLeases:
             return errCode['noimpl']
+
+        if srcDrive.transientDisk:
+            return errCode['transientErr']
 
         if not srcDrive.isDiskReplicationInProgress():
             return errCode['replicaErr']

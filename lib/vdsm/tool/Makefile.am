@@ -43,6 +43,7 @@ dist_vdsmtool_PYTHON = \
 	sanlock.py \
 	seboolsetup.py \
 	service.py \
+	transient.py \
 	vdsm-id.py \
 	$(NULL)
 

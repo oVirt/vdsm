@@ -367,6 +367,7 @@ class TestVm(TestCaseBase):
             {},
             # New extended values
             {'shared': 'exclusive'}, {'shared': 'shared'}, {'shared': 'none'},
+            {'shared': 'transient'},
         ]
 
         expectedStates = [
@@ -375,7 +376,7 @@ class TestVm(TestCaseBase):
             # Missing shared definition
             'none',
             # New extended values
-            'exclusive', 'shared', 'none',
+            'exclusive', 'shared', 'none', 'transient',
         ]
 
         driveConfig = {'index': '0', 'iface': 'virtio', 'device': 'disk'}
