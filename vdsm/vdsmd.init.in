@@ -379,7 +379,6 @@ case "$1" in
     reconfigure)
         # Jump over 'reconfigure'
         shift 1
-        reconfigure_sanlock
         reconfigure_libvirt "$@"
     RETVAL=$?
     ;;
