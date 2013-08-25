@@ -38,6 +38,7 @@ from .ipwrapper import routeShowAllDefaultGateways
 from . import libvirtconnection
 from .ipwrapper import linkShowDev
 from .utils import anyFnmatch
+from .netconfpersistence import RunningConfig
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 # ifcfg persistence directories
@@ -456,8 +457,32 @@ def getIfaceCfg(iface):
     return ifaceCfg
 
 
-def getBootProtocol(iface):
-    return getIfaceCfg(iface).get('BOOTPROTO')
+def getBootProtocol(iface, persistence=None):
+    if persistence is None:
+        persistence = config.get('vars', 'persistence')
+
+    if persistence == 'ifcfg':
+        return getIfaceCfg(iface).get('BOOTPROTO')
+    elif persistence == 'unified':
+        runningConfig = RunningConfig()
+
+        # If the network is bridged its iface name will be its network name
+        network = runningConfig.networks.get(iface)
+        if network is not None:
+            return network.get('bootproto')
+
+        # Otherwise we need to search if the iface is the device for a network
+        for network, attributes in runningConfig.networks.iteritems():
+            nic = attributes.get('nic')
+            bonding = attributes.get('bonding')
+            vlan = attributes.get('vlan')
+            if iface in (nic, bonding,
+                         "%s.%s" % (nic, vlan), "%s.%s" % (bonding, vlan)):
+                return attributes.get('bootproto')
+
+        return None
+    else:
+        raise NotImplementedError
 
 
 def permAddr():
