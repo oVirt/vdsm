@@ -400,26 +400,33 @@ def _handleBondings(bondings, configurator):
 
     _netinfo = netinfo.NetInfo()
 
-    for bondName, bondAttrs in bondings.items():
-        bond = Bond.objectivize(bondName, configurator,
-                                bondAttrs.get('options'),
-                                bondAttrs.get('nics'), mtu=None,
-                                _netinfo=_netinfo,
-                                destroyOnMasterRemoval='remove' in bondAttrs)
-        if 'remove' in bondAttrs:
-            logger.debug("Removing bond %s with attributes %s", bondName,
-                         bondAttrs)
-            configurator.removeBond(bond)
-            del bondings[bondName]
-            del _netinfo.bondings[bondName]
-        elif bondName in _netinfo.bondings:
-            logger.debug("Editing bond %s with attributes %s", bondName,
-                         bondAttrs)
-            configurator.editBonding(bond, _netinfo)
+    edition = []
+    addition = []
+    for name, attrs in bondings.items():
+        if 'remove' in attrs:
+            bond = Bond.objectivize(name, configurator, attrs.get('options'),
+                                    attrs.get('nics'), mtu=None,
+                                    _netinfo=_netinfo,
+                                    destroyOnMasterRemoval='remove' in attrs)
+            bond.remove()
+            del _netinfo.bondings[name]
+        elif name in _netinfo.bondings:
+            edition.append((name, attrs))
         else:
-            logger.debug("Creating bond %s with attributes %s", bondName,
-                         bondAttrs)
-            configurator.configureBond(bond)
+            addition.append((name, attrs))
+
+    for name, attrs in edition:
+        bond = Bond.objectivize(name, configurator, attrs.get('options'),
+                                attrs.get('nics'), mtu=None, _netinfo=_netinfo,
+                                destroyOnMasterRemoval='remove' in attrs)
+        logger.debug("Editing bond %r with options %s", bond, bond.options)
+        configurator.editBonding(bond, _netinfo)
+    for name, attrs in addition:
+        bond = Bond.objectivize(name, configurator, attrs.get('options'),
+                                attrs.get('nics'), mtu=None, _netinfo=_netinfo,
+                                destroyOnMasterRemoval='remove' in attrs)
+        logger.debug("Creating bond %r with options %s", bond, bond.options)
+        configurator.configureBond(bond)
 
 
 def _buildBondOptions(bondName, bondings, _netinfo):
