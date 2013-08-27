@@ -253,3 +253,37 @@ def ruleDel(rule):
 def linkShowDev(dev):
     command = [_IP_BINARY.cmd, '-d', 'link', 'show', 'dev', dev]
     return _execCmd(command)
+
+
+def addrAdd(dev, ipaddr, netmask):
+    command = [_IP_BINARY.cmd, 'addr', 'add', 'dev', dev, '%s/%s' %
+               (ipaddr, netmask)]
+    _execCmd(command)
+
+
+def addrFlush(dev):
+    command = [_IP_BINARY.cmd, 'addr', 'flush', 'dev', dev]
+    _execCmd(command)
+
+
+def linkAdd(name, linkType, link=None, args=()):
+    command = [_IP_BINARY.cmd, 'link', 'add']
+    if link:
+        command += ['link', link]
+
+    command += ['name', name, 'type', linkType]
+
+    command.extend(args)
+
+    _execCmd(command)
+
+
+def linkSet(dev, linkArgs):
+    command = [_IP_BINARY.cmd, 'link', 'set', 'dev', dev]
+    command += linkArgs
+    _execCmd(command)
+
+
+def linkDel(dev):
+    command = [_IP_BINARY.cmd, 'link', 'del', 'dev', dev]
+    _execCmd(command)
