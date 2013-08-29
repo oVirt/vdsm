@@ -47,8 +47,8 @@ FORCE_RECONFIGURE="@VDSMLIBDIR@/reconfigure"
 get_libvirt_conf_item() {
     local cfile="$1"
     local key="$2"
-    /bin/grep "^\s*"${key}"\s*=" "${cfile}" | \
-            /usr/bin/tail -1 | /bin/sed "s/\s*$key\s*=\s*//;s/\s*\(#.*\)\?$//"
+    @GREP_PATH@ "^\s*"${key}"\s*=" "${cfile}" | \
+            tail -1 | @SED_PATH@ "s/\s*$key\s*=\s*//;s/\s*\(#.*\)\?$//"
 }
 
 test_conflicting_conf() {
@@ -93,8 +93,8 @@ libvirtd_sysv2upstart() {
         return 0
     fi
 
-    local packaged=$(/bin/rpm -ql libvirt libvirt-daemon | \
-                     /bin/grep libvirtd.upstart | /usr/bin/tail -1)
+    local packaged=$(@RPM_PATH@ -ql libvirt libvirt-daemon | \
+                     @GREP_PATH@ libvirtd.upstart | tail -1)
     local target="/etc/init/libvirtd.conf"
 
     if ! [ -f "${packaged}" ]; then
@@ -110,7 +110,7 @@ libvirtd_sysv2upstart() {
     fi
 
     if ! diff -q "${packaged}" "${target}" >/dev/null 2>&1; then
-        /bin/cp -p "${packaged}" "${target}" || return 1
+        @CP_PATH@ -p "${packaged}" "${target}" || return 1
         /sbin/initctl reload-configuration
     fi
 }
@@ -143,7 +143,7 @@ set_if_default() {
     local key="$2"
     local val="$3"
 
-    /bin/grep -q "^\s*${key}\s*=" "${cfile}" || \
+    @GREP_PATH@ -q "^\s*${key}\s*=" "${cfile}" || \
       echo "${key}=${val}" >> "${cfile}"
 }
 
@@ -154,7 +154,7 @@ is_already_configured() {
             shift
             continue
         fi
-        if ! /bin/grep -q "${BY_VDSM_VERS}" "$1" >/dev/null 2>&1; then
+        if ! @GREP_PATH@ -q "${BY_VDSM_VERS}" "$1" >/dev/null 2>&1; then
             rc=1
             echo "libvirt is not configured for vdsm yet"
             break
@@ -203,7 +203,7 @@ configure() {
 
     # Set the default values for libvirt and qemu
     set_if_default "${lconf}" listen_addr \"0.0.0.0\"
-    set_if_default "${lconf}" unix_sock_group \"kvm\"
+    set_if_default "${lconf}" unix_sock_group \"@QEMUGROUP@\"
     set_if_default "${lconf}" unix_sock_rw_perms \"0770\"
     set_if_default "${lconf}" auth_unix_rw \"sasl\"
     set_if_default "${lconf}" host_uuid "\"$(uuidgen)\""
@@ -282,12 +282,12 @@ configure() {
 ## end of configuration section by vdsm
 EOF
     # Backup (comment) original logrotate.d/libvirtd
-    /bin/sed -i 's/^/# VDSM backup/' "$llogr"
-    /bin/sed -e "/# vdsm/,/# end vdsm/d" "${llogr}" >> "${stanza}"
+    @SED_PATH@ -i 's/^/# VDSM backup/' "$llogr"
+    @SED_PATH@ -e "/# vdsm/,/# end vdsm/d" "${llogr}" >> "${stanza}"
     local oldmod=`/usr/bin/stat --format=%a "${llogr}"`
-    /bin/mv "${stanza}" "${llogr}"
+    @MV_PATH@ "${stanza}" "${llogr}"
     if [ -n "${oldmod}" ]; then
-        /bin/chmod "${oldmod}" "${llogr}"
+        @CHMOD_PATH@ "${oldmod}" "${llogr}"
     fi
     restorecon "${llogr}"
 
@@ -303,7 +303,7 @@ EOF
     # next time
     #
     if [ -f "${FORCE_RECONFIGURE}" ]; then
-        rm -f "${FORCE_RECONFIGURE}"
+        @RM_PATH@ -f "${FORCE_RECONFIGURE}"
     fi
 }
 
