@@ -2026,7 +2026,7 @@ class Vm(object):
                         and not self.cif.mom:
                     # If MOM is available, we needn't tell it to adjust KSM
                     # behaviors on VM start/destroy, because the tuning can be
-                    # done automatically acccording its statistical data.
+                    # done automatically according to its statistical data.
                     self.cif.ksmMonitor.adjust()
             except Exception:
                 if 'recover' not in self.conf:
