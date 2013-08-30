@@ -83,8 +83,12 @@ class Nic(NetDevice):
             _netinfo = netinfo.NetInfo()
         if name not in _netinfo.nics:
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'unknown nic: %s' % name)
+
+        if _netinfo.ifaceUsers(name):
+            mtu = max(mtu, netinfo.getMtu(name))
+
         super(Nic, self).__init__(name, configurator, ipconfig,
-                                  mtu=max(mtu, netinfo.getMtu(name)))
+                                  mtu=mtu)
 
     def configure(self, **opts):
         if (not self.vlan or
@@ -229,12 +233,16 @@ class Bond(NetDevice):
             slaves = cls._objectivizeSlaves(name, configurator, nics, mtu,
                                             _netinfo)
             if name in _netinfo.bondings:
-                mtu = max(netinfo.getMtu(name), mtu)
+                if _netinfo.ifaceUsers(name):
+                    mtu = max(mtu, netinfo.getMtu(name))
+
                 if not options:
                     options = _netinfo.bondings[name]['cfg'].get(
                         'BONDING_OPTS')
         elif name in _netinfo.bondings:  # Implicit bonding.
-            mtu = max(netinfo.getMtu(name), mtu)
+            if _netinfo.ifaceUsers(name):
+                mtu = max(mtu, netinfo.getMtu(name))
+
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
                       for nic in _netinfo.getNicsForBonding(name)]
             options = _netinfo.bondings[name]['cfg'].get('BONDING_OPTS')
