@@ -382,7 +382,7 @@ class clientIF:
         finally:
             self.teardownVolumePath(drive)
 
-        return {'status': 0, 'alignment': aligning}
+        return {'status': doneCode, 'alignment': aligning}
 
     def createVm(self, vmParams):
         with self.vmContainerLock:
