@@ -49,6 +49,10 @@ def _getGlusterSystemCmd():
     return [_glusterCommandPath.cmd, "system::"]
 
 
+def _getGlusterVolGeoRepCmd():
+    return _getGlusterVolCmd() + ["geo-replication"]
+
+
 class BrickStatus:
     PAUSED = 'PAUSED'
     COMPLETED = 'COMPLETED'
@@ -1054,3 +1058,33 @@ def volumeTasks(volumeName="all"):
         return _parseVolumeTasks(xmltree)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+@makePublic
+def volumeGeoRepSessionStart(volumeName, remoteHost, remoteVolumeName,
+                             force=False):
+    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
+        remoteHost, remoteVolumeName), "start"]
+    if force:
+        command.append('force')
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeGeoRepSessionStartFailedException(rc=e.rc,
+                                                                err=e.err)
+
+
+@makePublic
+def volumeGeoRepSessionStop(volumeName, remoteHost, remoteVolumeName,
+                            force=False):
+    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
+        remoteHost, remoteVolumeName), "stop"]
+    if force:
+        command.append('force')
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeGeoRepSessionStopFailedException(rc=e.rc,
+                                                               err=e.err)

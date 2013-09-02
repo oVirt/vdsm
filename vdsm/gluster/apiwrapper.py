@@ -181,3 +181,17 @@ class GlusterVolume(GlusterApiBase):
 
     def rebalanceStatus(self, volumeName):
         return self._gluster.volumeRebalanceStatus(volumeName)
+
+    def geoRepSessionStart(self, volumeName, remoteHost,
+                           remoteVolumeName, force=False):
+        return self._gluster.volumeGeoRepSessionStart(volumeName,
+                                                      remoteHost,
+                                                      remoteVolumeName,
+                                                      force)
+
+    def geoRepSessionStop(self, volumeName, remoteHost,
+                          remoteVolumeName, force=False):
+        return self._gluster.volumeGeoRepSessionStop(volumeName,
+                                                     remoteHost,
+                                                     remoteVolumeName,
+                                                     force)

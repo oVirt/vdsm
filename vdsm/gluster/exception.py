@@ -506,3 +506,19 @@ class GlfsInitException(GlusterLibgfapiException):
 class GlfsFiniException(GlusterLibgfapiException):
     code = 4573
     message = "glfs fini failed"
+
+
+# geo-replication
+class GlusterGeoRepException(GlusterException):
+    code = 4200
+    message = "Gluster Geo-Replication Exception"
+
+
+class GlusterVolumeGeoRepSessionStartFailedException(GlusterGeoRepException):
+    code = 4201
+    message = "Volume geo-replication start failed"
+
+
+class GlusterVolumeGeoRepSessionStopFailedException(GlusterGeoRepException):
+    code = 4202
+    message = "Volume geo-replication stop failed"

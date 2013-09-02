@@ -1285,3 +1285,47 @@
 {'command': {'class': 'GlusterVolume', 'name': 'statsInfoGet'},
  'data': {'volumeName': 'str'},
  'returns': 'GlusterVolumeStatsInfo'}
+
+##
+# @GlusterVolume.geoRepSessionStart:
+#
+# Starts the Geo Replication session
+#
+# @volumeName: Is an existing volume name in the master node
+#
+# @remoteHost: Is remote slave host name or ip
+#
+# @remoteVolumeName: Is an available existing volume name in the slave node
+#
+# @force: For starting a geo-replication session forcefully
+#
+# Returns:
+# True if session is successfully started
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStart'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str', 'force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.geoRepSessionStop:
+#
+# Stops the Geo Replication session
+#
+# @volumeName: Is an existing volume name in the master node
+#
+# @remoteHost: Is remote slave host name or ip
+#
+# @remoteVolumeName: Is an available existing volume name in the slave node
+#
+# @force: For stoping a georeplication session forcefully
+#
+# Returns:
+# True if session is successfully stopped
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStop'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str', 'force': 'bool'},
+ 'returns': 'bool'}
