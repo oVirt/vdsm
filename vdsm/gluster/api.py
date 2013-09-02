@@ -366,6 +366,24 @@ class GlusterApi(object):
         )
         return {'sessionStatus': status}
 
+    @exportAsVerb
+    def volumeGeoRepSessionPause(self, volumeName, remoteHost,
+                                 remoteVolumeName,
+                                 force=False, options=None):
+        self.svdsmProxy.glusterVolumeGeoRepSessionPause(volumeName,
+                                                        remoteHost,
+                                                        remoteVolumeName,
+                                                        force)
+
+    @exportAsVerb
+    def volumeGeoRepSessionResume(self, volumeName, remoteHost,
+                                  remoteVolumeName,
+                                  force=False, options=None):
+        self.svdsmProxy.glusterVolumeGeoRepSessionResume(volumeName,
+                                                         remoteHost,
+                                                         remoteVolumeName,
+                                                         force)
+
 
 def getGlusterMethods(gluster):
     l = []
