@@ -1170,3 +1170,33 @@ def volumeGeoRepStatus(volumeName=None, remoteHost=None,
         return _parseGeoRepStatus(xmltree, detail)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+@makePublic
+def volumeGeoRepSessionPause(volumeName, remoteHost, remoteVolumeName,
+                             force=False):
+    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
+        remoteHost, remoteVolumeName), "pause"]
+    if force:
+        command.append('force')
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeGeoRepSessionPauseFailedException(rc=e.rc,
+                                                                err=e.err)
+
+
+@makePublic
+def volumeGeoRepSessionResume(volumeName, remoteHost, remoteVolumeName,
+                              force=False):
+    command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
+        remoteHost, remoteVolumeName), "resume"]
+    if force:
+        command.append('force')
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeGeoRepSessionResumeFailedException(rc=e.rc,
+                                                                 err=e.err)

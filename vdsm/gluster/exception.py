@@ -527,3 +527,13 @@ class GlusterVolumeGeoRepSessionStopFailedException(GlusterGeoRepException):
 class GlusterGeoRepStatusFailedException(GlusterGeoRepException):
     code = 4203
     message = "Geo Rep status failed"
+
+
+class GlusterVolumeGeoRepSessionPauseFailedException(GlusterGeoRepException):
+    code = 4204
+    message = "Volume geo-replication session pause failed"
+
+
+class GlusterVolumeGeoRepSessionResumeFailedException(GlusterGeoRepException):
+    code = 4205
+    message = "Volume geo-replication session resume failed"

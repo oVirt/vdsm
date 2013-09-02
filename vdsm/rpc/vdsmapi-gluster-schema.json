@@ -1319,7 +1319,7 @@
 #
 # @remoteVolumeName: Is an available existing volume name in the slave node
 #
-# @force: For stoping a georeplication session forcefully
+# @force: For stoping a geo-replication session forcefully
 #
 # Returns:
 # True if session is successfully stopped
@@ -1450,3 +1450,51 @@
  'data': {'VolumeName': 'str', 'remoteHost': 'str',
           'remoteVolumeName': 'str'},
  'returns': 'GlusterGeoRepSessionMap'}
+
+##
+# @GlusterVolume.geoRepSessionPause:
+#
+# Pauses the Geo Replication session
+#
+# @volumeName:         Is an existing volume name in the local node
+#
+# @remoteHost:         Is remote host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the remote node
+#
+# @force:              #optional For pausing a geo-replication session
+#                      forcefully
+#
+# Returns:
+# True if session is successfully paused
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionPause'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
+          '*force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @GlusterVolume.geoRepSessionResume:
+#
+# Resumes the Geo Replication session
+#
+# @volumeName:         Is an existing volume name in the local node
+#
+# @remoteHost:         Is remote host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the remote node
+#
+# @force:              #optional For resuming a geo-replication session
+#                      forcefully
+#
+# Returns:
+# True if session is successfully resumed
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionResume'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
+          '*force': 'bool'},
+ 'returns': 'bool'}

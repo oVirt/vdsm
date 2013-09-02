@@ -207,3 +207,17 @@ class GlusterVolume(GlusterApiBase):
         return self._gluster.volumeGeoRepSessionList(masterVolumeName,
                                                      remoteHost,
                                                      remoteVolumeName)
+
+    def geoRepSessionPause(self, volumeName, remoteHost,
+                           remoteVolumeName, force=False):
+        return self._gluster.volumeGeoRepSessionPause(volumeName,
+                                                      remoteHost,
+                                                      remoteVolumeName,
+                                                      force)
+
+    def geoRepSessionResume(self, volumeName, remoteHost,
+                            remoteVolumeName, force=False):
+        return self._gluster.volumeGeoRepSessionResume(volumeName,
+                                                       remoteHost,
+                                                       remoteVolumeName,
+                                                       force)
