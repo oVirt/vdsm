@@ -328,6 +328,23 @@ class GlusterApi(object):
         status = self.svdsmProxy.glusterStorageDevicesList()
         return {'deviceInfo': status}
 
+    @exportAsVerb
+    def volumeGeoRepSessionStart(self, volumeName, remoteHost,
+                                 remoteVolumeName,
+                                 force=False, options=None):
+        self.svdsmProxy.glusterVolumeGeoRepSessionStart(volumeName,
+                                                        remoteHost,
+                                                        remoteVolumeName,
+                                                        force)
+
+    @exportAsVerb
+    def volumeGeoRepSessionStop(self, volumeName, remoteHost, remoteVolumeName,
+                                force=False, options=None):
+        self.svdsmProxy.glusterVolumeGeoRepSessionStop(volumeName,
+                                                       remoteHost,
+                                                       remoteVolumeName,
+                                                       force)
+
 
 def getGlusterMethods(gluster):
     l = []

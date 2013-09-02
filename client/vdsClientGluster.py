@@ -436,6 +436,34 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeGeoRepSessionStart(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeGeoRepSessionStart(volumeName,
+                                                        remoteHost,
+                                                        remoteVolumeName,
+                                                        force)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeGeoRepSessionStop(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeGeoRepSessionStop(volumeName,
+                                                       remoteHost,
+                                                       remoteVolumeName,
+                                                       force)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -743,5 +771,25 @@ def getGlusterCmdDict(serv):
              serv.do_glusterStorageDevicesList,
              ('',
               'list all disk info of the host'
+              )),
+         'glusterVolumeGeoRepSessionStart': (
+             serv.do_glusterVolumeGeoRepSessionStart,
+             ('volumeName=<volume_name> '
+              'remoteHost=<remote_host> '
+              'remoteVolumeName=<remote_volume_name> '
+              '[force={yes|no}]\n\t'
+              '<remote_host> is IP/dns name of host in remote Gluster cluster.'
+              '<remote_volume_name> volume name in remote gluster cluster.',
+              'start the geo-replication session'
+              )),
+         'glusterVolumeGeoRepSessionStop': (
+             serv.do_glusterVolumeGeoRepSessionStop,
+             ('volumeName=<volume_name> '
+              'remoteHost=<remote_host> '
+              'remoteVolumeName=<remote_volume_name> '
+              '[force={yes|no}]\n\t'
+              '<remote_host> is IP/dns name of host in remote Gluster cluster.'
+              '<remote_volume_name> volume name in remote gluster cluster.',
+              'stop the geo-replication session'
               )),
          }
