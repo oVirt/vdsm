@@ -22,6 +22,7 @@ import sys
 
 from vdsm import utils
 import vdsm.tool
+from vdsm.tool import service
 from vdsm.constants import P_VDSM_EXEC
 
 
@@ -62,3 +63,15 @@ def test_conflict_configurations(*args):
     Validate conflict in configured files
     """
     return exec_libvirt_configure("test_conflict_configurations", *args)
+
+
+@vdsm.tool.expose("libvirt-configure-services-restart")
+def libvirt_configure_services_restart(*args):
+    """
+    Managing restart of related services
+    """
+    service.service_stop("supervdsmd")
+    service.service_stop("libvirtd")
+    service.service_start("libvirtd")
+    service.service_start("supervdsmd")
+    return 0
