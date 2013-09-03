@@ -96,6 +96,7 @@ Requires: ntp
 Requires: iproute
 Requires: python-netaddr
 Requires: python-inotify
+Requires: python-argparse
 Requires: python-ethtool >= 0.6-3
 Requires: rpm-python
 Requires: nfs-utils
