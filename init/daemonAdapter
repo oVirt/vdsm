@@ -21,67 +21,95 @@
 import argparse
 import os
 import sys
+import syslog
+import traceback
 from stat import S_IRUSR, S_IWUSR
 
 from vdsm.config import config
 
 
-def getArgs():
-    parser = argparse.ArgumentParser(
-        description='Start daemon process with various daemon options')
-    parser.add_argument(
-        '-0', '--stdin', dest='stdin', default=None,
-        metavar='dest', help='Redirect stdin to new destination')
-    parser.add_argument(
-        '-1', '--stdout', dest='stdout', default=None,
-        metavar='dest', help='Redirect stdout to new destination')
-    parser.add_argument(
-        '-2', '--stderr', dest='stderr', default=None,
-        metavar='dest', help='Redirect stderr to new destination')
-    parser.add_argument(
-        'target', action='store', nargs=1, metavar='targetFullPath',
-        help='Full path of the target binary to start')
-    parser.add_argument(
-        'targetOptions', default=list(), nargs=argparse.REMAINDER,
-        metavar='target_opt0 target_opt1 ...', action='store',
-        help='Add options to be passed to target')
-    args = parser.parse_args(sys.argv[1:])
-    return args
+class DaemonAdapter(object):
+    def __init__(self):
+        self._args = None
+
+    def _parse_args(self):
+        parser = argparse.ArgumentParser(
+            description='Start daemon process with various daemon options')
+        parser.add_argument(
+            '-0', '--stdin', dest='stdin', default=None,
+            metavar='dest', help='Redirect stdin to new destination')
+        parser.add_argument(
+            '-1', '--stdout', dest='stdout', default=None,
+            metavar='dest', help='Redirect stdout to new destination')
+        parser.add_argument(
+            '-2', '--stderr', dest='stderr', default=None,
+            metavar='dest', help='Redirect stderr to new destination')
+        parser.add_argument(
+            '--syslog', dest='syslog', default=False, action='store_true',
+            help='Reporting errors to syslog when specified')
+        parser.add_argument(
+            'target', action='store', nargs=1, metavar='targetFullPath',
+            help='Full path of the target binary to start')
+        parser.add_argument(
+            'targetOptions', default=list(), nargs=argparse.REMAINDER,
+            metavar='target_opt0 target_opt1 ...', action='store',
+            help='Add options to be passed to target')
+        self._args = parser.parse_args(sys.argv[1:])
+
+    def _log(self, msg):
+        if self._args and self._args.syslog:
+            for m in msg.splitlines():
+                syslog.syslog(m)
+        else:
+            sys.stderr.write("%s\n" % msg)
+
+    def execute(self):
+        try:
+            self._parse_args()
+            os.nice(config.getint('vars', 'vdsm_nice'))
+
+            env = os.environ.copy()
+            env.update({
+                'LIBVIRT_LOG_FILTERS': config.get(
+                    'vars', 'libvirt_env_variable_log_filters'),
+                'LIBVIRT_LOG_OUTPUTS': config.get(
+                    'vars', 'libvirt_env_variable_log_outputs'),
+                'LC_ALL': 'C',
+            })
+
+            cmd = [self._args.target[0]] + self._args.targetOptions
+
+            if self._args.stdin:
+                fdin = os.open(self._args.stdin, os.O_RDONLY)
+                os.dup2(fdin, sys.stdin.fileno())
+                os.close(fdin)
+
+            # stdout and stderr redirection should be in last minute,
+            # otherwise it swallows error messages from daemonAdapter when
+            # redirected to /dev/null.
+            if self._args.stdout:
+                fdout = os.open(self._args.stdout, os.O_WRONLY | os.O_CREAT |
+                                os.O_APPEND,
+                                S_IRUSR | S_IWUSR)
+                os.dup2(fdout, sys.stdout.fileno())
+                os.close(fdout)
+
+            if self._args.stderr:
+                fderr = os.open(self._args.stderr, os.O_WRONLY | os.O_CREAT |
+                                os.O_APPEND,
+                                S_IRUSR | S_IWUSR)
+                os.dup2(fderr, sys.stderr.fileno())
+                os.close(fderr)
+
+            os.execve(cmd[0], cmd, env)
+
+        except:
+            self._log("Error in daemonAdapater: %s" % traceback.print_exc())
+
+        finally:
+            return 1
 
 
 if __name__ == '__main__':
-    args = getArgs()
-
-    os.nice(config.getint('vars', 'vdsm_nice'))
-
-    env = os.environ.copy()
-    env.update({
-        'LIBVIRT_LOG_FILTERS': config.get(
-            'vars', 'libvirt_env_variable_log_filters'),
-        'LIBVIRT_LOG_OUTPUTS': config.get(
-            'vars', 'libvirt_env_variable_log_outputs'),
-        'LC_ALL': 'C',
-    })
-
-    cmd = [args.target[0]] + args.targetOptions
-
-    if args.stdin:
-        fdin = os.open(args.stdin, os.O_RDONLY)
-        os.dup2(fdin, sys.stdin.fileno())
-        os.close(fdin)
-
-    # stdout and stderr redirection should be in last minute, otherwise it
-    # swallows error messages from daemonAdapter when redirected to /dev/null.
-    if args.stdout:
-        fdout = os.open(args.stdout, os.O_WRONLY | os.O_CREAT | os.O_APPEND,
-                        S_IRUSR | S_IWUSR)
-        os.dup2(fdout, sys.stdout.fileno())
-        os.close(fdout)
-
-    if args.stderr:
-        fderr = os.open(args.stderr, os.O_WRONLY | os.O_CREAT | os.O_APPEND,
-                        S_IRUSR | S_IWUSR)
-        os.dup2(fderr, sys.stderr.fileno())
-        os.close(fderr)
-
-    os.execve(cmd[0], cmd, env)
+    d = DaemonAdapter()
+    sys.exit(d.execute())
