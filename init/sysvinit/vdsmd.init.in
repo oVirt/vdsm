@@ -150,11 +150,6 @@ start() {
 
 stop() {
     echo $"Shutting down vdsm daemon: "
-    if has_systemd; then
-        kill_instance
-        return 0
-    fi
-
     trap cleanup SIGINT SIGHUP SIGTERM
     if [ -f "$LOCK_FILE" ]; then
        if ! pidofproc -p "$RESPAWNPIDFILE" >/dev/null; then
@@ -207,11 +202,7 @@ locked_start() {
 
 case "$1" in
      start)
-         if has_systemd; then
-             start
-         else
-             locked_start
-         fi
+         locked_start
          RETVAL=$?
     ;;
      stop)
@@ -224,7 +215,7 @@ case "$1" in
     if [ "$RETVAL" -eq 0 ]; then
         echo "VDS daemon server is running"
     else
-        if ! has_systemd && [ -f "$LOCK_FILE" ]; then
+        if [ -f "$LOCK_FILE" ]; then
             printf "VDS daemon dead but subsys locked"
         else
             printf "VDS daemon is not running"
