@@ -91,9 +91,14 @@ class Nic(NetDevice):
                                   mtu=mtu)
 
     def configure(self, **opts):
-        if (not self.vlan or
-                netinfo.operstate(self.name) != netinfo.OPERSTATE_UP):
-            self.configurator.configureNic(self, **opts)
+        # in a limited condition, we should not touch the nic config
+        if (self.vlan and
+                netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
+                netinfo.NetInfo().ifaceUsers(self.name) and
+                self.mtu <= netinfo.getMtu(self.name)):
+            return
+
+        self.configurator.configureNic(self, **opts)
 
     def remove(self):
         self.configurator.removeNic(self)
@@ -193,13 +198,17 @@ class Bond(NetDevice):
     def configure(self, **opts):
         # When the bond is up and we are not changing the configuration that
         # is already applied in any way, we can skip the configuring.
-        if not(self.vlan and
-               self.name in netinfo.bondings() and
-               netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
-               self.areOptionsApplied() and
-               frozenset(slave.name for slave in self.slaves) ==
-               frozenset(netinfo.slaves(self.name))):
-            self.configurator.configureBond(self, **opts)
+        if (self.vlan and
+            self.name in netinfo.bondings() and
+            netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
+            netinfo.NetInfo().ifaceUsers(self.name) and
+            self.mtu <= netinfo.getMtu(self.name) and
+            self.areOptionsApplied() and
+            frozenset(slave.name for slave in self.slaves) ==
+                frozenset(netinfo.slaves(self.name))):
+                return
+
+        self.configurator.configureBond(self, **opts)
 
     def areOptionsApplied(self):
         confOpts = [option.split('=', 1) for option in self.options.split(' ')]
