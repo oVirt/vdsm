@@ -29,11 +29,10 @@ PIDFILE=@VDSMRUNDIR@/vdsmd.pid
 RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
 CORE_DUMP_PATH="/var/log/core/core.%p.%t.dump"
 CORE_PATTERN="/proc/sys/kernel/core_pattern"
-# lock_file is needed only with sysv
-LOCK_FILE="/var/lock/subsys/vdsmd"
 NEEDED_SERVICES="iscsid multipathd rpcbind ntpd wdmd sanlock network libvirtd
                  supervdsmd"
 CONFLICTING_SERVICES="libvirt-guests ksmtuned"
+LOCK_FILE="/var/lock/subsys/vdsmd"
 VDSM_TOOL="@BINDIR@/vdsm-tool"
 NICE_LOWEST=-20
 VDSMD_INIT_COMMON="@LIBEXECDIR@/vdsmd_init_common.sh"
@@ -70,19 +69,6 @@ shutdown_conflicting_srv() {
         fi
     done
     return 0
-}
-
-acquire_lock() {
-    # todo: add additional flock on free fd
-    if [ -f "$LOCK_FILE" ]; then
-        return 1
-    fi
-    touch "$LOCK_FILE"
-    trap cleanup SIGINT SIGHUP SIGTERM
-}
-
-release_lock() {
-    "@RM_PATH@" -f "$LOCK_FILE" > /dev/null 2>&1
 }
 
 start_needed_srv() {
@@ -145,29 +131,12 @@ start() {
         -0 /dev/null -1 /dev/null -2 /dev/null "@VDSMDIR@/respawn" --minlifetime 10 \
         --daemon --masterpid "${RESPAWNPIDFILE}" "${VDSM_BIN}" --pidfile "${PIDFILE}"
     RETVAL=$?
-    [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog start" || log_failure_msg $"$prog start"
+    [ "$RETVAL" = 0 ] && touch "${LOCK_FILE}"
     return "$RETVAL"
 }
 
 stop() {
     echo $"Shutting down vdsm daemon: "
-    trap cleanup SIGINT SIGHUP SIGTERM
-    if [ -f "$LOCK_FILE" ]; then
-       if ! pidofproc -p "$RESPAWNPIDFILE" >/dev/null; then
-           log_failure_msg "$prog during another start, cannot stop yet"
-           return 1
-       else
-           kill_instance
-           release_lock
-       fi
-    else
-       log_failure_msg "$prog already stopped"
-    fi
-
-    return 0
-}
-
-kill_instance() {
     if killproc -p "$RESPAWNPIDFILE"; then
         log_success_msg $"$prog watchdog stop"
     fi
@@ -177,37 +146,33 @@ kill_instance() {
     else
         killproc -p "$PIDFILE" -d 2
         RETVAL=$?
-        [ "$RETVAL" -eq 0 ] && log_success_msg $"$prog stop" || log_failure_msg $"$prog stop"
+        [ "$RETVAL" = 0 ] && "@RM_PATH@" -f "$LOCK_FILE" > /dev/null 2>&1
     fi
     "${VDSMD_INIT_COMMON}" --post-stop
+    return "$RETVAL"
 }
 
-cleanup() {
-    echo "Unexpected signal received, cleaning locks"
-    if pidofproc -p "$RESPAWNPIDFILE" >/dev/null ||
-       pidofproc -p "$PIDFILE" >/dev/null; then
-        kill_instance
-    fi
-    release_lock
-    exit 0
-}
-
-locked_start() {
-    if ! acquire_lock; then
-        log_failure_msg "cannot start VDS daemon when another instance runs"
-        return 1
-    else
-        start || (release_lock && return 1)
-    fi
+lock_op() {
+    {
+        if ! flock -n 9; then
+            log_failure_msg $"cannot ${1} ${prog}, operation is locked"
+            false
+        elif ( "${1}" 9<&- ); then
+            log_success_msg $"${prog} ${1}"
+        else
+            log_failure_msg $"${prog} ${1}"
+            false
+        fi
+     } 9<$0
 }
 
 case "$1" in
      start)
-         locked_start
+         lock_op start
          RETVAL=$?
     ;;
      stop)
-        stop
+        lock_op stop
         RETVAL=$?
     ;;
      status)
@@ -216,11 +181,7 @@ case "$1" in
     if [ "$RETVAL" -eq 0 ]; then
         echo "VDS daemon server is running"
     else
-        if [ -f "$LOCK_FILE" ]; then
-            printf "VDS daemon dead but subsys locked"
-        else
-            printf "VDS daemon is not running"
-        fi
+        printf "VDS daemon is not running"
         if pidofproc -p "$RESPAWNPIDFILE" >/dev/null; then
             echo ", and its watchdog is running"
         else
