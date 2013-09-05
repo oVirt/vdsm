@@ -1299,3 +1299,80 @@ class NetworkTest(TestCaseBase):
                 self.assertFalse(routeExists(route))
             for rule in rules:
                 self.assertFalse(ruleExists(rule))
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testAddVlanedBridgeless(self):
+        # BZ# 980174
+        vlan_name = 'vlan_net'
+        with dummyIf(1) as nics:
+            nic, = nics
+            # net NETWORK_NAME has bootproto:none because we can't use dhcp
+            # on dummyIf
+            networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
+                                       'bootproto': 'none'},
+                        vlan_name: {'nic': nic, 'bridged': True,
+                                    'vlan': VLAN_ID, 'bootproto': 'none'}}
+            with self.vdsm_net.pinger():
+                status, msg = self.vdsm_net.setupNetworks(
+                    {NETWORK_NAME: networks[NETWORK_NAME]}, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME))
+                status, msg, info = self.vdsm_net.getVdsCapabilities()
+                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
+                self.assertEqual(bootproto, 'none')
+
+                status, msg = self.vdsm_net.setupNetworks(
+                    {vlan_name: networks[vlan_name]}, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertTrue(self.vdsm_net.networkExists(vlan_name))
+                status, msg, info = self.vdsm_net.getVdsCapabilities()
+                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
+                self.assertEqual(bootproto, 'none')
+
+                # network should be fine even after second addition of vlan
+                status, msg = self.vdsm_net.setupNetworks(
+                    {vlan_name: networks[vlan_name]}, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+                status, msg, info = self.vdsm_net.getVdsCapabilities()
+                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
+                self.assertEqual(bootproto, 'none')
+
+                delete_networks = {NETWORK_NAME: {'remove': True},
+                                   vlan_name: {'remove': True}}
+                status, msg = self.vdsm_net.setupNetworks(delete_networks,
+                                                          {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testAddVlanedBridgeless_oneCommand(self):
+        vlan_name = 'vlan_net'
+        with dummyIf(1) as nics:
+            nic, = nics
+            # net NETWORK_NAME has bootproto:none because we can't use dhcp
+            # on dummyIf
+            networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
+                                       'bootproto': 'none'},
+                        vlan_name: {'nic': nic, 'bridged': True,
+                                    'vlan': VLAN_ID, 'bootproto': 'none'}}
+            with self.vdsm_net.pinger():
+                status, msg = self.vdsm_net.setupNetworks(networks, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME))
+                self.assertTrue(self.vdsm_net.networkExists(vlan_name))
+                status, msg, info = self.vdsm_net.getVdsCapabilities()
+                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
+                self.assertEqual(bootproto, 'none')
+
+                delete_networks = {NETWORK_NAME: {'remove': True},
+                                   vlan_name: {'remove': True}}
+                status, msg = self.vdsm_net.setupNetworks(delete_networks,
+                                                          {}, {})
+                self.assertEqual(status, SUCCESS, msg)

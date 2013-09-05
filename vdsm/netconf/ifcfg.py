@@ -146,7 +146,6 @@ class Ifcfg(Configurator):
         DynamicSourceRoute.addInterfaceTracking(iface)
         ifdown(iface.name)
         self._removeSourceRoute(iface)
-        self.configApplier.removeIfaceCleanup(iface.name)
         return not _netinfo.ifaceUsers(iface.name)
 
     def removeBond(self, bonding):
@@ -457,6 +456,8 @@ class ConfigWriter(object):
         '''Backs up the previous contents of the file referenced by fileName
         writes the new configuration and sets the specified access mode.'''
         self._backup(fileName)
+        logging.debug('Writing to file %s configuration:\n%s' % (fileName,
+                      configuration))
         open(fileName, 'w').write(configuration)
         os.chmod(fileName, 0664)
         try:
@@ -566,9 +567,8 @@ class ConfigWriter(object):
                 ipaddr = confParams.get('IPADDR', None)
                 netmask = confParams.get('NETMASK', None)
                 gateway = confParams.get('GATEWAY', None)
-                bootproto = confParams.get('BOOTPROTO', None)
-            if defaultRoute is None:
-                defaultRoute = confParams.get('DEFROUTE', None)
+                bootproto = bootproto or confParams.get('BOOTPROTO', None)
+            defaultRoute = defaultRoute or confParams.get('DEFROUTE', None)
             if not iface.mtu:
                 mtu = confParams.get('MTU', None)
                 if mtu:
@@ -604,11 +604,6 @@ class ConfigWriter(object):
         self._backup(netinfo.NET_CONF_PREF + bridge)
         self._removeFile(netinfo.NET_CONF_PREF + bridge)
 
-    def removeIfaceCleanup(self, iface):
-        cf = netinfo.NET_CONF_PREF + iface
-        self._removeConfigValues(cf, ('IPADDR', 'NETMASK', 'GATEWAY',
-                                      'BOOTPROTO', 'BRIDGE'))
-
     def _getConfigValue(self, conffile, entry):
         """
         Get value from network configuration file
@@ -629,18 +624,6 @@ class ConfigWriter(object):
             value = entries[0].split('=', 1)[1]
             return value.strip()
         return None
-
-    def _removeConfigValues(self, conffile, entries):
-        """Updates conffile by removing the specified entries."""
-        removal_pattern = re.compile(r'=|'.join(entries) + '=')
-        with open(conffile) as f:
-            entries = [line for line in f.readlines()
-                       if not removal_pattern.match(line)]
-
-        self._backup(conffile)
-        with open(conffile, 'w') as f:
-            f.writelines(entries)
-            f.close()
 
     def _updateConfigValue(self, conffile, entry, value):
         """
