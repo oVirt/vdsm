@@ -52,6 +52,24 @@ AC_ARG_ENABLE(
 )
 AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
 
+AC_ARG_ENABLE(
+	[libvirt-sanlock],
+	[AS_HELP_STRING([--disable-libvirt-sanlock],
+                        [disable libvirt sanlock plugin @<:@default=yes@:>@])],
+	,
+	[enable_libvirt_sanlock="yes"]
+)
+AC_SUBST([ENABLE_LIBVIRT_SANLOCK], ["${enable_libvirt_sanlock}"])
+
+AC_ARG_ENABLE(
+	[libvirt-selinux],
+	[AS_HELP_STRING([--disable-libvirt-selinux],
+                        [disable libvirt selinux plugin @<:@default=yes@:>@])],
+	,
+	[enable_libvirt_selinux="yes"]
+)
+AC_SUBST([ENABLE_LIBVIRT_SELINUX], ["${enable_libvirt_selinux}"])
+
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
 AC_SUBST([VDSMGROUP], [kvm])

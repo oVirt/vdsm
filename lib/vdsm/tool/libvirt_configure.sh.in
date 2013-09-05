@@ -20,6 +20,9 @@
 
 . @LIBEXECDIR@/ovirt_functions.sh
 
+ENABLE_LIBVIRT_SANLOCK="@ENABLE_LIBVIRT_SANLOCK@"
+ENABLE_LIBVIRT_SELINUX="@ENABLE_LIBVIRT_SELINUX@"
+
 GETCONFITEM="@VDSMDIR@/get-conf-item"
 VDSM_CONF_FILE="@CONFDIR@/vdsm.conf"
 QEMU_DUMP_PATH="/var/log/core"
@@ -27,6 +30,7 @@ LCONF="@sysconfdir@/libvirt/libvirtd.conf"
 QCONF="@sysconfdir@/libvirt/qemu.conf"
 LDCONF="@sysconfdir@/sysconfig/libvirtd"
 QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
+[ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ] && QLCONF="/dev/null"
 
 # trigger for reconfiguration
 FORCE_RECONFIGURE="@VDSMLIBDIR@/reconfigure"
@@ -204,6 +208,9 @@ configure() {
     set_if_default "${lconf}" host_uuid "\"$(uuidgen)\""
     set_if_default "${lconf}" keepalive_interval -1
     set_if_default "${qconf}" dynamic_ownership 0
+    if [ "${ENABLE_LIBVIRT_SELINUX}" = "yes" ]; then
+        set_if_default "${qconf}" security_driver \"none\"
+    fi
 
     if [ "${ssl}" = "true" ]; then
         set_if_default "${qconf}" spice_tls 1
@@ -235,9 +242,11 @@ configure() {
     fi
 
     # Configuring sanlock
-    set_if_default "${qconf}" lock_manager \"sanlock\"
-    set_if_default "${qlconf}" auto_disk_leases 0
-    set_if_default "${qlconf}" require_lease_for_disks 0
+    if [ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ]; then
+        set_if_default "${qconf}" lock_manager \"sanlock\"
+        set_if_default "${qlconf}" auto_disk_leases 0
+        set_if_default "${qlconf}" require_lease_for_disks 0
+    fi
 
     # Configuring auto dump path
     set_if_default "${qconf}" auto_dump_path \"${QEMU_DUMP_PATH}\"
