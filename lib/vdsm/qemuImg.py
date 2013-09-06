@@ -88,6 +88,29 @@ def info(image, format=None):
     return info
 
 
+def create(image, size=None, format=None, backing=None, backingFormat=None):
+    cmd = [_qemuimg.cmd, "create"]
+
+    if format:
+        cmd.extend(("-f", format))
+
+    if backing:
+        cmd.extend(("-b", backing))
+
+    if backingFormat:
+        cmd.extend(("-F", backingFormat))
+
+    cmd.append(image)
+
+    if size:
+        cmd.append(int(size))
+
+    rc, out, err = utils.execCmd(cmd)
+
+    if rc != 0:
+        raise QImgError(rc, out, err)
+
+
 def check(image, format=None):
     cmd = [_qemuimg.cmd, "check"]
 
