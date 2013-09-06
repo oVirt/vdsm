@@ -44,15 +44,13 @@ AC_PROG_CC
 AC_PROG_LN_S
 AM_PATH_PYTHON([2.6])
 
-# Checking if hooks enables
-AC_ARG_ENABLE([hooks],
-[  --enable-hooks    build hooks RPMs],
-[case "${enableval}" in
-  yes) hooks=true ;;
-  no)  hooks=false ;;
-  *) AC_MSG_ERROR([bad value ${enableval} for --enable-hooks]) ;;
-esac],[hooks=false])
-AM_CONDITIONAL([HOOKS], [test x$hooks = xtrue])
+AC_ARG_ENABLE(
+	[hooks],
+	[AS_HELP_STRING([--enable-hooks], [build hooks packages @<:@default=no@:>@])],
+	,
+	[enable_hooks="no"]
+)
+AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
 
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
