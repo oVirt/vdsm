@@ -59,7 +59,7 @@ AC_ARG_ENABLE(
     [libvirt-sanlock],
     [AS_HELP_STRING(
         [--disable-libvirt-sanlock],
-        [disable libvirt sanlock plugin @<:@default=yes@:>@]
+        [disable libvirt sanlock plugin]
     )],
     ,
     [enable_libvirt_sanlock="yes"]
@@ -70,7 +70,7 @@ AC_ARG_ENABLE(
     [libvirt-selinux],
     [AS_HELP_STRING(
         [--disable-libvirt-selinux],
-        [disable libvirt selinux plugin @<:@default=yes@:>@]
+        [disable libvirt selinux plugin]
     )],
     ,
     [enable_libvirt_selinux="yes"]

@@ -208,7 +208,7 @@ configure() {
     set_if_default "${lconf}" host_uuid "\"$(uuidgen)\""
     set_if_default "${lconf}" keepalive_interval -1
     set_if_default "${qconf}" dynamic_ownership 0
-    if [ "${ENABLE_LIBVIRT_SELINUX}" = "yes" ]; then
+    if [ "${ENABLE_LIBVIRT_SELINUX}" != "yes" ]; then
         set_if_default "${qconf}" security_driver \"none\"
     fi
 
