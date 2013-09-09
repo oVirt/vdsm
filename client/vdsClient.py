@@ -1467,10 +1467,14 @@ class service:
             message = ''
             for entry in infos['vmlist']:
                 message += '\n' + '================================' + '\n'
-                message += entry + '=' + str(infos['vmlist'][entry])
+                message += entry + '=' + infos['vmlist'][entry]
             if not message:
                 message = 'No VMs found.'
-            print message
+            if isinstance(message, unicode):
+                print message.encode('utf-8')
+            else:
+                print message
+
             return 0, ''
 
     def do_getVmsList(self, args):
