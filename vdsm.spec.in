@@ -565,7 +565,7 @@ install -Dm 0755 init/sysvinit/respawn \
                  %{buildroot}%{_datadir}/%{vdsm_name}/respawn
 
 # Install the lvm rules
-install -Dm 0644 vdsm/storage/12-vdsm-lvm.rules \
+install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}/lib/udev/rules.d/12-vdsm-lvm.rules
 
 install -Dm 0644 vdsm/limits.conf \

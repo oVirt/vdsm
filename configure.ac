@@ -240,10 +240,10 @@ AC_OUTPUT([
 	vdsm/gluster/Makefile
 	vdsm/netconf/Makefile
 	vdsm/sos/Makefile
-	vdsm/storage/12-vdsm-lvm.rules
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
+	vdsm/storage/vdsm-lvm.rules
 	vdsm_api/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/checkimages/Makefile
