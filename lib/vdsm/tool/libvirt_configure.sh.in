@@ -28,7 +28,7 @@ VDSM_CONF_FILE="@CONFDIR@/vdsm.conf"
 QEMU_DUMP_PATH="/var/log/core"
 LCONF="@sysconfdir@/libvirt/libvirtd.conf"
 QCONF="@sysconfdir@/libvirt/qemu.conf"
-LDCONF="@sysconfdir@/sysconfig/libvirtd"
+LDCONF="@LIBVIRT_SERVICE_DEFAULT@"
 QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
 [ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ] || QLCONF="/dev/null"
 

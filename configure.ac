@@ -77,21 +77,45 @@ AC_ARG_ENABLE(
 )
 AC_SUBST([ENABLE_LIBVIRT_SELINUX], ["${enable_libvirt_selinux}"])
 
+AC_ARG_WITH(
+    [qemu-user],
+    [AS_HELP_STRING(
+        [--with-qemu-user=USER],
+        [configure user of qemu process spawned by libvirt, @<:@default=qemu@:>@]
+    )],
+    ,
+    [with_qemu_user="qemu"]
+)
+AC_SUBST([QEMUUSER], ["${with_qemu_user}"])
+
+AC_ARG_WITH(
+    [qemu-group],
+    [AS_HELP_STRING(
+        [--with-qemu-group=GROUP],
+        [configure group of qemu process spawned by libvirt, @<:@default=qemu@:>@]
+    )],
+    ,
+    [with_qemu_group="qemu"]
+)
+AC_SUBST([QEMUGROUP], ["${with_qemu_group}"])
+
+AC_ARG_WITH(
+    [libvirt-service-default=FILE],
+    [AS_HELP_STRING(
+        [--with-libvirt-service-default],
+        [configure full path of libvirt service environment file.
+         @<:@SYSCONFDIR/sysconfig/libvirtd@:>@]
+    )],
+    ,
+    [with_libvirt_service_default="${sysconfdir}/sysconfig/libvirtd"]
+)
+AC_SUBST([LIBVIRT_SERVICE_DEFAULT], ["${with_libvirt_service_default}"])
+
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
 AC_SUBST([VDSMGROUP], [kvm])
 AC_SUBST([METADATAUSER], [vdsm])
 AC_SUBST([METADATAGROUP], [kvm])
-if grep -i fedora /etc/*-release; then
-  AC_SUBST([QEMUUSER], [qemu])
-  AC_SUBST([QEMUGROUP], [qemu])
-elif grep -i ubuntu /etc/*-release; then
-  AC_SUBST([QEMUUSER], [libvirt-qemu])
-  AC_SUBST([QEMUGROUP], [kvm])
-else
-  AC_SUBST([QEMUUSER], [qemu])
-  AC_SUBST([QEMUGROUP], [qemu])
-fi
 AC_SUBST([SNLKUSER], [sanlock])
 AC_SUBST([SNLKGROUP], [sanlock])
 
