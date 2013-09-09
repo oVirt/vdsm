@@ -347,8 +347,13 @@ def directWriteLines(path, lines):
         return f.writelines(lines)
 
 
-def truncateFile(path, size, mode=None):
-    with open(path, "w") as f:
+def truncateFile(path, size, mode=None, creatExcl=False):
+    flags = os.O_CREAT | os.O_WRONLY
+    if creatExcl:
+        flags |= os.O_EXCL
+
+    fd = os.open(path, flags)
+    with os.fdopen(fd, 'w') as f:
         if mode is not None:
             os.chmod(path, mode)
         f.truncate(size)
