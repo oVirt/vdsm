@@ -399,19 +399,10 @@ class Volume(object):
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
         """
-        # Validate volume parameters should be checked here for all
-        # internal flows using volume creation.
-        misc.validateUUID(sdUUID, "sdUUID", False)
-        misc.validateUUID(imgUUID, "imgUUID", False)
-        misc.validateUUID(srcImgUUID, "srcImgUUID", True)
-        misc.validateUUID(srcVolUUID, "srcVolUUID", True)
         cls.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
 
         dom = sdCache.produce(sdUUID)
         imgPath = image.Image(repoPath).create(sdUUID, imgUUID)
-
-        if dom.volumeExists(imgPath, volUUID):
-            raise se.VolumeAlreadyExists(volUUID)
 
         volPath = os.path.join(imgPath, volUUID)
         volParent = None
@@ -468,10 +459,15 @@ class Volume(object):
             )
 
             # Specific volume creation (block, file, etc...)
-            metaId = cls._create(dom, imgUUID, volUUID, size, volFormat,
-                                 preallocate, volParent, srcImgUUID,
-                                 srcVolUUID, imgPath, volPath)
-
+            try:
+                metaId = cls._create(dom, imgUUID, volUUID, size, volFormat,
+                                     preallocate, volParent, srcImgUUID,
+                                     srcVolUUID, imgPath, volPath)
+            except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume) as e:
+                cls.log.error("Failed to create volume: %s, volume already "
+                              "exists", volPath)
+                vars.task.popRecovery()
+                raise e
             # When the volume format is raw what the guest sees is the apparent
             # size of the file/device therefore if the requested size doesn't
             # match the apparent size (eg: physical extent granularity in LVM)

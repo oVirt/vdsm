@@ -19,6 +19,7 @@
 #
 
 from os.path import normpath
+import errno
 import os
 import sanlock
 
@@ -86,9 +87,11 @@ class FileVolume(volume.Volume):
             raise TypeError("halfbakedVolumeRollback takes 1 or 3 "
                             "arguments (%d given)" % len(args))
 
+        metaVolPath = cls.__metaVolumePath(volPath)
         cls.log.info("Halfbaked volume rollback for volPath=%s", volPath)
 
-        if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath):
+        if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath) and not \
+                oop.getProcessPool(sdUUID).fileUtils.pathExists(metaVolPath):
             oop.getProcessPool(sdUUID).os.unlink(volPath)
 
     @classmethod
@@ -124,10 +127,14 @@ class FileVolume(volume.Volume):
 
         sizeBytes = int(size) * BLOCK_SIZE
 
-        if preallocate == volume.SPARSE_VOL:
-            # Sparse = regular file
-            oop.getProcessPool(dom.sdUUID).truncateFile(volPath, sizeBytes)
-        else:
+        try:
+            oop.getProcessPool(dom.sdUUID).truncateFile(volPath, sizeBytes,
+                                                        creatExcl=True)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                raise se.VolumeAlreadyExists(volUUID)
+            raise
+        if preallocate == volume.PREALLOCATED_VOL:
             try:
                 # ddWatchCopy expects size to be in bytes
                 misc.ddWatchCopy("/dev/zero", volPath,

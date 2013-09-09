@@ -122,19 +122,21 @@ class BlockVolume(volume.Volume):
     def halfbakedVolumeRollback(cls, taskObj, sdUUID, volUUID, volPath):
         cls.log.info("sdUUID=%s volUUID=%s volPath=%s" %
                     (sdUUID, volUUID, volPath))
-
         try:
             # Fix me: assert resource lock.
-            lvm.getLV(sdUUID, volUUID)
-            lvm.removeLVs(sdUUID, volUUID)
+            tags = lvm.getLV(sdUUID, volUUID).tags
         except se.LogicalVolumeDoesNotExistError:
             pass  # It's OK: inexistent LV, don't try to remove.
-        except se.CannotRemoveLogicalVolume as e:
-            cls.log.warning("Remove logical volume failed %s/%s %s", sdUUID,
-                            volUUID, str(e))
+        else:
+            if TAG_VOL_UNINIT in tags:
+                try:
+                    lvm.removeLVs(sdUUID, volUUID)
+                except se.CannotRemoveLogicalVolume as e:
+                    cls.log.warning("Remove logical volume failed %s/%s %s",
+                                    sdUUID, volUUID, str(e))
 
-        if os.path.lexists(volPath):
-            os.unlink(volPath)
+                if os.path.lexists(volPath):
+                    os.unlink(volPath)
 
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
