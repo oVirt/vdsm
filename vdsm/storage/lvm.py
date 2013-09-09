@@ -463,6 +463,8 @@ class LVMCache(object):
                 log.warning("Removing stale lv: %s/%s", vgName, lvName)
                 self._lvs.pop((vgName, lvName), None)
 
+            log.debug("lvs reloaded")
+
         return updatedLVs
 
     def _reloadAllLvs(self):
