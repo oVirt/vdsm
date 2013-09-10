@@ -186,7 +186,9 @@ start() {
     local ret_val
     "@PYTHON@" "@VDSMDIR@/hooks.pyc" before_vdsm_start
 
-    shutdown_conflicting_srv
+    if ! has_systemd; then
+        shutdown_conflicting_srv
+    fi
 
     if ! "@LIBEXECDIR@/vdsm-gencerts.sh" --check; then
         printf $"Configuring a self-signed VDSM host certificate: "
