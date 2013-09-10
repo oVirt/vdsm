@@ -205,7 +205,7 @@ class VirtTest(TestCaseBase):
 
     @requireKVM
     @permutations([['hotplugNic'], ['virtioNic'], ['smartcard'],
-                   ['hotplugDisk']])
+                   ['hotplugDisk'], ['virtioRng']])
     def testVmWithDevice(self, *devices):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'vmName': 'testVm', 'devices': []}
@@ -239,6 +239,19 @@ class VirtTest(TestCaseBase):
                                     'mode': 'passthrough'}},
                      'hotplugDisk': {'vmId': customization['vmId'],
                                      'drive': diskSpecs}}
+
+        if 'virtioRng' in devices:
+            status, msg, caps = self.vdsm.getVdsCapabilities()
+            self.assertEqual(status, SUCCESS, msg)
+
+            if not caps['rngSources']:
+                raise SkipTest('No suitable rng source on host found')
+            # we can safely pick any device as long, as it exists
+            deviceDef['virtioRng'] = {'type': 'rng', 'model': 'virtio',
+                                      'specParams': {'bytes': '1234',
+                                                     'period': '20000',
+                                                     'source':
+                                                     caps['rngSources'][0]}}
 
         for device in devices:
             if 'hotplug' not in device:

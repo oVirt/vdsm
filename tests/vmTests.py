@@ -259,6 +259,19 @@ class TestVm(TestCaseBase):
         balloon = vm.BalloonDevice(self.conf, self.log, **dev)
         self.assertXML(balloon.getXML(), balloonXML)
 
+    def testRngXML(self):
+        rngXML = """
+            <rng model="virtio">
+                <rate bytes="1234" period="2000"/>
+                <backend model="random">/dev/random</backend>
+            </rng>"""
+
+        dev = {'type': 'rng', 'model': 'virtio', 'specParams':
+               {'period': '2000', 'bytes': '1234', 'source': 'random'}}
+
+        rng = vm.RngDevice(self.conf, self.log, **dev)
+        self.assertXML(rng.getXML(), rngXML)
+
     def testWatchdogXML(self):
         watchdogXML = '<watchdog action="none" model="i6300esb"/>'
         dev = {'device': 'watchdog', 'type': 'watchdog',

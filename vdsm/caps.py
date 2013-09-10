@@ -63,6 +63,9 @@ class OSName:
     RHEVH = 'RHEV Hypervisor'
     DEBIAN = 'Debian'
 
+RNG_SOURCES = {'random': '/dev/random',
+               'hwrng': '/dev/hwrng'}
+
 
 class CpuInfo(object):
     def __init__(self, cpuinfo='/proc/cpuinfo'):
@@ -211,6 +214,11 @@ def _getIscsiIniName():
     return ''
 
 
+def _getRngSources():
+    return [source for (source, path) in RNG_SOURCES.items()
+            if os.path.exists(path)]
+
+
 @utils.memoized
 def getos():
     if os.path.exists('/etc/rhev-hypervisor-release'):
@@ -300,6 +308,7 @@ def get():
     caps['reservedMem'] = str(config.getint('vars', 'host_mem_reserve') +
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
+    caps['rngSources'] = _getRngSources()
 
     return caps
 

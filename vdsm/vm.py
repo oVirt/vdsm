@@ -74,6 +74,7 @@ CONTROLLER_DEVICES = 'controller'
 GENERAL_DEVICES = 'general'
 BALLOON_DEVICES = 'balloon'
 REDIR_DEVICES = 'redir'
+RNG_DEVICES = 'rng'
 WATCHDOG_DEVICES = 'watchdog'
 CONSOLE_DEVICES = 'console'
 SMARTCARD_DEVICES = 'smartcard'
@@ -1706,6 +1707,32 @@ class RedirDevice(VmDevice):
         return self.createXmlElem('redirdev', self.device, ['bus', 'address'])
 
 
+class RngDevice(VmDevice):
+    def getXML(self):
+        """
+        <rng model='virtio'>
+            <rate period="2000" bytes="1234"/>
+            <backend model='random'>/dev/random</backend>
+        </rng>
+        """
+        rng = self.createXmlElem('rng', None, ['model'])
+
+        # <rate... /> element
+        if 'bytes' in self.specParams:
+            rateAttrs = {'bytes': self.specParams['bytes']}
+            if 'period' in self.specParams:
+                rateAttrs['period'] = self.specParams['period']
+
+            rng.appendChildWithArgs('rate', None, **rateAttrs)
+
+        # <backend... /> element
+        rng.appendChildWithArgs('backend',
+                                caps.RNG_SOURCES[self.specParams['source']],
+                                model='random')
+
+        return rng
+
+
 class ConsoleDevice(VmDevice):
     def getXML(self):
         """
@@ -1741,6 +1768,7 @@ class Vm(object):
                      (WATCHDOG_DEVICES, WatchdogDevice),
                      (CONSOLE_DEVICES, ConsoleDevice),
                      (REDIR_DEVICES, RedirDevice),
+                     (RNG_DEVICES, RngDevice),
                      (SMARTCARD_DEVICES, SmartCardDevice))
 
     def _makeDeviceDict(self):

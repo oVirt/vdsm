@@ -972,6 +972,8 @@
 # @netConfigDirty:      Indicates if there are uncommitted changes to the
 #                       network configuration
 #
+# @rngSources:          Sources of entropy available at this host
+#
 # Since: 4.10.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -991,7 +993,8 @@
           'emulatedMachines': ['str'], 'ISCSIInitiatorName': 'str',
           'HBAInventory': 'HbaInventory', 'vmTypes': ['VmType'],
           'memSize': 'uint', 'reservedMem': 'uint',
-          'guestOverhead': 'uint', 'netConfigDirty': 'bool'}}
+          'guestOverhead': 'uint', 'netConfigDirty': 'bool',
+          'rngSources': ['VmRngDeviceSource']}}
 
 ##
 # @Host.getCapabilities:
@@ -1822,11 +1825,13 @@
 #
 # @smartcard:   A smartcard device
 #
+# @rng:         A rng device
+#
 # Since: 4.10.0
 ##
 {'enum': 'VmDeviceType',
  'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
-          'channel', 'console', 'smartcard']}
+          'channel', 'console', 'smartcard', 'rng']}
 
 ##
 # @VmDiskDeviceType:
@@ -2655,6 +2660,68 @@
  'data': {'deviceType': 'VmDeviceType', 'device': 'VmSmartcardDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str',
           'specParams': 'VmSmartcardDeviceSpecParams'}}
+
+##
+# @VmRngDeviceModel:
+#
+# An enumeration of VM rng device models
+#
+# @virtio:  supported by qemu and virtio-rng kernel module
+#
+# Since: 4.14.0
+##
+{'enum': 'VmRngDeviceModel',
+ 'data': ['virtio']}
+
+##
+# @VmRngDeviceSource:
+#
+# An enumeration of VM rng device models
+#
+# @random:  Host standard software+hardware based /dev/random
+#
+# @hwrng:   Host hardware entropy source
+#
+# Since: 4.14.0
+##
+{'enum': 'VmRngDeviceSource',
+ 'data': ['random', 'hwrng']}
+
+##
+# @VmRngDeviceSpecParams:
+#
+# An enumeration of VM rng device models
+#
+# @bytes:           #optional Maximum number of bytes consumed per
+#                   period
+#
+# @period:          #optional Required if @bytes are set
+#                   Limits the rate of entropy consumption
+#                   from source
+#
+# @source:          Entropy source
+#
+# Since: 4.14.0
+##
+{'type': 'VmRngDeviceSpecParams',
+ 'data': {'*bytes': 'int', '*period': 'int', 'source': 'VmRngDeviceSource'}}
+
+##
+# @VmRngDevice:
+#
+# Properties of a VM rng device.
+#
+# @deviceType:  The device type (always @rng)
+#
+# @model:       The model of rng device
+#
+# @specParams:  Additional device parameters
+#
+# Since: 4.14.0
+##
+{'type': 'VmRngDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'model': 'VmRngDeviceModel',
+          'specParams': 'VmRngDeviceSpecParams'}}
 
 ##
 # @VmConsoleDevice:
