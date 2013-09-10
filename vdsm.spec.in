@@ -184,20 +184,20 @@ Requires: sanlock >= 2.4-2, sanlock-python
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
-Requires: selinux-policy-targeted >= 3.12.1-71
 Requires: lvm2 >= 2.02.95
-%endif
 
 %if 0%{?fedora} >= 18
 %if 0%{?fedora} >= 19
-Requires: selinux-policy-targeted >= 3.12.1-69
+Requires: selinux-policy-targeted >= 3.12.1-71
 %else
-Requires: selinux-policy-targeted >= 3.11.1-100
+Requires: selinux-policy-targeted >= 3.11.1-103
 %endif
 # In order to avoid a policycoreutils bug (rhbz 889698) when selinux is
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-55
 Requires: systemd >= 197-1.fc18.2
+%endif
+
 %endif
 
 # GlusterFS client-side RPMs needed for Gluster SD
