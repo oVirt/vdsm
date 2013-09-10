@@ -30,7 +30,7 @@ LCONF="@sysconfdir@/libvirt/libvirtd.conf"
 QCONF="@sysconfdir@/libvirt/qemu.conf"
 LDCONF="@sysconfdir@/sysconfig/libvirtd"
 QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
-[ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ] && QLCONF="/dev/null"
+[ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ] || QLCONF="/dev/null"
 
 # trigger for reconfiguration
 FORCE_RECONFIGURE="@VDSMLIBDIR@/reconfigure"
