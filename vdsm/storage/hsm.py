@@ -3242,14 +3242,13 @@ class HSM:
                        'volumeID': volUUID, 'path': path,
                        'volType': "path"}
 
-            if config.getboolean('irs', 'use_volume_leases'):
-                leasePath, leaseOffset = dom.getVolumeLease(imgUUID, volUUID)
+            leasePath, leaseOffset = dom.getVolumeLease(imgUUID, volUUID)
 
-                if leasePath and leaseOffset is not None:
-                    volInfo.update({
-                                   'leasePath': leasePath,
-                                   'leaseOffset': leaseOffset,
-                                   })
+            if leasePath and type(leaseOffset) in (int, long):
+                volInfo.update({
+                    'leasePath': leasePath,
+                    'leaseOffset': leaseOffset,
+                })
 
             imgVolumesInfo.append(volInfo)
             if volUUID == leafUUID:
