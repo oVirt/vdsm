@@ -38,13 +38,13 @@ def sanlock_check_service(*args):
     supplementary groups.
     """
 
-    sanlock_pid = open(SANLOCK_PID, "r").readline().strip()
-
     try:
+        sanlock_pid = open(SANLOCK_PID, "r").readline().strip()
         sanlock_status = open(PROC_STATUS_PATH % sanlock_pid, "r")
     except IOError as e:
         if e.errno == os.errno.ENOENT:
             return 0  # service is not running, returning
+        raise
 
     for status_line in sanlock_status:
         if status_line.startswith(PROC_STATUS_GROUPS):
