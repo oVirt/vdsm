@@ -847,6 +847,13 @@ class StoragePool(Securable):
             newMD.changeLeaseParams(leaseParams)
 
     @unsecured
+    def _copyLeaseParameters(self, srcDomain, dstDomain):
+        leaseParams = srcDomain.getLeaseParams()
+        self.log.info("Updating lease parameters for domain %s to %s",
+                      srcDomain.sdUUID, leaseParams)
+        dstDomain.changeLeaseParams(leaseParams)
+
+    @unsecured
     def masterMigrate(self, sdUUID, msdUUID, masterVersion):
         self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID, self.spUUID,
                       msdUUID)
@@ -859,6 +866,7 @@ class StoragePool(Securable):
         self._refreshDomainLinks(newmsd)
         curmsd.invalidateMetadata()
         self._convertDomain(newmsd, curmsd.getFormat())
+        self._copyLeaseParameters(curmsd, newmsd)
 
         # new 'master' should be in 'active' status
         domList = self.getDomains()

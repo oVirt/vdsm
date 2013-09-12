@@ -123,9 +123,9 @@ DMDK_LEASE_RETRIES = 'LEASERETRIES'
 
 DEFAULT_LEASE_PARAMS = {DMDK_LOCK_POLICY: "ON",
                         DMDK_LEASE_RETRIES: 3,
-                        DMDK_LEASE_TIME_SEC: 30,
+                        DMDK_LEASE_TIME_SEC: 60,
                         DMDK_LOCK_RENEWAL_INTERVAL_SEC: 5,
-                        DMDK_IO_OP_TIMEOUT_SEC: 1}
+                        DMDK_IO_OP_TIMEOUT_SEC: 10}
 
 MASTER_FS_DIR = 'master'
 VMS_DIR = 'vms'
