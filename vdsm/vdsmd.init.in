@@ -83,6 +83,7 @@ shutdown_conflicting_srv() {
     local srv
 
     for srv in ${CONFLICTING_SERVICES}; do
+        "$VDSM_TOOL" service-is-managed "$srv" >/dev/null 2>&1 || continue
         "$VDSM_TOOL" service-disable "$srv"
         if "$VDSM_TOOL" service-status "$srv" > /dev/null 2>&1; then
             if [ "$srv" = "libvirt-guests" ]; then
