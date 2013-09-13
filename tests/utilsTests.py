@@ -146,3 +146,57 @@ class AsyncProcessOperationTests(TestCaseBase):
         res, err = aop.result()
         self.assertEquals(res, None)
         self.assertNotEquals(err, None)
+
+
+class CallbackChainTests(TestCaseBase):
+    def testCanPassIterableOfCallbacks(self):
+        f = lambda: False
+        callbacks = [f] * 10
+        chain = utils.CallbackChain(callbacks)
+        self.assertEqual(list(chain.callbacks), callbacks)
+
+    def testEmptyChainIsNoop(self):
+        chain = utils.CallbackChain()
+        self.assertFalse(chain.callbacks)
+        chain.start()
+        chain.join()
+        # assert exception isn't thrown in start on empty chain
+
+    def testAllCallbacksAreInvokedIfTheyReturnFalse(self):
+        n = 10
+        counter = [n]
+
+        def callback():
+            counter[0] -= 1
+            return False
+
+        chain = utils.CallbackChain([callback] * n)
+        chain.start()
+        chain.join()
+        self.assertEqual(counter[0], 0)
+
+    def testChainStopsAfterSuccessfulCallback(self):
+        n = 10
+        counter = [n]
+
+        def callback():
+            counter[0] -= 1
+            return counter[0] == 5
+
+        chain = utils.CallbackChain([callback] * n)
+        chain.start()
+        chain.join()
+        self.assertEquals(counter[0], 5)
+
+    def testArgsPassedToCallback(self):
+        callbackArgs = ('arg', 42, 'and another')
+        callbackKwargs = {'some': 42, 'kwargs': []}
+
+        def callback(*args, **kwargs):
+            self.assertEqual(args, callbackArgs)
+            self.assertEqual(kwargs, callbackKwargs)
+
+        chain = utils.CallbackChain()
+        chain.addCallback(callback, *callbackArgs, **callbackKwargs)
+        chain.start()
+        chain.join()

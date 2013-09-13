@@ -26,7 +26,7 @@ plentifuly around vdsm.
 
     Contains a reverse dictionary pointing from error string to its error code.
 """
-from collections import namedtuple
+from collections import namedtuple, deque
 from fnmatch import fnmatch
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
@@ -970,3 +970,65 @@ def pairwise(iterable):
 def anyFnmatch(name, patterns):
     """Returns True if any element in the patterns iterable fnmatches name."""
     return any(fnmatch(name, pattern) for pattern in patterns)
+
+
+class Callback(namedtuple('Callback_', ('func', 'args', 'kwargs'))):
+    log = logging.getLogger("utils.Callback")
+
+    def __call__(self):
+        result = None
+        try:
+            self.log.debug('Calling %s with args=%s and kwargs=%s',
+                           self.func.__name__, self.args, self.kwargs)
+            result = self.func(*self.args, **self.kwargs)
+        except Exception:
+            self.log.error("%s failed", self.func.__name__, exc_info=True)
+        return result
+
+
+class CallbackChain(threading.Thread):
+    """
+    Encapsulates the pattern of calling multiple alternative functions
+    to achieve some action.
+
+    The chain ends when the action succeeds (indicated by a callback
+    returning True) or when it runs out of alternatives.
+    """
+    log = logging.getLogger("utils.CallbackChain")
+
+    def __init__(self, callbacks=()):
+        """
+        :param callbacks:
+            iterable of callback objects. Individual callback should be
+            callable and when invoked should return True/False based on whether
+            it was successful in accomplishing the chain's action.
+        """
+        super(CallbackChain, self).__init__()
+        self.daemon = True
+        self.callbacks = deque(callbacks)
+
+    def run(self):
+        """Invokes serially the callback objects until any reports success."""
+        try:
+            self.log.debug("Starting callback chain.")
+            while self.callbacks:
+                callback = self.callbacks.popleft()
+                if callback():
+                    self.log.debug("Succeeded after invoking " +
+                                   callback.func.__name__)
+                    return
+            self.log.debug("Ran out of callbacks")
+        except Exception:
+            self.log.error("Unexpected CallbackChain error", exc_info=True)
+
+    def addCallback(self, func, *args, **kwargs):
+        """
+        :param func:
+            the callback function
+        :param args:
+            args of the callback
+        :param kwargs:
+            kwargs of the callback
+        :return:
+        """
+        self.callbacks.append(Callback(func, args, kwargs))
