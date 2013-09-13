@@ -29,11 +29,18 @@ def httpGetSize(methodArgs):
     headers = curlImgWrap.head(methodArgs.get('url'),
                                methodArgs.get("headers", {}))
 
+    size = None
+
     if 'Content-Length' in headers:
         size = int(headers['Content-Length'])
-    elif 'X-Image-Meta-Size' in headers:
-        size = int(headers['X-Image-Meta-Size'])
-    else:
+
+    # OpenStack Glance returns Content-Length = 0 so we need to
+    # override the value with the content of the custom header
+    # X-Image-Meta-Size.
+    if 'X-Image-Meta-Size' in headers:
+        size = max(size, int(headers['X-Image-Meta-Size']))
+
+    if size is None:
         raise RuntimeError("Unable to determine image size")
 
     return size
