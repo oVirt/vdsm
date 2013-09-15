@@ -30,7 +30,6 @@ import errno
 import time
 from collections import namedtuple
 
-from vdsm import constants
 import misc
 from vdsm.config import config
 import devicemapper
@@ -373,38 +372,15 @@ def iterateIscsiInterfaces():
 
 
 @misc.samplingmethod
-def rescan():
-    try:
-        iscsiadm.session_rescan()
-    except iscsiadm.IscsiError:
-        pass
+def rescan(minTimeout=None, maxTimeout=None):
+    # FIXME: This whole thing is wrong from the core. We need to make rescan
+    #        completely async and have methods timeout on their own if they
+    #        can't find the devices they are looking for
+    if minTimeout is None:
+        minTimeout = config.getint('irs', 'scsi_rescan_minimal_timeout')
+    if maxTimeout is None:
+        maxTimeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
 
-
-@misc.samplingmethod
-def forceScsiScan():
-    processes = []
-    minTimeout = config.getint('irs', 'scsi_rescan_minimal_timeout')
-    maxTimeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
-    for hba in glob.glob(SCAN_PATTERN):
-        cmd = [constants.EXT_DD, 'of=' + hba]
-        p = misc.execCmd(cmd, sudo=False, sync=False)
-        try:
-            p.stdin.write("- - -")
-            p.stdin.flush()
-            p.stdin.close()
-        except OSError as e:
-            if p.wait(0) is False:
-                log.error("pid %s still running", p.pid)
-            log.warning("Error in rescan of hba:%s with returncode:%s and "
-                        "error message: %s", hba, p.returncode,
-                        p.stderr.read(1000))
-            if e.errno != errno.EPIPE:
-                raise
-            else:
-                log.warning("Ignoring error in rescan of hba %s: ",
-                            hba, exc_info=True)
-                continue
-        processes.append((hba, p))
     if (minTimeout > maxTimeout or minTimeout < 0):
         minTimeout = 2
         maxTimeout = 30
@@ -412,24 +388,13 @@ def forceScsiScan():
                     "illegal value: scsi_rescan_minimal_timeout or "
                     "scsi_rescan_maximal_timeout. Set to %s and %s seconds "
                     "respectively.", minTimeout, maxTimeout)
+
     log.debug("Performing SCSI scan, this will take up to %s seconds",
               maxTimeout)
+
+    rescanOp = iscsiadm.session_rescan_async()
     time.sleep(minTimeout)
-    for i in xrange(maxTimeout - minTimeout):
-        for p in processes[:]:
-            (hba, proc) = p
-            if proc.wait(0):
-                if proc.returncode != 0:
-                    log.warning('returncode for: %s is: %s', hba,
-                                proc.returncode)
-                processes.remove(p)
-        if not processes:
-            break
-        else:
-            time.sleep(1)
-    else:
-        log.warning("Still waiting for scsi scan of hbas: %s",
-                    tuple(hba for p in processes))
+    rescanOp.wait(timeout=(maxTimeout - minTimeout))
 
 
 def devIsiSCSI(dev):
