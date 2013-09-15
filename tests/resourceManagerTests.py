@@ -21,6 +21,7 @@ import time
 from weakref import proxy
 from random import Random
 import threading
+from thread import error as ThreadError
 from StringIO import StringIO
 import types
 from resource import getrlimit, RLIMIT_NPROC
@@ -609,18 +610,17 @@ class ResourceManagerTests(TestCaseBase):
         This tests raises thousands of threads and tries to acquire the same
         resource.
         """
-        resources = []
-        requests = []
+        queue = []
 
         procLimit, _ = getrlimit(RLIMIT_NPROC)
         procLimit *= 0.5
         procLimit = int(procLimit)
+        procLimit = min(procLimit, 4096)
         threadLimit = threading.Semaphore(procLimit)
-        nthreads = procLimit
+        maxedOut = False
 
         def callback(req, res):
-            requests.insert(0, req)
-            resources.insert(0, res)
+            queue.insert(0, (req, res))
 
         def register():
             time.sleep(rnd.randint(0, 4))
@@ -645,31 +645,50 @@ class ResourceManagerTests(TestCaseBase):
                           resourceManager.LockType.shared]
 
         threads = []
-        for i in range(nthreads):
-                threadLimit.acquire()
-                threads.append(threading.Thread(target=register))
-                threads[-1].start()
+        for i in range(procLimit / 2):
+            t = threading.Thread(target=register)
+            try:
+                t.start()
+            except ThreadError:
+                # Reached thread limit, bail out
+                # Mark test as "maxedOut" which will be used later to make sure
+                # we clean up without using threads.
+                maxedOut = True
+                break
 
-        while len(threads) > 0:
-            for t in threads[:]:
-                if not t.isAlive():
-                    threads.remove(t)
+            threadLimit.acquire()
+            threads.append(t)
 
-            while len(resources) > 0:
-                while len(resources) > 1:
+        n = 0
+        releaseThreads = []
+        while n < len(threads):
+            queueLen = len(queue)
+            # If there is more than 1 item in the queue we know it's a shared
+            # lock so we should check for sanity. If there is one item it can
+            # be either.
+            if queueLen == 1:
+                f = releaseUnknown
+            else:
+                f = releaseShared
+
+            for i in range(queueLen):
+                if maxedOut:
+                    f(*queue.pop())
+                else:
                     threadLimit.acquire()
-                    threads.append(
-                        threading.Thread(target=releaseShared,
-                                         args=[requests.pop(),
-                                               resources.pop()]))
-                    threads[-1].start()
+                    t = threading.Thread(target=f, args=queue.pop())
+                    try:
+                        t.start()
+                    except ThreadError:
+                        threadLimit.release()
+                        f(*queue.pop())
+                    else:
+                        releaseThreads.append(t)
 
-                threadLimit.acquire()
-                threads.append(
-                    threading.Thread(target=releaseUnknown,
-                                     args=[requests.pop(),
-                                           resources.pop()]))
-                threads[-1].start()
+                n += 1
+
+        for t in releaseThreads:
+            t.join()
 
     def tearDown(self):
         manager = self.manager
