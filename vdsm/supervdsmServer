@@ -324,8 +324,8 @@ class _SuperVdsm(object):
         return mkimage.removeFs(path)
 
     @logDecorator
-    def fuser(self, *args):
-        return fuser.fuser(*args)
+    def fuser(self, *args, **kwargs):
+        return fuser.fuser(*args, **kwargs)
 
     def __udevReloadRules(self, guid):
         if self.__udevOperationReload():
