@@ -37,6 +37,7 @@ test_modules = \
 	guestIFTests.py \
 	hooksTests.py \
 	ipwrapperTests.py \
+	iscsiTests.py \
 	jsonRpcTests.py \
 	jsonRpcUtils.py \
 	libvirtconnectionTests.py \
