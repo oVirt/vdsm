@@ -48,6 +48,7 @@ import stat
 import subprocess
 import threading
 import time
+import zombiereaper
 
 from cpopen import CPopen as BetterPopen
 from config import config
@@ -934,6 +935,55 @@ def retry(func, expectedException=Exception, tries=None,
                 raise
 
             time.sleep(sleep)
+
+
+class AsyncProcessOperation(object):
+    def __init__(self, proc, resultParser=None):
+        """Wraps a running process operation.
+
+        resultParser should be of type callback(rc, out, err) and can return
+        anything or throw exceptions."""
+        self._lock = threading.Lock()
+
+        self._result = None
+        self._resultParser = resultParser
+
+        self._proc = proc
+
+    def wait(self, timeout=None, cond=None):
+        """Waits until the process has exited, the timeout has been reached or
+        the condition has been met"""
+        return self._proc.wait(timeout, cond)
+
+    def stop(self):
+        """Stops the running operation, effectively sending a kill signal to
+        the process"""
+        self._proc.kill()
+
+    def result(self):
+        """Returns the result in the as a tuple of (result, error).
+        If the operation is still running it will block until it returns.
+
+        If no resultParser has been set the default result
+        is (rc, out, err) """
+        with self._lock:
+            if self._result is None:
+                out, err = self._proc.communicate()
+                rc = self._proc.returncode
+                if self._resultParser is not None:
+                    try:
+                        self._result = (self._resultParser(rc, out, err),
+                                        None)
+                    except Exception as e:
+                        self._result = (None, e)
+                else:
+                    self._result = ((rc, out, err), None)
+
+            return self._result
+
+    def __del__(self):
+        if self._proc.returncode is None:
+            zombiereaper.autoReapPID(self._proc.pid)
 
 
 def panic(msg):
