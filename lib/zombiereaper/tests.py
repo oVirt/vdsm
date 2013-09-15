@@ -20,15 +20,18 @@
 from time import sleep
 import os
 
-from testrunner import VdsmTestCase as TestCaseBase
-import zombieReaper
+import zombiereaper
 from cpopen import CPopen as BetterPopen
 
+from unittest import TestCase
 
-class zombieReaperTests(TestCaseBase):
+zombiereaper.registerSignalHandler()
+
+
+class zombieReaperTests(TestCase):
     def testProcessDiesAfterBeingTracked(self):
         p = BetterPopen(["sleep", "1"])
-        zombieReaper.autoReapPID(p.pid)
+        zombiereaper.autoReapPID(p.pid)
         # wait for the grim reaper to arrive
         sleep(4)
 
@@ -40,7 +43,7 @@ class zombieReaperTests(TestCaseBase):
         # wait for the process to die
         sleep(1)
 
-        zombieReaper.autoReapPID(p.pid)
+        zombiereaper.autoReapPID(p.pid)
 
         # Throws error because pid is not found or is not child
         self.assertRaises(OSError, os.waitpid, p.pid, os.WNOHANG)

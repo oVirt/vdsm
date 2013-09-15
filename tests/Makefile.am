@@ -65,7 +65,6 @@ test_modules = \
 	vmTestsData.py \
 	vmTests.py \
 	volumeTests.py \
-	zombieReaperTests.py \
 	$(NULL)
 
 nodist_vdsmtests_PYTHON = \

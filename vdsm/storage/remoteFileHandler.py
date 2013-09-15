@@ -46,7 +46,7 @@ else:
 
 import misc
 import fileUtils
-import zombieReaper
+import zombiereaper
 from vdsm import utils
 
 
@@ -260,9 +260,9 @@ class PoolHandler(object):
                            out, err)
 
         try:
-            zombieReaper.autoReapPID(self.process.pid)
+            zombiereaper.autoReapPID(self.process.pid)
         except AttributeError:
-            if zombieReaper is not None:
+            if zombiereaper is not None:
                 raise
 
     def __del__(self):

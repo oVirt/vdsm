@@ -40,8 +40,8 @@ if sys.version_info[0] == 2:
 
 from testValidation import SlowTestsPlugin, StressTestsPlugin
 
-import zombieReaper
-zombieReaper.registerSignalHandler()
+import zombiereaper
+zombiereaper.registerSignalHandler()
 
 PERMUTATION_ATTR = "_permutations_"
 

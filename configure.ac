@@ -255,6 +255,7 @@ AC_OUTPUT([
 	lib/vdsm/Makefile
 	lib/vdsm/tool/Makefile
 	lib/yajsonrpc/Makefile
+	lib/zombiereaper/Makefile
 	tests/Makefile
 	tests/functional/Makefile
 	vds_bootstrap/Makefile

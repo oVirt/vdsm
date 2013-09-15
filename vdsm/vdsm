@@ -24,7 +24,7 @@ from logging import config as lconfig
 from vdsm import constants
 from vdsm.config import config
 
-import zombieReaper
+import zombiereaper
 import dsaversion
 if sys.version_info[0] == 2:
     # as long as we work with Python 2, we need to monkey-patch threading
@@ -56,7 +56,7 @@ def serve_clients(log):
 
     signal.signal(signal.SIGTERM, sigtermHandler)
     signal.signal(signal.SIGUSR1, sigusr1Handler)
-    zombieReaper.registerSignalHandler()
+    zombiereaper.registerSignalHandler()
 
     from clientIF import clientIF  # must import after config is read
     cif = clientIF.getInstance(log)

@@ -100,6 +100,7 @@ Requires: python-inotify
 Requires: python-argparse
 Requires: python-cpopen
 Requires: python-ethtool >= 0.6-3
+Requires: %{name}-python-zombiereaper = %{version}-%{release}
 Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
@@ -282,6 +283,15 @@ Requires:       python >= 2.6
 
 %description yajsonrpc
 A JSON RPC server and client implementation.
+
+%package python-zombiereaper
+Summary:        Collects zombie processes automatically
+BuildArch:      noarch
+
+Requires:       python >= 2.6
+
+%description python-zombiereaper
+Collects zombie processes automatically so you don't have to
 
 %package bootstrap
 Summary:        VDSM bootstrapping package
@@ -827,7 +837,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vm.py*
-%{_datadir}/%{vdsm_name}/zombieReaper.py*
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf
@@ -1230,6 +1239,9 @@ exit 0
 %{python_sitelib}/yajsonrpc/asyncoreReactor.py*
 %{python_sitelib}/yajsonrpc/protonReactor.py*
 %{python_sitelib}/yajsonrpc/client.py*
+
+%files python-zombiereaper
+%{python_sitelib}/zombiereaper/__init__.py*
 
 %files bootstrap
 %defattr(-, root, root, -)
