@@ -20,6 +20,7 @@
 
 """Collect host capabilities"""
 
+import itertools
 import os
 from xml.dom import minidom
 import logging
@@ -323,12 +324,12 @@ def _getKeyPackages():
     pkgs = {'kernel': kernelDict()}
 
     if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL):
-        KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm',
-                        'qemu-img': 'qemu-img',
-                        'vdsm': 'vdsm',
-                        'spice-server': 'spice-server',
-                        'libvirt': 'libvirt',
-                        'mom': 'mom',
+        KEY_PACKAGES = {'qemu-kvm': ('qemu-kvm',),
+                        'qemu-img': ('qemu-img',),
+                        'vdsm': ('vdsm',),
+                        'spice-server': ('spice-server',),
+                        'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
+                        'mom': ('mom',),
                         }
 
         if _glusterEnabled:
@@ -337,9 +338,10 @@ def _getKeyPackages():
         try:
             ts = rpm.TransactionSet()
 
-            for pkg in KEY_PACKAGES:
+            for pkg, names in KEY_PACKAGES.iteritems():
                 try:
-                    mi = ts.dbMatch('name', KEY_PACKAGES[pkg]).next()
+                    mi = itertools.chain(*[ts.dbMatch('name', name)
+                                           for name in names]).next()
                 except StopIteration:
                     logging.debug("rpm package %s not found",
                                   KEY_PACKAGES[pkg])
