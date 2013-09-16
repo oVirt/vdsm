@@ -696,7 +696,7 @@ class HSM:
         if volFormat != volume.COW_FORMAT:
             # This method is used only with COW volumes (see docstring),
             # for RAW volumes we just return the volume size.
-            return dict(size=str(self.getVolumeSize(bs=1)))
+            return dict(size=str(volToExtend.getVolumeSize(bs=1)))
 
         qemuImgFormat = volume.fmt2str(volume.COW_FORMAT)
 
