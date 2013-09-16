@@ -50,6 +50,8 @@ NET_PATH = '/sys/class/net'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
+_BONDING_FAILOVER_MODES = frozenset(('1', '3'))
+_BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DUMMY_BRIDGE = ';vdsmdummy;'
@@ -286,11 +288,13 @@ def operstate(dev):
 def speed(dev):
     # return the speed of devices that are capable of replying
     try:
-        # nics() filters out OS devices (bonds, vlans, bridges)
         # operstat() filters out down/disabled nics
+        if operstate(dev) != OPERSTATE_UP:
+            return 0
+
+        # nics() filters out OS devices (bonds, vlans, bridges)
         # virtio is a valid device, but doesn't support speed
-        if (dev in nics() and operstate(dev) == OPERSTATE_UP and
-                not isvirtio(dev)):
+        if dev in nics() and not isvirtio(dev):
             # the device may have been disabled/downed after checking
             # so we validate the return value as sysfs may return
             # special values to indicate the device is down/disabled
@@ -298,6 +302,15 @@ def speed(dev):
                 s = int(speedFile.read())
             if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
                 return s
+        elif dev in bondings():
+            bondopts = bondOpts(dev, keys=['slaves', 'active_slave', 'mode'])
+            if bondopts['slaves']:
+                if bondopts['mode'][1] in _BONDING_FAILOVER_MODES:
+                    s = speed(bondopts['active_slave'][0])
+                elif bondopts['mode'][1] in _BONDING_LOADBALANCE_MODES:
+                    s = sum(speed(slave) for slave in bondopts['slaves'])
+                return s
+
     except Exception:
         logging.exception('cannot read %s speed', dev)
     return 0
