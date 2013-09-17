@@ -1641,6 +1641,12 @@ class BalloonDevice(VmDevice):
 
 
 class WatchdogDevice(VmDevice):
+    def __init__(self, *args, **kwargs):
+        super(WatchdogDevice, self).__init__(*args, **kwargs)
+
+        if not hasattr(self, 'specParams'):
+            self.specParams = {}
+
     def getXML(self):
         """
         Create domxml for a watchdog device.
@@ -1651,8 +1657,8 @@ class WatchdogDevice(VmDevice):
         </watchdog>
         """
         m = self.createXmlElem(self.type, None, ['address'])
-        m.setAttrs(model=self.specParams['model'],
-                   action=self.specParams['action'])
+        m.setAttrs(model=self.specParams.get('model', 'i6300esb'),
+                   action=self.specParams.get('action', 'none'))
         return m
 
 
@@ -1925,14 +1931,6 @@ class Vm(object):
         # libvirt only support one watchdog device
         if len(devices[WATCHDOG_DEVICES]) > 1:
             raise ValueError("only a single watchdog device is supported")
-        if len(devices[WATCHDOG_DEVICES]) == 1:
-            if not 'specParams' in devices[WATCHDOG_DEVICES][0]:
-                devices[WATCHDOG_DEVICES][0]['specParams'] = {}
-            if not 'model' in devices[WATCHDOG_DEVICES][0]['specParams']:
-                devices[WATCHDOG_DEVICES][0]['specParams']['model'] = \
-                    'i6300esb'
-            if not 'action' in devices[WATCHDOG_DEVICES][0]['specParams']:
-                devices[WATCHDOG_DEVICES][0]['specParams']['action'] = 'none'
 
         if len(devices[CONSOLE_DEVICES]) > 1:
             raise ValueError("Only a single console device is supported")
