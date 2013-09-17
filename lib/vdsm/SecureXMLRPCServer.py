@@ -116,12 +116,28 @@ class SSLServerSocket(SSLSocket):
         self.connection = SSL.Connection(self.context, sock=raw)
 
     def accept(self):
-        # The SSL connection already returns a SSL prepared socket, but it
-        # misses some of the methods that the XML PRC server uses, so we need
-        # to wrap it as well:
-        client, address = self.connection.accept()
+        # First we need to call the accept method of the raw
+        # socket and build a new SSL connection object with the
+        # results:
+        client, address = self.connection.socket.accept()
+        client = SSL.Connection(self.context, client)
+        client.addr = address
+
+        # Now perform the SSL setup and add the IP address of the client
+        # to the exception message if any SSL error is detected:
+        try:
+            client.setup_ssl()
+            client.set_accept_state()
+            client.accept_ssl()
+        except SSL.SSLError as e:
+            raise SSL.SSLError("%s, client %s" % (e, address[0]))
+
+        # Finally wrap the connection so that it mimics a
+        # socket as the XMLRPC server expects:
         client = SSLSocket(client)
+
         return client, address
+
 
 
 class SecureXMLRPCServer(IPXMLRPCServer):
