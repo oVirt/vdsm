@@ -1895,10 +1895,6 @@ class Vm(object):
         # Update indices for drives devices
         self.normalizeDrivesIndices(devices[DISK_DEVICES])
 
-        # Avoid overriding the saved balloon target value on recovery.
-        if 'recover' not in self.conf:
-            for dev in devices[BALLOON_DEVICES]:
-                dev['target'] = int(self.conf.get('memSize')) * 1024
         return devices
 
     def buildConfDevices(self):
@@ -1942,14 +1938,23 @@ class Vm(object):
 
         # Preserve old behavior. Since libvirt add a memory balloon device
         # to all guests, we need to specifically request not to add it.
-        if len(devices[BALLOON_DEVICES]) == 0:
-            devices[BALLOON_DEVICES].append({
-                'type': BALLOON_DEVICES,
-                'device': 'memballoon',
-                'specParams': {
-                    'model': 'none'}})
+        self._normalizeBalloonDevice(devices[BALLOON_DEVICES])
 
         return devices
+
+    def _normalizeBalloonDevice(self, balloonDevices):
+        EMPTY_BALLOON = {'type': BALLOON_DEVICES,
+                         'device': 'memballoon',
+                         'specParams': {
+                             'model': 'none'}}
+
+        # Avoid overriding the saved balloon target value on recovery.
+        if 'recover' not in self.conf:
+            for dev in balloonDevices:
+                dev['target'] = int(self.conf.get('memSize')) * 1024
+
+        if not balloonDevices:
+            balloonDevices.append(EMPTY_BALLOON)
 
     def getConfController(self):
         """
