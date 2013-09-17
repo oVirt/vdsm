@@ -1885,47 +1885,30 @@ class Vm(object):
                 'truesize': 0})
         return removables
 
-    def getConfDevices(self):
-        devices = self._makeDeviceDict()
-        for dev in self.conf.get('devices'):
-            try:
-                devices[dev['type']].append(dev)
-            except KeyError:
-                # Unknown type device found
-                self.log.warn("Unknown type found, device: '%s' found", dev)
-                devices[GENERAL_DEVICES].append(dev)
-
-        # Update indices for drives devices
-        self.normalizeDrivesIndices(devices[DISK_DEVICES])
-
-        return devices
-
     def buildConfDevices(self):
         """
         Return the "devices" section of this Vm's conf.
         If missing, create it according to old API.
         """
+        devices = self._makeDeviceDict()
+
         # For BC we need to save previous behaviour for old type parameters.
         # The new/old type parameter will be distinguished
         # by existence/absence of the 'devices' key
-        devices = {}
-        # Build devices structure
         if self.conf.get('devices') is None:
-            with self._confLock:
-                self.conf['devices'] = []
             devices[DISK_DEVICES] = self.getConfDrives()
             devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
             devices[SOUND_DEVICES] = self.getConfSound()
             devices[VIDEO_DEVICES] = self.getConfVideo()
             devices[CONTROLLER_DEVICES] = self.getConfController()
-            devices[GENERAL_DEVICES] = []
-            devices[BALLOON_DEVICES] = []
-            devices[WATCHDOG_DEVICES] = []
-            devices[SMARTCARD_DEVICES] = self.getConfSmartcard()
-            devices[REDIR_DEVICES] = []
-            devices[CONSOLE_DEVICES] = []
         else:
-            devices = self.getConfDevices()
+            for dev in self.conf.get('devices'):
+                try:
+                    devices[dev['type']].append(dev)
+                except KeyError:
+                    self.log.warn("Unknown type found, device: '%s' "
+                                  "found", dev)
+                    devices[GENERAL_DEVICES].append(dev)
 
         self._checkDeviceLimits(devices)
 
@@ -1933,6 +1916,8 @@ class Vm(object):
         for drv in devices[DISK_DEVICES]:
             if isVdsmImage(drv):
                 self._normalizeVdsmImg(drv)
+
+        self.normalizeDrivesIndices(devices[DISK_DEVICES])
 
         # Preserve old behavior. Since libvirt add a memory balloon device
         # to all guests, we need to specifically request not to add it.
@@ -1988,17 +1973,6 @@ class Vm(object):
                            'device': devType})
 
         return vcards
-
-    def getConfSmartcard(self):
-        """
-        Normalize smartcard device (now there is only one)
-        """
-        cards = []
-        if self.conf.get('smartcard'):
-            cards.append({'device': SMARTCARD_DEVICES,
-                          'specParams': {'mode': 'passthrough',
-                                         'type': 'spicevmc'}})
-        return cards
 
     def getConfSound(self):
         """
@@ -2063,9 +2037,6 @@ class Vm(object):
             # FIXME: For BC we have now two identical keys: iface = if
             # Till the day that conf will not returned as a status anymore.
             drv['iface'] = drv.get('iface') or drv.get('if', 'ide')
-
-        # Update indices for drives devices
-        self.normalizeDrivesIndices(confDrives)
 
         return confDrives
 
@@ -2960,9 +2931,11 @@ class Vm(object):
     def _run(self):
         self.log.info("VM wrapper has started")
         self.conf['smp'] = self.conf.get('smp', '1')
+        devices = self.buildConfDevices()
 
+        # TODO: In recover should loop over disks running on the VM because
+        # conf may be outdated if something happened during restart.
         if not 'recover' in self.conf:
-            devices = self.buildConfDevices()
             self.preparePaths(devices[DISK_DEVICES])
             self._prepareTransientDisks(devices[DISK_DEVICES])
             # Update self.conf with updated devices
@@ -2980,17 +2953,6 @@ class Vm(object):
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
             self.saveState()
-        else:
-            # TODO: In recover should loop over disks running on the VM because
-            # conf may be outdated if something happened during restart.
-
-            # For BC we should to keep running VM run after vdsm upgrade.
-            # So, because this vm doesn't have normalize conf we need to build
-            # it in recovery flow
-            if not self.conf.get('devices'):
-                devices = self.buildConfDevices()
-            else:
-                devices = self.getConfDevices()
 
         for devType, devClass in self.DeviceMapping:
             for dev in devices[devType]:
