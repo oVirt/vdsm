@@ -192,10 +192,6 @@ class MigrationSourceThread(threading.Thread):
         self._machineParams.update(self._vm.status())
         # patch VM config for targets < 3.1
         self._patchConfigForLegacy()
-        if self._vm._guestCpuRunning:
-            self._machineParams['afterMigrationStatus'] = 'Up'
-        else:
-            self._machineParams['afterMigrationStatus'] = 'Pause'
         self._machineParams['elapsedTimeOffset'] = \
             time.time() - self._vm._startTime
         vmStats = self._vm.getStats()
@@ -3420,7 +3416,6 @@ class Vm(object):
 
             self._domDependentInit()
             del self.conf['migrationDest']
-            del self.conf['afterMigrationStatus']
             hooks.after_vm_migrate_destination(self._dom.XMLDesc(0), self.conf)
 
             for dev in self._customDevices():
