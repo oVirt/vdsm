@@ -154,6 +154,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/mnt
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
+	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/libvirt-spice
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/sourceRoutes
