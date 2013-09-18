@@ -329,15 +329,16 @@ class Volume(object):
     def parentVolumeRollback(cls, taskObj, sdUUID, pimgUUID, pvolUUID):
         cls.log.info("parentVolumeRollback: sdUUID=%s pimgUUID=%s"
                      " pvolUUID=%s" % (sdUUID, pimgUUID, pvolUUID))
-        try:
-            if pvolUUID != BLANK_UUID and pimgUUID != BLANK_UUID:
-                pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID,
-                                                             pvolUUID)
-                if not pvol.isShared() and not pvol.recheckIfLeaf():
-                    pvol.setLeaf()
+        if pvolUUID != BLANK_UUID and pimgUUID != BLANK_UUID:
+            pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID,
+                                                         pvolUUID)
+            pvol.prepare()
+            try:
+                pvol.recheckIfLeaf()
+            except Exception:
+                cls.log.error("Unexpected error", exc_info=True)
+            finally:
                 pvol.teardown(sdUUID, pvolUUID)
-        except Exception:
-            cls.log.error("Unexpected error", exc_info=True)
 
     @classmethod
     def startCreateVolumeRollback(cls, taskObj, sdUUID, imgUUID, volUUID):
