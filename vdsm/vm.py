@@ -1212,10 +1212,12 @@ class VideoDevice(VmDevice):
         Create domxml for video device
         """
         video = self.createXmlElem('video', None, ['address'])
-        video.appendChildWithArgs('model', type=self.device,
-                                  vram=self.specParams['vram'],
-                                  heads=self.specParams.get('heads', '1'))
+        sourceAttrs = {'vram': self.specParams.get('vram', '32768'),
+                       'heads': self.specParams.get('heads', '1')}
+        if 'ram' in self.specParams:
+            sourceAttrs['ram'] = self.specParams['ram']
 
+        video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
         return video
 
 
