@@ -174,7 +174,7 @@ class BlockVolume(volume.Volume):
         if preallocate == volume.SPARSE_VOL:
             volSize = "%s" % config.get("irs", "volume_utilization_chunk_mb")
         else:
-            volSize = "%s" % (size / 2 / 1024)
+            volSize = "%s" % ((size + SECTORS_TO_MB - 1) / SECTORS_TO_MB)
 
         lvm.createLV(dom.sdUUID, volUUID, volSize, activate=True,
                      initialTag=TAG_VOL_UNINIT)
