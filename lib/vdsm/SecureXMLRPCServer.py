@@ -139,7 +139,6 @@ class SSLServerSocket(SSLSocket):
         return client, address
 
 
-
 class SecureXMLRPCServer(IPXMLRPCServer):
     def __init__(self, addr,
                  requestHandler=IPXMLRPCRequestHandler,
