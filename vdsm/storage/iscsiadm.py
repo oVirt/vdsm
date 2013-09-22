@@ -197,6 +197,8 @@ def discoverydb_discover(discoveryType, iface, portal):
     if rc == 0:
         res = []
         for line in out:
+            if line.startswith("["):  # skip IPv6 targets
+                continue
             rest, iqn = line.split()
             rest, tpgt = rest.split(",")
             ip, port = rest.split(":")
