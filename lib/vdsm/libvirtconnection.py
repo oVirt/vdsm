@@ -90,15 +90,22 @@ def get(target=None, killOnFailure=True):
                           libvirt.VIR_ERR_NO_CONNECT,
                           libvirt.VIR_ERR_INVALID_CONN)
                 if edom in EDOMAINS and ecode in ECODES:
-                    log.error('connection to libvirt broken.'
-                              '  ecode: %d edom: %d', ecode, edom)
-                    if killOnFailure:
-                        log.error('taking calling process down.')
-                        os.kill(os.getpid(), signal.SIGTERM)
-                else:
-                    log.debug('Unknown libvirterror: ecode: %d edom: %d '
-                              'level: %d message: %s', ecode, edom,
-                              e.get_error_level(), e.get_error_message())
+                    try:
+                        __connections.get(id(target)).pingLibvirt()
+                    except libvirt.libvirtError as e:
+                        edom = e.get_error_domain()
+                        ecode = e.get_error_code()
+                        if edom in EDOMAINS and ecode in ECODES:
+                            log.error('connection to libvirt broken.'
+                                      '  ecode: %d edom: %d', ecode, edom)
+                            if killOnFailure:
+                                log.error('taking calling process down.')
+                                os.kill(os.getpid(), signal.SIGTERM)
+                            else:
+                                raise
+                log.debug('Unknown libvirterror: ecode: %d edom: %d '
+                          'level: %d message: %s', ecode, edom,
+                          e.get_error_level(), e.get_error_message())
                 raise
         wrapper.__name__ = f.__name__
         wrapper.__doc__ = f.__doc__
@@ -125,6 +132,7 @@ def get(target=None, killOnFailure=True):
             conn = utils.retry(libvirtOpenAuth, timeout=10, sleep=0.2)
             __connections[id(target)] = conn
 
+            setattr(conn, 'pingLibvirt', getattr(conn, 'getLibVersion'))
             for name in dir(libvirt.virConnect):
                 method = getattr(conn, name)
                 if callable(method) and name[0] != '_':

@@ -42,6 +42,7 @@ test_modules = \
 	jsonRpcUtils.py \
 	vmTests.py \
 	vmTestsData.py \
+	libvirtconnectionTests.py \
 	lsblkTests.py \
 	lvmTests.py \
 	main.py \
