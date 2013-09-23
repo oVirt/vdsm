@@ -78,15 +78,15 @@ loop() {
         then
             if [[ -n "$thrash_start" ]] && \
                [[ $[d1-thrash_start] -gt "$MAX_THRASH_INTERVAL" ]]; then
-                logger -t respawn "slave '$@' died too quickly for more than $MAX_THRASH_INTERVAL seconds, master sleeping for $POST_FAIL_INTERVAL seconds"
+                logger -t respawn -- "slave '$*' died too quickly for more than $MAX_THRASH_INTERVAL seconds, master sleeping for $POST_FAIL_INTERVAL seconds"
                 thrash_start=
                 sleep "$POST_FAIL_INTERVAL"
             else
-                logger -t respawn "slave '$@' died too quickly, respawning slave"
+                logger -t respawn -- "slave '$*' died too quickly, respawning slave"
                 [[ -z "$thrash_start" ]] && thrash_start=$d1
             fi
         else
-            logger -t respawn "slave '$@' died, respawning slave"
+            logger -t respawn -- "slave '$*' died, respawning slave"
             thrash_start=
         fi
         d0=$d1
