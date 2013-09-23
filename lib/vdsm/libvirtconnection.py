@@ -71,6 +71,7 @@ def get(target=None, killOnFailure=True):
     take the current process down.
     """
     def wrapMethod(f):
+        @functools.wraps(f)
         def wrapper(*args, **kwargs):
             try:
                 ret = f(*args, **kwargs)
@@ -96,10 +97,10 @@ def get(target=None, killOnFailure=True):
                         edom = e.get_error_domain()
                         ecode = e.get_error_code()
                         if edom in EDOMAINS and ecode in ECODES:
-                            log.error('connection to libvirt broken.'
-                                      '  ecode: %d edom: %d', ecode, edom)
+                            log.warning('connection to libvirt broken.'
+                                        ' ecode: %d edom: %d', ecode, edom)
                             if killOnFailure:
-                                log.error('taking calling process down.')
+                                log.critical('taking calling process down.')
                                 os.kill(os.getpid(), signal.SIGTERM)
                             else:
                                 raise
@@ -107,8 +108,6 @@ def get(target=None, killOnFailure=True):
                           'level: %d message: %s', ecode, edom,
                           e.get_error_level(), e.get_error_message())
                 raise
-        wrapper.__name__ = f.__name__
-        wrapper.__doc__ = f.__doc__
         return wrapper
 
     def req(credentials, user_data):
