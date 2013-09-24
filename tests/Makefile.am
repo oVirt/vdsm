@@ -36,12 +36,8 @@ test_modules = \
 	guestIFTests.py \
 	hooksTests.py \
 	ipwrapperTests.py \
-	netconfTests.py \
-	netmodelsTests.py \
 	jsonRpcTests.py \
 	jsonRpcUtils.py \
-	vmTests.py \
-	vmTestsData.py \
 	libvirtconnectionTests.py \
 	lsblkTests.py \
 	lvmTests.py \
@@ -50,7 +46,9 @@ test_modules = \
 	miscTests.py \
 	mkimageTests.py \
 	mountTests.py \
+	netconfTests.py \
 	netinfoTests.py \
+	netmodelsTests.py \
 	outOfProcessTests.py \
 	parted_utils_tests.py \
 	permutationTests.py \
@@ -63,6 +61,8 @@ test_modules = \
 	tcTests.py \
 	utilsTests.py \
 	vdsClientTests.py \
+	vmTestsData.py \
+	vmTests.py \
 	volumeTests.py \
 	zombieReaperTests.py \
 	$(NULL)
