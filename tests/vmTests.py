@@ -357,20 +357,38 @@ class TestVm(TestCaseBase):
         redir = vm.RedirDevice(self.conf, self.log, **dev)
         self.assertXML(redir.getXML(), redirXML)
 
-    def testDriveSharedBackwardCompatibility(self):
-        driveConfigs = [
+    def testDriveSharedStatus(self):
+        sharedConfigs = [
+            # Backward compatibility
             {'shared': True}, {'shared': 'True'}, {'shared': 'true'},
             {'shared': False}, {'shared': 'False'}, {'shared': 'false'},
+            # Missing shared definition
+            {},
+            # New extended values
+            {'shared': 'exclusive'}, {'shared': 'shared'}, {'shared': 'none'},
         ]
 
-        expectedConfigs = [
-            {'shared': 'shared'}, {'shared': 'shared'}, {'shared': 'shared'},
-            {'shared': 'none'}, {'shared': 'none'}, {'shared': 'none'},
+        expectedStates = [
+            # Backward compatibility
+            'shared', 'shared', 'shared', 'none', 'none', 'none',
+            # Missing shared definition
+            'none',
+            # New extended values
+            'exclusive', 'shared', 'none',
         ]
 
-        for driveInput, driveOutput in zip(driveConfigs, expectedConfigs):
-            vm.Vm._normalizeDriveSharedAttribute(driveInput)
-            self.assertEqual(driveInput, driveOutput)
+        driveConfig = {'index': '0', 'iface': 'virtio', 'device': 'disk'}
+
+        for driveInput, driveOutput in zip(sharedConfigs, expectedStates):
+            driveInput.update(driveConfig)
+            drive = vm.Drive({}, self.log, **driveInput)
+            self.assertEqual(drive.extSharedState, driveOutput)
+
+        # Negative flow, unsupported value
+        driveInput.update({'shared': 'UNKNOWN-VALUE'})
+
+        with self.assertRaises(ValueError):
+            drive = vm.Drive({}, self.log, **driveInput)
 
     def testDriveXML(self):
         SERIAL = '54-a672-23e5b495a9ea'

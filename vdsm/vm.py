@@ -426,6 +426,11 @@ class DRIVE_SHARED_TYPE:
     EXCLUSIVE = "exclusive"
     SHARED = "shared"
 
+    @classmethod
+    def getAllValues(cls):
+        # TODO: use introspection
+        return (cls.NONE, cls.EXCLUSIVE, cls.SHARED)
+
 
 # These strings are representing libvirt virDomainEventType values
 # http://libvirt.org/html/libvirt-libvirt.html#virDomainEventType
@@ -1338,10 +1343,29 @@ class Drive(VmDevice):
             self._blockDev = None
 
         self._customize()
+        self._setExtSharedState()
+
+    def _setExtSharedState(self):
+        # We cannot use tobool here as shared can take several values
+        # (e.g. none, exclusive) that would be all mapped to False.
+        shared = str(getattr(self, "shared", "false")).lower()
+
+        # Backward compatibility with the old values (true, false)
+        if shared == 'true':
+            self.extSharedState = DRIVE_SHARED_TYPE.SHARED
+        elif shared == 'false':
+            if config.getboolean('irs', 'use_volume_leases'):
+                self.extSharedState = DRIVE_SHARED_TYPE.EXCLUSIVE
+            else:
+                self.extSharedState = DRIVE_SHARED_TYPE.NONE
+        elif shared in DRIVE_SHARED_TYPE.getAllValues():
+            self.extSharedState = shared
+        else:
+            raise ValueError("Unknown shared value %s" % shared)
 
     @property
     def hasVolumeLeases(self):
-        if self.shared != DRIVE_SHARED_TYPE.EXCLUSIVE:
+        if self.extSharedState != DRIVE_SHARED_TYPE.EXCLUSIVE:
             return False
 
         for volInfo in getattr(self, "volumeChain", []):
@@ -1535,7 +1559,7 @@ class Drive(VmDevice):
             targetAttrs['bus'] = self.iface
         diskelem.appendChildWithArgs('target', **targetAttrs)
 
-        if self.shared == DRIVE_SHARED_TYPE.SHARED:
+        if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
             diskelem.appendChildWithArgs('shareable')
         if hasattr(self, 'readonly') and utils.tobool(self.readonly):
             diskelem.appendChildWithArgs('readonly')
@@ -1795,28 +1819,6 @@ class Vm(object):
             drv['truesize'] = 0
             drv['apparentsize'] = 0
 
-    @classmethod
-    def _normalizeDriveSharedAttribute(self, drive):
-        # We cannot use tobool here as shared can take several values
-        # (e.g. none, exclusive) that would be all mapped to False.
-        shared = str(drive['shared']).lower()
-
-        # Backward compatibility with the old values (true, false)
-        if shared == 'true':
-            drive['shared'] = DRIVE_SHARED_TYPE.SHARED
-        elif shared == 'false':
-            if config.getboolean('irs', 'use_volume_leases'):
-                drive['shared'] = DRIVE_SHARED_TYPE.EXCLUSIVE
-            else:
-                drive['shared'] = DRIVE_SHARED_TYPE.NONE
-
-        # Filtering the values, current default is "none", in the future
-        # we might want to switch this to "exclusive".
-        if drive['shared'] not in (
-                DRIVE_SHARED_TYPE.SHARED, DRIVE_SHARED_TYPE.EXCLUSIVE,
-                DRIVE_SHARED_TYPE.NONE):
-            drive['shared'] = DRIVE_SHARED_TYPE.NONE
-
     def __legacyDrives(self):
         """
         Backward compatibility for qa scripts that specify direct paths.
@@ -1916,9 +1918,8 @@ class Vm(object):
         if len(devices[CONSOLE_DEVICES]) > 1:
             raise ValueError("Only a single console device is supported")
 
-        # Normalize shared attribute and vdsm images
+        # Normalize vdsm images
         for drv in devices[DISK_DEVICES]:
-            self._normalizeDriveSharedAttribute(drv)
             if isVdsmImage(drv):
                 self._normalizeVdsmImg(drv)
 
