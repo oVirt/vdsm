@@ -2819,10 +2819,12 @@ class Vm(object):
         self._updateAgentChannels()
 
         #Currently there is no protection agains mirroring a network twice,
-        for nic in self._devices[NIC_DEVICES]:
-            if hasattr(nic, 'portMirroring'):
-                for network in nic.portMirroring:
-                    supervdsm.getProxy().setPortMirroring(network, nic.name)
+        if 'recover' not in self.conf:
+            for nic in self._devices[NIC_DEVICES]:
+                if hasattr(nic, 'portMirroring'):
+                    for network in nic.portMirroring:
+                        supervdsm.getProxy().setPortMirroring(network,
+                                                              nic.name)
 
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
