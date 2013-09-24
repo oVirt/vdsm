@@ -1317,16 +1317,28 @@ class NetworkInterfaceDevice(VmDevice):
 
         if hasattr(self, 'specParams'):
             if 'inbound' in self.specParams or 'outbound' in self.specParams:
-                bandwidth = self.createXmlElem('bandwidth', None)
-                # Inbound and Outbound traffic can be indipendently shaped.
-                inbound = self.specParams.get('inbound')
-                outbound = self.specParams.get('outbound')
-                if inbound:
-                    bandwidth.appendChildWithArgs('inbound', **inbound)
-                if outbound:
-                    bandwidth.appendChildWithArgs('outbound', **outbound)
-                iface.appendChild(bandwidth)
+                iface.appendChild(self.getXMLBandwidth(self.specParams))
         return iface
+
+    def getXMLBandwidth(self, specParams, oldBandwidth=None):
+        bandwidth = self.createXmlElem('bandwidth', None)
+        # Inbound and Outbound traffic can be independently shaped.
+        for attr in ('inbound', 'outbound'):
+            newSetting = specParams.get(attr)
+            # if newSetting is specified, replace current settings
+            if newSetting:
+                bandwidth.appendChildWithArgs(attr, **newSetting)
+            # if newSetting is not specified, keep current settings
+            elif newSetting is None:
+                if oldBandwidth is not None:
+                    attrXMLs = oldBandwidth.getElementsByTagName
+                    attrXML = attrXMLs[0] if len(attrXMLs) else None
+                else:
+                    attrXML = None
+                if attrXML is not None:
+                    bandwidth.appendChild(attrXML)
+            # if newSetting is {} do nothing = remove current settings
+        return bandwidth
 
 
 class Drive(VmDevice):
@@ -3149,12 +3161,13 @@ class Vm(object):
                 network = DUMMY_BRIDGE
                 linkValue = 'down'
             custom = params.get('custom')
+            specParams = params.get('specParams')
 
             netsToMirror = params.get('portMirroring',
                                       netConf.get('portMirroring', []))
 
             with self.setLinkAndNetwork(netDev, netConf, linkValue, network,
-                                        custom):
+                                        custom, specParams):
                 with self.updatePortMirroring(netConf, netsToMirror):
                     return {'status': doneCode, 'vmList': self.status()}
         except (LookupError,
@@ -3165,7 +3178,8 @@ class Vm(object):
                      'message': e.message}}
 
     @contextmanager
-    def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom):
+    def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom,
+                          specParams=None):
         vnicXML = dev.getXML()
         source = vnicXML.getElementsByTagName('source')[0]
         source.setAttribute('bridge', networkValue)
@@ -3175,6 +3189,15 @@ class Vm(object):
             link = xml.dom.minidom.Element('link')
             vnicXML.appendChildWithArgs(link)
         link.setAttribute('state', linkValue)
+        if (specParams and
+                ('inbound' in specParams or 'outbound' in specParams)):
+            oldBandwidths = vnicXML.getElementsByTagName('bandwidth')
+            oldBandwidth = oldBandwidths[0] if len(oldBandwidths) else None
+            newBandwidth = dev.getXMLBandwidth(specParams, oldBandwidth)
+            if oldBandwidth is None:
+                vnicXML.appendChild(newBandwidth)
+            else:
+                vnicXML.replaceChild(newBandwidth, oldBandwidth)
         vnicStrXML = vnicXML.toprettyxml(encoding='utf-8')
         try:
             try:
