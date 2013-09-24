@@ -578,10 +578,15 @@ class FileVolume(volume.Volume):
         # No real sanity checks here, they should be included in the calling
         # function/method. We just validate the sizes to be consistent since
         # they're computed and used in the pre-allocated case.
-        if (newSizeBytes <= curSizeBytes):
+        if newSizeBytes == curSizeBytes:
+            return  # Nothing to do
+        elif curSizeBytes <= 0:
+            raise se.StorageException(
+                "Volume size is impossible: %s" % curSizeBytes)
+        elif newSizeBytes < curSizeBytes:
             raise se.VolumeResizeValueError(newSize)
 
-        if self.getVolType() == volume.PREALLOCATED_VOL:
+        if self.getType() == volume.PREALLOCATED_VOL:
             # for pre-allocated we need to zero to the file size
             misc.ddWatchCopy("/dev/zero", volPath, vars.task.aborting,
                              newSizeBytes - curSizeBytes, curSizeBytes)
