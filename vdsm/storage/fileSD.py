@@ -227,7 +227,7 @@ class FileStorageDomain(sd.StorageDomain):
             sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC:
             sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
             sd.DMDK_LEASE_TIME_SEC: sd.DEFAULT_LEASE_PARAMS[
-                sd.DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+                sd.DMDK_LEASE_TIME_SEC],
             sd.DMDK_IO_OP_TIMEOUT_SEC:
             sd.DEFAULT_LEASE_PARAMS[sd.DMDK_IO_OP_TIMEOUT_SEC],
             sd.DMDK_LEASE_RETRIES:
