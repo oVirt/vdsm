@@ -167,7 +167,9 @@ class NetworkTest(TestCaseBase):
     def testSetupNetworksAddOverExistingBond(self, bridged=True):
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.setupNetworks(
-                {}, {BONDING_NAME: {'nics': nics}},
+                {NETWORK_NAME + '0': {'bonding': BONDING_NAME,
+                                      'bridged': False}},
+                {BONDING_NAME: {'nics': nics}},
                 {'connectivityCheck': False})
             self.assertEqual(status, SUCCESS, msg)
             self.assertTrue(self.vdsm_net.bondExists(BONDING_NAME, nics))
@@ -182,7 +184,8 @@ class NetworkTest(TestCaseBase):
             self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME, bridged))
 
             status, msg = self.vdsm_net.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
+                {NETWORK_NAME: {'remove': True},
+                 NETWORK_NAME + '0': {'remove': True}},
                 {}, {'connectivityCheck': False})
             self.assertEqual(status, SUCCESS, msg)
             self.assertTrue(self.vdsm_net.bondExists(BONDING_NAME, nics))
