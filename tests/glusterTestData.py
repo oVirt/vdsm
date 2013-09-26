@@ -768,6 +768,7 @@ PROFILE_INFO_NFS = {'nfsServers': [
 
 REBALANCE_REMOVE_BRICK_STATUS = {
     'summary': {
+        'runtime': '10.2',
         'filesScanned': '278',
         'filesMoved': '78',
         'filesFailed': '0',
@@ -777,6 +778,8 @@ REBALANCE_REMOVE_BRICK_STATUS = {
     },
     'hosts': [{
         'name': 'localhost',
+        'id': '883626f8-4d29-4d02-8c5d-c9f48c5b2445',
+        'runtime': '10.2',
         'filesScanned': '278',
         'filesMoved': '78',
         'filesFailed': '0',

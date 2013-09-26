@@ -618,13 +618,16 @@ def volumeRebalanceStop(volumeName, force=False):
 def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
     """
     returns {'hosts': [{'name': NAME,
-                       'filesScanned': INT AS STRING,
-                       'filesMoved': INT AS STRING,
-                       'filesFailed': INT AS STRING,
-                       'filesSkipped': INT AS STRING,
-                       'totalSizeMoved': INT AS STRING,
-                       'status': STRING},...]
-             'summary': {'filesScanned': INT AS STRING,
+                        'id': UUID_STRING,
+                        'runtime': FLOAT_AS_STRING,
+                        'filesScanned': INT AS STRING,
+                        'filesMoved': INT AS STRING,
+                        'filesFailed': INT AS STRING,
+                        'filesSkipped': INT AS STRING,
+                        'totalSizeMoved': INT AS STRING,
+                        'status': STRING},...]
+             'summary': {'runtime': FLOAT_AS_STRING,
+                         'filesScanned': INT AS STRING,
                          'filesMoved': INT AS STRING,
                          'filesFailed': INT AS STRING,
                          'filesSkipped': INT AS STRING,
@@ -640,6 +643,7 @@ def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
 
     status = {
         'summary': {
+            'runtime': tree.find('aggregate/runtime').text,
             'filesScanned': tree.find('aggregate/lookups').text,
             'filesMoved': tree.find('aggregate/files').text,
             'filesFailed': tree.find('aggregate/failures').text,
@@ -650,6 +654,8 @@ def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
 
     for el in tree.findall('node'):
         status['hosts'].append({'name': el.find('nodeName').text,
+                                'id': el.find('id').text,
+                                'runtime': el.find('runtime').text,
                                 'filesScanned': el.find('lookups').text,
                                 'filesMoved': el.find('files').text,
                                 'filesFailed': el.find('failures').text,
