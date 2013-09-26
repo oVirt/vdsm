@@ -9,6 +9,8 @@
     <nodeCount>1</nodeCount>
     <node>
       <nodeName>localhost</nodeName>
+      <id>883626f8-4d29-4d02-8c5d-c9f48c5b2445</id>
+      <runtime>10.2</runtime>
       <files>78</files>
       <size>79872</size>
       <lookups>278</lookups>
@@ -18,6 +20,7 @@
       <statusStr>completed</statusStr>
     </node>
     <aggregate>
+      <runtime>10.2</runtime>
       <files>78</files>
       <size>79872</size>
       <lookups>278</lookups>
