@@ -1164,11 +1164,12 @@ class NetworkTest(TestCaseBase):
                                                        opts={'bridged':
                                                              bridged})
                 self.assertEquals(status, SUCCESS, msg)
+                hwaddr = self.vdsm_net.netinfo.bondings[BONDING_NAME]['hwaddr']
 
                 status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
                 self.assertEquals(status, SUCCESS, msg)
 
-                return self.vdsm_net.netinfo.bondings[BONDING_NAME]['hwaddr']
+                return hwaddr
 
             macAddress1 = _getBondHwAddress(nics[0], nics[1])
             macAddress2 = _getBondHwAddress(nics[1], nics[0])
