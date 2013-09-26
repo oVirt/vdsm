@@ -26,6 +26,7 @@ from netmodels import Bridge
 from netmodels import IPv4
 from netmodels import Nic
 from netmodels import Vlan
+from netmodels import _nicSort
 from vdsm import netinfo
 import neterrors
 
@@ -144,3 +145,12 @@ class TestNetmodels(TestCaseBase):
         bridge1 = Bridge('testbridge', None, port=vlan1)
         self.assertEqual('%r' % bridge1, 'Bridge(testbridge: Vlan(bond42.4: '
                          'Bond(bond42: (Nic(testnic1), Nic(testnic2)))))')
+
+    def testNicSort(self):
+        nics = {'nics_init': ('p33p1', 'eth1', 'lan0', 'em0', 'p331',
+                              'Lan1', 'eth0', 'em1', 'p33p2', 'p33p10'),
+                'nics_expected': ('Lan1', 'em0', 'em1', 'eth0', 'eth1',
+                                  'lan0', 'p33p1', 'p33p10', 'p33p2', 'p331')}
+
+        nics_res = _nicSort(nics['nics_init'])
+        self.assertEqual(nics['nics_expected'], tuple(nics_res))

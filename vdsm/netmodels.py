@@ -234,8 +234,8 @@ class Bond(NetDevice):
     def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
                     destroyOnMasterRemoval=None):
         if name and nics:  # New bonding or edit bonding.
-            slaves = cls._objectivizeSlaves(name, configurator, nics, mtu,
-                                            _netinfo)
+            slaves = cls._objectivizeSlaves(name, configurator, _nicSort(nics),
+                                            mtu, _netinfo)
             if name in _netinfo.bondings:
                 if _netinfo.ifaceUsers(name):
                     mtu = max(mtu, netinfo.getMtu(name))
@@ -381,3 +381,27 @@ class IpConfig(object):
             ipaddr = netmask = gateway = defaultRoute = None
         return self.ipConfig(ipaddr, netmask, gateway, self.bootproto,
                              self.async, defaultRoute)
+
+
+def _nicSort(nics):
+    """
+    Return a list of nics/interfaces ordered by name. We need it to enslave nic
+    to bonding in the same order that initscripts does it. Then it can
+    obtain the same master mac address by iproute2 as ifcfg.
+    """
+
+    nicsList = []
+    nicsRexp = re.compile("^(\D*)(\d*)(.*)$")
+
+    for nicName in nics:
+        nicSre = nicsRexp.match(nicName)
+        prefix, stridx, postfix = nicSre.groups((nicName, "0", ""))
+
+        try:
+            intidx = int(stridx)
+        except ValueError:
+            intidx = 0
+
+        nicsList.append((prefix, intidx, stridx + postfix))
+
+    return [x + z for x, y, z in sorted(nicsList)]
