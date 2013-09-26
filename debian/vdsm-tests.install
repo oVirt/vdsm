@@ -7,6 +7,10 @@ usr/share/vdsm/tests/cpu_info.out
 usr/share/vdsm/tests/functional/*.policy
 usr/share/vdsm/tests/functional/*.py
 usr/share/vdsm/tests/glob_1c60971a-8647-44ac-ae33-6520887f8843.out
+usr/share/vdsm/tests/glusterVolumeProfileInfo.xml
+usr/share/vdsm/tests/glusterVolumeProfileInfoNfs.xml
+usr/share/vdsm/tests/glusterVolumeRebalanceStatus.xml
+usr/share/vdsm/tests/glusterVolumeRemoveBricksStatus.xml
 usr/share/vdsm/tests/lvs_3386c6f2-926f-42c4-839c-38287fac8998.out
 usr/share/vdsm/tests/netmaskconversions
 usr/share/vdsm/tests/run_tests.sh

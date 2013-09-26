@@ -2,6 +2,7 @@ etc/ovirt-commandline.d
 etc/pki/vdsm
 etc/pki/vdsm/certs
 etc/pki/vdsm/keys
+etc/pki/vdsm/libvirt-spice
 etc/vdsm
 etc/vdsm/mom.d
 rhev
