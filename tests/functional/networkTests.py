@@ -27,11 +27,10 @@ from testrunner import (VdsmTestCase as TestCaseBase,
 from testValidation import RequireDummyMod, ValidateRunningAsRoot
 
 import dummy
-from dummy import dummyIf
 from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy, cleanupRules
 
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
-                            ruleExists, Route, Rule)
+                            ruleExists, Route, Rule, addrFlush)
 
 from vdsm.netinfo import operstate, prefix2netmask
 
@@ -44,19 +43,38 @@ IP_NETWORK = '240.0.0.0'
 IP_CIDR = '24'
 IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
 IP_GATEWAY = '240.0.0.254'
-IP_TABLE = '4026531841'  # Current implementation converts ip to its 32 bit int
-                         # representation
+# Current implementation converts ip to its 32 bit int representation
+IP_TABLE = '4026531841'
+dummyPool = set()
+DUMMY_POOL_SIZE = 5
 
 
 def setupModule():
     """Persists network configuration."""
     vdsm = VdsProxy()
     vdsm.save_config()
+    for _ in range(DUMMY_POOL_SIZE):
+        dummyPool.add(dummy.create())
 
 
 def tearDownModule():
     """Restores the network configuration previous to running tests."""
     restoreNetConfig()
+    for nic in dummyPool:
+        dummy.remove(nic)
+
+
+@contextmanager
+def dummyIf(num):
+    """Manages a list of num dummy interfaces. Assumes root privileges."""
+    dummies = []
+    try:
+        for _ in range(num):
+            dummies.append(dummyPool.pop())
+        yield dummies
+    finally:
+        for nic in dummies:
+            dummyPool.add(nic)
 
 
 class OperStateChangedError(ValueError):
@@ -156,7 +174,8 @@ class NetworkTest(TestCaseBase):
 
             with self.vdsm_net.pinger():
                 status, msg = self.vdsm_net.setupNetworks(
-                    {NETWORK_NAME: {'remove': True}}, {}, {})
+                    {NETWORK_NAME: {'remove': True}},
+                    {BONDING_NAME: {'remove': True}}, {})
             self.assertEqual(status, SUCCESS, msg)
             self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME))
 
@@ -521,9 +540,9 @@ class NetworkTest(TestCaseBase):
             setupNetworkBridged(nics[0], False)
             setupNetworkBridged(nics[0], True)
 
-        status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
-                                                   dict(remove=True)},
-                                                  {}, opts)
+            status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
+                                                       dict(remove=True)},
+                                                      {}, opts)
 
         self.assertEqual(status, SUCCESS, msg)
 
@@ -1230,17 +1249,20 @@ class NetworkTest(TestCaseBase):
         with dummyIf(1) as nics:
             nic, = nics
             dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
-            dummy.setLinkUp(nic)
+            try:
+                dummy.setLinkUp(nic)
 
-            rules = [Rule(source=IP_NETWORK_AND_CIDR, table=IP_TABLE),
-                     Rule(destination=IP_NETWORK_AND_CIDR, table=IP_TABLE,
-                          srcDevice=nic)]
-            for rule in rules:
-                self.assertFalse(ruleExists(rule))
-                ruleAdd(rule)
-                self.assertTrue(ruleExists(rule))
-                ruleDel(rule)
-                self.assertFalse(ruleExists(rule))
+                rules = [Rule(source=IP_NETWORK_AND_CIDR, table=IP_TABLE),
+                         Rule(destination=IP_NETWORK_AND_CIDR, table=IP_TABLE,
+                              srcDevice=nic)]
+                for rule in rules:
+                    self.assertFalse(ruleExists(rule))
+                    ruleAdd(rule)
+                    self.assertTrue(ruleExists(rule))
+                    ruleDel(rule)
+                    self.assertFalse(ruleExists(rule))
+            finally:
+                addrFlush(nic)
 
     @RequireDummyMod
     @ValidateRunningAsRoot
@@ -1248,18 +1270,21 @@ class NetworkTest(TestCaseBase):
         with dummyIf(1) as nics:
             nic, = nics
             dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
-            dummy.setLinkUp(nic)
+            try:
+                dummy.setLinkUp(nic)
 
-            routes = [Route(network='0.0.0.0/0', ipaddr=IP_GATEWAY,
-                            device=nic, table=IP_TABLE),
-                      Route(network=IP_NETWORK_AND_CIDR,
-                            ipaddr=IP_ADDRESS, device=nic, table=IP_TABLE)]
-            for route in routes:
-                self.assertFalse(routeExists(route))
-                routeAdd(route)
-                self.assertTrue(routeExists(route))
-                routeDel(route)
-                self.assertFalse(routeExists(route))
+                routes = [Route(network='0.0.0.0/0', ipaddr=IP_GATEWAY,
+                                device=nic, table=IP_TABLE),
+                          Route(network=IP_NETWORK_AND_CIDR,
+                                ipaddr=IP_ADDRESS, device=nic, table=IP_TABLE)]
+                for route in routes:
+                    self.assertFalse(routeExists(route))
+                    routeAdd(route)
+                    self.assertTrue(routeExists(route))
+                    routeDel(route)
+                    self.assertFalse(routeExists(route))
+            finally:
+                addrFlush(nic)
 
     @permutations([[True], [False]])
     @cleanupNet

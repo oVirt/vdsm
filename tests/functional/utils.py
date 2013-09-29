@@ -139,6 +139,10 @@ class VdsProxy(object):
         self.vdscli.setSafeNetworkConfig()
 
     @netinfo_altering
+    def restoreNetConfig(self):
+        restoreNetConfig()
+
+    @netinfo_altering
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None, opts=None):
         result = self.vdscli.addNetwork(bridge,
                                         *self._get_net_args(vlan, bond, nics,

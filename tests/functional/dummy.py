@@ -16,7 +16,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from contextlib import contextmanager
 import random
 
 from nose.plugins.skip import SkipTest
@@ -75,20 +74,3 @@ def _setLinkState(dummyName, state):
         linkSet(dummyName, [state])
     except IPRoute2Error:
         raise SkipTest('Failed to bring %s to state %s' % (dummyName, state))
-
-
-@contextmanager
-def dummyIf(num):
-    """
-    Manages a list of num dummy interfaces. Assumes root privileges.
-    """
-
-    dummies = []
-    try:
-        dummies = [create() for _ in range(num)]
-        yield dummies
-    except Exception:
-        raise
-    finally:
-        for dummy in dummies:
-            remove(dummy)
