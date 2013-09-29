@@ -390,6 +390,10 @@ class VolumeError(RuntimeError):
 class DoubleDownError(RuntimeError):
     pass
 
+
+class InvalidAllocError(Exception):
+    pass
+
 VALID_STATES = ('Down', 'Migration Destination', 'Migration Source',
                 'Paused', 'Powering down', 'RebootInProgress',
                 'Restoring state', 'Saving State',
@@ -489,21 +493,38 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             # Avoid queries from storage during recovery process
             return
 
-        for vmDrive in self._vm._devices[DISK_DEVICES]:
-            if not vmDrive.blockDev or vmDrive.format != 'cow':
+        try:
+            self._extendVmDrives(self._devices[DISK_DEVICES])
+        except InvalidAllocError as e:
+            self._log.error("Error extending VM drives: %s", e)
+            self._vm.pause(pauseCode='EOTHER')
+
+    def _extendVmDrives(self, vmDrives):
+        extend = []
+        for drive in vmDrives:
+            if not drive.blockDev or drive.format != 'cow':
                 continue
 
-            capacity, alloc, physical = \
-                self._vm._dom.blockInfo(vmDrive.path, 0)
+            capacity, alloc, physical = self._vm._dom.blockInfo(
+                drive.path, 0)
 
-            if physical - alloc >= vmDrive.watermarkLimit:
-                continue
+            if physical < alloc:
+                raise InvalidAllocError('Implausible alloc %s > physical %s '
+                                        'in volume %s.' %
+                                        (alloc, physical, drive.path))
 
+            if physical - alloc < drive.watermarkLimit:
+                extend.append((drive, capacity, alloc, physical))
+
+        if not extend:
+            self._log.info('No VM drives will be extended.')
+            return
+
+        for drive, capacity, alloc, physical in extend:
             self._log.info('%s/%s apparent: %s capacity: %s, alloc: %s, '
-                           'phys: %s', vmDrive.domainID, vmDrive.volumeID,
-                           vmDrive.apparentsize, capacity, alloc, physical)
-
-            self._vm.extendDriveVolume(vmDrive)
+                           'physical: %s', drive.domainID, drive.volumeID,
+                           drive.apparentsize, capacity, alloc, physical)
+            self._vm.extendDriveVolume(drive)
 
     def _updateVolumes(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -2432,12 +2453,13 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
-    def pause(self, afterState='Paused', guestCpuLocked=False):
+    def pause(self, afterState='Paused', guestCpuLocked=False,
+              pauseCode='NOERR'):
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout()
         try:
             with self._confLock:
-                self.conf['pauseCode'] = 'NOERR'
+                self.conf['pauseCode'] = pauseCode
             self._underlyingPause()
             if hasattr(self, 'updateGuestCpuRunning'):
                 self.updateGuestCpuRunning()
@@ -4271,25 +4293,12 @@ class Vm(object):
         self.conf['pauseCode'] = err.upper()
         self._guestCpuRunning = False
         if err.upper() == 'ENOSPC':
-            for d in self._devices[DISK_DEVICES]:
-                if d.alias == blockDevAlias:
-                    #in the case of a qcow2-like file stored inside a block
-                    #device 'physical' will give the block device size, while
-                    #'allocation' will give the qcow2 image size
-                    #D. Berrange
-                    capacity, alloc, physical = self._dom.blockInfo(d.path, 0)
-                    if (physical >
-                        (alloc + config.getint(
-                            'irs', 'volume_utilization_chunk_mb'))):
-                        self.log.warn('%s = %s/%s error %s phys: %s alloc: %s '
-                                      'Ingnoring already managed event.',
-                                      blockDevAlias, d.domainID, d.volumeID,
-                                      err, physical, alloc)
-                        return
-                    self.log.info('%s = %s/%s error %s phys: %s alloc: %s',
-                                  blockDevAlias, d.domainID, d.volumeID, err,
-                                  physical, alloc)
-                    self.extendDriveVolume(d)
+            drives = [vmDrive for vmDrive in self._devices[DISK_DEVICES]
+                      if vmDrive.alias == blockDevAlias]
+            try:
+                self._extendVmDrives(drives)
+            except InvalidAllocError as e:
+                self._log.error("Error extending VM drives: %s", e)
 
     def _acpiShutdown(self):
         self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
