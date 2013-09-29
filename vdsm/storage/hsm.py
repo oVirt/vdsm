@@ -723,7 +723,7 @@ class HSM:
         return dict(size=str(roundedSizeBytes))
 
     @public
-    def extendStorageDomain(self, sdUUID, spUUID, devlist,
+    def extendStorageDomain(self, sdUUID, spUUID, guids,
                             force=False, options=None):
         """
         Extends a VG. ?
@@ -735,19 +735,21 @@ class HSM:
         :type sdUUID: UUID
         :param spUUID: The UUID of the storage pool that owns the VG.
         :type spUUID: UUID
-        :param devlist: The list of devices you want to extend the VG to. ?
-        :type devlist: list of devices. ``[dev1, dev2]``. ?
+        :param guids: The list of device guids you want to extend the VG to.
+        :type guids: list of device guids. ``[guid1, guid2]``.
         :param options: ?
         """
         vars.task.setDefaultException(
             se.StorageDomainActionError(
-                "sdUUID=%s, devlist=%s" % (sdUUID, devlist)))
+                "sdUUID=%s, devlist=%s" % (sdUUID, guids)))
 
         vars.task.getSharedLock(STORAGE, sdUUID)
         # We need to let the domain to extend itself
         pool = self.getPool(spUUID)
         pool.validatePoolSD(sdUUID)
-        pool.extendSD(sdUUID, devlist, force)
+        dmDevs = tuple(os.path.join(devicemapper.DMPATH_PREFIX, guid) for guid
+                       in guids)
+        pool.extendSD(sdUUID, dmDevs, force)
 
     @public
     def forcedDetachStorageDomain(self, sdUUID, spUUID, options=None):
