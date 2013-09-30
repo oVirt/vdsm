@@ -49,6 +49,8 @@ def tokenize(data):
                 data = data[1:]
             data = data[1:]
             yield string
+        else:
+            raise ValueError('Invalid data: %r' % data)
 
 
 def parse(tokens):
