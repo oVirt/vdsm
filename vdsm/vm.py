@@ -4980,7 +4980,7 @@ class Vm(object):
         if not self._pathsPreparedEvent.isSet():
             self.log.debug('Timeout while waiting for path preparation')
             return False
-        srcDomXML = self.conf.pop('_srcDomXML')
+        srcDomXML = self.conf.pop('_srcDomXML').encode('utf-8')
         self._updateDevicesDomxmlCache(srcDomXML)
 
         for dev in self._customDevices():
