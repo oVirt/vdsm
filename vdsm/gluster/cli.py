@@ -641,27 +641,31 @@ def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
     else:
         return
 
+    st = tree.find('aggregate/statusStr').text
+    statusStr = st.replace(' ', '_').replace('-', '_')
     status = {
         'summary': {
             'runtime': tree.find('aggregate/runtime').text,
             'filesScanned': tree.find('aggregate/lookups').text,
             'filesMoved': tree.find('aggregate/files').text,
             'filesFailed': tree.find('aggregate/failures').text,
-            'filesSkipped': tree.find('aggregate/failures').text,
+            'filesSkipped': tree.find('aggregate/skipped').text,
             'totalSizeMoved': tree.find('aggregate/size').text,
-            'status': tree.find('aggregate/statusStr').text.upper()},
+            'status': statusStr.upper()},
         'hosts': []}
 
     for el in tree.findall('node'):
+        st = el.find('statusStr').text
+        statusStr = st.replace(' ', '_').replace('-', '_')
         status['hosts'].append({'name': el.find('nodeName').text,
                                 'id': el.find('id').text,
                                 'runtime': el.find('runtime').text,
                                 'filesScanned': el.find('lookups').text,
                                 'filesMoved': el.find('files').text,
                                 'filesFailed': el.find('failures').text,
-                                'filesSkipped': el.find('failures').text,
+                                'filesSkipped': el.find('skipped').text,
                                 'totalSizeMoved': el.find('size').text,
-                                'status': el.find('statusStr').text.upper()})
+                                'status': statusStr.upper()})
 
     return status
 
