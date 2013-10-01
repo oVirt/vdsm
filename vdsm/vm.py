@@ -1713,6 +1713,20 @@ class Vm(object):
     # limit threads number until the libvirt lock will be fixed
     _ongoingCreations = threading.BoundedSemaphore(4)
     MigrationSourceThreadClass = MigrationSourceThread
+    DeviceMapping = ((DISK_DEVICES, Drive),
+                     (NIC_DEVICES, NetworkInterfaceDevice),
+                     (SOUND_DEVICES, SoundDevice),
+                     (VIDEO_DEVICES, VideoDevice),
+                     (CONTROLLER_DEVICES, ControllerDevice),
+                     (GENERAL_DEVICES, GeneralDevice),
+                     (BALLOON_DEVICES, BalloonDevice),
+                     (WATCHDOG_DEVICES, WatchdogDevice),
+                     (CONSOLE_DEVICES, ConsoleDevice),
+                     (REDIR_DEVICES, RedirDevice),
+                     (SMARTCARD_DEVICES, SmartCardDevice))
+
+    def _makeDeviceDict(self):
+        return dict((dev, []) for dev, _ in self.DeviceMapping)
 
     def _makeChannelPath(self, deviceName):
         return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + deviceName
@@ -1767,12 +1781,7 @@ class Vm(object):
         self.stopDisksStatsCollection()
         self._vmCreationEvent = threading.Event()
         self._pathsPreparedEvent = threading.Event()
-        self._devices = {DISK_DEVICES: [], NIC_DEVICES: [],
-                         SOUND_DEVICES: [], VIDEO_DEVICES: [],
-                         CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
-                         BALLOON_DEVICES: [], REDIR_DEVICES: [],
-                         WATCHDOG_DEVICES: [], CONSOLE_DEVICES: [],
-                         SMARTCARD_DEVICES: []}
+        self._devices = self._makeDeviceDict()
 
         self._connection = libvirtconnection.get(cif)
         if 'vmName' not in self.conf:
@@ -1870,12 +1879,7 @@ class Vm(object):
         return removables
 
     def getConfDevices(self):
-        devices = {DISK_DEVICES: [], NIC_DEVICES: [],
-                   SOUND_DEVICES: [], VIDEO_DEVICES: [],
-                   CONTROLLER_DEVICES: [], GENERAL_DEVICES: [],
-                   BALLOON_DEVICES: [], REDIR_DEVICES: [],
-                   WATCHDOG_DEVICES: [], CONSOLE_DEVICES: [],
-                   SMARTCARD_DEVICES: []}
+        devices = self._makeDeviceDict()
         for dev in self.conf.get('devices'):
             try:
                 devices[dev['type']].append(dev)
@@ -2930,19 +2934,7 @@ class Vm(object):
             else:
                 devices = self.getConfDevices()
 
-        devMap = {DISK_DEVICES: Drive,
-                  NIC_DEVICES: NetworkInterfaceDevice,
-                  SOUND_DEVICES: SoundDevice,
-                  VIDEO_DEVICES: VideoDevice,
-                  CONTROLLER_DEVICES: ControllerDevice,
-                  GENERAL_DEVICES: GeneralDevice,
-                  BALLOON_DEVICES: BalloonDevice,
-                  WATCHDOG_DEVICES: WatchdogDevice,
-                  REDIR_DEVICES: RedirDevice,
-                  CONSOLE_DEVICES: ConsoleDevice,
-                  SMARTCARD_DEVICES: SmartCardDevice}
-
-        for devType, devClass in devMap.items():
+        for devType, devClass in self.DeviceMapping:
             for dev in devices[devType]:
                 self._devices[devType].append(devClass(self.conf, self.log,
                                                        **dev))
