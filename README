@@ -25,9 +25,17 @@ start you can do
    make
    sudo make install
 
+Before starting the VDSM service in the first time, you must configure and
+restart libvirt service:
+
+   vdsm-tool libvirt-configure
+   vdsm-tool libvirt-configure-services-restart
+
+Packaging
+=========
+
 The 'vdsm.spec' file demonstrates how to distribute VDSM as an RPM
 package.
-
 
 Getting Help
 ============
