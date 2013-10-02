@@ -1506,7 +1506,7 @@ class HSM:
         force parameter is deprecated and not evaluated.
         """
         # vars.task.setDefaultException(se.ChangeMeError("%s" % args))
-        self.getPool(spUUID)  # Validates that the pool is connected. WHY?
+        pool = self.getPool(spUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
 
         vars.task.getExclusiveLock(STORAGE, imgUUID)
@@ -1541,7 +1541,7 @@ class HSM:
             if fakeTUUID:
                 tParams = dom.produceVolume(imgUUID, fakeTUUID).\
                     getVolumeParams()
-            dom.deleteImage(sdUUID, imgUUID, volsByImg)
+            pool.deleteImage(dom, imgUUID, volsByImg)
             # This is a hack to keep the interface consistent
             # We currently have race conditions in delete image, to quickly fix
             # this we delete images in the "synchronous" state. This only works

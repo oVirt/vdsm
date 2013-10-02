@@ -2020,6 +2020,26 @@ class StoragePool(Securable):
                 sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID).delete(
                     postZero=postZero, force=force)
 
+    def deleteImage(self, domain, imgUUID, volsByImg):
+        """
+        Deletes a given list of volumes belonging to imgUUID.
+
+        .. note::
+            This function cannot be scheduled as it takes the domain object
+            (for performance reasons) instead of the sdUUID.
+
+            Few arguments could be evetually optimzed out and normalized but
+            it requires some refactoring.
+
+        :param domain: The object of the domain containing the image.
+        :type sdUUID: StorageDomain
+        :param imgUUID: The UUID of the relevant image.
+        :type imgUUID: UUID
+        :param volsByImg: List of the volumes to remove.
+        :type volsByImg: list
+        """
+        domain.deleteImage(domain.sdUUID, imgUUID, volsByImg)
+
     def setMaxHostID(self, spUUID, maxID):
         """
         Set maximum host ID
