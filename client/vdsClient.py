@@ -1642,44 +1642,44 @@ class service:
             return status['status']['code'], status['power']
         return status['status']['code'], status['status']['message']
 
-    def __image_status(self, imgUUID, list):
-            if "imagestatus" in list and "message" in list:
+    def __image_status(self, imgUUID, res):
+            if "imagestatus" in res and "message" in res:
                 status = "OK"
-                if list["imagestatus"]:
+                if res["imagestatus"]:
                     status = "ERROR"
                 print ("Image %s status %s: %s (%s)" %
-                       (imgUUID, status, list["message"], list["imagestatus"]))
-            if "badvols" in list:
-                for v, err in list["badvols"].iteritems():
+                       (imgUUID, status, res["message"], res["imagestatus"]))
+            if "badvols" in res:
+                for v, err in res["badvols"].iteritems():
                     print "\tVolume %s is bad: %s" % (v, err)
 
-    def __domain_status(self, sdUUID, list):
-            if "domainstatus" in list and "message" in list:
+    def __domain_status(self, sdUUID, res):
+            if "domainstatus" in res and "message" in res:
                 status = "OK"
-                if list["domainstatus"]:
+                if res["domainstatus"]:
                     status = "ERROR"
                 print ("Domain %s status %s: %s (%s)" %
-                       (sdUUID, status, list["message"], list["domainstatus"]))
-            if "badimages" in list:
-                for i in list["badimages"]:
+                       (sdUUID, status, res["message"], res["domainstatus"]))
+            if "badimages" in res:
+                for i in res["badimages"]:
                     print "\tImage %s is bad" % (i)
-                    self.__image_status(i, list["badimages"][i])
+                    self.__image_status(i, res["badimages"][i])
 
-    def __pool_status(self, spUUID, list):
-            if "poolstatus" in list and "message" in list:
+    def __pool_status(self, spUUID, res):
+            if "poolstatus" in res and "message" in res:
                 status = "OK"
-                if list["poolstatus"]:
+                if res["poolstatus"]:
                     status = "ERROR"
                 print ("Pool %s status %s: %s (%s)" %
-                       (spUUID, status, list["message"], list["poolstatus"]))
+                       (spUUID, status, res["message"], res["poolstatus"]))
             if "masterdomain":
-                print "\tMaster domain is %s" % list["masterdomain"]
+                print "\tMaster domain is %s" % res["masterdomain"]
             if "spmhost":
-                print "\tThe SPM host id is %s" % list["spmhost"]
-            if "baddomains" in list:
-                for d in list["baddomains"]:
+                print "\tThe SPM host id is %s" % res["spmhost"]
+            if "baddomains" in res:
+                for d in res["baddomains"]:
                     print "\tDomain %s is bad:" % (d)
-                    self.__domain_status(d, list["baddomains"][d])
+                    self.__domain_status(d, res["baddomains"][d])
 
     def repoStats(self, args):
         stats = self.s.repoStats()
