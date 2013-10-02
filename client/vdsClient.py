@@ -1685,7 +1685,7 @@ class service:
         stats = self.s.repoStats()
         if stats['status']['code']:
             print "count not get repo stats"
-            return int(list['status']['code'])
+            return int(stats['status']['code'])
         for d in stats:
             if d == "status":
                 continue
