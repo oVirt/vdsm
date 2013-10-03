@@ -3230,8 +3230,12 @@ class HSM:
         # Filter volumes related to this image
         imgVolumes = sd.getVolsOfImage(allVols, imgUUID).keys()
         imgPath = dom.activateVolumes(imgUUID, imgVolumes)
+        if spUUID and spUUID != sd.BLANK_UUID:
+            runImgPath = dom.linkBCImage(imgPath, imgUUID)
+        else:
+            runImgPath = imgPath
 
-        leafPath = os.path.join(imgPath, leafUUID)
+        leafPath = os.path.join(runImgPath, leafUUID)
         for volUUID in imgVolumes:
             path = os.path.join(dom.domaindir, sd.DOMAIN_IMAGES, imgUUID,
                                 volUUID)

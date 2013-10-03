@@ -1029,6 +1029,21 @@ class BlockStorageDomain(sd.StorageDomain):
         vols, rems = self.getAllVolumesImages()
         return rems
 
+    def linkBCImage(self, imgPath, imgUUID):
+        dst = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
+                           imgUUID)
+        try:
+            os.symlink(imgPath, dst)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                self.log.debug("path to image directory already exists: %s",
+                               dst)
+            else:
+                self.log.error("Failed to create path to image directory: %s",
+                               dst)
+                raise
+        return dst
+
     def createImageLinks(self, srcImgPath, imgUUID, volUUIDs):
         """
         qcow chain is build by reading each qcow header and reading the path

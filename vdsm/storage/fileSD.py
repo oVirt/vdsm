@@ -418,6 +418,10 @@ class FileStorageDomain(sd.StorageDomain):
         return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
                     for k, v in volumes.iteritems())
 
+    def linkBCImage(self, imgPath, imgUUID):
+        return os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
+                            imgUUID)
+
     def createImageLinks(self, srcImgPath, imgUUID):
         """
         qcow chain is build by reading each qcow header and reading the path
