@@ -1022,7 +1022,7 @@ class Image:
 
         # Prepare chain for future erase
         rmChain = [vol.volUUID for
-                   vol in chain if srcVol.volUUID != srcVolParams['volUUID']]
+                   vol in chain if vol.volUUID != srcVolParams['volUUID']]
         rmChain.append(tmpUUID)
 
         return rmChain
