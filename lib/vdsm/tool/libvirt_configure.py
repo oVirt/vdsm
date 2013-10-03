@@ -41,11 +41,7 @@ def exec_libvirt_configure(action, *args):
 
     sys.stdout.write(out)
     sys.stderr.write(err)
-
-    if rc != 0:
-        raise RuntimeError("Failed to configure libvirt")
-
-    return 0
+    return rc
 
 
 @vdsm.tool.expose("libvirt-configure")
@@ -53,8 +49,11 @@ def configure_libvirt(*args):
     """
     libvirt configuration (--force for reconfigure)
     """
-    return exec_libvirt_configure("reconfigure",
-                                  *args)
+    rc = exec_libvirt_configure("reconfigure", *args)
+    if rc != 0:
+        raise RuntimeError("Failed to configure libvirt")
+
+    return 0
 
 
 @vdsm.tool.expose("libvirt-test-conflicts")
@@ -75,3 +74,11 @@ def libvirt_configure_services_restart(*args):
     service.service_start("libvirtd")
     service.service_start("supervdsmd")
     return 0
+
+
+@vdsm.tool.expose("libvirt-is-configured")
+def libvirt_is_configured(*args):
+    """
+    Check if libvirt is already configured for vdsm
+    """
+    return exec_libvirt_configure("check_if_configured", *args)

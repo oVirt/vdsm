@@ -54,8 +54,12 @@ _reconfigure_sanlock() {
 }
 
 
-task_reconfigure_libvirt(){
-    "$VDSM_TOOL" libvirt-configure
+task_check_libvirt_configure() {
+    if ! "$VDSM_TOOL" libvirt-is-configured; then
+        echo "Perform 'vdsm-tool libvirt-configure' before starting vdsmd"
+        return 1
+    fi
+    return 0
 }
 
 
@@ -202,12 +206,22 @@ run_tasks(){
 case "$1" in
     --pre-start)
         run_tasks " \
-            run_init_hooks gencerts reconfigure_sanlock reconfigure_libvirt \
-            syslog_available nwfilter dummybr load_needed_modules \
-            tune_system mkdirs test_space test_lo test_conflicting_conf"
+            run_init_hooks \
+            gencerts \
+            check_libvirt_configure \
+            reconfigure_sanlock \
+            syslog_available \
+            nwfilter dummybr \
+            load_needed_modules \
+            tune_system mkdirs \
+            test_space test_lo \
+            test_conflicting_conf \
+            "
         ;;
     --post-stop)
-        run_tasks "run_final_hooks"
+        run_tasks " \
+            run_final_hooks \
+            "
         ;;
     --help|*)
         usage

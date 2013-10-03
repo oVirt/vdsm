@@ -30,6 +30,15 @@ LCONF="@sysconfdir@/libvirt/libvirtd.conf"
 QCONF="@sysconfdir@/libvirt/qemu.conf"
 LDCONF="@LIBVIRT_SERVICE_DEFAULT@"
 QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
+
+# The PACKAGE_VERSION define is not used here because we do not want to
+# update the libvirt configure file every time we change vdsm package
+# version. In fact the configure generated here is almost unrelated to the
+# package version, so anything meaningful can be used here. Since a hard
+# coded version string has been already used, for compatibility we will
+# continue to use this string.
+BY_VDSM_VERS="4.10.3"
+
 [ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ] || QLCONF="/dev/null"
 
 # trigger for reconfiguration
@@ -101,7 +110,7 @@ libvirtd_sysv2upstart() {
         "@SERVICE_PATH@" libvirtd stop
     fi
 
-    if ! diff -q "${packaged}" "${target}" >/dev/null;
+    if ! diff -q "${packaged}" "${target}" >/dev/null 2>&1;
     then
         /bin/cp -p "${packaged}" "${target}" || return 1
         /sbin/initctl reload-configuration
@@ -140,6 +149,20 @@ set_if_default() {
       echo "${key}=${val}" >> "${cfile}"
 }
 
+is_already_configured() {
+    local rc=0
+    while [ -n "$1" ]; do
+        if ! /bin/grep -q "${BY_VDSM_VERS}" "$1" >/dev/null 2>&1; then
+            rc=1
+            echo "libvirt is not configured for vdsm yet"
+            break
+        fi
+        shift
+    done
+    [ "${rc}" = 0 ] && echo "libvirt is already configured for vdsm"
+    return "${rc}"
+}
+
 configure() {
     # if SysV init file and Upstart job file both exist, prefer Upstart
     libvirtd_sysv2upstart || return $?
@@ -150,13 +173,6 @@ configure() {
     local qlconf="$4"
     local force_reconfigure="$5"
     local by_vdsm="by vdsm"
-    # The PACKAGE_VERSION macro is not used here because we do not want to
-    # update the libvirt configure file every time we change vdsm package
-    # version. In fact the configure generated here is almost unrelated to the
-    # package version, so anything meaningful can be used here. Since a hard
-    # coded version string has been already used, for compatibility we will
-    # continue to use this string.
-    local by_vdsm_vers="4.10.3"
     local start_conf_section="## beginning of configuration section ${by_vdsm}"
     local end_conf_section="## end of configuration section ${by_vdsm}"
 
@@ -183,12 +199,10 @@ configure() {
     # - not configured
     #
     if [ "${force_reconfigure}" != "--force" ] && \
-      ! [ -f "${FORCE_RECONFIGURE}" ] && \
-        grep -q "${by_vdsm_vers}" "${lconf}" && \
-        grep -q "${by_vdsm_vers}" "${qconf}" && \
-        grep -q "${by_vdsm_vers}" "${ldconf}" && \
-        grep -q "${by_vdsm_vers}" "${qlconf}"; then
-        echo "libvirt is already configured for vdsm"
+       ! [ -f "${FORCE_RECONFIGURE}" ] && \
+       is_already_configured "${lconf}" "${qconf}" "${ldconf}" "${qlconf}";
+    then
+        echo "Not forcing reconfigure"
         return 0
     fi
 
@@ -197,7 +211,7 @@ configure() {
 
     # Write to all conf files the *initial* message of vdsm changes
     for arg in "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"; do
-        echo "${start_conf_section}-${by_vdsm_vers}" >> "${arg}"
+        echo "${start_conf_section}-${BY_VDSM_VERS}" >> "${arg}"
     done
 
     # Set the default values for libvirt and qemu
@@ -254,7 +268,7 @@ configure() {
     # Write to all conf files the *end* message of vdsm changes
     for arg in "${lconf}" "${qconf}" "${ldconf}" "${qlconf}"
     do
-        echo "${end_conf_section}-${by_vdsm_vers}" >> "${arg}"
+        echo "${end_conf_section}-${BY_VDSM_VERS}" >> "${arg}"
     done
 
     local lnetwork=/etc/libvirt/qemu/networks/autostart/default.xml
@@ -318,9 +332,13 @@ case "$1" in
      test_conflict_configurations)
         test_conflicting_conf "$LCONF" "$QCONF"
         RETVAL=$?
-    ;;
+        ;;
+     check_if_configured)
+        is_already_configured "$LCONF" "$QCONF" "$LDCONF" "$QLCONF"
+        RETVAL=$?
+        ;;
      *)
-        echo "Usage: $0 {reconfigure *conf-files [--force] | test_conflict_configurations *conf-files}"
+        echo "Usage: $0 {reconfigure *conf-files [--force] | test_conflict_configurations *conf-files | check_if_configured}"
         RETVAL=2
 esac
 
