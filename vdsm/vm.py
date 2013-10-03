@@ -285,6 +285,9 @@ class MigrationSourceThread(threading.Thread):
                         new_drives.append(drive)
                 self._machineParams['drives'] = new_drives
 
+        # vdsm < 4.13 expect this to exist
+        self._machineParams['afterMigrationStatus'] = ''
+
     def run(self):
         try:
             mstate = ''
