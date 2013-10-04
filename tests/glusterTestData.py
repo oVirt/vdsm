@@ -768,20 +768,20 @@ PROFILE_INFO_NFS = {'nfsServers': [
 
 REBALANCE_REMOVE_BRICK_STATUS = {
     'summary': {
-        'filesScanned': 278,
-        'filesMoved': 78,
-        'filesFailed': 0,
-        'filesSkipped': 0,
-        'totalSizeMoved': 79872,
+        'filesScanned': '278',
+        'filesMoved': '78',
+        'filesFailed': '0',
+        'filesSkipped': '0',
+        'totalSizeMoved': '79872',
         'status': 'COMPLETED'
     },
     'hosts': [{
         'name': 'localhost',
-        'filesScanned': 278,
-        'filesMoved': 78,
-        'filesFailed': 0,
-        'filesSkipped': 0,
-        'totalSizeMoved': 79872,
+        'filesScanned': '278',
+        'filesMoved': '78',
+        'filesFailed': '0',
+        'filesSkipped': '0',
+        'totalSizeMoved': '79872',
         'status': 'COMPLETED'
     }]}
 

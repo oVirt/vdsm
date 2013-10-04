@@ -594,17 +594,17 @@ def volumeRebalanceStop(volumeName, force=False):
 def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
     """
     returns {'hosts': [{'name': NAME,
-                       'filesScanned': INT,
-                       'filesMoved': INT,
-                       'filesFailed': INT,
-                       'filesSkipped': INT,
-                       'totalSizeMoved': INT,
+                       'filesScanned': INT AS STRING,
+                       'filesMoved': INT AS STRING,
+                       'filesFailed': INT AS STRING,
+                       'filesSkipped': INT AS STRING,
+                       'totalSizeMoved': INT AS STRING,
                        'status': STRING},...]
-             'summary': {'filesScanned': INT,
-                         'filesMoved': INT,
-                         'filesFailed': INT,
-                         'filesSkipped': INT,
-                         'totalSizeMoved': INT,
+             'summary': {'filesScanned': INT AS STRING,
+                         'filesMoved': INT AS STRING,
+                         'filesFailed': INT AS STRING,
+                         'filesSkipped': INT AS STRING,
+                         'totalSizeMoved': INT AS STRING,
                          'status': STRING}}
     """
     if mode == 'rebalance':
@@ -616,21 +616,21 @@ def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
 
     status = {
         'summary': {
-            'filesScanned': int(tree.find('aggregate/lookups').text),
-            'filesMoved': int(tree.find('aggregate/files').text),
-            'filesFailed': int(tree.find('aggregate/failures').text),
-            'filesSkipped': int(tree.find('aggregate/failures').text),
-            'totalSizeMoved': int(tree.find('aggregate/size').text),
+            'filesScanned': tree.find('aggregate/lookups').text,
+            'filesMoved': tree.find('aggregate/files').text,
+            'filesFailed': tree.find('aggregate/failures').text,
+            'filesSkipped': tree.find('aggregate/failures').text,
+            'totalSizeMoved': tree.find('aggregate/size').text,
             'status': tree.find('aggregate/statusStr').text.upper()},
         'hosts': []}
 
     for el in tree.findall('node'):
         status['hosts'].append({'name': el.find('nodeName').text,
-                                'filesScanned': int(el.find('lookups').text),
-                                'filesMoved': int(el.find('files').text),
-                                'filesFailed': int(el.find('failures').text),
-                                'filesSkipped': int(el.find('failures').text),
-                                'totalSizeMoved': int(el.find('size').text),
+                                'filesScanned': el.find('lookups').text,
+                                'filesMoved': el.find('files').text,
+                                'filesFailed': el.find('failures').text,
+                                'filesSkipped': el.find('failures').text,
+                                'totalSizeMoved': el.find('size').text,
                                 'status': el.find('statusStr').text.upper()})
 
     return status
