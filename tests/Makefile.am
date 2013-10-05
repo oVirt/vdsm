@@ -45,6 +45,7 @@ test_modules = \
 	md_utils_tests.py \
 	miscTests.py \
 	mkimageTests.py \
+	monkeypatchTests.py \
 	mountTests.py \
 	netconfTests.py \
 	netinfoTests.py \

@@ -21,6 +21,54 @@
 from contextlib import contextmanager
 from functools import wraps
 
+#
+# Monkey patch
+#
+# Usage:
+# ---
+# import monkeypatch
+#
+# class TestSomething():
+#
+#     def __init__(self):
+#         self.patch = monkeypatch.Patch([
+#             (subprocess, 'Popen', lambda x: None),
+#             (os, 'chown', lambda *x: 0)
+#         ])
+#
+#     def setUp(self):
+#         self.patch.apply()
+#
+#     def tearDown(self):
+#         self.patch.revert()
+#
+#     def testThis(self):
+#         # using patched functions
+#
+#     def testThat(self):
+#         # using patched functions
+# ---
+#
+
+
+class Patch(object):
+
+    def __init__(self, what):
+        self.what = what
+        self.old = []
+
+    def apply(self):
+        assert self.old == []
+        for module, name, that in self.what:
+            self.old.append((module, name, getattr(module, name)))
+            setattr(module, name, that)
+
+    def revert(self):
+        assert self.old != []
+        while self.old:
+            module, name, that = self.old.pop()
+            setattr(module, name, that)
+
 
 #
 # Monkey patch scope.
@@ -39,17 +87,12 @@ from functools import wraps
 #
 @contextmanager
 def MonkeyPatchScope(what):
-    old = []
-    for f in what:
-        module, name, that = f
-        old.append((module, name, getattr(module, name)))
-        setattr(module, name, that)
+    patch = Patch(what)
+    patch.apply()
     try:
         yield {}
     finally:
-        for f in old:
-            module, name, that = f
-            setattr(module, name, that)
+        patch.revert()
 
 
 #
