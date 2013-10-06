@@ -22,13 +22,9 @@
 ### END INIT INFO
 
 VDSM_BIN="@VDSMDIR@/vdsm"
-CONF_FILE="@CONFDIR@/vdsm.conf"
-GETCONFITEM="@VDSMDIR@/get-conf-item"
 prog=vdsm
 PIDFILE=@VDSMRUNDIR@/vdsmd.pid
 RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
-CORE_DUMP_PATH="/var/log/core/core.%p.%t.dump"
-CORE_PATTERN="/proc/sys/kernel/core_pattern"
 NEEDED_SERVICES="iscsid multipathd rpcbind ntpd wdmd sanlock network libvirtd
                  supervdsmd"
 CONFLICTING_SERVICES="libvirt-guests ksmtuned"
@@ -37,9 +33,6 @@ VDSM_TOOL="@BINDIR@/vdsm-tool"
 NICE_LOWEST=-20
 VDSMD_INIT_COMMON="@LIBEXECDIR@/vdsmd_init_common.sh"
 RETVAL=0
-
-is_coredump="$("${GETCONFITEM}" "${CONF_FILE}" vars core_dump_enable false | tr A-Z a-z)"
-[ "${is_coredump}" != "true" ] && is_coredump=false
 
 SYSTEMCTL_SKIP_REDIRECT=true
 
@@ -125,18 +118,16 @@ reconfigure_libvirt() {
 start() {
     test_already_running && return 0
 
-    if [ "${is_coredump}" = "true" ]; then
-        export DAEMON_COREFILE_LIMIT=unlimited
-        echo "${CORE_DUMP_PATH}" > "${CORE_PATTERN}"
-    fi
     shutdown_conflicting_srv "${CONFLICTING_SERVICES}" || return 1
     start_needed_srv "${NEEDED_SERVICES}" || return 1
     "${VDSMD_INIT_COMMON}" --pre-start || return 1
 
     echo $"Starting up vdsm daemon: "
-    NICELEVEL="${NICE_LOWEST}" daemon --user=vdsm "@VDSMDIR@/daemonAdapter" \
-        -0 /dev/null -1 /dev/null -2 /dev/null --syslog "@VDSMDIR@/respawn" --minlifetime 10 \
-        --daemon --masterpid "${RESPAWNPIDFILE}" "${VDSM_BIN}" --pidfile "${PIDFILE}" || return 1
+    DAEMON_COREFILE_LIMIT=unlimited NICELEVEL="${NICE_LOWEST}" daemon \
+        --user=vdsm "@VDSMDIR@/daemonAdapter" -0 /dev/null -1 /dev/null \
+        -2 /dev/null --syslog "@VDSMDIR@/respawn" --minlifetime 10 \
+        --daemon --masterpid "${RESPAWNPIDFILE}" "${VDSM_BIN}" \
+        --pidfile "${PIDFILE}" || return 1
     touch "${LOCK_FILE}"
     return 0
 }

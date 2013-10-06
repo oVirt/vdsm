@@ -6,6 +6,7 @@ Conflicts=libvirt-guests.service ksmtuned.service
 
 [Service]
 Type=simple
+LimitCORE=infinity
 EnvironmentFile=-/etc/sysconfig/vdsm
 ExecStartPre=@LIBEXECDIR@/vdsmd_init_common.sh --pre-start
 ExecStart=@VDSMDIR@/daemonAdapter -0 /dev/null -1 /dev/null -2 /dev/null "@VDSMDIR@/vdsm"

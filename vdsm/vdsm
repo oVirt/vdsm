@@ -18,9 +18,12 @@ import grp
 import threading
 import logging
 import syslog
+import resource
 from logging import config as lconfig
 
 from vdsm import constants
+from vdsm.config import config
+
 import zombieReaper
 import dsaversion
 if sys.version_info[0] == 2:
@@ -159,6 +162,10 @@ def __assertVdsmUser():
 if __name__ == '__main__':
     __assertVdsmUser()
     __assertLogPermission()
+
+    if not config.getboolean('vars', 'core_dump_enable'):
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
     if os.getsid(0) != os.getpid():
         # Modern init systems such as systemd can provide us a clean daemon
         # environment. So we setpgrp only when run by traditional init system

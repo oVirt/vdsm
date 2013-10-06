@@ -21,8 +21,17 @@
 VDSM_TOOL="@BINDIR@/vdsm-tool"
 prog=vdsm
 
-
 #### pre-start tasks ####
+task_configure_coredump() {
+    local conf_file="@CONFDIR@/vdsm.conf"
+    local getconfitem="@VDSMDIR@/get-conf-item"
+
+    if "${getconfitem}" "${conf_file}" vars core_dump_enable false |
+      tr A-Z a-z | grep -q true; then
+        echo "/var/log/core/core.%p.%t.dump" > /proc/sys/kernel/core_pattern
+    fi
+}
+
 task_run_init_hooks(){
     "@PYTHON@" "@VDSMDIR@/hooks.pyc" before_vdsm_start
 }
@@ -212,6 +221,7 @@ run_tasks(){
 case "$1" in
     --pre-start)
         run_tasks " \
+            configure_coredump \
             run_init_hooks \
             gencerts \
             check_libvirt_configure \
