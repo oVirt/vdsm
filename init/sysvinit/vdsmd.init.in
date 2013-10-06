@@ -67,9 +67,11 @@ shutdown_conflicting_srv() {
                # When srv is Upstart service, status srv always returns 0
                initctl stop "${srv}" || : # stop fails when already down
                initctl status "${srv}" | grep -q stop/waiting
-           else
+           elif [ -x "/etc/init.d/${srv}" ]; then
                (! service "${srv}" status >/dev/null 2>&1) ||
                    service "${srv}" stop
+           else
+               true
            fi
         fi
         ret_val=$?
@@ -120,28 +122,22 @@ reconfigure_libvirt() {
 }
 
 start() {
-    local ret_val
-
     test_already_running && return 0
 
     if [ "${is_coredump}" = "true" ]; then
         export DAEMON_COREFILE_LIMIT=unlimited
         echo "${CORE_DUMP_PATH}" > "${CORE_PATTERN}"
     fi
-
-    shutdown_conflicting_srv "${CONFLICTING_SERVICES}"
-
-    start_needed_srv "${NEEDED_SERVICES}"
-
-    "${VDSMD_INIT_COMMON}" --pre-start
+    shutdown_conflicting_srv "${CONFLICTING_SERVICES}" || return 1
+    start_needed_srv "${NEEDED_SERVICES}" || return 1
+    "${VDSMD_INIT_COMMON}" --pre-start || return 1
 
     echo $"Starting up vdsm daemon: "
     NICELEVEL="${NICE_LOWEST}" daemon --user=vdsm "@VDSMDIR@/daemonAdapter" \
         -0 /dev/null -1 /dev/null -2 /dev/null --syslog "@VDSMDIR@/respawn" --minlifetime 10 \
-        --daemon --masterpid "${RESPAWNPIDFILE}" "${VDSM_BIN}" --pidfile "${PIDFILE}"
-    RETVAL=$?
-    [ "$RETVAL" = 0 ] && touch "${LOCK_FILE}"
-    return "$RETVAL"
+        --daemon --masterpid "${RESPAWNPIDFILE}" "${VDSM_BIN}" --pidfile "${PIDFILE}" || return 1
+    touch "${LOCK_FILE}"
+    return 0
 }
 
 stop() {
