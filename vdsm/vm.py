@@ -4803,6 +4803,19 @@ class Vm(object):
             # Get disk address
             address = self._getUnderlyingDeviceAddress(x)
 
+            # Keep data as dict for easier debugging
+            deviceDict = {'path': devPath, 'name': name,
+                          'readonly': readonly, 'bootOrder': bootOrder,
+                          'address': address, 'type': devType, 'boot': boot}
+
+            # display indexed pairs of ordered values from 2 dicts
+            # such as {key_1: (valueA_1, valueB_1), ...}
+            def mergeDicts(deviceDef, dev):
+                d = dev if not isinstance(dev, VmDevice) else dev.__dict__
+                return dict((k, (deviceDef[k], d.get(k, None)))
+                            for k in deviceDef.iterkeys())
+
+            self.log.debug('Looking for drive with attributes %s', deviceDict)
             for d in self._devices[DISK_DEVICES]:
                 if d.path == devPath:
                     d.name = name
@@ -4813,6 +4826,7 @@ class Vm(object):
                     d.readonly = readonly
                     if bootOrder:
                         d.bootOrder = bootOrder
+                    self.log.debug('Matched %s', mergeDicts(deviceDict, d))
             # Update vm's conf with address for known disk devices
             knownDev = False
             for dev in self.conf['devices']:
@@ -4823,6 +4837,7 @@ class Vm(object):
                     dev['readonly'] = str(readonly)
                     if bootOrder:
                         dev['bootOrder'] = bootOrder
+                    self.log.debug('Matched %s', mergeDicts(deviceDict, dev))
                     knownDev = True
             # Add unknown disk device to vm's conf
             if not knownDev:
@@ -4833,6 +4848,7 @@ class Vm(object):
                            'readonly': str(readonly)}
                 if bootOrder:
                     diskDev['bootOrder'] = bootOrder
+                self.log.debug('Found unknown drive: %s', diskDev)
                 self.conf['devices'].append(diskDev)
 
     def _getUnderlyingDisplayPort(self):
