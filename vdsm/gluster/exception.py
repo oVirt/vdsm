@@ -356,51 +356,6 @@ class GlusterVolumeTasksFailedException(GlusterVolumeException):
     message = "Volume tasks list failed"
 
 
-class GlusterTaskNotFoundException(GlusterVolumeException):
-    code = 4162
-    message = "Task not found"
-
-    def __init__(self, taskId):
-        self.taskId = taskId
-        s = 'task id: %s' % taskId
-        self.err = [s]
-
-
-class GlusterTaskActionNotFoundException(GlusterVolumeException):
-    code = 4163
-    message = "Task action not found"
-
-    def __init__(self, taskId, action):
-        self.taskId = taskId
-        self.action = action
-        s = 'Action %s not found for task %s' % (action, taskId)
-        self.err = [s]
-
-
-class GlusterTaskActionUnsupportedException(GlusterVolumeException):
-    code = 4164
-    message = "Task action unsupported"
-
-    def __init__(self, taskId, taskType, action):
-        self.taskId = taskId
-        self.taskType = taskType
-        self.action = action
-        s = 'Unsupported action %s for task %s and type %s' % \
-            (action, taskId, taskType)
-        self.err = [s]
-
-
-class GlusterTaskTypeUnknownException(GlusterVolumeException):
-    code = 4165
-    message = "Task type unknown"
-
-    def __init__(self, taskId, taskType):
-        self.taskId = taskId
-        self.taskType = taskType
-        s = 'Unknown task type %s for task %s' % (taskId, taskType)
-        self.err = [s]
-
-
 # Host
 class GlusterHostException(GlusterException):
     code = 4400
