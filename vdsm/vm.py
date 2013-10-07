@@ -4579,7 +4579,8 @@ class Vm(object):
             sources = x.getElementsByTagName('source')
             if sources:
                 devPath = (sources[0].getAttribute('file') or
-                           sources[0].getAttribute('dev'))
+                           sources[0].getAttribute('dev') or
+                           sources[0].getAttribute('name'))
             else:
                 devPath = ''
 
