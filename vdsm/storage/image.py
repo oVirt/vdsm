@@ -1002,8 +1002,8 @@ class Image:
 
         # Step 3: Rename successor as to _remove_me__successor
         tmpUUID = self.deletedVolumeName(srcVol.volUUID)
-        # Step 4: Rename successor_MERGE to successor
         srcVol.rename(tmpUUID)
+        # Step 4: Rename successor_MERGE to successor
         newVol.rename(srcVolParams['volUUID'])
 
         # Step 5: Rebase children 'unsafely' on top of new volume
@@ -1132,8 +1132,10 @@ class Image:
             self.log.error("Failure to remove subchain %s -> %s in image %s",
                            ancestor, successor, imgUUID, exc_info=True)
 
+        newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
+                                     volUUID=srcVolParams['volUUID'])
         try:
-            srcVol.shrinkToOptimalSize()
+            newVol.shrinkToOptimalSize()
         except qemuImg.QImgError:
             self.log.warning("Auto shrink after merge failed", exc_info=True)
 
