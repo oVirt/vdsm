@@ -164,9 +164,11 @@ Requires: logrotate < 3.8.0
 %if 0%{?fedora} >= 19
 Requires: python-pthreading >= 0.1.2
 Requires: fence-agents-all
+Requires: kernel >= 3.11.3-201
 %else
 Requires: python-pthreading
 Requires: fence-agents
+Requires: kernel >= 3.6
 %endif
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
@@ -179,7 +181,6 @@ Requires: initscripts >= 9.42.2-1
 Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
-Requires: kernel >= 3.6
 Requires: sanlock >= 2.4-2, sanlock-python
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
