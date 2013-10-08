@@ -2380,6 +2380,11 @@ class HSM:
                     self.log.debug("prefetch failed: %s",
                                    sdCache.knownSDs,  exc_info=True)
                 else:
+                    # Any pre-existing domains in sdCache stand the chance of
+                    # being invalid, since there is no way to know what happens
+                    # to them while the storage is disconnected.
+                    for sdUUID in doms.iterkeys():
+                        sdCache.manuallyRemoveDomain(sdUUID)
                     sdCache.knownSDs.update(doms)
 
             self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
