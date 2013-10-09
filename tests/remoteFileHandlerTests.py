@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
+import string
+import tempfile
 from vdsm import utils
 
 from testrunner import VdsmTestCase as TestCaseBase
@@ -69,3 +71,29 @@ class PoolHandlerTests(TestCaseBase):
         test = lambda: self.assertFalse(os.path.exists(procPath))
 
         utils.retry(test, AssertionError, timeout=4, sleep=0.1)
+
+
+class RemoteFileHandlerFunctionTests(TestCaseBase):
+    def testTruncateFile(self):
+        fd, path = tempfile.mkstemp()
+        try:
+            os.write(fd, string.ascii_uppercase)
+            os.close(fd)
+
+            # Verifying content
+            data = string.ascii_uppercase
+            self.assertEquals(data, file(path).read())
+
+            # Testing truncate to a larger size
+            data = string.ascii_uppercase + chr(0) * 16
+
+            rhandler.truncateFile(path, len(data))
+            self.assertEquals(data, file(path).read())
+
+            # Testing truncate to a smaller size
+            data = string.ascii_uppercase
+
+            rhandler.truncateFile(path, len(data))
+            self.assertEquals(data, file(path).read())
+        finally:
+            os.unlink(path)
