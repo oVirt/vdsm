@@ -3910,7 +3910,6 @@ class Vm(object):
                 vmDrive = self._findDriveByUUIDs(baseDrv)
             except LookupError:
                 # The volume we want to snapshot doesn't exist
-                _rollbackDrives(newDrives)
                 self.log.error("The base volume doesn't exist: %s", baseDrv)
                 return errCode['snapshotErr']
 
@@ -3924,22 +3923,29 @@ class Vm(object):
             newDrives[vmDevName]["name"] = vmDevName
             newDrives[vmDevName]["format"] = "cow"
 
+        # If all the drives are the current ones, return success
+        if len(newDrives) == 0:
+            self.log.debug('all the drives are already in use, success')
+            return {'status': doneCode}
+
+        preparedDrives = {}
+
+        for vmDevName, vmDevice in newDrives.iteritems():
+            # Adding the device before requesting to prepare it as we want
+            # to be sure to teardown it down even when prepareVolumePath
+            # failed for some unknown issue that left the volume active.
+            preparedDrives[vmDevName] = vmDevice
             try:
                 newDrives[vmDevName]["path"] = \
                     self.cif.prepareVolumePath(newDrives[vmDevName])
             except Exception:
-                _rollbackDrives(newDrives)
-                self.log.error("Unable to prepare the volume path "
-                               "for the disk: %s", vmDevName, exc_info=True)
+                self.log.exception('unable to prepare the volume path for '
+                                   'disk %s', vmDevName)
+                _rollbackDrives(preparedDrives)
                 return errCode['snapshotErr']
 
             snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"])
             disks.appendChild(snapelem)
-
-        # If all the drives are the current ones, return success
-        if len(newDrives) == 0:
-            self.log.debug("All the drives are already in use, success")
-            return {'status': doneCode}
 
         snap.appendChild(disks)
 
