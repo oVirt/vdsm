@@ -348,15 +348,23 @@ def directWriteLines(path, lines):
 
 
 def truncateFile(path, size, mode=None, creatExcl=False):
+    # NOTE: Under no circumstance you should add the O_TRUNC
+    # flag here. We rely on the fact that the file content is
+    # not deleted when truncating to a larger size.
+    # Please also note that the "w" option used in open/file
+    # contains O_TRUNC and therefore should not be used here.
     flags = os.O_CREAT | os.O_WRONLY
+
     if creatExcl:
         flags |= os.O_EXCL
 
     fd = os.open(path, flags)
-    with os.fdopen(fd, 'w') as f:
+    try:
         if mode is not None:
-            os.chmod(path, mode)
-        f.truncate(size)
+            os.fchmod(fd, mode)
+        os.ftruncate(fd, size)
+    finally:
+        os.close(fd)
 
 
 def readLines(path):
