@@ -21,6 +21,7 @@
 import os
 import math
 import tempfile
+from stat import S_IROTH
 from functools import partial, wraps
 
 from nose.plugins.skip import SkipTest
@@ -68,13 +69,13 @@ def _detectBootImages(initramfsPaths):
     if not os.path.isfile(_kernelPath):
         raise SkipTest("Can not locate kernel image for release %s" %
                        _kernelVer)
-    if not os.access(_kernelPath, os.R_OK):
+    if not (os.stat(_kernelPath).st_mode & S_IROTH):
         raise SkipTest("qemu process can not read the file "
                        "%s" % _kernelPath)
 
     initramfsPaths = filter(os.path.isfile, initramfsPaths)
     if len(initramfsPaths) > 0:
-        if os.access(initramfsPaths[0], os.R_OK):
+        if (os.stat(initramfsPaths[0]).st_mode & S_IROTH):
             return initramfsPaths[0]
     return None
 
