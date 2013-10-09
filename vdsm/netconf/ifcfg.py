@@ -267,7 +267,8 @@ class ConfigWriter(object):
             os.makedirs(dirName)
         os.chown(dirName, vdsm_uid, 0)
 
-        open(backup, 'w').write(content)
+        with open(backup, 'w') as backupFile:
+            backupFile.write(content)
         os.chown(backup, vdsm_uid, 0)
         logging.debug("Persistently backed up %s "
                       "(until next 'set safe config')", backup)
@@ -337,14 +338,15 @@ class ConfigWriter(object):
 
     def restoreAtomicBackup(self):
         logging.info("Rolling back configuration (restoring atomic backup)")
-        for confFile, content in self._backups.iteritems():
+        for confFilePath, content in self._backups.iteritems():
             if content is None:
-                utils.rmFile(confFile)
+                utils.rmFile(confFilePath)
                 logging.debug('Removing empty configuration backup %s',
-                              confFile)
+                              confFilePath)
             else:
-                open(confFile, 'w').write(content)
-            logging.info('Restored %s', confFile)
+                with open(confFilePath, 'w') as confFile:
+                    confFile.write(content)
+            logging.info('Restored %s', confFilePath)
 
     def _devType(self, content):
         if re.search('^TYPE=Bridge$', content, re.MULTILINE):
@@ -479,7 +481,8 @@ class ConfigWriter(object):
         self._backup(fileName)
         logging.debug('Writing to file %s configuration:\n%s' % (fileName,
                       configuration))
-        open(fileName, 'w').write(configuration)
+        with open(fileName, 'w') as confFile:
+            confFile.write(configuration)
         os.chmod(fileName, 0664)
         try:
             selinux.restorecon(fileName)
@@ -559,7 +562,8 @@ class ConfigWriter(object):
 
         # create the bonding device to avoid initscripts noise
         if bond.name not in open(netinfo.BONDING_MASTERS).read().split():
-            open(netinfo.BONDING_MASTERS, 'w').write('+%s\n' % bond.name)
+            with open(netinfo.BONDING_MASTERS, 'w') as bondingMasters:
+                bondingMasters.write('+%s\n' % bond.name)
 
     def addNic(self, nic, **opts):
         """ Create ifcfg-* file with proper fields for NIC """
@@ -606,7 +610,8 @@ class ConfigWriter(object):
                        if line.startswith('HWADDR=')]
             l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
                  'MTU=%s\n' % netinfo.DEFAULT_MTU] + hwlines
-            open(cf, 'w').writelines(l)
+            with open(cf, 'w') as nicFile:
+                nicFile.writelines(l)
         except IOError:
             pass
 
