@@ -103,7 +103,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                            stp=opts.get('stp'),
                            forwardDelay=int(opts.get('forward_delay', 0)))
     if topNetDev is None:
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without'
+        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
     topNetDev.ip = IpConfig(inet=IPv4(ipaddr, netmask, gateway, defaultRoute),
                             bootproto=bootproto,
