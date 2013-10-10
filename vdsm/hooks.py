@@ -302,6 +302,14 @@ def after_vdsm_stop():
     return _runHooksDir(None, 'after_vdsm_stop', raiseError=False)
 
 
+def before_network_setup():
+    return _runHooksDir(None, 'before_network_setup')
+
+
+def after_network_setup():
+    return _runHooksDir(None, 'after_network_setup', raiseError=False)
+
+
 def _getScriptInfo(path):
     try:
         with file(path) as f:

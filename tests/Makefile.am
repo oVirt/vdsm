@@ -102,9 +102,11 @@ dist_vdsmtests_DATA = \
 dist_vdsmtests_PYTHON = \
 	$(test_modules) \
 	apiData.py \
+	hookValidation.py \
 	monkeypatch.py \
 	testrunner.py \
-	testValidation.py
+	testValidation.py \
+	$(NULL)
 
 dist_vdsmtests_SCRIPTS = \
 	run_tests.sh \
