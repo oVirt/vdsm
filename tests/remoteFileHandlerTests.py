@@ -73,27 +73,30 @@ class PoolHandlerTests(TestCaseBase):
         utils.retry(test, AssertionError, timeout=4, sleep=0.1)
 
 
-class RemoteFileHandlerFunctionTests(TestCaseBase):
-    def testTruncateFile(self):
-        fd, path = tempfile.mkstemp()
+class RemoteFileHandlerTruncateTests(TestCaseBase):
+
+    def setUp(self):
+        fd, self.path = tempfile.mkstemp(self.__class__.__name__)
         try:
             os.write(fd, string.ascii_uppercase)
-            os.close(fd)
-
-            # Verifying content
-            data = string.ascii_uppercase
-            self.assertEquals(data, file(path).read())
-
-            # Testing truncate to a larger size
-            data = string.ascii_uppercase + chr(0) * 16
-
-            rhandler.truncateFile(path, len(data))
-            self.assertEquals(data, file(path).read())
-
-            # Testing truncate to a smaller size
-            data = string.ascii_uppercase
-
-            rhandler.truncateFile(path, len(data))
-            self.assertEquals(data, file(path).read())
+            os.fsync(fd)
         finally:
-            os.unlink(path)
+            os.close(fd)
+        self.checkData(string.ascii_uppercase)
+
+    def tearDown(self):
+        os.unlink(self.path)
+
+    def testEnlarge(self):
+        data = string.ascii_uppercase + '\0' * 16
+        rhandler.truncateFile(self.path, len(data))
+        self.checkData(data)
+
+    def testShrink(self):
+        data = string.ascii_uppercase[:10]
+        rhandler.truncateFile(self.path, len(data))
+        self.checkData(data)
+
+    def checkData(self, expected):
+        actual = open(self.path).read()
+        self.assertEquals(expected, actual)
