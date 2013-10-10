@@ -18,10 +18,12 @@
 #
 from contextlib import contextmanager
 from threading import Thread
+import os.path
 import time
 
 import neterrors
 
+from hookValidation import ValidatesHook
 from testrunner import (VdsmTestCase as TestCaseBase,
                         expandPermutations, permutations)
 from testValidation import RequireDummyMod, ValidateRunningAsRoot
@@ -1429,3 +1431,39 @@ class NetworkTest(TestCaseBase):
                                                       {'connectivityCheck': 0})
             self.assertEqual(status, SUCCESS, msg)
             self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME))
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.sh')
+    def testBeforeNetworkSetupHook(self, hook_cookiefile):
+        with dummyIf(1) as nics:
+            nic, = nics
+            networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
+                                       'bootproto': 'none'}}
+            with self.vdsm_net.pinger():
+                self.vdsm_net.setupNetworks(networks, {}, {})
+
+                self.assertTrue(os.path.isfile(hook_cookiefile))
+
+                delete_networks = {NETWORK_NAME: {'remove': True}}
+                self.vdsm_net.setupNetworks(delete_networks,
+                                            {}, {})
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    @ValidatesHook('after_network_setup', 'testAfterNetworkSetup.sh')
+    def testAfterNetworkSetupHook(self, hook_cookiefile):
+        with dummyIf(1) as nics:
+            nic, = nics
+            networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
+                                       'bootproto': 'none'}}
+            with self.vdsm_net.pinger():
+                self.vdsm_net.setupNetworks(networks, {}, {})
+
+                self.assertTrue(os.path.isfile(hook_cookiefile))
+
+                delete_networks = {NETWORK_NAME: {'remove': True}}
+                self.vdsm_net.setupNetworks(delete_networks,
+                                            {}, {})

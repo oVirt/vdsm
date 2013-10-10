@@ -56,15 +56,17 @@ Currently-supported hooks have self-explanatory names:
     before_update_device, after_update_device, after_update_device_fail,
     before_disk_hotplug, after_disk_hotplug,
     before_disk_hotunplug, after_disk_hotunplug,
-    before_vdsm_start, after_vdsm_stop.
+    before_vdsm_start, after_vdsm_stop,
+    before_network_setup, after_network_setup.
 
 Each hook executes the scripts under
 .FN /usr/libexec/vdsm/hooks/<hook-name>/
 in lexicographic order.
 
 .SS Hook environment
-Each hook script (except before_vdsm_start and after_vdsm_stop) inherit the
-environment of the VDSM process, with an additional variable
+Each hook script (except before_vdsm_start, after_vdsm_stop, 
+before_network_setup and after_network_setup)) inherit the environment of
+the VDSM process, with an additional variable
 .B _hook_domxml
 which holds the path of libvirt's
 .B domain xml

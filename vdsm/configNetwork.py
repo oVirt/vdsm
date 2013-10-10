@@ -38,6 +38,7 @@ from netmodels import IPv4
 from netmodels import IpConfig
 from netmodels import Nic
 from netmodels import Vlan
+import hooks
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
 
@@ -500,6 +501,8 @@ def setupNetworks(networks, bondings, **options):
         logging.debug("Validating configuration")
         _validateNetworkSetup(dict(networks), dict(bondings))
 
+    hooks.before_network_setup()
+
     logger.debug("Applying...")
     with Ifcfg() as configurator:
         libvirt_nets = netinfo.networks()
@@ -559,6 +562,8 @@ def setupNetworks(networks, bondings, **options):
                                get('bonding') in bondings)
                 raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                          'connectivity check failed')
+
+    hooks.after_network_setup()
 
 
 def _vlanToInternalRepresentation(vlan):

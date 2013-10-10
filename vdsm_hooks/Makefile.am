@@ -99,7 +99,10 @@ VDSMHOOKS = \
 	before_disk_hotunplug \
 	after_disk_hotunplug \
 	before_vdsm_start \
-	after_vdsm_stop
+	after_vdsm_stop \
+	before_network_setup \
+	after_network_setup \
+	$(NULL)
 
 all-local: \
 	$(nodist_vdsmexec_SCRIPTS)

@@ -987,6 +987,8 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_disk_hotunplug
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_vdsm_start
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup
 %{_datadir}/%{vdsm_name}/addNetwork
 %{_datadir}/%{vdsm_name}/configNetwork.py*
 %{_datadir}/%{vdsm_name}/delNetwork
