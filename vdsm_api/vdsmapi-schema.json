@@ -1617,6 +1617,9 @@
 #
 # @momStatus:       The current status of the MOM policy engine
 #
+# @haScore:         #optional The host score according to the HA agent,
+#                   if installed (new in version 4.13.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'HostStats',
@@ -1634,7 +1637,7 @@
            'vmCount': 'int', 'vmActive': 'int', 'vmMigrating': 'int',
            'dateTime': 'str', 'ksmState': 'bool', 'ksmPages': 'int',
            'ksmCpu': 'float', 'netConfigDirty': 'bool', 'generationID': 'UUID',
-           'momStatus': 'MOMStatus'}}
+           'momStatus': 'MOMStatus', '*haScore': 'uint'}}
 
 ##
 # @Host.getStats:

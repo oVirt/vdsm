@@ -48,6 +48,12 @@ import ksm
 
 import supervdsm
 
+haClient = None  # Define here to work around pyflakes issue #13
+try:
+    import ovirt_hosted_engine_ha.client.client as haClient
+except ImportError:
+    pass
+
 # default message for system shutdown, will be displayed in guest
 USER_SHUTDOWN_MESSAGE = 'System going down'
 
@@ -1209,6 +1215,13 @@ class Global(APIBase):
 
         stats['netConfigDirty'] = str(self._cif._netConfigDirty)
         stats['generationID'] = self._cif._generationID
+
+        if haClient:
+            try:
+                stats['haScore'] = haClient.HAClient().get_local_host_score()
+            except Exception:
+                self.log.exception("failed to retrieve Hosted Engine HA score")
+
         return {'status': doneCode, 'info': stats}
 
     def setLogLevel(self, level):
