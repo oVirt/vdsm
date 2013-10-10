@@ -518,11 +518,14 @@ class HostStatsThread(StatsThread):
             self._imagesStatus._refreshStorageDomains()
         now = time.time()
         for sd, d in self._imagesStatus.storageDomains.iteritems():
-            stats['storageDomains'][sd] = {'code': d['code'],
-                                           'delay': d['delay'],
-                                           'lastCheck': d['lastCheck'],
-                                           'valid': d['valid'],
-                                           'version': d['version']}
+            stats['storageDomains'][sd] = {
+                'code': d['code'],
+                'delay': d['delay'],
+                'lastCheck': d['lastCheck'],
+                'valid': d['valid'],
+                'version': d['version'],
+                'acquired': d['acquired'],
+            }
         stats['elapsedTime'] = int(now - self.startTime)
         if len(self._samples) < 2:
             return stats

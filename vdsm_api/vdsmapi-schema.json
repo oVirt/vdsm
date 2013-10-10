@@ -1449,12 +1449,16 @@
 #
 # @version:    Indicates the Storage Domain version
 #
+# @acquired:   Indicates if the lockspace on the Storage Domain has been
+#              acquired and therefore if it's possible to run (sanlock)
+#              protected VMs
+#
 # Since: 4.10.0
 # XXX: Add an enum for return codes and their meanings
 ##
 {'type': 'StorageDomainVitals',
  'data': {'code': 'int', 'delay': 'float', 'lastCheck': 'float',
-          'valid': 'bool', 'version': 'int'}}
+          'valid': 'bool', 'version': 'int', 'acquired': 'bool'}}
 
 ##
 # @PathStats:

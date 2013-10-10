@@ -3648,6 +3648,8 @@ class HSM:
                     'delay': str(domStatus.readDelay),
                     'valid': (domStatus.error is None),
                     'version': domStatus.version,
+                    # domStatus.hasHostId can also be None
+                    'acquired': domStatus.hasHostId is True,
                 },
 
                 'disktotal': disktotal,
