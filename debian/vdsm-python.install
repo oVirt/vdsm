@@ -13,12 +13,11 @@
 ./usr/lib/python2.7/dist-packages/vdsm/qemuImg.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/dummybr.py
-./usr/lib/python2.7/dist-packages/vdsm/tool/libvirt_configure.py
+./usr/lib/python2.7/dist-packages/vdsm/tool/configurator.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/load_needed_modules.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/nwfilter.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/passwd.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/restore_nets.py
-./usr/lib/python2.7/dist-packages/vdsm/tool/sanlock.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/seboolsetup.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/service.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/transient.py

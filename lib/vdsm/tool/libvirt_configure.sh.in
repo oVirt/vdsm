@@ -104,14 +104,12 @@ libvirtd_sysv2upstart() {
         return 0
     fi
 
-    # Stop libvirt SysV service before configure upstart
+    # Shutoff libvirt SysV service before configure upstart
     if [ ! -f "${target}" ]; then
         "@CHKCONFIG_PATH@" libvirtd off
-        "@SERVICE_PATH@" libvirtd stop
     fi
 
-    if ! diff -q "${packaged}" "${target}" >/dev/null 2>&1;
-    then
+    if ! diff -q "${packaged}" "${target}" >/dev/null 2>&1; then
         /bin/cp -p "${packaged}" "${target}" || return 1
         /sbin/initctl reload-configuration
     fi
@@ -175,7 +173,6 @@ configure() {
     local qconf="$2"
     local ldconf="$3"
     local qlconf="$4"
-    local force_reconfigure="$5"
     local by_vdsm="by vdsm"
     local start_conf_section="## beginning of configuration section ${by_vdsm}"
     local end_conf_section="## end of configuration section ${by_vdsm}"
@@ -194,20 +191,6 @@ configure() {
             return 6
         fi
         /usr/bin/vdsm-tool validate-ovirt-certs
-    fi
-
-    #
-    # reconfigure if:
-    # - force specified or
-    # - we have the FORCE_RECONFIGURE trigger file
-    # - not configured
-    #
-    if [ "${force_reconfigure}" != "--force" ] && \
-       ! [ -f "${FORCE_RECONFIGURE}" ] && \
-       is_already_configured "${lconf}" "${qconf}" "${ldconf}" "${qlconf}";
-    then
-        echo "Not forcing reconfigure"
-        return 0
     fi
 
     # Remove a previous configuration (if present)
@@ -310,14 +293,6 @@ EOF
     fi
 
     echo "Reconfiguration of libvirt is done."
-    echo
-    cat << __EOF__
-To start working with the new configuration, execute:
-'vdsm-tool libvirt-configure-services-restart'
-This will manage restarting of the following services:
-libvirtd, supervdsmd
-__EOF__
-    echo
 
     #
     # finished reconfiguration, do not trigger
@@ -342,7 +317,7 @@ case "$1" in
         RETVAL=$?
         ;;
      *)
-        echo "Usage: $0 {reconfigure *conf-files [--force] | test_conflict_configurations *conf-files | check_if_configured}"
+        echo "Usage: $0 {reconfigure|test_conflict_configurations|check_if_configured}"
         RETVAL=2
 esac
 

@@ -46,29 +46,8 @@ task_gencerts(){
 }
 
 
-task_reconfigure_sanlock() {
-    _reconfigure_sanlock
-}
-
-_reconfigure_sanlock() {
-    # If sanlock was started before the *first* installation of vdsm
-    # then it is probably missing the supplementary groups.
-    # Here we attempt to restart the service (when needed) to refresh
-    # the groups.
-    "$VDSM_TOOL" sanlock-check-service
-    if [ $? != 0 ]; then
-        echo -n "Attempting to restart sanlock service:"
-        "$VDSM_TOOL" service-restart sanlock || return 1
-    fi
-}
-
-
-task_check_libvirt_configure() {
-    if ! "$VDSM_TOOL" libvirt-is-configured; then
-        echo "Perform 'vdsm-tool libvirt-configure' before starting vdsmd"
-        return 1
-    fi
-    return 0
+task_check_is_configured() {
+    "$VDSM_TOOL" is-configured
 }
 
 
@@ -187,8 +166,8 @@ task_test_lo() {
 }
 
 
-task_test_conflicting_conf(){
-    "$VDSM_TOOL" libvirt-test-conflicts
+task_validate_configuration(){
+    "$VDSM_TOOL" validate-config
 }
 
 task_restore_nets(){
@@ -234,9 +213,9 @@ case "$1" in
             configure_coredump \
             run_init_hooks \
             gencerts \
-            check_libvirt_configure \
+            check_is_configured \
+            validate_configuration \
             prepare_transient_repository \
-            reconfigure_sanlock \
             syslog_available \
             nwfilter \
             dummybr \
@@ -244,7 +223,6 @@ case "$1" in
             tune_system \
             test_space \
             test_lo \
-            test_conflicting_conf \
             restore_nets \
             "
         ;;

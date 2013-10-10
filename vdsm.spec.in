@@ -630,7 +630,6 @@ export LC_ALL=C
     /usr/sbin/useradd -r -u 36 -g %{vdsm_group} -d /var/lib/vdsm \
         -s /sbin/nologin -c "Node Virtualization Manager" %{vdsm_user}
 /usr/sbin/usermod -a -G %{qemu_group},%{snlk_group} %{vdsm_user}
-/usr/sbin/usermod -a -G %{qemu_group},%{vdsm_group} %{snlk_user}
 
 %post
 %{_bindir}/vdsm-tool sebool-config || :
@@ -726,6 +725,9 @@ exit 0
 if [ "$1" -ge 1 ]; then
     supervdsmd_start_required='no'
     vdsmd_start_required='no'
+
+    # Both vdsm and supervdsm should be managed here and must be restarted if
+    # ran before (code might changed)
     if %{_bindir}/vdsm-tool service-status vdsmd >/dev/null 2>&1; then
         %{_bindir}/vdsm-tool service-stop vdsmd >/dev/null 2>&1
         vdsmd_start_required='yes'
@@ -734,11 +736,12 @@ if [ "$1" -ge 1 ]; then
         %{_bindir}/vdsm-tool service-stop supervdsmd >/dev/null 2>&1
         supervdsmd_start_required='yes'
     fi
-    if %{_bindir}/vdsm-tool libvirt-configure | grep -q 'is done.'; then
-        if %{_bindir}/vdsm-tool service-status libvirtd >/dev/null 2>&1; then
-            %{_bindir}/vdsm-tool service-restart libvirtd >/dev/null 2>&1
-        fi
+
+    if ! %{_bindir}/vdsm-tool is-configured --module libvirt >/dev/null 2>&1;
+    then
+        %{_bindir}/vdsm-tool configure --module libvirt --force >/dev/null 2>&1
     fi
+
     if [ "${supervdsmd_start_required}" = 'yes' ]; then
         %{_bindir}/vdsm-tool service-start supervdsmd >/dev/null 2>&1
     fi
@@ -1051,11 +1054,10 @@ exit 0
 %endif
 %{python_sitearch}/%{vdsm_name}/tool/dummybr.py*
 %{python_sitearch}/%{vdsm_name}/tool/nwfilter.py*
-%{python_sitearch}/%{vdsm_name}/tool/libvirt_configure.py*
+%{python_sitearch}/%{vdsm_name}/tool/configurator.py*
 %{_libexecdir}/%{vdsm_name}/libvirt_configure.sh
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
 %{python_sitearch}/%{vdsm_name}/tool/restore_nets.py*
-%{python_sitearch}/%{vdsm_name}/tool/sanlock.py*
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitearch}/%{vdsm_name}/tool/service.py*
 %{python_sitearch}/%{vdsm_name}/tool/transient.py*

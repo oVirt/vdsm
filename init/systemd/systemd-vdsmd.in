@@ -26,5 +26,6 @@ usage_exit(){
 [ "$1" != "reconfigure" ] && usage_exit
 [ -n "$2" -a "$2" != "force" ] && usage_exit
 
-"@BINDIR@/vdsm-tool" libvirt-configure ${2:+--force} &&
-    "@BINDIR@/vdsm-tool" libvirt-configure-services-restart
+if [ "$2" = "force" ] || ! "@BINDIR@/vdsm-tool" is-configured; then
+    "@BINDIR@/vdsm-tool" configure --force
+fi

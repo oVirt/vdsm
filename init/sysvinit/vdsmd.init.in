@@ -108,11 +108,10 @@ test_already_running()
     return 1
 }
 
-reconfigure_libvirt() {
-    local force
-    [ "${1}" = "force" ] && force="--force"
-    "$VDSM_TOOL" libvirt-configure ${force} &&
-        "$VDSM_TOOL" libvirt-configure-services-restart
+reconfigure() {
+    if [ "${1}" = "force" ] || ! "$VDSM_TOOL" is-configured; then
+        "$VDSM_TOOL" configure "--force"
+    fi
 }
 
 start() {
@@ -206,11 +205,11 @@ case "$1" in
     reconfigure)
         # Jump over 'reconfigure'
         shift 1
-        reconfigure_libvirt "$@"
+        reconfigure "$@"
     RETVAL=$?
     ;;
      *)
-    echo "Usage: $0 {start|stop|status|restart|force-reload|try-restart}"
+    echo "Usage: $0 {start|stop|status|restart|force-reload|try-restart|condrestart}"
     RETVAL=2
 esac
 

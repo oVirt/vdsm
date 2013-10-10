@@ -38,10 +38,9 @@ dist_vdsmtool_PYTHON = \
 	__init__.py \
 	dummybr.py \
 	nwfilter.py \
-	libvirt_configure.py \
+	configurator.py \
 	passwd.py \
 	restore_nets.py \
-	sanlock.py \
 	seboolsetup.py \
 	service.py \
 	transient.py \
