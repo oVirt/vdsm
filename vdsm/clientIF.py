@@ -303,11 +303,13 @@ class clientIF:
                 volPath = self._getUUIDSpecPath(drive["UUID"])
 
             # leave path == '' for empty cdrom and floppy drives ...
-            elif drive['device'] in ('cdrom', 'floppy') and \
-                    'specParams' in drive and \
-                    'path' in drive['specParams'] and \
-                    drive['specParams']['path'] == '':
-                        volPath = ''
+            elif (drive['device'] in ('cdrom', 'floppy') and
+                  'specParams' in drive and
+                  # next line can be removed in future, when < 3.3 engine
+                  # is not supported
+                  drive['specParams'].get('path', '') == '' and
+                  drive.get('path', '') == ''):
+                    volPath = ''
 
             # ... or load the drive from vmPayload:
             elif drive['device'] in ('cdrom', 'floppy') and \
