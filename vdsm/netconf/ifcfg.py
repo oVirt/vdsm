@@ -671,7 +671,6 @@ class ConfigWriter(object):
         self._backup(conffile)
         with open(conffile, 'w') as f:
             f.writelines(entries)
-            f.close()
 
     def setIfaceMtu(self, iface, newmtu):
         cf = netinfo.NET_CONF_PREF + iface
