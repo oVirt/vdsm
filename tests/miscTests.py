@@ -50,11 +50,6 @@ SUDO_USER = "root"
 SUDO_GROUP = "root"
 
 
-def ddWatchCopy(srcPath, dstPath, callback, dataLen):
-    rc, out, err = misc.ddWatchCopy(srcPath, dstPath, callback, dataLen)
-    return rc, out, err
-
-
 def watchCmd(cmd, stop, cwd=None, data=None, recoveryCallback=None):
     ret, out, err = utils.watchCmd(cmd, stop, cwd=cwd, data=data,
                                    recoveryCallback=recoveryCallback)
@@ -437,7 +432,7 @@ class DdWatchCopy(TestCaseBase):
         os.chmod(dstPath, 0666)
 
         #Copy
-        rc, out, err = ddWatchCopy(srcPath, dstPath, None, len(data))
+        rc, out, err = misc.ddWatchCopy(srcPath, dstPath, None, len(data))
 
         #Get copied data
         readData = open(dstPath).read()
@@ -448,6 +443,70 @@ class DdWatchCopy(TestCaseBase):
 
         # Compare
         self.assertEquals(readData, data)
+
+    def _createDataFile(self, data, repetitions):
+        fd, path = tempfile.mkstemp()
+
+        try:
+            for i in xrange(repetitions):
+                os.write(fd, data)
+            self.assertEquals(os.stat(path).st_size, misc.MEGA)
+        except:
+            os.unlink(path)
+            raise
+        finally:
+            os.close(fd)
+
+        return path
+
+    def testAlignedAppend(self):
+        data = "ABCD" * 256  # 1Kb
+        repetitions = misc.MEGA / len(data)
+
+        path = self._createDataFile(data, repetitions)
+        try:
+            # Using os.stat(path).st_size is part of the test, please do not
+            # remove or change.
+            rc, out, err = misc.ddWatchCopy(
+                "/dev/zero", path, None, misc.MEGA, os.stat(path).st_size)
+
+            self.assertEquals(rc, 0)
+            self.assertEquals(os.stat(path).st_size, misc.MEGA * 2)
+
+            with open(path, "r") as f:
+                for i in xrange(repetitions):
+                    self.assertEquals(f.read(len(data)), data)
+        finally:
+            os.unlink(path)
+
+    def testNonAlignedAppend(self):
+        data = "ABCD" * 256  # 1Kb
+        add_data = "E"
+        repetitions = misc.MEGA / len(data)
+
+        path = self._createDataFile(data, repetitions)
+        try:
+            with open(path, "a") as f:  # Appending additional data
+                f.write(add_data)
+
+            self.assertEquals(os.stat(path).st_size, misc.MEGA + len(add_data))
+
+            # Using os.stat(path).st_size is part of the test, please do not
+            # remove or change.
+            rc, out, err = misc.ddWatchCopy(
+                "/dev/zero", path, None, misc.MEGA, os.stat(path).st_size)
+
+            self.assertEquals(rc, 0)
+            self.assertEquals(os.stat(path).st_size,
+                              misc.MEGA * 2 + len(add_data))
+
+            with open(path, "r") as f:
+                for i in xrange(repetitions):
+                    self.assertEquals(f.read(len(data)), data)
+                # Checking the additional data
+                self.assertEquals(f.read(len(add_data)), add_data)
+        finally:
+            os.unlink(path)
 
     def testCopy(self):
         """
@@ -476,7 +535,7 @@ class DdWatchCopy(TestCaseBase):
         os.chmod(dstPath, 0666)
 
         #Copy
-        rc, out, err = ddWatchCopy(srcPath, dstPath, None, len(data))
+        rc, out, err = misc.ddWatchCopy(srcPath, dstPath, None, len(data))
 
         #Get copied data
         readData = open(dstPath).read()
@@ -498,7 +557,7 @@ class DdWatchCopy(TestCaseBase):
         os.unlink(srcPath)
 
         #Copy
-        self.assertRaises(misc.se.MiscBlockWriteException, ddWatchCopy,
+        self.assertRaises(misc.se.MiscBlockWriteException, misc.ddWatchCopy,
                           srcPath, "/tmp/tmp", None, 100)
 
     def testStop(self):
@@ -510,7 +569,7 @@ class DdWatchCopy(TestCaseBase):
                 os.unlink(src.name)
                 os.mkfifo(src.name)
                 with tempfile.NamedTemporaryFile() as dst:
-                    ddWatchCopy(src.name, dst.name, lambda: True, 100)
+                    misc.ddWatchCopy(src.name, dst.name, lambda: True, 100)
         except utils.ActionStopped:
             self.log.info("Looks like it stopped!")
         else:
