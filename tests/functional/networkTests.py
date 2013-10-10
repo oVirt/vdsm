@@ -149,7 +149,8 @@ class NetworkTest(TestCaseBase):
             with self.vdsm_net.pinger():
                 for vlan_net in network_names:
                     status, msg = self.vdsm_net.setupNetworks(
-                        {vlan_net: {'remove': True}}, {}, {})
+                        {vlan_net: {'remove': True}},
+                        {BONDING_NAME: {'remove': True}}, {})
                     self.assertEqual(status, SUCCESS, msg)
                     self.assertFalse(self.vdsm_net.networkExists(vlan_net,
                                                                  bridged))
