@@ -181,10 +181,9 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeRemoveBrickStatus(self, volumeName, brickList,
                                 replicaCount=0, options=None):
-        message = self.svdsmProxy.glusterVolumeRemoveBrickStatus(volumeName,
-                                                                 brickList,
-                                                                 replicaCount)
-        return {'message': message}
+        return self.svdsmProxy.glusterVolumeRemoveBrickStatus(volumeName,
+                                                              brickList,
+                                                              replicaCount)
 
     @exportAsVerb
     def volumeRemoveBrickCommit(self, volumeName, brickList,
