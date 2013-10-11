@@ -147,6 +147,30 @@ class VdsmTestCase(unittest.TestCase):
         with context:
             callableObj(*args, **kwargs)
 
+    # FIXME: This is a forward port of the assertIn from python
+    #        2.7, remove when no loger supporting earlier versions
+    def assertIn(self, member, container, msg=None):
+        """
+        Just like self.assertTrue(a in b), but with a nicer default message.
+        """
+        if member not in container:
+            if msg is None:
+                msg = '%s not found in %s' % (safe_repr(member),
+                                              safe_repr(container))
+            raise self.failureException(msg)
+
+    # FIXME: This is a forward port of the assertNotIn from python
+    #        2.7, remove when no loger supporting earlier versions
+    def assertNotIn(self, member, container, msg=None):
+        """
+        Just like self.assertTrue(a not in b), but with a nicer default message
+        """
+        if member in container:
+            if msg is None:
+                msg = '%s unexpectedly found in %s' % (safe_repr(member),
+                                                       safe_repr(container))
+            raise self.failureException(msg)
+
 
 class VdsmTestResult(result.TextTestResult):
     def __init__(self, *args, **kwargs):
@@ -260,6 +284,19 @@ class _AssertRaisesContext(object):
                                         (expected_regexp.pattern,
                                          str(exc_value)))
         return True
+
+
+# FIXME: This is a forward port of the assertIn from python
+#        2.7, remove when no loger supporting earlier versions
+def safe_repr(obj, short=False):
+    _MAX_LENGTH = 80
+    try:
+        result = repr(obj)
+    except Exception:
+        result = object.__repr__(obj)
+    if not short or len(result) < _MAX_LENGTH:
+        return result
+    return result[:_MAX_LENGTH] + ' [truncated]...'
 
 
 class VdsmTestRunner(core.TextTestRunner):
