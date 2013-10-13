@@ -57,6 +57,7 @@ BuildRequires: python-netaddr
 # BuildRequires needed by the tests during the build
 BuildRequires: python-ethtool
 BuildRequires: python-pthreading
+BuildRequires: python-cpopen
 BuildRequires: libselinux-python
 BuildRequires: libvirt-python
 BuildRequires: genisoimage
@@ -97,6 +98,7 @@ Requires: iproute
 Requires: python-netaddr
 Requires: python-inotify
 Requires: python-argparse
+Requires: python-cpopen
 Requires: python-ethtool >= 0.6-3
 Requires: rpm-python
 Requires: nfs-utils
@@ -237,7 +239,6 @@ BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-xmlrpc = %{version}-%{release}
-Requires: %{name}-python-cpopen
 
 %description cli
 Call VDSM commands from the command line. Used for testing and debugging.
@@ -247,7 +248,6 @@ Summary:        VDSM xmlrpc API
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
-Requires: %{name}-python-cpopen
 
 
 %description xmlrpc
@@ -302,15 +302,6 @@ Requires: openssl
 %description reg
 VDSM registration package. Used to register a Linux host to a Virtualization
 Manager.
-
-%package python-cpopen
-Summary: Creates a sub-process in simpler safer manner.
-
-BuildRequires: python2-devel
-
-%description python-cpopen
-Python package for creating sub-process in simpler and safer manner by using C
-code.
 
 %package python
 Summary:        VDSM python libraries
@@ -1300,11 +1291,11 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/tasks.py*
 %endif
 
-%files python-cpopen
-%{python_sitearch}/cpopen/__init__.py*
-%attr(755, root, root) %{python_sitearch}/cpopen/cpopen.so*
-
 %changelog
+* Sun Oct 13 2013 Yaniv Bronhaim <ybronhei@redhat.com> - 4.13.0
+- Removing vdsm-python-cpopen from the spec
+- Adding dependency on formal cpopen package
+
 * Sun Apr 07 2013 Yaniv Bronhaim <ybronhei@redhat.com> - 4.9.0-1
 - Adding cpopen package
 

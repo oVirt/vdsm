@@ -252,7 +252,6 @@ AC_OUTPUT([
 	init/sysvinit/Makefile
 	init/upstart/Makefile
 	lib/Makefile
-	lib/cpopen/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/tool/Makefile
 	lib/yajsonrpc/Makefile

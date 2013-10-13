@@ -16,6 +16,7 @@ Build-Depends: debhelper (>= 8.0.0),
  pyflakes,
  python (>=2.7.3),
  python-dev,
+ python-cpopen,
  python-dmidecode,
  python-ethtool (>=0.8),
  python-libvirt (>= 1.0.2),
@@ -30,13 +31,6 @@ Standards-Version: 3.9.4
 Homepage: http://www.ovirt.org/wiki/Vdsm
 Vcs-Git: git://gerrit.ovirt.org/vdsm
 Vcs-Browser: http://gerrit.ovirt.org/gitweb?p=vdsm.git
-
-Package: vdsm-python-cpopen
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.7.3)
-Description: Creates a sub-process in simpler safer manner
- Python package for creating sub-process in simpler and safer manner by using
- C code.
 
 Package: vdsm-yajsonrpc
 Architecture: all
@@ -54,7 +48,6 @@ Package: vdsm-client
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends},
  python (>=2.7.3),
- vdsm-python-cpopen (>= ${source:Version}),
  vdsm-python (= ${source:Version})
 Description: VDSM command line interface
  Call VDSM commands from the command line. Used for testing and debugging.
@@ -93,7 +86,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  policycoreutils (>= 2.1.10),
  psmisc (>= 22.6),
  python (>= 2.7.3),
- vdsm-python-cpopen (= ${binary:Version}),
+ python-cpopen,
  python-dmidecode,
  python-ethtool (>= 0.8),
  python-ethtool (>= 0.8),
