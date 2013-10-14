@@ -31,7 +31,6 @@ case "$1" in
                /etc/default/libvirt-bin \
                /etc/libvirt/libvirtd.conf \
                /etc/libvirt/qemu.conf \
-               /etc/libvirt/qemu-sanlock.conf \
                /etc/logrotate.d/libvirtd \
                /etc/sysctl.conf \
                /etc/default/sanlock
