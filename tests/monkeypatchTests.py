@@ -49,7 +49,7 @@ def patched(*args, **kw):
     pass
 
 
-class TestMonkeyPatchDecorator(VdsmTestCase):
+class TestMonkeyPatch(VdsmTestCase):
 
     module = FakeModule()
 
@@ -78,6 +78,34 @@ class TestMonkeyPatchDecorator(VdsmTestCase):
     def testPatchBoth(self):
         self.assertEqual(self.module.a, patched)
         self.assertEqual(self.module.b, patched)
+
+
+module = FakeModule()
+
+
+@monkeypatch.MonkeyClass(module, 'a', patched)
+class TestMonkeyClass(VdsmTestCase):
+
+    def tearDown(self):
+        self.assertTrue(module.isClean())
+
+    def testPatched(self):
+        self.assertEqual(module.a, patched)
+        self.assertNotEqual(module.b, patched)
+        self.assertNotEqual(module.c, patched)
+
+
+@monkeypatch.MonkeyClass(module, 'a', patched)
+@monkeypatch.MonkeyClass(module, 'b', patched)
+class TestMonkeyClassChain(VdsmTestCase):
+
+    def tearDown(self):
+        self.assertTrue(module.isClean())
+
+    def testPatched(self):
+        self.assertEqual(module.a, patched)
+        self.assertEqual(module.b, patched)
+        self.assertNotEqual(module.c, patched)
 
 
 class TestMonkeyPatchFixture(VdsmTestCase):

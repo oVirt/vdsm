@@ -96,7 +96,7 @@ def MonkeyPatchScope(what):
 
 
 #
-# Monkey patch decoration.
+# Monkey patch function decorator.
 #
 # Usage:
 # ---
@@ -116,3 +116,50 @@ def MonkeyPatch(module, name, that):
                 return f(*args, **kw)
         return wrapper
     return decorator
+
+
+#
+# Monkey patch class decorator.
+#
+# Usage:
+# ---
+# from monkeypatch import MonkeyClass
+#
+# @MonkeyClass(subprocess, 'Popen', lambda x: None)
+# @MonkeyClass(os, 'chown', lambda *x: 0)
+# class TestSomething():
+#
+#     def testThis(self):
+#         # using patched functions
+#
+#     def testThat(self):
+#         # using patched functions
+# ---
+#
+def MonkeyClass(module, name, that):
+
+    def setup_decorator(func):
+        @wraps(func)
+        def setup(self, *a, **kw):
+            if not hasattr(self, '__monkeystack__'):
+                self.__monkeystack__ = []
+            patch = Patch([(module, name, that)])
+            self.__monkeystack__.append(patch)
+            patch.apply()
+            return func(self, *a, **kw)
+        return setup
+
+    def teardown_decorator(func):
+        @wraps(func)
+        def teardown(self, *a, **kw):
+            patch = self.__monkeystack__.pop()
+            patch.revert()
+            return func(self, *a, **kw)
+        return teardown
+
+    def wrapper(cls):
+        cls.setUp = setup_decorator(cls.setUp)
+        cls.tearDown = teardown_decorator(cls.tearDown)
+        return cls
+
+    return wrapper
