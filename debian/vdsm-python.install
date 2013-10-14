@@ -8,6 +8,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/exception.py
 ./usr/lib/python2.7/dist-packages/vdsm/ipwrapper.py
 ./usr/lib/python2.7/dist-packages/vdsm/libvirtconnection.py
+./usr/lib/python2.7/dist-packages/vdsm/netconfpersistence.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo.py
 ./usr/lib/python2.7/dist-packages/vdsm/qemuImg.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/__init__.py
@@ -19,6 +20,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/tool/sanlock.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/seboolsetup.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/service.py
+./usr/lib/python2.7/dist-packages/vdsm/tool/transient.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/validate_ovirt_certs.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/vdsm-id.py
 ./usr/lib/python2.7/dist-packages/vdsm/utils.py

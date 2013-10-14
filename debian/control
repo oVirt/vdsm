@@ -64,7 +64,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  fence-agents,
  genisoimage,
  glusterfs-client,
- glusterfs-common (>= 3.4.0),
+ glusterfs-common (>= 3.4.1),
  gnutls-bin,
  hostname,
  ifupdown,
@@ -125,7 +125,7 @@ Description: VDSM: Virtual Desktop Server Manager
 Package: vdsm-gluster
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
- glusterfs-common (>= 3.4.0),
+ glusterfs-common (>= 3.4.1),
  glusterfs-server,
  python (>=2.7.3),
  python-magic,

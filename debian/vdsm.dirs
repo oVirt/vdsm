@@ -15,6 +15,7 @@ usr/libexec/vdsm/hooks/after_device_migrate_destination
 usr/libexec/vdsm/hooks/after_device_migrate_source
 usr/libexec/vdsm/hooks/after_disk_hotplug
 usr/libexec/vdsm/hooks/after_disk_hotunplug
+usr/libexec/vdsm/hooks/after_network_setup
 usr/libexec/vdsm/hooks/after_nic_hotplug
 usr/libexec/vdsm/hooks/after_nic_hotplug_fail
 usr/libexec/vdsm/hooks/after_nic_hotunplug
@@ -37,6 +38,7 @@ usr/libexec/vdsm/hooks/before_device_migrate_destination
 usr/libexec/vdsm/hooks/before_device_migrate_source
 usr/libexec/vdsm/hooks/before_disk_hotplug
 usr/libexec/vdsm/hooks/before_disk_hotunplug
+usr/libexec/vdsm/hooks/before_network_setup
 usr/libexec/vdsm/hooks/before_nic_hotplug
 usr/libexec/vdsm/hooks/before_nic_hotunplug
 usr/libexec/vdsm/hooks/before_update_device
@@ -53,6 +55,7 @@ usr/libexec/vdsm/hooks/before_vm_start
 var/lib/libvirt/qemu/channels
 var/lib/vdsm
 var/lib/vdsm/netconfback
+var/lib/vdsm/persistence
 var/log/vdsm
 var/log/vdsm/backup
 var/run/vdsm

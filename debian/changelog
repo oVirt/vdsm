@@ -1,3 +1,9 @@
+vdsm (4.13.0-1) unstable; urgency=low
+
+  * vdsm 4.13.0 release on Ubuntu 13.04.
+
+ -- Zheng Sheng, Zhou <zhshzhou@linux.vnet.ibm.com>  Mon, 14 Oct 2013 17:32:50 +0800
+
 vdsm (4.12.0-1) unstable; urgency=low
 
   * Initial release on Ubuntu 13.04 .
