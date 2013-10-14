@@ -1738,7 +1738,7 @@
 # Returns:
 # None
 #
-# Since: 4.12.2
+# Since: 4.14.0
 ##
 {'command': {'class': 'Host', 'name': 'startMonitoringDomain'},
  'data': {'SdUUID': 'UUID', 'HostID': 'int' }
@@ -1754,7 +1754,7 @@
 # Returns:
 # None
 #
-# Since: 4.12.2
+# Since: 4.14.0
 ##
 {'command': {'class': 'Host', 'name': 'stopMonitoringDomain'},
  'data': {'SdUUID': 'UUID' }
