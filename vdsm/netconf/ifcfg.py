@@ -605,15 +605,12 @@ class ConfigWriter(object):
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic
         self._backup(cf)
-        try:
-            hwlines = [line for line in open(cf).readlines()
-                       if line.startswith('HWADDR=')]
-            l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
-                 'MTU=%s\n' % netinfo.DEFAULT_MTU] + hwlines
-            with open(cf, 'w') as nicFile:
-                nicFile.writelines(l)
-        except IOError:
-            pass
+        with open(cf) as nicFile:
+            hwlines = [line for line in nicFile if line.startswith('HWADDR=')]
+        l = ['DEVICE=%s\n' % nic, 'ONBOOT=yes\n', 'MTU=%s\n' %
+             netinfo.DEFAULT_MTU] + hwlines
+        with open(cf, 'w') as nicFile:
+            nicFile.writelines(l)
 
     def removeVlan(self, vlan):
         self._backup(netinfo.NET_CONF_PREF + vlan)
