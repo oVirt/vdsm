@@ -21,8 +21,9 @@
 from contextlib import contextmanager
 from functools import wraps
 
+
 #
-# Monkey patch
+# Monkey patch.
 #
 # Usage:
 # ---
@@ -49,8 +50,6 @@ from functools import wraps
 #         # using patched functions
 # ---
 #
-
-
 class Patch(object):
 
     def __init__(self, what):
@@ -75,7 +74,7 @@ class Patch(object):
 #
 # Usage:
 # ---
-# from monkeypatch import MonkeyPatch
+# from monkeypatch import MonkeyPatchScope
 #
 # def test():
 #     with MonkeyPatchScope([

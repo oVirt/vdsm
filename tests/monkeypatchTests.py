@@ -134,7 +134,7 @@ class TestMonkeyPatchFixture(VdsmTestCase):
         self.assertNotEqual(self.module.c, patched)
 
 
-class TestMonkeyPatchAssertions(VdsmTestCase):
+class TestMonkeyPatchFixtureAssertions(VdsmTestCase):
 
     def testAlreadyApplied(self):
         patch = monkeypatch.Patch([(FakeModule(), 'a', patched)])
