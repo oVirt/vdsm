@@ -411,8 +411,8 @@ class LVMCache(object):
                     vgsFields[uuid][pvNameIdx].append(pv_name)
             for fields in vgsFields.itervalues():
                 vg = makeVG(*fields)
-                if vg.pv_count != len(vg.pv_name):
-                    log.error("vg %s has pv_count %d but pv_names %s",
+                if int(vg.pv_count) != len(vg.pv_name):
+                    log.error("vg %s has pv_count %s but pv_names %s",
                               vg.name, vg.pv_count, vg.pv_name)
                 self._vgs[vg.name] = vg
                 updatedVGs[vg.name] = vg
