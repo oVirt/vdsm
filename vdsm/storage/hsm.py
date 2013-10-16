@@ -2560,8 +2560,8 @@ class HSM:
         domInfo = self._getDomsStats(pool.domainMonitor, doms)
         for sdUUID in doms.iterkeys():
             if domInfo[sdUUID]['isoprefix']:
-                    poolInfo['isoprefix'] = domInfo[sdUUID]['isoprefix']
-                    break
+                poolInfo['isoprefix'] = domInfo[sdUUID]['isoprefix']
+                break
         else:
             poolInfo['isoprefix'] = ''  # No ISO domain found
 
@@ -3588,7 +3588,8 @@ class HSM:
 
         for sdUUID, sdStatus in doms.iteritems():
             # Return statistics for active domains only
-            domInfo[sdUUID] = {'status': sdStatus, 'alerts': []}
+            domInfo[sdUUID] = {'status': sdStatus, 'alerts': [],
+                               'isoprefix': ''}
 
             if sdStatus != sd.DOM_ACTIVE_STATUS or sdUUID not in repoStats:
                 continue
@@ -3620,9 +3621,8 @@ class HSM:
                                  repoStats[sdUUID]['mdasize'],
                                  repoStats[sdUUID]['mdafree'])
 
-            isoprefix = repoStats[sdUUID]['isoprefix']
-            domInfo[sdUUID]['isoprefix'] = \
-                isoprefix if isoprefix is not None else ''
+            if repoStats[sdUUID]['isoprefix'] is not None:
+                domInfo[sdUUID]['isoprefix'] = repoStats[sdUUID]['isoprefix']
 
         return domInfo
 
