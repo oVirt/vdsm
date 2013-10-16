@@ -81,7 +81,7 @@ VG_UNKNOWN = "UNKNOWN"
 SEPARATOR = "|"
 LVM_NOBACKUP = ("--autobackup", "n")
 LVM_FLAGS = ("--noheadings", "--units", "b", "--nosuffix", "--separator",
-             SEPARATOR)
+             SEPARATOR, "--ignoreskippedcluster")
 
 PV_PREFIX = "/dev/mapper"
 # Assuming there are no spaces in the PV name
