@@ -17,9 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from contextlib import contextmanager
-from threading import Thread
 import os.path
-import time
 
 import neterrors
 
@@ -34,7 +32,8 @@ from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy, cleanupRules
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush)
 
-from vdsm.netinfo import operstate, prefix2netmask
+from vdsm.netinfo import prefix2netmask
+from vdsm.utils import execCmd
 
 
 NETWORK_NAME = 'test-network'
@@ -85,34 +84,18 @@ class OperStateChangedError(ValueError):
 
 @contextmanager
 def nonChangingOperstate(device):
-    """Raises an exception if it detects that the device operstate changes."""
-    # The current implementation is raceful (but empirically tested to work)
-    # due to the fact that two changes could happen between iterations and no
-    # exception would be raised.
-    def changed(dev, changes):
-        status = operstate(dev)
-        while not done:
-            try:
-                newState = operstate(dev)
-                time.sleep(0.1)
-            except IOError as ioe:
-                _, message = ioe.args
-                changes.append(message)
-                break
-            if status != newState:
-                changes.append(newState)
-                status = newState
-
+    """Raises an exception if it detects that the device link state changes."""
     try:
-        done = False
-        changes = []
-        monitoring_t = Thread(target=changed, name='operstate_mon',
-                              args=(device, changes))
-        monitoring_t.start()
+        monitoringProc = execCmd(['ip', 'monitor', 'link'], sync=False)
         yield
     finally:
-        time.sleep(3)  # So that the last action in yield gets to kernel
-        done = True
+        monitoringProc.kill()
+        out, _ = monitoringProc.communicate()
+        changes = []
+        for line in out.splitlines():
+            tokens = line.split()
+            if '%s:' % device == tokens[1]:
+                changes.append(tokens[-1])
         if changes:
             raise OperStateChangedError('%s operstate changed: %r' %
                                         (device, changes))
