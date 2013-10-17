@@ -137,7 +137,7 @@ def _checkDependencies():
     try:
         dev.addDevice()
     except:
-        raise SkipTest("'brctl' has failed. Do you have bride-utils "
+        raise SkipTest("'brctl' has failed. Do you have bridge-utils "
                        "installed?")
 
     null = open("/dev/null", "a")
