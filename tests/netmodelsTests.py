@@ -31,6 +31,7 @@ from vdsm import netinfo
 import neterrors
 
 from testrunner import VdsmTestCase as TestCaseBase
+from testValidation import ValidateRunningAsRoot
 from nose.plugins.skip import SkipTest
 
 from monkeypatch import MonkeyPatch
@@ -87,6 +88,7 @@ class TestNetmodels(TestCaseBase):
         self.assertEqual(Bond.validateName('bond11'), None)
         self.assertEqual(Bond.validateName('bond11128421982'), None)
 
+    @ValidateRunningAsRoot
     def testValidateBondingOptions(self):
         if not os.path.exists(netinfo.BONDING_MASTERS):
             raise SkipTest("bonding kernel module could not be found.")
