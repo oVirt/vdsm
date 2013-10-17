@@ -152,6 +152,10 @@ set_if_default() {
 is_already_configured() {
     local rc=0
     while [ -n "$1" ]; do
+        if [ "$1" = "/dev/null" ];then
+            shift
+            continue
+        fi
         if ! /bin/grep -q "${BY_VDSM_VERS}" "$1" >/dev/null 2>&1; then
             rc=1
             echo "libvirt is not configured for vdsm yet"
