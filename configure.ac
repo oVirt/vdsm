@@ -100,9 +100,9 @@ AC_ARG_WITH(
 AC_SUBST([QEMUGROUP], ["${with_qemu_group}"])
 
 AC_ARG_WITH(
-    [libvirt-service-default=FILE],
+    [libvirt-service-default],
     [AS_HELP_STRING(
-        [--with-libvirt-service-default],
+        [--with-libvirt-service-default=FILE],
         [configure full path of libvirt service environment file.
          @<:@SYSCONFDIR/sysconfig/libvirtd@:>@]
     )],
