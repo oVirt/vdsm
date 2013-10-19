@@ -18,12 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import os
-import shutil
 import tempfile
 
 from functools import wraps
 from vdsm import constants
+from vdsm import utils
 
 
 def _createHookScript(hook_path, hook_filename, script=None):
@@ -62,8 +63,11 @@ def ValidatesHook(hook_dir, hook_name, functional=True, hook_script=None):
 
             try:
                 os.mkdir(hook_path)
-            except OSError:
-                directory_existed = True
+            except OSError as mkdir_error:
+                if mkdir_error.errno == errno.EEXIST:
+                    directory_existed = True
+                else:
+                    raise
 
             cookie_file = _createHookScript(hook_path, hook_name, hook_script)
 
@@ -74,9 +78,11 @@ def ValidatesHook(hook_dir, hook_name, functional=True, hook_script=None):
                 output = test_function(*args, **kwargs)
             finally:
                 if directory_existed:
-                    os.unlink(cookie_file)
+                    utils.rmFile(hook_path + '/' + hook_name)
                 else:
-                    shutil.rmtree(hook_path)
+                    utils.rmTree(hook_path)
+
+                utils.rmFile(cookie_file)
 
                 if not functional:
                     constants.P_VDSM_HOOKS = old_vdsm_hooks
