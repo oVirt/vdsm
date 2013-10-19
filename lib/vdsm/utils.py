@@ -42,6 +42,7 @@ import sys
 import os
 import pwd
 import select
+import shutil
 import signal
 import socket
 import stat
@@ -114,6 +115,21 @@ def rmFile(fileToRemove):
         else:
             logging.error("Removing file: %s failed", fileToRemove,
                           exc_info=True)
+            raise
+
+
+def rmTree(directoryToRemove):
+    """
+    Try to remove a directory and all it's contents.
+
+    If the directory doesn't exist is assumed that it was already removed.
+    """
+    try:
+        shutil.rmtree(directoryToRemove)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            logging.warning("Directory: %s already removed", directoryToRemove)
+        else:
             raise
 
 IPXMLRPCRequestHandler = SimpleXMLRPCRequestHandler
