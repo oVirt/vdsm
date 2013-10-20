@@ -524,6 +524,15 @@ def _buildBondOptions(bondName, bondings, _netinfo):
     return bond
 
 
+def _buildSetupHookDict(req_networks, req_bondings, req_options):
+
+    hook_dict = {'request': {'networks': dict(req_networks),
+                             'bondings': dict(req_bondings),
+                             'options': dict(req_options)}}
+
+    return hook_dict
+
+
 def setupNetworks(networks, bondings, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -577,7 +586,14 @@ def setupNetworks(networks, bondings, **options):
         logging.debug("Validating configuration")
         _validateNetworkSetup(dict(networks), dict(bondings))
 
-    hooks.before_network_setup()
+    results = hooks.before_network_setup(_buildSetupHookDict(networks,
+                                                             bondings,
+                                                             options))
+
+    # gather any changes that could have been done by the hook scripts
+    networks = results['request']['networks']
+    bondings = results['request']['bondings']
+    options = results['request']['options']
 
     logger.debug("Applying...")
     with ConfiguratorClass(options.get('_inRollback', False)) as configurator:
@@ -639,7 +655,7 @@ def setupNetworks(networks, bondings, **options):
                 raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                          'connectivity check failed')
 
-    hooks.after_network_setup()
+    hooks.after_network_setup(_buildSetupHookDict(networks, bondings, options))
 
 
 def _vlanToInternalRepresentation(vlan):

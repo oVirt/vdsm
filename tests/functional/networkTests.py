@@ -19,6 +19,7 @@
 from contextlib import contextmanager
 from functools import wraps
 import os.path
+import json
 
 import neterrors
 from hookValidation import ValidatesHook
@@ -1501,7 +1502,27 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
-    @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.sh')
+    @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.py', True,
+                   "#!/usr/bin/env python\n"
+                   "import json\n"
+                   "import os\n"
+                   "\n"
+                   "# get the filename where settings are stored\n"
+                   "hook_data = os.environ['_hook_json']\n"
+                   "network_config = None\n"
+                   "with open(hook_data, 'r') as network_config_file:\n"
+                   "    network_config = json.load(network_config_file)\n"
+                   "\n"
+                   "# setup an output config file\n"
+                   "cookie_file = open('%(cookiefile)s','w')\n"
+                   "cookie_file.write(str(network_config) + '\\n')\n"
+                   "network_config['request']['networks']['" + NETWORK_NAME +
+                   "']['bridged'] = True\n"
+                   "\n"
+                   "# output modified config back to the hook_data file\n"
+                   "with open(hook_data, 'w') as network_config_file:\n"
+                   "    json.dump(network_config, network_config_file)\n"
+                   )
     def testBeforeNetworkSetupHook(self, hook_cookiefile):
         with dummyIf(1) as nics:
             nic, = nics
@@ -1509,6 +1530,7 @@ class NetworkTest(TestCaseBase):
                                        'bootproto': 'none'}}
             with self.vdsm_net.pinger():
                 self.vdsm_net.setupNetworks(networks, {}, {})
+                self.assertNetworkExists(NETWORK_NAME, bridged=True)
 
                 self.assertTrue(os.path.isfile(hook_cookiefile))
 
@@ -1519,7 +1541,10 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
-    @ValidatesHook('after_network_setup', 'testAfterNetworkSetup.sh')
+    @ValidatesHook('after_network_setup', 'testAfterNetworkSetup.sh', True,
+                   "#!/bin/sh\n"
+                   "cat $_hook_json > %(cookiefile)s\n"
+                   )
     def testAfterNetworkSetupHook(self, hook_cookiefile):
         with dummyIf(1) as nics:
             nic, = nics
@@ -1529,6 +1554,20 @@ class NetworkTest(TestCaseBase):
                 self.vdsm_net.setupNetworks(networks, {}, {})
 
                 self.assertTrue(os.path.isfile(hook_cookiefile))
+
+                with open(hook_cookiefile, 'r') as cookie_file:
+                    network_config = json.load(cookie_file)
+                    self.assertIn('networks', network_config['request'])
+                    self.assertIn('bondings', network_config['request'])
+                    self.assertIn(NETWORK_NAME,
+                                  network_config['request']['networks'])
+
+                    # when unified persistence is enabled we also provide
+                    # the current configuration to the hook
+
+                    if 'current' in network_config:
+                        self.assertTrue(NETWORK_NAME in
+                                        network_config['current']['networks'])
 
                 delete_networks = {NETWORK_NAME: {'remove': True}}
                 self.vdsm_net.setupNetworks(delete_networks,

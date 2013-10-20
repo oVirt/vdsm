@@ -20,13 +20,14 @@
 
 from vdsm import utils
 import glob
+import hashlib
+import itertools
+import json
+import logging
 import os
 import os.path
 import sys
 import tempfile
-import logging
-import itertools
-import hashlib
 
 from vdsm.constants import P_VDSM_HOOKS, P_VDSM
 
@@ -45,18 +46,26 @@ def _scriptsPerDir(dir):
     return [s for s in glob.glob(path + '/*')
             if os.access(s, os.X_OK)]
 
+_DOMXML_HOOK = 1
+_JSON_HOOK = 2
 
-def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
+
+def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
+                 hookType=_DOMXML_HOOK):
+
     scripts = _scriptsPerDir(dir)
     scripts.sort()
 
     if not scripts:
-        return domxml
+        return data
 
-    xmlfd, xmlname = tempfile.mkstemp()
+    data_fd, data_filename = tempfile.mkstemp()
     try:
-        os.write(xmlfd, domxml or '')
-        os.close(xmlfd)
+        if hookType == _DOMXML_HOOK:
+            os.write(data_fd, data or '')
+        elif hookType == _JSON_HOOK:
+            os.write(data_fd, json.dumps(data))
+        os.close(data_fd)
 
         scriptenv = os.environ.copy()
 
@@ -79,7 +88,10 @@ def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
             scriptenv['vmId'] = vmconf.get('vmId')
         ppath = scriptenv.get('PYTHONPATH', '')
         scriptenv['PYTHONPATH'] = ':'.join(ppath.split(':') + [P_VDSM])
-        scriptenv['_hook_domxml'] = xmlname
+        if hookType == _DOMXML_HOOK:
+            scriptenv['_hook_domxml'] = data_filename
+        elif hookType == _JSON_HOOK:
+            scriptenv['_hook_json'] = data_filename
 
         errorSeen = False
         for s in scripts:
@@ -97,10 +109,13 @@ def _runHooksDir(domxml, dir, vmconf={}, raiseError=True, params={}):
         if errorSeen and raiseError:
             raise HookError()
 
-        finalxml = file(xmlname).read()
+        final_data = file(data_filename).read()
     finally:
-        os.unlink(xmlname)
-    return finalxml
+        os.unlink(data_filename)
+    if hookType == _DOMXML_HOOK:
+        return final_data
+    elif hookType == _JSON_HOOK:
+        return json.loads(final_data)
 
 
 def before_device_create(devicexml, vmconf={}, customProperties={}):
@@ -314,12 +329,14 @@ def after_vdsm_stop():
     return _runHooksDir(None, 'after_vdsm_stop', raiseError=False)
 
 
-def before_network_setup():
-    return _runHooksDir(None, 'before_network_setup')
+def before_network_setup(network_config_dict):
+    return _runHooksDir(network_config_dict, 'before_network_setup',
+                        hookType=_JSON_HOOK)
 
 
-def after_network_setup():
-    return _runHooksDir(None, 'after_network_setup', raiseError=False)
+def after_network_setup(network_config_dict):
+    return _runHooksDir(network_config_dict, 'after_network_setup',
+                        raiseError=False, hookType=_JSON_HOOK)
 
 
 def _getScriptInfo(path):
