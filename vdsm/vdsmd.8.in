@@ -74,6 +74,31 @@ representation of the relevant virtual machine.
 The uuid of the virtual machine may be deduced from that xml, but it is also
 available as the environment variable
 .B vmId.
+
+The before_network_setup and after_network_setup hooks do also include an
+extra environment variable
+.B _hook_json
+which holds a pointer to a file with the network parameters that vdsm is
+setting up (
+.B request
+)
+, the request may be modified by the before_network_setup hook as thus affect
+the operation ultimately taken place by Vdsm.
+
+The JSON format of this file has one section: request, this section
+contains networks, bondings and options, those parameters are specified
+in the setupNetworks VDSM API call.
+
+.nf
+{"request":
+    {
+    "networks": {"virtnet": {"bonding" : "bond0", "bridged": true, "vlan":27}},
+    "bondings": {"bond0": {"nics":["eth1","eth2"]}},
+    "options":  {"conectivityCheck":false}
+    }
+ }
+.fi
+
 Hooks that handle NIC hotplug, hotunplug and update device
 have the _hook_domxml variable but it contains the representation of the NIC
 rather than the VM. Hotplug/hotunplug disk hooks also have the _hook_dom_xml variable,
