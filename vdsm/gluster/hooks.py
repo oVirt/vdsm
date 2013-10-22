@@ -51,7 +51,11 @@ class HookStatus:
 def _getMimeType(fileName):
     global _mimeType
     if not _mimeType:
-        _mimeType = magic.open(magic.MIME_TYPE)
+        if hasattr(magic, "MIME_TYPE"):
+            _mimeType = magic.open(magic.MIME_TYPE)
+        else:
+            _mimeType = magic.open(magic.MAGIC_NONE)
+            _mimeType.setflags(magic.MAGIC_MIME)
         _mimeType.load()
     return _mimeType.file(fileName)
 
