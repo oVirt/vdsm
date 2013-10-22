@@ -718,24 +718,30 @@ exit 0
 %endif
 
 %postun
-%if 0%{?rhel}
 if [ "$1" -ge 1 ]; then
-    /sbin/service vdsmd condrestart > /dev/null 2>&1
-    /sbin/service supervdsmd condrestart > /dev/null 2>&1
+    supervdsmd_start_required='no'
+    vdsmd_start_required='no'
+    if %{_bindir}/vdsm-tool service-status vdsmd >/dev/null 2>&1; then
+        %{_bindir}/vdsm-tool service-stop vdsmd >/dev/null 2>&1
+        vdsmd_start_required='yes'
+    fi
+    if %{_bindir}/vdsm-tool service-status supervdsmd >/dev/null 2>&1; then
+        %{_bindir}/vdsm-tool service-stop supervdsmd >/dev/null 2>&1
+        supervdsmd_start_required='yes'
+    fi
+    if %{_bindir}/vdsm-tool libvirt-configure | grep -q 'is done.'; then
+        if %{_bindir}/vdsm-tool service-status libvirtd >/dev/null 2>&1; then
+            %{_bindir}/vdsm-tool service-restart libvirtd >/dev/null 2>&1
+        fi
+    fi
+    if [ "${supervdsmd_start_required}" = 'yes' ]; then
+        %{_bindir}/vdsm-tool service-start supervdsmd >/dev/null 2>&1
+    fi
+    if [ "${vdsmd_start_required}" = 'yes' ]; then
+        %{_bindir}/vdsm-tool service-start vdsmd >/dev/null 2>&1
+    fi
 fi
 exit 0
-%else
-%if 0%{?with_systemd_macros}
-%systemd_postun_with_restart vdsmd.service
-%systemd_postun_with_restart supervdsmd.service
-%else
-if [ "$1" -ge 1 ] ; then
-    /bin/systemctl try-restart vdsmd.service >/dev/null 2>&1 || :
-    /bin/systemctl try-restart supervdsmd.service >/dev/null 2>&1 || :
-fi
-exit 0
-%endif
-%endif
 
 %if 0%{?rhel}
 %triggerun -- libvirt
