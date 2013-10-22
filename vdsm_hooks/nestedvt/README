@@ -13,3 +13,5 @@ The nested option should now be enabled:
  # cat /sys/module/kvm*/parameters/nested
  Y
 
+This hook assumes that your kernel supports nested virtualization. Please do
+not install it on machines with stock EL6 kernel.
