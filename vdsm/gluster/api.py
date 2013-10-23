@@ -122,7 +122,7 @@ class GlusterApi(object):
 
     @exportAsVerb
     def volumeRebalanceStop(self, volumeName, force=False, options=None):
-        self.svdsmProxy.glusterVolumeRebalanceStop(volumeName, force)
+        return self.svdsmProxy.glusterVolumeRebalanceStop(volumeName, force)
 
     @exportAsVerb
     def volumeRebalanceStatus(self, volumeName, options=None):
@@ -175,8 +175,9 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeRemoveBrickStop(self, volumeName, brickList,
                               replicaCount=0, options=None):
-        self.svdsmProxy.glusterVolumeRemoveBrickStop(volumeName, brickList,
-                                                     replicaCount)
+        return self.svdsmProxy.glusterVolumeRemoveBrickStop(volumeName,
+                                                            brickList,
+                                                            replicaCount)
 
     @exportAsVerb
     def volumeRemoveBrickStatus(self, volumeName, brickList,

@@ -583,11 +583,15 @@ def volumeRebalanceStop(volumeName, force=False):
     if force:
         command.append('force')
     try:
-        _execGlusterXml(command)
-        return True
+        xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException, e:
         raise ge.GlusterVolumeRebalanceStopFailedException(rc=e.rc,
                                                            err=e.err)
+
+    try:
+        return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'rebalance')
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @makePublic
@@ -751,11 +755,15 @@ def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
         command += ["replica", "%s" % replicaCount]
     command += brickList + ["stop"]
     try:
-        _execGlusterXml(command)
-        return True
+        xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException, e:
         raise ge.GlusterVolumeRemoveBrickStopFailedException(rc=e.rc,
                                                              err=e.err)
+
+    try:
+        return _parseVolumeRebalanceRemoveBrickStatus(xmltree, 'remove-brick')
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @makePublic

@@ -705,13 +705,13 @@
 # @volumeName: Gluster volume name
 #
 # Returns:
-# Success or failure
+# Status information of remove brick operation
 #
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'removeBrickStop'},
  'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int'},
- 'returns': 'bool'}
+ 'returns': 'RebalanceRemoveStatus'}
 
 ##
 # @TaskStatus:
@@ -881,13 +881,13 @@
 # @volumeName: Gluster volume name
 #
 # Returns:
-# Success or failure
+# Gluster volume rebalance status
 #
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'rebalanceStop'},
  'data': {'volumeName': 'str', 'force': 'bool'},
- 'returns': 'bool'}
+ 'returns': 'RebalanceRemoveStatus'}
 
 ##
 # @GlusterVolume.rebalanceStatus:

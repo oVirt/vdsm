@@ -131,6 +131,7 @@ class GlusterService(service):
         force = (params.get('force', 'no').upper() == 'YES')
 
         status = self.s.glusterVolumeRebalanceStop(volumeName, force)
+        pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRebalanceStatus(self, args):
@@ -234,6 +235,7 @@ class GlusterService(service):
         status = self.s.glusterVolumeRemoveBrickStop(volumeName,
                                                      brickList,
                                                      replicaCount)
+        pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumeRemoveBrickStatus(self, args):
