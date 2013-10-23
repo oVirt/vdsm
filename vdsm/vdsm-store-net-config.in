@@ -48,7 +48,7 @@ unified_node_persist() {
 unified_nonnode_persist() {
     # Atomic directory copy by using the atomicity of overwriting a link
     # (rename syscall).
-    TIMESTAMP=$(date +%s)
+    TIMESTAMP=$(date +%s%N)
     PERS_CONF_SYMLINK=$PERS_NET_CONF_PATH
     PERS_CONF_DIR_ROOTNAME="$PERS_CONF_SYMLINK."
     PERS_CONF_NEW_DIR="$PERS_CONF_DIR_ROOTNAME$TIMESTAMP"
