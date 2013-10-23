@@ -80,11 +80,11 @@ class TestIpwrapper(TestCaseBase):
                "    link/ether \n")
         expected = [
             MonitorEvent(
-                'bond',
+                'bond0',
                 frozenset(['BROADCAST', 'MULTICAST', 'MASTER']),
                 'DOWN'),
             MonitorEvent(
-                'wlp3s',
+                'wlp3s0',
                 frozenset(['BROADCAST', 'MULTICAST', 'UP', 'LOWER_UP']),
                 None)]
 
