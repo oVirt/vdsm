@@ -877,7 +877,6 @@ class Volume(object):
         """
         self.log.info("Info request: sdUUID=%s imgUUID=%s volUUID = %s ",
                       self.sdUUID, self.imgUUID, self.volUUID)
-        image_corrupted = False
         info = {}
         try:
             meta = self.getMetadata()
@@ -904,7 +903,7 @@ class Volume(object):
 
         # If image was set to illegal, mark the status same
         # (because of VDC constraints)
-        if info.get('legality', None) == ILLEGAL_VOL or image_corrupted:
+        if info.get('legality', None) == ILLEGAL_VOL:
             info['status'] = ILLEGAL_VOL
         self.log.info("%s/%s/%s info is %s",
                       self.sdUUID, self.imgUUID, self.volUUID, str(info))
