@@ -351,7 +351,7 @@ class Monitor():
             if not tokens[1].endswith(':'):
                 continue
 
-            device = tokens[1][:-2]
+            device = tokens[1][:-1]
             flags = frozenset(tokens[2][1:-1].split(','))
             values = dict(tokens[i:i + 2] for i in range(3, len(tokens), 2))
 

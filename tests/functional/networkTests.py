@@ -91,8 +91,8 @@ def nonChangingOperstate(device):
         yield
     finally:
         monitor.stop()
-        changes = [(dev, state) for (dev, state) in monitor.events()
-                   if dev == device]
+        changes = [(event.device, event.state) for event in monitor.events()
+                   if event.device == device]
         if changes:
             raise OperStateChangedError('%s operstate changed: %r' %
                                         (device, changes))
