@@ -3836,7 +3836,7 @@
  'key': 'str', 'value': 'StorageDomainFileStats'}
 
 ##
-# @StorageDomain.getFileList:
+# @StorageDomain.getFileStats:
 #
 # Get a list of files in an ISO domain.
 #
@@ -3844,13 +3844,15 @@
 #
 # @pattern:          Filter results by this glob pattern
 #
+# @caseSensitive:    Enables case-sensitive matching
+#
 # Returns:
 # A dictionary of file information indexed by file name
 #
-# Since: 4.10.0
+# Since: 4.15.0
 ##
-{'command': {'class': 'StorageDomain', 'name': 'getFileList'},
- 'data': {'storagedomainID': 'UUID', 'pattern': 'str'},
+{'command': {'class': 'StorageDomain', 'name': 'getFileStats'},
+ 'data': {'storagedomainID': 'UUID', 'pattern': 'str', 'caseSensitive': 'bool'},
  'returns': 'StorageDomainFileStatsMap'}
 
 ##

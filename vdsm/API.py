@@ -929,8 +929,8 @@ class StorageDomain(APIBase):
     def format(self, autoDetach):
         return self._irs.formatStorageDomain(self._UUID, autoDetach)
 
-    def getFileList(self, pattern):
-        return self._irs.getFileList(self._UUID, pattern)
+    def getFileStats(self, pattern, caseSensitive):
+        return self._irs.getFileStats(self._UUID, pattern, caseSensitive)
 
     def getImages(self):
         return self._irs.getImagesList(self._UUID)

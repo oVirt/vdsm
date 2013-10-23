@@ -1095,15 +1095,15 @@ class service:
                 print message
         return 0, ''
 
-    def getFileList(self, args):
+    def getFileStats(self, args):
         assert args
         validateArgTypes(args, [str, str])
-        response = self.s.getFileList(*args)
+        response = self.s.getFileStats(*args)
         if response['status']['code']:
             return response['status']['code'], response['status']['message']
 
-        for key, value in response['files'].iteritems():
-            print 'file: ', key, 'status: ', value
+        for key, value in response['fileStats'].iteritems():
+            print 'file: ', key, 'stats: ', value
 
         return 0, ''
 
@@ -2272,10 +2272,10 @@ if __name__ == '__main__':
                            'Returns the apparent size and the true size of the'
                            ' volume (in bytes)'
                            )),
-        'getFileList': (serv.getFileList,
-                        ('<sdUUID> [pattern]',
-                         'Returns files list from ISO domain'
-                         )),
+        'getFileStats': (serv.getFileStats,
+                         ('<sdUUID> [pattern][caseSensitive]',
+                          'Returns files statistics from ISO domain'
+                          )),
         'getIsoList': (serv.getIsoList,
                        ('<spUUID>',
                         'Returns list of all .iso images in ISO domain'

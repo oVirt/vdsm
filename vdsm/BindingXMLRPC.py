@@ -476,9 +476,10 @@ class BindingXMLRPC(object):
         domain = API.StorageDomain(sdUUID)
         return domain.format(autoDetach)
 
-    def domainGetFileList(self, sdUUID, pattern='*', options=None):
+    def domainGetFileStats(self, sdUUID, pattern='*',
+                           caseSensitive=False, options=None):
         domain = API.StorageDomain(sdUUID)
-        return domain.getFileList(pattern)
+        return domain.getFileStats(pattern, caseSensitive)
 
     def domainGetImages(self, sdUUID, options=None):
         domain = API.StorageDomain(sdUUID)
@@ -877,7 +878,7 @@ class BindingXMLRPC(object):
                 (self.domainDetachForced, 'forcedDetachStorageDomain'),
                 (self.domainExtend, 'extendStorageDomain'),
                 (self.domainFormat, 'formatStorageDomain'),
-                (self.domainGetFileList, 'getFileList'),
+                (self.domainGetFileStats, 'getFileStats'),
                 (self.domainGetImages, 'getImagesList'),
                 (self.domainGetInfo, 'getStorageDomainInfo'),
                 (self.domainGetStats, 'getStorageDomainStats'),

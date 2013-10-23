@@ -2225,28 +2225,33 @@ class HSM:
         return self.taskMng.revertTask(taskID=taskID)
 
     @public
-    def getFileList(self, sdUUID, pattern='*', options=None):
+    def getFileStats(self, sdUUID, pattern='*', caseSensitive=False,
+                     options=None):
         """
-        Returns a list of all files in the domain filtered according to
-        extension.
+        Returns statistics of all files in the domain filtered according to
+        pattern.
 
         :param sdUUID: The UUID of the storage domain you want to query.
         :type sdUUID: UUID
-        :param pattern: the glob expression for filtering
-        :type extension: str
+        :param pattern: The glob expression for filtering.
+        :type pattern: str
+        :param caseSensitive: Enables case-sensitive matching.
+        :type caseSensitive: bool
         :options: ?
 
-        :returns: a dict of all the volumes found.
+        :returns: file statistics for files matching pattern.
         :rtype: dict
         """
-        vars.task.setDefaultException(se.GetFileListError(sdUUID))
+        vars.task.setDefaultException(se.GetFileStatsError(sdUUID))
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         dom = sdCache.produce(sdUUID=sdUUID)
         if not dom.isISO or dom.getStorageType() != sd.NFS_DOMAIN:
-            raise se.GetFileListError(sdUUID)
-        filesDict = dom.getFileList(pattern=pattern, caseSensitive=True)
-        return {'files': filesDict}
+            raise se.GetFileStatsError(sdUUID)
+
+        fileStats = dom.getFileList(pattern=pattern,
+                                    caseSensitive=caseSensitive)
+        return {'fileStats': fileStats}
 
     @public
     def getIsoList(self, spUUID, extension='iso', options=None):

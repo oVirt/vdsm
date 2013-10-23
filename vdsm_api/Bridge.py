@@ -302,7 +302,7 @@ command_info = {
     'ISCSIConnection_discoverSendTargets': {'ret': 'fullTargets'},
     'LVMVolumeGroup_create': {'ret': 'uuid'},
     'LVMVolumeGroup_getInfo': {'ret': 'info'},
-    'StorageDomain_getFileList': {'ret': 'files'},
+    'StorageDomain_getFileStats': {'ret': 'fileStats'},
     'StorageDomain_getImages': {'ret': 'imageslist'},
     'StorageDomain_getInfo': {'ret': 'info'},
     'StorageDomain_getStats': {'ret': 'stats'},

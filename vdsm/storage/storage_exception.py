@@ -605,9 +605,9 @@ class ImagesNotSupportedError(StorageException):
     message = "This domain does not support images"
 
 
-class GetFileListError(StorageException):
+class GetFileStatsError(StorageException):
     code = 330
-    message = "Cannot get files list"
+    message = "Cannot get file stats"
 
 
 #################################################
