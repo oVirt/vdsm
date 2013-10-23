@@ -33,7 +33,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush)
 
 from vdsm.netinfo import prefix2netmask
-from vdsm.utils import execCmd
+from vdsm import ipwrapper
 
 
 NETWORK_NAME = 'test-network'
@@ -85,17 +85,14 @@ class OperStateChangedError(ValueError):
 @contextmanager
 def nonChangingOperstate(device):
     """Raises an exception if it detects that the device link state changes."""
+    monitor = ipwrapper.Monitor()
+    monitor.start()
     try:
-        monitoringProc = execCmd(['ip', 'monitor', 'link'], sync=False)
         yield
     finally:
-        monitoringProc.kill()
-        out, _ = monitoringProc.communicate()
-        changes = []
-        for line in out.splitlines():
-            tokens = line.split()
-            if '%s:' % device == tokens[1]:
-                changes.append(tokens[-1])
+        monitor.stop()
+        changes = [(dev, state) for (dev, state) in monitor.events()
+                   if dev == device]
         if changes:
             raise OperStateChangedError('%s operstate changed: %r' %
                                         (device, changes))

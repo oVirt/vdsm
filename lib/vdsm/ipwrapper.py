@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from collections import namedtuple
+
 from netaddr.core import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
@@ -321,3 +323,43 @@ def linkSet(dev, linkArgs):
 def linkDel(dev):
     command = [_IP_BINARY.cmd, 'link', 'del', 'dev', dev]
     _execCmd(command)
+
+
+MonitorEvent = namedtuple('MonitorEvent', ['device', 'flags', 'state'])
+
+
+class Monitor():
+    """Minimal wrapper over `ip monitor link`"""
+
+    def __init__(self):
+        self.proc = None
+
+    def start(self):
+        self.proc = execCmd([_IP_BINARY.cmd, 'monitor', 'link'], sync=False)
+
+    def stop(self):
+        self.proc.kill()
+
+    @classmethod
+    def _parse(cls, text):
+        changes = []
+        for line in text.splitlines():
+            if line.startswith(' '):
+                continue
+
+            tokens = line.split()
+            if not tokens[1].endswith(':'):
+                continue
+
+            device = tokens[1][:-2]
+            flags = frozenset(tokens[2][1:-1].split(','))
+            values = dict(tokens[i:i + 2] for i in range(3, len(tokens), 2))
+
+            changes.append(MonitorEvent(device, flags, values.get('state')))
+
+        return changes
+
+    def events(self):
+        out, _ = self.proc.communicate()
+
+        return self._parse(out)

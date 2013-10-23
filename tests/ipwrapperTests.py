@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from vdsm.ipwrapper import Monitor
+from vdsm.ipwrapper import MonitorEvent
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
 
@@ -69,3 +71,21 @@ class TestIpwrapper(TestCaseBase):
                      '32:    from 10.0.0.0/8 to 264.0.0.0/8 lookup table_100']
         for text in bad_rules:
             self.assertRaises(ValueError, Rule.fromText, text)
+
+    def testMonitorEvents(self):
+        out = ("273: bond0: <BROADCAST,MULTICAST,MASTER> "
+               "mtu 1500 qdisc noqueue state DOWN \n"
+               "    link/ether 33:44:55:66:77:88 brd ff:ff:ff:ff:ff:ff \n"
+               "4: wlp3s0: <BROADCAST,MULTICAST,UP,LOWER_UP> \n"
+               "    link/ether \n")
+        expected = [
+            MonitorEvent(
+                'bond',
+                frozenset(['BROADCAST', 'MULTICAST', 'MASTER']),
+                'DOWN'),
+            MonitorEvent(
+                'wlp3s',
+                frozenset(['BROADCAST', 'MULTICAST', 'UP', 'LOWER_UP']),
+                None)]
+
+        self.assertEqual(Monitor._parse(out), expected)
