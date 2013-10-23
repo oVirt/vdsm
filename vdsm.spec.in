@@ -101,7 +101,7 @@ Requires: iproute
 Requires: python-netaddr
 Requires: python-inotify
 Requires: python-argparse
-Requires: python-cpopen
+Requires: python-cpopen >= 1.2.3-4
 Requires: python-ethtool >= 0.6-3
 Requires: %{name}-python-zombiereaper = %{version}-%{release}
 Requires: rpm-python
