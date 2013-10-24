@@ -425,11 +425,11 @@ class DdWatchCopy(TestCaseBase):
         f.write(data)
         f.flush()
         f.close()
-        os.chmod(srcPath, 0666)
+        os.chmod(srcPath, 0o666)
 
         #Get a tempfilename
         dstFd, dstPath = tempfile.mkstemp()
-        os.chmod(dstPath, 0666)
+        os.chmod(dstPath, 0o666)
 
         #Copy
         rc, out, err = misc.ddWatchCopy(srcPath, dstPath, None, len(data))
@@ -528,11 +528,11 @@ class DdWatchCopy(TestCaseBase):
         f.write(data)
         f.flush()
         f.close()
-        os.chmod(srcPath, 0666)
+        os.chmod(srcPath, 0o666)
 
         #Get a tempfilename
         dstFd, dstPath = tempfile.mkstemp()
-        os.chmod(dstPath, 0666)
+        os.chmod(dstPath, 0o666)
 
         #Copy
         rc, out, err = misc.ddWatchCopy(srcPath, dstPath, None, len(data))

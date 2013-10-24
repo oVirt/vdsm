@@ -180,11 +180,11 @@ class ChownTests(TestCaseBase):
 
 
 class CopyUserModeToGroupTests(TestCaseBase):
-    MODE_MASK = 0777
+    MODE_MASK = 0o777
 
     # format: initialMode, expectedMode
     modesList = [
-        (0770, 0770), (0700, 0770), (0750, 0770), (0650, 0660),
+        (0o770, 0o770), (0o700, 0o770), (0o750, 0o770), (0o650, 0o660),
     ]
 
     def testCopyUserModeToGroup(self):

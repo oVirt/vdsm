@@ -182,7 +182,7 @@ class FileStorageDomain(sd.StorageDomain):
         for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
             try:
                 fpath = os.path.join(self.getMDPath(), metaFile)
-                procPool.os.chmod(fpath, 0660)
+                procPool.os.chmod(fpath, 0o660)
             except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
                     "Lease permission change file '%s' failed: %s"
@@ -198,12 +198,12 @@ class FileStorageDomain(sd.StorageDomain):
         metadataDir = os.path.join(domPath, sd.DOMAIN_META_DATA)
 
         procPool = oop.getProcessPool(sdUUID)
-        procPool.fileUtils.createdir(metadataDir, 0775)
+        procPool.fileUtils.createdir(metadataDir, 0o775)
 
         for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
             try:
                 procPool.truncateFile(
-                    os.path.join(metadataDir, metaFile), 0, 0660)
+                    os.path.join(metadataDir, metaFile), 0, 0o660)
             except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
                     "create meta file '%s' failed: %s" % (metaFile, str(e)))
@@ -546,7 +546,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         masterdir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
         if not self.oop.fileUtils.pathExists(masterdir):
-            self.oop.os.mkdir(masterdir, 0755)
+            self.oop.os.mkdir(masterdir, 0o755)
 
     def unmountMaster(self):
         """

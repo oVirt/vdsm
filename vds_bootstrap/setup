@@ -394,7 +394,7 @@ def main():
 
 if __name__ == "__main__":
     # make sure nobody can access our files
-    os.umask(0077)
+    os.umask(0o077)
 
     # working directory is script location
     os.chdir(os.path.dirname(sys.argv[0]))

@@ -36,7 +36,7 @@ def createDaemon():
     """
     # Default daemon parameters.
     # File mode creation mask of the daemon.
-    UMASK = 007
+    UMASK = 0o007
 
     # Default working directory for the daemon.
     WORKDIR = "/"

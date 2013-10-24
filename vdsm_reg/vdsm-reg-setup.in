@@ -102,7 +102,7 @@ class Setup:
         #Fix file permissions to relevant mask
         if fReturn:
             try:
-                os.chmod("/config/etc/sysconfig/network-scripts/ifcfg-" + MGT_BRIDGE_NAME, 0644)
+                os.chmod("/config/etc/sysconfig/network-scripts/ifcfg-" + MGT_BRIDGE_NAME, 0o644)
             except:
                 fReturn = False
                 logging.error("renameBridge: failed to chmod bridge file")
@@ -217,7 +217,7 @@ def _createUpgradeDir(upgradeDir):
     if not os.path.exists(upgradeDir):
         try:
             os.makedirs(upgradeDir)
-            os.chmod(upgradeDir, 0755)
+            os.chmod(upgradeDir, 0o755)
         except OSError as err:
             if err.errno != errno.EEXIST:
                 log.error(
@@ -255,7 +255,7 @@ def run(confFile, daemonize):
 
             log.info("After daemonize - My pid is %d", os.getpid())
             file(pidfile, 'w').write(str(os.getpid()) + "\n")
-            os.chmod(pidfile, 0664)
+            os.chmod(pidfile, 0o664)
 
             itr = 0
             while daemonize and not registered:

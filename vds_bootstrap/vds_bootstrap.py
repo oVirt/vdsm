@@ -201,7 +201,7 @@ VDSM_DIR = "/usr/share/vdsm/"
 
 # Adding VDSM_DIR to the current python path
 try:
-    os.mkdir(VDSM_DIR, 0755)
+    os.mkdir(VDSM_DIR, 0o755)
 except OSError:
     pass
 sys.path.append(VDSM_DIR)
@@ -712,7 +712,7 @@ class Deploy:
             f = os.fdopen(fd, 'w')
             f.writelines(lines)
             f.close()
-            os.chmod(tmpName, 0644)
+            os.chmod(tmpName, 0o644)
             shutil.move(tmpName, VDSM_CONF)
         else:
             self.message = 'Basic configuration found, skipping this step'

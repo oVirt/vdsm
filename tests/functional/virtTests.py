@@ -84,7 +84,7 @@ def _genInitramfs():
     fd, path = tempfile.mkstemp()
     cmd = [_mkinitrd.cmd, "-f", path, _kernelVer]
     rc, out, err = execCmd(cmd, sudo=False)
-    os.chmod(path, 0644)
+    os.chmod(path, 0o644)
     return path
 
 

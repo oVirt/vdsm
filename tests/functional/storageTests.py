@@ -278,7 +278,7 @@ class LocalFSServer(BackendServer):
         undo = lambda: os.rmdir(rootDir)
         rollback.prependDefer(undo)
         os.chown(rootDir, uid, gid)
-        os.chmod(rootDir, 0755)
+        os.chmod(rootDir, 0o755)
 
         connections = {}
         for uuid, subDir in backends.iteritems():
@@ -287,7 +287,7 @@ class LocalFSServer(BackendServer):
             undo = lambda path=path: shutil.rmtree(path, ignore_errors=True)
             rollback.prependDefer(undo)
             os.chown(path, uid, gid)
-            os.chmod(path, 0775)
+            os.chmod(path, 0o775)
 
             connections[uuid] = {'type': 'localfs',
                                  'params': {'path': path}}
@@ -499,7 +499,7 @@ class NFSServer(BackendServer):
         undo = lambda: os.rmdir(rootDir)
         rollback.prependDefer(undo)
         os.chown(rootDir, uid, gid)
-        os.chmod(rootDir, 0755)
+        os.chmod(rootDir, 0o755)
 
         connections = {}
         for uuid, subDir in backends.iteritems():
@@ -508,7 +508,7 @@ class NFSServer(BackendServer):
             undo = lambda path=path: shutil.rmtree(path, ignore_errors=True)
             rollback.prependDefer(undo)
             os.chown(path, uid, gid)
-            os.chmod(path, 0775)
+            os.chmod(path, 0o775)
             self.asserts.assertEquals(0, exportNFS(path))
             undo = lambda path=path: self.asserts.assertEquals(
                 0, unexportNFS(path))

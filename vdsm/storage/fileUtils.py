@@ -393,11 +393,11 @@ def fsyncPath(path):
 
 def copyUserModeToGroup(path):
     mode = os.stat(path).st_mode
-    userMode = mode & 0700  # user mode mask
+    userMode = mode & 0o700  # user mode mask
     newGroupMode = userMode >> 3
-    if (mode & 0070) != newGroupMode:  # group mode mask
+    if (mode & 0o070) != newGroupMode:  # group mode mask
         # setting the new group mode masking out the original one
-        os.chmod(path, (mode & 0707) | newGroupMode)
+        os.chmod(path, (mode & 0o707) | newGroupMode)
 
 
 def padToBlockSize(path):

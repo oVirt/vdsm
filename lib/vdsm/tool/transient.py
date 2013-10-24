@@ -51,7 +51,7 @@ def setup_transient_repository(*args):
             raise
 
     os.chown(TRANSIENT_DISKS_REPO, vdsm_uid, vdsm_gid)
-    os.chmod(TRANSIENT_DISKS_REPO, 0750)
+    os.chmod(TRANSIENT_DISKS_REPO, 0o750)
     selinux.chcon(TRANSIENT_DISKS_REPO, SELINUX_VIRT_IMAGE_LABEL)
 
 

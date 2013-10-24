@@ -3307,7 +3307,7 @@ class Vm(object):
             qemuImg.create(transientPath, format=qemuImg.FORMAT.QCOW2,
                            backing=diskParams['path'],
                            backingFormat=driveFormat)
-            os.fchmod(transientHandle, 0660)
+            os.fchmod(transientHandle, 0o660)
         except:
             os.unlink(transientPath)  # Closing after deletion is correct
             self.log.error("Failed to create the transient disk for "

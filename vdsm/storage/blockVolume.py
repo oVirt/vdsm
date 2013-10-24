@@ -416,7 +416,7 @@ class BlockVolume(volume.Volume):
                                                           self.imgUUID)
         if not os.path.isdir(imageDir):
             try:
-                os.mkdir(imageDir, 0755)
+                os.mkdir(imageDir, 0o755)
             except Exception:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.ImagePathError(imageDir)

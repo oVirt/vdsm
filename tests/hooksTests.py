@@ -46,7 +46,7 @@ echo -n %s >> "$_hook_domxml"
         scripts.sort(key=lambda f: f.name)
         for n, script in enumerate(scripts):
             script.write(code % n)
-            os.chmod(os.path.join(dirName, script.name), 0775)
+            os.chmod(os.path.join(dirName, script.name), 0o775)
             script.close()
         return dirName, scripts
 
@@ -90,7 +90,7 @@ echo "81212590184644762"
         """
         script.write(code)
         script.close()
-        os.chmod(script.name, 0775)
+        os.chmod(script.name, 0o775)
         return script.name, '683394fc34f6830dd1882418eefd9b66'
 
     def test_getScriptInfo(self):
@@ -103,7 +103,7 @@ echo "81212590184644762"
         dir = tempfile.mkdtemp()
         sName, md5 = self.createScript(dir)
         NEscript = tempfile.NamedTemporaryFile(dir=dir)
-        os.chmod(NEscript.name, 0000)
+        os.chmod(NEscript.name, 0o000)
         info = hooks._getHookInfo(dir)
         os.unlink(sName)
         expectedRes = dict([(os.path.basename(sName), {'md5': md5})])
@@ -122,7 +122,7 @@ customProperty = os.environ['customProperty']
 domXMLFile.write(customProperty)
         """
         script.write(code)
-        os.chmod(script.name, 0775)
+        os.chmod(script.name, 0o775)
         script.close()
         return dirName
 

@@ -97,7 +97,7 @@ def run(pidfile=None):
         if pidfile:
             with open(pidfile, 'w') as f:
                 f.write(pid + "\n")
-            os.chmod(pidfile, 0664)
+            os.chmod(pidfile, 0o664)
 
         sysname, nodename, release, version, machine = os.uname()
         log.info('(PID: %s) I am the actual vdsm %s %s (%s)',

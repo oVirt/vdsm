@@ -511,7 +511,7 @@ class ConfigWriter(object):
                       configuration))
         with open(fileName, 'w') as confFile:
             confFile.write(configuration)
-        os.chmod(fileName, 0664)
+        os.chmod(fileName, 0o664)
         try:
             selinux.restorecon(fileName)
         except:

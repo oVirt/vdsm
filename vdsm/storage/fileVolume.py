@@ -69,11 +69,11 @@ class FileVolume(volume.Volume):
     @staticmethod
     def file_setrw(volPath, rw):
         sdUUID = getDomUuidFromVolumePath(volPath)
-        mode = 0440
+        mode = 0o440
         if rw:
-            mode |= 0220
+            mode |= 0o220
         if oop.getProcessPool(sdUUID).os.path.isdir(volPath):
-            mode |= 0110
+            mode |= 0o110
         oop.getProcessPool(sdUUID).os.chmod(volPath, mode)
 
     @classmethod
