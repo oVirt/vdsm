@@ -306,6 +306,8 @@ Manager.
 Summary: Creates a sub-process in simpler safer manner.
 
 BuildRequires: python2-devel
+Provides: python-cpopen = %{version}-%{release}
+Obsoletes: python-cpopen
 
 %description python-cpopen
 Python package for creating sub-process in simpler and safer manner by using C
