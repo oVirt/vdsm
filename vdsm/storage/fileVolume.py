@@ -561,16 +561,6 @@ class FileVolume(volume.Volume):
         volPath = self.getVolumePath()
         return int(int(self.oop.os.stat(volPath).st_blocks) * BLOCK_SIZE / bs)
 
-    def getVolumeMtime(self):
-        """
-        Return the volume mtime in msec epoch
-        """
-        volPath = self.getVolumePath()
-        try:
-            return self.getMetaParam(volume.MTIME)
-        except se.MetaDataKeyNotFoundError:
-            return self.oop.os.stat(volPath).st_mtime
-
     def _extendSizeRaw(self, newSize):
         volPath = self.getVolumePath()
         curSizeBytes = self.oop.os.stat(volPath).st_size

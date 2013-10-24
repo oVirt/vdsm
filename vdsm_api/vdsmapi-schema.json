@@ -6649,7 +6649,7 @@
 #
 # @ctime:         The Volume creation time in seconds since the epoch
 #
-# @mtime:         The Volume modification time in seconds since the epoch
+# @mtime:         The Volume modification time (deprecated)
 #
 # @legality:      Indicates whether the volume is legal to use
 #
@@ -6668,7 +6668,7 @@
           'format': 'VolumeFormat', 'disktype': 'DiskType',
           'voltype': 'VolumeRole', 'capacity': 'uint', 'parent': 'UUID',
           'description': 'str', 'pool': 'UUID', 'domain': 'UUID',
-          'image': 'UUID', 'ctime': 'int', 'mtime': 'uint',
+          'image': 'UUID', 'ctime': 'int', '*mtime': 'uint',
           'legality': 'VolumeLegality', 'apparentsize': 'uint',
           'truesize': 'uint', 'status': 'VolumeStatus', 'children': ['UUID']}}
 

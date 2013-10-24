@@ -807,9 +807,6 @@ class Volume(object):
         self.updateInvalidatedSize()
 
         try:
-            # Mtime is the time of the last prepare for RW
-            if rw:
-                self.setMetaParam(MTIME, int(time.time()))
             if justme:
                 return True
             pvol = self.getParentVolume()
@@ -845,7 +842,7 @@ class Volume(object):
             "domain": meta.get(DOMAIN, ""),
             "image": self.getImage(),
             "ctime": meta.get(CTIME, ""),
-            "mtime": meta.get(MTIME, ""),
+            "mtime": "0",
             "legality": meta.get(LEGALITY, ""),
         }
 
@@ -864,7 +861,7 @@ class Volume(object):
             IMAGE: str(imgUUID),
             DESCRIPTION: str(desc),
             PUUID: str(puuid),
-            MTIME: int(time.time()),
+            MTIME: 0,
             LEGALITY: str(legality),
         }
 
@@ -888,13 +885,11 @@ class Volume(object):
             avsize = self.getVolumeTrueSize(bs=1)
             info['apparentsize'] = str(vsize)
             info['truesize'] = str(avsize)
-            info['mtime'] = self.getVolumeMtime()
             info['status'] = "OK"
         except se.StorageException as e:
             self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
             info['apparentsize'] = "0"
             info['truesize'] = "0"
-            info['mtime'] = "0"
             info['status'] = "INVALID"
 
         # Both engine and dumpStorageTable don't use this option so

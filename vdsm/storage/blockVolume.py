@@ -623,17 +623,6 @@ class BlockVolume(volume.Volume):
 
     getVolumeTrueSize = getVolumeSize
 
-    def getVolumeMtime(self):
-        """
-        Return the volume mtime in msec epoch
-        """
-        try:
-            mtime = self.getMetaParam(volume.MTIME)
-        except se.MetaDataKeyNotFoundError:
-            mtime = 0
-
-        return mtime
-
     def _extendSizeRaw(self, newSize):
         # Since this method relies on lvm.extendLV (lvextend) when the
         # requested size is equal or smaller than the current size, the
