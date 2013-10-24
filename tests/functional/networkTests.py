@@ -32,7 +32,7 @@ from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy, cleanupRules
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush)
 
-from vdsm.netinfo import prefix2netmask
+from vdsm.netinfo import operstate, prefix2netmask
 from vdsm import ipwrapper
 
 
@@ -89,6 +89,7 @@ class OperStateChangedError(ValueError):
 @contextmanager
 def nonChangingOperstate(device):
     """Raises an exception if it detects that the device link state changes."""
+    originalState = operstate(device).upper()
     monitor = ipwrapper.Monitor()
     monitor.start()
     try:
@@ -97,9 +98,10 @@ def nonChangingOperstate(device):
         monitor.stop()
         changes = [(event.device, event.state) for event in monitor.events()
                    if event.device == device]
-        if changes:
-            raise OperStateChangedError('%s operstate changed: %r' %
-                                        (device, changes))
+        for _, state in changes:
+            if state != originalState:
+                raise OperStateChangedError('%s operstate changed: %s -> %r' %
+                                            (device, originalState, changes))
 
 
 @expandPermutations
