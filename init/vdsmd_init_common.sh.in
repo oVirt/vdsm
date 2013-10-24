@@ -228,10 +228,13 @@ case "$1" in
             prepare_transient_repository \
             reconfigure_sanlock \
             syslog_available \
-            nwfilter dummybr \
+            nwfilter \
+            dummybr \
             load_needed_modules \
-            tune_system mkdirs \
-            test_space test_lo \
+            tune_system \
+            mkdirs \
+            test_space \
+            test_lo \
             test_conflicting_conf \
             "
         ;;
