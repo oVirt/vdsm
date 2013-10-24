@@ -27,12 +27,12 @@ Note:
 inbound or outbound elements can be once but not mandatory
 
 syntax:
-    MAC1=in{'average':'1','peek':'2','burst':'5'}^out{'average':'1'}&MAC2=...
+    MAC1=in{'average':'1','peak':'2','burst':'5'}^out{'average':'1'}&MAC2=...
 where:
     MACn should be replaced with the MAC addresses of the virtual nics to be
     edited.'''
 
-keys = ['average', 'peek', 'burst']
+keys = ['average', 'peak', 'burst']
 
 
 def add_attributes(node, attributes):
