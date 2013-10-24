@@ -221,6 +221,7 @@ run_tasks(){
 case "$1" in
     --pre-start)
         run_tasks " \
+            mkdirs \
             configure_coredump \
             run_init_hooks \
             gencerts \
@@ -232,7 +233,6 @@ case "$1" in
             dummybr \
             load_needed_modules \
             tune_system \
-            mkdirs \
             test_space \
             test_lo \
             test_conflicting_conf \
