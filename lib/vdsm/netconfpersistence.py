@@ -23,10 +23,10 @@ import json
 import logging
 import os
 
-from config import config
-from tool.restore_nets import restore
-import constants
-import utils
+from .config import config
+from .tool.restore_nets import restore
+from . import constants
+from . import utils
 
 
 CONF_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'

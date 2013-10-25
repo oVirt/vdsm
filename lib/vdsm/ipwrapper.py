@@ -23,8 +23,8 @@ from netaddr.core import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
-from utils import CommandPath
-from utils import execCmd
+from .utils import CommandPath
+from .utils import execCmd
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 

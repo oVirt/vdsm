@@ -38,7 +38,7 @@ import logging
 import M2Crypto
 from M2Crypto import SSL, X509
 
-from vdsm.utils import IPXMLRPCRequestHandler, IPXMLRPCServer
+from .utils import IPXMLRPCRequestHandler, IPXMLRPCServer
 
 M2Crypto.threading.init()
 

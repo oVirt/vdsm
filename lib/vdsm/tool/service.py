@@ -27,9 +27,9 @@ import re
 import sys
 from collections import defaultdict
 
-from vdsm.tool import expose
-from vdsm.utils import CommandPath
-from vdsm.utils import execCmd as _execCmd
+from . import expose
+from ..utils import CommandPath
+from ..utils import execCmd as _execCmd
 
 
 def execCmd(argv, raw=True, *args, **kwargs):

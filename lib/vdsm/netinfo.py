@@ -32,12 +32,12 @@ from xml.dom import minidom
 
 import ethtool
 
-from config import config
-import constants
-from ipwrapper import Route
-from ipwrapper import routeShowAllDefaultGateways
-import libvirtconnection
-from ipwrapper import linkShowDev
+from .config import config
+from . import constants
+from .ipwrapper import Route
+from .ipwrapper import routeShowAllDefaultGateways
+from . import libvirtconnection
+from .ipwrapper import linkShowDev
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 # ifcfg persistence directories

@@ -23,7 +23,7 @@ import xmlrpclib
 import subprocess
 import os
 import re
-from vdsm import SecureXMLRPCServer
+from . import SecureXMLRPCServer
 
 d_useSSL = False
 d_tsPath = '@TRUSTSTORE@'
@@ -48,7 +48,7 @@ def __guessDefaults():
     VDSM_CONF = '/etc/vdsm/vdsm.conf'
     try:
         try:
-            from vdsm.config import config
+            from .config import config
             config.read(VDSM_CONF)
             d_useSSL = config.getboolean('vars', 'ssl')
             d_tsPath = config.get('vars', 'trust_store_path')
@@ -59,7 +59,7 @@ def __guessDefaults():
                 if config.get('addresses', 'management_ip'):
                     d_addr = config.get('addresses', 'management_ip')
                 else:
-                    from vdsm import netinfo
+                    from . import netinfo
                     proposed_addr = netinfo.getaddr('@VDSMBRIDGE@')
                     if proposed_addr:
                         d_addr = proposed_addr

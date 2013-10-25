@@ -17,8 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from vdsm.utils import getHostUUID
-from vdsm.tool import expose
+from ..utils import getHostUUID
+from . import expose
 import sys
 
 

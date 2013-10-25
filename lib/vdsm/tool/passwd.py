@@ -19,8 +19,8 @@
 
 import errno
 import subprocess
-from vdsm import constants
-from vdsm.tool import expose
+from .. import constants
+from . import expose
 
 
 @expose("set-saslpasswd")

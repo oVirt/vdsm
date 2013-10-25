@@ -21,9 +21,9 @@
 
 import os
 
-from vdsm.netinfo import DUMMY_BRIDGE
-from vdsm import libvirtconnection, utils, constants
-from vdsm.tool import expose
+from ..netinfo import DUMMY_BRIDGE
+from .. import libvirtconnection, utils, constants
+from . import expose
 
 
 def createEphemeralBridge(bridgeName):

@@ -20,7 +20,7 @@
 
 import re
 
-import utils
+from . import utils
 
 _qemuimg = utils.CommandPath("qemu-img",
                              "/usr/bin/qemu-img",)  # Fedora, EL6

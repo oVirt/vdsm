@@ -20,12 +20,12 @@
 import os
 import sys
 
-from vdsm import utils
-import vdsm.tool
-from vdsm.constants import P_VDSM
+from .. import utils
+from . import expose
+from ..constants import P_VDSM
 
 
-@vdsm.tool.expose('restore-nets')
+@expose('restore-nets')
 def restore(*args, **kwargs):
     """
     Restores the networks to what was previously persisted via vdsm.

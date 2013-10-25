@@ -52,7 +52,7 @@ import time
 import zombiereaper
 
 from cpopen import CPopen as BetterPopen
-import constants
+from . import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1k was fastets. If
 # you find this number to be a bottleneck in any way you are welcome to change

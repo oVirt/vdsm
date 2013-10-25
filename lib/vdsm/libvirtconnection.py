@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2012 Red Hat, Inc.
+# Copyright 2009-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import os
 import signal
 
 import libvirt
-from vdsm import constants, utils
+from . import constants, utils
 
 log = logging.getLogger("libvirtconnection")
 

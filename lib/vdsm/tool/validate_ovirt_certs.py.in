@@ -21,8 +21,8 @@ import os
 import pwd
 import shutil
 
-from vdsm.tool import expose
-from vdsm.utils import execCmd
+from . import expose
+from ..utils import execCmd
 
 try:
     from ovirtnode import ovirtfunctions

@@ -20,9 +20,9 @@
 
 import os.path
 
-from vdsm import netinfo
-from vdsm.tool import expose
-from vdsm.utils import execCmd
+from .. import netinfo
+from . import expose
+from ..utils import execCmd
 
 
 EX_MODPROBE = '@MODPROBE_PATH@'

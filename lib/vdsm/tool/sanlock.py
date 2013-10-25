@@ -20,8 +20,8 @@
 import os
 import grp
 
-from vdsm import constants
-from vdsm.tool import expose
+from .. import constants
+from . import expose
 
 
 SANLOCK_PID = "/var/run/sanlock/sanlock.pid"

@@ -20,10 +20,10 @@
 import os
 import sys
 
-from vdsm import utils
-import vdsm.tool
-from vdsm.tool import service
-from vdsm.constants import P_VDSM_EXEC
+from .. import utils
+from . import expose
+from . import service
+from ..constants import P_VDSM_EXEC
 
 
 def exec_libvirt_configure(action, *args):
@@ -44,7 +44,7 @@ def exec_libvirt_configure(action, *args):
     return rc
 
 
-@vdsm.tool.expose("libvirt-configure")
+@expose("libvirt-configure")
 def configure_libvirt(*args):
     """
     libvirt configuration (--force for reconfigure)
@@ -56,7 +56,7 @@ def configure_libvirt(*args):
     return 0
 
 
-@vdsm.tool.expose("libvirt-test-conflicts")
+@expose("libvirt-test-conflicts")
 def test_conflict_configurations(*args):
     """
     Validate conflict in configured files
@@ -64,7 +64,7 @@ def test_conflict_configurations(*args):
     return exec_libvirt_configure("test_conflict_configurations", *args)
 
 
-@vdsm.tool.expose("libvirt-configure-services-restart")
+@expose("libvirt-configure-services-restart")
 def libvirt_configure_services_restart(*args):
     """
     Managing restart of related services
@@ -76,7 +76,7 @@ def libvirt_configure_services_restart(*args):
     return 0
 
 
-@vdsm.tool.expose("libvirt-is-configured")
+@expose("libvirt-is-configured")
 def libvirt_is_configured(*args):
     """
     Check if libvirt is already configured for vdsm

@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from vdsm.tool import expose
+from . import expose
 
 SEBOOL_ENABLED = "on"
 SEBOOL_DISABLED = "off"

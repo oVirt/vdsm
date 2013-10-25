@@ -1,5 +1,5 @@
 #! /usr/bin/python
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 
 import logging
 
-from vdsm import libvirtconnection
-from vdsm.tool import expose
+from .. import libvirtconnection
+from . import expose
 
 
 @expose('nwfilter')
