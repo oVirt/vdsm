@@ -1313,6 +1313,10 @@ def lvsByTag(vgName, tag):
     return [lv for lv in getLV(vgName) if tag in lv.tags]
 
 
+def invalidateFilter():
+    _lvminfo.invalidateFilter()
+
+
 # Fix me: unify with addTag
 def replaceLVTag(vg, lv, deltag, addtag):
     """
