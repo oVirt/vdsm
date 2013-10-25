@@ -1996,6 +1996,7 @@ class HSM:
         :rtype: dict
         """
         visibility = self.scanDevicesVisibility(guids)
+        lvm.invalidateFilter()
         for guid in guids:
             if visibility[guid]:
                 visibility[guid] = (os.stat('/dev/mapper/' + guid).st_mode &
