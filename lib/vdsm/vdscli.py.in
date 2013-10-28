@@ -23,12 +23,32 @@ import xmlrpclib
 import subprocess
 import os
 import re
+import sys
+import types
+from xml.parsers.expat import ExpatError
 from . import SecureXMLRPCServer
+
 
 d_useSSL = False
 d_tsPath = '@TRUSTSTORE@'
 d_addr = '0'
 d_port = '54321'
+
+
+class TransportWrapper:
+    def __init__(self, transport):
+        self._orig_parse_response = transport.parse_response
+        transport.parse_response = types.MethodType(
+            self.wrapped_parse_response,
+            transport)
+
+    def wrapped_parse_response(self, *args, **kwargs):
+        try:
+            return self._orig_parse_response(*args[1:], **kwargs)
+        except ExpatError:
+            sys.stderr.write('Parsing error was thrown during parsing '
+                             'response when provided: {}'.format(args[1]))
+            raise
 
 
 class SingleRequestTransport(xmlrpclib.Transport):
@@ -143,10 +163,10 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
         transport = TransportClass(key_file=KEYFILE,
                                    cert_file=CERTFILE, ca_certs=CACERT)
         server = xmlrpclib.ServerProxy('https://%s' % hostPort,
-                                       transport=transport)
+                                       TransportWrapper(transport))
     else:
-        server = xmlrpclib.Server('http://%s' % hostPort,
-                                  transport=SingleRequestTransport())
+        transport = TransportWrapper(SingleRequestTransport())
+        server = xmlrpclib.Server('http://%s' % hostPort, transport)
     return server
 
 if __name__ == '__main__':
