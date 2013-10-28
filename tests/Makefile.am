@@ -63,6 +63,7 @@ test_modules = \
 	sslTests.py \
 	storageMailboxTests.py \
 	tcTests.py \
+	transportWrapperTests.py \
 	utilsTests.py \
 	vdsClientTests.py \
 	vmTestsData.py \
