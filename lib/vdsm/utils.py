@@ -50,7 +50,6 @@ import threading
 import time
 
 from cpopen import CPopen as BetterPopen
-from config import config
 import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1k was fastets. If
@@ -557,49 +556,6 @@ def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None,
                         repr(err), proc.returncode)
 
     return (proc.returncode, out, err)
-
-
-class ImagePathStatus(threading.Thread):
-    def __init__(self, cif, interval=None):
-        if interval is None:
-            interval = config.getint('irs', 'images_check_times')
-        self._interval = interval
-        self._cif = cif
-        self.storageDomains = {}
-        self._stopEvent = threading.Event()
-        threading.Thread.__init__(self, name='ImagePathStatus')
-        if self._interval > 0:
-            self.start()
-
-    def stop(self):
-        self._stopEvent.set()
-
-    def _refreshStorageDomains(self):
-        self.storageDomains = self._cif.irs.repoStats()
-        del self.storageDomains["status"]
-        if "args" in self.storageDomains:
-            del self.storageDomains["args"]
-
-    def run(self):
-        try:
-            while not self._stopEvent.isSet():
-                if self._cif.irs:
-                    self._refreshStorageDomains()
-                self._stopEvent.wait(self._interval)
-        except:
-            logging.error("Error while refreshing storage domains",
-                          exc_info=True)
-
-
-def getPidNiceness(pid):
-    """
-    Get the nice level of a process.
-
-    :param pid: the PID of the process.
-    :type pid: int
-    """
-    stat = file('/proc/%s/stat' % (pid)).readlines()[0]
-    return int(stat.split(') ')[-1].split()[16])
 
 
 def tobool(s):
