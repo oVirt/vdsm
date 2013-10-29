@@ -541,16 +541,6 @@ class HostStatsThread(StatsThread):
         return stats
 
 
-def checkPathStat(pathToCheck):
-    try:
-        startTime = time.time()
-        os.statvfs(pathToCheck)
-        delay = time.time() - startTime
-        return (True, delay)
-    except:
-        return (False, 0)
-
-
 class ImagePathStatus(threading.Thread):
     def __init__(self, cif, interval=None):
         if interval is None:

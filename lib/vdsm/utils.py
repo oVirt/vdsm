@@ -559,16 +559,6 @@ def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None,
     return (proc.returncode, out, err)
 
 
-def checkPathStat(pathToCheck):
-    try:
-        startTime = time.time()
-        os.statvfs(pathToCheck)
-        delay = time.time() - startTime
-        return (True, delay)
-    except:
-        return (False, 0)
-
-
 class ImagePathStatus(threading.Thread):
     def __init__(self, cif, interval=None):
         if interval is None:
