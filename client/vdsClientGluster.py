@@ -156,6 +156,14 @@ class GlusterService(service):
         status = self.s.glusterHostRemove(hostName, force)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterHostRemoveByUuid(self, args):
+        params = self._eqSplit(args)
+        hostUuid = params.get('hostUuid', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterHostRemoveByUuid(hostUuid, force)
+        return status['status']['code'], status['status']['message']
+
     def do_glusterVolumeReplaceBrickStart(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
@@ -536,6 +544,13 @@ def getGlusterCmdDict(serv):
              serv.do_glusterHostRemove,
              ('hostName=<host> [force={yes|no}]\n\t'
               '<host> is hostname or ip address of a server in '
+              'gluster cluster',
+              'remove server from gluster cluster'
+              )),
+         'glusterHostRemoveByUuid': (
+             serv.do_glusterHostRemoveByUuid,
+             ('hostUuid=<hostUuid> [force={yes|no}]\n\t'
+              '<hostUuid> is UUID of the host in '
               'gluster cluster',
               'remove server from gluster cluster'
               )),

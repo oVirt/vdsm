@@ -933,6 +933,21 @@
  'data': {'hostName': 'str', 'force': 'bool'},
  'returns': 'bool'}
 
+
+##
+# @GlusterHost.removeByUuid:
+#
+# Remove Gluster Host by uuid
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.14.0
+##
+{'command': {'class': 'GlusterHost', 'name': 'removeByUuid'},
+ 'data': {'hostUuid': 'UUID', 'force': 'bool'},
+ 'returns': 'bool'}
+
 ##
 # @HostStatus:
 #

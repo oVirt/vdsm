@@ -19,9 +19,10 @@
 #
 
 from functools import wraps
-
 from vdsm.define import doneCode
+
 import supervdsm as svdsm
+import exception as ge
 
 _SUCCESS = {'status': doneCode}
 
@@ -212,6 +213,16 @@ class GlusterApi(object):
 
     @exportAsVerb
     def hostRemove(self, hostName, force=False, options=None):
+        self.svdsmProxy.glusterPeerDetach(hostName, force)
+
+    @exportAsVerb
+    def hostRemoveByUuid(self, hostUuid, force=False, options=None):
+        for hostInfo in self.svdsmProxy.glusterPeerStatus():
+            if hostInfo['uuid'] == hostUuid:
+                hostName = hostInfo['hostname']
+                break
+        else:
+            raise ge.GlusterHostNotFoundException()
         self.svdsmProxy.glusterPeerDetach(hostName, force)
 
     @exportAsVerb
