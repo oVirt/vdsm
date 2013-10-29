@@ -364,12 +364,10 @@ class StatsThread(threading.Thread):
     """
     AVERAGING_WINDOW = 5
     SAMPLE_INTERVAL_SEC = 2
-    MBITTOBYTES = 1000000 / 8
 
     def __init__(self, log, ifids, ifrates):
         threading.Thread.__init__(self)
         self._log = log
-        self._lastCheckTime = 0
         self._stopEvent = threading.Event()
         self._samples = []
         self._ifids = ifids
@@ -377,17 +375,10 @@ class StatsThread(threading.Thread):
         self._ncpus = 1
         # in bytes-per-second
         self._lineRate = (sum(ifrates) or 1000) * (10 ** 6) / 8
-        self._paused = False
         self._lastSampleTime = time.time()
 
     def stop(self):
         self._stopEvent.set()
-
-    def pause(self):
-        self._paused = True
-
-    def cont(self):
-        self._paused = False
 
     def sample(self):  # override
         pass
@@ -398,16 +389,15 @@ class StatsThread(threading.Thread):
             # wait a bit before starting to sample
             time.sleep(self.SAMPLE_INTERVAL_SEC)
             while not self._stopEvent.isSet():
-                if not self._paused:
-                    try:
-                        sample = self.sample()
-                        self._samples.append(sample)
-                        self._lastSampleTime = sample.timestamp
-                        if len(self._samples) > self.AVERAGING_WINDOW:
-                            self._samples.pop(0)
-                    except vm.TimeoutError:
-                        self._log.error("Timeout while sampling stats",
-                                        exc_info=True)
+                try:
+                    sample = self.sample()
+                    self._samples.append(sample)
+                    self._lastSampleTime = sample.timestamp
+                    if len(self._samples) > self.AVERAGING_WINDOW:
+                        self._samples.pop(0)
+                except vm.TimeoutError:
+                    self._log.error("Timeout while sampling stats",
+                                    exc_info=True)
                 self._stopEvent.wait(self.SAMPLE_INTERVAL_SEC)
         except:
             if not self._stopEvent.isSet():
