@@ -78,6 +78,7 @@ RNG_DEVICES = 'rng'
 WATCHDOG_DEVICES = 'watchdog'
 CONSOLE_DEVICES = 'console'
 SMARTCARD_DEVICES = 'smartcard'
+TPM_DEVICES = 'tpm'
 
 
 def isVdsmImage(drive):
@@ -1811,6 +1812,28 @@ class SmartCardDevice(VmDevice):
         return card
 
 
+class TpmDevice(VmDevice):
+    __slots__ = ()
+
+    def getXML(self):
+        """
+        Add tpm section to domain xml
+
+        <tpm model='tpm-tis'>
+            <backend type='passthrough'>
+                <device path='/dev/tpm0'>
+            </backend>
+        </tpm>
+        """
+        tpm = self.createXmlElem(self.device, None)
+        tpm.setAttrs(model=self.specParams['model'])
+        backend = tpm.appendChildWithArgs('backend',
+                                          type=self.specParams['mode'])
+        backend.appendChildWithArgs('device',
+                                    path=self.specParams['path'])
+        return tpm
+
+
 class RedirDevice(VmDevice):
     __slots__ = ('address',)
 
@@ -1893,7 +1916,8 @@ class Vm(object):
                      (CONSOLE_DEVICES, ConsoleDevice),
                      (REDIR_DEVICES, RedirDevice),
                      (RNG_DEVICES, RngDevice),
-                     (SMARTCARD_DEVICES, SmartCardDevice))
+                     (SMARTCARD_DEVICES, SmartCardDevice),
+                     (TPM_DEVICES, TpmDevice))
 
     def _makeDeviceDict(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)

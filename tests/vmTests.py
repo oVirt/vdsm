@@ -174,6 +174,20 @@ class TestVm(TestCaseBase):
         smartcard = vm.SmartCardDevice(self.conf, self.log, **dev)
         self.assertXML(smartcard.getXML(), smartcardXML)
 
+    def testTpmXML(self):
+        tpmXML = """
+            <tpm model="tpm-tis">
+                <backend type="passthrough">
+                    <device path="/dev/tpm0"/>
+                </backend>
+            </tpm>
+            """
+        dev = {'device': 'tpm',
+               'specParams': {'mode': 'passthrough',
+                              'path': '/dev/tpm0', 'model': 'tpm-tis'}}
+        tpm = vm.TpmDevice(self.conf, self.log, **dev)
+        self.assertXML(tpm.getXML(), tpmXML)
+
     def testFeaturesXML(self):
         featuresXML = """
             <features>

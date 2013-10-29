@@ -2666,6 +2666,74 @@
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID'}}
 
 ##
+# @VmTpmDeviceMode:
+#
+# An enumeration of VM tpm device types.
+#
+# @passthrough:     use hosts TPM
+#
+# Since: 4.15.0
+##
+{'enum': 'VmTpmDeviceMode', 'data': ['passthrough']}
+
+##
+# @VmTpmDeviceModel:
+#
+# An enumeration of VM tpm device modes.
+#
+# @tpm-tis: TPM Interface Standard
+#
+# Since: 4.15.0
+##
+{'enum': 'VmTpmDeviceModel', 'data': ['tpm-tis']}
+
+##
+# @VmTpmDeviceType:
+#
+# An enumeration of VM smartcard device types.
+#
+# @tpm: A tpm
+#
+# Since: 4.15.0
+##
+{'enum': 'VmTpmDeviceType', 'data': ['tpm']}
+
+##
+# @VmTpmDeviceSpecParams:
+#
+# Additional VM tpm device parameters.
+#
+# @mode:      Protocol used by tpmdevice
+#
+# @model:     Model of TPM device
+#
+# @path:      Path to hosts device TPM
+#
+# Since: 4.15.0
+##
+{'type': 'VmTpmDeviceSpecParams',
+ 'data': {'model': 'VmTpmDeviceModel',
+          'path': 'str',
+          'mode': 'VmTpmDeviceMode'}}
+
+##
+# @VmTpmDevice:
+#
+# Properties of a VM tpm device.
+#
+# @deviceType:  The device type (always @tpm)
+#
+# @device:      The the type of tpm device
+#
+# @specParams:  Additional device parameters
+#
+# Since: 4.15.0
+##
+{'type': 'VmTpmDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmTpmDeviceType',
+          'specParams': 'VmTpmDeviceSpecParams'}}
+
+##
 # @VmSmartcardDeviceProtocol:
 #
 # An enumeration of VM smartcard device protocols.
