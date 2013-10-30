@@ -274,13 +274,25 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                     log.error("Image %s can't be activated.",
                               imgUUID, exc_info=True)
 
-                for vol in imgVolumes:
+                for volUUID in imgVolumes:
                     try:
-                        v3ResetMetaVolSize(vol)  # BZ#811880
+                        v3ResetMetaVolSize(  # BZ#811880
+                            domain.produceVolume(imgUUID, volUUID))
                     except qemuImg.QImgError:
                         log.error("It is not possible to read the volume %s "
                                   "using qemu-img, the content looks damaged",
-                                  vol.volUUID, exc_info=True)
+                                  volUUID, exc_info=True)
+
+            except se.VolumeDoesNotExist:
+                log.error("It is not possible to prepare the image %s, the "
+                          "volume chain looks damaged", imgUUID,
+                          exc_info=True)
+
+            except se.MetaDataKeyNotFoundError:
+                log.error("It is not possible to prepare the image %s, the "
+                          "volume metadata looks damaged", imgUUID,
+                          exc_info=True)
+
             finally:
                 try:
                     domain.deactivateImage(imgUUID)
