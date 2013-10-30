@@ -644,6 +644,10 @@ if grep -q "# VDSM section begin" /etc/sysctl.conf; then
         /etc/sysctl.conf
 fi
 
+# hack until we replace core dump with abrt
+/usr/sbin/semanage fcontext -a -t virt_cache_t '/var/log/core(/.*)?'
+/sbin/restorecon -R -v /var/log/core
+
 %if 0%{?rhel}
 if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsmd
