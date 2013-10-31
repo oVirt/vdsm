@@ -48,12 +48,12 @@ def getDomUuidFromVolumePath(volPath):
     #  /rhev/data-center/spUUID/sdUUID/images/imgUUID/volUUID
 
     # sdUUID position after data-center
-    sdUUIDPos = 3
+    sdUUIDOffset = 1
 
     volList = volPath.split('/')
-    sdUUID = len(normpath(config.get('irs', 'repository')).split('/')) + \
-        sdUUIDPos
-    return volList[sdUUID]
+    sdUUIDPos = len(normpath(config.get('irs', 'repository')).split('/')) + \
+        sdUUIDOffset
+    return volList[sdUUIDPos]
 
 
 class FileVolume(volume.Volume):
