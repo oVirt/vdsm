@@ -18,13 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from os.path import normpath
 import errno
 import os
 import sanlock
 
 import storage_exception as se
-from vdsm.config import config
 from vdsm.utils import ActionStopped, grepCmd
 from sdc import sdCache
 import outOfProcess as oop
@@ -44,16 +42,11 @@ BLOCK_SIZE = volume.BLOCK_SIZE
 
 
 def getDomUuidFromVolumePath(volPath):
-    # Volume path has pattern:
-    #  /rhev/data-center/spUUID/sdUUID/images/imgUUID/volUUID
-
-    # sdUUID position after data-center
-    sdUUIDOffset = 1
-
-    volList = volPath.split('/')
-    sdUUIDPos = len(normpath(config.get('irs', 'repository')).split('/')) + \
-        sdUUIDOffset
-    return volList[sdUUIDPos]
+    # fileVolume path has pattern:
+    # */sdUUID/images/imgUUID/volUUID
+    sdPath = os.path.normpath(volPath).split('/images')[0]
+    target, sdUUID = os.path.split(sdPath)
+    return sdUUID
 
 
 class FileVolume(volume.Volume):
