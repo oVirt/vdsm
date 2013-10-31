@@ -28,6 +28,7 @@ test_modules = \
 	betterPopenTests.py \
 	capsTests.py \
 	configNetworkTests.py \
+	fileVolumeTests.py \
 	fileUtilTests.py \
 	fuserTests.py \
 	getAllVolumesTests.py \
