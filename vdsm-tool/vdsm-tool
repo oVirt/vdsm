@@ -65,13 +65,15 @@ def load_modules():
     global tool_modules, tool_command
 
     mod_path = os.path.dirname(vdsm.tool.__file__)
+    package_name = vdsm.tool.__name__
 
     for mod_name in _listPathModules(mod_path):
         if mod_name.startswith("_"):
             continue
 
         mod_fobj, mod_absp, mod_desc = imp.find_module(mod_name, [mod_path])
-        module = imp.load_module(mod_name, mod_fobj, mod_absp, mod_desc)
+        module = imp.load_module(package_name + '.' + mod_name, mod_fobj,
+                                 mod_absp, mod_desc)
 
         mod_cmds = []
 
