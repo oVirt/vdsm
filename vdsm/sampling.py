@@ -365,15 +365,14 @@ class HostStatsThread(threading.Thread):
     AVERAGING_WINDOW = 5
     SAMPLE_INTERVAL_SEC = 2
 
-    def __init__(self, cif, log, ifids, ifrates):
+    def __init__(self, cif, log):
         self.startTime = time.time()
 
         threading.Thread.__init__(self)
         self._log = log
         self._stopEvent = threading.Event()
         self._samples = []
-        self._ifids = ifids
-        self._ifrates = ifrates
+        self._updateIfidsIfrates()
         # in bytes-per-second
         self._lineRate = (sum(self._ifrates) or 1000) * (10 ** 6) / 8
         self._lastSampleTime = time.time()
@@ -386,18 +385,14 @@ class HostStatsThread(threading.Thread):
         self._imagesStatus.stop()
         self._stopEvent.set()
 
-    def _updateIfRates(self, hs0, hs1):
-        i = 0
-        for ifid in self._ifids:
-            if (hs0.interfaces[ifid].operstate !=
-                    hs1.interfaces[ifid].operstate):
-                self._ifrates[i] = netinfo.speed(ifid)
-            i += 1
+    def _updateIfidsIfrates(self):
+        self._ifids = netinfo.nics() + netinfo.bondings() + netinfo.vlans() + \
+            netinfo.bridges()
+        self._ifrates = map(netinfo.speed, self._ifids)
 
     def sample(self):
+        self._updateIfidsIfrates()
         hs = HostSample(self._pid, self._ifids)
-        if self._samples:
-            self._updateIfRates(self._samples[-1], hs)
         return hs
 
     def run(self):
@@ -483,6 +478,10 @@ class HostStatsThread(threading.Thread):
         rx = tx = rxDropped = txDropped = 0
         stats['network'] = {}
         for ifid, ifrate in zip(self._ifids, self._ifrates):
+            # it skips hot-plugged devices if we haven't enough information
+            # to count stats from it
+            if not ifid in hs0.interfaces:
+                continue
             ifrate = ifrate or 1000
             Mbps2Bps = (10 ** 6) / 8
             thisRx = (hs1.interfaces[ifid].rx - hs0.interfaces[ifid].rx) % \

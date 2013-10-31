@@ -83,11 +83,7 @@ class clientIF:
             self.gluster = None
         try:
             self.vmContainer = {}
-            ifids = netinfo.nics() + netinfo.bondings()
-            ifrates = map(netinfo.speed, ifids)
-            self._hostStats = sampling.HostStatsThread(
-                cif=self, log=log, ifids=ifids,
-                ifrates=ifrates)
+            self._hostStats = sampling.HostStatsThread(cif=self, log=log)
             self._hostStats.start()
             self.lastRemoteAccess = 0
             self._memLock = threading.Lock()
