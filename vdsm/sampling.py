@@ -358,30 +358,47 @@ class AdvancedStatsThread(threading.Thread):
             intervalAccum = (intervalAccum + waitInterval) % maxInterval
 
 
-class StatsThread(threading.Thread):
+class HostStatsThread(threading.Thread):
     """
-    A thread that periodically checks the stats of interfaces
+    A thread that periodically samples host statistics.
     """
     AVERAGING_WINDOW = 5
     SAMPLE_INTERVAL_SEC = 2
 
-    def __init__(self, log, ifids, ifrates):
+    def __init__(self, cif, log, ifids, ifrates):
+        self.startTime = time.time()
+
         threading.Thread.__init__(self)
         self._log = log
         self._stopEvent = threading.Event()
         self._samples = []
         self._ifids = ifids
         self._ifrates = ifrates
-        self._ncpus = 1
         # in bytes-per-second
-        self._lineRate = (sum(ifrates) or 1000) * (10 ** 6) / 8
+        self._lineRate = (sum(self._ifrates) or 1000) * (10 ** 6) / 8
         self._lastSampleTime = time.time()
 
+        self._imagesStatus = ImagePathStatus(cif)
+        self._pid = os.getpid()
+        self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
+
     def stop(self):
+        self._imagesStatus.stop()
         self._stopEvent.set()
 
-    def sample(self):  # override
-        pass
+    def _updateIfRates(self, hs0, hs1):
+        i = 0
+        for ifid in self._ifids:
+            if (hs0.interfaces[ifid].operstate !=
+                    hs1.interfaces[ifid].operstate):
+                self._ifrates[i] = netinfo.speed(ifid)
+            i += 1
+
+    def sample(self):
+        hs = HostSample(self._pid, self._ifids)
+        if self._samples:
+            self._updateIfRates(self._samples[-1], hs)
+        return hs
 
     def run(self):
         import vm
@@ -404,6 +421,46 @@ class StatsThread(threading.Thread):
                 self._log.error("Error while sampling stats", exc_info=True)
 
     def get(self):
+        stats = self._getInterfacesStats()
+        stats['cpuSysVdsmd'] = stats['cpuUserVdsmd'] = 0.0
+        stats['storageDomains'] = {}
+        if self._imagesStatus._cif.irs:
+            self._imagesStatus._refreshStorageDomains()
+        now = time.time()
+        for sd, d in self._imagesStatus.storageDomains.iteritems():
+            stats['storageDomains'][sd] = {
+                'code': d['code'],
+                'delay': d['delay'],
+                'lastCheck': d['lastCheck'],
+                'valid': d['valid'],
+                'version': d['version'],
+                'acquired': d['acquired'],
+            }
+        stats['elapsedTime'] = int(now - self.startTime)
+        if len(self._samples) < 2:
+            return stats
+        hs0, hs1 = self._samples[0], self._samples[-1]
+        interval = hs1.timestamp - hs0.timestamp
+        jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % (2 ** 32)
+        stats['cpuUserVdsmd'] = (jiffies / interval) % (2 ** 32)
+        jiffies = hs1.pidcpu.sys - hs0.pidcpu.sys
+        stats['cpuSysVdsmd'] = (jiffies / interval) % (2 ** 32)
+
+        jiffies = (hs1.totcpu.user - hs0.totcpu.user) % (2 ** 32)
+        stats['cpuUser'] = jiffies / interval / self._ncpus
+        jiffies = (hs1.totcpu.sys - hs0.totcpu.sys) % (2 ** 32)
+        stats['cpuSys'] = jiffies / interval / self._ncpus
+        stats['cpuIdle'] = max(0.0,
+                               100.0 - stats['cpuUser'] - stats['cpuSys'])
+        stats['memUsed'] = hs1.memUsed
+        stats['anonHugePages'] = hs1.anonHugePages
+        stats['cpuLoad'] = hs1.cpuLoad
+
+        stats['diskStats'] = hs1.diskStats
+        stats['thpState'] = hs1.thpState
+        return stats
+
+    def _getInterfacesStats(self):
         """
         Compile and return a dict containing the stats.
 
@@ -468,76 +525,6 @@ class StatsThread(threading.Thread):
         stats['rxDropped'] = rxDropped
         stats['txDropped'] = txDropped
 
-        return stats
-
-
-class HostStatsThread(StatsThread):
-    """
-    A thread that periodically samples host statistics.
-    """
-    def __init__(self, cif, log, ifids, ifrates):
-        self.startTime = time.time()
-        StatsThread.__init__(self, log, ifids, ifrates)
-        self._imagesStatus = ImagePathStatus(cif)
-        self._pid = os.getpid()
-        self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
-
-    def stop(self):
-        self._imagesStatus.stop()
-        StatsThread.stop(self)
-
-    def _updateIfRates(self, hs0, hs1):
-        i = 0
-        for ifid in self._ifids:
-            if (hs0.interfaces[ifid].operstate !=
-                    hs1.interfaces[ifid].operstate):
-                self._ifrates[i] = netinfo.speed(ifid)
-            i += 1
-
-    def sample(self):
-        hs = HostSample(self._pid, self._ifids)
-        if self._samples:
-            self._updateIfRates(self._samples[-1], hs)
-        return hs
-
-    def get(self):
-        stats = StatsThread.get(self)
-        stats['cpuSysVdsmd'] = stats['cpuUserVdsmd'] = 0.0
-        stats['storageDomains'] = {}
-        if self._imagesStatus._cif.irs:
-            self._imagesStatus._refreshStorageDomains()
-        now = time.time()
-        for sd, d in self._imagesStatus.storageDomains.iteritems():
-            stats['storageDomains'][sd] = {
-                'code': d['code'],
-                'delay': d['delay'],
-                'lastCheck': d['lastCheck'],
-                'valid': d['valid'],
-                'version': d['version'],
-                'acquired': d['acquired'],
-            }
-        stats['elapsedTime'] = int(now - self.startTime)
-        if len(self._samples) < 2:
-            return stats
-        hs0, hs1 = self._samples[0], self._samples[-1]
-        interval = hs1.timestamp - hs0.timestamp
-        jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % (2 ** 32)
-        stats['cpuUserVdsmd'] = (jiffies / interval) % (2 ** 32)
-        jiffies = hs1.pidcpu.sys - hs0.pidcpu.sys
-        stats['cpuSysVdsmd'] = (jiffies / interval) % (2 ** 32)
-
-        jiffies = (hs1.totcpu.user - hs0.totcpu.user) % (2 ** 32)
-        stats['cpuUser'] = jiffies / interval / self._ncpus
-        jiffies = (hs1.totcpu.sys - hs0.totcpu.sys) % (2 ** 32)
-        stats['cpuSys'] = jiffies / interval / self._ncpus
-        stats['cpuIdle'] = max(0.0,
-                               100.0 - stats['cpuUser'] - stats['cpuSys'])
-        stats['memUsed'] = hs1.memUsed
-        stats['anonHugePages'] = hs1.anonHugePages
-        stats['cpuLoad'] = hs1.cpuLoad
-
-        stats['diskStats'] = hs1.diskStats
-        stats['thpState'] = hs1.thpState
         return stats
 
 
