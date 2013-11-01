@@ -180,9 +180,12 @@ task_restore_nets(){
     return 0
 }
 
-
 task_unified_network_persistence_upgrade(){
     "$VDSM_TOOL" upgrade-to-unified-persistence
+}
+
+task_upgrade_300_nets(){
+    "$VDSM_TOOL" upgrade-3.0.0-networks
 }
 #### pre-start tasks end ####
 
@@ -231,6 +234,7 @@ case "$1" in
             test_lo \
             restore_nets \
             unified_network_persistence_upgrade \
+            upgrade_300_nets \
             "
         ;;
     --post-stop)

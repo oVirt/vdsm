@@ -31,14 +31,12 @@ import alignmentScan
 from vdsm.config import config
 import ksm
 from momIF import MomThread, isMomAvailable
-from vdsm import netinfo
 from vdsm.define import doneCode, errCode
 import libvirt
 from vdsm import libvirtconnection
 import vm
 from vdsm import constants
 from vdsm import utils
-from netconf import ifcfg
 import caps
 from vmChannels import Listener
 from vm import Vm
@@ -192,27 +190,6 @@ class clientIF:
             self.log.warn("MOM is not available, fallback to KsmMonitor")
 
         self.ksmMonitor = ksm.KsmMonitorThread(self)
-
-    def _syncLibvirtNetworks(self):
-        """
-            function is mostly for upgrade from versions that did not
-            have a libvirt network per vdsm network
-        """
-        # add libvirt networks
-        nets = netinfo.networks()
-        bridges = netinfo.bridges()
-        configWriter = ifcfg.ConfigWriter()
-        for bridge in bridges:
-            if not bridge in nets:
-                configWriter.createLibvirtNetwork(network=bridge,
-                                                  bridged=True,
-                                                  skipBackup=True)
-        # remove bridged networks that their bridge not exists
-        #TODO:
-        # this should probably go into vdsm-restore-net script
-        for network in nets:
-            if nets[network]['bridged'] and network not in bridges:
-                configWriter.removeLibvirtNetwork(network, skipBackup=True)
 
     def prepareForShutdown(self):
         """
@@ -400,12 +377,6 @@ class clientIF:
                        (vmParams['vmId'], container_len))
         return {'status': doneCode, 'vmList': vm.status()}
 
-    def _initializingLibvirt(self):
-        self._syncLibvirtNetworks()
-        mog = min(config.getint('vars', 'max_outgoing_migrations'),
-                  caps.CpuTopology().cores())
-        vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
-
     def _recoverThread(self):
         # Trying to run recover process until it works. During that time vdsm
         # stays in recovery mode (_recover=True), means all api requests
@@ -417,7 +388,9 @@ class clientIF:
             # Starting up libvirt might take long when host under high load,
             # we prefer running this code in external thread to avoid blocking
             # API response.
-            self._initializingLibvirt()
+            mog = min(config.getint('vars', 'max_outgoing_migrations'),
+                      caps.CpuTopology().cores())
+            vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
 
             vdsmVms = self._getVDSMVms()
             #Recover
