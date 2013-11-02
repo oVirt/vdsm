@@ -1139,6 +1139,14 @@ def panic(msg):
     sys.exit(-3)
 
 
+@memoized
+def isOvirtNode():
+    return (
+        os.path.exists('/etc/rhev-hypervisor-release') or
+        glob.glob('/etc/ovirt-node-*-release')
+    )
+
+
 # Copied from
 # http://docs.python.org/2.6/library/itertools.html?highlight=grouper#recipes
 def grouper(iterable, n, fillvalue=None):

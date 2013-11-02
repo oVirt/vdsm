@@ -686,7 +686,3 @@ def _getKeyPackages():
                 logging.error('', exc_info=True)
 
     return pkgs
-
-
-def isOvirtNode():
-    return getos() in (OSName.RHEVH, OSName.OVIRT)

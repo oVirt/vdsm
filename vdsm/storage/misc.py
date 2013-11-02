@@ -53,7 +53,6 @@ from vdsm import constants
 from vdsm import utils
 import storage_exception as se
 import logUtils
-from caps import isOvirtNode
 
 IOUSER = "vdsm"
 DIRECTFLAG = "direct"
@@ -480,7 +479,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
     for key in keys:
         oldName = os.path.join(directory, fd[key]['old'])
         newName = os.path.join(directory, fd[key]['new'])
-        if isOvirtNode() and persist and not cp:
+        if utils.isOvirtNode() and persist and not cp:
             try:
                 execCmd([constants.EXT_UNPERSIST, oldName],
                         sudo=True)
@@ -491,7 +490,8 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
         try:
             if cp:
                 execCmd([constants.EXT_CP, oldName, newName], sudo=True)
-                if isOvirtNode() and persist and not os.path.exists(newName):
+                if (utils.isOvirtNode() and
+                        persist and not os.path.exists(newName)):
                     execCmd([constants.EXT_PERSIST, newName],
                             sudo=True)
 
@@ -499,7 +499,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
                 os.rename(oldName, newName)
         except:
             pass
-        if isOvirtNode() and persist and not cp:
+        if utils.isOvirtNode() and persist and not cp:
             try:
                 execCmd([constants.EXT_PERSIST, newName],
                         sudo=True)
@@ -508,7 +508,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
 
 
 def persistFile(name):
-    if isOvirtNode():
+    if utils.isOvirtNode():
         execCmd([constants.EXT_PERSIST, name], sudo=True)
 
 
