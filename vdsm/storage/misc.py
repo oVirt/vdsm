@@ -55,14 +55,13 @@ from vdsm import utils
 import storage_exception as se
 import fileUtils
 import logUtils
-
+from caps import isOvirtNode
 
 IOUSER = "vdsm"
 DIRECTFLAG = "direct"
 DATASYNCFLAG = "fdatasync"
 STR_UUID_SIZE = 36
 UUID_HYPHENS = [8, 13, 18, 23]
-OVIRT_NODE = False
 MEGA = 1 << 20
 UNLIMITED_THREADS = -1
 
@@ -508,7 +507,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
     for key in keys:
         oldName = os.path.join(directory, fd[key]['old'])
         newName = os.path.join(directory, fd[key]['new'])
-        if OVIRT_NODE and persist and not cp:
+        if isOvirtNode() and persist and not cp:
             try:
                 execCmd([constants.EXT_UNPERSIST, oldName], logErr=False,
                         sudo=True)
@@ -519,7 +518,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
         try:
             if cp:
                 execCmd([constants.EXT_CP, oldName, newName], sudo=True)
-                if OVIRT_NODE and persist and not os.path.exists(newName):
+                if isOvirtNode() and persist and not os.path.exists(newName):
                     execCmd([constants.EXT_PERSIST, newName], logErr=False,
                             sudo=True)
 
@@ -527,7 +526,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
                 os.rename(oldName, newName)
         except:
             pass
-        if OVIRT_NODE and persist and not cp:
+        if isOvirtNode() and persist and not cp:
             try:
                 execCmd([constants.EXT_PERSIST, newName], logErr=False,
                         sudo=True)
@@ -536,7 +535,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
 
 
 def persistFile(name):
-    if OVIRT_NODE:
+    if isOvirtNode():
         execCmd([constants.EXT_PERSIST, name], sudo=True)
 
 
@@ -1109,13 +1108,6 @@ def isAscii(s):
         return True
     except (UnicodeDecodeError, UnicodeEncodeError):
         return False
-
-# Upon import determine if we are running on ovirt
-try:
-    OVIRT_NODE = os.path.exists('/etc/rhev-hypervisor-release') or \
-        not len(glob.glob('/etc/ovirt-node-*-release')) == 0
-except:
-    pass
 
 
 def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
