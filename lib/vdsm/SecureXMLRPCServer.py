@@ -35,9 +35,12 @@ import socket
 import SocketServer
 import logging
 
+import M2Crypto
 from M2Crypto import SSL, X509
 
 from vdsm.utils import IPXMLRPCRequestHandler, IPXMLRPCServer
+
+M2Crypto.threading.init()
 
 SecureXMLRPCRequestHandler = IPXMLRPCRequestHandler
 
