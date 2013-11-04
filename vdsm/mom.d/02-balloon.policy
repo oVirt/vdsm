@@ -46,7 +46,7 @@
     # Given current conditions, determine the ideal guest memory size
     (defvar guest_used_mem (- (guest.StatAvg "balloon_cur")
                               (guest.StatAvg "mem_unused")))
-    (defvar balloon_min (min guest.balloon_min (+ guest_used_mem
+    (defvar balloon_min (max guest.balloon_min (+ guest_used_mem
                            (* guest_free_percent guest.balloon_cur))))
     # But do not change it too fast
     (defvar balloon_size (* guest.balloon_cur
@@ -79,7 +79,7 @@
         # Minimally, increase so the guest has its desired free memory
         (defvar guest_used_mem (- (guest.StatAvg "balloon_cur")
                                   (guest.StatAvg "mem_unused")))
-        (defvar balloon_min (min guest.balloon_min (+ guest_used_mem
+        (defvar balloon_min (max guest.balloon_min (+ guest_used_mem
                                (* guest_free_percent guest.balloon_cur))))
         # Otherwise, increase according to the max balloon change
         (defvar balloon_size (* guest.balloon_cur
