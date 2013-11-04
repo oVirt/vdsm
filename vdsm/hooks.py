@@ -251,7 +251,7 @@ def before_nic_hotplug(nicxml, vmconf={}, params={}):
 
 def after_nic_hotplug(nicxml, vmconf={}, params={}):
     return _runHooksDir(nicxml, 'after_nic_hotplug', vmconf=vmconf,
-                        params=params)
+                        params=params, raiseError=False)
 
 
 def before_nic_hotunplug(nicxml, vmconf={}, params={}):
