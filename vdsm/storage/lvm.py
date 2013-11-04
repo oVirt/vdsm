@@ -105,6 +105,7 @@ preferred_names = ["^/dev/mapper/"]
 ignore_suspended_devices=1
 write_cache_state=0
 disable_after_error_count=3
+obtain_device_list_from_udev=0
 %s
 }
 
