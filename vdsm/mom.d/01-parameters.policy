@@ -1,1 +1,2 @@
 (defvar balloonEnabled 0)
+(defvar ksmEnabled 1)
