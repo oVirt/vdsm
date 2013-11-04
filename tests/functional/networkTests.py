@@ -400,7 +400,7 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkExists(netVlan, bridged=bridged)
                 self.assertVlanExists(nics[0] + '.' + str(vlanId))
 
-                self.vdsm_net.delNetwork(netVlan)
+                status, msg = self.vdsm_net.delNetwork(netVlan)
                 self.assertEquals(status, SUCCESS, msg)
 
     @cleanupNet
@@ -418,7 +418,7 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
             self.assertVlanExists(nics[0] + '.' + VLAN_ID)
 
-            self.vdsm_net.delNetwork(NETWORK_NAME)
+            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
             self.assertEquals(status, SUCCESS, msg)
 
     @cleanupNet
@@ -435,6 +435,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.addNetwork(firstVlan, vlan=firstVlanId,
                                                    bond=BONDING_NAME,
                                                    nics=nics, opts=opts)
+            self.assertEquals(status, SUCCESS, msg)
             with nonChangingOperstate(BONDING_NAME):
                 for netVlan, vlanId in NET_VLANS[1:]:
                     status, msg = self.vdsm_net.addNetwork(netVlan,
