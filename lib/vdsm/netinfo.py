@@ -340,6 +340,10 @@ def getnetmask(dev):
     return prefix2netmask(netmask)
 
 
+def getgateway(gateways, dev):
+    return gateways.get(dev, '')
+
+
 def getIpInfo(dev):
     devInfo = ethtool.get_interfaces_info(dev.encode('utf8'))[0]
     addr = devInfo.ipv4_address
@@ -473,7 +477,7 @@ def permAddr():
     return paddr
 
 
-def _getNetInfo(iface, bridged, routes, ipv6routes, qosInbound, qosOutbound):
+def _getNetInfo(iface, bridged, gateways, ipv6routes, qosInbound, qosOutbound):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -490,7 +494,7 @@ def _getNetInfo(iface, bridged, routes, ipv6routes, qosInbound, qosOutbound):
         ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(iface)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'gateway': routes.get(iface, '0.0.0.0'),
+                     'gateway': getgateway(gateways, iface),
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
                      'mtu': str(getMtu(iface)),
@@ -505,9 +509,9 @@ def _getNetInfo(iface, bridged, routes, ipv6routes, qosInbound, qosOutbound):
     return data
 
 
-def _bridgeinfo(bridge, routes, ipv6routes):
+def _bridgeinfo(bridge, gateways, ipv6routes):
     info = _devinfo(bridge)
-    info.update({'gateway': routes.get(bridge, '0.0.0.0'),
+    info.update({'gateway': getgateway(gateways, bridge),
                 'ipv6gateway': ipv6routes.get(bridge, '::'),
                 'ports': ports(bridge), 'stp': bridge_stp_state(bridge)})
     return (bridge, info)
@@ -544,7 +548,7 @@ def _devinfo(dev):
 
 def get():
     d = {}
-    routes = getRoutes()
+    gateways = getRoutes()
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
     d['networks'] = {}
@@ -552,14 +556,14 @@ def get():
     for net, netAttr in networks().iteritems():
         try:
             d['networks'][net] = _getNetInfo(netAttr.get('iface', net),
-                                             netAttr['bridged'], routes,
+                                             netAttr['bridged'], gateways,
                                              ipv6routes,
                                              netAttr.get('qosInbound'),
                                              netAttr.get('qosOutbound'))
         except KeyError:
             continue  # Do not report missing libvirt networks.
 
-    d['bridges'] = dict([_bridgeinfo(bridge, routes, ipv6routes)
+    d['bridges'] = dict([_bridgeinfo(bridge, gateways, ipv6routes)
                          for bridge in bridges()])
     d['nics'] = dict([_nicinfo(nic, paddr) for nic in nics()])
     d['bondings'] = dict([_bondinfo(bond) for bond in bondings()])
