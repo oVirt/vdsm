@@ -19,6 +19,7 @@
 #
 
 import os
+from tempfile import NamedTemporaryFile
 from storage import fuser
 
 from testrunner import VdsmTestCase
@@ -28,4 +29,5 @@ class TestFuser(VdsmTestCase):
 
     def testSelfExe(self):
         pid = os.getpid()
-        self.assertTrue(pid in fuser.fuser('/proc/%s/exe' % pid))
+        with NamedTemporaryFile() as tempFile:
+            self.assertTrue(pid in fuser.fuser(tempFile.name))
