@@ -1453,9 +1453,11 @@ class CouldNotRetrieveLogicalVolumesList(StorageException):
     message = "Could not retrieve lv list"
 
 
-class InvalidPhysDev(StorageException):
+class InaccessiblePhysDev(StorageException):
+    def __init__(self, devices):
+        self.value = "devices=%s" % (devices,)
     code = 606
-    message = "Invalid physical device"
+    message = "Multipath cannot access physical device(s)"
 
 
 class PartitionedPhysDev(StorageException):

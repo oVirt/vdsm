@@ -2038,13 +2038,17 @@ class HSM:
                         in multipath.getMPDevNamesIter())
         size = 0
         devices = []
+        unknowndevs = []
 
         for dev in devlist:
             if dev in knowndevs:
                 devices.append(dev)
                 size += multipath.getDeviceSize(devicemapper.getDmId(dev))
             else:
-                raise se.InvalidPhysDev(dev)
+                unknowndevs.append(dev)
+
+        if unknowndevs:
+            raise se.InaccessiblePhysDev(unknowndevs)
 
         # Minimal size check
         if size < MINIMALVGSIZE:

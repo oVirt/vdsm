@@ -723,16 +723,12 @@ class BlockStorageDomain(sd.StorageDomain):
                 if len(mapping) + len(devlist) > MAX_PVS:
                     raise se.StorageDomainIsMadeFromTooManyPVs()
 
-            knowndevs = list(multipath.getMPDevNamesIter())
-            devices = []
+            knowndevs = set(multipath.getMPDevNamesIter())
+            unknowndevs = set(devlist) - knowndevs
+            if unknowndevs:
+                raise se.InaccessiblePhysDev(unknowndevs)
 
-            for dev in devlist:
-                if dev in knowndevs:
-                    devices.append(dev)
-                else:
-                    raise se.InvalidPhysDev(dev)
-
-            lvm.extendVG(self.sdUUID, devices, force)
+            lvm.extendVG(self.sdUUID, devlist, force)
             self.updateMapping()
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
