@@ -5265,27 +5265,37 @@
 #
 # Memory statistics as reported by the guest agent.
 #
-# @mem_total:   The total amount of memory available to the OS (in KiB)
+# @mem_total:               The total amount of memory available to the OS
+#                           (in KiB)
 #
-# @mem_unused:  The amount of memory that is completely unused (in KiB)
+# @mem_unused:              The amount of memory that is completely unused
+#                           (in KiB)
 #
-# @mem_free:    The amount of memory available for allocation in KiB (includes
-#               easily reclaimable memory)
+# @mem_free:                The amount of memory available for allocation in
+#                           KiB (includes easily reclaimable memory)
 #
-# @swap_in:     The number of memory pages swapped in since the last collection
+# @swap_in:                 The number of memory pages swapped in since the
+#                           last collection
 #
-# @swap_out:    The number of memory pages swapped out since the last collection
+# @swap_out:                The number of memory pages swapped out since the
+#                           last collection
 #
-# @pageflt:     The number of page faults since the last collection
+# @pageflt:                 The number of page faults since the last collection
 #
-# @majflt:      The number of major page faults since the last collection
+# @majflt:                  The number of major page faults since the last
+#                           collection
+#
+# @swap_total: #optional    The total amount of swap space available to the OS
+#                           (in KiB)
+#
+# @swap_usage: #optional    The amount of swap space used by the OS (in KiB)
 #
 # Since: 4.10.0
 ##
 {'type': 'GuestMemoryStats',
  'data': {'mem_total': 'str', 'mem_unused': 'str', 'mem_free': 'str',
           'swap_in': 'uint', 'swap_out': 'uint', 'pageflt': 'uint',
-          'majflt': 'uint'}}
+          'majflt': 'uint', '*swap_total': 'str', '*swap_usage': 'str'}}
 
 ##
 # @BalloonInfo:
