@@ -144,12 +144,11 @@ class Bridge(NetDevice):
     ILLEGAL_CHARS = frozenset(':. \t')
 
     def __init__(self, name, configurator, ipconfig=None, mtu=None, port=None,
-                 forwardDelay=0, stp=None):
+                 stp=None):
         self.validateName(name)
         if port:
             port.master = self
         self.port = port
-        self.forwardDelay = forwardDelay
         self.stp = stp
         super(Bridge, self).__init__(name, configurator, ipconfig, mtu)
 

@@ -1520,8 +1520,6 @@ class Global(APIBase):
             'PREFIX': 'prefix',
             'GATEWAY': 'gateway',
             'BOOTPROTO': 'bootproto',
-            'DELAY': 'delay',
-            'ONBOOT': 'onboot',
             'BONDING_OPTS': 'bondingOptions',
         }
         for k, v in options.items():

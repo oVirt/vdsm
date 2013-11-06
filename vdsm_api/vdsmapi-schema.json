@@ -57,10 +57,6 @@
 # @bootproto:       #optional Interface autoconfiguration protocol (typically
 #                   'dhcp' or 'static')
 #
-# @delay:           #optional The time to wait before starting the interface
-#
-# @onboot:          #optional Start the interface automatically during boot
-#
 # @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
 #
 # @qosInbound:      #optional BandwidthParams for incoming traffic.
@@ -71,8 +67,7 @@
 ##
 {'type': 'NetworkOptions',
  'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
-          '*bootproto': 'str', '*delay': 'uint', '*onboot': 'str',
-          '*bondingOptions', 'str',
+          '*bootproto': 'str', '*bondingOptions', 'str',
           '*qosInbound': 'BandwidthParams',
           '*qosOutbound': 'BandwidthParams'}}
 
@@ -163,10 +158,6 @@
 # @bootproto:     #optional Interface autoconfiguration protocol (typically 'dhcp'
 #                 or 'static')
 #
-# @delay:         #optional The time to wait before starting the network device
-#
-# @onboot:        #optional Start the network device automatically during boot
-#
 # @remove:        #optional If True, remove existing network only
 #
 # @qosInbound:    #optional BandwidthParams for incoming traffic.
@@ -178,7 +169,7 @@
 {'type': 'SetupNetworkNetAttributes',
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
-          '*delay': 'uint', '*onboot': 'bool', '*remove': 'bool',
+          '*remove': 'bool',
           '*qosInbound': 'BandwidthParams',
           '*qosOutbound': 'BandwidthParams'}}
 ##

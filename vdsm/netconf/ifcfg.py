@@ -524,13 +524,11 @@ class ConfigWriter(object):
             return None
         return 'yes' if defaultRoute else 'no'
 
-    def _createConfFile(self, conf, name, ipconfig, mtu=None,
-                        onboot='yes', **kwargs):
+    def _createConfFile(self, conf, name, ipconfig, mtu=None, **kwargs):
         """ Create ifcfg-* file with proper fields per device """
         cfg = self.CONFFILE_HEADER + '\n'
 
-        cfg += """DEVICE=%s\nONBOOT=%s\n""" % (pipes.quote(name),
-                                               pipes.quote(onboot))
+        cfg += """DEVICE=%s\nONBOOT=yes\n""" % pipes.quote(name)
         cfg += conf
         if ipconfig.ipaddr:
             cfg = cfg + 'IPADDR=%s\n' % pipes.quote(ipconfig.ipaddr)
@@ -564,7 +562,8 @@ class ConfigWriter(object):
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'bondingOptions',
                      'force', 'blockingdhcp',
                      'connectivityCheck', 'connectivityTimeout',
-                     'implicitBonding']
+                     'implicitBonding', 'delay', 'onboot', 'forward_delay',
+                     'DELAY', 'ONBOOT']
         for k in set(kwargs.keys()).difference(set(BLACKLIST)):
             if re.match('^[a-zA-Z_]\w*$', k):
                 cfg += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
@@ -575,12 +574,11 @@ class ConfigWriter(object):
 
     def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
-        conf = 'TYPE=Bridge\nDELAY=%s\n' % bridge.forwardDelay
+        conf = 'TYPE=Bridge\nDELAY=0\n'
         ipconfig = bridge.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
         ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
-        self._createConfFile(conf, bridge.name, ipconfig, bridge.mtu,
-                             **opts)
+        self._createConfFile(conf, bridge.name, ipconfig, bridge.mtu, **opts)
 
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """

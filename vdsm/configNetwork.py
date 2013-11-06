@@ -108,8 +108,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
         topNetDev = Vlan(topNetDev, vlan, configurator, mtu=mtu)
     if bridge:
         topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
-                           stp=opts.get('stp'),
-                           forwardDelay=int(opts.get('forward_delay', 0)))
+                           stp=opts.get('stp'))
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
@@ -523,8 +522,6 @@ def setupNetworks(networks, bondings, **options):
                         ipv6gateway="<ipv6>"
                         ipv6autoconf="0|1"
                         dhcpv6="0|1"
-                        delay="..."
-                        onboot="yes"|"no"
                         (other options will be passed to the config file AS-IS)
                         -- OR --
                         remove=True (other attributes can't be specified)
