@@ -504,22 +504,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
-
-        for vmDrive in self._vm._devices[DISK_DEVICES]:
-            if not vmDrive.blockDev or vmDrive.format != 'cow':
-                continue
-
-            capacity, alloc, physical = \
-                self._vm._dom.blockInfo(vmDrive.path, 0)
-
-            if physical - alloc >= vmDrive.watermarkLimit:
-                continue
-
-            self._log.info('%s/%s apparent: %s capacity: %s, alloc: %s, '
-                           'phys: %s', vmDrive.domainID, vmDrive.volumeID,
-                           vmDrive.apparentsize, capacity, alloc, physical)
-
-            self._vm.extendDriveVolume(vmDrive)
+        self._vm.extendDrivesIfNeeded()
 
     def _updateVolumes(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -2271,6 +2256,27 @@ class Vm(object):
         self.log.debug('new rtc offset %s', timeOffset)
         with self._confLock:
             self.conf['timeOffset'] = timeOffset
+
+    def extendDrivesIfNeeded(self):
+        extend = []
+
+        for drive in self._devices[DISK_DEVICES]:
+            if not drive.blockDev or drive.format != 'cow':
+                continue
+
+            capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+            if physical - alloc < drive.watermarkLimit:
+                extend.append((drive, capacity, alloc, physical))
+
+        for drive, capacity, alloc, physical in extend:
+            self.log.info(
+                "Requesting extension for volume %s on domain %s (apparent: "
+                "%s, capacity: %s, allocated: %s, physical: %s)",
+                drive.volumeID, drive.domainID, drive.apparentsize, capacity,
+                alloc, physical)
+            self.extendDriveVolume(drive)
+
+        return len(extend) > 0
 
     def extendDriveVolume(self, vmDrive):
         if not vmDrive.blockDev:
@@ -4208,25 +4214,8 @@ class Vm(object):
         self.conf['pauseCode'] = err.upper()
         self._guestCpuRunning = False
         if err.upper() == 'ENOSPC':
-            for d in self._devices[DISK_DEVICES]:
-                if d.alias == blockDevAlias:
-                    #in the case of a qcow2-like file stored inside a block
-                    #device 'physical' will give the block device size, while
-                    #'allocation' will give the qcow2 image size
-                    #D. Berrange
-                    capacity, alloc, physical = self._dom.blockInfo(d.path, 0)
-                    if (physical >
-                        (alloc + config.getint(
-                            'irs', 'volume_utilization_chunk_mb'))):
-                        self.log.warn('%s = %s/%s error %s phys: %s alloc: %s '
-                                      'Ingnoring already managed event.',
-                                      blockDevAlias, d.domainID, d.volumeID,
-                                      err, physical, alloc)
-                        return
-                    self.log.info('%s = %s/%s error %s phys: %s alloc: %s',
-                                  blockDevAlias, d.domainID, d.volumeID, err,
-                                  physical, alloc)
-                    self.extendDriveVolume(d)
+            if not self.extendDrivesIfNeeded():
+                self.log.info("No VM drives were extended")
 
     def _acpiShutdown(self):
         self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
