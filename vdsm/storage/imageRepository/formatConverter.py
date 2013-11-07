@@ -276,8 +276,8 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
                 for volUUID in imgVolumes:
                     try:
-                        v3ResetMetaVolSize(  # BZ#811880
-                            domain.produceVolume(imgUUID, volUUID))
+                        vol = domain.produceVolume(imgUUID, volUUID)
+                        v3ResetMetaVolSize(vol)  # BZ#811880
                     except qemuImg.QImgError:
                         log.error("It is not possible to read the volume %s "
                                   "using qemu-img, the content looks damaged",
