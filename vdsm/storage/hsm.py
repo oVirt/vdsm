@@ -332,7 +332,6 @@ class HSM:
         rm.ResourceManager.getInstance().registerNamespace(
             STORAGE, rm.SimpleResourceFactory())
         self.storage_repository = config.get('irs', 'repository')
-        self.sd_validate_timeout = config.getint('irs', 'sd_validate_timeout')
         self.taskMng = taskManager.TaskManager()
 
         mountBasePath = os.path.join(self.storage_repository,
