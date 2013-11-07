@@ -248,7 +248,7 @@ def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum):
 @makePublic
 def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
             enable=False):
-    hookPath = os.path.join(_glusterHooksPath, glusterCmd, hookLevel)
+    hookPath = os.path.join(_glusterHooksPath, glusterCmd, hookLevel.lower())
     try:
         os.makedirs(hookPath)
         if selinux.is_selinux_enabled():
