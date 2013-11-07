@@ -1569,6 +1569,8 @@
 #
 # @cpuUserVdsmd:    Ratio of CPU time spent in userspace by vdsm
 #
+# @storageDomains:  Storage Domain vital statistics
+#
 # @elapsedTime:     The number of seconds that vdsm has been running
 #
 # @memUsed:         The percentage of memory used (not including caches)
@@ -1626,6 +1628,7 @@
            'network': 'HostNetworkInterfaceStatsMap',
            'rxDropped': 'uint', 'txDropped': 'uint',
            'cpuSysVdsmd': 'float', 'cpuUserVdsmd': 'float',
+           'storageDomains': 'StorageDomainVitalsMap',
            'elapsedTime': 'uint', 'memUsed': 'uint',
            'anonHugePages': 'uint', 'cpuLoad': 'float',
            'diskStats': 'PathStatsMap', 'thpState': 'THPStates',
