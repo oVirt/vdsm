@@ -1241,18 +1241,23 @@ class _DomXML:
 
 
 class VmDevice(object):
+    __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
+                 'conf', 'log', '_deviceXML', 'type')
+
     def __init__(self, conf, log, **kwargs):
+        self.conf = conf
+        self.log = log
+        self.specParams = {}
         for attr, value in kwargs.iteritems():
             try:
                 setattr(self, attr, value)
             except AttributeError:  # skip read-only properties
-                pass
-        self.conf = conf
-        self.log = log
+                self.log.debug('Ignoring param (%s, %s) in %s', attr, value,
+                               self.__class__.__name__)
         self._deviceXML = None
 
     def __str__(self):
-        attrs = [':'.join((a, str(getattr(self, a)))) for a in dir(self)
+        attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)
                  if not a.startswith('__')]
         return ' '.join(attrs)
 
@@ -1290,6 +1295,7 @@ class GeneralDevice(VmDevice):
 
 
 class ControllerDevice(VmDevice):
+    __slots__ = ('address', 'model', 'index', 'master')
 
     def getXML(self):
         """
@@ -1304,6 +1310,7 @@ class ControllerDevice(VmDevice):
 
 
 class VideoDevice(VmDevice):
+    __slots__ = ('address',)
 
     def getXML(self):
         """
@@ -1320,6 +1327,7 @@ class VideoDevice(VmDevice):
 
 
 class SoundDevice(VmDevice):
+    __slots__ = ('address', 'alias')
 
     def getXML(self):
         """
@@ -1331,6 +1339,9 @@ class SoundDevice(VmDevice):
 
 
 class NetworkInterfaceDevice(VmDevice):
+    __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
+                 'linkActive', 'spotMirroring', 'custom', 'filter',
+                 'sndbufParam', 'driver', 'name')
 
     def __init__(self, conf, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
@@ -1435,6 +1446,12 @@ class NetworkInterfaceDevice(VmDevice):
 
 
 class Drive(VmDevice):
+    __slots__ = ('iface', 'path', 'readonly', 'bootOrder', 'domainID',
+                 'poolID', 'imageID', 'UUID', 'volumeID', 'format',
+                 'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
+                 'index', 'name', 'optional', 'shared', 'truesize',
+                 'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
+                 '_blockDev', 'extSharedState', 'drv', 'sgio')
     VOLWM_CHUNK_MB = config.getint('irs', 'volume_utilization_chunk_mb')
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
@@ -1733,6 +1750,7 @@ class Drive(VmDevice):
 
 
 class BalloonDevice(VmDevice):
+    __slots__ = ('address',)
 
     def getXML(self):
         """
@@ -1749,6 +1767,8 @@ class BalloonDevice(VmDevice):
 
 
 class WatchdogDevice(VmDevice):
+    __slots__ = ('address',)
+
     def __init__(self, *args, **kwargs):
         super(WatchdogDevice, self).__init__(*args, **kwargs)
 
@@ -1771,6 +1791,8 @@ class WatchdogDevice(VmDevice):
 
 
 class SmartCardDevice(VmDevice):
+    __slots__ = ('address',)
+
     def getXML(self):
         """
         Add smartcard section to domain xml
@@ -1788,6 +1810,8 @@ class SmartCardDevice(VmDevice):
 
 
 class RedirDevice(VmDevice):
+    __slots__ = ('address',)
+
     def getXML(self):
         """
         Create domxml for a redir device.
@@ -1826,6 +1850,8 @@ class RngDevice(VmDevice):
 
 
 class ConsoleDevice(VmDevice):
+    __slots__ = ()
+
     def getXML(self):
         """
         Create domxml for a console device.
@@ -4958,8 +4984,7 @@ class Vm(object):
             # display indexed pairs of ordered values from 2 dicts
             # such as {key_1: (valueA_1, valueB_1), ...}
             def mergeDicts(deviceDef, dev):
-                d = dev if not isinstance(dev, VmDevice) else dev.__dict__
-                return dict((k, (deviceDef[k], d.get(k, None)))
+                return dict((k, (deviceDef[k], getattr(dev, k, None)))
                             for k in deviceDef.iterkeys())
 
             self.log.debug('Looking for drive with attributes %s', deviceDict)
