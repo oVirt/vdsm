@@ -194,9 +194,6 @@ parameters = [
 
         ('irsd', '%(images)s/irsd', None),
 
-        ('images_check_times', '0',
-            'Image repository check period (seconds).'),
-
         ('volume_utilization_percent', '50', None),
 
         ('volume_utilization_chunk_mb', '1024', None),

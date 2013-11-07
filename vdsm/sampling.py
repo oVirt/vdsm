@@ -36,7 +36,6 @@ import ethtool
 from vdsm import utils
 from vdsm import netinfo
 from vdsm.constants import P_VDSM_RUN
-from vdsm.config import config
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -377,12 +376,11 @@ class HostStatsThread(threading.Thread):
         self._lineRate = (sum(self._ifrates) or 1000) * (10 ** 6) / 8
         self._lastSampleTime = time.time()
 
-        self._imagesStatus = ImagePathStatus(cif)
+        self._cif = cif
         self._pid = os.getpid()
         self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
 
     def stop(self):
-        self._imagesStatus.stop()
         self._stopEvent.set()
 
     def _updateIfidsIfrates(self):
@@ -418,20 +416,8 @@ class HostStatsThread(threading.Thread):
     def get(self):
         stats = self._getInterfacesStats()
         stats['cpuSysVdsmd'] = stats['cpuUserVdsmd'] = 0.0
-        stats['storageDomains'] = {}
-        if self._imagesStatus._cif.irs:
-            self._imagesStatus._refreshStorageDomains()
-        now = time.time()
-        for sd, d in self._imagesStatus.storageDomains.iteritems():
-            stats['storageDomains'][sd] = {
-                'code': d['code'],
-                'delay': d['delay'],
-                'lastCheck': d['lastCheck'],
-                'valid': d['valid'],
-                'version': d['version'],
-                'acquired': d['acquired'],
-            }
-        stats['elapsedTime'] = int(now - self.startTime)
+        stats['storageDomains'] = self._getStorageDomainsStats()
+        stats['elapsedTime'] = int(time.time() - self.startTime)
         if len(self._samples) < 2:
             return stats
         hs0, hs1 = self._samples[0], self._samples[-1]
@@ -519,41 +505,26 @@ class HostStatsThread(threading.Thread):
             stats['txRate'] = min(stats['txRate'], 100.0)
             stats['rxRate'] = min(stats['rxRate'], 100.0)
             logging.debug(stats)
-#        stats['rxBps'] = float(rx) / interval
-#        stats['txBps'] = float(tx) / interval
         stats['rxDropped'] = rxDropped
         stats['txDropped'] = txDropped
 
         return stats
 
+    def _getStorageDomainsStats(self):
+        stats = {}
+        if self._cif.irs:
+            res = self._cif.irs.repoStats()
+            del res["status"]
+            if "args" in res:
+                del res["args"]
 
-class ImagePathStatus(threading.Thread):
-    def __init__(self, cif, interval=None):
-        if interval is None:
-            interval = config.getint('irs', 'images_check_times')
-        self._interval = interval
-        self._cif = cif
-        self.storageDomains = {}
-        self._stopEvent = threading.Event()
-        threading.Thread.__init__(self, name='ImagePathStatus')
-        if self._interval > 0:
-            self.start()
-
-    def stop(self):
-        self._stopEvent.set()
-
-    def _refreshStorageDomains(self):
-        self.storageDomains = self._cif.irs.repoStats()
-        del self.storageDomains["status"]
-        if "args" in self.storageDomains:
-            del self.storageDomains["args"]
-
-    def run(self):
-        try:
-            while not self._stopEvent.isSet():
-                if self._cif.irs:
-                    self._refreshStorageDomains()
-                self._stopEvent.wait(self._interval)
-        except:
-            logging.error("Error while refreshing storage domains",
-                          exc_info=True)
+            for sd, d in res.iteritems():
+                stats[sd] = {
+                    'code': d['code'],
+                    'delay': d['delay'],
+                    'lastCheck': d['lastCheck'],
+                    'valid': d['valid'],
+                    'version': d['version'],
+                    'acquired': d['acquired'],
+                }
+        return stats
