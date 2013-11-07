@@ -33,12 +33,14 @@ import ethtool
 
 from .config import config
 from . import constants
+from .ipwrapper import getLink, getLinks
 from .ipwrapper import Route
 from .ipwrapper import routeShowAllDefaultGateways
 from . import libvirtconnection
 from .ipwrapper import linkShowDev
 from .utils import anyFnmatch
 from .netconfpersistence import RunningConfig
+
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 # ifcfg persistence directories
@@ -67,21 +69,12 @@ OPERSTATE_UP = 'up'
 
 def _nic_devices():
     """
-    Returns a list of nic devices real or fakes,
-    available on the host.
+    Returns an iterable of nic devices real or fakes, available on the host.
     """
-
-    devices = []
-    fake_nics = config.get('vars', 'fake_nics').split(',')
-
-    for dev_path in iglob(NET_PATH + '/*'):
-        if os.path.exists(os.path.join(dev_path, 'device')):
-            devices.append(os.path.basename(dev_path))
-        else:
-            dev_name = os.path.basename(dev_path)
-            if anyFnmatch(dev_name, fake_nics):
-                devices.append(dev_name)
-    return devices
+    deviceLinks = getLinks()
+    for device in deviceLinks:
+        if device.isNIC() or device.isFakeNIC():
+            yield device
 
 
 def nics():
@@ -90,16 +83,6 @@ def nics():
     The list of nics is built by filtering out nics defined
     as hidden, fake or hidden bonds (with related nics'slaves).
     """
-    res = []
-
-    def isHiddenNic(device):
-        """
-        Returns boolean given the device name stating
-        if the device is a hidden nic.
-        """
-        hidden_nics = config.get('vars', 'hidden_nics').split(',')
-        return anyFnmatch(device, hidden_nics)
-
     def isEnslavedByHiddenBond(device):
         """
         Returns boolean stating if a nic device is enslaved to an hidden bond.
@@ -116,10 +99,10 @@ def nics():
 
     def isManagedByVdsm(device):
         """Returns boolean stating if a device should be managed by vdsm."""
-        return (not isHiddenNic(device) and
-                not isEnslavedByHiddenBond(device))
+        return (not device.isHidden() and
+                not isEnslavedByHiddenBond(device.name))
 
-    res = [dev for dev in _nic_devices() if isManagedByVdsm(dev)]
+    res = [dev.name for dev in _nic_devices() if isManagedByVdsm(dev)]
     return res
 
 
@@ -144,9 +127,8 @@ def bondings():
 
 
 def vlans():
-    hidden_vlans = config.get('vars', 'hidden_vlans').split(',')
-    return [os.path.basename(b) for b in iglob('/sys/class/net/*.*')
-            if not anyFnmatch(os.path.basename(b), hidden_vlans)]
+    return [link.name for link in getLinks() if link.isVLAN() and
+            not link.isHidden()]
 
 
 def bridges():
@@ -607,15 +589,8 @@ def getVlanDevice(vlan):
 
 def getVlanID(vlan):
     """ Return the ID of the given VLAN. """
-    vlanId = None
-    out = linkShowDev(vlan)
-
-    for item in out:
-        if "vlan id" in item:
-            vlanId = item.split()[2]
-            break
-
-    return int(vlanId)
+    vlanLink = getLink(vlan)
+    return int(vlanLink.vlanid)
 
 
 def getIpAddresses():

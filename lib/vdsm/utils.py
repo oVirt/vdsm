@@ -38,6 +38,7 @@ import fcntl
 import functools
 import glob
 import io
+import itertools
 import logging
 import sys
 import os
@@ -944,6 +945,15 @@ def panic(msg):
     logging.error("Panic: %s", msg, exc_info=True)
     os.killpg(0, 9)
     sys.exit(-3)
+
+
+# Copied from
+# http://docs.python.org/2.6/library/itertools.html?highlight=pairwise#recipes
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return itertools.izip(a, b)
 
 
 def anyFnmatch(name, patterns):

@@ -18,15 +18,24 @@
 #
 
 from collections import namedtuple
+import os
 
 from netaddr.core import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
+from .config import config
+from .utils import anyFnmatch
 from .utils import CommandPath
 from .utils import execCmd
+from .utils import pairwise
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
+_ETHTOOL_BINARY = CommandPath('ethtool',
+                              '/usr/sbin/ethtool',  # F19+
+                              '/sbin/ethtool',  # EL6, ubuntu and Debian
+                              '/usr/bin/ethtool',  # Arch
+                              )
 
 
 def _isValid(ip, verifier):
@@ -43,6 +52,160 @@ def equals(cls):
         return type(other) == cls and self.__dict__ == other.__dict__
     cls.__eq__ = __eq__
     return cls
+
+
+class LinkType(object):
+    """Representation of the different link types"""
+    NIC = 'nic'
+    VLAN = 'vlan'
+    BOND = 'bond'
+    BRIDGE = 'bridge'
+    LOOPBACK = 'loopback'
+    MACVLAN = 'macvlan'
+    DUMMY = 'dummy'
+    TUN = 'tun'
+
+
+@equals
+class Link(object):
+    """Represents link information obtained from iproute2"""
+    def __init__(self, address, index, linkType, mtu, name, qdisc, state,
+                 vlanid=None, vlanprotocol=None, master=None, **kwargs):
+        self.address = address
+        self.index = index
+        self.type = linkType
+        self.mtu = mtu
+        self.name = name
+        self.qdisc = qdisc
+        self.state = state
+        self.master = master
+        if vlanid is not None:
+            self.vlanid = vlanid
+        if vlanprotocol is not None:
+            self.vlanprotocol = vlanprotocol
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        if linkType == LinkType.DUMMY:
+            self._fakeNics = config.get('vars', 'fake_nics').split(',')
+            self._hiddenNics = config.get('vars', 'hidden_nics').split(',')
+        if linkType == LinkType.NIC:
+            self._hiddenNics = config.get('vars', 'hidden_nics').split(',')
+        if linkType == LinkType.VLAN:
+            self._hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
+
+    def __repr__(self):
+        return '%s: %s(%s) %s' % (self.index, self.name, self.type,
+                                  self.address)
+
+    @staticmethod
+    def _parse(text):
+        """
+        Returns the Link attribute dictionary resulting from parsing the text.
+        """
+        attrs = {}
+        attrs['index'], attrs['name'], data = [el.strip() for el in
+                                               text.split(':', 2)]
+
+        processedData = [el.strip() for el in
+                         data.replace('\\', '', 1).split('\\')]
+
+        baseData = (el for el in
+                    processedData[0].split('>')[1].strip().split(' ') if el and
+                    el != 'link/none')
+        for key, value in pairwise(baseData):
+            if key.startswith('link/'):
+                key = 'address'
+            attrs[key] = value
+        if 'address' not in attrs:
+            attrs['address'] = None
+
+        if len(processedData) > 1:
+            tokens = [token for token in processedData[1].split(' ') if token]
+            linkType = tokens.pop(0)
+            attrs['linkType'] = linkType
+            attrs.update((linkType + tokens[i], tokens[i+1]) for i in
+                         range(0, len(tokens)-1, 2))
+        return attrs
+
+    @classmethod
+    def fromText(cls, text):
+        """Creates a Link object from the textual representation from
+        iproute2's "ip -o -d link show" command."""
+        attrs = cls._parse(text)
+        if 'linkType' not in attrs:
+            attrs['linkType'] = cls._detectType(attrs['name'])
+        if attrs['linkType'] in (LinkType.VLAN, LinkType.MACVLAN):
+            attrs['name'] = attrs['name'].split('@')[0]
+        return cls(**attrs)
+
+    @staticmethod
+    def _detectType(name):
+        """Returns the LinkType for the specified device."""
+        # TODO: Add support for virtual functions
+        detectedType = None
+        rc, out, _ = execCmd([_ETHTOOL_BINARY.cmd, '-i', name])
+        if rc == 71:  # Unkown driver, usually dummy or loopback
+            if not os.path.exists('/sys/class/net/' + name):
+                raise ValueError('Device %s does not exist' % name)
+            if name == 'lo':
+                detectedType = LinkType.LOOPBACK
+            else:
+                detectedType = LinkType.DUMMY
+            return detectedType
+        elif rc:
+            raise ValueError('Unknown ethtool errcode %s when checking %s' %
+                             (rc, name))
+        driver = None
+        for line in out:
+            key, value = line.split(': ')
+            if key == 'driver':
+                driver = value
+                break
+        if driver is None:
+            raise ValueError('Unknown device driver type')
+        if driver in (LinkType.BRIDGE, LinkType.MACVLAN, LinkType.TUN):
+            detectedType = driver
+        elif driver == 'bonding':
+            detectedType = LinkType.BOND
+        elif 'VLAN' in driver or 'vlan' in driver:
+            detectedType = LinkType.VLAN
+        else:
+            detectedType = LinkType.NIC
+        return detectedType
+
+    def isDUMMY(self):
+        return self.type == LinkType.DUMMY
+
+    def isNIC(self):
+        return self.type == LinkType.NIC
+
+    def isVLAN(self):
+        return self.type == LinkType.VLAN
+
+    def isFakeNIC(self):
+        """
+        Returns True iff vdsm config marks the DUMMY dev to be reported as NIC.
+        """
+        return self.isDUMMY() and anyFnmatch(self.name, self._fakeNics)
+
+    def isHidden(self):
+        """Returns True iff vdsm config hides the device."""
+        if self.isVLAN():
+            return anyFnmatch(self.name, self._hiddenVlans)
+        elif self.isDUMMY() or self.isNIC():
+            return anyFnmatch(self.name, self._hiddenNics)
+        else:
+            raise NotImplementedError
+
+
+def getLinks():
+    """Returns a list of Link objects for each link in the system."""
+    return [Link.fromText(line) for line in linksShowDetailed()]
+
+
+def getLink(dev):
+    """Returns the Link object for the specified dev."""
+    return Link.fromText(linksShowDetailed(dev=dev)[0])
 
 
 @equals
@@ -288,6 +451,16 @@ def ruleExists(rule):
 
 def linkShowDev(dev):
     command = [_IP_BINARY.cmd, '-d', 'link', 'show', 'dev', dev]
+    return _execCmd(command)
+
+
+def linksShowDetailed(dev=None):
+    """Returns a list of detailed link information (each device output
+    collapsed into a single line). If a device is specified, only that link
+    output will be returned (if present)."""
+    command = [_IP_BINARY.cmd, '-d', '-o', 'link']
+    if dev:
+        command += ['show', 'dev', dev]
     return _execCmd(command)
 
 

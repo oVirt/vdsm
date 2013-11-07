@@ -19,16 +19,19 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
+from functools import partial
 from shutil import rmtree
 import tempfile
 from xml.dom import minidom
 
 import ethtool
 
+from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
 from vdsm.netinfo import getBootProtocol
 
+from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testrunner import VdsmTestCase as TestCaseBase
 
@@ -50,12 +53,16 @@ class TestNetinfo(TestCaseBase):
         self.assertRaises(ValueError, netinfo.prefix2netmask, -1)
         self.assertRaises(ValueError, netinfo.prefix2netmask, 33)
 
+    @MonkeyPatch(ipwrapper.Link, '_detectType',
+                 partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInvalidNic(self):
         nicName = 'DUMMYNICDEVNAME'
         self.assertTrue(nicName not in netinfo.nics())
         s = netinfo.speed(nicName)
         self.assertEqual(s, 0)
 
+    @MonkeyPatch(ipwrapper.Link, '_detectType',
+                 partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInRange(self):
         for d in netinfo.nics():
             s = netinfo.speed(d)
@@ -85,6 +92,8 @@ class TestNetinfo(TestCaseBase):
         for s, addr in zip(inputs, ip):
             self.assertEqual(addr, netinfo.ipv6StrToAddress(s))
 
+    @MonkeyPatch(ipwrapper.Link, '_detectType',
+                 partial(_fakeTypeDetection, ipwrapper.Link))
     @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
     def testGetNonExistantBridgeInfo(self):
         # Getting info of non existing bridge should not raise an exception,
@@ -104,32 +113,54 @@ class TestNetinfo(TestCaseBase):
             for ip in ipaddrs:
                 self.assertEqual(dev.device, netinfo.getIfaceByIP(ip))
 
+    def _testNics(self):
+        """Creates a test fixture so that nics() reports:
+        physical nics: em, me, me0, me1, hid0 and hideous
+        dummies: fake and fake0"""
+        lines = ('2: em: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
+                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
+                 '  link/ether f0:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0 \\    nic ',
+                 '3: me: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
+                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
+                 '  link/ether ff:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0 \\    nic ',
+                 '4: hid0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
+                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
+                 '  link/ether ff:de:fa:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0 \\    nic ',
+                 '5: hideous: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc'
+                 ' pfifo_fast state UP mode DEFAULT group default qlen 1000\\ '
+                 '   link/ether ff:de:11:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0 \\    nic ',
+                 '6: me0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
+                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
+                 '  link/ether 66:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0 \\    nic ',
+                 '7: me1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
+                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
+                 '  link/ether 77:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0 \\    nic ',
+                 '34: fake0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
+                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
+                 '  link/ether ff:aa:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0  \\    dummy ',
+                 '35: fake: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
+                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
+                 '  link/ether ff:aa:f1:da:bb:e7 brd ff:ff:ff:ff:ff:ff '
+                 'promiscuity 0  \\    dummy ')
+        return [ipwrapper.Link.fromText(line) for line in lines]
+
     def _dev_dirs_setup(self, dir_fixture):
         """
-        Creates test fixture which is a dir structure:
-        em, me, fake0, fake1 devices that should managed by vdsm.
-        hid0, hideons not managed by being hidden nics.
-        jbond not managed by being hidden bond.
-        me0, me1 not managed by being nics enslaved to jbond hidden bond.
-        /tmp/.../em/device
-        /tmp/.../me/device
-        /tmp/.../fake0
-        /tmp/.../fake
-        /tmp/.../hid0/device
-        /tmp/.../hideous/device
-        /tmp/.../me0/device
-        /tmp/.../me1/device
+        Creates test fixture so that the nics created by _testNics are reported
+        as:
+        managed by vdsm: em, me, fake0, fake1
+        not managed due to hidden bond (jbond) enslavement: me0, me1
+        not managed due to being hidden nics: hid0, hideous
+
         returns related containing dir.
         """
-
-        dev_dirs = [os.path.join(dir_fixture, dev) for dev in
-                    ('em/device', 'me/device', 'fake', 'fake0',
-                     'hid/device', 'hideous/device',
-                     'me0/device', 'me1/device')]
-
-        for dev_dir in dev_dirs:
-            os.makedirs(dev_dir)
-
         bonding_path = os.path.join(dir_fixture, 'jbond/bonding')
         os.makedirs(bonding_path)
         with open(os.path.join(bonding_path, 'slaves'), 'w') as f:
@@ -160,9 +191,15 @@ class TestNetinfo(TestCaseBase):
         temp_dir = tempfile.mkdtemp()
         with MonkeyPatchScope([(netinfo, 'BONDING_SLAVES',
                                 temp_dir + '/%s/bonding/slaves'),
+                               (netinfo, 'getLinks',
+                                self._testNics),
                                (netinfo, 'NET_PATH',
                                 self._dev_dirs_setup(temp_dir)),
-                               (netinfo, 'config', self._config_setup())]):
+                               (ipwrapper.Link, '_detectType',
+                                partial(_fakeTypeDetection, ipwrapper.Link)),
+                               (netinfo, 'config', self._config_setup()),
+                               (ipwrapper, 'config', self._config_setup())
+                               ]):
             try:
                 self.assertEqual(set(netinfo.nics()),
                                  set(['em', 'me', 'fake', 'fake0']))
