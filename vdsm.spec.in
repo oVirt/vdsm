@@ -306,7 +306,7 @@ Manager.
 Summary: Creates a sub-process in simpler safer manner.
 
 BuildRequires: python2-devel
-Provides: python-cpopen = %{version}-%{release}
+Provides: python-cpopen = 1.2.3
 Obsoletes: python-cpopen
 
 %description python-cpopen
