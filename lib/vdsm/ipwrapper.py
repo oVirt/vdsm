@@ -28,6 +28,7 @@ from .config import config
 from .utils import anyFnmatch
 from .utils import CommandPath
 from .utils import execCmd
+from .utils import memoized
 from .utils import pairwise
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
@@ -64,6 +65,8 @@ class LinkType(object):
     MACVLAN = 'macvlan'
     DUMMY = 'dummy'
     TUN = 'tun'
+    OVS = 'openvswitch'
+    TEAM = 'team'
 
 
 @equals
@@ -135,10 +138,13 @@ class Link(object):
         if 'linkType' not in attrs:
             attrs['linkType'] = cls._detectType(attrs['name'])
         if attrs['linkType'] in (LinkType.VLAN, LinkType.MACVLAN):
-            attrs['name'] = attrs['name'].split('@')[0]
+            name, device = attrs['name'].split('@')
+            attrs['name'] = name
+            attrs['device'] = device
         return cls(**attrs)
 
     @staticmethod
+    @memoized
     def _detectType(name):
         """Returns the LinkType for the specified device."""
         # TODO: Add support for virtual functions
@@ -163,7 +169,8 @@ class Link(object):
                 break
         if driver is None:
             raise ValueError('Unknown device driver type')
-        if driver in (LinkType.BRIDGE, LinkType.MACVLAN, LinkType.TUN):
+        if driver in (LinkType.BRIDGE, LinkType.MACVLAN, LinkType.TUN,
+                      LinkType.OVS, LinkType.TEAM):
             detectedType = driver
         elif driver == 'bonding':
             detectedType = LinkType.BOND
