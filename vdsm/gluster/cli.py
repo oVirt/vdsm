@@ -448,7 +448,7 @@ def volumeInfo(volumeName=None, remoteServer=None):
 
 @makePublic
 def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
-                 transportList=[]):
+                 transportList=[], force=False):
     command = _getGlusterVolCmd() + ["create", volumeName]
     if stripeCount:
         command += ["stripe", "%s" % stripeCount]
@@ -457,6 +457,10 @@ def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
     if transportList:
         command += ["transport", ','.join(transportList)]
     command += brickList
+
+    if force:
+        command.append('force')
+
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:

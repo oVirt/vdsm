@@ -552,13 +552,25 @@
 #
 # @volumeName: Gluster volume name
 #
+# @bricklist: List of bricks
+#
+# @replicaCount: #optional Replica count for volume
+#
+# @stripeCount: #optional Stripe count for volume
+#
+# @transportList: #optional Transport type
+#
+# @force: #optional Force create Volume (new in version 4.14.0)
+#
 # Returns:
 # uuid of the volume
 #
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'create'},
- 'data': {'volumeName': 'str', 'bricklist': ['str'], 'replicaCount': 'int', 'stripeCount': 'int', 'transportList': ['transType']},
+ 'data': {'volumeName': 'str', 'bricklist': ['str'],
+          '*replicaCount': 'int', '*stripeCount': 'int',
+          '*transportList': ['transType'], '*force': 'bool'},
  'returns': 'UUID'}
 
 ##

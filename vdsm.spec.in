@@ -224,7 +224,7 @@ Requires: systemd >= 197-1.fc18.2
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %if 0%{?with_gluster}
-Requires: glusterfs >= 3.4.1
+Requires: glusterfs >= 3.4.2
 Requires: glusterfs-cli
 Requires: glusterfs-api
 Requires: glusterfs-fuse

@@ -79,10 +79,11 @@ class GlusterApi(object):
 
     @exportAsVerb
     def volumeCreate(self, volumeName, brickList, replicaCount=0,
-                     stripeCount=0, transportList=[], options=None):
+                     stripeCount=0, transportList=[],
+                     force=False, options=None):
         return self.svdsmProxy.glusterVolumeCreate(volumeName, brickList,
                                                    replicaCount, stripeCount,
-                                                   transportList)
+                                                   transportList, force)
 
     @exportAsVerb
     def volumeStart(self, volumeName, force=False, options=None):

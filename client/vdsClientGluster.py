@@ -39,10 +39,12 @@ class GlusterService(service):
         stripeCount = params.get('stripe', '')
         transport = params.get('transport', '')
         transportList = transport.strip().split(',') if transport else []
+        force = (params.get('force', 'no').upper() == 'YES')
 
         status = self.s.glusterVolumeCreate(volumeName, brickList,
                                             replicaCount, stripeCount,
-                                            transportList)
+                                            transportList, force)
+        pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
     def do_glusterVolumesList(self, args):
@@ -459,7 +461,8 @@ def getGlusterCmdDict(serv):
         {'glusterVolumeCreate': (
             serv.do_glusterVolumeCreate,
             ('volumeName=<volume_name> bricks=<brick[,brick, ...]> '
-             '[replica=<count>] [stripe=<count>] [transport={tcp|rdma}]\n\t'
+             '[replica=<count>] [stripe=<count>] [transport={tcp|rdma}] '
+             '[force={yes|no}]\n\t'
              '<volume_name> is name of new volume',
              '<brick[,brick, ...]> is brick(s) which will be used to '
              'create volume',
