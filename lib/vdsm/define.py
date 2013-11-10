@@ -69,7 +69,7 @@ errCode = {
     'nonresp': {'status': {
         'code': 19,
         'message': 'Guest agent non-responsive'}},
-    # codes 20-29 are reserved for add/delNetwork
+    # codes 20-30 are reserved for add/delNetwork
     # code 39 was used for:
     # wrongHost - migration destination has an invalid hostname
     'unavail': {'status': {

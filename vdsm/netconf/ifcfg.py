@@ -46,6 +46,10 @@ class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, inRollback=False):
         super(Ifcfg, self).__init__(ConfigWriter(), inRollback)
+        self.unifiedPersistence = \
+            config.get('vars', 'persistence') == 'unified'
+        if self.unifiedPersistence:
+            self.runningConfig = RunningConfig()
 
     def begin(self):
         if self.configApplier is None:
@@ -219,7 +223,7 @@ class Ifcfg(Configurator):
         self._removeSourceRouteFile('route', device)
 
     def flush(self):
-        libvirtCfg.flush()
+        super(Ifcfg, self).flush()
         self.configApplier.flush()
 
 
