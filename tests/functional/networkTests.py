@@ -26,9 +26,14 @@ from storage.misc import RollbackContext
 from hookValidation import ValidatesHook
 from testrunner import (VdsmTestCase as TestCaseBase,
                         expandPermutations, permutations)
-from testValidation import RequireDummyMod, ValidateRunningAsRoot
+from testValidation import (RequireDummyMod, RequireVethMod,
+                            ValidateRunningAsRoot)
 
+import dnsmasq
 import dummy
+import firewall
+import veth
+from nose.plugins.skip import SkipTest
 from utils import SUCCESS, VdsProxy, cleanupRules
 
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
@@ -49,6 +54,8 @@ IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
 IP_GATEWAY = '240.0.0.254'
 # Current implementation converts ip to its 32 bit int representation
 IP_TABLE = '4026531841'
+DHCP_RANGE_FROM = '240.0.0.10'
+DHCP_RANGE_TO = '240.0.0.100'
 
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ff'
@@ -74,6 +81,32 @@ def tearDownModule():
 
 
 @contextmanager
+def dnsmasqDhcp(interface):
+    """ Manages the life cycle of dnsmasq as a DHCP server."""
+    dhcpServer = dnsmasq.Dnsmasq()
+    try:
+        dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO)
+    except dnsmasq.DnsmasqError as e:
+        raise SkipTest(e)
+
+    with firewallDhcp(interface):
+        try:
+            yield
+        finally:
+            dhcpServer.stop()
+
+
+@contextmanager
+def firewallDhcp(interface):
+    """ Adds and removes firewall rules for DHCP"""
+    firewall.allowDhcp(interface)
+    try:
+        yield
+    finally:
+        firewall.stopAllowingDhcp(interface)
+
+
+@contextmanager
 def dummyIf(num):
     """Manages a list of num dummy interfaces. Assumes root privileges."""
     dummies = []
@@ -84,6 +117,16 @@ def dummyIf(num):
     finally:
         for nic in dummies:
             dummyPool.add(nic)
+
+
+@contextmanager
+def vethIf():
+    """ Yields a tuple containing pair of veth devices."""
+    (left, right) = veth.create()
+    try:
+        yield (left, right)
+    finally:
+        veth.remove(left)
 
 
 class OperStateChangedError(ValueError):
@@ -1538,3 +1581,24 @@ class NetworkTest(TestCaseBase):
                 {NETWORK_NAME: {'remove': True}},
                 {BONDING_NAME: {'remove': True}},
                 {'connectivityCheck': False})
+
+    @cleanupNet
+    @RequireVethMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksAddDelDhcp(self):
+        with vethIf() as (left, right):
+            veth.setIP(left, IP_ADDRESS, IP_CIDR)
+            veth.setLinkUp(left)
+            with dnsmasqDhcp(left):
+                network = {NETWORK_NAME: {'nic': right, 'bridged': False,
+                                          'bootprot': 'dhcp'}}
+                options = {'connectivityCheck': 0}
+
+                status, msg = self.vdsm_net.setupNetworks(network, {}, options)
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertNetworkExists(NETWORK_NAME)
+
+                network = {NETWORK_NAME: {'remove': True}}
+                status, msg = self.vdsm_net.setupNetworks(network, {}, options)
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertNetworkDoesntExist(NETWORK_NAME)

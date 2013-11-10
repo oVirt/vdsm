@@ -22,6 +22,8 @@ vdsmfunctestsdir = ${vdsmtestsdir}/functional
 
 dist_vdsmfunctests_PYTHON = \
 	dummy.py \
+	dnsmasq.py \
+	firewall.py \
 	momTests.py \
 	networkTests.py \
 	sosPluginTests.py \
@@ -29,6 +31,7 @@ dist_vdsmfunctests_PYTHON = \
 	utils.py \
 	virtTests.py \
 	storageTests.py \
+	veth.py \
 	$(NULL)
 
 dist_vdsmfunctests_DATA = \

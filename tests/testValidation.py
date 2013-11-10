@@ -115,6 +115,20 @@ def RequireDummyMod(f):
     return wrapper
 
 
+def RequireVethMod(f):
+    """
+    Assumes root privileges to be used after
+    ValidateRunningAsRoot decoration.
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not os.path.exists('/sys/module/veth'):
+            cmd_modprobe = [modprobe.cmd, "veth"]
+            rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
+        return f(*args, **kwargs)
+    return wrapper
+
+
 def slowtest(f):
     @wraps(f)
     def wrapper(*args, **kwargs):

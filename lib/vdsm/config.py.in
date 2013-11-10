@@ -38,7 +38,7 @@ parameters = [
         ('extra_mem_reserve', '65',
             'Memory reserved for non-vds-administered programs.'),
 
-        ('fake_nics', 'dummy_*',
+        ('fake_nics', 'dummy_*,veth_*',
             'Comma-separated list of fnmatch-patterns for dummy hosts nics to '
             'be shown to vdsm.'),
 
