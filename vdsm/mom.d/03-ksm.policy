@@ -41,8 +41,8 @@
 (defvar ksm_pressure_threshold (* Host.mem_available ksm_free_percent))
 (defvar ksm_committed Host.ksm_shareable)
 
-(if (and (< (+ ksm_pressure_threshold ksm_committed) Host.mem_available)
-         (> (Host.StatAvg "mem_free") ksm_pressure_threshold))
+(if (or (and (< (+ ksm_pressure_threshold ksm_committed) Host.mem_available)
+         (> (Host.StatAvg "mem_free") ksm_pressure_threshold)) (not ksmEnabled))
     (Host.Control "ksm_run" 0)
     {        # else
         (Host.Control "ksm_run" 1)
