@@ -2288,6 +2288,36 @@ class Vm(object):
                 continue
 
             capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+
+            # Since the check based on nextPhysSize is extremly risky (it
+            # may result in the VM being paused) we can't use the regular
+            # getNextVolumeSize call as it relies on a cached value of the
+            # drive apparentsize.
+            nextPhysSize = physical + drive.VOLWM_CHUNK_MB * constants.MEGAB
+
+            # NOTE: the intent of this check is to prevent faulty images to
+            # trick qemu in requesting extremely large extensions (BZ#998443).
+            # Probably the definitive check would be comparing the allocated
+            # space with capacity + format_overhead. Anyway given that:
+            #
+            # - format_overhead is tricky to be computed (it depends on few
+            #   assumptions that may change in the future e.g. cluster size)
+            # - currently we allow only to extend by one chunk at time
+            #
+            # the current check compares alloc with the next volume size.
+            # It should be noted that alloc cannot be directly compared with
+            # the volume physical size as it includes also the clusters not
+            # written yet (pending).
+            if alloc > nextPhysSize:
+                self.log.error(
+                    "Improbable extension request for volume %s on domain "
+                    "%s, pausing the VM to avoid corruptions (capacity: %s, "
+                    "allocated: %s, physical: %s, next physical size: %s)",
+                    drive.volumeID, drive.domainID, capacity, alloc,
+                    physical, nextPhysSize)
+                self.pause(pauseCode='EOTHER')
+                return False
+
             if physical - alloc < drive.watermarkLimit:
                 extend.append((drive, capacity, alloc, physical))
 
@@ -2438,12 +2468,13 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
-    def pause(self, afterState='Paused', guestCpuLocked=False):
+    def pause(self, afterState='Paused', guestCpuLocked=False,
+              pauseCode='NOERR'):
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout()
         try:
             with self._confLock:
-                self.conf['pauseCode'] = 'NOERR'
+                self.conf['pauseCode'] = pauseCode
             self._underlyingPause()
             if hasattr(self, 'updateGuestCpuRunning'):
                 self.updateGuestCpuRunning()
