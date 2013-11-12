@@ -286,14 +286,15 @@ class clientIF:
 
             # GUID drive format
             elif "GUID" in drive:
-                volPath = os.path.join("/dev/mapper", drive["GUID"])
-
-                if not os.path.exists(volPath):
+                res = self.irs.getDevicesVisibility([drive["GUID"]])
+                if not res["visible"][drive["GUID"]]:
                     raise vm.VolumeError(drive)
 
                 res = self.irs.appropriateDevice(drive["GUID"], vmId)
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
+
+                volPath = os.path.join("/dev/mapper", drive["GUID"])
 
             # UUID drive format
             elif "UUID" in drive:
