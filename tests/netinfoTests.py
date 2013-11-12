@@ -90,9 +90,6 @@ class TestNetinfo(TestCaseBase):
         # it should.
         netinfo.get()
 
-    def testMatchNicName(self):
-        self.assertTrue(netinfo._match_name('test1', ['test0', 'test1']))
-
     def testIPv4toMapped(self):
         self.assertEqual('::ffff:127.0.0.1', netinfo.IPv4toMapped('127.0.0.1'))
 

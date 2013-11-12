@@ -20,7 +20,6 @@
 
 from collections import namedtuple
 import errno
-from fnmatch import fnmatch
 from glob import iglob
 from itertools import chain
 import logging
@@ -38,6 +37,7 @@ from .ipwrapper import Route
 from .ipwrapper import routeShowAllDefaultGateways
 from . import libvirtconnection
 from .ipwrapper import linkShowDev
+from .utils import anyFnmatch
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 # ifcfg persistence directories
@@ -64,10 +64,6 @@ _Qos = namedtuple('Qos', 'inbound outbound')
 OPERSTATE_UP = 'up'
 
 
-def _match_name(name, patterns):
-    return any(map(lambda p: fnmatch(name, p), patterns))
-
-
 def _nic_devices():
     """
     Returns a list of nic devices real or fakes,
@@ -82,7 +78,7 @@ def _nic_devices():
             devices.append(os.path.basename(dev_path))
         else:
             dev_name = os.path.basename(dev_path)
-            if _match_name(dev_name, fake_nics):
+            if anyFnmatch(dev_name, fake_nics):
                 devices.append(dev_name)
     return devices
 
@@ -101,7 +97,7 @@ def nics():
         if the device is a hidden nic.
         """
         hidden_nics = config.get('vars', 'hidden_nics').split(',')
-        return _match_name(device, hidden_nics)
+        return anyFnmatch(device, hidden_nics)
 
     def isEnslavedByHiddenBond(device):
         """
@@ -135,7 +131,7 @@ def bondings():
     res = []
     try:
         for bond in open(BONDING_MASTERS).readline().split():
-            if not _match_name(bond, hidden_bonds):
+            if not anyFnmatch(bond, hidden_bonds):
                 res.append(bond)
     except IOError as e:
         if e.errno == os.errno.ENOENT:
@@ -149,7 +145,7 @@ def bondings():
 def vlans():
     hidden_vlans = config.get('vars', 'hidden_vlans').split(',')
     return [os.path.basename(b) for b in iglob('/sys/class/net/*.*')
-            if not _match_name(os.path.basename(b), hidden_vlans)]
+            if not anyFnmatch(os.path.basename(b), hidden_vlans)]
 
 
 def bridges():

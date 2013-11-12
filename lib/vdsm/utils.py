@@ -27,6 +27,7 @@ plentifuly around vdsm.
     Contains a reverse dictionary pointing from error string to its error code.
 """
 from collections import namedtuple
+from fnmatch import fnmatch
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from StringIO import StringIO
@@ -943,3 +944,8 @@ def panic(msg):
     logging.error("Panic: %s", msg, exc_info=True)
     os.killpg(0, 9)
     sys.exit(-3)
+
+
+def anyFnmatch(name, patterns):
+    """Returns True if any element in the patterns iterable fnmatches name."""
+    return any(fnmatch(name, pattern) for pattern in patterns)

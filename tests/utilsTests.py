@@ -82,6 +82,9 @@ class GeneralUtilsTests(TestCaseBase):
     def testPanic(self):
         self.assertRaises(AssertionError, utils.panic, "panic test")
 
+    def testAnyFnmatch(self):
+        self.assertTrue(utils.anyFnmatch('test1', ['test0', 'test1']))
+
 
 class AsyncProcessOperationTests(TestCaseBase):
     def _echo(self, text):
