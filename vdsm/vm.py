@@ -4054,6 +4054,12 @@ class Vm(object):
         return {'status': doneCode, 'size': str(sizeRoundedBytes)}
 
     def _diskSizeExtendRaw(self, drive, newSizeBytes):
+        # Picking up the volume size extension
+        self.__refreshDriveVolume({
+            'domainID': drive.domainID, 'poolID': drive.poolID,
+            'imageID': drive.imageID, 'volumeID': drive.volumeID,
+        })
+
         volumeInfo = self.cif.irs.getVolumeSize(
             drive.domainID, drive.poolID, drive.imageID, drive.volumeID)
 
