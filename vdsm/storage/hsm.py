@@ -1978,16 +1978,6 @@ class HSM:
         return devices
 
     @public
-    def scanDevicesVisibility(self, guids):
-        visible = lambda guid: (guid, os.path.exists(
-                                os.path.join("/dev/mapper", guid)))
-        visibleDevs = map(visible, guids)
-        if not all(visibleDevs):
-            multipath.rescan()
-            visibleDevs = map(visible, guids)
-        return dict(visibleDevs)
-
-    @public
     def getDevicesVisibility(self, guids, options=None):
         """
         Check which of the luns with specified guids are visible
@@ -2000,12 +1990,28 @@ class HSM:
                   boolean
         :rtype: dict
         """
-        visibility = self.scanDevicesVisibility(guids)
-        lvm.invalidateFilter()
+        def _isVisible(guid):
+            try:
+                res = (os.stat('/dev/mapper/' + guid).st_mode &
+                       stat.S_IRUSR != 0)
+            except:
+                res = False
+            return res
+
+        visibility = {}
+        scanned = False
         for guid in guids:
-            if visibility[guid]:
-                visibility[guid] = (os.stat('/dev/mapper/' + guid).st_mode &
-                                    stat.S_IRUSR != 0)
+            visible = _isVisible(guid)
+            if not scanned and not visible:
+                multipath.rescan()
+                scanned = True
+                visible = _isVisible(guid)
+            visibility[guid] = visible
+
+        # After multipath.rescan, existing devices may disapper, and new
+        # devices may appear, making lvm filter stale.
+        lvm.invalidateFilter()
+
         return {'visible': visibility}
 
     @public
