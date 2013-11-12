@@ -11,7 +11,7 @@
 ./etc/rwtab.d/vdsm
 ./etc/security/limits.d/99-vdsm.conf
 ./etc/sudoers.d/50_vdsm
-./etc/sysctl.d/vdsm
+./etc/sysctl.d/vdsm.conf
 ./etc/vdsm/logger.conf
 ./etc/vdsm/mom.conf
 ./etc/vdsm/mom.d/00-python.policy

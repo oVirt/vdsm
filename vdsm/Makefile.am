@@ -239,10 +239,10 @@ uninstall-data-sudoers:
 install-data-sysctl:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sysctl.d
 	$(INSTALL_DATA) $(srcdir)/vdsm-sysctl.conf \
-		$(DESTDIR)$(sysconfdir)/sysctl.d/vdsm
+		$(DESTDIR)$(sysconfdir)/sysctl.d/vdsm.conf
 
 uninstall-data-sysctl:
-	$(RM) $(DESTDIR)$(sysconfdir)/sysctl.d/vdsm
+	$(RM) $(DESTDIR)$(sysconfdir)/sysctl.d/vdsm.conf
 
 install-data-dhclient-hooks:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d

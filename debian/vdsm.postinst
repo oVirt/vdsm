@@ -68,7 +68,7 @@ case "$1" in
         chmod 644 /etc/iscsi/initiatorname.iscsi
 
         vdsm-tool sebool-config || :
-        sysctl -q -p /etc/sysctl.d/vdsm
+        sysctl -q -p /etc/sysctl.d/vdsm.conf
         vdsm-tool load-needed-modules
 
         echo /usr/lib/sanlock/ > /etc/ld.so.conf.d/sanlock.conf
