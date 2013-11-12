@@ -142,7 +142,7 @@ class StoragePool(Securable):
         return self.spmRole, self.getSpmLver(), self.getSpmId()
 
     def __del__(self):
-        if len(self.domainMonitor.monitoredDomains) > 0:
+        if len(self.domainMonitor.poolMonitoredDomains) > 0:
             threading.Thread(target=self.stopMonitoringDomains).start()
 
     @unsecured
@@ -1541,15 +1541,13 @@ class StoragePool(Securable):
     @unsecured
     @misc.samplingmethod
     def updateMonitoringThreads(self):
-        # getDomains() returns a dict of {sdUUID:status}
-        # {sdUUID1: status1, sdUUID2: status2, ...}
+        # domain list it's list of sdUUID:status
+        # sdUUID1:status1,sdUUID2:status2,...
         self.invalidateMetadata()
-        poolDoms = self.getDomains()
-        activeDomains = tuple(sdUUID for sdUUID in poolDoms
-                              if poolDoms[sdUUID] == sd.DOM_ACTIVE_STATUS)
-        monitoredDomains = self.domainMonitor.monitoredDomains
+        activeDomains = self.getDomains(activeOnly=True)
+        monitoredDomains = self.domainMonitor.poolMonitoredDomains
 
-        for sdUUID in poolDoms:
+        for sdUUID in monitoredDomains:
             if sdUUID not in activeDomains:
                 try:
                     self.domainMonitor.stopMonitoring(sdUUID)

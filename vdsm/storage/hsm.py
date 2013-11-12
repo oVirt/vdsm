@@ -3710,7 +3710,7 @@ class HSM:
     def startMonitoringDomain(self, sdUUID, hostID, options=None):
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
-            self.domainMonitor.startMonitoring(sdUUID, int(hostID))
+            self.domainMonitor.startMonitoring(sdUUID, int(hostID), False)
 
     @deprecated
     @public

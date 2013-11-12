@@ -84,12 +84,20 @@ class DomainMonitor(object):
     def monitoredDomains(self):
         return self._domains.keys()
 
-    def startMonitoring(self, sdUUID, hostId):
-        if sdUUID in self._domains:
+    @property
+    def poolMonitoredDomains(self):
+        return [k for k, v in self._domains.iteritems() if v.poolDomain]
+
+    def startMonitoring(self, sdUUID, hostId, poolDomain=True):
+        domainThread = self._domains.get(sdUUID)
+
+        if domainThread is not None:
+            domainThread.poolDomain |= poolDomain
             return
 
         domainThread = DomainMonitorThread(weakref.proxy(self),
                                            sdUUID, hostId, self._interval)
+        domainThread.poolDomain = poolDomain
         domainThread.start()
         # The domain should be added only after it succesfully started
         self._domains[sdUUID] = domainThread
