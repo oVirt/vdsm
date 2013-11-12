@@ -1955,15 +1955,11 @@ class HSM:
                 res = False
             return res
 
-        visibility = {}
-        scanned = False
-        for guid in guids:
-            visible = _isVisible(guid)
-            if not scanned and not visible:
-                multipath.rescan()
-                scanned = True
-                visible = _isVisible(guid)
-            visibility[guid] = visible
+        visibility = [_isVisible(guid) for guid in guids]
+        if not all(visibility):
+            multipath.rescan()
+            visibility = [_isVisible(guid) for guid in guids]
+        visibility = dict(zip(guids, visibility))
 
         # After multipath.rescan, existing devices may disapper, and new
         # devices may appear, making lvm filter stale.
