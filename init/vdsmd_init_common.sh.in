@@ -91,7 +91,7 @@ task_load_needed_modules(){
 
 
 task_tune_system(){
-    "@SYSCTL_PATH@" -q -p "/etc/sysctl.d/vdsm"
+    "@SYSCTL_PATH@" -q -p "/etc/sysctl.d/vdsm.conf"
 }
 
 
