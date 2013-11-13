@@ -46,6 +46,7 @@ class MomThread(threading.Thread):
         self.log = logging.getLogger("MOM")
         self.log.info("Starting up MOM")
         self._mom = mom.MOM(momconf)
+        self._policy = {}
         threading.Thread.__init__(self, target=self._mom.run, name="MOM")
         self.start()
 
@@ -64,14 +65,16 @@ class MomThread(threading.Thread):
 
     def setPolicyParameters(self, key_value_store):
         # mom.setNamedPolicy will raise an exception on failure.
+
         # Prepare in-memory policy file with tuning variables
         # this might need to convert certain python types to proper MoM
         # policy language
+        self._policy.update(key_value_store)
 
-        # Python bool values are defined in 00-python.policy so need no
+        # Python bool values are defined in 00-defines.policy so need no
         # conversion here
-        policy_string = "\n".join(["(defvar %s %r)" % (k, v)
-                                   for k, v in key_value_store.iteritems()])
+        policy_string = "\n".join(["(set %s %r)" % (k, v)
+                                   for k, v in self._policy.iteritems()])
 
         self._mom.setNamedPolicy(config.get("mom", "tuning_policy"),
                                  policy_string)

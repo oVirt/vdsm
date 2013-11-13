@@ -14,7 +14,7 @@
 ./etc/sysctl.d/vdsm.conf
 ./etc/vdsm/logger.conf
 ./etc/vdsm/mom.conf
-./etc/vdsm/mom.d/00-python.policy
+./etc/vdsm/mom.d/00-defines.policy
 ./etc/vdsm/mom.d/01-parameters.policy
 ./etc/vdsm/mom.d/02-balloon.policy
 ./etc/vdsm/mom.d/03-ksm.policy

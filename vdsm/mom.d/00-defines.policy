@@ -2,3 +2,8 @@
 # received by setMOMPolicyParameters
 (defvar False 0)
 (defvar True 1)
+
+# Define variables for configurable options here
+(defvar ksmEnabled 1)
+(defvar balloonEnabled 0)
+

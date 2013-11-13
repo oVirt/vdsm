@@ -110,7 +110,7 @@ EXTRA_DIST = \
 	logger.conf.in \
 	mk_sysprep_floppy.in \
 	mom.conf.in \
-	mom.d/00-python.policy \
+	mom.d/00-defines.policy \
 	mom.d/01-parameters.policy \
 	mom.d/02-balloon.policy \
 	mom.d/03-ksm.policy \
