@@ -1951,7 +1951,9 @@ class HSM:
             try:
                 res = (os.stat('/dev/mapper/' + guid).st_mode &
                        stat.S_IRUSR != 0)
-            except:
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
                 res = False
             return res
 
