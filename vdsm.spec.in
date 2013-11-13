@@ -124,7 +124,7 @@ Requires: libvirt-daemon-driver-nwfilter
 Requires: libvirt-daemon-driver-qemu
 %else
 %if 0%{?rhel}
-Requires: libvirt >= 0.10.2-29.el6
+Requires: libvirt >= 0.10.2-18.el6_4.15
 %else
 Requires: libvirt >= 1.0.2-1
 %endif
