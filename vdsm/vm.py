@@ -290,7 +290,8 @@ class MigrationSourceThread(threading.Thread):
                 self._finishSuccessfully()
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
-                    self.status['status']['code'] = errCode['migCancelErr']
+                    self.status['status']['code'] = \
+                        errCode['migCancelErr']['status']['code']
                     self.status['status']['message'] = 'Migration canceled'
                 raise
             finally:
