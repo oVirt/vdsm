@@ -38,8 +38,8 @@ CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
 
 class Config(object):
     def __init__(self, savePath):
-        self.networksPath = savePath + 'nets/'
-        self.bondingsPath = savePath + 'bonds/'
+        self.networksPath = os.path.join(savePath, 'nets', '')
+        self.bondingsPath = os.path.join(savePath, 'bonds', '')
         self.networks = self._getConfigs(self.networksPath)
         self.bonds = self._getConfigs(self.bondingsPath)
 

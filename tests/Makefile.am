@@ -49,6 +49,7 @@ test_modules = \
 	mkimageTests.py \
 	monkeypatchTests.py \
 	mountTests.py \
+	netconfpersistenceTests.py \
 	netconfTests.py \
 	netinfoTests.py \
 	netmodelsTests.py \
