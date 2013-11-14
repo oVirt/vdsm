@@ -650,6 +650,50 @@ class LVMCache(object):
 _lvminfo = LVMCache()
 
 
+def bootstrap(refreshlvs=()):
+    """
+    Bootstrap lvm module
+
+    This function builds the lvm cache and ensure that all unused lvs are
+    deactivated, expect lvs matching refreshlvs, which are refreshed instead.
+    """
+    _lvminfo.bootstrap()
+
+    refreshlvs = set(refreshlvs)
+
+    for vg in _lvminfo.getAllVgs():
+        deactivate = []
+        refresh = []
+
+        for lv in _lvminfo.getLv(vg.name):
+            if lv.active:
+                if lv.name in refreshlvs:
+                    refresh.append(lv.name)
+                elif lv.opened:
+                    log.debug("Skipping open lv: vg=%s lv=%s", vg.name,
+                              lv.name)
+                else:
+                    deactivate.append(lv.name)
+
+        if deactivate:
+            log.info("Deactivating lvs: vg=%s lvs=%s", vg.name, deactivate)
+            try:
+                _setLVAvailability(vg.name, deactivate, "n")
+            except se.CannotDeactivateLogicalVolume:
+                log.error("Error deactivating lvs: vg=%s lvs=%s", vg.name,
+                          deactivate)
+            # Some lvs are inactive now
+            _lvminfo._invalidatelvs(vg.name, deactivate)
+
+        if refresh:
+            log.info("Refreshing lvs: vg=%s lvs=%s", vg.name, refresh)
+            try:
+                refreshLVs(vg.name, refresh)
+            except se.LogicalVolumeRefreshError:
+                log.error("Error refreshing lvs: vg=%s lvs=%s", vg.name,
+                          refresh)
+
+
 def invalidateCache():
     _lvminfo.invalidateCache()
 
