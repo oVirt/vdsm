@@ -371,7 +371,7 @@ class HSM:
             self.log.warn("Failed to clean Storage Repository.", exc_info=True)
 
         def storageRefresh():
-            lvm._lvminfo.bootstrap()
+            lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS)
             sdCache.refreshStorage()
 
             fileUtils.createdir(self.tasksDir)
