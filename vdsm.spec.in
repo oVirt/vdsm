@@ -131,6 +131,17 @@ Requires: libvirt >= 1.0.2-1
 %endif
 Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 
+# iscsi-intiator versions
+%if 0%{?rhel}
+%if 0%{?rhel} >= 7
+Requires: iscsi-initiator-utils
+%else
+Requires: iscsi-initiator-utils >= 6.2.0.872-15
+%endif # rhel 7
+%else # fedora
+Requires: iscsi-initiator-utils >= 6.2.0.873-3
+%endif
+
 %if 0%{?rhel}
 Requires: python-ethtool >= 0.6-3
 %if 0%{?rhel} >= 7
@@ -138,7 +149,6 @@ ExclusiveArch:  x86_64
 Requires: device-mapper-multipath
 Requires: e2fsprogs
 Requires: fence-agents-all
-Requires: iscsi-initiator-utils
 Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
@@ -152,7 +162,6 @@ Requires: python
 # Update the qemu-kvm requires when block_stream will be included
 Requires: qemu-kvm >= 2:0.12.1.2-2.295.el6_3.4
 Requires: qemu-img >= 2:0.12.1.2-2.295.el6_3.4
-Requires: iscsi-initiator-utils >= 6.2.0.873-3
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 Requires: fence-agents
@@ -184,7 +193,6 @@ Requires: python-ethtool >= 0.8-1
 %if 0%{?fedora} >= 18
 Requires: initscripts >= 9.42.2-1
 %endif
-Requires: iscsi-initiator-utils >= 6.2.0.872-14
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
 Requires: sanlock >= 2.4-2, sanlock-python
