@@ -25,6 +25,7 @@ import argparse
 from .. import utils
 from . import service, expose
 from ..constants import P_VDSM_EXEC, DISKIMAGE_GROUP
+from ..constants import QEMU_PROCESS_GROUP, VDSM_GROUP
 
 
 class _ModuleConfigure(object):
@@ -125,7 +126,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
                 '/usr/sbin/usermod',
                 '-a',
                 '-G',
-                'qemu,kvm',
+                '%s,%s' % (QEMU_PROCESS_GROUP, VDSM_GROUP),
                 'sanlock'
             ),
             raw=True,
