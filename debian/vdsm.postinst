@@ -94,14 +94,28 @@ esac
 # dh helpers. Restarting vdsmd should be run after dh helpers so that the
 # hooks are invoked correctly.
 if [ "$1" = "configure" ]; then
-        if initctl status supervdsmd | grep -q start/running ; then
-            initctl stop supervdsmd || :
-            initctl start supervdsmd || :
-        fi
-        if initctl status vdsmd | grep -q start/running ; then
-            initctl stop vdsmd || :
-            initctl start vdsmd || :
-        fi
+    supervdsmd_start_required='no'
+    vdsmd_start_required='no'
+
+    # Both vdsm and supervdsm should be managed here and must be restarted if
+    # ran before (code might changed)
+    if initctl status supervdsmd | grep -q start/running ; then
+        supervdsmd_start_required='yes'
+    fi
+    if initctl status vdsmd | grep -q start/running ; then
+        vdsmd_start_required='yes'
+    fi
+    if ! vdsm-tool is-configured --module libvirt >/dev/null 2>&1; then
+        vdsm-tool configure --module libvirt --force >/dev/null 2>&1
+    fi
+    if [ "${supervdsmd_start_required}" = 'yes' ]; then
+        initctl stop supervdsmd || :
+        initctl start supervdsmd || :
+    fi
+    if [ "${vdsmd_start_required}" = 'yes' ]; then
+        initctl stop vdsmd || :
+        initctl start vdsmd || :
+    fi
 fi
 
 exit 0

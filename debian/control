@@ -5,6 +5,7 @@ Maintainer: Zheng Sheng, Zhou <zhshzhou@linux.vnet.ibm.com>
 Build-Depends: debhelper (>= 8.0.0),
  autoconf,
  automake,
+ gcc,
  genisoimage,
  gettext,
  libasprintf-dev,
@@ -43,6 +44,12 @@ Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.7.3)
 Description: VDSM python libraries
  Shared libraries between the various VDSM packages.
+
+Package: vdsm-python-zombiereaper
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.7.3)
+Description: zombiereaper for Python
+ Collects zombie processes automatically so you don't have to
 
 Package: vdsm-client
 Architecture: all
@@ -114,6 +121,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  tree,
  vdsm-python (= ${source:Version}),
  xz-utils,
+ vdsm-python-zombiereaper (= ${source:Version}),
  vdsm-yajsonrpc (= ${source:Version})
 Conflicts: apparmor
 Description: VDSM: Virtual Desktop Server Manager
