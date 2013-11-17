@@ -81,7 +81,7 @@ class clientIF:
             self.gluster = None
         try:
             self.vmContainer = {}
-            self._hostStats = sampling.HostStatsThread(cif=self, log=log)
+            self._hostStats = sampling.HostStatsThread(log=log)
             self._hostStats.start()
             self.lastRemoteAccess = 0
             self._memLock = threading.Lock()

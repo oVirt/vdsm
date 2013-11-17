@@ -199,6 +199,12 @@ class StorageTest(TestCaseBase):
                     r = self.s.activateStorageDomain(sdid, poolid)
                     self.assertVdsOK(r)
 
+        r = self.s.getVdsStats()
+        self.assertVdsOK(r)
+        self.assertIn('storageDomains', r['info'])
+        self.assertEquals(set(r['info']['storageDomains'].keys()),
+                          set(domains.keys()))
+
     def _createVolume(self, images, layout, rollback):
         for poolid, domains in layout.iteritems():
             for sdid, imageList in domains.iteritems():

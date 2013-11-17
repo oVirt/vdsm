@@ -1187,8 +1187,16 @@ class Global(APIBase):
 
         stats = {}
         decStats = self._cif._hostStats.get()
+
+        if self._cif.irs:
+            decStats['storageDomains'] = self._cif.irs.repoStats()
+            del decStats['storageDomains']['status']
+        else:
+            decStats['storageDomains'] = {}
+
         for var in decStats:
             stats[var] = utils.convertToStr(decStats[var])
+
         stats['memAvailable'] = self._memAvailable() / Mbytes
         stats['memCommitted'] = self._memCommitted() / Mbytes
         stats['memFree'] = self._memFree() / Mbytes

@@ -365,7 +365,7 @@ class HostStatsThread(threading.Thread):
     AVERAGING_WINDOW = 5
     SAMPLE_INTERVAL_SEC = 2
 
-    def __init__(self, cif, log):
+    def __init__(self, log):
         self.startTime = time.time()
 
         threading.Thread.__init__(self)
@@ -378,7 +378,6 @@ class HostStatsThread(threading.Thread):
         self._lineRate = (sum(self._ifrates) or 1000) * (10 ** 6) / 8
         self._lastSampleTime = time.time()
 
-        self._cif = cif
         self._pid = os.getpid()
         self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
 
@@ -426,7 +425,6 @@ class HostStatsThread(threading.Thread):
     def get(self):
         stats = self._getInterfacesStats()
         stats['cpuSysVdsmd'] = stats['cpuUserVdsmd'] = 0.0
-        stats['storageDomains'] = self._getStorageDomainsStats()
         stats['elapsedTime'] = int(time.time() - self.startTime)
         if len(self._samples) < 2:
             return stats
@@ -518,23 +516,4 @@ class HostStatsThread(threading.Thread):
         stats['rxDropped'] = rxDropped
         stats['txDropped'] = txDropped
 
-        return stats
-
-    def _getStorageDomainsStats(self):
-        stats = {}
-        if self._cif.irs:
-            res = self._cif.irs.repoStats()
-            del res["status"]
-            if "args" in res:
-                del res["args"]
-
-            for sd, d in res.iteritems():
-                stats[sd] = {
-                    'code': d['code'],
-                    'delay': d['delay'],
-                    'lastCheck': d['lastCheck'],
-                    'valid': d['valid'],
-                    'version': d['version'],
-                    'acquired': d['acquired'],
-                }
         return stats
