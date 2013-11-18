@@ -58,6 +58,7 @@ BuildRequires: rpm-build
 
 # BuildRequires needed by the tests during the build
 BuildRequires: python-ethtool
+BuildRequires: python-inotify
 BuildRequires: python-pthreading
 BuildRequires: python-cpopen
 BuildRequires: libselinux-python
