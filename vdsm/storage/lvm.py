@@ -1150,11 +1150,12 @@ def renameLV(vg, oldlv, newlv):
     _lvminfo._reloadlvs(vg, newlv)
 
 
-def refreshLV(vgName, lvName):
-    # If  the  logical  volume  is active, reload its metadata.
-    cmd = ['lvchange', '--refresh', "%s/%s" % (vgName, lvName)]
+def refreshLVs(vgName, lvNames):
+    # If  the  logical  volumes  are active, reload their metadata.
+    cmd = ['lvchange', '--refresh']
+    cmd.extend("%s/%s" % (vgName, lv) for lv in lvNames)
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    _lvminfo._invalidatelvs(vgName, lvName)
+    _lvminfo._invalidatelvs(vgName, lvNames)
     if rc != 0:
         raise se.LogicalVolumeRefreshError("%s failed" % list2cmdline(cmd))
 

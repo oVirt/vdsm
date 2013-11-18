@@ -95,7 +95,7 @@ class BlockVolume(volume.Volume):
         volume.Volume.validate(self)
 
     def refreshVolume(self):
-        lvm.refreshLV(self.sdUUID, self.volUUID)
+        lvm.refreshLVs(self.sdUUID, (self.volUUID,))
 
     @classmethod
     def getVSize(cls, sdobj, imgUUID, volUUID, bs=BLOCK_SIZE):
