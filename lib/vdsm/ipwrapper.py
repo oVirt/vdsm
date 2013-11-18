@@ -67,6 +67,7 @@ class LinkType(object):
     TUN = 'tun'
     OVS = 'openvswitch'
     TEAM = 'team'
+    VETH = 'veth'
 
 
 @equals
@@ -88,7 +89,7 @@ class Link(object):
             self.vlanprotocol = vlanprotocol
         for key, value in kwargs.items():
             setattr(self, key, value)
-        if linkType == LinkType.DUMMY:
+        if linkType == LinkType.DUMMY or linkType == LinkType.VETH:
             self._fakeNics = config.get('vars', 'fake_nics').split(',')
             self._hiddenNics = config.get('vars', 'hidden_nics').split(',')
         if linkType == LinkType.NIC:
@@ -186,20 +187,26 @@ class Link(object):
     def isNIC(self):
         return self.type == LinkType.NIC
 
+    def isVETH(self):
+        return self.type == LinkType.VETH
+
     def isVLAN(self):
         return self.type == LinkType.VLAN
 
     def isFakeNIC(self):
         """
-        Returns True iff vdsm config marks the DUMMY dev to be reported as NIC.
+        Returns True iff vdsm config marks the DUMMY or VETH dev to be reported
+        as NIC.
         """
-        return self.isDUMMY() and anyFnmatch(self.name, self._fakeNics)
+        if self.isDUMMY() or self.isVETH():
+            return anyFnmatch(self.name, self._fakeNics)
+        return False
 
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
         if self.isVLAN():
             return anyFnmatch(self.name, self._hiddenVlans)
-        elif self.isDUMMY() or self.isNIC():
+        elif self.isDUMMY() or self.isVETH() or self.isNIC():
             return anyFnmatch(self.name, self._hiddenNics)
         else:
             raise NotImplementedError
