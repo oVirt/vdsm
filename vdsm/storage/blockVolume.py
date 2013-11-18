@@ -89,7 +89,7 @@ class BlockVolume(volume.Volume):
         volume.Volume.validate(self)
 
     def refreshVolume(self):
-        lvm.refreshLV(self.sdUUID, self.volUUID)
+        lvm.refreshLVs(self.sdUUID, (self.volUUID,))
 
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, sdUUID, volUUID, volPath):
