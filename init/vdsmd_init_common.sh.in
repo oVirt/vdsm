@@ -123,7 +123,7 @@ _mk_core_path() {
 _mk_run_path() {
     local run_path
 
-    for run_path in "@VDSMRUNDIR@" "@POOLSDIR@"; do
+    for run_path in "@VDSMRUNDIR@"; do
         @MKDIR_P@ "${run_path}"
         "@CHMOD_PATH@" 755 "${run_path}"
         "@CHOWN_PATH@" @VDSMUSER@:@VDSMGROUP@ "${run_path}"

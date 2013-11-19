@@ -60,7 +60,6 @@ var/log/vdsm
 var/log/vdsm/backup
 var/run/vdsm
 var/run/vdsm/payload
-var/run/vdsm/pools
 var/run/vdsm/sourceRoutes
 var/run/vdsm/trackedInterfaces
 var/log/core

@@ -218,8 +218,6 @@ parameters = [
             'NFS mount options, comma-separated list (NB: no white space '
             'allowed!)'),
 
-        ('pools_data_dir', '@POOLSDIR@', None),
-
         ('vol_extend_policy', 'ON', None),
 
         ('lock_util_path', '@LIBEXECDIR@', None),

@@ -1068,7 +1068,6 @@ exit 0
 %dir %{_localstatedir}/run/%{vdsm_name}
 %dir %{_localstatedir}/run/%{vdsm_name}/sourceRoutes
 %dir %{_localstatedir}/run/%{vdsm_name}/trackedInterfaces
-%ghost %dir %{_localstatedir}/run/%{vdsm_name}/pools
 %ghost %dir %{_localstatedir}/run/%{vdsm_name}/payload
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup

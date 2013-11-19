@@ -108,7 +108,6 @@ class StoragePool(Securable):
 
     log = logging.getLogger('Storage.StoragePool')
     storage_repository = config.get('irs', 'repository')
-    _poolsTmpDir = config.get('irs', 'pools_data_dir')
     lvExtendPolicy = config.get('irs', 'vol_extend_policy')
 
     def __init__(self, spUUID, domainMonitor, taskManager):
@@ -123,7 +122,6 @@ class StoragePool(Securable):
         self.id = SPM_ID_FREE
         self.scsiKey = None
         self.taskMng = taskManager
-        self._poolFile = os.path.join(self._poolsTmpDir, self.spUUID)
         self.hsmMailer = None
         self.spmMailer = None
         self.masterDomain = None
@@ -651,19 +649,6 @@ class StoragePool(Securable):
         return True
 
     @unsecured
-    def _saveReconnectInformation(self, hostID, scsiKey, msdUUID,
-                                  masterVersion):
-        if os.path.exists(self._poolFile):
-            os.unlink(self._poolFile)
-
-        pers = ["id=%d\n" % hostID]
-        pers.append("scsiKey=%s\n" % scsiKey)
-        pers.append("sdUUID=%s\n" % msdUUID)
-        pers.append("version=%s\n" % masterVersion)
-        with open(self._poolFile, "w") as f:
-            f.writelines(pers)
-
-    @unsecured
     def connect(self, hostID, scsiKey, msdUUID, masterVersion):
         """
         Connect a Host to a specific storage pool.
@@ -675,16 +660,6 @@ class StoragePool(Securable):
                       "domain: %s (ver = %s)" %
                       (hostID, self.spUUID, msdUUID, masterVersion))
 
-        if not os.path.exists(self._poolsTmpDir):
-            msg = ("StoragePoolConnectionError for hostId: %s, on poolId: %s,"
-                   " Pools temp data dir: %s does not exist" %
-                   (hostID, self.spUUID, self._poolsTmpDir))
-            self.log.error(msg)
-            msg = "Pools temp data dir: %s does not exist" % (
-                self._poolsTmpDir)
-            raise se.StoragePoolConnectionError(msg)
-
-        self._saveReconnectInformation(hostID, scsiKey, msdUUID, masterVersion)
         self.id = hostID
         self.scsiKey = scsiKey
         # Make sure SDCache doesn't have stale data (it can be in case of FC)
@@ -714,8 +689,6 @@ class StoragePool(Securable):
 
         self.id = SPM_ID_FREE
         self.scsiKey = None
-        if os.path.exists(self._poolFile):
-            os.unlink(self._poolFile)
 
         if self.hsmMailer:
             self.hsmMailer.stop()
@@ -727,24 +700,6 @@ class StoragePool(Securable):
 
         self.stopMonitoringDomains()
         return True
-
-    @unsecured
-    def getPoolParams(self):
-        file = open(self._poolFile, "r")
-        for line in file:
-            pair = line.strip().split("=")
-            if len(pair) == 2:
-                if pair[0] == "id":
-                    hostId = int(pair[1])
-                elif pair[0] == "scsiKey":
-                    scsiKey = pair[1]
-                elif pair[0] == "sdUUID":
-                    msdUUID = pair[1]
-                elif pair[0] == "version":
-                    masterVersion = pair[1]
-        file.close()
-
-        return hostId, scsiKey, msdUUID, masterVersion
 
     @unsecured
     def createMaster(self, poolName, domain, masterVersion, leaseParams):

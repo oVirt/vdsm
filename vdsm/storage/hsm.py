@@ -383,20 +383,6 @@ class HSM:
             self.taskMng.loadDumpedTasks(self.tasksDir)
             self.taskMng.recoverDumpedTasks()
 
-            _poolsTmpDir = config.get('irs', 'pools_data_dir')
-            dirList = os.listdir(_poolsTmpDir)
-            for spUUID in dirList:
-                poolPath = os.path.join(self.storage_repository, spUUID)
-                try:
-                    if os.path.exists(poolPath):
-                        self._connectStoragePool(spUUID, None,
-                                                 None, None, None)
-                        # TODO Once we support simultaneous connection to
-                        # multiple pools, remove following line (break)
-                        break
-                except Exception:
-                    self.log.error("Unexpected error", exc_info=True)
-
         storageRefreshThread = threading.Thread(target=storageRefresh,
                                                 name="storageRefresh")
         storageRefreshThread.daemon = True
@@ -1055,8 +1041,6 @@ class HSM:
                 return True
 
             pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
-            if not hostID or not scsiKey or not msdUUID or not masterVersion:
-                hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
 
             # Must register domain state change callbacks *before* connecting
             # the pool, which starts domain monitor threads. Otherwise we will
