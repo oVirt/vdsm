@@ -194,7 +194,10 @@ class TestIpwrapper(TestCaseBase):
                'noqueue state DOWN \\    link/ether 33:44:55:66:77:88 brd '
                'ff:ff:ff:ff:ff:ff \n'
                '4: wlp3s0: <BROADCAST,MULTICAST,UP,LOWER_UP> \\    '
-               'link/ether \n')
+               'link/ether \n'
+               'Deleted 418: foo: <BROADCAST,MULTICAST> mtu 1500 qdisc noop '
+               'state DOWN group default \\    link/ether ba:2c:7b:68:b8:77 '
+               'brd ff:ff:ff:ff:ff:ff\n')
         expected = [
             MonitorEvent(
                 'bond0',
@@ -203,6 +206,10 @@ class TestIpwrapper(TestCaseBase):
             MonitorEvent(
                 'wlp3s0',
                 frozenset(['BROADCAST', 'MULTICAST', 'UP', 'LOWER_UP']),
-                None)]
+                None),
+            MonitorEvent(
+                'foo',
+                frozenset(['BROADCAST', 'MULTICAST']),
+                'DELETED')]
 
         self.assertEqual(Monitor._parse(out), expected)

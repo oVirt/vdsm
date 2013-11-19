@@ -514,6 +514,8 @@ MonitorEvent = namedtuple('MonitorEvent', ['device', 'flags', 'state'])
 
 class Monitor(object):
     """Minimal wrapper over `ip monitor link`"""
+    _DELETED_TEXT = 'Deleted'
+    LINK_STATE_DELETED = 'DELETED'
 
     def __init__(self):
         self.proc = None
@@ -530,17 +532,22 @@ class Monitor(object):
         changes = []
         for line in text.splitlines():
             state = None
+            if line.startswith(cls._DELETED_TEXT):
+                state = cls.LINK_STATE_DELETED
+                line = line[len(cls._DELETED_TEXT):]
+
             _, device, data = [el.strip() for el in line.split(':', 2)]
             flagVal, _ = data.split('\\', 1)  # We don't parse link/ether
 
             flags, values = data.split('>')
             flags = frozenset(flags[1:].split(','))
 
-            values = (el for el in values.strip().split(' ') if el)
-            for key, value in pairwise(values):
-                if key == 'state':
-                    state = value
-                    break
+            if state is None:
+                values = (el for el in values.strip().split(' ') if el)
+                for key, value in pairwise(values):
+                    if key == 'state':
+                        state = value
+                        break
 
             changes.append(MonitorEvent(device, flags, state))
 
