@@ -202,7 +202,8 @@ class TestNetinfo(TestCaseBase):
                                (ipwrapper.Link, '_detectType',
                                 partial(_fakeTypeDetection, ipwrapper.Link)),
                                (netinfo, 'config', self._config_setup()),
-                               (ipwrapper, 'config', self._config_setup())
+                               (ipwrapper.Link, '_fakeNics', ['fake*']),
+                               (ipwrapper.Link, '_hiddenNics', ['hid*'])
                                ]):
             try:
                 self.assertEqual(set(netinfo.nics()),

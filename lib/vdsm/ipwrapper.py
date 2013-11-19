@@ -73,6 +73,10 @@ class LinkType(object):
 @equals
 class Link(object):
     """Represents link information obtained from iproute2"""
+    _fakeNics = config.get('vars', 'fake_nics').split(',')
+    _hiddenNics = config.get('vars', 'hidden_nics').split(',')
+    _hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
+
     def __init__(self, address, index, linkType, mtu, name, qdisc, state,
                  vlanid=None, vlanprotocol=None, master=None, **kwargs):
         self.address = address
@@ -89,13 +93,6 @@ class Link(object):
             self.vlanprotocol = vlanprotocol
         for key, value in kwargs.items():
             setattr(self, key, value)
-        if linkType == LinkType.DUMMY or linkType == LinkType.VETH:
-            self._fakeNics = config.get('vars', 'fake_nics').split(',')
-            self._hiddenNics = config.get('vars', 'hidden_nics').split(',')
-        if linkType == LinkType.NIC:
-            self._hiddenNics = config.get('vars', 'hidden_nics').split(',')
-        if linkType == LinkType.VLAN:
-            self._hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
 
     def __repr__(self):
         return '%s: %s(%s) %s' % (self.index, self.name, self.type,
