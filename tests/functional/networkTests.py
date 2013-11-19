@@ -144,7 +144,7 @@ def nonChangingOperstate(device):
         yield
     finally:
         monitor.stop()
-        changes = [(event.device, event.state) for event in monitor.events()
+        changes = [(event.device, event.state) for event in monitor
                    if event.device == device]
         for _, state in changes:
             if state != originalState:

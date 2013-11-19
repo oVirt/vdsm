@@ -25,6 +25,7 @@ from vdsm.ipwrapper import Link
 from vdsm.ipwrapper import LinkType
 from vdsm.ipwrapper import Monitor
 from vdsm.ipwrapper import MonitorEvent
+from vdsm.ipwrapper import MonitorError
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
 from monkeypatch import MonkeyPatch
@@ -197,6 +198,14 @@ class TestIpwrapper(TestCaseBase):
         for text in bad_rules:
             self.assertRaises(ValueError, Rule.fromText, text)
 
+
+class TestMonitor(TestCaseBase):
+    def testWrongMonitorUsage(self):
+        mon = Monitor()
+        with self.assertRaises(MonitorError):
+            for event in mon:
+                pass
+
     def testMonitorEvents(self):
         devs = ({'index': '273',
                  'reportedName': 'bond0', 'name': 'bond0',
@@ -253,6 +262,27 @@ class TestIpwrapper(TestCaseBase):
             Monitor.LINK_STATE_DELETED if dev.get('deleted') else
             dev.get('state', None)) for dev in devs]
         self.assertEqual(Monitor._parse('\n'.join(data)), events)
+
+    @ValidateRunningAsRoot
+    def testMonitorIteration(self):
+        bridge = tcTests._Bridge()
+        tcTests._checkDependencies()
+        mon = Monitor()
+        mon.start()
+        iterator = iter(mon)
+
+        bridge.addDevice()  # Generate an event to avoid blocking
+        iterator.next()
+
+        bridge.delDevice()
+        iterator.next()  # Generate an event to avoid blocking
+
+        # Stop the monitor and check that eventually StopIteration is raised.
+        # There might be other system link events so we loop to exhaust them.
+        mon.stop()
+        with self.assertRaises(StopIteration):
+            while True:
+                iterator.next()
 
 
 class TestDrvinfo(TestCaseBase):

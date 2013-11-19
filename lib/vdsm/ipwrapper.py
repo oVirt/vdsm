@@ -458,6 +458,10 @@ class IPRoute2Error(Exception):
     pass
 
 
+class MonitorError(Exception):
+    pass
+
+
 def _execCmd(command):
     returnCode, output, error = execCmd(command)
 
@@ -590,16 +594,38 @@ MonitorEvent = namedtuple('MonitorEvent', ['index', 'device', 'flags',
 
 
 class Monitor(object):
-    """Minimal wrapper over `ip monitor link`"""
+    """Wrapper over `ip monitor link`. Usage:
+    Get events collected while the monitor was running:
+
+        mon = Monitor()
+        mon.start()
+        ....
+        mon.stop()
+        for event in mon:
+            handle event
+
+    Monitoring events forever:
+        mon = Monitor()
+        mon.start()
+        for event in mon:
+            handle event
+    """
     _DELETED_TEXT = 'Deleted'
     LINK_STATE_DELETED = 'DELETED'
 
     def __init__(self):
         self.proc = None
 
+    def __iter__(self):
+        if self.proc is None:
+            raise MonitorError('The monitor has not run yet')
+        for line in self.proc.stdout:
+            yield self._parseLine(line)
+
     def start(self):
         self.proc = execCmd([_IP_BINARY.cmd, '-d', '-o', 'monitor', 'link'],
                             sync=False)
+        self.proc.blocking = True
 
     def stop(self):
         self.proc.kill()
@@ -622,11 +648,6 @@ class Monitor(object):
     @classmethod
     def _parse(cls, text):
         return [cls._parseLine(line) for line in text.splitlines()]
-
-    def events(self):
-        out, _ = self.proc.communicate()
-
-        return self._parse(out)
 
 
 def _dev_sysfs_exists(devName):
