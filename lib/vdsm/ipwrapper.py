@@ -512,14 +512,15 @@ def linkDel(dev):
 MonitorEvent = namedtuple('MonitorEvent', ['device', 'flags', 'state'])
 
 
-class Monitor():
+class Monitor(object):
     """Minimal wrapper over `ip monitor link`"""
 
     def __init__(self):
         self.proc = None
 
     def start(self):
-        self.proc = execCmd([_IP_BINARY.cmd, 'monitor', 'link'], sync=False)
+        self.proc = execCmd([_IP_BINARY.cmd, '-d', '-o', 'monitor', 'link'],
+                            sync=False)
 
     def stop(self):
         self.proc.kill()
@@ -528,18 +529,20 @@ class Monitor():
     def _parse(cls, text):
         changes = []
         for line in text.splitlines():
-            if line.startswith(' '):
-                continue
+            state = None
+            _, device, data = [el.strip() for el in line.split(':', 2)]
+            flagVal, _ = data.split('\\', 1)  # We don't parse link/ether
 
-            tokens = line.split()
-            if not tokens[1].endswith(':'):
-                continue
+            flags, values = data.split('>')
+            flags = frozenset(flags[1:].split(','))
 
-            device = tokens[1][:-1]
-            flags = frozenset(tokens[2][1:-1].split(','))
-            values = dict(tokens[i:i + 2] for i in range(3, len(tokens), 2))
+            values = (el for el in values.strip().split(' ') if el)
+            for key, value in pairwise(values):
+                if key == 'state':
+                    state = value
+                    break
 
-            changes.append(MonitorEvent(device, flags, values.get('state')))
+            changes.append(MonitorEvent(device, flags, state))
 
         return changes
 

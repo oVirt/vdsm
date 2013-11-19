@@ -190,11 +190,11 @@ class TestIpwrapper(TestCaseBase):
             self.assertRaises(ValueError, Rule.fromText, text)
 
     def testMonitorEvents(self):
-        out = ("273: bond0: <BROADCAST,MULTICAST,MASTER> "
-               "mtu 1500 qdisc noqueue state DOWN \n"
-               "    link/ether 33:44:55:66:77:88 brd ff:ff:ff:ff:ff:ff \n"
-               "4: wlp3s0: <BROADCAST,MULTICAST,UP,LOWER_UP> \n"
-               "    link/ether \n")
+        out = ('273: bond0: <BROADCAST,MULTICAST,MASTER> mtu 1500 qdisc '
+               'noqueue state DOWN \\    link/ether 33:44:55:66:77:88 brd '
+               'ff:ff:ff:ff:ff:ff \n'
+               '4: wlp3s0: <BROADCAST,MULTICAST,UP,LOWER_UP> \\    '
+               'link/ether \n')
         expected = [
             MonitorEvent(
                 'bond0',
