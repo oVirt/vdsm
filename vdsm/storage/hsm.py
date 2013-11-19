@@ -1412,34 +1412,6 @@ class HSM:
         return dict(vmlist=vms)
 
     @public
-    def uploadVolume(self, sdUUID, spUUID, imgUUID, volUUID, srcPath, size,
-                     method="rsync", options=None):
-        """
-        Uploads a volume to the server. (NFS only?)
-
-        :param spUUID: The UUID of the storage pool that will contain the
-                       new volume.
-        :type spUUID: UUID
-        :param sdUUID: The UUID of the backup domain that will contain the
-                       new volume.
-        :type sdUUID: UUID
-        :param imgUUID: The UUID of image you want associated with that volume.
-        :type imgUUID: UUID
-        :param volUUID: The UUID that the new volume will have after upload.
-        :type volUUID: UUID
-        :param size: The size of the volume being uploaded in ...?
-        :type size: ?
-        :param method: The desired method of upload. Currently only *'wget'*
-                       and *'rsync'* are supported.
-        :type method: str
-        :param options: ?
-        """
-        vars.task.getSharedLock(STORAGE, spUUID)
-        pool = self.getPool(spUUID)
-        pool.uploadVolume(sdUUID, imgUUID, volUUID, srcPath, size,
-                          method="rsync")
-
-    @public
     def createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat,
                      preallocate, diskType, volUUID, desc,
                      srcImgUUID=volume.BLANK_UUID,

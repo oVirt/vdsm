@@ -25,7 +25,6 @@ import threading
 import errno
 import uuid
 import codecs
-import signal
 from contextlib import nested
 from functools import partial
 from weakref import proxy
@@ -2002,47 +2001,6 @@ class StoragePool(Securable):
 
     def getVmsInfo(self, sdUUID, vmList=None):
         return sdCache.produce(sdUUID).getVMsInfo(vmList=vmList)
-
-    def uploadVolume(self, sdUUID, imgUUID, volUUID, srcPath, size,
-                     method="rsync"):
-        vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
-        if not vol.isLeaf():
-            raise se.NonLeafVolumeNotWritable(vol)
-        targetPath = vol.getVolumePath()
-        if vol.isSparse():
-            vol.extend(int(size))
-
-        vol.prepare(rw=True, setrw=False)
-        try:
-            if method.lower() == "wget":
-                cmd = [constants.EXT_WGET, "-O", targetPath, srcPath]
-                (rc, out, err) = misc.execCmd(cmd, sudo=False,
-                                              deathSignal=signal.SIGKILL)
-
-                if rc:
-                    self.log.error("uploadVolume - error while trying to "
-                                   "retrieve: %s into: %s, stderr: %s" %
-                                   (srcPath, targetPath, err))
-                    raise se.VolumeCopyError(vol, err)
-            elif method.lower() == "rsync":
-                cmd = [constants.EXT_RSYNC, "-aq", srcPath, targetPath]
-                (rc, out, err) = misc.execCmd(cmd, sudo=False,
-                                              deathSignal=signal.SIGKILL)
-
-                if rc:
-                    self.log.error("uploadVolume - error while trying to copy:"
-                                   " %s into: %s, stderr: %s" %
-                                   (srcPath, targetPath, err))
-                    raise se.VolumeCopyError(vol, err)
-            else:
-                self.log.error("uploadVolume - method '%s' not supported",
-                               method)
-                raise se.InvalidParameterException('method', method)
-        finally:
-            try:
-                vol.teardown(sdUUID, volUUID)
-            except:
-                self.log.warning("SP %s SD %s img %s Vol %s - teardown failed")
 
     def validateVolumeChain(self, sdUUID, imgUUID):
         image.Image(self.poolPath).validateVolumeChain(sdUUID, imgUUID)

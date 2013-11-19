@@ -947,10 +947,6 @@ class StorageDomain(APIBase):
     def setDescription(self, description):
         return self._irs.setStorageDomainDescription(self._UUID, description)
 
-    def uploadVolume(self, spUUID, imgUUID, volUUID, srcPath, size, method):
-        return self._irs.uploadVolume(self._UUID, spUUID, imgUUID, volUUID,
-                                      srcPath, size, method)
-
     def validate(self):
         return self._irs.validateStorageDomain(self._UUID)
 

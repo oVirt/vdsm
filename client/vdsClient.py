@@ -989,19 +989,6 @@ class service:
             return status['status']['code'], status['status']['message']
         return 0, ''
 
-    def uploadVolume(self, args):
-        sdUUID = args[0]
-        spUUID = args[1]
-        imgUUID = args[2]
-        volUUID = args[3]
-        srcPath = args[4]
-        size = args[5]
-        status = self.s.uploadVolume(sdUUID, spUUID, imgUUID,
-                                     volUUID, srcPath, size, *args[6:])
-        if status['status']['code']:
-            return status['status']['code'], status['status']['message']
-        return 0, ''
-
     def setVolumeDescription(self, args):
         sdUUID = args[0]
         spUUID = args[1]
@@ -2223,11 +2210,6 @@ if __name__ == '__main__':
             '<spUUID> <sdUUID> <imgUUID> <volUUID> <newSize>',
             'Extend the volume size (virtual disk size seen by the guest).',
         )),
-        'uploadVolume': (serv.uploadVolume,
-                         ('<sdUUID> <spUUID> <imgUUID> <volUUID> <srcPath> '
-                          '<size>',
-                          'Upload volume file into existing volume'
-                          )),
         'getVolumePath': (serv.getVolumePath,
                           ('<sdUUID> <spUUID> <imgUUID> <volume uuid>',
                            'Returns the path to the requested uuid'

@@ -502,12 +502,6 @@ class BindingXMLRPC(object):
         domain = API.StorageDomain(sdUUID)
         return domain.setDescription(description)
 
-    def domainUploadVolume(self, sdUUID, spUUID, imgUUID, volUUID,
-                           srcPath, size, method="rsync", options=None):
-        domain = API.StorageDomain(sdUUID)
-        return domain.uploadVolume(spUUID, imgUUID, volUUID, srcPath, size,
-                                   method)
-
     def domainValidate(self, sdUUID, options=None):
         domain = API.StorageDomain(sdUUID)
         return domain.validate()
@@ -884,7 +878,6 @@ class BindingXMLRPC(object):
                 (self.domainGetStats, 'getStorageDomainStats'),
                 (self.domainGetVolumes, 'getVolumesList'),
                 (self.domainSetDescription, 'setStorageDomainDescription'),
-                (self.domainUploadVolume, 'uploadVolume'),
                 (self.domainValidate, 'validateStorageDomain'),
                 (self.imageDelete, 'deleteImage'),
                 (self.imageDeleteVolumes, 'deleteVolume'),

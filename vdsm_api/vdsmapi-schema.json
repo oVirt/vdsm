@@ -3999,48 +3999,6 @@
  'data': {'storagedomainID': 'UUID', 'description': 'str'}}
 
 ##
-# @UploadVolumeMethod:
-#
-# An enumeration of uploadVolume methods.
-#
-# @wget:   Fetch data using the wget command
-#
-# @rsync:  Fetch data using the rsync command
-#
-# Since: 4.10.0
-##
-{'enum': 'UploadVolumeMethod', 'data': ['wget', 'rsync']}
-
-##
-# @StorageDomain.uploadVolume:
-#
-# Upload a Volume into a Storage Domain from a remote location.
-#
-# @storagedomainID:  The UUID of the Storage Domain
-#
-# @storagepoolID:    The UUID of the Storage Pool
-#
-# @imageID:          The UUID of the image that is associated with the Volume
-#
-# @volumeID:         The UUID of an existing Volume where the data will be
-#                    uploaded
-#
-# @srcPath:          The remote location of the Volume data.  Must be in a
-#                    format that can be understood by the command indicated in
-#                    @method.
-#
-# @size:             The size of the volume data in blocks
-#
-# @method:           The method (command) to use to upload the data
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'StorageDomain', 'name': 'uploadVolume'},
- 'data': {'storagedomainID': 'UUID', 'storagepoolID': 'UUID',
-          'imageID': 'UUID', 'volumeID': 'UUID', 'srcPath': 'str',
-          'size': 'int', 'method': 'UploadVolumeMethod'}}
-
-##
 # @StorageDomain.validate:
 #
 # Check that the Storage Domain is accessible.
