@@ -32,6 +32,7 @@ from weakref import proxy
 from imageRepository.formatConverter import DefaultFormatConverter
 
 from vdsm import constants, utils
+from clusterlock import InquireNotSupportedError
 import storage_mailbox
 import blockSD
 import fileSD
@@ -142,16 +143,26 @@ class StoragePool(object):
 
     @unsecured
     def getSpmStatus(self):
-        poolMeta = self._getPoolMD(self.masterDomain)
-
-        # if we claim that we were the SPM (but we're currently not) we
-        # have to make sure that we're not returning stale data
-        if (poolMeta[PMDK_SPM_ID] == self.id
-                and not self.spmRole == SPM_ACQUIRED):
-            self.invalidateMetadata()
+        try:
+            # If the cluster lock implements inquire (e.g. sanlock) then we
+            # can fetch the spmId and the lVer from it.
+            lVer, spmId = self.masterDomain.inquireClusterLock()
+            lVer, spmId = lVer or LVER_INVALID, spmId or SPM_ID_FREE
+        except InquireNotSupportedError:
+            # Legacy implementation for cluster locks that are not able to
+            # return the spmId and the lVer.
             poolMeta = self._getPoolMD(self.masterDomain)
 
-        return poolMeta[PMDK_LVER], poolMeta[PMDK_SPM_ID]
+            # if we claim that we were the SPM (but we're currently not) we
+            # have to make sure that we're not returning stale data
+            if (poolMeta[PMDK_SPM_ID] == self.id
+                    and not self.spmRole == SPM_ACQUIRED):
+                self.invalidateMetadata()
+                poolMeta = self._getPoolMD(self.masterDomain)
+
+            lVer, spmId = poolMeta[PMDK_LVER], poolMeta[PMDK_SPM_ID]
+
+        return lVer, spmId
 
     def setSpmStatus(self, lVer=None, spmId=None):
         self.invalidateMetadata()

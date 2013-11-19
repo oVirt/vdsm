@@ -42,6 +42,10 @@ SDM_LEASE_NAME = 'SDM'
 SDM_LEASE_OFFSET = 512 * 2048
 
 
+class InquireNotSupportedError(Exception):
+    """Raised when the clusterlock class is not supporting inquire"""
+
+
 class SafeLease(object):
     log = logging.getLogger("SafeLease")
 
@@ -112,6 +116,9 @@ class SafeLease(object):
                 raise se.AcquireLockFailure(self._sdUUID, rc, out, err)
             self.log.debug("Clustered lock acquired successfully")
 
+    def inquire(self):
+        raise InquireNotSupportedError()
+
     def getLockUtilFullPath(self):
         return os.path.join(self.lockUtilPath, self.lockCmd)
 
@@ -167,6 +174,9 @@ class SANLock(object):
 
     def getReservedId(self):
         return MAX_HOST_ID
+
+    def getLockDisk(self):
+        return [(self._leasesPath, SDM_LEASE_OFFSET)]
 
     def acquireHostId(self, hostId, async):
         with self._lock:
@@ -235,7 +245,7 @@ class SANLock(object):
 
                 try:
                     sanlock.acquire(self._sdUUID, SDM_LEASE_NAME,
-                                    [(self._leasesPath, SDM_LEASE_OFFSET)],
+                                    self.getLockDisk(),
                                     slkfd=SANLock._sanlock_fd)
                 except sanlock.SanlockException as e:
                     if e.errno != os.errno.EPIPE:
@@ -250,14 +260,27 @@ class SANLock(object):
             self.log.debug("Cluster lock for domain %s successfully acquired "
                            "(id: %s)", self._sdUUID, hostId)
 
+    def inquire(self):
+        resource = sanlock.read_resource(self._leasesPath, SDM_LEASE_OFFSET)
+        owners = sanlock.read_resource_owners(self._sdUUID, SDM_LEASE_NAME,
+                                              self.getLockDisk())
+
+        if len(owners) == 1:
+            return resource.get("version"), owners[0].get("host_id")
+        elif len(owners) > 1:
+            self.log.error("Cluster lock is reported to have more than "
+                           "one owner: %s", owners)
+            raise RuntimeError("Cluster lock multiple owners error")
+
+        return None, None
+
     def release(self):
         with self._lock:
             self.log.info("Releasing cluster lock for domain %s", self._sdUUID)
 
             try:
                 sanlock.release(self._sdUUID, SDM_LEASE_NAME,
-                                [(self._leasesPath, SDM_LEASE_OFFSET)],
-                                slkfd=SANLock._sanlock_fd)
+                                self.getLockDisk(), slkfd=SANLock._sanlock_fd)
             except sanlock.SanlockException as e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
@@ -268,6 +291,8 @@ class SANLock(object):
 
 class LocalLock(object):
     log = logging.getLogger("LocalLock")
+
+    LVER = 0
 
     _globalLockMap = {}
     _globalLockMapSync = threading.Lock()
@@ -294,23 +319,52 @@ class LocalLock(object):
     def getReservedId(self):
         return MAX_HOST_ID
 
+    def _getLease(self):
+        return self._globalLockMap.get(self._sdUUID, (None, None))
+
     def acquireHostId(self, hostId, async):
+        with self._globalLockMapSync:
+            currentHostId, lockFile = self._getLease()
+
+            if currentHostId is not None and currentHostId != hostId:
+                self.log.error("Different host id already acquired (id: %s)",
+                               currentHostId)
+                raise se.AcquireHostIdFailure(self._sdUUID)
+
+            self._globalLockMap[self._sdUUID] = (hostId, lockFile)
+
         self.log.debug("Host id for domain %s successfully acquired (id: %s)",
                        self._sdUUID, hostId)
 
     def releaseHostId(self, hostId, async, unused):
+        with self._globalLockMapSync:
+            currentHostId, lockFile = self._getLease()
+
+            if currentHostId is not None and currentHostId != hostId:
+                self.log.error("Different host id acquired (id: %s)",
+                               currentHostId)
+                raise se.ReleaseHostIdFailure(self._sdUUID)
+
+            if lockFile is not None:
+                self.log.error("Cannot release host id when lock is acquired")
+                raise se.ReleaseHostIdFailure(self._sdUUID)
+
+            del self._globalLockMap[self._sdUUID]
+
         self.log.debug("Host id for domain %s released successfully (id: %s)",
                        self._sdUUID, hostId)
 
     def hasHostId(self, hostId):
-        return True
+        with self._globalLockMapSync:
+            currentHostId, lockFile = self._getLease()
+            return currentHostId == hostId
 
     def acquire(self, hostId):
         with self._globalLockMapSync:
             self.log.info("Acquiring local lock for domain %s (id: %s)",
                           self._sdUUID, hostId)
 
-            lockFile = self._globalLockMap.get(self._sdUUID, None)
+            hostId, lockFile = self._getLease()
 
             if lockFile:
                 try:
@@ -340,16 +394,21 @@ class LocalLock(object):
                         str(e))
                 raise
             else:
-                self._globalLockMap[self._sdUUID] = lockFile
+                self._globalLockMap[self._sdUUID] = (hostId, lockFile)
 
         self.log.debug("Local lock for domain %s successfully acquired "
                        "(id: %s)", self._sdUUID, hostId)
+
+    def inquire(self):
+        with self._globalLockMapSync:
+            hostId, lockFile = self._getLease()
+            return self.LVER, hostId if lockFile else None
 
     def release(self):
         with self._globalLockMapSync:
             self.log.info("Releasing local lock for domain %s", self._sdUUID)
 
-            lockFile = self._globalLockMap.get(self._sdUUID, None)
+            hostId, lockFile = self._getLease()
 
             if not lockFile:
                 self.log.debug("Local lock already released for domain %s",
@@ -357,7 +416,7 @@ class LocalLock(object):
                 return
 
             misc.NoIntrCall(os.close, lockFile)
-            del self._globalLockMap[self._sdUUID]
+            self._globalLockMap[self._sdUUID] = (hostId, None)
 
             self.log.debug("Local lock for domain %s successfully released",
                            self._sdUUID)

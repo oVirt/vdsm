@@ -489,6 +489,9 @@ class StorageDomain:
     def releaseClusterLock(self):
         self._clusterLock.release()
 
+    def inquireClusterLock(self):
+        return self._clusterLock.inquire()
+
     def attach(self, spUUID):
         self.invalidateMetadata()
         pools = self.getPools()
