@@ -893,12 +893,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/fileUtils.py*
 %{_datadir}/%{vdsm_name}/storage/fileVolume.py*
 %{_datadir}/%{vdsm_name}/storage/fuser.py*
-%if 0%{?with_gluster}
 %{_datadir}/%{vdsm_name}/storage/glusterSD.py*
 %{_datadir}/%{vdsm_name}/storage/glusterVolume.py*
-%else
-%exclude %{_datadir}/%{vdsm_name}/storage/gluster*
-%endif
 %{_datadir}/%{vdsm_name}/storage/hba.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
 %{_datadir}/%{vdsm_name}/storage/image.py*
@@ -1094,15 +1090,11 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/tc_filter_show.out
-%if 0%{?with_gluster}
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRebalanceStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRemoveBricksStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeTasks.xml
-%else
-%exclude %{_datadir}/%{vdsm_name}/tests/gluster*
-%endif
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
 %{_datadir}/%{vdsm_name}/tests/functional/*.policy
 

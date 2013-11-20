@@ -43,7 +43,12 @@ except:
 
 from storage import fuser
 from multiprocessing import Pipe, Process
-from gluster import listPublicFunctions
+try:
+    from gluster import listPublicFunctions
+    _glusterEnabled = True
+except ImportError:
+    _glusterEnabled = False
+
 import storage.misc as misc
 from vdsm import utils
 from vdsm.tool import restore_nets
@@ -362,8 +367,9 @@ def main(sockfile, pidfile=None):
             return func(*args, **kwargs)
         return wrapper
 
-    for name, func in listPublicFunctions():
-        setattr(_SuperVdsm, name, logDecorator(bind(func)))
+    if _glusterEnabled:
+        for name, func in listPublicFunctions():
+            setattr(_SuperVdsm, name, logDecorator(bind(func)))
 
     try:
         log.debug("Making sure I'm root - SuperVdsm")
