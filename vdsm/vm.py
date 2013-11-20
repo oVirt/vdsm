@@ -128,7 +128,7 @@ class MigrationSourceThread(threading.Thread):
                 'message': 'Migration in progress'},
             'progress': 0}
         threading.Thread.__init__(self)
-        self._preparingMigrationEvt = False
+        self._preparingMigrationEvt = True
         self._migrationCanceledEvt = False
         self._monitorThread = None
 
@@ -271,6 +271,19 @@ class MigrationSourceThread(threading.Thread):
         # vdsm < 4.13 expect this to exist
         self._machineParams['afterMigrationStatus'] = ''
 
+    @staticmethod
+    def _raiseAbortError():
+        e = libvirt.libvirtError(defmsg='')
+        # we have to override the value to get what we want
+        # err might be None
+        e.err = (libvirt.VIR_ERR_OPERATION_ABORTED,  # error code
+                 libvirt.VIR_FROM_QEMU,              # error domain
+                 'operation aborted',                # error message
+                 libvirt.VIR_ERR_WARNING,            # error level
+                 '', '', '',                         # str1, str2, str3,
+                 -1, -1)                             # int1, int2
+        raise e
+
     def run(self):
         try:
             self._setupVdsConnection()
@@ -278,6 +291,8 @@ class MigrationSourceThread(threading.Thread):
             self._prepareGuest()
             MigrationSourceThread._ongoingMigrations.acquire()
             try:
+                if self._migrationCanceledEvt:
+                    self._raiseAbortError()
                 self.log.debug("migration semaphore acquired")
                 self._vm.conf['_migrationParams'] = {
                     'dst': self._dst,
@@ -303,7 +318,6 @@ class MigrationSourceThread(threading.Thread):
             self.log.error("Failed to migrate", exc_info=True)
 
     def _startUnderlyingMigration(self):
-        self._preparingMigrationEvt = True
         if self._mode == 'file':
             hooks.before_vm_hibernate(self._vm._dom.XMLDesc(0), self._vm.conf)
             try:
@@ -367,6 +381,9 @@ class MigrationSourceThread(threading.Thread):
                         (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
                             self._abortOnError else 0),
                         None, maxBandwidth)
+                else:
+                    self._raiseAbortError()
+
             finally:
                 t.cancel()
                 if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
