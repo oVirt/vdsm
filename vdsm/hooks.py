@@ -110,7 +110,7 @@ def before_device_create(devicexml, vmconf={}, customProperties={}):
 
 def after_device_create(devicexml, vmconf={}, customProperties={}):
     return _runHooksDir(devicexml, 'after_device_create', vmconf=vmconf,
-                        params=customProperties)
+                        params=customProperties, raiseError=False)
 
 
 def before_device_destroy(devicexml, vmconf={}, customProperties={}):
@@ -120,7 +120,7 @@ def before_device_destroy(devicexml, vmconf={}, customProperties={}):
 
 def after_device_destroy(devicexml, vmconf={}, customProperties={}):
     return _runHooksDir(devicexml, 'after_device_destroy', vmconf=vmconf,
-                        params=customProperties)
+                        params=customProperties, raiseError=False)
 
 
 def before_vm_start(domxml, vmconf={}):
@@ -157,7 +157,8 @@ def before_device_migrate_source(devicexml, vmconf={}, customProperties={}):
 
 def after_device_migrate_source(devicexml, vmconf={}, customProperties={}):
     return _runHooksDir(devicexml, 'after_device_migrate_source',
-                        vmconf=vmconf, params=customProperties)
+                        vmconf=vmconf, params=customProperties,
+                        raiseError=False)
 
 
 def before_device_migrate_destination(
@@ -169,7 +170,8 @@ def before_device_migrate_destination(
 def after_device_migrate_destination(
         devicexml, vmconf={}, customProperties={}):
     return _runHooksDir(devicexml, 'after_device_migrate_destination',
-                        vmconf=vmconf, params=customProperties)
+                        vmconf=vmconf, params=customProperties,
+                        raiseError=False)
 
 
 def before_vm_migrate_source(domxml, vmconf={}):
@@ -281,7 +283,7 @@ def before_disk_hotplug(domxml, vmconf={}, params={}):
 
 def after_disk_hotplug(domxml, vmconf={}, params={}):
     return _runHooksDir(domxml, 'after_disk_hotplug', vmconf=vmconf,
-                        params=params)
+                        params=params, raiseError=False)
 
 
 def before_disk_hotunplug(domxml, vmconf={}, params={}):
@@ -291,7 +293,7 @@ def before_disk_hotunplug(domxml, vmconf={}, params={}):
 
 def after_disk_hotunplug(domxml, vmconf={}, params={}):
     return _runHooksDir(domxml, 'after_disk_hotunplug', vmconf=vmconf,
-                        params=params)
+                        params=params, raiseError=False)
 
 
 def before_vdsm_start():
