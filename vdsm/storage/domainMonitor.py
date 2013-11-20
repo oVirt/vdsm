@@ -24,6 +24,7 @@ import weakref
 
 import logging
 import misc
+from vdsm import utils
 from vdsm.config import config
 from sdc import sdCache
 
@@ -151,6 +152,7 @@ class DomainMonitorThread(object):
     def getStatus(self):
         return self.status.copy()
 
+    @utils.traceback(on=log.name)
     def _monitorLoop(self):
         self.log.debug("Starting domain monitor for %s", self.sdUUID)
 
