@@ -455,6 +455,12 @@ def routeDel(route):
     _execCmd(command)
 
 
+def routeGet(ipAddress):
+    command = [_IP_BINARY.cmd, 'route', 'get']
+    command += ipAddress
+    return _execCmd(command)
+
+
 def _getValidEntries(constructor, iterable):
     for entry in iterable:
         try:

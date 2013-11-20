@@ -40,7 +40,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush, LinkType,
                             getLinks)
 
-from vdsm.netinfo import operstate, prefix2netmask
+from vdsm.netinfo import operstate, prefix2netmask, getRouteTo
 from vdsm import ipwrapper
 
 
@@ -49,6 +49,7 @@ VLAN_ID = '27'
 BONDING_NAME = 'bond0'
 IP_ADDRESS = '240.0.0.1'
 IP_NETWORK = '240.0.0.0'
+IP_ADDRESS_IN_NETWORK = '240.0.0.50'
 IP_CIDR = '24'
 IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
 IP_GATEWAY = '240.0.0.254'
@@ -1602,3 +1603,15 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.vdsm_net.setupNetworks(network, {}, options)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkDoesntExist(NETWORK_NAME)
+
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testGetRouteTo(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
+            try:
+                dummy.setLinkUp(nic)
+                self.assertEqual(getRouteTo(IP_ADDRESS_IN_NETWORK).device, nic)
+            finally:
+                addrFlush(nic)

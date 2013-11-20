@@ -34,7 +34,9 @@ import ethtool
 from .config import config
 from . import constants
 from .ipwrapper import getLink, getLinks
+from .ipwrapper import IPRoute2Error
 from .ipwrapper import Route
+from .ipwrapper import routeGet
 from .ipwrapper import routeShowAllDefaultGateways
 from . import libvirtconnection
 from .ipwrapper import linkShowDev
@@ -592,18 +594,18 @@ def IPv4toMapped(ip):
     return mapped
 
 
-def getIfaceByIP(ip):
-    for info in ethtool.get_interfaces_info(ethtool.get_active_devices()):
+def getRouteTo(destinationIP):
+    try:
+        route = routeGet([destinationIP])[0]
+    except (IPRoute2Error, IndexError):
+        logging.exception('Could not route to %s' % destinationIP)
+        return ''
 
-        for ipv4addr in info.get_ipv4_addresses():
-            if ip == ipv4addr.address or ip == IPv4toMapped(ipv4addr.address):
-                return info.device
-
-        for ipv6addr in info.get_ipv6_addresses():
-            if ip == ipv6addr.address:
-                return info.device
-
-    return ''
+    try:
+        return Route.fromText(route)
+    except ValueError:
+        logging.exception('Could not parse route %s' % route)
+        return ''
 
 
 class NetInfo(object):
