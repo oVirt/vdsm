@@ -2,7 +2,11 @@ from volume import VmVolumeInfo
 import fileVolume
 from sdc import sdCache
 import supervdsm as svdsm
-from gluster.exception import GlusterException
+try:
+    from gluster.exception import GlusterException
+    _glusterEnabled = True
+except ImportError:
+    _glusterEnabled = False
 
 
 class GlusterVolume(fileVolume.FileVolume):
