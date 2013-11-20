@@ -544,13 +544,15 @@ def volumeReset(volumeName, option='', force=False):
 
 @makePublic
 def volumeAddBrick(volumeName, brickList,
-                   replicaCount=0, stripeCount=0):
+                   replicaCount=0, stripeCount=0, force=False):
     command = _getGlusterVolCmd() + ["add-brick", volumeName]
     if stripeCount:
         command += ["stripe", "%s" % stripeCount]
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
     command += brickList
+    if force:
+        command.append('force')
     try:
         _execGlusterXml(command)
         return True

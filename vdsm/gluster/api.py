@@ -109,10 +109,13 @@ class GlusterApi(object):
         self.svdsmProxy.glusterVolumeReset(volumeName, option, force)
 
     @exportAsVerb
-    def volumeBrickAdd(self, volumeName, brickList,
-                       replicaCount=0, stripeCount=0, options=None):
-        self.svdsmProxy.glusterVolumeAddBrick(volumeName, brickList,
-                                              replicaCount, stripeCount)
+    def volumeBrickAdd(self, volumeName, brickList, replicaCount=0,
+                       stripeCount=0, force=False, options=None):
+        self.svdsmProxy.glusterVolumeAddBrick(volumeName,
+                                              brickList,
+                                              replicaCount,
+                                              stripeCount,
+                                              force)
 
     @exportAsVerb
     def volumeRebalanceStart(self, volumeName, rebalanceType="",

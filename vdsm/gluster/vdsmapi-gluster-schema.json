@@ -644,9 +644,18 @@
 ##
 # @GlusterVolume.addBrick:
 #
+# @volumeName: Gluster volume name
+#
 # Add Gluster volume brick
 #
-# @volumeName: Gluster volume name
+# @bricklist: List of bricks
+#
+# @replicaCount: #optional Replica count of the volume
+#
+# @stripeCount: #optional Stripe count of the volume
+#
+# @force: #optional Force add brick (new in version 4.14.0)
+#
 #
 # Returns:
 # Success or failure
@@ -654,7 +663,9 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'addBrick'},
- 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int', 'stripeCount': 'int'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'],
+          '*replicaCount': 'int', '*stripeCount': 'int',
+          '*force': 'bool'},
  'returns': 'bool'}
 
 ##
