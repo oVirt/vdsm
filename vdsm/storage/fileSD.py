@@ -44,6 +44,9 @@ FILE_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
 # TBD: Do we really need this key?
 FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
 
+# Specific stat(2) block size as defined in the man page
+ST_BYTES_PER_BLOCK = 512
+
 getProcPool = oop.getGlobalProcPool
 
 
@@ -298,7 +301,8 @@ class FileStorageDomain(sd.StorageDomain):
         volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',
                                imgUUID, volUUID)
         stat = self.oop.os.stat(volPath)
-        return stat.st_blocks * stat.st_blksize
+
+        return stat.st_blocks * ST_BYTES_PER_BLOCK
 
     @classmethod
     def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
