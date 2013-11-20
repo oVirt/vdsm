@@ -370,6 +370,7 @@ class HSM:
         except Exception:
             self.log.warn("Failed to clean Storage Repository.", exc_info=True)
 
+        @utils.traceback(on=self.log.name)
         def storageRefresh():
             lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS)
             sdCache.refreshStorage()
