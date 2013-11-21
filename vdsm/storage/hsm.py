@@ -596,12 +596,17 @@ class HSM:
         pool = self.getPool(spUUID)
         pool.stopSpm()
 
+    @staticmethod
+    def _getSpmStatusInfo(pool):
+        return dict(
+            zip(('spmStatus', 'spmLver', 'spmId'),
+                (pool.spmRole,) + pool.getSpmStatus()))
+
     @public
     def getSpmStatus(self, spUUID, options=None):
         pool = self.getPool(spUUID)
         try:
-            status = {'spmStatus': pool.spmRole, 'spmLver': pool.getSpmLver(),
-                      'spmId': pool.getSpmId()}
+            status = self._getSpmStatusInfo(pool)
         except (se.LogicalVolumeRefreshError, IOError):
             # This happens when we cannot read the MD LV
             self.log.error("Can't read LV based metadata", exc_info=True)
@@ -3531,9 +3536,7 @@ class HSM:
         pool.invalidateMetadata()
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool.forceFreeSpm()
-        st = {'spmStatus': pool.spmRole, 'spmLver': pool.getSpmLver(),
-              'spmId': pool.getSpmId()}
-        return dict(spm_st=st)
+        return dict(spm_st=self._getSpmStatusInfo(pool))
 
     @public
     def upgradeStoragePool(self, spUUID, targetDomVersion):

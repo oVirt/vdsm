@@ -130,19 +130,29 @@ class StoragePool(Securable):
                                         proxy(self))
 
     @unsecured
-    def getSpmLver(self):
-        return self.getMetaParam(PMDK_LVER)
-
-    @unsecured
     def getSpmStatus(self):
-        return self.spmRole, self.getSpmLver(), self.getSpmId()
+        poolMeta = self._getPoolMD(self.masterDomain)
+
+        # if we claim that we were the SPM (but we're currently not) we
+        # have to make sure that we're not returning stale data
+        if (poolMeta[PMDK_SPM_ID] == self.id
+                and not self.spmRole == SPM_ACQUIRED):
+            self.invalidateMetadata()
+            poolMeta = self._getPoolMD(self.masterDomain)
+
+        return poolMeta[PMDK_LVER], poolMeta[PMDK_SPM_ID]
+
+    def setSpmStatus(self, lVer=None, spmId=None):
+        self.invalidateMetadata()
+        metaParams = dict(filter(lambda (k, v): v is not None,
+                          ((PMDK_LVER, lVer), (PMDK_SPM_ID, spmId))))
+        self._metadata.update(metaParams)
 
     @unsecured
     def forceFreeSpm(self):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
         # TODO: SCSI Fence the 'lastOwner'
-        self.setMetaParams({PMDK_SPM_ID: SPM_ID_FREE, PMDK_LVER: LVER_INVALID},
-                           __securityOverride=True)
+        self.setSpmStatus(LVER_INVALID, SPM_ID_FREE, __securityOverride=True)
         self.spmRole = SPM_FREE
 
     def _upgradePoolDomain(self, sdUUID, isValid):
@@ -244,9 +254,7 @@ class StoragePool(Securable):
                 raise se.OperationInProgress("spm start %s" % self.spUUID)
 
             self.updateMonitoringThreads()
-            self.invalidateMetadata()
-            oldlver = self.getSpmLver()
-            oldid = self.getSpmId()
+            oldlver, oldid = self.getSpmStatus()
             masterDomVersion = self.getVersion()
             # If no specific domain version was specified use current master
             # domain version
@@ -278,10 +286,7 @@ class StoragePool(Securable):
             try:
                 self.lver = int(oldlver) + 1
 
-                self.invalidateMetadata()
-                self.setMetaParams({
-                    PMDK_LVER: self.lver,
-                    PMDK_SPM_ID: self.id}, __securityOverride=True)
+                self.setSpmStatus(self.lver, self.id, __securityOverride=True)
                 self._maxHostID = maxHostID
 
                 # Upgrade the master domain now if needed
@@ -417,7 +422,7 @@ class StoragePool(Securable):
 
             if not stopFailed:
                 try:
-                    self.setMetaParam(PMDK_SPM_ID, SPM_ID_FREE,
+                    self.setSpmStatus(spmId=SPM_ID_FREE,
                                       __securityOverride=True)
                 except:
                     pass  # The system can handle this inconsistency
@@ -1367,16 +1372,6 @@ class StoragePool(Securable):
         return self.masterDomain.getVersion()
 
     @unsecured
-    def getSpmId(self):
-        spmid = self.getMetaParam(PMDK_SPM_ID)
-        if spmid != self.id or self.spmRole != SPM_FREE:
-            return spmid
-
-        # If we claim to be the SPM we have to be really sure we are
-        self.invalidateMetadata()
-        return self.getMetaParam(PMDK_SPM_ID)
-
-    @unsecured
     def getInfo(self):
         """
         Get storage pool info.
@@ -1425,9 +1420,6 @@ class StoragePool(Securable):
             if dom.isISO():
                 return dom
         return None
-
-    def setMetaParams(self, params):
-        self._metadata.update(params)
 
     def setMetaParam(self, key, value):
         """
