@@ -3287,7 +3287,7 @@ class HSM:
                                 volUUID)
             volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
                        'volumeID': volUUID, 'path': path,
-                       }
+                       'volType': "path"}
 
             leasePath, leaseOffset = dom.getVolumeLease(imgUUID, volUUID)
 
@@ -3298,13 +3298,10 @@ class HSM:
                 })
 
             imgVolumesInfo.append(volInfo)
+            if volUUID == leafUUID:
+                leafInfo = volInfo
 
-        if isinstance(dom.getRealDomain(), glusterSD.GlusterStorageDomain):
-            ginfo = dom.produceVolume(imgUUID, volUUID).getVmVolumeInfo()
-        else:
-            ginfo = {'volType': 'path'}
-
-        return {'path': leafPath, 'info': ginfo,
+        return {'path': leafPath, 'info': leafInfo,
                 'imgVolumesInfo': imgVolumesInfo}
 
     @public
