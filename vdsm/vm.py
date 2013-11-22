@@ -1719,7 +1719,6 @@ class Vm(object):
     log = logging.getLogger("vm.Vm")
     # limit threads number until the libvirt lock will be fixed
     _ongoingCreations = threading.BoundedSemaphore(4)
-    MigrationSourceThreadClass = MigrationSourceThread
     DeviceMapping = ((DISK_DEVICES, Drive),
                      (NIC_DEVICES, NetworkInterfaceDevice),
                      (SOUND_DEVICES, SoundDevice),
@@ -1767,7 +1766,7 @@ class Vm(object):
             self._lastStatus = 'Restoring state'
         else:
             self._lastStatus = 'WaitForLaunch'
-        self._migrationSourceThread = self.MigrationSourceThreadClass(self)
+        self._migrationSourceThread = MigrationSourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._guestSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
             '.guest.socket'
@@ -2718,8 +2717,7 @@ class Vm(object):
             # taken self Down
             if self._lastStatus == 'Down':
                 return errCode['noVM']
-            self._migrationSourceThread = \
-                self.MigrationSourceThreadClass(self, **params)
+            self._migrationSourceThread = MigrationSourceThread(self, **params)
             self._migrationSourceThread.start()
             self._migrationSourceThread.getStat()
             return self._migrationSourceThread.status
