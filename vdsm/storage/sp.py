@@ -218,8 +218,7 @@ class StoragePool(Securable):
             self.setDomainRegularRole(domain)
 
     @unsecured
-    def startSpm(self, prevID, prevLVER, scsiFencing, maxHostID,
-                 expectedDomVersion=None):
+    def startSpm(self, prevID, prevLVER, maxHostID, expectedDomVersion=None):
         """
         Starts the SPM functionality.
 
@@ -228,8 +227,6 @@ class StoragePool(Securable):
         :type spUUID: UUID
         :param prevID: obsolete
         :param prevLVER: obsolete
-        :param scsiFencing: Should there be scsi fencing.?
-        :type scsiFencing: bool
         :param maxHostID: The maximun ID of the host.?
         :type maxHostID: int
 

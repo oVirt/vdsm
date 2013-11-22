@@ -529,7 +529,7 @@ class HSM:
         return dict(poollist=self.pools.keys())
 
     @public
-    def spmStart(self, spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
+    def spmStart(self, spUUID, prevID, prevLVER, recoveryMode,
                  maxHostID=clusterlock.MAX_HOST_ID, domVersion=None,
                  options=None):
         """
@@ -544,8 +544,6 @@ class HSM:
         :type prevLVER: int
         :param recoveryMode: The mode in which to recover the SPM.
         :type recoveryMode: RecoveryEnum?
-        :param scsiFencing: Do you want to fence the scsi.
-        :type scsiFencing: bool
         :param maxHostID: The maximum Host ID in the cluster.
         :type maxHostID: int
         :param options: unused
@@ -554,11 +552,10 @@ class HSM:
         :rtype: UUID
         """
 
-        argsStr = ("spUUID=%s, prevID=%s, prevLVER=%s, recoveryMode=%s, "
-                   "scsiFencing=%s, maxHostID=%s, domVersion=%s" %
-                   (spUUID, prevID, prevLVER, recoveryMode, scsiFencing,
-                    maxHostID, domVersion))
-        vars.task.setDefaultException(se.SpmStartError("%s" % (argsStr)))
+        vars.task.setDefaultException(se.SpmStartError(
+            "spUUID=%s, prevID=%s, prevLVER=%s, recoveryMode=%s, "
+            "maxHostID=%s, domVersion=%s" %
+            (spUUID, prevID, prevLVER, recoveryMode, maxHostID, domVersion)))
 
         if domVersion is not None:
             domVersion = int(domVersion)
@@ -580,7 +577,7 @@ class HSM:
         vars.task.setManager(self.taskMng)
         vars.task.setRecoveryPolicy("auto")
         vars.task.addJob(Job("spmStart", pool.startSpm, prevID, prevLVER,
-                             scsiFencing, maxHostID, domVersion))
+                             maxHostID, domVersion))
 
     @public
     def spmStop(self, spUUID, options=None):
