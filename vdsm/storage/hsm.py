@@ -329,6 +329,7 @@ class HSM:
                            for this thread
         :type defExcFun: function
         """
+        self._ready = False
         rm.ResourceManager.getInstance().registerNamespace(
             STORAGE, rm.SimpleResourceFactory())
         self.storage_repository = config.get('irs', 'repository')
@@ -383,6 +384,9 @@ class HSM:
             self.taskMng.loadDumpedTasks(self.tasksDir)
             self.taskMng.recoverDumpedTasks()
 
+            self._ready = True
+            self.log.debug("HSM is ready")
+
         storageRefreshThread = threading.Thread(target=storageRefresh,
                                                 name="storageRefresh")
         storageRefreshThread.daemon = True
@@ -390,6 +394,10 @@ class HSM:
 
         monitorInterval = config.getint('irs', 'sd_health_check_delay')
         self.domainMonitor = domainMonitor.DomainMonitor(monitorInterval)
+
+    @property
+    def ready(self):
+        return self._ready
 
     @public
     def registerDomainStateChangeCallback(self, callbackFunc):

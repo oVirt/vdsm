@@ -107,6 +107,10 @@ class clientIF:
             raise
         self._prepareBindings()
 
+    @property
+    def ready(self):
+        return (self.irs is None or self.irs.ready) and not self._recovery
+
     def contEIOVms(self, sdUUID, isDomainStateValid):
         # This method is called everytime the onDomainStateChange
         # event is emitted, this event is emitted even when a domain goes

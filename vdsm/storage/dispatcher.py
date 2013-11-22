@@ -93,9 +93,14 @@ class Dispatcher:
     log = logging.getLogger('Storage.Dispatcher')
 
     def __init__(self, obj):
+        self._obj = obj
         self.storage_repository = config.get('irs', 'repository')
         self._exposeFunctions(obj)
         self.log.info("Starting StorageDispatcher...")
+
+    @property
+    def ready(self):
+        return getattr(self._obj, 'ready', True)
 
     def _exposeFunctions(self, obj):
         for funcName in dir(obj):

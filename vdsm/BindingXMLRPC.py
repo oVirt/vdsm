@@ -962,10 +962,10 @@ def wrapApiMethod(f):
             # Ready to show the log into vdsm.log
             f.im_self.log.log(logLevel, logStr)
 
-            if f.im_self.cif._recovery:
-                res = errCode['recovery']
-            else:
+            if f.im_self.cif.ready:
                 res = f(*args, **kwargs)
+            else:
+                res = errCode['recovery']
             f.im_self.cif.log.log(logLevel, 'return %s with %s',
                                   f.__name__, res)
             return res
