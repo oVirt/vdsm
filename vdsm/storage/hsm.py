@@ -862,7 +862,7 @@ class HSM:
             self.validateSdUUID(msdUUID)
             pool.refresh(msdUUID, masterVersion)
         except:
-            self._disconnectPool(pool, pool.id, pool.scsiKey, False)
+            self._disconnectPool(pool, pool.id, False)
             raise
 
         if pool.hsmMailer:
@@ -961,8 +961,8 @@ class HSM:
             poolName, masterDom, domList, masterVersion, leaseParams)
 
     @public
-    def connectStoragePool(self, spUUID, hostID, scsiKey,
-                           msdUUID, masterVersion, options=None):
+    def connectStoragePool(self, spUUID, hostID, msdUUID, masterVersion,
+                           options=None):
         """
         Connect a Host to a specific storage pool.
 
@@ -970,7 +970,6 @@ class HSM:
         :type spUUID: UUID
         :param hostID: The hostID to be used for clustered locking.
         :type hostID: int
-        :param scsiKey: ?
         :param msdUUID: The UUID for the pool's master domain.
         :type msdUUID: UUID
         :param masterVersion: The expected master version. Used for validation.
@@ -985,12 +984,11 @@ class HSM:
         """
         vars.task.setDefaultException(
             se.StoragePoolConnectionError(
-                "spUUID=%s, msdUUID=%s, masterVersion=%s, hostID=%s, "
-                "scsiKey=%s" % (spUUID, msdUUID, masterVersion,
-                                hostID, scsiKey)))
+                "spUUID=%s, msdUUID=%s, masterVersion=%s, hostID=%s" %
+                (spUUID, msdUUID, masterVersion, hostID)))
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
-            return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID,
+            return self._connectStoragePool(spUUID, hostID, msdUUID,
                                             masterVersion, options)
 
     @staticmethod
@@ -1001,7 +999,7 @@ class HSM:
 
         pool.refresh(msdUUID, masterVersion)
 
-    def _connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID,
+    def _connectStoragePool(self, spUUID, hostID, msdUUID,
                             masterVersion, options=None):
         misc.validateUUID(spUUID, 'spUUID')
 
@@ -1042,13 +1040,13 @@ class HSM:
             for cb in self.domainStateChangeCallbacks:
                 pool.domainMonitor.onDomainStateChange.register(cb)
 
-            res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
+            res = pool.connect(hostID, msdUUID, masterVersion)
             if res:
                 self.pools[spUUID] = pool
             return res
 
     @public
-    def disconnectStoragePool(self, spUUID, hostID, scsiKey, remove=False,
+    def disconnectStoragePool(self, spUUID, hostID, remove=False,
                               options=None):
         """
         Disconnect a Host from a specific storage pool.
@@ -1057,7 +1055,6 @@ class HSM:
         :type spUUID: UUID
         :param hostID: The ID of the host you want to disconnect the pool from.
         :type hostID: int
-        :param scsiKey: ?
         :param remove: ?
         :type remove: bool
         :param options: ?
@@ -1071,8 +1068,7 @@ class HSM:
         """
         vars.task.setDefaultException(
             se.StoragePoolDisconnectionError(
-                "spUUID=%s, hostID=%s, scsiKey=%s" %
-                (spUUID, hostID, scsiKey)))
+                "spUUID=%s, hostID=%s" % (spUUID, hostID)))
         misc.validateN(hostID, 'hostID')
         # already disconnected/or pool is just unknown - return OK
         try:
@@ -1087,9 +1083,9 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
 
-        return self._disconnectPool(pool, hostID, scsiKey, remove)
+        return self._disconnectPool(pool, hostID, remove)
 
-    def _disconnectPool(self, pool, hostID, scsiKey, remove):
+    def _disconnectPool(self, pool, hostID, remove):
         self.validateNotSPM(pool.spUUID)
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
@@ -1098,7 +1094,7 @@ class HSM:
         return res
 
     @public
-    def destroyStoragePool(self, spUUID, hostID, scsiKey, options=None):
+    def destroyStoragePool(self, spUUID, hostID, options=None):
         """
         Destroy a storage pool.
         The command will detach all inactive domains from the pool
@@ -1108,13 +1104,11 @@ class HSM:
         :type spUUID: UUID
         :param hostID: The ID of the host managing this storage pool. ?
         :type hostID: int
-        :param scsiKey: ?
         :param options: ?
         """
         vars.task.setDefaultException(
             se.StoragePoolDestroyingError(
-                "spUUID=%s, hostID=%s, scsiKey=%s" %
-                (spUUID, hostID, scsiKey)))
+                "spUUID=%s, hostID=%s" % (spUUID, hostID)))
         self.log.info("spUUID=%s", spUUID)
 
         pool = self.getPool(spUUID)
@@ -1128,7 +1122,7 @@ class HSM:
             vars.task.getExclusiveLock(STORAGE, sdUUID)
 
         pool.detachAllDomains()
-        return self._disconnectPool(pool, hostID, scsiKey, remove=True)
+        return self._disconnectPool(pool, hostID, remove=True)
 
     @public
     def attachStorageDomain(self, sdUUID, spUUID, options=None):

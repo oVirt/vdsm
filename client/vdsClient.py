@@ -2131,17 +2131,26 @@ if __name__ == '__main__':
                                )),
         'destroyStoragePool': (serv.destroyStoragePool,
                                ('<spUUID> <id> <scsi-key>',
-                                'Destroy storage pool'
+                                'Destroy storage pool',
+                                'Parameter scsi-key is ignored (maintained '
+                                'only for the command line backward '
+                                'compatibility)'
                                 )),
         'connectStoragePool': (serv.connectStoragePool,
                                ('<spUUID> <id> <scsi-key> [masterUUID] '
                                 '[masterVer]',
-                                'Connect a Host to specific storage pool'
+                                'Connect a Host to specific storage pool',
+                                'Parameter scsi-key is ignored (maintained '
+                                'only for the command line backward '
+                                'compatibility)'
                                 )),
         'disconnectStoragePool': (serv.disconnectStoragePool,
                                   ('<spUUID> <id> <scsi-key>',
                                    'Disconnect a Host from the specific '
-                                   'storage pool'
+                                   'storage pool',
+                                   'Parameter scsi-key is ignored '
+                                   '(maintained only for the command line '
+                                   'backward compatibility)'
                                    )),
         'refreshStoragePool': (serv.refreshStoragePool,
                                ('<spUUID> <masterDom> <masterVersion>',

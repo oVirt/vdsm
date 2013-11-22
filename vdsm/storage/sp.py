@@ -120,7 +120,6 @@ class StoragePool(Securable):
         self.spUUID = str(spUUID)
         self.poolPath = os.path.join(self.storage_repository, self.spUUID)
         self.id = SPM_ID_FREE
-        self.scsiKey = None
         self.taskMng = taskManager
         self.hsmMailer = None
         self.spmMailer = None
@@ -646,7 +645,7 @@ class StoragePool(Securable):
         return True
 
     @unsecured
-    def connect(self, hostID, scsiKey, msdUUID, masterVersion):
+    def connect(self, hostID, msdUUID, masterVersion):
         """
         Connect a Host to a specific storage pool.
 
@@ -658,7 +657,6 @@ class StoragePool(Securable):
                       (hostID, self.spUUID, msdUUID, masterVersion))
 
         self.id = hostID
-        self.scsiKey = scsiKey
         # Make sure SDCache doesn't have stale data (it can be in case of FC)
         sdCache.invalidateStorage()
         sdCache.refresh()
@@ -685,7 +683,6 @@ class StoragePool(Securable):
         self.log.info("Disconnect from the storage pool %s", self.spUUID)
 
         self.id = SPM_ID_FREE
-        self.scsiKey = None
 
         if self.hsmMailer:
             self.hsmMailer.stop()

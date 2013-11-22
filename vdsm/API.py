@@ -963,7 +963,7 @@ class StoragePool(APIBase):
         self._UUID = UUID
 
     def connect(self, hostID, scsiKey, masterSdUUID, masterVersion):
-        return self._irs.connectStoragePool(self._UUID, hostID, scsiKey,
+        return self._irs.connectStoragePool(self._UUID, hostID,
                                             masterSdUUID, masterVersion)
 
     def connectStorageServer(self, domainType, connectionParams):
@@ -981,11 +981,10 @@ class StoragePool(APIBase):
             ioOpTimeoutSec, leaseRetries)
 
     def destroy(self, hostID, scsiKey):
-        return self._irs.destroyStoragePool(self._UUID, hostID, scsiKey)
+        return self._irs.destroyStoragePool(self._UUID, hostID)
 
     def disconnect(self, hostID, scsiKey, remove):
-        return self._irs.disconnectStoragePool(self._UUID, hostID, scsiKey,
-                                               remove)
+        return self._irs.disconnectStoragePool(self._UUID, hostID, remove)
 
     def disconnectStorageServer(self, domainType, connectionParams):
         return self._irs.disconnectStorageServer(domainType, self._UUID,
