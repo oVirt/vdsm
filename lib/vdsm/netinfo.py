@@ -67,43 +67,12 @@ _Qos = namedtuple('Qos', 'inbound outbound')
 OPERSTATE_UP = 'up'
 
 
-def _nic_devices():
-    """
-    Returns an iterable of nic devices real or fakes, available on the host.
-    """
-    deviceLinks = getLinks()
-    for device in deviceLinks:
-        if device.isNIC() or device.isFakeNIC():
-            yield device
-
-
 def nics():
-    """
-    Returns a list of nics devices available to be used by vdsm.
-    The list of nics is built by filtering out nics defined
-    as hidden, fake or hidden bonds (with related nics'slaves).
-    """
-    def isEnslavedByHiddenBond(device):
-        """
-        Returns boolean stating if a nic device is enslaved to an hidden bond.
-        """
-        hidden_bonds = config.get('vars', 'hidden_bonds').split(',')
-        valid_bonds_fn = (bond_fn for bond_fn in hidden_bonds if bond_fn)
-
-        for bond_fn in valid_bonds_fn:
-            for bond_path in iglob(NET_PATH + '/' + bond_fn):
-                bond = os.path.basename(bond_path)
-                if device in slaves(bond):
-                    return True
-        return False
-
-    def isManagedByVdsm(device):
-        """Returns boolean stating if a device should be managed by vdsm."""
-        return (not device.isHidden() and
-                not isEnslavedByHiddenBond(device.name))
-
-    res = [dev.name for dev in _nic_devices() if isManagedByVdsm(dev)]
-    return res
+    """Returns a list of nics and fake nics devices available (not hidden) to
+    be used by vdsm."""
+    return [dev.name for dev in getLinks() if
+            (dev.isDUMMY() or dev.isVETH() or dev.isNIC()) and
+            not dev.isHidden()]
 
 
 def bondings():

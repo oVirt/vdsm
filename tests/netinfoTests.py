@@ -136,13 +136,13 @@ class TestNetinfo(TestCaseBase):
                  '   link/ether ff:de:11:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
                  'promiscuity 0 \\    nic ',
                  '6: me0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
-                 '  link/ether 66:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0 \\    nic ',
+                 'pfifo_fast master jbond state UP mode DEFAULT group default '
+                 'qlen 1000\\    link/ether 66:de:f1:da:aa:e7 brd '
+                 'ff:ff:ff:ff:ff:ff promiscuity 0 \\    nic ',
                  '7: me1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
-                 '  link/ether 77:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0 \\    nic ',
+                 'pfifo_fast master jbond state UP mode DEFAULT group default '
+                 'qlen 1000\\    link/ether 77:de:f1:da:aa:e7 brd '
+                 'ff:ff:ff:ff:ff:ff promiscuity 0 \\    nic ',
                  '34: fake0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
                  'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
                  '  link/ether ff:aa:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
@@ -153,61 +153,24 @@ class TestNetinfo(TestCaseBase):
                  'promiscuity 0  \\    dummy ')
         return [ipwrapper.Link.fromText(line) for line in lines]
 
-    def _dev_dirs_setup(self, dir_fixture):
+    def testNics(self):
         """
-        Creates test fixture so that the nics created by _testNics are reported
-        as:
         managed by vdsm: em, me, fake0, fake1
         not managed due to hidden bond (jbond) enslavement: me0, me1
         not managed due to being hidden nics: hid0, hideous
-
-        returns related containing dir.
         """
-        bonding_path = os.path.join(dir_fixture, 'jbond/bonding')
-        os.makedirs(bonding_path)
-        with open(os.path.join(bonding_path, 'slaves'), 'w') as f:
-            f.write('me0 me1')
-
-        return dir_fixture
-
-    def _config_setup(self):
-        """
-        Returns an instance of a config stub.
-        With patterns:
-            * hid* for hidden nics.
-            * fake* for fake nics.
-            * jb* for hidden bonds.
-        """
-        class Config(object):
-            def get(self, unused_vars, key):
-                if key == 'hidden_nics':
-                    return 'hid*'
-                elif key == 'fake_nics':
-                    return 'fake*'
-                else:
-                    return 'jb*'
-
-        return Config()
-
-    def testNics(self):
-        temp_dir = tempfile.mkdtemp()
-        with MonkeyPatchScope([(netinfo, 'BONDING_SLAVES',
-                                temp_dir + '/%s/bonding/slaves'),
-                               (netinfo, 'getLinks',
+        with MonkeyPatchScope([(netinfo, 'getLinks',
                                 self._testNics),
-                               (netinfo, 'NET_PATH',
-                                self._dev_dirs_setup(temp_dir)),
+                               (ipwrapper, '_bondExists',
+                                lambda x: x == 'jbond'),
                                (ipwrapper.Link, '_detectType',
                                 partial(_fakeTypeDetection, ipwrapper.Link)),
-                               (netinfo, 'config', self._config_setup()),
                                (ipwrapper.Link, '_fakeNics', ['fake*']),
+                               (ipwrapper.Link, '_hiddenBonds', ['jb*']),
                                (ipwrapper.Link, '_hiddenNics', ['hid*'])
                                ]):
-            try:
-                self.assertEqual(set(netinfo.nics()),
-                                 set(['em', 'me', 'fake', 'fake0']))
-            finally:
-                rmtree(temp_dir)
+            self.assertEqual(set(netinfo.nics()),
+                             set(['em', 'me', 'fake', 'fake0']))
 
     def testGetBandwidthQos(self):
         notEmptyDoc = minidom.parseString("""<bandwidth>

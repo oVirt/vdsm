@@ -74,6 +74,7 @@ class LinkType(object):
 class Link(object):
     """Represents link information obtained from iproute2"""
     _fakeNics = config.get('vars', 'fake_nics').split(',')
+    _hiddenBonds = config.get('vars', 'hidden_bonds').split(',')
     _hiddenNics = config.get('vars', 'hidden_nics').split(',')
     _hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
 
@@ -207,9 +208,14 @@ class Link(object):
         if self.isVLAN():
             return anyFnmatch(self.name, self._hiddenVlans)
         elif self.isDUMMY() or self.isVETH() or self.isNIC():
-            return anyFnmatch(self.name, self._hiddenNics)
-        else:
-            raise NotImplementedError
+            return (anyFnmatch(self.name, self._hiddenNics) or
+                    (self.master and _bondExists(self.master) and
+                     anyFnmatch(self.master, self._hiddenBonds)))
+        return False
+
+
+def _bondExists(bondName):
+    return os.path.exists('/sys/class/net/%s/bonding' % bondName)
 
 
 def getLinks():
