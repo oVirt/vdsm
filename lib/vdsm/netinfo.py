@@ -70,8 +70,7 @@ OPERSTATE_UP = 'up'
 def nics():
     """Returns a list of nics and fake nics devices available (not hidden) to
     be used by vdsm."""
-    return [dev.name for dev in getLinks() if
-            (dev.isDUMMY() or dev.isVETH() or dev.isNIC()) and
+    return [dev.name for dev in getLinks() if dev.isNICLike() and
             not dev.isHidden()]
 
 

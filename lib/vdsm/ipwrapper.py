@@ -203,11 +203,14 @@ class Link(object):
             return anyFnmatch(self.name, self._fakeNics)
         return False
 
+    def isNICLike(self):
+        return self.isDUMMY() or self.isNIC() or self.isVETH()
+
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
         if self.isVLAN():
             return anyFnmatch(self.name, self._hiddenVlans)
-        elif self.isDUMMY() or self.isVETH() or self.isNIC():
+        elif self.isNICLike():
             return (anyFnmatch(self.name, self._hiddenNics) or
                     (self.master and _bondExists(self.master) and
                      anyFnmatch(self.master, self._hiddenBonds)))
