@@ -214,7 +214,8 @@ def bondOpts(bond, keys=None):
     opts = {}
     for path in paths:
         with open(path) as optFile:
-            opts[os.path.basename(path)] = optFile.read().rstrip().split(' ')
+            opts[os.path.basename(path)] = [
+                el for el in optFile.read().rstrip().split(' ') if el]
     return opts
 
 
@@ -285,7 +286,8 @@ def speed(dev):
             bondopts = bondOpts(dev, keys=['slaves', 'active_slave', 'mode'])
             if bondopts['slaves']:
                 if bondopts['mode'][1] in _BONDING_FAILOVER_MODES:
-                    s = speed(bondopts['active_slave'][0])
+                    active_slave = bondopts['active_slave']
+                    s = speed(active_slave[0]) if active_slave else 0
                 elif bondopts['mode'][1] in _BONDING_LOADBALANCE_MODES:
                     s = sum(speed(slave) for slave in bondopts['slaves'])
                 return s
