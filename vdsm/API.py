@@ -1043,9 +1043,8 @@ class StoragePool(APIBase):
                  maxHostID=None, domVersion=None):
         if maxHostID is None:
             maxHostID = storage.clusterlock.MAX_HOST_ID
-        recoveryMode = None   # unused
-        return self._irs.spmStart(self._UUID, prevID, prevLver, recoveryMode,
-                                  maxHostID, domVersion)
+        return self._irs.spmStart(self._UUID, prevID, prevLver, maxHostID,
+                                  domVersion)
 
     def spmStop(self):
         return self._irs.spmStop(self._UUID)

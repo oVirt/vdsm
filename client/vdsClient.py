@@ -2074,8 +2074,9 @@ if __name__ == '__main__':
                      ('<spUUID> <prevID> <prevLVER> <recoveryMode> '
                       '<scsiFencing> <maxHostID> <version>',
                       'Start SPM functionality',
-                      'Parameter scsiFencing is ignored (maintained only '
-                      'for the command line backward compatibility)'
+                      'Parameters scsiFencing and recoveryMode are ignored '
+                      '(maintained only for the command line backward '
+                      'compatibility)'
                       )),
         'spmStop': (serv.spmStop,
                     ('<spUUID>',

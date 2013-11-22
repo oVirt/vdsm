@@ -529,7 +529,7 @@ class HSM:
         return dict(poollist=self.pools.keys())
 
     @public
-    def spmStart(self, spUUID, prevID, prevLVER, recoveryMode,
+    def spmStart(self, spUUID, prevID, prevLVER,
                  maxHostID=clusterlock.MAX_HOST_ID, domVersion=None,
                  options=None):
         """
@@ -542,8 +542,6 @@ class HSM:
         :param prevLVER: The previous version of the pool that was managed by
                          the SPM.
         :type prevLVER: int
-        :param recoveryMode: The mode in which to recover the SPM.
-        :type recoveryMode: RecoveryEnum?
         :param maxHostID: The maximum Host ID in the cluster.
         :type maxHostID: int
         :param options: unused
@@ -553,9 +551,8 @@ class HSM:
         """
 
         vars.task.setDefaultException(se.SpmStartError(
-            "spUUID=%s, prevID=%s, prevLVER=%s, recoveryMode=%s, "
-            "maxHostID=%s, domVersion=%s" %
-            (spUUID, prevID, prevLVER, recoveryMode, maxHostID, domVersion)))
+            "spUUID=%s, prevID=%s, prevLVER=%s, maxHostID=%s, domVersion=%s"
+            % (spUUID, prevID, prevLVER, maxHostID, domVersion)))
 
         if domVersion is not None:
             domVersion = int(domVersion)
