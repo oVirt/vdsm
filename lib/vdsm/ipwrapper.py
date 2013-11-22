@@ -182,6 +182,9 @@ class Link(object):
     def isBOND(self):
         return self.type == LinkType.BOND
 
+    def isBRIDGE(self):
+        return self.type == LinkType.BRIDGE
+
     def isDUMMY(self):
         return self.type == LinkType.DUMMY
 
@@ -214,6 +217,8 @@ class Link(object):
             return (anyFnmatch(self.name, self._hiddenNics) or
                     (self.master and _bondExists(self.master) and
                      anyFnmatch(self.master, self._hiddenBonds)))
+        elif self.isBOND():
+            return anyFnmatch(self.name, self._hiddenBonds)
         return False
 
 

@@ -526,11 +526,10 @@ def _devinfo(dev):
 
 
 def get():
-    d = {}
+    d = {'networks': {}}
     gateways = getRoutes()
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
-    d['networks'] = {}
 
     for net, netAttr in networks().iteritems():
         try:
@@ -542,11 +541,13 @@ def get():
         except KeyError:
             continue  # Do not report missing libvirt networks.
 
-    d['bridges'] = dict([_bridgeinfo(bridge, gateways, ipv6routes)
-                         for bridge in bridges()])
-    d['nics'] = dict([_nicinfo(nic, paddr) for nic in nics()])
-    d['bondings'] = dict([_bondinfo(bond) for bond in bondings()])
-    d['vlans'] = dict([_vlaninfo(vlan) for vlan in vlans()])
+    links = filter(lambda x: not x.isHidden(), getLinks())
+    d['bridges'] = dict(_bridgeinfo(dev.name, gateways, ipv6routes) for dev
+                        in links if dev.isBRIDGE())
+    d['nics'] = dict(_nicinfo(dev.name, paddr) for dev in links
+                     if dev.isNICLike())
+    d['bondings'] = dict(_bondinfo(dev.name) for dev in links if dev.isBOND())
+    d['vlans'] = dict(_vlaninfo(dev.name) for dev in links if dev.isVLAN())
     return d
 
 
