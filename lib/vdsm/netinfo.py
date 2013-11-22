@@ -265,35 +265,41 @@ def operstate(dev):
         return operstateFile.read().strip()
 
 
-def speed(dev):
-    # return the speed of devices that are capable of replying
+def nicSpeed(nicName):
+    """Returns the nic speed if it is a legal value and nicName refers to a
+    nic, 0 otherwise."""
     try:
-        # operstat() filters out down/disabled nics
-        if operstate(dev) != OPERSTATE_UP:
+        # if the device is not up we must report 0
+        if operstate(nicName) != OPERSTATE_UP:
             return 0
-
-        # nics() filters out OS devices (bonds, vlans, bridges)
-        # virtio is a valid device, but doesn't support speed
-        if dev in nics() and not isvirtio(dev):
-            # the device may have been disabled/downed after checking
-            # so we validate the return value as sysfs may return
-            # special values to indicate the device is down/disabled
-            with open('/sys/class/net/%s/speed' % dev) as speedFile:
-                s = int(speedFile.read())
-            if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
-                return s
-        elif dev in bondings():
-            bondopts = bondOpts(dev, keys=['slaves', 'active_slave', 'mode'])
-            if bondopts['slaves']:
-                if bondopts['mode'][1] in _BONDING_FAILOVER_MODES:
-                    active_slave = bondopts['active_slave']
-                    s = speed(active_slave[0]) if active_slave else 0
-                elif bondopts['mode'][1] in _BONDING_LOADBALANCE_MODES:
-                    s = sum(speed(slave) for slave in bondopts['slaves'])
-                return s
-
+        with open('/sys/class/net/%s/speed' % nicName) as speedFile:
+            s = int(speedFile.read())
+        # the device may have been disabled/downed after checking
+        # so we validate the return value as sysfs may return
+        # special values to indicate the device is down/disabled
+        if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
+            return s
+    except IOError as ose:
+        if ose.errno != errno.EINVAL:
+            logging.exception('cannot read %s nic speed', nicName)
     except Exception:
-        logging.exception('cannot read %s speed', dev)
+        logging.exception('cannot read %s speed', nicName)
+    return 0
+
+
+def bondSpeed(bondName):
+    """Returns the bond speed if bondName refers to a bond, 0 otherwise."""
+    opts = bondOpts(bondName, keys=['slaves', 'active_slave', 'mode'])
+    try:
+        if opts['slaves']:
+            if opts['mode'][1] in _BONDING_FAILOVER_MODES:
+                active_slave = opts['active_slave']
+                s = nicSpeed(active_slave[0]) if active_slave else 0
+            elif opts['mode'][1] in _BONDING_LOADBALANCE_MODES:
+                s = sum(nicSpeed(slave) for slave in opts['slaves'])
+            return s
+    except Exception:
+        logging.exception('cannot read %s speed', bondName)
     return 0
 
 
@@ -524,7 +530,7 @@ def _bridgeinfo(bridge, gateways, ipv6routes):
 
 def _nicinfo(nic, paddr):
     info = _devinfo(nic)
-    info.update({'hwaddr': gethwaddr(nic), 'speed': speed(nic)})
+    info.update({'hwaddr': gethwaddr(nic), 'speed': nicSpeed(nic)})
     if paddr.get(nic):
         info['permhwaddr'] = paddr[nic]
     return (nic, info)

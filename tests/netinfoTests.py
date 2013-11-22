@@ -57,16 +57,14 @@ class TestNetinfo(TestCaseBase):
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInvalidNic(self):
-        nicName = 'DUMMYNICDEVNAME'
-        self.assertTrue(nicName not in netinfo.nics())
-        s = netinfo.speed(nicName)
-        self.assertEqual(s, 0)
+        nicName = '0' * 20  # devices can't have so long names
+        self.assertEqual(netinfo.nicSpeed(nicName), 0)
 
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInRange(self):
         for d in netinfo.nics():
-            s = netinfo.speed(d)
+            s = netinfo.nicSpeed(d)
             self.assertFalse(s < 0)
             self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
 

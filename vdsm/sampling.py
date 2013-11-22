@@ -35,6 +35,7 @@ import ethtool
 
 from vdsm import utils
 from vdsm import netinfo
+from vdsm.ipwrapper import getLinks
 from vdsm.constants import P_VDSM_RUN
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
@@ -384,9 +385,17 @@ class HostStatsThread(threading.Thread):
         self._stopEvent.set()
 
     def _updateIfidsIfrates(self):
-        self._ifids = netinfo.nics() + netinfo.bondings() + netinfo.vlans() + \
-            netinfo.bridges()
-        self._ifrates = map(netinfo.speed, self._ifids)
+        devices = getLinks()
+        self._ifids = [dev.name for dev in devices]
+        self._ifrates = []
+        for dev in devices:
+            if dev.isNIC():
+                speed = netinfo.nicSpeed(dev.name)
+            elif dev.isBOND():
+                speed = netinfo.bondSpeed(dev.name)
+            else:
+                speed = 0
+            self._ifrates.append(speed)
 
     def sample(self):
         self._updateIfidsIfrates()

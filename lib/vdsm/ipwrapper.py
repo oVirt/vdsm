@@ -178,6 +178,9 @@ class Link(object):
             detectedType = LinkType.NIC
         return detectedType
 
+    def isBOND(self):
+        return self.type == LinkType.BOND
+
     def isDUMMY(self):
         return self.type == LinkType.DUMMY
 
