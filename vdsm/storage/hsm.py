@@ -375,8 +375,8 @@ class HSM:
 
         @utils.traceback(on=self.log.name)
         def storageRefresh():
-            lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS)
             sdCache.refreshStorage()
+            lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS)
 
             fileUtils.createdir(self.tasksDir)
             # TBD: Should this be run in connectStoragePool? Should tasksDir
