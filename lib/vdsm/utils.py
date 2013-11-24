@@ -103,6 +103,17 @@ def isBlockDevice(path):
     return stat.S_ISBLK(os.stat(path).st_mode)
 
 
+def touchFile(filePath):
+    """
+    http://www.unix.com/man-page/POSIX/1posix/touch/
+    If a file at filePath already exists, its accessed and modified times are
+    updated to the current time. Otherwise, the file is created.
+    :param filePath: The file to touch
+    """
+    with open(filePath, 'a'):
+        os.utime(filePath, None)
+
+
 def rmFile(fileToRemove):
     """
     Try to remove a file.
