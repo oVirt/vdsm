@@ -125,8 +125,8 @@ class Link(object):
             tokens = [token for token in processedData[1].split(' ') if token]
             linkType = tokens.pop(0)
             attrs['linkType'] = linkType
-            attrs.update((linkType + tokens[i], tokens[i+1]) for i in
-                         range(0, len(tokens)-1, 2))
+            attrs.update((linkType + tokens[i], tokens[i + 1]) for i in
+                         range(0, len(tokens) - 1, 2))
         return attrs
 
     @classmethod
