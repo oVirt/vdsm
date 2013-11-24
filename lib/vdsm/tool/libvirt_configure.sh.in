@@ -291,14 +291,9 @@ EOF
         ovirt_store_config "${lconf}" "${qconf}" "${ldconf}" "${llogr}"
     fi
 
+    /usr/bin/vdsm-tool libvirt-configure-services-restart || return 1
+
     echo "Reconfiguration of libvirt is done."
-    echo
-    cat << __EOF__
-To start working with the new configuration, execute:
-'vdsm-tool libvirt-configure-services-restart'
-This will manage restarting of the following services:
-libvirtd, supervdsmd
-__EOF__
     echo
 
     #

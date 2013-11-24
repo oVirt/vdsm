@@ -117,8 +117,7 @@ test_already_running()
 reconfigure_libvirt() {
     local force
     [ "${1}" = "force" ] && force="--force"
-    "$VDSM_TOOL" libvirt-configure ${force} &&
-        "$VDSM_TOOL" libvirt-configure-services-restart
+    "$VDSM_TOOL" libvirt-configure ${force}
 }
 
 start() {
