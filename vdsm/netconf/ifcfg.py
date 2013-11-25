@@ -44,8 +44,8 @@ import neterrors as ne
 
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
-    def __init__(self):
-        super(Ifcfg, self).__init__(ConfigWriter())
+    def __init__(self, inRollback=False):
+        super(Ifcfg, self).__init__(ConfigWriter(), inRollback)
 
     def begin(self):
         if self.configApplier is None:

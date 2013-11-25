@@ -537,6 +537,7 @@ def setupNetworks(networks, bondings, **options):
                         force=0|1
                         connectivityCheck=0|1
                         connectivityTimeout=<int>
+                        inRollback=True|False
 
     Notes:
         When you edit a network that is attached to a bonding, it's not
@@ -560,7 +561,7 @@ def setupNetworks(networks, bondings, **options):
     hooks.before_network_setup()
 
     logger.debug("Applying...")
-    with Ifcfg() as configurator:
+    with Ifcfg(options.get('inRollback', False)) as configurator:
         libvirt_nets = netinfo.networks()
         # Remove edited networks and networks with 'remove' attribute
         for network, networkAttrs in networks.items():

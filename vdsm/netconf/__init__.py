@@ -24,12 +24,15 @@ from sourceRoute import DynamicSourceRoute
 from sourceRoute import StaticSourceRoute
 from vdsm import netinfo
 from vdsm.config import config
+from vdsm.constants import EXT_VDSM_RESTORE_NET_CONFIG
 from vdsm.netconfpersistence import RunningConfig
+from vdsm.utils import execCmd
 
 
 class Configurator(object):
-    def __init__(self, configApplier):
+    def __init__(self, configApplier, inRollback=False):
         self.configApplier = configApplier
+        self._inRollback = inRollback
         self._libvirtAdded = set()
         self.unifiedPersistence = \
             config.get('vars', 'persistence') == 'unified'
@@ -43,6 +46,13 @@ class Configurator(object):
     def __exit__(self, type, value, traceback):
         if type is None:
             self.commit()
+        elif self._inRollback:
+            # If we failed the rollback transaction, we try to apply the last
+            # known good network configuration, i.e., last persistent.
+            rc, _, err = execCmd(EXT_VDSM_RESTORE_NET_CONFIG, raw=True)
+            if not rc:
+                logging.error('Failed rollback transaction and restoration to '
+                              'last known good network. ERR=%s', err)
         else:
             self.rollback()
 
