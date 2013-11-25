@@ -151,16 +151,19 @@ def _parseVolumeStatus(tree):
 
         if value['hostname'] == 'NFS Server':
             status['nfs'].append({'hostname': value['path'],
+                                  'hostuuid': value['peerid'],
                                   'port': value['port'],
                                   'status': value['status'],
                                   'pid': value['pid']})
         elif value['hostname'] == 'Self-heal Daemon':
             status['shd'].append({'hostname': value['path'],
+                                  'hostuuid': value['peerid'],
                                   'status': value['status'],
                                   'pid': value['pid']})
         else:
             status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
                                                          value['path']),
+                                     'hostuuid': value['peerid'],
                                      'port': value['port'],
                                      'status': value['status'],
                                      'pid': value['pid']})
@@ -182,6 +185,7 @@ def _parseVolumeStatusDetail(tree):
         value['sizeFree'] = sizeFree / (1024.0 * 1024.0)
         status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
                                                      value['path']),
+                                 'hostuuid': value['peerid'],
                                  'sizeTotal': '%.3f' % (value['sizeTotal'],),
                                  'sizeFree': '%.3f' % (value['sizeFree'],),
                                  'device': value['device'],
@@ -197,6 +201,7 @@ def _parseVolumeStatusClients(tree):
     for el in tree.findall('volStatus/volumes/volume/node'):
         hostname = el.find('hostname').text
         path = el.find('path').text
+        hostuuid = el.find('peerid').text
 
         clientsStatus = []
         for c in el.findall('clientsStatus/client'):
@@ -208,6 +213,7 @@ def _parseVolumeStatusClients(tree):
                                   'bytesWrite': clientValue['bytesWrite']})
 
         status['bricks'].append({'brick': '%s:%s' % (hostname, path),
+                                 'hostuuid': hostuuid,
                                  'clientsStatus': clientsStatus})
     return status
 
@@ -218,6 +224,7 @@ def _parseVolumeStatusMem(tree):
     for el in tree.findall('volStatus/volumes/volume/node'):
         brick = {'brick': '%s:%s' % (el.find('hostname').text,
                                      el.find('path').text),
+                 'hostuuid': el.find('peerid').text,
                  'mallinfo': {},
                  'mempool': []}
 
@@ -247,20 +254,24 @@ def volumeStatus(volumeName, brick=None, option=None):
        When option=None,
          {'name': NAME,
           'bricks': [{'brick': BRICK,
+                      'hostuuid': UUID,
                       'port': PORT,
                       'status': STATUS,
                       'pid': PID}, ...],
           'nfs': [{'hostname': HOST,
+                   'hostuuid': UUID,
                    'port': PORT,
                    'status': STATUS,
                    'pid': PID}, ...],
           'shd: [{'hostname': HOST,
+                  'hostuuid': UUID,
                   'status': STATUS,
                   'pid': PID}, ...]}
 
       When option='detail',
          {'name': NAME,
           'bricks': [{'brick': BRICK,
+                      'hostuuid': UUID,
                       'sizeTotal': SIZE,
                       'sizeFree': FREESIZE,
                       'device': DEVICE,
@@ -271,6 +282,7 @@ def volumeStatus(volumeName, brick=None, option=None):
        When option='clients':
          {'name': NAME,
           'bricks': [{'brick': BRICK,
+                      'hostuuid': UUID,
                       'clientsStatus': [{'hostname': HOST,
                                          'bytesRead': BYTESREAD,
                                          'bytesWrite': BYTESWRITE}, ...]},
@@ -279,6 +291,7 @@ def volumeStatus(volumeName, brick=None, option=None):
        When option='mem':
          {'name': NAME,
           'bricks': [{'brick': BRICK,
+                      'hostuuid': UUID,
                       'mallinfo': {'arena': int,
                                    'fordblks': int,
                                    'fsmblks': int,

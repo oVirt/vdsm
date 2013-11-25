@@ -230,6 +230,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b1</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49152</port>
           <status>1</status>
           <pid>1313</pid>
@@ -237,6 +238,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b2</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49153</port>
           <status>1</status>
           <pid>1335</pid>
@@ -244,6 +246,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>NFS Server</hostname>
           <path>192.168.122.2</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>38467</port>
           <status>1</status>
           <pid>1357</pid>
@@ -251,6 +254,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>Self-heal Daemon</hostname>
           <path>192.168.122.2</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>0</port>
           <status>1</status>
           <pid>1375</pid>
@@ -264,19 +268,27 @@ class GlusterCliTests(TestCaseBase):
         status = gcli._parseVolumeStatus(tree)
         self.assertEquals(status,
                           {'bricks': [{'brick': '192.168.122.2:/tmp/music-b1',
+                                       'hostuuid':
+                                       'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                                        'pid': '1313',
                                        'port': '49152',
                                        'status': 'ONLINE'},
                                       {'brick': '192.168.122.2:/tmp/music-b2',
+                                       'hostuuid':
+                                       'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                                        'pid': '1335',
                                        'port': '49153',
                                        'status': 'ONLINE'}],
                            'name': 'music',
                            'nfs': [{'hostname': '192.168.122.2',
+                                    'hostuuid':
+                                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                                     'pid': '1357',
                                     'port': '38467',
                                     'status': 'ONLINE'}],
                            'shd': [{'hostname': '192.168.122.2',
+                                    'hostuuid':
+                                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                                     'pid': '1375',
                                     'status': 'ONLINE'}]})
 
@@ -294,6 +306,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b1</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49152</port>
           <status>1</status>
           <pid>1313</pid>
@@ -307,6 +320,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b2</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49153</port>
           <status>1</status>
           <pid>1335</pid>
@@ -325,6 +339,8 @@ class GlusterCliTests(TestCaseBase):
         oStatus = \
             {'bricks': [{'blockSize': '4096',
                          'brick': '192.168.122.2:/tmp/music-b1',
+                         'hostuuid':
+                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                          'device': '/dev/vda1',
                          'fsName': 'ext4',
                          'mntOptions': 'rw,seclabel,relatime,data=ordered',
@@ -332,6 +348,8 @@ class GlusterCliTests(TestCaseBase):
                          'sizeTotal': '7982.934'},
                         {'blockSize': '4096',
                          'brick': '192.168.122.2:/tmp/music-b2',
+                         'hostuuid':
+                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                          'device': '/dev/vda1',
                          'fsName': 'ext4',
                          'mntOptions': 'rw,seclabel,relatime,data=ordered',
@@ -355,6 +373,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b1</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49152</port>
           <status>1</status>
           <pid>1313</pid>
@@ -375,6 +394,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b2</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49153</port>
           <status>1</status>
           <pid>1335</pid>
@@ -402,6 +422,8 @@ class GlusterCliTests(TestCaseBase):
         self.assertEquals(status.keys(), ['bricks', 'name'])
         self.assertEquals(status['name'], 'music')
         oBricks = [{'brick': '192.168.122.2:/tmp/music-b1',
+                    'hostuuid':
+                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                     'clientsStatus': [{'bytesRead': '1172',
                                        'bytesWrite': '792',
                                        'hostname': '192.168.122.2:1021'},
@@ -409,6 +431,8 @@ class GlusterCliTests(TestCaseBase):
                                        'bytesWrite': '12152',
                                        'hostname': '192.168.122.2:1011'}]},
                    {'brick': '192.168.122.2:/tmp/music-b2',
+                    'hostuuid':
+                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                     'clientsStatus': [{'bytesRead': '1172',
                                        'bytesWrite': '792',
                                        'hostname': '192.168.122.2:1020'},
@@ -431,6 +455,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b1</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49152</port>
           <status>1</status>
           <pid>1452</pid>
@@ -605,6 +630,7 @@ class GlusterCliTests(TestCaseBase):
         <node>
           <hostname>192.168.122.2</hostname>
           <path>/tmp/music-b2</path>
+          <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49153</port>
           <status>1</status>
           <pid>1459</pid>
@@ -783,6 +809,8 @@ class GlusterCliTests(TestCaseBase):
 """
         ostatus = \
             {'bricks': [{'brick': '192.168.122.2:/tmp/music-b1',
+                         'hostuuid':
+                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                          'mallinfo': {'arena': '606208',
                                       'fordblks': '132000',
                                       'fsmblks': '64',
@@ -914,6 +942,8 @@ class GlusterCliTests(TestCaseBase):
                                       'padddedSizeOf': '172',
                                       'poolMisses': '0'}]},
                         {'brick': '192.168.122.2:/tmp/music-b2',
+                         'hostuuid':
+                         'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                          'mallinfo': {'arena': '606208',
                                       'fordblks': '131984',
                                       'fsmblks': '128',
