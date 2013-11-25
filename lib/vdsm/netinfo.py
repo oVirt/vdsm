@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import errno
 from glob import iglob
 from itertools import chain
@@ -493,7 +493,7 @@ def _bridgeinfo(bridge, gateways, ipv6routes):
     info.update({'gateway': getgateway(gateways, bridge),
                 'ipv6gateway': ipv6routes.get(bridge, '::'),
                 'ports': ports(bridge), 'stp': bridge_stp_state(bridge)})
-    return (bridge, info)
+    return info
 
 
 def _nicinfo(nic, paddr):
@@ -501,19 +501,19 @@ def _nicinfo(nic, paddr):
     info.update({'hwaddr': gethwaddr(nic), 'speed': nicSpeed(nic)})
     if paddr.get(nic):
         info['permhwaddr'] = paddr[nic]
-    return (nic, info)
+    return info
 
 
 def _bondinfo(bond):
     info = _devinfo(bond)
     info.update({'hwaddr': gethwaddr(bond), 'slaves': slaves(bond)})
-    return (bond, info)
+    return info
 
 
 def _vlaninfo(vlan):
     info = _devinfo(vlan)
     info.update({'iface': getVlanDevice(vlan), 'vlanid': getVlanID(vlan)})
-    return (vlan, info)
+    return info
 
 
 def _devinfo(dev):
@@ -526,7 +526,7 @@ def _devinfo(dev):
 
 
 def get():
-    d = {'networks': {}}
+    d = defaultdict(dict)
     gateways = getRoutes()
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
@@ -541,13 +541,17 @@ def get():
         except KeyError:
             continue  # Do not report missing libvirt networks.
 
-    links = filter(lambda x: not x.isHidden(), getLinks())
-    d['bridges'] = dict(_bridgeinfo(dev.name, gateways, ipv6routes) for dev
-                        in links if dev.isBRIDGE())
-    d['nics'] = dict(_nicinfo(dev.name, paddr) for dev in links
-                     if dev.isNICLike())
-    d['bondings'] = dict(_bondinfo(dev.name) for dev in links if dev.isBOND())
-    d['vlans'] = dict(_vlaninfo(dev.name) for dev in links if dev.isVLAN())
+    for dev in (link for link in getLinks() if not link.isHidden()):
+        if dev.isBRIDGE():
+            d['bridges'][dev.name] = \
+                _bridgeinfo(dev.name, gateways, ipv6routes)
+        elif dev.isNICLike():
+            d['nics'][dev.name] = _nicinfo(dev.name, paddr)
+        elif dev.isBOND():
+            d['bondings'][dev.name] = _bondinfo(dev.name)
+        elif dev.isVLAN():
+            d['vlans'][dev.name] = _vlaninfo(dev.name)
+
     return d
 
 
