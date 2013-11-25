@@ -1219,9 +1219,7 @@ class StoragePool(Securable):
         Rebuild storage pool.
         """
         # master domain must be refreshed first
-        self.masterDomain = self.getMasterDomain(msdUUID=msdUUID,
-                                                 masterVersion=masterVersion)
-        self.updateMonitoringThreads()
+        self.setMasterDomain(msdUUID, masterVersion)
 
         fileUtils.createdir(self.poolPath)
 
@@ -1488,7 +1486,7 @@ class StoragePool(Securable):
             raise se.StoragePoolWrongMaster(self.spUUID, masterDomain.sdUUID)
 
     @unsecured
-    def getMasterDomain(self, msdUUID, masterVersion):
+    def setMasterDomain(self, msdUUID, masterVersion):
         """
         Get the (verified) master domain of this pool.
 
@@ -1515,7 +1513,9 @@ class StoragePool(Securable):
         self.validateMasterDomainVersion(domain, masterVersion)
         self.log.debug("Master domain %s verified, version %s", msdUUID,
                        masterVersion)
-        return domain
+
+        self.masterDomain = domain
+        self.updateMonitoringThreads()
 
     @unsecured
     def invalidateMetadata(self):
