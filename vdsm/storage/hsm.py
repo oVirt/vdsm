@@ -1051,12 +1051,16 @@ class HSM:
             pool = sp.StoragePool(spUUID, self.taskMng)
             if not hostID or not scsiKey or not msdUUID or not masterVersion:
                 hostID, scsiKey, msdUUID, masterVersion = pool.getPoolParams()
+
+            # Must register domain state change callbacks *before* connecting
+            # the pool, which starts domain monitor threads. Otherwise we will
+            # miss the first event from the monitor thread.
+            for cb in self.domainStateChangeCallbacks:
+                pool.domainMonitor.onDomainStateChange.register(cb)
+
             res = pool.connect(hostID, scsiKey, msdUUID, masterVersion)
             if res:
                 self.pools[spUUID] = pool
-                for callback in self.domainStateChangeCallbacks:
-                    self.pools[spUUID].domainMonitor.\
-                        onDomainStateChange.register(callback)
             return res
 
     @public

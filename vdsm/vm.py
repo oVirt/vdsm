@@ -2953,6 +2953,10 @@ class Vm(object):
             else:
                 devices = self.getConfDevices()
 
+            for drive in devices[DISK_DEVICES]:
+                if drive['device'] == 'disk' and isVdsmImage(drive):
+                    self.sdIds.append(drive['domainID'])
+
         devMap = {DISK_DEVICES: Drive,
                   NIC_DEVICES: NetworkInterfaceDevice,
                   SOUND_DEVICES: SoundDevice,
