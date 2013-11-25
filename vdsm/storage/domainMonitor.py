@@ -27,6 +27,8 @@ import misc
 from vdsm.config import config
 from sdc import sdCache
 
+NOT_CHECKED_YET = -1
+
 
 class DomainMonitorStatus(object):
     __slots__ = (
@@ -41,7 +43,7 @@ class DomainMonitorStatus(object):
 
     def clear(self):
         self.error = None
-        self.lastCheck = time()
+        self.lastCheck = NOT_CHECKED_YET
         self.valid = True
         self.readDelay = 0
         self.diskUtilization = (None, None)
@@ -236,7 +238,7 @@ class DomainMonitorThread(object):
         self.nextStatus.lastCheck = time()
         self.nextStatus.valid = (self.nextStatus.error is None)
 
-        if self.status.valid != self.nextStatus.valid:
+        if self._statusDidChange():
             self.log.debug("Domain %s changed its status to %s", self.sdUUID,
                            "Valid" if self.nextStatus.valid else "Invalid")
 
@@ -258,3 +260,7 @@ class DomainMonitorThread(object):
                                self.sdUUID, exc_info=True)
 
         self.status.update(self.nextStatus)
+
+    def _statusDidChange(self):
+        return (self.status.lastCheck == NOT_CHECKED_YET or
+                self.status.valid != self.nextStatus.valid)

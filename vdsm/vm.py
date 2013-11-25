@@ -2954,6 +2954,10 @@ class Vm(object):
             # we must to have updated conf before VM run
             self.saveState()
 
+            for drive in devices[DISK_DEVICES]:
+                if drive['device'] == 'disk' and isVdsmImage(drive):
+                    self.sdIds.append(drive['domainID'])
+
         for devType, devClass in self.DeviceMapping:
             for dev in devices[devType]:
                 self._devices[devType].append(devClass(self.conf, self.log,
