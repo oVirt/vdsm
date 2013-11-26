@@ -64,7 +64,9 @@ class Configurator(object):
         vdsm.netoconfpersistence.Config object with the not yet rolled back
         networks and bonds.
         """
-        raise NotImplementedError
+        # self.runningConfig will have all the changes that were applied before
+        # we needed to rollback.
+        return RunningConfig().diffFrom(self.runningConfig)
 
     def configureBridge(self, bridge, **opts):
         raise NotImplementedError
