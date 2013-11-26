@@ -20,6 +20,7 @@
 
 SUBDIRS = \
 	client \
+	debian \
 	init \
 	lib \
 	vds_bootstrap \
