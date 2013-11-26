@@ -287,6 +287,7 @@ class MigrationSourceThread(threading.Thread):
 
     def run(self):
         try:
+            startTime = time.time()
             self._setupVdsConnection()
             self._setupRemoteMachineParams()
             self._prepareGuest()
@@ -302,7 +303,7 @@ class MigrationSourceThread(threading.Thread):
                     'dstparams': self._dstparams,
                     'dstqemu': self._dstqemu}
                 self._vm.saveState()
-                self._startUnderlyingMigration()
+                self._startUnderlyingMigration(startTime)
                 self._finishSuccessfully()
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
@@ -318,7 +319,7 @@ class MigrationSourceThread(threading.Thread):
             self._recover(str(e))
             self.log.error("Failed to migrate", exc_info=True)
 
-    def _startUnderlyingMigration(self):
+    def _startUnderlyingMigration(self, startTime):
         if self._mode == 'file':
             hooks.before_vm_hibernate(self._vm._dom.XMLDesc(0), self._vm.conf)
             try:
@@ -360,7 +361,8 @@ class MigrationSourceThread(threading.Thread):
                                         self._vm._migrationTimeout() / 2)
 
             if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
-                self._monitorThread = MigrationMonitorThread(self._vm)
+                self._monitorThread = MigrationMonitorThread(self._vm,
+                                                             startTime)
                 self._monitorThread.start()
 
             try:
@@ -738,10 +740,11 @@ class MigrationMonitorThread(threading.Thread):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
         'vars', 'migration_monitor_interval')  # seconds
 
-    def __init__(self, vm):
+    def __init__(self, vm, startTime):
         super(MigrationMonitorThread, self).__init__()
         self._stop = threading.Event()
         self._vm = vm
+        self._startTime = startTime
         self.daemon = True
         self.data_progress = 0
         self.mem_progress = 0
@@ -755,6 +758,10 @@ class MigrationMonitorThread(threading.Thread):
 
         self._vm.log.debug('starting migration monitor thread')
 
+        memSize = int(self._vm.conf['memSize'])
+        maxTimePerGiB = config.getint('vars',
+                                      'migration_max_time_per_gib_mem')
+        migrationMaxTime = (maxTimePerGiB * memSize + 1023) / 1024
         lastProgressTime = time.time()
         lowmark = None
         progress_timeout = config.getint('vars', 'migration_progress_timeout')
@@ -767,14 +774,27 @@ class MigrationMonitorThread(threading.Thread):
              fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
 
             remaining = dataRemaining + memRemaining
-            if (lowmark is None) or (lowmark > remaining):
+            abort = False
+            now = time.time()
+            if 0 < migrationMaxTime < now - self._startTime:
+                self._vm.log.warn('The migration took %d seconds which is '
+                                  'exceeding the configured maximum time '
+                                  'for migrations of %d seconds. The '
+                                  'migration will be aborted.',
+                                  now - self._startTime,
+                                  migrationMaxTime)
+                abort = True
+            elif (lowmark is None) or (lowmark > remaining):
                 lowmark = remaining
-                lastProgressTime = time.time()
-            elif (time.time() - lastProgressTime) > progress_timeout:
+                lastProgressTime = now
+            elif (now - lastProgressTime) > progress_timeout:
                 # Migration is stuck, abort
                 self._vm.log.warn(
                     'Migration is stuck: Hasn\'t progressed in %s seconds. '
-                    'Aborting.' % (time.time() - lastProgressTime))
+                    'Aborting.' % (now - lastProgressTime))
+                abort = True
+
+            if abort:
                 self._vm._dom.abortJob()
                 self.stop()
                 break
