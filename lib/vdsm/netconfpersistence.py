@@ -36,12 +36,10 @@ CONF_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
 CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
 
 
-class Config(object):
-    def __init__(self, savePath):
-        self.networksPath = os.path.join(savePath, 'nets', '')
-        self.bondingsPath = os.path.join(savePath, 'bonds', '')
-        self.networks = self._getConfigs(self.networksPath)
-        self.bonds = self._getConfigs(self.bondingsPath)
+class BaseConfig(object):
+    def __init__(self, networks, bonds):
+        self.networks = networks
+        self.bonds = bonds
 
     def __eq__(self, other):
         return self.networks == other.networks and self.bonds == other.bonds
@@ -52,6 +50,60 @@ class Config(object):
 
     def __nonzero__(self):
         return True if self.networks or self.bonds else False
+
+    def diffFrom(self, other):
+        """Returns a diff Config that shows the what should be changed for
+        going from other to self."""
+        diff = BaseConfig(self._confDictDiff(self.networks, other.networks),
+                          self._confDictDiff(self.bonds, other.bonds))
+        return diff
+
+    def setNetwork(self, network, attributes):
+        # Clean netAttrs from fields that should not be serialized
+        cleanAttrs = dict((key, value) for key, value in attributes.iteritems()
+                          if value is not None and key not in
+                          ('configurator', '_netinfo', 'force',
+                           'implicitBonding'))
+        self.networks[network] = cleanAttrs
+        logging.info('Adding network %s(%s)' % (network, cleanAttrs))
+
+    def removeNetwork(self, network):
+        try:
+            del self.networks[network]
+            logging.info('Removing network %s' % network)
+        except KeyError:
+            logging.debug('Network %s not found for removal' % network)
+
+    def setBonding(self, bonding, attributes):
+        self.bonds[bonding] = attributes
+        logging.info('Adding %s(%s)' % (bonding, attributes))
+
+    def removeBonding(self, bonding):
+        try:
+            del self.bonds[bonding]
+            logging.info('Removing %s' % bonding)
+        except KeyError:
+            logging.debug('%s not found for removal' % bonding)
+
+    @staticmethod
+    def _confDictDiff(lhs, rhs):
+        result = {}
+        for name in rhs:
+            if name not in lhs:
+                result[name] = {'remove': True}
+
+        for name, attr in lhs.iteritems():
+            if name not in rhs or attr != rhs[name]:
+                result[name] = lhs[name]
+        return result
+
+
+class Config(BaseConfig):
+    def __init__(self, savePath):
+        self.networksPath = os.path.join(savePath, 'nets', '')
+        self.bondingsPath = os.path.join(savePath, 'bonds', '')
+        super(Config, self).__init__(self._getConfigs(self.networksPath),
+                                     self._getConfigs(self.bondingsPath))
 
     def _networkPath(self, network):
         return self.networksPath + network
@@ -99,33 +151,6 @@ class Config(object):
     @staticmethod
     def _removeConfig(path):
         utils.rmFile(path)
-
-    def setNetwork(self, network, attributes):
-        # Clean netAttrs from fields that should not be serialized
-        cleanAttrs = dict((key, value) for key, value in attributes.iteritems()
-                          if value is not None and key not in
-                          ('configurator', '_netinfo', 'force',
-                           'implicitBonding'))
-        self.networks[network] = cleanAttrs
-        logging.info('Adding network %s(%s)' % (network, cleanAttrs))
-
-    def removeNetwork(self, network):
-        try:
-            del self.networks[network]
-            logging.info('Removing network %s' % network)
-        except KeyError:
-            logging.debug('Network %s not found for removal' % network)
-
-    def setBonding(self, bonding, attributes):
-        self.bonds[bonding] = attributes
-        logging.info('Adding %s(%s)' % (bonding, attributes))
-
-    def removeBonding(self, bonding):
-        try:
-            del self.bonds[bonding]
-            logging.info('Removing %s' % bonding)
-        except KeyError:
-            logging.debug('%s not found for removal' % bonding)
 
     def _clearDisk(self):
         try:

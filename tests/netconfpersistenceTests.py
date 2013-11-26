@@ -78,3 +78,29 @@ class NetConfPersistenceTests(TestCaseBase):
         self.assertTrue(os.path.exists(filePath))
         persistence.delete()
         self.assertFalse(os.path.exists(filePath))
+
+    def testDiff(self):
+        configA = Config(self.tempdir)
+        configA.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+        configA.setBonding(BONDING, BONDING_ATTRIBUTES)
+
+        configB = Config(self.tempdir)
+        configB.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+        configB.setBonding(BONDING, BONDING_ATTRIBUTES)
+
+        diff = configA.diffFrom(configB)
+        self.assertEqual(diff.networks, {})
+        self.assertEqual(diff.bonds, {})
+
+        EVIL_NETWORK = 'jarjar'
+        EVIL_BONDING_ATTRIBUTES = {'options': 'mode=3', 'nics': ['eth3']}
+        configB.setNetwork(EVIL_NETWORK, NETWORK_ATTRIBUTES)
+        configB.setBonding(BONDING, EVIL_BONDING_ATTRIBUTES)
+
+        diff = configA.diffFrom(configB)
+        self.assertEqual(diff.networks[EVIL_NETWORK], {'remove': True})
+        self.assertEqual(diff.bonds[BONDING], BONDING_ATTRIBUTES)
+
+        configB.removeNetwork(NETWORK)
+        diff = configA.diffFrom(configB)
+        self.assertIn(NETWORK, diff.networks)
