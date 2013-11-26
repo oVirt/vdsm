@@ -224,16 +224,17 @@ class StoragePool(object):
         .. note::
             if the SPM is already started the function will fail silently.
 
-        :raises: :exc:`storage_exception.OperationInProgress` if called during
-                       an already running connection attempt. (makes the fact
-                       that it fails silently does not matter very much).
+        :raises: :exc:`storage_exception.MiscOperationInProgress` if
+                       called during an already running connection
+                       attempt. (makes the fact that it fails silently
+                       does not matter very much).
         """
         with self.lock:
             if self.spmRole == SPM_ACQUIRED:
                 return True
             # Since we added the lock the following should NEVER happen
             if self.spmRole == SPM_CONTEND:
-                raise se.OperationInProgress("spm start %s" % self.spUUID)
+                raise se.MiscOperationInProgress("spm start %s" % self.spUUID)
 
             self.updateMonitoringThreads()
             oldlver, oldid = self._backend.getSpmStatus()
@@ -1826,7 +1827,7 @@ class StoragePool(object):
         self.log.error("TODO: Implement")
         self._maxHostID
         self.spmMailer.setMaxHostID(maxID)
-        raise se.NotImplementedException
+        raise se.MiscNotImplementedException
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         self.validatePoolSD(sdUUID)

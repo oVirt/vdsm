@@ -531,7 +531,7 @@ class Image:
             except IndexError:
                 raise se.ImageIsNotLegalChain()
         elif syncType != SYNC_VOLUMES_ALL:
-            raise se.NotImplementedException()
+            raise se.MiscNotImplementedException()
 
         if len(srcChain) != len(dstChain):
             raise se.DestImageActionError(imgUUID, dstSdUUID)

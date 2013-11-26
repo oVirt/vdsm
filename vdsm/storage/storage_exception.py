@@ -112,7 +112,7 @@ class UnicodeArgumentException(GeneralException):
 # Misc Exceptions
 #################################################
 
-class NotImplementedException(GeneralException):
+class MiscNotImplementedException(GeneralException):
     code = 2000
     message = "Method not implemented"
 
@@ -141,7 +141,7 @@ class MiscBlockWriteException(StorageException):
     message = "Internal block device write failure"
 
 
-class OperationInProgress(StorageException):
+class MiscOperationInProgress(StorageException):
     code = 2005
     message = "Operation is already in progress"
 
