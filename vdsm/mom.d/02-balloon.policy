@@ -87,10 +87,10 @@
 
         # Determine the new target for the BalloonController.  Only set
         # if the value is a large enough for the change to be worth it.
-        (if (> balloon_size guest.balloon_max)
-            (set balloon_size guest.balloon_max) 0)
         (if (< balloon_size balloon_min)
             (set balloon_size balloon_min) 0)
+        (if (> balloon_size guest.balloon_max)
+            (set balloon_size guest.balloon_max) 0)
         (if (change_big_enough guest balloon_size)
             (guest.Control "balloon_target" balloon_size) 0)
     } 0)
