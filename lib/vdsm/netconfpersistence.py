@@ -50,6 +50,9 @@ class Config(object):
         return '%s(%s, %s)' % (self.__class__.__name__, self.networks,
                                self.bonds)
 
+    def __nonzero__(self):
+        return True if self.networks or self.bonds else False
+
     def _networkPath(self, network):
         return self.networksPath + network
 

@@ -19,8 +19,10 @@
 #
 # pylint: disable=R0904
 
+from contextlib import contextmanager
 import os
 import signal
+import sys
 import copy
 import subprocess
 import pickle
@@ -33,6 +35,7 @@ from clientIF import clientIF
 import configNetwork
 from netmodels import Bond
 from netmodels import Vlan
+from netconf import RollbackIncomplete
 from vdsm import netinfo
 from vdsm import constants
 import storage.misc
@@ -1273,12 +1276,9 @@ class Global(APIBase):
         try:
             self._cif._netConfigDirty = True
 
-            try:
+            with self._rollback() as rollbackCtx:
                 supervdsm.getProxy().setupNetworks(networks, bondings, options)
-            except configNetwork.ConfigNetworkError as e:
-                self.log.error(e.message, exc_info=True)
-                return {'status': {'code': e.errCode, 'message': e.message}}
-            return {'status': doneCode}
+            return rollbackCtx
         finally:
             self._cif._networkSemaphore.release()
 
@@ -1380,14 +1380,39 @@ class Global(APIBase):
                 options['nics'] = list(nics)
             self._cif._netConfigDirty = True
 
-            try:
+            with self._rollback() as rollbackCtx:
                 supervdsm.getProxy().editNetwork(oldBridge, newBridge, options)
-            except configNetwork.ConfigNetworkError as e:
-                self.log.error(e.message, exc_info=True)
-                return {'status': {'code': e.errCode, 'message': e.message}}
-            return {'status': doneCode}
+            return rollbackCtx
         finally:
             self._cif._networkSemaphore.release()
+
+    @contextmanager
+    def _rollback(self):
+        rollbackCtx = {'status': doneCode}
+        try:
+            yield rollbackCtx
+        except configNetwork.ConfigNetworkError as e:
+            self.log.error(e.message, exc_info=True)
+            rollbackCtx['status'] = {'code': e.errCode, 'message': e.message}
+        except RollbackIncomplete as roi:
+            config, excType, value = roi
+            tb = sys.exc_info()[2]
+            try:
+                supervdsm.getProxy().setupNetworks(
+                    config.networks, config.bonds, {'inRollback': True,
+                                                    'connectivityCheck': 0})
+            except Exception:
+                self.log.error('Memory rollback failed.', exc_info=True)
+            finally:
+                if excType is configNetwork.ConfigNetworkError:
+                    rollbackCtx['status'] = {'code': value.errCode,
+                                             'message': value.message}
+                else:
+                    # We raise the original unexpected exception since any
+                    # exception that might have happened on rollback is
+                    # properly logged and derived from actions to respond to
+                    # the original exception.
+                    raise excType, value, tb
 
     def setSafeNetworkConfig(self):
         """Declare current network configuration as 'safe'"""

@@ -27,6 +27,10 @@ from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
 
 
+class RollbackIncomplete(Exception):
+    pass
+
+
 class Configurator(object):
     def __init__(self, configApplier, inRollback=False):
         self.configApplier = configApplier
@@ -50,7 +54,17 @@ class Configurator(object):
             logging.error('Failed rollback transaction last known good '
                           'network. ERR=%s', exc_info=(type, value, traceback))
         else:
-            self.rollback()
+            leftover = self.rollback()
+            if leftover:
+                raise RollbackIncomplete(leftover, type, value)
+
+    def rollback(self):
+        """
+        returns None when all the nets were successfully rolled back, a
+        vdsm.netoconfpersistence.Config object with the not yet rolled back
+        networks and bonds.
+        """
+        raise NotImplementedError
 
     def configureBridge(self, bridge, **opts):
         raise NotImplementedError
