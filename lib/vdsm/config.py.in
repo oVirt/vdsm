@@ -60,6 +60,11 @@ parameters = [
             'Please note, that this is not overall migration timeout. '
             'Source waits twice as long (to avoid races).'),
 
+        ('migration_max_time_per_gib_mem', '64',
+            'The maximum time in seconds per GiB memory a migration may take '
+            'before the migration will be aborted by the source host. '
+            'Setting this value to 0 will disable this feature.'),
+
         ('migration_listener_timeout', '30',
             'Time to wait (in seconds) for migration destination to start '
             'listening before migration begins.'),
