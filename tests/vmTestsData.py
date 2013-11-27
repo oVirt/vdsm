@@ -26,7 +26,7 @@ CONF_TO_DOMXML_X86_64 = [({
     'boot': '', 'timeOffset': 0, 'tdf': True,
     'acpiEnable': 'true', 'cpuType': 'qemu64',
     'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
-    'smp': '1', 'cpuPinning': {},
+    'smp': '1', 'cpuPinning': {}, 'maxVCpus': '160',
     'vmchannel': 'true', 'qgaEnable': 'true',
     'tabletEnable': False,
     'displayNetwork': 'mydisp', 'custom': {}},
@@ -37,7 +37,7 @@ CONF_TO_DOMXML_X86_64 = [({
             <uuid>%(vmId)s</uuid>
             <memory>1048576</memory>
             <currentMemory>1048576</currentMemory>
-            <vcpu>1</vcpu>
+            <vcpu current="1">160</vcpu>
             <memtune>
                 <min_guarantee>524288</min_guarantee>
             </memtune>
@@ -81,7 +81,7 @@ CONF_TO_DOMXML_X86_64 = [({
                 <cpu match="exact">
                     <model>qemu64</model>
                     <feature name="svm" policy="disable"/>
-                    <topology cores="1" sockets="1" threads="1"/>
+                    <topology cores="1" sockets="160" threads="1"/>
                 </cpu>
             </domain>
 """, )]
@@ -94,7 +94,7 @@ CONF_TO_DOMXML_PPC64 = [({
     'boot': '', 'timeOffset': 0, 'tdf': True,
     'acpiEnable': 'true', 'cpuType': 'qemu64',
     'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
-    'smp': '1', 'cpuPinning': {},
+    'smp': '1', 'cpuPinning': {}, 'maxVCpus': '160',
     'vmchannel': 'true', 'qgaEnable': 'true',
     'tabletEnable': False,
     'displayNetwork': 'mydisp', 'custom': {}},
@@ -106,7 +106,7 @@ CONF_TO_DOMXML_PPC64 = [({
             <uuid>%(vmId)s</uuid>
             <memory>1048576</memory>
             <currentMemory>1048576</currentMemory>
-            <vcpu>1</vcpu>
+            <vcpu current="1">160</vcpu>
             <memtune>
                 <min_guarantee>524288</min_guarantee>
             </memtune>
@@ -136,7 +136,7 @@ CONF_TO_DOMXML_PPC64 = [({
                 </clock>
                 <cputune/>
                 <cpu>
-                    <topology cores="1" sockets="1" threads="1"/>
+                    <topology cores="1" sockets="160" threads="1"/>
                 </cpu>
                 <qemu:commandline>
                     <qemu:arg value="-usbdevice"/>

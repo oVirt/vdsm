@@ -1019,6 +1019,8 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_vdsm_stop
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_set_num_of_cpus
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_set_num_of_cpus
 %{_datadir}/%{vdsm_name}/addNetwork
 %{_datadir}/%{vdsm_name}/configNetwork.py*
 %{_datadir}/%{vdsm_name}/delNetwork

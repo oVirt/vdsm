@@ -105,6 +105,8 @@ VDSMHOOKS = \
 	after_vdsm_stop \
 	before_network_setup \
 	after_network_setup \
+	before_set_num_of_cpus \
+	after_set_num_of_cpus \
 	$(NULL)
 
 all-local: \

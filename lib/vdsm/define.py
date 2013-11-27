@@ -132,6 +132,9 @@ errCode = {
     'transientErr': {'status': {
         'code': 59,
         'message': 'Action not permitted on a VM with transient disks'}},
+    'setNumberOfCpusErr': {'status': {
+        'code': 60,
+        'message': 'Failed to set the number of cpus'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

@@ -49,7 +49,8 @@ class TestVm(TestCaseBase):
         TestCaseBase.__init__(self, *args, **kwargs)
         self.conf = {'vmName': 'testVm',
                      'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-                     'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512'}
+                     'smp': '8', 'maxVCpus': '160',
+                     'memSize': '1024', 'memGuaranteedSize': '512'}
 
     def assertXML(self, element, expectedXML, path=None):
         if path is None:
@@ -91,7 +92,7 @@ class TestVm(TestCaseBase):
               <uuid>9ffe28b6-6134-4b1e-8804-1185f49c436f</uuid>
               <memory>1048576</memory>
               <currentMemory>1048576</currentMemory>
-              <vcpu>8</vcpu>
+              <vcpu current="8">160</vcpu>
               <memtune>
                   <min_guarantee>524288</min_guarantee>
               </memtune>
@@ -227,7 +228,7 @@ class TestVm(TestCaseBase):
               <feature name="sse4.1" policy="require"/>
               <feature name="sse4.2" policy="require"/>
               <feature name="svm" policy="disable"/>
-              <topology cores="2" sockets="2" threads="2"/>
+              <topology cores="2" sockets="40" threads="2"/>
           </cpu> """
         cputuneXML = """
           <cputune>

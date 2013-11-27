@@ -2808,6 +2808,9 @@
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
 #
+# @maxVCpus:              #optional Maximum number of CPU available for the guest
+#                         It is the upper boundry for hot plug CPU action
+#
 # @memSize:               The amount of memory assigned to the VM in MB
 #
 # @memGuaranteedSize:     The amount of memory guaranteed to the VM in MB
@@ -2852,9 +2855,9 @@
           'display': 'VmDisplayType', 'displayIp': 'str',
           'displayPort': 'int', 'displaySecurePort': 'int',
           '*emulatedMachine': 'str', '*keyboardLayout': 'str',
-          'kvmEnable': 'bool', 'memSize': 'uint', 'memGuaranteedSize': 'uint',
-          'nicModel': 'str', 'nice': 'int', '*pauseCode': 'str',
-          'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
+          'kvmEnable': 'bool', '*maxVCpus': 'uint', 'memSize': 'uint',
+          'memGuaranteedSize': 'uint', 'nicModel': 'str', 'nice': 'int',
+          '*pauseCode': 'str', 'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'status': 'VmStatus',
           'timeOffset': 'uint', 'transparentHugePages': 'bool',
           'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType',
@@ -6711,3 +6714,21 @@
 {'command': {'class': 'Volume', 'name': 'tearDown'},
  'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
           'storagedomainID': 'UUID', 'imageID': 'UUID'}}
+
+##
+# @VM.setNumberOfCpus:
+#
+# Set the number CPUs for a VM
+#
+# @vmID:    The UUID of the VM
+#
+# @numberOfCpus:  The new number of cpus
+#
+# Returns:
+# The VM definition, as updated
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'VM', 'name': 'setNumberOfCpus'},
+ 'data': {'vmID': 'UUID', 'numberOfCpus': 'int'},
+ 'returns': 'VmDefinition'}

@@ -296,6 +296,16 @@ def after_disk_hotunplug(domxml, vmconf={}, params={}):
                         params=params, raiseError=False)
 
 
+def before_set_num_of_cpus(vmconf={}, params={}):
+    return _runHooksDir(None, 'before_set_num_of_cpus', vmconf=vmconf,
+                        params=params, raiseError=True)
+
+
+def after_set_num_of_cpus(vmconf={}, params={}):
+    return _runHooksDir(None, 'after_set_num_of_cpus', vmconf=vmconf,
+                        params=params, raiseError=False)
+
+
 def before_vdsm_start():
     return _runHooksDir(None, 'before_vdsm_start', raiseError=False)
 

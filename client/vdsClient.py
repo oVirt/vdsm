@@ -245,6 +245,9 @@ class service:
         params = {'vmId': args[0], 'drive': drive}
         return self.ExecAndExit(self.s.hotunplugDisk(params))
 
+    def setNumberOfCpus(self, args):
+        return self.ExecAndExit(self.s.setNumberOfCpus(args[0], args[1]))
+
     def do_changeCD(self, args):
         vmId = args[0]
         file = self._parseDriveSpec(args[1])
@@ -2510,6 +2513,11 @@ if __name__ == '__main__':
             serv.diskSizeExtend, (
                 '<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID> <newSize>',
                 'Extends the virtual size of a disk'
+            )),
+        'setNumberOfCpus': (
+            serv.setNumberOfCpus, (
+                '<vmId> <numberOfCpus>',
+                'set the number of cpus for a running VM'
             )),
     }
     if _glusterEnabled:

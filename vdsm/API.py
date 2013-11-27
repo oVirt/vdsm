@@ -456,6 +456,22 @@ class VM(APIBase):
 
         return curVm.hotunplugDisk(params)
 
+    def setNumberOfCpus(self, vmId, numberOfCpus):
+
+        if vmId is None or numberOfCpus is None:
+            self.log.error('Missing one of required parameters: \
+            vmId: (%s), numberOfCpus: (%s)', vmId, numberOfCpus)
+            return {'status': {'code': errCode['MissParam']['status']['code'],
+                               'message': 'Missing one of required '
+                                          'parameters: vmId, numberOfCpus'}}
+        try:
+            curVm = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            self.log.warning("vm %s doesn't exist", self._UUID)
+            return errCode['noVM']
+
+        return curVm.setNumberOfCpus(int(numberOfCpus))
+
     def migrate(self, params):
         """
         Migrate a VM to a remote host.

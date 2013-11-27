@@ -333,6 +333,7 @@ command_info = {
     'VM_hotUnplugNic': {'ret': 'vmList'},
     'VM_mergeStatus': {'ret': 'mergeStatus'},
     'VM_migrationCreate': {'ret': VM_migrationCreate_Ret},
+    'VM_setNumberOfCpus': {'ret': 'vmList'},
     'Volume_copy': {'ret': 'uuid'},
     'Volume_create': {'ret': 'uuid'},
     'Volume_delete': {'ret': 'uuid'},

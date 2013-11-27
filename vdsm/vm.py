@@ -903,7 +903,7 @@ class _DomXML:
             <uuid>9ffe28b6-6134-4b1e-8804-1185f49c436f</uuid>
             <memory>262144</memory>
             <currentMemory>262144</currentMemory>
-            <vcpu>smp</vcpu>
+            <vcpu current='smp'>160</vcpu>
             <devices>
             </devices>
             <memtune>
@@ -942,7 +942,8 @@ class _DomXML:
         memSizeKB = str(int(self.conf.get('memSize', '256')) * 1024)
         self.dom.appendChildWithArgs('memory', text=memSizeKB)
         self.dom.appendChildWithArgs('currentMemory', text=memSizeKB)
-        self.dom.appendChildWithArgs('vcpu', text=self.conf['smp'])
+        vcpu = self.dom.appendChildWithArgs('vcpu', text=self._getMaxVCpus())
+        vcpu.setAttrs(**{'current': self._getSmp()})
 
         memSizeGuaranteedKB = str(1024 * int(
             self.conf.get('memGuaranteedSize', '0')
@@ -1108,11 +1109,11 @@ class _DomXML:
 
         if ('smpCoresPerSocket' in self.conf or
                 'smpThreadsPerCore' in self.conf):
-            vcpus = int(self.conf.get('smp', '1'))
+            maxVCpus = int(self._getMaxVCpus())
             cores = int(self.conf.get('smpCoresPerSocket', '1'))
             threads = int(self.conf.get('smpThreadsPerCore', '1'))
             cpu.appendChildWithArgs('topology',
-                                    sockets=str(vcpus / cores / threads),
+                                    sockets=str(maxVCpus / cores / threads),
                                     cores=str(cores), threads=str(threads))
 
         #CPU-pinning support
@@ -1230,6 +1231,12 @@ class _DomXML:
 
     def toxml(self):
         return self.doc.toprettyxml(encoding='utf-8')
+
+    def _getSmp(self):
+        return self.conf.get('smp', '1')
+
+    def _getMaxVCpus(self):
+        return self.conf.get('maxVCpus', self._getSmp())
 
 
 class VmDevice(object):
@@ -3473,6 +3480,28 @@ class Vm(object):
 
         hooks.after_nic_hotunplug(nicXml, self.conf,
                                   params=customProps)
+        return {'status': doneCode, 'vmList': self.status()}
+
+    def setNumberOfCpus(self, numberOfCpus):
+
+        if self.isMigrating():
+            return errCode['migInProgress']
+
+        self.log.debug("Setting number of cpus to : %s", numberOfCpus)
+        hooks.before_set_num_of_cpus()
+        try:
+            self._dom.setVcpusFlags(numberOfCpus,
+                                    libvirt.VIR_DOMAIN_AFFECT_CURRENT)
+        except libvirt.libvirtError as e:
+            self.log.error("setNumberOfCpus failed", exc_info=True)
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return errCode['noVM']
+            return {'status': {'code': errCode['setNumberOfCpusErr']
+                    ['status']['code'], 'message': e.message}}
+
+        self.conf['smp'] = str(numberOfCpus)
+        self.saveState()
+        hooks.after_set_num_of_cpus()
         return {'status': doneCode, 'vmList': self.status()}
 
     def _createTransientDisk(self, diskParams):

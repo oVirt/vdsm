@@ -20,6 +20,7 @@ usr/libexec/vdsm/hooks/after_nic_hotplug
 usr/libexec/vdsm/hooks/after_nic_hotplug_fail
 usr/libexec/vdsm/hooks/after_nic_hotunplug
 usr/libexec/vdsm/hooks/after_nic_hotunplug_fail
+usr/libexec/vdsm/hooks/after_set_num_of_cpus
 usr/libexec/vdsm/hooks/after_update_device
 usr/libexec/vdsm/hooks/after_update_device_fail
 usr/libexec/vdsm/hooks/after_vdsm_stop
@@ -41,6 +42,7 @@ usr/libexec/vdsm/hooks/before_disk_hotunplug
 usr/libexec/vdsm/hooks/before_network_setup
 usr/libexec/vdsm/hooks/before_nic_hotplug
 usr/libexec/vdsm/hooks/before_nic_hotunplug
+usr/libexec/vdsm/hooks/before_set_num_of_cpus
 usr/libexec/vdsm/hooks/before_update_device
 usr/libexec/vdsm/hooks/before_vdsm_start
 usr/libexec/vdsm/hooks/before_vm_cont
