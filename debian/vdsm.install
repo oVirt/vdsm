@@ -116,6 +116,7 @@
 ./usr/share/vdsm/storage/sdc.py
 ./usr/share/vdsm/storage/securable.py
 ./usr/share/vdsm/storage/sp.py
+./usr/share/vdsm/storage/spbackends.py
 ./usr/share/vdsm/storage/storageConstants.py
 ./usr/share/vdsm/storage/storageServer.py
 ./usr/share/vdsm/storage/storage_exception.py

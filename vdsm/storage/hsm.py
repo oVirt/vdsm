@@ -40,6 +40,8 @@ import stat
 
 from vdsm.config import config
 import sp
+from spbackends import MAX_POOL_DESCRIPTION_SIZE
+from spbackends import StoragePoolDiskBackend
 import domainMonitor
 import sd
 import blockSD
@@ -937,7 +939,7 @@ class HSM:
         if masterDom not in domList:
             raise se.InvalidParameterException("masterDom", str(masterDom))
 
-        if len(poolName) > sp.MAX_POOL_DESCRIPTION_SIZE:
+        if len(poolName) > MAX_POOL_DESCRIPTION_SIZE:
             raise se.StoragePoolDescriptionTooLongError()
 
         msd = sdCache.produce(sdUUID=masterDom)
@@ -1043,6 +1045,7 @@ class HSM:
                 return True
 
             pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
+            pool.backend = StoragePoolDiskBackend(pool)
 
             # Must register domain state change callbacks *before* connecting
             # the pool, which starts domain monitor threads. Otherwise we will
@@ -1811,6 +1814,7 @@ class HSM:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
             pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
+            pool.setBackend(StoragePoolDiskBackend(pool))
         else:
             raise se.StoragePoolConnected(spUUID)
 

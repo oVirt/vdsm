@@ -32,7 +32,6 @@ from weakref import proxy
 from imageRepository.formatConverter import DefaultFormatConverter
 
 from vdsm import constants, utils
-from clusterlock import InquireNotSupportedError
 import storage_mailbox
 import blockSD
 import fileSD
@@ -42,7 +41,6 @@ import fileUtils
 from vdsm.config import config
 from sdc import sdCache
 import storage_exception as se
-from persistentDict import DictValidator, unicodeEncoder, unicodeDecoder
 from remoteFileHandler import Timeout
 from securable import secured, unsecured
 import image
@@ -53,14 +51,6 @@ import volume
 import mount
 
 POOL_MASTER_DOMAIN = 'mastersd'
-
-MAX_POOL_DESCRIPTION_SIZE = 50
-
-PMDK_DOMAINS = "POOL_DOMAINS"
-PMDK_POOL_DESCRIPTION = "POOL_DESCRIPTION"
-PMDK_LVER = "POOL_SPM_LVER"
-PMDK_SPM_ID = "POOL_SPM_ID"
-PMDK_MASTER_VER = "MASTER_VERSION"
 
 rmanager = rm.ResourceManager.getInstance()
 
@@ -84,21 +74,6 @@ def domainListDecoder(s):
         k, v = domDecl.split(':')
         domList[k.strip("'")] = v.strip("'").capitalize()
     return domList
-
-SP_MD_FIELDS = {
-    # Key          dec,  enc
-    PMDK_DOMAINS: (domainListDecoder, domainListEncoder),
-    PMDK_POOL_DESCRIPTION: (unicodeDecoder, unicodeEncoder),
-    PMDK_LVER: (int, str),
-    PMDK_SPM_ID: (int, str),
-    PMDK_MASTER_VER: (int, str)
-}
-
-# Calculate how many domains can be in the pool before overflowing the Metadata
-MAX_DOMAINS = blockSD.SD_METADATA_SIZE - blockSD.METADATA_BASE_SIZE
-MAX_DOMAINS -= MAX_POOL_DESCRIPTION_SIZE + sd.MAX_DOMAIN_DESCRIPTION_SIZE
-MAX_DOMAINS -= blockSD.PVS_METADATA_SIZE
-MAX_DOMAINS /= 48
 
 
 @secured
@@ -129,8 +104,13 @@ class StoragePool(object):
         self.domainMonitor = domainMonitor
         self._upgradeCallback = partial(StoragePool._upgradePoolDomain,
                                         proxy(self))
+        self._backend = None
 
     def __is_secure__(self):
+        return self.isSecure()
+
+    @unsecured
+    def isSecure(self):
         return self._secured.isSet()
 
     @unsecured
@@ -143,53 +123,19 @@ class StoragePool(object):
 
     @unsecured
     def getSpmStatus(self):
-        try:
-            # If the cluster lock implements inquire (e.g. sanlock) then we
-            # can fetch the spmId and the lVer from it.
-            lVer, spmId = self.masterDomain.inquireClusterLock()
-            lVer, spmId = lVer or LVER_INVALID, spmId or SPM_ID_FREE
-        except InquireNotSupportedError:
-            # Legacy implementation for cluster locks that are not able to
-            # return the spmId and the lVer.
-            poolMeta = self._getPoolMD(self.masterDomain)
-
-            # if we claim that we were the SPM (but we're currently not) we
-            # have to make sure that we're not returning stale data
-            if (poolMeta[PMDK_SPM_ID] == self.id
-                    and not self.spmRole == SPM_ACQUIRED):
-                self.invalidateMetadata()
-                poolMeta = self._getPoolMD(self.masterDomain)
-
-            lVer, spmId = poolMeta[PMDK_LVER], poolMeta[PMDK_SPM_ID]
-
-        return lVer, spmId
-
-    def setSpmStatus(self, lVer=None, spmId=None):
-        self.invalidateMetadata()
-        metaParams = dict(filter(lambda (k, v): v is not None,
-                          ((PMDK_LVER, lVer), (PMDK_SPM_ID, spmId))))
-        self._metadata.update(metaParams)
+        return self._backend.getSpmStatus()
 
     @unsecured
-    def getDomainsMap(self):
-        # The assumption is that whenever the storage pool metadata changes
-        # the HSM hosts will receive refreshStoragePool (and the metadata will
-        # be invalidated). So the invalidation in this method may be redundant
-        # or it was introduced to handle negative flows (missed refresh call).
-        # Anyway I think that we could get rid of this in the future, provided
-        # that the engine handles/resends failed refreshStoragePool calls.
-        self.invalidateMetadata()
-        return self.getMetaParam(PMDK_DOMAINS)
-
-    def setDomainsMap(self, domains):
-        self.setMetaParam(PMDK_DOMAINS, domains)
+    def setBackend(self, backend):
+        self.log.info('updating pool %s backend from type %s instance 0x%x '
+                      'to type %s instance 0x%x', self.spUUID,
+                      type(self._backend).__name__, id(self._backend),
+                      type(backend).__name__, id(backend))
+        self._backend = backend
 
     @unsecured
-    def forceFreeSpm(self):
-        # DO NOT USE, STUPID, HERE ONLY FOR BC
-        # TODO: SCSI Fence the 'lastOwner'
-        self.setSpmStatus(LVER_INVALID, SPM_ID_FREE, __securityOverride=True)
-        self.spmRole = SPM_FREE
+    def getBackend(self):
+        return self._backend
 
     def _upgradePoolDomain(self, sdUUID, isValid):
         # This method is called everytime the onDomainStateChange
@@ -260,7 +206,7 @@ class StoragePool(object):
             if domain.getDomainRole() == sd.REGULAR_DOMAIN:
                 continue
 
-            self.setDomainRegularRole(domain)
+            self._backend.setDomainRegularRole(domain)
 
     @unsecured
     def startSpm(self, prevID, prevLVER, maxHostID, expectedDomVersion=None):
@@ -290,7 +236,7 @@ class StoragePool(object):
                 raise se.OperationInProgress("spm start %s" % self.spUUID)
 
             self.updateMonitoringThreads()
-            oldlver, oldid = self.getSpmStatus()
+            oldlver, oldid = self._backend.getSpmStatus()
             masterDomVersion = self.getVersion()
             # If no specific domain version was specified use current master
             # domain version
@@ -322,7 +268,8 @@ class StoragePool(object):
             try:
                 self.lver = int(oldlver) + 1
 
-                self.setSpmStatus(self.lver, self.id, __securityOverride=True)
+                self._backend.setSpmStatus(self.lver, self.id,
+                                           __securityOverride=True)
                 self._maxHostID = maxHostID
 
                 # Upgrade the master domain now if needed
@@ -458,8 +405,8 @@ class StoragePool(object):
 
             if not stopFailed:
                 try:
-                    self.setSpmStatus(spmId=SPM_ID_FREE,
-                                      __securityOverride=True)
+                    self._backend.setSpmStatus(spmId=SPM_ID_FREE,
+                                               __securityOverride=True)
                 except:
                     pass  # The system can handle this inconsistency
 
@@ -530,18 +477,6 @@ class StoragePool(object):
         # Cleanup links to domains under /rhev/datacenter/poolName
         self.refresh(msdUUID, masterVersion)
 
-    @unsecured
-    def getMasterVersion(self):
-        return self.getMetaParam(PMDK_MASTER_VER)
-
-    def setDomainRegularRole(self, domain):
-        poolMetadata = self._getPoolMD(domain)
-        # TODO: consider to remove the transaction (and this method as well)
-        # since setting the version to 0 may be useless.
-        with poolMetadata.transaction():
-            poolMetadata[PMDK_MASTER_VER] = 0
-            domain.changeRole(sd.REGULAR_DOMAIN)
-
     # TODO: Remove or rename this function.
     def validatePoolSD(self, sdUUID):
         if sdUUID not in self.getDomains():
@@ -558,17 +493,6 @@ class StoragePool(object):
             if self.spUUID not in dom.getPools():
                 raise se.StorageDomainNotInPool(self.spUUID, dom.sdUUID)
         return True
-
-    @unsecured
-    def getMaximumSupportedDomains(self):
-        msdInfo = self.masterDomain.getInfo()
-        msdType = sd.name2type(msdInfo["type"])
-        msdVersion = int(msdInfo["version"])
-        if msdType in sd.BLOCK_DOMAIN_TYPES and \
-                msdVersion in blockSD.VERS_METADATA_LV:
-            return MAX_DOMAINS
-        else:
-            return config.getint("irs", "maximum_domains_in_pool")
 
     @unsecured
     def _acquireTemporaryClusterLock(self, msdUUID, leaseParams):
@@ -733,16 +657,6 @@ class StoragePool(object):
         return True
 
     @unsecured
-    def initParameters(self, poolName, domain, masterVersion):
-        self._getPoolMD(domain).update({
-            PMDK_SPM_ID: SPM_ID_FREE,
-            PMDK_LVER: LVER_INVALID,
-            PMDK_MASTER_VER: masterVersion,
-            PMDK_POOL_DESCRIPTION: poolName,
-            PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS},
-        })
-
-    @unsecured
     def createMaster(self, poolName, domain, masterVersion, leaseParams):
         """
         Create a fresh master file system directory tree
@@ -754,7 +668,7 @@ class StoragePool(object):
         if not misc.isAscii(poolName) and not domain.supportsUnicode():
             raise se.UnicodeArgumentException()
 
-        self.initParameters(poolName, domain, masterVersion)
+        self._backend.initParameters(poolName, domain, masterVersion)
         domain.initMaster(self.spUUID, leaseParams)
 
     @unsecured
@@ -812,19 +726,6 @@ class StoragePool(object):
             else:
                 futureMaster.releaseClusterLock()
 
-    def switchMasterDomain(self, curMasterDomain, newMasterDomain,
-                           newMasterVersion):
-        curPoolMD = self._getPoolMD(curMasterDomain)
-        newPoolMD = self._getPoolMD(newMasterDomain)
-
-        newPoolMD.update({
-            PMDK_DOMAINS: curPoolMD[PMDK_DOMAINS],
-            PMDK_POOL_DESCRIPTION: curPoolMD[PMDK_POOL_DESCRIPTION],
-            PMDK_LVER: curPoolMD[PMDK_LVER],
-            PMDK_SPM_ID: curPoolMD[PMDK_SPM_ID],
-            PMDK_MASTER_VER: newMasterVersion,
-        })
-
     def _copyLeaseParameters(self, srcDomain, dstDomain):
         leaseParams = srcDomain.getLeaseParams()
         self.log.info("Updating lease parameters for domain %s to %s",
@@ -837,7 +738,7 @@ class StoragePool(object):
 
         # TODO: is this check still relevant?
         # Make sure the masterVersion higher than that of the pool
-        if not masterVersion > self.getMasterVersion():
+        if not masterVersion > self._backend.getMasterVersion():
             raise se.StoragePoolWrongMaster(self.spUUID,
                                             self.masterDomain.sdUUID)
 
@@ -905,7 +806,7 @@ class StoragePool(object):
             # the last method to call as "point of no return" after which we
             # only try to cleanup but we cannot rollback.
             newmsd.changeRole(sd.MASTER_DOMAIN)
-            self.switchMasterDomain(curmsd, newmsd, masterVersion)
+            self._backend.switchMasterDomain(curmsd, newmsd, masterVersion)
         except Exception:
             self.log.exception('migration to new master failed')
             try:
@@ -930,7 +831,7 @@ class StoragePool(object):
             # From this point on there is a new master domain in the pool
             # Now that we are beyond the critical point we can clean up
             # things
-            self.setDomainRegularRole(curmsd)
+            self._backend.setDomainRegularRole(curmsd)
 
             # Clean up the old data from previous master fs
             for directory in [curmsd.getVMsDir(), curmsd.getTasksDir()]:
@@ -962,7 +863,7 @@ class StoragePool(object):
         if sdUUID in domains:
             return True
 
-        if len(domains) >= self.getMaximumSupportedDomains():
+        if len(domains) >= self._backend.getMaximumSupportedDomains():
             raise se.TooManyDomainsInStoragePoolError()
 
         try:
@@ -988,7 +889,7 @@ class StoragePool(object):
 
                 dom.attach(self.spUUID)
                 domains[sdUUID] = sd.DOM_ATTACHED_STATUS
-                self.setDomainsMap(domains)
+                self._backend.setDomainsMap(domains)
                 self._refreshDomainLinks(dom)
 
             finally:
@@ -1008,7 +909,7 @@ class StoragePool(object):
 
         del domains[sdUUID]
 
-        self.setDomainsMap(domains)
+        self._backend.setDomainsMap(domains)
         self._cleanupDomainLinks(sdUUID)
 
         # If the domain that we are detaching is the master domain
@@ -1058,6 +959,23 @@ class StoragePool(object):
         # Remove domain from pool metadata
         self.forcedDetachSD(sdUUID)
 
+    def detachAllDomains(self):
+        """
+        Detach all domains from pool before destroying pool
+
+        Assumed cluster lock and that SPM is already stopped.
+        """
+        # Find regular (i.e. not master) domains from the pool metadata
+        regularDoms = tuple(sdUUID for sdUUID in self.getDomains()
+                            if sdUUID != self.masterDomain.sdUUID)
+        # The Master domain should be detached last
+        for sdUUID in regularDoms:
+            self.detachSD(sdUUID)
+
+        # Forced detach master domain
+        self.forcedDetachSD(self.masterDomain.sdUUID)
+        self.masterDomain.detach(self.spUUID)
+
     @unsecured
     def _convertDomain(self, domain, targetFormat=None):
         # Remember to get the sdUUID before upgrading because the object is
@@ -1101,7 +1019,7 @@ class StoragePool(object):
 
         # Domain conversion requires the links to be present
         self._refreshDomainLinks(dom)
-        self.setDomainRegularRole(dom)
+        self._backend.setDomainRegularRole(dom)
 
         if dom.getDomainClass() == sd.DATA_DOMAIN:
             self._convertDomain(dom)
@@ -1109,7 +1027,7 @@ class StoragePool(object):
         dom.activate()
         # set domains also do rebuild
         domainStatuses[sdUUID] = sd.DOM_ACTIVE_STATUS
-        self.setDomainsMap(domainStatuses)
+        self._backend.setDomainsMap(domainStatuses)
         self.updateMonitoringThreads()
         return True
 
@@ -1172,7 +1090,7 @@ class StoragePool(object):
                                        "%s", masterDir, dom)
 
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
-        self.setDomainsMap(domList)
+        self._backend.setDomainsMap(domList)
         self.updateMonitoringThreads()
 
     @unsecured
@@ -1345,21 +1263,6 @@ class StoragePool(object):
         if os.path.exists(os.path.join(vms, vmUUID)):
             fileUtils.cleanupdir(os.path.join(vms, vmUUID))
 
-    def setDescription(self, descr):
-        """
-        Set storage pool description.
-         'descr' - pool description
-        """
-        if len(descr) > MAX_POOL_DESCRIPTION_SIZE:
-            raise se.StoragePoolDescriptionTooLongError()
-
-        self.log.info("spUUID=%s descr=%s", self.spUUID, descr)
-
-        if not misc.isAscii(descr) and not self.masterDomain.supportsUnicode():
-            raise se.UnicodeArgumentException()
-
-        self.setMetaParam(PMDK_POOL_DESCRIPTION, descr)
-
     def extendVolume(self, sdUUID, volumeUUID, size, isShuttingDown=None):
         # This method is not exposed through the remote API but it's called
         # directly from the mailbox to implement the thin provisioning on
@@ -1375,27 +1278,6 @@ class StoragePool(object):
                                       rm.LockType.exclusive):
             return sdCache.produce(sdUUID) \
                 .produceVolume(imgUUID, volUUID).extendSize(int(newSize))
-
-    @classmethod
-    def _getPoolMD(cls, domain):
-        # This might look disgusting but this makes it so that
-        # This is the only intrusion needed to satisfy the
-        # unholy union between pool and SD metadata
-        return DictValidator(domain._metadata._dict, SP_MD_FIELDS)
-
-    @property
-    def _metadata(self):
-        return self._getPoolMD(self.masterDomain)
-
-    @unsecured
-    def getDescription(self):
-        try:
-            return self.getMetaParam(PMDK_POOL_DESCRIPTION)
-            # There was a bug that cause pool description to
-            # disappear. Returning "" might be ugly but it keeps
-            # everyone happy.
-        except KeyError:
-            return ""
 
     @unsecured
     def getVersion(self):
@@ -1413,25 +1295,22 @@ class StoragePool(object):
             raise se.StoragePoolMasterNotFound(self.spUUID,
                                                self.masterDomain.sdUUID)
 
-        try:
-            pmd = self._getPoolMD(self.masterDomain)
-        except Exception:
-            self.log.error("Pool metadata error", exc_info=True)
-            raise se.StoragePoolActionError(self.spUUID)
-
         poolInfo = {
             'type': msdInfo['type'],
-            'name': pmd[PMDK_POOL_DESCRIPTION],
-            'domains': domainListEncoder(pmd[PMDK_DOMAINS]),
+            'name': '',
+            'domains': '',
             'master_uuid': self.masterDomain.sdUUID,
-            'master_ver': pmd[PMDK_MASTER_VER],
-            'lver': pmd[PMDK_LVER],
-            'spm_id': pmd[PMDK_SPM_ID],
+            'master_ver': self._backend.getMasterVersion(),
+            'lver': LVER_INVALID,
+            'spm_id': SPM_ID_FREE,
             'pool_status': 'uninitialized',
             'version': str(msdInfo['version']),
             'isoprefix': '',
             'pool_status': 'connected',
         }
+
+        poolInfo.update(self._backend.getInfo())
+
         return poolInfo
 
     @unsecured
@@ -1450,28 +1329,6 @@ class StoragePool(object):
             if dom.isISO():
                 return dom
         return None
-
-    def setMetaParam(self, key, value):
-        """
-        Set key:value in pool metadata file
-        """
-        self._metadata[key] = value
-
-    @unsecured
-    def getMetaParam(self, key):
-        """
-        Get parameter from pool metadata file
-        """
-        return self._metadata[key]
-
-    @unsecured
-    def validateMasterDomainVersion(self, masterDomain, masterVersion):
-        version = self._getPoolMD(masterDomain)[PMDK_MASTER_VER]
-        if version != int(masterVersion):
-            self.log.error("Requested master domain %s does not have expected "
-                           "version %s it is version %s",
-                           masterDomain.sdUUID, masterVersion, version)
-            raise se.StoragePoolWrongMaster(self.spUUID, masterDomain.sdUUID)
 
     @unsecured
     def setMasterDomain(self, msdUUID, masterVersion):
@@ -1498,17 +1355,12 @@ class StoragePool(object):
                            " %s", msdUUID, self.spUUID)
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
-        self.validateMasterDomainVersion(domain, masterVersion)
+        self._backend.validateMasterDomainVersion(domain, masterVersion)
         self.log.debug("Master domain %s verified, version %s", msdUUID,
                        masterVersion)
 
         self.masterDomain = domain
         self.updateMonitoringThreads()
-
-    @unsecured
-    def invalidateMetadata(self):
-        if not self.spmRole == SPM_ACQUIRED:
-            self._metadata.invalidate()
 
     @unsecured
     @misc.samplingmethod
@@ -1542,7 +1394,7 @@ class StoragePool(object):
     @unsecured
     def getDomains(self, activeOnly=False):
         return dict((sdUUID, status) for sdUUID, status
-                    in self.getDomainsMap().iteritems()
+                    in self._backend.getDomainsMap().iteritems()
                     if not activeOnly or status == sd.DOM_ACTIVE_STATUS)
 
     def checkBackupDomain(self):
@@ -1945,23 +1797,6 @@ class StoragePool(object):
         self._maxHostID
         self.spmMailer.setMaxHostID(maxID)
         raise se.NotImplementedException
-
-    def detachAllDomains(self):
-        """
-        Detach all domains from pool before destroying pool
-
-        Assumed cluster lock and that SPM is already stopped.
-        """
-        # Find regular (i.e. not master) domains from the pool metadata
-        regularDoms = tuple(sdUUID for sdUUID in self.getDomains()
-                            if sdUUID != self.masterDomain.sdUUID)
-        # The Master domain should be detached last
-        for sdUUID in regularDoms:
-            self.detachSD(sdUUID)
-
-        # Forced detach master domain
-        self.forcedDetachSD(self.masterDomain.sdUUID)
-        self.masterDomain.detach(self.spUUID)
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         self.validatePoolSD(sdUUID)
