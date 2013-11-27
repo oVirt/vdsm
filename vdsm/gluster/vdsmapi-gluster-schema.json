@@ -80,7 +80,8 @@
 # Since: 4.10.3
 ##
 {'type': 'HookInfo',
- 'data': {'name': 'str', 'status': 'HookStatus', 'mimetype': 'str', 'command': 'str', 'level': 'HookLevel', 'md5sum': 'str'}}
+ 'data': {'name': 'str', 'status': 'HookStatus', 'mimetype': 'str',
+          'command': 'str', 'level': 'HookLevel', 'md5sum': 'str'}}
 
 ##
 # @GlusterHook.list:
@@ -193,7 +194,8 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterHook', 'name': 'update'},
- 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str', 'hookData': 'str', 'hookMd5Sum': 'str'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str',
+          'hookData': 'str', 'hookMd5Sum': 'str'},
  'returns': 'bool'}
 
 ##
@@ -219,7 +221,8 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterHook', 'name': 'add'},
- 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str', 'hookData': 'str', 'hookMd5Sum': 'str', 'enable': 'bool'},
+ 'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str',
+          'hookData': 'str', 'hookMd5Sum': 'str', 'enable': 'bool'},
  'returns': 'bool'}
 
 ##
@@ -391,7 +394,7 @@
 #
 # @id:        The @UUID of the task
 #
-# @verb:      Volume name is passed
+# @volumeName:      Volume name is passed
 #
 # @filesScanned:     Number of files scanned
 #
@@ -409,7 +412,8 @@
 ##
 {'type': 'TaskSummary',
   'data': {
-        'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int',
+        'id': 'UUID', 'volumeName': 'str', 'filesScanned': 'int',
+        'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int',
         'totalSizeMoved': 'int', 'status': 'str'}}
 ##
 # @TaskInfo:
@@ -418,23 +422,21 @@
 #
 # @id:        The @UUID of the task
 #
-# @verb:      Volume name is passed
+# @volume:    Volume name
 #
-# @state:     Status of the task
+# @status:    Status of the task
 #
-# @code:      Type of task
+# @type:      Type of task
 #
-# @message:   Status message of the task
+# @data:      Task summary
 #
-# @result:    Not used.  Empty string is passed
-#
-# @tag:       String constant 'gluster' is passed
+# @bricks:    Volume Bricks
 #
 # Since: 4.10.3
 ##
 {'type': 'TaskInfo',
-  'data': {'volume': 'str', 'status': 'TaskStatus', 'type': 'TaskType', 'data': 'TaskSummary', 'bricks': ['str']}}
-
+  'data': {'id': 'UUID', 'volume': 'str', 'status': 'TaskStatus',
+           'type': 'TaskType', 'data': 'TaskSummary', 'bricks': ['str']}}
 ##
 # @GlusterTask.list:
 #
@@ -494,7 +496,7 @@
 #
 # Volume profile information.
 #
-# @volumeName:   volume name
+# @volumeName:  volume name
 #
 # @bricks:  list of bricks
 #
@@ -516,7 +518,7 @@
 #
 # Since: 4.10.3
 ##
-{'type': 'VolumeProfileInfo',
+{'type': 'VolumeOptionInfo',
  'data': {'name': 'str', 'defaultValue': 'str', 'description': 'str'}}
 
 ##
@@ -574,8 +576,10 @@
 # Since: 4.10.3
 ##
 {'type': 'VolumeInfo',
- 'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'], 'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str', 'status': 'volumeStatus', 'volumeType': 'str', 'bricksInfo': ['BricksInfo']}}
-
+ 'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'],
+          'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str',
+          'status': 'volumeStatus', 'volumeType': 'str',
+          'bricksInfo': ['BricksInfo']}}
 ##
 # @StatusOption:
 #
@@ -681,6 +685,8 @@
 #
 # @volumeName: Gluster volume name
 #
+# @force: Start volume forcefully
+#
 # Returns:
 # Success or failure
 #
@@ -696,6 +702,8 @@
 # Stop Gluster volume
 #
 # @volumeName: Gluster volume name
+#
+# @force: Stop volume forcefully
 #
 # Returns:
 # Success or failure
@@ -729,6 +737,10 @@
 #
 # @volumeName: Gluster volume name
 #
+# @option: Volume set option name
+#
+# @value:  Value of the volume option
+#
 # Returns:
 # Success or failure
 #
@@ -758,6 +770,10 @@
 #
 # @volumeName: Gluster volume name
 #
+# @option: Volume option
+#
+# @force: Reset volume options forcefully
+#
 # Returns:
 # Success or failure
 #
@@ -770,18 +786,17 @@
 ##
 # @GlusterVolume.addBrick:
 #
-# @volumeName: Gluster volume name
-#
 # Add Gluster volume brick
 #
-# @bricklist: List of bricks
+# @volumeName: Gluster volume name
+#
+# @brickList: List of bricks
 #
 # @replicaCount: #optional Replica count of the volume
 #
 # @stripeCount: #optional Stripe count of the volume
 #
 # @force: #optional Force add brick (new in version 4.14.0)
-#
 #
 # Returns:
 # Success or failure
@@ -800,6 +815,10 @@
 # Start Gluster volume brick remove
 #
 # @volumeName: Gluster volume name
+#
+# @brickList: List of bricks
+#
+# @replicaCount: Volume replica count
 #
 # Returns:
 # Task id of the operation
@@ -832,7 +851,9 @@
 # Since: 4.10.3
 ##
 {'type': 'Summary',
- 'data': {'runtime': 'float', 'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int', 'totalSizeMoved': 'int', 'status': 'str'}}
+ 'data': {'runtime': 'float', 'filesScanned': 'int', 'filesMoved': 'int',
+          'filesFailed': 'int', 'filesSkipped': 'int', 'totalSizeMoved': 'int',
+          'status': 'str'}}
 
 ##
 # @GlusterVolume.removeBrickStop:
@@ -840,6 +861,10 @@
 # Stop Gluster volume brick remove
 #
 # @volumeName: Gluster volume name
+#
+# @brickList: List of bricks
+#
+# @replicaCount: Volume replica count
 #
 # Returns:
 # Status information of remove brick operation
@@ -870,7 +895,8 @@
 # Since: 4.10.3
 ##
 {'enum': 'TaskStatus',
- 'data': ['NOT_STARTED', 'STARTED','STOPPED', 'COMPLETED', 'FAILED', 'UNKNOWN']}
+ 'data': ['NOT_STARTED', 'STARTED','STOPPED', 'COMPLETED', 'FAILED',
+          'UNKNOWN']}
 
 ##
 # @HostInfo:
@@ -898,7 +924,10 @@
 # Since: 4.10.3
 ##
 {'type': 'HostInfo',
- 'data': {'name': 'str', 'id': 'UUID', 'runtime': 'float', 'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int', 'totalSizeMoved': 'int', 'status': 'TaskStatus'}}
+ 'data': {'name': 'str', 'id': 'UUID', 'runtime': 'float',
+          'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int',
+          'filesSkipped': 'int', 'totalSizeMoved': 'int',
+          'status': 'TaskStatus'}}
 
 ##
 # @RebalanceRemoveStatus:
@@ -941,6 +970,10 @@
 #
 # @volumeName: Gluster volume name
 #
+# @brickList: List of bricks
+#
+# @replicaCount: Volume replica count
+#
 # Returns:
 # Success or failure
 #
@@ -956,6 +989,10 @@
 # Force remove Gluster volume brick
 #
 # @volumeName: Gluster volume name
+#
+# @brickList: List of bricks
+#
+# @replicaCount: Volume replica count
 #
 # Returns:
 # Success or failure
@@ -1005,6 +1042,10 @@
 #
 # @volumeName: Gluster volume name
 #
+# @rebalanceType: Rebalance type
+#
+# @force: Start rebalance forcefully
+#
 # Returns:
 # Task id of the operation
 #
@@ -1029,7 +1070,7 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'rebalanceStop'},
- 'data': {'volumeName': 'str', 'force': 'bool'},
+ 'data': {'volumeName': 'str', '*force': 'bool'},
  'returns': 'RebalanceRemoveStatus'}
 
 ##
@@ -1073,6 +1114,8 @@
 #
 # Add Gluster Host
 #
+# @hostName:    Host name
+#
 # Returns:
 # Success or Failure
 #
@@ -1087,6 +1130,10 @@
 #
 # Remove Gluster Host
 #
+# @hostName:     host name
+#
+# @force:        forcefull removal
+#
 # Returns:
 # Success or failure
 #
@@ -1096,11 +1143,14 @@
  'data': {'hostName': 'str', 'force': 'bool'},
  'returns': 'bool'}
 
-
 ##
 # @GlusterHost.removeByUuid:
 #
 # Remove Gluster Host by uuid
+#
+# @hostUuid:   host uuid
+#
+# @force:      remove host forcefully
 #
 # Returns:
 # Success or failure
