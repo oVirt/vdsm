@@ -23,7 +23,7 @@ import os.path
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import temporaryPath
 from monkeypatch import MonkeyPatch
-from vm import VolumeError
+from virt.vm import VolumeError
 import clientIF
 
 

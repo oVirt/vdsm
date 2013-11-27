@@ -47,7 +47,7 @@ from vdsm.constants import VDSM_USER, VDSM_GROUP
 from vdsm.utils import CommandPath, RollbackContext
 from vdsm import vdscli
 
-import vmstatus
+from virt import vmstatus
 
 _VARTMP = '/var/tmp'
 

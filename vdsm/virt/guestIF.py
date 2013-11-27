@@ -1,5 +1,5 @@
 #
-# Copyright 2011,2012 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,12 @@ import time
 import socket
 import errno
 import json
-import supervdsm
 import unicodedata
 
-import vmstatus
+# TODO: in future import from ..
+import supervdsm
+
+from . import vmstatus
 
 _MAX_SUPPORTED_API_VERSION = 0
 _IMPLICIT_API_VERSION_ZERO = 0

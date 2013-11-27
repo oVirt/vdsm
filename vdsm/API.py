@@ -42,8 +42,8 @@ import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
-import vm
-import vmstatus
+from virt import vm
+from virt import vmstatus
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config

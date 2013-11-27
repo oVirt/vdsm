@@ -20,7 +20,7 @@
 #
 import logging
 from collections import namedtuple
-import guestIF
+from virt import guestIF
 import json
 
 from testrunner import VdsmTestCase as TestCaseBase

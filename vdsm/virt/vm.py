@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2013 Red Hat, Inc.
+# Copyright 2008-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,15 +50,18 @@ from storage import sd
 from storage import fileUtils
 
 # local imports
+# In future those should be imported via ..
 from logUtils import SimpleLogAdapter
 import caps
-import guestIF
 import hooks
 import kaxmlrpclib
-import sampling
 import supervdsm
-import vmexitreason
-import vmstatus
+
+# local package imports
+from . import guestIF
+from . import sampling
+from . import vmexitreason
+from . import vmstatus
 
 from vmpowerdown import VmShutdown, VmReboot
 

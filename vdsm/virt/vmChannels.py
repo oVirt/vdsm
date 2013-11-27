@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ import threading
 import time
 import select
 import logging
+
 from storage.misc import NoIntrPoll
 
 # How many times a reconnect should be performed before a cooldown will be

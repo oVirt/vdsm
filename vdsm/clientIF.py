@@ -32,16 +32,17 @@ from momIF import MomThread, isMomAvailable
 from vdsm.define import doneCode, errCode
 import libvirt
 from vdsm import libvirtconnection
-import vm
 from vdsm import constants
 from vdsm import utils
 import caps
-from vmChannels import Listener
-from vm import Vm
 import blkid
 import supervdsm
-import sampling
-import vmstatus
+
+from virt import sampling
+from virt import vm
+from virt import vmstatus
+from virt.vm import Vm
+from virt.vmChannels import Listener
 try:
     import gluster.api as gapi
     _glusterEnabled = True

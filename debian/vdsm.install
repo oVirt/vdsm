@@ -54,7 +54,6 @@
 ./usr/share/vdsm/gluster/cli.py
 ./usr/share/vdsm/gluster/exception.py
 ./usr/share/vdsm/gluster/hostname.py
-./usr/share/vdsm/guestIF.py
 ./usr/share/vdsm/hooking.py
 ./usr/share/vdsm/hooks.py
 ./usr/share/vdsm/kaxmlrpclib.py
@@ -74,7 +73,6 @@
 ./usr/share/vdsm/parted_utils.py
 ./usr/share/vdsm/ppc64HardwareInfo.py
 ./usr/share/vdsm/respawn
-./usr/share/vdsm/sampling.py
 ./usr/share/vdsm/set-conf-item
 ./usr/share/vdsm/sourceRoute.py
 ./usr/share/vdsm/sourceRouteThread.py
@@ -135,8 +133,12 @@
 ./usr/share/vdsm/vdsm-store-net-config
 ./usr/share/vdsm/vdsmDebugPlugin.py
 ./usr/share/vdsm/vdsmapi-schema.json
-./usr/share/vdsm/vm.py
-./usr/share/vdsm/vmexitreason.py
-./usr/share/vdsm/vmChannels.py
-./usr/share/vdsm/vmpowerdown.py
+./usr/share/vdsm/virt/__init__.py
+./usr/share/vdsm/virt/guestIF.py
+./usr/share/vdsm/virt/sampling.py
+./usr/share/vdsm/virt/vm.py
+./usr/share/vdsm/virt/vmChannels.py
+./usr/share/vdsm/virt/vmexitreason.py
+./usr/share/vdsm/virt/vmpowerdown.py
+./usr/share/vdsm/virt/vmstatus.py
 ./var/lib/polkit-1/localauthority/10-vendor.d/10-vdsm-libvirt-access.pkla

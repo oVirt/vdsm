@@ -25,8 +25,8 @@ import shutil
 import tempfile
 import xml.etree.ElementTree as ET
 
-import vm
-import vmexitreason
+from virt import vm
+from virt import vmexitreason
 from vdsm import constants
 from vdsm import define
 from testrunner import VdsmTestCase as TestCaseBase

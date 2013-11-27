@@ -908,6 +908,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/netconf
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
+%dir %{_datadir}/%{vdsm_name}/virt
 %{_datadir}/%{vdsm_name}/alignmentScan.py*
 %{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
@@ -927,15 +928,18 @@ exit 0
 %{_datadir}/%{vdsm_name}/sourceRouteThread.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
-%{_datadir}/%{vdsm_name}/vmChannels.py*
-%{_datadir}/%{vdsm_name}/vmstatus.py*
 %{_datadir}/%{vdsm_name}/tc.py*
 %{_datadir}/%{vdsm_name}/vdsm
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
-%{_datadir}/%{vdsm_name}/vm.py*
-%{_datadir}/%{vdsm_name}/vmexitreason.py*
-%{_datadir}/%{vdsm_name}/vmpowerdown.py*
+%{_datadir}/%{vdsm_name}/virt/__init__.py*
+%{_datadir}/%{vdsm_name}/virt/guestIF.py*
+%{_datadir}/%{vdsm_name}/virt/vmChannels.py*
+%{_datadir}/%{vdsm_name}/virt/vmstatus.py*
+%{_datadir}/%{vdsm_name}/virt/vm.py*
+%{_datadir}/%{vdsm_name}/virt/vmexitreason.py*
+%{_datadir}/%{vdsm_name}/virt/vmpowerdown.py*
+%{_datadir}/%{vdsm_name}/virt/sampling.py*
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
@@ -956,7 +960,6 @@ exit 0
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/cron.d/vdsm-libvirt-logrotate
-%{_datadir}/%{vdsm_name}/guestIF.py*
 %{_datadir}/%{vdsm_name}/logUtils.py*
 %{_datadir}/%{vdsm_name}/dsaversion.py*
 %{_libexecdir}/%{vdsm_name}/curl-img-wrap
@@ -1079,7 +1082,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/neterrors.py*
 %{_datadir}/%{vdsm_name}/netmodels.py*
 %{_datadir}/%{vdsm_name}/respawn
-%{_datadir}/%{vdsm_name}/sampling.py*
 %{_datadir}/%{vdsm_name}/set-conf-item
 %if 0%{?with_gluster}
 %dir %{_datadir}/%{vdsm_name}/gluster

@@ -276,6 +276,7 @@ AC_OUTPUT([
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm/storage/vdsm-lvm.rules
+	vdsm/virt/Makefile
 	vdsm_api/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/checkimages/Makefile

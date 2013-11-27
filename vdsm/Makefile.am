@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2012 Red Hat, Inc.
+# Copyright 2008-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = netconf sos storage gluster
+SUBDIRS = netconf sos storage gluster virt
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -32,7 +32,6 @@ dist_vdsm_PYTHON = \
 	configNetwork.py \
 	debugPluginClient.py \
 	dmidecodeUtil.py \
-	guestIF.py \
 	hooking.py \
 	hooks.py \
 	kaxmlrpclib.py \
@@ -46,17 +45,11 @@ dist_vdsm_PYTHON = \
 	netmodels.py \
 	parted_utils.py \
 	ppc64HardwareInfo.py \
-	sampling.py \
 	sourceRoute.py \
 	sourceRouteThread.py \
 	supervdsm.py \
 	tc.py \
 	vdsmDebugPlugin.py \
-	vmChannels.py \
-	vm.py \
-	vmstatus.py \
-	vmexitreason.py \
-	vmpowerdown.py \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \

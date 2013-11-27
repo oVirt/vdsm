@@ -37,7 +37,7 @@ from storage.misc import execCmd
 
 from utils import VdsProxy, SUCCESS
 
-import vmstatus
+from virt import vmstatus
 
 _mkinitrd = CommandPath("mkinitrd", "/usr/bin/mkinitrd")
 _modprobe = CommandPath("modprobe",
