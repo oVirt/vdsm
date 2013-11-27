@@ -282,6 +282,8 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
                            masterDomain.sdUUID, masterVersion, version)
             raise se.StoragePoolWrongMaster(self.spUUID, masterDomain.sdUUID)
 
+    # TODO: evaluate if it is possible to remove this from the backends and
+    # just use domain.changeRole(...) in the StoragePool class
     def setDomainRegularRole(self, domain):
         poolMetadata = self._getPoolMD(domain)
         # TODO: consider to remove the transaction (and this method as well)
@@ -391,3 +393,106 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
     def invalidateMetadata(self):
         if not self.spmRole == SPM_ACQUIRED:
             self._metadata.invalidate()
+
+
+@secured
+class StoragePoolMemoryBackend(StoragePoolBackendInterface):
+
+    __slots__ = ('pool', 'masterVersion', 'domainsMap')
+
+    log = logging.getLogger('Storage.StoragePoolMemoryBackend')
+
+    def __init__(self, pool, masterVersion, domainsMap):
+        self.pool = weakref.proxy(pool)
+        self.updateVersionAndDomains(masterVersion, domainsMap)
+
+    ### Read-Only StoragePool Object Accessors ###
+
+    def __is_secure__(self):
+        return self.pool.isSecure()
+
+    @property
+    def spUUID(self):
+        return self.pool.spUUID
+
+    @property
+    def masterDomain(self):
+        return self.pool.masterDomain
+
+    ### StoragePool Backend Interface Implementation ###
+
+    @unsecured
+    def getSpmStatus(self):
+        # FIXME: unify with StoragePoolDiskBackend
+        lVer, spmId = self.masterDomain.inquireClusterLock()
+        return lVer or LVER_INVALID, spmId or SPM_ID_FREE
+
+    def setSpmStatus(self, lVer, spmId):
+        self.log.debug(
+            'this storage pool implementation ignores the set spm '
+            'status requests (lver=%s, spmid=%s)', lVer, spmId)
+
+    @unsecured
+    def getDomainsMap(self):
+        return self.domainsMap
+
+    def setDomainsMap(self, domainsMap):
+        self.domainsMap = dict(
+            ((k, v.capitalize()) for k, v in domainsMap.iteritems()))
+        self.log.info(
+            'new storage pool master version %s and domains map %s',
+            self.masterVersion, self.domainsMap)
+
+    @unsecured
+    def getMaximumSupportedDomains(self):
+        return config.getint("irs", "maximum_domains_in_pool")
+
+    @unsecured
+    def getMasterVersion(self):
+        return self.masterVersion
+
+    @unsecured
+    def validateMasterDomainVersion(self, masterDomain, masterVersion):
+        if self.masterVersion != int(masterVersion):
+            self.log.error(
+                'requested master version %s is not the expected one %s',
+                masterVersion, self.masterVersion)
+            raise se.StoragePoolWrongMaster(self.spUUID, masterDomain.sdUUID)
+
+    def setDomainRegularRole(self, domain):
+        domain.changeRole(sd.REGULAR_DOMAIN)
+
+    @unsecured
+    def initParameters(self, domain, poolName, masterVersion):
+        self.log.debug(
+            'this storage pool implementation ignores master '
+            'domain initialization (sdUUID=%s, poolName="%s", '
+            'masterVersion=%s)', domain.sdUUID, poolName, masterVersion)
+
+    def switchMasterDomain(self, currentMasterDomain, newMasterDomain,
+                           newMasterVersion):
+        self.log.debug(
+            'switching from master domain %s version %s to master domain '
+            '%s version %s', currentMasterDomain.sdUUID, self.masterVersion,
+            newMasterDomain.sdUUID, newMasterVersion)
+        self.masterVersion = newMasterVersion
+
+    @unsecured
+    def getInfo(self):
+        lVer, spmId = self.getSpmStatus()
+        return {
+            'name': 'No Description',
+            'domains': domainListEncoder(self.domainsMap),
+            'master_ver': self.masterVersion,
+            'lver': lVer,
+            'spm_id': spmId,
+        }
+
+    ### Backend Specific Methods ###
+
+    @unsecured
+    def updateVersionAndDomains(self, masterVersion, domainsMap):
+        self.log.debug('updating domain version to %s and domains map '
+                       'to %s', masterVersion, domainsMap)
+        self.masterVersion = masterVersion
+        self.setDomainsMap(domainsMap, __securityOverride=True)

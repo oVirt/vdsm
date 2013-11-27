@@ -42,6 +42,7 @@ from vdsm.config import config
 import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE
 from spbackends import StoragePoolDiskBackend
+from spbackends import StoragePoolMemoryBackend
 import domainMonitor
 import sd
 import blockSD
@@ -969,12 +970,15 @@ class HSM:
         for dom in sorted(domList):
             vars.task.getExclusiveLock(STORAGE, dom)
 
-        return sp.StoragePool(spUUID, self.domainMonitor, self.taskMng).create(
-            poolName, masterDom, domList, masterVersion, leaseParams)
+        pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
+        pool.setBackend(StoragePoolDiskBackend(pool))
+
+        return pool.create(poolName, masterDom, domList, masterVersion,
+                           leaseParams)
 
     @public
     def connectStoragePool(self, spUUID, hostID, msdUUID, masterVersion,
-                           options=None):
+                           domainsMap=None, options=None):
         """
         Connect a Host to a specific storage pool.
 
@@ -996,23 +1000,36 @@ class HSM:
         """
         vars.task.setDefaultException(
             se.StoragePoolConnectionError(
-                "spUUID=%s, msdUUID=%s, masterVersion=%s, hostID=%s" %
-                (spUUID, msdUUID, masterVersion, hostID)))
+                "spUUID=%s, msdUUID=%s, masterVersion=%s, hostID=%s, "
+                "domainsMap=%s" %
+                (spUUID, msdUUID, masterVersion, hostID, domainsMap)))
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
-            return self._connectStoragePool(spUUID, hostID, msdUUID,
-                                            masterVersion, options)
+            return self._connectStoragePool(
+                spUUID, hostID, msdUUID, masterVersion, domainsMap)
 
     @staticmethod
-    def _updateStoragePool(pool, hostId, msdUUID, masterVersion):
+    def _updateStoragePool(pool, hostId, msdUUID, masterVersion, domainsMap):
         if hostId != pool.id:
             raise se.StoragePoolConnected(
                 "hostId=%s, newHostId=%s" % (pool.id, hostId))
 
+        if domainsMap is None:
+            if not isinstance(pool.getBackend(), StoragePoolDiskBackend):
+                raise se.StoragePoolConnected('Cannot downgrade pool backend')
+        else:
+            if isinstance(pool.getBackend(), StoragePoolMemoryBackend):
+                pool.getBackend().updateVersionAndDomains(
+                    masterVersion, domainsMap)
+            else:
+                # Live pool backend upgrade
+                pool.setBackend(
+                    StoragePoolMemoryBackend(pool, masterVersion, domainsMap))
+
         pool.refresh(msdUUID, masterVersion)
 
     def _connectStoragePool(self, spUUID, hostID, msdUUID,
-                            masterVersion, options=None):
+                            masterVersion, domainsMap=None, options=None):
         misc.validateUUID(spUUID, 'spUUID')
 
         # TBD: To support multiple pool connection on single host,
@@ -1032,7 +1049,7 @@ class HSM:
                 # but the problem must be addressed (possibly improving the
                 # entire locking pattern used in this method).
                 self._updateStoragePool(self.getPool(spUUID), hostID, msdUUID,
-                                        masterVersion)
+                                        masterVersion, domainsMap)
                 return True
 
         with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
@@ -1041,11 +1058,18 @@ class HSM:
             except se.StoragePoolUnknown:
                 pass  # pool not connected yet
             else:
-                self._updateStoragePool(pool, hostID, msdUUID, masterVersion)
+                self._updateStoragePool(pool, hostID, msdUUID, masterVersion,
+                                        domainsMap)
                 return True
 
             pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
             pool.backend = StoragePoolDiskBackend(pool)
+
+            if domainsMap is None:
+                pool.setBackend(StoragePoolDiskBackend(pool))
+            else:
+                pool.setBackend(
+                    StoragePoolMemoryBackend(pool, masterVersion, domainsMap))
 
             # Must register domain state change callbacks *before* connecting
             # the pool, which starts domain monitor threads. Otherwise we will

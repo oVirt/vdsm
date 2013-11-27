@@ -532,9 +532,10 @@ class BindingXMLRPC(object):
         return image.download(methodArgs, volUUID)
 
     def poolConnect(self, spUUID, hostID, scsiKey, msdUUID, masterVersion,
-                    options=None):
+                    domainsMap=None, options=None):
         pool = API.StoragePool(spUUID)
-        return pool.connect(hostID, scsiKey, msdUUID, masterVersion)
+        return pool.connect(hostID, scsiKey, msdUUID, masterVersion,
+                            domainsMap)
 
     def poolConnectStorageServer(self, domType, spUUID, conList, options=None):
         pool = API.StoragePool(spUUID)

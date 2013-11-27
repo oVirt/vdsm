@@ -978,9 +978,10 @@ class StoragePool(APIBase):
         APIBase.__init__(self)
         self._UUID = UUID
 
-    def connect(self, hostID, scsiKey, masterSdUUID, masterVersion):
-        return self._irs.connectStoragePool(self._UUID, hostID,
-                                            masterSdUUID, masterVersion)
+    def connect(self, hostID, scsiKey, masterSdUUID, masterVersion,
+                domainsMap):
+        return self._irs.connectStoragePool(
+            self._UUID, hostID, masterSdUUID, masterVersion, domainsMap)
 
     def connectStorageServer(self, domainType, connectionParams):
         return self._irs.connectStorageServer(domainType, self._UUID,

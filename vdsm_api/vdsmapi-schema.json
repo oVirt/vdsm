@@ -4115,13 +4115,16 @@
 #
 # @masterVersion:  The Storage Domain version of the master domain
 #
+# @domainDict:     The Storage Domain statuses (added in cluster level 3.4)
+#
 # Since: 4.10.0
 #
 # Notes:  Only one Storage pool may be connected at a time
 ##
 {'command': {'class': 'StoragePool', 'name': 'connect'},
  'data': {'storagepoolID': 'UUID', 'hostID': 'int', 'scsiKey': 'str',
-          'masterSdUUID': 'UUID', 'masterVersion': 'int'}}
+          'masterSdUUID': 'UUID', 'masterVersion': 'int',
+          'domainDict': 'StorageDomainStatusMap'}}
 
 ##
 # @ConnectStorageServerStatus:
