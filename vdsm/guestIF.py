@@ -169,9 +169,9 @@ class GuestAgent ():
     def _handleMessage(self, message, args):
         self.log.log(logging.TRACE, "Guest's message %s: %s", message, args)
         if self.guestStatus is None:
-            self.guestStatus = 'Running'
+            self.guestStatus = 'Up'
         if message == 'heartbeat':
-            self.guestStatus = 'Running'
+            self.guestStatus = 'Up'
             self.guestInfo['memUsage'] = int(args['free-ram'])
             # ovirt-guest-agent reports the following fields in 'memory-stat':
             # 'mem_total', 'mem_free', 'mem_unused', 'swap_in', 'swap_out',

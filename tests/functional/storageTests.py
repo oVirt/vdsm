@@ -62,7 +62,7 @@ _exportfs = CommandPath("exportfs", "/usr/sbin/exportfs")
 
 @expandPermutations
 class StorageTest(TestCaseBase):
-    UPSTATES = frozenset(('Up', 'Powering up', 'Running'))
+    UPSTATES = frozenset(('Up', 'Powering up'))
 
     def runTest(self):
         pass

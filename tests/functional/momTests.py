@@ -80,7 +80,7 @@ class MOMTest(TestCaseBase):
 
     def _statsOK(self, stats):
         try:
-            return stats['status'] == 'Running' and stats['balloonInfo'] \
+            return stats['status'] == 'Up' and stats['balloonInfo'] \
                 and stats['memoryStats']
         except KeyError:
             return False

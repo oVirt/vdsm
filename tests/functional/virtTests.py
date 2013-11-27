@@ -137,7 +137,7 @@ class RunningVm(object):
 
 @expandPermutations
 class VirtTest(TestCaseBase):
-    UPSTATES = frozenset(('Up', 'Powering up', 'Running'))
+    UPSTATES = frozenset(('Up', 'Powering up'))
 
     def setUp(self):
         self.vdsm = VdsProxy()
