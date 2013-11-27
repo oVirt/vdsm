@@ -599,6 +599,28 @@ def getPidNiceness(pid):
     return int(stat.split(') ')[-1].split()[16])
 
 
+def traceback(on="", msg="Unhandled exception"):
+    """
+    Log a traceback for unhandled execptions.
+
+    :param on: Use specific logger name instead of root logger
+    :type on: str
+    :param msg: Use specified message for the exception
+    :type msg: str
+    """
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*a, **kw):
+            try:
+                return f(*a, **kw)
+            except Exception:
+                log = logging.getLogger(on)
+                log.exception(msg)
+                raise  # Do not swallow
+        return wrapper
+    return decorator
+
+
 def tobool(s):
     try:
         if s is None:
