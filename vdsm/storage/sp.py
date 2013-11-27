@@ -1012,6 +1012,7 @@ class StoragePool(Securable):
         dom = sdCache.produce(sdUUID)
 
         # Avoid detach domains if not owned by pool
+        self.validatePoolSD(sdUUID)
         self.validateAttachedDomain(dom)
 
         if sdUUID == self.masterDomain.sdUUID:
@@ -1104,6 +1105,7 @@ class StoragePool(Securable):
         :param masterVersion: new master storage domain version
         """
 
+        self.validatePoolSD(sdUUID)
         self.log.info("sdUUID=%s spUUID=%s newMsdUUID=%s", sdUUID, self.spUUID,
                       newMsdUUID)
         domList = self.getDomains()
@@ -1278,6 +1280,7 @@ class StoragePool(Securable):
                     If sdUUID is None, the update is on the pool, and therefore
                     the master domain will be updated.
         """
+        self.validatePoolSD(sdUUID)
         self.log.info("spUUID=%s sdUUID=%s", self.spUUID, sdUUID)
         vms = self._getVMsPath(sdUUID)
         # We should exclude 'masterd' link from IMG_METAPATTERN globing
@@ -1315,6 +1318,7 @@ class StoragePool(Securable):
         Remove VM.
          'vmUUID' - Virtual machine UUID
         """
+        self.validatePoolSD(sdUUID)
         self.log.info("spUUID=%s vmUUID=%s sdUUID=%s", self.spUUID, vmUUID,
                       sdUUID)
         vms = self._getVMsPath(sdUUID)
@@ -1342,6 +1346,7 @@ class StoragePool(Securable):
         # block devices. The scope of this method is to extend only the
         # volume apparent size; the virtual disk size seen by the guest is
         # unchanged.
+        self.validatePoolSD(sdUUID)
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
     def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
@@ -1922,6 +1927,7 @@ class StoragePool(Securable):
         self.masterDomain.detach(self.spUUID)
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
+        self.validatePoolSD(sdUUID)
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
@@ -1930,6 +1936,7 @@ class StoragePool(Securable):
                 volUUID=volUUID).setDescription(descr=description)
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
+        self.validatePoolSD(sdUUID)
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
@@ -1937,24 +1944,23 @@ class StoragePool(Securable):
                 imgUUID=imgUUID,
                 volUUID=volUUID).setLegality(legality=legality)
 
-    def getVmsList(self, sdUUID=None):
-        if sdUUID is None:
-            dom = self.masterDomain
-        else:
-            dom = sdCache.produce(sdUUID)
-
-        return dom.getVMsList()
+    def getVmsList(self, sdUUID):
+        self.validatePoolSD(sdUUID)
+        return sdCache.produce(sdUUID).getVMsList()
 
     def getVmsInfo(self, sdUUID, vmList=None):
+        self.validatePoolSD(sdUUID)
         return sdCache.produce(sdUUID).getVMsInfo(vmList=vmList)
 
     def validateVolumeChain(self, sdUUID, imgUUID):
         image.Image(self.poolPath).validateVolumeChain(sdUUID, imgUUID)
 
     def extendSD(self, sdUUID, devlist, force):
+        self.validatePoolSD(sdUUID)
         sdCache.produce(sdUUID).extend(devlist, force)
 
     def setSDDescription(self, sd, description):
+        self.validatePoolSD(sd.sdUUID)
         sd.setDescription(descr=description)
 
     def getAllTasksStatuses(self):

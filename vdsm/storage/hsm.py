@@ -662,7 +662,6 @@ class HSM:
         size = math.ceil(size / 2 ** 20)
 
         pool = self.getPool(spUUID)
-        pool.validatePoolSD(sdUUID)
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
     @public
@@ -745,7 +744,6 @@ class HSM:
         vars.task.getSharedLock(STORAGE, sdUUID)
         # We need to let the domain to extend itself
         pool = self.getPool(spUUID)
-        pool.validatePoolSD(sdUUID)
         dmDevs = tuple(os.path.join(devicemapper.DMPATH_PREFIX, guid) for guid
                        in guids)
         pool.extendSD(sdUUID, dmDevs, force)
@@ -794,7 +792,6 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
-        pool.validatePoolSD(sdUUID)
         pool.detachSD(sdUUID)
 
     @public
@@ -1199,7 +1196,6 @@ class HSM:
         vars.task.getExclusiveLock(STORAGE, spUUID)
         vars.task.getExclusiveLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
-        pool.validatePoolSD(sdUUID)
         pool.deactivateSD(sdUUID, msdUUID, masterVersion)
 
     @public
@@ -1263,7 +1259,6 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
         pool = self.getPool(spUUID)
-        pool.validatePoolSD(sdUUID)
         pool.setVolumeDescription(sdUUID, imgUUID, volUUID, description)
 
     @public
@@ -1287,7 +1282,6 @@ class HSM:
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         pool = self.getPool(spUUID)
-        pool.validatePoolSD(sdUUID)
         pool.setVolumeLegality(sdUUID, imgUUID, volUUID, legality)
 
     @public
@@ -1312,9 +1306,7 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
-        if sdUUID and sdUUID != sd.BLANK_UUID:
-            pool.validatePoolSD(sdUUID)
-        else:
+        if not sdUUID or sdUUID == sd.BLANK_UUID:
             sdUUID = pool.masterDomain.sdUUID
 
         vmUUIDs = [vmDesc['vm'] for vmDesc in vmList]
@@ -1340,9 +1332,7 @@ class HSM:
         """
         vars.task.getSharedLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
-        if sdUUID and sdUUID != sd.BLANK_UUID:
-            pool.validatePoolSD(sdUUID)
-        else:
+        if not sdUUID or sdUUID == sd.BLANK_UUID:
             sdUUID = pool.masterDomain.sdUUID
         vars.task.getExclusiveLock(STORAGE, "%s_%s" % (vmUUID, sdUUID))
         pool.removeVM(vmUUID=vmUUID, sdUUID=sdUUID)
@@ -1362,9 +1352,7 @@ class HSM:
         :param options: ?
         """
         pool = self.getPool(spUUID)
-        if sdUUID and sdUUID != sd.BLANK_UUID:
-            pool.validatePoolSD(sdUUID)
-        else:
+        if not sdUUID or sdUUID == sd.BLANK_UUID:
             sdUUID = pool.masterDomain.sdUUID
         vars.task.getSharedLock(STORAGE, sdUUID)
         vms = pool.getVmsList(sdUUID)
@@ -1390,7 +1378,6 @@ class HSM:
         """
         pool = self.getPool(spUUID)
         if sdUUID and sdUUID != sd.BLANK_UUID:
-            pool.validatePoolSD(sdUUID)
             # Only backup domains are allowed in this path
             self.validateBackupDom(sdUUID)
         else:
@@ -2703,7 +2690,6 @@ class HSM:
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         pool = self.getPool(dom.getPools()[0])
-        pool.validatePoolSD(sdUUID)
         pool.setSDDescription(dom, description)
 
     @public
