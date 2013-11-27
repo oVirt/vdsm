@@ -1339,10 +1339,10 @@ class NetworkTest(TestCaseBase):
             try:
                 dummy.setLinkUp(nic)
 
-                routes = [Route(network='0.0.0.0/0', ipaddr=IP_GATEWAY,
+                routes = [Route(network='0.0.0.0/0', via=IP_GATEWAY,
                                 device=nic, table=IP_TABLE),
                           Route(network=IP_NETWORK_AND_CIDR,
-                                ipaddr=IP_ADDRESS, device=nic, table=IP_TABLE)]
+                                via=IP_ADDRESS, device=nic, table=IP_TABLE)]
                 for route in routes:
                     self.assertFalse(routeExists(route))
                     routeAdd(route)
@@ -1370,10 +1370,10 @@ class NetworkTest(TestCaseBase):
             deviceName = NETWORK_NAME if bridged else nics[0]
 
             # Assert that routes and rules exist
-            routes = [Route(network='0.0.0.0/0', ipaddr=IP_GATEWAY,
+            routes = [Route(network='0.0.0.0/0', via=IP_GATEWAY,
                             device=deviceName, table=IP_TABLE),
                       Route(network=IP_NETWORK_AND_CIDR,
-                            ipaddr=IP_ADDRESS, device=deviceName,
+                            via=IP_ADDRESS, device=deviceName,
                             table=IP_TABLE)]
             rules = [Rule(source=IP_NETWORK_AND_CIDR, table=IP_TABLE),
                      Rule(destination=IP_NETWORK_AND_CIDR, table=IP_TABLE,

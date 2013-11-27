@@ -145,22 +145,27 @@ class TestIpwrapper(TestCaseBase):
         self.assertEqual(devices[-2].name, 'p1p3.13')
 
     def testRouteFromText(self):
-        _getRouteAttrs = lambda x: (x.network, x.ipaddr, x.device, x.table)
+        _getRouteAttrs = lambda x: (x.network, x.via, x.device, x.table)
         good_routes = {
             'default via 192.168.99.254 dev eth0':
             ('0.0.0.0/0', '192.168.99.254', 'eth0', None),
             'default via 192.168.99.254 dev eth0 table foo':
             ('0.0.0.0/0', '192.168.99.254', 'eth0', 'foo'),
             '200.100.50.0/16 via 11.11.11.11 dev eth2 table foo':
-            ('200.100.50.0/16', '11.11.11.11', 'eth2', 'foo')}
+            ('200.100.50.0/16', '11.11.11.11', 'eth2', 'foo'),
+            'local 127.0.0.1 dev lo  src 127.0.0.1':
+            ('local', None, 'lo', None)}
+
         for text, attributes in good_routes.iteritems():
             route = Route.fromText(text)
             self.assertEqual(_getRouteAttrs(route), attributes)
 
-        bad_routes = ['default via 192.168.99.257 dev eth0 table foo',
-                      '200.100.50.0/16 dev eth2 table foo',
-                      '288.100.23.9/43 via 192.168.99.254 dev eth0 table foo',
-                      '200.100.50.0/16 via 192.168.99.254 table foo']
+        bad_routes = \
+            ['default via 192.168.99.257 dev eth0 table foo',  # Misformed via
+             '200.100.50.0/16 dev eth2 table foo extra',  # Key without value
+             '288.1.2.9/43 via 1.1.9.4 dev em1 table foo',  # Misformed network
+             '200.100.50.0/16 via 192.168.99.254 table foo',  # No device
+             'local dev eth0 table bar']  # local with no address
         for text in bad_routes:
             self.assertRaises(ValueError, Route.fromText, text)
 

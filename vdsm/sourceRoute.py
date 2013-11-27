@@ -53,9 +53,9 @@ class StaticSourceRoute(object):
         return netaddr.IPAddress(self.ipaddr).value
 
     def _buildRoutes(self):
-        return [Route(network='0.0.0.0/0', ipaddr=self.gateway,
+        return [Route(network='0.0.0.0/0', via=self.gateway,
                       device=self.device, table=self.table),
-                Route(network=self.network, ipaddr=self.ipaddr,
+                Route(network=self.network, via=self.ipaddr,
                       device=self.device, table=self.table)]
 
     def _buildRules(self):

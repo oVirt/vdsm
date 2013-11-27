@@ -367,7 +367,7 @@ def getRoutes():
     """Return the default gateway for each interface that has one."""
     default_routes = (Route.fromText(text) for text in
                       routeShowAllDefaultGateways())
-    return dict((route.device, route.ipaddr) for route in default_routes)
+    return dict((route.device, route.via) for route in default_routes)
 
 
 def ipv6StrToAddress(ipv6_str):

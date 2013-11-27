@@ -238,15 +238,19 @@ def getLink(dev):
 
 @equals
 class Route(object):
-    def __init__(self, network, ipaddr=None, device=None, table=None):
-        if not _isValid(network, IPNetwork):
+    def __init__(self, network, via=None, src=None, device=None, table=None):
+        if network != 'local' and not _isValid(network, IPNetwork):
             raise ValueError('network %s is not properly defined' % network)
 
-        if ipaddr and not _isValid(ipaddr, IPAddress):
-            raise ValueError('ipaddr %s is not properly defined' % ipaddr)
+        if via and not _isValid(via, IPAddress):
+            raise ValueError('via %s is not a proper IP address' % via)
+
+        if src and not _isValid(src, IPAddress):
+            raise ValueError('src %s is not a proper IP address' % src)
 
         self.network = network
-        self.ipaddr = ipaddr
+        self.via = via
+        self.src = src
         self.device = device
         self.table = table
 
@@ -257,15 +261,13 @@ class Route(object):
         textual representation.
         """
         route = text.split()
-        """
-        The network / first column is required, followed by key+value pairs.
-        Thus, the length of a route must be odd.
-        """
-        if len(route) % 2 == 0:
-            raise ValueError('Route %s: The length of the textual '
-                             'representation of a route must be odd.' % text)
 
-        network, params = route[0], route[1:]
+        network = route[0]
+        if network == 'local':
+            params = route[2:]
+        else:
+            params = route[1:]
+
         data = dict(params[i:i + 2] for i in range(0, len(params), 2))
         data['network'] = '0.0.0.0/0' if network == 'default' else network
         return data
@@ -273,35 +275,46 @@ class Route(object):
     @classmethod
     def fromText(cls, text):
         """
-            Creates a Route object from a textual representation. For the vdsm
-            use case we require the network IP address and interface to reach
-            the network to be provided in the text.
+            Creates a Route object from a textual representation.
 
             Examples:
             'default via 192.168.99.254 dev eth0':
             '0.0.0.0/0 via 192.168.99.254 dev eth0 table foo':
             '200.100.50.0/16 via 11.11.11.11 dev eth2 table foo':
+            'local 127.0.0.1 dev lo scope host src 127.0.0.1':
         """
-        data = cls.parse(text)
         try:
-            ipaddr = data['via']
-        except KeyError:
-            raise ValueError('Route %s: Routes require an IP address.' % text)
+            data = cls.parse(text)
+        except Exception:
+            raise ValueError('Route %s: Failed to parse route.' % text)
+
+        via = data.get('via')
+        src = data.get('src')
         try:
             device = data['dev']
         except KeyError:
             raise ValueError('Route %s: Routes require a device.' % text)
         table = data.get('table')
 
-        return cls(data['network'], ipaddr=ipaddr, device=device, table=table)
+        return cls(data['network'], via=via, src=src, device=device,
+                   table=table)
 
     def __str__(self):
-        str = '%s via %s dev %s' % (self.network, self.ipaddr, self.device)
+        output = str(self.network)
+        if self.network == 'local':
+            output += ' %s' % self.src
+        if self.via:
+            output += ' via %s' % self.via
+
+        output += ' dev %s' % self.device
+
+        if self.src:
+            output += ' src %s' % self.src
 
         if self.table:
-            str += ' table %s' % self.table
+            output += ' table %s' % self.table
 
-        return str
+        return output
 
     def __iter__(self):
         for word in str(self).split():
@@ -382,19 +395,19 @@ class Rule(object):
                    srcDevice=srcDevice, detached=detached)
 
     def __str__(self):
-        str = 'from '
+        output = 'from '
         if self.source:
-            str += self.source
+            output += self.source
         else:
-            str += 'all'
+            output += 'all'
         if self.destination:
-            str += ' to %s' % self.destination
+            output += ' to %s' % self.destination
         if self.srcDevice:
-            str += ' dev %s' % self.srcDevice
+            output += ' dev %s' % self.srcDevice
 
-        str += ' table %s' % self.table
+        output += ' table %s' % self.table
 
-        return str
+        return output
 
     def __iter__(self):
         for word in str(self).split():
