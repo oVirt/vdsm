@@ -17,7 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import contextlib
 import errno
+import logging
 
 from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import utils
@@ -200,3 +202,61 @@ class CallbackChainTests(TestCaseBase):
         chain.addCallback(callback, *callbackArgs, **callbackKwargs)
         chain.start()
         chain.join()
+
+
+@contextlib.contextmanager
+def loghandler(handler, logger=""):
+    log = logging.getLogger(logger)
+    log.addHandler(handler)
+    try:
+        yield {}
+    finally:
+        log.removeHandler(handler)
+
+
+class TracebackTests(TestCaseBase):
+
+    def __init__(self, *a, **kw):
+        self.record = None
+        super(TestCaseBase, self).__init__(*a, **kw)
+
+    def testDefaults(self):
+        @utils.traceback()
+        def fail():
+            raise Exception
+        with loghandler(self):
+            self.assertRaises(Exception, fail)
+        self.assertEquals(self.record.name, "root")
+        self.assertTrue(self.record.exc_text is not None)
+
+    def testOn(self):
+        logger = "test"
+
+        @utils.traceback(on=logger)
+        def fail():
+            raise Exception
+        with loghandler(self, logger=logger):
+            self.assertRaises(Exception, fail)
+        self.assertEquals(self.record.name, logger)
+
+    def testMsg(self):
+        @utils.traceback(msg="WAT")
+        def fail():
+            raise Exception
+        with loghandler(self):
+            self.assertRaises(Exception, fail)
+        self.assertEquals(self.record.message, "WAT")
+
+    # Logging handler interface
+
+    level = logging.DEBUG
+
+    def acquire(self):
+        pass
+
+    def release(self):
+        pass
+
+    def handle(self, record):
+        assert self.record is None
+        self.record = record
