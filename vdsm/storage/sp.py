@@ -149,6 +149,20 @@ class StoragePool(Securable):
         self._metadata.update(metaParams)
 
     @unsecured
+    def getDomainsMap(self):
+        # The assumption is that whenever the storage pool metadata changes
+        # the HSM hosts will receive refreshStoragePool (and the metadata will
+        # be invalidated). So the invalidation in this method may be redundant
+        # or it was introduced to handle negative flows (missed refresh call).
+        # Anyway I think that we could get rid of this in the future, provided
+        # that the engine handles/resends failed refreshStoragePool calls.
+        self.invalidateMetadata()
+        return self.getMetaParam(PMDK_DOMAINS)
+
+    def setDomainsMap(self, domains):
+        self.setMetaParam(PMDK_DOMAINS, domains)
+
+    @unsecured
     def forceFreeSpm(self):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
         # TODO: SCSI Fence the 'lastOwner'
@@ -507,15 +521,11 @@ class StoragePool(Securable):
             domain.changeRole(sd.REGULAR_DOMAIN)
 
     # TODO: Remove or rename this function.
-    @unsecured
     def validatePoolSD(self, sdUUID):
         if sdUUID not in self.getDomains():
-            self._metadata.invalidate()
-            if sdUUID not in self.getDomains():
-                raise se.StorageDomainNotMemberOfPool(self.spUUID, sdUUID)
+            raise se.StorageDomainNotMemberOfPool(self.spUUID, sdUUID)
         return True
 
-    @unsecured
     def validateAttachedDomain(self, dom):
         """
         Avoid handling domains if not owned by pool.
@@ -961,7 +971,7 @@ class StoragePool(Securable):
 
                 dom.attach(self.spUUID)
                 domains[sdUUID] = sd.DOM_ATTACHED_STATUS
-                self.setMetaParam(PMDK_DOMAINS, domains)
+                self.setDomainsMap(domains)
                 self._refreshDomainLinks(dom)
 
             finally:
@@ -981,7 +991,7 @@ class StoragePool(Securable):
 
         del domains[sdUUID]
 
-        self.setMetaParam(PMDK_DOMAINS, domains)
+        self.setDomainsMap(domains)
         self._cleanupDomainLinks(sdUUID)
 
         # If the domain that we are detaching is the master domain
@@ -1081,7 +1091,7 @@ class StoragePool(Securable):
         dom.activate()
         # set domains also do rebuild
         domainStatuses[sdUUID] = sd.DOM_ACTIVE_STATUS
-        self.setMetaParam(PMDK_DOMAINS, domainStatuses)
+        self.setDomainsMap(domainStatuses)
         self.updateMonitoringThreads()
         return True
 
@@ -1143,7 +1153,7 @@ class StoragePool(Securable):
                                        "%s", masterDir, dom)
 
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
-        self.setMetaParam(PMDK_DOMAINS, domList)
+        self.setDomainsMap(domList)
         self.updateMonitoringThreads()
 
     @unsecured
@@ -1483,7 +1493,6 @@ class StoragePool(Securable):
     def updateMonitoringThreads(self):
         # domain list it's list of sdUUID:status
         # sdUUID1:status1,sdUUID2:status2,...
-        self.invalidateMetadata()
         activeDomains = self.getDomains(activeOnly=True)
         monitoredDomains = self.domainMonitor.poolMonitoredDomains
 
@@ -1510,10 +1519,9 @@ class StoragePool(Securable):
 
     @unsecured
     def getDomains(self, activeOnly=False):
-        return dict(
-            (sdUUID, status) for sdUUID, status in
-            self.getMetaParam(PMDK_DOMAINS).iteritems()
-            if not activeOnly or status == sd.DOM_ACTIVE_STATUS)
+        return dict((sdUUID, status) for sdUUID, status
+                    in self.getDomainsMap().iteritems()
+                    if not activeOnly or status == sd.DOM_ACTIVE_STATUS)
 
     def checkBackupDomain(self):
         domDict = self.getDomains(activeOnly=True)
