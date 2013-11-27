@@ -568,15 +568,15 @@ def getVlanDevice(vlan):
 
 def getVlanID(vlan):
     """ Return the ID of the given VLAN. """
-    vlanId = None
     out = linkShowDev(vlan)
 
-    for item in out:
-        if "vlan id" in item:
-            vlanId = item.split()[2]
-            break
-
-    return int(vlanId)
+    vlanPos = out[2].find('vlan')
+    if vlanPos == -1:
+        raise ValueError('device %s does not seem to be a vlan' % vlan)
+    tokens = [token.strip() for token in out[2][vlanPos:].split(' ')]
+    for index, token in enumerate(tokens):
+        if "id" == token:
+            return int(tokens[index + 1])
 
 
 def getIpAddresses():
