@@ -20,13 +20,16 @@
 #
 
 import os
+import platform
 from testrunner import VdsmTestCase as TestCaseBase
+from monkeypatch import MonkeyPatch
 
 import caps
 
 
 class TestCaps(TestCaseBase):
 
+    @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.X86_64)
     def testCpuInfo(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
@@ -79,7 +82,8 @@ class TestCaps(TestCaseBase):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
         path = os.path.join(dirName, "caps_libvirt_amd_6274.out")
-        machines = caps._getEmulatedMachines(file(path).read())
+        machines = caps._getEmulatedMachines(caps.Architecture.X86_64,
+                                             file(path).read())
         expectedMachines = ['pc-0.15', 'pc', 'pc-1.0', 'pc-0.14',
                             'pc-0.13', 'pc-0.12', 'pc-0.11',
                             'pc-0.10', 'isapc']

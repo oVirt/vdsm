@@ -22,6 +22,7 @@
 
 import itertools
 import os
+import platform
 from xml.dom import minidom
 import logging
 import time
@@ -67,11 +68,18 @@ RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
 
 
+class Architecture:
+    X86_64 = 'x86_64'
+    PPC64 = 'ppc64'
+
+
 class CpuInfo(object):
     def __init__(self, cpuinfo='/proc/cpuinfo'):
         """Parse /proc/cpuinfo"""
         self._info = {}
         p = {}
+        self._arch = platform.machine()
+
         for line in file(cpuinfo):
             if line.strip() == '':
                 p = {}
@@ -83,13 +91,29 @@ class CpuInfo(object):
                 p[key] = value
 
     def flags(self):
-        return self._info.itervalues().next()['flags'].split()
+        if self._arch == Architecture.X86_64:
+            return self._info.itervalues().next()['flags'].split()
+        elif self._arch == Architecture.PPC64:
+            return ['powernv']
+        else:
+            raise RuntimeError('Unsupported architecture')
 
     def mhz(self):
-        return self._info.itervalues().next()['cpu MHz']
+        if self._arch == Architecture.X86_64:
+            return self._info.itervalues().next()['cpu MHz']
+        elif self._arch == Architecture.PPC64:
+            clock = self._info.itervalues().next()['clock']
+            return clock[:-3]
+        else:
+            raise RuntimeError('Unsupported architecture')
 
     def model(self):
-        return self._info.itervalues().next()['model name']
+        if self._arch == Architecture.X86_64:
+            return self._info.itervalues().next()['model name']
+        elif self._arch == Architecture.PPC64:
+            return self._info.itervalues().next()['cpu']
+        else:
+            raise RuntimeError('Unsupported architecture')
 
 
 class CpuTopology(object):
@@ -135,12 +159,13 @@ def _getCpuTopology(capabilities):
 
 
 @utils.memoized
-def _getEmulatedMachines(capabilities=None):
+def _getEmulatedMachines(arch, capabilities=None):
     if capabilities is None:
         capabilities = _getCapsXMLStr()
     caps = minidom.parseString(capabilities)
+
     for archTag in caps.getElementsByTagName('arch'):
-        if archTag.getAttribute('name') == 'x86_64':
+        if archTag.getAttribute('name') == arch:
             return [m.firstChild.data for m in archTag.childNodes
                     if m.nodeName == 'machine']
     return []
@@ -150,8 +175,32 @@ def _getAllCpuModels():
     cpu_map = minidom.parseString(
         file('/usr/share/libvirt/cpu_map.xml').read())
 
+    arch = platform.machine()
+
+    # In libvirt CPU map XML, both x86_64 and x86 are
+    # the same architecture, so in order to find all
+    # the CPU models for this architecture, 'x86'
+    # must be used
+    if arch == Architecture.X86_64:
+        arch = 'x86'
+
+    architectureElement = None
+
+    architectureElements = cpu_map.getElementsByTagName('arch')
+
+    if architectureElements:
+        for a in architectureElements:
+            if a.getAttribute('name') == arch:
+                architectureElement = a
+
+    if architectureElement is None:
+        logging.error('Error while getting all CPU models: the host '
+                      'architecture is not supported', exc_info=True)
+        return {}
+
     allModels = dict()
-    for m in cpu_map.getElementsByTagName('arch')[0].childNodes:
+
+    for m in architectureElement.childNodes:
         if m.nodeName != 'model':
             continue
         element = m.getElementsByTagName('vendor')
@@ -260,6 +309,8 @@ def osversion():
 
 
 def get():
+    targetArch = platform.machine()
+
     caps = {}
 
     caps['kvmEnabled'] = \
@@ -299,7 +350,7 @@ def get():
     caps['operatingSystem'] = osversion()
     caps['uuid'] = utils.getHostUUID()
     caps['packages2'] = _getKeyPackages()
-    caps['emulatedMachines'] = _getEmulatedMachines()
+    caps['emulatedMachines'] = _getEmulatedMachines(targetArch)
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
     caps['HBAInventory'] = storage.hba.HBAInventory()
     caps['vmTypes'] = ['kvm']
