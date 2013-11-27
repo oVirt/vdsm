@@ -47,6 +47,8 @@ from vdsm.constants import VDSM_USER, VDSM_GROUP
 from vdsm.utils import CommandPath, RollbackContext
 from vdsm import vdscli
 
+import vmstatus
+
 _VARTMP = '/var/tmp'
 
 if not config.getboolean('vars', 'xmlrpc_enable'):
@@ -69,7 +71,7 @@ VERSIONS = tuple(os.environ.get('VDSM_TEST_STORAGE_VERSIONS', '').split()) \
 
 @expandPermutations
 class StorageTest(TestCaseBase):
-    UPSTATES = frozenset(('Up', 'Powering up'))
+    UPSTATES = frozenset((vmstatus.UP, vmstatus.POWERING_UP))
 
     def runTest(self):
         pass

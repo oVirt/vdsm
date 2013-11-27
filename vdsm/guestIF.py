@@ -26,6 +26,8 @@ import json
 import supervdsm
 import unicodedata
 
+import vmstatus
+
 _MAX_SUPPORTED_API_VERSION = 0
 _IMPLICIT_API_VERSION_ZERO = 0
 
@@ -222,9 +224,9 @@ class GuestAgent ():
     def _handleMessage(self, message, args):
         self.log.log(logging.TRACE, "Guest's message %s: %s", message, args)
         if self.guestStatus is None:
-            self.guestStatus = 'Up'
+            self.guestStatus = vmstatus.UP
         if message == 'heartbeat':
-            self.guestStatus = 'Up'
+            self.guestStatus = vmstatus.UP
             self.guestInfo['memUsage'] = int(args['free-ram'])
             # ovirt-guest-agent reports the following fields in 'memory-stat':
             # 'mem_total', 'mem_free', 'mem_unused', 'swap_in', 'swap_out',
@@ -332,7 +334,7 @@ class GuestAgent ():
                 'guestFQDN': self.guestInfo['guestFQDN']}
 
     def onReboot(self):
-        self.guestStatus = 'RebootInProgress'
+        self.guestStatus = vmstatus.REBOOT_IN_PROGRESS
         self.guestInfo['lastUser'] = '' + self.guestInfo['username']
         self.guestInfo['username'] = 'Unknown'
         self.guestInfo['lastLogout'] = time.time()
@@ -381,7 +383,8 @@ class GuestAgent ():
     @staticmethod
     def _onChannelTimeout(self):
         self.guestInfo['memUsage'] = 0
-        if self.guestStatus not in ("Powering down", "RebootInProgress"):
+        if self.guestStatus not in (vmstatus.POWERING_DOWN,
+                                    vmstatus.REBOOT_IN_PROGRESS):
             self.log.log(logging.TRACE, "Guest connection timed out")
             self.guestStatus = None
 

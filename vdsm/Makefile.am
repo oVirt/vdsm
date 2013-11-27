@@ -54,6 +54,7 @@ dist_vdsm_PYTHON = \
 	vdsmDebugPlugin.py \
 	vmChannels.py \
 	vm.py \
+	vmstatus.py \
 	vmexitreason.py \
 	vmpowerdown.py \
 	$(NULL)

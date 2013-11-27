@@ -928,6 +928,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
 %{_datadir}/%{vdsm_name}/vmChannels.py*
+%{_datadir}/%{vdsm_name}/vmstatus.py*
 %{_datadir}/%{vdsm_name}/tc.py*
 %{_datadir}/%{vdsm_name}/vdsm
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config

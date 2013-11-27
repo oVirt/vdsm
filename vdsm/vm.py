@@ -58,6 +58,7 @@ import kaxmlrpclib
 import sampling
 import supervdsm
 import vmexitreason
+import vmstatus
 
 from vmpowerdown import VmShutdown, VmReboot
 
@@ -216,10 +217,10 @@ class MigrationSourceThread(threading.Thread):
                                      ' unresponsive. Hiberanting without '
                                      'desktopLock.')
                     break
-            self._vm.pause('Saving State')
+            self._vm.pause(vmstatus.SAVING_STATE)
         else:
             self.log.debug("Migration started")
-            self._vm.lastStatus = 'Migration Source'
+            self._vm.lastStatus = vmstatus.MIGRATION_SOURCE
 
     def _recover(self, message):
         if not self.status['status']['code']:
@@ -234,7 +235,7 @@ class MigrationSourceThread(threading.Thread):
         if self._mode == 'file' or self._method != 'online':
             self._vm.cont()
         # either way, migration has finished
-        self._vm.lastStatus = 'Up'
+        self._vm.lastStatus = vmstatus.UP
 
     def _finishSuccessfully(self):
         self.status['progress'] = 100
@@ -418,10 +419,11 @@ class VolumeError(RuntimeError):
 class DoubleDownError(RuntimeError):
     pass
 
-VALID_STATES = ('Down', 'Migration Destination', 'Migration Source',
-                'Paused', 'Powering down', 'RebootInProgress',
-                'Restoring state', 'Saving State',
-                'Up', 'WaitForLaunch')
+VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
+                vmstatus.MIGRATION_SOURCE, vmstatus.PAUSED,
+                vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
+                vmstatus.RESTORING_STATE, vmstatus.SAVING_STATE,
+                vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
 
 class MERGESTATUS:
@@ -1994,11 +1996,11 @@ class Vm(object):
         self._confLock = threading.Lock()
         self._creationThread = threading.Thread(target=self._startUnderlyingVm)
         if 'migrationDest' in self.conf:
-            self._lastStatus = 'Migration Destination'
+            self._lastStatus = vmstatus.MIGRATION_DESTINATION
         elif 'restoreState' in self.conf:
-            self._lastStatus = 'Restoring state'
+            self._lastStatus = vmstatus.RESTORING_STATE
         else:
-            self._lastStatus = 'WaitForLaunch'
+            self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
         self._migrationSourceThread = MigrationSourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._guestSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
@@ -2009,7 +2011,7 @@ class Vm(object):
         self._initTimePauseCode = None
         self._initTimeRTC = long(self.conf.get('timeOffset', 0))
         self.guestAgent = None
-        self._guestEvent = 'Powering up'
+        self._guestEvent = vmstatus.POWERING_UP
         self._guestEventTime = 0
         self._vmStats = None
         self._guestCpuRunning = False
@@ -2043,16 +2045,17 @@ class Vm(object):
         self._powerDownEvent = threading.Event()
 
     def _get_lastStatus(self):
-        PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
+        PAUSED_STATES = (vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
+                         vmstatus.UP)
         if not self._guestCpuRunning and self._lastStatus in PAUSED_STATES:
-            return 'Paused'
+            return vmstatus.PAUSED
         return self._lastStatus
 
     def _set_lastStatus(self, value):
-        if self._lastStatus == 'Down':
+        if self._lastStatus == vmstatus.DOWN:
             self.log.warning('trying to set state to %s when already Down',
                              value)
-            if value == 'Down':
+            if value == vmstatus.DOWN:
                 raise DoubleDownError
             else:
                 return
@@ -2334,7 +2337,7 @@ class Vm(object):
             self._vmCreationEvent.set()
             try:
                 self._run()
-                if self.lastStatus != 'Down' and not self.recovering \
+                if self.lastStatus != vmstatus.DOWN and not self.recovering \
                         and not self.cif.mom:
                     # If MOM is available, we needn't tell it to adjust KSM
                     # behaviors on VM start/destroy, because the tuning can be
@@ -2350,10 +2353,10 @@ class Vm(object):
                 self.log.debug("_ongoingCreations released")
 
             if ('migrationDest' in self.conf or 'restoreState' in self.conf) \
-                    and self.lastStatus != 'Down':
+                    and self.lastStatus != vmstatus.DOWN:
                 self._waitForIncomingMigrationFinish()
 
-            self.lastStatus = 'Up'
+            self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
                 self.conf['pauseCode'] = self._initTimePauseCode
                 if self._initTimePauseCode == 'ENOSPC':
@@ -2447,7 +2450,8 @@ class Vm(object):
         with self._confLock:
             toSave = deepcopy(self.status())
         toSave['startTime'] = self._startTime
-        if self.lastStatus != 'Down' and self._vmStats and self.guestAgent:
+        if self.lastStatus != vmstatus.DOWN and \
+                self._vmStats and self.guestAgent:
             toSave['username'] = self.guestAgent.guestInfo['username']
             toSave['guestIPs'] = self.guestAgent.guestInfo['guestIPs']
             toSave['guestFQDN'] = self.guestAgent.guestInfo['guestFQDN']
@@ -2476,7 +2480,7 @@ class Vm(object):
             self.log.debug('reboot event')
             self._startTime = time.time()
             self._guestEventTime = self._startTime
-            self._guestEvent = 'RebootInProgress'
+            self._guestEvent = vmstatus.REBOOT_IN_PROGRESS
             self._powerDownEvent.set()
             self.saveState()
             self.guestAgent.onReboot()
@@ -2667,11 +2671,12 @@ class Vm(object):
                 raise RuntimeError('waiting more that %ss for _guestCpuLock' %
                                    timeout)
 
-    def cont(self, afterState='Up', guestCpuLocked=False):
+    def cont(self, afterState=vmstatus.UP, guestCpuLocked=False):
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout()
         try:
-            if self.lastStatus in ('Migration Source', 'Saving State', 'Down'):
+            if self.lastStatus in (vmstatus.MIGRATION_SOURCE,
+                                   vmstatus.SAVING_STATE, vmstatus.DOWN):
                 self.log.error('cannot cont while %s', self.lastStatus)
                 return errCode['unexpected']
             self._underlyingCont()
@@ -2688,7 +2693,7 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
-    def pause(self, afterState='Paused', guestCpuLocked=False,
+    def pause(self, afterState=vmstatus.PAUSED, guestCpuLocked=False,
               pauseCode='NOERR'):
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout()
@@ -2705,7 +2710,7 @@ class Vm(object):
                 self._guestCpuLock.release()
 
     def shutdown(self, delay, message, reboot):
-        if self.lastStatus == 'Down':
+        if self.lastStatus == vmstatus.DOWN:
             return errCode['noVM']
 
         delay = int(delay)
@@ -2713,11 +2718,11 @@ class Vm(object):
 
         self._guestEventTime = time.time()
         if reboot:
-            self._guestEvent = 'RebootInProgress'
+            self._guestEvent = vmstatus.REBOOT_IN_PROGRESS
             powerDown = VmReboot(self, delay, message, timeout,
                                  self._powerDownEvent)
         else:
-            self._guestEvent = 'Powering down'
+            self._guestEvent = vmstatus.POWERING_DOWN
             powerDown = VmShutdown(self, delay, message, timeout,
                                    self._powerDownEvent)
         return powerDown.start()
@@ -2775,7 +2780,7 @@ class Vm(object):
             exitMessage = vmexitreason.exitReasons.get(exitReasonCode,
                                                        'VM terminated')
         try:
-            self.lastStatus = 'Down'
+            self.lastStatus = vmstatus.DOWN
             with self._confLock:
                 self.conf['exitCode'] = code
                 if 'restoreState' in self.conf:
@@ -2817,16 +2822,16 @@ class Vm(object):
             GUEST_WAIT_TIMEOUT = 60
             now = time.time()
             if now - self._guestEventTime < 5 * GUEST_WAIT_TIMEOUT and \
-                    self._guestEvent == 'Powering down':
+                    self._guestEvent == vmstatus.POWERING_DOWN:
                 return self._guestEvent
             if self.guestAgent and self.guestAgent.isResponsive() and \
                     self.guestAgent.getStatus():
                 return self.guestAgent.getStatus()
             if now - self._guestEventTime < GUEST_WAIT_TIMEOUT:
                 return self._guestEvent
-            return 'Up'
+            return vmstatus.UP
 
-        if self.lastStatus == 'Down':
+        if self.lastStatus == vmstatus.DOWN:
             stats = {}
             stats['exitCode'] = self.conf['exitCode']
             stats['status'] = self.lastStatus
@@ -2877,16 +2882,17 @@ class Vm(object):
                     self.log.error("Error setting vm disk stats",
                                    exc_info=True)
 
-        statuses = ('Saving State', 'Restoring state', 'Migration Source',
-                    'Migration Destination', 'Paused')
+        statuses = (vmstatus.SAVING_STATE, vmstatus.RESTORING_STATE,
+                    vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
+                    vmstatus.PAUSED)
         if self.lastStatus in statuses:
             stats['status'] = self.lastStatus
         elif self.isMigrating():
             if self._migrationSourceThread._mode == 'file':
-                stats['status'] = 'Saving State'
+                stats['status'] = vmstatus.SAVING_STATE
             else:
-                stats['status'] = 'Migration Source'
-        elif self.lastStatus == 'Up':
+                stats['status'] = vmstatus.MIGRATION_SOURCE
+        elif self.lastStatus == vmstatus.UP:
             stats['status'] = _getGuestStatus()
         else:
             stats['status'] = self.lastStatus
@@ -2929,7 +2935,7 @@ class Vm(object):
                 return errCode['transientErr']
             # while we were blocking, another migrationSourceThread could have
             # taken self Down
-            if self._lastStatus == 'Down':
+            if self._lastStatus == vmstatus.DOWN:
                 return errCode['noVM']
             self._migrationSourceThread = MigrationSourceThread(self, **params)
             self._migrationSourceThread.start()
@@ -3134,8 +3140,8 @@ class Vm(object):
 
         self._guestCpuRunning = (self._dom.info()[0] ==
                                  libvirt.VIR_DOMAIN_RUNNING)
-        if self.lastStatus not in ('Migration Destination',
-                                   'Restoring state'):
+        if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
+                                   vmstatus.RESTORING_STATE):
             self._initTimePauseCode = self._readPauseCode(0)
         if not self.recovering and self._initTimePauseCode:
             self.conf['pauseCode'] = self._initTimePauseCode
@@ -4645,7 +4651,7 @@ class Vm(object):
                 return {'status': doneCode}
 
             self.log.info('Release VM resources')
-            self.lastStatus = 'Powering down'
+            self.lastStatus = vmstatus.POWERING_DOWN
             try:
                 # Terminate the VM's creation thread.
                 self._incomingMigrationFinished.set()
@@ -5201,13 +5207,13 @@ class Vm(object):
                        eventToString(event), detail, opaque)
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
             if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
-                    self.lastStatus == 'Migration Source'):
+                    self.lastStatus == vmstatus.MIGRATION_SOURCE):
                 hooks.after_vm_migrate_source(self._lastXMLDesc, self.conf)
                 for dev in self._customDevices():
                     hooks.after_device_migrate_source(
                         dev._deviceXML, self.conf, dev.custom)
             elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
-                    self.lastStatus == 'Saving State'):
+                    self.lastStatus == vmstatus.SAVING_STATE):
                 hooks.after_vm_hibernate(self._lastXMLDesc, self.conf)
             else:
                 if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN:
@@ -5243,7 +5249,7 @@ class Vm(object):
                 else:
                     hooks.after_vm_cont(domxml, self.conf)
             elif (detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED and
-                  self.lastStatus == 'Migration Destination'):
+                  self.lastStatus == vmstatus.MIGRATION_DESTINATION):
                 self._incomingMigrationFinished.set()
 
     def _updateDevicesDomxmlCache(self, xml):

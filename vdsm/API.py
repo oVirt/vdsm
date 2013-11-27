@@ -43,6 +43,7 @@ import storage.volume
 import storage.sd
 import storage.image
 import vm
+import vmstatus
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
@@ -499,7 +500,7 @@ class VM(APIBase):
             return errCode['noVM']
 
         vmParams = v.status()
-        if vmParams['status'] in ('WaitForLaunch', 'Down'):
+        if vmParams['status'] in (vmstatus.WAIT_FOR_LAUNCH, vmstatus.DOWN):
             return errCode['noVM']
         if params.get('mode') == 'file':
             if 'dst' not in params:
@@ -1585,7 +1586,7 @@ class Global(APIBase):
             try:
                 count += 1
                 status = v.lastStatus
-                if status == 'Up':
+                if status == vmstatus.UP:
                     active += 1
                 elif 'Migration' in status:
                     migrating += 1

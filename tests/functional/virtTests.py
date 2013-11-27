@@ -37,6 +37,8 @@ from storage.misc import execCmd
 
 from utils import VdsProxy, SUCCESS
 
+import vmstatus
+
 _mkinitrd = CommandPath("mkinitrd", "/usr/bin/mkinitrd")
 _modprobe = CommandPath("modprobe",
                         "/usr/sbin/modprobe",  # Fedora, Ubuntu
@@ -139,7 +141,7 @@ class RunningVm(object):
 
 @expandPermutations
 class VirtTest(TestCaseBase):
-    UPSTATES = frozenset(('Up', 'Powering up'))
+    UPSTATES = frozenset((vmstatus.UP, vmstatus.POWERING_UP))
 
     def setUp(self):
         self.vdsm = VdsProxy()
@@ -151,12 +153,12 @@ class VirtTest(TestCaseBase):
 
     def assertQemuSetupComplete(self, vmid):
         result = self._getVmStatus(vmid)
-        self.assertTrue(result['status'] != 'WaitForLaunch',
+        self.assertTrue(result['status'] != vmstatus.WAIT_FOR_LAUNCH,
                         'VM is not booting!')
 
     def assertVmBooting(self, vmid):
         result = self._getVmStatus(vmid)
-        self.assertTrue(result['status'] != 'Down',
+        self.assertTrue(result['status'] != vmstatus.DOWN,
                         'VM is not booting!')
 
     def assertVmUp(self, vmid):
@@ -168,7 +170,7 @@ class VirtTest(TestCaseBase):
         if targetUptime > 0:
             self.assertTrue(int(result['elapsedTime']) >= targetUptime)
         else:
-            self.assertEquals(result['status'], 'Up')
+            self.assertEquals(result['status'], vmstatus.UP)
 
     def _waitForStartup(self, vmid, targetUptime=0):
         self.retryAssert(partial(self.assertQemuSetupComplete, vmid),

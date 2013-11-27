@@ -41,6 +41,7 @@ from vm import Vm
 import blkid
 import supervdsm
 import sampling
+import vmstatus
 try:
     import gluster.api as gapi
     _glusterEnabled = True
@@ -416,8 +417,8 @@ class clientIF:
                                        vmId, exc_info=True)
 
             while (self._enabled and
-                   'WaitForLaunch' in [v.lastStatus for v in
-                                       self.vmContainer.values()]):
+                   vmstatus.WAIT_FOR_LAUNCH in [v.lastStatus for v in
+                                                self.vmContainer.values()]):
                 time.sleep(1)
             self._cleanOldFiles()
             self._recovery = False

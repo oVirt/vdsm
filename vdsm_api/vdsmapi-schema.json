@@ -1882,6 +1882,8 @@
 #
 # @Powering down:          A shutdown command has been sent to the VM
 #
+# @Powering up:            The VM is booting
+#
 # @RebootInProgress:       The VM is currently rebooting
 #
 # @Restoring state:        The VM is waking from hibernation
@@ -1897,7 +1899,7 @@
 {'enum': 'VmStatus',
  'data': ['Down', 'Migration Destination', 'Migration Source', 'Paused',
           'Powering down', 'RebootInProgress', 'Restoring state',
-          'Saving State', 'Up', 'WaitForLaunch']}
+          'Saving State', 'Up', 'WaitForLaunch', 'Powering up']}
 
 ##
 # @VmDisplayType:
