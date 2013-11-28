@@ -235,7 +235,13 @@ Requires: %{name}-python = %{version}-%{release}
 Requires: pyparted
 
 Requires(post): /usr/sbin/saslpasswd2
+
+%if 0%{?fedora} && 0%{?fedora} >= 21
+Requires(post): hostname
+%else
 Requires(post): /bin/hostname
+%endif
+
 Requires(post): policycoreutils-python
 Requires(preun): policycoreutils-python
 
