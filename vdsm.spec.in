@@ -649,8 +649,11 @@ if grep -q "# VDSM section begin" /etc/sysctl.conf; then
 fi
 
 # hack until we replace core dump with abrt
-/usr/sbin/semanage fcontext -a -t virt_cache_t '/var/log/core(/.*)?'
+if /usr/sbin/selinuxenabled; then
+    /usr/sbin/semanage fcontext -a -t virt_cache_t '/var/log/core(/.*)?'
+fi
 /sbin/restorecon -R -v /var/log/core
+# hack until we replace core dump with abrt
 
 %if 0%{?rhel}
 if [ "$1" -eq 1 ] ; then
