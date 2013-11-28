@@ -455,7 +455,7 @@ class clientIF:
                     # Do not prepare volumes when system goes down
                     if self._enabled:
                         vmObj.preparePaths(
-                            vmObj.getConfDevices()[vm.DISK_DEVICES])
+                            vmObj.buildConfDevices()[vm.DISK_DEVICES])
                 except:
                     self.log.error("Vm %s recovery failed",
                                    vmId, exc_info=True)
