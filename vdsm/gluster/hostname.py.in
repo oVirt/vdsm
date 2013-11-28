@@ -20,10 +20,6 @@
 
 from vdsm import utils
 
-_hostNameCommandPath = utils.CommandPath("hostname",
-                                         "/bin/hostname",
-                                         )
-
 
 class HostNameException(Exception):
     def __init__(self, rc):
@@ -35,7 +31,7 @@ class HostNameException(Exception):
 
 
 def getHostNameFqdn():
-    rc, out, err = utils.execCmd([_hostNameCommandPath.cmd, '--fqdn'])
+    rc, out, err = utils.execCmd(['@HOSTNAME_PATH@', '--fqdn'])
     if rc:
         raise HostNameException(rc)
     else:
