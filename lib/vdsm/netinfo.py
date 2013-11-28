@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 import errno
 from glob import iglob
 from itertools import chain
@@ -528,7 +528,8 @@ def _devinfo(dev):
 
 
 def get():
-    d = defaultdict(dict)
+    d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
+         'vlans': {}}
     gateways = getRoutes()
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
