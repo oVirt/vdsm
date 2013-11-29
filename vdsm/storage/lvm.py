@@ -161,19 +161,6 @@ def _updateLvmConf(conf):
         log.warning("Cannot create %s file %s", VDSM_LVM_CONF, str(e))
 
 
-def _setupLVMEnv():
-    lvmenvfname = os.path.join(VAR_RUN_VDSM, "lvm.env")
-    with file(lvmenvfname, "w") as lvmenv:
-        lvmenv.write("export LVM_SYSTEM_DIR=%s\n" % VDSM_LVM_SYSTEM_DIR)
-
-
-def _setupLVM():
-    try:
-        _setupLVMEnv()
-    except IOError as e:
-        log.warning("Cannot create env file %s", e)
-
-
 #
 # Make sure that "args" is suitable for consumption in interfaces
 # that expect an iterabale argument. The string is treated a single
@@ -294,7 +281,6 @@ class LVMCache(object):
     def __init__(self):
         self._filterStale = True
         self._extraCfg = None
-        _setupLVM()
         self._filterLock = threading.Lock()
         self._oplock = misc.OperationMutex()
         self._stalepv = True

@@ -20,6 +20,8 @@
 
 SUBDIRS = protect imageRepository
 
+include $(top_srcdir)/build-aux/Makefile.subs
+
 vdsmstoragedir = $(vdsmdir)/storage
 dist_vdsmstorage_PYTHON = \
 	__init__.py \
@@ -70,6 +72,14 @@ dist_vdsmstorage_PYTHON = \
 
 dist_vdsmexec_SCRIPTS = \
 	curl-img-wrap
+
+nodist_vdsmstorage_DATA = \
+	lvm.env \
+	$(NULL)
+
+EXTRA_DIST = \
+	lvm.env.in \
+	$(NULL)
 
 check-local:
 	PYTHONPATH="$(top_srcdir)/lib:$$PYTHONPATH" PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/storage_exception.py

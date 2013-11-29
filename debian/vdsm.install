@@ -99,6 +99,7 @@
 ./usr/share/vdsm/storage/iscsi.py
 ./usr/share/vdsm/storage/iscsiadm.py
 ./usr/share/vdsm/storage/localFsSD.py
+./usr/share/vdsm/storage/lvm.env
 ./usr/share/vdsm/storage/lvm.py
 ./usr/share/vdsm/storage/misc.py
 ./usr/share/vdsm/storage/mount.py

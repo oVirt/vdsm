@@ -911,6 +911,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/iscsiadm.py*
 %{_datadir}/%{vdsm_name}/storage/iscsi.py*
 %{_datadir}/%{vdsm_name}/storage/localFsSD.py*
+%{_datadir}/%{vdsm_name}/storage/lvm.env
 %{_datadir}/%{vdsm_name}/storage/lvm.py*
 %{_datadir}/%{vdsm_name}/storage/misc.py*
 %{_datadir}/%{vdsm_name}/storage/mount.py*
