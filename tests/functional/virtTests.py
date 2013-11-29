@@ -21,6 +21,7 @@
 import os
 import math
 import tempfile
+import logging
 from stat import S_IROTH
 from functools import partial, wraps
 
@@ -81,6 +82,7 @@ def _detectBootImages(initramfsPaths):
 
 
 def _genInitramfs():
+    logging.warning('Generating a temporary initramfs image')
     fd, path = tempfile.mkstemp()
     cmd = [_mkinitrd.cmd, "-f", path, _kernelVer]
     rc, out, err = execCmd(cmd, sudo=False)
@@ -176,10 +178,6 @@ class VirtTest(TestCaseBase):
         # 20 % more time on timeout
         self.retryAssert(partial(self.assertGuestUp, vmid, targetUptime),
                          timeout=math.ceil(targetUptime * 1.2))
-
-    def testInitramfsReadable(self):
-        # initialize initramfs paths
-        self.assertFalse(_tmpinitramfs)
 
     @requireKVM
     def testSimpleVm(self):
