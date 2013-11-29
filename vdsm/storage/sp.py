@@ -1892,11 +1892,11 @@ class StoragePool(Securable):
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
-            uuid = sdCache.produce(sdUUID).createVolume(
+            newVolUUID = sdCache.produce(sdUUID).createVolume(
                 imgUUID=imgUUID, size=size, volFormat=volFormat,
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
                 desc=desc, srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID)
-        return dict(uuid=uuid)
+        return dict(uuid=newVolUUID)
 
     def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force):
         """
@@ -1961,8 +1961,8 @@ class StoragePool(Securable):
         Assumed cluster lock and that SPM is already stopped.
         """
         # Find regular (i.e. not master) domains from the pool metadata
-        regularDoms = tuple(uuid for uuid in self.getDomains()
-                            if uuid != self.masterDomain.sdUUID)
+        regularDoms = tuple(sdUUID for sdUUID in self.getDomains()
+                            if sdUUID != self.masterDomain.sdUUID)
         # The Master domain should be detached last
         for sdUUID in regularDoms:
             self.detachSD(sdUUID)
