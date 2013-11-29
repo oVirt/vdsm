@@ -309,7 +309,10 @@ def osversion():
 
 
 def get():
-    targetArch = platform.machine()
+    if config.getboolean('vars', 'fake_kvm_support'):
+        targetArch = config.get('vars', 'fake_kvm_architecture')
+    else:
+        targetArch = platform.machine()
 
     caps = {}
 
@@ -328,12 +331,23 @@ def get():
     caps['cpuSockets'] = str(cpuTopology.sockets())
     caps['cpuSpeed'] = cpuInfo.mhz()
     if config.getboolean('vars', 'fake_kvm_support'):
-        caps['cpuModel'] = 'Intel(Fake) CPU'
-        flags = set(cpuInfo.flags() + ['vmx', 'sse2', 'nx'])
-        caps['cpuFlags'] = ','.join(flags) + 'model_486,model_pentium,' \
-            'model_pentium2,model_pentium3,model_pentiumpro,model_qemu32,' \
-            'model_coreduo,model_core2duo,model_n270,model_Conroe,' \
-            'model_Penryn,model_Nehalem,model_Opteron_G1'
+        if targetArch == Architecture.X86_64:
+            caps['cpuModel'] = 'Intel(Fake) CPU'
+
+            flagList = ['vmx', 'sse2', 'nx']
+
+            if targetArch == platform.machine():
+                flagList += cpuInfo.flags()
+
+            flags = set(flagList)
+
+            caps['cpuFlags'] = ','.join(flags) + ',model_486,model_pentium,' \
+                'model_pentium2,model_pentium3,model_pentiumpro,' \
+                'model_qemu32,model_coreduo,model_core2duo,model_n270,' \
+                'model_Conroe,model_Penryn,model_Nehalem,model_Opteron_G1'
+        elif targetArch == Architecture.PPC64:
+            caps['cpuModel'] = 'POWER 7 (fake)'
+            caps['cpuFlags'] = 'powernv,model_POWER7_v2.3'
     else:
         caps['cpuModel'] = cpuInfo.model()
         caps['cpuFlags'] = ','.join(cpuInfo.flags() +

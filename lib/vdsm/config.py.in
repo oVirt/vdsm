@@ -145,6 +145,9 @@ parameters = [
 
         ('fake_kvm_support', 'false', None),
 
+        ('fake_kvm_architecture', 'x86_64',
+            'Choose the target architecture of the fake KVM mode'),
+
         ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
 
         ('jsonrpc_enable', 'true', 'Enable the JSON RPC server'),
