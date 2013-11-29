@@ -24,7 +24,7 @@ import tempfile
 from nose.tools import eq_, raises
 from nose.plugins.skip import SkipTest
 from testrunner import VdsmTestCase as TestCaseBase
-from testValidation import slowtest
+from testValidation import brokentest, slowtest
 from storage.misc import execCmd
 from alignmentScan import runScanArgs, scanImage, VirtAlignError
 
@@ -57,6 +57,7 @@ class AlignmentScanTests(TestCaseBase):
         scanImage("nonexistent-image-name")
 
     @slowtest
+    @brokentest("libguestfs occasionally fails to open libvirt-sock")
     def test_nonaligned_image(self):
         validate_virtalignscan_installed()
         with tempfile.NamedTemporaryFile() as img:
@@ -67,6 +68,7 @@ class AlignmentScanTests(TestCaseBase):
             eq_(msg[0][4], 'bad (alignment < 4K)')
 
     @slowtest
+    @brokentest("libguestfs occasionally fails to open libvirt-sock")
     def test_aligned_image(self):
         validate_virtalignscan_installed()
         with tempfile.NamedTemporaryFile() as img:
