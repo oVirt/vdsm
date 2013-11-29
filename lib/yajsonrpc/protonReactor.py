@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Saggi Mizrahi, Red Hat Inc.
+# Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -24,7 +24,20 @@ import proton
 
 FAILED = 0
 CONNECTED = 1
-AUTHENTICATING = 2
+SERVER_AUTH = 2
+CLIENT_AUTH = 3
+
+MBUFF_SIZE = 10
+
+
+class ProtonError(RuntimeError):
+    pass
+
+
+# Used for reactor coroutines
+class Return(object):
+    def __init__(self, value):
+        self.value = value
 
 
 class ProtonListener(object):
@@ -40,28 +53,90 @@ class ProtonListener(object):
 
 
 class ProtonClient(object):
-    def __init__(self, reactor, connection, connector, session):
+    log = logging.getLogger("jsonrpc.ProtonClient")
+
+    def __init__(self, reactor, connection, connector, session, address):
+        self._address = address
         self.connector = connector
         self.connection = connection
         self.session = session
         self.sender = None
-        self.links = []
-        self._inbox = None
+        self._messageHandler = None
         self._outbox = Queue()
         self._reactor = reactor
+        self._connected = False
+
+    def setTimeout(self, timeout):
+        # TODO
+        pass
+
+    def closed(self):
+        return (self.connector is None or
+                proton.pn_connector_closed(self.connector))
+
+    def connect(self):
+        res = self._reactor._scheduleOp(True, self._openClientSession)
+        self.log.debug("Connected successfully to server")
+        if res == -1:
+            raise ProtonError("Could not connect to server")
+
+    def _openClientSession(self):
+        host, port = self._address
+        amqpAddress = "ampq://%s:%d/vdsm" % (host, port)
+        senderName = "jsonrpc.ProtonClient %s (%s)" % (str(uuid.uuid4()),
+                                                       amqpAddress,)
+        self.log = logging.getLogger(senderName)
+
+        self.connector = proton.pn_connector(self._reactor._driver,
+                                             host, str(port), None)
+        if self.connector is None:
+            raise ProtonError("Could not create connector")
+
+        self.connection = proton.pn_connection()
+        proton.pn_connector_set_connection(self.connector, self.connection)
+
+        sasl = proton.pn_connector_sasl(self.connector)
+        proton.pn_sasl_mechanisms(sasl, "ANONYMOUS")
+        proton.pn_sasl_client(sasl)
+
+        proton.pn_connector_set_context(self.connector, CLIENT_AUTH)
+        self.log.debug("Opening active connection")
+        proton.pn_connection_open(self.connection)
+
+        while True:
+            # TODO: Handle connection being closed mid authentication
+            if proton.pn_sasl_state(sasl) in (proton.PN_SASL_PASS,):
+                proton.pn_connector_set_context(self.connector, CONNECTED)
+                break
+
+            if proton.pn_sasl_state(sasl) == proton.PN_SASL_FAIL:
+                yield Return(-1)
+
+            yield
+
+        self.session = proton.pn_session(self.connection)
+        proton.pn_session_open(self.session)
+        proton.pn_session_set_context(self.session, self)
+
+        link = proton.pn_sender(self.session, senderName)
+        dst = proton.pn_link_target(link)
+        proton.pn_terminus_set_address(dst, amqpAddress)
+        self.sender = link
+        yield Return(1)
 
     def _pushIncomingMessage(self, msg):
-        try:
-            self._inbox.put_nowait((self, msg))
-        except AttributeError:
+        if self._messageHandler is not None:
+            self._messageHandler((self, msg))
+        else:
             # Inbox not set
-            pass
+            self.log.warn("Message missed since inbox was not set for "
+                          "this client")
 
     def _popPendingMessage(self):
         return self._outbox.get_nowait()
 
-    def setInbox(self, queue):
-        self._inbox = queue
+    def setMessageHandler(self, msgHandler):
+        self._messageHandler = msgHandler
 
     def send(self, msg):
         self._outbox.put_nowait(msg)
@@ -76,18 +151,22 @@ class ProtonClient(object):
 class ProtonReactor(object):
     log = logging.getLogger("jsonrpc.ProtonReactor")
 
-    def __init__(self, deliveryTimeout=5):
+    def __init__(self, deliveryTimeout=5, sslctx=None):
+        self.sslctx = sslctx
+        self.log = logging.getLogger("jsonrpc.ProtonReactor (%d)" % id(self))
         self._isRunning = False
+        self._coroutines = []
 
         self._driver = proton.pn_driver()
 
-        self._sessionContexts = []
         self._deliveryTimeout = deliveryTimeout
         self._commandQueue = Queue()
         self._listeners = {}
+        self._wakeEv = Event()
 
     def _activate(self, connector, cond):
-        self._scheduleOp(False, proton.pn_connector_activate, connector, cond)
+        self._scheduleOp(False, proton.pn_connector_activate,
+                         connector, cond)
 
     def _convertTimeout(self, timeout):
         """
@@ -111,7 +190,7 @@ class ProtonReactor(object):
         while l:
             self.log.debug("Accepting Connection.")
             connector = proton.pn_listener_accept(l)
-            proton.pn_connector_set_context(connector, AUTHENTICATING)
+            proton.pn_connector_set_context(connector, SERVER_AUTH)
 
             l = proton.pn_driver_listener(self._driver)
 
@@ -127,6 +206,9 @@ class ProtonReactor(object):
             elif state == proton.PN_SASL_STEP:
                 self.log.debug("Authenticating-STEP...")
                 mech = proton.pn_sasl_remote_mechanisms(sasl)
+                if isinstance(mech, (list, tuple)):
+                    mech = mech[0]
+
                 if mech == "ANONYMOUS":
                     proton.pn_sasl_done(sasl, proton.PN_SASL_OK)
                 else:
@@ -145,10 +227,8 @@ class ProtonReactor(object):
             self.log.debug("Authentication-PENDING")
 
     def _processConnectors(self):
-        connector = proton.pn_driver_connector(self._driver)
+        connector = proton.pn_connector_head(self._driver)
         while connector:
-            self.log.debug("Process Connector")
-
             # releaes any connector that has been closed
             if proton.pn_connector_closed(connector):
                 self.log.debug("Closing connector")
@@ -157,32 +237,37 @@ class ProtonReactor(object):
                 proton.pn_connector_process(connector)
 
                 state = proton.pn_connector_context(connector)
-                if state == AUTHENTICATING:
+                if state == SERVER_AUTH:
                     self._authenticateConnector(connector)
                 elif state == CONNECTED:
                     self._serviceConnector(connector)
+                # Client authentication is handeled in a coroutine
+                elif state == CLIENT_AUTH:
+                    pass
                 else:
                     self.log.warning("Unknown Connection state '%s'" % state)
 
                 proton.pn_connector_process(connector)
 
-            connector = proton.pn_driver_connector(self._driver)
+            connector = proton.pn_connector_next(connector)
 
     def _initConnection(self, conn):
         if proton.pn_connection_state(conn) & proton.PN_LOCAL_UNINIT:
             self.log.debug("Connection Opened.")
             proton.pn_connection_open(conn)
 
+    def createClient(self, address):
+        return ProtonClient(self, None, None, None, address)
+
     def _openPendingSessions(self, conn, connector):
         ssn = proton.pn_session_head(conn, proton.PN_LOCAL_UNINIT)
         while ssn:
             proton.pn_session_open(ssn)
-            ctx = ProtonClient(self, conn, connector, ssn)
+            ctx = ProtonClient(self, conn, connector, ssn, None)
             l = proton.pn_connector_listener(connector)
             listener = proton.pn_listener_context(l)
             listener._acceptHandler(listener, ctx)
 
-            self._sessionContexts.append(ctx)
             proton.pn_session_set_context(ssn, ctx)
             self.log.debug("Session Opened.")
             ssn = proton.pn_session_next(ssn, proton.PN_LOCAL_UNINIT)
@@ -197,27 +282,25 @@ class ProtonReactor(object):
                                     proton.pn_link_remote_target(link))
 
             ssn = proton.pn_link_session(link)
+            client = proton.pn_session_get_context(ssn)
             if proton.pn_link_is_sender(link):
-                for ctx in self._sessionContexts:
-                    if ctx['session'] != ssn:
-                        continue
+                if client.sender != link:
+                    self.log.debug("Already have a sender opened for session")
+                    proton.pn_link_close(link)
+                else:
+                    self.log.debug("Opening Link to send messages")
+                    proton.pn_link_open(link)
 
-                    ctx['links'].append(link)
-                self.log.debug("Opening Link to send Events")
-
-            if proton.pn_link_is_receiver(link):
+            elif proton.pn_link_is_receiver(link):
                 self.log.debug("Opening Link to recv messages")
-                proton.pn_link_flow(link, 1)
+                proton.pn_link_open(link)
+                proton.pn_link_flow(link, MBUFF_SIZE)
 
-            proton.pn_link_open(link)
             link = proton.pn_link_next(link, proton.PN_LOCAL_UNINIT)
 
     def _processDeliveries(self, conn, connector):
         delivery = proton.pn_work_head(conn)
         while delivery:
-            self.log.debug("Process delivery %s" %
-                           proton.pn_delivery_tag(delivery))
-
             if proton.pn_delivery_readable(delivery):
                 self._processIncoming(delivery, connector)
             elif proton.pn_delivery_writable(delivery):
@@ -226,32 +309,46 @@ class ProtonReactor(object):
             delivery = proton.pn_work_next(delivery)
 
     def _cleanDeliveries(self, conn):
-        link = proton.pn_link_head(conn, (proton.PN_LOCAL_ACTIVE))
-        while link:
+        def link_iter(conn):
+            link = proton.pn_link_head(conn, (proton.PN_LOCAL_ACTIVE))
+            while link:
+                yield link
+                link = proton.pn_link_next(link, (proton.PN_LOCAL_ACTIVE))
+
+        def delivery_iter(link):
             d = proton.pn_unsettled_head(link)
             while d:
-                _next = proton.pn_unsettled_next(d)
+                yield d
+                d = proton.pn_unsettled_next(d)
+
+        for link in link_iter(conn):
+            for d in delivery_iter(link):
+                ctx = proton.pn_delivery_get_context(d)
+                if isinstance(ctx, str):
+                    continue
+
                 disp = proton.pn_delivery_remote_state(d)
-                age = time.time() - proton.pn_delivery_get_context(d)
-                self.log.debug("Checking delivery")
+                age = time.time() - ctx
+                self.log.debug("Checking delivery (%s)",
+                               proton.pn_delivery_tag(d))
+
                 if disp and disp != proton.PN_ACCEPTED:
                     self.log.warn("Message was not accepted by remote end")
 
                 if disp and proton.pn_delivery_settled(d):
                     self.log.debug("Message settled by remote end")
                     proton.pn_delivery_settle(d)
+                    proton.pn_delivery_clear(d)
 
                 elif age > self._deliveryTimeout:
                     self.log.warn("Delivary not settled by remote host")
                     proton.pn_delivery_settle(d)
+                    proton.pn_delivery_clear(d)
 
                 elif proton.pn_link_state(link) & proton.PN_REMOTE_CLOSED:
                     self.log.warn("Link closed before settling message")
                     proton.pn_delivery_settle(d)
-
-                d = _next
-
-            link = proton.pn_link_next(link, (proton.PN_LOCAL_ACTIVE))
+                    proton.pn_delivery_clear(d)
 
     def _cleanLinks(self, conn):
         link = proton.pn_link_head(conn, (proton.PN_LOCAL_ACTIVE |
@@ -259,12 +356,10 @@ class ProtonReactor(object):
         while link:
             self.log.debug("Closing Link")
             proton.pn_link_close(link)
-            for ctx in self._sessionContexts:
-                if link in ctx.links:
-                    ctx.links.remove(link)
-
-                if link == ctx.sender:
-                    ctx.sender = None
+            ssn = proton.pn_link_session(link)
+            client = proton.pn_session_get_context(ssn)
+            if link == client.sender:
+                client.sender = None
 
             link = proton.pn_link_next(link, (proton.PN_LOCAL_ACTIVE |
                                               proton.PN_REMOTE_CLOSED))
@@ -275,7 +370,6 @@ class ProtonReactor(object):
         while ssn:
             self.log.debug("Closing Session")
             proton.pn_session_close(ssn)
-            self._sessionContexts.remove(proton.pn_session_get_context(ssn))
             ssn = proton.pn_session_next(ssn, (proton.PN_LOCAL_ACTIVE |
                                                proton.PN_REMOTE_CLOSED))
 
@@ -284,11 +378,15 @@ class ProtonReactor(object):
                                                  proton.PN_REMOTE_CLOSED)):
             proton.pn_connection_close(conn)
 
-    def _queueOutgoingDeliveries(self, conn):
-        ctxs = (ctx for ctx in self._sessionContexts
-                if ctx.connection == conn)
+    def _iterSessions(self, conn, flags):
+        ssn = proton.pn_session_head(conn, flags)
+        while ssn:
+            yield ssn
+            ssn = proton.pn_session_next(ssn, flags)
 
-        for ctx in ctxs:
+    def _queueOutgoingDeliveries(self, conn):
+        for ssn in self._iterSessions(conn, proton.PN_LOCAL_ACTIVE):
+            ctx = proton.pn_session_get_context(ssn)
             sender = ctx.sender
 
             if sender is None:
@@ -296,28 +394,24 @@ class ProtonReactor(object):
                 sender = proton.pn_sender(ctx.session,
                                           "sender-%s" % str(uuid.uuid4()))
                 ctx.sender = sender
-                proton.pn_link_open(sender)
                 continue
 
-            if proton.pn_link_credit(sender) == 0:
-                self.log.debug("Not enough credit, waiting")
-                continue
+            while proton.pn_link_credit(sender) > 0:
+                try:
+                    data = ctx._popPendingMessage()
+                except Empty:
+                    break
+                else:
+                    msg = proton.Message()
+                    msg.body = data
+                    d = proton.pn_delivery(sender,
+                                           "delivery-%s" % str(uuid.uuid4()))
 
-            try:
-                data = ctx._popPendingMessage()
-            except Empty:
-                continue
-            else:
-                msg = proton.Message()
-                msg.body = data
-                self.log.debug("Creating delivery")
-                proton.pn_link_set_context(sender, msg.encode())
-
-                proton.pn_delivery(sender,
-                                   "response-delivery-%s" % str(uuid.uuid4()))
+                    proton.pn_delivery_set_context(d, msg.encode())
+                    self.log.debug("Queueing delivery (%s)",
+                                   proton.pn_delivery_tag(d))
 
     def _serviceConnector(self, connector):
-        self.log.debug("Service Connector")
         conn = proton.pn_connector_connection(connector)
 
         self._initConnection(conn)
@@ -338,42 +432,37 @@ class ProtonReactor(object):
         link = proton.pn_delivery_link(delivery)
         ssn = proton.pn_link_session(link)
         msg = []
-        rc, buff = proton.pn_link_recv(link, 1024)
-        while rc >= 0:
-            msg.append(buff)
+        self.log.debug("Receiving '%s'", proton.pn_delivery_tag(delivery))
+        while True:
             rc, buff = proton.pn_link_recv(link, 1024)
+            msg.append(buff)
+            if rc == proton.PN_EOS:
+                break
 
         msg = ''.join(msg)
 
+        self.log.debug("Received '%s'", proton.pn_delivery_tag(delivery))
+        proton.pn_link_advance(link)
         proton.pn_delivery_update(delivery, proton.PN_ACCEPTED)
+        proton.pn_delivery_settle(delivery)
+
         msgObj = proton.Message()
         msgObj.decode(msg)
         ctx = proton.pn_session_get_context(ssn)
         ctx._pushIncomingMessage(msgObj.body)
 
-        proton.pn_delivery_settle(delivery)
-        proton.pn_link_advance(link)
-
         # if more credit is needed, grant it
         if proton.pn_link_credit(link) == 0:
-            proton.pn_link_flow(link, 1)
+            proton.pn_link_flow(link, MBUFF_SIZE)
 
     def _processOutgoing(self, delivery):
         link = proton.pn_delivery_link(delivery)
-        msg = proton.pn_link_get_context(link)
-        sent = proton.pn_link_send(link, msg)
-        if sent < 0:
-            self.log.warn("Problem sending message")
-        else:
-            msg = msg[sent:]
-            if len(msg) != 0:
-                self.log.debug("Delivery partial")
-                proton.pn_link_set_context(link, msg)
-            else:
-                self.log.debug("Delivery finished")
-                proton.pn_link_set_context(link, "")
-                proton.pn_delivery_set_context(delivery, time.time())
-                proton.pn_link_advance(link)
+        msg = proton.pn_delivery_get_context(delivery)
+        proton.pn_link_send(link, msg)
+        if proton.pn_link_advance(link):
+            self.log.debug("Delivery finished (%s)",
+                           proton.pn_delivery_tag(delivery))
+            proton.pn_delivery_set_context(delivery, time.time())
 
     def createListener(self, address, acceptHandler):
         host, port = address
@@ -399,8 +488,22 @@ class ProtonReactor(object):
             else:
                 cmd, evt, _ = r
                 res = cmd()
-                if evt is not None:
+                if hasattr(res, "next"):
+                    self._coroutines.append((res, r))
+
+                elif evt is not None:
                     r[2] = res
+                    evt.set()
+
+    def _processCoroutines(self):
+        for cr, req in self._coroutines[:]:
+            res = cr.next()
+            if isinstance(res, Return):
+                cr.close()
+                evt = req[1]
+                self._coroutines.remove((cr, req))
+                if evt is not None:
+                    req[2] = res.value
                     evt.set()
 
     def _scheduleOp(self, sync, op, *args, **kwargs):
@@ -423,6 +526,7 @@ class ProtonReactor(object):
             self._emptyCommandQueue()
             self._acceptConnectionRequests()
             self._processConnectors()
+            self._processCoroutines()
 
         l = proton.pn_listener_head(self._driver)
         while l:

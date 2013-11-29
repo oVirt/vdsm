@@ -82,9 +82,13 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	crossImportsTests.py.in \
+	makecert.sh \
 	$(NULL)
 
 dist_noinst_DATA = \
+	jsonrpc-tests.server.crt \
+	jsonrpc-tests.server.csr \
+	jsonrpc-tests.server.key \
 	run_tests_local.sh
 
 dist_vdsmtests_DATA = \
@@ -123,6 +127,9 @@ dist_vdsmtests_SCRIPTS = \
 
 all-local: \
 	$(nodist_vdsmtests_PYTHON)
+
+jsonrpc-tests.server.crt:
+	./makecert.sh
 
 # crossImportsTests.py has to be run separate due to different tests which
 # load modules first, making the env dirty. Unloading python modules

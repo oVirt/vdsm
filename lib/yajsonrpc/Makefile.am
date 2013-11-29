@@ -23,7 +23,7 @@ yajsonrpcdir = $(pythondir)/yajsonrpc
 dist_yajsonrpc_PYTHON = \
 	__init__.py \
 	asyncoreReactor.py \
-	client.py \
+	betterAsyncore.py \
 	protonReactor.py \
 	$(NULL)
 

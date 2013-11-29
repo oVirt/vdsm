@@ -33,6 +33,7 @@ from jsonRpcUtils import getFreePort
 
 ip = '127.0.0.1'
 port = 9824
+id = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
 _fakeret = {}
 
 apiWhitelist = ('StorageDomain.Classes', 'StorageDomain.Types',
@@ -208,18 +209,19 @@ class JsonRawTest(APITest):
         self.clearAPI()
         self.programAPI("testPing")
         msg = self.buildMessage({'jsonrpc': '2.0',
-                                 'id': 1,
+                                 'id': id,
                                  'method': 'Host.ping',
                                  'params': {}})
         reply = self.sendMessage(msg)
         self.assertNotIn('error', reply)
-        self.assertEquals(None, reply['result'])
+        self.assertTrue(reply['result'])
 
     def testPingError(self):
         self.clearAPI()
         self.programAPI("testPingError")
         msg = self.buildMessage({'jsonrpc': '2.0',
-                                 'id': 1, 'method': 'Host.ping',
+                                 'id': id,
+                                 'method': 'Host.ping',
                                  'params': {}})
         reply = self.sendMessage(msg)
         self.assertEquals(1, reply['error']['code'])
@@ -227,14 +229,14 @@ class JsonRawTest(APITest):
 
     def testNoMethod(self):
         msg = self.buildMessage({'jsonrpc': '2.0',
-                                 'id': 1,
+                                 'id': id,
                                  'method': 'Host.fake'})
         reply = self.sendMessage(msg)
         self.assertEquals(yajsonrpc.JsonRpcMethodNotFoundError().code,
                           reply['error']['code'])
 
     def testBadMethod(self):
-        msg = self.buildMessage(self._createRequest('malformed\'', 1))
+        msg = self.buildMessage(self._createRequest('malformed\'', id))
         reply = self.sendMessage(msg)
         self.assertEquals(yajsonrpc.JsonRpcMethodNotFoundError().code,
                           reply['error']['code'])
@@ -258,8 +260,7 @@ class JsonRawTest(APITest):
             ret = self.sendMessage(msg)
             self.assertNotIn('error', ret)
 
-        msg = self.buildMessage({'jsonrpc': '2.0',
-                                 'id': 1,
+        msg = self.buildMessage({'jsonrpc': '2.0', 'id': id,
                                  'method': 'Host.ping'})
         # Send Truncated message
         self.assertRaises(ProtocolError, doPing, msg[:-1])
@@ -275,7 +276,8 @@ class JsonRawTest(APITest):
 
     def testInternalError(self):
         msg = self.buildMessage({'jsonrpc': '2.0',
-                                 'id': 1, 'method': 'Host.ping'})
+                                 'id': id,
+                                 'method': 'Host.ping'})
         reply = self.sendMessage(msg)
         self.assertEquals(yajsonrpc.JsonRpcInternalError().code,
                           reply['error']['code'])

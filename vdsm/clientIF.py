@@ -162,8 +162,12 @@ class clientIF:
         from Bridge import DynamicBridge
         ip = config.get('addresses', 'management_ip')
         port = config.getint('addresses', 'json_port')
+        truststore_path = None
+        if config.getboolean('vars', 'ssl'):
+            truststore_path = config.get('vars', 'trust_store_path')
         conf = [('tcp', {"ip": ip, "port": port})]
-        self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf)
+        self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf,
+                                               truststore_path)
 
     def _prepareBindings(self):
         self.bindings = {}

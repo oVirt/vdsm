@@ -297,6 +297,7 @@ BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-api = %{version}-%{release}
+Requires: %{name}-yajsonrpc = %{version}-%{release}
 %if 0%{?rhel} == 6
 Requires: python-ordereddict
 %endif
@@ -1369,7 +1370,7 @@ exit 0
 %{python_sitelib}/yajsonrpc/__init__.py*
 %{python_sitelib}/yajsonrpc/asyncoreReactor.py*
 %{python_sitelib}/yajsonrpc/protonReactor.py*
-%{python_sitelib}/yajsonrpc/client.py*
+%{python_sitelib}/yajsonrpc/betterAsyncore.py*
 %else
 %exclude %{python_sitelib}/yajsonrpc
 %exclude %{_datadir}/%{vdsm_name}/Bridge.py*

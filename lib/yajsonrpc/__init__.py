@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Saggi Mizrahi, Red Hat Inc.
+# Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -15,13 +15,25 @@
 import json
 import logging
 from functools import partial
+from Queue import Queue
+from weakref import ref
+from threading import Lock, Event
 
 __all__ = ["tcpReactor"]
-
 
 _STATE_INCOMING = 1
 _STATE_OUTGOING = 2
 _STATE_ONESHOT = 4
+
+
+class SSLContext(object):
+    def __init__(self, cert_file, key_file, ca_cert=None, session_id="SSL",
+                 protocol="sslv23"):
+        self.cert_file = cert_file
+        self.key_file = key_file
+        self.ca_cert = ca_cert
+        self.session_id = session_id
+        self.protocol = protocol
 
 
 class JsonRpcError(RuntimeError):
@@ -39,9 +51,13 @@ class JsonRpcParseError(JsonRpcError):
 
 
 class JsonRpcInvalidRequestError(JsonRpcError):
-    def __init__(self):
+    log = logging.getLogger("JsonRpcInvalidRequestError")
+
+    def __init__(self, object_name, msg_content):
+        self.log.error("Invalid message found " + msg_content)
         JsonRpcError.__init__(self, -32600,
-                              "The JSON sent is not a valid Request object.")
+                              "The JSON sent is not a valid Request object "
+                              "with " + object_name)
 
 
 class JsonRpcMethodNotFoundError(JsonRpcError):
@@ -81,19 +97,20 @@ class JsonRpcRequest(object):
     @staticmethod
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
-            raise JsonRpcInvalidRequestError()
+            raise JsonRpcInvalidRequestError("wrong protocol version", obj)
 
         method = obj.get("method")
         if method is None:
-            raise JsonRpcInvalidRequestError()
+            raise JsonRpcInvalidRequestError("missing method header", obj)
 
         reqId = obj.get("id")
-        if not isinstance(reqId, int):
-            raise JsonRpcInvalidRequestError()
+        if not isinstance(reqId, (str, unicode)):
+            raise JsonRpcInvalidRequestError("missing request identifier",
+                                             obj)
 
         params = obj.get('params', [])
         if not isinstance(params, (list, dict)):
-            raise JsonRpcInvalidRequestError()
+            raise JsonRpcInvalidRequestError("wrong params type", obj)
 
         return JsonRpcRequest(method, params, reqId)
 
@@ -134,11 +151,72 @@ class JsonRpcResponse(object):
     @staticmethod
     def decode(msg):
         obj = json.loads(msg, 'utf-8')
-        # TODO: More validations
+
+        if "result" not in obj and "error" not in obj:
+            raise JsonRpcInvalidRequestError("missing result or error info",
+                                             obj)
+
         result = obj.get('result')
         error = JsonRpcError(**obj.get('error'))
+
         reqId = obj.get('id')
+        if not isinstance(reqId, (str, unicode)):
+            raise JsonRpcInvalidRequestError("missing response identifier",
+                                             obj)
         return JsonRpcResponse(result, error, reqId)
+
+    @staticmethod
+    def fromRawObject(obj):
+        if obj.get("jsonrpc") != "2.0":
+            raise JsonRpcInvalidRequestError("wrong protocol version", obj)
+
+        if "result" not in obj and "error" not in obj:
+            raise JsonRpcInvalidRequestError("missing result or error info",
+                                             obj)
+
+        result = obj.get("result")
+        error = obj.get("error")
+
+        reqId = obj.get("id")
+        if not isinstance(reqId, (str, unicode)):
+            raise JsonRpcInvalidRequestError("missing response identifier",
+                                             obj)
+
+        return JsonRpcResponse(result, error, reqId)
+
+
+class _JsonRpcClientRequestContext(object):
+    def __init__(self, requests, callback):
+        self.callback = callback
+        self._requests = requests
+
+        self._responses = {}
+        for req in requests:
+            if req.id is None:
+                continue  # Notifications don't have responses
+
+            self._responses[req.id] = None
+
+    def addResponse(self, resp):
+        self._responses[resp.id] = resp
+
+    def isDone(self):
+        for v in self._responses.values():
+            if v is None:
+                return False
+
+        return True
+
+    def getResponses(self):
+        return self._responses.values()
+
+    def ids(self):
+        return self._responses.keys()
+
+    def encode(self):
+        return ("[" +
+                ", ".join(r.encode() for r in self._requests) +
+                "]")
 
 
 class _JsonRpcServeRequestContext(object):
@@ -190,13 +268,205 @@ class _JsonRpcServeRequestContext(object):
         self.sendReply()
 
 
+class JsonRpcClientPool(object):
+    def __init__(self, reactors):
+        self.log = logging.getLogger("JsonRpcClientPool")
+        self._reactors = reactors
+        self._inbox = Queue()
+        self._clients = {}
+        self._eventcbs = []
+
+    def createClient(self, address):
+        rtype, address = address.split("://")
+        host, port = address.split(":")
+        port = int(port)
+        transport = self._reactors[rtype].createClient((host, port))
+        transport.setMessageHandler(self._handleClientMessage)
+        client = JsonRpcClient(transport)
+        self._clients[transport] = client
+        return client
+
+    def _handleClientMessage(self, req):
+        self._inbox.put_nowait(req)
+
+    def registerEventCallback(self, eventcb):
+        self._eventcbs.append(ref(eventcb))
+
+    def unregisterEventCallback(self, eventcb):
+        for r in self._eventcbs[:]:
+            cb = r()
+            if cb is None or cb == eventcb:
+                try:
+                    self._eventcbs.remove(r)
+                except ValueError:
+                    # Double unregister, ignore.
+                    pass
+
+    def emit(self, client, event, params):
+        for r in self._eventcbs[:]:
+            cb = r()
+            if cb is None:
+                continue
+
+            cb(client, event, params)
+
+    def _processEvent(self, client, obj):
+        if isinstance(obj, list):
+            map(self._processEvent, obj)
+            return
+
+        req = JsonRpcRequest.fromRawObject(obj)
+        if not req.isNotification():
+            self.log.warning("Recieved non notification, ignoring")
+
+        self.emit(client, req.method, req.params)
+
+    def serve(self):
+        while True:
+            data = self._inbox.get()
+            if data is None:
+                return
+
+            transport, message = data
+            client = self._clients[transport]
+            try:
+                mobj = json.loads(message)
+                isResponse = self._isResponse(mobj)
+            except:
+                self.log.exception("Problem parsing message from client")
+                transport.close()
+                del self._clients[transport]
+                continue
+
+            if isResponse:
+                client._processIncomingResponse(mobj)
+            else:
+                self._processEvent(client, mobj)
+
+    def _isResponse(self, obj):
+            if isinstance(obj, list):
+                v = None
+                for res in map(self._isResponse, obj):
+                    if v is None:
+                        v = res
+
+                    if v != res:
+                        raise TypeError("batch is mixed")
+
+                return v
+            else:
+                return ("result" in obj or "error" in obj)
+
+    def close(self):
+        self._inbox.put(None)
+
+
+class JsonRpcCall(object):
+    def __init__(self):
+        self._ev = Event()
+        self.responses = None
+
+    def callback(self, c, resp):
+        if not isinstance(resp, list):
+            resp = [resp]
+
+        self.responses = resp
+        self._ev.set()
+
+    def wait(self, timeout=None):
+        self._ev.wait(timeout)
+        return self._ev.is_set()
+
+    def isSet(self):
+        return self._ev.is_set()
+
+
+class JsonRpcClient(object):
+    def __init__(self, transport):
+        self.log = logging.getLogger("jsonrpc.JsonRpcClient")
+        self._transport = transport
+        self._runningRequests = {}
+        self._lock = Lock()
+
+    def setTimeout(self, timeout):
+        self._transport.setTimeout(timeout)
+
+    def connect(self):
+        self._transport.connect()
+
+    def callMethod(self, methodName, params=[], rid=None):
+        return self.call(JsonRpcRequest(methodName, params, rid))
+
+    def call(self, req):
+        resp = self.call_batch([req])[0]
+        if "error" in resp:
+            raise JsonRpcError(resp.error['code'], resp.error['message'])
+
+        return resp.result
+
+    def call_batch(self, *reqs):
+        call = self.call_async(reqs)
+        call.wait()
+        return call.responses
+
+    def call_async(self, *reqs):
+        call = JsonRpcCall()
+        self.call_cb(call.callback, *reqs)
+        return call
+
+    def call_cb(self, cb, *reqs):
+        ctx = _JsonRpcClientRequestContext(reqs, cb)
+        with self._lock:
+            for rid in ctx.ids():
+                try:
+                    self._runningRequests[rid]
+                except KeyError:
+                    pass
+                else:
+                    raise ValueError("Request id already in use %s", rid)
+
+                self._runningRequests[rid] = ctx
+                self._transport.send(ctx.encode())
+
+        # All notifications
+        if ctx.isDone():
+            self._finalizeCtx(ctx)
+
+    def _finalizeCtx(self, ctx):
+        with self._lock:
+            if not ctx.isDone():
+                return
+
+            cb = ctx.callback
+            if cb is not None:
+                cb(self, ctx.getResponses())
+
+    def _processIncomingResponse(self, resp):
+        if isinstance(resp, list):
+            map(self._processIncomingResponse, resp)
+            return
+
+        resp = JsonRpcResponse.fromRawObject(resp)
+        with self._lock:
+            ctx = self._runningRequests.pop(resp.id)
+            ctx.addResponse(resp)
+
+        self._finalizeCtx(ctx)
+
+    def close(self):
+        self._transport.close()
+
+
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
-    def __init__(self, bridge, messageQueue, threadFactory=None):
+    def __init__(self, bridge, threadFactory=None):
         self._bridge = bridge
-        self._workQueue = messageQueue
+        self._workQueue = Queue()
         self._threadFactory = threadFactory
+
+    def queueRequest(self, req):
+        self._workQueue.put_nowait(req)
 
     def _serveRequest(self, ctx, req):
         mangledMethod = req.method.replace(".", "_")
@@ -226,6 +496,8 @@ class JsonRpcServer(object):
                                             JsonRpcInternalError(str(e)),
                                             req.id))
         else:
+            res = True if res is None else res
+
             ctx.requestDone(JsonRpcResponse(res, None, req.id))
 
     def serve_requests(self):

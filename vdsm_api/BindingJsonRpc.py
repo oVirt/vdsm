@@ -16,12 +16,12 @@
 import threading
 import logging
 import struct
-from Queue import Queue
 
 _Size = struct.Struct("!Q")
 
 from yajsonrpc import JsonRpcServer
 from yajsonrpc.asyncoreReactor import AsyncoreReactor
+from yajsonrpc.betterAsyncore import SSLContext
 ProtonReactor = None
 try:
     from yajsonrpc.protonReactor import ProtonReactor
@@ -38,18 +38,17 @@ def _simpleThreadFactory(func):
 class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
-    def __init__(self, bridge, backendConfig):
+    def __init__(self, bridge, backendConfig, truststore_path=None):
         reactors = {}
         self.bridge = bridge
-        self._messageQueue = Queue()
-        self.server = JsonRpcServer(bridge, self._messageQueue,
+        self.server = JsonRpcServer(bridge,
                                     _simpleThreadFactory)
         self._cfg = backendConfig
 
         for backendType, cfg in backendConfig:
             if backendType not in reactors:
                 if backendType == "tcp":
-                    reactors["tcp"] = self._createTcpReactor()
+                    reactors["tcp"] = self._createTcpReactor(truststore_path)
                 elif backendType == "amqp":
                     if ProtonReactor is None:
                         continue
@@ -69,15 +68,21 @@ class BindingJsonRpc(object):
                                                     self._onAccept)
 
     def _onAccept(self, listener, client):
-        client.setInbox(self._messageQueue)
+        client.setMessageHandler(self.server.queueRequest)
 
     def _createProtonListener(self, cfg):
         address = cfg.get("host", "0.0.0.0")
         port = cfg.get("port", 5672)
         return self._reactors["amqp"].createListener((address, port))
 
-    def _createTcpReactor(self):
-        return AsyncoreReactor()
+    def _createTcpReactor(self, truststore_path=None):
+        if truststore_path is None:
+            return AsyncoreReactor()
+        else:
+            key_file = truststore_path + '/keys/vdsmkey.pem'
+            cert_file = truststore_path + '/certs/vdsmcert.pem'
+            ca_cert = truststore_path + '/certs/cacert.pem'
+            return AsyncoreReactor(SSLContext(cert_file, key_file, ca_cert))
 
     def _createProtonReactor(self):
         return ProtonReactor()

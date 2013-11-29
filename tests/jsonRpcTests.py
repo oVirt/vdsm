@@ -20,9 +20,9 @@
 import threading
 import socket
 import logging
+import apiTests
 from Queue import Queue
-from contextlib import closing
-from testValidation import brokentest
+from contextlib import contextmanager
 
 from testrunner import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -30,14 +30,15 @@ from testrunner import VdsmTestCase as TestCaseBase, \
     dummyTextGenerator
 
 from jsonRpcUtils import \
-    REACTOR_TYPE_PERMUTATIONS, \
+    CONNECTION_PERMUTATIONS, \
     constructReactor, \
     constructServer
 
 from yajsonrpc import \
     JsonRpcError, \
     JsonRpcMethodNotFoundError, \
-    JsonRpcInternalError
+    JsonRpcInternalError, \
+    JsonRpcRequest
 
 
 CALL_TIMEOUT = 5
@@ -55,7 +56,7 @@ class _EchoServer(object):
         self._queue = Queue()
 
     def accept(self, l, c):
-        c.setInbox(self._queue)
+        c.setMessageHandler(self._queue.put_nowait)
 
     def serve(self):
         while True:
@@ -64,21 +65,33 @@ class _EchoServer(object):
                 if client is None:
                     return
 
-                self.log.info("Echoing message")
                 client.send(msg)
             except Exception:
                 self.log.error("EchoServer died unexpectedly", exc_info=True)
 
 
+class ReactorClientSyncWrapper(object):
+    def __init__(self, client):
+        self._client = client
+        self._queue = Queue()
+        self._client.setMessageHandler(self._queue.put_nowait)
+
+    def send(self, data):
+        self._client.send(data)
+
+    def connect(self):
+        self._client.setTimeout(CALL_TIMEOUT)
+        self._client.connect()
+
+    def recv(self, timeout=None):
+        return self._queue.get(True, timeout)[1]
+
+
 @expandPermutations
 class ReactorTests(TestCaseBase):
-    @brokentest("We sometime see: "
-                "AssertionError: Data is not as expected "
-                "'Lorem ipsu...o eiusmod ' != 'Lorem ipsu... eiusmod t'")
-    @permutations(REACTOR_TYPE_PERMUTATIONS)
-    def test(self, reactorType):
+    @permutations(CONNECTION_PERMUTATIONS)
+    def test(self, rt, ssl):
         data = dummyTextGenerator(((2 ** 10) * 200))
-        queue = Queue()
 
         echosrv = _EchoServer()
 
@@ -91,8 +104,8 @@ class ReactorTests(TestCaseBase):
                 self.log.error("Reactor died unexpectedly", exc_info=True)
                 self.fail("Reactor died: (%s) %s" % (type(e), e))
 
-        with constructReactor(reactorType) as \
-                (reactor, clientFactory, laddr):
+        with constructReactor(rt) as \
+                (reactor, clientReactor, laddr):
 
             t = threading.Thread(target=echosrv.serve)
             t.setDaemon(True)
@@ -100,36 +113,37 @@ class ReactorTests(TestCaseBase):
 
             reactor.createListener(laddr, echosrv.accept)
 
-            clientNum = 4
-            repeats = 2
-            subRepeats = 4
+            clientNum = 2
+            repeats = 10
+            subRepeats = 10
 
             clients = []
-            try:
-                for i in range(clientNum):
-                    c = clientFactory()
-                    c.connect()
-                    clients.append(c)
+            for i in range(clientNum):
+                c = ReactorClientSyncWrapper(
+                    clientReactor.createClient(laddr))
+                c.connect()
+                clients.append(c)
 
-                for i in range(repeats):
-                    for client in clients:
-                        for i in range(subRepeats):
-                            self.log.info("Sending message...")
-                            client.send(data, CALL_TIMEOUT)
+            for i in range(repeats):
+                for client in clients:
+                    for i in range(subRepeats):
+                        self.log.info("Sending message...")
+                        client.send(data)
 
-                for i in range(repeats * subRepeats):
-                    for client in clients:
-                            self.log.info("Waiting for reply...")
-                            retData = client.recv(CALL_TIMEOUT)
-                            self.log.info("Asserting reply...")
-                            self.assertEquals(
-                                retData, data,
-                                "Data is not as expected " +
-                                "'%s...%s' != '%s...%s'" %
-                                (retData[:10], retData[-10:],
-                                 data[:10], data[-10:]))
-            finally:
-                queue.put((None, None))
+            for i in range(repeats * subRepeats):
+                for client in clients:
+                    self.log.info("Waiting for reply...")
+                    retData = client.recv(CALL_TIMEOUT)
+                    self.log.info("Asserting reply...")
+                    self.assertTrue(isinstance(retData,
+                                               (str, unicode)))
+                    plen = 20  # Preview len, used for debugging
+                    self.assertEquals(
+                        retData, data,
+                        "Data is not as expected " +
+                        "'%s...%s' (%d chars) != '%s...%s' (%d chars)" %
+                        (retData[:plen], retData[-plen:], len(retData),
+                         data[:plen], data[-plen:], len(data)))
 
 
 class _DummyBridge(object):
@@ -142,75 +156,83 @@ class _DummyBridge(object):
 
 @expandPermutations
 class JsonRpcServerTests(TestCaseBase):
-    @brokentest('we sometime see this fail with '
-                '"error: [Errno 9] Bad file descriptor"')
-    @permutations(REACTOR_TYPE_PERMUTATIONS)
-    def testMethodCallArgList(self, reactorType):
+    def _callTimeout(self, client, methodName, params=None, rid=None,
+                     timeout=None):
+        call = client.call_async(JsonRpcRequest(methodName, params, rid))
+        self.assertTrue(call.wait(timeout))
+        resp = call.responses[0]
+        if resp.error is not None:
+            raise JsonRpcError(resp.error['code'], resp.error['message'])
+
+        return resp.result
+
+    @contextmanager
+    def _client(self, clientFactory):
+            client = clientFactory()
+            client.setTimeout(CALL_TIMEOUT)
+            client.connect()
+            try:
+                yield client
+            finally:
+                client.close()
+
+    @permutations(CONNECTION_PERMUTATIONS)
+    def testMethodCallArgList(self, rt, ssl):
         data = dummyTextGenerator(1024)
 
         bridge = _DummyBridge()
-        with constructServer(reactorType, bridge) as (server, clientFactory):
-            client = clientFactory()
-            client.connect()
-            with closing(client):
-                self.assertEquals(client.callMethod("echo", (data,), 10,
-                                                    CALL_TIMEOUT),
-                                  data)
+        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+            with self._client(clientFactory) as client:
+                self.assertEquals(self._callTimeout(client, "echo", (data,),
+                                  apiTests.id,
+                                  CALL_TIMEOUT), data)
 
-    @brokentest
-    @permutations(REACTOR_TYPE_PERMUTATIONS)
-    def testMethodCallArgDict(self, reactorType):
+    @permutations(CONNECTION_PERMUTATIONS)
+    def testMethodCallArgDict(self, rt, ssl):
         data = dummyTextGenerator(1024)
 
         bridge = _DummyBridge()
-        with constructServer(reactorType, bridge) as (server, clientFactory):
-            client = clientFactory()
-            client.connect()
-            with closing(client):
-                self.assertEquals(client.callMethod("echo",
-                                                    {'text': data},
-                                                    10, CALL_TIMEOUT),
-                                  data)
+        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+            with self._client(clientFactory) as client:
+                self.assertEquals(self._callTimeout(client, "echo",
+                                  {'text': data},
+                                  apiTests.id,
+                                  CALL_TIMEOUT), data)
 
-    @brokentest('fail with "error: [Errno 9] Bad file descriptor"')
-    @permutations(REACTOR_TYPE_PERMUTATIONS)
-    def testMethodMissingMethod(self, reactorType):
+    @permutations(CONNECTION_PERMUTATIONS)
+    def testMethodMissingMethod(self, rt, ssl):
         bridge = _DummyBridge()
-        with constructServer(reactorType, bridge) as (server, clientFactory):
-            client = clientFactory()
-            client.connect()
-            with closing(client):
+        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+            with self._client(clientFactory) as client:
                 with self.assertRaises(JsonRpcError) as cm:
-                    client.callMethod("I.DO.NOT.EXIST :(", [], 10,
+                    self._callTimeout(client, "I.DO.NOT.EXIST :(", [],
+                                      apiTests.id,
                                       CALL_TIMEOUT)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcMethodNotFoundError().code)
 
-    @brokentest()
-    @permutations(REACTOR_TYPE_PERMUTATIONS)
-    def testMethodBadParameters(self, reactorType):
+    @permutations(CONNECTION_PERMUTATIONS)
+    def testMethodBadParameters(self, rt, ssl):
         # Without a schema the server returns an internal error
 
         bridge = _DummyBridge()
-        with constructServer(reactorType, bridge) as (server, clientFactory):
-            client = clientFactory()
-            client.connect()
-            with closing(client):
+        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+            with self._client(clientFactory) as client:
                 with self.assertRaises(JsonRpcError) as cm:
-                    client.callMethod("echo", [], 10, timeout=CALL_TIMEOUT)
+                    self._callTimeout(client, "echo", [],
+                                      apiTests.id,
+                                      timeout=CALL_TIMEOUT)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcInternalError().code)
 
-    @brokentest
-    @permutations(REACTOR_TYPE_PERMUTATIONS)
-    def testMethodReturnsNull(self, reactorType):
+    @permutations(CONNECTION_PERMUTATIONS)
+    def testMethodReturnsNullAndServerReturnsTrue(self, rt, ssl):
         bridge = _DummyBridge()
-        with constructServer(reactorType, bridge) as (server, clientFactory):
-            client = clientFactory()
-            client.connect()
-            with closing(client):
-                res = client.callMethod("ping", [], 10, timeout=CALL_TIMEOUT)
-
-                self.assertEquals(res, None)
+        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+            with self._client(clientFactory) as client:
+                res = self._callTimeout(client, "ping", [],
+                                        apiTests.id,
+                                        timeout=CALL_TIMEOUT)
+                self.assertEquals(res, True)

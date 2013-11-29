@@ -43,6 +43,10 @@ results.log
 tests/crossImportsTests.py
 tests/run_tests.sh
 tests/run_tests_local.sh
+tests/jsonrpc-tests.p12
+tests/jsonrpc-tests.server.crt
+tests/jsonrpc-tests.server.csr
+tests/jsonrpc-tests.server.key
 vds_bootstrap/deployUtil.py*
 vdsm-*.tar.gz
 vdsm.spec

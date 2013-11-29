@@ -20,6 +20,11 @@ import logging
 import types
 import API
 import yajsonrpc
+try:
+    import gluster.apiwrapper as gapi
+    _glusterEnabled = True
+except ImportError:
+    _glusterEnabled = False
 
 
 class VdsmError(Exception):
@@ -50,7 +55,8 @@ class DynamicBridge(object):
         return result
 
     def _getArgs(self, argobj, arglist):
-        return tuple(argobj[arg] for arg in arglist if arg in argobj)
+        return tuple(argobj[self._symNameFilter(arg)] for arg in arglist
+                     if self._symNameFilter(arg) in argobj)
 
     def _getResult(self, response, member=None):
         if member is None:
@@ -98,7 +104,10 @@ class DynamicBridge(object):
 
         className = self._convertClassName(className)
         # Get the list of ctor_args
-        ctorArgs = getattr(API, className).ctorArgs
+        if _glusterEnabled and className.startswith('Gluster'):
+            ctorArgs = getattr(gapi, className).ctorArgs
+        else:
+            ctorArgs = getattr(API, className).ctorArgs
 
         # Determine the method arguments by subtraction
         methodArgs = []
@@ -111,7 +120,11 @@ class DynamicBridge(object):
     def _getApiInstance(self, className, argObj):
         className = self._convertClassName(className)
 
-        apiObj = getattr(API, className)
+        if _glusterEnabled and className.startswith('Gluster'):
+            apiObj = getattr(gapi, className)
+        else:
+            apiObj = getattr(API, className)
+
         ctorArgs = self._getArgs(argObj, apiObj.ctorArgs)
         return apiObj(*ctorArgs)
 
@@ -156,6 +169,9 @@ class DynamicBridge(object):
         argInfo = zip(argDef.items(), args)
         for typeInfo, val in argInfo:
             argName, argType = typeInfo
+            if isinstance(argType, list):
+                # check type of first element
+                argType = argType[0]
             if argType not in self.api['types']:
                 continue
             self._typeFixup(argName, argType, val)
@@ -202,6 +218,9 @@ class DynamicBridge(object):
         retfield = command_info.get(cmd, {}).get('ret')
         if isinstance(retfield, types.FunctionType):
             ret = retfield(result)
+        elif _glusterEnabled and className.startswith('Gluster'):
+            ret = dict([(key, value) for key, value in result.items()
+                        if key is not 'status'])
         else:
             ret = self._getResult(result, retfield)
         return self._fixupRet(className, methodName, ret)
@@ -223,6 +242,14 @@ def Host_getVMList_Call(api, args):
     """
     vmList = args.get('vmList', [])
     return API.Global().getVMList(False, vmList)
+
+
+def Host_getVMFullList_Call(api, args):
+    """
+    This call is interested in returning full status.
+    """
+    vmList = args.get('vmList', [])
+    return API.Global().getVMList(True, vmList)
 
 
 def Host_getVMList_Ret(ret):
@@ -287,6 +314,7 @@ command_info = {
     'Host_getConnectedStoragePools': {'ret': 'poollist'},
     'Host_getDeviceList': {'ret': 'devList'},
     'Host_getDevicesVisibility': {'ret': 'visibility'},
+    'Host_getHardwareInfo': {'ret': 'info'},
     'Host_getLVMVolumeGroups': {'ret': 'vglist'},
     'Host_getStats': {'ret': 'info'},
     'Host_getStorageDomains': {'ret': 'domlist'},
@@ -294,6 +322,8 @@ command_info = {
     'Host_startMonitoringDomain': {},
     'Host_stopMonitoringDomain': {},
     'Host_getVMList': {'call': Host_getVMList_Call, 'ret': Host_getVMList_Ret},
+    'Host_getVMFullList': {'call': Host_getVMFullList_Call, 'ret': 'vmList'},
+    'Host_getAllVmStats': {'ret': 'statsList'},
     'Image_delete': {'ret': 'uuid'},
     'Image_deleteVolumes': {'ret': 'uuid'},
     'Image_getVolumes': {'ret': 'uuidlist'},
