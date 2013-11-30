@@ -31,7 +31,7 @@ from sdc import sdCache
 
 class DomainMonitorStatus(object):
     __slots__ = (
-        "error", "lastCheck", "valid", "readDelay", "masterMounted",
+        "error", "checkTime", "valid", "readDelay", "masterMounted",
         "masterValid", "diskUtilization", "vgMdUtilization",
         "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
         "isoPrefix", "version",
@@ -42,7 +42,7 @@ class DomainMonitorStatus(object):
 
     def clear(self):
         self.error = None
-        self.lastCheck = time()
+        self.checkTime = time()
         self.valid = True
         self.readDelay = 0
         self.diskUtilization = (None, None)
@@ -239,7 +239,7 @@ class DomainMonitorThread(object):
                            "information", self.sdUUID, exc_info=True)
             self.nextStatus.error = e
 
-        self.nextStatus.lastCheck = time()
+        self.nextStatus.checkTime = time()
         self.nextStatus.valid = (self.nextStatus.error is None)
 
         if self._statusDidChange():

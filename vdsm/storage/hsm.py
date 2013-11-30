@@ -3627,10 +3627,10 @@ class HSM:
 
             disktotal, diskfree = domStatus.diskUtilization
             vgmdtotal, vgmdfree = domStatus.vgMdUtilization
-            lastcheck = '%.1f' % (statsGenTime - domStatus.lastCheck)
+            lastcheck = '%.1f' % (statsGenTime - domStatus.checkTime)
 
             repoStats[sdUUID] = {
-                'finish': domStatus.lastCheck,
+                'finish': domStatus.checkTime,
 
                 'result': {
                     'code': code,
