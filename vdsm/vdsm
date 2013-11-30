@@ -22,8 +22,12 @@ import resource
 from logging import config as lconfig
 
 from vdsm import constants
+from vdsm import utils
 from vdsm.config import config
 from vdsm import libvirtconnection
+
+from storage.dispatcher import Dispatcher
+from storage.hsm import HSM
 
 import zombiereaper
 import dsaversion
@@ -43,6 +47,7 @@ def usage():
 
 def serve_clients(log):
     cif = None
+    irs = None
 
     def sigtermHandler(signum, frame):
         if cif:
@@ -50,10 +55,10 @@ def serve_clients(log):
             cif.prepareForShutdown()
 
     def sigusr1Handler(signum, frame):
-        if cif and cif.irs:
+        if irs:
             log.debug("Received signal %s" % signum)
-            cif.irs.spmStop(
-                cif.irs.getConnectedStoragePoolsList()['poollist'][0])
+            irs.spmStop(
+                irs.getConnectedStoragePoolsList()['poollist'][0])
 
     signal.signal(signal.SIGTERM, sigtermHandler)
     signal.signal(signal.SIGUSR1, sigusr1Handler)
@@ -61,8 +66,14 @@ def serve_clients(log):
 
     libvirtconnection.start_event_loop()
 
+    if config.getboolean('irs', 'irs_enable'):
+        try:
+            irs = Dispatcher(HSM())
+        except:
+            utils.panic("Error initializing IRS")
+
     from clientIF import clientIF  # must import after config is read
-    cif = clientIF.getInstance(log)
+    cif = clientIF.getInstance(irs, log)
     cif.serve()
 
 

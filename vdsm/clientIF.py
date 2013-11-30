@@ -25,8 +25,6 @@ import pickle
 from xml.dom import minidom
 import uuid
 
-from storage.dispatcher import Dispatcher
-from storage.hsm import HSM
 import alignmentScan
 from vdsm.config import config
 import ksm
@@ -59,21 +57,25 @@ class clientIF:
     _instance = None
     _instanceLock = threading.Lock()
 
-    def __init__(self, log):
+    def __init__(self, irs, log):
         """
         Initialize the (single) clientIF instance
 
+        :param irs: a Dispatcher object to be used as this object's irs.
+        :type irs: :class:`storage.dispatcher.Dispatcher`
         :param log: a log object to be used for this object's logging.
         :type log: :class:`logging.Logger`
         """
         self.vmContainerLock = threading.Lock()
         self._networkSemaphore = threading.Semaphore()
         self._shutdownSemaphore = threading.Semaphore()
+        self.irs = irs
+        if self.irs:
+            self.irs.registerDomainStateChangeCallback(self.contEIOVms)
         self.log = log
         self._recovery = True
         self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
-        self._initIRS()
         self.mom = None
         if _glusterEnabled:
             self.gluster = gapi.GlusterApi(self, log)
@@ -128,14 +130,14 @@ class clientIF:
                         vmObj.cont()
 
     @classmethod
-    def getInstance(cls, log=None):
+    def getInstance(cls, irs=None, log=None):
         with cls._instanceLock:
             if cls._instance is None:
                 if log is None:
                     raise Exception("Logging facility is required to create "
                                     "the single clientIF instance")
                 else:
-                    cls._instance = clientIF(log)
+                    cls._instance = clientIF(irs, log)
         return cls._instance
 
     def _loadBindingXMLRPC(self):
@@ -223,16 +225,6 @@ class clientIF:
             binding.start()
         while self._enabled:
             time.sleep(3)
-
-    def _initIRS(self):
-        self.irs = None
-        if config.getboolean('irs', 'irs_enable'):
-            try:
-                self.irs = Dispatcher(HSM())
-            except:
-                self.log.error("Error initializing IRS", exc_info=True)
-            else:
-                self.irs.registerDomainStateChangeCallback(self.contEIOVms)
 
     def _getUUIDSpecPath(self, uuid):
         try:
