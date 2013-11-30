@@ -28,8 +28,6 @@ from vdsm import utils
 from vdsm.config import config
 from sdc import sdCache
 
-NOT_CHECKED_YET = -1
-
 
 class DomainMonitorStatus(object):
     __slots__ = (
@@ -44,7 +42,7 @@ class DomainMonitorStatus(object):
 
     def clear(self):
         self.error = None
-        self.lastCheck = NOT_CHECKED_YET
+        self.lastCheck = time()
         self.valid = True
         self.readDelay = 0
         self.diskUtilization = (None, None)
@@ -142,6 +140,7 @@ class DomainMonitorThread(object):
         self.sdUUID = sdUUID
         self.hostId = hostId
         self.interval = interval
+        self.firstChange = True
         self.status = DomainMonitorStatus()
         self.nextStatus = DomainMonitorStatus()
         self.isIsoDomain = None
@@ -254,6 +253,8 @@ class DomainMonitorThread(object):
                 self.log.warn("Could not emit domain state change event",
                               exc_info=True)
 
+        self.firstChange = False
+
         # An ISO domain can be shared by multiple pools
         if (not self.isIsoDomain and self.nextStatus.valid
                 and self.nextStatus.hasHostId is False):
@@ -267,5 +268,4 @@ class DomainMonitorThread(object):
         self.status.update(self.nextStatus)
 
     def _statusDidChange(self):
-        return (self.status.lastCheck == NOT_CHECKED_YET or
-                self.status.valid != self.nextStatus.valid)
+        return self.firstChange or self.status.valid != self.nextStatus.valid
