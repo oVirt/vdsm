@@ -90,6 +90,7 @@ class DomainMonitor(object):
         if sdUUID in self._domains:
             return
 
+        self.log.info("Start monitoring %s", sdUUID)
         domainThread = DomainMonitorThread(weakref.proxy(self),
                                            sdUUID, hostId, self._interval)
         domainThread.start()
@@ -102,6 +103,7 @@ class DomainMonitor(object):
         # Eg: when a domain is detached the domain monitor is stopped and
         # the host id is released. If the monitor didn't actually exit it
         # might respawn a new acquire host id.
+        self.log.info("Stop monitoring %s", sdUUID)
         try:
             self._domains[sdUUID].stop()
         except KeyError:
@@ -113,6 +115,7 @@ class DomainMonitor(object):
         return self._domains[sdUUID].getStatus()
 
     def close(self):
+        self.log.info("Stopping domain monitors")
         for sdUUID in self._domains.keys():
             self.stopMonitoring(sdUUID)
 
