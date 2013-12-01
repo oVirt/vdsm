@@ -664,7 +664,7 @@ fi
 if /usr/sbin/selinuxenabled; then
     /usr/sbin/semanage fcontext -a -t virt_cache_t '/var/log/core(/.*)?'
 fi
-/sbin/restorecon -R -v /var/log/core
+/sbin/restorecon -R /var/log/core >/dev/null 2>&1
 # hack until we replace core dump with abrt
 
 %if 0%{?rhel}
