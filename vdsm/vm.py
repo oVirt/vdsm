@@ -2971,8 +2971,6 @@ class Vm(object):
         self.conf['smp'] = self.conf.get('smp', '1')
         devices = self.buildConfDevices()
 
-        # TODO: In recover should loop over disks running on the VM because
-        # conf may be outdated if something happened during restart.
         if not 'recover' in self.conf:
             self.preparePaths(devices[DISK_DEVICES])
             self._prepareTransientDisks(devices[DISK_DEVICES])
@@ -2991,7 +2989,7 @@ class Vm(object):
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
             self.saveState()
-
+        else:
             for drive in devices[DISK_DEVICES]:
                 if drive['device'] == 'disk' and isVdsmImage(drive):
                     self.sdIds.append(drive['domainID'])
