@@ -97,6 +97,17 @@ class TestNetinfo(TestCaseBase):
         # it should.
         netinfo.get()
 
+    @MonkeyPatch(netinfo, 'getLinks', lambda: [])
+    @MonkeyPatch(netinfo, 'networks', lambda: {})
+    def testGetEmpty(self):
+        result = {}
+        result.update(netinfo.get())
+        self.assertEqual(result['networks'], {})
+        self.assertEqual(result['bridges'], {})
+        self.assertEqual(result['nics'], {})
+        self.assertEqual(result['bondings'], {})
+        self.assertEqual(result['vlans'], {})
+
     def testIPv4toMapped(self):
         self.assertEqual('::ffff:127.0.0.1', netinfo.IPv4toMapped('127.0.0.1'))
 
