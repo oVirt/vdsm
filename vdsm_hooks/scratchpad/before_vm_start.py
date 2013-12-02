@@ -53,7 +53,7 @@ def indexToDiskName(i):
 def add_disk(domxml, path):
     '''
     Create libvirt xml node
-    <disk device="disk" type="file">
+    <disk device="disk" type="file" snapshot="no">
         <source file="[path to image]"/>
         <driver cache="writeback" error_policy="stop" type="raw"/>
     </disk>
@@ -62,6 +62,7 @@ def add_disk(domxml, path):
     disk = domxml.createElement('disk')
     disk.setAttribute('device', 'disk')
     disk.setAttribute('type', 'file')
+    disk.setAttribute('snapshot', 'no')
 
     source = domxml.createElement('source')
     source.setAttribute('file', path)

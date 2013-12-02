@@ -25,7 +25,7 @@ def indexToDiskName(i):
 
 def createDiskElement(domxml, devpath, lunid, options):
     '''
-    <disk device="disk" type="block">
+    <disk device="disk" type="block" snapshot="no">
         <source dev="/dev/mapper/lunid"/>
         <target bus="virtio" dev="vda"/>
         <driver cache="none" error_policy="stop" name="qemu" type="raw"/>
@@ -35,6 +35,7 @@ def createDiskElement(domxml, devpath, lunid, options):
     disk = domxml.createElement('disk')
     disk.setAttribute('device', 'disk')
     disk.setAttribute('type', 'block')
+    disk.setAttribute('snapshot', 'no')
 
     source = domxml.createElement('source')
     source.setAttribute('dev', devpath)

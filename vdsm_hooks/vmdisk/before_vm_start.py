@@ -27,7 +27,7 @@ def indexToDiskName(i):
 
 def createDiskElement(domxml, devpath, drivertype):
     '''
-    <disk device="disk" type="file">
+    <disk device="disk" type="file" snapshot="no">
         <source file="/net/myhost/myimage.img"/>
         <target bus="virtio" dev="vda"/>
         <driver cache="none" error_policy="stop" name="qemu" type="qcow2"/>
@@ -37,6 +37,7 @@ def createDiskElement(domxml, devpath, drivertype):
     disk = domxml.createElement('disk')
     disk.setAttribute('device', 'disk')
     disk.setAttribute('type', 'file')
+    disk.setAttribute('snapshot', 'no')
 
     source = domxml.createElement('source')
     source.setAttribute('file', devpath)
