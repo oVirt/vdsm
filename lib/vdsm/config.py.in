@@ -54,13 +54,14 @@ parameters = [
             'recognized by kvm/qemu if a coma separated list given then a '
             'NIC per device will be created.'),
 
+        ('migration_destination_timeout', '21600',
+            'Maximum time the destination waits for the migration to finish.'),
+
         ('migration_timeout', '300',
             'Migration Source Host: Uses at least 1/2 of this value for VMs '
             'with less than 2 GiB of RAM otherwise 1/4 of this value per GiB '
             'RAM for calculating the delay before setting/increasing the '
             'migration_downtime.'
-            'Migration Destination Host: Maximum time the destination waits '
-            'before it tries to finalize the VM intialization. '
             'NOTE: This value is not used as an overall migration timeout.'),
 
         ('migration_progress_timeout', '150',
