@@ -191,6 +191,18 @@ class MkimageTestCase(VdsmTestCase):
         try:
             self._check_content()
             self._check_label(iso_img, label)
+            self._check_permissions(iso_img,
+                                    ((stat.S_IRUSR, True),
+                                     (stat.S_IWUSR, True),
+                                     (stat.S_IXUSR, False)))
+            self._check_permissions(iso_img,
+                                    ((stat.S_IRGRP, True),
+                                     (stat.S_IWGRP, False),
+                                     (stat.S_IXGRP, False)))
+            self._check_permissions(iso_img,
+                                    ((stat.S_IROTH, False),
+                                     (stat.S_IWOTH, False),
+                                     (stat.S_IXOTH, False)))
         finally:
             m.umount(force=True)
             os.unlink(iso_img)

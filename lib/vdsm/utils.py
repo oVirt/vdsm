@@ -522,7 +522,7 @@ class AsyncProc(object):
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
             printable=None, env=None, sync=True, nice=None, ioclass=None,
             ioclassdata=None, setsid=False, execCmdLogger=logging.root,
-            deathSignal=0):
+            deathSignal=0, childUmask=None):
     """
     Executes an external command, optionally via sudo.
 
@@ -555,7 +555,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
 
     p = CPopen(command, close_fds=True, cwd=cwd, env=env,
-               deathSignal=deathSignal)
+               deathSignal=deathSignal, childUmask=childUmask)
     p = AsyncProc(p)
     if not sync:
         if data is not None:

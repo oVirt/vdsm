@@ -127,7 +127,7 @@ def mkIsoFs(vmId, files, volumeName=None):
         if volumeName is not None:
             command.extend(['-V', volumeName])
         command.extend([dirname])
-        rc, out, err = execCmd(command, raw=True)
+        rc, out, err = execCmd(command, raw=True, childUmask=0o027)
         if rc:
             raise OSError(errno.EIO, "could not create iso file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))
