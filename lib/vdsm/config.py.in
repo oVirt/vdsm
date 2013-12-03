@@ -52,6 +52,9 @@ parameters = [
             'recognized by kvm/qemu if a coma separated list given then a '
             'NIC per device will be created.'),
 
+        ('migration_destination_timeout', '21600',
+            'Maximum time the destination waits for the migration to finish.'),
+
         ('migration_timeout', '300',
             'Maximum time the destination waits since migration is stalled. '
             'Please note, that this is not overall migration timeout. '

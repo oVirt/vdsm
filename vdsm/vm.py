@@ -1695,6 +1695,10 @@ class ConsoleDevice(VmDevice):
         return m
 
 
+class MigrationError(Exception):
+    pass
+
+
 class Vm(object):
     """
     Used for abstracting communication between various parts of the
@@ -3465,23 +3469,37 @@ class Vm(object):
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
                                        {'FROM_SNAPSHOT': fromSnapshot})
         elif 'migrationDest' in self.conf:
-            timeout = config.getint('vars', 'migration_timeout')
-            self.log.debug("Waiting %s seconds for end of migration" % timeout)
+            timeout = config.getint('vars', 'migration_destination_timeout')
+            self.log.debug("Waiting %s seconds for end of migration", timeout)
             self._incomingMigrationFinished.wait(timeout)
+
             try:
                 # Would fail if migration isn't successful,
                 # or restart vdsm if connection to libvirt was lost
                 self._dom = NotifyingVirDomain(
                     self._connection.lookupByUUIDString(self.id),
                     self._timeoutExperienced)
-            except Exception as e:
-                # Improve description of exception
+
                 if not self._incomingMigrationFinished.isSet():
-                    newMsg = ('%s - Timed out '
-                              '(did not receive success event)' %
-                              (e.args[0] if len(e.args) else
-                               'Migration Error'))
-                    e.args = (newMsg,) + e.args[1:]
+                    state = self._dom.state(0)
+                    if state[0] == libvirt.VIR_DOMAIN_PAUSED:
+                        if state[1] == libvirt.VIR_DOMAIN_PAUSED_MIGRATION:
+                            raise MigrationError("Migration Error - Timed out "
+                                                 "(did not receive success "
+                                                 "event)")
+                    self.log.debug("NOTE: incomingMigrationFinished event has "
+                                   "not been set and wait timed out after %d "
+                                   "seconds. Current VM state: %d, reason %d. "
+                                   "Continuing with VM initialization anyway.",
+                                   timeout, state[0], state[1])
+            except libvirt.libvirtError as e:
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    if not self._incomingMigrationFinished.isSet():
+                        newMsg = ('%s - Timed out '
+                                  '(did not receive success event)' %
+                                  (e.args[0] if len(e.args) else
+                                   'Migration Error'))
+                        e.args = (newMsg,) + e.args[1:]
                 raise
 
             self._domDependentInit()
