@@ -1061,6 +1061,7 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
         else:
             vlan, bonding, nic = _getRHELBridgeParams(mgtIface,
                                                       bridgeName=bridgeName)
+        vlan = str(vlan)
         fReturn = (nic is not None)
 
     #Delete existing bridge in oVirt
