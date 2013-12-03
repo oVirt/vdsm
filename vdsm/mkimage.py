@@ -35,6 +35,16 @@ import storage.mount
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
 
 
+def _openFile(filename, mode, perms):
+    '''
+    opens a filename allowing to specify the unix permissions
+    right from the start, to avoid world-readable files
+    with sensitive informations.
+    '''
+    fd = os.open(filename, os.O_CREAT | os.O_TRUNC | os.O_RDWR, perms)
+    return os.fdopen(fd, mode)
+
+
 def _decodeFilesIntoDir(files, parentdir):
     '''
     create temp files from files list
@@ -55,7 +65,7 @@ def _decodeFilesIntoDir(files, parentdir):
             except OSError as e:
                 if e.errno != os.errno.EEXIST:
                     raise
-        with file(filename, 'w') as f:
+        with _openFile(filename, 'w', 0o640) as f:
             f.write(base64.b64decode(content))
 
 
@@ -113,7 +123,7 @@ def mkIsoFs(vmId, files, volumeName=None):
         _decodeFilesIntoDir(files, dirname)
         isopath = _getFileName(vmId, files)
 
-        command = [EXT_MKISOFS, '-r', '-o', isopath]
+        command = [EXT_MKISOFS, '-R', '-o', isopath]
         if volumeName is not None:
             command.extend(['-V', volumeName])
         command.extend([dirname])

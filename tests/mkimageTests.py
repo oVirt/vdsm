@@ -28,6 +28,7 @@ Tests for mkimage vdsm module.
 
 from base64 import b64encode
 import os
+import stat
 from shutil import rmtree
 from tempfile import mkdtemp
 
@@ -89,6 +90,19 @@ class MkimageTestCase(VdsmTestCase):
         #pylint: disable=W0212
         mkimage._P_PAYLOAD_IMAGES = self.orig_mkimage["_P_PAYLOAD_IMAGES"]
 
+    def _check_permissions(self, filepath, permsMask):
+        """
+        Ensure the file at `filepath' has the permissions coherent
+        with the given mask.
+        The mask may specifiy the required presence, or absence, of a
+        permission bit.
+        """
+        data = os.stat(filepath)
+        if stat.S_ISREG(data.st_mode):
+            for perm, expected in permsMask:
+                self.assertEqual(bool(data.st_mode & perm), expected,
+                                 '%s: %s' % (filepath, oct(data.st_mode)))
+
     def _check_content(self):
         """
         Ensure that the workdir contains what we want
@@ -102,7 +116,20 @@ class MkimageTestCase(VdsmTestCase):
                 self.assertTrue(filename in out_dir)
             else:
                 self.assertTrue(os.path.basename(filename) in out_subdir)
-            with open(os.path.join(self.workdir, filename), "r") as fd:
+            filepath = os.path.join(self.workdir, filename)
+            self._check_permissions(filepath,
+                                    ((stat.S_IRGRP, True),
+                                     (stat.S_IWGRP, False),
+                                     (stat.S_IXGRP, False)))
+            self._check_permissions(filepath,
+                                    ((stat.S_IRUSR, True),
+                                     (stat.S_IWUSR, True),
+                                     (stat.S_IXUSR, False)))
+            self._check_permissions(filepath,
+                                    ((stat.S_IROTH, False),
+                                     (stat.S_IWOTH, False),
+                                     (stat.S_IXOTH, False)))
+            with open(filepath, "r") as fd:
                 content = fd.read()
                 self.assertEqual(content, self.expected_results[filename])
 
