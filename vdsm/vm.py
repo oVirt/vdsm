@@ -2483,7 +2483,7 @@ class Vm(object):
         try:
             now = time.time()
             if self.lastStatus == 'Down':
-                return
+                return errCode['noVM']
             if self.guestAgent and self.guestAgent.isResponsive():
                 self._guestEventTime = now
                 self._guestEvent = 'Powering down'
