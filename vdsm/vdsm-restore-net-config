@@ -48,7 +48,8 @@ def unified_restoration():
         removeBonds[bond] = {'remove': True}
     logging.debug('Removing all networks (%s) and bonds (%s) in running '
                   'config.', removeNetworks, removeBonds)
-    setupNetworks(removeNetworks, removeBonds, connectivityCheck=False)
+    setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
+                  _inRollback=True)
 
     configurator.flush()
     persistentConfig = PersistentConfig()
@@ -56,7 +57,7 @@ def unified_restoration():
     bonds = persistentConfig.bonds
     logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
                   nets, bonds)
-    setupNetworks(nets, bonds, connectivityCheck=False)
+    setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
 
 
 def restore():
