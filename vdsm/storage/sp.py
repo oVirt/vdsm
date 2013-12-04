@@ -140,10 +140,6 @@ class StoragePool(Securable):
     def getSpmStatus(self):
         return self.spmRole, self.getSpmLver(), self.getSpmId()
 
-    def __del__(self):
-        if len(self.domainMonitor.poolMonitoredDomains) > 0:
-            threading.Thread(target=self.stopMonitoringDomains).start()
-
     @unsecured
     def forceFreeSpm(self):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
