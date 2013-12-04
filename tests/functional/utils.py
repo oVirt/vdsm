@@ -190,7 +190,7 @@ class VdsProxy(object):
 
     def networkQos(self, networkName):
         network = self.netinfo.networks[networkName]
-        return network['qosInbound'], network['qosOutbound']
+        return network.get('qosInbound', {}), network.get('qosOutbound', {})
 
     def getVdsStats(self):
         result = self.vdscli.getVdsStats()

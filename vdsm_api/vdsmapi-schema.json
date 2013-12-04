@@ -552,6 +552,10 @@
 # @bridged:     Always True to distinguish this type from
 #               @NetInfoBridgelessNetwork
 #
+# @qosInbound:  #optional BandwidthParams for incoming traffic.
+#
+# @qosOutbound: #optional BandwidthParams for outgoing traffic.
+#
 # Since: 4.10.0
 # XXX: Add types for IP Address?
 ##
@@ -559,7 +563,8 @@
  'data': {'ports': ['str'], 'stp': 'bool', 'addr': 'str',
           'netmask': 'str', 'gateway': 'str', 'ipv6addrs': ['str'],
           'ipv6gateway': 'str', 'mtu': 'uint', 'cfg': 'StringMap',
-          'bridged': 'bool'}}
+          'bridged': 'bool', '*qosInbound': 'BandwidthParams',
+          '*qosOutbound': 'BandwidthParams'}}
 
 ##
 # @NetInfoBridgelessNetwork:

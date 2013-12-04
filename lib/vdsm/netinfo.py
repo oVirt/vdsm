@@ -113,12 +113,10 @@ def networks():
     :returns: dict of networkname={properties}
     :rtype: dict of dict
             { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True,
-                            'qosInbound': {'average': '1024', 'burst': '',
-                                           'peak': ''},
-                            'qosOutbound': {'average': '1024', 'burst': '2048',
-                                           'peak': ''}},
+                            'qosInbound': {'average': 1024, 'peak': 4096},
+                            'qosOutbound': {'average': 1024, 'burst': 2048}},
               'red': { 'iface': 'red', 'bridged': False
-                        'qosInbound': '', 'qosOutbound': ''} }
+                       'qosOutbound': {'average': 1024, 'burst': 2048}}}
     """
     nets = {}
     conn = libvirtconnection.get()
@@ -129,8 +127,10 @@ def networks():
             nets[netname] = {}
             xml = minidom.parseString(net.XMLDesc(0))
             qos = _parseBandwidthQos(xml)
-            nets[netname]['qosInbound'] = qos.inbound
-            nets[netname]['qosOutbound'] = qos.outbound
+            if qos.inbound:
+                nets[netname]['qosInbound'] = qos.inbound
+            if qos.outbound:
+                nets[netname]['qosOutbound'] = qos.outbound
             interfaces = xml.getElementsByTagName('interface')
             if len(interfaces) > 0:
                 nets[netname]['iface'] = interfaces[0].getAttribute('dev')
@@ -149,15 +149,17 @@ def _parseBandwidthQos(networkXml):
     :return: _Qos namedtuple containing inbound and outbound qos dicts.
     """
 
-    qos = _Qos("", "")
+    qos = _Qos({}, {})
 
     def extractQos(bandWidthElem, trafficType):
-        qos = ""
+        qos = {}
         elem = bandWidthElem.getElementsByTagName(trafficType)
         if elem:
-            qos = {'average': elem[0].getAttribute('average'),
-                   'burst': elem[0].getAttribute('burst'),
-                   'peak': elem[0].getAttribute('peak')}
+            qos['average'] = int(elem[0].getAttribute('average'))
+            if elem[0].hasAttribute('burst'):  # libvirt XML optional field
+                qos['burst'] = int(elem[0].getAttribute('burst'))
+            if elem[0].hasAttribute('peak'):  # libvirt XML optional field
+                qos['peak'] = int(elem[0].getAttribute('peak'))
         return qos
 
     bandwidthElem = networkXml.getElementsByTagName('bandwidth')
@@ -478,9 +480,11 @@ def _getNetInfo(iface, bridged, gateways, ipv6routes, qosInbound, qosOutbound):
                      'gateway': getgateway(gateways, iface),
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
-                     'mtu': str(getMtu(iface)),
-                     'qosInbound': qosInbound,
-                     'qosOutbound': qosOutbound})
+                     'mtu': str(getMtu(iface))})
+        if qosInbound:
+            data['qosInbound'] = qosInbound
+        if qosOutbound:
+            data['qosOutbound'] = qosOutbound
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)

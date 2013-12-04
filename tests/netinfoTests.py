@@ -178,17 +178,16 @@ class TestNetinfo(TestCaseBase):
                             <inbound average='4500' burst='5400' />
                             <outbound average='4500' burst='5400' peak='101' />
                           </bandwidth>""")
-        expectedQosNotEmpty = netinfo._Qos(inbound={'average': '4500',
-                                                    'burst': '5400',
-                                                    'peak': ''},
-                                           outbound={'average': '4500',
-                                                     'burst': '5400',
-                                                     'peak': '101'})
+        expectedQosNotEmpty = netinfo._Qos(inbound={'average': 4500,
+                                                    'burst': 5400},
+                                           outbound={'average': 4500,
+                                                     'burst': 5400,
+                                                     'peak': 101})
         emptyDoc = minidom.parseString("<whatever></whatever>")
 
         self.assertEqual(expectedQosNotEmpty,
                          netinfo._parseBandwidthQos(notEmptyDoc))
-        self.assertEqual(netinfo._Qos('', ''),
+        self.assertEqual(netinfo._Qos({}, {}),
                          netinfo._parseBandwidthQos(emptyDoc))
 
     def testGetBootProtocolIfcfg(self):
