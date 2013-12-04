@@ -164,6 +164,18 @@ class SimpleThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
     allow_reuse_address = True
 
 
+def _parseMemInfo(lines):
+    """
+    Parse the content of ``/proc/meminfo`` as list of strings
+    and return its content as a dictionary.
+    """
+    meminfo = {}
+    for line in lines:
+        var, val = line.split()[0:2]
+        meminfo[var[:-1]] = int(val)
+    return meminfo
+
+
 def readMemInfo():
     """
     Parse ``/proc/meminfo`` and return its content as a dictionary.
@@ -176,16 +188,12 @@ def readMemInfo():
     """
     # FIXME the root cause for these retries should be found and fixed
     tries = 3
-    meminfo = {}
     while True:
         tries -= 1
         try:
-            lines = []
-            lines = file('/proc/meminfo').readlines()
-            for line in lines:
-                var, val = line.split()[0:2]
-                meminfo[var[:-1]] = int(val)
-            return meminfo
+            with open('/proc/meminfo') as f:
+                lines = f.readlines()
+                return _parseMemInfo(lines)
         except:
             logging.warning(lines, exc_info=True)
             if tries <= 0:

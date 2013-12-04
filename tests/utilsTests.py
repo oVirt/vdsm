@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+import os.path
 import contextlib
 import errno
 import logging
@@ -86,6 +88,29 @@ class GeneralUtilsTests(TestCaseBase):
 
     def testAnyFnmatch(self):
         self.assertTrue(utils.anyFnmatch('test1', ['test0', 'test1']))
+
+    def testReadMemInfo(self):
+        meminfo = utils.readMemInfo()
+        # most common fields as per man 5 proc
+        # add your own here
+        fields = ('MemTotal', 'MemFree', 'Buffers', 'Cached', 'SwapCached',
+                  'Active', 'Inactive', 'SwapTotal', 'SwapFree', 'Dirty',
+                  'Writeback', 'Mapped', 'Slab', 'VmallocTotal',
+                  'VmallocUsed', 'VmallocChunk')
+        for field in fields:
+            self.assertTrue(field in meminfo)
+            self.assertTrue(isinstance(meminfo[field], int))
+
+    def testParseMemInfo(self):
+        testPath = os.path.realpath(__file__)
+        dirName = os.path.dirname(testPath)
+        path = os.path.join(dirName, "mem_info.out")
+        with open(path) as f:
+            meminfo = utils._parseMemInfo(f.readlines())
+        # testing some random fields
+        self.assertEquals(meminfo['NFS_Unstable'], 0)
+        self.assertEquals(meminfo['KernelStack'], 2760)
+        self.assertEquals(meminfo['Inactive'], 1432748)
 
     def testGrouper(self):
         iterable = '1234567890'

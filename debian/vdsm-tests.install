@@ -13,6 +13,7 @@ usr/share/vdsm/tests/glusterVolumeRebalanceStatus.xml
 usr/share/vdsm/tests/glusterVolumeRemoveBricksStatus.xml
 usr/share/vdsm/tests/glusterVolumeTasks.xml
 usr/share/vdsm/tests/lvs_3386c6f2-926f-42c4-839c-38287fac8998.out
+usr/share/vdsm/tests/mem_info.out
 usr/share/vdsm/tests/netmaskconversions
 usr/share/vdsm/tests/run_tests.sh
 usr/share/vdsm/tests/tc_filter_show.out
