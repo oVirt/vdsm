@@ -244,7 +244,7 @@ class MigrationSourceThread(threading.Thread):
 
             fname = self._vm.cif.prepareVolumePath(self._dstparams)
             try:
-                with file(fname, "w") as f:
+                with open(fname, "w") as f:
                     pickle.dump(self._machineParams, f)
             finally:
                 self._vm.cif.teardownVolumePath(self._dstparams)
@@ -3795,7 +3795,7 @@ class Vm(object):
             vmConfVolPath = self.cif.prepareVolumePath(vmConfVol)
             vmConf = _vmConfForMemorySnapshot()
             try:
-                with file(vmConfVolPath, "w") as f:
+                with open(vmConfVolPath, "w") as f:
                     pickle.dump(vmConf, f)
             finally:
                 self.cif.teardownVolumePath(vmConfVol)
