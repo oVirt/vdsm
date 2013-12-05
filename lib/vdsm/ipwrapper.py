@@ -38,6 +38,8 @@ _ETHTOOL_BINARY = CommandPath('ethtool',
                               '/usr/bin/ethtool',  # Arch
                               )
 
+NET_SYSFS = '/sys/class/net'
+
 
 def _isValid(ip, verifier):
     try:
@@ -150,7 +152,7 @@ class Link(object):
         detectedType = None
         rc, out, _ = execCmd([_ETHTOOL_BINARY.cmd, '-i', name])
         if rc == 71:  # Unkown driver, usually dummy or loopback
-            if not os.path.exists('/sys/class/net/' + name):
+            if not _dev_sysfs_exists(name):
                 raise ValueError('Device %s does not exist' % name)
             if name == 'lo':
                 detectedType = LinkType.LOOPBACK
@@ -546,7 +548,8 @@ def linkDel(dev):
     _execCmd(command)
 
 
-MonitorEvent = namedtuple('MonitorEvent', ['device', 'flags', 'state'])
+MonitorEvent = namedtuple('MonitorEvent', ['index', 'device', 'flags',
+                                           'state'])
 
 
 class Monitor(object):
@@ -573,9 +576,13 @@ class Monitor(object):
                 state = cls.LINK_STATE_DELETED
                 line = line[len(cls._DELETED_TEXT):]
 
-            _, device, data = [el.strip() for el in line.split(':', 2)]
-            flagVal, _ = data.split('\\', 1)  # We don't parse link/ether
+            ifindex, repName, data = [el.strip() for el in line.split(':', 2)]
+            # Consider everything with an '@' symbol a vlan/macvlan/macvtap
+            # since that's how iproute2 reports it and there is currently no
+            # disambiguation (iproute bug https://bugzilla.redhat.com/1042799
+            devName = repName.split('@', 1)[0]
 
+            flagVal, _ = data.split('\\', 1)  # We don't parse link/ether
             flags, values = data.split('>')
             flags = frozenset(flags[1:].split(','))
 
@@ -586,7 +593,7 @@ class Monitor(object):
                         state = value
                         break
 
-            changes.append(MonitorEvent(device, flags, state))
+            changes.append(MonitorEvent(ifindex, devName, flags, state))
 
         return changes
 
@@ -594,3 +601,7 @@ class Monitor(object):
         out, _ = self.proc.communicate()
 
         return self._parse(out)
+
+
+def _dev_sysfs_exists(devName):
+    return os.path.exists(os.path.join(NET_SYSFS, devName))

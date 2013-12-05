@@ -195,26 +195,58 @@ class TestIpwrapper(TestCaseBase):
             self.assertRaises(ValueError, Rule.fromText, text)
 
     def testMonitorEvents(self):
-        out = ('273: bond0: <BROADCAST,MULTICAST,MASTER> mtu 1500 qdisc '
-               'noqueue state DOWN \\    link/ether 33:44:55:66:77:88 brd '
-               'ff:ff:ff:ff:ff:ff \n'
-               '4: wlp3s0: <BROADCAST,MULTICAST,UP,LOWER_UP> \\    '
-               'link/ether \n'
-               'Deleted 418: foo: <BROADCAST,MULTICAST> mtu 1500 qdisc noop '
-               'state DOWN group default \\    link/ether ba:2c:7b:68:b8:77 '
-               'brd ff:ff:ff:ff:ff:ff\n')
-        expected = [
-            MonitorEvent(
-                'bond0',
-                frozenset(['BROADCAST', 'MULTICAST', 'MASTER']),
-                'DOWN'),
-            MonitorEvent(
-                'wlp3s0',
-                frozenset(['BROADCAST', 'MULTICAST', 'UP', 'LOWER_UP']),
-                None),
-            MonitorEvent(
-                'foo',
-                frozenset(['BROADCAST', 'MULTICAST']),
-                'DELETED')]
+        devs = ({'index': '273',
+                 'reportedName': 'bond0', 'name': 'bond0',
+                 'flags': frozenset(['BROADCAST', 'MULTICAST', 'MASTER']),
+                 'attrs': 'mtu 1500 qdisc noqueue',
+                 'state': 'DOWN',
+                 'address': '33:44:55:66:77:88', 'brd': 'ff:ff:ff:ff:ff:ff'},
+                {'index': '4',
+                 'reportedName': 'wlp3s0', 'name': 'wlp3s0',
+                 'flags': frozenset(['BROADCAST', 'MULTICAST', 'UP',
+                                     'LOWER_UP']),
+                 'address': ''},
+                {'index': '417',
+                 'reportedName': 'p1p3.13@p1p3', 'name': 'p1p3.13',
+                 'flags': frozenset(['NO-CARRIER', 'BROADCAST', 'MULTICAST',
+                                     'UP']),
+                 'attrs': 'mtu 1500 qdisc noqueue',
+                 'state': 'LOWERLAYERDOWN',
+                 'address': '00:10:18:e1:6c:f4',
+                 'brd': 'ff:ff:ff:ff:ff:ff'},
+                {'index': '418',
+                 'reportedName': 'foo', 'name': 'foo',
+                 'flags': frozenset(['BROADCAST', 'MULTICAST']),
+                 'attrs': 'mtu 1500 qdisc noop',
+                 'state': 'DOWN',
+                 'extraAttrs': 'group default',
+                 'address': 'ba:2c:7b:68:b8:77',
+                 'brd': 'ff:ff:ff:ff:ff:ff',
+                 'deleted': True})
 
-        self.assertEqual(Monitor._parse(out), expected)
+        def entry(index, reportedName, flags, address, attrs=None,
+                  state=None, extraAttrs=None, brd=None, deleted=False,
+                  **kwargs):
+            elements = []
+            if deleted:
+                elements.append(Monitor._DELETED_TEXT)
+            elements += [index + ':', reportedName + ':',
+                         '<' + ','.join(flags) + '>']
+            if attrs is not None:
+                elements.append(attrs)
+            if state is not None:
+                elements.append('state ' + state)
+            if extraAttrs is not None:
+                elements.append(extraAttrs)
+            elements.append('\\   ')
+            elements.append('link/ether ' + address)
+            if brd is not None:
+                elements.append('brd ' + brd)
+            return ' '.join(elements)
+
+        data = [entry(**dev) for dev in devs]
+        events = [MonitorEvent(
+            dev['index'], dev['name'], dev['flags'],
+            Monitor.LINK_STATE_DELETED if dev.get('deleted') else
+            dev.get('state', None)) for dev in devs]
+        self.assertEqual(Monitor._parse('\n'.join(data)), events)
