@@ -72,6 +72,37 @@ class LinkType(object):
     VETH = 'veth'
 
 
+def _parseLinkLine(text):
+    """Returns the a link attribute dictionary resulting from parsing the
+    output of an iproute2 detailed link entry."""
+    attrs = {}
+    attrs['index'], attrs['name'], data = [el.strip() for el in
+                                           text.split(':', 2)]
+
+    processedData = [el.strip() for el in
+                     data.replace('\\', '', 1).split('\\')]
+
+    flags, values = processedData[0].split('>', 1)
+    attrs['flags'] = frozenset(flags[1:].split(','))
+
+    baseData = (el for el in values.strip().split(' ') if el and
+                el != 'link/none')
+    for key, value in grouper(baseData, 2):
+        if key.startswith('link/'):
+            key = 'address'
+        attrs[key] = value
+    if 'address' not in attrs:
+        attrs['address'] = None
+
+    if len(processedData) > 1:
+        tokens = [token for token in processedData[1].split(' ') if token]
+        linkType = tokens.pop(0)
+        attrs['linkType'] = linkType
+        attrs.update((linkType + tokens[i], tokens[i + 1]) for i in
+                     range(0, len(tokens) - 1, 2))
+    return attrs
+
+
 @equals
 class Link(object):
     """Represents link information obtained from iproute2"""
@@ -101,41 +132,11 @@ class Link(object):
         return '%s: %s(%s) %s' % (self.index, self.name, self.type,
                                   self.address)
 
-    @staticmethod
-    def _parse(text):
-        """
-        Returns the Link attribute dictionary resulting from parsing the text.
-        """
-        attrs = {}
-        attrs['index'], attrs['name'], data = [el.strip() for el in
-                                               text.split(':', 2)]
-
-        processedData = [el.strip() for el in
-                         data.replace('\\', '', 1).split('\\')]
-
-        baseData = (el for el in
-                    processedData[0].split('>')[1].strip().split(' ') if el and
-                    el != 'link/none')
-        for key, value in grouper(baseData, 2):
-            if key.startswith('link/'):
-                key = 'address'
-            attrs[key] = value
-        if 'address' not in attrs:
-            attrs['address'] = None
-
-        if len(processedData) > 1:
-            tokens = [token for token in processedData[1].split(' ') if token]
-            linkType = tokens.pop(0)
-            attrs['linkType'] = linkType
-            attrs.update((linkType + tokens[i], tokens[i + 1]) for i in
-                         range(0, len(tokens) - 1, 2))
-        return attrs
-
     @classmethod
     def fromText(cls, text):
         """Creates a Link object from the textual representation from
         iproute2's "ip -o -d link show" command."""
-        attrs = cls._parse(text)
+        attrs = _parseLinkLine(text)
         if 'linkType' not in attrs:
             attrs['linkType'] = cls._detectType(attrs['name'])
         if attrs['linkType'] in (LinkType.VLAN, LinkType.MACVLAN):
@@ -568,34 +569,23 @@ class Monitor(object):
         self.proc.kill()
 
     @classmethod
+    def _parseLine(cls, line):
+        state = None
+        if line.startswith(cls._DELETED_TEXT):
+            state = cls.LINK_STATE_DELETED
+            line = line[len(cls._DELETED_TEXT):]
+
+        data = _parseLinkLine(line)
+        # Consider everything with an '@' symbol a vlan/macvlan/macvtap
+        # since that's how iproute2 reports it and there is currently no
+        # disambiguation (iproute bug https://bugzilla.redhat.com/1042799
+        data['name'] = data['name'].split('@', 1)[0]
+        state = state if state or not 'state' in data else data['state']
+        return MonitorEvent(data['index'], data['name'], data['flags'], state)
+
+    @classmethod
     def _parse(cls, text):
-        changes = []
-        for line in text.splitlines():
-            state = None
-            if line.startswith(cls._DELETED_TEXT):
-                state = cls.LINK_STATE_DELETED
-                line = line[len(cls._DELETED_TEXT):]
-
-            ifindex, repName, data = [el.strip() for el in line.split(':', 2)]
-            # Consider everything with an '@' symbol a vlan/macvlan/macvtap
-            # since that's how iproute2 reports it and there is currently no
-            # disambiguation (iproute bug https://bugzilla.redhat.com/1042799
-            devName = repName.split('@', 1)[0]
-
-            flagVal, _ = data.split('\\', 1)  # We don't parse link/ether
-            flags, values = data.split('>')
-            flags = frozenset(flags[1:].split(','))
-
-            if state is None:
-                values = (el for el in values.strip().split(' ') if el)
-                for key, value in grouper(values, 2):
-                    if key == 'state':
-                        state = value
-                        break
-
-            changes.append(MonitorEvent(ifindex, devName, flags, state))
-
-        return changes
+        return [cls._parseLine(line) for line in text.splitlines()]
 
     def events(self):
         out, _ = self.proc.communicate()
