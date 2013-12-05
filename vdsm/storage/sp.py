@@ -43,7 +43,7 @@ from sdc import sdCache
 import storage_exception as se
 from persistentDict import DictValidator, unicodeEncoder, unicodeDecoder
 from remoteFileHandler import Timeout
-from securable import Securable, unsecured
+from securable import secured, unsecured
 import image
 from resourceFactories import IMAGE_NAMESPACE
 from storageConstants import STORAGE
@@ -100,7 +100,8 @@ MAX_DOMAINS -= blockSD.PVS_METADATA_SIZE
 MAX_DOMAINS /= 48
 
 
-class StoragePool(Securable):
+@secured
+class StoragePool(object):
     '''
     StoragePool object should be relatively cheap to construct. It should defer
     any heavy lifting activities until the time it is really needed.
@@ -111,12 +112,11 @@ class StoragePool(Securable):
     lvExtendPolicy = config.get('irs', 'vol_extend_policy')
 
     def __init__(self, spUUID, domainMonitor, taskManager):
-        Securable.__init__(self)
-
+        self._secured = threading.Event()
         self._formatConverter = DefaultFormatConverter()
         self._domainsToUpgrade = []
         self.lock = threading.RLock()
-        self._setUnsafe()
+        self._setUnsecure()
         self.spUUID = str(spUUID)
         self.poolPath = os.path.join(self.storage_repository, self.spUUID)
         self.id = SPM_ID_FREE
@@ -128,6 +128,17 @@ class StoragePool(Securable):
         self.domainMonitor = domainMonitor
         self._upgradeCallback = partial(StoragePool._upgradePoolDomain,
                                         proxy(self))
+
+    def __is_secure__(self):
+        return self._secured.isSet()
+
+    @unsecured
+    def _setSecure(self):
+        self._secured.set()
+
+    @unsecured
+    def _setUnsecure(self):
+        self._secured.clear()
 
     @unsecured
     def getSpmStatus(self):
@@ -322,13 +333,13 @@ class StoragePool(Securable):
 
                 self.spmRole = SPM_ACQUIRED
 
-                # Once setSafe completes we are running as SPM
-                self._setSafe()
+                # Once setSecure completes we are running as SPM
+                self._setSecure()
                 self._updateDomainsRole()
 
                 # Mailbox issues SPM commands, therefore we start it AFTER spm
                 # commands are allowed to run to prevent a race between the
-                # mailbox and the "self._setSafe() call"
+                # mailbox and the "self._setSecure() call"
 
                 # Create mailbox if SAN pool (currently not needed on nas)
                 # FIXME: Once pool contains mixed type domains (NFS + Block)
@@ -416,7 +427,7 @@ class StoragePool(Securable):
                 return True
 
             self._shutDownUpgrade()
-            self._setUnsafe()
+            self._setUnsecure()
 
             stopFailed = False
 
@@ -622,7 +633,7 @@ class StoragePool(Securable):
         self._acquireTemporaryClusterLock(msdUUID, leaseParams)
 
         try:
-            self._setSafe()
+            self._setSecure()
             # Mark 'master' domain
             # We should do it before actually attaching this domain to the pool
             # During 'master' marking we create pool metadata and each attached
@@ -652,7 +663,7 @@ class StoragePool(Securable):
                                exc_info=True)
             raise
         finally:
-            self._setUnsafe()
+            self._setUnsecure()
 
             self._releaseTemporaryClusterLock(msdUUID)
             self.stopMonitoringDomains()

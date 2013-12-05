@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,72 +18,60 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from threading import Event
 from functools import wraps
 
 OVERRIDE_ARG = "__securityOverride"
 SECURE_FIELD = "__secured__"
+SECURE_METHOD_NAME = "__is_secure__"
 
 
 class SecureError(RuntimeError):
     pass
 
 
-class MetaSecurable(type):
-    def __new__(cls, name, bases, dct):
-        for fun, val in dct.iteritems():
-            if not callable(val):
-                continue
+def secured(cls):
+    """Secured class decorator.
 
-            if (hasattr(val, SECURE_FIELD) and
-                    not getattr(val, SECURE_FIELD)):
-                continue
+    When a class is @secured the execution of its methods is permitted
+    only when the __is_secure__ method returns True.
+    The methods that are not subject to this check are the special methods
+    (e.g. __init__) including __is_secure__, and all the methods that are
+    marked with the @unsecured decorator.
+    """
 
-            if fun.startswith("__"):
-                # Wrapping builtins might cause weird results
-                continue
+    if not callable(cls.__dict__.get(SECURE_METHOD_NAME)):
+        raise NotImplementedError("Security method not implemented")
 
-            dct[fun] = secured(val)
+    for name, value in cls.__dict__.iteritems():
+        # Skipping non callable attributes, special methods (including
+        # SECURE_METHOD_NAME) and unsecured methods.
+        if (not callable(value) or not getattr(value, SECURE_FIELD, True)
+                or name.startswith("__")):
+            continue
+        setattr(cls, name, _secure_method(value))
 
-        dct['__securable__'] = True
-        return type.__new__(cls, name, bases, dct)
+    return cls
 
 
 def unsecured(f):
+    """Unsecured method decorator.
+
+    This decorator is used to mark the methods (of a @secured class) that
+    are not subject to the __is_secure__ execution check.
+    """
     setattr(f, SECURE_FIELD, False)
     return f
 
 
-def secured(f):
-    @wraps(f)
+def _secure_method(method):
+    @wraps(method)
     def wrapper(self, *args, **kwargs):
-        if not hasattr(self, "__securable__"):
-            raise RuntimeError("Secured object is not a securable")
-
         override = kwargs.pop(OVERRIDE_ARG, False)
 
-        if not (self._isSafe() or override):
-            raise SecureError()
+        if not (getattr(self, SECURE_METHOD_NAME)() is True
+                or override is True):
+            raise SecureError("Secured object is not in safe state")
 
-        return f(self, *args, **kwargs)
+        return method(self, *args, **kwargs)
 
     return wrapper
-
-
-class Securable(object):
-    __metaclass__ = MetaSecurable
-
-    def __init__(self):
-        self._safety = Event()
-
-    @unsecured
-    def _isSafe(self):
-        return self._safety.isSet()
-
-    @unsecured
-    def _setSafe(self):
-        self._safety.set()
-
-    @unsecured
-    def _setUnsafe(self):
-        self._safety.clear()
