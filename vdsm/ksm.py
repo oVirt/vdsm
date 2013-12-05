@@ -27,6 +27,18 @@ from vdsm import utils
 from vdsm.config import config
 
 
+def _readFile(path):
+    with open(path) as f:
+        return f.read()
+
+
+def _readProcFSInt(path):
+    try:
+        return int(_readFile(path))
+    except (IOError, ValueError):
+        return 0
+
+
 class KsmMonitorThread(threading.Thread):
     def __init__(self, cif):
         threading.Thread.__init__(self, name='KsmMonitor')
@@ -49,8 +61,8 @@ class KsmMonitorThread(threading.Thread):
         self.cpuUsage = 0
 
     def _getKsmdJiffies(self):
-        return sum(map(int, file('/proc/%s/stat' % self._pid)
-                       .read().split()[13:15]))
+        return sum(map(int, _readFile('/proc/%s/stat' % self._pid)
+                       .split()[13:15]))
 
     def run(self):
         start()
@@ -73,33 +85,22 @@ class KsmMonitorThread(threading.Thread):
         current memory stress.
         Return whether ksm is running"""
 
-        self._lock.acquire()
-        try:
+        with self._lock:
             utils.execCmd([constants.EXT_SERVICE, 'ksmtuned', 'retune'],
                           sudo=True)
-        finally:
-            self._lock.release()
         return running()
 
     def memsharing(self):
-        try:
-            return (int(file('/sys/kernel/mm/ksm/pages_sharing').read()))
-        except:
-            return 0
+        return _readProcFSInt('/sys/kernel/mm/ksm/pages_sharing')
 
 
 def running():
-    try:
-        return int(file('/sys/kernel/mm/ksm/run').read()) & 1 == 1
-    except:
-        return False
+    value = _readProcFSInt('/sys/kernel/mm/ksm/pages_to_scan')
+    return (value & 1) == 1
 
 
 def npages():
-    try:
-        return int(file('/sys/kernel/mm/ksm/pages_to_scan').read())
-    except:
-        return 0
+    return _readProcFSInt('/sys/kernel/mm/ksm/pages_to_scan')
 
 
 def start():
