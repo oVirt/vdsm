@@ -981,12 +981,12 @@ def panic(msg):
 
 
 # Copied from
-# http://docs.python.org/2.6/library/itertools.html?highlight=pairwise#recipes
-def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return itertools.izip(a, b)
+# http://docs.python.org/2.6/library/itertools.html?highlight=grouper#recipes
+def grouper(iterable, n, fillvalue=None):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
+    args = [iter(iterable)] * n
+    return itertools.izip_longest(fillvalue=fillvalue, *args)
 
 
 def anyFnmatch(name, patterns):

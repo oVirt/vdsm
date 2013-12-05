@@ -29,7 +29,7 @@ from .utils import anyFnmatch
 from .utils import CommandPath
 from .utils import execCmd
 from .utils import memoized
-from .utils import pairwise
+from .utils import grouper
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 _ETHTOOL_BINARY = CommandPath('ethtool',
@@ -114,7 +114,7 @@ class Link(object):
         baseData = (el for el in
                     processedData[0].split('>')[1].strip().split(' ') if el and
                     el != 'link/none')
-        for key, value in pairwise(baseData):
+        for key, value in grouper(baseData, 2):
             if key.startswith('link/'):
                 key = 'address'
             attrs[key] = value
@@ -580,7 +580,7 @@ class Monitor(object):
 
             if state is None:
                 values = (el for el in values.strip().split(' ') if el)
-                for key, value in pairwise(values):
+                for key, value in grouper(values, 2):
                     if key == 'state':
                         state = value
                         break

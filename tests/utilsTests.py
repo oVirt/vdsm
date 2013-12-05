@@ -87,6 +87,24 @@ class GeneralUtilsTests(TestCaseBase):
     def testAnyFnmatch(self):
         self.assertTrue(utils.anyFnmatch('test1', ['test0', 'test1']))
 
+    def testGrouper(self):
+        iterable = '1234567890'
+        grouped = [('1', '2'), ('3', '4'), ('5', '6'), ('7', '8'), ('9', '0')]
+        self.assertEquals(list(utils.grouper(iterable, 2)), grouped)
+
+        iterable += 'a'
+        grouped.append(('a', None))
+        self.assertEquals(list(utils.grouper(iterable, 2)), grouped)
+
+        iterable += 'bcde'
+        grouped = [('1', '2', '3'), ('4', '5', '6'), ('7', '8', '9'),
+                   ('0', 'a', 'b'), ('c', 'd', 'e')]
+        self.assertEquals(list(utils.grouper(iterable, 3)), grouped)
+
+        grouped = [('1', '2', '3', '4', '5'), ('6', '7', '8', '9', '0'),
+                   ('a', 'b', 'c', 'd', 'e')]
+        self.assertEquals(list(utils.grouper(iterable, 5)), grouped)
+
 
 class AsyncProcessOperationTests(TestCaseBase):
     def _echo(self, text):
