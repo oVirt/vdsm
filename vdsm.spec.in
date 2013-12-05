@@ -57,6 +57,8 @@ BuildRequires: python-netaddr
 BuildRequires: rpm-build
 
 # BuildRequires needed by the tests during the build
+BuildRequires: dosfstools
+BuildRequires: psmisc
 BuildRequires: python-ethtool
 BuildRequires: python-inotify
 BuildRequires: python-pthreading
