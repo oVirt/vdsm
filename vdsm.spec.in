@@ -856,6 +856,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
+%{_datadir}/%{vdsm_name}/ppc64HardwareInfo.py*
 %{_datadir}/%{vdsm_name}/sourceRoute.py*
 %{_datadir}/%{vdsm_name}/sourceRouteThread.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
@@ -866,6 +867,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vm.py*
+
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf

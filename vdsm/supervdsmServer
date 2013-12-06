@@ -123,6 +123,9 @@ class _SuperVdsm(object):
         if platform.machine() in ('x86_64', 'i686'):
             from dmidecodeUtil import getHardwareInfoStructure
             return getHardwareInfoStructure()
+        elif platform.machine() in ('ppc64', ):
+            from ppc64HardwareInfo import getHardwareInfoStructure
+            return getHardwareInfoStructure()
         else:
             #  not implemented over other architecture
             return {}

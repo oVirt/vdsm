@@ -45,6 +45,7 @@ dist_vdsm_PYTHON = \
 	neterrors.py \
 	netmodels.py \
 	parted_utils.py \
+	ppc64HardwareInfo.py \
 	sampling.py \
 	sourceRoute.py \
 	sourceRouteThread.py \

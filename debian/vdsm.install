@@ -71,6 +71,7 @@
 ./usr/share/vdsm/neterrors.py
 ./usr/share/vdsm/netmodels.py
 ./usr/share/vdsm/parted_utils.py
+./usr/share/vdsm/ppc64HardwareInfo.py
 ./usr/share/vdsm/respawn
 ./usr/share/vdsm/sampling.py
 ./usr/share/vdsm/set-conf-item
