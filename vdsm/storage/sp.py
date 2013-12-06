@@ -509,23 +509,6 @@ class StoragePool(Securable):
         return True
 
     @unsecured
-    def validatePoolMVerHigher(self, masterVersion):
-        """
-        Make sure the masterVersion higher than that of the pool.
-
-        :param masterVersion: the master version you want to validate
-        :type masterVersion: int
-
-        :raises: :exc:`storage_exception.StoragePoolWrongMasterVersion`
-            exception if masterVersion doesn't follow the rules
-
-        """
-        mver = self.getMasterVersion()
-        if not int(masterVersion) > mver:
-            raise se.StoragePoolWrongMaster(self.spUUID,
-                                            self.masterDomain.sdUUID)
-
-    @unsecured
     def getMaximumSupportedDomains(self):
         msdInfo = self.masterDomain.getInfo()
         msdType = sd.name2type(msdInfo["type"])
@@ -852,7 +835,10 @@ class StoragePool(Securable):
                       msdUUID)
 
         # TODO: is this check still relevant?
-        self.validatePoolMVerHigher(masterVersion)
+        # Make sure the masterVersion higher than that of the pool
+        if not masterVersion > self.getMasterVersion():
+            raise se.StoragePoolWrongMaster(self.spUUID,
+                                            self.masterDomain.sdUUID)
 
         curmsd = sdCache.produce(sdUUID)
         newmsd = sdCache.produce(msdUUID)
@@ -1493,6 +1479,15 @@ class StoragePool(Securable):
         return self._metadata[key]
 
     @unsecured
+    def validateMasterDomainVersion(self, masterDomain, masterVersion):
+        version = self._getPoolMD(masterDomain)[PMDK_MASTER_VER]
+        if version != int(masterVersion):
+            self.log.error("Requested master domain %s does not have expected "
+                           "version %s it is version %s",
+                           masterDomain.sdUUID, masterVersion, version)
+            raise se.StoragePoolWrongMaster(self.spUUID, masterDomain.sdUUID)
+
+    @unsecured
     def getMasterDomain(self, msdUUID, masterVersion):
         """
         Get the (verified) master domain of this pool.
@@ -1517,13 +1512,7 @@ class StoragePool(Securable):
                            " %s", msdUUID, self.spUUID)
             raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
-        version = self._getPoolMD(domain)[PMDK_MASTER_VER]
-        if version != int(masterVersion):
-            self.log.error("Requested master domain %s does not have expected "
-                           "version %s it is version %s",
-                           msdUUID, masterVersion, version)
-            raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
-
+        self.validateMasterDomainVersion(domain, masterVersion)
         self.log.debug("Master domain %s verified, version %s", msdUUID,
                        masterVersion)
         return domain
