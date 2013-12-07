@@ -191,8 +191,8 @@ class WorkerThread(threading.Thread):
         it, calling the callback if any.  """
 
         while not self.__isDying:
+            id, cmd, args, callback = self.__pool.getNextTask()
             try:
-                id, cmd, args, callback = self.__pool.getNextTask()
                 if id is None:  # should retry.
                     pass
                 elif self.__isDying:
@@ -212,6 +212,11 @@ class WorkerThread(threading.Thread):
                     self.__pool.setRunningTask(False)
             except Exception:
                 self.log.error("Task %s failed" % repr(cmd), exc_info=True)
+            finally:
+                # Don't keep reference to objects taken from the pool.
+                # Otherwise this thread may keep those object alive until the
+                # next iteration. See BZ#1032925.
+                del id, cmd, args, callback
 
     def goAway(self):
 
