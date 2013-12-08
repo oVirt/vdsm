@@ -1,0 +1,30 @@
+extnet vdsm hook
+=================================
+This hook allows to override Engine's choice of to which bridge device should a
+vNIC be connected.
+
+Installation:
+* Use the engine-config to append the appropriate custom property:
+
+  sudo engine-config -s CustomDeviceProperties=
+  '{type=interface;prop={extnet=^[a-zA-Z0-9_ ---]+$}}'
+
+* Verify that the extnet custom propertes were properly added:
+	sudo engine-config -g CustomDeviceProperties
+
+Usage:
+Define a vNIC profile and set one of its custom properites to "extnet" with
+the value of the name of a libvirt network that is managed outside of oVirt.
+Then, attach the defined profile to a vNIC. When the VM is run, the relevant
+vNIC would be attached to the forced external network network instead of the
+oVirt network specified by Engine.
+
+For example, to use an openvswitch bridge, first virsh net-define
+    <network>
+      <name>ovs-net</name>
+      <forward mode='bridge'/>
+      <bridge name='ovsbr0'/>
+      <virtualport type='openvswitch'/>
+    </network>
+and make sure the network and its bridge are up and running. Then, vNICs with
+extnet=ovs-net would be connected to this network by the hook.

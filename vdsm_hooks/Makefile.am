@@ -27,6 +27,7 @@ if HOOKS
 SUBDIRS += \
 	checkimages \
 	directlun \
+	extnet \
 	fileinject \
 	floppy \
 	hostusb \

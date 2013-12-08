@@ -279,6 +279,7 @@ AC_OUTPUT([
 	vdsm_hooks/Makefile
 	vdsm_hooks/checkimages/Makefile
 	vdsm_hooks/directlun/Makefile
+	vdsm_hooks/extnet/Makefile
 	vdsm_hooks/faqemu/Makefile
 	vdsm_hooks/fileinject/Makefile
 	vdsm_hooks/floppy/Makefile

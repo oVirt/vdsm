@@ -184,6 +184,13 @@ Description: Disables MAC spoofing filtering
  either on all the of the VM's interfaces or on
  specific vnics.
 
+Package: vdsm-hook-extnet
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Force a vNIC to connect to a specific libvirt network
+ VDSM hook which allows to connect a vNIC to a libvirt network that is managed
+ outside of oVirt, such as an openvswitch network.
+
 Package: vdsm-hook-fileinject
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version}), python-libguestfs

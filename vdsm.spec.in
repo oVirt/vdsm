@@ -403,6 +403,15 @@ VDSM hooks which allow to disable mac spoof filtering
 either on all the of the VM's interfaces or on
 specific vnics.
 
+%package hook-extnet
+Summary:        Force a vNIC to connect to a specific libvirt network
+BuildArch:      noarch
+Requires:       vdsm = %{version}-%{release}
+
+%description hook-extnet
+VDSM hook which allows to connect a vNIC to a libvirt network that is managed
+outside of oVirt, such as an openvswitch network.
+
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
 BuildArch:      noarch
@@ -1191,6 +1200,11 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_macspoof
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_macspoof
+
+%files hook-extnet
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_extnet
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_extnet
 
 %files hook-nestedvt
 %defattr(-, root, root, -)
