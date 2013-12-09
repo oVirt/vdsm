@@ -214,6 +214,11 @@ class VdsProxy(object):
         else:
             return result['status']['code'], result['status']['message']
 
+    def getVmList(self, vmId):
+        result = self.vdscli.list('true', [vmId])
+        return result['status']['code'], result['status']['message'],\
+            result['vmList'][0]
+
     def getVdsCapabilities(self):
         result = self.vdscli.getVdsCapabilities()
         return result['status']['code'], result['status']['message'],\

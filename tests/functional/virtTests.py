@@ -29,6 +29,7 @@ from nose.plugins.skip import SkipTest
 
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import permutations, expandPermutations
+from testrunner import temporaryPath
 
 from vdsm.utils import CommandPath, RollbackContext
 import storageTests as storage
@@ -272,3 +273,47 @@ class VirtTest(TestCaseBase):
                                          deviceDef['hotplugDisk']), timeout=10)
                 self.retryAssert(partial(self.vdsm.hotunplugDisk,
                                          deviceDef['hotplugDisk']), timeout=10)
+
+    @permutations([['self'], ['specParams'], ['vmPayload']])
+    def testVmWithCdrom(self, pathLocation):
+        customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
+                         'devices': [],
+                         'vmName':
+                         ('testVmWithCdrom_{}').format(pathLocation)}
+
+        # echo -n testPayload | md5sum
+        # d37e46c24c78b1aed33496107afdb44b
+        vmPayloadName = ('/var/run/vdsm/payload/{}.'
+                         'd37e46c24c78b1aed33496107afdb44b'
+                         '.img').format(customization['vmId'])
+
+        cdrom = {'index': '2', 'iface': 'ide', 'specParams':
+                 {}, 'readonly': 'true', 'path':
+                 '', 'device': 'cdrom', 'shared':
+                 'false', 'type': 'disk'}
+
+        with temporaryPath(0o666) as path:
+            cdromPaths = {'self': {'path': path, 'specParams':
+                                   {'path': '/dev/null'}},
+                          'specParams': {'path': '', 'specParams':
+                                         {'path': path}},
+                          'vmPayload': {'path': '', 'specParams':
+                                        {'path': '',
+                                         'vmPayload': {'volId': 'testConfig',
+                                                       'file': {'testPayload':
+                                                                ''}}}}}
+            cdrom.update(cdromPaths[pathLocation])
+            customization['devices'].append(cdrom)
+
+            with RunningVm(self.vdsm, customization) as vm:
+                self._waitForStartup(vm, 10)
+
+                status, msg, stats = self.vdsm.getVmList(vm)
+                self.assertEqual(status, SUCCESS, msg)
+                for device in stats['devices']:
+                    if device['device'] == 'cdrom':
+                        if 'vmPayload' in cdrom['specParams']:
+                            cdrom['path'] = vmPayloadName
+                        self.assertEqual(device['path'], cdrom['path'])
+                        self.assertEqual(device['specParams']['path'],
+                                         cdrom['specParams']['path'])
