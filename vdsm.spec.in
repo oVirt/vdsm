@@ -91,6 +91,7 @@ BuildRequires: python-pep8
 BuildRequires: systemd-units
 %endif
 
+Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate
