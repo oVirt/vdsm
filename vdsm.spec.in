@@ -541,6 +541,15 @@ BuildArch:      noarch
 sr-iov hook enable to add virtual functions exposed by the device
 directly to a virtual machine.
 
+
+%package hook-spiceoptions
+Summary:        To configure spice options for vm
+BuildArch:      noarch
+
+%description hook-spiceoptions
+This vdsm hook can be used to configure some of
+the spice optimization attributes and values..
+
 %package hook-vmfex
 Summary:        vmfex support for VDSM
 BuildArch:      noarch
@@ -1308,6 +1317,11 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_sriov
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_sriov
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_sriov
+
+
+%files hook-spiceoptions
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_spiceoptions
 
 %files hook-vmdisk
 %defattr(-, root, root, -)

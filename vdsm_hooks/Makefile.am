@@ -41,6 +41,7 @@ SUBDIRS += \
 	qos \
 	scratchpad \
 	smbios \
+	spiceoptions \
 	sriov \
 	vmdisk \
 	vmfex \

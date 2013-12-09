@@ -1,0 +1,56 @@
+spiceoptions vdsm hook:
+===============================
+
+This hook goes through VM definitions xml file and manipulate its
+graphics device if the protocol type is spice. This can be used to
+configure spice options on the fly. That said, this hook script
+will be really useful to configure some of the spice optimization
+attributes and values..
+
+For ex:
+
+  <graphics type='spice' port='-1' tlsPort='-1' autoport='yes'>
+     ******
+    <image compression='auto_glz'/>
+    <streaming mode='filter'/>
+    <mouse mode='client'/>
+  </graphics>
+
+Spice supports variable compression settings for audio, images
+and streaming. These settings are accessible via the compression
+attribute in all following elements: image to set image compression
+(accepts auto_glz, auto_lz, quic, glz, lz, off),jpeg for JPEG
+compression for images over wan (accepts auto, never, always),
+zlib for configuring wan image compression (accepts auto, never, always)
+..etc.
+
+Streaming mode is set by the streaming element, settings its mode
+attribute to one of filter, all or off.
+
+Mouse mode is set by the mouse element, setting its mode attribute
+to one of server or client.If no mode is specified, the qemu default
+will be used (client mode).
+
+Syntax:
+   spiceoptions={'element': {'attribute': 'value'}, ... }
+
+For ex:
+   spiceoptions={'image': {'compression': 'auto_glz'},
+                 'jpeg': {'compression': 'never'},
+                 'streaming':{'mode':'filter'}}
+
+
+Installation:
+* Use the engine-config to append the appropriate custom property as such:
+        sudo engine-config -s UserDefinedVMProperties=
+        'previousProperties;spiceoptions=^.*$' --cver=3.2
+
+* Verify that the spiceoptions custom property was properly added:
+        sudo engine-config -g UserDefinedVMProperties
+
+Usage:
+In the VM configuration window, open the custom properites tab
+and add spiceoptions=
+
+NOTE: Live migration is **not** tested.
+
