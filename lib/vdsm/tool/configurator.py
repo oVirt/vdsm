@@ -138,15 +138,16 @@ class SanlockModuleConfigure(_ModuleConfigure):
 
     def isconfigured(self, *args):
         """
-        Return 0 if sanlock service requires a restart to reload the relevant
-        supplementary groups.
+        True if sanlock service is configured, False if sanlock service
+        requires a restart to reload the relevant supplementary groups.
         """
-        proc_status_group_prefix = "Groups:\t"
+        ret = False
         try:
             with open("/var/run/sanlock/sanlock.pid", "r") as f:
                 sanlock_pid = f.readline().strip()
             with open(os.path.join('/proc', sanlock_pid, 'status'),
                       "r") as sanlock_status:
+                proc_status_group_prefix = "Groups:\t"
                 for status_line in sanlock_status:
                     if status_line.startswith(proc_status_group_prefix):
                         groups = [int(x) for x in
@@ -155,18 +156,20 @@ class SanlockModuleConfigure(_ModuleConfigure):
                         break
                 else:
                     raise RuntimeError("Unable to find sanlock service groups")
-
+            ret = grp.getgrnam(DISKIMAGE_GROUP)[2] in groups
         except IOError as e:
             if e.errno == os.errno.ENOENT:
-                raise RuntimeError("sanlock service is not running")
-            raise
+                sys.stdout.write("sanlock service is not running\n")
+                ret = True
+            else:
+                raise
 
-        diskimage_gid = grp.getgrnam(DISKIMAGE_GROUP)[2]
-        if diskimage_gid not in groups:
-            raise RuntimeError("sanlock service requires restart")
+        if ret:
+            sys.stdout.write("sanlock service requires restart\n")
+        else:
+            sys.stdout.write("sanlock service is already configured\n")
 
-        sys.stdout.write("sanlock service is already configured\n")
-        return True
+        return ret
 
 
 __configurers = (
