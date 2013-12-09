@@ -28,8 +28,8 @@ import hashlib
 from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
     DISKIMAGE_USER, DISKIMAGE_GROUP
 from vdsm.constants import P_VDSM_RUN
+from vdsm.utils import execCmd
 from storage.fileUtils import resolveUid, resolveGid
-import storage.misc
 import storage.mount
 
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
@@ -88,7 +88,7 @@ def mkFloppyFs(vmId, files, volumeName=None):
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
         if volumeName is not None:
             command.extend(['-n', volumeName])
-        rc, out, err = storage.misc.execCmd(command, raw=True)
+        rc, out, err = execCmd(command, raw=True)
         if rc:
             raise OSError(errno.EIO, "could not create floppy file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))
@@ -117,7 +117,7 @@ def mkIsoFs(vmId, files, volumeName=None):
         if volumeName is not None:
             command.extend(['-V', volumeName])
         command.extend([dirname])
-        rc, out, err = storage.misc.execCmd(command, raw=True)
+        rc, out, err = execCmd(command, raw=True)
         if rc:
             raise OSError(errno.EIO, "could not create iso file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))

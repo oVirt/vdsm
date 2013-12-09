@@ -49,7 +49,6 @@ try:
 except ImportError:
     _glusterEnabled = False
 
-import storage.misc as misc
 from vdsm import utils
 from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
@@ -255,7 +254,7 @@ class _SuperVdsm(object):
         self.__udevReloadRules(guid)
         cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
                '--property-match=DM_NAME=%s' % guid]
-        rc, out, err = misc.execCmd(cmd, sudo=False)
+        rc, out, err = utils.execCmd(cmd, sudo=False)
         if rc:
             raise OSError(errno.EINVAL, "Could not trigger change for device \
                           %s, out %s\nerr %s" % (guid, out, err))
@@ -341,7 +340,7 @@ class _SuperVdsm(object):
         else:
             reload = "--reload-rules"
         cmd = [EXT_UDEVADM, 'control', reload]
-        rc, out, err = misc.execCmd(cmd, sudo=False)
+        rc, out, err = utils.execCmd(cmd, sudo=False)
         if rc:
             self.log.error("Udevadm reload-rules command failed rc=%s, "
                            "out=\"%s\", err=\"%s\"", rc, out, err)
@@ -351,7 +350,7 @@ class _SuperVdsm(object):
     @utils.memoized
     def __udevVersion(self):
         cmd = [EXT_UDEVADM, '--version']
-        rc, out, err = misc.execCmd(cmd, sudo=False)
+        rc, out, err = utils.execCmd(cmd, sudo=False)
         if rc:
             self.log.error("Udevadm version command failed rc=%s, "
                            " out=\"%s\", err=\"%s\"", rc, out, err)

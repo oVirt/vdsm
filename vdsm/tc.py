@@ -26,8 +26,8 @@ import socket
 
 import ethtool
 
-import storage.misc
 from vdsm.constants import EXT_TC
+from vdsm.utils import execCmd
 
 ERR_DEV_NOEXIST = 2
 
@@ -99,7 +99,7 @@ def unsetPortMirroring(network, target):
 
 
 def _process_request(command):
-    retcode, out, err = storage.misc.execCmd(command, raw=True, sudo=False)
+    retcode, out, err = execCmd(command, raw=True, sudo=False)
     if retcode != 0:
         raise TrafficControlException(retcode, err, command)
     return out

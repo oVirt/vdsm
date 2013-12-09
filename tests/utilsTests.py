@@ -25,7 +25,6 @@ import logging
 
 from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import utils
-from storage import misc
 import time
 
 
@@ -56,7 +55,7 @@ class RetryTests(TestCaseBase):
 class PidStatTests(TestCaseBase):
     def test(self):
         args = ["sleep", "3"]
-        sproc = misc.execCmd(args, sync=False, sudo=False)
+        sproc = utils.execCmd(args, sync=False, sudo=False)
         stats = utils.pidStat(sproc.pid)
         pid = int(stats.pid)
         # procName comes in the format of (procname)
@@ -133,7 +132,7 @@ class GeneralUtilsTests(TestCaseBase):
 
 class AsyncProcessOperationTests(TestCaseBase):
     def _echo(self, text):
-        proc = misc.execCmd(["echo", "-n", "test"], sync=False)
+        proc = utils.execCmd(["echo", "-n", "test"], sync=False)
 
         def parse(rc, out, err):
             return out
@@ -141,11 +140,11 @@ class AsyncProcessOperationTests(TestCaseBase):
         return utils.AsyncProcessOperation(proc, parse)
 
     def _sleep(self, t):
-        proc = misc.execCmd(["sleep", str(t)], sync=False)
+        proc = utils.execCmd(["sleep", str(t)], sync=False)
         return utils.AsyncProcessOperation(proc)
 
     def _fail(self, t):
-        proc = misc.execCmd(["sleep", str(t)], sync=False)
+        proc = utils.execCmd(["sleep", str(t)], sync=False)
 
         def parse(rc, out, err):
             raise Exception("TEST!!!")

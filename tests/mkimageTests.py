@@ -35,6 +35,7 @@ from nose.plugins.skip import SkipTest
 from testrunner import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 
+from vdsm.utils import execCmd
 import storage
 import mkimage
 
@@ -113,7 +114,7 @@ class MkimageTestCase(VdsmTestCase):
             return
         cmd = ['blkid', '-s', 'LABEL', imgPath]
         try:
-            (ret, out, err) = storage.misc.execCmd(cmd, raw=True)
+            (ret, out, err) = execCmd(cmd, raw=True)
         except OSError:
             raise SkipTest("cannot execute blkid")
 
