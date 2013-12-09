@@ -53,7 +53,7 @@ import threading
 import time
 import zombiereaper
 
-from cpopen import CPopen as BetterPopen
+from cpopen import CPopen
 from . import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1k was fastets. If
@@ -550,8 +550,8 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     cmdline = repr(subprocess.list2cmdline(printable))
     execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
 
-    p = BetterPopen(command, close_fds=True, cwd=cwd, env=env,
-                    deathSignal=deathSignal)
+    p = CPopen(command, close_fds=True, cwd=cwd, env=env,
+               deathSignal=deathSignal)
     p = AsyncProc(p)
     if not sync:
         if data is not None:

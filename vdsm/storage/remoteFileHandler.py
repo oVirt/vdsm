@@ -34,7 +34,7 @@ from contextlib import contextmanager
 if __name__ != "__main__":
     # The following modules are not used by the newly spawned child porcess.
     # Do not import them in the child to save memory.
-    from cpopen import CPopen as BetterPopen
+    from cpopen import CPopen
     from vdsm import constants
 else:
     # We add the parent directory so that imports that import the storage
@@ -230,9 +230,9 @@ class PoolHandler(object):
                 env.get("PYTHONPATH", ""), constants.P_VDSM)
             env['PYTHONPATH'] = ":".join(map(os.path.abspath,
                                              env['PYTHONPATH'].split(":")))
-            self.process = BetterPopen([constants.EXT_PYTHON, __file__,
-                                       str(hisRead), str(hisWrite)],
-                                       close_fds=False, env=env)
+            self.process = CPopen([constants.EXT_PYTHON, __file__,
+                                  str(hisRead), str(hisWrite)],
+                                  close_fds=False, env=env)
 
             self.proxy = CrabRPCProxy(myRead, myWrite)
 

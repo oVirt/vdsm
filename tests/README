@@ -14,8 +14,8 @@ From within an installed directory:
     ./run_tests.sh *.py
 
 Individual files or test cases can be specified:
-    ./run_tests.sh betterPopenTests.py
-    ./run_tests.sh betterPopenTests.py:TestBetterPopen.testEcho
+    ./run_tests.sh cPopenTests.py
+    ./run_tests.sh cPopenTests.py:TestCPopen.testEcho
 
 
 Functional test suite:

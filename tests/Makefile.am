@@ -25,7 +25,7 @@ SUBDIRS = functional
 test_modules = \
 	alignmentScanTests.py \
 	apiTests.py \
-	betterPopenTests.py \
+	cPopenTests.py \
 	capsTests.py \
 	configNetworkTests.py \
 	fileVolumeTests.py \
