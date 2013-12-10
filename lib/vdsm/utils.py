@@ -303,7 +303,6 @@ class AsyncProc(object):
             self._parent = proxy(parent)
             self._fd = fd
             self._closed = False
-            self._emptyCounter = 0
 
         def close(self):
             if not self._closed:
@@ -339,11 +338,6 @@ class AsyncProc(object):
             with self._parent._streamLock:
                 res = self._stream.read(length)
                 if self._stream.pos == self._stream.len:
-                    if self._streamClosed and res == "":
-                        self._emptyCounter += 1
-                        if self._emptyCounter > 2:
-                            self._closed = True
-
                     self._stream.truncate(0)
 
             return res
