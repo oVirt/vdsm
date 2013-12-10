@@ -369,6 +369,7 @@ class HostStatsThread(threading.Thread):
         self.startTime = time.time()
 
         threading.Thread.__init__(self)
+        self.daemon = True
         self._log = log
         self._stopEvent = threading.Event()
         self._samples = []
