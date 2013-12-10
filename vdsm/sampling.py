@@ -368,6 +368,7 @@ class StatsThread(threading.Thread):
 
     def __init__(self, log, ifids, ifrates):
         threading.Thread.__init__(self)
+        self.daemon = True
         self._log = log
         self._lastCheckTime = 0
         self._stopEvent = threading.Event()
