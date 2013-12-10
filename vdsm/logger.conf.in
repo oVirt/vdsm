@@ -1,5 +1,5 @@
 [loggers]
-keys=root,vds,Storage,metadata
+keys=root,vds,Storage,metadata,ovirt_hosted_engine_ha
 
 [handlers]
 keys=console,syslog,logfile,metadata
@@ -29,6 +29,12 @@ level=WARNING
 handlers=metadata
 qualname=irs.metadata
 propagate=0
+
+[logger_ovirt_hosted_engine_ha]
+level=ERROR
+handlers=
+qualname=ovirt_hosted_engine_ha
+propagate=1
 
 [handler_syslog]
 level=WARNING
