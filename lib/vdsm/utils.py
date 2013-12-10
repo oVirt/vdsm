@@ -340,10 +340,16 @@ class AsyncProc(object):
                 if self._stream.pos == self._stream.len:
                     self._stream.truncate(0)
 
-            return res
+            if res == "" and not self._streamClosed:
+                return None
+            else:
+                return res
 
         def readinto(self, b):
             data = self.read(len(b))
+            if data is None:
+                return None
+
             bytesRead = len(data)
             b[:bytesRead] = data
 
