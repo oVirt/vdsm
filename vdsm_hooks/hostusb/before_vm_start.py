@@ -67,7 +67,7 @@ def chown(vendorid, productid):
     # remove the 0x from the vendor and product id
     devid = vendorid[2:] + ':' + productid[2:]
     command = ['lsusb', '-d', devid]
-    retcode, out, err = hooking.execCmd(command, sudo=False, raw=True)
+    retcode, out, err = hooking.execCmd(command, raw=True)
     if retcode != 0:
         sys.stderr.write('hostusb: cannot find usb device: %s\n' % devid)
         sys.exit(2)

@@ -65,8 +65,7 @@ class SafeLease(object):
     def initLock(self):
         lockUtil = os.path.join(self.lockUtilPath, "safelease")
         initCommand = [lockUtil, "release", "-f", self._leasesPath, "0"]
-        rc, out, err = misc.execCmd(initCommand, sudo=False,
-                                    cwd=self.lockUtilPath)
+        rc, out, err = misc.execCmd(initCommand, cwd=self.lockUtilPath)
         if rc != 0:
             self.log.warn("could not initialise spm lease (%s): %s", rc, out)
             raise se.ClusterLockInitError()
@@ -128,7 +127,7 @@ class SafeLease(object):
             releaseLockCommand = [freeLockUtil, self._sdUUID]
             self.log.info("Releasing cluster lock for domain %s" %
                           self._sdUUID)
-            (rc, out, err) = misc.execCmd(releaseLockCommand, sudo=False,
+            (rc, out, err) = misc.execCmd(releaseLockCommand,
                                           cwd=self.lockUtilPath)
             if rc != 0:
                 self.log.error("Could not release cluster lock "

@@ -33,7 +33,7 @@ def create_image(path, size):
     Create image file
     '''
     command = ['/usr/bin/qemu-img', 'create', '-f', 'raw', path, size]
-    retcode, out, err = hooking.execCmd(command, sudo=False, raw=True)
+    retcode, out, err = hooking.execCmd(command, raw=True)
     if retcode != 0:
         sys.stderr.write('scratchpad: error running command %s, err = %s\n' %
                          (' '.join(command), err))

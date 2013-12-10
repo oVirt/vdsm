@@ -342,7 +342,7 @@ class AsyncProcTests(TestCaseBase):
 
     def testWaitTimeout(self):
         ttl = 2
-        p = utils.execCmd([EXT_SLEEP, str(ttl + 10)], sudo=False, sync=False)
+        p = utils.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
         startTime = time.time()
         p.wait(ttl)
         duration = time.time() - startTime
@@ -352,7 +352,7 @@ class AsyncProcTests(TestCaseBase):
 
     def testWaitCond(self):
         ttl = 2
-        p = utils.execCmd([EXT_SLEEP, str(ttl + 10)], sudo=False, sync=False)
+        p = utils.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
         startTime = time.time()
         p.wait(cond=lambda: time.time() - startTime > ttl)
         duration = time.time() - startTime
@@ -363,7 +363,7 @@ class AsyncProcTests(TestCaseBase):
     def testCommunicate(self):
         data = ("The trouble with the world is that the stupid are cocksure "
                 "and the intelligent are full of doubt")
-        p = utils.execCmd([EXT_DD], data=data, sudo=False, sync=False)
+        p = utils.execCmd([EXT_DD], data=data, sync=False)
         p.stdin.close()
         self.assertEquals(p.stdout.read(len(data)).strip(), data)
 
@@ -688,7 +688,7 @@ class ValidateDDBytes(TestCaseBase):
         with tempfile.NamedTemporaryFile() as f:
             cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
                    'count=%d' % count]
-            rc, out, err = utils.execCmd(cmd, sudo=False)
+            rc, out, err = utils.execCmd(cmd)
 
         self.assertTrue(misc.validateDDBytes(err, count))
 
@@ -700,7 +700,7 @@ class ValidateDDBytes(TestCaseBase):
         with tempfile.NamedTemporaryFile() as f:
             cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
                    'count=%d' % count]
-            rc, out, err = utils.execCmd(cmd, sudo=False)
+            rc, out, err = utils.execCmd(cmd)
 
         self.assertFalse(misc.validateDDBytes(err, count + 1))
 
@@ -993,12 +993,12 @@ class ExecCmd(TestCaseBase):
         """
         Tests that execCmd execs and returns the correct ret code
         """
-        ret, out, err = utils.execCmd([EXT_ECHO], sudo=False)
+        ret, out, err = utils.execCmd([EXT_ECHO])
 
         self.assertEquals(ret, 0)
 
     def testNoCommand(self):
-        self.assertRaises(OSError, utils.execCmd, ["I.DONT.EXIST"], sudo=False)
+        self.assertRaises(OSError, utils.execCmd, ["I.DONT.EXIST"])
 
     def testStdOut(self):
         """
@@ -1008,7 +1008,7 @@ class ExecCmd(TestCaseBase):
         line = "All I wanted was to have some pizza, hang out with dad, " + \
                "and not let your weirdness mess up my day"
         # (C) Nickolodeon - Invader Zim
-        ret, stdout, stderr = utils.execCmd((EXT_ECHO, line), sudo=False)
+        ret, stdout, stderr = utils.execCmd((EXT_ECHO, line))
         self.assertEquals(stdout[0], line)
 
     def testStdErr(self):
@@ -1020,8 +1020,7 @@ class ExecCmd(TestCaseBase):
                "turning you on at all?"
         # (C) Fox - The X Files
         code = "import sys; sys.stderr.write('%s')" % line
-        ret, stdout, stderr = utils.execCmd([EXT_PYTHON, "-c", code],
-                                            sudo=False)
+        ret, stdout, stderr = utils.execCmd([EXT_PYTHON, "-c", code])
         self.assertEquals(stderr[0], line)
 
     def testSudo(self):
@@ -1036,7 +1035,7 @@ class ExecCmd(TestCaseBase):
 
     def testNice(self):
         cmd = ["sleep", "10"]
-        proc = utils.execCmd(cmd, sudo=False, nice=10, sync=False)
+        proc = utils.execCmd(cmd, nice=10, sync=False)
 
         def test():
             nice = utils.pidStat(proc.pid).nice

@@ -119,7 +119,7 @@ def removeMapping(deviceName):
 
 def _removeMapping(deviceName):
     cmd = [EXT_DMSETUP, "remove", deviceName]
-    rc = misc.execCmd(cmd, sudo=False)[0]
+    rc = misc.execCmd(cmd)[0]
     if rc != 0:
         raise Exception("Could not remove mapping `%s`" % deviceName)
 
@@ -150,7 +150,7 @@ PATH_STATUS_RE = re.compile(r"(?P<devnum>\d+:\d+)\s+(?P<status>[AF])")
 
 def _getPathsStatus():
     cmd = [EXT_DMSETUP, "status"]
-    rc, out, err = misc.execCmd(cmd, sudo=False)
+    rc, out, err = misc.execCmd(cmd)
     if rc != 0:
         raise Exception("Could not get device statuses")
 

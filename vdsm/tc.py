@@ -99,7 +99,7 @@ def unsetPortMirroring(network, target):
 
 
 def _process_request(command):
-    retcode, out, err = execCmd(command, raw=True, sudo=False)
+    retcode, out, err = execCmd(command, raw=True)
     if retcode != 0:
         raise TrafficControlException(retcode, err, command)
     return out

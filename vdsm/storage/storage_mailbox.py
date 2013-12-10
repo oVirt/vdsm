@@ -275,7 +275,7 @@ class HSM_MailMonitor(threading.Thread):
 
     def _initMailbox(self):
         # Sync initial incoming mail state with storage view
-        (rc, out, err) = _mboxExecCmd(self._inCmd, sudo=False, raw=True)
+        (rc, out, err) = _mboxExecCmd(self._inCmd, raw=True)
         if rc == 0:
             self._incomingMail = out
             self._init = True
@@ -372,7 +372,7 @@ class HSM_MailMonitor(threading.Thread):
     def _checkForMail(self):
         #self.log.debug("HSM_MailMonitor - checking for mail")
         #self.log.debug("Running command: " + str(self._inCmd))
-        (rc, in_mail, err) = misc.execCmd(self._inCmd, sudo=False, raw=True)
+        (rc, in_mail, err) = misc.execCmd(self._inCmd, raw=True)
         if rc:
             raise RuntimeError("_handleResponses.Could not read mailbox - rc "
                                "%s" % rc)
@@ -391,7 +391,7 @@ class HSM_MailMonitor(threading.Thread):
         pChk = struct.pack('<l', chk)  # Assumes CHECKSUM_BYTES equals 4!!!
         self._outgoingMail = \
             self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES] + pChk
-        _mboxExecCmd(self._outCmd, data=self._outgoingMail, sudo=False)
+        _mboxExecCmd(self._outCmd, data=self._outgoingMail)
 
     def _handleMessage(self, message):
         # TODO: add support for multiple mailboxes
@@ -575,7 +575,7 @@ class SPM_MailMonitor:
         self.log.debug("SPM_MailMonitor - clearing outgoing mail, command is: "
                        "%s", self._outCmd)
         cmd = self._outCmd + ['bs=' + str(self._outMailLen)]
-        (rc, out, err) = _mboxExecCmd(cmd, sudo=False, data=self._outgoingMail)
+        (rc, out, err) = _mboxExecCmd(cmd, data=self._outgoingMail)
         if rc:
             self.log.warning("SPM_MailMonitor couldn't clear outgoing mail, "
                              "dd failed")
@@ -730,7 +730,7 @@ class SPM_MailMonitor:
             cmd = self._inCmd + ['bs=' + str(self._outMailLen)]
             #self.log.debug("SPM_MailMonitor - reading incoming mail, "
             #               "command: " + str(cmd))
-            (rc, in_mail, err) = misc.execCmd(cmd, sudo=False, raw=True)
+            (rc, in_mail, err) = misc.execCmd(cmd, raw=True)
             if rc:
                 raise IOError(errno.EIO, "_handleRequests._checkForMail - "
                               "Could not read mailbox: %s" % self._inbox)
@@ -747,7 +747,7 @@ class SPM_MailMonitor:
                 self._outLock.acquire()
                 try:
                     cmd = self._outCmd + ['bs=' + str(self._outMailLen)]
-                    (rc, out, err) = _mboxExecCmd(cmd, sudo=False,
+                    (rc, out, err) = _mboxExecCmd(cmd,
                                                   data=self._outgoingMail)
                     if rc:
                         self.log.warning("SPM_MailMonitor couldn't write "
@@ -773,7 +773,7 @@ class SPM_MailMonitor:
                                   'seek=' + str(mailboxOffset / MAILBOX_SIZE)]
             #self.log.debug("Running command: %s, for message id: %s",
             #               str(cmd), str(msgID))
-            (rc, out, err) = _mboxExecCmd(cmd, sudo=False, data=mailbox)
+            (rc, out, err) = _mboxExecCmd(cmd, data=mailbox)
             if rc:
                 self.log.error("SPM_MailMonitor: sendReply - couldn't send "
                                "reply, dd failed")

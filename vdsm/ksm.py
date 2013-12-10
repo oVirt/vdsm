@@ -48,7 +48,7 @@ class KsmMonitorThread(threading.Thread):
         self._lock = threading.Lock()
         if config.getboolean('ksm', 'ksm_monitor_thread'):
             pids = utils.execCmd([constants.EXT_PGREP, '-xf', 'ksmd'],
-                                 raw=False, sudo=False)[1]
+                                 raw=False)[1]
             if pids:
                 self._pid = pids[0].strip()
                 self._cif.log.info(

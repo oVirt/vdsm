@@ -629,7 +629,7 @@ def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None,
     """
     Executes an external command, optionally via sudo with stop abilities.
     """
-    proc = execCmd(command, sudo=False, cwd=cwd, data=data, sync=False,
+    proc = execCmd(command, cwd=cwd, data=data, sync=False,
                    nice=nice, ioclass=ioclass, execCmdLogger=execCmdLogger,
                    deathSignal=deathSignal)
     if recoveryCallback:

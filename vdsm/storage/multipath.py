@@ -211,7 +211,7 @@ def getScsiSerial(physdev):
            "--export",
            "--replace-whitespace",
            "--device=" + blkdev]
-    (rc, out, err) = misc.execCmd(cmd, sudo=False)
+    (rc, out, err) = misc.execCmd(cmd)
     if rc == 0:
         for line in out:
             if line.startswith("ID_SERIAL="):

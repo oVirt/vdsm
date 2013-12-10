@@ -199,7 +199,7 @@ def _readfile(name, buffersize=None):
 
     if buffersize:
         cmd.extend(["bs=%d" % buffersize, "count=1"])
-    (rc, out, err) = execCmd(cmd, sudo=False)
+    (rc, out, err) = execCmd(cmd)
     if rc:
         raise se.MiscFileReadException(name)
 
@@ -365,7 +365,7 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
             cmd.append("oflag=%s" % oflag)
 
         if not stop:
-            (rc, out, err) = execCmd(cmd, sudo=False, nice=utils.NICENESS.HIGH,
+            (rc, out, err) = execCmd(cmd, nice=utils.NICENESS.HIGH,
                                      ioclass=utils.IOCLASS.IDLE,
                                      deathSignal=signal.SIGKILL)
         else:

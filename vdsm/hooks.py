@@ -95,7 +95,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
 
         errorSeen = False
         for s in scripts:
-            rc, out, err = utils.execCmd([s], sudo=False, raw=True,
+            rc, out, err = utils.execCmd([s], raw=True,
                                          env=scriptenv)
             logging.info(err)
             if rc != 0:

@@ -213,9 +213,8 @@ def _zeroVolume(sdUUID, volUUID):
     cmd = [constants.EXT_DD, "oflag=%s" % misc.DIRECTFLAG, "if=/dev/zero",
            "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
            "count=%s" % count]
-    p = misc.execCmd(cmd, sudo=False, sync=False,
-                     nice=utils.NICENESS.HIGH, ioclass=utils.IOCLASS.IDLE,
-                     deathSignal=signal.SIGKILL)
+    p = misc.execCmd(cmd, sync=False, nice=utils.NICENESS.HIGH,
+                     ioclass=utils.IOCLASS.IDLE, deathSignal=signal.SIGKILL)
     return p
 
 

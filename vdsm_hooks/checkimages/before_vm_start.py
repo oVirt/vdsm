@@ -75,7 +75,7 @@ def checkImage(path, timeout):
 
     # Check the image using qemu-img. Enforce check termination
     # on timeout expiration
-    p = hooking.execCmd(cmd, sudo=False, raw=True, sync=False)
+    p = hooking.execCmd(cmd, raw=True, sync=False)
 
     if not p.wait(timeout):
         p.kill()

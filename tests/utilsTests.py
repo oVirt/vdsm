@@ -57,7 +57,7 @@ class RetryTests(TestCaseBase):
 class PidStatTests(TestCaseBase):
     def test(self):
         args = ["sleep", "3"]
-        sproc = utils.execCmd(args, sync=False, sudo=False)
+        sproc = utils.execCmd(args, sync=False)
         stats = utils.pidStat(sproc.pid)
         pid = int(stats.pid)
         # procName comes in the format of (procname)
@@ -88,7 +88,7 @@ class PgrepTests(TestCaseBase):
 class GetCmdArgsTests(TestCaseBase):
     def test(self):
         args = [EXT_SLEEP, "4"]
-        sproc = utils.execCmd(args, sync=False, sudo=False)
+        sproc = utils.execCmd(args, sync=False)
         try:
             self.assertEquals(utils.getCmdArgs(sproc.pid), tuple(args))
         finally:
@@ -97,7 +97,7 @@ class GetCmdArgsTests(TestCaseBase):
 
     def testZombie(self):
         args = [EXT_SLEEP, "0"]
-        sproc = utils.execCmd(args, sync=False, sudo=False)
+        sproc = utils.execCmd(args, sync=False)
         sproc.kill()
         try:
             test = lambda: self.assertEquals(utils.getCmdArgs(sproc.pid),

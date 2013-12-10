@@ -87,7 +87,7 @@ def _genInitramfs():
     logging.warning('Generating a temporary initramfs image')
     fd, path = tempfile.mkstemp()
     cmd = [_mkinitrd.cmd, "-f", path, _kernelVer]
-    rc, out, err = execCmd(cmd, sudo=False)
+    rc, out, err = execCmd(cmd)
     os.chmod(path, 0o644)
     return path
 
