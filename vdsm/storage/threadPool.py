@@ -185,38 +185,36 @@ class WorkerThread(threading.Thread):
         self.__isDying = False
         self.daemon = True
 
+    def _processNextTask(self):
+        id, cmd, args, callback = self.__pool.getNextTask()
+        try:
+            if id is None:  # should retry.
+                pass
+            elif self.__isDying:
+                # return the task into the queue, since we abort.
+                self.__pool.__tasks.put((id, cmd, args, callback))
+            elif callback is None:
+                self.__pool.setRunningTask(True)
+                self.setName(id)
+                self.log.debug("Task: %s running: %s with: %s" %
+                               (id, repr(cmd), repr(args)))
+                cmd(args)
+                self.__pool.setRunningTask(False)
+            else:
+                self.__pool.setRunningTask(True)
+                self.setName(id)
+                callback(cmd(args))
+                self.__pool.setRunningTask(False)
+        except Exception:
+            self.log.error("Task %s failed" % repr(cmd), exc_info=True)
+
     def run(self):
 
         """ Until told to quit, retrieve the next task and execute
         it, calling the callback if any.  """
 
         while not self.__isDying:
-            id, cmd, args, callback = self.__pool.getNextTask()
-            try:
-                if id is None:  # should retry.
-                    pass
-                elif self.__isDying:
-                    # return the task into the queue, since we abort.
-                    self.__pool.__tasks.put((id, cmd, args, callback))
-                elif callback is None:
-                    self.__pool.setRunningTask(True)
-                    self.setName(id)
-                    self.log.debug("Task: %s running: %s with: %s" %
-                                   (id, repr(cmd), repr(args)))
-                    cmd(args)
-                    self.__pool.setRunningTask(False)
-                else:
-                    self.__pool.setRunningTask(True)
-                    self.setName(id)
-                    callback(cmd(args))
-                    self.__pool.setRunningTask(False)
-            except Exception:
-                self.log.error("Task %s failed" % repr(cmd), exc_info=True)
-            finally:
-                # Don't keep reference to objects taken from the pool.
-                # Otherwise this thread may keep those object alive until the
-                # next iteration. See BZ#1032925.
-                del id, cmd, args, callback
+            self._processNextTask()
 
     def goAway(self):
 
