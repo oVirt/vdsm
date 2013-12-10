@@ -330,7 +330,7 @@ class AsyncProc(object):
         def writable(self):
             return True
 
-        def read(self, length):
+        def _readNonBlock(self, length):
             hasNewData = (self._stream.len - self._stream.pos)
             if hasNewData < length and not self._streamClosed:
                 self._parent._processStreams()
@@ -343,6 +343,16 @@ class AsyncProc(object):
             if res == "" and not self._streamClosed:
                 return None
             else:
+                return res
+
+        def read(self, length):
+            if not self._parent.blocking:
+                return self._readNonBlock(length)
+            else:
+                res = None
+                while res is None:
+                    res = self._readNonBlock(length)
+
                 return res
 
         def readinto(self, b):
@@ -408,6 +418,8 @@ class AsyncProc(object):
                                        self._stdin, self._fdin), BUFFSIZE)
 
         self._returncode = None
+
+        self.blocking = False
 
     def _processStreams(self):
         if len(self._closedfds) == 3:
