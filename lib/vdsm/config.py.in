@@ -49,6 +49,11 @@ parameters = [
         ('net_persistence', 'ifcfg',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
 
+        ('hwaddr_in_ifcfg', 'always',
+            'Whether to set HWADDR in ifcfg files. Set to "never" if '
+            'NetworkManager is disabled and device name persistence does '
+            'not depend on HWADDR.'),
+
         ('nic_model', 'rtl8139,pv',
             'NIC model is rtl8139, ne2k_pci pv or any other valid device '
             'recognized by kvm/qemu if a coma separated list given then a '

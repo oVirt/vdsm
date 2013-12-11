@@ -42,6 +42,10 @@ import libvirtCfg
 import neterrors as ne
 
 
+def _hwaddr_required():
+    return config.get('vars', 'hwaddr_in_ifcfg') == 'always'
+
+
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, inRollback=False):
@@ -611,10 +615,12 @@ class ConfigWriter(object):
     def addNic(self, nic, **opts):
         """ Create ifcfg-* file with proper fields for NIC """
         _netinfo = netinfo.NetInfo()
-        hwaddr = (_netinfo.nics[nic.name].get('permhwaddr') or
-                  _netinfo.nics[nic.name]['hwaddr'])
+        conf = ''
+        if _hwaddr_required():
+            hwaddr = (_netinfo.nics[nic.name].get('permhwaddr') or
+                      _netinfo.nics[nic.name]['hwaddr'])
 
-        conf = 'HWADDR=%s\n' % pipes.quote(hwaddr)
+            conf += 'HWADDR=%s\n' % pipes.quote(hwaddr)
         if nic.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(nic.bridge.name)
         if nic.bond:
