@@ -92,11 +92,14 @@ def _execGlusterXml(cmd):
         tree = etree.fromstring('\n'.join(out))
         rv = int(tree.find('opRet').text)
         msg = tree.find('opErrstr').text
+        errNo = int(tree.find('opErrno').text)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=out)
     if rv == 0:
         return tree
     else:
+        if errNo != 0:
+            rv = errNo
         raise ge.GlusterCmdFailedException(rc=rv, err=[msg])
 
 
@@ -832,7 +835,10 @@ def peerDetach(hostName, force=False):
         _execGlusterXml(command)
         return True
     except ge.GlusterCmdFailedException as e:
-        raise ge.GlusterHostRemoveFailedException(rc=e.rc, err=e.err)
+        if e.rc == 2:
+            raise ge.GlusterHostNotFoundException(rc=e.rc, err=e.err)
+        else:
+            raise ge.GlusterHostRemoveFailedException(rc=e.rc, err=e.err)
 
 
 def _parsePeerStatus(tree, gHostName, gUuid, gStatus):
