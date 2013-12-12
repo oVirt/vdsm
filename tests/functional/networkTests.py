@@ -28,7 +28,7 @@ from testValidation import RequireDummyMod, ValidateRunningAsRoot
 
 import dummy
 from utils import cleanupNet, restoreNetConfig, SUCCESS, VdsProxy, cleanupRules
-
+from vdsm import ipwrapper
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush)
 
@@ -1405,3 +1405,27 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.vdsm_net.setupNetworks(delete_networks,
                                                           {}, {})
                 self.assertEqual(status, SUCCESS, msg)
+
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testBrokenBridgelessNetReplacement(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            network = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN_ID,
+                                      'bridged': False}}
+            status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                      {'connectivityCheck': 0})
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME))
+            ipwrapper.linkDel(nic + '.' + VLAN_ID)
+            self.vdsm_net.refreshNetinfo()
+            self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME))
+            status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                      {'connectivityCheck': 0})
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertTrue(self.vdsm_net.networkExists(NETWORK_NAME))
+            network[NETWORK_NAME] = {'remove': True}
+            status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                      {'connectivityCheck': 0})
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertFalse(self.vdsm_net.networkExists(NETWORK_NAME))

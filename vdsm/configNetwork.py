@@ -27,6 +27,7 @@ from vdsm import constants
 from vdsm import utils
 from storage.misc import execCmd
 import neterrors as ne
+from netconf import libvirtCfg
 from neterrors import ConfigNetworkError
 from vdsm import netinfo
 from netconf.ifcfg import ConfigWriter
@@ -263,6 +264,10 @@ def _delBrokenNetwork(network, netAttr, configurator):
     _netinfo.networks[network] = netAttr
     if _netinfo.networks[network]['bridged']:
         _netinfo.networks[network]['ports'] = ConfigWriter.ifcfgPorts(network)
+    elif not os.path.exists('/sys/class/net/' + netAttr['iface']):
+        # Bridgeless broken network without underlying device
+        libvirtCfg.removeNetwork(network)
+        return
     delNetwork(network, configurator=configurator, force=True,
                implicitBonding=False, _netinfo=_netinfo)
 
