@@ -711,6 +711,16 @@ class StoragePool(Securable):
         return True
 
     @unsecured
+    def initParameters(self, poolName, domain, masterVersion):
+        self._getPoolMD(domain).update({
+            PMDK_SPM_ID: SPM_ID_FREE,
+            PMDK_LVER: LVER_INVALID,
+            PMDK_MASTER_VER: masterVersion,
+            PMDK_POOL_DESCRIPTION: poolName,
+            PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS},
+        })
+
+    @unsecured
     def createMaster(self, poolName, domain, masterVersion, leaseParams):
         """
         Create a fresh master file system directory tree
@@ -718,25 +728,12 @@ class StoragePool(Securable):
         # THIS METHOD MUST BE RUN UNDER DOMAIN STORAGE LOCK
         self.log.info("setting master domain for spUUID %s on sdUUID=%s",
                       self.spUUID, domain.sdUUID)
-        futurePoolMD = self._getPoolMD(domain)
-        with futurePoolMD.transaction():
-            domain.changeLeaseParams(leaseParams)
-            for spUUID in domain.getPools():
-                if spUUID != self.spUUID:
-                    self.log.warn("Force detaching from pool `%s` because of "
-                                  "reconstruct master", spUUID)
-                    domain.detach(spUUID)
-            domain.attach(self.spUUID)
-            domain.changeRole(sd.MASTER_DOMAIN)
-            if not misc.isAscii(poolName) and not domain.supportsUnicode():
-                raise se.UnicodeArgumentException()
 
-            futurePoolMD.update({
-                PMDK_SPM_ID: SPM_ID_FREE,
-                PMDK_LVER: LVER_INVALID,
-                PMDK_MASTER_VER: masterVersion,
-                PMDK_POOL_DESCRIPTION: poolName,
-                PMDK_DOMAINS: {domain.sdUUID: sd.DOM_ACTIVE_STATUS}})
+        if not misc.isAscii(poolName) and not domain.supportsUnicode():
+            raise se.UnicodeArgumentException()
+
+        self.initParameters(poolName, domain, masterVersion)
+        domain.initMaster(self.spUUID, leaseParams)
 
     @unsecured
     def reconstructMaster(self, hostId, poolName, msdUUID, domDict,

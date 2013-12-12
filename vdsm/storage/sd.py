@@ -766,6 +766,18 @@ class StorageDomain:
     def isMaster(self):
         return self.getMetaParam(DMDK_ROLE).capitalize() == MASTER_DOMAIN
 
+    def initMaster(self, spUUID, leaseParams):
+        self.invalidateMetadata()
+        pools = self.getPools()
+
+        if len(pools) > 1 or (len(pools) == 1 and pools[0] != spUUID):
+            raise se.StorageDomainAlreadyAttached(pools[0], self.sdUUID)
+
+        with self._metadata.transaction():
+            self.changeLeaseParams(leaseParams)
+            self.setMetaParam(DMDK_POOLS, [spUUID])
+            self.changeRole(MASTER_DOMAIN)
+
     def isISO(self):
         return self.getMetaParam(DMDK_CLASS) == ISO_DOMAIN
 
