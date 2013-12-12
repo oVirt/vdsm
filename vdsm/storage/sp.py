@@ -781,36 +781,25 @@ class StoragePool(Securable):
             else:
                 futureMaster.releaseClusterLock()
 
-    @unsecured
-    def copyPoolMD(self, prevMd, newMD):
-        prevPoolMD = self._getPoolMD(prevMd)
-        domains = prevPoolMD[PMDK_DOMAINS]
-        pool_descr = prevPoolMD[PMDK_POOL_DESCRIPTION]
-        lver = prevPoolMD[PMDK_LVER]
-        spmId = prevPoolMD[PMDK_SPM_ID]
-        # This is actually domain metadata, But I can't change this because of
-        # backward compatibility
-        leaseParams = prevMd.getLeaseParams()
+    def switchMasterDomain(self, curMasterDomain, newMasterDomain,
+                           newMasterVersion):
+        curPoolMD = self._getPoolMD(curMasterDomain)
+        newPoolMD = self._getPoolMD(newMasterDomain)
 
-        # Now insert pool metadata into new mastersd metadata
+        newPoolMD.update({
+            PMDK_DOMAINS: curPoolMD[PMDK_DOMAINS],
+            PMDK_POOL_DESCRIPTION: curPoolMD[PMDK_POOL_DESCRIPTION],
+            PMDK_LVER: curPoolMD[PMDK_LVER],
+            PMDK_SPM_ID: curPoolMD[PMDK_SPM_ID],
+            PMDK_MASTER_VER: newMasterVersion,
+        })
 
-        newPoolMD = self._getPoolMD(newMD)
-        with newPoolMD.transaction():
-            newPoolMD.update({
-                PMDK_DOMAINS: domains,
-                PMDK_POOL_DESCRIPTION: pool_descr,
-                PMDK_LVER: lver,
-                PMDK_SPM_ID: spmId})
-            newMD.changeLeaseParams(leaseParams)
-
-    @unsecured
     def _copyLeaseParameters(self, srcDomain, dstDomain):
         leaseParams = srcDomain.getLeaseParams()
         self.log.info("Updating lease parameters for domain %s to %s",
                       srcDomain.sdUUID, leaseParams)
         dstDomain.changeLeaseParams(leaseParams)
 
-    @unsecured
     def masterMigrate(self, sdUUID, msdUUID, masterVersion):
         self.log.info("sdUUID=%s spUUID=%s msdUUID=%s", sdUUID, self.spUUID,
                       msdUUID)
@@ -825,8 +814,6 @@ class StoragePool(Securable):
         newmsd = sdCache.produce(msdUUID)
         self._refreshDomainLinks(newmsd)
         curmsd.invalidateMetadata()
-        self._convertDomain(newmsd, curmsd.getFormat())
-        self._copyLeaseParameters(curmsd, newmsd)
 
         # new 'master' should be in 'active' status
         domList = self.getDomains()
@@ -836,98 +823,100 @@ class StoragePool(Securable):
             raise se.InvalidParameterException("msdUUID", msdUUID)
         if domList[msdUUID] != sd.DOM_ACTIVE_STATUS:
             raise se.StorageDomainNotActive(msdUUID)
+
+        self._convertDomain(newmsd, curmsd.getFormat())
+        self._copyLeaseParameters(curmsd, newmsd)
+
         if newmsd.isISO():
             raise se.IsoCannotBeMasterDomain(msdUUID)
         if newmsd.isBackup():
             raise se.BackupCannotBeMasterDomain(msdUUID)
-
-        # Copy master file system content to the new master
-        src = os.path.join(curmsd.domaindir, sd.MASTER_FS_DIR)
-        dst = os.path.join(newmsd.domaindir, sd.MASTER_FS_DIR)
-
-        # Mount new master file system
-        newmsd.mountMaster()
-        # Make sure there is no cruft left over
-        for dir in [newmsd.getVMsDir(), newmsd.getTasksDir()]:
-            fileUtils.cleanupdir(dir)
-
-        try:
-            fileUtils.tarCopy(src, dst, exclude=("./lost+found",))
-        except fileUtils.TarCopyFailed:
-            self.log.error("tarCopy failed", exc_info=True)
-            # Failed to copy the master data
-            try:
-                newmsd.unmountMaster()
-            except Exception:
-                self.log.error("Unexpected error", exc_info=True)
-            raise se.StorageDomainMasterCopyError(msdUUID)
-
-        self.copyPoolMD(curmsd, newmsd)
-
-        path = newmsd.getMDPath()
-        if not path:
-            newmsd.unmountMaster()
+        if not newmsd.getMDPath():
             raise se.StorageDomainLayoutError("domain", msdUUID)
 
-        # Acquire cluster lock on new master
-        try:
-            # If the new master domain is using safelease (version < 3) then
-            # we can speed up the cluster lock acquirement by resetting the
-            # SPM lease.
-            # XXX: With SANLock there is no need to speed up the process (the
-            # acquirement will take a short time anyway since we already hold
-            # the host id) and more importantly resetting the lease is going
-            # to interfere with the regular SANLock behavior.
-            # @deprecated this is relevant only for domain version < 3
-            if not newmsd.hasVolumeLeases():
-                newmsd.initSPMlease()
-            # Forcing to acquire the host id (if it's not acquired already)
-            newmsd.acquireHostId(self.id)
-            newmsd.acquireClusterLock(self.id)
-        except Exception:
-            self.log.error("Unexpected error", exc_info=True)
-            newmsd.releaseClusterLock()
-            newmsd.unmountMaster()
-            raise
-        self.log.debug("masterMigrate - lease acquired successfully")
+        # If the new master domain is using safelease (version < 3) then
+        # we can speed up the cluster lock acquirement by resetting the
+        # SPM lease.
+        # XXX: With SANLock there is no need to speed up the process (the
+        # acquirement will take a short time anyway since we already hold
+        # the host id) and more importantly resetting the lease is going
+        # to interfere with the regular SANLock behavior.
+        # @deprecated this is relevant only for domain version < 3
+        if not newmsd.hasVolumeLeases():
+            newmsd.initSPMlease()
+
+        # Forcing to acquire the host id (if it's not acquired already)
+        # and acquiring the cluster lock on new master.
+        newmsd.acquireHostId(self.id)
+        newmsd.acquireClusterLock(self.id)
 
         try:
-            # Now mark new domain as 'master'
-            # if things break down here move the master back pronto
-            newPoolMD = self._getPoolMD(newmsd)
-            with newPoolMD.transaction():
-                newPoolMD[PMDK_MASTER_VER] = masterVersion
-                newmsd.changeRole(sd.MASTER_DOMAIN)
+            self.log.debug('migration to the new master %s begins',
+                           newmsd.sdUUID)
+
+            # Mount new master file system
+            newmsd.mountMaster()
+
+            # Make sure there is no cruft left over
+            for dir in [newmsd.getVMsDir(), newmsd.getTasksDir()]:
+                fileUtils.cleanupdir(dir)
+
+            # Copy master file system content to the new master
+            fileUtils.tarCopy(
+                os.path.join(curmsd.domaindir, sd.MASTER_FS_DIR),
+                os.path.join(newmsd.domaindir, sd.MASTER_FS_DIR),
+                exclude=('./lost+found',))
+
+            # There's no way to ensure that we only have one domain marked
+            # as master in the storage pool (e.g. after a reconstructMaster,
+            # or even in this method if we fail to set the old master to
+            # regular). That said, for API cleaness switchMasterDomain is
+            # the last method to call as "point of no return" after which we
+            # only try to cleanup but we cannot rollback.
+            newmsd.changeRole(sd.MASTER_DOMAIN)
+            self.switchMasterDomain(curmsd, newmsd, masterVersion)
         except Exception:
-            self.log.error("Unexpected error", exc_info=True)
-            newmsd.releaseClusterLock()
+            self.log.exception('migration to new master failed')
+            try:
+                self.setDomainRegularRole(newmsd)
+            except Exception:
+                self.log.exception('unable to mark domain %s as regular',
+                                   newmsd.sdUUID)
+
+            # Do not release the cluster lock if unmount fails. The lock
+            # will prevent other hosts from mounting the master filesystem
+            # (avoiding corruptions).
             newmsd.unmountMaster()
+            newmsd.releaseClusterLock()
             raise
 
         # From this point on we have a new master and should not fail
         try:
-            # Now recreate 'mastersd' link
-            # we can use refresh() to do the job
+            self.log.debug('master has migrated to %s, cleaning up %s',
+                           newmsd.sdUUID, curmsd.sdUUID)
             self.refresh(msdUUID, masterVersion)
 
             # From this point on there is a new master domain in the pool
-            # Now that we are beyond the critical point we can clean up things
-            curmsd.changeRole(sd.REGULAR_DOMAIN)
+            # Now that we are beyond the critical point we can clean up
+            # things
+            self.setDomainRegularRole(curmsd)
 
             # Clean up the old data from previous master fs
             for directory in [curmsd.getVMsDir(), curmsd.getTasksDir()]:
                 fileUtils.cleanupdir(directory)
-
-            # NOTE: here we unmount the *previous* master file system !!!
-            curmsd.unmountMaster()
         except Exception:
-            self.log.error("Unexpected error", exc_info=True)
-
-        try:
-            # Release old lease
-            curmsd.releaseClusterLock()
-        except Exception:
-            self.log.error("Unexpected error", exc_info=True)
+            self.log.exception('ignoring old master cleanup failure')
+        finally:
+            try:
+                # Unmounting the old master filesystem and releasing the
+                # old cluster lock. Do not release the cluster lock if
+                # unmount fails. The lock will prevent other hosts from
+                # mounting the master filesystem (avoiding corruptions).
+                curmsd.unmountMaster()
+                curmsd.releaseClusterLock()
+            except Exception:
+                self.log.exception(
+                    'ignoring old master unmount and release failures')
 
     def attachSD(self, sdUUID):
         """
