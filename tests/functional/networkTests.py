@@ -40,7 +40,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush, LinkType,
                             getLinks)
 
-from vdsm.netinfo import operstate, prefix2netmask, getRouteTo
+from vdsm.netinfo import operstate, prefix2netmask, getRouteDeviceTo
 from vdsm import ipwrapper
 
 
@@ -1612,13 +1612,13 @@ class NetworkTest(TestCaseBase):
 
     @RequireDummyMod
     @ValidateRunningAsRoot
-    def testGetRouteTo(self):
+    def testGetRouteDeviceTo(self):
         with dummyIf(1) as nics:
             nic, = nics
             dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
             try:
                 dummy.setLinkUp(nic)
-                self.assertEqual(getRouteTo(IP_ADDRESS_IN_NETWORK).device, nic)
+                self.assertEqual(getRouteDeviceTo(IP_ADDRESS_IN_NETWORK), nic)
             finally:
                 addrFlush(nic)
 

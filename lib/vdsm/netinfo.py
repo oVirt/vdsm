@@ -599,7 +599,9 @@ def IPv4toMapped(ip):
     return mapped
 
 
-def getRouteTo(destinationIP):
+def getRouteDeviceTo(destinationIP):
+    """Return the name of the device leading to destinationIP or the empty
+       string if none is found"""
     try:
         route = routeGet([destinationIP])[0]
     except (IPRoute2Error, IndexError):
@@ -607,7 +609,7 @@ def getRouteTo(destinationIP):
         return ''
 
     try:
-        return Route.fromText(route)
+        return Route.fromText(route).device
     except ValueError:
         logging.exception('Could not parse route %s' % route)
         return ''

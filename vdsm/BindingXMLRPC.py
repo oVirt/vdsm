@@ -29,7 +29,7 @@ import threading
 from vdsm import constants
 from vdsm import utils
 from vdsm.define import doneCode, errCode
-from vdsm.netinfo import getRouteTo
+from vdsm.netinfo import getRouteDeviceTo
 import API
 from vdsm.exception import VdsmException
 try:
@@ -86,10 +86,9 @@ class BindingXMLRPC(object):
         Return the IP address and last client information
         """
         last = self.server.lastClient
-        route = getRouteTo(destinationIP=last)
         return {'management_ip': self.serverIP,
                 'lastClient': last,
-                'lastClientIface': route.device}
+                'lastClientIface': getRouteDeviceTo(destinationIP=last)}
 
     def _getKeyCertFilenames(self):
         """
