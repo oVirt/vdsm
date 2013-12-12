@@ -406,8 +406,11 @@ def main(sockfile, pidfile=None):
 
             log.debug("Started serving super vdsm object")
 
-            threading.Thread(target=sourceRouteThread.subscribeToInotifyLoop(),
-                             name='sourceRoute').start()
+            _sourceRouteThread = threading.Thread(
+                target=sourceRouteThread.subscribeToInotifyLoop(),
+                name='sourceRoute')
+            _sourceRouteThread.daemon = True
+            _sourceRouteThread.start()
 
             # Python bug of thread.join() will block signal
             # http://bugs.python.org/issue1167930
