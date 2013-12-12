@@ -754,7 +754,6 @@ if [ "$1" -ge 1 ]; then
 
     %{_bindir}/vdsm-tool libvirt-configure >/dev/null 2>&1
 
-    fi
     if [ "${supervdsmd_start_required}" = 'yes' ]; then
         %{_bindir}/vdsm-tool service-start supervdsmd >/dev/null 2>&1
     fi
