@@ -118,6 +118,10 @@ class VdsProxy(object):
         self.vdscli.setSafeNetworkConfig()
 
     @netinfo_altering
+    def refreshNetinfo(self):
+        pass
+
+    @netinfo_altering
     def restoreNetConfig(self):
         supervdsm.getProxy().restoreNetworks()
 

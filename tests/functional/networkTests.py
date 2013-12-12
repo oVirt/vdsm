@@ -1621,3 +1621,27 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(getRouteTo(IP_ADDRESS_IN_NETWORK).device, nic)
             finally:
                 addrFlush(nic)
+
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testBrokenBridgelessNetReplacement(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            network = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN_ID,
+                                      'bridged': False}}
+            status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                      {'connectivityCheck': 0})
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            ipwrapper.linkDel(nic + '.' + VLAN_ID)
+            self.vdsm_net.refreshNetinfo()
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+            status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                      {'connectivityCheck': 0})
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            network[NETWORK_NAME] = {'remove': True}
+            status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                      {'connectivityCheck': 0})
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
