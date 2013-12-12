@@ -30,30 +30,41 @@ from . import constants, utils
 log = logging.getLogger("libvirtconnection")
 
 
-class EventLoop:
+class _EventLoop:
     def __init__(self):
-        self.run = True
-        libvirt.virEventRegisterDefaultImpl()
+        self.run = False
+        self.__thread = None
+
+    def start(self):
+        assert not self.run
         self.__thread = threading.Thread(target=self.__run,
                                          name="libvirtEventLoop")
         self.__thread.setDaemon(True)
         self.__thread.start()
+        self.run = True
+
+    def stop(self, wait=True):
+        if self.run:
+            self.run = False
+            if wait:
+                self.__thread.join()
+            self.__thread = None
 
     def __run(self):
+        libvirt.virEventRegisterDefaultImpl()
         while self.run:
             libvirt.virEventRunDefaultImpl()
 
-    def stop(self, wait=True):
-        self.run = False
-        if wait:
-            self.__thread.join()
 
 # Make sure to never reload this module, or you would lose events
-__event_loop = EventLoop()
+__event_loop = _EventLoop()
+
+
+def start_event_loop():
+    __event_loop.start()
 
 
 def stop_event_loop():
-    global __event_loop
     __event_loop.stop()
 
 

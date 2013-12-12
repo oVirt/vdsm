@@ -19,7 +19,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import contextlib
 import os
+
 from vdsm import libvirtconnection
 from testrunner import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
@@ -77,19 +79,32 @@ class LibvirtMock(object):
     def openAuth(self, *args):
         return LibvirtMock.virConnect()
 
+    class virEventRegisterDefaultImpl(object):
+        pass
+
 
 def _kill(*args):
     raise TerminationException()
+
+
+@contextlib.contextmanager
+def run_libvirt_event_loop():
+    libvirtconnection.start_event_loop()
+    try:
+        yield
+    finally:
+        libvirtconnection.stop_event_loop()
 
 
 class testLibvirtconnection(TestCaseBase):
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     def testCallSucceeded(self):
         """Positive test - libvirtMock does not raise any errors"""
-        LibvirtMock.virConnect.failGetLibVersion = False
-        LibvirtMock.virConnect.failNodeDeviceLookupByName = False
-        connection = libvirtconnection.get()
-        connection.nodeDeviceLookupByName()
+        with run_libvirt_event_loop():
+            LibvirtMock.virConnect.failGetLibVersion = False
+            LibvirtMock.virConnect.failNodeDeviceLookupByName = False
+            connection = libvirtconnection.get()
+            connection.nodeDeviceLookupByName()
 
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     @MonkeyPatch(os, 'kill', _kill)
@@ -101,11 +116,12 @@ class testLibvirtconnection(TestCaseBase):
         it will not raise an error -> in that case an error should be raised
         ('Unknown libvirterror').
         """
-        connection = libvirtconnection.get(killOnFailure=True)
-        LibvirtMock.virConnect.failNodeDeviceLookupByName = True
-        LibvirtMock.virConnect.failGetLibVersion = False
-        self.assertRaises(LibvirtMock.libvirtError,
-                          connection.nodeDeviceLookupByName)
+        with run_libvirt_event_loop():
+            connection = libvirtconnection.get(killOnFailure=True)
+            LibvirtMock.virConnect.failNodeDeviceLookupByName = True
+            LibvirtMock.virConnect.failGetLibVersion = False
+            self.assertRaises(LibvirtMock.libvirtError,
+                              connection.nodeDeviceLookupByName)
 
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     @MonkeyPatch(os, 'kill', _kill)
@@ -117,8 +133,9 @@ class testLibvirtconnection(TestCaseBase):
         it will also raise an error -> in that case os.kill should be called
         ('connection to libvirt broken.').
         """
-        connection = libvirtconnection.get(killOnFailure=True)
-        LibvirtMock.virConnect.failNodeDeviceLookupByName = True
-        LibvirtMock.virConnect.failGetLibVersion = True
-        self.assertRaises(TerminationException,
-                          connection.nodeDeviceLookupByName)
+        with run_libvirt_event_loop():
+            connection = libvirtconnection.get(killOnFailure=True)
+            LibvirtMock.virConnect.failNodeDeviceLookupByName = True
+            LibvirtMock.virConnect.failGetLibVersion = True
+            self.assertRaises(TerminationException,
+                              connection.nodeDeviceLookupByName)
