@@ -18,6 +18,7 @@
 ./etc/vdsm/mom.d/02-balloon.policy
 ./etc/vdsm/mom.d/03-ksm.policy
 ./etc/vdsm/svdsm.logger.conf
+./etc/vdsm/upgrade.logger.conf
 ./etc/vdsm/vdsm-tmpfiles.conf
 ./lib/udev/rules.d/61-vdsm-lvm.rules
 ./usr/lib/python2.7/dist-packages/sos/plugins/vdsm.py

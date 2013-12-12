@@ -57,6 +57,7 @@ vdsm/storage/lvm.env
 vdsm/storage/vdsm-lvm.rules
 vdsm/sudoers.vdsm
 vdsm/svdsm.logger.conf
+vdsm/upgrade.logger.conf
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-logrotate.conf

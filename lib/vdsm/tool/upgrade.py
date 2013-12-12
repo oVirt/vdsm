@@ -22,12 +22,14 @@ import logging
 import logging.config
 from logging.handlers import SysLogHandler
 import os
+import sys
 
-from .. import constants
+from ..constants import (P_VDSM_LOG, P_VDSM_LIB, P_VDSM_CONF, VDSM_USER,
+                         VDSM_GROUP)
 from ..utils import touchFile
 
-
-LOGGER_CONF_FILE = constants.P_VDSM_CONF + 'logger.conf'
+sys.path.append("/usr/share/vdsm")
+from storage.fileUtils import chown
 
 
 class Upgrade(object):
@@ -47,10 +49,20 @@ class Upgrade(object):
     """
     def __init__(self, upgradeName):
         self._upgradeName = upgradeName
-        self._upgradeFilePath = os.path.join(constants.P_VDSM_LIB,
-                                             "upgrade", self._upgradeName)
+        self._upgradeFilePath = os.path.join(P_VDSM_LIB,
+                                             'upgrade', self._upgradeName)
         try:
-            logging.config.fileConfig(LOGGER_CONF_FILE)
+            # First load normal VDSM loggers, then the upgrade logger.
+            # This will override VDSM's root logger but will keep the other
+            # loggers intact. During an upgrade we add the update handler
+            # to all loggers.
+            logging.config.fileConfig(P_VDSM_CONF + 'logger.conf')
+            logging.config.fileConfig(P_VDSM_CONF + 'upgrade.logger.conf',
+                                      disable_existing_loggers=False)
+            chown(
+                os.path.join(P_VDSM_LOG, 'upgrade.log'),
+                VDSM_USER,
+                VDSM_GROUP)
         except Exception:
             logging.getLogger('upgrade').addHandler(SysLogHandler('/dev/log'))
             logging.exception("Could not init proper logging")

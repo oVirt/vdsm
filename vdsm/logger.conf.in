@@ -1,8 +1,8 @@
 [loggers]
-keys=root,vds,Storage,metadata,upgrade,ovirt_hosted_engine_ha
+keys=root,vds,Storage,metadata,ovirt_hosted_engine_ha
 
 [handlers]
-keys=console,syslog,logfile,metadata,upgrade
+keys=console,syslog,logfile,metadata
 
 [formatters]
 keys=long,simple,none,sysform
@@ -30,12 +30,6 @@ handlers=metadata
 qualname=irs.metadata
 propagate=0
 
-[logger_upgrade]
-level=DEBUG
-handlers=upgrade
-qualname=upgrade
-propagate=0
-
 [logger_ovirt_hosted_engine_ha]
 level=ERROR
 handlers=
@@ -59,12 +53,6 @@ formatter=long
 class=logging.handlers.WatchedFileHandler
 args=('@VDSMLOGDIR@/metadata.log',)
 level=WARNING
-formatter=long
-
-[handler_upgrade]
-class=logging.handlers.WatchedFileHandler
-args=('@VDSMLOGDIR@/upgrade.log',)
-level=DEBUG
 formatter=long
 
 [handler_console]
