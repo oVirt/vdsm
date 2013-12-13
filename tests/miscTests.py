@@ -27,6 +27,7 @@ import signal
 import fcntl
 import errno
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import temporaryPath
 import inspect
 from multiprocessing import Process
 from vdsm import utils
@@ -420,26 +421,14 @@ class DdWatchCopy(TestCaseBase):
         if (len(data) % 512) == 0:
             data += "!"
 
-        srcFd, srcPath = tempfile.mkstemp()
-        f = os.fdopen(srcFd, "wb")
-        f.write(data)
-        f.flush()
-        f.close()
-        os.chmod(srcPath, 0o666)
+        with temporaryPath(perms=0o666, data=data) as srcPath:
+            with temporaryPath(perms=0o666) as dstPath:
+                #Copy
+                rc, out, err = misc.ddWatchCopy(srcPath, dstPath,
+                                                None, len(data))
 
-        #Get a tempfilename
-        dstFd, dstPath = tempfile.mkstemp()
-        os.chmod(dstPath, 0o666)
-
-        #Copy
-        rc, out, err = misc.ddWatchCopy(srcPath, dstPath, None, len(data))
-
-        #Get copied data
-        readData = open(dstPath).read()
-
-        #clean
-        os.unlink(dstPath)
-        os.unlink(srcPath)
+                #Get copied data
+                readData = open(dstPath).read()
 
         # Compare
         self.assertEquals(readData, data)
@@ -523,26 +512,14 @@ class DdWatchCopy(TestCaseBase):
         # Makes sure we round up to a complete block size
         data *= 512
 
-        srcFd, srcPath = tempfile.mkstemp()
-        f = os.fdopen(srcFd, "wb")
-        f.write(data)
-        f.flush()
-        f.close()
-        os.chmod(srcPath, 0o666)
+        with temporaryPath(perms=0o666, data=data) as srcPath:
+            with temporaryPath(perms=0o666) as dstPath:
+                #Copy
+                rc, out, err = misc.ddWatchCopy(srcPath, dstPath,
+                                                None, len(data))
 
-        #Get a tempfilename
-        dstFd, dstPath = tempfile.mkstemp()
-        os.chmod(dstPath, 0o666)
-
-        #Copy
-        rc, out, err = misc.ddWatchCopy(srcPath, dstPath, None, len(data))
-
-        #Get copied data
-        readData = open(dstPath).read()
-
-        #clean
-        os.unlink(dstPath)
-        os.unlink(srcPath)
+                #Get copied data
+                readData = open(dstPath).read()
 
         #Comapre
         self.assertEquals(readData, data)
@@ -919,16 +896,9 @@ class ReadFile(TestCaseBase):
                      "but to kill myself? That would put a damper on my "
                      "search for answers. Not at all productive.")
         # (C) Jhonen Vasquez - Johnny the Homicidal Maniac
-        fd, path = tempfile.mkstemp()
-        f = os.fdopen(fd, "wb")
-        f.write(writeData)
-        f.close()
-
-        #read
-        readData = misc.readfile(path)
-
-        #clean
-        os.unlink(path)
+        with temporaryPath(data=writeData) as path:
+            #read
+            readData = misc.readfile(path)
 
         self.assertEquals(writeData, readData[0])
 

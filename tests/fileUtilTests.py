@@ -17,12 +17,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import tempfile
 import os
 
 import storage.fileUtils as fileUtils
 import testValidation
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import temporaryPath
 
 
 class DirectFileTests(TestCaseBase):
@@ -35,14 +35,10 @@ class DirectFileTests(TestCaseBase):
         platea lacus morbi nisl montes ve. Ac. A, consectetuer erat, justo eu.
         Elementum et, phasellus fames et rutrum donec magnis eu bibendum. Arcu,
         ante aliquam ipsum ut facilisis ad."""
-        srcFd, srcPath = tempfile.mkstemp()
-        f = os.fdopen(srcFd, "wb")
-        f.write(data)
-        f.flush()
-        f.close()
-        with fileUtils.open_ex(srcPath, "dr") as f:
-            self.assertEquals(f.read(), data)
-        os.unlink(srcPath)
+        with temporaryPath(data=data) as srcPath:
+            # two nested withs to be py2.6 friendly.
+            with fileUtils.open_ex(srcPath, "dr") as f:
+                self.assertEquals(f.read(), data)
 
     def testSeekRead(self):
         data = """
@@ -62,29 +58,22 @@ class DirectFileTests(TestCaseBase):
         quam.
         """
         self.assertTrue(len(data) > 512)
-        srcFd, srcPath = tempfile.mkstemp()
-        f = os.fdopen(srcFd, "wb")
-        f.write(data)
-        f.flush()
-        f.close()
-        with fileUtils.open_ex(srcPath, "dr") as f:
-            f.seek(512)
-            self.assertEquals(f.read(), data[512:])
-        os.unlink(srcPath)
+        with temporaryPath(data=data) as srcPath:
+            # two nested withs to be py2.6 friendly.
+            with fileUtils.open_ex(srcPath, "dr") as f:
+                f.seek(512)
+                self.assertEquals(f.read(), data[512:])
 
     def testWrite(self):
         data = """In ut non platea egestas, quisque magnis nunc nostra ac etiam
         suscipit nec integer sociosqu. Fermentum. Ante orci luctus, ipsum
         ullamcorper enim arcu class neque inceptos class. Ut, sagittis
         torquent, commodo facilisi."""
-        srcFd, srcPath = tempfile.mkstemp()
-        os.close(srcFd)
-        with fileUtils.open_ex(srcPath, "dw") as f:
-            f.write(data)
-
-        with fileUtils.open_ex(srcPath, "r") as f:
-            self.assertEquals(f.read(len(data)), data)
-        os.unlink(srcPath)
+        with temporaryPath() as srcPath:
+            with fileUtils.open_ex(srcPath, "dw") as f:
+                f.write(data)
+            with fileUtils.open_ex(srcPath, "r") as f:
+                self.assertEquals(f.read(len(data)), data)
 
     def testSmallWrites(self):
         data = """
@@ -109,15 +98,13 @@ class DirectFileTests(TestCaseBase):
         """
         self.assertTrue(len(data) > 512)
 
-        srcFd, srcPath = tempfile.mkstemp()
-        os.close(srcFd)
-        with fileUtils.open_ex(srcPath, "dw") as f:
-            f.write(data[:512])
-            f.write(data[512:])
+        with temporaryPath() as srcPath:
+            with fileUtils.open_ex(srcPath, "dw") as f:
+                f.write(data[:512])
+                f.write(data[512:])
 
-        with fileUtils.open_ex(srcPath, "r") as f:
-            self.assertEquals(f.read(len(data)), data)
-        os.unlink(srcPath)
+            with fileUtils.open_ex(srcPath, "r") as f:
+                self.assertEquals(f.read(len(data)), data)
 
     def testUpdateRead(self):
         data = """
@@ -137,30 +124,26 @@ class DirectFileTests(TestCaseBase):
         """
         self.assertTrue(len(data) > 512)
 
-        srcFd, srcPath = tempfile.mkstemp()
-        os.close(srcFd)
-        with fileUtils.open_ex(srcPath, "wd") as f:
-            f.write(data[:512])
+        with temporaryPath() as srcPath:
+            with fileUtils.open_ex(srcPath, "wd") as f:
+                f.write(data[:512])
 
-        with fileUtils.open_ex(srcPath, "r+d") as f:
-            f.seek(512)
-            f.write(data[512:])
+            with fileUtils.open_ex(srcPath, "r+d") as f:
+                f.seek(512)
+                f.write(data[512:])
 
-        with fileUtils.open_ex(srcPath, "r") as f:
-            self.assertEquals(f.read(len(data)), data)
-        os.unlink(srcPath)
+            with fileUtils.open_ex(srcPath, "r") as f:
+                self.assertEquals(f.read(len(data)), data)
 
 
 class ChownTests(TestCaseBase):
     @testValidation.ValidateRunningAsRoot
     def test(self):
         targetId = 666
-        srcFd, srcPath = tempfile.mkstemp()
-        os.close(srcFd)
-        fileUtils.chown(srcPath, targetId, targetId)
-        stat = os.stat(srcPath)
-        self.assertTrue(stat.st_uid == stat.st_gid == targetId)
-        os.unlink(srcPath)
+        with temporaryPath() as srcPath:
+            fileUtils.chown(srcPath, targetId, targetId)
+            stat = os.stat(srcPath)
+            self.assertTrue(stat.st_uid == stat.st_gid == targetId)
 
     @testValidation.ValidateRunningAsRoot
     def testNames(self):
@@ -168,15 +151,14 @@ class ChownTests(TestCaseBase):
         # idea what users are defined and what
         # there IDs are apart from root
         tmpId = 666
-        srcFd, srcPath = tempfile.mkstemp()
-        os.close(srcFd)
-        fileUtils.chown(srcPath, tmpId, tmpId)
-        stat = os.stat(srcPath)
-        self.assertTrue(stat.st_uid == stat.st_gid == tmpId)
+        with temporaryPath() as srcPath:
+            fileUtils.chown(srcPath, tmpId, tmpId)
+            stat = os.stat(srcPath)
+            self.assertTrue(stat.st_uid == stat.st_gid == tmpId)
 
-        fileUtils.chown(srcPath, "root", "root")
-        stat = os.stat(srcPath)
-        self.assertTrue(stat.st_uid == stat.st_gid == 0)
+            fileUtils.chown(srcPath, "root", "root")
+            stat = os.stat(srcPath)
+            self.assertTrue(stat.st_uid == stat.st_gid == 0)
 
 
 class CopyUserModeToGroupTests(TestCaseBase):
@@ -188,13 +170,9 @@ class CopyUserModeToGroupTests(TestCaseBase):
     ]
 
     def testCopyUserModeToGroup(self):
-        fd, path = tempfile.mkstemp()
-        try:
-            os.close(fd)
+        with temporaryPath() as path:
             for initialMode, expectedMode in self.modesList:
                 os.chmod(path, initialMode)
                 fileUtils.copyUserModeToGroup(path)
                 self.assertEquals(os.stat(path).st_mode & self.MODE_MASK,
                                   expectedMode)
-        finally:
-            os.unlink(path)

@@ -23,6 +23,8 @@ import os
 import unittest
 from functools import wraps
 import re
+import tempfile
+from contextlib import contextmanager
 
 from vdsm import utils
 
@@ -121,6 +123,24 @@ def colorWrite(stream, text, color):
         stream.write('\x1b[%s;1m%s\x1b[0m' % (color, text))
     else:
         stream.write(text)
+
+
+@contextmanager
+def temporaryPath(perms=None, data=None):
+    fd, src = tempfile.mkstemp()
+    if data is not None:
+        f = os.fdopen(fd, "wb")
+        f.write(data)
+        f.flush()
+        f.close()
+    else:
+        os.close(fd)
+    if perms is not None:
+        os.chmod(src, perms)
+    try:
+        yield src
+    finally:
+        os.unlink(src)
 
 
 class VdsmTestCase(unittest.TestCase):
