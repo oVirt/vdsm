@@ -42,19 +42,6 @@ class ifcfgConfigWriterTests(TestCaseBase):
     INITIAL_CONTENT = '123-testing'
     SOME_GARBAGE = '456'
 
-    def __init__(self, *args, **kwargs):
-        TestCaseBase.__init__(self, *args, **kwargs)
-        self._tempdir = tempfile.mkdtemp()
-        self._files = tuple((os.path.join(self._tempdir, bn), init, makeDirty)
-                            for bn, init, makeDirty in
-                            (('ifcfg-eth0', self.INITIAL_CONTENT, True),
-                             ('ifcfg-eth1', None, True),
-                             ('ifcfg-eth2', None, False),
-                             ('ifcfg-eth3', self.INITIAL_CONTENT, False),))
-
-    def __del__(self):
-        shutil.rmtree(self._tempdir)
-
     def _createFiles(self):
         for fn, content, _ in self._files:
             if content is not None:
@@ -85,7 +72,17 @@ class ifcfgConfigWriterTests(TestCaseBase):
         self.assertEqual(aXmlNrml, bXmlNrml, msg)
 
     def setUp(self):
+        self._tempdir = tempfile.mkdtemp()
+        self._files = tuple((os.path.join(self._tempdir, bn), init, makeDirty)
+                            for bn, init, makeDirty in
+                            (('ifcfg-eth0', self.INITIAL_CONTENT, True),
+                             ('ifcfg-eth1', None, True),
+                             ('ifcfg-eth2', None, False),
+                             ('ifcfg-eth3', self.INITIAL_CONTENT, False),))
         self._cw = ifcfg.ConfigWriter()
+
+    def tearDown(self):
+        shutil.rmtree(self._tempdir)
 
     @MonkeyPatch(subprocess, 'Popen', lambda x: None)
     def testAtomicRestore(self):

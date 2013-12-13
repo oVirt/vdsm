@@ -23,6 +23,7 @@ import os
 import unittest
 from functools import wraps
 import re
+import shutil
 import tempfile
 from contextlib import contextmanager
 
@@ -141,6 +142,15 @@ def temporaryPath(perms=None, data=None):
         yield src
     finally:
         os.unlink(src)
+
+
+@contextmanager
+def namedTemporaryDir():
+    tmpDir = tempfile.mkdtemp()
+    try:
+        yield tmpDir
+    finally:
+        shutil.rmtree(tmpDir)
 
 
 class VdsmTestCase(unittest.TestCase):

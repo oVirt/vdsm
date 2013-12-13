@@ -20,13 +20,13 @@
 
 from contextlib import contextmanager
 import errno
-from tempfile import mkstemp, mkdtemp
+from tempfile import mkstemp
 import os
-import shutil
 
 from nose.plugins.skip import SkipTest
 
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import namedTemporaryDir
 from storage.misc import execCmd
 import storage.mount as mount
 from testValidation import checkSudo
@@ -63,12 +63,12 @@ class MountTests(TestCaseBase):
     def testLoopMount(self):
         checkSudo(["mount", "-o", "loop", "somefile", "target"])
         checkSudo(["umount", "target"])
-        mpath = mkdtemp()
-        with createFloppyImage(FLOPPY_SIZE) as path:
-            m = mount.Mount(path, mpath)
-            m.mount(mntOpts="loop")
-            try:
-                self.assertTrue(m.isMounted())
-            finally:
-                m.umount()
-                shutil.rmtree(mpath)
+        with namedTemporaryDir() as mpath:
+            # two nested with blocks to be python 2.6 friendly
+            with createFloppyImage(FLOPPY_SIZE) as path:
+                m = mount.Mount(path, mpath)
+                m.mount(mntOpts="loop")
+                try:
+                    self.assertTrue(m.isMounted())
+                finally:
+                    m.umount()

@@ -23,7 +23,9 @@
 import tempfile
 import os
 import os.path
+from contextlib import contextmanager
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import namedTemporaryDir
 
 import hooks
 
@@ -100,19 +102,20 @@ echo "81212590184644762"
         self.assertEqual({'md5': md5}, info)
 
     def test_getHookInfo(self):
-        dir = tempfile.mkdtemp()
-        sName, md5 = self.createScript(dir)
-        NEscript = tempfile.NamedTemporaryFile(dir=dir)
-        os.chmod(NEscript.name, 0o000)
-        info = hooks._getHookInfo(dir)
-        os.unlink(sName)
-        expectedRes = dict([(os.path.basename(sName), {'md5': md5})])
-        self.assertEqual(expectedRes, info)
+        with namedTemporaryDir() as dir:
+            sName, md5 = self.createScript(dir)
+            with tempfile.NamedTemporaryFile(dir=dir) as NEscript:
+                os.chmod(NEscript.name, 0o000)
+                info = hooks._getHookInfo(dir)
+                expectedRes = dict([(os.path.basename(sName), {'md5': md5})])
+                self.assertEqual(expectedRes, info)
 
+    @contextmanager
     def _deviceCustomPropertiesTestFile(self):
-        dirName = tempfile.mkdtemp()
-        script = tempfile.NamedTemporaryFile(dir=dirName, delete=False)
-        code = """#!/usr/bin/python
+        with namedTemporaryDir() as dirName:
+            # two nested with blocks to be python 2.6 friendly
+            with tempfile.NamedTemporaryFile(dir=dirName, delete=False) as f:
+                code = """#!/usr/bin/python
 
 import os
 import hooking
@@ -120,27 +123,24 @@ import hooking
 domXMLFile = file(os.environ['_hook_domxml'], 'a')
 customProperty = os.environ['customProperty']
 domXMLFile.write(customProperty)
-        """
-        script.write(code)
-        os.chmod(script.name, 0o775)
-        script.close()
-        return dirName
+            """
+                f.write(code)
+                os.chmod(f.name, 0o775)
+            yield dirName
 
     def test_deviceCustomProperties(self):
-        dirName = self._deviceCustomPropertiesTestFile()
-
-        result = hooks._runHooksDir("oVirt", dirName,
-                                    params={'customProperty': ' rocks!'})
-        self.assertEqual(result, "oVirt rocks!")
+        with self._deviceCustomPropertiesTestFile() as dirName:
+            result = hooks._runHooksDir("oVirt", dirName,
+                                        params={'customProperty': ' rocks!'})
+            self.assertEqual(result, "oVirt rocks!")
 
     def test_deviceVmConfProperties(self):
-        dirName = self._deviceCustomPropertiesTestFile()
+        with self._deviceCustomPropertiesTestFile() as dirName:
+            vmconf = {
+                'custom': {
+                    'customProperty': ' rocks more!'}}
 
-        vmconf = {
-            'custom': {
-                'customProperty': ' rocks more!'}}
-
-        result = hooks._runHooksDir("oVirt", dirName,
-                                    params={'customProperty': ' rocks!'},
-                                    vmconf=vmconf)
-        self.assertEqual(result, "oVirt rocks more!")
+            result = hooks._runHooksDir("oVirt", dirName,
+                                        params={'customProperty': ' rocks!'},
+                                        vmconf=vmconf)
+            self.assertEqual(result, "oVirt rocks more!")
