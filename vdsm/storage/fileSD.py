@@ -81,23 +81,6 @@ def validateFileSystemFeatures(sdUUID, mountDir):
         raise
 
 
-def getDomPath(sdUUID):
-    pattern = os.path.join(sd.StorageDomain.storage_repository,
-                           sd.DOMAIN_MNT_POINT, '*', sdUUID)
-    # Warning! You need a global proc pool big as the number of NFS domains.
-    domPaths = getProcPool().glob.glob(pattern)
-    if len(domPaths) == 0:
-        raise se.StorageDomainDoesNotExist(sdUUID)
-    elif len(domPaths) > 1:
-        raise se.StorageDomainLayoutError(sdUUID)
-    else:
-        return domPaths[0]
-
-
-def getImagePath(sdUUID, imgUUID):
-    return os.path.join(getDomPath(sdUUID), 'images', imgUUID)
-
-
 def getDomUuidFromMetafilePath(metafile):
     # Metafile path has pattern:
     #  /rhev/data-center/mnt/export-path/sdUUID/dom_md/metadata
@@ -339,8 +322,11 @@ class FileStorageDomain(sd.StorageDomain):
                 images.add(os.path.basename(i))
         return images
 
+    def getImagePath(self, imgUUID):
+        return os.path.join(self.domaindir, sd.DOMAIN_IMAGES, imgUUID)
+
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
-        currImgDir = getImagePath(sdUUID, imgUUID)
+        currImgDir = self.getImagePath(imgUUID)
         dirName, baseName = os.path.split(currImgDir)
         toDelDir = os.tempnam(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
         try:
