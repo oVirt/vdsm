@@ -1558,6 +1558,27 @@
 ##
 {'enum': 'MOMStatus', 'data': ['disabled', 'active', 'inactive']}
 
+##
+# @HostedEngineStatus:
+#
+# Hosted Engine subsystem status, according to each host.
+#
+# @configured:         Indicates if Hosted Engine is configured on this host
+#
+# @active:             Indicates if the HA agent is alive and updating data
+#
+# @localMaintenance:   Indicates if host is in local HA maintenance mode
+#
+# @globalMaintenance:  Indicates if cluster is in global maintenance mode
+#
+# @score:              Numeric host score
+#
+# Since: 4.14.0
+##
+{'type': 'HostedEngineStatus',
+ 'data': {'configured': 'bool', 'active': 'bool',
+          'globalMaintenance': 'bool', 'localMaintenance': 'bool',
+          'score': 'uint'}}
 
 ##
 # @HostStats:
@@ -1637,6 +1658,9 @@
 # @haScore:         #optional The host score according to the HA agent,
 #                   if installed (new in version 4.13.0)
 #
+# @haStatus:        The current status of the Hosted Engine HA system
+#                   (new in version 4.14.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'HostStats',
@@ -1654,7 +1678,8 @@
            'vmCount': 'int', 'vmActive': 'int', 'vmMigrating': 'int',
            'dateTime': 'str', 'ksmState': 'bool', 'ksmPages': 'int',
            'ksmCpu': 'float', 'netConfigDirty': 'bool', 'generationID': 'UUID',
-           'momStatus': 'MOMStatus', '*haScore': 'uint'}}
+           'momStatus': 'MOMStatus', '*haScore': 'int',
+           'haStatus': 'HostedEngineStatus'}}
 
 ##
 # @Host.getStats:

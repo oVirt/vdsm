@@ -1244,12 +1244,10 @@ class Global(APIBase):
 
         stats['netConfigDirty'] = str(self._cif._netConfigDirty)
         stats['generationID'] = self._cif._generationID
-
-        if haClient:
-            try:
-                stats['haScore'] = haClient.HAClient().get_local_host_score()
-            except Exception:
-                self.log.exception("failed to retrieve Hosted Engine HA score")
+        stats['haStats'] = self._getHaInfo()
+        if stats['haStats']['configured']:
+            # For backwards compatibility, will be removed in the future
+            stats['haScore'] = stats['haStats']['score']
 
         return {'status': doneCode, 'info': stats}
 
@@ -1565,6 +1563,36 @@ class Global(APIBase):
             except:
                 self.log.error(vmId + ': Lost connection to VM')
         return count, active, migrating
+
+    def _getHaInfo(self):
+        """
+        Return Hosted Engine HA information for this host.
+        """
+        i = {
+            'configured': False,
+            'active': False,
+            'score': 0,
+            'globalMaintenance': False,
+            'localMaintenance': False,
+        }
+        if haClient:
+            try:
+                instance = haClient.HAClient()
+                host_id = instance.get_local_host_id()
+                # If a host id is available, consider HA configured
+                i['configured'] = True
+
+                stats = instance.get_all_stats()
+                if 0 in stats:
+                    i['globalMaintenance'] = stats[0].get(
+                        haClient.HAClient.GlobalMdFlags.MAINTENANCE, False)
+                if host_id in stats:
+                    i['active'] = stats[host_id]['live-data']
+                    i['score'] = stats[host_id]['score']
+                    i['localMaintenance'] = stats[host_id]['maintenance']
+            except Exception:
+                self.log.exception("failed to retrieve Hosted Engine HA info")
+        return i
 
     @staticmethod
     def translateNetOptionsToNew(options):
