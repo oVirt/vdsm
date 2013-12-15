@@ -26,13 +26,13 @@ import sys
 import traceback
 
 import hooking
-from openstacknet_consts import DEV_MAX_LENGTH
-from openstacknet_consts import DUMMY_BRIDGE
-from openstacknet_consts import OPENSTACK_NET_PROVIDER_TYPE
-from openstacknet_consts import PLUGIN_TYPE_KEY
-from openstacknet_consts import PROVIDER_TYPE_KEY
-from openstacknet_consts import PT_BRIDGE
-from openstacknet_consts import VNIC_ID_KEY
+from openstacknet_utils import DEV_MAX_LENGTH
+from openstacknet_utils import DUMMY_BRIDGE
+from openstacknet_utils import OPENSTACK_NET_PROVIDER_TYPE
+from openstacknet_utils import PLUGIN_TYPE_KEY
+from openstacknet_utils import PROVIDER_TYPE_KEY
+from openstacknet_utils import PT_BRIDGE
+from openstacknet_utils import VNIC_ID_KEY
 from vdsm.constants import EXT_BRCTL
 
 

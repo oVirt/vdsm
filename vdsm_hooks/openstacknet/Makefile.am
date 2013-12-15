@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-constsfile=openstacknet_consts.py
+constsfile=openstacknet_utils.py
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
