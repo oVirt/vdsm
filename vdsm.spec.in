@@ -1146,10 +1146,14 @@ exit 0
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py*
+%{_libexecdir}/%{vdsm_name}/hooks/after_device_destroy/50_openstacknet
+%{_libexecdir}/%{vdsm_name}/hooks/after_device_destroy/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_migrate_destination/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotplug/openstacknet_utils.py*
+%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotunplug/50_openstacknet
+%{_libexecdir}/%{vdsm_name}/hooks/after_nic_hotunplug/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet

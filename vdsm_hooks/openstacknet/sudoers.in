@@ -1,1 +1,3 @@
-vdsm  ALL=(ALL) NOPASSWD: @BRCTL_PATH@
+vdsm  ALL=(ALL) NOPASSWD: /sbin/brctl, /usr/sbin/brctl
+vdsm  ALL=(ALL) NOPASSWD: /sbin/ip
+vdsm  ALL=(ALL) NOPASSWD: /usr/sbin/ovs-vsctl, /usr/bin/ovs-vsctl
