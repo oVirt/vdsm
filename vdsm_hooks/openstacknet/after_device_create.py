@@ -33,17 +33,13 @@ from openstacknet_utils import PLUGIN_TYPE_KEY
 from openstacknet_utils import PROVIDER_TYPE_KEY
 from openstacknet_utils import PT_BRIDGE
 from openstacknet_utils import VNIC_ID_KEY
+from openstacknet_utils import executeOrExit
 from vdsm.constants import EXT_BRCTL
 
 
 def disconnectVnic(portId):
     tapName = ('tap' + portId)[:DEV_MAX_LENGTH]
-    command = [EXT_BRCTL, 'delif', DUMMY_BRIDGE, tapName]
-    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
-
-    if retcode != 0:
-        hooking.exit_hook("Can't disconnect %s from %s, due to: %s"
-                          % (tapName, DUMMY_BRIDGE, err))
+    executeOrExit([EXT_BRCTL, 'delif', DUMMY_BRIDGE, tapName])
 
 
 def main():

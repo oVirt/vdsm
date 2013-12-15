@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import hooking
 from vdsm.netinfo import DUMMY_BRIDGE
 
 # Constants for hook's API
@@ -15,3 +16,10 @@ DEV_MAX_LENGTH = 14
 
 # Make pyflakes happy
 DUMMY_BRIDGE
+
+
+def executeOrExit(command):
+    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
+    if retcode != 0:
+        raise RuntimeError("Failed to execute %s, due to: %s" %
+                           (command, err))
