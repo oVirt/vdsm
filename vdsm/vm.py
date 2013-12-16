@@ -2512,21 +2512,27 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
-    def shutdown(self, timeout, message):
+    def shutdown(self, timeout, message, reboot):
         try:
             now = time.time()
             if self.lastStatus == 'Down':
                 return errCode['noVM']
             if self.guestAgent and self.guestAgent.isResponsive():
                 self._guestEventTime = now
-                self._guestEvent = 'Powering down'
-                self.log.debug('guestAgent shutdown called')
-                self.guestAgent.desktopShutdown(timeout, message)
-                agent_timeout = (int(timeout) +
-                                 config.getint('vars', 'sys_shutdown_timeout'))
-                timer = threading.Timer(agent_timeout, self._timedShutdown)
-                timer.start()
-            elif utils.tobool(self.conf.get('acpiEnable', 'true')):
+                if reboot:
+                    self._guestEvent = 'RebootInProgress'
+                    self.log.debug('guestAgent reboot called')
+                else:
+                    self._guestEvent = 'Powering down'
+                    self.log.debug('guestAgent shutdown called')
+                    agent_timeout = (int(timeout) +
+                                     config.getint('vars',
+                                                   'sys_shutdown_timeout'))
+                    timer = threading.Timer(agent_timeout, self._timedShutdown)
+                    timer.start()
+                self.guestAgent.desktopShutdown(timeout, message, reboot)
+            elif utils.tobool(self.conf.get('acpiEnable', 'true')) and \
+                    not reboot:
                 self._guestEventTime = now
                 self._guestEvent = 'Powering down'
                 self._acpiShutdown()
@@ -2541,8 +2547,8 @@ class Vm(object):
             self.log.error("Shutdown failed", exc_info=True)
             return {'status': {'code': errCode['exist']['status']['code'],
                     'message': 'Failed to shutdown VM. Try Forced Shutdown.'}}
-        return {'status': {'code': doneCode['code'],
-                'message': 'Machine shut down'}}
+        message = 'Machine rebooting' if reboot else 'Machine shut down'
+        return {'status': {'code': doneCode['code'], 'message': message}}
 
     def _timedShutdown(self):
         self.log.debug('_timedShutdown Called')

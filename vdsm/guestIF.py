@@ -299,10 +299,11 @@ class GuestAgent ():
         except:
             self.log.error("desktopLogoff failed", exc_info=True)
 
-    def desktopShutdown(self, timeout, msg):
+    def desktopShutdown(self, timeout, msg, reboot):
         try:
             self.log.debug("desktopShutdown called")
-            self._forward('shutdown', {'timeout': timeout, 'message': msg})
+            self._forward('shutdown', {'timeout': timeout, 'message': msg,
+                                       'reboot': str(reboot)})
         except:
             self.log.error("desktopShutdown failed", exc_info=True)
 

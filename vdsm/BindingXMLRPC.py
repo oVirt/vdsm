@@ -229,9 +229,9 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.reset()
 
-    def vmShutdown(self, vmId, delay=None, message=None):
+    def vmShutdown(self, vmId, delay=None, message=None, reboot=False):
         vm = API.VM(vmId)
-        return vm.shutdown(delay, message)
+        return vm.shutdown(delay, message, reboot)
 
     def vmSetTicket(self, vmId, password, ttl,
                     existingConnAction='disconnect', params={}):

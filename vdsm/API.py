@@ -594,7 +594,7 @@ class VM(APIBase):
             return errCode['noVM']
         return v.setTicket(password, ttl, existingConnAction, params)
 
-    def shutdown(self, delay=None, message=None):
+    def shutdown(self, delay=None, message=None, reboot=False):
         """
         Shut a VM down politely.
 
@@ -602,6 +602,7 @@ class VM(APIBase):
                         his machine.
         :param delay: grace period (seconds) to let guest user close his
                       applications.
+        :param reboot: True if reboot is desired, False for shutdown
         """
         try:
             v = self._cif.vmContainer[self._UUID]
@@ -611,7 +612,7 @@ class VM(APIBase):
             delay = config.get('vars', 'user_shutdown_timeout')
         if not message:
             message = USER_SHUTDOWN_MESSAGE
-        return v.shutdown(delay, message)
+        return v.shutdown(delay, message, reboot)
 
     def _createSysprepFloppyFromInf(self, infFileBinary, floppyImage):
         try:

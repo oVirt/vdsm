@@ -5984,10 +5984,12 @@
 #
 # @message:  #optional Message to display to VM users before shutting down
 #
+# @reboot:   #optional True if reboot is desired, False for shutdown
+#
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'shutdown'},
- 'data': {'vmID': 'UUID', '*delay': 'int', '*message': 'str'}}
+ 'data': {'vmID': 'UUID', '*delay': 'int', '*message': 'str', '*reboot': 'bool'}}
 
 ##
 # @SnapshotVolumeDriveInfo:

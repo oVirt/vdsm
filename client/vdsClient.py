@@ -26,7 +26,7 @@ import re
 import socket
 import pprint as pp
 
-from vdsm import vdscli
+from vdsm import utils, vdscli
 try:
     import vdsClientGluster as ge
     _glusterEnabled = True
@@ -336,8 +336,12 @@ class service:
         return self.ExecAndExit(response)
 
     def do_shutdown(self, args):
-        vmId, timeout, message = args
-        response = self.s.shutdown(vmId, timeout, message)
+        vmId, timeout, message = args[:3]
+        if len(args) > 3:
+            reboot = utils.tobool(args[3])
+            response = self.s.shutdown(vmId, timeout, message, reboot)
+        else:
+            response = self.s.shutdown(vmId, timeout, message)
         print response['status']['message']
         sys.exit(response['status']['code'])
 
@@ -1915,9 +1919,11 @@ if __name__ == '__main__':
                      ' This is not a shutdown.'
                      )),
         'shutdown': (serv.do_shutdown,
-                     ('<vmId> <timeout> <message>',
+                     ('<vmId> <timeout> <message> [reboot:bool]',
                       'Stops the emulation and graceful shutdown the virtual'
-                      ' machine.'
+                      ' machine.',
+                      'o reboot: if specified, reboot instead of shutdown'
+                      ' (default False)'
                       )),
         'list': (serv.do_list,
                  ('[view] [vms:vmId1,vmId2]',
