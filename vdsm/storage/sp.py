@@ -208,6 +208,17 @@ class StoragePool(Securable):
                     except KeyError:
                         pass
 
+    def _updateDomainsRole(self):
+        for sdUUID in self.getDomains(activeOnly=True):
+            if sdUUID == self.masterDomain.sdUUID:
+                continue
+
+            domain = sdCache.produce(sdUUID)
+            if domain.getDomainRole() == sd.REGULAR_DOMAIN:
+                continue
+
+            self.setDomainRegularRole(domain)
+
     @unsecured
     def startSpm(self, prevID, prevLVER, scsiFencing, maxHostID,
                  expectedDomVersion=None):
@@ -300,6 +311,7 @@ class StoragePool(Securable):
 
                 # Once setSafe completes we are running as SPM
                 self._setSafe()
+                self._updateDomainsRole()
 
                 # Mailbox issues SPM commands, therefore we start it AFTER spm
                 # commands are allowed to run to prevent a race between the
@@ -486,6 +498,14 @@ class StoragePool(Securable):
     @unsecured
     def getMasterVersion(self):
         return self.getMetaParam(PMDK_MASTER_VER)
+
+    def setDomainRegularRole(self, domain):
+        poolMetadata = self._getPoolMD(domain)
+        # TODO: consider to remove the transaction (and this method as well)
+        # since setting the version to 0 may be useless.
+        with poolMetadata.transaction():
+            poolMetadata[PMDK_MASTER_VER] = 0
+            domain.changeRole(sd.REGULAR_DOMAIN)
 
     # TODO: Remove or rename this function.
     @unsecured
@@ -1101,6 +1121,8 @@ class StoragePool(Securable):
 
         # Domain conversion requires the links to be present
         self._refreshDomainLinks(dom)
+        self.setDomainRegularRole(dom)
+
         if dom.getDomainClass() == sd.DATA_DOMAIN:
             self._convertDomain(dom)
 
@@ -1207,11 +1229,6 @@ class StoragePool(Securable):
         if self.masterDomain.sdUUID == domain.sdUUID:
             masterName = os.path.join(self.poolPath, POOL_MASTER_DOMAIN)
             self._linkStorageDomain(domain.domaindir, masterName)
-        else:
-            domPoolMD = self._getPoolMD(domain)
-            with domPoolMD.transaction():
-                domain.changeRole(sd.REGULAR_DOMAIN)
-                domPoolMD[PMDK_MASTER_VER] = 0
 
     @unsecured
     def __rebuild(self, msdUUID, masterVersion):
