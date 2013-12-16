@@ -23,3 +23,7 @@ def executeOrExit(command):
     if retcode != 0:
         raise RuntimeError("Failed to execute %s, due to: %s" %
                            (command, err))
+
+
+def devName(prefix, name):
+    return (prefix + name)[:DEV_MAX_LENGTH]

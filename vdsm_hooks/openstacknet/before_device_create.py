@@ -28,7 +28,6 @@ import traceback
 from xml.dom import minidom
 
 import hooking
-from openstacknet_utils import DEV_MAX_LENGTH
 from openstacknet_utils import DUMMY_BRIDGE
 from openstacknet_utils import OPENSTACK_NET_PROVIDER_TYPE
 from openstacknet_utils import PLUGIN_TYPE_KEY
@@ -36,6 +35,7 @@ from openstacknet_utils import PROVIDER_TYPE_KEY
 from openstacknet_utils import PT_BRIDGE
 from openstacknet_utils import PT_OVS
 from openstacknet_utils import VNIC_ID_KEY
+from openstacknet_utils import devName
 
 HELP_ARG = "-h"
 TEST_ARG = "-t"
@@ -57,8 +57,7 @@ INTEGRATION_BRIDGE = 'br-int'
 
 def addLinuxBridgeVnic(domxml, iface, portId):
     target = domxml.createElement('target')
-    tapName = ('tap' + portId)[:DEV_MAX_LENGTH]
-    target.setAttribute('dev', tapName)
+    target.setAttribute('dev', devName('tap', portId))
     iface.appendChild(target)
 
     source = iface.getElementsByTagName('source')[0]
