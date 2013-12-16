@@ -57,13 +57,6 @@ parameters = [
         ('migration_destination_timeout', '21600',
             'Maximum time the destination waits for the migration to finish.'),
 
-        ('migration_timeout', '300',
-            'Migration Source Host: Uses at least 1/2 of this value for VMs '
-            'with less than 2 GiB of RAM otherwise 1/4 of this value per GiB '
-            'RAM for calculating the delay before setting/increasing the '
-            'migration_downtime.'
-            'NOTE: This value is not used as an overall migration timeout.'),
-
         ('migration_progress_timeout', '150',
             'Maximum time the source host waits during a migration in case '
             'that there is no progress. If the time has passed, the migration '
@@ -108,6 +101,12 @@ parameters = [
             '(anything below 100ms is ignored) if you do not care about '
             'liveness of migration, set to a very high value, such as '
             '600000.'),
+
+        ('migration_downtime_delay', '75',
+            'This value is used on the source host to define the delay before '
+            'setting/increasing the downtime of a migration. '
+            'The value is per GiB of RAM. A minimum of twice this value is '
+            'used for VMs with less than 2 GiB of RAM'),
 
         ('migration_downtime_steps', '10',
             'Incremental steps used to reach migration_downtime.'),

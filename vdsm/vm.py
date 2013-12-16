@@ -357,8 +357,7 @@ class MigrationSourceThread(threading.Thread):
             self._vm.log.debug('starting migration to %s '
                                'with miguri %s', duri, muri)
 
-            t = MigrationDowntimeThread(self._vm, int(self._downtime),
-                                        self._vm._migrationTimeout() / 2)
+            t = MigrationDowntimeThread(self._vm, int(self._downtime))
 
             if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
                 self._monitorThread = MigrationMonitorThread(self._vm,
@@ -704,14 +703,17 @@ class VmStatsThread(sampling.AdvancedStatsThread):
 
 
 class MigrationDowntimeThread(threading.Thread):
-    def __init__(self, vm, downtime, wait):
+    def __init__(self, vm, downtime):
         super(MigrationDowntimeThread, self).__init__()
         self.DOWNTIME_STEPS = config.getint('vars', 'migration_downtime_steps')
 
         self._vm = vm
         self._downtime = downtime
-        self._wait = wait
         self._stop = threading.Event()
+
+        delay_per_gib = config.getint('vars', 'migration_downtime_delay')
+        memSize = int(vm.conf['memSize'])
+        self._wait = (delay_per_gib * max(memSize, 2048) + 1023) / 1024
 
         self.daemon = True
         self.start()
@@ -2550,13 +2552,6 @@ class Vm(object):
         except libvirt.libvirtError:
             self.log.debug("VM %s can't be resumed", self.id, exc_info=True)
         self._setWriteWatermarks()
-
-    def _migrationTimeout(self):
-        timeout = config.getint('vars', 'migration_timeout')
-        mem = int(self.conf['memSize'])
-        if mem > 2048:
-            timeout = timeout * mem / 2048
-        return timeout
 
     def _acquireCpuLockWithTimeout(self):
         timeout = self._loadCorrectedTimeout(
