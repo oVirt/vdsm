@@ -47,6 +47,9 @@ class _ModuleConfigure(object):
     def isconfigured(self):
         return True
 
+    def reconfigureOnForce(self):
+        return True
+
 
 class LibvirtModuleConfigure(_ModuleConfigure):
     def __init__(self):
@@ -136,7 +139,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
         if rc != 0:
             raise RuntimeError("Failed to perform sanlock config.")
 
-    def isconfigured(self, *args):
+    def isconfigured(self):
         """
         True if sanlock service is configured, False if sanlock service
         requires a restart to reload the relevant supplementary groups.
@@ -171,6 +174,9 @@ class SanlockModuleConfigure(_ModuleConfigure):
 
         return ret
 
+    def reconfigureOnForce(self):
+        return False
+
 
 __configurers = (
     LibvirtModuleConfigure(),
@@ -191,7 +197,7 @@ def configure(*args):
                 raise RuntimeError(
                     "Configuration of %s is invalid" % c.getName()
                 )
-            if args.force or not c.isconfigured():
+            if (args.force and c.reconfigureOnForce()) or not c.isconfigured():
                 configurer_to_trigger.append(c)
 
     services = []
