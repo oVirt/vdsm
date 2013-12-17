@@ -1,0 +1,98 @@
+<!--
+	vdsm-jsonrpc-java - vdsm json rpc
+	Copyright (C) 2013 Red Hat, Inc.
+
+	This library is free software; you can redistribute it and/or
+	modify it under the terms of the GNU Lesser General Public
+	License as published by the Free Software Foundation; either
+	version 2.1 of the License, or (at your option) any later version.
+
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public
+	License along with this library; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+-->
+<project
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+	<modelVersion>4.0.0</modelVersion>
+
+	<name>root</name>
+	<description>Root module for jsonrpc</description>
+	<url>http://ovirt.org</url>
+	<licenses>
+		<license>
+			<name>GNU Lesser General Public License, version 2.1</name>
+			<url>http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<scm>
+		<connection>scm:git:git://gerrit.ovirt.org/@PACKAGE_NAME@</connection>
+		<developerConnection>scm:git:gerrit.ovirt.org:@PACKAGE_NAME@</developerConnection>
+		<url>http://gerrit.ovirt.org/gitweb?p=@PACKAGE_NAME@.git</url>
+	</scm>
+	<groupId>org.ovirt.@PACKAGE_NAME@</groupId>
+	<artifactId>root</artifactId>
+	<version>@PACKAGE_MAVEN_VERSION@@MAVEN_VERSION_SNAPSHOT@</version>
+	<packaging>pom</packaging>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<jackson.version>1.9.9</jackson.version>
+		<junit.version>4.8.1</junit.version>
+		<commons-logging.version>1.1</commons-logging.version>
+		<mockito.version>1.9.0</mockito.version>
+	</properties>
+
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
+
+	<modules>
+		<module>client</module>
+	</modules>
+
+	<profiles>
+		<profile>
+			<id>release-sign-artifacts</id>
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.4</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+								<configuration>
+									<keyname>${gpg.keyname}</keyname>
+									<passphrase>${gpg.passphrase}</passphrase>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

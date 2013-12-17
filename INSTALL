@@ -1,0 +1,24 @@
+vdsm-jsonrpc-java - vdsm json rpc
+=============================
+
+Pacakge is standard autotool package.
+
+To build from source:
+
+$ autoreconf -ivf
+$ ./configure
+$ make
+$ make install
+
+plain j2se build and maven build (--with-maven).
+
+Java SDK is not installed, it is available for distribution specific
+installation at $(builddir)/target.
+
+Signing maven artifact is possible using the following environment
+variable:
+ MAVEN_OPTS="-DperformRelease=true -Dgpg.keyname=C223E417 -Dgpg.passphrase=pass"
+
+Maven publish is done via oss.sonatype.org, refer to instructions[1].
+
+[1] https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide#SonatypeOSSMavenRepositoryUsageGuide-7a.2.PublishSnapshots

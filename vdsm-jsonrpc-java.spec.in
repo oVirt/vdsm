@@ -1,0 +1,157 @@
+#
+# vdsm-jsonrpc-java - vdsm json rpc
+# Copyright (C) 2013 Red Hat, Inc.
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+
+%global		package_version @PACKAGE_VERSION@
+%global		package_maven_version @PACKAGE_MAVEN_VERSION@
+
+%if 0%{?rhel:1}
+%global		maven2brewrepodir %{_javadir}/repository.jboss.com/maven2-brew/dummy
+%endif
+
+Summary:	oVirt JsonRpc java client (%{name})
+Name:		@PACKAGE_NAME@
+Version:	@PACKAGE_RPM_VERSION@
+Release:	@PACKAGE_RPM_RELEASE@%{?release_suffix}%{?dist}
+License:	LGPLv2+
+URL:		http://www.ovirt.org
+Source:		http://resources.ovirt.org/releases/3.4/src/%{name}-%{package_version}.tar.gz
+Group:		Development/Libraries
+
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildArch:	noarch
+
+
+BuildRequires:	java-devel
+Requires:	java
+
+
+%if 0%{?fedora:1}
+BuildRequires:	apache-commons-logging
+BuildRequires:	jackson
+BuildRequires:	junit
+BuildRequires:	mockito
+BuildRequires:	maven-compiler-plugin
+BuildRequires:	maven-enforcer-plugin
+BuildRequires:	maven-install-plugin
+BuildRequires:	maven-jar-plugin
+BuildRequires:	maven-javadoc-plugin
+BuildRequires:	maven-local
+BuildRequires:	maven-source-plugin
+BuildRequires:	maven-surefire-provider-junit4
+Requires:	apache-commons-logging
+Requires:	jackson
+%else
+BuildRequires:	codehaus-jackson-core-asl
+BuildRequires:	codehaus-jackson-mapper-asl
+BuildRequires:	jakarta-commons-logging
+BuildRequires:	java-1.7.0-openjdk-devel >= 1:1.7
+BuildRequires:	junit4
+# Package not in rhel. it is only build time, at this point (until rhel-7) we can accept that
+# BuildRequires:	mockito
+Requires:	jakarta-commons-logging
+Requires:	codehaus-jackson-core-asl
+Requires:	codehaus-jackson-mapper-asl
+%endif
+
+%description
+vdsm jsonrpc java
+
+%if 0%{?fedora:1}
+%package javadoc
+Summary:	Javadocs for %{name}
+Group:		Documentation
+
+%description javadoc
+This package contains the API documentation for %{name}.
+%endif
+
+%if 0%{?rhel:1}
+%package repolib
+Summary:	%{name} maven repo
+%description repolib
+%{name} maven repo
+%endif
+
+%prep
+%setup -q -n %{name}-%{package_version}
+
+%build
+%if 0%{?fedora:1}
+%global conf --with-maven --disable-java-build
+%else
+%global conf \\\
+	JACKSON_CORE_ASL=$(build-classpath codehaus-jackson/jackson-core-asl) \\\
+	JACKSON_MAPPER_ASL=$(build-classpath codehaus-jackson/jackson-mapper-asl) \\\
+	COMMONS_LOGGING_JAR=$(build-classpath commons-logging) \\\
+	JAVAC=/usr/lib/jvm/java-1.7.0/bin/javac \\\
+	JAR=/usr/lib/jvm/java-1.7.0/bin/jar \\\
+	%{?null}
+%endif
+%configure %{?conf}
+make %{?_smp_mflags}
+
+%if 0%{?fedora:1}
+%mvn_build
+%endif
+
+%install
+%if 0%{?rhel:1}
+rm -rf "%{buildroot}"
+%endif
+make %{?_smp_mflags} install DESTDIR="%{buildroot}"
+
+%if 0%{?fedora:1}
+%mvn_install
+%else
+install -d "%{buildroot}%{_javadir}/%{name}"
+install target/%{name}-client-%{package_maven_version}.jar %{buildroot}%{_javadir}/%{name}
+ln -s %{name}-client-%{package_maven_version}.jar %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
+%endif
+
+%if 0%{?rhel:1}
+install -d "%{buildroot}%{maven2brewrepodir}"
+cp pom.xml "%{buildroot}%{maven2brewrepodir}/root-%{package_maven_version}.pom"
+cp "%{buildroot}%{_javadir}/%{name}/%{name}-client.jar" "%{buildroot}%{maven2brewrepodir}/%{name}-client-%{package_maven_version}.jar"
+cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}-client-%{package_maven_version}.pom"
+%endif
+
+%if 0%{?fedora:1}
+%files -f .mfiles
+%dir %{_javadir}/%{name}
+%else
+%files
+%dir %{_javadir}/%{name}
+%{_javadir}/%{name}/%{name}*.jar
+%endif
+
+%if 0%{?fedora:1}
+%files javadoc -f .mfiles-javadoc
+%endif
+
+%if 0%{?rhel:1}
+%files repolib
+%{maven2brewrepodir}/
+%endif
+
+%changelog
+* Thu Dec 19 2013 Piotr Kliczewski <pkliczew@redhat.com> 1.0
+- Initial template for vdsm-jsonrpc-java.
+
+* Wed Nov 20 2013 Alon Bar-Lev <alonbl@redhat.com> - 1.1.0-1
+- Initial template.
