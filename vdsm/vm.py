@@ -81,8 +81,15 @@ SMARTCARD_DEVICES = 'smartcard'
 
 
 def isVdsmImage(drive):
-    return all(k in drive.keys() for k in ('volumeID', 'domainID', 'imageID',
-                                           'poolID'))
+    """
+    Tell if drive looks like a vdsm image
+
+    :param drive: drive to check
+    :type drive: dict or vm.Drive
+    :return: bool
+    """
+    required = ('domainID', 'imageID', 'poolID', 'volumeID')
+    return all(k in drive for k in required)
 
 
 def _filterSnappableDiskDevices(diskDeviceXmlElements):
@@ -624,7 +631,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             try:
                 dStats = {'truesize': str(vmDrive.truesize),
                           'apparentsize': str(vmDrive.apparentsize)}
-                if vmDrive.isVdsmImage():
+                if isVdsmImage(vmDrive):
                     dStats['imageID'] = vmDrive.imageID
                 dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1]) /
                                       sampleInterval)
@@ -1480,6 +1487,9 @@ class Drive(VmDevice):
         else:
             return value
 
+    def __contains__(self, attr):
+        return hasattr(self, attr)
+
     def isDiskReplicationInProgress(self):
         return hasattr(self, "diskReplicate")
 
@@ -1564,9 +1574,6 @@ class Drive(VmDevice):
             i /= 26
 
         return devname.get(self.iface, 'hd') + (devindex or 'a')
-
-    def isVdsmImage(self):
-        return getattr(self, 'poolID', False)
 
     def _checkIoTuneCategories(self):
         categories = ("bytes", "iops")
@@ -2344,7 +2351,7 @@ class Vm(object):
                 del toSave['floppy']
         for drive in toSave.get('drives', []):
             for d in self._devices[DISK_DEVICES]:
-                if d.isVdsmImage() and drive.get('volumeID') == d.volumeID:
+                if isVdsmImage(d) and drive.get('volumeID') == d.volumeID:
                     drive['truesize'] = str(d.truesize)
                     drive['apparentsize'] = str(d.apparentsize)
 
@@ -3578,7 +3585,7 @@ class Vm(object):
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotunplug disk xml: %s", driveXml)
         # Remove found disk from vm's drives list
-        if drive.isVdsmImage():
+        if isVdsmImage(drive):
             self.sdIds.remove(drive.domainID)
         self._devices[DISK_DEVICES].remove(drive)
         # Find and remove disk device from vm's conf
@@ -3733,7 +3740,7 @@ class Vm(object):
         raise LookupError("No such drive: '%s'" % drive)
 
     def updateDriveVolume(self, vmDrive):
-        if not vmDrive.device == 'disk' or not vmDrive.isVdsmImage():
+        if not vmDrive.device == 'disk' or not isVdsmImage(vmDrive):
             return
 
         volSize = self.cif.irs.getVolumeSize(
