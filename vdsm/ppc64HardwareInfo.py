@@ -49,3 +49,37 @@ def getHardwareInfoStructure():
         infoStructure['systemUUID'] = vdsmId
 
     return infoStructure
+
+
+@utils.memoized
+def getCpuTopology(capabilities):
+    topology = {}
+
+    if capabilities is None:
+        retcode, out, err = utils.execCmd(['lscpu'], raw=True)
+        capabilities = out
+
+    corePS = None
+    threadsPC = None
+    sockets = None
+
+    for line in capabilities.splitlines():
+        if line.strip() == '':
+            continue
+        key, value = map(str.strip, line.split(':', 1))
+
+        if key == 'Socket(s)':
+            sockets = int(value)
+        elif key == 'Thread(s) per core':
+            threadsPC = int(value)
+        elif key == 'Core(s) per socket':
+            corePS = int(value)
+
+    if corePS and threadsPC and sockets:
+        topology['sockets'] = sockets
+        topology['cores'] = corePS * sockets
+        topology['threads'] = threadsPC * corePS * sockets
+    else:
+        raise RuntimeError('Undefined topology')
+
+    return topology

@@ -1,0 +1,15 @@
+Architecture:          ppc64
+Byte Order:            Big Endian
+CPU(s):                16
+On-line CPU(s) list:   0-15
+Thread(s) per core:    4
+Core(s) per socket:    1
+Socket(s):             4
+NUMA node(s):          1
+Model:                 IBM,8246-L2D
+L1d cache:             32K
+L1i cache:             32K
+L2 cache:              256K
+L3 cache:              10240K
+NUMA node0 CPU(s):     0-15
+

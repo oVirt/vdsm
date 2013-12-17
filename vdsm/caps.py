@@ -118,7 +118,13 @@ class CpuInfo(object):
 
 class CpuTopology(object):
     def __init__(self, capabilities=None):
-        self._topology = _getCpuTopology(capabilities)
+
+        if platform.machine() == Architecture.PPC64:
+            from ppc64HardwareInfo import \
+                getCpuTopology as getPPC64CpuTopology
+            self._topology = getPPC64CpuTopology(capabilities)
+        else:
+            self._topology = _getCpuTopology(capabilities)
 
     def threads(self):
         return self._topology['threads']

@@ -56,7 +56,25 @@ class TestCaps(TestCaseBase):
         self.assertEqual(c.model(),
                          'Intel(R) Xeon(R) CPU           E5649  @ 2.53GHz')
 
-    def testCpuTopology(self):
+    @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.PPC64)
+    def testCpuTopologyPPC64(self):
+        testPath = os.path.realpath(__file__)
+        dirName = os.path.split(testPath)[0]
+        # PPC64 1 socket, 4 cores, 4 threads per core
+        path = os.path.join(dirName, "caps_lscpu_ppc64_1_4_4.out")
+        t = caps.CpuTopology(open(path).read())
+        self.assertEqual(t.threads(), 16)
+        self.assertEqual(t.cores(), 4)
+        self.assertEqual(t.sockets(), 4)
+        # PPC64 2 sockets, 8 cores, 8 threads per core
+        path = os.path.join(dirName, "caps_lscpu_ppc64_2_4_8.out")
+        t = caps.CpuTopology(open(path).read())
+        self.assertEqual(t.threads(), 64)
+        self.assertEqual(t.cores(), 8)
+        self.assertEqual(t.sockets(), 2)
+
+    @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.X86_64)
+    def testCpuTopologyX86_64(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
         # 2 x Intel E5649 (with Hyperthreading)
