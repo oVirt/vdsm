@@ -4147,6 +4147,9 @@ class Vm(object):
                 self.log.error("Unable to teardown the previous chain: %s",
                                diskToTeardown, exc_info=True)
             self.updateDriveParameters(dstDiskCopy)
+            if "domainID" in srcDisk:
+                self.sdIds.append(dstDiskCopy['domainID'])
+                self.sdIds.remove(srcDisk['domainID'])
         finally:
             self._delDiskReplica(srcDrive)
             self.startDisksStatsCollection()
