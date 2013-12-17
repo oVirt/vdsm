@@ -1007,6 +1007,14 @@ class HSM:
         return self._connectStoragePool(spUUID, hostID, scsiKey, msdUUID,
                                         masterVersion, options)
 
+    @staticmethod
+    def _updateStoragePool(pool, hostId, msdUUID, masterVersion):
+        if hostId != pool.id:
+            raise se.StoragePoolConnected(
+                "hostId=%s, newHostId=%s" % (pool.id, hostId))
+
+        pool.refresh(msdUUID, masterVersion)
+
     def _connectStoragePool(self, spUUID, hostID, scsiKey, msdUUID,
                             masterVersion, options=None):
         misc.validateUUID(spUUID, 'spUUID')
@@ -1022,17 +1030,14 @@ class HSM:
             pass  # pool not connected yet
         else:
             with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.shared):
-                pool = self.getPool(spUUID)
-                if not msdUUID or not masterVersion:
-                    hostID, scsiKey, msdUUID, masterVersion = \
-                        pool.getPoolParams()
-                misc.validateN(hostID, 'hostID')
-                # getMasterDomain is called because produce is required here
-                # since the master domain can be changed by the SPM if it is
-                # the refreshPool flow.
-                pool.getMasterDomain(msdUUID=msdUUID,
-                                     masterVersion=masterVersion)
-                return
+                # FIXME: this breaks in case of a race as it assumes that the
+                # pool is still available. At the moment we maintain this
+                # behavior as it's inherited from the previous implementation
+                # but the problem must be addressed (possibly improving the
+                # entire locking pattern used in this method).
+                self._updateStoragePool(self.getPool(spUUID), hostID, msdUUID,
+                                        masterVersion)
+                return True
 
         with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
             try:
@@ -1040,14 +1045,8 @@ class HSM:
             except se.StoragePoolUnknown:
                 pass  # pool not connected yet
             else:
-                if not msdUUID or not masterVersion:
-                    hostID, scsiKey, msdUUID, masterVersion = \
-                        pool.getPoolParams()
-                misc.validateN(hostID, 'hostID')
-                # Idem. See above.
-                pool.getMasterDomain(msdUUID=msdUUID,
-                                     masterVersion=masterVersion)
-                return
+                self._updateStoragePool(pool, hostID, msdUUID, masterVersion)
+                return True
 
             pool = sp.StoragePool(spUUID, self.taskMng)
             if not hostID or not scsiKey or not msdUUID or not masterVersion:
