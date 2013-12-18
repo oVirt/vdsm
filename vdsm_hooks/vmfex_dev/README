@@ -1,0 +1,41 @@
+vmfex_dev vdsm hook
+======================
+
+Override a oVirt engine's vnic with a Cisco VM-FEX VM vNic connected using
+SR-IOV passthrough with macvtap (allows migration).
+
+Before Installation:
+* Make sure that the VM level vmfex hook is not installed. vmfex_dev and
+  vmfex hooks are not compatible and running them at the same time can cause
+  all sorts of problems.
+
+Installation:
+* Use the engine-config to append the appropriate custom property:
+
+  sudo engine-config -s CustomDeviceProperties=
+  '{type=interface;prop={vmfex=^[a-zA-Z0-9_ ---]+$}}'
+
+* Verify that the vmfex_dev custom device propertes were properly added:
+	sudo engine-config -g CustomDeviceProperties
+
+Usage:
+1. Define an oVirt vNIC profile and set one of its custom properites to
+   "vmfex" with the value of the name of UCS port profile. For instance:
+       vmfex: myPortProfileId
+2. Attach the oVirt vNIC profile to a VM vNIC. When the VM runs, the vNIC with
+   the vmfex custom device, the xml definition of which might originally look
+   like:
+       <interface type='bridge'>
+           <mac address='<mac>'/>
+           <model type='virtio'/>
+           <source bridge='<logical network>'/>
+       </interface>
+    will be transformed into:
+        <interface type='network'>
+          <mac address='<mac>'/>
+          <source network='direct-pool'/>
+          <virtualport type='802.1Qbh'>
+              <parameters profileid='<Port Profile id>'/>
+          </virtualport>
+          <model type='virtio'/>
+        </interface>

@@ -301,8 +301,17 @@ Description: sr-iov support for VDSM
 Package: vdsm-hook-vmfex
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Conflicts: vdsm-hook-vmfex-dev
 Description: vmfex support for VDSM
  Hook for vmfex.
+
+Package: vdsm-hook-vmfex-dev
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Conflicts: vdsm-hook-vmfex
+Description: VM-FEX vNIC support for VDSM
+ Allows to use custom device properties to pass through a VF using
+ VM-FEX SR-IOV with macvtap topology.
 
 Package: vdsm-hook-vmdisk
 Architecture: all

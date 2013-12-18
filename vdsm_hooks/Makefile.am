@@ -43,7 +43,9 @@ SUBDIRS += \
 	smbios \
 	sriov \
 	vmdisk \
-	vmfex
+	vmfex \
+	vmfex_dev \
+	$(NULL)
 endif
 
 dist_vdsmexec_SCRIPTS = \

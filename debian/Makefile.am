@@ -81,6 +81,8 @@ EXTRA_DIST = \
     vdsm-hook-vmdisk.install \
     vdsm-hook-vmfex.docs \
     vdsm-hook-vmfex.install \
+    vdsm-hook-vmfex-dev.docs \
+    vdsm-hook-vmfex-dev.install \
     vdsm.install \
     vdsm.postinst \
     vdsm.postrm \
