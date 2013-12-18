@@ -144,7 +144,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
         True if sanlock service is configured, False if sanlock service
         requires a restart to reload the relevant supplementary groups.
         """
-        ret = False
+        configured = False
         try:
             with open("/var/run/sanlock/sanlock.pid", "r") as f:
                 sanlock_pid = f.readline().strip()
@@ -159,20 +159,20 @@ class SanlockModuleConfigure(_ModuleConfigure):
                         break
                 else:
                     raise RuntimeError("Unable to find sanlock service groups")
-            ret = grp.getgrnam(DISKIMAGE_GROUP)[2] in groups
+            configured = grp.getgrnam(DISKIMAGE_GROUP)[2] in groups
         except IOError as e:
             if e.errno == os.errno.ENOENT:
                 sys.stdout.write("sanlock service is not running\n")
-                ret = True
+                configured = True
             else:
                 raise
 
-        if ret:
+        if not configured:
             sys.stdout.write("sanlock service requires restart\n")
         else:
             sys.stdout.write("sanlock service is already configured\n")
 
-        return ret
+        return configured
 
     def reconfigureOnForce(self):
         return False
