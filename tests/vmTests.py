@@ -19,12 +19,14 @@
 #
 
 from contextlib import contextmanager
+from itertools import product
 import re
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
 
 import vm
+import vmexitreason
 from vdsm import constants
 from vdsm import define
 from testrunner import VdsmTestCase as TestCaseBase
@@ -652,7 +654,9 @@ class TestVm(TestCaseBase):
 @contextmanager
 def FakeVM(params=None):
     with namedTemporaryDir() as tmpDir:
-        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir)]):
+        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
+                               (libvirtconnection, 'get',
+                                lambda x: ConnectionMock())]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
             yield vm.Vm(None, vmParams)
@@ -668,14 +672,14 @@ class TestVmOperations(TestCaseBase):
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetNotPresentByDefault(self, exitCode):
         with FakeVM() as fake:
-            fake.setDownStatus(exitCode, "testing")
+            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
             self.assertFalse('timeOffset' in fake.getStats())
 
     @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetRoundtrip(self, exitCode):
         with FakeVM({'timeOffset': self.BASE_OFFSET}) as fake:
-            fake.setDownStatus(exitCode, "testing")
+            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
             self.assertEqual(fake.getStats()['timeOffset'],
                              self.BASE_OFFSET)
 
@@ -687,7 +691,7 @@ class TestVmOperations(TestCaseBase):
         for offset in self.UPDATE_OFFSETS:
             with FakeVM({'timeOffset': lastOffset}) as fake:
                 fake._rtcUpdate(offset)
-                fake.setDownStatus(exitCode, "testing")
+                fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
                 vmOffset = fake.getStats()['timeOffset']
                 self.assertEqual(vmOffset, str(lastOffset + offset))
                 # the field in getStats is str, not int
@@ -701,7 +705,7 @@ class TestVmOperations(TestCaseBase):
             for offset in self.UPDATE_OFFSETS:
                 fake._rtcUpdate(offset)
             # beware of type change!
-            fake.setDownStatus(exitCode, "testing")
+            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
             self.assertEqual(fake.getStats()['timeOffset'],
                              str(self.UPDATE_OFFSETS[-1]))
 
@@ -712,6 +716,41 @@ class TestVmOperations(TestCaseBase):
             for offset in self.UPDATE_OFFSETS:
                 fake._rtcUpdate(offset)
             # beware of type change!
-            fake.setDownStatus(exitCode, "testing")
+            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
             self.assertEqual(fake.getStats()['timeOffset'],
                              str(self.BASE_OFFSET + self.UPDATE_OFFSETS[-1]))
+
+
+VM_EXITS = tuple(product((define.NORMAL, define.ERROR),
+                 vmexitreason.exitReasons.keys()))
+
+
+@expandPermutations
+class TestVmExit(TestCaseBase):
+    @permutations(VM_EXITS)
+    def testExitReason(self, exitCode, exitReason):
+        """
+        test of:
+        exitReason round trip;
+        error message is constructed correctly automatically
+        """
+        with FakeVM() as fake:
+            fake.setDownStatus(exitCode, exitReason)
+            stats = fake.getStats()
+            self.assertEqual(stats['exitReason'], exitReason)
+            self.assertEqual(stats['exitMessage'],
+                             vmexitreason.exitReasons.get(exitReason))
+
+    @permutations(VM_EXITS)
+    def testExitReasonExplicitMessage(self, exitCode, exitReason):
+        """
+        test of:
+        exitReason round trip;
+        error message can be overridden explicitely
+        """
+        with FakeVM() as fake:
+            msg = "test custom error message"
+            fake.setDownStatus(exitCode, exitReason, msg)
+            stats = fake.getStats()
+            self.assertEqual(stats['exitReason'], exitReason)
+            self.assertEqual(stats['exitMessage'], msg)

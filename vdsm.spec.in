@@ -932,6 +932,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vm.py*
+%{_datadir}/%{vdsm_name}/vmexitreason.py*
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf

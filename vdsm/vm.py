@@ -57,6 +57,8 @@ import hooks
 import kaxmlrpclib
 import sampling
 import supervdsm
+import vmexitreason
+
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 # This device name is used as default both in the qemu-guest-agent
@@ -236,7 +238,7 @@ class MigrationSourceThread(threading.Thread):
     def _finishSuccessfully(self):
         self.status['progress'] = 100
         if self._mode != 'file':
-            self._vm.setDownStatus(NORMAL, "Migration succeeded")
+            self._vm.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
             self.status['status']['message'] = 'Migration done'
         else:
             # don't pickle transient params
@@ -251,7 +253,7 @@ class MigrationSourceThread(threading.Thread):
             finally:
                 self._vm.cif.teardownVolumePath(self._dstparams)
 
-            self._vm.setDownStatus(NORMAL, "SaveState succeeded")
+            self._vm.setDownStatus(NORMAL, vmexitreason.SAVE_STATE_SUCCEEDED)
             self.status['status']['message'] = 'SaveState done'
 
     def _patchConfigForLegacy(self):
@@ -2330,7 +2332,7 @@ class Vm(object):
                 self.log.info("Skipping errors on recovery", exc_info=True)
             else:
                 self.log.error("The vm start process failed", exc_info=True)
-                self.setDownStatus(ERROR, str(e))
+                self.setDownStatus(ERROR, vmexitreason.GENERIC_ERROR, str(e))
 
     def _incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
@@ -2371,11 +2373,11 @@ class Vm(object):
         response = self.releaseVm()
         if not response['status']['code']:
             if self.destroyed:
-                self.setDownStatus(NORMAL, 'Admin shut down')
+                self.setDownStatus(NORMAL, vmexitreason.ADMIN_SHUTDOWN)
             elif self.user_destroy:
-                self.setDownStatus(NORMAL, 'User shut down')
+                self.setDownStatus(NORMAL, vmexitreason.USER_SHUTDOWN)
             else:
-                self.setDownStatus(ERROR, "Lost connection with qemu process")
+                self.setDownStatus(ERROR, vmexitreason.LOST_QEMU_CONNECTION)
 
     def _loadCorrectedTimeout(self, base, doubler=20, load=None):
         """
@@ -2762,7 +2764,10 @@ class Vm(object):
 
         utils.rmFile(self._guestSocketFile)
 
-    def setDownStatus(self, code, reason):
+    def setDownStatus(self, code, exitReasonCode, exitMessage=''):
+        if not exitMessage:
+            exitMessage = vmexitreason.exitReasons.get(exitReasonCode,
+                                                       'VM terminated')
         try:
             self.lastStatus = 'Down'
             with self._confLock:
@@ -2771,8 +2776,10 @@ class Vm(object):
                     self.conf['exitMessage'] = (
                         "Wake up from hibernation failed")
                 else:
-                    self.conf['exitMessage'] = reason
-            self.log.debug("Changed state to Down: " + reason)
+                    self.conf['exitMessage'] = exitMessage
+                    self.conf['exitReason'] = exitReasonCode
+            self.log.debug("Changed state to Down: %s (code=%i)",
+                           exitMessage, exitReasonCode)
         except DoubleDownError:
             pass
         try:
@@ -2818,6 +2825,7 @@ class Vm(object):
             stats['exitCode'] = self.conf['exitCode']
             stats['status'] = self.lastStatus
             stats['exitMessage'] = self.conf['exitMessage']
+            stats['exitReason'] = self.conf['exitReason']
             if 'timeOffset' in self.conf:
                 stats['timeOffset'] = self.conf['timeOffset']
             return stats
@@ -3222,7 +3230,7 @@ class Vm(object):
                                           dev.custom)
 
         if not self._dom:
-            self.setDownStatus(ERROR, 'failed to start libvirt vm')
+            self.setDownStatus(ERROR, vmexitreason.LIBVIRT_START_FAILED)
             return
         self._domDependentInit()
 

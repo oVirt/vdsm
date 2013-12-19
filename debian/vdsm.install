@@ -136,5 +136,6 @@
 ./usr/share/vdsm/vdsmDebugPlugin.py
 ./usr/share/vdsm/vdsmapi-schema.json
 ./usr/share/vdsm/vm.py
+./usr/share/vdsm/vmexitreason.py
 ./usr/share/vdsm/vmChannels.py
 ./var/lib/polkit-1/localauthority/10-vendor.d/10-vdsm-libvirt-access.pkla

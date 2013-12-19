@@ -5494,6 +5494,41 @@
 {'enum': 'VmExitCode', 'data': ['NORMAL', 'ERROR']}
 
 ##
+# @VmExitReason:
+#
+# An enumeration of VM exit reason, explaining why the VM
+# has gone down, either succesfully on in error.
+#
+# @success:                 The VM has exited gracefully
+#
+# @generic error:           Unspecified error code.
+#
+# @lost qemu connection:    The VM has lost the connection with QEMU
+#
+# @libvirt start failed:    The VM failed to start thorugh libvirt
+#
+# @migration succeeded:     The VM was succesfully migrated
+#
+# @save state succeeded:    The VM state was succesfully saved
+#
+# @admin shutdown:          The VM was shut down by the admin
+#                           from the engine UI
+#
+# @user shutdown:           The VM was shut down by an user
+#                           from within the guest
+#
+# @migration failed:        The VM failed to migrate, and do not
+#                           moved from the source host
+#
+# Since: 4.15.0
+##
+{'enum': 'VmExitReason',
+ 'data': ['success', 'generic error',
+          'lost qemu connection', 'libvirt start failed',
+          'migration succeeded', 'save state succeeded',
+          'admin shutdown', 'user shutdown', 'migration failed']}
+
+##
 # @ExitedVmStats:
 #
 # Statistics about a VM that no longer running.
@@ -5504,13 +5539,15 @@
 #
 # @exitMessage:  Detailed reason for the virtual machine exit
 #
+# @exitReason:   The specific exit reason code (new in version 4.15.0)
+#
 # @timeOffset:   #optional The time difference from host to the VM in seconds
 #
 # Since: 4.10.0
 ##
 {'type': 'ExitedVmStats',
  'data': {'exitCode': 'VmExitCode', 'status': 'VmStatus', 'exitMessage': 'str',
-          '*timeOffset': 'int'}}
+          'exitReason': 'VmExitReason', '*timeOffset': 'int'}}
 
 ##
 # @VmDiskStats:
