@@ -1270,7 +1270,7 @@ exit 0
 %files hook-vmfex-dev
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_desination/50_vmfex
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_vmfex
 %endif
 
