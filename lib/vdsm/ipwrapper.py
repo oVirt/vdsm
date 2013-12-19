@@ -18,6 +18,7 @@
 #
 
 from collections import namedtuple
+from glob import iglob
 import os
 
 from netaddr.core import AddrFormatError
@@ -70,6 +71,7 @@ class LinkType(object):
     OVS = 'openvswitch'
     TEAM = 'team'
     VETH = 'veth'
+    VF = 'vf'
 
 
 def _parseLinkLine(text):
@@ -178,6 +180,8 @@ class Link(object):
             detectedType = LinkType.BOND
         elif 'VLAN' in driver or 'vlan' in driver:
             detectedType = LinkType.VLAN
+        elif os.path.exists('/sys/class/net/%s/device/physfn/' % name):
+            detectedType = LinkType.VF
         else:
             detectedType = LinkType.NIC
         return detectedType
@@ -197,6 +201,9 @@ class Link(object):
     def isVETH(self):
         return self.type == LinkType.VETH
 
+    def isVF(self):
+        return self.type == LinkType.VF
+
     def isVLAN(self):
         return self.type == LinkType.VLAN
 
@@ -210,7 +217,7 @@ class Link(object):
         return False
 
     def isNICLike(self):
-        return self.isDUMMY() or self.isNIC() or self.isVETH()
+        return self.isDUMMY() or self.isNIC() or self.isVETH() or self.isVF()
 
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
@@ -219,10 +226,29 @@ class Link(object):
         elif self.isNICLike():
             return (anyFnmatch(self.name, self._hiddenNics) or
                     (self.master and _bondExists(self.master) and
-                     anyFnmatch(self.master, self._hiddenBonds)))
+                     anyFnmatch(self.master, self._hiddenBonds)) or
+                    (self.isVF() and self._isVFhidden()))
         elif self.isBOND():
             return anyFnmatch(self.name, self._hiddenBonds)
         return False
+
+    def _isVFhidden(self):
+        if self.address == '00:00:00:00:00:00':
+            return True
+        # We hide a VF if there exists a macvtap device with the same address.
+        # We assume that such VFs are used by a VM and should not be reported
+        # as host nics
+        for path in iglob('/sys/class/net/*/address'):
+            dev = os.path.basename(os.path.dirname(path))
+            if (dev != self.name and _read_stripped(path) == self.address and
+                    self._detectType(dev) == LinkType.MACVLAN):
+                return True
+        return False
+
+
+def _read_stripped(path):
+    with open(path) as f:
+        return f.read().strip()
 
 
 def _bondExists(bondName):
