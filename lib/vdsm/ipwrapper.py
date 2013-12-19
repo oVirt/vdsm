@@ -228,7 +228,8 @@ def _bondExists(bondName):
 
 def getLinks():
     """Returns a list of Link objects for each link in the system."""
-    return [Link.fromText(line) for line in linksShowDetailed()]
+    return [Link.fromText(line) for line in linksShowDetailed() if
+            not line.startswith(' ')]
 
 
 def getLink(dev):
