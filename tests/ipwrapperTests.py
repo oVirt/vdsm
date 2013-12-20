@@ -19,6 +19,8 @@
 #
 from functools import partial
 
+from testValidation import ValidateRunningAsRoot
+from vdsm import ipwrapper
 from vdsm.ipwrapper import Link
 from vdsm.ipwrapper import LinkType
 from vdsm.ipwrapper import Monitor
@@ -26,6 +28,7 @@ from vdsm.ipwrapper import MonitorEvent
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
 from monkeypatch import MonkeyPatch
+import tcTests
 
 from testrunner import VdsmTestCase as TestCaseBase
 
@@ -250,3 +253,19 @@ class TestIpwrapper(TestCaseBase):
             Monitor.LINK_STATE_DELETED if dev.get('deleted') else
             dev.get('state', None)) for dev in devs]
         self.assertEqual(Monitor._parse('\n'.join(data)), events)
+
+
+class TestDrvinfo(TestCaseBase):
+    _bridge = tcTests._Bridge()
+
+    @ValidateRunningAsRoot
+    def setUp(self):
+        tcTests._checkDependencies()
+        self._bridge.addDevice()
+
+    def tearDown(self):
+        self._bridge.delDevice()
+
+    def testBridgeEthtoolDrvinfo(self):
+        self.assertEqual(ipwrapper._drvinfo(self._bridge.devName),
+                         ipwrapper.LinkType.BRIDGE)

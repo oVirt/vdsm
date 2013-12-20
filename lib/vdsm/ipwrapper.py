@@ -18,8 +18,14 @@
 #
 
 from collections import namedtuple
+from contextlib import closing
 from glob import iglob
+import array
+import errno
+import fcntl
 import os
+import socket
+import struct
 
 from netaddr.core import AddrFormatError
 from netaddr import IPAddress
@@ -29,15 +35,9 @@ from .config import config
 from .utils import anyFnmatch
 from .utils import CommandPath
 from .utils import execCmd
-from .utils import memoized
 from .utils import grouper
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
-_ETHTOOL_BINARY = CommandPath('ethtool',
-                              '/usr/sbin/ethtool',  # F19+
-                              '/sbin/ethtool',  # EL6, ubuntu and Debian
-                              '/usr/bin/ethtool',  # Arch
-                              )
 
 NET_SYSFS = '/sys/class/net'
 
@@ -148,31 +148,21 @@ class Link(object):
         return cls(**attrs)
 
     @staticmethod
-    @memoized
     def _detectType(name):
         """Returns the LinkType for the specified device."""
         # TODO: Add support for virtual functions
         detectedType = None
-        rc, out, _ = execCmd([_ETHTOOL_BINARY.cmd, '-i', name])
-        if rc == 71:  # Unkown driver, usually dummy or loopback
-            if not _dev_sysfs_exists(name):
-                raise ValueError('Device %s does not exist' % name)
-            if name == 'lo':
-                detectedType = LinkType.LOOPBACK
+        try:
+            driver = _drvinfo(name)
+        except IOError as ioe:
+            if ioe.errno == errno.EOPNOTSUPP:
+                if name == 'lo':
+                    detectedType = LinkType.LOOPBACK
+                else:
+                    detectedType = LinkType.DUMMY
+                return detectedType
             else:
-                detectedType = LinkType.DUMMY
-            return detectedType
-        elif rc:
-            raise ValueError('Unknown ethtool errcode %s when checking %s' %
-                             (rc, name))
-        driver = None
-        for line in out:
-            key, value = line.split(': ')
-            if key == 'driver':
-                driver = value
-                break
-        if driver is None:
-            raise ValueError('Unknown device driver type')
+                raise  # Reraise other errors like ENODEV
         if driver in (LinkType.BRIDGE, LinkType.MACVLAN, LinkType.TUN,
                       LinkType.OVS, LinkType.TEAM):
             detectedType = driver
@@ -244,6 +234,26 @@ class Link(object):
                     self._detectType(dev) == LinkType.MACVLAN):
                 return True
         return False
+
+
+def _drvinfo(devName):
+    """Returns the driver used by a device.
+    Throws IOError ENODEV for non existing devices.
+    Throws IOError EOPNOTSUPP for non supported devices, i.g., loopback."""
+    ETHTOOL_GDRVINFO = 0x00000003  # ETHTOOL Get driver info command
+    SIOCETHTOOL = 0x8946  # Ethtool interface
+    DRVINFO_FORMAT = '= I 32s 32s 32s 32s 32s 12s 5I'
+    IFREQ_FORMAT = '16sPi'  # device_name, buffer_pointer, buffer_len
+    buff = array.array('c', b'\0' * struct.calcsize(DRVINFO_FORMAT))
+    cmd = struct.pack('= I', ETHTOOL_GDRVINFO)
+    buff[0:len(cmd)] = array.array('c', cmd)
+    data = struct.pack(IFREQ_FORMAT, devName, *buff.buffer_info())
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
+        fcntl.ioctl(sock, SIOCETHTOOL, data)
+    (cmd, driver, version, fw_version, businfo, _, _, n_priv_flags, n_stats,
+     testinfo_len, eedump_len, regdump_len) = struct.unpack(DRVINFO_FORMAT,
+                                                            buff)
+    return driver.rstrip('\0')  # C string end with the leftmost null char
 
 
 def _read_stripped(path):
