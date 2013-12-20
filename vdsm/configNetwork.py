@@ -617,7 +617,7 @@ def setupNetworks(networks, bondings, **options):
             if 'bonding' in d:
                 d.update(_buildBondOptions(d['bonding'], bondings, _ni))
             else:
-                d['nics'] = [d.pop('nic')]
+                d['nics'] = [d.pop('nic')] if 'nic' in d else []
             d['force'] = force
 
             logger.debug("Adding network %r" % network)

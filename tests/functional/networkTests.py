@@ -630,6 +630,26 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
+    def testSetupNetworksNicless(self):
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'bridged': True}}, {},
+            {'connectivityCheck': False})
+        self.assertEqual(status, SUCCESS, msg)
+        self.assertNetworkExists(NETWORK_NAME)
+
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: dict(remove=True)}, {},
+            {'connectivityCheck': False})
+        self.assertEqual(status, SUCCESS, msg)
+
+    @cleanupNet
+    def testSetupNetworksNiclessBridgeless(self):
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'bridged': False}}, {},
+            {'connectivityCheck': False})
+        self.assertEqual(status, neterrors.ERR_BAD_PARAMS, msg)
+
+    @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testSetupNetworksConvertVlanNetBridgeness(self):
