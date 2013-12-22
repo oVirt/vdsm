@@ -188,7 +188,7 @@ class RunningConfig(Config):
 
     def store(self):
         utils.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
-                       config.get('vars', 'persistence')])
+                       config.get('vars', 'net_persistence')])
         return PersistentConfig()
 
 

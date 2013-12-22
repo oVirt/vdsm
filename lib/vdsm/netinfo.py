@@ -421,7 +421,7 @@ def getIfaceCfg(iface):
 
 def getBootProtocol(iface, persistence=None):
     if persistence is None:
-        persistence = config.get('vars', 'persistence')
+        persistence = config.get('vars', 'net_persistence')
 
     if persistence == 'ifcfg':
         return getIfaceCfg(iface).get('BOOTPROTO')

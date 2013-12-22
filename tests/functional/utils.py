@@ -70,7 +70,7 @@ class VdsProxy(object):
         self.vdscli = vdscli.connect()
         self.netinfo = \
             netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
-        if config.get('vars', 'persistence') == 'unified':
+        if config.get('vars', 'net_persistence') == 'unified':
             self.config = RunningConfig()
         else:
             self.config = None

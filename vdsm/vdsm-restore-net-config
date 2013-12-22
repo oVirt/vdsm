@@ -61,7 +61,7 @@ def unified_restoration():
 
 
 def restore():
-    if config.get('vars', 'persistence') == 'unified':
+    if config.get('vars', 'net_persistence') == 'unified':
         unified_restoration()
     else:
         ifcfg_restoration()

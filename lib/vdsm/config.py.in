@@ -46,7 +46,7 @@ parameters = [
             'Whether to use "ifcfg" or "iproute2" to configure networks. '
             'iproute2 configurator is not ready yet for genral usage.'),
 
-        ('persistence', 'ifcfg',
+        ('net_persistence', 'ifcfg',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
 
         ('nic_model', 'rtl8139,pv',

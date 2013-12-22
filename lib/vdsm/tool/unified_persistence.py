@@ -133,7 +133,7 @@ def _persist(networks, bondings):
 
 
 def isNeeded():
-    return config.get('vars', 'persistence') == 'unified'
+    return config.get('vars', 'net_persistence') == 'unified'
 
 
 @expose('upgrade-to-unified-persistence')

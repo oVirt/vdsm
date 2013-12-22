@@ -182,7 +182,7 @@ def _alterRunningConfig(func):
 
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if not config.get('vars', 'persistence') == 'unified':
+        if not config.get('vars', 'net_persistence') == 'unified':
             return func(*args, **kwargs)
 
         # Get args and kwargs in a single dictionary
@@ -654,7 +654,7 @@ def _vlanToInternalRepresentation(vlan):
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
     execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
-             config.get('vars', 'persistence')])
+             config.get('vars', 'net_persistence')])
 
 
 def usage():

@@ -47,7 +47,7 @@ class Ifcfg(Configurator):
     def __init__(self, inRollback=False):
         super(Ifcfg, self).__init__(ConfigWriter(), inRollback)
         self.unifiedPersistence = \
-            config.get('vars', 'persistence') == 'unified'
+            config.get('vars', 'net_persistence') == 'unified'
         if self.unifiedPersistence:
             self.runningConfig = RunningConfig()
 
@@ -292,7 +292,7 @@ class ConfigWriter(object):
 
     def _networkBackup(self, network):
         self._atomicNetworkBackup(network)
-        if config.get('vars', 'persistence') != 'unified':
+        if config.get('vars', 'net_persistence') != 'unified':
             self._persistentNetworkBackup(network)
 
     def _atomicNetworkBackup(self, network):
@@ -334,7 +334,7 @@ class ConfigWriter(object):
 
     def _backup(self, filename):
         self._atomicBackup(filename)
-        if config.get('vars', 'persistence') != 'unified':
+        if config.get('vars', 'net_persistence') != 'unified':
             self._persistentBackup(filename)
 
     def _atomicBackup(self, filename):
