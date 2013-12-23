@@ -1333,7 +1333,8 @@ class GraphicsDevice(VmDevice):
         'keyboardLayout': 'keyMap',
         'spiceDisableTicketing': 'disableTicketing',
         'displayNetwork': 'displayNetwork',
-        'spiceSecureChannels': 'spiceSecureChannels'}
+        'spiceSecureChannels': 'spiceSecureChannels',
+        'copyPasteEnable': 'copyPasteEnable'}
 
     SPICE_CHANNEL_NAMES = (
         'main', 'display', 'inputs', 'cursor', 'playback',
@@ -1407,6 +1408,10 @@ class GraphicsDevice(VmDevice):
             graphicsAttrs['keymap'] = self.specParams['keyMap']
 
         graphics = XMLElement('graphics', **graphicsAttrs)
+
+        if not utils.tobool(self.specParams.get('copyPasteEnable', True)):
+            clipboard = XMLElement('clipboard', copypaste='no')
+            graphics.appendChild(clipboard)
 
         if (self.device == 'spice' and
            'spiceSecureChannels' in self.specParams):

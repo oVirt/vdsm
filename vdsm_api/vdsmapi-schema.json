@@ -2595,11 +2595,15 @@
 #
 # @spiceSecureChannels:   #optional Secure space channels, comma separated
 #
+# @copyPasteEnable:       #optional Specify if copy and paste is enabled.
+#                         Currently relevant for @spice devices only.
+#
 # Since: 4.15.0
 ##
 {'type': 'VmGraphicsDeviceSpecParams',
  'data': {'*keyMap': 'str', '*disableTicketing': 'bool',
-          '*displayNetwork': 'str', '*spiceSecureChannels': 'str'}}
+          '*displayNetwork': 'str', '*spiceSecureChannels': 'str',
+          '*copyPasteEnable': 'bool'}}
 
 ##
 # @VmGraphicsDevice:
@@ -3162,6 +3166,10 @@
 #
 # @clientIp:              The IP address of the client connected to the display
 #
+# @copyPasteEnable:       #optional Specify if copy and paste is enabled.
+#                         Currently relevant for @qxl devices only.
+#                         (new in version 4.15.0)
+#
 # @cpuShares:             #optional The host scheduling priority (relative to
 #                         other VMs). In case both cpuShares and nice are
 #                         present, cpuShares will be used.
@@ -3233,9 +3241,9 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDefinition',
- 'data': {'acpiEnable': 'bool', 'clientIp': 'str', '*cpuShares': 'str',
-          '*cpuType': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
-          'display': 'VmDisplayType', 'displayIp': 'str',
+ 'data': {'acpiEnable': 'bool', 'clientIp': 'str', '*copyPasteEnable': 'bool',
+          '*cpuShares': 'str', '*cpuType': 'str', '*custom': 'StringMap',
+          '*devices': ['VmDevice'], 'display': 'VmDisplayType', 'displayIp': 'str',
           'displayPort': 'int', 'displaySecurePort': 'int',
           '*emulatedMachine': 'str', '*keyboardLayout': 'str',
           'kvmEnable': 'bool', '*maxVCpus': 'uint', 'memSize': 'uint',

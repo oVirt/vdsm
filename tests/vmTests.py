@@ -94,6 +94,20 @@ class TestVm(TestCaseBase):
             <channel mode="secure" name="playback"/>
             <channel mode="secure" name="record"/>
             <channel mode="secure" name="display"/>
+        </graphics>""",
+
+        """
+        <graphics autoport="yes" listen="0" passwd="*****"
+                  passwdValidTo="1970-01-01T00:00:01" port="-1"
+                  tlsPort="-1" type="spice">
+            <channel mode="secure" name="main"/>
+        </graphics>""",
+
+        """
+        <graphics autoport="yes" listen="0" passwd="*****"
+                  passwdValidTo="1970-01-01T00:00:01" port="-1"
+                  tlsPort="-1" type="spice">
+            <clipboard copypaste="no"/>
         </graphics>"""]
 
     def __init__(self, *args, **kwargs):
@@ -429,7 +443,13 @@ class TestVm(TestCaseBase):
 
             {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
              'spiceSecureChannels':
-             "smain,sinputs,scursor,splayback,srecord,sdisplay"}]
+             "smain,sinputs,scursor,splayback,srecord,sdisplay"},
+
+            {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
+             'spiceSecureChannels': "smain"},
+
+            {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
+             'copyPasteEnable': 'false'}]
 
         for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
             self._verifyGraphicsXML(vmConf, xml, isLegacy=True)
@@ -446,7 +466,17 @@ class TestVm(TestCaseBase):
                 'type': 'graphics', 'device': 'spice', 'port': '-1',
                 'tlsPort': '-1', 'specParams': {
                     'spiceSecureChannels':
-                        'smain,sinputs,scursor,splayback,srecord,sdisplay'}}]}]
+                        'smain,sinputs,scursor,splayback,srecord,sdisplay'}}]},
+
+            {'devices': [{
+                'type': 'graphics', 'device': 'spice', 'port': '-1',
+                'tlsPort': '-1', 'specParams': {
+                    'spiceSecureChannels': 'smain'}}]},
+
+            {'devices': [{
+                'type': 'graphics', 'device': 'spice', 'port': '-1',
+                'tlsPort': '-1', 'specParams': {
+                    'copyPasteEnable': 'false'}}]}]
 
         for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
             self._verifyGraphicsXML(vmConf, xml, isLegacy=False)
