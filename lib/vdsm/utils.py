@@ -525,7 +525,10 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     """
     Executes an external command, optionally via sudo.
 
-    IMPORTANT NOTE: don't define a deathSignal when sync=False
+    IMPORTANT NOTE: the new process would receive `deathSignal` when the
+    controlling thread dies, which may not be what you intended: if you create
+    a temporary thread, spawn a sync=False sub-process, and have the thread
+    finish, the new subprocess would die immediately.
     """
     if ioclass is not None:
         cmd = command

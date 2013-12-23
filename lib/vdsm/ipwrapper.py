@@ -24,6 +24,7 @@ import array
 import errno
 import fcntl
 import os
+import signal
 import socket
 import struct
 
@@ -609,6 +610,9 @@ class Monitor(object):
         mon.start()
         for event in mon:
             handle event
+
+    Note that the underlying `ip monitor` process is killed when its controlled
+    thread dies, so as not to leave stray processes when Vdsm crahsed.
     """
     _DELETED_TEXT = 'Deleted'
     LINK_STATE_DELETED = 'DELETED'
@@ -624,6 +628,7 @@ class Monitor(object):
 
     def start(self):
         self.proc = execCmd([_IP_BINARY.cmd, '-d', '-o', 'monitor', 'link'],
+                            deathSignal=signal.SIGKILL,
                             sync=False)
         self.proc.blocking = True
 
