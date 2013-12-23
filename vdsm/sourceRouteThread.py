@@ -6,6 +6,7 @@ import pyinotify
 from netconf.iproute2 import Iproute2
 from sourceRoute import DynamicSourceRoute
 from vdsm.constants import P_VDSM_RUN
+from vdsm import utils
 
 
 SOURCE_ROUTES_FOLDER = P_VDSM_RUN + 'sourceRoutes'
@@ -42,6 +43,7 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
         self.process_IN_CLOSE_WRITE_filePath(event.pathname)
 
 
+@utils.traceback()
 def subscribeToInotifyLoop():
     logging.debug("sourceRouteThread.subscribeToInotifyLoop started")
 
