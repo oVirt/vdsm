@@ -80,6 +80,8 @@ _UDEV_RULE_FILE_NAME = _UDEV_RULE_FILE_DIR + _UDEV_RULE_FILE_PREFIX + \
 
 RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
 
+_running = True
+
 
 class Timeout(RuntimeError):
     pass
@@ -361,6 +363,11 @@ class _SuperVdsm(object):
         return self.__udevVersion() > self.UDEV_WITH_RELOAD_VERSION
 
 
+def terminate(signo, frame):
+    global _running
+    _running = False
+
+
 def main(sockfile, pidfile=None):
     log = logging.getLogger("SuperVdsm.Server")
 
@@ -393,6 +400,9 @@ def main(sockfile, pidfile=None):
         log.debug("Setting up keep alive thread")
 
         try:
+            signal.signal(signal.SIGTERM, terminate)
+            signal.signal(signal.SIGINT, terminate)
+
             log.debug("Creating remote object manager")
             manager = _SuperVdsmManager(address=address, authkey='')
             manager.register('instance', callable=_SuperVdsm)
@@ -408,10 +418,10 @@ def main(sockfile, pidfile=None):
 
             sourceRouteThread.start()
 
-            # Python bug of thread.join() will block signal
-            # http://bugs.python.org/issue1167930
-            while servThread.isAlive():
-                servThread.join(5)
+            while _running:
+                signal.pause()
+
+            log.debug("Terminated normally")
         finally:
             if os.path.exists(address):
                 utils.rmFile(address)
