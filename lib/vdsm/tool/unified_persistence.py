@@ -50,7 +50,7 @@ def _toIfcfgFormat(value):
 def _getNetInfo():
     def _processNetworks(netinfo):
         networks = {}
-        whitelist = ['bridged', 'mtu', 'qosInbound', 'qosOutbound', 'stp']
+        whitelist = ['mtu', 'qosInbound', 'qosOutbound', 'stp']
         toLower = ['True', 'False', 'None']
         toUpper = ['stp']
 
@@ -64,6 +64,8 @@ def _getNetInfo():
                     v = str(_toIfcfgFormat(v))
                     v = v.lower() if v in toLower else v
                     networks[network][k] = v
+
+            networks[network]['bridged'] = netParams['bridged']
 
             # Determine devices: nic/bond -> vlan -> bridge
             physicalDevice = "".join(netParams['ports']) if \
