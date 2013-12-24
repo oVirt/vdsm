@@ -1635,7 +1635,7 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkExists(NETWORK_NAME)
             ipwrapper.linkDel(nic + '.' + VLAN_ID)
             self.vdsm_net.refreshNetinfo()
-            self.assertNetworkDoesntExist(NETWORK_NAME)
+            self.assertNotIn(NETWORK_NAME, self.vdsm_net.netinfo.networks)
             status, msg = self.vdsm_net.setupNetworks(network, {},
                                                       {'connectivityCheck': 0})
             self.assertEqual(status, SUCCESS, msg)
