@@ -355,10 +355,21 @@ def _parseVolumeInfo(tree):
             value['transportType'] = [TransportType.TCP, TransportType.RDMA]
         value['bricks'] = []
         value['options'] = {}
+        value['bricksInfo'] = []
         for b in el.findall('bricks/brick'):
             value['bricks'].append(b.text)
         for o in el.findall('options/option'):
             value['options'][o.find('name').text] = o.find('value').text
+        for d in el.findall('bricks/brick'):
+            brickDetail = {}
+            #this try block is to maintain backward compatibility
+            #it returns an empty list when gluster doesnot return uuid
+            try:
+                brickDetail['name'] = d.find('name').text
+                brickDetail['hostUuid'] = d.find('hostUuid').text
+                value['bricksInfo'].append(brickDetail)
+            except AttributeError:
+                break
         volumes[value['volumeName']] = value
     return volumes
 

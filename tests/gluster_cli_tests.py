@@ -60,8 +60,12 @@ class GlusterCliTests(TestCaseBase):
         <typeStr>Replicate</typeStr>
         <transport>0</transport>
         <bricks>
-          <brick>192.168.122.2:/tmp/music-b1</brick>
-          <brick>192.168.122.2:/tmp/music-b2</brick>
+          <brick>192.168.122.2:/tmp/m_b1<name>192.168.122.2:/tmp/m_b1</name>
+            <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
+          </brick>
+          <brick>192.168.122.2:/tmp/m_b2<name>192.168.122.2:/tmp/m_b2</name>
+            <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
+          </brick>
         </bricks>
         <optCount>1</optCount>
         <options>
@@ -84,7 +88,9 @@ class GlusterCliTests(TestCaseBase):
         <typeStr>Distribute</typeStr>
         <transport>1</transport>
         <bricks>
-          <brick>192.168.122.2:/tmp/test1-b1</brick>
+          <brick>192.168.122.2:/tmp/t_b1<name>192.168.122.2:/tmp/t_b1</name>
+            <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
+          </brick>
         </bricks>
         <optCount>0</optCount>
         <options/>
@@ -97,9 +103,16 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         oVolumeInfo = \
             {'music': {'brickCount': '2',
-                       'bricks': ['192.168.122.2:/tmp/music-b1',
-                                  '192.168.122.2:/tmp/music-b2'],
+                       'bricks': ['192.168.122.2:/tmp/m_b1',
+                                  '192.168.122.2:/tmp/m_b2'],
                        'distCount': '2',
+                       'bricksInfo': [{
+                           'name': '192.168.122.2:/tmp/m_b1',
+                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
+                       }, {
+                           'name': '192.168.122.2:/tmp/m_b2',
+                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
+                       }],
                        'options': {'auth.allow': '*'},
                        'replicaCount': '2',
                        'stripeCount': '1',
@@ -109,8 +122,12 @@ class GlusterCliTests(TestCaseBase):
                        'volumeStatus': gcli.VolumeStatus.ONLINE,
                        'volumeType': 'REPLICATE'},
              'test1': {'brickCount': '1',
-                       'bricks': ['192.168.122.2:/tmp/test1-b1'],
+                       'bricks': ['192.168.122.2:/tmp/t_b1'],
                        'distCount': '1',
+                       'bricksInfo': [{
+                           'name': '192.168.122.2:/tmp/t_b1',
+                           'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
+                       }],
                        'options': {},
                        'replicaCount': '1',
                        'stripeCount': '1',

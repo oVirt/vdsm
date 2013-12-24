@@ -504,6 +504,21 @@
  'data': ['TCP', 'RDMA']}
 
 ##
+# @BricksInfo:
+#
+# Bricks information.
+#
+# @name:    Name of the brick
+#
+# @hostUuid:   Uuid of the host on which brick lies.
+#
+# Since: 4.14.0
+##
+{'type': 'BricksInfo',
+ 'data': {'name': 'str', 'hostUuid': 'UUID'}}
+
+
+##
 # @VolumeInfo:
 #
 # volume information.
@@ -524,10 +539,12 @@
 #
 # @volumeType:    Type of the volume
 #
+# @bricksInfo:    details related to bricks(new in version 4.14.0)
+#
 # Since: 4.10.3
 ##
 {'type': 'VolumeInfo',
- 'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'], 'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str', 'status': 'volumeStatus', 'volumeType': 'str'}}
+ 'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'], 'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str', 'status': 'volumeStatus', 'volumeType': 'str', 'bricksInfo': ['BricksInfo']}}
 
 ##
 # @GlusterVolume.list:
