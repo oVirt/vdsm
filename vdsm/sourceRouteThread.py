@@ -1,5 +1,6 @@
 import logging
 import os
+import threading
 
 import pyinotify
 
@@ -43,8 +44,15 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
         self.process_IN_CLOSE_WRITE_filePath(event.pathname)
 
 
+def start():
+    thread = threading.Thread(target=_subscribeToInotifyLoop,
+                              name='sourceRoute')
+    thread.daemon = True
+    thread.start()
+
+
 @utils.traceback()
-def subscribeToInotifyLoop():
+def _subscribeToInotifyLoop():
     logging.debug("sourceRouteThread.subscribeToInotifyLoop started")
 
     # Subscribe to pyinotify event
