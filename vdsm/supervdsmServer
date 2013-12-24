@@ -407,7 +407,7 @@ def main(sockfile, pidfile=None):
             log.debug("Started serving super vdsm object")
 
             _sourceRouteThread = threading.Thread(
-                target=sourceRouteThread.subscribeToInotifyLoop(),
+                target=sourceRouteThread.subscribeToInotifyLoop,
                 name='sourceRoute')
             _sourceRouteThread.daemon = True
             _sourceRouteThread.start()
