@@ -1,31 +1,39 @@
 macspoof vdsm hook
 =================================
 These hooks allow to remove MAC and ARP spoofing filtering
-from all of the VM's interfaces or for a specific vnic.
+from all of the VM's interfaces or from a specific vNIC.
 
 Installation:
-* Use the engine-config to append the appropriate custom properties
-  as such:
+* Use engine-config to set the appropriate custom properties as such:
 
-Custom property which removes MAC and ARP spoofing filtering
-for all interfaces in a VM:
+Custom property for all interfaces in a VM:
+    sudo engine-config -s "UserDefinedVMProperties=macspoof=^(true|false)$"
 
-	sudo engine-config -s UserDefinedVMProperties=
-	'previousProperties;macspoof=^(true|false)$' --cver=3.2
+Custom property for a specific vNIC in a VM:
+    sudo engine-config -s "CustomDeviceProperties={type=interface;prop={ifacemacspoof=^(true|false)$}}"
 
-Custom property which removes MAC and ARP spoofing filtering
-for a specific vnic in a VM:
-
-  sudo engine-config -s CustomDeviceProperties=
-  '{type=interface;prop={ifacemacspoof=true}}'
-
-* Verify that the macspoof custom propertes were properly added:
+* Verify that the custom properties were added properly:
+    sudo engine-config -g UserDefinedVMProperties
 	sudo engine-config -g CustomDeviceProperties
 
-Usage:
-In the VM configuration window, open the custom properites tab
-and add macspoof=true for applying filtering to all VM's interfaces.
+* Setting UserDefinedVMProperties or CustomDeviceProperties overwrites all
+  previous custom properties. If you've already defined other custom properties,
+  you may wish to append instead:
+    sudo engine-config -g UserDefinedVMProperties
+  Copy the value into $PREVIOUS_PROPERTIES, then use:
+    sudo engine-config -s "UserDefinedVMProperties=$PREVIOUS_PROPERTIES;macspoof=^(true|false)$"
+  Or, for per-device properties:
+    sudo engine-config -s "CustomDeviceProperties={type=interface;prop={$PREVIOUS_PROPERTIES;ifacemacspoof=^(true|false)$}}"
 
-In the vnic profiles configuration window, open the custom properties
-tab and add ifacemacspoof=true for applying filtering to the specific
-interface.
+Usage:
+In the VM configuration window, open the custom properties tab
+and add macspoof=true to remove filtering from all interfaces.
+
+In the vNIC profiles configuration window, open the custom properties
+tab and add ifacemacspoof=true to remove filtering from the specified interface.
+
+Precedence:
+If you set both VM-wide macspoof, and vNIC specific ifacemacspoof, then the
+VM wide setting takes precedence. For example, if a VM's macspoof is True
+(Disable the filter), but a vNIC's ifacemacspoof is False (Enable the filter)
+then the filter for all vNICs on that VM will be disabled.
