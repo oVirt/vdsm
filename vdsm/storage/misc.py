@@ -699,21 +699,22 @@ class RollbackContext(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        firstException = exc_value
-
+        """
+        If this function doesn't return True (or raises a different
+        exception), python re-raises the original exception once this
+        function is finished.
+        """
+        undoExcInfo = None
         for undo, args, kwargs in self._finally:
             try:
                 undo(*args, **kwargs)
-            except Exception as e:
+            except Exception:
                 # keep the earliest exception info
-                if not firstException:
-                    firstException = e
-                    # keep the original traceback info
-                    traceback = sys.exc_info()[2]
+                if undoExcInfo is None:
+                    undoExcInfo = sys.exc_info()
 
-        # re-raise the earliest exception
-        if firstException is not None:
-            raise firstException, None, traceback
+        if exc_type is None and undoExcInfo is not None:
+            raise undoExcInfo[0], undoExcInfo[1], undoExcInfo[2]
 
     def defer(self, func, *args, **kwargs):
         self._finally.append((func, args, kwargs))

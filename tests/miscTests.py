@@ -1087,6 +1087,13 @@ class ExecCmd(TestCaseBase):
 
 
 class RollbackContextTests(TestCaseBase):
+
+    class UndoException(Exception):
+        """A special exception for testing exceptions during undo functions"""
+
+    class OriginalException(Exception):
+        """A special exception for testing exceptions in the with statement"""
+
     def setUp(self):
         self._called = 0
 
@@ -1120,7 +1127,7 @@ class RollbackContextTests(TestCaseBase):
 
         self.fail("Exception was not raised")
 
-    def testFirstException(self):
+    def testFirstUndoException(self):
         """
         Test that if multiple actions raise an exception only the first one is
         raised. When performing a batch rollback operations, probably the first
@@ -1136,6 +1143,43 @@ class RollbackContextTests(TestCaseBase):
         except RuntimeError:
             self.assertEquals(self._called, 3)
             return
+        except Exception:
+            self.fail("Wrong exception was raised")
+
+        self.fail("Exception was not raised")
+
+    def testKeyError(self):
+        """
+        KeyError is raised as a tuple and not expection. Re-raising it
+        should be aware of this fact and handled carfully.
+        """
+        try:
+            with misc.RollbackContext():
+                {}['aKey']
+        except KeyError:
+            return
+        except Exception:
+            self.fail("Wrong exception was raised")
+
+        self.fail("Exception was not raised")
+
+    def testPreferOriginalException(self):
+        """
+        Test that if an exception is raised both from the with
+        statement and from the finally clause, the one from the with
+        statement is the one that's actually raised.
+        More info in: http://docs.python.org/
+        2.6/library/stdtypes.html#contextmanager.__exit__
+        """
+        try:
+            with misc.RollbackContext() as rollback:
+                rollback.prependDefer(self._raiseDef, self.UndoException())
+                raise self.OriginalException()
+        except self.OriginalException:
+            return
+        except self.UndoException:
+            self.fail("Wrong exception was raised - from undo function. \
+                        should have raised OriginalException")
         except Exception:
             self.fail("Wrong exception was raised")
 
