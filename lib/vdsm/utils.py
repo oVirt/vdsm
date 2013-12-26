@@ -19,7 +19,7 @@
 #
 
 """
-A module containing miscellaneous functions and classes that are user
+A module containing miscellaneous functions and classes that are used
 plentifuly around vdsm.
 
 .. attribute:: utils.symbolerror
@@ -57,7 +57,7 @@ import zombiereaper
 from cpopen import CPopen
 from . import constants
 
-# Buffsize is 1K because I tested it on some use cases and 1k was fastets. If
+# Buffsize is 1K because I tested it on some use cases and 1K was fastest. If
 # you find this number to be a bottleneck in any way you are welcome to change
 # it
 BUFFSIZE = 1024
@@ -119,7 +119,7 @@ def rmFile(fileToRemove):
     """
     Try to remove a file.
 
-    If the file doesn't exist is assumed that it was already removed.
+    If the file doesn't exist it's assumed that it was already removed.
     """
     try:
         os.unlink(fileToRemove)
@@ -136,7 +136,7 @@ def rmTree(directoryToRemove):
     """
     Try to remove a directory and all it's contents.
 
-    If the directory doesn't exist is assumed that it was already removed.
+    If the directory doesn't exist it's assumed that it was already removed.
     """
     try:
         shutil.rmtree(directoryToRemove)
@@ -181,7 +181,7 @@ def readMemInfo():
     """
     Parse ``/proc/meminfo`` and return its content as a dictionary.
 
-    For a reason unknown to me, ``/proc/meminfo`` is is sometime
+    For a reason unknown to me, ``/proc/meminfo`` is sometimes
     empty when opened. If that happens, the function retries to open it
     3 times.
 
@@ -298,7 +298,7 @@ def NoIntrPoll(pollfun, timeout=-1):
 
 class AsyncProc(object):
     """
-    AsyncProc is a funky class. It warps a standard subprocess.Popen
+    AsyncProc is a funky class. It wraps a standard subprocess.Popen
     Object and gives it super powers. Like the power to read from a stream
     without the fear of deadlock. It does this by always sampling all
     stream while waiting for data. By doing this the other process can freely
@@ -441,7 +441,7 @@ class AsyncProc(object):
         try:
             if self._stdin.len > 0 and self._stdin.pos == 0:
                 # Polling stdin is redundant if there is nothing to write
-                # trun on only if data is waiting to be pushed
+                # turn on only if data is waiting to be pushed
                 self._poller.modify(self._fdin, select.EPOLLOUT)
 
             pollres = NoIntrPoll(self._poller.poll, 1)
@@ -812,12 +812,12 @@ def closeOnExec(fd):
 
 
 class memoized(object):
-    """Decorator that caches a function's return value each time it is called.
+    """
+    Decorator that caches a function's return value each time it is called.
     If called later with the same arguments, the cached value is returned, and
     not re-evaluated. There is no support for uncachable arguments.
 
     Adaptation from http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-
     """
     def __init__(self, func):
         self.func = func
@@ -925,7 +925,7 @@ def retry(func, expectedException=Exception, tries=None,
     :param func: The callable to run.
     :param expectedException: The exception you expect to receive when the
                               function fails.
-    :param tries: The number of time to try. None\0,-1 means infinite.
+    :param tries: The number of times to try. None\0,-1 means infinite.
     :param timeout: The time you want to spend waiting. This **WILL NOT** stop
                     the method. It will just not run it if it ended after the
                     timeout.
@@ -961,10 +961,12 @@ def retry(func, expectedException=Exception, tries=None,
 
 class AsyncProcessOperation(object):
     def __init__(self, proc, resultParser=None):
-        """Wraps a running process operation.
+        """
+        Wraps a running process operation.
 
         resultParser should be of type callback(rc, out, err) and can return
-        anything or throw exceptions."""
+        anything or throw exceptions.
+        """
         self._lock = threading.Lock()
 
         self._result = None
@@ -973,21 +975,27 @@ class AsyncProcessOperation(object):
         self._proc = proc
 
     def wait(self, timeout=None, cond=None):
-        """Waits until the process has exited, the timeout has been reached or
-        the condition has been met"""
+        """
+        Waits until the process has exited, the timeout has been reached or
+        the condition has been met
+        """
         return self._proc.wait(timeout, cond)
 
     def stop(self):
-        """Stops the running operation, effectively sending a kill signal to
-        the process"""
+        """
+        Stops the running operation, effectively sending a kill signal to
+        the process
+        """
         self._proc.kill()
 
     def result(self):
-        """Returns the result in the as a tuple of (result, error).
+        """
+        Returns the result as a tuple of (result, error).
         If the operation is still running it will block until it returns.
 
         If no resultParser has been set the default result
-        is (rc, out, err) """
+        is (rc, out, err)
+        """
         with self._lock:
             if self._result is None:
                 out, err = self._proc.communicate()
