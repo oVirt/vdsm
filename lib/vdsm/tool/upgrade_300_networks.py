@@ -29,13 +29,15 @@ from vdsm.tool.upgrade import upgrade
 sys.path.append("/usr/share/vdsm")
 from netconf import ifcfg
 
+UPGRADE_NAME = 'upgrade-3.0.0-networks'
+
 
 def isNeeded(networks, bridges):
     return (MANAGEMENT_NETWORK not in networks and
             MANAGEMENT_NETWORK in bridges)
 
 
-@upgrade('3.0.0-networks')
+@upgrade(UPGRADE_NAME)
 def run(networks, bridges):
     configWriter = ifcfg.ConfigWriter()
 
@@ -54,8 +56,8 @@ def run(networks, bridges):
             configWriter.removeLibvirtNetwork(network, skipBackup=True)
 
 
-@expose('upgrade-3.0.0-networks')
-def upgrade_networks():
+@expose(UPGRADE_NAME)
+def upgrade_networks(*args):
     """
     Since ovirt-3.0, Vdsm uses libvirt networks (with names vdsm-*) to store
     its own networks. Older Vdsms did not have those defined, and used only

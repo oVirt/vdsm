@@ -26,7 +26,7 @@ from . import expose
 from .upgrade import upgrade
 
 
-UPGRADE_NAME = 'UnifiedPersistence'
+UPGRADE_NAME = 'upgrade-unified-persistence'
 
 
 @upgrade(UPGRADE_NAME)
@@ -138,8 +138,8 @@ def isNeeded():
     return config.get('vars', 'net_persistence') == 'unified'
 
 
-@expose('upgrade-to-unified-persistence')
-def unified_persistence():
+@expose(UPGRADE_NAME)
+def unified_persistence(*args):
     """
     Upgrade host networking persistence from ifcfg to unified if the
     persistence model is set as unified in /usr/lib64/python2.X/site-packages/

@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import argparse
 from functools import wraps
 import logging
 import logging.config
@@ -116,6 +117,18 @@ class Upgrade(object):
         self._detachUpgradeLog()
 
 
+def _parse_args(upgradeName):
+    parser = argparse.ArgumentParser('vdsm-tool %s' % upgradeName)
+    parser.add_argument(
+        '--run-again',
+        dest='runAgain',
+        default=False,
+        action='store_true',
+        help='Run the upgrade again, even if it was ran before',
+    )
+    return parser.parse_args(sys.argv[2:])
+
+
 def upgrade(upgradeName):
     """
     Used as a decorator for upgrades. Runs the upgrade with an Upgrade
@@ -126,7 +139,8 @@ def upgrade(upgradeName):
         @wraps(f)
         def wrapper(*args, **kwargs):
             with Upgrade(upgradeName) as upgrade:
-                if upgrade.isNeeded():
+                cliArguments = _parse_args(upgradeName)
+                if cliArguments.runAgain or upgrade.isNeeded():
                     upgrade.log.debug("Running upgrade %s", upgradeName)
                     try:
                         f(*args, **kwargs)
