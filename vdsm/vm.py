@@ -1877,7 +1877,7 @@ class Vm(object):
                                    caps.Architecture.PPC64: 'scsi'}
         return DEFAULT_DISK_INTERFACES[self.arch]
 
-    def __init__(self, cif, params):
+    def __init__(self, cif, params, recover=False):
         """
         Initialize a new VM instance.
 
@@ -1885,8 +1885,11 @@ class Vm(object):
         :type cif: :class:`clientIF.clientIF`
         :param params: The VM parameters.
         :type params: dict
+        :param recover: Signal if the Vm is recovering;
+        :type recover: bool
         """
         self._dom = None
+        self.recovering = recover
         self.conf = {'pid': '0'}
         self.conf.update(params)
         self.cif = cif
@@ -2075,7 +2078,7 @@ class Vm(object):
                              'model': 'none'}}
 
         # Avoid overriding the saved balloon target value on recovery.
-        if 'recover' not in self.conf:
+        if not self.recovering:
             for dev in balloonDevices:
                 dev['target'] = int(self.conf.get('memSize')) * 1024
 
@@ -2231,14 +2234,14 @@ class Vm(object):
             self._vmCreationEvent.set()
             try:
                 self._run()
-                if self.lastStatus != 'Down' and 'recover' not in self.conf \
+                if self.lastStatus != 'Down' and not self.recovering \
                         and not self.cif.mom:
                     # If MOM is available, we needn't tell it to adjust KSM
                     # behaviors on VM start/destroy, because the tuning can be
                     # done automatically according to its statistical data.
                     self.cif.ksmMonitor.adjust()
             except Exception:
-                if 'recover' not in self.conf:
+                if not self.recovering:
                     raise
                 else:
                     self.log.info("Skipping errors on recovery", exc_info=True)
@@ -2262,12 +2265,10 @@ class Vm(object):
                 except KeyError:
                     pass
 
-            if 'recover' in self.conf:
-                with self._confLock:
-                    del self.conf['recover']
+            self.recovering = False
             self.saveState()
         except Exception as e:
-            if 'recover' in self.conf:
+            if self.recovering:
                 self.log.info("Skipping errors on recovery", exc_info=True)
             else:
                 self.log.error("The vm start process failed", exc_info=True)
@@ -3048,7 +3049,7 @@ class Vm(object):
         self._updateAgentChannels()
 
         #Currently there is no protection agains mirroring a network twice,
-        if 'recover' not in self.conf:
+        if not self.recovering:
             for nic in self._devices[NIC_DEVICES]:
                 if hasattr(nic, 'portMirroring'):
                     for network in nic.portMirroring:
@@ -3067,7 +3068,7 @@ class Vm(object):
         if self.lastStatus not in ('Migration Destination',
                                    'Restoring state'):
             self._initTimePauseCode = self._readPauseCode(0)
-        if 'recover' not in self.conf and self._initTimePauseCode:
+        if not self.recovering and self._initTimePauseCode:
             self.conf['pauseCode'] = self._initTimePauseCode
             if self._initTimePauseCode == 'ENOSPC':
                 self.cont()
@@ -3092,7 +3093,7 @@ class Vm(object):
         self.conf['smp'] = self.conf.get('smp', '1')
         devices = self.buildConfDevices()
 
-        if not 'recover' in self.conf:
+        if not self.recovering:
             self.preparePaths(devices[DISK_DEVICES])
             self._prepareTransientDisks(devices[DISK_DEVICES])
             # Update self.conf with updated devices
@@ -3125,10 +3126,10 @@ class Vm(object):
 
         if self.conf.get('migrationDest'):
             return
-        if not 'recover' in self.conf:
+        if not self.recovering:
             domxml = hooks.before_vm_start(self._buildCmdLine(), self.conf)
             self.log.debug(domxml)
-        if 'recover' in self.conf:
+        if self.recovering:
             self._dom = NotifyingVirDomain(
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)

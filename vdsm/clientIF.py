@@ -355,17 +355,17 @@ class clientIF:
 
         return {'status': doneCode, 'alignment': aligning}
 
-    def createVm(self, vmParams):
+    def createVm(self, vmParams, vmRecover=False):
         with self.vmContainerLock:
             self.log.info("vmContainerLock acquired by vm %s",
                           vmParams['vmId'])
             try:
-                if 'recover' not in vmParams:
+                if not vmRecover:
                     if vmParams['vmId'] in self.vmContainer:
                         self.log.warning('vm %s already exists' %
                                          vmParams['vmId'])
                         return errCode['exist']
-                vm = Vm(self, vmParams)
+                vm = Vm(self, vmParams, vmRecover)
                 self.vmContainer[vmParams['vmId']] = vm
             finally:
                 container_len = len(self.vmContainer)
@@ -486,12 +486,11 @@ class clientIF:
         try:
             recoveryFile = constants.P_VDSM_RUN + vmid + ".recovery"
             params = pickle.load(file(recoveryFile))
-            params['recover'] = True
             now = time.time()
             pt = float(params.pop('startTime', now))
             params['elapsedTimeOffset'] = now - pt
             self.log.debug("Trying to recover " + params['vmId'])
-            if not self.createVm(params)['status']['code']:
+            if not self.createVm(params, vmRecover=True)['status']['code']:
                 return recoveryFile
         except:
             self.log.debug("Error recovering VM", exc_info=True)
