@@ -50,6 +50,7 @@ class _EventLoop:
                 self.__thread.join()
             self.__thread = None
 
+    @utils.traceback(on=log.name)
     def __run(self):
         libvirt.virEventRegisterDefaultImpl()
         while self.run:
