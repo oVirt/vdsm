@@ -891,8 +891,6 @@ class StoragePool(Securable):
             with newPoolMD.transaction():
                 newPoolMD[PMDK_MASTER_VER] = masterVersion
                 newmsd.changeRole(sd.MASTER_DOMAIN)
-            self._saveReconnectInformation(self.id, self.scsiKey,
-                                           newmsd.sdUUID, masterVersion)
         except Exception:
             self.log.error("Unexpected error", exc_info=True)
             newmsd.releaseClusterLock()
