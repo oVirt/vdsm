@@ -103,7 +103,7 @@ class MkimageTestCase(VdsmTestCase):
                 self.assertEqual(bool(data.st_mode & perm), expected,
                                  '%s: %s' % (filepath, oct(data.st_mode)))
 
-    def _check_content(self):
+    def _check_content(self, checkPerms=True):
         """
         Ensure that the workdir contains what we want
         """
@@ -117,18 +117,19 @@ class MkimageTestCase(VdsmTestCase):
             else:
                 self.assertTrue(os.path.basename(filename) in out_subdir)
             filepath = os.path.join(self.workdir, filename)
-            self._check_permissions(filepath,
-                                    ((stat.S_IRGRP, True),
-                                     (stat.S_IWGRP, False),
-                                     (stat.S_IXGRP, False)))
-            self._check_permissions(filepath,
-                                    ((stat.S_IRUSR, True),
-                                     (stat.S_IWUSR, True),
-                                     (stat.S_IXUSR, False)))
-            self._check_permissions(filepath,
-                                    ((stat.S_IROTH, False),
-                                     (stat.S_IWOTH, False),
-                                     (stat.S_IXOTH, False)))
+            if checkPerms:
+                self._check_permissions(filepath,
+                                        ((stat.S_IRGRP, True),
+                                         (stat.S_IWGRP, False),
+                                         (stat.S_IXGRP, False)))
+                self._check_permissions(filepath,
+                                        ((stat.S_IRUSR, True),
+                                         (stat.S_IWUSR, True),
+                                         (stat.S_IXUSR, False)))
+                self._check_permissions(filepath,
+                                        ((stat.S_IROTH, False),
+                                         (stat.S_IWOTH, False),
+                                         (stat.S_IXOTH, False)))
             with open(filepath, "r") as fd:
                 content = fd.read()
                 self.assertEqual(content, self.expected_results[filename])
@@ -170,7 +171,7 @@ class MkimageTestCase(VdsmTestCase):
         m = storage.mount.Mount(floppy, self.workdir)
         m.mount(mntOpts='loop')
         try:
-            self._check_content()
+            self._check_content(checkPerms=False)
             self._check_label(floppy, label)
         finally:
             m.umount(force=True)
