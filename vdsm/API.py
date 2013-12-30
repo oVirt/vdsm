@@ -1077,29 +1077,27 @@ class Global(APIBase):
            agent is one of (rsa, ilo, drac5, ipmilan, etc)
            action can be one of (status, on, off, reboot)."""
 
+        @utils.traceback(on=self.log.name)
         def waitForPid(p, inp):
             """ Wait until p.pid exits. Kill it if vdsm exists before. """
-            try:
-                p.stdin.write(inp)
-                p.stdin.close()
-                while p.poll() is None:
-                    if not self._cif._enabled:
-                        self.log.debug('killing fence script pid %s', p.pid)
-                        os.kill(p.pid, signal.SIGTERM)
-                        time.sleep(1)
-                        try:
-                            # improbable race: p.pid may now belong to another
-                            # process
-                            os.kill(p.pid, signal.SIGKILL)
-                        except:
-                            pass
-                        return
+            p.stdin.write(inp)
+            p.stdin.close()
+            while p.poll() is None:
+                if not self._cif._enabled:
+                    self.log.debug('killing fence script pid %s', p.pid)
+                    os.kill(p.pid, signal.SIGTERM)
                     time.sleep(1)
-                self.log.debug('rc %s inp %s out %s err %s', p.returncode,
-                               hidePasswd(inp),
-                               p.stdout.read(), p.stderr.read())
-            except:
-                self.log.error("Error killing fence script", exc_info=True)
+                    try:
+                        # improbable race: p.pid may now belong to another
+                        # process
+                        os.kill(p.pid, signal.SIGKILL)
+                    except:
+                        pass
+                    return
+                time.sleep(1)
+            self.log.debug('rc %s inp %s out %s err %s', p.returncode,
+                           hidePasswd(inp),
+                           p.stdout.read(), p.stderr.read())
 
         def hidePasswd(text):
             cleantext = ''
