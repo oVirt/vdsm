@@ -29,6 +29,7 @@ from Queue import Queue
 import storage_exception as se
 import misc
 from logUtils import SimpleLogAdapter
+from vdsm import utils
 
 
 # Errors
@@ -539,7 +540,7 @@ class ResourceManager(object):
         request = Request(namespace, name, lockType, callback)
         self._log.debug("Trying to register resource '%s' for lock type '%s'",
                         fullName, lockType)
-        with nested(misc.RollbackContext(),
+        with nested(utils.RollbackContext(),
                     self._syncRoot.shared) as (contextCleanup, lock):
             try:
                 namespaceObj = self._namespaces[namespace]
@@ -613,7 +614,7 @@ class ResourceManager(object):
         fullName = "%s.%s" % (namespace, name)
 
         self._log.debug("Trying to release resource '%s'", fullName)
-        with nested(misc.RollbackContext(),
+        with nested(utils.RollbackContext(),
                     self._syncRoot.shared) as (contextCleanup, lock):
             try:
                 namespaceObj = self._namespaces[namespace]

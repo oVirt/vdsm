@@ -302,3 +302,103 @@ class TracebackTests(TestCaseBase):
     def handle(self, record):
         assert self.record is None
         self.record = record
+
+
+class RollbackContextTests(TestCaseBase):
+
+    class UndoException(Exception):
+        """A special exception for testing exceptions during undo functions"""
+
+    class OriginalException(Exception):
+        """A special exception for testing exceptions in the with statement"""
+
+    def setUp(self):
+        self._called = 0
+
+    def _callDef(self):
+        self._called += 1
+        self.log.info("Incremented call count (%d)", self._called)
+
+    def _raiseDef(self, ex=Exception()):
+        self.log.info("Raised exception (%s)", ex.__class__.__name__)
+        raise ex
+
+    def test(self):
+        with utils.RollbackContext() as rollback:
+            rollback.prependDefer(self._callDef)
+
+        self.assertEquals(self._called, 1)
+
+    def testRaise(self):
+        """
+        Test that raising an exception in a deferred action does
+        not block all subsequent actions from running
+        """
+        try:
+            with utils.RollbackContext() as rollback:
+                rollback.prependDefer(self._callDef)
+                rollback.prependDefer(self._raiseDef)
+                rollback.prependDefer(self._callDef)
+        except Exception:
+            self.assertEquals(self._called, 2)
+            return
+
+        self.fail("Exception was not raised")
+
+    def testFirstUndoException(self):
+        """
+        Test that if multiple actions raise an exception only the first one is
+        raised. When performing a batch rollback operations, probably the first
+        exception is the root cause.
+        """
+        try:
+            with utils.RollbackContext() as rollback:
+                rollback.prependDefer(self._callDef)
+                rollback.prependDefer(self._raiseDef)
+                rollback.prependDefer(self._callDef)
+                rollback.prependDefer(self._raiseDef, RuntimeError())
+                rollback.prependDefer(self._callDef)
+        except RuntimeError:
+            self.assertEquals(self._called, 3)
+            return
+        except Exception:
+            self.fail("Wrong exception was raised")
+
+        self.fail("Exception was not raised")
+
+    def testKeyError(self):
+        """
+        KeyError is raised as a tuple and not expection. Re-raising it
+        should be aware of this fact and handled carfully.
+        """
+        try:
+            with utils.RollbackContext():
+                {}['aKey']
+        except KeyError:
+            return
+        except Exception:
+            self.fail("Wrong exception was raised")
+
+        self.fail("Exception was not raised")
+
+    def testPreferOriginalException(self):
+        """
+        Test that if an exception is raised both from the with
+        statement and from the finally clause, the one from the with
+        statement is the one that's actually raised.
+        More info in: http://docs.python.org/
+        2.6/library/stdtypes.html#contextmanager.__exit__
+        """
+        try:
+            with utils.RollbackContext() as rollback:
+                rollback.prependDefer(self._raiseDef, self.UndoException())
+                raise self.OriginalException()
+        except self.OriginalException:
+            return
+        except self.UndoException:
+            self.fail("Wrong exception was raised - from undo function. \
+                        should have re-raised OriginalException")
+        except Exception:
+            self.fail("Wrong exception was raised")
+
+        self.fail("Exception was not raised")

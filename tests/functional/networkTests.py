@@ -21,8 +21,6 @@ from functools import wraps
 import os.path
 
 import neterrors
-from storage.misc import RollbackContext
-
 from hookValidation import ValidatesHook
 from testrunner import (VdsmTestCase as TestCaseBase,
                         expandPermutations, permutations)
@@ -40,6 +38,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush, LinkType,
                             getLinks)
 
+from vdsm.utils import RollbackContext
 from vdsm.netinfo import operstate, prefix2netmask, getRouteDeviceTo
 from vdsm import ipwrapper
 

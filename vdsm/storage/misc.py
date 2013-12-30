@@ -43,7 +43,6 @@ import signal
 import select
 import string
 import struct
-import sys
 import threading
 import types
 import weakref
@@ -675,52 +674,6 @@ class RWLock(object):
             nextRequest, self._currentState = self._queue.get_nowait()
 
         nextRequest.set()
-
-
-class RollbackContext(object):
-    '''
-    A context manager for recording and playing rollback.
-    The first exception will be remembered and re-raised after rollback
-
-    Sample usage:
-    with RollbackContext() as rollback:
-        step1()
-        rollback.prependDefer(lambda: undo step1)
-        def undoStep2(arg): pass
-        step2()
-        rollback.prependDefer(undoStep2, arg)
-
-    More examples see tests/miscTests.py
-    '''
-    def __init__(self, *args):
-        self._finally = []
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """
-        If this function doesn't return True (or raises a different
-        exception), python re-raises the original exception once this
-        function is finished.
-        """
-        undoExcInfo = None
-        for undo, args, kwargs in self._finally:
-            try:
-                undo(*args, **kwargs)
-            except Exception:
-                # keep the earliest exception info
-                if undoExcInfo is None:
-                    undoExcInfo = sys.exc_info()
-
-        if exc_type is None and undoExcInfo is not None:
-            raise undoExcInfo[0], undoExcInfo[1], undoExcInfo[2]
-
-    def defer(self, func, *args, **kwargs):
-        self._finally.append((func, args, kwargs))
-
-    def prependDefer(self, func, *args, **kwargs):
-        self._finally.insert(0, (func, args, kwargs))
 
 
 class DynamicBarrier(object):

@@ -30,10 +30,9 @@ from nose.plugins.skip import SkipTest
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import permutations, expandPermutations
 
-from vdsm.utils import CommandPath
+from vdsm.utils import CommandPath, RollbackContext
 import storageTests as storage
 from storage.misc import execCmd
-from storage.misc import RollbackContext
 
 from utils import VdsProxy, SUCCESS
 

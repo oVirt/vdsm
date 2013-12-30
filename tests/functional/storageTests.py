@@ -40,12 +40,11 @@ import storage.sd
 import storage.storage_exception as se
 import storage.volume
 from storage.misc import execCmd
-from storage.misc import RollbackContext
 from storage.mount import Mount
 
 from vdsm.config import config
 from vdsm.constants import VDSM_USER, VDSM_GROUP
-from vdsm.utils import CommandPath
+from vdsm.utils import CommandPath, RollbackContext
 from vdsm import vdscli
 
 _VARTMP = '/var/tmp'
