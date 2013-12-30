@@ -376,6 +376,7 @@ class clientIF:
                        (vmParams['vmId'], container_len))
         return {'status': doneCode, 'vmList': vm.status()}
 
+    @utils.traceback()
     def _recoverThread(self):
         # Trying to run recover process until it works. During that time vdsm
         # stays in recovery mode (_recover=True), means all api requests
