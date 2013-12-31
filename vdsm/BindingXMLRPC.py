@@ -81,15 +81,6 @@ class BindingXMLRPC(object):
         self._thread.join()
         return {'status': doneCode}
 
-    def getServerInfo(self):
-        """
-        Return the IP address and last client information
-        """
-        last = self.server.lastClient
-        return {'management_ip': self.serverIP,
-                'lastClient': last,
-                'lastClientIface': getRouteDeviceTo(destinationIP=last)}
-
     def _getKeyCertFilenames(self):
         """
         Get the locations of key and certificate files.
@@ -312,7 +303,10 @@ class BindingXMLRPC(object):
     def getCapabilities(self):
         api = API.Global()
         ret = api.getCapabilities()
-        ret['info'].update(self.getServerInfo())
+        last = self.server.lastClient
+        ret['info']['management_ip'] = self.serverIP
+        ret['info']['lastClient'] = last
+        ret['info']['lastClientIface'] = getRouteDeviceTo(destinationIP=last)
         return ret
 
     def getHardwareInfo(self):
