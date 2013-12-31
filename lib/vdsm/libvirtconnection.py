@@ -40,8 +40,8 @@ class _EventLoop:
         self.__thread = threading.Thread(target=self.__run,
                                          name="libvirtEventLoop")
         self.__thread.setDaemon(True)
-        self.__thread.start()
         self.run = True
+        self.__thread.start()
 
     def stop(self, wait=True):
         if self.run:
