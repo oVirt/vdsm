@@ -615,6 +615,23 @@ def getRouteDeviceTo(destinationIP):
         return ''
 
 
+def getDeviceByIP(ip):
+    """
+    Get network device by IP address
+    :param ip: String representing IPv4 or IPv6, but not link-local IPv6
+    """
+    for info in ethtool.get_interfaces_info(ethtool.get_active_devices()):
+        for ipv4addr in info.get_ipv4_addresses():
+            if ip in (ipv4addr.address, IPv4toMapped(ipv4addr.address)):
+                return info.device
+
+        for ipv6addr in info.get_ipv6_addresses():
+            if ip == ipv6addr.address:
+                return info.device
+
+    return ''
+
+
 class NetInfo(object):
     def __init__(self, _netinfo=None):
         if _netinfo is None:

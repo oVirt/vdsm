@@ -24,6 +24,8 @@ from shutil import rmtree
 import tempfile
 from xml.dom import minidom
 
+import ethtool
+
 from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
@@ -110,6 +112,20 @@ class TestNetinfo(TestCaseBase):
 
     def testIPv4toMapped(self):
         self.assertEqual('::ffff:127.0.0.1', netinfo.IPv4toMapped('127.0.0.1'))
+
+    def testGetDeviceByIP(self):
+        for dev in ethtool.get_interfaces_info(ethtool.get_active_devices()):
+            # Link-local IPv6 addresses are generated from the MAC address,
+            # which is shared between a nic and its bridge. Since We don't
+            # support having the same IP address on two different NICs, and
+            # link-local IPv6 addresses aren't interesting for 'getDeviceByIP'
+            # then ignore them in the test
+            ipaddrs = [ipv6.address for ipv6 in dev.get_ipv6_addresses()
+                       if ipv6.scope != 'link']
+            if dev.ipv4_address is not None:
+                ipaddrs.append(dev.ipv4_address)
+            for ip in ipaddrs:
+                self.assertEqual(dev.device, netinfo.getDeviceByIP(ip))
 
     def _testNics(self):
         """Creates a test fixture so that nics() reports:
