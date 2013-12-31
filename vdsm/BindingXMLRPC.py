@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import time
 from errno import EINTR
 import SimpleXMLRPCServer
 from vdsm import SecureXMLRPCServer
@@ -103,8 +102,6 @@ class BindingXMLRPC(object):
             def log_request(self, code='-', size='-'):
                 """Track from where client connections are coming."""
                 self.server.lastClient = self.client_address[0]
-                self.server.lastClientTime = time.time()
-                self.server.lastServerIP = self.request.getsockname()[0]
                 # FIXME: The editNetwork API uses this log file to
                 # determine if this host is still accessible.  We use a
                 # file (rather than an event) because editNetwork is
@@ -143,9 +140,7 @@ class BindingXMLRPC(object):
                 requestHandler=LoggingHandler, logRequests=True)
         utils.closeOnExec(server.socket.fileno())
 
-        server.lastClientTime = 0
         server.lastClient = '0.0.0.0'
-        server.lastServerIP = '0.0.0.0'
 
         return server
 
