@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import time
 from errno import EINTR
 import SimpleXMLRPCServer
 from vdsm import SecureXMLRPCServer
@@ -85,11 +84,18 @@ class BindingXMLRPC(object):
         """
         Return the IP address and last client information
         """
-        last = self.server.lastClient
-        lastserver = self.server.lastServerIP
         return {'management_ip': self.serverIP,
-                'lastClient': last,
-                'lastClientIface': getIfaceByIP(lastserver)}
+                'lastClient': self.cif.threadLocal.client,
+                'lastClientIface': getIfaceByIP(self.cif.threadLocal.server)}
+
+    def updateTimestamp(self):
+        # FIXME: The setup+editNetwork API uses this log file to
+        # determine if this host is still accessible.  We use a
+        # file (rather than an event) because setup+editNetwork is
+        # performed by a separate, root process.  To clean this
+        # up we need to move this to an API wrapper that is only
+        # run for real clients (not vdsm internal API calls).
+        file(constants.P_VDSM_CLIENT_LOG, 'w')
 
     def _getKeyCertFilenames(self):
         """
@@ -108,30 +114,16 @@ class BindingXMLRPC(object):
 
         threadLocal = self.cif.threadLocal
 
-        class LoggingMixIn:
-
-            def log_request(self, code='-', size='-'):
-                """Track from where client connections are coming."""
-                self.server.lastClient = self.client_address[0]
-                self.server.lastClientTime = time.time()
-                self.server.lastServerIP = self.request.getsockname()[0]
-                # FIXME: The editNetwork API uses this log file to
-                # determine if this host is still accessible.  We use a
-                # file (rather than an event) because editNetwork is
-                # performed by a separate, root process.  To clean this
-                # up we need to move this to an API wrapper that is only
-                # run for real clients (not vdsm internal API calls).
-                file(constants.P_VDSM_CLIENT_LOG, 'w')
-
         server_address = (self.serverIP, int(self.serverPort))
         if self.enableSSL:
             basehandler = SecureXMLRPCServer.SecureXMLRPCRequestHandler
         else:
             basehandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
 
-        class LoggingHandler(LoggingMixIn, basehandler):
+        class LoggingHandler(basehandler):
             def setup(self):
                 threadLocal.client = self.client_address[0]
+                threadLocal.server = self.request.getsockname()[0]
                 return basehandler.setup(self)
 
             def parse_request(self):
@@ -153,15 +145,12 @@ class BindingXMLRPC(object):
                 requestHandler=LoggingHandler, logRequests=True)
         utils.closeOnExec(server.socket.fileno())
 
-        server.lastClientTime = 0
-        server.lastClient = '0.0.0.0'
-        server.lastServerIP = '0.0.0.0'
-
         return server
 
     def _registerFunctions(self):
         def wrapIrsMethod(f):
             def wrapper(*args, **kwargs):
+                self.updateTimestamp()
                 fmt = ""
                 logargs = []
 
@@ -951,6 +940,7 @@ class BindingXMLRPC(object):
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         try:
+            f.im_self.updateTimestamp()
             logLevel = logging.DEBUG
             if f.__name__ in ('getVMList', 'getAllVmStats', 'getStats',
                               'fenceNode'):
