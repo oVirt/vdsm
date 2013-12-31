@@ -28,7 +28,7 @@ import threading
 from vdsm import constants
 from vdsm import utils
 from vdsm.define import doneCode, errCode
-from vdsm.netinfo import getRouteDeviceTo
+from vdsm.netinfo import getDeviceByIP
 import API
 from vdsm.exception import VdsmException
 try:
@@ -116,6 +116,7 @@ class BindingXMLRPC(object):
         class LoggingHandler(basehandler):
             def setup(self):
                 threadLocal.client = self.client_address[0]
+                threadLocal.server = self.request.getsockname()[0]
                 return basehandler.setup(self)
 
             def parse_request(self):
@@ -296,8 +297,8 @@ class BindingXMLRPC(object):
         ret = api.getCapabilities()
         ret['info']['management_ip'] = self.serverIP
         ret['info']['lastClient'] = self.cif.threadLocal.client
-        ret['info']['lastClientIface'] = getRouteDeviceTo(
-            destinationIP=self.cif.threadLocal.client)
+        ret['info']['lastClientIface'] = getDeviceByIP(
+            self.cif.threadLocal.server)
         return ret
 
     def getHardwareInfo(self):
