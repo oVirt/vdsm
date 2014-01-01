@@ -27,7 +27,7 @@ import signal
 import libvirt
 from . import constants, utils
 
-log = logging.getLogger("libvirtconnection")
+log = logging.getLogger()
 
 
 class _EventLoop:
