@@ -25,11 +25,12 @@ start you can do
    make
    sudo make install
 
-Before starting the VDSM service in the first time, you must configure and
-restart libvirt service:
+In order to start vdsm at first try, please perform:
 
-   vdsm-tool libvirt-configure
-   vdsm-tool libvirt-configure-services-restart
+   vdsm-tool configure [--force]
+
+   * --force flag will override old conf files with vdsm defaults and restart
+     services that were configured (if were already running)
 
 Packaging
 =========
