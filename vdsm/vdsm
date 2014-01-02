@@ -19,6 +19,7 @@ import threading
 import logging
 import syslog
 import resource
+import tempfile
 from logging import config as lconfig
 
 from vdsm import constants
@@ -173,9 +174,27 @@ def __assertVdsmUser():
         syslog.syslog("VDSM failed to start: vdsm user is not in KVM group")
         sys.exit(1)
 
+
+def __assertSudoerPermissions():
+    rc = 1
+    with tempfile.NamedTemporaryFile() as dst:
+        # This cmd choice is arbitrary to validate that sudoes.d/50_vdsm file
+        # is read properly
+        cmd = [constants.EXT_CHOWN, "%s:%s" %
+               (constants.VDSM_USER, constants.QEMU_PROCESS_GROUP), dst.name]
+        rc, _, stderr = utils.execCmd(cmd, sudo=True)
+
+    if rc != 0:
+        syslog.syslog("vdsm user could not manage to run sudo operation: "
+                      "(stderr: %s). Verify sudoer rules configuration" %
+                      (stderr))
+        sys.exit(1)
+
+
 if __name__ == '__main__':
     __assertVdsmUser()
     __assertLogPermission()
+    __assertSudoerPermissions()
 
     if not config.getboolean('vars', 'core_dump_enable'):
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
