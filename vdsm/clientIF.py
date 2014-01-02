@@ -278,7 +278,8 @@ class clientIF:
                   # next line can be removed in future, when < 3.3 engine
                   # is not supported
                   drive['specParams'].get('path', '') == '' and
-                  drive.get('path', '') == ''):
+                  drive.get('path', '') == '' and
+                  'vmPayload' not in drive['specParams']):
                     volPath = ''
 
             # ... or load the drive from vmPayload:
