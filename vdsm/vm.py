@@ -3161,7 +3161,7 @@ class Vm(object):
             if network == '':
                 network = DUMMY_BRIDGE
                 linkValue = 'down'
-            custom = params.get('custom')
+            custom = params.get('custom', {})
 
             netsToMirror = params.get('portMirroring',
                                       netConf.get('portMirroring', []))
