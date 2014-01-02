@@ -52,9 +52,12 @@ class _EventLoop:
 
     @utils.traceback(on=log.name)
     def __run(self):
-        libvirt.virEventRegisterDefaultImpl()
-        while self.run:
-            libvirt.virEventRunDefaultImpl()
+        try:
+            libvirt.virEventRegisterDefaultImpl()
+            while self.run:
+                libvirt.virEventRunDefaultImpl()
+        finally:
+            self.run = False
 
 
 # Make sure to never reload this module, or you would lose events
