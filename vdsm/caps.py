@@ -314,11 +314,15 @@ def osversion():
     return dict(release=release, version=version, name=osname)
 
 
-def get():
+def getTargetArch():
     if config.getboolean('vars', 'fake_kvm_support'):
-        targetArch = config.get('vars', 'fake_kvm_architecture')
+        return config.get('vars', 'fake_kvm_architecture')
     else:
-        targetArch = platform.machine()
+        return platform.machine()
+
+
+def get():
+    targetArch = getTargetArch()
 
     caps = {}
 
@@ -354,6 +358,8 @@ def get():
         elif targetArch == Architecture.PPC64:
             caps['cpuModel'] = 'POWER 7 (fake)'
             caps['cpuFlags'] = 'powernv,model_POWER7_v2.3'
+        else:
+            raise RuntimeError('Unsupported architecture: %s' % targetArch)
     else:
         caps['cpuModel'] = cpuInfo.model()
         caps['cpuFlags'] = ','.join(cpuInfo.flags() +

@@ -862,7 +862,7 @@ class XMLElement(object):
 
 
 class _DomXML:
-    def __init__(self, conf, log):
+    def __init__(self, conf, log, arch):
         """
         Create the skeleton of a libvirt domain xml
 
@@ -883,12 +883,26 @@ class _DomXML:
         self.conf = conf
         self.log = log
 
+        self.arch = arch
+
         self.doc = xml.dom.minidom.Document()
+
         if utils.tobool(self.conf.get('kvmEnable', 'true')):
             domainType = 'kvm'
         else:
             domainType = 'qemu'
-        self.dom = XMLElement('domain', type=domainType)
+
+        domainAttrs = {'type': domainType}
+
+        # Hack around libvirt issue BZ#988070, this is going to be removed as
+        # soon as the domain XML format supports the specification of USB
+        # keyboards
+
+        if self.arch == caps.Architecture.PPC64:
+            domainAttrs['xmlns:qemu'] = \
+                'http://libvirt.org/schemas/domain/qemu/1.0'
+
+        self.dom = XMLElement('domain', **domainAttrs)
         self.doc.appendChild(self.dom)
 
         self.dom.appendChildWithArgs('name', text=self.conf['vmName'])
@@ -943,9 +957,14 @@ class _DomXML:
 
         oselem = XMLElement('os')
         self.dom.appendChild(oselem)
-        oselem.appendChildWithArgs('type', text='hvm', arch='x86_64',
-                                   machine=self.conf.get('emulatedMachine',
-                                                         'pc'))
+
+        DEFAULT_MACHINES = {caps.Architecture.X86_64: 'pc',
+                            caps.Architecture.PPC64: 'pseries'}
+
+        machine = self.conf.get('emulatedMachine', DEFAULT_MACHINES[self.arch])
+
+        oselem.appendChildWithArgs('type', text='hvm', arch=self.arch,
+                                   machine=machine)
 
         qemu2libvirtBoot = {'a': 'fd', 'c': 'hd', 'd': 'cdrom', 'n': 'network'}
         for c in self.conf.get('boot', ''):
@@ -960,7 +979,8 @@ class _DomXML:
         if self.conf.get('kernelArgs'):
             oselem.appendChildWithArgs('cmdline', text=self.conf['kernelArgs'])
 
-        oselem.appendChildWithArgs('smbios', mode='sysinfo')
+        if self.arch == caps.Architecture.X86_64:
+            oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
     def appendSysinfo(self, osname, osversion, hostUUID):
         """
@@ -1005,6 +1025,7 @@ class _DomXML:
             <acpi/>
         <features/>
         """
+
         if utils.tobool(self.conf.get('acpiEnable', 'true')):
             features = self.dom.appendChildWithArgs('features')
             features.appendChildWithArgs('acpi')
@@ -1021,33 +1042,37 @@ class _DomXML:
         </cpu>
         """
 
-        features = self.conf.get('cpuType', 'qemu64').split(',')
-        model = features[0]
-        cpu = XMLElement('cpu', match='exact')
+        cpu = XMLElement('cpu')
 
-        if model == 'hostPassthrough':
-            cpu.setAttrs(mode='host-passthrough')
-        elif model == 'hostModel':
-            cpu.setAttrs(mode='host-model')
-        else:
-            cpu.appendChildWithArgs('model', text=model)
+        if self.arch in (caps.Architecture.X86_64):
+            cpu.setAttrs(match='exact')
 
-            # This hack is for backward compatibility as the libvirt
-            # does not allow 'qemu64' guest on intel hardware
-            if model == 'qemu64' and not '+svm' in features:
-                features += ['-svm']
+            features = self.conf.get('cpuType', 'qemu64').split(',')
+            model = features[0]
 
-            for feature in features[1:]:
-                # convert Linux name of feature to libvirt
-                if feature[1:6] == 'sse4_':
-                    feature = feature[0] + 'sse4.' + feature[6:]
+            if model == 'hostPassthrough':
+                cpu.setAttrs(mode='host-passthrough')
+            elif model == 'hostModel':
+                cpu.setAttrs(mode='host-model')
+            else:
+                cpu.appendChildWithArgs('model', text=model)
 
-                featureAttrs = {'name': feature[1:]}
-                if feature[0] == '+':
-                    featureAttrs['policy'] = 'require'
-                elif feature[0] == '-':
-                    featureAttrs['policy'] = 'disable'
-                cpu.appendChildWithArgs('feature', **featureAttrs)
+                # This hack is for backward compatibility as the libvirt
+                # does not allow 'qemu64' guest on intel hardware
+                if model == 'qemu64' and not '+svm' in features:
+                    features += ['-svm']
+
+                for feature in features[1:]:
+                    # convert Linux name of feature to libvirt
+                    if feature[1:6] == 'sse4_':
+                        feature = feature[0] + 'sse4.' + feature[6:]
+
+                    featureAttrs = {'name': feature[1:]}
+                    if feature[0] == '+':
+                        featureAttrs['policy'] = 'require'
+                    elif feature[0] == '-':
+                        featureAttrs['policy'] = 'disable'
+                    cpu.appendChildWithArgs('feature', **featureAttrs)
 
         if ('smpCoresPerSocket' in self.conf or
                 'smpThreadsPerCore' in self.conf):
@@ -1091,8 +1116,28 @@ class _DomXML:
         if utils.tobool(self.conf.get('tabletEnable')):
             inputAttrs = {'type': 'tablet', 'bus': 'usb'}
         else:
-            inputAttrs = {'type': 'mouse', 'bus': 'ps2'}
+            if self.arch == caps.Architecture.PPC64:
+                mouseBus = 'usb'
+            else:
+                mouseBus = 'ps2'
+
+            inputAttrs = {'type': 'mouse', 'bus': mouseBus}
         self._devices.appendChildWithArgs('input', **inputAttrs)
+
+    def appendKeyboardDevice(self):
+        """
+        Add keyboard device for ppc64 using a QEMU argument directly.
+        This is a workaround to the issue BZ#988070 in libvirt
+
+            <qemu:commandline>
+                <qemu:arg value='-usbdevice'/>
+                <qemu:arg value='keyboard'/>
+            </qemu:commandline>
+        """
+        commandLine = XMLElement('qemu:commandline')
+        commandLine.appendChildWithArgs('qemu:arg', value='-usbdevice')
+        commandLine.appendChildWithArgs('qemu:arg', value='keyboard')
+        self.dom.appendChild(commandLine)
 
     def appendGraphics(self):
         """
@@ -1143,6 +1188,13 @@ class _DomXML:
             graphics.setAttrs(listen='0')
 
         self._devices.appendChild(graphics)
+
+    def appendEmulator(self):
+        emulatorPath = '/usr/bin/qemu-system-' + self.arch
+
+        emulator = XMLElement('emulator', text=emulatorPath)
+
+        self._devices.appendChild(emulator)
 
     def toxml(self):
         return self.doc.toprettyxml(encoding='utf-8')
@@ -1777,6 +1829,11 @@ class Vm(object):
     def _makeChannelPath(self, deviceName):
         return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + deviceName
 
+    def _getDefaultDiskInterface(self):
+        DEFAULT_DISK_INTERFACES = {caps.Architecture.X86_64: 'ide',
+                                   caps.Architecture.PPC64: 'scsi'}
+        return DEFAULT_DISK_INTERFACES[self.arch]
+
     def __init__(self, cif, params):
         """
         Initialize a new VM instance.
@@ -1841,6 +1898,10 @@ class Vm(object):
         self.saveState()
         self._watchdogEvent = {}
         self.sdIds = []
+        self.arch = caps.getTargetArch()
+
+        if (self.arch not in ['ppc64', 'x86_64']):
+            raise RuntimeError('Unsupported architecture: %s' % self.arch)
 
     def _get_lastStatus(self):
         PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
@@ -1909,7 +1970,7 @@ class Vm(object):
         removables = [{
             'type': DISK_DEVICES,
             'device': 'cdrom',
-            'iface': 'ide',
+            'iface': self._getDefaultDiskInterface(),
             'path': self.conf.get('cdrom', ''),
             'index': 2,
             'truesize': 0}]
@@ -1999,9 +2060,13 @@ class Vm(object):
         """
         Normalize video device provided by conf.
         """
+
+        DEFAULT_VIDEOS = {caps.Architecture.X86_64: 'cirrus',
+                          caps.Architecture.PPC64: 'vga'}
+
         vcards = []
         if self.conf.get('display') == 'vnc':
-            devType = 'cirrus'
+            devType = DEFAULT_VIDEOS[self.arch]
         elif self.conf.get('display') == 'qxl':
             devType = 'qxl'
 
@@ -2075,7 +2140,8 @@ class Vm(object):
             drv['shared'] = False
             # FIXME: For BC we have now two identical keys: iface = if
             # Till the day that conf will not returned as a status anymore.
-            drv['iface'] = drv.get('iface') or drv.get('if', 'ide')
+            drv['iface'] = drv.get('iface') or \
+                drv.get('if', self._getDefaultDiskInterface())
 
         return confDrives
 
@@ -2822,17 +2888,24 @@ class Vm(object):
                     xml.dom.minidom.parseString(deviceXML).firstChild)
 
     def _buildCmdLine(self):
-        domxml = _DomXML(self.conf, self.log)
+        domxml = _DomXML(self.conf, self.log, self.arch)
         domxml.appendOs()
 
-        osd = caps.osversion()
-        domxml.appendSysinfo(
-            osname=constants.SMBIOS_OSNAME,
-            osversion=osd.get('version', '') + '-' + osd.get('release', ''),
-            hostUUID=utils.getHostUUID())
+        if self.arch == caps.Architecture.X86_64:
+            osd = caps.osversion()
+
+            osVersion = osd.get('version', '') + '-' + osd.get('release', '')
+
+            domxml.appendSysinfo(
+                osname=constants.SMBIOS_OSNAME,
+                osversion=osVersion,
+                hostUUID=utils.getHostUUID())
 
         domxml.appendClock()
-        domxml.appendFeatures()
+
+        if self.arch == caps.Architecture.X86_64:
+            domxml.appendFeatures()
+
         domxml.appendCpu()
         if utils.tobool(self.conf.get('vmchannel', 'true')):
             domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
@@ -2844,11 +2917,17 @@ class Vm(object):
         domxml.appendInput()
         domxml.appendGraphics()
 
+        if self.arch == caps.Architecture.PPC64:
+            domxml.appendEmulator()
+
         self._appendDevices(domxml)
 
         for drive in self._devices[DISK_DEVICES][:]:
             for leaseElement in drive.getLeasesXML():
                 domxml._devices.appendChild(leaseElement)
+
+        if self.arch == caps.Architecture.PPC64:
+            domxml.appendKeyboardDevice()
 
         return domxml.toxml()
 
@@ -4281,7 +4360,12 @@ class Vm(object):
                       actionToString(action))
 
     def changeCD(self, drivespec):
-        return self._changeBlockDev('cdrom', 'hdc', drivespec)
+        if self.arch == caps.Architecture.PPC64:
+            blockdev = 'sda'
+        else:
+            blockdev = 'hdc'
+
+        return self._changeBlockDev('cdrom', blockdev, drivespec)
 
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
@@ -4841,7 +4925,8 @@ class Vm(object):
                     knownDev = True
             # Add unknown disk device to vm's conf
             if not knownDev:
-                iface = 'ide' if address['type'] == 'drive' else 'pci'
+                archIface = self._getDefaultDiskInterface()
+                iface = archIface if address['type'] == 'drive' else 'pci'
                 diskDev = {'type': DISK_DEVICES, 'device': devType,
                            'iface': iface, 'path': devPath, 'name': name,
                            'address': address, 'alias': alias,

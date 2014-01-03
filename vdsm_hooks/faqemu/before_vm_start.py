@@ -33,7 +33,15 @@ if config.getboolean('vars', 'fake_kvm_support'):
         memvalue = domxml.getElementsByTagName(memtag)[0]
         while memvalue.firstChild:
             memvalue.removeChild(memvalue.firstChild)
-        memvalue.appendChild(domxml.createTextNode("20480"))
+
+        arch = config.get('vars', 'fake_kvm_architecture')
+
+        if arch == 'x86_64':
+            memory = '20480'
+        elif arch == 'ppc64':
+            memory = '262144'
+
+        memvalue.appendChild(domxml.createTextNode(memory))
 
     for cputag in domxml.getElementsByTagName("cpu"):
         cputag.parentNode.removeChild(cputag)

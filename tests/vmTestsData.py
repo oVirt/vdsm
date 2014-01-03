@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-CONF_TO_DOMXML = [({
+CONF_TO_DOMXML_X86_64 = [({
     'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
     'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512',
     'displayPort': '-1', 'vmName': 'testVm',
@@ -83,5 +83,64 @@ CONF_TO_DOMXML = [({
                     <feature name="svm" policy="disable"/>
                     <topology cores="1" sockets="1" threads="1"/>
                 </cpu>
+            </domain>
+""", )]
+
+CONF_TO_DOMXML_PPC64 = [({
+    'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
+    'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512',
+    'displayPort': '-1', 'vmName': 'testVm',
+    'display': 'vnc', 'emulatedMachine': 'pc',
+    'boot': '', 'timeOffset': 0, 'tdf': True,
+    'acpiEnable': 'true', 'cpuType': 'qemu64',
+    'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
+    'smp': '1', 'cpuPinning': {},
+    'vmchannel': 'true', 'qgaEnable': 'true',
+    'tabletEnable': False,
+    'displayNetwork': 'mydisp', 'custom': {}},
+
+    """<?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm"
+        xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+            <name>testVm</name>
+            <uuid>%(vmId)s</uuid>
+            <memory>1048576</memory>
+            <currentMemory>1048576</currentMemory>
+            <vcpu>1</vcpu>
+            <memtune>
+                <min_guarantee>524288</min_guarantee>
+            </memtune>
+            <devices>
+                <channel type="unix">
+                    <target name="com.redhat.rhevm.vdsm" type="virtio"/>
+                    <source mode="bind"
+       path="/var/lib/libvirt/qemu/channels/%(vmId)s.com.redhat.rhevm.vdsm"/>
+                </channel>
+                <channel type="unix">
+                    <target name="org.qemu.guest_agent.0" type="virtio"/>
+                    <source mode="bind"
+       path="/var/lib/libvirt/qemu/channels/%(vmId)s.org.qemu.guest_agent.0"/>
+                </channel>
+                <input bus="usb" type="mouse"/>
+                <graphics autoport="yes" passwd="*****"
+                passwdValidTo="1970-01-01T00:00:01" port="-1" type="vnc">
+                <listen network="vdsm-mydisp" type="network"/>
+                </graphics>
+                <emulator>/usr/bin/qemu-system-ppc64</emulator>
+                </devices>
+                <os>
+                    <type arch="ppc64" machine="pc">hvm</type>
+                </os>
+                <clock adjustment="0" offset="variable">
+                    <timer name="rtc" tickpolicy="catchup"/>
+                </clock>
+                <cputune/>
+                <cpu>
+                    <topology cores="1" sockets="1" threads="1"/>
+                </cpu>
+                <qemu:commandline>
+                    <qemu:arg value="-usbdevice"/>
+                    <qemu:arg value="keyboard"/>
+                </qemu:commandline>
             </domain>
 """, )]

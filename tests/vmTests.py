@@ -29,7 +29,8 @@ import caps
 from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch
-from vmTestsData import CONF_TO_DOMXML
+from vmTestsData import CONF_TO_DOMXML_X86_64
+from vmTestsData import CONF_TO_DOMXML_PPC64
 
 
 class ConnectionMock:
@@ -60,6 +61,29 @@ class TestVm(TestCaseBase):
         self.assertEqual(re.sub('\n\s*', ' ', converted).strip(' '),
                          re.sub('\n\s*', ' ', expectedXML).strip(' '))
 
+    def assertXMLNone(self, element, path):
+        elem = ET.fromstring(element.toprettyxml())
+        converted = elem.find("./%s" % path)
+        self.assertEqual(converted, None)
+
+    def assertBuildCmdLine(self, confToDom):
+        oldVdsmRun = constants.P_VDSM_RUN
+        constants.P_VDSM_RUN = tempfile.mkdtemp()
+        try:
+            for conf, expectedXML in confToDom:
+
+                expectedXML = expectedXML % conf
+
+                testVm = vm.Vm(self, conf)
+
+                output = testVm._buildCmdLine()
+
+                self.assertEqual(re.sub('\n\s*', ' ', output.strip(' ')),
+                                 re.sub('\n\s*', ' ', expectedXML.strip(' ')))
+        finally:
+            shutil.rmtree(constants.P_VDSM_RUN)
+            constants.P_VDSM_RUN = oldVdsmRun
+
     def testDomXML(self):
         expectedXML = """
            <domain type="kvm">
@@ -74,10 +98,11 @@ class TestVm(TestCaseBase):
               <devices/>
            </domain>"""
 
-        domxml = vm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log,
+                            caps.Architecture.X86_64)
         self.assertXML(domxml.dom, expectedXML)
 
-    def testOSXML(self):
+    def testOSXMLX86_64(self):
         expectedXMLs = ["""
             <os>
                 <type arch="x86_64" machine="pc">hvm</type>
@@ -103,7 +128,37 @@ class TestVm(TestCaseBase):
 
         for vmConf, xml in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vm._DomXML(vmConf, self.log)
+            domxml = vm._DomXML(vmConf, self.log,
+                                caps.Architecture.X86_64)
+            domxml.appendOs()
+            self.assertXML(domxml.dom, xml, 'os')
+
+    def testOSPPCXML(self):
+        expectedXMLs = ["""
+            <os>
+                <type arch="ppc64" machine="pseries">hvm</type>
+                <initrd>/tmp/initrd-2.6.18.img</initrd>
+                <kernel>/tmp/vmlinuz-2.6.18</kernel>
+                <cmdline>console=ttyS0 1</cmdline>
+            </os>"""]
+        vmConfs = [{'kernel': '/tmp/vmlinuz-2.6.18', 'initrd':
+                   '/tmp/initrd-2.6.18.img', 'kernelArgs': 'console=ttyS0 1'}]
+
+        OSXML = """
+            <os>
+                 <type arch="ppc64" machine="pseries">hvm</type>
+                 <boot dev="%s"/>
+            </os>"""
+
+        qemu2libvirtBoot = {'a': 'fd', 'c': 'hd', 'd': 'cdrom', 'n': 'network'}
+        for k, v in qemu2libvirtBoot.iteritems():
+            vmConfs.append({'boot': k})
+            expectedXMLs.append(OSXML % v)
+
+        for vmConf, xml in zip(vmConfs, expectedXMLs):
+            vmConf.update(self.conf)
+            domxml = vm._DomXML(vmConf, self.log,
+                                caps.Architecture.PPC64)
             domxml.appendOs()
             self.assertXML(domxml.dom, xml, 'os')
 
@@ -119,7 +174,8 @@ class TestVm(TestCaseBase):
             <features>
                   <acpi/>
             </features>"""
-        domxml = vm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log,
+                            caps.Architecture.X86_64)
         domxml.appendFeatures()
         self.assertXML(domxml.dom, featuresXML, 'features')
 
@@ -139,7 +195,8 @@ class TestVm(TestCaseBase):
         serial = 'A5955881-519B-11CB-8352-E78A528C28D8_00:21:cc:68:d7:38'
         sysinfoXML = sysinfoXML % (constants.SMBIOS_MANUFACTURER,
                                    product, version, serial, self.conf['vmId'])
-        domxml = vm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log,
+                            caps.Architecture.X86_64)
         domxml.appendSysinfo(product, version, serial)
         self.assertXML(domxml.dom, sysinfoXML, 'sysinfo')
 
@@ -158,7 +215,8 @@ class TestVm(TestCaseBase):
                 <timer name="rtc" tickpolicy="catchup"/>
             </clock>"""
         self.conf['timeOffset'] = '-3600'
-        domxml = vm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log,
+                            caps.Architecture.X86_64)
         domxml.appendClock()
         self.assertXML(domxml.dom, clockXML, 'clock')
 
@@ -181,7 +239,8 @@ class TestVm(TestCaseBase):
                   'smpCoresPerSocket': 2, 'smpThreadsPerCore': 2,
                   'cpuPinning': {'0': '0-1', '1': '2-3'}}
         vmConf.update(self.conf)
-        domxml = vm._DomXML(vmConf, self.log)
+        domxml = vm._DomXML(vmConf, self.log,
+                            caps.Architecture.X86_64)
         domxml.appendCpu()
         self.assertXML(domxml.dom, cpuXML, 'cpu')
         self.assertXML(domxml.dom, cputuneXML, 'cputune')
@@ -195,11 +254,12 @@ class TestVm(TestCaseBase):
         path = '/tmp/channel-socket'
         name = 'org.linux-kvm.port.0'
         channelXML = channelXML % (name, path)
-        domxml = vm._DomXML(self.conf, self.log)
+        domxml = vm._DomXML(self.conf, self.log,
+                            caps.Architecture.X86_64)
         domxml._appendAgentDevice(path, name)
         self.assertXML(domxml.dom, channelXML, 'devices/channel')
 
-    def testInputXML(self):
+    def testInputXMLX86_64(self):
         expectedXMLs = [
             """<input bus="ps2" type="mouse"/>""",
             """<input bus="usb" type="tablet"/>"""]
@@ -207,7 +267,21 @@ class TestVm(TestCaseBase):
         vmConfs = [{}, {'tabletEnable': 'true'}]
         for vmConf, xml in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vm._DomXML(vmConf, self.log)
+            domxml = vm._DomXML(vmConf, self.log,
+                                caps.Architecture.X86_64)
+            domxml.appendInput()
+            self.assertXML(domxml.dom, xml, 'devices/input')
+
+    def testInputXMLPPC64(self):
+        expectedXMLs = [
+            """<input bus="usb" type="mouse"/>""",
+            """<input bus="usb" type="tablet"/>"""]
+
+        vmConfs = [{}, {'tabletEnable': 'true'}]
+        for vmConf, xml in zip(vmConfs, expectedXMLs):
+            vmConf.update(self.conf)
+            domxml = vm._DomXML(vmConf, self.log,
+                                caps.Architecture.PPC64)
             domxml.appendInput()
             self.assertXML(domxml.dom, xml, 'devices/input')
 
@@ -246,7 +320,8 @@ class TestVm(TestCaseBase):
 
         for vmConf, xml in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vm._DomXML(vmConf, self.log)
+            domxml = vm._DomXML(vmConf, self.log,
+                                caps.Architecture.X86_64)
             domxml.appendGraphics()
             self.assertXML(domxml.dom, xml, 'devices/graphics')
             if vmConf['display'] == 'qxl':
@@ -532,6 +607,7 @@ class TestVm(TestCaseBase):
 
             self.assertEquals(cm.exception.args[0], exceptionMsg)
 
+    @MonkeyPatch(caps, 'getTargetArch', lambda: caps.Architecture.X86_64)
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
@@ -539,19 +615,14 @@ class TestVm(TestCaseBase):
     @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
     @MonkeyPatch(utils,  'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
-    def testBuildCmdLine(self):
+    def testBuildCmdLineX86_64(self):
+        self.assertBuildCmdLine(CONF_TO_DOMXML_X86_64)
 
-        oldVdsmRun = constants.P_VDSM_RUN
-        constants.P_VDSM_RUN = tempfile.mkdtemp()
-        try:
-            for conf, expectedXML in CONF_TO_DOMXML:
-
-                expectedXML = expectedXML % conf
-
-                output = vm.Vm(self, conf)._buildCmdLine()
-
-                self.assertEqual(re.sub('\n\s*', ' ', output.strip(' ')),
-                                 re.sub('\n\s*', ' ', expectedXML.strip(' ')))
-        finally:
-            shutil.rmtree(constants.P_VDSM_RUN)
-            constants.P_VDSM_RUN = oldVdsmRun
+    @MonkeyPatch(caps, 'getTargetArch', lambda: caps.Architecture.PPC64)
+    @MonkeyPatch(caps, 'osversion', lambda: {
+        'release': '1', 'version': '18', 'name': 'Fedora'})
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(utils,  'getHostUUID',
+                 lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
+    def testBuildCmdLinePPC64(self):
+        self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
