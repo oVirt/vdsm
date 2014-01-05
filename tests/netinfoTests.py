@@ -98,10 +98,15 @@ class TestNetinfo(TestCaseBase):
 
     def testGetIfaceByIP(self):
         for dev in ethtool.get_interfaces_info(ethtool.get_active_devices()):
-            ipaddrs = map(
-                lambda etherinfo_ipv6addr: etherinfo_ipv6addr.address,
-                dev.get_ipv6_addresses())
-            ipaddrs.append(dev.ipv4_address)
+            # Link-local IPv6 addresses are generated from the MAC address,
+            # which is shared between a nic and its bridge. Since We don't
+            # support having the same IP address on two different NICs, and
+            # link-local IPv6 addresses aren't interesting for 'getDeviceByIP'
+            # then ignore them in the test
+            ipaddrs = [ipv6.address for ipv6 in dev.get_ipv6_addresses()
+                       if ipv6.scope != 'link']
+            if dev.ipv4_address is not None:
+                ipaddrs.append(dev.ipv4_address)
             for ip in ipaddrs:
                 self.assertEqual(dev.device, netinfo.getIfaceByIP(ip))
 
