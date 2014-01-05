@@ -24,7 +24,6 @@ import os
 import signal
 import sys
 import copy
-import subprocess
 import pickle
 import time
 import threading
@@ -1103,26 +1102,16 @@ class Global(APIBase):
            action can be one of (status, on, off, reboot)."""
 
         @utils.traceback(on=self.log.name)
-        def waitForPid(p, inp):
-            """ Wait until p.pid exits. Kill it if vdsm exists before. """
-            p.stdin.write(inp)
-            p.stdin.close()
-            while p.poll() is None:
-                if not self._cif._enabled:
-                    self.log.debug('killing fence script pid %s', p.pid)
-                    os.kill(p.pid, signal.SIGTERM)
-                    time.sleep(1)
-                    try:
-                        # improbable race: p.pid may now belong to another
-                        # process
-                        os.kill(p.pid, signal.SIGKILL)
-                    except:
-                        pass
-                    return
-                time.sleep(1)
-            self.log.debug('rc %s inp %s out %s err %s', p.returncode,
-                           hidePasswd(inp),
-                           p.stdout.read(), p.stderr.read())
+        def fence(script, inp):
+            # non-status actions are sent asyncronously. deathSignal is set to
+            # make sure that no stray fencing scripts are left behind if Vdsm
+            # crashes.
+            rc, out, err = utils.execCmd(
+                [script], deathSignal=signal.SIGTERM,
+                data=inp)
+            self.log.debug('rc %s inp %s out %s err %s', rc,
+                           hidePasswd(inp), out, err)
+            return rc, out, err
 
         def hidePasswd(text):
             cleantext = ''
@@ -1141,15 +1130,6 @@ class Global(APIBase):
 
         script = constants.EXT_FENCE_PREFIX + agent
 
-        try:
-            p = subprocess.Popen([script], stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE, close_fds=True)
-        except OSError as e:
-            if e.errno == os.errno.ENOENT:
-                return errCode['fenceAgent']
-            raise
-
         inp = ('agent=fence_%s\nipaddr=%s\nlogin=%s\noption=%s\n'
                'passwd=%s\n') % (agent, addr, username, action, password)
         if port != '':
@@ -1157,24 +1137,30 @@ class Global(APIBase):
         if utils.tobool(secure):
             inp += 'secure=yes\n'
         inp += options
+
         if action == 'status':
-            out, err = p.communicate(inp)
-            self.log.debug('rc %s in %s out %s err %s', p.returncode,
+            try:
+                rc, out, err = fence(script, inp)
+            except OSError as e:
+                if e.errno == os.errno.ENOENT:
+                    return errCode['fenceAgent']
+                raise
+            self.log.debug('rc %s in %s out %s err %s', rc,
                            hidePasswd(inp), out, err)
-            if not 0 <= p.returncode <= 2:
+            if not 0 <= rc <= 2:
                 return {'status': {'code': 1,
                                    'message': out + err}}
             message = doneCode['message']
-            if p.returncode == 0:
+            if rc == 0:
                 power = 'on'
-            elif p.returncode == 2:
+            elif rc == 2:
                 power = 'off'
             else:
                 power = 'unknown'
                 message = out + err
             return {'status': {'code': 0, 'message': message},
                     'power': power}
-        threading.Thread(target=waitForPid, args=(p, inp)).start()
+        threading.Thread(target=fence, args=(script, inp)).start()
         return {'status': doneCode}
 
     def ping(self):
