@@ -157,7 +157,7 @@ Requires: python
 Requires: policycoreutils-python
 Requires: python-pthreading >= 0.1.2
 Requires: qemu-kvm
-Requires: qemu-kvm-img
+Requires: qemu-img
 Requires: sanlock, sanlock-python
 Requires: selinux-policy-targeted
 %else
