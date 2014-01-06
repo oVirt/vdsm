@@ -2361,6 +2361,7 @@ class Vm(object):
 
     def _onQemuDeath(self):
         self.log.info('underlying process disconnected')
+        self._dom = None
         # Try release VM resources first, if failed stuck in 'Powering Down'
         # state
         response = self.releaseVm()
