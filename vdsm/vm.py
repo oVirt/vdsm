@@ -332,6 +332,9 @@ class MigrationSourceThread(threading.Thread):
                 self._vm._vmStats.cont()
                 raise
         else:
+            for dev in self._vm._customDevices():
+                hooks.before_device_migrate_source(
+                    dev._deviceXML, self._vm.conf, dev.custom)
             hooks.before_vm_migrate_source(self._vm._dom.XMLDesc(0),
                                            self._vm.conf)
             response = self.destServer.migrationCreate(self._machineParams)
