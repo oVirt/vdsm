@@ -38,6 +38,16 @@ except ImportError:
     _glusterEnabled = False
 
 
+def _updateTimestamp():
+    # FIXME: The setup+editNetwork API uses this log file to
+    # determine if this host is still accessible.  We use a
+    # file (rather than an event) because setup+editNetwork is
+    # performed by a separate, root process.  To clean this
+    # up we need to move this to an API wrapper that is only
+    # run for real clients (not vdsm internal API calls).
+    file(constants.P_VDSM_CLIENT_LOG, 'w')
+
+
 class BindingXMLRPC(object):
     def __init__(self, cif, log, ip, port, ssl, vds_resp_timeout,
                  trust_store_path, default_bridge):
@@ -79,15 +89,6 @@ class BindingXMLRPC(object):
         self.server.server_close()
         self._thread.join()
         return {'status': doneCode}
-
-    def updateTimestamp(self):
-        # FIXME: The setup+editNetwork API uses this log file to
-        # determine if this host is still accessible.  We use a
-        # file (rather than an event) because setup+editNetwork is
-        # performed by a separate, root process.  To clean this
-        # up we need to move this to an API wrapper that is only
-        # run for real clients (not vdsm internal API calls).
-        file(constants.P_VDSM_CLIENT_LOG, 'w')
 
     def _getKeyCertFilenames(self):
         """
@@ -141,7 +142,7 @@ class BindingXMLRPC(object):
     def _registerFunctions(self):
         def wrapIrsMethod(f):
             def wrapper(*args, **kwargs):
-                self.updateTimestamp()
+                _updateTimestamp()
                 fmt = ""
                 logargs = []
 
@@ -938,7 +939,7 @@ class BindingXMLRPC(object):
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         try:
-            f.im_self.updateTimestamp()
+            _updateTimestamp()
             logLevel = logging.DEBUG
             if f.__name__ in ('getVMList', 'getAllVmStats', 'getStats',
                               'fenceNode'):
