@@ -260,6 +260,43 @@ def pidStat(pid):
         return stat._make(res[:len(fields)])
 
 
+def iteratePids():
+    for path in glob.iglob("/proc/[0-9]*"):
+        pid = os.path.basename(path)
+        yield int(pid)
+
+
+def pgrep(name):
+    res = []
+    for pid in iteratePids():
+        try:
+            procName = pidStat(pid).comm
+            if procName == name:
+                res.append(pid)
+        except (OSError, IOError):
+            continue
+    return res
+
+
+def _parseCmdLine(pid):
+    with open("/proc/%d/cmdline" % pid, "rb") as f:
+        return tuple(f.read().split("\0")[:-1])
+
+
+def getCmdArgs(pid):
+    res = tuple()
+    # Sometimes cmdline is empty even though the process is not a zombie.
+    # Retrying seems to solve it.
+    while len(res) == 0:
+        # cmdline is empty for zombie processes
+        if pidStat(pid).state in ("Z", "z"):
+            return tuple()
+
+        res = _parseCmdLine(pid)
+
+    return res
+
+
 def convertToStr(val):
     varType = type(val)
     if varType is float:

@@ -1177,7 +1177,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     @classmethod
     def __handleStuckUmount(cls, masterDir):
-        umountPids = misc.pgrep("umount")
+        umountPids = utils.pgrep("umount")
         try:
             masterMount = mount.getMountFromTarget(masterDir)
         except OSError as ex:
@@ -1189,7 +1189,7 @@ class BlockStorageDomain(sd.StorageDomain):
         for umountPid in umountPids:
             try:
                 state = utils.pidStat(umountPid).state
-                mountPoint = misc.getCmdArgs(umountPid)[-1]
+                mountPoint = utils.getCmdArgs(umountPid)[-1]
             except:
                 # Process probably exited
                 continue

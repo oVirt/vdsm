@@ -27,6 +27,8 @@ from testrunner import VdsmTestCase as TestCaseBase
 from vdsm import utils
 import time
 
+EXT_SLEEP = "sleep"
+
 
 class RetryTests(TestCaseBase):
     def testStopCallback(self):
@@ -64,6 +66,45 @@ class PidStatTests(TestCaseBase):
         self.assertEquals(name, args[0])
         sproc.kill()
         sproc.wait()
+
+
+class PgrepTests(TestCaseBase):
+    def test(self):
+        sleepProcs = []
+        for i in range(3):
+            sleepProcs.append(utils.execCmd([EXT_SLEEP, "3"], sync=False,
+                              sudo=False))
+
+        pids = utils.pgrep(EXT_SLEEP)
+        for proc in sleepProcs:
+            self.assertTrue(proc.pid in pids, "pid %d was not located by pgrep"
+                            % proc.pid)
+
+        for proc in sleepProcs:
+            proc.kill()
+            proc.wait()
+
+
+class GetCmdArgsTests(TestCaseBase):
+    def test(self):
+        args = [EXT_SLEEP, "4"]
+        sproc = utils.execCmd(args, sync=False, sudo=False)
+        try:
+            self.assertEquals(utils.getCmdArgs(sproc.pid), tuple(args))
+        finally:
+            sproc.kill()
+            sproc.wait()
+
+    def testZombie(self):
+        args = [EXT_SLEEP, "0"]
+        sproc = utils.execCmd(args, sync=False, sudo=False)
+        sproc.kill()
+        try:
+            test = lambda: self.assertEquals(utils.getCmdArgs(sproc.pid),
+                                             tuple())
+            utils.retry(AssertionError, test, tries=10, sleep=0.1)
+        finally:
+            sproc.wait()
 
 
 class CommandPathTests(TestCaseBase):

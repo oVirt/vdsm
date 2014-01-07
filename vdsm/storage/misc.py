@@ -782,48 +782,6 @@ def samplingmethod(func):
     return helper
 
 
-def iteratePids():
-    for path in glob.iglob("/proc/[0-9]*"):
-        pid = os.path.basename(path)
-        yield int(pid)
-
-
-def pgrep(name):
-    res = []
-    for pid in iteratePids():
-        try:
-            pid = int(pid)
-        except ValueError:
-            continue
-
-        try:
-            procName = utils.pidStat(pid).comm
-            if procName == name:
-                res.append(pid)
-        except (OSError, IOError):
-            continue
-    return res
-
-
-def _parseCmdLine(pid):
-    with open("/proc/%d/cmdline" % pid, "rb") as f:
-        return tuple(f.read().split("\0")[:-1])
-
-
-def getCmdArgs(pid):
-    res = tuple()
-    # Sometimes cmdline is empty even though the process is not a zombie.
-    # Retrying seems to solve it.
-    while len(res) == 0:
-        # cmdline is empty for zombie processes
-        if utils.pidStat(pid).state in ("Z", "z"):
-            return tuple()
-
-        res = _parseCmdLine(pid)
-
-    return res
-
-
 def tmap(func, iterable):
     resultsDict = {}
     error = [None]
@@ -962,7 +920,7 @@ class OperationMutex(object):
 def killall(name, signum, group=False):
     exception = None
     knownPgs = set()
-    pidList = pgrep(name)
+    pidList = utils.pgrep(name)
     if len(pidList) == 0:
         raise OSError(errno.ESRCH,
                       "Could not find processes named `%s`" % name)

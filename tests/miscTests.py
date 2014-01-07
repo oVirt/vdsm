@@ -58,45 +58,6 @@ def watchCmd(cmd, stop, cwd=None, data=None, recoveryCallback=None):
     return ret, out, err
 
 
-class PgrepTests(TestCaseBase):
-    def test(self):
-        sleepProcs = []
-        for i in range(3):
-            sleepProcs.append(utils.execCmd([EXT_SLEEP, "3"], sync=False,
-                              sudo=False))
-
-        pids = misc.pgrep("sleep")
-        for proc in sleepProcs:
-            self.assertTrue(proc.pid in pids, "pid %d was not located by pgrep"
-                            % proc.pid)
-
-        for proc in sleepProcs:
-            proc.kill()
-            proc.wait()
-
-
-class GetCmdArgsTests(TestCaseBase):
-    def test(self):
-        args = [EXT_SLEEP, "4"]
-        sproc = utils.execCmd(args, sync=False, sudo=False)
-        try:
-            self.assertEquals(misc.getCmdArgs(sproc.pid), tuple(args))
-        finally:
-            sproc.kill()
-            sproc.wait()
-
-    def testZombie(self):
-        args = [EXT_SLEEP, "0"]
-        sproc = utils.execCmd(args, sync=False, sudo=False)
-        sproc.kill()
-        try:
-            test = lambda: self.assertEquals(misc.getCmdArgs(sproc.pid),
-                                             tuple())
-            utils.retry(AssertionError, test, tries=10, sleep=0.1)
-        finally:
-            sproc.wait()
-
-
 class EventTests(TestCaseBase):
     def testEmit(self):
         ev = threading.Event()
