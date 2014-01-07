@@ -63,6 +63,14 @@ USER_SHUTDOWN_MESSAGE = 'System going down'
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 
+def _updateTimestamp():
+    # The setup+editNetwork API uses this log file to
+    # determine if this host is still accessible.  We use a
+    # file (rather than an event) because setup+editNetwork is
+    # performed by a separate, root process.
+    file(constants.P_VDSM_CLIENT_LOG, 'w')
+
+
 class APIBase(object):
     ctorArgs = []
 
@@ -1171,12 +1179,14 @@ class Global(APIBase):
 
     def ping(self):
         "Ping the server. Useful for tests"
+        _updateTimestamp()
         return {'status': doneCode}
 
     def getCapabilities(self):
         """
         Report host capabilities.
         """
+        _updateTimestamp()  # required for some ovirt-3.0.z Engines
         c = caps.get()
         c['netConfigDirty'] = str(self._cif._netConfigDirty)
 
@@ -1273,6 +1283,9 @@ class Global(APIBase):
                 return d
             else:
                 return {'vmId': d['vmId'], 'status': d['status']}
+
+        _updateTimestamp()  # required for editNetwork flow
+
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
         return {'status': doneCode,

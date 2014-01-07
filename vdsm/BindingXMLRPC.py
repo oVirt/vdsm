@@ -25,7 +25,6 @@ import logging
 import libvirt
 import threading
 
-from vdsm import constants
 from vdsm import utils
 from vdsm.define import doneCode, errCode
 from vdsm.netinfo import getDeviceByIP
@@ -36,16 +35,6 @@ try:
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
-
-
-def _updateTimestamp():
-    # FIXME: The setup+editNetwork API uses this log file to
-    # determine if this host is still accessible.  We use a
-    # file (rather than an event) because setup+editNetwork is
-    # performed by a separate, root process.  To clean this
-    # up we need to move this to an API wrapper that is only
-    # run for real clients (not vdsm internal API calls).
-    file(constants.P_VDSM_CLIENT_LOG, 'w')
 
 
 class BindingXMLRPC(object):
@@ -143,7 +132,6 @@ class BindingXMLRPC(object):
     def _registerFunctions(self):
         def wrapIrsMethod(f):
             def wrapper(*args, **kwargs):
-                _updateTimestamp()
                 fmt = ""
                 logargs = []
 
@@ -946,7 +934,6 @@ class BindingXMLRPC(object):
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         try:
-            _updateTimestamp()
             logLevel = logging.DEBUG
             if f.__name__ in ('getVMList', 'getAllVmStats', 'getStats',
                               'fenceNode'):
