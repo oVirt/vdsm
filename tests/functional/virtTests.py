@@ -48,6 +48,8 @@ _initramfsPaths = ["/boot/initramfs-%s.img" % _kernelVer,  # Fedora, RHEL
                    ]
 _tmpinitramfs = False
 
+VM_MINIMAL_UPTIME = 30
+
 
 def setUpModule():
     # global used in order to keep the iniramfs image persistent across
@@ -184,7 +186,7 @@ class VirtTest(TestCaseBase):
                          'vmName': 'testSimpleVm'}
 
         with RunningVm(self.vdsm, customization) as vm:
-            self._waitForStartup(vm, 10)
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
 
     @requireKVM
     @permutations([['localfs'], ['iscsi'], ['nfs']])
@@ -200,7 +202,7 @@ class VirtTest(TestCaseBase):
         with RollbackContext() as rollback:
             disk.createVdsmStorageLayout(conf, 3, rollback)
             with RunningVm(self.vdsm, customization) as vm:
-                self._waitForStartup(vm, 10)
+                self._waitForStartup(vm, VM_MINIMAL_UPTIME)
 
     @requireKVM
     @permutations([['hotplugNic'], ['virtioNic'], ['smartcard'],
@@ -257,7 +259,7 @@ class VirtTest(TestCaseBase):
                 customization['devices'].append(deviceDef[device])
 
         with RunningVm(self.vdsm, customization) as vm:
-            self._waitForStartup(vm, 10)
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
 
             if 'hotplugNic' in devices:
                 self.retryAssert(partial(self.vdsm.hotplugNic,
