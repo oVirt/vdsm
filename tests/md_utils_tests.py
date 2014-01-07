@@ -38,5 +38,5 @@ class MdUtilsTests(TestCaseBase):
             elif dev == '/dev/md2':
                 self.assertEquals(uuid, '1234566d:9f136504:efb8e4be:12810206')
             else:
-                self.assertTrue(dev in ['/dev/md1', '/dev/md/1', '/dev/md0',
-                                        '/dev/md/0', '/dev/md2'])
+                self.assertIn(dev, ['/dev/md1', '/dev/md/1', '/dev/md0',
+                                    '/dev/md/0', '/dev/md2'])

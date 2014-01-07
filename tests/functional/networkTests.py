@@ -1441,7 +1441,7 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
                 bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
                 self.assertEqual(bootproto, 'none')
 
@@ -1450,7 +1450,7 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(vlan_name)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
                 bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
                 self.assertEqual(bootproto, 'none')
 
@@ -1459,7 +1459,7 @@ class NetworkTest(TestCaseBase):
                     {vlan_name: networks[vlan_name]}, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
                 bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
                 self.assertEqual(bootproto, 'none')
 
@@ -1488,7 +1488,7 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkExists(NETWORK_NAME)
                 self.assertNetworkExists(vlan_name)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertTrue('BOOTPROTO' in info['nics'][nic]['cfg'])
+                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
                 bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
                 self.assertEqual(bootproto, 'none')
 

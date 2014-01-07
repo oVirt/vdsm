@@ -77,8 +77,7 @@ class CommandPathTests(TestCaseBase):
             utils.CommandPath(NAME, 'utter nonsense').cmd
         except OSError as e:
             self.assertEquals(e.errno, errno.ENOENT)
-            self.assertTrue(NAME in e.strerror,
-                            msg='%s not in %s' % (NAME, e.strerror))
+            self.assertIn(NAME, e.strerror)
 
 
 class GeneralUtilsTests(TestCaseBase):
@@ -97,7 +96,7 @@ class GeneralUtilsTests(TestCaseBase):
                   'Writeback', 'Mapped', 'Slab', 'VmallocTotal',
                   'VmallocUsed', 'VmallocChunk')
         for field in fields:
-            self.assertTrue(field in meminfo)
+            self.assertIn(field, meminfo)
             self.assertTrue(isinstance(meminfo[field], int))
 
     def testParseMemInfo(self):

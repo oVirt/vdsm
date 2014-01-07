@@ -212,7 +212,7 @@ class JsonRawTest(APITest):
                                  'method': 'Host.ping',
                                  'params': {}})
         reply = self.sendMessage(msg)
-        self.assertFalse('error' in reply)
+        self.assertNotIn('error', reply)
         self.assertEquals(None, reply['result'])
 
     def testPingError(self):
@@ -223,7 +223,7 @@ class JsonRawTest(APITest):
                                  'params': {}})
         reply = self.sendMessage(msg)
         self.assertEquals(1, reply['error']['code'])
-        self.assertFalse('result' in reply)
+        self.assertNotIn('result', reply)
 
     def testNoMethod(self):
         msg = self.buildMessage({'jsonrpc': '2.0',
@@ -256,7 +256,7 @@ class JsonRawTest(APITest):
             self.clearAPI()
             self.programAPI("testPing")
             ret = self.sendMessage(msg)
-            self.assertFalse('error' in ret)
+            self.assertNotIn('error', ret)
 
         msg = self.buildMessage({'jsonrpc': '2.0',
                                  'id': 1,

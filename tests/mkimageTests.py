@@ -113,9 +113,9 @@ class MkimageTestCase(VdsmTestCase):
         self.assertEqual(len(out_subdir), len(self.expected_results) / 2)
         for filename in self.expected_results:
             if os.path.basename(filename) == filename:
-                self.assertTrue(filename in out_dir)
+                self.assertIn(filename, out_dir)
             else:
-                self.assertTrue(os.path.basename(filename) in out_subdir)
+                self.assertIn(os.path.basename(filename), out_subdir)
             filepath = os.path.join(self.workdir, filename)
             if checkPerms:
                 self._check_permissions(filepath,

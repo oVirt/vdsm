@@ -170,14 +170,12 @@ class TestQdisc(TestCaseBase):
 
     def _addIngress(self):
         tc.qdisc_replace_ingress(self._bridge.devName)
-        self.assertTrue("qdisc ingress" in self._showQdisc(),
-                        "Could not add an ingress qdisc to the device.")
+        self.assertIn("qdisc ingress", self._showQdisc())
 
     def testToggleIngress(self):
         self._addIngress()
         tc.qdisc_del(self._bridge.devName, 'ingress')
-        self.assertFalse("qdisc ingress" in self._showQdisc(),
-                         "Could not remove an ingress qdisc from the device.")
+        self.assertNotIn("qdisc ingress", self._showQdisc())
 
     def testQdiscsOfDevice(self):
         self._addIngress()
@@ -187,7 +185,7 @@ class TestQdisc(TestCaseBase):
     def testReplacePrio(self):
         self._addIngress()
         tc.qdisc_replace_prio(self._bridge.devName)
-        self.assertTrue("root" in self._showQdisc())
+        self.assertIn("root", self._showQdisc())
 
     def testTogglePromisc(self):
         tc.set_promisc(self._bridge.devName, True)

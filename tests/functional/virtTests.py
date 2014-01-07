@@ -158,7 +158,7 @@ class VirtTest(TestCaseBase):
 
     def assertVmUp(self, vmid):
         result = self._getVmStatus(vmid)
-        self.assertTrue(result['status'] in self.UPSTATES)
+        self.assertIn(result['status'], self.UPSTATES)
 
     def assertGuestUp(self, vmid, targetUptime=0):
         result = self._getVmStatus(vmid)

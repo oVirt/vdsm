@@ -30,4 +30,4 @@ class TestFuser(VdsmTestCase):
     def testSelfExe(self):
         pid = os.getpid()
         with NamedTemporaryFile() as tempFile:
-            self.assertTrue(pid in fuser.fuser(tempFile.name))
+            self.assertIn(pid, fuser.fuser(tempFile.name))
