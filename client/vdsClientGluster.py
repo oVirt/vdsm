@@ -30,10 +30,7 @@ class GlusterService(service):
 
     def do_glusterVolumeCreate(self, args):
         params = self._eqSplit(args)
-        try:
-            brickList = params['bricks'].split(',')
-        except:
-            raise ValueError
+        brickList = params.get('bricks', '').split(',')
         volumeName = params.get('volumeName', '')
         replicaCount = params.get('replica', '')
         stripeCount = params.get('stripe', '')
@@ -73,10 +70,7 @@ class GlusterService(service):
 
     def do_glusterVolumeBrickAdd(self, args):
         params = self._eqSplit(args)
-        try:
-            brickList = params['bricks'].split(',')
-        except:
-            raise ValueError
+        brickList = params.get('bricks', '').split(',')
         volumeName = params.get('volumeName', '')
         replicaCount = params.get('replica', '')
         stripeCount = params.get('stripe', '')
@@ -223,10 +217,7 @@ class GlusterService(service):
     def do_glusterVolumeRemoveBrickStart(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
-        try:
-            brickList = params['bricks'].split(',')
-        except:
-            raise ValueError
+        brickList = params('bricks', '').split(',')
         replicaCount = params.get('replica', '')
 
         status = self.s.glusterVolumeRemoveBrickStart(volumeName,
@@ -238,10 +229,7 @@ class GlusterService(service):
     def do_glusterVolumeRemoveBrickStop(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
-        try:
-            brickList = params['bricks'].split(',')
-        except:
-            raise ValueError
+        brickList = params.get('bricks', '').split(',')
         replicaCount = params.get('replica', '')
 
         status = self.s.glusterVolumeRemoveBrickStop(volumeName,
@@ -253,10 +241,7 @@ class GlusterService(service):
     def do_glusterVolumeRemoveBrickStatus(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
-        try:
-            brickList = params['bricks'].split(',')
-        except:
-            raise ValueError
+        brickList = params.get('bricks', '').split(',')
         replicaCount = params.get('replica', '')
 
         status = self.s.glusterVolumeRemoveBrickStatus(volumeName,
@@ -268,10 +253,7 @@ class GlusterService(service):
     def do_glusterVolumeRemoveBrickCommit(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
-        try:
-            brickList = params['bricks'].split(',')
-        except:
-            raise ValueError
+        brickList = params.get('bricks', '').split(',')
         replicaCount = params.get('replica', '')
 
         status = self.s.glusterVolumeRemoveBrickCommit(volumeName,
@@ -282,10 +264,7 @@ class GlusterService(service):
     def do_glusterVolumeRemoveBrickForce(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
-        try:
-            brickList = params['bricks'].split(',')
-        except:
-            raise ValueError
+        brickList = params.get('bricks', '').split(',')
         replicaCount = params.get('replica', '')
 
         status = self.s.glusterVolumeRemoveBrickForce(volumeName,
@@ -416,14 +395,8 @@ class GlusterService(service):
 
     def do_glusterServicesAction(self, args):
         params = self._eqSplit(args)
-        try:
-            serviceNames = params.get('serviceNames', '').split(',')
-        except:
-            raise ValueError
+        serviceNames = params.get('serviceNames', '').split(',')
         action = params.get('action', '')
-
-        if not serviceNames or action == "":
-            raise ValueError
 
         status = self.s.glusterServicesAction(serviceNames, action)
         pp.pprint(status)
@@ -431,13 +404,7 @@ class GlusterService(service):
 
     def do_glusterServicesGet(self, args):
         params = self._eqSplit(args)
-        try:
-            serviceNames = params.get('serviceNames', '').split(',')
-        except:
-            raise ValueError
-
-        if not serviceNames:
-            raise ValueError
+        serviceNames = params.get('serviceNames', '').split(',')
 
         status = self.s.glusterServicesGet(serviceNames)
         pp.pprint(status)
