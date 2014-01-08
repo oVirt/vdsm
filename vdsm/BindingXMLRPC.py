@@ -60,6 +60,7 @@ class BindingXMLRPC(object):
         """
         Register xml-rpc functions and serve clients until stopped
         """
+        @utils.traceback(on=self.log.name)
         def threaded_start():
             self._registerFunctions()
             self.server.timeout = 1
