@@ -951,21 +951,6 @@ class HSM:
                 len(domList) > MAX_DOMAINS):
             raise se.TooManyDomainsInStoragePoolError()
 
-        for sdUUID in domList:
-            try:
-                dom = sdCache.produce(sdUUID=sdUUID)
-                # TODO: consider removing validate() from here, as the domains
-                # are going to be accessed much later, and may loose validity
-                # until then.
-                dom.validate()
-            except:
-                raise se.StorageDomainAccessError(sdUUID)
-            # If you remove this condition, remove it from
-            # StoragePool.attachSD() too.
-            if dom.isData() and (dom.getVersion() > msdVersion):
-                raise se.MixedSDVersionError(dom.sdUUID, dom.getVersion(),
-                                             msd.sdUUID, msdVersion)
-
         vars.task.getExclusiveLock(STORAGE, spUUID)
         for dom in sorted(domList):
             vars.task.getExclusiveLock(STORAGE, dom)

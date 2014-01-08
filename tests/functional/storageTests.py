@@ -96,6 +96,51 @@ class StorageTest(TestCaseBase):
         with RollbackContext() as rollback:
             self.createVdsmStorageLayout(conf, domVersion, rollback)
 
+    def testCreatePoolErrors(self):
+        # It's not necessary to test this with multiple storage types
+        conf = storageLayouts['localfs']
+
+        # We duplicate some functionality from createVdsmStorageLayout
+        # so that we can purposefully create a bad configuration
+        with RollbackContext() as rollback:
+            backendServer = conf['server'](self.s, self)
+            connDef = conf['conn']
+            storageDomains = conf['sd']
+            storagePools = conf['sp']
+
+            typeSpecificArgs = backendServer.prepare(connDef, rollback)
+
+            spUUID = storagePools.keys()[0]
+            sdUUIDs = storageDomains.keys()
+            msdVersion = 0
+            badVersion = 3
+            msdUUID = storagePools[spUUID]['master_uuid']
+            self.assertTrue(len(sdUUIDs) >= 2)
+
+            # Now create two domains with mismatched versions
+            for sd in sdUUIDs:
+                if sd == msdUUID:
+                    ver = msdVersion
+                else:
+                    ver = badVersion
+                    regSdUUID = sd
+                self._createStorageDomain(dict([(sd, storageDomains[sd])]),
+                                          typeSpecificArgs, ver, rollback)
+            self._detachExistingStoragePool(rollback)
+
+            # Create the Storage pool using the above two domains.
+            # We expect this operation to be rejected.
+            sp = storagePools[spUUID]
+            r = self.s.createStoragePool(0, spUUID, sp['name'],
+                                         msdUUID, sdUUIDs, msdVersion)
+            self.assertEquals(398, r['status']['code'])
+
+            # Create the pool without including the master SD in the list
+            # This will fail as well
+            r = self.s.createStoragePool(0, spUUID, sp['name'],
+                                         msdUUID, [regSdUUID], msdVersion)
+            self.assertEquals(1000, r['status']['code'])
+
     @staticmethod
     def generateDriveConf(conf):
         drives = []
