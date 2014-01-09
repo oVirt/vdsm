@@ -145,8 +145,8 @@ def temporaryPath(perms=None, data=None):
 
 
 @contextmanager
-def namedTemporaryDir():
-    tmpDir = tempfile.mkdtemp()
+def namedTemporaryDir(dir=None):
+    tmpDir = tempfile.mkdtemp(dir=dir)
     try:
         yield tmpDir
     finally:

@@ -22,7 +22,7 @@ vdsmfunctestsdir = ${vdsmtestsdir}/functional
 
 dist_vdsmfunctests_PYTHON = \
 	dummy.py \
-	dnsmasq.py \
+	dhcp.py \
 	firewall.py \
 	momTests.py \
 	networkTests.py \

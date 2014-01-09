@@ -21,6 +21,7 @@
 from collections import namedtuple
 import errno
 from glob import iglob
+from datetime import datetime
 from itertools import chain
 import logging
 import os
@@ -48,6 +49,14 @@ NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 # ifcfg persistence directories
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
 NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
+
+# possible names of dhclient's lease files (e.g. as NetworkManager's slave)
+_DHCLIENT_LEASES_GLOBS = [
+    '/var/lib/dhclient/dhclient-*.lease',   # Fedora 20 legacy network service
+    '/var/lib/dhclient/dhclient-*.leases',  # RHEL 6.5 network service
+    '/var/lib/NetworkManager/dhclient-*.lease',  # NetworkManager
+    '/var/lib/dhclient/dhclient.leases',  # default
+]
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
@@ -470,7 +479,8 @@ def permAddr():
     return paddr
 
 
-def _getNetInfo(iface, bridged, gateways, ipv6routes, qosInbound, qosOutbound):
+def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes,
+                qosInbound, qosOutbound):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -487,6 +497,7 @@ def _getNetInfo(iface, bridged, gateways, ipv6routes, qosInbound, qosOutbound):
         ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(iface)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
+                     'bootproto4': iface in dhcp4,
                      'gateway': getgateway(gateways, iface),
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
@@ -541,16 +552,87 @@ def _devinfo(link):
             'netmask': ipv4netmask}
 
 
+def _parseExpiryTime(expiryTime):
+    EPOCH = 'epoch '
+
+    if expiryTime.startswith(EPOCH):
+        since_epoch = expiryTime[len(EPOCH):]
+        return datetime.fromtimestamp(float(since_epoch))
+
+    else:
+        return datetime.strptime(expiryTime, '%w %Y/%m/%d %H:%M:%S')
+
+
+def _parseLeaseFile(leaseFile, ipv6):
+    LEASE = 'lease{0} {{\n'.format('6' if ipv6 else '')
+    IFACE = '  interface "'
+    IFACE_END = '";\n'
+    EXPIRE = '  expire '
+
+    interfaces = set()
+    insideLease = False
+
+    for line in leaseFile:
+        if insideLease:
+            if line.startswith(IFACE) and line.endswith(IFACE_END):
+                name = line[len(IFACE):-len(IFACE_END)]
+
+            elif line.startswith(EXPIRE):
+                end = line.find(';')
+                if end == -1:
+                    continue  # the line should always contain a ;
+
+                expiryTime = _parseExpiryTime(line[len(EXPIRE):end])
+                if datetime.now() > expiryTime:
+                    insideLease = False
+                    continue
+
+            elif line == '}\n':
+                insideLease = False
+                if name:
+                    interfaces.add(name)
+
+        elif line == LEASE:
+            insideLease = True
+            name = ''
+
+    return interfaces
+
+
+def getDhclientIfaces(leaseFilesGlobs, ipv6=False):
+    """Returns a set of interfaces configured using dhclient.
+
+    dhclient stores DHCP leases to file(s) whose names can be specified
+    by the leaseFilesGlobs parameter (an iterable of glob strings).
+
+        TODO: dhclient6 does not use an 'expire' line, create a test to see
+        if a line reading 'released;' is an unambiguous sign of an invalid
+        DHCPv6 lease.
+
+    To discover DHCPv6 leases set the ipv6 parameter to True."""
+
+    interfaces = set()
+
+    for leaseFilesGlob in leaseFilesGlobs:
+        for leaseFile in iglob(leaseFilesGlob):
+            with open(leaseFile) as leaseFile:
+                interfaces.update(_parseLeaseFile(leaseFile, ipv6))
+
+    return interfaces
+
+
 def get():
     d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
          'vlans': {}}
     gateways = getRoutes()
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
+    dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
 
     for net, netAttr in networks().iteritems():
         try:
             d['networks'][net] = _getNetInfo(netAttr.get('iface', net),
+                                             dhcp4,
                                              netAttr['bridged'], gateways,
                                              ipv6routes,
                                              netAttr.get('qosInbound'),

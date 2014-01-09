@@ -23,12 +23,12 @@ import json
 
 import neterrors
 from hookValidation import ValidatesHook
-from testrunner import (VdsmTestCase as TestCaseBase,
+from testrunner import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                         expandPermutations, permutations)
 from testValidation import (RequireDummyMod, RequireVethMod,
                             ValidateRunningAsRoot)
 
-import dnsmasq
+import dhcp
 import dummy
 import firewall
 import veth
@@ -40,8 +40,10 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             getLinks)
 
 from vdsm.utils import RollbackContext
-from vdsm.netinfo import operstate, prefix2netmask, getRouteDeviceTo
+from vdsm.netinfo import (operstate, prefix2netmask, getRouteDeviceTo,
+                          getDhclientIfaces)
 from vdsm import ipwrapper
+from vdsm.utils import pgrep
 
 
 NETWORK_NAME = 'test-network'
@@ -83,11 +85,11 @@ def tearDownModule():
 
 @contextmanager
 def dnsmasqDhcp(interface):
-    """ Manages the life cycle of dnsmasq as a DHCP server."""
-    dhcpServer = dnsmasq.Dnsmasq()
+    """Manages the life cycle of dnsmasq as a DHCP server."""
+    dhcpServer = dhcp.Dnsmasq()
     try:
         dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO)
-    except dnsmasq.DnsmasqError as e:
+    except dhcp.DhcpError as e:
         raise SkipTest(e)
 
     with firewallDhcp(interface):
@@ -95,6 +97,22 @@ def dnsmasqDhcp(interface):
             yield
         finally:
             dhcpServer.stop()
+
+
+@contextmanager
+def avoidAnotherDhclient(interface):
+    """Makes sure no other dhclient is run automatically on the interface."""
+    has_nm = pgrep('NetworkManager')
+
+    if has_nm:
+        connectionName = 'placeholder-' + interface
+        dhcp.addNMplaceholderConnection(interface, connectionName)
+
+    try:
+        yield
+    finally:
+        if has_nm:
+            dhcp.removeNMplaceholderConnection(connectionName)
 
 
 @contextmanager
@@ -1667,6 +1685,28 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.vdsm_net.setupNetworks(network, {}, options)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkDoesntExist(NETWORK_NAME)
+
+    @cleanupNet
+    @RequireVethMod
+    @ValidateRunningAsRoot
+    def testDhclientLeases(self):
+        dhcp4 = set()
+        with vethIf() as (server, client):
+            with avoidAnotherDhclient(client):
+
+                veth.setIP(server, IP_ADDRESS, IP_CIDR)
+                veth.setLinkUp(server)
+
+                with dnsmasqDhcp(server):
+
+                    with namedTemporaryDir(dir='/var/lib/dhclient') as tmpDir:
+                        leaseFile = os.path.join(tmpDir, 'test.lease')
+                        pidFile = os.path.join(tmpDir, 'test.pid')
+
+                        dhcp.runDhclient(client, leaseFile, pidFile)
+                        dhcp4 = getDhclientIfaces([leaseFile])
+
+        self.assertIn(client, dhcp4, 'Test iface not found in a lease file.')
 
     @RequireDummyMod
     @ValidateRunningAsRoot

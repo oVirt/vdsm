@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2014 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 from nose.plugins.skip import SkipTest
 
 from vdsm.utils import CommandPath
@@ -31,40 +32,48 @@ class FirewallError(Exception):
     pass
 
 
-def allowDhcp(interface):
+def allowDhcp(veth):
+    """Allows DHCP traffic on a testing veth interface.
+
+    When using the iptables service, no other traffic is allowed.
+    With firewalld, the whole interface is moved to the 'trusted',
+    unrestricted zone.
+    """
     try:
         if _serviceRunning('iptables'):
             _execCmdChecker([_IPTABLES_BINARY.cmd, '-I', 'INPUT', '-i',
-                            interface, '-p', 'udp', '--sport', '68', '--dport',
+                            veth, '-p', 'udp', '--sport', '68', '--dport',
                             '67', '-j', 'ACCEPT'])
-        if _serviceRunning('firewalld'):
-            """
-            zone "work" is used to not to disable dhcp in the public zone
-            after the test finishes, if it is enabled there
-            """
-            _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=work',
-                            '--add-interface=' + interface])
-            _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=work',
-                            '--add-service=dhcp'])
+        elif _serviceRunning('firewalld'):
+            _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
+                            '--change-interface=' + veth])
+        else:
+            raise SkipTest('No firewall service detected.')
     except FirewallError as e:
         raise SkipTest('Failed to allow dhcp traffic in firewall because of '
                        '%s' % e)
 
 
-def stopAllowingDhcp(interface):
-    try:
-        if _serviceRunning('iptables'):
-            _execCmdChecker([_IPTABLES_BINARY.cmd, '-D', 'INPUT', '-i',
-                            interface, '-p', 'udp', '--sport', '68', '--dport',
-                            '67', '-j', 'ACCEPT'])
-        if _serviceRunning('firewalld'):
-            _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=work',
-                            '--remove-service=dhcp'])
-            _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=work',
-                            '--remove-interface=' + interface])
-    except FirewallError as e:
-        raise SkipTest('Failed to remove created rules from firewall because '
-                       'of %s' % e)
+def stopAllowingDhcp(veth):
+    """Removes the rules allowing DHCP on the testing veth interface.
+
+    As the interface is expected to be removed from the system,
+    this function merely reverses the effect of the 'allowDhcp' function
+    just to clean up.
+    For iptables, it deletes the rule introduced. For firewalld, it removes
+    the interface from the 'trusted' zone.
+
+    If cleaning up fails the affected test must fail too (with FirewallError).
+    """
+    if _serviceRunning('iptables'):
+        _execCmdChecker([_IPTABLES_BINARY.cmd, '-D', 'INPUT', '-i',
+                        veth, '-p', 'udp', '--sport', '68', '--dport',
+                        '67', '-j', 'ACCEPT'])
+    elif _serviceRunning('firewalld'):
+        _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
+                        '--remove-interface=' + veth])
+    else:
+        logging.error('The firewall service is gone.')
 
 
 def _serviceRunning(name):
@@ -74,6 +83,7 @@ def _serviceRunning(name):
 
 
 def _execCmdChecker(command):
-    ret, _, err = execCmd(command)
+    ret, out, err = execCmd(command)
     if ret:
-        raise FirewallError('Command %s failed with %s' % (command[0], err))
+        raise FirewallError('Command {0} failed with {1}; {2}'.format(
+                            command, out, err))

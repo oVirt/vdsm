@@ -29,11 +29,11 @@ import ethtool
 from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
-from vdsm.netinfo import getBootProtocol
+from vdsm.netinfo import getBootProtocol, getDhclientIfaces
 
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import VdsmTestCase as TestCaseBase, namedTemporaryDir
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -292,3 +292,35 @@ class TestNetinfo(TestCaseBase):
                         attributes.get('bootproto'))
             finally:
                 rmtree(tempDir)
+
+    def testGetDhclientIfaces(self):
+        LEASES = (
+            'lease {\n'
+            '  interface "valid";\n'
+            '  expire 3 2037/01/29 18:25:46;\n'
+            '}\n'
+            'lease {\n'
+            '  interface "valid2";\n'
+            '  expire epoch 2117041460; # Sat Jan 31 20:04:20 2037\n'
+            '}\n'
+            'lease {\n'
+            '  interface "expired";\n'
+            '  expire 3 2014/01/29 18:25:46;\n'
+            '}\n'
+            'lease {\n'
+            '  interface "expired2";\n'
+            '  expire epoch 1391195060; # Fri Jan 31 20:04:20 2014\n'
+            '}\n'
+        )
+
+        with namedTemporaryDir() as tmpDir:
+            leaseFile = os.path.join(tmpDir, 'test.lease')
+            with open(leaseFile, 'w') as f:
+                f.write(LEASES)
+
+            dhcp4 = getDhclientIfaces([leaseFile])
+
+        self.assertIn('valid', dhcp4)
+        self.assertIn('valid2', dhcp4)
+        self.assertNotIn('expired', dhcp4)
+        self.assertNotIn('expired2', dhcp4)
