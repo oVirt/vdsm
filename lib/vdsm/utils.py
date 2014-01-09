@@ -42,6 +42,7 @@ import itertools
 import logging
 import sys
 import os
+import platform
 import pwd
 import select
 import shutil
@@ -686,21 +687,31 @@ def getHostUUID(legacy=True):
             with open(constants.P_VDSM_NODE_ID) as f:
                 __hostUUID = f.readline().replace("\n", "")
         else:
-            p = subprocess.Popen([constants.EXT_SUDO,
-                                  constants.EXT_DMIDECODE, "-s",
-                                  "system-uuid"],
-                                 close_fds=True, stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            out = '\n'.join(line for line in out.splitlines()
-                            if not line.startswith('#'))
+            arch = platform.machine()
+            if arch in ('x86_64', 'i686'):
+                p = subprocess.Popen([constants.EXT_SUDO,
+                                      constants.EXT_DMIDECODE, "-s",
+                                      "system-uuid"],
+                                     close_fds=True, stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                out, err = p.communicate()
+                out = '\n'.join(line for line in out.splitlines()
+                                if not line.startswith('#'))
 
-            if p.returncode == 0 and 'Not' not in out:
-                #Avoid error string - 'Not Settable' or 'Not Present'
-                __hostUUID = out.strip()
-            else:
-                logging.warning('Could not find host UUID.')
+                if p.returncode == 0 and 'Not' not in out:
+                    #Avoid error string - 'Not Settable' or 'Not Present'
+                    __hostUUID = out.strip()
+                else:
+                    logging.warning('Could not find host UUID.')
+            elif arch in ('ppc', 'ppc64'):
+                #eg. output IBM,03061C14A
+                try:
+                    with open('/proc/device-tree/system-id') as f:
+                        systemId = f.readline()
+                        __hostUUID = systemId.rstrip('\0').replace(',', '')
+                except IOError:
+                    logging.warning('Could not find host UUID.')
 
             if legacy:
                 try:
