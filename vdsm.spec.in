@@ -29,6 +29,10 @@
 %global with_gluster 1
 %endif
 
+%if ! 0%{?rhel}
+%global with_vhostmd 1
+%endif
+
 %if 0%{?fedora} >= 15 || 0%{?rhel} >= 7
 %global with_systemd 1
 %endif
@@ -367,6 +371,7 @@ Requires:       vdsm
 VDSM hook used to perform consistency check on a qcow2 format disk image
 using the QEMU disk image utility.
 
+%if 0%{?with_vhostmd}
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
 Requires:       vhostmd
@@ -374,6 +379,7 @@ BuildArch:      noarch
 
 %description hook-vhostmd
 VDSM hook to use vhostmd per VM according to Virtualization Manager requests.
+%endif
 
 %package hook-faqemu
 Summary:        Fake qemu process for VDSM quality assurance
@@ -1159,6 +1165,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
 
+%if 0%{?with_vhostmd}
 %files hook-vhostmd
 %defattr(-, root, root, -)
 %doc COPYING
@@ -1167,6 +1174,13 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
+%else
+%exclude %{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
+%exclude %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
+%exclude %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
+%exclude %{_libexecdir}/%{vdsm_name}/hooks/before_vm_dehibernate/50_vhostmd
+%exclude %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vhostmd
+%endif
 
 %files hook-qemucmdline
 %defattr(-, root, root, -)
