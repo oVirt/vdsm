@@ -1019,6 +1019,19 @@
  'returns': 'VdsmCapabilities'}
 
 ##
+# @Host.getHardwareInfo:
+#
+# Get host hardware information.
+#
+# Returns:
+# Host hardware information
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'Host', 'name': 'getHardwareInfo'},
+ 'returns': 'HardwareInformation'}
+
+##
 # @Host.getConnectedStoragePools:
 #
 # Get a list of all Storage Pools that are connected to this host.
@@ -1043,6 +1056,7 @@
 # @MIXED:  The device consists of a mix of iSCSI and FibreChannel paths
 #
 # Since: 4.10.0
+# XXX: Need to specify explicit int values for the enum
 ##
 {'enum': 'BlockDeviceType', 'data': ['iSCSI', 'FCP', 'MIXED']}
 
@@ -1666,7 +1680,7 @@
 # @Backup:   The Storage Domain is used for import and export of disk images
 #
 # Since: 4.10.0
-# XXX: Need to specify explicit values for the enum
+# XXX: Need to specify explicit int values for the enum
 ##
 {'enum': 'StorageDomainImageClass',
  'data': ['Unknown', 'Data', 'Iso', 'Backup']}
@@ -1691,7 +1705,7 @@
 # @SHAREDFS:  The Storage Domain uses storage from a Linux VFS file system
 #
 # Since: 4.10.0
-# XXX: Need to specify explicit values for the enum
+# XXX: Need to specify explicit int values for the enum
 ##
 {'enum': 'StorageDomainType',
  'data': ['UNKNOWN', 'NFS', 'FCP', 'ISCSI', 'LOCALFS', 'CIFS', 'SHAREDFS']}
@@ -2911,7 +2925,7 @@
 ##
 {'type': 'VmParameters',
  'data': {'acpiEnable': 'bool',
-          'cpuShares': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
+          '*cpuShares': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
           'display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
@@ -2946,6 +2960,127 @@
 {'command': {'class': 'Host', 'name': 'getVMList'},
  'data': {'*vmList': ['UUID']},
  'returns': ['UUID']}
+
+##
+# @VMFullInfo:
+#
+# Full information about VM.
+#
+# @acpiEnable:            Indicates if ACPI is enabled inside the VM
+#
+# @custom:                A dictionary of custom, free-form properties
+#
+# @devices:               An array of VM devices requested
+#
+# @display:               The type of display
+#
+# @kvmEnable:             Indicates if KVM hardware acceleration is enabled
+#
+# @memSize:               The amount of memory assigned to the VM in MB
+#
+# @nice:                  The host scheduling priority
+#
+# @smp:                   The number of CPUs presented to the VM
+#
+# @smpCoresPerSocket:     Indicates the number of CPU cores per socket
+#
+# @timeOffset:            The time difference from host to the VM in seconds
+#
+# @transparentHugePages:  Indicates if the Transparent Huge Pages feature is
+#                         enabled for this virtual machine
+#
+# @vmId:                  The VM UUID
+#
+# @vmName:                The VM name
+#
+# @vmType:                The type of VM
+#
+# @memGuaranteedSize:     The amount of memory guaranteed to the VM in MB
+#
+# @displaySecurePort:     The port in use for encrypted display data
+#
+# @spiceSecureChannels:   Secure space channels comma separated
+#
+# @username:              The username associated with the current session
+#
+# @emulatedMachine:       The machine specification being emulated
+#
+# @pid:                   The process ID of the underlying qemu process
+#
+# @spiceSslCipherSuite:
+#
+# @cpuType:               The type of CPU being emulated
+#                         special values 'hostPassthrough' and 'hostModel'
+#                         are reserved for host-passthrough and host-mode cpu
+#                         mode
+#
+# @pauseCode:             Indicates the reason a VM has been paused
+#
+# @guestFQDN:             Fully qualified domain name of the guest OS. (Reported
+#                         by the guest agent)
+#
+# @displayIp:             The IP address to use for accessing the VM display
+#
+# @keyboardLayout:        The keyboard layout string (eg. 'en-us')
+#
+# @displayPort:           The port in use for unencrypted display data
+#
+# @guestIPs:              A space separated string of assigned IPv4 addresses
+#
+# @smartcardEnable:       Info whether smartcard is enabled.
+#
+# @nicModel:              The type of device that is exposed to the VM operating system
+#
+# @pitReinjection:
+#
+# @status:                State of the VM
+#
+# @clientIp:              The IP address of the client connected to the display
+#
+# Since: 4.14.1
+##
+{'type': 'VMFullInfo',
+ 'data': {'acpiEnable': 'bool', 'custom': 'StringMap', 'devices': ['VmDevice'],
+          'display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
+          'nice': 'int', 'smp': 'uint', 'smpCoresPerSocket': 'uint',
+          'timeOffset': 'uint', 'transparentHugePages': 'bool', 'vmId': 'UUID',
+          'vmName': 'str', 'vmType': 'VmType', 'memGuaranteedSize': 'uint',
+          'displaySecurePort': 'uint', 'spiceSecureChannels': 'str',
+          'username': 'str', 'emulatedMachine': 'str', 'pid': 'uint',
+          'spiceSslCipherSuite': 'str', 'cpuType': 'str', 'pauseCode': 'str',
+          'guestFQDN': 'str', 'displayIp': 'str', 'keyboardLayout': 'str',
+          'displayPort': 'uint', 'guestIPs': 'str', 'smartcardEnable': 'bool',
+          'nicModel': 'VmInterfaceDeviceModel', 'pitReinjection': 'bool',
+          'status': 'str', 'clientIp': 'str'}}
+
+##
+# @Host.getVMFullList:
+#
+# Get full information about the current virtual machines.
+#
+# @vmList:      #optional Filter the results by a list of UUIDs
+#
+# Returns:
+# A list of full information about current VMs
+#
+# Since: 4.14.1
+##
+{'command': {'class': 'Host', 'name': 'getVMFullList'},
+ 'data': {'*vmList': ['UUID']},
+ 'returns': ['VMFullInfo']}
+
+##
+# @Host.getAllVmStats:
+#
+# Get statistics for all virtual machines.
+#
+# Returns:
+# A list of stats for all VMs
+#
+# Since: 4.10.0
+##
+{'command': {'class': 'Host', 'name': 'getAllVmStats'},
+ 'returns': ['VmStats']}
 
 ##
 # @Host.ping:
@@ -3829,20 +3964,20 @@
 #
 # @storagepoolID:    The UUID of the Storage Pool
 #
-# @masterSdUUID:     The UUID of a Storage Domain that should become master
-#                    after this domain has been deactivated.  If this domain
-#                    was not the master domain, then the current master's UUID
-#                    may be used.
+# @masterSdUUID:     #optional The UUID of a Storage Domain that should become
+#                    master after this domain has been deactivated.  If this
+#                    domain was not the master domain, then the current master's
+#                    UUID may be used.
 #
-# @masterVersion:    The Storage Domain version of the new master domain
+# @masterVersion:    #optional The Storage Domain version of the new master domain
 #
-# @force:            Force operation -- do not perform validation
+# @force:            #optional Force operation -- do not perform validation
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'detach'},
  'data': {'storagedomainID': 'UUID', 'storagepoolID': 'UUID',
-          'masterSdUUID': 'UUID', 'masterVersion': 'int', 'force': 'bool'}}
+          '*masterSdUUID': 'UUID', '*masterVersion': 'int', '*force': 'bool'}}
 
 ##
 # @StorageDomain.extend:
@@ -4227,13 +4362,14 @@
 #
 # @scsiKey:        The key that was passed into @StoragePool.connect
 #
-# @remove:         If True, remove the Storage Pool after it is disconnected
+# @remove:         #optional If True, remove the Storage Pool after it is disconnected
+#                  Not used by vdsm and set to false
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'disconnect'},
  'data': {'storagepoolID': 'UUID', 'hostID': 'int', 'scsiKey': 'str',
-          'remove': 'bool'}}
+          '*remove': 'bool'}}
 
 ##
 # @StoragePool.disconnectStorageServer:
@@ -4829,13 +4965,13 @@
 #
 # @vmList:           A list of virtual machine definitions to store
 #
-# @storagedomainID:  The Storage Domain to use for storing the VM definitions
+# @storagedomainID:  #optional The Storage Domain to use for storing the VM definitions
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'updateVMs'},
  'data': {'storagepoolID': 'UUID', 'vmList': ['UpdateVmDefinition'],
-          'storagedomainID': 'UUID'}}
+          '*storagedomainID': 'UUID'}}
 
 ##
 # @StoragePool.removeVM:
@@ -4846,12 +4982,12 @@
 #
 # @vmUUID:           Remove the saved definition of the VM with this UUID
 #
-# @storagedomainID:  The Storage Domain where the VM is stored
+# @storagedomainID:  #optional The Storage Domain where the VM is stored
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'removeVM'},
- 'data': {'storagepoolID': 'UUID', 'vmUUID': 'UUID', 'storagedomainID': 'UUID'}}
+ 'data': {'storagepoolID': 'UUID', 'vmUUID': 'UUID', '*storagedomainID': 'UUID'}}
 
 ## Category: @Task #############################################################
 ##

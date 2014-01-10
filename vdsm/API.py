@@ -668,7 +668,7 @@ class VM(APIBase):
             self.log.info('network %s: using %s', network, ip)
         return ip
 
-    def snapshot(self, snapDrives, snapMemVolHandle):
+    def snapshot(self, snapDrives, snapMemVolHandle=None):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']

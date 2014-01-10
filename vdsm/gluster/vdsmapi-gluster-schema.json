@@ -344,7 +344,7 @@
 #
 # Get status information for list of services
 #
-# @serviceName:   Gluster service name
+# @serviceNames:   A list of Gluster service names
 #
 # Returns:
 # Status information for list of services
@@ -352,7 +352,7 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterService', 'name': 'get'},
- 'data': {'serviceName': 'str'},
+ 'data': {'serviceNames': ['str']},
  'returns': 'GlusterServicesStatusInfo'}
 
 ##
@@ -360,7 +360,7 @@
 #
 # start/stop/restart the list of services and get status information.
 #
-# @serviceName:  Gluster service name
+# @serviceNames:  Gluster service name
 #
 # @action:       Action to perform start/stop/restart
 #
@@ -370,7 +370,7 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterService', 'name': 'action'},
- 'data': {'serviceName': 'str', 'action': 'GlusterServiceAction'},
+ 'data': {'serviceNames': ['str'], 'action': 'GlusterServiceAction'},
  'returns': 'GlusterServicesStatusInfo'}
 
 
@@ -490,6 +490,36 @@
  'data': ['ONLINE', 'OFFLINE']}
 
 ##
+# @VolumeProfileInfo:
+#
+# Volume profile information.
+#
+# @volumeName:   volume name
+#
+# @bricks:  list of bricks
+#
+# Since: 4.10.3
+##
+{'type': 'VolumeProfileInfo',
+ 'data': {'volumeName': 'str', 'bricks': ['str']}}
+
+##
+# @VolumeOptionInfo:
+#
+# Volume option information.
+#
+# @name:   volume option name
+#
+# @defaultValue:  default value
+#
+# @description: description
+#
+# Since: 4.10.3
+##
+{'type': 'VolumeProfileInfo',
+ 'data': {'name': 'str', 'defaultValue': 'str', 'description': 'str'}}
+
+##
 # @transType:
 #
 # Possible value of transport type.
@@ -545,6 +575,60 @@
 ##
 {'type': 'VolumeInfo',
  'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'], 'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str', 'status': 'volumeStatus', 'volumeType': 'str', 'bricksInfo': ['BricksInfo']}}
+
+##
+# @StatusOption:
+#
+# Possible value of Status option type.
+#
+# @DETAIL:
+#
+# @CLIENTS:
+#
+# @MEM:
+#
+# Since: 4.10.3
+##
+{'enum': 'StatusOption',
+ 'data': ['DETAIL', 'CLIENTS', 'MEM']}
+
+##
+# @GlusterVolume.status:
+#
+# Get Gluster volume status
+#
+# @volumeName: Gluster volume name
+#
+# @brick: #optional Brick name
+#
+# @statusOption: #optional One of the status options
+#
+# Returns:
+# List of gluster volume statuses
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'status'},
+ 'data': {'volumeName': 'str', '*brick': 'str', '*statusOption': 'StatusOption'},
+ 'returns': ['VolumeStatus']}
+
+##
+# @GlusterVolume.profileInfo:
+#
+# Get Gluster volume profileInfo
+#
+# @volumeName: Gluster volume name
+#
+# @nfs: #optional
+#
+# Returns:
+# List of Gluster volume profile infos
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'profileInfo'},
+ 'data': {'volumeName': 'str', '*nfs': 'str'},
+ 'returns': ['VolumeProfileInfo']}
 
 ##
 # @GlusterVolume.list:
@@ -653,6 +737,19 @@
 {'command': {'class': 'GlusterVolume', 'name': 'set'},
  'data': {'volumeName': 'str', 'option': 'str', 'value': 'str'},
  'returns': 'bool'}
+
+##
+# @GlusterVolume.setOptionsList:
+#
+# List Gluster volume options
+#
+# Returns:
+# VolumeOptionInfo
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'setOptionsList'},
+ 'returns': ['VolumeOptionInfo']}
 
 ##
 # @GlusterVolume.reset:
@@ -824,13 +921,17 @@
 #
 # @volumeName: Gluster volume name
 #
+# @brickList: List of bricks
+#
+# @replicaCount: #optional Replica count of the volume
+#
 # Returns:
 # Status information of remove brick operation
 #
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'removeBrickStatus'},
- 'data': {'volumeName': 'str', 'brickList': ['str'], 'replicaCount': 'int'},
+ 'data': {'volumeName': 'str', 'brickList': ['str'], '*replicaCount': 'int'},
  'returns': 'RebalanceRemoveStatus'}
 
 ##
@@ -920,6 +1021,8 @@
 #
 # @volumeName: Gluster volume name
 #
+# @force: #optional Force flag
+#
 # Returns:
 # Gluster volume rebalance status
 #
@@ -928,6 +1031,26 @@
 {'command': {'class': 'GlusterVolume', 'name': 'rebalanceStop'},
  'data': {'volumeName': 'str', 'force': 'bool'},
  'returns': 'RebalanceRemoveStatus'}
+
+##
+# @GlusterVolume.replaceBrickStart:
+#
+# Replace Gluster volume start
+#
+# @volumeName: Gluster volume name
+#
+# @existingBrick: Existing brick
+#
+# @newBrick: New brick
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.10.3
+##
+{'command': {'class': 'GlusterVolume', 'name': 'replaceBrickStart'},
+ 'data': {'volumeName': 'str', 'existingBrick': 'str', 'newBrick': 'str'},
+ 'returns': 'bool'}
 
 ##
 # @GlusterVolume.rebalanceStatus:

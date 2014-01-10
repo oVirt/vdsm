@@ -25,7 +25,6 @@
 #
 
 import os
-from vdsm import constants
 
 try:
     from collections import OrderedDict
@@ -119,6 +118,9 @@ def find_schema(schema_name='vdsmapi', raiseOnError=True):
     Find the API schema file whether we are running from within the source dir
     or from an installed location
     """
+    # Don't depend on module VDSM if not looking for schema
+    from vdsm import constants
+
     localpath = os.path.dirname(__file__)
     installedpath = constants.P_VDSM
     for directory in localpath, installedpath:
