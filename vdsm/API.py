@@ -1203,6 +1203,18 @@ class Global(APIBase):
             self.log.error("failed to retrieve hardware info", exc_info=True)
             return errCode['hwInfoErr']
 
+    def getAllVmStats(self):
+        """
+        Get statistics of all running VMs.
+        """
+        vms = self.getVMList()
+        statsList = []
+        for s in vms['vmList']:
+            response = VM(s['vmId']).getStats()
+            if response:
+                statsList.append(response['statsList'][0])
+        return {'status': doneCode, 'statsList': statsList}
+
     def getStats(self):
         """
         Report host statistics.

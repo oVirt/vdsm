@@ -306,16 +306,8 @@ class BindingXMLRPC(object):
         return vm.getStats()
 
     def getAllVmStats(self):
-        """
-        Get statistics of all running VMs.
-        """
-        vms = self.getVMList()
-        statsList = []
-        for s in vms['vmList']:
-            response = self.vmGetStats(s['vmId'])
-            if response:
-                statsList.append(response['statsList'][0])
-        return {'status': doneCode, 'statsList': statsList}
+        api = API.Global()
+        return api.getAllVmStats()
 
     def vmMigrationCreate(self, params):
         vm = API.VM(params['vmId'])
