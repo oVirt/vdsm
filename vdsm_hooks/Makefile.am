@@ -64,8 +64,8 @@ EXTRA_DIST = \
 VDSMHOOKS = \
 	before_device_create \
 	after_device_create \
-    before_device_destroy \
-    after_device_destroy \
+	before_device_destroy \
+	after_device_destroy \
 	before_vm_start \
 	after_vm_start \
 	before_vm_cont \
@@ -76,10 +76,10 @@ VDSMHOOKS = \
 	after_vm_hibernate \
 	before_vm_dehibernate \
 	after_vm_dehibernate \
-    before_device_migrate_source \
-    after_device_migrate_source \
-    before_device_migrate_destination \
-    after_device_migrate_destination \
+	before_device_migrate_source \
+	after_device_migrate_source \
+	before_device_migrate_destination \
+	after_device_migrate_destination \
 	before_vm_migrate_source \
 	after_vm_migrate_source \
 	before_vm_migrate_destination \
