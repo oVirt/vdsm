@@ -30,7 +30,7 @@ for kvm_mod in ("kvm_intel", "kvm_amd"):
     kvm_mod_path = "/sys/module/%s/parameters/nested" % kvm_mod
     try:
         with file(kvm_mod_path) as f:
-            if f.readline().strip() == "Y":
+            if f.readline().strip() in ("Y", "1"):
                 break
     except IOError:
         pass
