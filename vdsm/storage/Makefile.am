@@ -80,6 +80,3 @@ nodist_vdsmstorage_DATA = \
 EXTRA_DIST = \
 	lvm.env.in \
 	$(NULL)
-
-check-local:
-	PYTHONPATH="$(top_srcdir)/lib:$$PYTHONPATH" PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/storage_exception.py
