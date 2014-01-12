@@ -268,7 +268,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     bootproto = options.pop('bootproto', None)
 
-    defaultRoute = network == constants.MANAGEMENT_NETWORK
+    defaultRoute = network in constants.LEGACY_MANAGEMENT_NETWORKS
 
     netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
                                 bondingOptions, nics, mtu, ipaddr, netmask,

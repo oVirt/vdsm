@@ -22,8 +22,8 @@
 
 import os
 
-# VDSM management device
-MANAGEMENT_NETWORK = '@VDSMBRIDGE@'
+# VDSM management networks
+LEGACY_MANAGEMENT_NETWORKS = ('ovirtmgmt', 'rhevm')
 
 # SMBIOS manufacturer
 SMBIOS_MANUFACTURER = '@SMBIOS_MANUFACTURER@'

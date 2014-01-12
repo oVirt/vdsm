@@ -22,7 +22,7 @@ import logging
 import sys
 
 from vdsm import netinfo
-from vdsm.constants import MANAGEMENT_NETWORK
+from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 from vdsm.tool import expose
 from vdsm.tool.upgrade import upgrade
 
@@ -33,8 +33,13 @@ UPGRADE_NAME = 'upgrade-3.0.0-networks'
 
 
 def isNeeded(networks, bridges):
-    return (MANAGEMENT_NETWORK not in networks and
-            MANAGEMENT_NETWORK in bridges)
+    def managementNetwork():
+        return any(net in networks for net in LEGACY_MANAGEMENT_NETWORKS)
+
+    def managementBridge():
+        return any(net in bridges for net in LEGACY_MANAGEMENT_NETWORKS)
+
+    return not managementNetwork() and managementBridge()
 
 
 @upgrade(UPGRADE_NAME)
