@@ -861,6 +861,11 @@ class Image(APIBase):
         return self._irs.downloadImage(
             methodArgs, self._spUUID, self._sdUUID, self._UUID, volUUID)
 
+    def downloadFromStream(self, methodArgs, callback, volUUID=None):
+        return self._irs.downloadImageFromStream(
+            methodArgs, callback, self._spUUID, self._sdUUID, self._UUID,
+            volUUID)
+
 
 class LVMVolumeGroup(APIBase):
     ctorArgs = ['lvmvolumegroupID']

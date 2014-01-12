@@ -1618,6 +1618,20 @@ class StoragePool(object):
             return image.Image(self.poolPath) \
                 .download(methodArgs, sdUUID, imgUUID, volUUID)
 
+    def downloadImageFromStream(self, methodArgs, callback, sdUUID, imgUUID,
+                                volUUID=None):
+        """
+        Download an image from a stream.
+        """
+        imgResourceLock = rmanager.acquireResource(
+            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            rm.LockType.exclusive)
+
+        with imgResourceLock:
+            return image.Image(self.poolPath) \
+                .downloadFromStream(methodArgs, callback, sdUUID, imgUUID,
+                                    volUUID)
+
     def moveMultipleImages(self, srcDomUUID, dstDomUUID, imgDict, vmUUID,
                            force):
         """
