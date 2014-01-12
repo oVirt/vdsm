@@ -1173,3 +1173,22 @@ class Image:
             imageSharing.download(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)
+
+    def downloadFromStream(self, methodArgs, callback, sdUUID, imgUUID,
+                           volUUID=None):
+        try:
+            self._downloadFromStream(methodArgs, sdUUID, imgUUID, volUUID)
+        finally:
+            callback()
+
+    def _downloadFromStream(self, methodArgs, sdUUID, imgUUID, volUUID=None):
+        domain = sdCache.produce(sdUUID)
+
+        vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
+        try:
+            # Extend the volume (if relevant) to the image size
+            vol.extend(imageSharing.
+                       streamGetSize(methodArgs) / volume.BLOCK_SIZE)
+            imageSharing.streamDownloadImage(vol.getVolumePath(), methodArgs)
+        finally:
+            domain.deactivateImage(imgUUID)

@@ -1673,6 +1673,22 @@ class HSM:
         self._spmSchedule(spUUID, "downloadImage", pool.downloadImage,
                           methodArgs, sdUUID, imgUUID, volUUID)
 
+    @public
+    def downloadImageFromStream(self, methodArgs, callback, spUUID, sdUUID,
+                                imgUUID, volUUID=None):
+        """
+        Download an image from a stream.
+
+        Warning: Internal use only.
+        """
+        sdCache.produce(sdUUID)
+        pool = self.getPool(spUUID)
+        # NOTE: this could become an hsm task, in such case the LV extension
+        # required to prepare the destination should go through the mailbox.
+        self._spmSchedule(spUUID, "downloadImageFromStream",
+                          pool.downloadImageFromStream, methodArgs, callback,
+                          sdUUID, imgUUID, volUUID)
+
     @deprecated
     @public
     def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict,

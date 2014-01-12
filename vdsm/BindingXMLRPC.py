@@ -21,9 +21,12 @@
 from errno import EINTR
 import SimpleXMLRPCServer
 from vdsm import SecureXMLRPCServer
+import json
+import httplib
 import logging
 import libvirt
 import threading
+import socket
 
 from vdsm import constants
 from vdsm import utils
@@ -113,11 +116,95 @@ class BindingXMLRPC(object):
         else:
             basehandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
 
-        class LoggingHandler(basehandler):
+        class RequestHandler(basehandler):
+
+            # Timeout for the request socket
+            timeout = 60
+            log = logging.getLogger("BindingXMLRPC.RequestHandler")
+
+            HEADER_POOL = 'Storage-Pool-Id'
+            HEADER_DOMAIN = 'Storage-Domain-Id'
+            HEADER_IMAGE = 'Image-Id'
+            HEADER_VOLUME = 'Volume-Id'
+            HEADER_CONTENT_LENGTH = 'content-length'
+            HEADER_CONTENT_TYPE = 'content-type'
+
             def setup(self):
                 threadLocal.client = self.client_address[0]
                 threadLocal.server = self.request.getsockname()[0]
                 return basehandler.setup(self)
+
+            def do_PUT(self):
+                try:
+                    contentLength = self.headers.getheader(
+                        self.HEADER_CONTENT_LENGTH)
+                    if not contentLength:
+                        self.send_error(httplib.LENGTH_REQUIRED,
+                                        "missing content length")
+                        return
+
+                    try:
+                        contentLength = int(contentLength)
+                    except ValueError:
+                        self.send_error(httplib.BAD_REQUEST,
+                                        "invalid content length %r" %
+                                        contentLength)
+                        return
+
+                    # Required headers
+                    spUUID = self.headers.getheader(self.HEADER_POOL)
+                    sdUUID = self.headers.getheader(self.HEADER_DOMAIN)
+                    imgUUID = self.headers.getheader(self.HEADER_IMAGE)
+                    if not all((spUUID, sdUUID, imgUUID)):
+                        self.send_error(httplib.BAD_REQUEST,
+                                        "missing or empty required header(s):"
+                                        " spUUID=%s sdUUID=%s imgUUID=%s"
+                                        % (spUUID, sdUUID, imgUUID))
+                        return
+
+                    # Optional headers
+                    volUUID = self.headers.getheader(self.HEADER_VOLUME)
+
+                    uploadFinishedEvent = threading.Event()
+
+                    def upload_finished():
+                        uploadFinishedEvent.set()
+
+                    methodArgs = {'fileObj': self.rfile,
+                                  'contentLength': contentLength}
+                    image = API.Image(imgUUID, spUUID, sdUUID)
+                    response = image.downloadFromStream(methodArgs,
+                                                        upload_finished,
+                                                        volUUID)
+
+                    while not uploadFinishedEvent.is_set():
+                        uploadFinishedEvent.wait()
+
+                    json_response = json.dumps(response)
+                    self.send_response(httplib.OK)
+                    self.send_header(self.HEADER_CONTENT_TYPE,
+                                     'application/json')
+                    self.send_header(self.HEADER_CONTENT_LENGTH,
+                                     len(json_response))
+                    self.end_headers()
+                    self.wfile.write(json_response)
+
+                except socket.timeout:
+                    self.send_error(httplib.REQUEST_TIMEOUT,
+                                    "request timeout")
+
+                except Exception:
+                    self.send_error(httplib.INTERNAL_SERVER_ERROR,
+                                    "error during execution", exc_info=True)
+
+            def send_error(self, error, message, exc_info=False):
+                try:
+                    self.log.error(message, exc_info=exc_info)
+                    self.send_response(error)
+                    self.end_headers()
+                except Exception:
+                    self.log.error("failed to return response",
+                                   exc_info=True)
 
             def parse_request(self):
                 r = (SecureXMLRPCServer.SecureXMLRPCRequestHandler.
@@ -131,11 +218,11 @@ class BindingXMLRPC(object):
                 server_address,
                 keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
                 timeout=self.serverRespTimeout,
-                requestHandler=LoggingHandler)
+                requestHandler=RequestHandler)
         else:
             server = utils.SimpleThreadedXMLRPCServer(
                 server_address,
-                requestHandler=LoggingHandler, logRequests=True)
+                requestHandler=RequestHandler, logRequests=True)
         utils.closeOnExec(server.socket.fileno())
 
         return server
