@@ -164,6 +164,9 @@
 #
 # @qosOutbound:   #optional BandwidthParams for outgoing traffic.
 #
+# @defaultRoute:  #optional boolean - Is this network's gateway the host's
+#                 default gateway?
+#
 # Since: 4.10.0
 ##
 {'type': 'SetupNetworkNetAttributes',
@@ -171,7 +174,8 @@
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
           '*remove': 'bool',
           '*qosInbound': 'BandwidthParams',
-          '*qosOutbound': 'BandwidthParams'}}
+          '*qosOutbound': 'BandwidthParams',
+          '*defaultRoute': 'bool'}}
 ##
 # @SetupNetworkBondAttributes:
 #

@@ -65,9 +65,9 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                        bondingOptions=None, nics=None, mtu=None, ipaddr=None,
                        netmask=None, gateway=None, bootproto=None,
                        ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
-                       dhcpv6=None, _netinfo=None, configurator=None,
-                       blockingdhcp=None, implicitBonding=None,
-                       defaultRoute=None, **opts):
+                       dhcpv6=None, defaultRoute=None, _netinfo=None,
+                       configurator=None, blockingdhcp=None,
+                       implicitBonding=None, **opts):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -224,7 +224,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, prefix=None, mtu=None, gateway=None,
                ipv6addr=None, ipv6gateway=None, force=False,
                configurator=None, bondingOptions=None, bridged=True,
-               _netinfo=None, qosInbound=None, qosOutbound=None, **options):
+               _netinfo=None, qosInbound=None, qosOutbound=None,
+               defaultRoute=None, **options):
     nics = nics or ()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
@@ -258,23 +259,28 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                 _validateInterNetworkCompatibility(_netinfo, vlan, nic,
                                                    bridged)
 
+    # defaultRoute is set either explicitly by the client, OR if we're adding
+    # the management network.
+    # TODO: When oVirt 3.3 is deprecated, change the default to False and
+    #       remove reference to constants.LEGACY_MANAGEMENT_NETWORKS
+    if defaultRoute is None:
+        defaultRoute = network in constants.LEGACY_MANAGEMENT_NETWORKS
+
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
-                 " bondingOptions=%s, mtu=%s, bridged=%s, options=%s",
-                 network, vlan, bonding, nics, bondingOptions,
-                 mtu, bridged, options)
+                 " bondingOptions=%s, mtu=%s, bridged=%s, defaultRoute=%s,"
+                 "options=%s", network, vlan, bonding, nics, bondingOptions,
+                 mtu, bridged, defaultRoute, options)
 
     if configurator is None:
         configurator = ConfiguratorClass()
 
     bootproto = options.pop('bootproto', None)
 
-    defaultRoute = network in constants.LEGACY_MANAGEMENT_NETWORKS
-
     netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, bootproto, ipv6addr, ipv6gateway,
-                                _netinfo=_netinfo, configurator=configurator,
-                                defaultRoute=defaultRoute, **options)
+                                defaultRoute, _netinfo=_netinfo,
+                                configurator=configurator, **options)
 
     netEnt.configure(**options)
     configurator.configureLibvirtNetwork(network, netEnt,
@@ -550,6 +556,7 @@ def setupNetworks(networks, bondings, **options):
                         ipv6gateway="<ipv6>"
                         ipv6autoconf="0|1"
                         dhcpv6="0|1"
+                        defaultRoute=True|False
                         (other options will be passed to the config file AS-IS)
                         -- OR --
                         remove=True (other attributes can't be specified)

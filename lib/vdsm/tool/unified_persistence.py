@@ -21,12 +21,19 @@ import logging
 
 from ..config import config
 from ..netconfpersistence import RunningConfig
-from ..netinfo import NetInfo, getIfaceCfg
+from ..netinfo import NetInfo, getIfaceCfg, getDefaultGateway
 from . import expose
 from .upgrade import upgrade
 
 
 UPGRADE_NAME = 'upgrade-unified-persistence'
+
+
+# TODO: Upgrade currently gets bootproto from ifcfg files,
+# as we assume we're upgrading from oVirt <= 3.4, where users still used
+# ifcfg files. Once we start dealing with new installations on OS that don't
+# use ifcfg files, we need to stop getting information from ifcfg files.
+# bootproto = 'dhcp' if there's a lease on the NIC at the moment of upgrade
 
 
 @upgrade(UPGRADE_NAME)
@@ -38,13 +45,19 @@ def run():
 
 
 def _toIfcfgFormat(value):
-    filter = {'on': 'yes', 'off': 'no'}
-    # If value is in the dict and hashable - Get its filtered value.
-    # Otherwise: Return the original value
+    """
+    Return 'on' -> 'yes', 'off' -> 'no'
+    :return: Altered value, unless value is unknown - In which case return
+             it unaltered
+    """
     try:
-        return filter.get(value, value)
+        return {'on': 'yes', 'off': 'no'}.get(value, value)
     except TypeError:
         return value
+
+
+def _fromIfcfgFormat(value):
+    return {'yes': True, 'no': False}[value]
 
 
 def _getNetInfo():
@@ -53,6 +66,7 @@ def _getNetInfo():
         whitelist = ['mtu', 'qosInbound', 'qosOutbound', 'stp']
         toLower = ['True', 'False', 'None']
         toUpper = ['stp']
+        defaultGateway = getDefaultGateway()
 
         for network, netParams in netinfo.networks.iteritems():
             networks[network] = {}
@@ -84,6 +98,10 @@ def _getNetInfo():
                     networks[network]['netmask'] = netParams['netmask']
                 if netParams['gateway'] != '':
                     networks[network]['gateway'] = netParams['gateway']
+
+            if defaultGateway is not None:
+                networks[network]['defaultRoute'] = \
+                    str(defaultGateway.device == topLevelDevice)
 
             # What if the 'physical device' is actually a VLAN?
             if physicalDevice in netinfo.vlans:
