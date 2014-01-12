@@ -70,6 +70,3 @@ dist_vdsmstorage_PYTHON = \
 
 dist_vdsmexec_SCRIPTS = \
 	curl-img-wrap
-
-check-local:
-	PYTHONPATH="$(top_srcdir)/lib:$$PYTHONPATH" PYTHONDONTWRITEBYTECODE=1 $(PYTHON) $(srcdir)/storage_exception.py
