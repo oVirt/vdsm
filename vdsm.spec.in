@@ -339,6 +339,7 @@ Manager.
 
 %package python
 Summary:        VDSM python libraries
+Requires:       %{name}-python-zombiereaper = %{version}-%{release}
 
 %description python
 Shared libraries between the various VDSM packages.
