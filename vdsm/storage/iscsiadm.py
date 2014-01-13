@@ -1,7 +1,6 @@
 from threading import Lock
 import misc
 from vdsm import constants
-from vdsm.utils import AsyncProcessOperation
 
 # iscsiadm exit statuses
 ISCSI_ERR_SESS_EXISTS = 15
@@ -72,7 +71,7 @@ _RESERVED_INTERFACES = ("default", "tcp", "iser")
 _iscsiadmLock = Lock()
 
 
-def _runCmd(args, hideValue=False, sync=True):
+def _runCmd(args, hideValue=False):
     # FIXME: I don't use supervdsm because this entire module has to just be
     # run as root and there is no such feature yet in supervdsm. When such
     # feature exists please change this.
@@ -89,7 +88,7 @@ def _runCmd(args, hideValue=False, sync=True):
                 if i < (len(printCmd) - 1):
                     printCmd[i + 1] = "****"
 
-        return misc.execCmd(cmd, printable=printCmd, sudo=True, sync=sync)
+        return misc.execCmd(cmd, printable=printCmd, sudo=True)
 
 
 def iface_exists(interfaceName):
@@ -295,21 +294,12 @@ def node_login(iface, portal, targetName):
     raise IscsiNodeError(rc, out, err)
 
 
-def session_rescan_async():
-    proc = _runCmd(["-m", "session", "-R"], sync=False)
-
-    def parse_result(rc, out, err):
-        if rc == 0:
-            return
-
-        raise IscsiSessionError(rc, out, err)
-
-    return AsyncProcessOperation(proc, parse_result)
-
-
 def session_rescan():
-    aop = session_rescan_async()
-    return aop.result()
+    rc, out, err = _runCmd(["-m", "session", "-R"])
+    if rc == 0:
+        return
+
+    raise IscsiSessionError(rc, out, err)
 
 
 def session_logout(sessionId):
