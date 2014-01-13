@@ -181,7 +181,7 @@ task_restore_nets(){
 }
 
 task_unified_network_persistence_upgrade(){
-    "$VDSM_TOOL" upgrade-to-unified-persistence
+    "$VDSM_TOOL" upgrade-unified-persistence
 }
 
 task_upgrade_300_nets(){
