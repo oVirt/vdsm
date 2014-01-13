@@ -48,7 +48,7 @@ import stat
 import subprocess
 import threading
 import time
-import zombiereaper
+import zombieReaper
 
 from cpopen import CPopen as BetterPopen
 from config import config
@@ -983,7 +983,7 @@ class AsyncProcessOperation(object):
 
     def __del__(self):
         if self._proc.returncode is None:
-            zombiereaper.autoReapPID(self._proc.pid)
+            zombieReaper.autoReapPID(self._proc.pid)
 
 
 def panic(msg):
