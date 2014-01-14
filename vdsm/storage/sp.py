@@ -1834,6 +1834,23 @@ class StoragePool(Securable):
         """
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
 
+        if imgUUID != srcImgUUID and srcImgUUID != volume.BLANK_UUID:
+            srcDom = sdCache.produce(sdUUID)
+            srcVol = srcDom.produceVolume(imgUUID=srcImgUUID,
+                                          volUUID=srcVolUUID)
+
+            if not srcVol.isShared():
+                if srcVol.getParent() == volume.BLANK_UUID:
+                    with rmanager.acquireResource(imageResourcesNamespace,
+                                                  srcImgUUID,
+                                                  rm.LockType.exclusive):
+
+                        self.log.debug("volume %s is not shared. "
+                                       "Setting it as shared", srcVolUUID)
+                        srcVol.setShared()
+                else:
+                    raise se.VolumeNonShareable(srcVol)
+
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
             newVolUUID = sdCache.produce(sdUUID).createVolume(
