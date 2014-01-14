@@ -191,6 +191,8 @@ def configure(*args):
     """
     args = _parse_args("configure")
     configurer_to_trigger = []
+
+    sys.stdout.write("\nChecking configuration status...\n\n")
     for c in __configurers:
         if c.getName() in args.modules:
             if not c.validate():
@@ -203,21 +205,25 @@ def configure(*args):
     services = []
     for c in configurer_to_trigger:
         for s in c.getServices():
-            if service.service_status(s) == 0:
+            if service.service_status(s, False) == 0:
                 if not args.force:
                     raise RuntimeError(
-                        "Cannot configure while %s is running" % s
+                        "\n\nCannot configure while service '%s' is "
+                        "running.\n Stop the service manually or use the "
+                        "--force flag.\n" % s
                     )
                 services.append(s)
 
     for s in services:
         service.service_stop(s)
 
+    sys.stdout.write("\nRunning configure...\n")
     for c in configurer_to_trigger:
         c.configure()
 
     for s in reversed(services):
         service.service_start(s)
+    sys.stdout.write("\nDone configuring modules to VDSM.\n")
 
 
 @expose("is-configured")
@@ -240,7 +246,19 @@ def isconfigured(*args):
         ret = False
 
     if not ret:
-        raise RuntimeError("Not configured. Try 'vdsm-tool configure'")
+        msg = \
+            """
+
+One of the modules is not configured to work with VDSM.
+To configure the module use the following:
+'vdsm-tool configure [module_name]'.
+
+If all modules are not configured try to use:
+'vdsm-tool configure --force'
+(The force flag will stop the module's service and start it
+afterwards automatically to load the new configuration.)
+"""
+        raise RuntimeError(msg)
 
 
 @expose("validate-config")

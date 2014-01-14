@@ -209,7 +209,8 @@ run_tasks(){
         "task_${taskName}"
         rt=$?
         if [ "$rt" -ne 0 ]; then
-            echo "${prog}: failed to execute ${taskName}, error code ${rt}"
+            echo "${prog}: stopped during execute ${taskName} task" \
+                 "(task returned with error code ${rt})."
             exit 1
         fi
     done

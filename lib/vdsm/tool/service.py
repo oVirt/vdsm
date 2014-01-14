@@ -370,14 +370,15 @@ def service_stop(srvName):
 
 
 @expose("service-status")
-def service_status(srvName):
+def service_status(srvName, verbose=True):
     """
     Get status of a system service
     """
     try:
         return _runAlts(_srvStatusAlts, srvName)
     except ServiceError as e:
-        sys.stderr.write('service-status: %s\n' % e)
+        if verbose:
+            sys.stderr.write('service-status: %s\n' % e)
         return 1
 
 
