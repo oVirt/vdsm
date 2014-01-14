@@ -58,6 +58,14 @@ _modprobe = CommandPath("modprobe",
                         )
 _exportfs = CommandPath("exportfs", "/usr/sbin/exportfs")
 
+DEFAULT_TYPES = ('localfs', 'iscsi', 'glusterfs', 'nfs')
+TYPES = tuple(os.environ.get('VDSM_TEST_STORAGE_TYPES', '').split()) \
+    or DEFAULT_TYPES
+
+DEFAULT_VERSIONS = (0, 3)
+VERSIONS = tuple(os.environ.get('VDSM_TEST_STORAGE_VERSIONS', '').split()) \
+    or DEFAULT_VERSIONS
+
 
 @expandPermutations
 class StorageTest(TestCaseBase):
@@ -81,8 +89,8 @@ class StorageTest(TestCaseBase):
 
     @permutations(
         [[backend, ver]
-         for backend in ['localfs', 'iscsi', 'glusterfs', 'nfs']
-         for ver in [0, 3]])
+         for backend in TYPES
+         for ver in VERSIONS])
     def testStorage(self, backendType, domVersion):
         conf = storageLayouts[backendType]
         with RollbackContext() as rollback:
