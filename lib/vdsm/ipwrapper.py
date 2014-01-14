@@ -37,6 +37,7 @@ from .utils import anyFnmatch
 from .utils import CommandPath
 from .utils import execCmd
 from .utils import grouper
+from . import netlink
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 
@@ -115,7 +116,8 @@ class Link(object):
     _hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
 
     def __init__(self, address, index, linkType, mtu, name, qdisc, state,
-                 vlanid=None, vlanprotocol=None, master=None, **kwargs):
+                 vlanid=None, vlanprotocol=None, master=None, device=None,
+                 **kwargs):
         self.address = address
         self.index = index
         self.type = linkType
@@ -128,12 +130,22 @@ class Link(object):
             self.vlanid = vlanid
         if vlanprotocol is not None:
             self.vlanprotocol = vlanprotocol
+        if device is not None:
+            self.device = device
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     def __repr__(self):
         return '%s: %s(%s) %s' % (self.index, self.name, self.type,
                                   self.address)
+
+    @classmethod
+    def fromDict(cls, data):
+        # TODO: Tune the following line to use in some cases the type when
+        # libnl1 type getting is fixed
+        # https://github.com/tgraf/libnl-1.1-stable/issues/1
+        data['linkType'] = cls._detectType(data['name'])
+        return cls(**data)
 
     @classmethod
     def fromText(cls, text):
@@ -271,13 +283,12 @@ def _bondExists(bondName):
 
 def getLinks():
     """Returns a list of Link objects for each link in the system."""
-    return [Link.fromText(line) for line in linksShowDetailed() if
-            not line.startswith(' ')]
+    return [Link.fromDict(data) for data in netlink.iter_links()]
 
 
 def getLink(dev):
     """Returns the Link object for the specified dev."""
-    return Link.fromText(linksShowDetailed(dev=dev)[0])
+    return Link.fromDict(netlink.get_link(dev))
 
 
 @equals

@@ -10,6 +10,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/libvirtconnection.py
 ./usr/lib/python2.7/dist-packages/vdsm/netconfpersistence.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo.py
+./usr/lib/python2.7/dist-packages/vdsm/netlink.py
 ./usr/lib/python2.7/dist-packages/vdsm/qemuImg.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/dummybr.py

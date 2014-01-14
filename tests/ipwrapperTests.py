@@ -285,6 +285,24 @@ class TestMonitor(TestCaseBase):
                 iterator.next()
 
 
+class TestLinks(TestCaseBase):
+    _bridge = tcTests._Bridge()
+
+    @ValidateRunningAsRoot
+    def setUp(self):
+        tcTests._checkDependencies()
+        self._bridge.addDevice()
+
+    def tearDown(self):
+        self._bridge.delDevice()
+
+    def testGetLink(self):
+        link = ipwrapper.getLink(self._bridge.devName)
+        self.assertTrue(link.isBRIDGE)
+        self.assertEqual(link.master, None)
+        self.assertEqual(link.name, self._bridge.devName)
+
+
 class TestDrvinfo(TestCaseBase):
     _bridge = tcTests._Bridge()
 

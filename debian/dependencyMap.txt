@@ -22,6 +22,7 @@ iscsi-initiator-utils >= 6.2.0.872-15	open-iscsi
 kernel >= 3.6	linux-image-generic
 libguestfs-tools	libguestfs-tools
 libguestfs-tools-c	?
+libnl   libnl1
 libselinux-python	python-selinux
 libtool	libtool
 libvirt >= 1.0.2-1	libvirt-bin libvirt0

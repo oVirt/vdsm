@@ -29,6 +29,7 @@ dist_vdsmpylib_PYTHON = \
 	libvirtconnection.py \
 	netconfpersistence.py \
 	netinfo.py \
+	netlink.py \
 	qemuImg.py \
 	SecureXMLRPCServer.py \
 	utils.py \
