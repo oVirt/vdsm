@@ -2874,12 +2874,16 @@
 # @copyPasteEnable:       #optional Specify if copy and paste is enabled.
 #                         Currently relevant for @spice devices only.
 #
+# @fileTransferEnable:    #optional Specify if file transfer is enabled.
+#                         Currently relevant for @qxl devices only.
+#                         (new in version 4.17.0)
+#
 # Since: 4.15.0
 ##
 {'type': 'VmGraphicsDeviceSpecParams',
  'data': {'*keyMap': 'str', '*disableTicketing': 'bool',
           '*displayNetwork': 'str', '*spiceSecureChannels': 'str',
-          '*copyPasteEnable': 'bool'}}
+          '*copyPasteEnable': 'bool', '*fileTransferEnable': 'bool'}}
 
 ##
 # @VmGraphicsDevice:
@@ -3516,6 +3520,10 @@
 # @hypervEnable:          #optional Enables hyperv specific optimizations for
 #                         the Guest OS (new in version 4.16.0)
 #
+# @fileTransferEnable:    #optional Specify if file transfer is enabled.
+#                         Currently relevant for @qxl devices only.
+#                         (new in version 4.17.0)
+#
 # @keyboardLayout:        #optional The keyboard layout string (eg. 'en-us')
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
@@ -3570,9 +3578,9 @@
           '*cpuShares': 'str', '*cpuType': 'str', '*custom': 'StringMap',
           '*devices': ['VmDevice'], 'display': 'VmDisplayType',
           'displayIp': 'str', 'displayPort': 'int', 'displaySecurePort': 'int',
-          '*emulatedMachine': 'str', '*hypervEnable': 'bool',
-          '*keyboardLayout': 'str', 'kvmEnable': 'bool',
-          '*maxVCpus': 'uint', 'memSize': 'uint',
+          '*emulatedMachine': 'str', '*fileTransferEnable': 'bool',
+          '*hypervEnable': 'bool', '*keyboardLayout': 'str',
+          'kvmEnable': 'bool', '*maxVCpus': 'uint', 'memSize': 'uint',
           'memGuaranteedSize': 'uint', 'nicModel': 'str', 'nice': 'int',
           '*pauseCode': 'str', 'pid': 'uint', 'smp': 'uint',
           '*smpCoresPerSocket': 'uint', '*smpThreadsPerCore': 'uint',

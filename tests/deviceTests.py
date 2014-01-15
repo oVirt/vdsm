@@ -65,6 +65,13 @@ class TestVmDevices(XMLTestCase):
                   passwdValidTo="1970-01-01T00:00:01" port="-1"
                   tlsPort="-1" type="spice">
             <clipboard copypaste="no"/>
+        </graphics>""",
+
+        """
+        <graphics autoport="yes" listen="0" passwd="*****"
+                passwdValidTo="1970-01-01T00:00:01" port="-1"
+                tlsPort="-1" type="spice">
+            <filetransfer enable="no"/>
         </graphics>"""]
 
     def setUp(self):
@@ -410,7 +417,10 @@ class TestVmDevices(XMLTestCase):
              'spiceSecureChannels': "smain"},
 
             {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
-             'copyPasteEnable': 'false'}]
+             'copyPasteEnable': 'false'},
+
+            {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
+             'fileTransferEnable': 'false'}]
 
         for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
             self._verifyGraphicsXML(vmConf, xml, isLegacy=True)
@@ -437,7 +447,12 @@ class TestVmDevices(XMLTestCase):
             {'devices': [{
                 'type': 'graphics', 'device': 'spice', 'port': '-1',
                 'tlsPort': '-1', 'specParams': {
-                    'copyPasteEnable': 'false'}}]}]
+                    'copyPasteEnable': 'false'}}]},
+
+            {'devices': [{
+                'type': 'graphics', 'device': 'spice', 'port': '-1',
+                'tlsPort': '-1', 'specParams': {
+                    'fileTransferEnable': 'false'}}]}]
 
         for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
             self._verifyGraphicsXML(vmConf, xml, isLegacy=False)

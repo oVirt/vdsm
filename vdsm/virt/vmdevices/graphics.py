@@ -40,7 +40,8 @@ _LEGACY_MAP = {
     'spiceDisableTicketing': 'disableTicketing',
     'displayNetwork': 'displayNetwork',
     'spiceSecureChannels': 'spiceSecureChannels',
-    'copyPasteEnable': 'copyPasteEnable'}
+    'copyPasteEnable': 'copyPasteEnable',
+    'fileTransferEnable': 'fileTransferEnable'}
 
 
 class Graphics(Base):
@@ -113,6 +114,10 @@ class Graphics(Base):
         if not utils.tobool(self.specParams.get('copyPasteEnable', True)):
             clipboard = vmxml.Element('clipboard', copypaste='no')
             graphics.appendChild(clipboard)
+
+        if not utils.tobool(self.specParams.get('fileTransferEnable', True)):
+            filetransfer = vmxml.Element('filetransfer', enable='no')
+            graphics.appendChild(filetransfer)
 
         if (self.device == 'spice' and
            'spiceSecureChannels' in self.specParams):
