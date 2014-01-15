@@ -1571,7 +1571,7 @@ class NetworkTest(TestCaseBase):
     def testIpLinkWrapper(self):
         """Tests that the created devices are properly parsed by the ipwrapper
         Link class."""
-        BIG_MTU = '2000'
+        BIG_MTU = 2000
         VLAN_NAME = '%s.%s' % (BONDING_NAME, VLAN_ID)
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.setupNetworks(

@@ -146,6 +146,9 @@ class Link(object):
             name, device = attrs['name'].split('@')
             attrs['name'] = name
             attrs['device'] = device
+        if 'vlanid' in attrs:
+            attrs['vlanid'] = int(attrs['vlanid'])
+        attrs['mtu'] = int(attrs['mtu'])
         return cls(**attrs)
 
     @staticmethod

@@ -87,7 +87,7 @@ class TestIpwrapper(TestCaseBase):
                  'macvlan  mode vepa ')
         devices = [Link.fromText(line) for line in lines]
         self.assertEqual(len(devices), len(lines))
-        self.assertEqual(devices[-3].vlanid, '555')
+        self.assertEqual(devices[-3].vlanid, 555)
         self.assertEqual(devices[1].address, 'f0:de:f1:da:aa:e7')
         self.assertEqual(devices[-5].type, LinkType.DUMMY)
         self.assertEqual(devices[-3].master, devices[-2].name)
@@ -143,7 +143,7 @@ class TestIpwrapper(TestCaseBase):
             'ff:ff:ff:ff:ff:ff')
         devices = [Link.fromText(line) for line in lines]
         self.assertEqual(len(devices), len(lines))
-        self.assertEqual(devices[-2].vlanid, '13')
+        self.assertEqual(devices[-2].vlanid, 13)
         self.assertEqual(devices[1].address, '00:10:18:e1:6c:f0')
         self.assertEqual(devices[-3].type, LinkType.DUMMY)
         self.assertEqual(devices[-2].name, 'p1p3.13')
