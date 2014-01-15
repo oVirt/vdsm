@@ -1444,6 +1444,15 @@ class service:
             return stats['status']['code'], stats['status']['message']
         return 0, ''
 
+    def do_setHaMaintenanceMode(self, args):
+        assert len(args) == 2
+        mode = args[0]
+        enabled = utils.tobool(args[1])
+        stats = self.s.setHaMaintenanceMode(mode, enabled)
+        if stats['status']['code']:
+            return stats['status']['code'], stats['status']['message']
+        return 0, ''
+
     def do_getVmsInfo(self, args):
         spUUID = args[0]
         if len(args) >= 2:
@@ -2343,6 +2352,11 @@ if __name__ == '__main__':
                                    ('key=python_code [key=python_code] ...',
                                     'set variables for MOM policy fine '
                                     'tuning')),
+        'setHaMaintenanceMode': (serv.do_setHaMaintenanceMode,
+                                 ('<type = global/local>'
+                                  ' <enabled = true/false>',
+                                  'Enable or disable Hosted Engine HA'
+                                  ' maintenance')),
         'deleteImage': (serv.deleteImage,
                         ('<sdUUID> <spUUID> <imgUUID> [<postZero>] [<force>]',
                          'Delete Image folder with all volumes.',
