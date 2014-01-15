@@ -504,40 +504,40 @@ def _getNetInfo(iface, bridged, gateways, ipv6routes, qosInbound, qosOutbound):
     return data
 
 
-def _bridgeinfo(bridge, gateways, ipv6routes):
-    info = _devinfo(bridge)
-    info.update({'gateway': getgateway(gateways, bridge),
-                'ipv6gateway': ipv6routes.get(bridge, '::'),
-                'ports': ports(bridge), 'stp': bridge_stp_state(bridge)})
+def _bridgeinfo(link, gateways, ipv6routes):
+    info = _devinfo(link)
+    info.update({'gateway': getgateway(gateways, link.name),
+                'ipv6gateway': ipv6routes.get(link.name, '::'),
+                'ports': ports(link.name), 'stp': bridge_stp_state(link.name)})
     return info
 
 
-def _nicinfo(nic, paddr):
-    info = _devinfo(nic)
-    info.update({'hwaddr': gethwaddr(nic), 'speed': nicSpeed(nic)})
-    if paddr.get(nic):
-        info['permhwaddr'] = paddr[nic]
+def _nicinfo(link, paddr):
+    info = _devinfo(link)
+    info.update({'hwaddr': link.address, 'speed': nicSpeed(link.name)})
+    if paddr.get(link.name):
+        info['permhwaddr'] = paddr[link.name]
     return info
 
 
-def _bondinfo(bond):
-    info = _devinfo(bond)
-    info.update({'hwaddr': gethwaddr(bond), 'slaves': slaves(bond)})
+def _bondinfo(link):
+    info = _devinfo(link)
+    info.update({'hwaddr': link.address, 'slaves': slaves(link.name)})
     return info
 
 
-def _vlaninfo(vlan):
-    info = _devinfo(vlan)
-    info.update({'iface': getVlanDevice(vlan), 'vlanid': getVlanID(vlan)})
+def _vlaninfo(link):
+    info = _devinfo(link)
+    info.update({'iface': link.device, 'vlanid': link.vlanid})
     return info
 
 
-def _devinfo(dev):
-    ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(dev)
+def _devinfo(link):
+    ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(link.name)
     return {'addr': ipv4addr,
-            'cfg': getIfaceCfg(dev),
+            'cfg': getIfaceCfg(link.name),
             'ipv6addrs': ipv6addrs,
-            'mtu': str(getMtu(dev)),
+            'mtu': str(link.mtu),
             'netmask': ipv4netmask}
 
 
@@ -561,13 +561,13 @@ def get():
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
             d['bridges'][dev.name] = \
-                _bridgeinfo(dev.name, gateways, ipv6routes)
+                _bridgeinfo(dev, gateways, ipv6routes)
         elif dev.isNICLike():
-            d['nics'][dev.name] = _nicinfo(dev.name, paddr)
+            d['nics'][dev.name] = _nicinfo(dev, paddr)
         elif dev.isBOND():
-            d['bondings'][dev.name] = _bondinfo(dev.name)
+            d['bondings'][dev.name] = _bondinfo(dev)
         elif dev.isVLAN():
-            d['vlans'][dev.name] = _vlaninfo(dev.name)
+            d['vlans'][dev.name] = _vlaninfo(dev)
 
     return d
 
