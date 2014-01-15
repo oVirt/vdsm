@@ -135,6 +135,9 @@ errCode = {
     'setNumberOfCpusErr': {'status': {
         'code': 60,
         'message': 'Failed to set the number of cpus'}},
+    'haErr': {'status': {
+        'code': 61,
+        'message': 'Failed to set Hosted Engine HA policy'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

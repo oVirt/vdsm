@@ -1490,6 +1490,30 @@ class Global(APIBase):
         except:
             return errCode['momErr']
 
+    def setHaMaintenanceMode(self, mode, enabled):
+        """
+        Sets Hosted Engine HA maintenance mode ('global' or 'local') to
+        enabled (True) or disabled (False).
+        """
+        if not haClient:
+            return errCode['unavail']
+
+        self.log.info("Setting Hosted Engine HA {0} maintenance to {1}"
+            .format(mode.lower(), enabled))
+        if mode.lower() == 'global':
+            mm = haClient.HAClient.MaintenanceMode.GLOBAL
+        elif mode.lower() == 'local':
+            mm = haClient.HAClient.MaintenanceMode.LOCAL
+        else:
+            return errCode['haErr']
+
+        try:
+            haClient.HAClient().set_maintenance_mode(mm, enabled)
+        except Exception:
+            self.log.exception("error setting HA maintenance mode")
+            return errCode['haErr']
+        return {'status': doneCode}
+
     # take a rough estimate on how much free mem is available for new vm
     # memTotal = memFree + memCached + mem_used_by_non_qemu + resident  .
     # simply returning (memFree + memCached) is not good enough, as the

@@ -464,6 +464,35 @@
  'data': {'key_value_store': 'dict'}}
 
 ##
+# @HaMaintenanceMode:
+#
+# An enumeration of recognized Hosted Engine maintenance modes.
+#
+# @GLOBAL:  Suspend Hosted Engine agent actions on all hosts
+#
+# @LOCAL:   Suspend Hosted Engine agent on this host, after migrating
+#           engine VM, if necessary.
+#
+# Since: 4.14.0
+##
+{'enum': 'HaMaintenanceMode',
+ 'data': ['GLOBAL', 'LOCAL']}
+
+##
+# @Host.setHaMaintenanceMode:
+#
+# Configure maintenance for Hosted Engine subsystem.
+#
+# @mode:     Type of maintenance to configure
+#
+# @enabled:  Whether to enable or disable maintenance
+#
+# Since: 4.14.0
+##
+{'command': {'class': 'Host', 'name': 'setHaMaintenanceMode'},
+ 'data': {'mode': 'HaMaintenanceMode', 'enabled': 'bool'}}
+
+##
 # @TaskDetails:
 #
 # A collection of information about a task.
