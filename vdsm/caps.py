@@ -365,7 +365,7 @@ def get():
         caps['cpuFlags'] = ','.join(cpuInfo.flags() +
                                     _getCompatibleCpuModels())
 
-    caps.update(dsaversion.version_info)
+    caps.update(_getVersionInfo())
     caps.update(netinfo.get())
 
     try:
@@ -388,6 +388,26 @@ def get():
     caps['rngSources'] = _getRngSources()
 
     return caps
+
+
+@utils.memoized
+def _getVersionInfo():
+    # commit bbeb165e42673cddc87495c3d12c4a7f7572013c
+    # added default abort of the VM migration on EIO.
+    # libvirt 1.0.5.8 found in Fedora 19 does not export
+    # that flag, even though it should be present since 1.0.1.
+    if hasattr(libvirt, 'VIR_MIGRATE_ABORT_ON_ERROR'):
+        return dsaversion.version_info
+
+    from distutils.version import StrictVersion
+    # Workaround: we drop the cluster 3.4+
+    # compatibility when we run on top of
+    # a libvirt without this flag.
+    info = dsaversion.version_info.copy()
+    maxVer = StrictVersion('3.4')
+    info['clusterLevels'] = [ver for ver in info['clusterLevels']
+                             if StrictVersion(ver) < maxVer]
+    return info
 
 
 def _getKeyPackages():
