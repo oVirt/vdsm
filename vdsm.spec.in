@@ -744,21 +744,32 @@ if [ "$1" -ge 1 ]; then
     supervdsmd_start_required='no'
     vdsmd_start_required='no'
     if %{_bindir}/vdsm-tool service-status vdsmd >/dev/null 2>&1; then
-        %{_bindir}/vdsm-tool service-stop vdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-stop vdsmd >/dev/null 2>&1 || :
         vdsmd_start_required='yes'
     fi
     if %{_bindir}/vdsm-tool service-status supervdsmd >/dev/null 2>&1; then
-        %{_bindir}/vdsm-tool service-stop supervdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-stop supervdsmd >/dev/null 2>&1 || :
         supervdsmd_start_required='yes'
     fi
 
-    %{_bindir}/vdsm-tool libvirt-configure >/dev/null 2>&1
+    if ! %{_bindir}/vdsm-tool libvirt-configure >/dev/null 2>&1; then
+        # fallback to vdsmd reconfigure api. this is needed for ovirt-3.3 as
+        # vdsm-tool api was modified from libvirt-configure to configure.
+
+        # downgrade to older versions is not supported. for that please remove
+        # vdsm packages and install the older version.
+        for f in '/lib/systemd/systemd-vdsmd' '/etc/init.d/vdsmd'; do
+            if [ -f "${f}" ]; then
+                "${f}" reconfigure >/dev/null 2>&1 || :
+            fi
+        done
+    fi
 
     if [ "${supervdsmd_start_required}" = 'yes' ]; then
-        %{_bindir}/vdsm-tool service-start supervdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-start supervdsmd >/dev/null 2>&1 || :
     fi
     if [ "${vdsmd_start_required}" = 'yes' ]; then
-        %{_bindir}/vdsm-tool service-start vdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-start vdsmd >/dev/null 2>&1 || :
     fi
 fi
 exit 0
