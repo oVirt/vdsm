@@ -54,6 +54,12 @@ parameters = [
             'NetworkManager is disabled and device name persistence does '
             'not depend on HWADDR.'),
 
+        ('ethtool_opts', '',
+            'Which special ethtool options should be applied to NICs after '
+            'they are taken up, e.g. "lro off" on buggy devices. '
+            'To apply options to a single interface, '
+            'set ethtool_opts.iface_name.'),
+
         ('nic_model', 'rtl8139,pv',
             'NIC model is rtl8139, ne2k_pci pv or any other valid device '
             'recognized by kvm/qemu if a coma separated list given then a '

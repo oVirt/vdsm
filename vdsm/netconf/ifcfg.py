@@ -28,7 +28,7 @@ import selinux
 import shutil
 import threading
 
-from netconf import Configurator
+from netconf import Configurator, getEthtoolOpts
 from neterrors import ConfigNetworkError
 from netmodels import Nic, Bridge, IpConfig
 from sourceRoute import DynamicSourceRoute
@@ -625,6 +625,10 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(nic.bridge.name)
         if nic.bond:
             conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(nic.bond.name)
+
+        ethtool_opts = getEthtoolOpts(nic.name)
+        if ethtool_opts:
+            conf += 'ETHTOOL_OPTS=%s\n' % pipes.quote(ethtool_opts)
 
         ipconfig, mtu = self._getIfaceConfValues(nic, _netinfo)
         self._createConfFile(conf, nic.name, ipconfig, mtu, **opts)

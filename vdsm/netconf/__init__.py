@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import ConfigParser
 import logging
 
 import libvirtCfg
@@ -24,6 +25,7 @@ from netmodels import Bond, Bridge
 from sourceRoute import DynamicSourceRoute
 from sourceRoute import StaticSourceRoute
 from vdsm import netinfo
+from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
 
 
@@ -145,3 +147,11 @@ class Configurator(object):
                 self.configApplier.setBondingMtu(iface.name, maxMtu)
             else:
                 self.configApplier.setIfaceMtu(iface.name, maxMtu)
+
+
+def getEthtoolOpts(name):
+    try:
+        opts = config.get('vars', 'ethtool_opts.' + name)
+    except ConfigParser.NoOptionError:
+        opts = config.get('vars', 'ethtool_opts')
+    return opts
