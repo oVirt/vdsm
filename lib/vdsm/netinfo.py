@@ -37,7 +37,7 @@ from .ipwrapper import getLink, getLinks
 from .ipwrapper import IPRoute2Error
 from .ipwrapper import Route
 from .ipwrapper import routeGet
-from .ipwrapper import routeShowAllDefaultGateways
+from .ipwrapper import routeShowGateways, routeShowAllDefaultGateways
 from . import libvirtconnection
 from .ipwrapper import linkShowDev
 from .utils import anyFnmatch
@@ -299,6 +299,11 @@ def getnetmask(dev):
     if netmask == 0:
         return ''
     return prefix2netmask(netmask)
+
+
+def getDefaultGateway():
+    output = routeShowGateways('main')
+    return Route.fromText(output[0]) if output else None
 
 
 def getgateway(gateways, dev):

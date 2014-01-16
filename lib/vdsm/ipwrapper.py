@@ -480,10 +480,14 @@ def routeList():
     return _execCmd(command)
 
 
-def routeShowAllDefaultGateways():
+def routeShowGateways(table):
     command = [_IP_BINARY.cmd, 'route', 'show', 'to', '0.0.0.0/0', 'table',
-               'all']
+               table]
     return _execCmd(command)
+
+
+def routeShowAllDefaultGateways():
+    return routeShowGateways('all')
 
 
 def routeShowTable(table):
