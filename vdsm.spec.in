@@ -697,13 +697,12 @@ fi
 /sbin/restorecon -R /var/log/core >/dev/null 2>&1
 # hack until we replace core dump with abrt
 
-%if 0%{?rhel}
+%if ! 0%{?with_systemd}
 if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsmd
     /sbin/chkconfig --add supervdsmd
 fi
 %else
-%if 0%{?with_systemd}
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
@@ -711,7 +710,6 @@ if [ "$1" -eq 1 ] ; then
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 exit 0
-%endif
 %endif
 
 %preun
@@ -733,7 +731,7 @@ if [ "$1" -eq 0 ]; then
         /bin/sed -i -e 's/# VDSM backup//' %{_sysconfdir}/logrotate.d/libvirtd
 fi
 
-%if 0%{?rhel}
+%if ! 0%{?with_systemd}
 if [ "$1" -eq 0 ]
 then
     /sbin/service vdsmd stop > /dev/null 2>&1 || :
@@ -801,7 +799,10 @@ if [ "$1" -ge 1 ]; then
 fi
 exit 0
 
-%if 0%{?rhel}
+%if 0%{?rhel} == 6
+# In el6, We configure libvirt to use upstart without the libvirt.rpm's
+# awareness. Thus, we must stop/restart libvirt ourselves when the
+# libvirt.rpm is removed/upgraded.
 %triggerun -- libvirt
 if [ "$2" -eq "0" ]; then
     /sbin/initctl stop libvirtd > /dev/null 2>&1 || :
@@ -814,7 +815,7 @@ fi
 %endif
 
 %post reg
-%if 0%{?rhel}
+%if ! 0%{?with_systemd}
 if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsm-reg
 fi
@@ -831,7 +832,7 @@ exit 0
 %endif
 
 %preun reg
-%if 0%{?rhel}
+%if ! 0%{?with_systemd}
 if [ "$1" -eq 0 ]
 then
     /sbin/service vdsm-reg stop > /dev/null 2>&1 || :
