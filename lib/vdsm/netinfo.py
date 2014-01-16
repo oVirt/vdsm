@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2013 Red Hat, Inc.
+# Copyright 2009-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,6 +57,8 @@ BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 _BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 _BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
+_IFCFG_ZERO_SUFFIXED = frozenset(
+    ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DUMMY_BRIDGE = ';vdsmdummy;'
@@ -412,8 +414,11 @@ def getIfaceCfg(iface):
     ifaceCfg = {}
     try:
         with open(NET_CONF_PREF + iface) as f:
-            ifaceCfg = dict(
-                l.split('=', 1) for l in shlex.split(f, comments=True))
+            for line in shlex.split(f, comments=True):
+                k, v = line.split('=', 1)
+                if k in _IFCFG_ZERO_SUFFIXED:
+                    k = k[:-1]
+                ifaceCfg[k] = v
     except Exception:
         pass
     return ifaceCfg

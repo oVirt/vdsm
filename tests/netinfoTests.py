@@ -230,6 +230,24 @@ class TestNetinfo(TestCaseBase):
             finally:
                 rmtree(tempDir)
 
+    def testGetIfaceCfg(self):
+        deviceName = "___This_could_never_be_a_device_name___"
+        ifcfg = ('GATEWAY0=1.1.1.1\n' 'NETMASK=255.255.0.0\n')
+        tempDir = tempfile.mkdtemp()
+        ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
+        filePath = ifcfgPrefix + deviceName
+
+        with MonkeyPatchScope([(netinfo, 'NET_CONF_PREF', ifcfgPrefix)]):
+            try:
+                with open(filePath, 'w') as ifcfgFile:
+                    ifcfgFile.write(ifcfg)
+                self.assertEqual(
+                    netinfo.getIfaceCfg(deviceName)['GATEWAY'], '1.1.1.1')
+                self.assertEqual(
+                    netinfo.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
+            finally:
+                rmtree(tempDir)
+
     def testGetBootProtocolUnified(self):
         tempDir = tempfile.mkdtemp()
         netsDir = os.path.join(tempDir, 'nets')
