@@ -777,24 +777,34 @@ if [ "$1" -ge 1 ]; then
     # Both vdsm and supervdsm should be managed here and must be restarted if
     # ran before (code might changed)
     if %{_bindir}/vdsm-tool service-status vdsmd >/dev/null 2>&1; then
-        %{_bindir}/vdsm-tool service-stop vdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-stop vdsmd >/dev/null 2>&1 || :
         vdsmd_start_required='yes'
     fi
     if %{_bindir}/vdsm-tool service-status supervdsmd >/dev/null 2>&1; then
-        %{_bindir}/vdsm-tool service-stop supervdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-stop supervdsmd >/dev/null 2>&1 || :
         supervdsmd_start_required='yes'
     fi
 
     if ! %{_bindir}/vdsm-tool is-configured --module libvirt >/dev/null 2>&1;
     then
-        %{_bindir}/vdsm-tool configure --module libvirt --force >/dev/null 2>&1
+        if ! %{_bindir}/vdsm-tool configure --module libvirt --force \
+                >/dev/null 2>&1; then
+            # fallback to vdsmd reconfigure api - This change may be removed
+            # when vdsm won't support any downgrade\upgrade to versions that
+            # don't include vdsm-tool configure api (vdsm <= 3.3)
+            for f in '/lib/systemd/systemd-vdsmd' '/etc/init.d/vdsmd'; do
+                if [ -f "${f}" ]; then
+                    "${f}" reconfigure >/dev/null 2>&1 || :
+                fi
+            done
+        fi
     fi
 
     if [ "${supervdsmd_start_required}" = 'yes' ]; then
-        %{_bindir}/vdsm-tool service-start supervdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-start supervdsmd >/dev/null 2>&1 || :
     fi
     if [ "${vdsmd_start_required}" = 'yes' ]; then
-        %{_bindir}/vdsm-tool service-start vdsmd >/dev/null 2>&1
+        %{_bindir}/vdsm-tool service-start vdsmd >/dev/null 2>&1 || :
     fi
 fi
 exit 0
