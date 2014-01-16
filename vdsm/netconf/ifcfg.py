@@ -626,6 +626,10 @@ class ConfigWriter(object):
         if nic.bond:
             conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(nic.bond.name)
 
+        ethtool_opts = self.getEthtoolOpts(nic.name)
+        if ethtool_opts:
+            conf += 'ETHTOOL_OPTS=%s\n' % pipes.quote(ethtool_opts)
+
         ipconfig, mtu = self._getIfaceConfValues(nic, _netinfo)
         self._createConfFile(conf, nic.name, ipconfig, mtu, **opts)
 

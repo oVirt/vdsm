@@ -32,7 +32,15 @@ from vdsm.ipwrapper import routeDel
 from vdsm.ipwrapper import ruleAdd
 from vdsm.ipwrapper import ruleDel
 from vdsm.netconfpersistence import RunningConfig
+from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
+
+_ETHTOOL_BINARY = CommandPath(
+    'ethtool',
+    '/usr/sbin/ethtool',  # F19+
+    '/sbin/ethtool',  # EL6, ubuntu and Debian
+    '/usr/bin/ethtool',  # Arch
+)
 
 
 class Iproute2(Configurator):
@@ -112,6 +120,13 @@ class Iproute2(Configurator):
 
     def configureNic(self, nic, **opts):
         self.configApplier.setIfaceConfigAndUp(nic)
+
+        ethtool_opts = self.getEthtoolOpts(nic.name)
+        if ethtool_opts:
+            # We ignore ethtool's return code to maintain initscripts'
+            # behaviour.
+            execCmd(
+                [_ETHTOOL_BINARY.cmd, '-K', nic.name] + ethtool_opts.split())
 
     def removeBridge(self, bridge):
         self.configApplier.ifdown(bridge)
