@@ -9,6 +9,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 
@@ -24,26 +25,31 @@ public class SSLClient extends ReactorClient {
     private static Log log = LogFactory.getLog(SSLClient.class);
     private final ExecutorService executorService;
     private final Selector selector;
-    private final SSLEngine engine;
     private SSLEngineNioHelper nioEngine;
+    private SSLContext sslContext;
 
     public SSLClient(Reactor reactor, Selector selector,
-            String hostname, int port, SSLEngine engine) throws ClientConnectionException {
+            String hostname, int port, SSLContext sslctx) throws ClientConnectionException {
         super(reactor, hostname, port);
         this.executorService = Executors.newCachedThreadPool();
         this.selector = selector;
-        this.engine = engine;
+        this.sslContext = sslctx;
     }
 
     public SSLClient(Reactor reactor, Selector selector, String hostname, int port,
-            SSLEngine engine, SocketChannel socketChannel) throws ClientConnectionException {
+            SSLContext sslctx, SocketChannel socketChannel) throws ClientConnectionException {
         super(reactor, hostname, port);
         this.executorService = Executors.newCachedThreadPool();
         this.selector = selector;
-        this.engine = engine;
         channel = socketChannel;
 
         postConnect();
+    }
+
+    private SSLEngine createSSLEngine(boolean clientMode) {
+        final SSLEngine engine = this.sslContext.createSSLEngine();
+        engine.setUseClientMode(clientMode);
+        return engine;
     }
 
     @Override
@@ -110,7 +116,7 @@ public class SSLClient extends ReactorClient {
     @Override
     void postConnect() throws ClientConnectionException {
         try {
-            this.nioEngine = new SSLEngineNioHelper(channel, engine);
+            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(true));
             this.nioEngine.beginHandshake();
 
             int interestedOps = SelectionKey.OP_READ;

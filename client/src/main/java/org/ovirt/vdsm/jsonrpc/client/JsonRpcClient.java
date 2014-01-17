@@ -33,6 +33,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
  */
 public class JsonRpcClient {
     private static final int TRACKING_TIMEOUT = 1000;
+    private static final int MAX_FAILED_CONNECTIONS = 5;
     private static Log log = LogFactory.getLog(JsonRpcClient.class);
     private final ReactorClient client;
     private final ObjectMapper objectMapper;
@@ -144,7 +145,14 @@ public class JsonRpcClient {
         return client.isOpen();
     }
 
+    /**
+     * Response tracker thread is responsible for tracking and retrying requests.
+     * For each connection there is single instance of the thread.
+     *
+     */
     private class ResponseTracker extends Thread {
+        private int failedConnections = 0;
+
         public ResponseTracker() {
             setName("Response tracker for " + client.getHostname());
         }
@@ -162,6 +170,7 @@ public class JsonRpcClient {
                     for (JsonNode id : queue) {
                         if (!runningCalls.containsKey(id)) {
                             removeRequestFromTracking(id);
+                            this.failedConnections = 0;
                             continue;
                         }
                         ResponseTracking tracking = map.get(id);
@@ -169,9 +178,7 @@ public class JsonRpcClient {
                             RetryContext context = tracking.getContext();
                             context.decreaseAttempts();
                             if (context.getNumberOfAttempts() <= 0) {
-                                runningCalls.remove(id);
-                                removeRequestFromTracking(id);
-                                tracking.getCall().addResponse(buildFailedResponse(tracking.getRequest()));
+                                handleFailure(tracking, id);
                                 continue;
                             }
                             try {
@@ -179,15 +186,26 @@ public class JsonRpcClient {
                                 tracking.setTimeout(getTimeout(context.getTimeout(), context.getTimeUnit()));
                             } catch (ClientConnectionException e) {
                                 log.error("Retry failed", e);
-                                runningCalls.remove(id);
-                                removeRequestFromTracking(id);
-                                tracking.getCall().addResponse(buildFailedResponse(tracking.getRequest()));
+                                handleFailure(tracking, id);
                             }
                         }
                     }
                 }
             } catch (InterruptedException e) {
                 log.warn("Tracker thread intrreupted");
+            }
+        }
+
+        private void handleFailure(ResponseTracking tracking, JsonNode id) {
+            runningCalls.remove(id);
+            removeRequestFromTracking(id);
+            tracking.getCall().addResponse(buildFailedResponse(tracking.getRequest()));
+
+            if (this.failedConnections < MAX_FAILED_CONNECTIONS) {
+                this.failedConnections++;
+            } else {
+                this.failedConnections = 0;
+                client.close();
             }
         }
     }

@@ -5,7 +5,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 
@@ -14,6 +13,7 @@ import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
  *
  */
 public final class SSLReactor extends Reactor {
+    private final static String REACTOR_NAME = "SSL Reactor";
 
     private final SSLContext sslContext;
 
@@ -21,30 +21,20 @@ public final class SSLReactor extends Reactor {
         this.sslContext = sslctx;
     }
 
-    private SSLEngine createSSLEngine(boolean clientMode) {
-        final SSLContext ctx = this.sslContext;
-        if (ctx == null) {
-            return null;
-        }
-        final SSLEngine engine = ctx.createSSLEngine();
-        engine.setUseClientMode(clientMode);
-        return engine;
-    }
-
     @Override
     public ReactorClient createClient(Reactor reactor, Selector selector, String hostname, int port)
             throws ClientConnectionException {
-        return new SSLClient(reactor, selector, hostname, port, createSSLEngine(true));
+        return new SSLClient(reactor, selector, hostname, port, this.sslContext);
     }
 
     @Override
     public ReactorClient createConnectedClient(Reactor reactor, Selector selector, String hostname,
             int port, SocketChannel channel) throws ClientConnectionException {
-        return new SSLClient(reactor, selector, hostname, port, createSSLEngine(true), channel);
+        return new SSLClient(reactor, selector, hostname, port, this.sslContext, channel);
     }
 
     @Override
     public String getReactorName() {
-        return "SSL Reactor";
+        return REACTOR_NAME;
     }
 }
