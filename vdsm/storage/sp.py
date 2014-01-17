@@ -784,19 +784,28 @@ class StoragePool(object):
             self.id = hostId
             temporaryLock = False
 
+        # As in the create method we need to temporarily set the object
+        # secure in order to change the domains map.
+        # TODO: it is clear that reconstructMaster and create (StoragePool)
+        # are extremely similar and they should be unified.
+        self._setSecure()
+
         try:
             self.createMaster(poolName, futureMaster, masterVersion,
                               leaseParams)
+            self.setMasterDomain(msdUUID, masterVersion)
 
             for sdUUID in domDict:
                 domDict[sdUUID] = domDict[sdUUID].capitalize()
 
             # Add domain to domain list in pool metadata.
             self.log.info("Set storage pool domains: %s", domDict)
-            self._getPoolMD(futureMaster).update({PMDK_DOMAINS: domDict})
+            self._backend.setDomainsMap(domDict)
 
             self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
         finally:
+            self._setUnsecure()
+
             if temporaryLock:
                 self._releaseTemporaryClusterLock(msdUUID)
                 self.stopMonitoringDomains()
