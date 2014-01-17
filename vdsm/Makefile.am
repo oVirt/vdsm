@@ -55,6 +55,7 @@ dist_vdsm_PYTHON = \
 	vmChannels.py \
 	vm.py \
 	vmexitreason.py \
+	vmpowerdown.py \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \

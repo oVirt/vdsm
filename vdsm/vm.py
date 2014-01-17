@@ -59,6 +59,7 @@ import sampling
 import supervdsm
 import vmexitreason
 
+from vmpowerdown import VmShutdown, VmReboot
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
 # This device name is used as default both in the qemu-guest-agent
@@ -2009,6 +2010,8 @@ class Vm(object):
         if (self.arch not in ['ppc64', 'x86_64']):
             raise RuntimeError('Unsupported architecture: %s' % self.arch)
 
+        self._powerDownEvent = threading.Event()
+
     def _get_lastStatus(self):
         PAUSED_STATES = ('Powering down', 'RebootInProgress', 'Up')
         if not self._guestCpuRunning and self._lastStatus in PAUSED_STATES:
@@ -2385,6 +2388,7 @@ class Vm(object):
                 self.setDownStatus(NORMAL, vmexitreason.USER_SHUTDOWN)
             else:
                 self.setDownStatus(ERROR, vmexitreason.LOST_QEMU_CONNECTION)
+        self._powerDownEvent.set()
 
     def _loadCorrectedTimeout(self, base, doubler=20, load=None):
         """
@@ -2443,6 +2447,7 @@ class Vm(object):
             self._startTime = time.time()
             self._guestEventTime = self._startTime
             self._guestEvent = 'RebootInProgress'
+            self._powerDownEvent.set()
             self.saveState()
             self.guestAgent.onReboot()
             if self.conf.get('volatileFloppy'):
@@ -2450,10 +2455,6 @@ class Vm(object):
                 self.log.debug('ejected volatileFloppy')
         except Exception:
             self.log.error("Reboot event failed", exc_info=True)
-
-    def onShutdown(self):
-        self.log.debug('onShutdown() event')
-        self.user_destroy = True
 
     def onConnect(self, clientIp=''):
         if clientIp:
@@ -2673,55 +2674,23 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
-    def shutdown(self, timeout, message, reboot):
-        try:
-            now = time.time()
-            if self.lastStatus == 'Down':
-                return errCode['noVM']
-            if self.guestAgent and self.guestAgent.isResponsive():
-                self._guestEventTime = now
-                if reboot:
-                    self._guestEvent = 'RebootInProgress'
-                    self.log.debug('guestAgent reboot called')
-                else:
-                    self._guestEvent = 'Powering down'
-                    self.log.debug('guestAgent shutdown called')
-                    agent_timeout = (int(timeout) +
-                                     config.getint('vars',
-                                                   'sys_shutdown_timeout'))
-                    timer = threading.Timer(agent_timeout, self._timedShutdown)
-                    timer.start()
-                self.guestAgent.desktopShutdown(timeout, message, reboot)
-            elif utils.tobool(self.conf.get('acpiEnable', 'true')) and \
-                    not reboot:
-                self._guestEventTime = now
-                self._guestEvent = 'Powering down'
-                self._acpiShutdown()
-            # No tools, no ACPI
-            else:
-                return {
-                    'status': {
-                        'code': errCode['exist']['status']['code'],
-                        'message': 'VM without ACPI or active SolidICE tools. '
-                                   'Try Forced Shutdown.'}}
-        except Exception:
-            self.log.error("Shutdown failed", exc_info=True)
-            return {'status': {'code': errCode['exist']['status']['code'],
-                    'message': 'Failed to shutdown VM. Try Forced Shutdown.'}}
-        message = 'Machine rebooting' if reboot else 'Machine shut down'
-        return {'status': {'code': doneCode['code'], 'message': message}}
+    def shutdown(self, delay, message, reboot):
+        if self.lastStatus == 'Down':
+            return errCode['noVM']
 
-    def _timedShutdown(self):
-        self.log.debug('_timedShutdown Called')
-        try:
-            if self.lastStatus == 'Down':
-                return
-            if not utils.tobool(self.conf.get('acpiEnable', 'true')):
-                self.destroy()
-            else:
-                self._acpiShutdown()
-        except Exception:
-            self.log.error("_timedShutdown failed", exc_info=True)
+        delay = int(delay)
+        timeout = int(config.get('vars', 'sys_shutdown_timeout'))
+
+        self._guestEventTime = time.time()
+        if reboot:
+            self._guestEvent = 'RebootInProgress'
+            powerDown = VmReboot(self, delay, message, timeout,
+                                 self._powerDownEvent)
+        else:
+            self._guestEvent = 'Powering down'
+            powerDown = VmShutdown(self, delay, message, timeout,
+                                   self._powerDownEvent)
+        return powerDown.start()
 
     def _cleanupDrives(self, *drives):
         """
@@ -4589,9 +4558,6 @@ class Vm(object):
         if err.upper() == 'ENOSPC':
             if not self.extendDrivesIfNeeded():
                 self.log.info("No VM drives were extended")
-
-    def _acpiShutdown(self):
-        self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
 
     def _getPid(self):
         pid = '0'
