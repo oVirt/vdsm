@@ -82,6 +82,9 @@ class LibvirtMock(object):
     class virEventRegisterDefaultImpl(object):
         pass
 
+    def virEventRunDefaultImpl(*args, **kwargs):
+        return 0
+
 
 def _kill(*args):
     raise TerminationException()
