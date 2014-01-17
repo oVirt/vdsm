@@ -46,7 +46,7 @@ class FakeModule:
 
 
 def patched(*args, **kw):
-    pass
+    return 'patched'
 
 
 class TestMonkeyPatch(VdsmTestCase):
@@ -150,3 +150,59 @@ class TestMonkeyPatchFixtureAssertions(VdsmTestCase):
         patch.apply()
         patch.revert()
         self.assertRaises(AssertionError, patch.revert)
+
+
+class Class:
+    @staticmethod
+    def static_method():
+        return 'clean'
+
+    @classmethod
+    def class_method(cls):
+        return 'clean'
+
+    def instance_method(self):
+        return 'clean'
+
+
+class TestMonkeyPatchClass(VdsmTestCase):
+
+    def testInstanceMethodReplacement(self):
+        patch = monkeypatch.Patch([(Class, 'instance_method', patched)])
+        self.assertEqual(Class().instance_method(), 'clean')
+        old = Class.instance_method
+        patch.apply()
+        try:
+            self.assertEqual(Class().instance_method(), 'patched')
+        finally:
+            patch.revert()
+        self.assertEqual(Class().instance_method(), 'clean')
+        self.assertEqual(old, Class.instance_method)
+
+    def testStaticMethodReplacement(self):
+        patch = monkeypatch.Patch([(Class, 'static_method', patched)])
+        self.assertEqual(Class.static_method(), 'clean')
+        old = Class.static_method
+        patch.apply()
+        try:
+            self.assertEqual(Class.static_method(), 'patched')
+            self.assertFalse(hasattr(Class.static_method, 'im_self'))
+        finally:
+            patch.revert()
+        self.assertEqual(Class.static_method(), 'clean')
+        self.assertEqual(old, Class.static_method)
+        self.assertFalse(hasattr(Class.static_method, 'im_self'))
+
+    def testClassMethodReplacement(self):
+        patch = monkeypatch.Patch([(Class, 'class_method', patched)])
+        self.assertEqual(Class.class_method(), 'clean')
+        old = Class.class_method
+        patch.apply()
+        try:
+            self.assertEqual(Class.class_method(), 'patched')
+            self.assertEqual(getattr(Class.class_method, 'im_self'), Class)
+        finally:
+            patch.revert()
+        self.assertEqual(Class.class_method(), 'clean')
+        self.assertEqual(old, Class.class_method)
+        self.assertEqual(getattr(Class.class_method, 'im_self'), Class)

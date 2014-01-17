@@ -20,6 +20,7 @@
 
 from contextlib import contextmanager
 from functools import wraps
+import inspect
 
 
 #
@@ -59,13 +60,30 @@ class Patch(object):
     def apply(self):
         assert self.old == []
         for module, name, that in self.what:
-            self.old.append((module, name, getattr(module, name)))
+            old = getattr(module, name)
+            self.old.append((module, name, old))
+            # The following block is done so that if it is a method we are
+            # patching in, that it will have the same type as the method it
+            # replaced.
+            if inspect.isclass(module):
+                if inspect.isfunction(old):
+                    that = staticmethod(that)
+                elif (inspect.ismethod(old) and
+                      getattr(old, 'im_self', None) is not None):
+                    that = classmethod(that)
             setattr(module, name, that)
 
     def revert(self):
         assert self.old != []
         while self.old:
             module, name, that = self.old.pop()
+            # The following block is only necessary for Python2 as it wrongly
+            # sets the function as instancemethod instead of keeping it as
+            # staticmethod.
+            if inspect.isclass(module):
+                if inspect.isfunction(that):
+                    that = staticmethod(that)
+
             setattr(module, name, that)
 
 
