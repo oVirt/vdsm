@@ -23,6 +23,8 @@ import sys
 import imp
 import getopt
 import textwrap
+import syslog
+import traceback
 
 import vdsm.tool
 
@@ -72,8 +74,14 @@ def load_modules():
             continue
 
         mod_fobj, mod_absp, mod_desc = imp.find_module(mod_name, [mod_path])
-        module = imp.load_module(package_name + '.' + mod_name, mod_fobj,
-                                 mod_absp, mod_desc)
+        try:
+            module = imp.load_module(package_name + '.' + mod_name, mod_fobj,
+                                     mod_absp, mod_desc)
+        except Exception:
+            # py module was failed to load. report to syslog and continue
+            syslog.syslog("module %s could not load to vdsm-tool: %s" %
+                          (mod_name, traceback.format_exc()))
+            continue
 
         mod_cmds = []
 
