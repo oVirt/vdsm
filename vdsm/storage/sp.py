@@ -860,9 +860,6 @@ class StoragePool(object):
         self.log.info("sdUUID=%s spUUID=%s", sdUUID, self.spUUID)
 
         domains = self.getDomains()
-        if sdUUID in domains:
-            return True
-
         if len(domains) >= self._backend.getMaximumSupportedDomains():
             raise se.TooManyDomainsInStoragePoolError()
 
@@ -871,6 +868,16 @@ class StoragePool(object):
         except se.StorageDomainDoesNotExist:
             sdCache.invalidateStorage()
             dom = sdCache.produce(sdUUID)
+
+        try:
+            self.validateAttachedDomain(dom)
+        except (se.StorageDomainNotMemberOfPool, se.StorageDomainNotInPool):
+            pass  # domain is not attached to this pool yet
+        else:
+            self.log.warning('domain %s is already attached to pool %s',
+                             sdUUID, self.spUUID)
+            return
+
         dom.acquireHostId(self.id)
 
         try:
@@ -933,7 +940,6 @@ class StoragePool(object):
         dom = sdCache.produce(sdUUID)
 
         # Avoid detach domains if not owned by pool
-        self.validatePoolSD(sdUUID)
         self.validateAttachedDomain(dom)
 
         if sdUUID == self.masterDomain.sdUUID:
