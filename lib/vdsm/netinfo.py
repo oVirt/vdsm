@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 import errno
 from glob import iglob
 from datetime import datetime
@@ -43,6 +43,7 @@ from . import libvirtconnection
 from .ipwrapper import linkShowDev
 from .utils import anyFnmatch
 from .netconfpersistence import RunningConfig
+from .netlink import iter_addrs
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -319,15 +320,17 @@ def getgateway(gateways, dev):
     return gateways.get(dev, '')
 
 
-def getIpInfo(dev):
-    devInfo = ethtool.get_interfaces_info(dev.encode('utf8'))[0]
-    addr = devInfo.ipv4_address
-    netmask = devInfo.ipv4_netmask
-    ipv6addrs = devInfo.get_ipv6_addresses()
-
-    return (addr if addr else '',
-            prefix2netmask(netmask) if netmask else '',
-            [addr6.address + '/' + str(addr6.netmask) for addr6 in ipv6addrs])
+def getIpInfo(dev, ipaddrs):
+    ipv4addr = ''
+    ipv4netmask = ''
+    ipv6addrs = []
+    for addr in ipaddrs[dev]:
+        if addr['family'] == 'inet':
+            ipv4addr, prefix = addr['address'].split('/')
+            ipv4netmask = prefix2netmask(addr['prefixlen'])
+        else:
+            ipv6addrs.append(addr['address'])
+    return ipv4addr, ipv4netmask, ipv6addrs
 
 
 def getipv6addrs(dev):
@@ -479,7 +482,7 @@ def permAddr():
     return paddr
 
 
-def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes,
+def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
                 qosInbound, qosOutbound):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
@@ -494,7 +497,7 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes,
             # comment when the version is no longer supported.
             data['interface'] = iface
 
-        ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(iface)
+        ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
                      'bootproto4': iface in dhcp4,
@@ -515,36 +518,36 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes,
     return data
 
 
-def _bridgeinfo(link, gateways, ipv6routes):
-    info = _devinfo(link)
+def _bridgeinfo(link, gateways, ipv6routes, ipaddrs):
+    info = _devinfo(link, ipaddrs)
     info.update({'gateway': getgateway(gateways, link.name),
                 'ipv6gateway': ipv6routes.get(link.name, '::'),
                 'ports': ports(link.name), 'stp': bridge_stp_state(link.name)})
     return info
 
 
-def _nicinfo(link, paddr):
-    info = _devinfo(link)
+def _nicinfo(link, paddr, ipaddrs):
+    info = _devinfo(link, ipaddrs)
     info.update({'hwaddr': link.address, 'speed': nicSpeed(link.name)})
     if paddr.get(link.name):
         info['permhwaddr'] = paddr[link.name]
     return info
 
 
-def _bondinfo(link):
-    info = _devinfo(link)
+def _bondinfo(link, ipaddrs):
+    info = _devinfo(link, ipaddrs)
     info.update({'hwaddr': link.address, 'slaves': slaves(link.name)})
     return info
 
 
-def _vlaninfo(link):
-    info = _devinfo(link)
+def _vlaninfo(link, ipaddrs):
+    info = _devinfo(link, ipaddrs)
     info.update({'iface': link.device, 'vlanid': link.vlanid})
     return info
 
 
-def _devinfo(link):
-    ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(link.name)
+def _devinfo(link, ipaddrs):
+    ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(link.name, ipaddrs)
     return {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
             'ipv6addrs': ipv6addrs,
@@ -621,6 +624,13 @@ def getDhclientIfaces(leaseFilesGlobs, ipv6=False):
     return interfaces
 
 
+def _getIpAddrs():
+    addrs = defaultdict(list)
+    for addr in iter_addrs():
+        addrs[addr['label']].append(addr)
+    return addrs
+
+
 def get():
     d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
          'vlans': {}}
@@ -628,13 +638,14 @@ def get():
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
     dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
+    ipaddrs = _getIpAddrs()
 
     for net, netAttr in networks().iteritems():
         try:
             d['networks'][net] = _getNetInfo(netAttr.get('iface', net),
                                              dhcp4,
                                              netAttr['bridged'], gateways,
-                                             ipv6routes,
+                                             ipv6routes, ipaddrs,
                                              netAttr.get('qosInbound'),
                                              netAttr.get('qosOutbound'))
         except KeyError:
@@ -643,13 +654,13 @@ def get():
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
             d['bridges'][dev.name] = \
-                _bridgeinfo(dev, gateways, ipv6routes)
+                _bridgeinfo(dev, gateways, ipv6routes, ipaddrs)
         elif dev.isNICLike():
-            d['nics'][dev.name] = _nicinfo(dev, paddr)
+            d['nics'][dev.name] = _nicinfo(dev, paddr, ipaddrs)
         elif dev.isBOND():
-            d['bondings'][dev.name] = _bondinfo(dev)
+            d['bondings'][dev.name] = _bondinfo(dev, ipaddrs)
         elif dev.isVLAN():
-            d['vlans'][dev.name] = _vlaninfo(dev)
+            d['vlans'][dev.name] = _vlaninfo(dev, ipaddrs)
 
     return d
 

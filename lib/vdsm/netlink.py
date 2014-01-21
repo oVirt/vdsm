@@ -20,10 +20,11 @@
 from contextlib import contextmanager
 from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, get_errno, sizeof)
+from functools import partial
 import errno
 
 NETLINK_ROUTE = 0
-CHARBUFFSIZE = 32
+CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
 LIBNL = CDLL('libnl.so.1', use_errno=True)
 
 # C function prototypes
@@ -43,6 +44,7 @@ _nl_cache_free = CFUNCTYPE(None, c_void_p)(('nl_cache_free', LIBNL))
 _nl_cache_get_first = _void_proto(('nl_cache_get_first', LIBNL))
 _nl_cache_get_next = _void_proto(('nl_cache_get_next', LIBNL))
 _rtnl_link_alloc_cache = _void_proto(('rtnl_link_alloc_cache', LIBNL))
+_rtnl_addr_alloc_cache = _void_proto(('rtnl_addr_alloc_cache', LIBNL))
 
 _rtnl_link_get_addr = _void_proto(('rtnl_link_get_addr', LIBNL))
 _rtnl_link_get_flags = _int_proto(('rtnl_link_get_flags', LIBNL))
@@ -55,6 +57,14 @@ _rtnl_link_get_operstate = _int_proto(('rtnl_link_get_operstate', LIBNL))
 _rtnl_link_get_qdisc = _char_proto(('rtnl_link_get_qdisc', LIBNL))
 _rtnl_link_vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL))
 
+_rtnl_addr_get_label = _char_proto(('rtnl_addr_get_label', LIBNL))
+_rtnl_addr_get_ifindex = _int_proto(('rtnl_addr_get_ifindex', LIBNL))
+_rtnl_addr_get_family = _int_proto(('rtnl_addr_get_family', LIBNL))
+_rtnl_addr_get_prefixlen = _int_proto(('rtnl_addr_get_prefixlen', LIBNL))
+_rtnl_addr_get_scope = _int_proto(('rtnl_addr_get_scope', LIBNL))
+_rtnl_addr_get_flags = _int_proto(('rtnl_addr_get_flags', LIBNL))
+_rtnl_addr_get_local = _void_proto(('rtnl_addr_get_local', LIBNL))
+
 _nl_addr2str = CFUNCTYPE(c_char_p, c_void_p, c_char_p, c_int)((
     'nl_addr2str', LIBNL))
 _rtnl_link_get_by_name = CFUNCTYPE(c_void_p, c_void_p, c_char_p)((
@@ -63,6 +73,9 @@ _rtnl_link_i2name = CFUNCTYPE(c_char_p, c_void_p, c_int, c_char_p, c_int)((
     'rtnl_link_i2name', LIBNL))
 _rtnl_link_operstate2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)((
     'rtnl_link_operstate2str', LIBNL))
+_nl_af2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_int)(('nl_af2str', LIBNL))
+_rtnl_scope2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_int)((
+    'rtnl_scope2str', LIBNL))
 
 
 def iter_links():
@@ -73,6 +86,17 @@ def iter_links():
         while link:
             yield _link_info(cache, link)
             link = _nl_cache_get_next(link)
+
+
+def iter_addrs():
+    """Generator that yields an information dictionary for each network address
+    in the system."""
+    with _nl_addr_cache() as addr_cache:
+        with _nl_link_cache() as link_cache:  # For index to label resolution
+            addr = _nl_cache_get_first(addr_cache)
+            while addr:
+                yield _addr_info(link_cache, addr)
+                addr = _nl_cache_get_next(addr)
 
 
 def get_link(name):
@@ -102,16 +126,36 @@ def _open_nl_socket():
 
 
 @contextmanager
-def _nl_link_cache():
-    """Provides a link cache and frees it and its links upon exit."""
+def _cache_manager(cache_allocator):
+    """Provides a cache using cache_allocator and frees it and its links upon
+    exit."""
     with _open_nl_socket() as sock:
-        cache = _rtnl_link_alloc_cache(sock)
+        cache = cache_allocator(sock)
         if cache is None:
-            raise IOError(get_errno(), 'Failed to allocate link cache.')
+            raise IOError(get_errno(), 'Failed to allocate the cache.')
         try:
             yield cache
         finally:
             _nl_cache_free(cache)
+
+
+_nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
+_nl_addr_cache = partial(_cache_manager, _rtnl_addr_alloc_cache)
+
+
+def _addr_info(link_cache, addr):
+    """Returns a dictionary with the address information."""
+    index = _rtnl_addr_get_ifindex(addr)
+    return {
+        'label': (_rtnl_addr_get_label(addr) or
+                  _link_index_to_name(link_cache, index)),
+        'index': index,
+        'family': _addr_family(addr),
+        'prefixlen': _rtnl_addr_get_prefixlen(addr),
+        'scope': _addr_scope(addr),
+        'flags': _rtnl_addr_get_flags(addr),
+        'address': _addr_local(addr),
+        }
 
 
 def _link_info(cache, link):
@@ -167,3 +211,21 @@ def _link_state(link):
     state = _rtnl_link_get_operstate(link)
     operstate = (c_char * CHARBUFFSIZE)()
     return _rtnl_link_operstate2str(state, operstate, sizeof(operstate))
+
+
+def _addr_scope(addr):
+    """Returns the scope name for which the address is defined."""
+    scope = (c_char * CHARBUFFSIZE)()
+    return _rtnl_scope2str(_rtnl_addr_get_scope(addr), scope, sizeof(scope))
+
+
+def _addr_family(addr):
+    """Returns the family name of the address."""
+    family = (c_char * CHARBUFFSIZE)()
+    return _nl_af2str(_rtnl_addr_get_family(addr), family, sizeof(family))
+
+
+def _addr_local(addr):
+    """Returns the textual representation of the address."""
+    address = (c_char * CHARBUFFSIZE)()
+    return _nl_addr2str(_rtnl_addr_get_local(addr), address, sizeof(address))
