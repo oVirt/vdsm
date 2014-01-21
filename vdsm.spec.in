@@ -76,6 +76,7 @@ BuildRequires: m2crypto
 BuildRequires: python-dmidecode
 %endif
 %if 0%{?rhel} == 6
+BuildRequires: python-argparse
 BuildRequires: python-ordereddict
 %endif
 BuildRequires: python-ethtool
