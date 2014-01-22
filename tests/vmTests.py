@@ -214,6 +214,8 @@ class TestVm(TestCaseBase):
         clockXML = """
             <clock adjustment="-3600" offset="variable">
                 <timer name="rtc" tickpolicy="catchup"/>
+                <timer name="pit" tickpolicy="delay"/>
+                <timer name="hpet" present="no"/>
             </clock>"""
         self.conf['timeOffset'] = '-3600'
         domxml = vm._DomXML(self.conf, self.log,

@@ -1806,8 +1806,6 @@ if __name__ == '__main__':
                     'o   acpiEnable : If present will remove the default '
                     '-no-acpi switch',
                     'o   qgaEnable : use qemu-ga as guest agent',
-                    'o   tdf : If present will add the -rtc-td-hack '
-                    'switch',
                     'o   irqChip : If false, add the -no-kvm-irqchip '
                     'switch',
                     'o   spiceSecureChannels : comma-separated list of '

@@ -23,7 +23,7 @@ CONF_TO_DOMXML_X86_64 = [({
     'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512',
     'displayPort': '-1', 'vmName': 'testVm',
     'display': 'vnc', 'emulatedMachine': 'pc',
-    'boot': '', 'timeOffset': 0, 'tdf': True,
+    'boot': '', 'timeOffset': 0,
     'acpiEnable': 'true', 'cpuType': 'qemu64',
     'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
     'smp': '1', 'cpuPinning': {}, 'maxVCpus': '160',
@@ -73,6 +73,8 @@ CONF_TO_DOMXML_X86_64 = [({
                 </sysinfo>
                 <clock adjustment="0" offset="variable">
                     <timer name="rtc" tickpolicy="catchup"/>
+                    <timer name="pit" tickpolicy="delay"/>
+                    <timer name="hpet" present="no"/>
                 </clock>
                 <features>
                     <acpi/>
@@ -91,7 +93,7 @@ CONF_TO_DOMXML_PPC64 = [({
     'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512',
     'displayPort': '-1', 'vmName': 'testVm',
     'display': 'vnc', 'emulatedMachine': 'pc',
-    'boot': '', 'timeOffset': 0, 'tdf': True,
+    'boot': '', 'timeOffset': 0,
     'acpiEnable': 'true', 'cpuType': 'qemu64',
     'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
     'smp': '1', 'cpuPinning': {}, 'maxVCpus': '160',
@@ -133,6 +135,8 @@ CONF_TO_DOMXML_PPC64 = [({
                 </os>
                 <clock adjustment="0" offset="variable">
                     <timer name="rtc" tickpolicy="catchup"/>
+                    <timer name="pit" tickpolicy="delay"/>
+                    <timer name="hpet" present="no"/>
                 </clock>
                 <cputune/>
                 <cpu>

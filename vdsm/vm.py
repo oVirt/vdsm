@@ -965,8 +965,9 @@ class _DomXML:
 
         m = XMLElement('clock', offset='variable',
                        adjustment=str(self.conf.get('timeOffset', 0)))
-        if utils.tobool(self.conf.get('tdf', True)):
-            m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
+        m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
+        m.appendChildWithArgs('timer', name='pit', tickpolicy='delay')
+        m.appendChildWithArgs('timer', name='hpet', present='no')
 
         self.dom.appendChild(m)
 
