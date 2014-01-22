@@ -25,7 +25,7 @@ VDSM_BIN="@VDSMDIR@/vdsm"
 prog=vdsm
 PIDFILE=@VDSMRUNDIR@/vdsmd.pid
 RESPAWNPIDFILE=@VDSMRUNDIR@/respawn.pid
-NEEDED_SERVICES="iscsid multipathd rpcbind ntpd wdmd sanlock network libvirtd
+NEEDED_SERVICES="multipathd rpcbind ntpd wdmd sanlock network libvirtd
                  supervdsmd"
 CONFLICTING_SERVICES="libvirt-guests ksmtuned"
 LOCK_FILE="/var/lock/subsys/vdsmd"
@@ -110,6 +110,12 @@ start() {
 
     shutdown_conflicting_srv "${CONFLICTING_SERVICES}" || return 1
     start_needed_srv "${NEEDED_SERVICES}" || return 1
+
+    # "service iscsid start" may not start becasue we configure node.startup to
+    # manual. See /etc/init.d/iscsid.
+    service iscsid status >/dev/null 2>&1 || service iscsid force-start \
+        || return 1
+
     "${VDSMD_INIT_COMMON}" --pre-start || return 1
 
     echo $"Starting up vdsm daemon: "
