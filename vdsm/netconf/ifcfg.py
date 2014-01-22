@@ -167,18 +167,17 @@ class Ifcfg(Configurator):
         self.configApplier.removeVlan(vlan.name)
         vlan.device.remove()
 
-    def _ifaceDownAndCleanup(self, iface, _netinfo):
+    def _ifaceDownAndCleanup(self, iface):
         """Returns True iff the iface is to be removed."""
         DynamicSourceRoute.addInterfaceTracking(iface)
-        to_be_removed = not _netinfo.ifaceUsers(iface.name)
+        to_be_removed = not netinfo.ifaceUsed(iface.name)
         if to_be_removed:
             ifdown(iface.name)
         self._removeSourceRoute(iface)
         return to_be_removed
 
     def removeBond(self, bonding):
-        _netinfo = netinfo.NetInfo()
-        to_be_removed = self._ifaceDownAndCleanup(bonding, _netinfo)
+        to_be_removed = self._ifaceDownAndCleanup(bonding)
         if to_be_removed:
             if bonding.destroyOnMasterRemoval:
                 self.configApplier.removeBonding(bonding.name)
@@ -194,8 +193,8 @@ class Ifcfg(Configurator):
                         netinfo.NET_CONF_PREF + bonding.name, 'BRIDGE', None)
                 ifup(bonding.name)
         else:
-            set_mtu = self._setNewMtu(
-                bonding, _netinfo.getVlanDevsForIface(bonding.name))
+            set_mtu = self._setNewMtu(bonding,
+                                      netinfo.vlanDevsForIface(bonding.name))
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value.
             # Note that ip link set dev bondX mtu Y sets Y on all its links
@@ -203,17 +202,15 @@ class Ifcfg(Configurator):
                 ipwrapper.linkSet(bonding.name, ['mtu', str(set_mtu)])
 
     def removeNic(self, nic):
-        _netinfo = netinfo.NetInfo()
-        to_be_removed = self._ifaceDownAndCleanup(nic, _netinfo)
+        to_be_removed = self._ifaceDownAndCleanup(nic)
         if to_be_removed:
             self.configApplier.removeNic(nic.name)
-            if nic.name in _netinfo.nics:
+            if nic.name in netinfo.nics():
                 ifup(nic.name)
             else:
                 logging.warning('host interface %s missing', nic.name)
         else:
-            set_mtu = self._setNewMtu(nic,
-                                      _netinfo.getVlanDevsForIface(nic.name))
+            set_mtu = self._setNewMtu(nic, netinfo.vlanDevsForIface(nic.name))
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value
             if set_mtu is not None:
@@ -622,7 +619,7 @@ class ConfigWriter(object):
         if bond.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
 
-        ipconfig, mtu = self._getIfaceConfValues(bond, netinfo.NetInfo())
+        ipconfig, mtu = self._getIfaceConfValues(bond)
         self._createConfFile(conf, bond.name, ipconfig, mtu, **opts)
 
         # create the bonding device to avoid initscripts noise
@@ -632,9 +629,9 @@ class ConfigWriter(object):
 
     def addNic(self, nic, **opts):
         """ Create ifcfg-* file with proper fields for NIC """
-        _netinfo = netinfo.NetInfo()
         conf = ''
         if _hwaddr_required():
+            _netinfo = netinfo.NetInfo()
             hwaddr = (_netinfo.nics[nic.name].get('permhwaddr') or
                       _netinfo.nics[nic.name]['hwaddr'])
 
@@ -648,17 +645,17 @@ class ConfigWriter(object):
         if ethtool_opts:
             conf += 'ETHTOOL_OPTS=%s\n' % pipes.quote(ethtool_opts)
 
-        ipconfig, mtu = self._getIfaceConfValues(nic, _netinfo)
+        ipconfig, mtu = self._getIfaceConfValues(nic)
         self._createConfFile(conf, nic.name, ipconfig, mtu, **opts)
 
     @staticmethod
-    def _getIfaceConfValues(iface, _netinfo):
+    def _getIfaceConfValues(iface):
         ipaddr, netmask, gateway, defaultRoute, ipv6addr, ipv6gateway, \
             ipv6defaultRoute, bootproto, async, ipv6autoconf, dhcpv6 = \
             iface.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(defaultRoute)
         mtu = iface.mtu
-        if _netinfo.ifaceUsers(iface.name):
+        if netinfo.ifaceUsed(iface.name):
             confParams = netinfo.getIfaceCfg(iface.name)
             if not ipaddr and bootproto != 'dhcp':
                 ipaddr = confParams.get('IPADDR', None)

@@ -89,7 +89,7 @@ class Nic(NetDevice):
         # in a limited condition, we should not touch the nic config
         if (self.vlan and
                 netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
-                netinfo.NetInfo().ifaceUsers(self.name) and
+                netinfo.ifaceUsed(self.name) and
                 self.mtu <= netinfo.getMtu(self.name)):
             return
 
@@ -195,7 +195,7 @@ class Bond(NetDevice):
         if (self.vlan and
             self.name in netinfo.bondings() and
             netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
-            netinfo.NetInfo().ifaceUsers(self.name) and
+            netinfo.ifaceUsed(self.name) and
             self.mtu <= netinfo.getMtu(self.name) and
             self.areOptionsApplied() and
             frozenset(slave.name for slave in self.slaves) ==

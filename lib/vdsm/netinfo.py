@@ -43,7 +43,7 @@ from .ipwrapper import routeGet
 from .ipwrapper import routeShowGateways, routeShowAllDefaultGateways
 from . import libvirtconnection
 from .netconfpersistence import RunningConfig
-from .netlink import iter_addrs
+from .netlink import iter_addrs, iter_links
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -875,3 +875,25 @@ class NetInfo(object):
             if iface == vdict['iface']:
                 users.add(v)
         return users
+
+
+def ifaceUsed(iface):
+    """Lightweight implementation of bool(Netinfo.ifaceUsers()) that does not
+    require a NetInfo object."""
+    if os.path.exists(os.path.join(NET_PATH, iface, 'brport')):  # Is it a port
+        return True
+    for linkDict in iter_links():
+        if linkDict['name'] == iface and 'master' in linkDict:  # Is it a slave
+            return True
+        if linkDict.get('device') == iface:  # Does it back a vlan
+            return True
+    for name, info in networks().iteritems():
+        if info.get('iface') == iface:
+            return True
+    return False
+
+
+def vlanDevsForIface(iface):
+    for linkDict in iter_links():
+        if linkDict.get('device') == iface:
+            yield linkDict['name']
