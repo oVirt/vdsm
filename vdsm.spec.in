@@ -164,7 +164,6 @@ Requires: policycoreutils-python
 Requires: python-pthreading >= 0.1.2
 Requires: qemu-kvm
 Requires: qemu-img
-Requires: sanlock, sanlock-python
 Requires: selinux-policy-targeted
 %else
 Requires: python
@@ -175,7 +174,7 @@ Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 Requires: fence-agents
 Requires: kernel >= 2.6.32-279.9.1
-Requires: sanlock >= 2.3-4, sanlock-python
+Requires: sanlock >= 2.8, sanlock-python
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: policycoreutils >= 2.0.83-19.30
 Requires: policycoreutils-python >= 2.0.83-19.30
@@ -204,7 +203,7 @@ Requires: initscripts >= 9.42.2-1
 %endif
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
-Requires: sanlock >= 2.4-2, sanlock-python
+Requires: sanlock >= 2.8, sanlock-python
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
