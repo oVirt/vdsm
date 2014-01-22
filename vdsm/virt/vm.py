@@ -602,6 +602,9 @@ class _DomXML:
         if self.arch == caps.Architecture.X86_64:
             oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
+        if utils.tobool(self.conf.get('bootMenuEnable', False)):
+            oselem.appendChildWithArgs('bootmenu', enable='yes')
+
     def appendSysinfo(self, osname, osversion, serialNumber):
         """
         Add <sysinfo> element to domain:

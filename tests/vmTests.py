@@ -109,6 +109,60 @@ class TestVm(TestCaseBase):
                             caps.Architecture.X86_64)
         self.assertXML(domxml.dom, expectedXML)
 
+    def testOSXMLBootMenu(self):
+        vmConfs = (
+            # trivial cases first
+            {},
+            {'bootMenuEnable': 'true'},
+            {'bootMenuEnable': 'false'},
+            {'bootMenuEnable': True},
+            {'bootMenuEnable': False},
+            # next with more fields
+            {'bootMenuEnable': True,
+             'kernelArgs': 'console=ttyS0 1'},
+            {'bootMenuEnable': False,
+             'kernelArgs': 'console=ttyS0 1'})
+        expectedXMLs = ("""
+            <os>
+                 <type arch="x86_64" machine="pc">hvm</type>
+                 <smbios mode="sysinfo"/>
+            </os>""", """
+            <os>
+                 <type arch="x86_64" machine="pc">hvm</type>
+                 <smbios mode="sysinfo"/>
+                 <bootmenu enable="yes"/>
+            </os>""", """
+            <os>
+                 <type arch="x86_64" machine="pc">hvm</type>
+                 <smbios mode="sysinfo"/>
+            </os>""", """
+            <os>
+                 <type arch="x86_64" machine="pc">hvm</type>
+                 <smbios mode="sysinfo"/>
+                 <bootmenu enable="yes"/>
+            </os>""", """
+            <os>
+                 <type arch="x86_64" machine="pc">hvm</type>
+                 <smbios mode="sysinfo"/>
+            </os>""", """
+            <os>
+                 <type arch="x86_64" machine="pc">hvm</type>
+                 <cmdline>console=ttyS0 1</cmdline>
+                 <smbios mode="sysinfo"/>
+                 <bootmenu enable="yes"/>
+            </os>""",  """
+            <os>
+                 <type arch="x86_64" machine="pc">hvm</type>
+                 <cmdline>console=ttyS0 1</cmdline>
+                 <smbios mode="sysinfo"/>
+            </os>""")
+        for conf, xmlout in zip(vmConfs, expectedXMLs):
+            conf.update(self.conf)
+            domxml = vm._DomXML(conf, self.log,
+                                caps.Architecture.X86_64)
+            domxml.appendOs()
+            self.assertXML(domxml.dom, xmlout, 'os')
+
     def testOSXMLX86_64(self):
         expectedXMLs = ["""
             <os>

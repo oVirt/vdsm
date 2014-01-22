@@ -3047,6 +3047,9 @@
 #
 # @acpiEnable:            Indicates if ACPI is enabled inside the VM
 #
+# @bootMenuEnable:        #optional enable the BIOS boot menu
+#                         (new in version 4.15.0)
+#
 # @cpuShares:             #optional The host scheduling priority (relative to
 #                         other VMs). In case both cpuShares and nice are
 #                         present, cpuShares will be used.
@@ -3089,7 +3092,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmParameters',
- 'data': {'acpiEnable': 'bool',
+ 'data': {'acpiEnable': 'bool', '*bootMenuEnable': 'bool',
           '*cpuShares': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
           'display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
