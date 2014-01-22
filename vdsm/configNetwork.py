@@ -53,7 +53,7 @@ def _getConfiguratorClass():
         return Iproute2
     else:
         if configurator != 'ifcfg':
-            logging.warn('Invalid config for network configruator: %s. '
+            logging.warn('Invalid config for network configurator: %s. '
                          'Use ifcfg instead.', configurator)
         from netconf.ifcfg import Ifcfg
         return Ifcfg
