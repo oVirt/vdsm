@@ -616,10 +616,12 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 ifStats['txDropped'] = str(eInfo[nic.name][7])
 
                 ifRxBytes = (100.0 *
-                             (eInfo[nic.name][0] - sInfo[nic.name][0]) /
+                             (eInfo[nic.name][0] - sInfo[nic.name][0]) %
+                             2 ** 32 /
                              sampleInterval / ifSpeed / self.MBPS_TO_BPS)
                 ifTxBytes = (100.0 *
-                             (eInfo[nic.name][4] - sInfo[nic.name][4]) /
+                             (eInfo[nic.name][4] - sInfo[nic.name][4]) %
+                             2 ** 32 /
                              sampleInterval / ifSpeed / self.MBPS_TO_BPS)
 
                 ifStats['rxRate'] = '%.1f' % ifRxBytes
