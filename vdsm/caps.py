@@ -399,6 +399,11 @@ def _getVersionInfo():
     if hasattr(libvirt, 'VIR_MIGRATE_ABORT_ON_ERROR'):
         return dsaversion.version_info
 
+    logging.error('VIR_MIGRATE_ABORT_ON_ERROR not found in libvirt,'
+                  ' support for clusterLevel >= 3.4 is disabled.'
+                  ' For Fedora 19 users, please consider upgrading'
+                  ' libvirt from the virt-preview repository')
+
     from distutils.version import StrictVersion
     # Workaround: we drop the cluster 3.4+
     # compatibility when we run on top of
