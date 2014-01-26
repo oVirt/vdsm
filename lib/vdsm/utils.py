@@ -689,17 +689,15 @@ def getHostUUID(legacy=True):
         else:
             arch = platform.machine()
             if arch in ('x86_64', 'i686'):
-                p = subprocess.Popen([constants.EXT_SUDO,
-                                      constants.EXT_DMIDECODE, "-s",
-                                      "system-uuid"],
-                                     close_fds=True, stdin=subprocess.PIPE,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE)
-                out, err = p.communicate()
+                ret, out, err = execCmd([constants.EXT_DMIDECODE,
+                                         "-s",
+                                         "system-uuid"],
+                                        raw=True,
+                                        sudo=True)
                 out = '\n'.join(line for line in out.splitlines()
                                 if not line.startswith('#'))
 
-                if p.returncode == 0 and 'Not' not in out:
+                if ret == 0 and 'Not' not in out:
                     #Avoid error string - 'Not Settable' or 'Not Present'
                     __hostUUID = out.strip()
                 else:
