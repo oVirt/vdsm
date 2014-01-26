@@ -197,13 +197,19 @@ class StorageTest(TestCaseBase):
                 if sdid != storagePools[poolid]['master_uuid']:
                     r = self.s.attachStorageDomain(sdid, poolid)
                     self.assertVdsOK(r)
-                    undo = lambda sdid=sdid, poolid=poolid: \
+                    undo1 = lambda sdid=sdid, poolid=poolid: \
                         self.assertVdsOK(
                             self.s.detachStorageDomain(
                                 sdid, poolid, storage.sd.BLANK_UUID,
                                 storagePools[poolid]['master_ver']))
-                    rollback.prependDefer(undo)
+                    rollback.prependDefer(undo1)
                     r = self.s.activateStorageDomain(sdid, poolid)
+                    undo2 = lambda sdid=sdid, poolid=poolid: \
+                        self.assertVdsOK(
+                            self.s.deactivateStorageDomain(
+                                sdid, poolid, storage.sd.BLANK_UUID,
+                                storagePools[poolid]['master_ver']))
+                    rollback.prependDefer(undo2)
                     self.assertVdsOK(r)
 
         r = self.s.getVdsStats()
