@@ -546,7 +546,8 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
         command = [constants.EXT_SETSID] + command
 
     if sudo:
-        command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG] + command
+        if os.geteuid() != 0:
+            command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG] + command
 
     if not printable:
         printable = command
