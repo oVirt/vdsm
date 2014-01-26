@@ -611,6 +611,11 @@ sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 
+# VDSM Log
+install -dDm 0755 %{buildroot}@VDSMLOGDIR@
+# Avoid rpmbuild complain about vdsm.log doesn't exist during the build
+touch %{buildroot}@VDSMLOGDIR@/vdsm.log
+
 # Install the respawn utility
 install -Dm 0755 init/sysvinit/respawn \
                  %{buildroot}%{_datadir}/%{vdsm_name}/respawn
@@ -875,6 +880,7 @@ exit 0
 %endif
 
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
+%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/vdsm.log
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
