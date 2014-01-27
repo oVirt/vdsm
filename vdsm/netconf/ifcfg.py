@@ -33,6 +33,7 @@ from netconf import Configurator
 from neterrors import ConfigNetworkError
 from netmodels import Nic, Bridge, IpConfig
 from sourceRoute import DynamicSourceRoute
+from vdsm.config import config
 from vdsm import constants
 from vdsm import netinfo
 from vdsm import utils
