@@ -148,9 +148,10 @@ class Configurator(object):
             else:
                 self.configApplier.setIfaceMtu(iface.name, maxMtu)
 
-    def getEthtoolOpts(self, name):
-        try:
-            opts = config.get('vars', 'ethtool_opts.' + name)
-        except ConfigParser.NoOptionError:
-            opts = config.get('vars', 'ethtool_opts')
-        return opts
+
+def getEthtoolOpts(name):
+    try:
+        opts = config.get('vars', 'ethtool_opts.' + name)
+    except ConfigParser.NoOptionError:
+        opts = config.get('vars', 'ethtool_opts')
+    return opts

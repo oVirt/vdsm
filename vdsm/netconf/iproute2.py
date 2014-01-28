@@ -20,7 +20,7 @@
 import logging
 
 import libvirtCfg
-from netconf import Configurator
+from netconf import Configurator, getEthtoolOpts
 from netconf.dhclient import DhcpClient
 from neterrors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from netmodels import Nic
@@ -121,7 +121,7 @@ class Iproute2(Configurator):
     def configureNic(self, nic, **opts):
         self.configApplier.setIfaceConfigAndUp(nic)
 
-        ethtool_opts = self.getEthtoolOpts(nic.name)
+        ethtool_opts = getEthtoolOpts(nic.name)
         if ethtool_opts:
             # We ignore ethtool's return code to maintain initscripts'
             # behaviour.
