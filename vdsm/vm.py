@@ -98,10 +98,6 @@ def _filterSnappableDiskDevices(diskDeviceXmlElements):
                       diskDeviceXmlElements)
 
 
-class _MigrationError(RuntimeError):
-    pass
-
-
 class MigrationSourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
