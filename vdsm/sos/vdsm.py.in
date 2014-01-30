@@ -120,5 +120,6 @@ class vdsm(sos.plugintools.PluginBase):
         import glob
 
         for f in glob.glob("@VDSMRUNDIR@/*"):
-            if not f.endswith('.vfd') and not f.endswith('/isoUploader'):
+            if not f.endswith('.vfd') and not f.endswith('/isoUploader') \
+                    and not f.endswith('/storage'):
                 self.addCopySpec(f)
