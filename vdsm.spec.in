@@ -612,12 +612,10 @@ sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 
-# Creating VDSM logs
+# Creating VDSM logs in this session to avoid rpmbuild
+# complain during the build
 install -dDm 0755 %{buildroot}@VDSMLOGDIR@
-touch %{buildroot}@VDSMLOGDIR@/metadata.log
-touch %{buildroot}@VDSMLOGDIR@/mom.log
-touch %{buildroot}@VDSMLOGDIR@/supervdsm.log
-touch %{buildroot}@VDSMLOGDIR@/vdsm.log
+touch %{buildroot}@VDSMLOGDIR@/{metadata.log,mom.log,supervdsm.log,vdsm.log}
 
 # Install the respawn utility
 install -Dm 0755 init/sysvinit/respawn \
@@ -692,6 +690,14 @@ export LC_ALL=C
 %{_bindir}/vdsm-tool sebool-config || :
 # set the vdsm "secret" password for libvirt
 %{_bindir}/vdsm-tool set-saslpasswd
+
+# After vdsm install we should create the logs files.
+# In the install session we create it but since we use
+# the ghost macro (in files session) the files are not included
+touch @VDSMLOGDIR@/{metadata.log,mom.log,supervdsm.log,vdsm.log}
+chmod 0644 @VDSMLOGDIR@/{metadata.log,mom.log,supervdsm.log,vdsm.log}
+chown @VDSMUSER@:@VDSMGROUP@ @VDSMLOGDIR@/{metadata.log,mom.log,vdsm.log}
+chown root:root @VDSMLOGDIR@/supervdsm.log
 
 # Have moved vdsm section in /etc/sysctl.conf to /etc/sysctl.d/vdsm.conf.
 # So Remove them if it is played with /etc/sysctl.conf.
@@ -883,10 +889,10 @@ exit 0
 %endif
 
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
-%config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/metadata.log
-%config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/mom.log
-%config %attr(0644, root, root) @VDSMLOGDIR@/supervdsm.log
-%config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/vdsm.log
+%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/metadata.log
+%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/mom.log
+%ghost %config %attr(0644, root, root) @VDSMLOGDIR@/supervdsm.log
+%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/vdsm.log
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
