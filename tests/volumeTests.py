@@ -31,6 +31,7 @@ class FileDomainMockObject(fileSD.FileStorageDomain):
     def __init__(self, mountpoint, sdUUID):
         self.mountpoint = mountpoint
         self.sdUUID = sdUUID
+        self.stat = None
 
     @property
     def oop(self):
