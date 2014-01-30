@@ -276,7 +276,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
 
 
 class VGTagMetadataRW(object):
-    log = logging.getLogger("storage.Metadata.VGTagMetadataRW")
+    log = logging.getLogger("Storage.Metadata.VGTagMetadataRW")
     METADATA_TAG_PREFIX = "MDT_"
     METADATA_TAG_PREFIX_LEN = len(METADATA_TAG_PREFIX)
 
@@ -319,7 +319,7 @@ class LvMetadataRW(object):
     """
     Block Storage Domain metadata implementation
     """
-    log = logging.getLogger("storage.Metadata.LvMetadataRW")
+    log = logging.getLogger("Storage.Metadata.LvMetadataRW")
 
     def __init__(self, vgName, lvName, offset, size):
         self._size = size

@@ -661,7 +661,7 @@ def getMountsList(pattern="*"):
 
 
 def scanDomains(pattern="*"):
-    log = logging.getLogger("scanDomains")
+    log = logging.getLogger("Storage.scanDomains")
 
     mntList = getMountsList(pattern)
 

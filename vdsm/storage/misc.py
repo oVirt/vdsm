@@ -710,7 +710,7 @@ class SamplingMethod(object):
     Supporting parameters or exception passing to all functions would
     make the code much more complex for no reason.
     """
-    _log = logging.getLogger("SamplingMethod")
+    _log = logging.getLogger("Storage.SamplingMethod")
 
     def __init__(self, func):
         self.__func = func
@@ -798,7 +798,7 @@ def getfds():
 
 class Event(object):
     def __init__(self, name, sync=False):
-        self._log = logging.getLogger("Event.%s" % name)
+        self._log = logging.getLogger("Storage.Event.%s" % name)
         self.name = name
         self._syncRoot = threading.Lock()
         self._registrar = {}
@@ -842,7 +842,7 @@ class Event(object):
 
 
 class OperationMutex(object):
-    log = enableLogSkip(logging.getLogger("OperationMutex"),
+    log = enableLogSkip(logging.getLogger("Storage.OperationMutex"),
                         ignoreSourceFiles=[__file__, contextlib.__file__])
 
     def __init__(self):

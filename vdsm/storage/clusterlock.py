@@ -47,7 +47,7 @@ class InquireNotSupportedError(Exception):
 
 
 class SafeLease(object):
-    log = logging.getLogger("SafeLease")
+    log = logging.getLogger("Storage.SafeLease")
 
     lockUtilPath = config.get('irs', 'lock_util_path')
     lockCmd = config.get('irs', 'lock_cmd')
@@ -136,7 +136,7 @@ class SafeLease(object):
             self.log.debug("Cluster lock released successfully")
 
 
-initSANLockLog = logging.getLogger("initSANLock")
+initSANLockLog = logging.getLogger("Storage.initSANLock")
 
 
 def initSANLock(sdUUID, idsPath, leasesPath):
@@ -153,7 +153,7 @@ def initSANLock(sdUUID, idsPath, leasesPath):
 
 
 class SANLock(object):
-    log = logging.getLogger("SANLock")
+    log = logging.getLogger("Storage.SANLock")
 
     _sanlock_fd = None
     _sanlock_lock = threading.Lock()
@@ -289,7 +289,7 @@ class SANLock(object):
 
 
 class LocalLock(object):
-    log = logging.getLogger("LocalLock")
+    log = logging.getLogger("Storage.LocalLock")
 
     LVER = 0
 

@@ -29,7 +29,7 @@ from threadPool import ThreadPool
 
 
 class TaskManager:
-    log = logging.getLogger('TaskManager')
+    log = logging.getLogger('Storage.TaskManager')
 
     def __init__(self,
                  tpSize=config.getint('irs', 'thread_pool_size'),

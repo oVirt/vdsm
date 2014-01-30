@@ -25,7 +25,7 @@ class ThreadPool:
     accepts tasks that will be dispatched to the next available
     thread."""
 
-    log = logging.getLogger('Misc.ThreadPool')
+    log = logging.getLogger('Storage.ThreadPool')
 
     def __init__(self, numThreads, waitTimeout=3, maxTasks=100):
 
@@ -175,7 +175,7 @@ class WorkerThread(threading.Thread):
 
     """ Pooled thread class. """
 
-    log = logging.getLogger('Misc.ThreadPool.WorkerThread')
+    log = logging.getLogger('Storage.ThreadPool.WorkerThread')
 
     def __init__(self, pool):
 

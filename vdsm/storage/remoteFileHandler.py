@@ -217,7 +217,7 @@ class CrabRPCProxy(object):
 
 
 class PoolHandler(object):
-    log = logging.getLogger("RepoFileHelper.PoolHandler")
+    log = logging.getLogger("Storage.RepoFileHelper.PoolHandler")
 
     def __init__(self):
         myRead, hisWrite = os.pipe()

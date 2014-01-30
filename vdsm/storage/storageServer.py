@@ -165,7 +165,7 @@ class ExampleConnection(object):
 
 
 class MountConnection(object):
-    log = logging.getLogger("StorageServer.MountConnection")
+    log = logging.getLogger("Storage.StorageServer.MountConnection")
     localPathBase = "/tmp"
 
     @property
@@ -522,7 +522,7 @@ class IllegalAliasError(RuntimeError):
 
 
 class ConnectionAliasRegistrar(object):
-    log = logging.getLogger("StorageServer.ConnectionAliasRegistrar")
+    log = logging.getLogger("Storage.StorageServer.ConnectionAliasRegistrar")
 
     def __init__(self, persistDir):
         self._aliases = {}
@@ -624,7 +624,7 @@ class ConnectionFactory(object):
 
 
 class ConnectionMonitor(object):
-    _log = logging.getLogger("ConnectionMonitor")
+    _log = logging.getLogger("Storage.ConnectionMonitor")
 
     TAG = "managed"
 
