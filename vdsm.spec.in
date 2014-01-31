@@ -242,7 +242,7 @@ BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-xmlrpc = %{version}-%{release}
-Requires: %{name}-python-cpopen
+Requires: python-cpopen
 
 %description cli
 Call VDSM commands from the command line. Used for testing and debugging.
@@ -252,7 +252,7 @@ Summary:        VDSM xmlrpc API
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
-Requires: %{name}-python-cpopen
+Requires: python-cpopen
 
 
 %description xmlrpc
