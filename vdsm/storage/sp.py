@@ -578,40 +578,41 @@ class StoragePool(object):
 
         fileUtils.createdir(self.poolPath)
         self._acquireTemporaryClusterLock(msdUUID, leaseParams)
-
         try:
             self._setSecure()
-            # Mark 'master' domain
-            # We should do it before actually attaching this domain to the pool
-            # During 'master' marking we create pool metadata and each attached
-            # domain should register there
-            self.createMaster(poolName, msd, masterVersion, leaseParams)
-            self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
-            # Attach storage domains to the storage pool
-            # Since we are creating the pool then attach is done from the hsm
-            # and not the spm therefore we must manually take the master domain
-            # lock
-            # TBD: create will receive only master domain and further attaches
-            #      should be done under SPM
-
-            # Master domain was already attached (in createMaster),
-            # no need to reattach
-            for sdUUID in domList:
-                # No need to attach the master
-                if sdUUID != msdUUID:
-                    self.attachSD(sdUUID)
-        except Exception:
-            self.log.error("Create pool %s canceled ", poolName, exc_info=True)
             try:
-                fileUtils.cleanupdir(self.poolPath)
-                self.__cleanupDomains(domList, msdUUID, masterVersion)
-            except:
-                self.log.error("Cleanup failed due to an unexpected error",
-                               exc_info=True)
-            raise
-        finally:
-            self._setUnsecure()
+                # Mark 'master' domain.  We should do it before actually
+                # attaching this domain to the pool During 'master' marking we
+                # create pool metadata and each attached domain should register
+                # there.
+                self.createMaster(poolName, msd, masterVersion, leaseParams)
+                self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
+                # Attach storage domains to the storage pool.  Since we are
+                # creating the pool then attach is done from the hsm and not
+                # the spm therefore we must manually take the master domain
+                # lock.
+                # TBD: create will receive only master domain and further
+                #      attaches should be done under SPM.
 
+                # Master domain was already attached (in createMaster), no need
+                # to reattach.
+                for sdUUID in domList:
+                    # No need to attach the master
+                    if sdUUID != msdUUID:
+                        self.attachSD(sdUUID)
+            except Exception:
+                self.log.error("Create pool %s canceled ", poolName,
+                               exc_info=True)
+                try:
+                    fileUtils.cleanupdir(self.poolPath)
+                    self.__cleanupDomains(domList, msdUUID, masterVersion)
+                except:
+                    self.log.error("Cleanup failed due to an unexpected error",
+                                   exc_info=True)
+                raise
+            finally:
+                self._setUnsecure()
+        finally:
             self._releaseTemporaryClusterLock(msdUUID)
             self.stopMonitoringDomains()
 
@@ -709,29 +710,28 @@ class StoragePool(object):
             # The host id must be set for createMaster(...).
             self.id = hostId
             temporaryLock = False
-
-        # As in the create method we need to temporarily set the object
-        # secure in order to change the domains map.
-        # TODO: it is clear that reconstructMaster and create (StoragePool)
-        # are extremely similar and they should be unified.
-        self._setSecure()
-
         try:
-            self.createMaster(poolName, futureMaster, masterVersion,
-                              leaseParams)
-            self.setMasterDomain(msdUUID, masterVersion)
+            # As in the create method we need to temporarily set the object
+            # secure in order to change the domains map.
+            # TODO: it is clear that reconstructMaster and create (StoragePool)
+            # are extremely similar and they should be unified.
+            self._setSecure()
+            try:
+                self.createMaster(poolName, futureMaster, masterVersion,
+                                  leaseParams)
+                self.setMasterDomain(msdUUID, masterVersion)
 
-            for sdUUID in domDict:
-                domDict[sdUUID] = domDict[sdUUID].capitalize()
+                for sdUUID in domDict:
+                    domDict[sdUUID] = domDict[sdUUID].capitalize()
 
-            # Add domain to domain list in pool metadata.
-            self.log.info("Set storage pool domains: %s", domDict)
-            self._backend.setDomainsMap(domDict)
+                # Add domain to domain list in pool metadata.
+                self.log.info("Set storage pool domains: %s", domDict)
+                self._backend.setDomainsMap(domDict)
 
-            self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
+                self.refresh(msdUUID=msdUUID, masterVersion=masterVersion)
+            finally:
+                self._setUnsecure()
         finally:
-            self._setUnsecure()
-
             if temporaryLock:
                 self._releaseTemporaryClusterLock(msdUUID)
                 self.stopMonitoringDomains()
