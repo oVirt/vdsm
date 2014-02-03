@@ -24,8 +24,7 @@ import argparse
 
 from .. import utils
 from . import service, expose
-from ..constants import P_VDSM_EXEC, DISKIMAGE_GROUP
-from ..constants import QEMU_PROCESS_GROUP, VDSM_GROUP
+from ..constants import P_VDSM_EXEC, QEMU_PROCESS_GROUP, VDSM_GROUP
 
 
 class _ModuleConfigure(object):
@@ -108,6 +107,9 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
 
 class SanlockModuleConfigure(_ModuleConfigure):
+
+    SANLOCK_GROUPS = (QEMU_PROCESS_GROUP, VDSM_GROUP)
+
     def __init__(self):
         super(SanlockModuleConfigure, self).__init__()
 
@@ -129,7 +131,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
                 '/usr/sbin/usermod',
                 '-a',
                 '-G',
-                '%s,%s' % (QEMU_PROCESS_GROUP, VDSM_GROUP),
+                ','.join(self.SANLOCK_GROUPS),
                 'sanlock'
             ),
             raw=True,
@@ -159,7 +161,13 @@ class SanlockModuleConfigure(_ModuleConfigure):
                         break
                 else:
                     raise RuntimeError("Unable to find sanlock service groups")
-            configured = grp.getgrnam(DISKIMAGE_GROUP)[2] in groups
+
+            is_sanlock_groups_set = True
+            for g in self.SANLOCK_GROUPS:
+                if grp.getgrnam(g)[2] not in groups:
+                    is_sanlock_groups_set = False
+            configured = is_sanlock_groups_set
+
         except IOError as e:
             if e.errno == os.errno.ENOENT:
                 sys.stdout.write("sanlock service is not running\n")
