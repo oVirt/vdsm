@@ -1964,8 +1964,8 @@ if __name__ == '__main__':
                     ('vmId=<id> method=<offline|online> src=<host[:port]> '
                      'dst=<host[:port]>  dstqemu=<host>',
                      'Migrate a desktop from src machine to dst host using '
-                     'the specified ports and an optional address for migration'
-                     'data traffic.'
+                     'the specified ports and an optional address for '
+                     'migration data traffic.'
                      )),
         'migrateStatus': (serv.do_mStat,
                           ('<vmId>',
