@@ -175,7 +175,10 @@ class SanlockModuleConfigure(_ModuleConfigure):
         return configured
 
     def reconfigureOnForce(self):
-        return False
+        # If sanlock is down isconfigure returns True and configure will skip
+        # sanlock configure. on force users expected to run configure even if
+        # isconfigure returned True.
+        return True
 
 
 __configurers = (
