@@ -168,7 +168,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
                 raise
 
         if not configured:
-            sys.stdout.write("sanlock service requires restart\n")
+            sys.stdout.write("sanlock service is not configured\n")
         else:
             sys.stdout.write("sanlock service is already configured\n")
 
