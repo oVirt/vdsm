@@ -822,15 +822,18 @@ class service:
             return res['status']['code'], res['status']['message']
         return 0, ''
 
+    def _parseDomainsMap(self, domMapString):
+        """
+        Parse domains map string: "sdUUID1=status1,sdUUID2=status2,..."
+        into a dictionary: {'sdUUID1': 'status1', 'sdUUID2': 'status2', ...}
+        """
+        return dict(x.split("=", 1) for x in domMapString.split(','))
+
     def reconstructMaster(self, args):
         spUUID = args[0]
         poolName = args[1]
         masterDom = args[2]
-        domList = args[3].split(",")
-        domDict = {}
-        for item in domList:
-            key, value = item.split('=')
-            domDict[key] = value
+        domDict = self._parseDomainsMap(args[3])
         mVer = int(args[4])
         if len(args) > 5:
             st = self.s.reconstructMaster(spUUID, poolName, masterDom, domDict,
@@ -883,8 +886,10 @@ class service:
             master_ver = int(args[4])
         else:
             master_ver = -1
-        pool = self.s.connectStoragePool(spUUID, ID, scsi_key,
-                                         master, master_ver)
+        connectArguments = [spUUID, ID, scsi_key, master, master_ver]
+        if len(args) > 5:
+            connectArguments.append(self._parseDomainsMap(args[5]))
+        pool = self.s.connectStoragePool(*connectArguments)
         if pool['status']['code']:
             return pool['status']['code'], pool['status']['message']
         return 0, ''
@@ -2145,14 +2150,17 @@ if __name__ == '__main__':
                                 'only for the command line backward '
                                 'compatibility)'
                                 )),
-        'connectStoragePool': (serv.connectStoragePool,
-                               ('<spUUID> <id> <scsi-key> [masterUUID] '
-                                '[masterVer]',
-                                'Connect a Host to specific storage pool',
-                                'Parameter scsi-key is ignored (maintained '
-                                'only for the command line backward '
-                                'compatibility)'
-                                )),
+        'connectStoragePool': (serv.connectStoragePool, (
+            '<spUUID> <id> <scsi-key> [masterUUID] [masterVer] '
+            '[<domDict>({sdUUID1=status,sdUUID2=status,...})]',
+            'Connect a Host to specific storage pool.',
+            'Parameters list: r=required, o=optional',
+            'o   scsi-key : ignored (maintained only for the command line '
+            'backward compatibility)',
+            'o   domDict : provides a map of domains (and status) that '
+            'are part of the pool, this selects the pool metadata memory '
+            'backend',
+        )),
         'disconnectStoragePool': (serv.disconnectStoragePool,
                                   ('<spUUID> <id> <scsi-key>',
                                    'Disconnect a Host from the specific '
