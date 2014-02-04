@@ -4306,7 +4306,9 @@
 #
 # @masterVersion:  The Storage Domain version of the master domain
 #
-# @domainDict:     The Storage Domain statuses (added in cluster level 3.4)
+# @domainDict:     #optional The Storage Domain statuses (added in cluster
+#                  level 3.4). If this argument is present the Storage Pool
+#                  will use the memory backend (no metadata).
 #
 # Since: 4.10.0
 #
@@ -4315,7 +4317,7 @@
 {'command': {'class': 'StoragePool', 'name': 'connect'},
  'data': {'storagepoolID': 'UUID', 'hostID': 'int', 'scsiKey': 'str',
           'masterSdUUID': 'UUID', 'masterVersion': 'int',
-          'domainDict': 'StorageDomainStatusMap'}}
+          '*domainDict': 'StorageDomainStatusMap'}}
 
 ##
 # @ConnectStorageServerStatus:
