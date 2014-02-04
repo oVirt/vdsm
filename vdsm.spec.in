@@ -42,6 +42,8 @@
 %global with_tmpfiles_macro 1
 %endif
 
+%global with_jsonrpc 1
+
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
@@ -281,6 +283,7 @@ Requires: %{name}-python = %{version}-%{release}
 An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
+%if 0%{?with_jsonrpc}
 %package api
 Summary:        VDSM API definition
 BuildArch:      noarch
@@ -309,6 +312,7 @@ Requires:       python >= 2.6
 
 %description yajsonrpc
 A JSON RPC server and client implementation.
+%endif
 
 %package python-zombiereaper
 Summary:        Collects zombie processes automatically
@@ -1349,6 +1353,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 
+%if 0%{?with_jsonrpc}
 %files api
 %doc vdsm_api/vdsm-api.html
 %{_datadir}/%{vdsm_name}/vdsmapi-schema.json
@@ -1364,6 +1369,13 @@ exit 0
 %{python_sitelib}/yajsonrpc/asyncoreReactor.py*
 %{python_sitelib}/yajsonrpc/protonReactor.py*
 %{python_sitelib}/yajsonrpc/client.py*
+%else
+%exclude %{python_sitelib}/yajsonrpc
+%exclude %{_datadir}/%{vdsm_name}/Bridge.py*
+%exclude %{_datadir}/%{vdsm_name}/BindingJsonRpc.py*
+%exclude %{python_sitelib}/vdsmapi.py*
+%exclude %{_datadir}/%{vdsm_name}/vdsmapi-schema.json
+%endif
 
 %files python-zombiereaper
 %{python_sitelib}/zombiereaper/__init__.py*
