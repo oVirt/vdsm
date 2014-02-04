@@ -629,7 +629,7 @@ class StoragePool(object):
 
     @unsecured
     def stopMonitoringDomains(self):
-        for sdUUID in self.getDomains():
+        for sdUUID in self.domainMonitor.poolMonitoredDomains:
             self.domainMonitor.stopMonitoring(sdUUID)
         return True
 
