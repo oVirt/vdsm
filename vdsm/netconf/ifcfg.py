@@ -515,6 +515,7 @@ class ConfigWriter(object):
         '''Backs up the previous contents of the file referenced by fileName
         writes the new configuration and sets the specified access mode.'''
         self._backup(fileName)
+        configuration = self.CONFFILE_HEADER + '\n' + configuration
         logging.debug('Writing to file %s configuration:\n%s' % (fileName,
                       configuration))
         with open(fileName, 'w') as confFile:
@@ -534,9 +535,8 @@ class ConfigWriter(object):
 
     def _createConfFile(self, conf, name, ipconfig, mtu=None, **kwargs):
         """ Create ifcfg-* file with proper fields per device """
-        cfg = self.CONFFILE_HEADER + '\n'
 
-        cfg += """DEVICE=%s\nONBOOT=yes\n""" % pipes.quote(name)
+        cfg = """DEVICE=%s\nONBOOT=yes\n""" % pipes.quote(name)
         cfg += conf
         if ipconfig.ipaddr:
             cfg = cfg + 'IPADDR=%s\n' % pipes.quote(ipconfig.ipaddr)
