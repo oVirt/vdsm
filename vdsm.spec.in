@@ -660,19 +660,21 @@ install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
 # This is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps
 install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
-%else
+%endif
+
+%if !0%{?rhel}
 # Install the configuration sample
 install -Dm 0644 lib/vdsm/vdsm.conf.sample \
-                 %{buildroot}%{_sysconfdir}/vdsm/vdsm.conf
+                 %{buildroot}%{_sysconfdir}/%{vdsm_name}/vdsm.conf
+%endif
 
 # Install the polkit for libvirt
-%if 0%{?fedora} >= 18
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 install -Dm 0644 vdsm/vdsm-libvirt-access.rules \
                  %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.rules
 %else
 install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
                  %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.pkla
-%endif
 %endif
 
 %check
@@ -1090,12 +1092,11 @@ exit 0
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}
 %dir %{_localstatedir}/log/core
-%else
-%if 0%{?fedora} >= 18
+%endif
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 %{_polkitdir}/10-vdsm-libvirt-access.rules
 %else
 %{_polkitdir}/10-vdsm-libvirt-access.pkla
-%endif
 %endif
 
 %defattr(-, %{vdsm_user}, %{qemu_group}, -)
