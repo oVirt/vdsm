@@ -3045,6 +3045,8 @@
 #
 # @vmType:                The type of VM
 #
+# @launchPaused:          #optional If present, launch the VM in pause mode.
+#
 # Since: 4.10.0
 ##
 {'type': 'VmParameters',
@@ -3054,7 +3056,7 @@
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
           'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
-          'vmType': 'VmType'}}
+          'vmType': 'VmType', '*launchPaused': 'bool'}}
 
 ##
 # @VmInfo:
