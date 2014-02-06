@@ -223,7 +223,7 @@ class Link(object):
         return False
 
     def isNICLike(self):
-        return self.isDUMMY() or self.isNIC() or self.isVETH() or self.isVF()
+        return self.isNIC() or self.isVF() or self.isFakeNIC()
 
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
