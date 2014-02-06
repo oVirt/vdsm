@@ -413,13 +413,6 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     configurator.removeLibvirtNetwork(network)
     netEnt.remove()
 
-    # We need to gather NetInfo again to refresh networks info from libvirt.
-    # The deleted bridge should never be up at this stage.
-    _netinfo = netinfo.NetInfo()
-    if network in _netinfo.networks:
-        raise ConfigNetworkError(ne.ERR_USED_BRIDGE, 'delNetwork: bridge %s '
-                                 'still exists' % network)
-
 
 def clientSeen(timeout):
     start = time.time()
