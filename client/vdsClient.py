@@ -1815,13 +1815,11 @@ if __name__ == '__main__':
                     'o   acpiEnable : If present will remove the default '
                     '-no-acpi switch',
                     'o   qgaEnable : use qemu-ga as guest agent',
-                    'o   irqChip : If false, add the -no-kvm-irqchip '
-                    'switch',
                     'o   spiceSecureChannels : comma-separated list of '
                     'spice channel that will be encrypted',
                     'o   spiceMonitors : number of emulated screen heads',
                     'o   soundDevice : emulated sound device',
-                    'o   launchPaused : If "true", start qemu paused',
+                    'o   launchPaused : If "true", start the VM paused',
                     'o   vmName : human-readable name of new VM',
                     'o   tabletEnable : If "true", enable tablet input',
                     'o   timeOffset : guest\'s start date, relative to '
