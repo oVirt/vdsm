@@ -18,12 +18,13 @@
 #
 
 import logging
+import os
+from time import sleep
+
 from nose.plugins.skip import SkipTest
 
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
-
-from time import sleep
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
 _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient')
@@ -59,15 +60,29 @@ class Dnsmasq():
         logging.debug(''.join(self.proc.stderr))
 
 
-def runDhclient(interface, leaseFile, pidFile):
-    """Starts dhclient and hands the process over after a while."""
-    rc, out, err = execCmd([_DHCLIENT_BINARY.cmd, '-d', '-lf', leaseFile,
+def runDhclient(interface, tmpDir, dateFormat):
+    """On the interface, dhclient is run to obtain a DHCP lease.
+
+    In the working directory (tmpDir), which is managed by the caller,
+    a lease file is created and a path to it is returned.
+    dhclient accepts the following dateFormats: 'default' and 'local'.
+    """
+    confFile = os.path.join(tmpDir, 'test.conf')
+    pidFile = os.path.join(tmpDir, 'test.pid')
+    leaseFile = os.path.join(tmpDir, 'test.lease')
+
+    with open(confFile, 'w') as f:
+        f.write('db-time-format {0};'.format(dateFormat))
+
+    rc, out, err = execCmd([_DHCLIENT_BINARY.cmd, '-lf', leaseFile,
                             '-pf', pidFile, '-timeout', str(_DHCLIENT_TIMEOUT),
-                            '-1', interface])
+                            '-1', '-cf', confFile, interface])
 
     if rc:  # == 2
         logging.debug(''.join(err))
         raise DhcpError('dhclient failed to obtain a lease: %d', rc)
+
+    return leaseFile
 
 
 def addNMplaceholderConnection(interface, connection):

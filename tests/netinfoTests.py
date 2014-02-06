@@ -19,9 +19,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
+from datetime import datetime
 from functools import partial
 from shutil import rmtree
 import tempfile
+import time
 from xml.dom import minidom
 
 import ethtool
@@ -295,28 +297,36 @@ class TestNetinfo(TestCaseBase):
 
     def testGetDhclientIfaces(self):
         LEASES = (
-            'lease {\n'
+            'lease {{\n'
             '  interface "valid";\n'
-            '  expire 3 2037/01/29 18:25:46;\n'
-            '}\n'
-            'lease {\n'
+            '  expire {0:%w %Y/%m/%d %H:%M:%S};\n'
+            '}}\n'
+            'lease {{\n'
             '  interface "valid2";\n'
-            '  expire epoch 2117041460; # Sat Jan 31 20:04:20 2037\n'
-            '}\n'
-            'lease {\n'
+            '  expire epoch {1:.0f}; # Sat Jan 31 20:04:20 2037\n'
+            '}}\n'                   # human-readable date is just a comment
+            'lease {{\n'
             '  interface "expired";\n'
-            '  expire 3 2014/01/29 18:25:46;\n'
-            '}\n'
-            'lease {\n'
+            '  expire {2:%w %Y/%m/%d %H:%M:%S};\n'
+            '}}\n'
+            'lease {{\n'
             '  interface "expired2";\n'
-            '  expire epoch 1391195060; # Fri Jan 31 20:04:20 2014\n'
-            '}\n'
+            '  expire epoch {3:.0f}; # Fri Jan 31 20:04:20 2014\n'
+            '}}\n'
         )
 
         with namedTemporaryDir() as tmpDir:
             leaseFile = os.path.join(tmpDir, 'test.lease')
             with open(leaseFile, 'w') as f:
-                f.write(LEASES)
+                lastMinute = time.time() - 60
+                nextMinute = time.time() + 60
+
+                f.write(LEASES.format(
+                    datetime.utcfromtimestamp(nextMinute),
+                    nextMinute,
+                    datetime.utcfromtimestamp(lastMinute),
+                    lastMinute
+                ))
 
             dhcp4 = getDhclientIfaces([leaseFile])
 

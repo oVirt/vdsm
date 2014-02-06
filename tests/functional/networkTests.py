@@ -1686,10 +1686,11 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkDoesntExist(NETWORK_NAME)
 
+    @permutations([['default'], ['local']])
     @cleanupNet
     @RequireVethMod
     @ValidateRunningAsRoot
-    def testDhclientLeases(self):
+    def testDhclientLeases(self, dateFormat):
         dhcp4 = set()
         with vethIf() as (server, client):
             with avoidAnotherDhclient(client):
@@ -1699,11 +1700,9 @@ class NetworkTest(TestCaseBase):
 
                 with dnsmasqDhcp(server):
 
-                    with namedTemporaryDir(dir='/var/lib/dhclient') as tmpDir:
-                        leaseFile = os.path.join(tmpDir, 'test.lease')
-                        pidFile = os.path.join(tmpDir, 'test.pid')
+                    with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
+                        leaseFile = dhcp.runDhclient(client, dir, dateFormat)
 
-                        dhcp.runDhclient(client, leaseFile, pidFile)
                         dhcp4 = getDhclientIfaces([leaseFile])
 
         self.assertIn(client, dhcp4, 'Test iface not found in a lease file.')

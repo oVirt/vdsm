@@ -557,7 +557,7 @@ def _parseExpiryTime(expiryTime):
 
     if expiryTime.startswith(EPOCH):
         since_epoch = expiryTime[len(EPOCH):]
-        return datetime.fromtimestamp(float(since_epoch))
+        return datetime.utcfromtimestamp(float(since_epoch))
 
     else:
         return datetime.strptime(expiryTime, '%w %Y/%m/%d %H:%M:%S')
@@ -583,7 +583,7 @@ def _parseLeaseFile(leaseFile, ipv6):
                     continue  # the line should always contain a ;
 
                 expiryTime = _parseExpiryTime(line[len(EXPIRE):end])
-                if datetime.now() > expiryTime:
+                if datetime.utcnow() > expiryTime:
                     insideLease = False
                     continue
 
