@@ -439,21 +439,21 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
 
 
 def _validateNetworkSetup(networks, bondings):
-    _netinfo = netinfo.NetInfo()
-
     for network, networkAttrs in networks.iteritems():
         if networkAttrs.get('remove', False):
             if set(networkAttrs) - set(['remove']):
                 raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Cannot specify '
                                          'any attribute when removing')
 
+    currentBondings = netinfo.bondings()
+    currentNicsSet = set(netinfo.nics())
     for bonding, bondingAttrs in bondings.iteritems():
         Bond.validateName(bonding)
         if 'options' in bondingAttrs:
             Bond.validateOptions(bonding, bondingAttrs['options'])
 
         if bondingAttrs.get('remove', False):
-            if bonding not in _netinfo.bondings:
+            if bonding not in currentBondings:
                 raise ConfigNetworkError(ne.ERR_BAD_BONDING, "Cannot remove "
                                          "bonding %s: Doesn't exist" % bonding)
             continue
@@ -462,7 +462,7 @@ def _validateNetworkSetup(networks, bondings):
         if not nics:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
                                      "Must specify nics for bonding")
-        if not set(nics).issubset(set(_netinfo.nics)):
+        if not set(nics).issubset(currentNicsSet):
             raise ConfigNetworkError(ne.ERR_BAD_NIC,
                                      "Unknown nics in: %r" % list(nics))
 
