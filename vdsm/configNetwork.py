@@ -574,7 +574,10 @@ def setupNetworks(networks, bondings, **options):
         a bonding, it's not necessary to specify its networks.
     """
     logger = logging.getLogger("setupNetworks")
-    _netinfo = netinfo.NetInfo()
+
+    libvirt_nets = netinfo.networks()
+    _netinfo = netinfo.NetInfo(_netinfo=netinfo.get(
+        netinfo._libvirtNets2vdsm(libvirt_nets)))
     networksAdded = set()
 
     logger.debug("Setting up network according to configuration: "
@@ -597,16 +600,17 @@ def setupNetworks(networks, bondings, **options):
 
     logger.debug("Applying...")
     with ConfiguratorClass(options.get('_inRollback', False)) as configurator:
-        libvirt_nets = netinfo.networks()
         # Remove edited networks and networks with 'remove' attribute
         for network, networkAttrs in networks.items():
             if network in _netinfo.networks:
                 logger.debug("Removing network %r" % network)
                 delNetwork(network, configurator=configurator, force=force,
-                           implicitBonding=False)
+                           implicitBonding=False, _netinfo=_netinfo)
                 if 'remove' in networkAttrs:
                     del networks[network]
                     del libvirt_nets[network]
+                _netinfo.updateDevices()
+                del _netinfo.networks[network]
             elif network in libvirt_nets:
                 # If the network was not in _netinfo but is in the networks
                 # returned by libvirt, it means that we are dealing with
@@ -617,6 +621,7 @@ def setupNetworks(networks, bondings, **options):
                 if 'remove' in networkAttrs:
                     del networks[network]
                     del libvirt_nets[network]
+                _netinfo.updateDevices()
             elif 'remove' in networkAttrs:
                 raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
                                          "network %r: It doesn't exist in the "
@@ -627,11 +632,11 @@ def setupNetworks(networks, bondings, **options):
         _handleBondings(bondings, configurator)
 
         # We need to use the newest host info
-        _ni = netinfo.NetInfo()
+        _netinfo.updateDevices()
         for network, networkAttrs in networks.iteritems():
             d = dict(networkAttrs)
             if 'bonding' in d:
-                d.update(_buildBondOptions(d['bonding'], bondings, _ni))
+                d.update(_buildBondOptions(d['bonding'], bondings, _netinfo))
             else:
                 d['nics'] = [d.pop('nic')] if 'nic' in d else []
             d['force'] = force

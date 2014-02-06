@@ -630,25 +630,42 @@ def _getIpAddrs():
     return addrs
 
 
-def get():
+def _libvirtNets2vdsm(nets, gateways=None, ipv6routes=None,
+                      ipAddrs=None):
+    dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
+    if gateways is None:
+        gateways = getRoutes()
+    if ipv6routes is None:
+        ipv6routes = getIPv6Routes()
+    if ipAddrs is None:
+        ipAddrs = _getIpAddrs()
+    d = {}
+    for net, netAttr in nets.iteritems():
+        try:
+            d[net] = _getNetInfo(netAttr.get('iface', net),
+                                 dhcp4,
+                                 netAttr['bridged'], gateways,
+                                 ipv6routes, ipAddrs,
+                                 netAttr.get('qosInbound'),
+                                 netAttr.get('qosOutbound'))
+        except KeyError:
+            continue  # Do not report missing libvirt networks.
+    return d
+
+
+def get(vdsmnets=None):
     d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
          'vlans': {}}
     gateways = getRoutes()
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
-    dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
     ipaddrs = _getIpAddrs()
 
-    for net, netAttr in networks().iteritems():
-        try:
-            d['networks'][net] = _getNetInfo(netAttr.get('iface', net),
-                                             dhcp4,
-                                             netAttr['bridged'], gateways,
-                                             ipv6routes, ipaddrs,
-                                             netAttr.get('qosInbound'),
-                                             netAttr.get('qosOutbound'))
-        except KeyError:
-            continue  # Do not report missing libvirt networks.
+    if vdsmnets is None:
+        nets = networks()
+        d['networks'] = _libvirtNets2vdsm(nets, gateways, ipv6routes, ipaddrs)
+    else:
+        d['networks'] = vdsmnets
 
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
@@ -736,6 +753,15 @@ class NetInfo(object):
         if _netinfo is None:
             _netinfo = get()
 
+        self.networks = _netinfo['networks']
+        self.vlans = _netinfo['vlans']
+        self.nics = _netinfo['nics']
+        self.bondings = _netinfo['bondings']
+
+    def updateDevices(self):
+        """Updates the object device information while keeping the cached
+        network information."""
+        _netinfo = get(vdsmnets=self.networks)
         self.networks = _netinfo['networks']
         self.vlans = _netinfo['vlans']
         self.nics = _netinfo['nics']
