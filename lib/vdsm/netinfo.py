@@ -22,6 +22,7 @@ from collections import defaultdict, namedtuple
 import errno
 from glob import iglob
 from datetime import datetime
+from functools import partial
 from itertools import chain
 import logging
 import os
@@ -34,13 +35,13 @@ import ethtool
 
 from .config import config
 from . import constants
-from .ipwrapper import getLink, getLinks
+from .ipwrapper import DUMMY_BRIDGE
+from .ipwrapper import getLink, getLinks, Link
 from .ipwrapper import IPRoute2Error
 from .ipwrapper import Route
 from .ipwrapper import routeGet
 from .ipwrapper import routeShowGateways, routeShowAllDefaultGateways
 from . import libvirtconnection
-from .utils import anyFnmatch
 from .netconfpersistence import RunningConfig
 from .netlink import iter_addrs
 
@@ -70,7 +71,6 @@ _IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
-DUMMY_BRIDGE = ';vdsmdummy;'
 DEFAULT_MTU = '1500'
 
 REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
@@ -78,43 +78,20 @@ REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
 _Qos = namedtuple('Qos', 'inbound outbound')
 
 OPERSTATE_UP = 'up'
+DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 
 
-def nics():
-    """Returns a list of nics and fake nics devices available (not hidden) to
-    be used by vdsm."""
-    return [dev.name for dev in getLinks() if dev.isNICLike() and
+def _visible_devs(predicate):
+    """Returns a list of visible (vdsm manageable) links for which the
+    predicate is True"""
+    return [dev.name for dev in getLinks() if predicate(dev) and
             not dev.isHidden()]
 
 
-def bondings():
-    """
-    Returns list of available bonds managed by vdsm.
-    """
-
-    hidden_bonds = config.get('vars', 'hidden_bonds').split(',')
-    res = []
-    try:
-        for bond in open(BONDING_MASTERS).readline().split():
-            if not anyFnmatch(bond, hidden_bonds):
-                res.append(bond)
-    except IOError as e:
-        if e.errno == os.errno.ENOENT:
-            return res
-        else:
-            raise
-
-    return res
-
-
-def vlans():
-    return [link.name for link in getLinks() if link.isVLAN() and
-            not link.isHidden()]
-
-
-def bridges():
-    return [b.split('/')[-2] for b in iglob('/sys/class/net/*/bridge')
-            if b.split('/')[-2] != DUMMY_BRIDGE]
+nics = partial(_visible_devs, Link.isNICLike)
+bondings = partial(_visible_devs, Link.isBOND)
+vlans = partial(_visible_devs, Link.isVLAN)
+bridges = partial(_visible_devs, Link.isBRIDGE)
 
 
 def networks():

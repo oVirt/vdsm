@@ -42,6 +42,7 @@ from . import netlink
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 
 NET_SYSFS = '/sys/class/net'
+DUMMY_BRIDGE = ';vdsmdummy;'
 
 
 def _isValid(ip, verifier):
@@ -236,6 +237,8 @@ class Link(object):
                     (self.isVF() and self._isVFhidden()))
         elif self.isBOND():
             return anyFnmatch(self.name, self._hiddenBonds)
+        elif self.isBRIDGE():
+            return self.name == DUMMY_BRIDGE
         return False
 
     def _isVFhidden(self):
