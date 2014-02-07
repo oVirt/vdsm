@@ -216,7 +216,7 @@ class NetworkTest(TestCaseBase):
         if self.vdsm_net.config is not None:
             self.assertNotIn(networkName, self.vdsm_net.config.networks)
 
-    def assertBondExists(self, bondName, nics=None):
+    def assertBondExists(self, bondName, nics=None, options=None):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
         self.assertIn(bondName, netinfo.bondings)
@@ -227,6 +227,10 @@ class NetworkTest(TestCaseBase):
             self.assertIn(bondName, config.bonds)
             self.assertEqual(set(nics),
                              set(config.bonds[bondName].get('nics')))
+        if options is None:
+            options = 'mode=4 miimon=150'
+        active = netinfo.bondings[bondName]['cfg']['BONDING_OPTS']
+        self.assertTrue(set(options.split()) <= set(active.split()))
 
     def assertBondDoesntExist(self, bondName, nics=None):
         netinfo = self.vdsm_net.netinfo
@@ -318,7 +322,7 @@ class NetworkTest(TestCaseBase):
                 {BONDING_NAME: {'nics': nics, 'options': 'mode=2'}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME, bridged)
-            self.assertBondExists(BONDING_NAME, nics)
+            self.assertBondExists(BONDING_NAME, nics, 'mode=2')
 
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
@@ -1219,7 +1223,8 @@ class NetworkTest(TestCaseBase):
                                                   {})
         self.assertEquals(status, SUCCESS, msg)
         self.assertNetworkExists(netName, bridged=bridged)
-        self.assertBondExists(BONDING_NAME, bondDict['nics'])
+        self.assertBondExists(BONDING_NAME, bondDict['nics'],
+                              bondDict.get('options'))
         if 'mtu' in networkOpts:
             self.assertMtu(networkOpts['mtu'], netName)
 
@@ -1407,9 +1412,8 @@ class NetworkTest(TestCaseBase):
 
                 self.assertEquals(status, SUCCESS, msg)
 
-                self.assertBondExists(BONDING_NAME, nics[:2])
-                self.assertEquals(self.vdsm_net.getBondMode(BONDING_NAME),
-                                  REQMODE_BROADCAST)
+                self.assertBondExists(BONDING_NAME, nics[:2],
+                                      bondings[BONDING_NAME]['options'])
 
                 bondings = {BONDING_NAME: dict(remove=True)}
                 status, msg = self.vdsm_net.setupNetworks({}, bondings, {})

@@ -648,9 +648,29 @@ def getBondingOptions(bond):
                  if val and val != defaults.get(opt)))
 
 
+def _bondOptsForIfcfg(opts):
+    """
+    Options having symbolic values, e.g. 'mode', are presented by sysfs in
+    the order symbolic name, numeric value, e.g. 'balance-rr 0'.
+    Choose the numeric value from a list given by bondOpts().
+    """
+    return ' '.join((opt + '=' + val[-1] for (opt, val)
+                     in sorted(opts.iteritems())))
+
+
 def _bondinfo(link, ipaddrs):
     info = _devinfo(link, ipaddrs)
-    info.update({'hwaddr': link.address, 'slaves': slaves(link.name)})
+    opts = getBondingOptions(link.name)
+
+    info.update({'hwaddr': link.address, 'slaves': slaves(link.name),
+                 'options': opts})
+
+    # Replace or empty legacy ifcfg options
+    if opts:
+        info['cfg']['BONDING_OPTS'] = _bondOptsForIfcfg(opts)
+    elif 'BONDING_OPTS' in info['cfg']:
+        info['cfg']['BONDING_OPTS'] = ''
+
     return info
 
 
