@@ -431,9 +431,9 @@ class HostStatsThread(threading.Thread):
         hs0, hs1 = self._samples[0], self._samples[-1]
         interval = hs1.timestamp - hs0.timestamp
         jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % (2 ** 32)
-        stats['cpuUserVdsmd'] = (jiffies / interval) % (2 ** 32)
-        jiffies = hs1.pidcpu.sys - hs0.pidcpu.sys
-        stats['cpuSysVdsmd'] = (jiffies / interval) % (2 ** 32)
+        stats['cpuUserVdsmd'] = jiffies / interval
+        jiffies = (hs1.pidcpu.sys - hs0.pidcpu.sys) % (2 ** 32)
+        stats['cpuSysVdsmd'] = jiffies / interval
 
         jiffies = (hs1.totcpu.user - hs0.totcpu.user) % (2 ** 32)
         stats['cpuUser'] = jiffies / interval / self._ncpus
