@@ -27,7 +27,8 @@ from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
-_DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient')
+_DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
+                               '/sbin/dhclient')
 _NM_CLI_BINARY = CommandPath('nmcli', '/usr/bin/nmcli')
 _START_CHECK_TIMEOUT = 0.5
 _DHCLIENT_TIMEOUT = 10
@@ -49,7 +50,7 @@ class Dnsmasq():
                             '-p', '0', '--dhcp-range=' + dhcpRangeFrom + ',' +
                             dhcpRangeTo + ',2m', '--dhcp-option=3', '-k',
                             '-i', interface, '-I', 'lo', '-d',
-                            '--bind-dynamic'], sync=False)
+                            '--bind-interfaces'], sync=False)
         sleep(_START_CHECK_TIMEOUT)
         if self.proc.returncode:
             raise DhcpError('Failed to start dnsmasq DHCP server.' +
