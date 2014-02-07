@@ -4743,6 +4743,16 @@ class Vm(object):
             address = self._getUnderlyingDeviceAddress(x)
 
             for d in self._devices[DISK_DEVICES]:
+                # When we analyze a disk device that was already discovered in
+                # the past (generally as soon as the VM is created) we should
+                # verify that the cached path is the one used in libvirt.
+                # We already hit few times the problem that after a live
+                # migration the paths were not in sync anymore (BZ#1059482).
+                if (hasattr(d, 'alias') and d.alias == alias
+                        and d.path != devPath):
+                    self.log.warning('updating drive %s path from %s to %s',
+                                     d.alias, d.path, devPath)
+                    d.path = devPath
                 if d.path == devPath:
                     d.name = name
                     d.type = devType
@@ -4755,6 +4765,14 @@ class Vm(object):
             # Update vm's conf with address for known disk devices
             knownDev = False
             for dev in self.conf['devices']:
+                # See comment in previous loop. This part is used to update
+                # the vm configuration as well.
+                if ('alias' in dev and dev['alias'] == alias
+                        and dev['path'] != devPath):
+                    self.log.warning('updating drive %s config path from %s '
+                                     'to %s', dev['alias'], dev['path'],
+                                     devPath)
+                    dev['path'] = devPath
                 if dev['type'] == DISK_DEVICES and dev['path'] == devPath:
                     dev['name'] = name
                     dev['address'] = address
