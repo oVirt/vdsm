@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,9 @@ import caps
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
+
+JIFFIES_BOUND = 2 ** 32
+NETSTATS_BOUND = 2 ** 32
 
 
 class InterfaceSample(object):
@@ -615,14 +618,14 @@ class HostStatsThread(threading.Thread):
         hs0, hs1 = self._samples[0], self._samples[-1]
         interval = hs1.timestamp - hs0.timestamp
 
-        jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % (2 ** 32)
+        jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % JIFFIES_BOUND
         stats['cpuUserVdsmd'] = jiffies / interval
-        jiffies = (hs1.pidcpu.sys - hs0.pidcpu.sys) % (2 ** 32)
+        jiffies = (hs1.pidcpu.sys - hs0.pidcpu.sys) % JIFFIES_BOUND
         stats['cpuSysVdsmd'] = jiffies / interval
 
-        jiffies = (hs1.totcpu.user - hs0.totcpu.user) % (2 ** 32)
+        jiffies = (hs1.totcpu.user - hs0.totcpu.user) % JIFFIES_BOUND
         stats['cpuUser'] = jiffies / interval / self._ncpus
-        jiffies = (hs1.totcpu.sys - hs0.totcpu.sys) % (2 ** 32)
+        jiffies = (hs1.totcpu.sys - hs0.totcpu.sys) % JIFFIES_BOUND
         stats['cpuSys'] = jiffies / interval / self._ncpus
         stats['cpuIdle'] = max(0.0,
                                100.0 - stats['cpuUser'] - stats['cpuSys'])
@@ -659,11 +662,11 @@ class HostStatsThread(threading.Thread):
                 interval = hs1.timestamp - hs0.timestamp
                 jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['user'] -
                            hs0.cpuCores.getCoreSample(cpuCore)['user']) % \
-                    (2 ** 32)
+                    JIFFIES_BOUND
                 coreStat['cpuUser'] = ("%.2f" % (jiffies / interval))
                 jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['sys'] -
                            hs0.cpuCores.getCoreSample(cpuCore)['sys']) % \
-                    (2 ** 32)
+                    JIFFIES_BOUND
                 coreStat['cpuSys'] = ("%.2f" % (jiffies / interval))
                 coreStat['cpuIdle'] = ("%.2f" %
                                        max(0.0, 100.0 -
@@ -690,9 +693,9 @@ class HostStatsThread(threading.Thread):
             ifrate = hs1.interfaces[ifid].speed or 1000
             Mbps2Bps = (10 ** 6) / 8
             thisRx = (hs1.interfaces[ifid].rx - hs0.interfaces[ifid].rx) % \
-                (2 ** 32)
+                NETSTATS_BOUND
             thisTx = (hs1.interfaces[ifid].tx - hs0.interfaces[ifid].tx) % \
-                (2 ** 32)
+                NETSTATS_BOUND
             rxRate = 100.0 * thisRx / interval / ifrate / Mbps2Bps
             txRate = 100.0 * thisTx / interval / ifrate / Mbps2Bps
             if txRate > 100 or rxRate > 100:
