@@ -297,6 +297,9 @@ def speed(dev):
                 s = int(speedFile.read())
             if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
                 return s
+    except IOError as ose:
+        if ose.errno != errno.EINVAL:
+            logging.exception('cannot read %s nic speed', dev)
     except Exception:
         logging.exception('cannot read %s speed', dev)
     return 0
