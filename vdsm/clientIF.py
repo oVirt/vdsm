@@ -263,6 +263,10 @@ class clientIF:
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
 
+                # Update size for LUN volume
+                drive["truesize"] = res['truesize']
+                drive["apparentsize"] = res['apparentsize']
+
                 volPath = os.path.join("/dev/mapper", drive["GUID"])
 
             # UUID drive format

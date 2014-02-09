@@ -3107,6 +3107,13 @@ class HSM:
                     expectedException=OSError,
                     timeout=QEMU_READABLE_TIMEOUT)
 
+        # Get the size of the logical unit volume.
+        # Casting to string for keeping consistency with public methods
+        # that use it to overcome xmlrpc integer size limitation issues.
+        size = str(multipath.getDeviceSize(devicemapper.getDmId(guid)))
+
+        return dict(truesize=size, apparentsize=size)
+
     @public
     def inappropriateDevices(self, thiefId):
         """
