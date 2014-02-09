@@ -860,8 +860,8 @@ class HSM:
         pool = self.getPool(spUUID)
 
         try:
-            self.validateSdUUID(msdUUID)
             pool.refresh(msdUUID, masterVersion)
+            self.validateSdUUID(msdUUID)
         except:
             self._disconnectPool(pool, pool.id, False)
             raise
