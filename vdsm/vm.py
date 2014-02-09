@@ -635,6 +635,8 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                           'apparentsize': str(vmDrive.apparentsize)}
                 if isVdsmImage(vmDrive):
                     dStats['imageID'] = vmDrive.imageID
+                elif "GUID" in vmDrive:
+                    dStats['lunGUID'] = vmDrive.GUID
                 dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1]) /
                                       sampleInterval)
                 dStats['writeRate'] = ((eInfo[dName][3] - sInfo[dName][3]) /
