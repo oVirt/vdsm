@@ -40,7 +40,7 @@ import stat
 
 from vdsm.config import config
 import sp
-from spbackends import MAX_POOL_DESCRIPTION_SIZE
+from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
 from spbackends import StoragePoolDiskBackend
 from spbackends import StoragePoolMemoryBackend
 import domainMonitor
@@ -948,7 +948,7 @@ class HSM:
         msdVersion = msd.getVersion()
         if (msdType in sd.BLOCK_DOMAIN_TYPES and
                 msdVersion in blockSD.VERS_METADATA_LV and
-                len(domList) > sp.MAX_DOMAINS):
+                len(domList) > MAX_DOMAINS):
             raise se.TooManyDomainsInStoragePoolError()
 
         for sdUUID in domList:
