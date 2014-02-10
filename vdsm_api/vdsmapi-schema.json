@@ -2919,6 +2919,8 @@
 # @exitMessage:           #optional Explains the reason that the VM process has
 #                         exited
 #
+# @serial:                #optional Serial number for the VM.
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDefinition',
@@ -2933,7 +2935,7 @@
           '*smpThreadsPerCore': 'uint', 'status': 'VmStatus',
           'timeOffset': 'uint', 'transparentHugePages': 'bool',
           'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType',
-          '*exitCode': 'int', '*exitMessage': 'str'}}
+          '*exitCode': 'int', '*exitMessage': 'str', '*serial': 'str'}}
 
 ##
 # @VmParameters:

@@ -1018,7 +1018,7 @@ class _DomXML:
         if self.arch == caps.Architecture.X86_64:
             oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
-    def appendSysinfo(self, osname, osversion, hostUUID):
+    def appendSysinfo(self, osname, osversion, serialNumber):
         """
         Add <sysinfo> element to domain:
 
@@ -1049,7 +1049,7 @@ class _DomXML:
         appendEntry('manufacturer', constants.SMBIOS_MANUFACTURER)
         appendEntry('product', osname)
         appendEntry('version', osversion)
-        appendEntry('serial', hostUUID)
+        appendEntry('serial', serialNumber)
         appendEntry('uuid', self.conf['vmId'])
 
     def appendFeatures(self):
@@ -2952,11 +2952,12 @@ class Vm(object):
             osd = caps.osversion()
 
             osVersion = osd.get('version', '') + '-' + osd.get('release', '')
+            serialNumber = self.conf.get('serial', utils.getHostUUID())
 
             domxml.appendSysinfo(
                 osname=constants.SMBIOS_OSNAME,
                 osversion=osVersion,
-                hostUUID=utils.getHostUUID())
+                serialNumber=serialNumber)
 
         domxml.appendClock()
 
