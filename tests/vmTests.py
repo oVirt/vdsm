@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+from contextlib import contextmanager
 import re
 import shutil
 import tempfile
@@ -24,11 +26,13 @@ import xml.etree.ElementTree as ET
 
 import vm
 from vdsm import constants
+from vdsm import define
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import permutations, expandPermutations, namedTemporaryDir
 import caps
 from vdsm import utils
 from vdsm import libvirtconnection
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 
@@ -629,3 +633,71 @@ class TestVm(TestCaseBase):
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLinePPC64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
+
+
+@contextmanager
+def FakeVM(params=None):
+    with namedTemporaryDir() as tmpDir:
+        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir)]):
+            vmParams = {'vmId': 'TESTING'}
+            vmParams.update({} if params is None else params)
+            yield vm.Vm(None, vmParams)
+
+
+@expandPermutations
+class TestVmOperations(TestCaseBase):
+    # just numbers, no particular meaning
+    UPDATE_OFFSETS = [-3200, 3502, -2700, 3601]
+    BASE_OFFSET = 42
+
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @permutations([[define.NORMAL], [define.ERROR]])
+    def testTimeOffsetNotPresentByDefault(self, exitCode):
+        with FakeVM() as fake:
+            fake.setDownStatus(exitCode, "testing")
+            self.assertFalse('timeOffset' in fake.getStats())
+
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @permutations([[define.NORMAL], [define.ERROR]])
+    def testTimeOffsetRoundtrip(self, exitCode):
+        with FakeVM({'timeOffset': self.BASE_OFFSET}) as fake:
+            fake.setDownStatus(exitCode, "testing")
+            self.assertEqual(fake.getStats()['timeOffset'],
+                             self.BASE_OFFSET)
+
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @permutations([[define.NORMAL], [define.ERROR]])
+    def testTimeOffsetRoundtriupAcrossInstances(self, exitCode):
+        # bz956741
+        lastOffset = 0
+        for offset in self.UPDATE_OFFSETS:
+            with FakeVM({'timeOffset': lastOffset}) as fake:
+                fake._rtcUpdate(offset)
+                fake.setDownStatus(exitCode, "testing")
+                vmOffset = fake.getStats()['timeOffset']
+                self.assertEqual(vmOffset, str(lastOffset + offset))
+                # the field in getStats is str, not int
+                lastOffset = int(vmOffset)
+
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @permutations([[define.NORMAL], [define.ERROR]])
+    def testTimeOffsetUpdateIfAbsent(self, exitCode):
+        # bz956741 (-like, simpler case)
+        with FakeVM() as fake:
+            for offset in self.UPDATE_OFFSETS:
+                fake._rtcUpdate(offset)
+            # beware of type change!
+            fake.setDownStatus(exitCode, "testing")
+            self.assertEqual(fake.getStats()['timeOffset'],
+                             str(self.UPDATE_OFFSETS[-1]))
+
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @permutations([[define.NORMAL], [define.ERROR]])
+    def testTimeOffsetUpdateIfPresent(self, exitCode):
+        with FakeVM({'timeOffset': self.BASE_OFFSET}) as fake:
+            for offset in self.UPDATE_OFFSETS:
+                fake._rtcUpdate(offset)
+            # beware of type change!
+            fake.setDownStatus(exitCode, "testing")
+            self.assertEqual(fake.getStats()['timeOffset'],
+                             str(self.BASE_OFFSET + self.UPDATE_OFFSETS[-1]))
