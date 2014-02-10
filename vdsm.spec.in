@@ -349,7 +349,7 @@ Shared libraries between the various VDSM packages.
 
 %package debug-plugin
 Summary:        VDSM Debug Plugin
-Requires:       vdsm
+Requires:       %{name}
 Requires:       %{name}-xmlrpc = %{version}-%{release}
 BuildArch:      noarch
 
@@ -358,7 +358,7 @@ Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
 
 %package tests
 Summary:        VDSM Test Suite
-Requires:       vdsm = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
 Requires:       dracut
 Requires:       python-nose
 BuildArch:      noarch
@@ -369,7 +369,7 @@ A test suite for verifying the functionality of a running vdsm instance
 %package hook-checkimages
 Summary:        Qcow2 disk image format check hook for VDSM
 BuildArch:      noarch
-Requires:       vdsm
+Requires:       %{name}
 
 %description hook-checkimages
 VDSM hook used to perform consistency check on a qcow2 format disk image
@@ -388,7 +388,7 @@ VDSM hook to use vhostmd per VM according to Virtualization Manager requests.
 %package hook-faqemu
 Summary:        Fake qemu process for VDSM quality assurance
 BuildArch:      noarch
-Requires:       vdsm
+Requires:       %{name}
 
 %description hook-faqemu
 VDSM hook used for testing VDSM with multiple fake virtual machines without
@@ -416,7 +416,7 @@ specific vnics.
 %package hook-extnet
 Summary:        Force a vNIC to connect to a specific libvirt network
 BuildArch:      noarch
-Requires:       vdsm = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
 
 %description hook-extnet
 VDSM hook which allows to connect a vNIC to a libvirt network that is managed
@@ -507,7 +507,7 @@ all network traffic.
 %package hook-qemucmdline
 Summary:        QEMU cmdline hook for VDSM
 BuildArch:      noarch
-Requires:       vdsm
+Requires:       %{name}
 
 %description hook-qemucmdline
 Provides support for injecting QEMU cmdline via VDSM hook.
@@ -561,7 +561,7 @@ Hook for vmfex.
 %package hook-vmfex-dev
 Summary:        VM-FEX vNIC support for VDSM
 BuildArch:      noarch
-Requires:       vdsm = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
 Conflicts:      hook-vmfex
 
 %description hook-vmfex-dev
