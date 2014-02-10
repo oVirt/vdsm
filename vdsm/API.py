@@ -1142,7 +1142,7 @@ class Global(APIBase):
                 return errCode['fenceAgent']
             raise
 
-        inp = ('agent=fence_%s\nipaddr=%s\nlogin=%s\noption=%s\n'
+        inp = ('agent=fence_%s\nipaddr=%s\nlogin=%s\naction=%s\n'
                'passwd=%s\n') % (agent, addr, username, action, password)
         if port != '':
             inp += 'port=%s\n' % (port,)
