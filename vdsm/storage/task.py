@@ -49,6 +49,7 @@ import os
 import logging
 import threading
 import types
+from functools import wraps
 
 import storage_exception as se
 import uuid
@@ -88,6 +89,21 @@ def _eq_encode(s):
 
 def _eq_decode(s):
     return s.replace(KEY_SEPARATOR_ENCODED, KEY_SEPARATOR)
+
+
+def threadlocal_task(m):
+    """
+    Decorator that set the task object in thread local storage task attribute
+    while the decorated method is running.
+    """
+    @wraps(m)
+    def wrapper(self, *a, **kw):
+        vars.task = self
+        try:
+            return m(self, *a, **kw)
+        finally:
+            vars.task = None
+    return wrapper
 
 
 class State:
@@ -1133,6 +1149,7 @@ class Task:
         t._load(store, ext)
         return t
 
+    @threadlocal_task
     def prepare(self, func, *args, **kwargs):
         message = self.error
         try:
@@ -1172,9 +1189,9 @@ class Task:
         finally:
             self._decref()
 
+    @threadlocal_task
     def commit(self, args=None):
         self.log.debug("committing task: %s", self.id)
-        vars.task = self
         try:
             self._incref()
         except se.TaskAborted:
@@ -1210,13 +1227,13 @@ class Task:
         finally:
             self._decref(force)
 
+    @threadlocal_task
     def recover(self, args=None):
         ''' Do not call this function while the task is actually running. this
             method should only be used to recover tasks state after
             (vdsmd) restart.
         '''
         self.log.debug('(recover): recovering: state %s', self.state)
-        vars.task = self
         try:
             self._incref(force=True)
         except se.TaskAborted:

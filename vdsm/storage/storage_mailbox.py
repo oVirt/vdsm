@@ -33,7 +33,6 @@ from vdsm.config import config
 import sd
 import misc
 import task
-from threadLocal import vars
 from threadPool import ThreadPool
 from storage_exception import InvalidParameterException
 from vdsm import constants
@@ -77,7 +76,6 @@ def runTask(args):
         cmd = args
         args = None
     ctask = task.Task(id=None, name=cmd)
-    vars.task = ctask
     ctask.prepare(cmd, *args)
 
 

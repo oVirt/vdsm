@@ -23,7 +23,6 @@ from vdsm.config import config
 
 import task
 import storage_exception as se
-from threadLocal import vars
 
 _EXPORTED_ATTRIBUTE = "__dispatcher_exported__"
 
@@ -56,7 +55,6 @@ class Protect:
     def run(self, *args, **kwargs):
         try:
             ctask = task.Task(id=None, name=self.name)
-            vars.task = ctask
             try:
                 response = self.STATUS_OK.copy()
                 result = ctask.prepare(self.func, *args, **kwargs)
