@@ -683,7 +683,7 @@ class HSM(object):
         volFormat = volToExtend.getFormat()
 
         if not volToExtend.isLeaf():
-            raise se.VolumeNonWritable(self.volUUID)
+            raise se.VolumeNonWritable(volUUID)
 
         if volFormat != volume.COW_FORMAT:
             # This method is used only with COW volumes (see docstring),
