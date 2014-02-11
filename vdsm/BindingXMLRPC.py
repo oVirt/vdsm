@@ -200,6 +200,12 @@ class BindingXMLRPC(object):
                 threadLocal.flowID = self.headers.get(HTTP_HEADER_FLOWID)
                 return r
 
+            def finish(self):
+                basehandler.finish(self)
+                threadLocal.client = None
+                threadLocal.server = None
+                threadLocal.flowID = None
+
         if self.enableSSL:
             KEYFILE, CERTFILE, CACERT = self._getKeyCertFilenames()
             server = SecureXMLRPCServer.SecureThreadedXMLRPCServer(
