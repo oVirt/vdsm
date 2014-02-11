@@ -971,7 +971,9 @@ class _DomXML:
                        adjustment=str(self.conf.get('timeOffset', 0)))
         m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
         m.appendChildWithArgs('timer', name='pit', tickpolicy='delay')
-        m.appendChildWithArgs('timer', name='hpet', present='no')
+
+        if self.arch == caps.Architecture.X86_64:
+            m.appendChildWithArgs('timer', name='hpet', present='no')
 
         self.dom.appendChild(m)
 

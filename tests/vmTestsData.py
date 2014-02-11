@@ -136,7 +136,6 @@ CONF_TO_DOMXML_PPC64 = [({
                 <clock adjustment="0" offset="variable">
                     <timer name="rtc" tickpolicy="catchup"/>
                     <timer name="pit" tickpolicy="delay"/>
-                    <timer name="hpet" present="no"/>
                 </clock>
                 <cputune/>
                 <cpu>
