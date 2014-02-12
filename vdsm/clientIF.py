@@ -301,8 +301,9 @@ class clientIF:
                     mkFsFunction = getattr(supervdsm.getProxy(),
                                            mkFsNames[drive['device']])
                 except AttributeError:
-                    raise vm.VolumeError("Unsupported 'device': %s in "
-                                         "drive: %" % (drive['device'], drive))
+                    raise vm.VolumeError(
+                        "Unsupported 'device': %s in drive: %s" %
+                        (drive['device'], drive))
                 else:
                     files = drive['specParams']['vmPayload']['file']
                     volId = drive['specParams']['vmPayload'].get('volId')
