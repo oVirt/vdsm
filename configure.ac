@@ -181,6 +181,7 @@ fi
 AX_PYTHON_MODULE([ethtool], [fatal])
 AX_PYTHON_MODULE([libvirt], [fatal])
 AX_PYTHON_MODULE([pthreading], [fatal])
+AX_PYTHON_MODULE([cpopen], [fatal])
 
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])
@@ -254,7 +255,6 @@ AC_OUTPUT([
 	init/sysvinit/Makefile
 	init/upstart/Makefile
 	lib/Makefile
-	lib/cpopen/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/tool/Makefile
 	lib/yajsonrpc/Makefile

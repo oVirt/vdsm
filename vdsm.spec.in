@@ -308,16 +308,6 @@ Requires: openssl
 VDSM registration package. Used to register a Linux host to a Virtualization
 Manager.
 
-%package python-cpopen
-Summary: Creates a sub-process in simpler safer manner.
-
-BuildRequires: python2-devel
-Conflicts: python-cpopen
-
-%description python-cpopen
-Python package for creating sub-process in simpler and safer manner by using C
-code.
-
 %package python
 Summary:        VDSM python libraries
 
@@ -1332,11 +1322,11 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/services.py*
 %endif
 
-%files python-cpopen
-%{python_sitearch}/cpopen/__init__.py*
-%attr(755, root, root) %{python_sitearch}/cpopen/cpopen.so*
-
 %changelog
+* Wed Feb 12 2014 Yaniv Bronhaim <ybronhei@redhat.com> - 4.13.2
+- Removing creation of vdsm-python-cpopen package and replace it by
+python-cpopen requirement.
+
 * Sun Apr 07 2013 Yaniv Bronhaim <ybronhei@redhat.com> - 4.9.0-1
 - Adding cpopen package
 

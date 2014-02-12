@@ -84,8 +84,6 @@ EXTRA_DIST = \
 	vdsm.postrm \
 	vdsm.preinst \
 	vdsm.prerm \
-	vdsm-python-cpopen.docs \
-	vdsm-python-cpopen.install \
 	vdsm-python.docs \
 	vdsm-python.install \
 	vdsm-tests.docs \

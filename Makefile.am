@@ -57,7 +57,6 @@ endif
 # checkd from now on
 PEP8_WHITELIST = \
 	client \
-	lib/cpopen/*.py \
 	lib/vdsm/*.py \
 	lib/vdsm/*.py.in \
 	tests \
