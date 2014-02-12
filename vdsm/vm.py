@@ -631,7 +631,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                           'apparentsize': str(vmDrive.apparentsize)}
                 if isVdsmImage(vmDrive):
                     dStats['imageID'] = vmDrive.imageID
-                else:
+                elif "GUID" in vmDrive:
                     dStats['lunGUID'] = vmDrive.GUID
                 dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1]) /
                                       sampleInterval)
@@ -1453,7 +1453,7 @@ class Drive(VmDevice):
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
                  'index', 'name', 'optional', 'shared', 'truesize',
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
-                 '_blockDev', 'extSharedState', 'drv', 'sgio')
+                 '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID')
     VOLWM_CHUNK_MB = config.getint('irs', 'volume_utilization_chunk_mb')
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
