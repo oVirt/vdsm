@@ -271,7 +271,7 @@ class clientIF:
                 drive["truesize"] = res['truesize']
                 drive["apparentsize"] = res['apparentsize']
 
-                volPath = os.path.join("/dev/mapper", drive["GUID"])
+                volPath = res['path']
 
             # UUID drive format
             elif "UUID" in drive:

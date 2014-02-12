@@ -3112,7 +3112,7 @@ class HSM:
         # that use it to overcome xmlrpc integer size limitation issues.
         size = str(multipath.getDeviceSize(devicemapper.getDmId(guid)))
 
-        return dict(truesize=size, apparentsize=size)
+        return dict(truesize=size, apparentsize=size, path=devPath)
 
     @public
     def inappropriateDevices(self, thiefId):
