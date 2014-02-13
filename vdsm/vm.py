@@ -2899,6 +2899,8 @@ class Vm(object):
                         int(self.conf['memSize']) * 100)
         stats['memUsage'] = utils.convertToStr(int(memUsage))
         stats['balloonInfo'] = self._getBalloonInfo()
+        if self.isMigrating():
+            stats['migrationProgress'] = self.migrateStatus()['progress']
         return stats
 
     def isMigrating(self):

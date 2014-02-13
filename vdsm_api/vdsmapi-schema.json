@@ -5784,6 +5784,10 @@
 # @guestFQDN:          Fully qualified domain name of the guest OS. (Reported
 #                      by the guest agent)
 #
+# @migrationProgress:  #optional Indicates the percentage progress of a
+#                      Migration, when there is one active.
+#                      (new in version 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -5802,7 +5806,8 @@
           'memoryStats': 'GuestMemoryStats', 'balloonInfo': 'BalloonInfo',
           'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo'],
-          '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str'}}
+          '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
+          '*migrationProgress': 'uint'}}
 
 ##
 # @VmStats:
