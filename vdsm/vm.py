@@ -1894,6 +1894,10 @@ class MigrationError(Exception):
     pass
 
 
+class StorageUnavailableError(Exception):
+    pass
+
+
 class Vm(object):
     """
     Used for abstracting communication between various parts of the
@@ -2040,14 +2044,14 @@ class Vm(object):
         if drv['device'] == 'disk':
             res = self.cif.irs.getVolumeSize(drv['domainID'], drv['poolID'],
                                              drv['imageID'], drv['volumeID'])
-            try:
-                drv['truesize'] = res['truesize']
-                drv['apparentsize'] = res['apparentsize']
-            except KeyError:
-                self.log.error("Unable to get volume size for %s",
-                               drv['volumeID'], exc_info=True)
-                raise RuntimeError("Volume %s is corrupted or missing" %
-                                   drv['volumeID'])
+            if res['status']['code'] != 0:
+                raise StorageUnavailableError("Failed to get size for"
+                                              " volume %s",
+                                              drv['volumeID'])
+
+            # if a key is missing here, is hsm bug and we cannot handle it.
+            drv['truesize'] = res['truesize']
+            drv['apparentsize'] = res['apparentsize']
         else:
             drv['truesize'] = 0
             drv['apparentsize'] = 0
@@ -2115,7 +2119,14 @@ class Vm(object):
         # Normalize vdsm images
         for drv in devices[DISK_DEVICES]:
             if isVdsmImage(drv):
-                self._normalizeVdsmImg(drv)
+                try:
+                    self._normalizeVdsmImg(drv)
+                except StorageUnavailableError:
+                    # storage unavailable is not fatal on recovery;
+                    # the storage subsystem monitors the devices
+                    # and will notify when they come up later.
+                    if not self.recovering:
+                        raise
 
         self.normalizeDrivesIndices(devices[DISK_DEVICES])
 
