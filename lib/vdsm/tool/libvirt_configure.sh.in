@@ -47,11 +47,16 @@ FORCE_RECONFIGURE="@VDSMLIBDIR@/reconfigure"
 get_libvirt_conf_item() {
     local cfile="$1"
     local key="$2"
-    @GREP_PATH@ "^\s*"${key}"\s*=" "${cfile}" | \
+    @GREP_PATH@ "^\s*"${key}"\s*=" "${cfile}" >/dev/null 2>&1 | \
             tail -1 | @SED_PATH@ "s/\s*$key\s*=\s*//;s/\s*\(#.*\)\?$//"
 }
 
 test_conflicting_conf() {
+    test_ssl_conflict_conf
+    # add here additional conf checks
+}
+
+test_ssl_conflict_conf() {
     local lconf="$1"
     local qconf="$2"
 
@@ -61,26 +66,38 @@ test_conflicting_conf() {
         return 3
     fi
 
-    if [ "${ssl}" = "true" ]; then
-        echo "SUCCESS: ssl configured to true. No conflicts"
-        return 0
-    fi
-
     local listen_tcp="$(get_libvirt_conf_item "${lconf}" listen_tcp)"
     local auth_tcp="$(get_libvirt_conf_item "${lconf}" auth_tcp)"
     local spice_tls="$(get_libvirt_conf_item "${qconf}" spice_tls)"
 
-    if [ "${listen_tcp}" = "1" -a \
-         "${auth_tcp}" = '"none"' -a \
-         "${spice_tls}" = "0" ]; then
-        echo "SUCCESS: No conflicts between configuration files"
+    if [ "${ssl}" = "true" ]; then
+        if [ "${listen_tcp}" != "1" -a \
+             "${auth_tcp}" != '"none"' -a \
+             "${spice_tls}" != "0" ]; then
+            echo "SUCCESS: ssl configured to true. No conflicts"
+            return 0
+        else
+            echo "FAILED: conflicting vdsm and libvirt-qemu tls configuration."
+            echo "vdsm.conf with ssl=True requires the following changed: "
+            echo "libvirtd.conf: listen_tcp=0, auth_tcp=\"sasl\", "
+            echo "qemu.conf: spice_tls=1."
+            return 1
+        fi
+
         return 0
     else
-        echo "FAILED: conflicting vdsm and libvirt-qemu tls configuration."
-        echo "vdsm.conf with ssl=False requires the following changed: "
-        echo "libvirtd.conf: listen_tcp=1, auth_tcp=\"none\", "
-        echo "qemu.conf: spice_tls=0."
-        return 1
+        if [ "${listen_tcp}" = "1" -a \
+             "${auth_tcp}" = '"none"' -a \
+             "${spice_tls}" = "0" ]; then
+            echo "SUCCESS: ssl configured to false. No conflicts."
+            return 0
+        else
+            echo "FAILED: conflicting vdsm and libvirt-qemu tls configuration."
+            echo "vdsm.conf with ssl=False requires the following changed: "
+            echo "libvirtd.conf: listen_tcp=1, auth_tcp=\"none\", "
+            echo "qemu.conf: spice_tls=0."
+            return 1
+        fi
     fi
 }
 
