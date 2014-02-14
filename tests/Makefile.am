@@ -61,6 +61,7 @@ test_modules = \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
 	schemaTests.py \
+	securableTests.py \
 	sslTests.py \
 	storageMailboxTests.py \
 	tcTests.py \
