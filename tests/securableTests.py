@@ -22,47 +22,50 @@ from storage.securable import secured, SecureError, unsecured
 from testrunner import VdsmTestCase as TestCaseBase
 
 
-class TestSecurable(TestCaseBase):
+@secured
+class SecureClass(object):
 
-    @secured
-    class MySecureClass(object):
-
-        class InnerClass(object):
-            pass
-
-        classVariable = 42
-
-        def __init__(self):
-            self.secured = False
-
-        def __is_secure__(self):
-            return self.secured
-
-        @staticmethod
-        def staticMethod():
-            pass
-
-        @classmethod
-        def classMethod(cls):
-            pass
-
-        def securedMethod(self):
-            "securedMethod docstring"
-            pass
-
-        @unsecured
-        def unsecuredMethod(self):
-            "unsecuredMethod docstring"
-            pass
-
-    class MyClassWithoutIsSecureMethod(object):
+    class InnerClass(object):
         pass
 
-    class MyClassIsSecureClassMethod(object):
+    classVariable = 42
 
-        @classmethod
-        def __is_secure__(self):
-            pass
+    def __init__(self):
+        self.secured = False
+
+    def __is_secure__(self):
+        return self.secured
+
+    @staticmethod
+    def staticMethod():
+        pass
+
+    @classmethod
+    def classMethod(cls):
+        pass
+
+    def securedMethod(self):
+        "securedMethod docstring"
+        pass
+
+    @unsecured
+    def unsecuredMethod(self):
+        "unsecuredMethod docstring"
+        pass
+
+
+class ClassWithoutIsSecureMethod(object):
+    pass
+
+
+class ClassIsSecureClassMethod(object):
+
+    @classmethod
+    def __is_secure__(cls):
+        return True
+
+
+class TestSecurable(TestCaseBase):
 
     def assertUnsecured(self, secureObject):
         self.assertRaises(SecureError, secureObject.securedMethod)
@@ -74,12 +77,12 @@ class TestSecurable(TestCaseBase):
 
     def testIsSecureMethodCheck(self):
         self.assertRaises(NotImplementedError, secured,
-                          TestSecurable.MyClassWithoutIsSecureMethod)
+                          ClassWithoutIsSecureMethod)
         self.assertRaises(NotImplementedError, secured,
-                          TestSecurable.MyClassIsSecureClassMethod)
+                          ClassIsSecureClassMethod)
 
     def testSecurable(self):
-        secureObject = TestSecurable.MySecureClass()
+        secureObject = SecureClass()
         self.assertUnsecured(secureObject)
 
         secureObject.secured = True
@@ -89,11 +92,11 @@ class TestSecurable(TestCaseBase):
         self.assertUnsecured(secureObject)
 
     def testSecurityOverride(self):
-        secureObject = TestSecurable.MySecureClass()
+        secureObject = SecureClass()
         secureObject.securedMethod(__securityOverride=True)
 
     def testDocstringWrapping(self):
-        secureObject = TestSecurable.MySecureClass()
+        secureObject = SecureClass()
 
         self.assertEqual(secureObject.securedMethod.__doc__,
                          "securedMethod docstring")
@@ -101,16 +104,16 @@ class TestSecurable(TestCaseBase):
                          "unsecuredMethod docstring")
 
     def testInnerClass(self):
-        obj = TestSecurable.MySecureClass.InnerClass()
-        self.assertEqual(type(obj), TestSecurable.MySecureClass.InnerClass)
+        obj = SecureClass.InnerClass()
+        self.assertEqual(type(obj), SecureClass.InnerClass)
 
     def testClassVariable(self):
-        self.assertEqual(TestSecurable.MySecureClass.classVariable, 42)
+        self.assertEqual(SecureClass.classVariable, 42)
 
     def testStaticMethod(self):
-        TestSecurable.MySecureClass.staticMethod()
+        SecureClass.staticMethod()
 
     def testClassMethod(self):
-        TestSecurable.MySecureClass.classMethod()
-        secureObject = TestSecurable.MySecureClass()
+        SecureClass.classMethod()
+        secureObject = SecureClass()
         secureObject.classMethod()
