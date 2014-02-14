@@ -27,11 +27,24 @@ class TestSecurable(TestCaseBase):
     @secured
     class MySecureClass(object):
 
+        class InnerClass(object):
+            pass
+
+        classVariable = 42
+
         def __init__(self):
             self.secured = False
 
         def __is_secure__(self):
             return self.secured
+
+        @staticmethod
+        def staticMethod():
+            pass
+
+        @classmethod
+        def classMethod(cls):
+            pass
 
         def securedMethod(self):
             "securedMethod docstring"
@@ -86,3 +99,18 @@ class TestSecurable(TestCaseBase):
                          "securedMethod docstring")
         self.assertEqual(secureObject.unsecuredMethod.__doc__,
                          "unsecuredMethod docstring")
+
+    def testInnerClass(self):
+        obj = TestSecurable.MySecureClass.InnerClass()
+        self.assertEqual(type(obj), TestSecurable.MySecureClass.InnerClass)
+
+    def testClassVariable(self):
+        self.assertEqual(TestSecurable.MySecureClass.classVariable, 42)
+
+    def testStaticMethod(self):
+        TestSecurable.MySecureClass.staticMethod()
+
+    def testClassMethod(self):
+        TestSecurable.MySecureClass.classMethod()
+        secureObject = TestSecurable.MySecureClass()
+        secureObject.classMethod()

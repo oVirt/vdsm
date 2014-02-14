@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import inspect
 from functools import wraps
 
 OVERRIDE_ARG = "__securityOverride"
@@ -45,8 +46,9 @@ def secured(cls):
     for name, value in cls.__dict__.iteritems():
         # Skipping non callable attributes, special methods (including
         # SECURE_METHOD_NAME) and unsecured methods.
-        if (not callable(value) or not getattr(value, SECURE_FIELD, True)
-                or name.startswith("__")):
+        if (not inspect.isfunction(value) or
+                not getattr(value, SECURE_FIELD, True) or
+                name.startswith("__")):
             continue
         setattr(cls, name, _secure_method(value))
 
