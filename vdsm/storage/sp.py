@@ -826,7 +826,7 @@ class StoragePool(object):
         except Exception:
             self.log.exception('migration to new master failed')
             try:
-                self.setDomainRegularRole(newmsd)
+                self._backend.setDomainRegularRole(newmsd)
             except Exception:
                 self.log.exception('unable to mark domain %s as regular',
                                    newmsd.sdUUID)
