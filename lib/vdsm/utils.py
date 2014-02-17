@@ -150,6 +150,10 @@ IPXMLRPCRequestHandler = SimpleXMLRPCRequestHandler
 
 
 class IPXMLRPCServer(SimpleXMLRPCServer):
+
+    # Create daemon threads when mixed with SocketServer.ThreadingMixIn
+    daemon_threads = True
+
     def __init__(self, addr, requestHandler=IPXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None,
                  bind_and_activate=True):
