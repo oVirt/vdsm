@@ -52,7 +52,7 @@ get_libvirt_conf_item() {
 }
 
 test_conflicting_conf() {
-    test_ssl_conflict_conf "$*"
+    test_ssl_conflict_conf "$@"
     # add here additional conf checks
 }
 
