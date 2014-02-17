@@ -154,8 +154,7 @@ def _addr_info(link_cache, addr):
         'prefixlen': _rtnl_addr_get_prefixlen(addr),
         'scope': _addr_scope(addr),
         'flags': _rtnl_addr_get_flags(addr),
-        'address': _addr_local(addr),
-        }
+        'address': _addr_local(addr)}
 
 
 def _link_info(cache, link):
