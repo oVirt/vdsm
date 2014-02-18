@@ -23,6 +23,7 @@ import logging
 import apiTests
 from Queue import Queue
 from contextlib import contextmanager
+from testValidation import brokentest
 
 from testrunner import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -89,6 +90,7 @@ class ReactorClientSyncWrapper(object):
 
 @expandPermutations
 class ReactorTests(TestCaseBase):
+    @brokentest
     @permutations(CONNECTION_PERMUTATIONS)
     def test(self, rt, ssl):
         data = dummyTextGenerator(((2 ** 10) * 200))
