@@ -27,6 +27,7 @@ test_modules = \
 	apiTests.py \
 	cPopenTests.py \
 	capsTests.py \
+	clientifTests.py \
 	configNetworkTests.py \
 	fileVolumeTests.py \
 	fileUtilTests.py \
