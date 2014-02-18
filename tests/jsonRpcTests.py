@@ -106,7 +106,7 @@ class ReactorTests(TestCaseBase):
                 self.log.error("Reactor died unexpectedly", exc_info=True)
                 self.fail("Reactor died: (%s) %s" % (type(e), e))
 
-        with constructReactor(rt) as \
+        with constructReactor(rt, ssl) as \
                 (reactor, clientReactor, laddr):
 
             t = threading.Thread(target=echosrv.serve)
