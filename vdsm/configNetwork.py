@@ -279,7 +279,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, bootproto, ipv6addr, ipv6gateway,
-                                defaultRoute, _netinfo=_netinfo,
+                                defaultRoute=defaultRoute, _netinfo=_netinfo,
                                 configurator=configurator, **options)
 
     netEnt.configure(**options)
