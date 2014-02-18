@@ -18,18 +18,20 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-. @LIBEXECDIR@/ovirt_functions.sh
+. "${OVIRT_FUNC_PATH:-@LIBEXECDIR@/ovirt_functions.sh}"
 
 ENABLE_LIBVIRT_SANLOCK="@ENABLE_LIBVIRT_SANLOCK@"
 ENABLE_LIBVIRT_SELINUX="@ENABLE_LIBVIRT_SELINUX@"
 
-GETCONFITEM="@VDSMDIR@/get-conf-item"
-VDSM_CONF_FILE="@CONFDIR@/vdsm.conf"
 QEMU_DUMP_PATH="/var/log/core"
-LCONF="@sysconfdir@/libvirt/libvirtd.conf"
-QCONF="@sysconfdir@/libvirt/qemu.conf"
-LDCONF="@LIBVIRT_SERVICE_DEFAULT@"
-QLCONF="@sysconfdir@/libvirt/qemu-sanlock.conf"
+
+# prefer env vars if exist. otherwise take defaults (mostly for testing)
+VDSM_CONF_FILE="${VDSM_CONF_FILE:=@CONFDIR@/vdsm.conf}"
+GETCONFITEM="${GETCONFITEM:=@VDSMDIR@/get-conf-item}"
+LCONF="${LCONF:=@sysconfdir@/libvirt/libvirtd.conf}"
+QCONF="${QCONF:=@sysconfdir@/libvirt/qemu.conf}"
+LDCONF="${LDCONF:=@LIBVIRT_SERVICE_DEFAULT@}"
+QLCONF="${QLCONF:=@sysconfdir@/libvirt/qemu-sanlock.conf}"
 
 # The PACKAGE_VERSION define is not used here because we do not want to
 # update the libvirt configure file every time we change vdsm package
@@ -42,7 +44,15 @@ BY_VDSM_VERS="4.13.0"
 [ "${ENABLE_LIBVIRT_SANLOCK}" = "yes" ] || QLCONF="/dev/null"
 
 # trigger for reconfiguration
-FORCE_RECONFIGURE="@VDSMLIBDIR@/reconfigure"
+FORCE_RECONFIGURE="${FORCE_RECONFIGURE:=@VDSMLIBDIR@/reconfigure}"
+
+skipontest() {
+    if [ -z "${TESTING_ENV}" ]; then
+        "$@"
+    else
+        echo 'TEST ENV: skipping "$@"'
+    fi
+}
 
 get_libvirt_conf_item() {
     local cfile="$1"
@@ -184,7 +194,7 @@ is_already_configured() {
 
 configure() {
     # if SysV init file and Upstart job file both exist, prefer Upstart
-    libvirtd_sysv2upstart || return $?
+    skipontest libvirtd_sysv2upstart || return $?
 
     local lconf="$1"
     local qconf="$2"
@@ -207,7 +217,7 @@ configure() {
             echo "${prog}: Missing certificates, ${prog} not registered" 1>&2
             return 6
         fi
-        /usr/bin/vdsm-tool validate-ovirt-certs
+        sciptontest /usr/bin/vdsm-tool validate-ovirt-certs
     fi
 
     # Remove a previous configuration (if present)
@@ -280,9 +290,9 @@ configure() {
     done
 
     local lnetwork=/etc/libvirt/qemu/networks/autostart/default.xml
-    rm -f "${lnetwork}"
+    skipontest rm -f "${lnetwork}"
 
-    local llogr=/etc/logrotate.d/libvirtd
+    local llogr="${LIBVIRT_LOGROTATE:=/etc/logrotate.d/libvirtd}"
     local stanza=`mktemp`
     /bin/cat > "${stanza}" <<EOF
 ## beginning of configuration section by vdsm
@@ -298,31 +308,32 @@ configure() {
 }
 ## end of configuration section by vdsm
 EOF
-    # We must unpersist the original logrotate.d/libvirtd before editing
-    if isOvirtNode; then
-        . /usr/libexec/ovirt-functions
-        remove_config "${llogr}"
-    fi
     # Backup (comment) original logrotate.d/libvirtd
     @SED_PATH@ -i 's/^/# VDSM backup/' "$llogr"
     @SED_PATH@ -e "/# vdsm/,/# end vdsm/d" "${llogr}" >> "${stanza}"
     local oldmod=`/usr/bin/stat --format=%a "${llogr}"`
 
+    # unpersist cmd is remove_config on ovirt-functions
+    if isOvirtNode; then
+        skipontest . /usr/libexec/ovirt-functions
+        skipontest remove_config "${llogr}"
+    fi
     @MV_PATH@ "${stanza}" "${llogr}"
 
     if [ -n "${oldmod}" ]; then
         @CHMOD_PATH@ "${oldmod}" "${llogr}"
     fi
-    restorecon "${llogr}"
+
+    skipontest restorecon "${llogr}"
 
     # persist cmd is ovirt_store_config on ovirt-functions
     if isOvirtNode; then
-        . /usr/libexec/ovirt-functions
-        ovirt_store_config \
+        skipontest . /usr/libexec/ovirt-functions
+        skipontest ovirt_store_config \
             "${lconf}" \
+            "${qconf}" \
             "${ldconf}" \
             "${llogr}" \
-            "${qconf}" \
             "${qlconf}"
     fi
 

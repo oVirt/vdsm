@@ -52,8 +52,12 @@ class _ModuleConfigure(object):
 
 
 class LibvirtModuleConfigure(_ModuleConfigure):
-    def __init__(self):
+    def __init__(self, env_override=None):
         super(LibvirtModuleConfigure, self).__init__()
+        if env_override is None:
+            self.env_override = {}
+        else:
+            self.env_override = env_override
 
     def getName(self):
         return 'libvirt'
@@ -68,20 +72,26 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         if os.getuid() != 0:
             raise UserWarning("Must run as root")
 
+        env = os.environ.copy()
+        for k, v in self.env_override.items():
+            try:
+                if isinstance(v, unicode):
+                    env[k] = v.encode('utf-8')
+                else:
+                    env[k] = v
+            except UnicodeDecodeError:
+                pass
         rc, out, err = utils.execCmd(
-            (
-                os.path.join(
-                    P_VDSM_EXEC,
-                    'libvirt_configure.sh'
-                ),
-                action,
-            ),
-            raw=True,
+            self._get_libvirt_exec() + (action,), env=env, raw=True
         )
+
         sys.stdout.write(out)
         sys.stderr.write(err)
         if rc != 0:
             raise RuntimeError("Failed to perform libvirt action.")
+
+    def _get_libvirt_exec(self):
+        return (os.path.join(P_VDSM_EXEC, 'libvirt_configure.sh'), )
 
     def configure(self):
         self._exec_libvirt_configure("reconfigure")
