@@ -245,8 +245,9 @@ class clientIF:
 
     def prepareVolumePath(self, drive, vmId=None):
         if type(drive) is dict:
+            device = drive['device']
             # PDIV drive format
-            if drive['device'] == 'disk' and vm.isVdsmImage(drive):
+            if device == 'disk' and vm.isVdsmImage(drive):
                 res = self.irs.prepareImage(
                     drive['domainID'], drive['poolID'],
                     drive['imageID'], drive['volumeID'])
@@ -279,37 +280,19 @@ class clientIF:
             elif "UUID" in drive:
                 volPath = self._getUUIDSpecPath(drive["UUID"])
 
-            # leave path == '' for empty cdrom and floppy drives ...
-            elif (drive['device'] in ('cdrom', 'floppy') and
-                  'specParams' in drive and
-                  # next line can be removed in future, when < 3.3 engine
-                  # is not supported
-                  drive['specParams'].get('path', '') == '' and
-                  drive.get('path', '') == '' and
-                  'vmPayload' not in drive['specParams']):
+            # cdrom and floppy drives
+            elif (device in ('cdrom', 'floppy') and 'specParams' in drive):
+                params = drive['specParams']
+                if 'vmPayload' in params:
+                    volPath = self._prepareVolumePathFromPayload(
+                        vmId, device, params['vmPayload'])
+                # next line can be removed in future, when < 3.3 engine
+                # is not supported
+                elif (params.get('path', '') == '' and
+                      drive.get('path', '') == ''):
                     volPath = ''
-
-            # ... or load the drive from vmPayload:
-            elif drive['device'] in ('cdrom', 'floppy') and \
-                    'specParams' in drive and \
-                    'vmPayload' in drive['specParams']:
-                '''
-                vmPayload is a key in specParams
-                'vmPayload': {'volId': 'volume id',   # volId is optional
-                              'file': {'filename': 'content', ...}}
-                '''
-                mkFsNames = {'cdrom': 'mkIsoFs', 'floppy': 'mkFloppyFs'}
-                try:
-                    mkFsFunction = getattr(supervdsm.getProxy(),
-                                           mkFsNames[drive['device']])
-                except AttributeError:
-                    raise vm.VolumeError(
-                        "Unsupported 'device': %s in drive: %s" %
-                        (drive['device'], drive))
                 else:
-                    files = drive['specParams']['vmPayload']['file']
-                    volId = drive['specParams']['vmPayload'].get('volId')
-                    volPath = mkFsFunction(vmId, files, volId)
+                    volPath = drive.get('path', '')
 
             elif "path" in drive:
                 volPath = drive['path']
@@ -330,6 +313,23 @@ class clientIF:
 
         self.log.info("prepared volume path: %s", volPath)
         return volPath
+
+    def _prepareVolumePathFromPayload(self, vmId, device, payload):
+        """
+        param vmId:
+            VM UUID or None
+        param device:
+            either 'floppy' or 'cdrom'
+        param payload:
+            a dict formed like this:
+            {'volId': 'volume id',   # volId is optional
+             'file': {'filename': 'content', ...}}
+        """
+        funcs = {'cdrom': 'mkIsoFs', 'floppy': 'mkFloppyFs'}
+        if device not in funcs:
+            raise vm.VolumeError("Unsupported 'device': %s" % device)
+        func = getattr(supervdsm.getProxy(), funcs[device])
+        return func(vmId, payload['file'], payload.get('volId'))
 
     def teardownVolumePath(self, drive):
         res = {'status': doneCode}
