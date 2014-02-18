@@ -20,9 +20,12 @@
 from contextlib import contextmanager
 from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, get_errno, sizeof)
+from Queue import Empty, Queue
+from threading import BoundedSemaphore
 import errno
 
 NETLINK_ROUTE = 0
+_POOL_SIZE = 5
 CHARBUFFSIZE = 32
 LIBNL = CDLL('libnl.so.1', use_errno=True)
 
@@ -38,6 +41,8 @@ _void_proto = CFUNCTYPE(c_void_p, c_void_p)
 _nl_connect = CFUNCTYPE(c_int, c_void_p, c_int)(('nl_connect', LIBNL))
 _nl_handle_alloc = CFUNCTYPE(c_void_p)(('nl_handle_alloc', LIBNL))
 _nl_handle_destroy = CFUNCTYPE(None, c_void_p)(('nl_handle_destroy', LIBNL))
+
+_nl_geterror = CFUNCTYPE(c_char_p)(('nl_geterror', LIBNL))
 
 _nl_cache_free = CFUNCTYPE(None, c_void_p)(('nl_cache_free', LIBNL))
 _nl_cache_get_first = _void_proto(('nl_cache_get_first', LIBNL))
@@ -65,53 +70,81 @@ _rtnl_link_operstate2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)((
     'rtnl_link_operstate2str', LIBNL))
 
 
+class NLSocketPool(object):
+    """Pool of netlink sockets."""
+    def __init__(self, size):
+        if size <= 0:
+            raise ValueError('Invalid socket pool size %r. Must be positive')
+        self._semaphore = BoundedSemaphore(size)
+        self._sockets = Queue(maxsize=size)
+
+    @contextmanager
+    def socket(self):
+        """Returns a socket from the pool (creating it when needed)."""
+        with self._semaphore:
+            try:
+                sock = self._sockets.get_nowait()
+            except Empty:
+                sock = _open_socket()
+            try:
+                yield sock
+            finally:
+                self._sockets.put_nowait(sock)
+
+
+_pool = NLSocketPool(_POOL_SIZE)
+
+
+def _open_socket():
+    """Returns an open netlink socket."""
+    handle = _nl_handle_alloc()
+    if handle is None:
+        raise IOError(get_errno(), 'Failed to allocate netlink handle')
+
+    err = _nl_connect(handle, NETLINK_ROUTE)
+    if err:
+        _nl_handle_destroy(handle)
+        raise IOError(-err, _nl_geterror())
+    return handle
+
+
+def _close_socket(sock):
+    """Closes and frees the resources of the passed netlink socket."""
+    _nl_handle_destroy(sock)
+
+
 def iter_links():
     """Generator that yields an information dictionary for each link of the
     system."""
-    with _nl_link_cache() as cache:
-        link = _nl_cache_get_first(cache)
-        while link:
-            yield _link_info(cache, link)
-            link = _nl_cache_get_next(link)
+    with _pool.socket() as sock:
+        with _nl_link_cache(sock) as cache:
+            link = _nl_cache_get_first(cache)
+            while link:
+                yield _link_info(cache, link)
+                link = _nl_cache_get_next(link)
 
 
 def get_link(name):
     """Returns the information dictionary of the name specified link."""
-    with _nl_link_cache() as cache:
-        link = _rtnl_link_get_by_name(cache, name)
-        if not link:
-            raise IOError(errno.ENODEV, '%s is not present in the system' %
-                          name)
-        return _link_info(cache, link)
+    with _pool.socket() as sock:
+        with _nl_link_cache(sock) as cache:
+            link = _rtnl_link_get_by_name(cache, name)
+            if not link:
+                raise IOError(errno.ENODEV, '%s is not present in the system' %
+                              name)
+            return _link_info(cache, link)
 
 
 @contextmanager
-def _open_nl_socket():
-    """Provides a Netlink socket and closes and destroys it upon exit."""
-    handle = _nl_handle_alloc()
-    if handle is None:
-        raise IOError(get_errno(), 'Failed to allocate netlink handle')
-    try:
-        err = _nl_connect(handle, NETLINK_ROUTE)
-        if err:
-            raise IOError(-err, 'Failed to connect to netlink socket.')
-        yield handle
-    finally:
-        # handle is automatically disconnected on destroy.
-        _nl_handle_destroy(handle)
-
-
-@contextmanager
-def _nl_link_cache():
+def _nl_link_cache(sock):
     """Provides a link cache and frees it and its links upon exit."""
-    with _open_nl_socket() as sock:
-        cache = _rtnl_link_alloc_cache(sock)
-        if cache is None:
-            raise IOError(get_errno(), 'Failed to allocate link cache.')
-        try:
-            yield cache
-        finally:
-            _nl_cache_free(cache)
+    cache = _rtnl_link_alloc_cache(sock)
+    if cache is None:
+        raise IOError(get_errno(), 'Failed to allocate link cache.')
+    try:
+        yield cache
+    finally:
+        _nl_cache_free(cache)
 
 
 def _link_info(cache, link):
