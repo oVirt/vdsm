@@ -3720,11 +3720,18 @@ class Vm(object):
         return {'status': doneCode, 'vmList': self.status()}
 
     def _readPauseCode(self, timeout):
+        # libvirt does not not export yet the I/O error reason code.
+        # we need a way to
+        # 1. detect ENOSPC when connected to a VM.
+        # 2. detect a VM was paused to ENOSPC when reconnecting after
+        #    a VDSM restart.
+        # upstream libvirt unfortunately lacks both features, because
+        # in turn QEMU doesn't yet export the information thorugh the
+        # QMP interface.
+        # libvirt: https://bugzilla.redhat.com/show_bug.cgi?id=1067414
+        # qemu: https://bugs.launchpad.net/qemu/+bug/1284090
         self.log.warning('_readPauseCode unsupported by libvirt vm')
         return 'NOERR'
-
-    def _monitorDependentInit(self, timeout=None):
-        self.log.warning('unsupported by libvirt vm')
 
     def _timeoutExperienced(self, timeout):
         if timeout:
