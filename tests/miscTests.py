@@ -979,10 +979,11 @@ class WatchCmd(TestCaseBase):
         """
         Make sure that nothing leaks
         """
+        import gc
         openFdNum = lambda: len(misc.getfds())
+        gc.collect()
         openFds = openFdNum()
         self.testStdOut()
-        import gc
         gc.collect()
         self.assertEquals(len(gc.garbage), 0)
         self.assertEquals(openFdNum(), openFds)
