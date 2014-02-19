@@ -47,7 +47,7 @@ FORCE_RECONFIGURE="@VDSMLIBDIR@/reconfigure"
 get_libvirt_conf_item() {
     local cfile="$1"
     local key="$2"
-    @GREP_PATH@ "^\s*"${key}"\s*=" "${cfile}" | \
+    @GREP_PATH@ -E "^\s*"${key}"\s*=" "${cfile}" | \
             tail -1 | @SED_PATH@ "s/\s*$key\s*=\s*//;s/\s*\(#.*\)\?$//"
 }
 
