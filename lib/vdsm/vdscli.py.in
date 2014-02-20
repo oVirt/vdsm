@@ -1,6 +1,6 @@
 # vdscli: contact vdsm running on localhost over xmlrpc easily
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,13 +73,7 @@ def __guessDefaults():
             if d_useSSL:
                 d_addr = __getLocalVdsName(d_tsPath)
             else:
-                if config.get('addresses', 'management_ip'):
-                    d_addr = config.get('addresses', 'management_ip')
-                else:
-                    from . import netinfo
-                    proposed_addr = netinfo.getaddr('@VDSMBRIDGE@')
-                    if proposed_addr:
-                        d_addr = proposed_addr
+                d_addr = config.get('addresses', 'management_ip')
         except:
             pass
         if os.name == 'nt':
