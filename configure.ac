@@ -142,9 +142,6 @@ AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
 AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 AC_SUBST([vdsmupgradedir], ['/data/updates'])
 
-# Network
-AC_SUBST([VDSMBRIDGE], ['ovirtmgmt'])
-
 # Engine Name
 AC_SUBST([ENGINENAME], ['oVirt Engine'])
 

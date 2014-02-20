@@ -86,7 +86,7 @@ ERR_NO_ROUTE = 7
 SCRIPT_NAME_ADD = "addNetwork"
 SCRIPT_NAME_DEL = "delNetwork"
 IFACE_CONFIG = "/etc/sysconfig/network-scripts/ifcfg-"
-MGT_BRIDGE_NAME = "@VDSMBRIDGE@"
+MGT_BRIDGE_NAME = "ovirtmgmt"
 REMOTE_SSH_KEY_FILE = ('/engine.ssh.key.txt',)
 CORE_DUMP_PATH = '/var/lib/vdsm/core'
 CORE_PATTERN = '/proc/sys/kernel/core_pattern'
@@ -471,7 +471,7 @@ def getMGTIP(vdsmDir, vdcHostName):
 
 def preventDuplicate(bridgeName=None):
     """
-      This function checks if the needed bridge (@VDSMBRIDGE@) already exist.
+      This function checks if the needed MGT_BRIDGE_NAME already exist.
     """
     if bridgeName is None:
         bridgeName = MGT_BRIDGE_NAME
@@ -1006,8 +1006,8 @@ def setSafeVdsmNetworkConfig():
 
 def makeBridge(vdcName, vdsmDir, bridgeName=None):
     """
-        Create (for RHEL) or rename (oVirt default bridge) to @VDSMBRIDGE@
-        bridge.
+        Create (for RHEL) or rename (oVirt default bridge) to
+        MGT_BRIDGE_NAME.
     """
     logging.debug('makeBridge begin.')
     if bridgeName is None:
