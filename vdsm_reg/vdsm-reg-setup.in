@@ -4,7 +4,7 @@
 # Output: none.
 #
 # Steps to perform: Initiate Certificate Initalization
-#   a. Find menagement bridge and rename it to @VDSMBRIDGE@.
+#   a. Find menagement bridge and rename it to MGT_BRIDGE_NAME.
 #   b. Create .ssh directory and fetch authorized_keys
 #   c. Call VDC registration.
 #   d. Set time according to rhev-m time.
@@ -23,12 +23,12 @@ import ssl
 from config import config
 import deployUtil
 import createDaemon
+from deployUtil import MGT_BRIDGE_NAME
 
 TICKET_RETRIES=3
 DEFAULT_CONFIG_FILE="/etc/vdsm-reg/vdsm-reg.conf"
 VDSM_CONF="/etc/vdsm/vdsm.conf"
 SCRIPT_NAME_SAVE="vdsm-store-net-config"
-MGT_BRIDGE_NAME="@VDSMBRIDGE@"
 
 class Setup:
     """
@@ -76,7 +76,7 @@ class Setup:
 
     def renameBridge(self):
         """
-            Rename oVirt default bridge to @VDSMBRIDGE@ bridge.
+            Rename oVirt-node default bridge to MGT_BRIDGE_NAME.
         """
         logging.debug("renameBridge begin.")
         fReturn = True
@@ -92,8 +92,10 @@ class Setup:
                 out, err, ret = deployUtil._logExec([os.path.join(self.vdsmDir, SCRIPT_NAME_SAVE)])
                 if ret:
                     fReturn = False
-                    logging.error("renameBridge Failed to persist @VDSMBRIDGE@ "
-                            "bridge changes. out=%s\nerr=%s\nret=%d", out, err,
+                    logging.error("renameBridge Failed to persist %s "
+                            "bridge changes. out=%s\nerr=%s\nret=%d",
+                            MGT_BRIDGE_NAME,
+                            out, err,
                             ret)
             except:
                 fReturn = False
