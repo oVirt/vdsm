@@ -3941,9 +3941,6 @@ class Vm(object):
         if self.isMigrating():
             return errCode['migInProgress']
 
-        if self.hasTransientDisks():
-            return errCode['transientErr']
-
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)
 
@@ -3966,7 +3963,12 @@ class Vm(object):
                 return errCode['snapshotErr']
 
             if vmDrive.hasVolumeLeases:
+                self.log.error('disk %s has volume leases', vmDrive.name)
                 return errCode['noimpl']
+
+            if vmDrive.transientDisk:
+                self.log.error('disk %s is a transient disk', vmDrive.name)
+                return errCode['transientErr']
 
             vmDevName = vmDrive.name
 
