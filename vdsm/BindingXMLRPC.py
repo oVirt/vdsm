@@ -27,6 +27,7 @@ import logging
 import libvirt
 import threading
 import socket
+import sys
 
 from vdsm import utils
 from vdsm.define import doneCode, errCode
@@ -205,6 +206,14 @@ class BindingXMLRPC(object):
                 threadLocal.client = None
                 threadLocal.server = None
                 threadLocal.flowID = None
+
+            if sys.version_info[:2] == (2, 6):
+                # Override BaseHTTPServer.BaseRequestHandler implementation to
+                # avoid pointless and slow attempt to get the fully qualified
+                # host name from the client address. This method is not used
+                # any more in Python 2.7.
+                def address_string(self):
+                    return self.client_address[0]
 
         if self.enableSSL:
             KEYFILE, CERTFILE, CACERT = self._getKeyCertFilenames()
