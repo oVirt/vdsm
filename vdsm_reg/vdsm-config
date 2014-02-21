@@ -8,7 +8,7 @@
 VDSM_CONFIG=/etc/vdsm/vdsm.conf
 GETCONFITEM=/usr/share/vdsm/get-conf-item
 DEPLOY_UTIL=/usr/share/vdsm-reg/deployUtil.pyc
-LOG=/var/log/vdsm-config
+LOG=/var/log/vdsm-reg/vdsm-config
 fWriteConfig=0
 strRHEVMAddress=""
 
