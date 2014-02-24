@@ -1276,33 +1276,8 @@ def changeVGTags(vgName, delTags=(), addTags=()):
             (vgName, ", ".join(delTags), ", ".join(addTags), err[-1]))
 
 
-def addVGTag(vgName, tag):
-    _lvminfo._invalidatevgs(vgName)
-    cmd = ["vgchange", "--addtag", tag, vgName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    if rc != 0:
-        raise se.VolumeGroupAddTagError("Failed adding tag %s to VG %s." %
-                                        (tag, vgName))
-
-
-def remVGTag(vgName, tag):
-    _lvminfo._invalidatevgs(vgName)
-    cmd = ["vgchange", "--deltag", tag, vgName]
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
-    if rc != 0:
-        raise se.VolumeGroupRemoveTagError(vgName)
-
-
 def replaceVGTag(vg, oldTag, newTag):
     changeVGTags(vg, [oldTag], [newTag])
-
-
-def addVGTags(vgName, tags):
-    changeVGTags(vgName, addTags=tags)
-
-
-def remVGTags(vgName, tags):
-    changeVGTags(vgName, delTags=tags)
 
 
 def getFirstExt(vg, lv):

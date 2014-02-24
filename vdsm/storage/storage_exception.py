@@ -1249,16 +1249,6 @@ class VolumeGroupReadTagError(StorageException):
     message = "Read Volume Group's tag error"
 
 
-class VolumeGroupAddTagError(StorageException):
-    code = 511
-    message = "Add tag to Volume Group error"
-
-
-class VolumeGroupRemoveTagError(StorageException):
-    code = 512
-    message = "Remove tag from Volume Group error"
-
-
 class VolumeGroupScanError(StorageException):
     code = 513
     message = "Volume Group scanning error"
