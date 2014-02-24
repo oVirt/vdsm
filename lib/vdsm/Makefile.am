@@ -47,6 +47,7 @@ nodist_noinst_DATA= \
 
 CLEANFILES = \
 	$(nodist_vdsmpylib_PYTHON) \
+	$(nodist_noinst_DATA) \
 	$(NULL)
 
 
@@ -54,10 +55,26 @@ EXTRA_DIST = \
 	config.py.in \
 	constants.py.in \
 	vdscli.py.in \
+	vdsm.conf.sample \
 	$(NULL)
 
 vdsm.conf.sample: Makefile config.py
 	@echo "  CONFIG $@"; $(PYTHON) $(builddir)/config.py > $@
 
+install-data-local: \
+	install-data-sample-vdsm-conf
+
+uninstall-local: \
+	uninstall-data-sample-vdsm-conf
+
+install-data-sample-vdsm-conf:
+	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
+	$(INSTALL_DATA) vdsm.conf.sample \
+		$(DESTDIR)$(vdsmconfdir)/vdsm.conf
+
+uninstall-data-sample-vdsm-conf:
+	$(RM) $(DESTDIR)$(vdsmconfdir)/vdsm.conf
+
 all-local: \
-	$(nodist_vdsmpylib_PYTHON)
+	$(nodist_vdsmpylib_PYTHON) \
+	$(nodist_noinst_DATA)
