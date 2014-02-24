@@ -667,12 +667,6 @@ install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
 install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
 %endif
 
-%if !0%{?rhel}
-# Install the configuration sample
-install -Dm 0644 lib/vdsm/vdsm.conf.sample \
-                 %{buildroot}%{_sysconfdir}/%{vdsm_name}/vdsm.conf
-%endif
-
 # Install the polkit for libvirt
 %if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 install -Dm 0644 vdsm/vdsm-libvirt-access.rules \
@@ -939,6 +933,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vm.py*
 
+%config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/upgrade.logger.conf
@@ -1127,9 +1122,6 @@ exit 0
 %files python
 %defattr(-, root, root, -)
 %{_bindir}/vdsm-tool
-%if !0%{?rhel}
-%config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
-%endif
 %dir %{python_sitearch}/%{vdsm_name}
 %dir %{python_sitearch}/%{vdsm_name}/tool
 %{python_sitearch}/%{vdsm_name}/__init__.py*
