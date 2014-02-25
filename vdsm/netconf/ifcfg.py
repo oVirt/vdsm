@@ -34,6 +34,7 @@ from netmodels import Nic, Bridge, IpConfig
 from sourceRoute import DynamicSourceRoute
 from vdsm.config import config
 from vdsm import constants
+from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig
@@ -169,9 +170,11 @@ class Ifcfg(Configurator):
     def _ifaceDownAndCleanup(self, iface, _netinfo):
         """Returns True iff the iface is to be removed."""
         DynamicSourceRoute.addInterfaceTracking(iface)
-        ifdown(iface.name)
+        to_be_removed = not _netinfo.ifaceUsers(iface.name)
+        if to_be_removed:
+            ifdown(iface.name)
         self._removeSourceRoute(iface)
-        return not _netinfo.ifaceUsers(iface.name)
+        return to_be_removed
 
     def removeBond(self, bonding):
         _netinfo = netinfo.NetInfo()
@@ -188,18 +191,30 @@ class Ifcfg(Configurator):
                                                  netinfo.DEFAULT_MTU)
                 ifup(bonding.name)
         else:
-            self._setNewMtu(bonding,
-                            _netinfo.getVlanDevsForIface(bonding.name))
-            ifup(bonding.name)
+            set_mtu = self._setNewMtu(
+                bonding, _netinfo.getVlanDevsForIface(bonding.name))
+            # Since we are not taking the device up again, ifcfg will not be
+            # read at this point and we need to set the live mtu value.
+            # Note that ip link set dev bondX mtu Y sets Y on all its links
+            if set_mtu is not None:
+                ipwrapper.linkSet(bonding.name, ['mtu', str(set_mtu)])
 
     def removeNic(self, nic):
         _netinfo = netinfo.NetInfo()
         to_be_removed = self._ifaceDownAndCleanup(nic, _netinfo)
         if to_be_removed:
             self.configApplier.removeNic(nic.name)
+            if nic.name in _netinfo.nics:
+                ifup(nic.name)
+            else:
+                logging.warning('host interface %s missing', nic.name)
         else:
-            self._setNewMtu(nic, _netinfo.getVlanDevsForIface(nic.name))
-        ifup(nic.name)
+            set_mtu = self._setNewMtu(nic,
+                                      _netinfo.getVlanDevsForIface(nic.name))
+            # Since we are not taking the device up again, ifcfg will not be
+            # read at this point and we need to set the live mtu value
+            if set_mtu is not None:
+                ipwrapper.linkSet(nic.name, ['mtu', str(set_mtu)])
 
     def _getFilePath(self, fileType, device):
         return os.path.join(netinfo.NET_CONF_DIR, '%s-%s' % (fileType, device))
