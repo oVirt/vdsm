@@ -199,7 +199,11 @@ class Ifcfg(Configurator):
             self.configApplier.removeNic(nic.name)
         else:
             self._setNewMtu(nic, _netinfo.getVlanDevsForIface(nic.name))
-        ifup(nic.name)
+
+        if nic.name in _netinfo.nics:
+            ifup(nic.name)
+        else:
+            logging.warning('host interface %s missing', nic.name)
 
     def _getFilePath(self, fileType, device):
         return os.path.join(netinfo.NET_CONF_DIR, '%s-%s' % (fileType, device))
