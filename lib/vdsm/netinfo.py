@@ -40,7 +40,6 @@ from .ipwrapper import Route
 from .ipwrapper import routeGet
 from .ipwrapper import routeShowGateways, routeShowAllDefaultGateways
 from . import libvirtconnection
-from .ipwrapper import linkShowDev
 from .utils import anyFnmatch
 from .netconfpersistence import RunningConfig
 from .netlink import iter_addrs
@@ -671,11 +670,8 @@ def isVlanned(dev):
 
 def getVlanDevice(vlan):
     """ Return the device of the given VLAN. """
-    out = linkShowDev(vlan)
-
-    # out example:
-    # 6: eth0.10@eth0: <BROADCAST,MULTICAST> mtu 1500...
-    return str(out).split(':')[1].strip().split('@')[1]
+    vlanLink = getLink(vlan)
+    return vlanLink.device
 
 
 def getVlanID(vlan):
