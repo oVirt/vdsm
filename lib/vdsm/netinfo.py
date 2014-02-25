@@ -248,6 +248,19 @@ def operstate(dev):
         return operstateFile.read().strip()
 
 
+def vlanSpeed(vlanName):
+    """Returns the vlan's underlying device speed."""
+    vlanDevName = getVlanDevice(vlanName)
+    vlanDev = getLink(vlanDevName)
+    if vlanDev.isNIC():
+        speed = nicSpeed(vlanDevName)
+    elif vlanDev.isBOND():
+        speed = bondSpeed(vlanDevName)
+    else:
+        speed = 0
+    return speed
+
+
 def nicSpeed(nicName):
     """Returns the nic speed if it is a legal value and nicName refers to a
     nic, 0 otherwise."""

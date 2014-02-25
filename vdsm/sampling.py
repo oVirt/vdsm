@@ -393,6 +393,8 @@ class HostStatsThread(threading.Thread):
                 speed = netinfo.nicSpeed(dev.name)
             elif dev.isBOND():
                 speed = netinfo.bondSpeed(dev.name)
+            elif dev.isVLAN():
+                speed = netinfo.vlanSpeed(dev.name)
             else:
                 speed = 0
             self._ifrates.append(speed)
