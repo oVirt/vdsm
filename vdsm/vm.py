@@ -43,7 +43,7 @@ from vdsm import qemuImg
 from vdsm import utils
 from vdsm import vdscli
 from vdsm.config import config
-from vdsm.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.define import ERROR, NORMAL, doneCode, errCode, Mbytes
 from vdsm.netinfo import DUMMY_BRIDGE
 from storage import outOfProcess as oop
 from storage import sd
@@ -143,9 +143,7 @@ class MigrationSourceThread(threading.Thread):
         """
         if self._monitorThread is not None:
             # fetch migration status from the monitor thread
-            self.status['progress'] = int(
-                float(self._monitorThread.data_progress +
-                      self._monitorThread.mem_progress) / 2)
+            self.status['progress'] = self._monitorThread.progress
         return self.status
 
     def _setupVdsConnection(self):
@@ -756,8 +754,7 @@ class MigrationMonitorThread(threading.Thread):
         self._vm = vm
         self._startTime = startTime
         self.daemon = True
-        self.data_progress = 0
-        self.mem_progress = 0
+        self.progress = 0
 
     def run(self):
         def calculateProgress(remaining, total):
@@ -782,8 +779,8 @@ class MigrationMonitorThread(threading.Thread):
              dataTotal, dataProcessed, dataRemaining,
              memTotal, memProcessed, memRemaining,
              fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
-
-            remaining = dataRemaining + memRemaining
+            # from libvirt sources: data* = file* + mem*.
+            # docs can be misleading due to misaligned lines.
             abort = False
             now = time.time()
             if 0 < migrationMaxTime < now - self._startTime:
@@ -794,8 +791,8 @@ class MigrationMonitorThread(threading.Thread):
                                   now - self._startTime,
                                   migrationMaxTime)
                 abort = True
-            elif (lowmark is None) or (lowmark > remaining):
-                lowmark = remaining
+            elif (lowmark is None) or (lowmark > dataRemaining):
+                lowmark = dataRemaining
                 lastProgressTime = now
             elif (now - lastProgressTime) > progress_timeout:
                 # Migration is stuck, abort
@@ -809,25 +806,21 @@ class MigrationMonitorThread(threading.Thread):
                 self.stop()
                 break
 
-            if remaining > lowmark:
-                MiB = 1024 * 1024
+            if dataRemaining > lowmark:
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
                     ' > lowmark (%sMiB).'
                     ' Refer to RHBZ#919201.',
-                    remaining / MiB, lowmark / MiB)
+                    dataRemaining / Mbytes, lowmark / Mbytes)
 
             if jobType == 0:
                 continue
 
-            self.data_progress = calculateProgress(dataRemaining, dataTotal)
-            self.mem_progress = calculateProgress(memRemaining, memTotal)
+            self.progress = calculateProgress(dataRemaining, dataTotal)
 
             self._vm.log.info('Migration Progress: %s seconds elapsed, %s%% of'
-                              ' data processed, %s%% of mem processed' %
-                              (timeElapsed / 1000,
-                                  self.data_progress,
-                                  self.mem_progress))
+                              ' data processed' %
+                              (timeElapsed / 1000, self.progress))
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
