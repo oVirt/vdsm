@@ -139,6 +139,7 @@ class Configurator(object):
         :param ifaceVlans: vlan devices using the interface 'iface'
         :type ifaceVlans: iterable
 
+        :return mtu value that was applied
         """
         ifaceMtu = netinfo.getMtu(iface.name)
         maxMtu = netinfo.getMaxMtu(ifaceVlans, None)
@@ -147,6 +148,7 @@ class Configurator(object):
                 self.configApplier.setBondingMtu(iface.name, maxMtu)
             else:
                 self.configApplier.setIfaceMtu(iface.name, maxMtu)
+        return maxMtu
 
 
 def getEthtoolOpts(name):
