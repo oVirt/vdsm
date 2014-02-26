@@ -1,6 +1,6 @@
 #! /usr/bin/python
 #
-# Copyright 2011-2012 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,14 +18,19 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
 import logging
 import logging.config
 
-from netconf import ifcfg
 from vdsm.config import config
+
+# Ifcfg persistence restoration
+from netconf import ifcfg
+
+# Unified persistence restoration
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig
-from configNetwork import setupNetworks, ConfiguratorClass
+from configNetwork import setupNetworks
+import pkgutil
+import netconf
 
 
 def ifcfg_restoration():
@@ -38,7 +43,6 @@ def unified_restoration():
     Builds a setupNetworks command from the persistent configuration to set it
     as running configuration.
     """
-    configurator = ConfiguratorClass()
     runningConfig = RunningConfig()
     removeNetworks = {}
     removeBonds = {}
@@ -51,13 +55,28 @@ def unified_restoration():
     setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
                   _inRollback=True)
 
-    configurator.flush()
+    # Flush vdsm configurations left-overs from any configurator on the system
+    # so that changes of configurator and persistence system are smooth.
+    for configurator_cls in _get_all_configurators():
+        configurator_cls().flush()
+
     persistentConfig = PersistentConfig()
     nets = persistentConfig.networks
     bonds = persistentConfig.bonds
     logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
                   nets, bonds)
     setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
+
+
+def _get_all_configurators():
+    """Returns the class objects of all the configurators in the netconf pkg"""
+    prefix = netconf.__name__ + '.'
+    for importer, moduleName, isPackage in pkgutil.iter_modules(
+            netconf.__path__, prefix):
+        __import__(moduleName, fromlist="_")
+
+    for cls in netconf.Configurator.__subclasses__():
+        yield cls
 
 
 def restore():

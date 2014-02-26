@@ -250,8 +250,8 @@ case "$1" in
             tune_system \
             test_space \
             test_lo \
-            restore_nets \
             unified_network_persistence_upgrade \
+            restore_nets \
             upgrade_300_nets \
             "
         ;;
