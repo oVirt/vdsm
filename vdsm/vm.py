@@ -1343,7 +1343,7 @@ class SoundDevice(VmDevice):
 
 class NetworkInterfaceDevice(VmDevice):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
-                 'linkActive', 'spotMirroring', 'custom', 'filter',
+                 'linkActive', 'portMirroring', 'custom', 'filter',
                  'sndbufParam', 'driver', 'name')
 
     def __init__(self, conf, log, **kwargs):
