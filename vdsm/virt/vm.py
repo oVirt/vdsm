@@ -1978,6 +1978,10 @@ class Vm(object):
                 self.conf.get(
                     'exitMessage', ''))
             self.recovering = False
+        except MigrationError:
+            # cannot happen during recovery
+            self.log.exception("Failed to start a migration destination vm")
+            self.setDownStatus(ERROR, vmexitreason.MIGRATION_FAILED)
         except Exception as e:
             if self.recovering:
                 self.log.info("Skipping errors on recovery", exc_info=True)
@@ -3418,6 +3422,7 @@ class Vm(object):
                                   (e.args[0] if len(e.args) else
                                    'Migration Error'))
                         e.args = (newMsg,) + e.args[1:]
+                    raise MigrationError(e.get_error_message())
                 raise
 
             self._domDependentInit()
