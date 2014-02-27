@@ -34,7 +34,7 @@ import logging.config
 LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
 
 try:
-    logging.config.fileConfig(LOG_CONF_PATH)
+    logging.config.fileConfig(LOG_CONF_PATH, disable_existing_loggers=False)
 except:
     logging.basicConfig(filename='/dev/stdout', filemode='w+',
                         level=logging.DEBUG)

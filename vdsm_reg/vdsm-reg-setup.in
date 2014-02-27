@@ -246,7 +246,7 @@ def run(confFile, daemonize):
             if daemonize:
                 createDaemon.createDaemon()
             #set up logger
-            logging.config.fileConfig(loggerConf)
+            logging.config.fileConfig(loggerConf, disable_existing_loggers=False)
             log = logging.getLogger('')
             if daemonize:
                 log = logging.getLogger('vdsRegistrator')

@@ -88,7 +88,8 @@ def restore():
 
 if __name__ == '__main__':
     try:
-        logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf')
+        logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf',
+                                  disable_existing_loggers=False)
     except:
         logging.basicConfig(filename='/dev/stdout', filemode='w+',
                             level=logging.DEBUG)
