@@ -1776,20 +1776,37 @@ class NetworkTest(TestCaseBase):
                 {BONDING_NAME: {'remove': True}},
                 NOCHK)
 
+    @permutations([[True], [False]])
     @cleanupNet
     @RequireVethMod
     @ValidateRunningAsRoot
-    def testSetupNetworksAddDelDhcp(self):
+    def testSetupNetworksAddDelDhcp(self, bridged):
         with vethIf() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(left)
             with dnsmasqDhcp(left):
-                network = {NETWORK_NAME: {'nic': right, 'bridged': False,
-                                          'bootprot': 'dhcp'}}
+                network = {NETWORK_NAME: {'nic': right, 'bridged': bridged,
+                                          'bootproto': 'dhcp'}}
 
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
+
+                net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                self.assertEqual(net['bootproto4'], 'dhcp')
+
+                if bridged:
+                    self.assertEqual(net['cfg']['BOOTPROTO'], 'dhcp')
+
+                    devs = self.vdsm_net.netinfo.bridges
+                    self.assertIn(NETWORK_NAME, devs)
+                    self.assertEqual(devs[NETWORK_NAME]['cfg']['BOOTPROTO'],
+                                     'dhcp')
+
+                else:
+                    devs = self.vdsm_net.netinfo.nics
+                    self.assertIn(right, devs)
+                    self.assertEqual(devs[right]['cfg']['BOOTPROTO'], 'dhcp')
 
                 network = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)

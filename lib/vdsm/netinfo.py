@@ -489,7 +489,7 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
         ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'bootproto4': iface in dhcp4,
+                     'bootproto4': 'dhcp' if iface in dhcp4 else 'none',
                      'gateway': getgateway(gateways, iface),
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
@@ -643,6 +643,20 @@ def _libvirtNets2vdsm(nets, gateways=None, ipv6routes=None,
     return d
 
 
+def _cfgBootprotoCompat(netsAndDevices):
+    """Set network 'cfg' 'BOOTPROTO' for backwards engine compatibility."""
+    for netAttrs in netsAndDevices['networks'].itervalues():
+        if netAttrs['bridged']:
+            netAttrs['cfg']['BOOTPROTO'] = netAttrs['bootproto4']
+
+        for devType in ('bondings', 'bridges', 'nics', 'vlans'):
+            dev = netsAndDevices[devType].get(netAttrs['iface'])
+
+            if dev:
+                dev['cfg']['BOOTPROTO'] = netAttrs['bootproto4']
+                break
+
+
 def get(vdsmnets=None):
     d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
          'vlans': {}}
@@ -667,6 +681,8 @@ def get(vdsmnets=None):
             d['bondings'][dev.name] = _bondinfo(dev, ipaddrs)
         elif dev.isVLAN():
             d['vlans'][dev.name] = _vlaninfo(dev, ipaddrs)
+
+    _cfgBootprotoCompat(d)
 
     return d
 
