@@ -4314,20 +4314,28 @@ class Vm(object):
         graphics.setAttribute('connected', 'keep')
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
 
-    def _onAbnormalStop(self, blockDevAlias, err):
+    def _onIOError(self, blockDevAlias, err, action):
         """
         Called back by IO_ERROR_REASON event
 
         :param err: one of "eperm", "eio", "enospc" or "eother"
         Note the different API from that of Vm._onAbnormalStop
         """
-        self.log.info('abnormal vm stop device %s error %s',
-                      blockDevAlias, err)
-        self.conf['pauseCode'] = err.upper()
-        self._guestCpuRunning = False
-        if err.upper() == 'ENOSPC':
-            if not self.extendDrivesIfNeeded():
-                self.log.info("No VM drives were extended")
+        if action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE:
+            self.log.info('abnormal vm stop device %s error %s',
+                          blockDevAlias, err)
+            self.conf['pauseCode'] = err.upper()
+            self._guestCpuRunning = False
+            if err.upper() == 'ENOSPC':
+                if not self.extendDrivesIfNeeded():
+                    self.log.info("No VM drives were extended")
+        elif action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT:
+            self.log.info('I/O error %s device %s reported to guest OS',
+                          err, blockDevAlias)
+        else:
+            # we do not support and do not expect other values
+            self.log.warning('unexpected action %i on device %s error %s',
+                             action, blockDevAlias, err)
 
     def _acpiShutdown(self):
         self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)

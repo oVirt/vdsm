@@ -575,7 +575,7 @@ class clientIF:
                 v._rtcUpdate(utcoffset)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON:
                 srcPath, devAlias, action, reason = args[:-1]
-                v._onAbnormalStop(devAlias, reason)
+                v._onIOError(devAlias, reason, action)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS:
                 phase, localAddr, remoteAddr, authScheme, subject = args[:-1]
                 v.log.debug('graphics event phase '
