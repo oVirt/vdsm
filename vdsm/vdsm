@@ -79,7 +79,7 @@ def serve_clients(log):
 
 
 def run(pidfile=None):
-    lconfig.fileConfig(loggerConfFile)
+    lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
     logging.addLevelName(5, 'TRACE')
     logging.TRACE = 5  # impolite but helpful
 

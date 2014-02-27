@@ -57,7 +57,8 @@ class Upgrade(object):
             # This will override VDSM's root logger but will keep the other
             # loggers intact. During an upgrade we add the update handler
             # to all loggers.
-            logging.config.fileConfig(P_VDSM_CONF + 'logger.conf')
+            logging.config.fileConfig(P_VDSM_CONF + 'logger.conf',
+                                      disable_existing_loggers=False)
             logging.config.fileConfig(P_VDSM_CONF + 'upgrade.logger.conf',
                                       disable_existing_loggers=False)
             chown(

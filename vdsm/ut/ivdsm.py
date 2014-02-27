@@ -42,7 +42,7 @@ def runVdsm(baseDir="/usr/share/vdsm/", configFilePath="/etc/vdsm/vdsm.conf",
     import clientIF
 
     loggerConfFile = loggerConfigurationPath
-    lconfig.fileConfig(loggerConfFile)
+    lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
     log = logging.getLogger('vds')
 
     config.read(configFilePath)
