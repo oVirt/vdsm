@@ -25,6 +25,19 @@ from testrunner import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
 import caps
+from vdsm import utils
+
+
+def _getTestData(testFileName):
+    testPath = os.path.realpath(__file__)
+    dirName = os.path.dirname(testPath)
+    path = os.path.join(dirName, testFileName)
+    with open(path) as src:
+        return src.read()
+
+
+def _getCapsNumaDistanceTestData(testFileName):
+    return (0, _getTestData(testFileName).splitlines(False), [])
 
 
 class TestCaps(TestCaseBase):
@@ -114,3 +127,36 @@ class TestCaps(TestCaseBase):
         sign = ["=", "&"]
         for res, s in zip(expectedRes, sign):
             self.assertEqual(res, caps._parseKeyVal(lines, s))
+
+    @MonkeyPatch(caps, '_getMemoryStatsByNumaCell', lambda x: {
+        'total': 50321208L, 'free': 47906488L})
+    @MonkeyPatch(caps, '_getCapsXMLStr', lambda: _getTestData(
+        "caps_libvirt_amd_6274.out"))
+    def testNumaTopology(self):
+        # 2 x AMD 6272 (with Modules)
+        t = caps._getNumaTopology()
+        expectedNumaInfo = {
+            '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': 49141},
+            '1': {'cpus': [8, 9, 10, 11, 12, 13, 14, 15],
+                  'totalMemory': 49141},
+            '2': {'cpus': [16, 17, 18, 19, 20, 21, 22, 23],
+                  'totalMemory': 49141},
+            '3': {'cpus': [24, 25, 26, 27, 28, 29, 30, 31],
+                  'totalMemory': 49141}}
+        self.assertEqual(t, expectedNumaInfo)
+
+    @MonkeyPatch(utils, 'execCmd', lambda x: _getCapsNumaDistanceTestData(
+        "caps_numactl_4_nodes.out"))
+    def testNumaNodeDistance(self):
+        t = caps._getNumaNodeDistance()
+        expectedDistanceInfo = {
+            '0': [10, 20, 20, 20],
+            '1': [20, 10, 20, 20],
+            '2': [20, 20, 10, 20],
+            '3': [20, 20, 20, 10]}
+        self.assertEqual(t, expectedDistanceInfo)
+
+    @MonkeyPatch(utils, 'execCmd', lambda x: (0, ['0'], []))
+    def testAutoNumaBalancingInfo(self):
+        t = caps._getAutoNumaBalancingInfo()
+        self.assertEqual(t, 0)

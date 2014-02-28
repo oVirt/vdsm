@@ -714,6 +714,22 @@
           'ipv6addrs': ['str'], 'mtu': 'uint', 'vlanid': 'uint'}}
 
 ##
+# @NumaNode:
+#
+# Information about a host numa cell
+#
+# @cpus:        The cpu ids in this numa node. The cpu id is described in
+#               libvirt's capabilities api. When hyper-thread is enabled,
+#               one cpu core id will correspond to two sibling cpu ids.
+#
+# @totalMemory: The total memory of this numa node
+#
+# Since: 4.15.0
+##
+{'type': 'NumaNode',
+ 'data': {'cpus': ['uint'], 'totalMemory': 'uint'}}
+
+##
 # @HookScriptInfo:
 #
 # Information about one script within a hook.
@@ -932,6 +948,44 @@
  'key': 'str', 'value': 'NetInfoVlan'}
 
 ##
+# @NumaNodeMap:
+#
+# A mapping of numa node(cell) information indexed by numa cell id.
+#
+# Since: 4.15.0
+##
+{'map': 'NumaNodeMap',
+ 'key': 'str', 'value': 'NumaNode'}
+
+##
+# @NumaNodeDistanceMap:
+#
+# A mapping of distance information between each two numa nodes
+# key    -- The numa node index
+# value  -- Distance list from self to other nodes in sequence,
+#           including self to self
+#
+# Since: 4.15.0
+##
+{'map': 'NumaNodeDistanceMap',
+ 'key': 'str', 'value': ['uint']}
+
+##
+# @AutoNumaBalancingStatus:
+#
+# An enumeration of the status of auto numa balancing function in kernel.
+#
+# @DISABLE:    Auto numa balancing is not active
+#
+# @ENABLE:     Auto numa balancing is active
+#
+# @UNKNOWN:    Can't get the status(maybe not support in this kernel version)
+#
+# Since: 4.15.0
+##
+{'enum': 'AutoNumaBalancingStatus', 'data': ['DISABLE', 'ENABLE', 'UNKNOWN']}
+
+##
 # @HookScriptInfoMap:
 #
 # A mapping of hook script information indexed by script name.
@@ -1052,6 +1106,12 @@
 #
 # @rngSources:          Sources of entropy available at this host
 #
+# @numaNodes:           Information about host numa topology
+#
+# @numaNodeDistance:    Distance information between each two numa nodes
+#
+# @autoNumaBalancing:   The status of auto numa balancing function
+#
 # Since: 4.10.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -1072,7 +1132,9 @@
           'HBAInventory': 'HbaInventory', 'vmTypes': ['VmType'],
           'memSize': 'uint', 'reservedMem': 'uint',
           'guestOverhead': 'uint', 'netConfigDirty': 'bool',
-          'rngSources': ['VmRngDeviceSource']}}
+          'rngSources': ['VmRngDeviceSource'], 'numaNodes': 'NumaNodeMap',
+          'numaNodeDistance': 'NumaNodeDistanceMap',
+          'autoNumaBalancing': 'AutoNumaBalancingStatus'}}
 
 ##
 # @Host.getCapabilities:

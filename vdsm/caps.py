@@ -28,6 +28,7 @@ import logging
 import time
 import linecache
 import glob
+import re
 
 import libvirt
 import rpm
@@ -63,6 +64,13 @@ class OSName:
     FEDORA = 'Fedora'
     RHEVH = 'RHEV Hypervisor'
     DEBIAN = 'Debian'
+
+
+class AutoNumaBalancingStatus:
+    DISABLE = 0
+    ENABLE = 1
+    UNKNOWN = 2
+
 
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
@@ -162,6 +170,67 @@ def _getCpuTopology(capabilities):
                 'threads': cpus}
 
     return topology
+
+
+@utils.memoized
+def _getNumaTopology():
+    capabilities = _getCapsXMLStr()
+    caps = minidom.parseString(capabilities)
+    host = caps.getElementsByTagName('host')[0]
+    cells = host.getElementsByTagName('cells')[0]
+    cellsInfo = {}
+    for cell in cells.getElementsByTagName('cell'):
+        cellInfo = {}
+        cpus = []
+        for cpu in cell.getElementsByTagName('cpu'):
+            cpus.append(int(cpu.getAttribute('id')))
+        cellInfo['cpus'] = cpus
+        cellIndex = cell.getAttribute('id')
+        memInfo = _getMemoryStatsByNumaCell(int(cellIndex))
+        cellInfo['totalMemory'] = memInfo['total'] / 1024
+        cellsInfo[cellIndex] = cellInfo
+    return cellsInfo
+
+
+def _getMemoryStatsByNumaCell(cell):
+    """
+    Get the memory stats of a specified numa node.
+
+    :param cell: the index of numa node
+    :type cell: int
+    :return: dict like {'total': 50321208L, 'free': 47906488L}
+    """
+    return libvirtconnection.get().getMemoryStats(cell, 0)
+
+
+@utils.memoized
+def _getNumaNodeDistance():
+    nodeDistance = {}
+    retcode, out, err = utils.execCmd(['numactl', '--hardware'])
+    if retcode != 0:
+        logging.error("Get error when execute numactl", exc_info=True)
+        return nodeDistance
+    pattern = re.compile(r'\s+(\d+):(.*)')
+    for item in out:
+        match = pattern.match(item)
+        if match:
+            nodeDistance[match.group(1)] = map(int,
+                                               match.group(2).strip().split())
+    return nodeDistance
+
+
+@utils.memoized
+def _getAutoNumaBalancingInfo():
+    retcode, out, err = utils.execCmd(['sysctl', '-n', '-e',
+                                       'kernel.numa_balancing'])
+    if not out:
+        return AutoNumaBalancingStatus.UNKNOWN
+    elif out[0] == '0':
+        return AutoNumaBalancingStatus.DISABLE
+    elif out[0] == '1':
+        return AutoNumaBalancingStatus.ENABLE
+    else:
+        return AutoNumaBalancingStatus.UNKNOWN
 
 
 @utils.memoized
@@ -386,6 +455,9 @@ def get():
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
     caps['rngSources'] = _getRngSources()
+    caps['numaNodes'] = _getNumaTopology()
+    caps['numaNodeDistance'] = _getNumaNodeDistance()
+    caps['autoNumaBalancing'] = _getAutoNumaBalancingInfo()
 
     return caps
 
