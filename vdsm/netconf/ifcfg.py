@@ -1,4 +1,4 @@
-# Copyright 2011-2013 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -189,6 +189,9 @@ class Ifcfg(Configurator):
             else:
                 self.configApplier.setBondingMtu(bonding.name,
                                                  netinfo.DEFAULT_MTU)
+                if bonding.bridge is not None:
+                    self.configApplier._updateConfigValue(
+                        netinfo.NET_CONF_PREF + bonding.name, 'BRIDGE', None)
                 ifup(bonding.name)
         else:
             set_mtu = self._setNewMtu(
@@ -725,7 +728,8 @@ class ConfigWriter(object):
 
     def _updateConfigValue(self, conffile, entry, value):
         """
-        Set value for network configuration file
+        Set value for network configuration file. If value is None, remove the
+        entry from conffile.
 
         :param entry: entry to update (entry=value)
         :type entry: string
@@ -739,7 +743,8 @@ class ConfigWriter(object):
             entries = [line for line in f.readlines()
                        if not line.startswith(entry + '=')]
 
-        entries.append('\n' + entry + '=' + value)
+        if value is not None:
+            entries.append('\n' + entry + '=' + value)
         self._backup(conffile)
         with open(conffile, 'w') as f:
             f.writelines(entries)

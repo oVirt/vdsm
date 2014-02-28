@@ -40,7 +40,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             getLinks)
 
 from vdsm.utils import RollbackContext
-from vdsm.netinfo import (operstate, prefix2netmask, getRouteDeviceTo,
+from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
                           getDhclientIfaces)
 from vdsm import ipwrapper
 from vdsm.utils import pgrep
@@ -1852,3 +1852,24 @@ class NetworkTest(TestCaseBase):
                                                       NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
+
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testNoBridgeLeftovers(self):
+        """Test for https://bugzilla.redhat.com/1071398"""
+        with dummyIf(2) as nics:
+            network = {NETWORK_NAME: {'bonding': BONDING_NAME}}
+            bonds = {BONDING_NAME: {'nics': nics}}
+            status, msg = self.vdsm_net.setupNetworks(network, bonds, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+
+            # Remove the network but not the bond
+            network[NETWORK_NAME] = {'remove': True}
+            status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNotIn(NETWORK_NAME, bridges())
+
+            bonds[BONDING_NAME] = {'remove': True}
+            status, msg = self.vdsm_net.setupNetworks({}, bonds, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
