@@ -384,17 +384,13 @@ def metadataValidity(vg):
                     else True
      mdavalid - False if the VG's metadata size too small, else True
     """
-    mdaStatus = {'mdavalid': True, 'mdathreshold': True}
     mda_size = int(vg.vg_mda_size)
     mda_free = int(vg.vg_mda_free)
 
-    if mda_size < (VG_METADATASIZE * constants.MEGAB) / 2:
-        mdaStatus['mdavalid'] = False
+    mda_size_ok = mda_size >= VG_METADATASIZE * constants.MEGAB / 2
+    mda_free_ok = mda_free >= mda_size * VG_MDA_MIN_THRESHOLD
 
-    if (mda_size * VG_MDA_MIN_THRESHOLD) > mda_free:
-        mdaStatus['mdathreshold'] = False
-
-    return mdaStatus
+    return {'mdathreshold': mda_free_ok, 'mdavalid': mda_size_ok}
 
 
 class BlockStorageDomain(sd.StorageDomain):
