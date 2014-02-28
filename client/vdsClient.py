@@ -157,6 +157,8 @@ class service:
         drives = []
         devices = []
         cpuPinning = {}
+        numaTune = {}
+        guestNumaNodes = []
         confLines = []
         confFile = open(args[0])
         for line in confFile.readlines():
@@ -175,6 +177,10 @@ class service:
                     drives.append(self._parseDriveSpec(value))
                 elif param == 'cpuPinning':
                     cpuPinning, rStr = self._parseNestedSpec(value)
+                elif param == 'numaTune':
+                    numaTune, rStr = self._parseNestedSpec(value)
+                elif param == 'guestNumaNodes':
+                    guestNumaNodes.append(self._parseDriveSpec(value))
                 elif param.startswith('custom_'):
                     if not 'custom' in params:
                         params['custom'] = {}
@@ -187,6 +193,10 @@ class service:
                 params[line.strip()] = ''
         if cpuPinning:
             params['cpuPinning'] = cpuPinning
+        if numaTune:
+            params['numaTune'] = numaTune
+        if guestNumaNodes:
+            params['guestNumaNodes'] = guestNumaNodes
         if drives:
             params['drives'] = drives
         if devices:
@@ -1840,7 +1850,13 @@ if __name__ == '__main__':
                     'name:val}]} : add a fully specified device',
                     'o   cpuPinning={vcpuid:pinning} cpu pinning in '
                     'libvirt-like format. see '
-                    'http://libvirt.org/formatdomain.html#elementsCPUTuning'
+                    'http://libvirt.org/formatdomain.html#elementsCPUTuning',
+                    'o   numaTune={mode:val,nodeset:val} numa nodeset in '
+                    'libvirt-like format. see '
+                    'http://libvirt.org/formatdomain.html#elementsNUMATuning',
+                    'o   guestNumaNodes={cpus:val,memory:val} cpus and memory '
+                    'in libvirt-like format. See Guest NUMA topology section '
+                    'in http://libvirt.org/formatdomain.html#elementsCPU'
                     )),
         'vmUpdateDevice': (serv.vmUpdateDevice,
                            ('<vmId> <devicespec>',

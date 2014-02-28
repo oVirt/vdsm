@@ -251,6 +251,10 @@ class TestVm(TestCaseBase):
               <feature name="sse4.2" policy="require"/>
               <feature name="svm" policy="disable"/>
               <topology cores="2" sockets="40" threads="2"/>
+              <numa>
+                  <cell cpus="0-1" memory="512000"/>
+                  <cell cpus="2,3" memory="512000"/>
+              </numa>
           </cpu> """
         cputuneXML = """
           <cputune>
@@ -258,15 +262,26 @@ class TestVm(TestCaseBase):
               <vcpupin cpuset="0-1" vcpu="0"/>
           </cputune> """
 
+        numatuneXML = """
+          <numatune>
+              <memory mode="strict" nodeset="0-1"/>
+          </numatune> """
+
         vmConf = {'cpuType': "Opteron_G4,+sse4_1,+sse4_2,-svm",
                   'smpCoresPerSocket': 2, 'smpThreadsPerCore': 2,
-                  'cpuPinning': {'0': '0-1', '1': '2-3'}}
+                  'cpuPinning': {'0': '0-1', '1': '2-3'},
+                  'numaTune': {'mode': 'strict', 'nodeset': '0-1'},
+                  'guestNumaNodes': [{'cpus': '0-1', 'memory': '512000'},
+                  {'cpus': '2,3', 'memory': 512000}]}
         vmConf.update(self.conf)
         domxml = vm._DomXML(vmConf, self.log,
                             caps.Architecture.X86_64)
         domxml.appendCpu()
         self.assertXML(domxml.dom, cpuXML, 'cpu')
         self.assertXML(domxml.dom, cputuneXML, 'cputune')
+
+        domxml.appendNumaTune()
+        self.assertXML(domxml.dom, numatuneXML, 'numatune')
 
     def testChannelXML(self):
         channelXML = """

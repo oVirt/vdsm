@@ -1126,7 +1126,37 @@ class _DomXML:
                                             cpuset=cpuPinning[cpuPin])
             self.dom.appendChild(cputune)
 
+        #Guest numa topology support
+        # see http://www.ovirt.org/Features/NUMA_and_Virtual_NUMA
+        if 'guestNumaNodes' in self.conf:
+            numa = XMLElement('numa')
+            guestNumaNodes = self.conf.get('guestNumaNodes')
+            for vmCell in guestNumaNodes:
+                numa.appendChildWithArgs('cell',
+                                         cpus=vmCell['cpus'],
+                                         memory=str(vmCell['memory']))
+            cpu.appendChild(numa)
+
         self.dom.appendChild(cpu)
+
+    #Guest numatune support
+    def appendNumaTune(self):
+        """
+        Add guest numatune definition.
+
+        <numatune>
+            <memory mode='strict' nodeset='0-1'/>
+        </numatune>
+        """
+
+        if 'numaTune' in self.conf:
+            numaTune = self.conf.get('numaTune')
+            if 'nodeset' in numaTune.keys():
+                mode = numaTune.get('mode', 'strict')
+                numatune = XMLElement('numatune')
+                numatune.appendChildWithArgs('memory', mode=mode,
+                                             nodeset=numaTune['nodeset'])
+                self.dom.appendChild(numatune)
 
     def _appendAgentDevice(self, path, name):
         """
@@ -2980,6 +3010,9 @@ class Vm(object):
             domxml.appendFeatures()
 
         domxml.appendCpu()
+
+        domxml.appendNumaTune()
+
         if utils.tobool(self.conf.get('vmchannel', 'true')):
             domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
                                       _VMCHANNEL_DEVICE_NAME)

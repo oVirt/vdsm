@@ -70,6 +70,9 @@ class vdsClientTest(TestCaseBase):
                     'devices={nicModel:virtio,macAddr:5F:45:00:95:F6:3F,'
                     'network:virbr0,alias:net0,address:{slot:0x03,bus:0x00,'
                     'domain:0x0000,type:pci,function:0x0}}',
+                    'guestNumaNodes={cpus:0-1,memory:1048576}',
+                    'guestNumaNodes={cpus:2-3,memory:1048576}',
+                    'numaTune={mode:strict,nodeset:0}',
                     'cpuPinning={0:0,1:1}']
         allArgs = plainArgs + nestArgs
 
@@ -78,6 +81,7 @@ class vdsClientTest(TestCaseBase):
                         'bridge': 'virbr0',
                         'cdrom': '/path/to/some.iso',
                         'cpuPinning': {'0': '0', '1': '1'},
+                        'numaTune': {'mode': 'strict', 'nodeset': '0'},
                         'devices': [{'device': 'ide', 'type': 'controller'},
                                     {'address': {'bus': '0x00',
                                                  'domain': '0x0000',
@@ -102,7 +106,11 @@ class vdsClientTest(TestCaseBase):
                         'smp': '2',
                         'vmId': '209b27e4-aed3-11e1-a547-00247edb4743',
                         'vmName': 'rhel62vdsm',
-                        'vmType': 'kvm'}
+                        'vmType': 'kvm',
+                        'guestNumaNodes': [{'cpus': '0-1',
+                                            'memory': '1048576'},
+                                           {'cpus': '2-3',
+                                            'memory': '1048576'}]}
 
         # test parsing only arguments
         r1 = serv.do_create(['/dev/null'] + allArgs)
@@ -120,6 +128,11 @@ class vdsClientTest(TestCaseBase):
 
         # changing one argument should result a different dictionary
         allArgs[-1] = 'cpuPinning={0:1,1:0}'
+        r4 = serv.do_create(['/dev/null'] + allArgs)
+        self.assertNotEquals(r4, expectResult)
+
+        # changing one argument should result a different dictionary
+        allArgs[-2] = 'numaTune={mode:strict,nodeset:1}'
         r4 = serv.do_create(['/dev/null'] + allArgs)
         self.assertNotEquals(r4, expectResult)
 

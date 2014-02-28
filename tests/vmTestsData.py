@@ -26,10 +26,11 @@ CONF_TO_DOMXML_X86_64 = [({
     'boot': '', 'timeOffset': 0,
     'acpiEnable': 'true', 'cpuType': 'qemu64',
     'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
-    'smp': '1', 'cpuPinning': {}, 'maxVCpus': '160',
+    'smp': '1', 'cpuPinning': {}, 'numaTune': {}, 'maxVCpus': '160',
     'vmchannel': 'true', 'qgaEnable': 'true',
     'tabletEnable': False,
-    'displayNetwork': 'mydisp', 'custom': {}},
+    'displayNetwork': 'mydisp', 'custom': {},
+    'guestNumaNodes': []},
 
     """<?xml version="1.0" encoding="utf-8"?>
         <domain type="kvm">
@@ -84,6 +85,7 @@ CONF_TO_DOMXML_X86_64 = [({
                     <model>qemu64</model>
                     <feature name="svm" policy="disable"/>
                     <topology cores="1" sockets="160" threads="1"/>
+                    <numa/>
                 </cpu>
             </domain>
 """, )]
@@ -96,10 +98,11 @@ CONF_TO_DOMXML_PPC64 = [({
     'boot': '', 'timeOffset': 0,
     'acpiEnable': 'true', 'cpuType': 'qemu64',
     'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
-    'smp': '1', 'cpuPinning': {}, 'maxVCpus': '160',
+    'smp': '1', 'cpuPinning': {}, 'numaTune': {}, 'maxVCpus': '160',
     'vmchannel': 'true', 'qgaEnable': 'true',
     'tabletEnable': False,
-    'displayNetwork': 'mydisp', 'custom': {}},
+    'displayNetwork': 'mydisp', 'custom': {},
+    'guestNumaNodes': []},
 
     """<?xml version="1.0" encoding="utf-8"?>
         <domain type="kvm"
@@ -140,6 +143,7 @@ CONF_TO_DOMXML_PPC64 = [({
                 <cputune/>
                 <cpu>
                     <topology cores="1" sockets="160" threads="1"/>
+                    <numa/>
                 </cpu>
                 <qemu:commandline>
                     <qemu:arg value="-usbdevice"/>

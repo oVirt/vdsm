@@ -945,6 +945,39 @@
  'key': 'SoftwarePackage', 'value': 'SoftwarePackageInfo'}
 
 ##
+# @NumaTune:
+#
+# Information about a vm numatune configuration
+#
+# @mode:        The numatune mode. Either 'interleave', 'strict',
+#               or 'preferred', defaults to 'strict'.
+#
+# @nodeset:     Specify the numa nodes that the vm will use. Refer to
+#               http://libvirt.org/formatdomain.html#elementsNUMATuning
+#               for the format details.
+#
+# Since: 4.15.0
+##
+{'type': 'NumaTune',
+ 'data': {'mode': 'str', 'nodeset': 'str'}}
+
+##
+# @GuestNumaNode:
+#
+# Information about a guest numa node(also known as cell)
+#
+# @cpus:        The guest cpu ids in this guest numa node. Refer to
+#               http://libvirt.org/formatdomain.html#elementsCPU
+#               for the format details.
+#
+# @memory:      The total memory of this guest numa node in KB.
+#
+# Since: 4.15.0
+##
+{'type': 'GuestNumaNode',
+ 'data': {'cpus': 'str', 'memory': 'int'}}
+
+##
 # @VdsmCapabilities:
 #
 # Host information and capabilities.
@@ -3047,6 +3080,10 @@
 #
 # @launchPaused:          #optional If present, launch the VM in pause mode.
 #
+# @numaTune:              #optional Indicates the numatune configuration.
+#
+# @guestNumaNodes:        #optional Indicates the guest numa topology.
+#
 # Since: 4.10.0
 ##
 {'type': 'VmParameters',
@@ -3056,7 +3093,8 @@
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
           'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
-          'vmType': 'VmType', '*launchPaused': 'bool'}}
+          'vmType': 'VmType', '*launchPaused': 'bool',
+          'numaTune': 'NumaTune', 'guestNumaNodes': ['GuestNumaNode']}}
 
 ##
 # @VmInfo:
