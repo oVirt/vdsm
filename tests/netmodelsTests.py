@@ -138,7 +138,7 @@ class TestNetmodels(TestCaseBase):
     def testTextualRepr(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
-                    'bondings': {}}
+                    'bondings': {}, 'bridges': {}}
         fakeInfo = netinfo.NetInfo(_netinfo)
         nic1 = Nic('testnic1', None, _netinfo=fakeInfo)
         nic2 = Nic('testnic2', None, _netinfo=fakeInfo)

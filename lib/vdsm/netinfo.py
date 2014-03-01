@@ -747,6 +747,7 @@ class NetInfo(object):
         self.vlans = _netinfo['vlans']
         self.nics = _netinfo['nics']
         self.bondings = _netinfo['bondings']
+        self.bridges = _netinfo['bridges']
 
     def updateDevices(self):
         """Updates the object device information while keeping the cached
@@ -756,6 +757,7 @@ class NetInfo(object):
         self.vlans = _netinfo['vlans']
         self.nics = _netinfo['nics']
         self.bondings = _netinfo['bondings']
+        self.bridges = _netinfo['bridges']
 
     def getNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (bridge/network, vlan) connected to  nic/bond """

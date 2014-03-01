@@ -88,6 +88,11 @@ class TestConfigNetwork(TestCaseBase):
             },
             'nics': ['eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6',
                      'eth7', 'eth8', 'eth9', 'eth10'],
+            'bridges': {
+                'fakebr': {'ports': ['eth0', 'eth1']},
+                'fakebr1': {'ports': ['bond00']},
+                'fakebr2': {'ports': ['eth7.1']}
+            },
             'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}}
         }
 
