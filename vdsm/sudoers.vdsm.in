@@ -2,8 +2,7 @@ Cmnd_Alias VDSM_LIFECYCLE = \
     @DMIDECODE_PATH@, \
     @VDSMDIR@/mk_sysprep_floppy, \
     @SERVICE_PATH@ ksmtuned *, \
-    @SERVICE_PATH@ ksm *, \
-    @VDSMDIR@/prepare-vmchannel
+    @SERVICE_PATH@ ksm *
 Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @FSCK_PATH@ -p *, \
     @TUNE2FS_PATH@ -j *, \
