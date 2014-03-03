@@ -56,6 +56,10 @@ _tmpinitramfs = False
 VM_MINIMAL_UPTIME = 30
 
 
+class VDSMConnectionError(Exception):
+    pass
+
+
 def setUpModule():
     # global used in order to keep the iniramfs image persistent across
     # different VM tests
@@ -113,7 +117,12 @@ class RunningVm(object):
         'fedora': 'rd.break=cmdline rd.shell rd.skipfsck',
         'rhel': 'rd.break=cmdline rd.shell rd.skipfsck'}
 
-    def __init__(self, vdsm, vmDef, distro='fedora'):
+    def __init__(self, vdsm, vmDef, distro='fedora',
+                 kernelPath=None, initramfsPath=None):
+        if kernelPath is None:
+            kernelPath = _kernelPath
+        if initramfsPath is None:
+            initramfsPath = _initramfsPath
         if distro.lower() not in self.KERNEL_ARGS_DISTRO:
             raise SkipTest("Don't know how to perform direct kernel boot for "
                            "%s" % distro)
@@ -125,24 +134,32 @@ class RunningVm(object):
                           'memSize': '256',
                           'vmType': 'kvm',
                           'kernelArgs': self.KERNEL_ARGS_DISTRO[distro],
-                          'kernel': _kernelPath,
-                          'initrd': _initramfsPath}
+                          'kernel': kernelPath,
+                          'initrd': initramfsPath}
         self._template.update(vmDef)
         self._vdsm = vdsm
 
-    def __enter__(self):
+    def start(self):
         self._id = self._template['vmId']
         self._vdsm.create(self._template)
         return self._id
 
-    def __exit__(self, type, value, traceback):
+    def stop(self):
         status, msg = self._vdsm.destroy(self._id)
         if status != SUCCESS:
-            raise Exception(msg)
+            raise VDSMConnectionError(msg)
+        else:
+            return SUCCESS
+
+    def __enter__(self):
+        return self.start()
+
+    def __exit__(self, type, value, traceback):
+        self.stop()
 
 
 @expandPermutations
-class VirtTest(TestCaseBase):
+class VirtTestBase(TestCaseBase):
     UPSTATES = frozenset((vmstatus.UP, vmstatus.POWERING_UP))
 
     def setUp(self):
@@ -167,6 +184,10 @@ class VirtTest(TestCaseBase):
         result = self._getVmStatus(vmid)
         self.assertIn(result['status'], self.UPSTATES)
 
+    def assertVmDown(self, vmid):
+        result = self._getVmStatus(vmid)
+        self.assertEqual(result['status'], vmstatus.DOWN)
+
     def assertGuestUp(self, vmid, targetUptime=0):
         result = self._getVmStatus(vmid)
         if targetUptime > 0:
@@ -174,17 +195,27 @@ class VirtTest(TestCaseBase):
         else:
             self.assertEquals(result['status'], vmstatus.UP)
 
-    def _waitForStartup(self, vmid, targetUptime=0):
+    def _waitForBoot(self, vmid):
         self.retryAssert(partial(self.assertQemuSetupComplete, vmid),
                          timeout=10)
         self.retryAssert(partial(self.assertVmBooting, vmid),
                          timeout=3)
         self.retryAssert(partial(self.assertVmUp, vmid),
                          timeout=10)
+
+    def _waitForStartup(self, vmid, targetUptime=0):
+        self._waitForBoot(vmid)
         # 20 % more time on timeout
         self.retryAssert(partial(self.assertGuestUp, vmid, targetUptime),
                          timeout=math.ceil(targetUptime * 1.2))
 
+    def _waitForShutdown(self, vmid):
+        self.retryAssert(partial(self.assertVmDown, vmid),
+                         timeout=10)
+
+
+@expandPermutations
+class VirtTest(VirtTestBase):
     @requireKVM
     def testSimpleVm(self):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',

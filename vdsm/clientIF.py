@@ -19,6 +19,7 @@
 #
 
 import os
+import os.path
 import time
 import threading
 from xml.dom import minidom
@@ -415,6 +416,19 @@ class clientIF:
                                        'process with id: %s',
                                        vmId, exc_info=True)
 
+            # we do this to safely handle VMs which disappeared
+            # from the host while VDSM was down/restarting
+            recVms = self._getVDSMVmsFromRecovery()
+            if recVms:
+                self.log.warning('Found %i VMs from recovery files not'
+                                 ' reported by libvirt.'
+                                 ' This should not happen!'
+                                 ' Will try to recover them.', len(recVms))
+            for vmId in recVms:
+                if not self._recoverVm(vmId):
+                    self.log.warning('VM %s failed to recover from recovery'
+                                     ' file, reported as Down', vmId)
+
             while (self._enabled and
                    vmstatus.WAIT_FOR_LAUNCH in [v.lastStatus for v in
                                                 self.vmContainer.values()]):
@@ -491,6 +505,15 @@ class clientIF:
             else:
                 if self.isVDSMVm(vm):
                     vms.append(vm)
+        return vms
+
+    def _getVDSMVmsFromRecovery(self):
+        vms = []
+        for f in os.listdir(constants.P_VDSM_RUN):
+            vmId, fileType = os.path.splitext(f)
+            if fileType == ".recovery":
+                if vmId not in self.vmContainer:
+                    vms.append(vmId)
         return vms
 
     def _recoverVm(self, vmid):

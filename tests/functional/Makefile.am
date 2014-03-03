@@ -30,6 +30,7 @@ dist_vdsmfunctests_PYTHON = \
 	supervdsmFuncTests.py \
 	utils.py \
 	virtTests.py \
+	vmRecoveryTests.py \
 	storageTests.py \
 	veth.py \
 	$(NULL)
