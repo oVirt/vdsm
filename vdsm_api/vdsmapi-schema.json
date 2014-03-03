@@ -5635,13 +5635,16 @@
 # @migration failed:        The VM failed to migrate, and do not
 #                           moved from the source host
 #
+# @libvirt domain missing:  Failed to find the libvirt domain for the VM
+#
 # Since: 4.15.0
 ##
 {'enum': 'VmExitReason',
  'data': ['success', 'generic error',
           'lost qemu connection', 'libvirt start failed',
           'migration succeeded', 'save state succeeded',
-          'admin shutdown', 'user shutdown', 'migration failed']}
+          'admin shutdown', 'user shutdown', 'migration failed',
+          'libvirt domain missing']}
 
 ##
 # @ExitedVmStats:

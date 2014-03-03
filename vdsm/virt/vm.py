@@ -1521,6 +1521,10 @@ class StorageUnavailableError(Exception):
     pass
 
 
+class MissingLibvirtDomainError(Exception):
+    pass
+
+
 class Vm(object):
     """
     Used for abstracting communication between various parts of the
@@ -1931,8 +1935,13 @@ class Vm(object):
                     # behaviors on VM start/destroy, because the tuning can be
                     # done automatically according to its statistical data.
                     self.cif.ksmMonitor.adjust()
-            except Exception:
-                if not self.recovering:
+            except Exception as e:
+                # we cannot continue without a libvirt domain object
+                # to avoid state desync or worse split-brain scenarios.
+                if isinstance(e, libvirt.libvirtError) and \
+                   e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    raise MissingLibvirtDomainError()
+                elif not self.recovering:
                     raise
                 else:
                     self.log.info("Skipping errors on recovery", exc_info=True)
@@ -1958,6 +1967,16 @@ class Vm(object):
 
             self.recovering = False
             self.saveState()
+        except MissingLibvirtDomainError:
+            # we cannot ever deal with this error, not even on recovery.
+            self.setDownStatus(
+                self.conf.get(
+                    'exitCode', ERROR),
+                self.conf.get(
+                    'exitReason', vmexitreason.LIBVIRT_DOMAIN_MISSING),
+                self.conf.get(
+                    'exitMessage', ''))
+            self.recovering = False
         except Exception as e:
             if self.recovering:
                 self.log.info("Skipping errors on recovery", exc_info=True)
