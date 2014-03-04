@@ -254,7 +254,7 @@ class NetworkTest(TestCaseBase):
 
     def assertMtu(self, mtu, *elems):
         for elem in elems:
-            self.assertEquals(mtu, self.vdsm_net.getMtu(elem))
+            self.assertEquals(int(mtu), int(self.vdsm_net.getMtu(elem)))
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -1890,3 +1890,40 @@ class NetworkTest(TestCaseBase):
             bonds[BONDING_NAME] = {'remove': True}
             status, msg = self.vdsm_net.setupNetworks({}, bonds, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testLowerMtuDoesNotOverride(self):
+        """Adding multiple vlanned networks with different mtus over a bond
+        should have each network with its own mtu and the bond with the maximum
+        mtu amongst all the configured networks"""
+        with dummyIf(2) as nics:
+            MTU_LOWEST, MTU_MAX, MTU_STEP = 2200, 3000, 100
+
+            # We need the dictionary to at least have one smaller mtu network
+            # handled after a bigger mtu one. The dictionary order depends on
+            # the string hash, so having the net names in deceasing and mtu
+            # values in increasing order will help.
+            networks = dict(
+                (NETWORK_NAME + str(MTU_MAX - mtu),
+                 {'mtu': mtu, 'bonding': BONDING_NAME, 'vlan': mtu}) for mtu in
+                range(MTU_LOWEST, MTU_MAX, MTU_STEP))
+            bonds = {BONDING_NAME: {'nics': nics}}
+
+            status, msg = self.vdsm_net.setupNetworks(networks, bonds, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            for network, attributes in networks.iteritems():
+                self.assertNetworkExists(network)
+                self.assertMtu(attributes['mtu'], network)
+
+            # Check that the bond's mtu is the maximum amongst the networks,
+            # which range [MTU_LOWEST, MTU_MAX - MTU_STEP]
+            self.assertMtu(MTU_MAX - MTU_STEP, BONDING_NAME)
+
+            # cleanup
+            for network in networks.iterkeys():
+                networks[network] = {'remove': True}
+            bonds['BONDING_NAME'] = {'remove': True}
+            status, msg = self.vdsm_net.setupNetworks(networks, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)

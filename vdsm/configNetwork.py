@@ -644,6 +644,7 @@ def setupNetworks(networks, bondings, **options):
             logger.debug("Adding network %r" % network)
             addNetwork(network, configurator=configurator,
                        implicitBonding=True, _netinfo=_netinfo, **d)
+            _netinfo.updateDevices()  # Things like a bond mtu can change
 
         if utils.tobool(options.get('connectivityCheck', True)):
             logger.debug('Checking connectivity...')
