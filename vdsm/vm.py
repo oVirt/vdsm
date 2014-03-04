@@ -1363,6 +1363,11 @@ class NetworkInterfaceDevice(VmDevice):
             self.driver['name'] = vhosts.get(self.network, False)
 
         try:
+            self.driver['queues'] = self.custom['queues']
+        except KeyError:
+            pass    # interface queues not specified
+
+        try:
             self.sndbufParam = self.conf['custom']['sndbuf']
         except KeyError:
             pass    # custom_sndbuf not specified
@@ -1390,7 +1395,7 @@ class NetworkInterfaceDevice(VmDevice):
             <mac address="aa:bb:dd:dd:aa:bb"/>
             <model type="virtio"/>
             <source bridge="engine"/>
-            [<driver name="vhost/qemu"/>]
+            [<driver name="vhost/qemu" queues="int"/>]
             [<filterref filter='filter name'/>]
             [<tune><sndbuf>0</sndbuf></tune>]
             [<link state='up|down'/>]
