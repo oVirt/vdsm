@@ -1356,8 +1356,12 @@ class NetworkInterfaceDevice(VmDevice):
 
     def _customize(self):
         # Customize network device
+        self.driver = {}
+
         vhosts = self._getVHostSettings()
-        self.driver = vhosts.get(self.network, False)
+        if vhosts:
+            self.driver['name'] = vhosts.get(self.network, False)
+
         try:
             self.sndbufParam = self.conf['custom']['sndbuf']
         except KeyError:
@@ -1386,6 +1390,7 @@ class NetworkInterfaceDevice(VmDevice):
             <mac address="aa:bb:dd:dd:aa:bb"/>
             <model type="virtio"/>
             <source bridge="engine"/>
+            [<driver name="vhost/qemu"/>]
             [<filterref filter='filter name'/>]
             [<tune><sndbuf>0</sndbuf></tune>]
             [<link state='up|down'/>]
@@ -1411,7 +1416,7 @@ class NetworkInterfaceDevice(VmDevice):
             iface.appendChildWithArgs('boot', order=self.bootOrder)
 
         if self.driver:
-            iface.appendChildWithArgs('driver', name=self.driver)
+            iface.appendChildWithArgs('driver', **self.driver)
 
         if self.sndbufParam:
             tune = iface.appendChildWithArgs('tune')
