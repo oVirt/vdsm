@@ -53,27 +53,7 @@ if HOOKS
 WITH_HOOKS = --define="with_hooks 1"
 endif
 
-# When fixing a file to conform with pep8 add it to the WL here so it will be
-# checkd from now on
-PEP8_WHITELIST = \
-	client \
-	lib/vdsm/*.py \
-	lib/vdsm/*.py.in \
-	tests \
-	vds_bootstrap \
-	vdsm-tool \
-	vdsm/*.py \
-	vdsm/*.py.in \
-	vdsm/netconf \
-	vdsm/sos/vdsm.py.in \
-	vdsm/storage \
-	vdsm/vdsm \
-	vdsm_api \
-	vdsm_hooks \
-	vdsm_reg \
-	$(NULL)
-
-PEP8_BLACKLIST = config.py,constants.py
+PEP8_BLACKLIST = config.py,constants.py,crossImportsTests.py,vdsm.py
 
 SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 	'lv' from line .*"
@@ -84,8 +64,7 @@ check-local:
 		grep -w -v $(SKIP_PYFLAKES_ERR) | \
 		while read LINE; do echo "$$LINE"; false; done
 	$(PEP8) --version
-	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' \
-		$(PEP8_WHITELIST)
+	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' .
 	@if test -f .gitignore; then \
 	  for i in `git ls-files \*.in`; do \
 	    if ! grep -q -x $${i%%.in} .gitignore; then \

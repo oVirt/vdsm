@@ -40,6 +40,7 @@ def addBridgeToLibvirt(bridgeName):
             '''<network><name>%s</name><forward mode='bridge'/><bridge '''
             '''name='%s'/></network>''' % (bridgeName, bridgeName))
 
+
 @expose('dummybr')
 def main():
     """
