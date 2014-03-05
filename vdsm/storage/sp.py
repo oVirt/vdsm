@@ -201,8 +201,13 @@ class StoragePool(object):
         for sdUUID in self.getDomains(activeOnly=True):
             if sdUUID == self.masterDomain.sdUUID:
                 continue
+            try:
+                domain = sdCache.produce(sdUUID)
+            except se.StorageDomainDoesNotExist:
+                self.log.exception("Error producing domain %s, ignoring",
+                                   sdUUID)
+                continue
 
-            domain = sdCache.produce(sdUUID)
             if domain.getDomainRole() == sd.REGULAR_DOMAIN:
                 continue
 
