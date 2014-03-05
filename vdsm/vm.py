@@ -1240,12 +1240,13 @@ class _DomXML:
 
 class VmDevice(object):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
-                 'conf', 'log', '_deviceXML', 'type')
+                 'conf', 'log', '_deviceXML', 'type', 'custom')
 
     def __init__(self, conf, log, **kwargs):
         self.conf = conf
         self.log = log
         self.specParams = {}
+        self.custom = kwargs.pop('custom', {})
         for attr, value in kwargs.iteritems():
             try:
                 setattr(self, attr, value)
@@ -1338,7 +1339,7 @@ class SoundDevice(VmDevice):
 
 class NetworkInterfaceDevice(VmDevice):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
-                 'linkActive', 'portMirroring', 'custom', 'filter',
+                 'linkActive', 'portMirroring', 'filter',
                  'sndbufParam', 'driver', 'name')
 
     def __init__(self, conf, log, **kwargs):
@@ -2970,7 +2971,7 @@ class Vm(object):
 
         for devType in self._devices:
             for dev in self._devices[devType]:
-                if getattr(dev, 'custom', {}):
+                if dev.custom:
                     yield dev
 
     def _appendDevices(self, domxml):
@@ -3299,10 +3300,9 @@ class Vm(object):
 
         nicParams = params['nic']
         nic = NetworkInterfaceDevice(self.conf, self.log, **nicParams)
-        customProps = getattr(nic, 'custom', {})
         nicXml = nic.getXML().toprettyxml(encoding='utf-8')
         nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
-                                          params=customProps)
+                                          params=nic.custom)
         nic._deviceXML = nicXml
         self.log.debug("Hotplug NIC xml: %s", nicXml)
 
@@ -3311,7 +3311,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.error("Hotplug failed", exc_info=True)
             nicXml = hooks.after_nic_hotplug_fail(
-                nicXml, self.conf, params=customProps)
+                nicXml, self.conf, params=nic.custom)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             return {'status': {'code': errCode['hotplugNic']['status']['code'],
@@ -3327,7 +3327,7 @@ class Vm(object):
             self.saveState()
             self._getUnderlyingNetworkInterfaceInfo()
             hooks.after_nic_hotplug(nicXml, self.conf,
-                                    params=customProps)
+                                    params=nic.custom)
 
         if hasattr(nic, 'portMirroring'):
             mirroredNetworks = []
@@ -3501,10 +3501,9 @@ class Vm(object):
                 for network in nicParams['portMirroring']:
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
-            customProps = getattr(nic, 'custom', {})
             nicXml = nic.getXML().toprettyxml(encoding='utf-8')
             hooks.before_nic_hotunplug(nicXml, self.conf,
-                                       params=customProps)
+                                       params=nic.custom)
             self.log.debug("Hotunplug NIC xml: %s", nicXml)
         else:
             self.log.error("Hotunplug NIC failed - NIC not found: %s",
@@ -3542,13 +3541,13 @@ class Vm(object):
                 self._devices[NIC_DEVICES].append(nic)
             self.saveState()
             hooks.after_nic_hotunplug_fail(nicXml, self.conf,
-                                           params=customProps)
+                                           params=nic.custom)
             return {
                 'status': {'code': errCode['hotunplugNic']['status']['code'],
                            'message': e.message}}
 
         hooks.after_nic_hotunplug(nicXml, self.conf,
-                                  params=customProps)
+                                  params=nic.custom)
         return {'status': doneCode, 'vmList': self.status()}
 
     def setNumberOfCpus(self, numberOfCpus):
@@ -3625,12 +3624,11 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return errCode['noimpl']
 
-        customProps = getattr(drive, 'custom', {})
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotplug disk xml: %s" % (driveXml))
 
         driveXml = hooks.before_disk_hotplug(driveXml, self.conf,
-                                             params=customProps)
+                                             params=drive.custom)
         drive._deviceXML = driveXml
         try:
             self._dom.attachDevice(driveXml)
@@ -3655,7 +3653,7 @@ class Vm(object):
             self.saveState()
             self._getUnderlyingDriveInfo()
             hooks.after_disk_hotplug(driveXml, self.conf,
-                                     params=customProps)
+                                     params=drive.custom)
 
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -3679,7 +3677,6 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return errCode['noimpl']
 
-        customProps = getattr(drive, 'custom', {})
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotunplug disk xml: %s", driveXml)
         # Remove found disk from vm's drives list
@@ -3699,7 +3696,7 @@ class Vm(object):
         self.saveState()
 
         hooks.before_disk_hotunplug(driveXml, self.conf,
-                                    params=customProps)
+                                    params=drive.custom)
         try:
             self._dom.detachDevice(driveXml)
         except libvirt.libvirtError as e:
@@ -3717,7 +3714,7 @@ class Vm(object):
                            'message': e.message}}
         else:
             hooks.after_disk_hotunplug(driveXml, self.conf,
-                                       params=customProps)
+                                       params=drive.custom)
             self._cleanupDrives(drive)
 
         return {'status': doneCode, 'vmList': self.status()}
