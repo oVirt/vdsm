@@ -53,7 +53,12 @@ if HOOKS
 WITH_HOOKS = --define="with_hooks 1"
 endif
 
-PEP8_BLACKLIST = config.py,constants.py,crossImportsTests.py,vdsm.py
+PEP8_BLACKLIST = \
+	config.py \
+	constants.py \
+	crossImportsTests.py \
+	vdsm.py \
+	$(NULL)
 
 SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 	'lv' from line .*"
@@ -64,7 +69,10 @@ check-local:
 		grep -w -v $(SKIP_PYFLAKES_ERR) | \
 		while read LINE; do echo "$$LINE"; false; done
 	$(PEP8) --version
-	$(PEP8) --exclude="$(PEP8_BLACKLIST)" --filename '*.py,*.py.in' .
+	for x in $(PEP8_BLACKLIST); do \
+	    exclude="$${exclude},$${x}" ; \
+	done ; \
+	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' .
 	@if test -f .gitignore; then \
 	  for i in `git ls-files \*.in`; do \
 	    if ! grep -q -x $${i%%.in} .gitignore; then \
