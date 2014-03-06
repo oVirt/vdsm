@@ -43,4 +43,4 @@ def set_saslpasswd():
         stderr=subprocess.PIPE, close_fds=True)
     output, err = p.communicate()
     if p.returncode != 0:
-        raise Exception("Set password failed: %s" % (err, ))
+        raise RuntimeError("Set password failed: %s" % (err,))
