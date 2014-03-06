@@ -314,9 +314,7 @@ parameters = [
 ]
 
 
-def __prepare_config():
-    global config
-
+def set_defaults(config):
     for section, keylist in parameters:
         config.add_section(section)
         for key, value, comment in keylist:
@@ -339,7 +337,7 @@ def print_config():
             print
 
 config = ConfigParser.ConfigParser()
-__prepare_config()
+set_defaults(config)
 config.read([os.path.join('@CONFDIR@', 'vdsm.conf')])
 
 if __name__ == '__main__':
