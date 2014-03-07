@@ -207,8 +207,7 @@ class BindingXMLRPC(object):
                                    exc_info=True)
 
             def parse_request(self):
-                r = (SecureXMLRPCServer.SecureXMLRPCRequestHandler.
-                     parse_request(self))
+                r = basehandler.parse_request(self)
                 threadLocal.flowID = self.headers.get(HTTP_HEADER_FLOWID)
                 return r
 
