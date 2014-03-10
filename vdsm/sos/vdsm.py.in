@@ -18,7 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import sos.plugintools
+try:
+    from sos.plugins import Plugin, RedHatPlugin
+
+    class Base(Plugin, RedHatPlugin):
+        pass
+except ImportError:
+    import sos.plugintools
+    Base = sos.plugintools.PluginBase
+
 import subprocess
 import os
 
@@ -39,12 +47,19 @@ def _importVdsmPylibModule(modName):
 config = _importVdsmPylibModule('config').config
 
 
-class vdsm(sos.plugintools.PluginBase):
+class vdsm(Base):
     """VDSM server related information
     """
 
     optionList = [("logsize", 'max size (MiB) to collect per log file', '',
                    False)]
+
+    # Make compatible com sos version >= 3
+    if not hasattr(Base, 'addCopySpec'):
+        addCopySpec = Base.add_copy_spec
+        addCopySpecLimit = Base.add_copy_spec_limit
+        collectExtOutput = Base.add_cmd_output
+        getOption = Base.get_option
 
     def __addCopySpecLogLimit(self, path, logsize=None):
         """
