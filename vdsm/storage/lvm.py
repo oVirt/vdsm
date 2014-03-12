@@ -61,7 +61,9 @@ LV_ATTR_BITS = ("voltype", "permission", "allocations", "fixedminor", "state",
 
 PV = namedtuple("PV", PV_FIELDS + ",guid")
 VG = namedtuple("VG", VG_FIELDS + ",writeable,partial")
+VG_ATTR = namedtuple("VG_ATTR", VG_ATTR_BITS)
 LV = namedtuple("LV", LV_FIELDS + ",writeable,opened,active")
+LV_ATTR = namedtuple("LV_ATTR", LV_ATTR_BITS)
 Stub = namedtuple("Stub", "name, stale")
 
 
@@ -185,19 +187,6 @@ def _tags2Tuple(sTags):
     return tuple(sTags.split(",")) if sTags else tuple()
 
 
-def _attr2NamedTuple(sAttr, attrMask, label):
-    """
-    Converts a attr string into a named tuple.
-
-    Fields are named as in attrMask.
-    """
-    Attrs = namedtuple(label, attrMask)
-    # tuple("wz--n-") = ('w', 'z', '-', '-', 'n', '-')
-    values = tuple(sAttr[:len(attrMask)])
-    attrs = Attrs(*values)
-    return attrs
-
-
 def makePV(*args):
     guid = os.path.basename(args[1])
     args += (guid,)
@@ -210,8 +199,10 @@ def makeVG(*args):
     tags = _tags2Tuple(args[VG._fields.index("tags")])
     args[VG._fields.index("tags")] = tags
     # Convert attr string into named tuple fields.
-    attrs = _attr2NamedTuple(args[VG._fields.index("attr")], VG_ATTR_BITS,
-                             "VG_ATTR")
+    # tuple("wz--n-") = ('w', 'z', '-', '-', 'n', '-')
+    sAttr = args[VG._fields.index("attr")]
+    attr_values = tuple(sAttr[:len(VG_ATTR._fields)])
+    attrs = VG_ATTR(*attr_values)
     args[VG._fields.index("attr")] = attrs
     # Convert pv_names list to tuple.
     args[VG._fields.index("pv_name")] = \
@@ -228,8 +219,9 @@ def makeLV(*args):
     tags = _tags2Tuple(args[LV._fields.index("tags")])
     args[LV._fields.index("tags")] = tags
     # Convert attr string into named tuple fields.
-    attrs = _attr2NamedTuple(args[LV._fields.index("attr")], LV_ATTR_BITS,
-                             "LV_ATTR")
+    sAttr = args[LV._fields.index("attr")]
+    attr_values = tuple(sAttr[:len(LV_ATTR._fields)])
+    attrs = LV_ATTR(*attr_values)
     args[LV._fields.index("attr")] = attrs
     # Add properties. Should be ordered as VG_PROPERTIES.
     args.append(attrs.permission == "w")  # writable
