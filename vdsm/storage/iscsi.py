@@ -41,6 +41,7 @@ import supervdsm
 IscsiPortal = namedtuple("IscsiPortal", "hostname, port")
 IscsiTarget = namedtuple("IscsiTarget", "portal, tpgt, iqn")
 
+DEFAULT_TPGT = 1
 ISCSI_DEFAULT_PORT = 3260
 SCAN_PATTERN = "/sys/class/scsi_host/host*/scan"
 
@@ -144,7 +145,15 @@ def readSessionInfo(sessionID):
 
 def addIscsiNode(iface, target, credentials=None):
     targetName = target.iqn
-    portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
+
+    # There are 2 formats for an iSCSI node record. An old style format where
+    # the path is /var/lib/iscsi/nodes/{target}/{portal} and a new style format
+    # where the portal path is a directory containing a record file for each
+    # bounded iface. Explicitly specifying tpgt on iSCSI login imposes creation
+    # of the node record in the new style format which enables to access a
+    # portal through multiple ifaces for multipathing.
+    portalStr = "%s:%d,%d" % (target.portal.hostname, target.portal.port,
+                              target.tpgt)
     with _iscsiadmTransactionLock:
         iscsiadm.node_new(iface.name, portalStr, targetName)
         try:
@@ -165,7 +174,12 @@ def addIscsiNode(iface, target, credentials=None):
 
 def removeIscsiNode(iface, target):
     targetName = target.iqn
-    portalStr = "%s:%d" % (target.portal.hostname, target.portal.port)
+
+    # Basically this command deleting a node record (see addIscsiNode).
+    # Once we create a record in the new style format by specifying a tpgt,
+    # we delete it in the same way.
+    portalStr = "%s:%d,%d" % (target.portal.hostname, target.portal.port,
+                              target.tpgt)
     with _iscsiadmTransactionLock:
         try:
             iscsiadm.node_disconnect(iface.name, portalStr, targetName)
