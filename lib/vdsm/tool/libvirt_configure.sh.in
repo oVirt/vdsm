@@ -302,12 +302,20 @@ EOF
     @SED_PATH@ -i 's/^/# VDSM backup/' "$llogr"
     @SED_PATH@ -e "/# vdsm/,/# end vdsm/d" "${llogr}" >> "${stanza}"
     local oldmod=`/usr/bin/stat --format=%a "${llogr}"`
+
+    # unpersist cmd is remove_config on ovirt-functions
+    if isOvirtNode; then
+        . /usr/libexec/ovirt-functions
+        remove_config "${llogr}"
+    fi
     @MV_PATH@ "${stanza}" "${llogr}"
+
     if [ -n "${oldmod}" ]; then
         @CHMOD_PATH@ "${oldmod}" "${llogr}"
     fi
     restorecon "${llogr}"
 
+    # persist cmd is ovirt_store_config on ovirt-functions
     if isOvirtNode; then
         . /usr/libexec/ovirt-functions
         ovirt_store_config "${lconf}" "${qconf}" "${ldconf}" "${llogr}"
