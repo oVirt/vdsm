@@ -226,7 +226,7 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         portal = iscsi.IscsiPortal(
             conDict.get('connection', None),
             int(conDict.get('port', None)))
-        tpgt = None
+        tpgt = int(conDict.get('tpgt', iscsi.DEFAULT_TPGT))
 
         target = iscsi.IscsiTarget(portal, tpgt, conDict.get('iqn', None))
 
