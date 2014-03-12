@@ -62,6 +62,7 @@ test_modules = \
 	persistentDictTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
+	samplingTests.py \
 	schemaTests.py \
 	securableTests.py \
 	sslTests.py \

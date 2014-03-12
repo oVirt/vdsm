@@ -1792,6 +1792,9 @@
 # @haStatus:        The current status of the Hosted Engine HA system
 #                   (new in version 4.14.0)
 #
+# @bootTime:        #optional The boot time of the system in seconds since
+#                   epoch (new in 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'HostStats',
@@ -1810,7 +1813,7 @@
            'dateTime': 'str', 'ksmState': 'bool', 'ksmPages': 'int',
            'ksmCpu': 'float', 'netConfigDirty': 'bool', 'generationID': 'UUID',
            'momStatus': 'MOMStatus', '*haScore': 'int',
-           'haStatus': 'HostedEngineStatus'}}
+           'haStatus': 'HostedEngineStatus', '*bootTime': 'uint'}}
 
 ##
 # @Host.getStats:

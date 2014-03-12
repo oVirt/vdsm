@@ -147,6 +147,27 @@ class BaseSample(TimedSample):
         self.pidcpu = PidCpuSample(pid)
 
 
+_PROC_STAT_PATH = '/proc/stat'
+
+
+def getBootTime():
+    """
+    Returns the boot time of the machine in seconds since epoch.
+
+    Raises IOError if file access fails, or ValueError if boot time not
+    present in file.
+    """
+    with open(_PROC_STAT_PATH) as proc_stat:
+        for line in proc_stat:
+            if line.startswith('btime'):
+                parts = line.split()
+                if len(parts) > 1:
+                    return int(parts[1])
+                else:
+                    break
+    raise ValueError('Boot time not present')
+
+
 class HostSample(BaseSample):
     """
     A sample of host-related statistics.
@@ -424,6 +445,16 @@ class HostStatsThread(threading.Thread):
             if not self._stopEvent.isSet():
                 self._log.error("Error while sampling stats", exc_info=True)
 
+    @utils.memoized
+    def _boot_time(self):
+        # Try to get boot time only once, if N/A just log the error and never
+        # include it in the response.
+        try:
+            return getBootTime()
+        except (IOError, ValueError):
+            self._log.error('Failed to get boot time', exc_info=True)
+            return None
+
     def get(self):
         stats = self._getInterfacesStats()
         stats['cpuSysVdsmd'] = stats['cpuUserVdsmd'] = 0.0
@@ -449,6 +480,10 @@ class HostStatsThread(threading.Thread):
 
         stats['diskStats'] = hs1.diskStats
         stats['thpState'] = hs1.thpState
+
+        if self._boot_time():
+            stats['bootTime'] = self._boot_time()
+
         return stats
 
     def _getInterfacesStats(self):
