@@ -2231,7 +2231,7 @@ class HSM:
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         dom = sdCache.produce(sdUUID=sdUUID)
-        if not dom.isISO or dom.getStorageType() != sd.NFS_DOMAIN:
+        if not dom.isISO or dom.getStorageType() not in sd.FILE_DOMAIN_TYPES:
             raise se.GetFileStatsError(sdUUID)
 
         fileStats = dom.getFileList(pattern=pattern,
