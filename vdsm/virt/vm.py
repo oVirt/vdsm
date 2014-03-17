@@ -4320,7 +4320,13 @@ class Vm(object):
                 max_mem = int(self.conf.get('memSize')) * 1024
                 min_mem = int(self.conf.get('memGuaranteedSize', '0')) * 1024
                 target_mem = dev.get('target', max_mem)
-                cur_mem = self._dom.info()[2]
+                try:
+                    cur_mem = self._dom.info()[2]
+                except (AttributeError, libvirt.libvirtError):
+                    # _dom may be None (race on shutdown)
+                    self.log.exception(
+                        'failed to retrieve the balloon stats')
+                    cur_mem = 0
                 return {'balloon_max': str(max_mem),
                         'balloon_cur': str(cur_mem),
                         'balloon_min': str(min_mem),
