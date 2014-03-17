@@ -17,18 +17,22 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from contextlib import contextmanager
 import re
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
 
+import libvirt
+
 import vm
 from vdsm import constants
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import namedTemporaryDir
 import caps
 from vdsm import utils
 from vdsm import libvirtconnection
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 
@@ -36,6 +40,11 @@ from vmTestsData import CONF_TO_DOMXML_PPC64
 class ConnectionMock:
     def domainEventRegisterAny(self, *arg):
         pass
+
+
+class FakeDomain:
+    def info(self):
+        raise libvirt.libvirtError(defmsg='')
 
 
 class TestVm(TestCaseBase):
@@ -655,3 +664,56 @@ class TestVm(TestCaseBase):
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLinePPC64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
+
+
+class FakeGuestAgent(object):
+    def getGuestInfo(self):
+        return {
+            'username': 'Unknown',
+            'session': 'Unknown',
+            'memUsage': 0,
+            'appsList': [],
+            'guestIPs': [],
+            'guestFQDN': '',
+            'disksUsage': [],
+            'netIfaces': [],
+            'memoryStats': {},
+            'guestCPUCount': -1}
+
+
+@contextmanager
+def FakeVM(params=None, devices=None):
+    with namedTemporaryDir() as tmpDir:
+        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
+                               (libvirtconnection, 'get',
+                                lambda x: ConnectionMock())]):
+            vmParams = {'vmId': 'TESTING'}
+            vmParams.update({} if params is None else params)
+            fake = vm.Vm(None, vmParams)
+            fake.guestAgent = FakeGuestAgent()
+            fake.conf['devices'] = [] if devices is None else devices
+            yield fake
+
+
+class TestVmStatsThread(TestCaseBase):
+    VM_PARAMS = {'displayPort': -1, 'displaySecurePort': -1,
+                 'display': 'qxl', 'displayIp': '127.0.0.1',
+                 'vmType': 'kvm', 'memSize': 1024}
+
+    DEV_BALLOON = [{'type': 'balloon', 'specParams': {'model': 'virtio'}}]
+
+    def testGetStatsNoDom(self):
+        # bz1073478 - main case
+        with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
+            self.assertEqual(fake._dom, None)
+            res = fake.getStats()
+            self.assertIn('balloonInfo', res)
+            self.assertIn('balloon_cur', res['balloonInfo'])
+
+    def testGetStatsDomInfoFail(self):
+        # bz1073478 - extra case
+        with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
+            fake._dom = FakeDomain()
+            res = fake.getStats()
+            self.assertIn('balloonInfo', res)
+            self.assertIn('balloon_cur', res['balloonInfo'])
