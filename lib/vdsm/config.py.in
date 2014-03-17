@@ -52,7 +52,7 @@ parameters = [
             'Whether to use "ifcfg" or "iproute2" to configure networks. '
             'iproute2 configurator is not ready yet for genral usage.'),
 
-        ('net_persistence', 'ifcfg',
+        ('net_persistence', 'unified',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
 
         ('hwaddr_in_ifcfg', 'always',
