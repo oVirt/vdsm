@@ -416,14 +416,43 @@ class TestVm(TestCaseBase):
                'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
                'device': 'bridge', 'type': 'interface',
                'bootOrder': '1', 'filter': 'no-mac-spoofing',
-               'specParams': {'inbound': {'average': '1000', 'peak': '5000',
-                                          'burst': '1024'},
-                              'outbound': {'average': '128', 'burst': '256'}},
+               'specParams': {'inbound': {'average': 1000, 'peak': 5000,
+                                          'burst': 1024},
+                              'outbound': {'average': 128, 'burst': 256}},
                'custom': {'queues': '7'}}
 
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
         iface = vm.NetworkInterfaceDevice(self.conf, self.log, **dev)
         self.assertXML(iface.getXML(), interfaceXML)
+
+    def testInterfaceXMLBandwidthUpdate(self):
+        originalBwidthXML = """
+                <bandwidth>
+                    <inbound average="1000" burst="1024" peak="5000"/>
+                    <outbound average="128" burst="256"/>
+                </bandwidth>"""
+        NEW_OUT = {'outbound': {'average': 1042, 'burst': 128, 'peak': 500}}
+        updatedBwidthXML = """
+                <bandwidth>
+                    <inbound average="1000" burst="1024" peak="5000"/>
+                    <outbound average="%(average)s" burst="%(burst)s"
+                    peak="%(peak)s"/>
+                </bandwidth>""" % NEW_OUT['outbound']
+
+        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+               'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
+               'device': 'bridge', 'type': 'interface',
+               'bootOrder': '1', 'filter': 'no-mac-spoofing',
+               'specParams': {'inbound': {'average': 1000, 'peak': 5000,
+                                          'burst': 1024},
+                              'outbound': {'average': 128, 'burst': 256}},
+               'custom': {'queues': '7'}}
+        self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
+        iface = vm.NetworkInterfaceDevice(self.conf, self.log, **dev)
+        originalBandwidth = iface.getXML().getElementsByTagName('bandwidth')[0]
+        self.assertXML(originalBandwidth, originalBwidthXML)
+        self.assertXML(iface.paramsToBandwidthXML(NEW_OUT, originalBandwidth),
+                       updatedBwidthXML)
 
     def testControllerXML(self):
         devConfs = [

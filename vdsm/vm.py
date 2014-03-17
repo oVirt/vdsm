@@ -1430,27 +1430,23 @@ class NetworkInterfaceDevice(VmDevice):
 
         if hasattr(self, 'specParams'):
             if 'inbound' in self.specParams or 'outbound' in self.specParams:
-                iface.appendChild(self.getXMLBandwidth(self.specParams))
+                iface.appendChild(self.paramsToBandwidthXML(self.specParams))
         return iface
 
-    def getXMLBandwidth(self, specParams, oldBandwidth=None):
+    def paramsToBandwidthXML(self, specParams, oldBandwidth=None):
+        """Returns a valid libvirt xml dom element object."""
         bandwidth = self.createXmlElem('bandwidth', None)
-        # Inbound and Outbound traffic can be independently shaped.
-        for attr in ('inbound', 'outbound'):
-            newSetting = specParams.get(attr)
-            # if newSetting is specified, replace current settings
-            if newSetting:
-                bandwidth.appendChildWithArgs(attr, **newSetting)
-            # if newSetting is not specified, keep current settings
-            elif newSetting is None:
-                if oldBandwidth is not None:
-                    attrXMLs = oldBandwidth.getElementsByTagName
-                    attrXML = attrXMLs[0] if len(attrXMLs) else None
-                else:
-                    attrXML = None
-                if attrXML is not None:
-                    bandwidth.appendChild(attrXML)
-            # if newSetting is {} do nothing = remove current settings
+        old = {} if oldBandwidth is None else dict(
+            (elem.nodeName, elem) for elem in oldBandwidth.childNodes)
+        for key in ('inbound', 'outbound'):
+            elem = specParams.get(key)
+            if elem is None:  # Use the old setting if present
+                if key in old:
+                    bandwidth.appendChild(old[key])
+            elif elem:
+                # Convert the values to string for adding them to the XML def
+                attrs = dict((key, str(value)) for key, value in elem.items())
+                bandwidth.appendChildWithArgs(key, **attrs)
         return bandwidth
 
 
@@ -3409,7 +3405,7 @@ class Vm(object):
                 ('inbound' in specParams or 'outbound' in specParams)):
             oldBandwidths = vnicXML.getElementsByTagName('bandwidth')
             oldBandwidth = oldBandwidths[0] if len(oldBandwidths) else None
-            newBandwidth = dev.getXMLBandwidth(specParams, oldBandwidth)
+            newBandwidth = dev.paramsToBandwidthXML(specParams, oldBandwidth)
             if oldBandwidth is None:
                 vnicXML.appendChild(newBandwidth)
             else:
