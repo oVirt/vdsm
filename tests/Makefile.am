@@ -80,6 +80,7 @@ test_modules = \
 	utilsTests.py \
 	vdsClientTests.py \
 	vmApiTests.py \
+	vmMigrationTests.py \
 	vmTestsData.py \
 	vmTests.py \
 	vmXmlTests.py \

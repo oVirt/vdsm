@@ -360,10 +360,19 @@ class SourceThread(threading.Thread):
                     raise
 
 
+def exponential_downtime(downtime, steps):
+    offset = downtime / float(steps)
+    base = (downtime - offset) ** (1 / float(steps - 1))
+
+    for i in range(steps):
+        yield int(offset + base ** i)
+
+
 class DowntimeThread(threading.Thread):
+    DOWNTIME_STEPS = config.getint('vars', 'migration_downtime_steps')
+
     def __init__(self, vm, downtime):
         super(DowntimeThread, self).__init__()
-        self.DOWNTIME_STEPS = config.getint('vars', 'migration_downtime_steps')
 
         self._vm = vm
         self._downtime = downtime
@@ -378,13 +387,13 @@ class DowntimeThread(threading.Thread):
     def run(self):
         self._vm.log.debug('migration downtime thread started')
 
-        for i in range(self.DOWNTIME_STEPS):
+        for downtime in exponential_downtime(self._downtime,
+                                             self.DOWNTIME_STEPS):
             self._stop.wait(self._wait / self.DOWNTIME_STEPS)
 
             if self._stop.isSet():
                 break
 
-            downtime = self._downtime * (i + 1) / self.DOWNTIME_STEPS
             self._vm.log.debug('setting migration downtime to %d', downtime)
             self._vm._dom.migrateSetMaxDowntime(downtime, 0)
 
