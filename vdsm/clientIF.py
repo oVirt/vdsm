@@ -21,7 +21,6 @@
 import os
 import time
 import threading
-import pickle
 from xml.dom import minidom
 import uuid
 
@@ -29,6 +28,7 @@ import alignmentScan
 from vdsm.config import config
 import ksm
 from momIF import MomThread, isMomAvailable
+from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode
 import libvirt
 from vdsm import libvirtconnection

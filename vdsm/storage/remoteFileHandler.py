@@ -25,7 +25,6 @@ import errno
 import glob
 import logging
 import os
-import pickle
 import signal
 import sys
 import select
@@ -47,6 +46,7 @@ else:
 import misc
 import fileUtils
 import zombiereaper
+from vdsm.compat import pickle
 from vdsm import utils
 
 

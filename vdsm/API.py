@@ -24,7 +24,6 @@ import os
 import signal
 import sys
 import copy
-import pickle
 import time
 import threading
 import logging
@@ -44,6 +43,7 @@ import storage.sd
 import storage.image
 from virt import vm
 from virt import vmstatus
+from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config

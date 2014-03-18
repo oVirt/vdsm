@@ -26,7 +26,6 @@ from xml.dom import Node
 from xml.dom.minidom import parseString as _domParseStr
 import logging
 import os
-import pickle
 import tempfile
 import threading
 import time
@@ -42,6 +41,7 @@ from vdsm import netinfo
 from vdsm import qemuImg
 from vdsm import utils
 from vdsm import vdscli
+from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode, Mbytes
 from vdsm.netinfo import DUMMY_BRIDGE

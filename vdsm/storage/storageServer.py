@@ -24,11 +24,12 @@ from os.path import normpath, basename, splitext
 import os
 from threading import RLock, Lock, Event, Thread
 import socket
-import pickle
 import glob
 from collections import namedtuple
 import misc
 from functools import partial
+
+from vdsm.compat import pickle
 
 import mount
 import fileUtils
