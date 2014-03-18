@@ -20,6 +20,7 @@
 
 SUBDIRS = \
 	client \
+	contrib \
 	debian \
 	init \
 	lib \
