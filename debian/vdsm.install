@@ -146,6 +146,7 @@
 ./usr/share/vdsm/vdsmDebugPlugin.py
 ./usr/share/vdsm/vdsmapi-schema.json
 ./usr/share/vdsm/virt/__init__.py
+./usr/share/vdsm/virt/domain_descriptor.py
 ./usr/share/vdsm/virt/guestagent.py
 ./usr/share/vdsm/virt/migration.py
 ./usr/share/vdsm/virt/sampling.py

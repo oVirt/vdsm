@@ -995,6 +995,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
+%{_datadir}/%{vdsm_name}/virt/domain_descriptor.py*
 %{_datadir}/%{vdsm_name}/virt/guestagent.py*
 %{_datadir}/%{vdsm_name}/virt/migration.py*
 %{_datadir}/%{vdsm_name}/virt/vmchannels.py*

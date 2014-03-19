@@ -57,6 +57,7 @@ import supervdsm
 import numaUtils
 
 # local package imports
+from .domain_descriptor import DomainDescriptor
 from . import guestagent
 from . import migration
 from . import vmdevices
@@ -1435,8 +1436,7 @@ class Vm(object):
         self._qemuguestSocketFile = self._makeChannelPath(_QEMU_GA_DEVICE_NAME)
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log)
-        self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
-        self._devXmlHash = 0
+        self._domain = DomainDescriptor.fromId(self.id)
         self._released = False
         self._releaseLock = threading.Lock()
         self.saveState()
@@ -1885,7 +1885,7 @@ class Vm(object):
     def saveState(self):
         self._saveStateInternal()
         try:
-            self._getUnderlyingVmInfo()
+            self._updateDomainDescriptor()
         except Exception:
             # we do not care if _dom suddenly died now
             pass
@@ -2452,7 +2452,7 @@ class Vm(object):
                                    exc_info=True)
 
         stats.update(self._getGraphicsStats())
-        stats['hash'] = str(hash((self._devXmlHash,
+        stats['hash'] = str(hash((self._domain.devicesHash,
                                   self.guestAgent.diskMappingHash)))
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
@@ -2703,7 +2703,7 @@ class Vm(object):
         This is necessary to prevent incoming migrations, restoring of VMs and
         the upgrade of VDSM with running VMs to fail on this.
         """
-        for name, path in vmxml.all_channels(self._lastXMLDesc):
+        for name, path in vmxml.all_channels(self._domain.xml):
             if name not in _AGENT_CHANNEL_DEVICES:
                 continue
 
@@ -2740,7 +2740,7 @@ class Vm(object):
         if self._dom is None:
             raise MissingLibvirtDomainError(vmexitreason.LIBVIRT_START_FAILED)
 
-        self._getUnderlyingVmInfo()
+        self._updateDomainDescriptor()
         self._getUnderlyingVmDevicesInfo()
         self._updateAgentChannels()
 
@@ -4349,14 +4349,14 @@ class Vm(object):
             graphics.setAttribute('passwdValidTo', validto)
         if graphics.getAttribute('type') == 'spice':
             graphics.setAttribute('connected', connAct)
-        hooks.before_vm_set_ticket(self._lastXMLDesc, self.conf, params)
+        hooks.before_vm_set_ticket(self._domain.xml, self.conf, params)
         try:
             self._dom.updateDeviceFlags(graphics.toxml(), 0)
         except TimeoutError as tmo:
             res = {'status': {'code': errCode['ticketErr']['status']['code'],
                               'message': unicode(tmo)}}
         else:
-            hooks.after_vm_set_ticket(self._lastXMLDesc, self.conf, params)
+            hooks.after_vm_set_ticket(self._domain.xml, self.conf, params)
             res = {'status': doneCode}
         return res
 
@@ -4426,13 +4426,9 @@ class Vm(object):
             pass
         return pid
 
-    def _getUnderlyingVmInfo(self):
-        self._lastXMLDesc = self._dom.XMLDesc(0)
-        devxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]
-        self._devXmlHash = hash(devxml.toxml())
-
-        return self._lastXMLDesc
+    def _updateDomainDescriptor(self):
+        domainXML = self._dom.XMLDesc(0)
+        self._domain = DomainDescriptor(domainXML)
 
     def _ejectFloppy(self):
         if 'volatileFloppy' in self.conf:
@@ -4484,7 +4480,7 @@ class Vm(object):
 
             self.cif.irs.inappropriateDevices(self.id)
 
-            hooks.after_vm_destroy(self._lastXMLDesc, self.conf)
+            hooks.after_vm_destroy(self._domain.xml, self.conf)
             for dev in self._customDevices():
                 hooks.after_device_destroy(dev._deviceXML, self.conf,
                                            dev.custom)
@@ -4547,7 +4543,7 @@ class Vm(object):
             hooks.before_device_destroy(dev._deviceXML, self.conf,
                                         dev.custom)
 
-        hooks.before_vm_destroy(self._lastXMLDesc, self.conf)
+        hooks.before_vm_destroy(self._domain.xml, self.conf)
         self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         self._destroyed = True
 
@@ -4648,10 +4644,7 @@ class Vm(object):
                     return True
             return False
 
-        devsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]
-
-        for x in devsxml.childNodes:
+        for x in self._domain.devices.childNodes:
             # Ignore empty nodes and devices without address
             if (x.nodeName == '#text' or
                     not x.getElementsByTagName('address')):
@@ -4673,10 +4666,7 @@ class Vm(object):
         """
         Obtain controller devices info from libvirt.
         """
-        ctrlsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]. \
-            getElementsByTagName('controller')
-        for x in ctrlsxml:
+        for x in self._domain.getDeviceElements('controller'):
             # Ignore controller devices without address
             if not x.getElementsByTagName('address'):
                 continue
@@ -4720,10 +4710,7 @@ class Vm(object):
         """
         Obtain balloon device info from libvirt.
         """
-        balloonxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]. \
-            getElementsByTagName('memballoon')
-        for x in balloonxml:
+        for x in self._domain.getDeviceElements('memballoon'):
             # Ignore balloon devices without address.
             if not x.getElementsByTagName('address'):
                 address = None
@@ -4748,10 +4735,7 @@ class Vm(object):
         """
         Obtain the alias for the console device from libvirt
         """
-        consolexml = _domParseStr(self._lastXMLDesc).childNodes[0].\
-            getElementsByTagName('devices')[0].\
-            getElementsByTagName('console')
-        for x in consolexml:
+        for x in self._domain.getDeviceElements('console'):
             # All we care about is the alias
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             for dev in self._devices[CONSOLE_DEVICES]:
@@ -4767,10 +4751,7 @@ class Vm(object):
         """
         Obtain smartcard device info from libvirt.
         """
-        smartcardxml = _domParseStr(self._lastXMLDesc).childNodes[0].\
-            getElementsByTagName('devices')[0].\
-            getElementsByTagName('smartcard')
-        for x in smartcardxml:
+        for x in self._domain.getDeviceElements('smartcard'):
             if not x.getElementsByTagName('address'):
                 continue
 
@@ -4792,10 +4773,7 @@ class Vm(object):
         """
         Obtain watchdog device info from libvirt.
         """
-        watchdogxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]. \
-            getElementsByTagName('watchdog')
-        for x in watchdogxml:
+        for x in self._domain.getDeviceElements('watchdog'):
 
             # PCI watchdog has "address" different from ISA watchdog
             if x.getElementsByTagName('address'):
@@ -4817,9 +4795,7 @@ class Vm(object):
         """
         Obtain video devices info from libvirt.
         """
-        videosxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0].getElementsByTagName('video')
-        for x in videosxml:
+        for x in self._domain.getDeviceElements('video'):
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get video card address
             address = self._getUnderlyingDeviceAddress(x)
@@ -4845,9 +4821,7 @@ class Vm(object):
         """
         Obtain sound devices info from libvirt.
         """
-        soundsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0].getElementsByTagName('sound')
-        for x in soundsxml:
+        for x in self._domain.getDeviceElements('sound'):
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get sound card address
             address = self._getUnderlyingDeviceAddress(x)
@@ -4886,12 +4860,10 @@ class Vm(object):
         """
         Obtain block devices info from libvirt.
         """
-        disksxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0].getElementsByTagName('disk')
         # FIXME!  We need to gather as much info as possible from the libvirt.
         # In the future we can return this real data to management instead of
         # vm's conf
-        for x in disksxml:
+        for x in self._domain.getDeviceElements('disk'):
             alias, devPath, name = self._getDriveIdentification(x)
             readonly = bool(x.getElementsByTagName('readonly'))
             boot = x.getElementsByTagName('boot')
@@ -4982,11 +4954,8 @@ class Vm(object):
         virsh responds: error: unsupported configuration: only 1 graphics
         device of each type (sdl, vnc, spice) is supported
         """
-        graphicsXml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]. \
-            getElementsByTagName('graphics')
 
-        for gxml in graphicsXml:
+        for gxml in self._domain.getDeviceElements('graphics'):
             port = gxml.getAttribute('port')
             tlsPort = gxml.getAttribute('tlsPort')
             graphicsType = gxml.getAttribute('type')
@@ -5015,11 +4984,7 @@ class Vm(object):
         """
         Obtain network interface info from libvirt.
         """
-        # TODO use xpath instead of parseString (here and elsewhere)
-        ifsxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]. \
-            getElementsByTagName('interface')
-        for x in ifsxml:
+        for x in self._domain.getDeviceElements('interface'):
             devType = x.getAttribute('type')
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
@@ -5091,13 +5056,13 @@ class Vm(object):
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
             if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
                     self.lastStatus == vmstatus.MIGRATION_SOURCE):
-                hooks.after_vm_migrate_source(self._lastXMLDesc, self.conf)
+                hooks.after_vm_migrate_source(self._domain.xml, self.conf)
                 for dev in self._customDevices():
                     hooks.after_device_migrate_source(
                         dev._deviceXML, self.conf, dev.custom)
             elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
                     self.lastStatus == vmstatus.SAVING_STATE):
-                hooks.after_vm_hibernate(self._lastXMLDesc, self.conf)
+                hooks.after_vm_hibernate(self._domain.xml, self.conf)
             else:
                 if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN:
                     if self._shutdownReason is None:
@@ -5442,10 +5407,10 @@ class Vm(object):
                               targetAlias)
 
         ret = {}
-        domXML = self._getUnderlyingVmInfo()
+        self._updateDomainDescriptor()
         for drive in drives:
             alias = drive['alias']
-            diskXML = lookupDeviceXMLByAlias(domXML, alias)
+            diskXML = lookupDeviceXMLByAlias(self._domain.xml, alias)
             volChain = self._diskXMLGetVolumeChainInfo(diskXML, drive)
             if volChain:
                 ret[alias] = volChain

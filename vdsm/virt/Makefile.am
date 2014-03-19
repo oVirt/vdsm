@@ -23,6 +23,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 vdsm_virtdir = $(vdsmdir)/virt
 dist_vdsm_virt_PYTHON = \
 	__init__.py \
+	domain_descriptor.py \
 	guestagent.py \
 	migration.py \
 	sampling.py \
