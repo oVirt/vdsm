@@ -40,7 +40,6 @@ import hooking
 from openstacknet_utils import DUMMY_BRIDGE
 from openstacknet_utils import EXT_BRCTL
 from openstacknet_utils import EXT_IP
-from openstacknet_utils import EXT_OVS_VSCTL
 from openstacknet_utils import INTEGRATION_BRIDGE
 from openstacknet_utils import OPENSTACK_NET_PROVIDER_TYPE
 from openstacknet_utils import PLUGIN_TYPE_KEY
@@ -52,6 +51,7 @@ from openstacknet_utils import VNIC_ID_KEY
 from openstacknet_utils import deviceExists
 from openstacknet_utils import devName
 from openstacknet_utils import executeOrExit
+from openstacknet_utils import ovs_vsctl
 
 HELP_ARG = "-h"
 TEST_ARG = "-t"
@@ -117,7 +117,7 @@ def addOvsHybridVnic(domxml, iface, portId):
         executeOrExit([EXT_BRCTL, 'addif', brName, vethBr])
 
         mac = iface.getElementsByTagName('mac')[0].getAttribute('address')
-        executeOrExit([EXT_OVS_VSCTL, '--', '--may-exist', 'add-port',
+        executeOrExit([ovs_vsctl.cmd, '--', '--may-exist', 'add-port',
                       INTEGRATION_BRIDGE, vethOvs,
                       '--', 'set', 'Interface', vethOvs,
                       'external-ids:iface-id=%s' % portId,
