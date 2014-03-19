@@ -19,7 +19,6 @@ import traceback
 import hooking
 from openstacknet_utils import EXT_BRCTL
 from openstacknet_utils import EXT_IP
-from openstacknet_utils import EXT_OVS_VSCTL
 from openstacknet_utils import INTEGRATION_BRIDGE
 from openstacknet_utils import OPENSTACK_NET_PROVIDER_TYPE
 from openstacknet_utils import PLUGIN_TYPE_KEY
@@ -29,6 +28,7 @@ from openstacknet_utils import VNIC_ID_KEY
 from openstacknet_utils import deviceExists
 from openstacknet_utils import devName
 from openstacknet_utils import executeOrExit
+from openstacknet_utils import ovs_vsctl
 
 
 def disconnectVnic(portId):
@@ -40,7 +40,7 @@ def disconnectVnic(portId):
         executeOrExit([EXT_BRCTL, 'delif', brName, vethBr])
         executeOrExit([EXT_IP, 'link', 'set', brName, 'down'])
         executeOrExit([EXT_BRCTL, 'delbr', brName])
-        executeOrExit([EXT_OVS_VSCTL, 'del-port', INTEGRATION_BRIDGE, vethOvs])
+        executeOrExit([ovs_vsctl.cmd, 'del-port', INTEGRATION_BRIDGE, vethOvs])
         executeOrExit([EXT_IP, 'link', 'delete', vethOvs])
 
 

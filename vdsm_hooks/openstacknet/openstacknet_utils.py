@@ -21,9 +21,9 @@ DEV_MAX_LENGTH = 14
 
 EXT_BRCTL = CommandPath('brctl', '/sbin/brctl', '/usr/sbin/brctl').cmd
 EXT_IP = CommandPath('ip', '/sbin/ip').cmd
-EXT_OVS_VSCTL = CommandPath('ovs-vsctl',
-                            '/usr/sbin/ovs-vsctl',
-                            '/usr/bin/ovs-vsctl').cmd
+ovs_vsctl = CommandPath('ovs-vsctl',
+                        '/usr/sbin/ovs-vsctl',
+                        '/usr/bin/ovs-vsctl')
 
 # Make pyflakes happy
 DUMMY_BRIDGE
