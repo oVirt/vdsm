@@ -20,13 +20,13 @@
 import ConfigParser
 import logging
 
-import libvirtCfg
-from netmodels import Bond, Bridge
-from sourceRoute import DynamicSourceRoute
-from sourceRoute import StaticSourceRoute
 from vdsm import netinfo
 from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
+
+from . import libvirt
+from ..models import Bond, Bridge
+from ..sourceroute import DynamicSourceRoute, StaticSourceRoute
 
 
 class RollbackIncomplete(Exception):
@@ -67,7 +67,7 @@ class Configurator(object):
         return RunningConfig().diffFrom(self.runningConfig)
 
     def flush(self):
-        libvirtCfg.flush()
+        libvirt.flush()
 
     def configureBridge(self, bridge, **opts):
         raise NotImplementedError

@@ -1,5 +1,6 @@
 #
 # Copyright 2012 Roman Fenkhuber.
+# Copyright 2012-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-
 import random
 import time
 import string
@@ -34,10 +34,11 @@ import ethtool
 
 from testrunner import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
+
 from vdsm.constants import EXT_BRCTL, EXT_TC
 from nose.plugins.skip import SkipTest
 
-import tc
+from network import tc
 import platform
 
 EXT_IP = "/sbin/ip"

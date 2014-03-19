@@ -1,4 +1,4 @@
-# Copyright 2011-2013 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,21 +27,15 @@ import logging
 
 from vdsm.config import config
 from vdsm import constants
-from vdsm import utils
-from storage.misc import execCmd
-import neterrors as ne
-from netconf import libvirtCfg
-from neterrors import ConfigNetworkError
 from vdsm import netinfo
-from netconf.ifcfg import ConfigWriter
-from netmodels import Bond
-from netmodels import Bridge
-from netmodels import IPv4
-from netmodels import IPv6
-from netmodels import IpConfig
-from netmodels import Nic
-from netmodels import Vlan
-import hooks
+from vdsm import utils
+
+from .configurators.ifcfg import ConfigWriter
+from .configurators import libvirt
+from .errors import ConfigNetworkError
+from . import errors as ne
+from .models import Bond, Bridge, IPv4, IPv6, IpConfig, Nic, Vlan
+import hooks  # TODO: Turn into parent package import when vdsm is a package
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
 
@@ -49,13 +43,13 @@ CONNECTIVITY_TIMEOUT_DEFAULT = 4
 def _getConfiguratorClass():
     configurator = config.get('vars', 'net_configurator')
     if configurator == 'iproute2':
-        from netconf.iproute2 import Iproute2
+        from .configurators.iproute2 import Iproute2
         return Iproute2
     else:
         if configurator != 'ifcfg':
             logging.warn('Invalid config for network configurator: %s. '
                          'Use ifcfg instead.', configurator)
-        from netconf.ifcfg import Ifcfg
+        from .configurators.ifcfg import Ifcfg
         return Ifcfg
 
 ConfiguratorClass = _getConfiguratorClass()
@@ -345,7 +339,7 @@ def _delBrokenNetwork(network, netAttr, configurator):
         _netinfo.networks[network]['ports'] = ConfigWriter.ifcfgPorts(network)
     elif not os.path.exists('/sys/class/net/' + netAttr['iface']):
         # Bridgeless broken network without underlying device
-        libvirtCfg.removeNetwork(network)
+        libvirt.removeNetwork(network)
         return
     delNetwork(network, configurator=configurator, force=True,
                implicitBonding=False, _netinfo=_netinfo)
@@ -675,16 +669,16 @@ def _vlanToInternalRepresentation(vlan):
 
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
-    execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
-             config.get('vars', 'net_persistence')])
+    utils.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
+                  config.get('vars', 'net_persistence')])
 
 
 def usage():
     print """Usage:
-    ./configNetwork.py add Network <attributes> <options>
-                       edit oldNetwork newNetwork <attributes> <options>
-                       del Network <options>
-                       setup Network [None|attributes] \
+    ./api.py add Network <attributes> <options>
+             edit oldNetwork newNetwork <attributes> <options>
+             del Network <options>
+             setup Network [None|attributes] \
 [++ Network [None|attributes] [++ ...]] [:: <options>]
 
                        attributes = [vlan=...] [bonding=...] [nics=<nic1>,...]

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,6 +55,10 @@ from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 from md_utils import getMdDeviceUuidMap as _getMdDeviceUuidMap
 
 from lsblk import getLsBlk as _getLsBlk
+from network import sourceroutethread
+from network.api import (addNetwork, delNetwork, editNetwork, setupNetworks,
+                         setSafeNetworkConfig)
+from network.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
@@ -64,13 +68,10 @@ from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER
 from storage.devicemapper import _removeMapping, _getPathsStatus
-import configNetwork
 from vdsm.config import config
-import tc
 import ksm
 import mkimage
 from storage.multipath import MPATH_CONF
-import sourceRouteThread
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -187,19 +188,19 @@ class _SuperVdsm(object):
 
     @logDecorator
     def addNetwork(self, bridge, options):
-        return configNetwork.addNetwork(bridge, **options)
+        return addNetwork(bridge, **options)
 
     @logDecorator
     def delNetwork(self, bridge, options):
-        return configNetwork.delNetwork(bridge, **options)
+        return delNetwork(bridge, **options)
 
     @logDecorator
     def editNetwork(self, oldBridge, newBridge, options):
-        return configNetwork.editNetwork(oldBridge, newBridge, **options)
+        return editNetwork(oldBridge, newBridge, **options)
 
     @logDecorator
     def setupNetworks(self, networks, bondings, options):
-        return configNetwork.setupNetworks(networks, bondings, **options)
+        return setupNetworks(networks, bondings, **options)
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(pipe):
@@ -249,7 +250,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def setSafeNetworkConfig(self):
-        return configNetwork.setSafeNetworkConfig()
+        return setSafeNetworkConfig()
 
     @logDecorator
     def udevTrigger(self, guid):
@@ -308,7 +309,7 @@ class _SuperVdsm(object):
 
         this commands mirror all 'networkName' traffic to 'ifaceName'
         '''
-        tc.setPortMirroring(networkName, ifaceName)
+        setPortMirroring(networkName, ifaceName)
 
     @logDecorator
     def unsetPortMirroring(self, networkName, target):
@@ -320,7 +321,7 @@ class _SuperVdsm(object):
         :param target: target device to release
         :type target: string
         '''
-        tc.unsetPortMirroring(networkName, target)
+        unsetPortMirroring(networkName, target)
 
     @logDecorator
     def mkFloppyFs(self, vmId, files, volId):
@@ -418,7 +419,7 @@ def main(sockfile, pidfile=None):
 
             log.debug("Started serving super vdsm object")
 
-            sourceRouteThread.start()
+            sourceroutethread.start()
 
             while _running:
                 signal.pause()

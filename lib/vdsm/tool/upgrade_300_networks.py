@@ -27,7 +27,7 @@ from vdsm.tool import expose
 from vdsm.tool.upgrade import upgrade
 
 sys.path.append("/usr/share/vdsm")
-from netconf import ifcfg
+from network.configurators import ifcfg
 
 UPGRADE_NAME = 'upgrade-3.0.0-networks'
 

@@ -1,4 +1,4 @@
-# Copyright 2011-2013 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,9 +24,10 @@ import re
 import socket
 import struct
 
-from neterrors import ConfigNetworkError
 from vdsm import netinfo
-import neterrors as ne
+
+from .errors import ConfigNetworkError
+from . import errors as ne
 
 
 class NetDevice(object):

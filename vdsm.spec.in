@@ -905,7 +905,8 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/netconf
+%dir %{_datadir}/%{vdsm_name}/network
+%dir %{_datadir}/%{vdsm_name}/network/configurators
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
@@ -924,11 +925,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/ppc64HardwareInfo.py*
-%{_datadir}/%{vdsm_name}/sourceRoute.py*
-%{_datadir}/%{vdsm_name}/sourceRouteThread.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
-%{_datadir}/%{vdsm_name}/tc.py*
 %{_datadir}/%{vdsm_name}/vdsm
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
@@ -968,6 +966,18 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/ovirt_functions.sh
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
+%{_datadir}/%{vdsm_name}/network/__init__.py*
+%{_datadir}/%{vdsm_name}/network/api.py*
+%{_datadir}/%{vdsm_name}/network/errors.py*
+%{_datadir}/%{vdsm_name}/network/models.py*
+%{_datadir}/%{vdsm_name}/network/sourceroute.py*
+%{_datadir}/%{vdsm_name}/network/sourceroutethread.py*
+%{_datadir}/%{vdsm_name}/network/tc.py*
+%{_datadir}/%{vdsm_name}/network/configurators/__init__.py*
+%{_datadir}/%{vdsm_name}/network/configurators/dhclient.py*
+%{_datadir}/%{vdsm_name}/network/configurators/ifcfg.py*
+%{_datadir}/%{vdsm_name}/network/configurators/libvirt.py*
+%{_datadir}/%{vdsm_name}/network/configurators/iproute2.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*
@@ -1067,20 +1077,12 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_set_num_of_cpus
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_set_num_of_cpus
 %{_datadir}/%{vdsm_name}/addNetwork
-%{_datadir}/%{vdsm_name}/configNetwork.py*
 %{_datadir}/%{vdsm_name}/delNetwork
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/get-conf-item
 %{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
 %{_datadir}/%{vdsm_name}/ksm.py*
 %{_datadir}/%{vdsm_name}/momIF.py*
-%{_datadir}/%{vdsm_name}/netconf/__init__.py*
-%{_datadir}/%{vdsm_name}/netconf/dhclient.py*
-%{_datadir}/%{vdsm_name}/netconf/ifcfg.py*
-%{_datadir}/%{vdsm_name}/netconf/libvirtCfg.py*
-%{_datadir}/%{vdsm_name}/netconf/iproute2.py*
-%{_datadir}/%{vdsm_name}/neterrors.py*
-%{_datadir}/%{vdsm_name}/netmodels.py*
 %{_datadir}/%{vdsm_name}/respawn
 %{_datadir}/%{vdsm_name}/set-conf-item
 %if 0%{?with_gluster}

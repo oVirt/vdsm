@@ -16,9 +16,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 import glob
-import libvirt
 import logging
 import os
 import pipes
@@ -28,19 +28,20 @@ import selinux
 import shutil
 import threading
 
-from netconf import Configurator, getEthtoolOpts
-from neterrors import ConfigNetworkError
-from netmodels import Nic, Bridge, IpConfig
-from sourceRoute import DynamicSourceRoute
+from libvirt import libvirtError, VIR_ERR_NO_NETWORK
+
 from vdsm.config import config
 from vdsm import constants
 from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig
-import dsaversion
-import libvirtCfg
-import neterrors as ne
+
+from . import Configurator, getEthtoolOpts, libvirt
+from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
+from ..models import Nic, Bridge, IpConfig
+from ..sourceroute import DynamicSourceRoute
+import dsaversion  # TODO: Make parent package import when vdsm is a package
 
 
 def _hwaddr_required():
@@ -277,17 +278,17 @@ class ConfigWriter(object):
     def createLibvirtNetwork(self, network, bridged=True, iface=None,
                              skipBackup=False, qosInbound=None,
                              qosOutbound=None):
-        netXml = libvirtCfg.createNetworkDef(network, bridged, iface,
-                                             qosInbound=qosInbound,
-                                             qosOutbound=qosOutbound)
+        netXml = libvirt.createNetworkDef(network, bridged, iface,
+                                          qosInbound=qosInbound,
+                                          qosOutbound=qosOutbound)
         if not skipBackup:
             self._networkBackup(network)
-        libvirtCfg.createNetwork(netXml)
+        libvirt.createNetwork(netXml)
 
     def removeLibvirtNetwork(self, network, skipBackup=False):
         if not skipBackup:
             self._networkBackup(network)
-        libvirtCfg.removeNetwork(network)
+        libvirt.removeNetwork(network)
 
     @classmethod
     def writeBackupFile(cls, dirName, fileName, content):
@@ -317,13 +318,13 @@ class ConfigWriter(object):
     def _atomicNetworkBackup(self, network):
         """ In-memory backup libvirt networks """
         if network not in self._networksBackups:
-            self._networksBackups[network] = libvirtCfg.getNetworkDef(network)
+            self._networksBackups[network] = libvirt.getNetworkDef(network)
             logging.debug("Backed up %s", network)
 
     @classmethod
     def _persistentNetworkBackup(cls, network):
         """ Persistently backup libvirt networks """
-        content = libvirtCfg.getNetworkDef(network)
+        content = libvirt.getNetworkDef(network)
         if not content:
             # For non-exists networks use predefined header
             content = cls.DELETED_HEADER + '\n'
@@ -341,13 +342,13 @@ class ConfigWriter(object):
             # To avoid libvirt errors during recreation we need
             # to remove the old network first
             try:
-                libvirtCfg.removeNetwork(network)
-            except libvirt.libvirtError as e:
-                if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
+                libvirt.removeNetwork(network)
+            except libvirtError as e:
+                if e.get_error_code() == VIR_ERR_NO_NETWORK:
                     pass
 
             if content:
-                libvirtCfg.createNetwork(content)
+                libvirt.createNetwork(content)
 
             logging.info('Restored %s', network)
 
@@ -771,8 +772,7 @@ def ifup(iface, async=False):
         if rc != 0:
             # In /etc/sysconfig/network-scripts/ifup* the last line usually
             # contains the error reason.
-            raise ConfigNetworkError(ne.ERR_FAILED_IFUP,
-                                     out[-1] if out else '')
+            raise ConfigNetworkError(ERR_FAILED_IFUP, out[-1] if out else '')
         return rc, out, err
 
     if async:

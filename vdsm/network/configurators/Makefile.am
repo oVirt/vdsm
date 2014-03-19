@@ -1,4 +1,4 @@
-# Copyright 20013 Red Hat, Inc.
+# Copyright 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetconfdir = $(vdsmdir)/netconf
+vdsmnetworkconfiguratorsdir = $(vdsmdir)/network/configurators
 
-dist_vdsmnetconf_PYTHON = \
+dist_vdsmnetworkconfigurators_PYTHON = \
 	__init__.py \
 	dhclient.py \
 	ifcfg.py \
 	iproute2.py \
-	libvirtCfg.py \
+	libvirt.py \
 	$(NULL)

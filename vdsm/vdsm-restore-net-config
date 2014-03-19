@@ -24,13 +24,13 @@ import logging.config
 from vdsm.config import config
 
 # Ifcfg persistence restoration
-from netconf import ifcfg
+from network.configurators import ifcfg
 
 # Unified persistence restoration
+from network.api import setupNetworks
+from network import configurators
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig
-from configNetwork import setupNetworks
 import pkgutil
-import netconf
 
 
 def ifcfg_restoration():
@@ -70,12 +70,12 @@ def unified_restoration():
 
 def _get_all_configurators():
     """Returns the class objects of all the configurators in the netconf pkg"""
-    prefix = netconf.__name__ + '.'
+    prefix = configurators.__name__ + '.'
     for importer, moduleName, isPackage in pkgutil.iter_modules(
-            netconf.__path__, prefix):
+            configurators.__path__, prefix):
         __import__(moduleName, fromlist="_")
 
-    for cls in netconf.Configurator.__subclasses__():
+    for cls in configurators.Configurator.__subclasses__():
         yield cls
 
 

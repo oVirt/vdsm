@@ -21,7 +21,6 @@ from functools import wraps
 import os.path
 import json
 
-import neterrors
 from hookValidation import ValidatesHook
 from testrunner import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                         expandPermutations, permutations)
@@ -44,6 +43,8 @@ from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
                           getDhclientIfaces)
 from vdsm import ipwrapper
 from vdsm.utils import pgrep
+
+from network import errors
 
 
 NETWORK_NAME = 'test-network'
@@ -430,14 +431,14 @@ class NetworkTest(TestCaseBase):
                                                        nics=nics,
                                                        opts={'bridged':
                                                              bridged})
-                self.assertEqual(status, neterrors.ERR_BAD_BONDING, msg)
+                self.assertEqual(status, errors.ERR_BAD_BONDING, msg)
 
     @cleanupNet
     def testFailWithInvalidBridgeName(self):
         invalid_bridge_names = ('a' * 16, 'a b', 'a\tb', 'a.b', 'a:b')
         for bridge_name in invalid_bridge_names:
             status, msg = self.vdsm_net.addNetwork(bridge_name)
-            self.assertEqual(status, neterrors.ERR_BAD_BRIDGE, msg)
+            self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
     @cleanupNet
     def testFailWithInvalidIpConfig(self):
@@ -453,7 +454,7 @@ class NetworkTest(TestCaseBase):
         for ipconfig in invalid_ip_configs:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
                                                    opts=ipconfig)
-            self.assertEqual(status, neterrors.ERR_BAD_ADDR, msg)
+            self.assertEqual(status, errors.ERR_BAD_ADDR, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -462,19 +463,19 @@ class NetworkTest(TestCaseBase):
                                                nics=['nowaythisnicexists'],
                                                opts={'bridged': bridged})
 
-        self.assertEqual(status, neterrors.ERR_BAD_NIC, msg)
+        self.assertEqual(status, errors.ERR_BAD_NIC, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
     def testFailWithInvalidParams(self, bridged):
         status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, VLAN_ID,
                                                opts={'bridged': bridged})
-        self.assertEqual(status, neterrors.ERR_BAD_PARAMS, msg)
+        self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
 
         status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
                                                bond=BONDING_NAME,
                                                opts={'bridged': bridged})
-        self.assertEqual(status, neterrors.ERR_BAD_PARAMS, msg)
+        self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -639,7 +640,7 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, nics=nics)
-            self.assertEqual(status, neterrors.ERR_USED_BRIDGE, msg)
+            self.assertEqual(status, errors.ERR_USED_BRIDGE, msg)
 
             status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
             self.assertEqual(status, SUCCESS, msg)
@@ -652,7 +653,7 @@ class NetworkTest(TestCaseBase):
         with dummyIf(1) as nics:
             status, msg = self.vdsm_net.delNetwork(NETWORK_NAME, nics=nics,
                                                    opts={'bridged': bridged})
-            self.assertEqual(status, neterrors.ERR_BAD_BRIDGE, msg)
+            self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -663,7 +664,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.editNetwork(NETWORK_NAME, NETWORK_NAME,
                                                     nics=nics,
                                                     opts={'bridged': bridged})
-            self.assertEqual(status, neterrors.ERR_BAD_BRIDGE, msg)
+            self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -703,7 +704,7 @@ class NetworkTest(TestCaseBase):
         status, msg = self.vdsm_net.setupNetworks(
             {NETWORK_NAME: {'bridged': False}}, {},
             NOCHK)
-        self.assertEqual(status, neterrors.ERR_BAD_PARAMS, msg)
+        self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
 
     @cleanupNet
     @RequireDummyMod

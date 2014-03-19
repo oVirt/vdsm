@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2012 Adam Litke, IBM Corporation
+# Copyright (C) 2012-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,12 +29,13 @@ import time
 import threading
 import logging
 
+from network.errors import ConfigNetworkError
+from network.errors import ERR_BAD_NIC
+from network.models import Bond, Vlan
+from network.configurators import RollbackIncomplete
+
 from vdsm import utils
 from clientIF import clientIF
-import configNetwork
-from netmodels import Bond
-from netmodels import Vlan
-from netconf import RollbackIncomplete
 from vdsm import netinfo
 from vdsm import constants
 import storage.misc
@@ -1336,7 +1338,7 @@ class Global(APIBase):
 
             try:
                 supervdsm.getProxy().addNetwork(bridge, options)
-            except configNetwork.ConfigNetworkError as e:
+            except ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
             return {'status': doneCode}
@@ -1371,10 +1373,9 @@ class Global(APIBase):
                                        'are enslaved (%s != %s)' %
                                        (nics,
                                         _netinfo.bondings[bond]["slaves"]))
-                        raise configNetwork.ConfigNetworkError(
-                            configNetwork.ne.ERR_BAD_NIC,
-                            "not all nics are enslaved")
-                except configNetwork.ConfigNetworkError as e:
+                        raise ConfigNetworkError(ERR_BAD_NIC,
+                                                 "not all nics are enslaved")
+                except ConfigNetworkError as e:
                     self.log.error(e.message, exc_info=True)
                     return {'status': {'code': e.errCode,
                                        'message': e.message}}
@@ -1383,7 +1384,7 @@ class Global(APIBase):
 
             try:
                 supervdsm.getProxy().delNetwork(bridge, options)
-            except configNetwork.ConfigNetworkError as e:
+            except ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
             return {'status': doneCode}
@@ -1420,7 +1421,7 @@ class Global(APIBase):
         rollbackCtx = {'status': doneCode}
         try:
             yield rollbackCtx
-        except configNetwork.ConfigNetworkError as e:
+        except ConfigNetworkError as e:
             self.log.error(e.message, exc_info=True)
             rollbackCtx['status'] = {'code': e.errCode, 'message': e.message}
         except RollbackIncomplete as roi:
@@ -1433,7 +1434,7 @@ class Global(APIBase):
             except Exception:
                 self.log.error('Memory rollback failed.', exc_info=True)
             finally:
-                if excType is configNetwork.ConfigNetworkError:
+                if excType is ConfigNetworkError:
                     rollbackCtx['status'] = {'code': value.errCode,
                                              'message': value.message}
                 else:

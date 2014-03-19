@@ -45,5 +45,5 @@ bonding="bonding=$3"
 shift 4
 
 PYTHONPATH=`dirname $(readlink -f "$0")` \
-/usr/bin/python -m configNetwork add "$bridge" "$vlan" "$bonding" $nics "$@"
+/usr/bin/python -m network.api add "$bridge" "$vlan" "$bonding" $nics "$@"
 

@@ -1,4 +1,4 @@
-# Copyright 2011-2013 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +16,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import libvirt
+from __future__ import absolute_import
+
 from xml.dom.minidom import Document
 from xml.sax.saxutils import escape
+
+from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm import libvirtconnection
 from vdsm import netinfo
@@ -41,8 +44,8 @@ def getNetworkDef(network):
     try:
         net = conn.networkLookupByName(netName)
         return net.XMLDesc(0)
-    except libvirt.libvirtError as e:
-        if e.get_error_code() == libvirt.VIR_ERR_NO_NETWORK:
+    except libvirtError as e:
+        if e.get_error_code() == VIR_ERR_NO_NETWORK:
             return
 
         raise

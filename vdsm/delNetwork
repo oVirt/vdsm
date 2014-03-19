@@ -26,5 +26,5 @@ bonding="bonding=$3"
 shift 4
 
 PYTHONPATH=`dirname $(readlink -f "$0")` \
-/usr/bin/python -m configNetwork del "$bridge" "$vlan" "$bonding" $nics "$@"
+/usr/bin/python -m network.api del "$bridge" "$vlan" "$bonding" $nics "$@"
 

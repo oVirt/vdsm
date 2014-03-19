@@ -1,6 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@ import tempfile
 from xml.dom.minidom import parseString
 
 from vdsm import netinfo
-from netconf import ifcfg
-from netconf import libvirtCfg
+from network.configurators import ifcfg, libvirt
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
@@ -107,8 +106,8 @@ class ifcfgConfigWriterTests(TestCaseBase):
              os.path.join(self._tempdir, 'ifcfg-')),
             (ifcfg, 'ifdown', lambda x: 0),
             (ifcfg, 'ifup', lambda *x: 0),
-            (libvirtCfg, 'createNetwork', lambda *x: None),
-            (libvirtCfg, 'removeNetwork', lambda *x: None),
+            (libvirt, 'createNetwork', lambda *x: None),
+            (libvirt, 'removeNetwork', lambda *x: None),
         ]):
             #after vdsm package is installed, the 'vdsm' account will be
             #created if no 'vdsm' account, we should skip this test
@@ -133,7 +132,7 @@ class ifcfgConfigWriterTests(TestCaseBase):
                            <forward mode='bridge'/>
                            <bridge name='awesome_net'/>
                          </network>"""
-        actualDoc = libvirtCfg.createNetworkDef('awesome_net', bridged=True)
+        actualDoc = libvirt.createNetworkDef('awesome_net', bridged=True)
 
         self.assertEqualXml(expectedDoc, actualDoc)
 
@@ -145,8 +144,8 @@ class ifcfgConfigWriterTests(TestCaseBase):
                             <interface dev='%s'/>
                             </forward>
                           </network>""" % iface)
-        actualDoc = libvirtCfg.createNetworkDef('awesome_net', bridged=False,
-                                                iface=iface)
+        actualDoc = libvirt.createNetworkDef('awesome_net', bridged=False,
+                                             iface=iface)
 
         self.assertEqualXml(expectedDoc, actualDoc)
 
@@ -166,8 +165,7 @@ class ifcfgConfigWriterTests(TestCaseBase):
                        % (inbound['average'], inbound['burst'],
                           outbound['average'], outbound['burst'],
                           outbound['peak']))
-        actualDoc = libvirtCfg.createNetworkDef('awesome_net',
-                                                qosInbound=inbound,
-                                                qosOutbound=outbound)
+        actualDoc = libvirt.createNetworkDef('awesome_net', qosInbound=inbound,
+                                             qosOutbound=outbound)
 
         self.assertEqualXml(expectedDoc, actualDoc)

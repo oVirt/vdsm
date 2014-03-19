@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,6 @@
 
 import logging
 
-import libvirtCfg
-from netconf import Configurator, getEthtoolOpts
-from netconf.dhclient import DhcpClient
-from neterrors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
-from netmodels import Nic
 from vdsm import netinfo
 from vdsm import ipwrapper
 from vdsm.constants import EXT_BRCTL
@@ -34,6 +29,11 @@ from vdsm.ipwrapper import ruleDel
 from vdsm.netconfpersistence import RunningConfig
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
+
+from . import Configurator, getEthtoolOpts, libvirt
+from .dhclient import DhcpClient
+from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
+from ..models import Nic
 
 _ETHTOOL_BINARY = CommandPath(
     'ethtool',
@@ -286,9 +286,9 @@ class ConfigApplier(object):
 
     def createLibvirtNetwork(self, network, bridged, iface, qosInbound=None,
                              qosOutbound=None):
-        netXml = libvirtCfg.createNetworkDef(network, bridged, iface,
-                                             qosInbound, qosOutbound)
-        libvirtCfg.createNetwork(netXml)
+        netXml = libvirt.createNetworkDef(network, bridged, iface,
+                                          qosInbound, qosOutbound)
+        libvirt.createNetwork(netXml)
 
     def removeLibvirtNetwork(self, network):
-        libvirtCfg.removeNetwork(network)
+        libvirt.removeNetwork(network)

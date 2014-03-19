@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2013, IBM Corporation
-# Copyright (C) 2013, Red Hat, Inc.
+# Copyright (C) 2013-2014, Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,14 +21,11 @@
 #
 import os
 
-from netmodels import Bond
-from netmodels import Bridge
-from netmodels import IPv4
-from netmodels import Nic
-from netmodels import Vlan
-from netmodels import _nicSort
 from vdsm import netinfo
-import neterrors
+
+from network import errors
+from network.models import Bond, Bridge, IPv4, Nic, Vlan
+from network.models import _nicSort
 
 from testrunner import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
@@ -43,11 +40,10 @@ class TestNetmodels(TestCaseBase):
         vlanIds = ('badValue', Vlan.MAX_ID + 1)
 
         for vlanId in vlanIds:
-            with self.assertRaises(neterrors.ConfigNetworkError) \
-                    as cneContext:
+            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
                 Vlan.validateTag(vlanId)
             self.assertEqual(cneContext.exception.errCode,
-                             neterrors.ERR_BAD_VLAN)
+                             errors.ERR_BAD_VLAN)
 
         self.assertEqual(Vlan.validateTag(0), None)
         self.assertEqual(Vlan.validateTag(Vlan.MAX_ID), None)
@@ -55,11 +51,10 @@ class TestNetmodels(TestCaseBase):
     def testIsBridgeNameValid(self):
         invalidBrName = ('-abc', 'abcdefghijklmnop', 'a:b', 'a.b')
         for i in invalidBrName:
-            with self.assertRaises(neterrors.ConfigNetworkError) \
-                    as cneContext:
+            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
                 Bridge.validateName(i)
             self.assertEqual(cneContext.exception.errCode,
-                             neterrors.ERR_BAD_BRIDGE)
+                             errors.ERR_BAD_BRIDGE)
 
     def testIsNicValid(self):
         invalidNicName = ('toni', 'livnat', 'dan')
@@ -69,21 +64,18 @@ class TestNetmodels(TestCaseBase):
                 self.nics = ['eth0', 'eth1']
 
         for nic in invalidNicName:
-            with self.assertRaises(neterrors.ConfigNetworkError) \
-                    as cneContext:
+            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
                 Nic(nic, None, _netinfo=FakeNetInfo())
-            self.assertEqual(cneContext.exception.errCode,
-                             neterrors.ERR_BAD_NIC)
+            self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_NIC)
 
     def testIsBondingNameValid(self):
         bondNames = ('badValue', ' bond14', 'bond14 ', 'bond14a', 'bond0 0')
 
         for bondName in bondNames:
-            with self.assertRaises(neterrors.ConfigNetworkError) \
-                    as cneContext:
+            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
                 Bond.validateName(bondName)
             self.assertEqual(cneContext.exception.errCode,
-                             neterrors.ERR_BAD_BONDING)
+                             errors.ERR_BAD_BONDING)
 
         self.assertEqual(Bond.validateName('bond11'), None)
         self.assertEqual(Bond.validateName('bond11128421982'), None)
@@ -96,9 +88,9 @@ class TestNetmodels(TestCaseBase):
         opts = 'mode=802.3ad miimon=150'
         badOpts = 'foo=bar badopt=one'
 
-        with self.assertRaises(neterrors.ConfigNetworkError) as cne:
+        with self.assertRaises(errors.ConfigNetworkError) as cne:
             Bond.validateOptions('bond0', badOpts)
-        self.assertEqual(cne.exception.errCode, neterrors.ERR_BAD_BONDING)
+        self.assertEqual(cne.exception.errCode, errors.ERR_BAD_BONDING)
         self.assertEqual(Bond.validateOptions('bond0', opts), None)
 
     def testIsIpValid(self):
@@ -108,11 +100,9 @@ class TestNetmodels(TestCaseBase):
                         '20.20.25.25.25')
 
         for address in badAddresses:
-            with self.assertRaises(neterrors.ConfigNetworkError) \
-                    as cneContext:
+            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
                 IPv4.validateAddress(address)
-            self.assertEqual(cneContext.exception.errCode,
-                             neterrors.ERR_BAD_ADDR)
+            self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_ADDR)
 
         for address in addresses:
             self.assertEqual(IPv4.validateAddress(address), None)
@@ -124,11 +114,9 @@ class TestNetmodels(TestCaseBase):
                     '253.0.0.0')
 
         for mask in badMasks:
-            with self.assertRaises(neterrors.ConfigNetworkError) \
-                    as cneContext:
+            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
                 IPv4.validateNetmask(mask)
-            self.assertEqual(cneContext.exception.errCode,
-                             neterrors.ERR_BAD_ADDR)
+            self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_ADDR)
 
         for mask in masks:
             self.assertEqual(IPv4.validateNetmask(mask), None)

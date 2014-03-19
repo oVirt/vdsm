@@ -270,7 +270,8 @@ AC_OUTPUT([
 	vdsm-tool/Makefile
 	vdsm/Makefile
 	vdsm/gluster/Makefile
-	vdsm/netconf/Makefile
+	vdsm/network/Makefile
+	vdsm/network/configurators/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
