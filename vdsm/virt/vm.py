@@ -120,6 +120,10 @@ class ImprobableResizeRequestError(RuntimeError):
     pass
 
 
+class BlockJobExistsError(Exception):
+    pass
+
+
 VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.MIGRATION_SOURCE, vmstatus.PAUSED,
                 vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
@@ -204,11 +208,16 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 self._sampleBalloon,
                 config.getint('vars', 'vm_sample_balloon_interval'),
                 config.getint('vars', 'vm_sample_balloon_window')))
+        self.sampleVmJobs = (
+            sampling.AdvancedStatsFunction(
+                self._sampleVmJobs,
+                config.getint('vars', 'vm_sample_jobs_interval'),
+                config.getint('vars', 'vm_sample_jobs_window')))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
             self.sampleDisk, self.sampleDiskLatency, self.sampleNet,
-            self.sampleBalloon)
+            self.sampleBalloon, self.sampleVmJobs)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -262,6 +271,9 @@ class VmStatsThread(sampling.AdvancedStatsThread):
     def _sampleBalloon(self):
         infos = self._vm._dom.info()
         return infos[2]
+
+    def _sampleVmJobs(self):
+        return self._vm.queryBlockJobs()
 
     def _diff(self, prev, curr, val):
         return prev[val] - curr[val]
@@ -424,6 +436,16 @@ class VmStatsThread(sampling.AdvancedStatsThread):
 
             stats[dName].update(dLatency)
 
+    def _getVmJobs(self, stats):
+        sInfo, eInfo, sampleInterval = self.sampleVmJobs.getStats()
+
+        info = deepcopy(eInfo)
+        if info is not None:
+            # If we are unable to collect stats we must not return anything at
+            # all since an empty dictionary would be interpreted as vm jobs
+            # finishing.
+            stats['vmJobs'] = info
+
     def get(self):
         stats = {}
 
@@ -438,6 +460,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         self._getDiskStats(stats)
         self._getDiskLatency(stats)
         self._getBalloonStats(stats)
+        self._getVmJobs(stats)
 
         return stats
 
@@ -1646,6 +1669,11 @@ class Vm(object):
                      (SMARTCARD_DEVICES, SmartCardDevice),
                      (TPM_DEVICES, TpmDevice))
 
+    BlockJobTypeMap = {libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_UNKNOWN: 'unknown',
+                       libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_PULL: 'pull',
+                       libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COPY: 'copy',
+                       libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT: 'commit'}
+
     def _makeDeviceDict(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)
 
@@ -1671,6 +1699,7 @@ class Vm(object):
         self._dom = None
         self.recovering = recover
         self.conf = {'pid': '0'}
+        self.conf['_blockJobs'] = {}
         self.conf.update(params)
         self._initLegacyConf()  # restore placeholders for BC sake
         self.cif = cif
@@ -1683,6 +1712,7 @@ class Vm(object):
         self.conf['clientIp'] = ''
         self.memCommitted = 0
         self._confLock = threading.Lock()
+        self._jobsLock = threading.Lock()
         self._creationThread = threading.Thread(target=self._startUnderlyingVm)
         if 'migrationDest' in self.conf:
             self._lastStatus = vmstatus.MIGRATION_DESTINATION
@@ -2642,10 +2672,8 @@ class Vm(object):
         for var in decStats:
             if type(decStats[var]) is not dict:
                 stats[var] = utils.convertToStr(decStats[var])
-            elif var == 'network':
-                stats['network'] = decStats[var]
-            elif var == 'balloonInfo':
-                stats['balloonInfo'] = decStats[var]
+            elif var in ('network', 'balloonInfo', 'vmJobs'):
+                stats[var] = decStats[var]
             else:
                 try:
                     stats['disks'][var] = {}
@@ -5121,6 +5149,61 @@ class Vm(object):
 
         hooks.before_vm_migrate_destination(srcDomXML, self.conf)
         return True
+
+    def trackBlockJob(self, jobID, drive, base, top, strategy):
+        driveSpec = dict([(k, drive[k]) for k in
+                         'poolID', 'domainID', 'imageID', 'volumeID'])
+        with self._confLock:
+            jobDir = self.conf['_blockJobs']
+            for job in jobDir.values():
+                if job['disk']['imageID'] == drive['imageID']:
+                    self.log.error("A block job with id %s already exists for "
+                                   "vm disk with image id: %s" %
+                                   (job['jobID'], drive['imageID']))
+                    raise BlockJobExistsError()
+
+            newJob = {'jobID': jobID, 'disk': driveSpec, 'baseVolume': base,
+                      'topVolume': top, 'strategy': strategy}
+            jobDir[jobID] = newJob
+        self.saveState()
+
+    def untrackBlockJob(self, jobID):
+        with self._confLock:
+            try:
+                del self.conf['_blockJobs'][jobID]
+            except KeyError:
+                # If there was contention on the confLock, this may have
+                # already been removed
+                return False
+        self.saveState()
+        return True
+
+    def queryBlockJobs(self):
+        jobs = {}
+        for jobID, job in self.conf['_blockJobs'].iteritems():
+            drive = self._findDriveByUUIDs(job['disk'])
+            ret = self._dom.blockJobInfo(drive.name, 0)
+            if not ret:
+                self.log.debug("Block Job for vm:%s, img:%s has ended",
+                               self.conf['vmId'], job['disk']['imageID'])
+                jobs[jobID] = None
+                continue
+
+            jobs[jobID] = {'id': jobID, 'jobType': 'block',
+                           'blockJobType': Vm.BlockJobTypeMap[ret['type']],
+                           'bandwidth': ret['bandwidth'],
+                           'cur': str(ret['cur']), 'end': str(ret['end']),
+                           'imgUUID': job['disk']['imageID']}
+
+        # This function is meant to be called from multiple threads (ie.
+        # VMStatsThread and API calls.  The _jobsLock ensures that a cohesive
+        # data set is returned by serializing each call.
+        with self._jobsLock:
+            for jobID, val in jobs.iteritems():
+                if val is None:
+                    self.untrackBlockJob(jobID)
+                    del jobs[jobID]
+        return jobs
 
     def _initLegacyConf(self):
         self.conf['displayPort'] = GraphicsDevice.LIBVIRT_PORT_AUTOSELECT

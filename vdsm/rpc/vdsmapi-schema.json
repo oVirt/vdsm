@@ -6098,6 +6098,84 @@
  'data': {'time': 'float', 'action': 'WatchdogEventAction'}}
 
 ##
+# @JobType:
+#
+# An enumeration of job types
+#
+# @unknown:  An unrecognized or unsupported job
+#
+# @block:    A block job
+#
+# Since: 4.15.0
+##
+{'enum': 'JobType', 'data': ['unknown', 'block']}
+
+##
+# @BlockJobType:
+#
+# An enumeration of block job types
+#
+# @unknown:  The block job type is not known or supported
+#
+# @pull:     A blockPull operation (forward merge)
+#
+# @copy:     A blockCopy operation
+#
+# @commit:   A blockCommit operation (backward merge)
+#
+# Since: 4.15.0
+##
+{'enum': 'BlockJobType', 'data': ['unknown', 'pull', 'copy', 'commit']}
+
+##
+# @BlockJobInfo:
+#
+# Information about a currently active block job.
+#
+# @id:            An ID that was associated with the job when it was started
+#
+# @jobType:       The general job type (always block)
+#
+# @blockJobType:  The specific type of block operation underway
+#
+# @cur:           Indicates progress of the job relative to @end
+#
+# @end:           Indicates the value of @cur that will signify job completion
+#
+# @bandwidth:     I/O limit in MB/s (zero means no limit)
+#
+# @imgUUID:       The UUID of the image on which this job is operating
+#
+# Since: 4.15.0
+##
+{'type': 'BlockJobInfo',
+ 'data': {'id': 'UUID', 'jobType': 'JobType', 'blockJobType': 'BlockJobType',
+          'cur': 'int', 'end': 'int', 'bandwidth': 'int', 'imgUUID': 'UUID'}}
+
+##
+# @VmJobInfo:
+#
+# Information about a currently active block job.
+#
+# @id:       An ID that was associated with the job when it was started
+#
+# @jobType:  The general job type
+#
+# Since: 4.15.0
+##
+{'type': 'VmJobInfo', 'data': {'id': 'UUID', 'jobType': 'JobType'},
+ 'union': ['BlockJobInfo']}
+
+##
+# @VmJobsMap:
+#
+# A mapping of VM job information indexed by job UUID.
+#
+# Since: 4.15.0
+##
+{'map': 'VmJobsMap', 'key': 'UUID', 'value': 'VmJobInfo'}
+
+##
 # @RunningVmStats:
 #
 # Statistics for a running virtual machine.
@@ -6175,6 +6253,9 @@
 # @displayInfo:        Display and graphics device informations.
 #                      (new in version 4.15.0)
 #
+# @vmJobs:             #optional Info about active vm jobs
+#                      (new in version 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -6195,7 +6276,7 @@
           'netIfaces': ['GuestNetworkDeviceInfo'],
           '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
           '*migrationProgress': 'uint', 'guestCPUCount': 'int',
-          'displayInfo': ['VmDisplayInfo']}}
+          'displayInfo': ['VmDisplayInfo'], '*vmJobs': 'VmJobsMap'}}
 
 ##
 # @VmStats:

@@ -170,6 +170,11 @@ parameters = [
 
         ('vm_sample_balloon_window', '2', None),
 
+        ('vm_sample_jobs_interval', '15', None),
+
+        # TODO: Change this to 1 once AdvancedStatsFunction can support it
+        ('vm_sample_jobs_window', '2', None),
+
         ('trust_store_path', '@TRUSTSTORE@',
             'Where the certificates and keys are situated.'),
 
