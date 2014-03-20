@@ -50,6 +50,7 @@ from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
 import ksm
+import hooks
 
 import supervdsm
 
@@ -357,15 +358,20 @@ class VM(APIBase):
             return errCode['noVM']
         return v.migrateStatus()
 
-    def getStats(self):
+    def getStats(self, runHooks=True):
         """
         Obtain statistics of the specified VM
         """
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
+
+        if runHooks:
+            hooks.before_get_vm_stats()
         stats = v.getStats().copy()
         stats['vmId'] = self._UUID
+        if runHooks:
+            stats = hooks.after_get_vm_stats([stats])[0]
         return {'status': doneCode, 'statsList': [stats]}
 
     def hibernate(self, hibernationVolHandle):
@@ -1201,12 +1207,14 @@ class Global(APIBase):
         """
         Get statistics of all running VMs.
         """
+        hooks.before_get_all_vm_stats()
         vms = self.getVMList()
         statsList = []
         for s in vms['vmList']:
-            response = VM(s['vmId']).getStats()
+            response = VM(s['vmId']).getStats(runHooks=False)
             if response:
                 statsList.append(response['statsList'][0])
+        statsList = hooks.after_get_all_vm_stats(statsList)
         return {'status': doneCode, 'statsList': statsList}
 
     def getStats(self):

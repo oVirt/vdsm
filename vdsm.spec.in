@@ -423,6 +423,14 @@ Requires:       %{name} = %{version}-%{release}
 VDSM hook which allows to connect a vNIC to a libvirt network that is managed
 outside of oVirt, such as an openvswitch network.
 
+%package hook-fakevmstats
+Summary:        Generate random VM statistics
+BuildArch:      noarch
+Requires:       %{name}
+
+%description hook-fakevmstats
+Hook intercepts VM's stats and randomizes various fields.
+
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
 BuildArch:      noarch
@@ -1079,6 +1087,10 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_set_num_of_cpus
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_set_num_of_cpus
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_vm_stats
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_vm_stats
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_all_vm_stats
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_all_vm_stats
 %{_datadir}/%{vdsm_name}/addNetwork
 %{_datadir}/%{vdsm_name}/delNetwork
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
@@ -1257,6 +1269,10 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_directlun
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_directlun
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_directlun
+
+%files hook-fakevmstats
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_all_vm_stats/10_fakevmstats
 
 %files hook-fileinject
 %defattr(-, root, root, -)

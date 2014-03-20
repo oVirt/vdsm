@@ -339,6 +339,26 @@ def after_network_setup(network_config_dict):
                         raiseError=False, hookType=_JSON_HOOK)
 
 
+def before_get_vm_stats():
+    return _runHooksDir({}, 'before_get_vm_stats', raiseError=True,
+                        hookType=_JSON_HOOK)
+
+
+def after_get_vm_stats(stats):
+    return _runHooksDir(stats, 'after_get_vm_stats', raiseError=False,
+                        hookType=_JSON_HOOK)
+
+
+def before_get_all_vm_stats():
+    return _runHooksDir({}, 'before_get_all_vm_stats', raiseError=True,
+                        hookType=_JSON_HOOK)
+
+
+def after_get_all_vm_stats(stats):
+    return _runHooksDir(stats, 'after_get_all_vm_stats', raiseError=False,
+                        hookType=_JSON_HOOK)
+
+
 def _getScriptInfo(path):
     try:
         with file(path) as f:

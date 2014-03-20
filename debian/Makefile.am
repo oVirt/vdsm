@@ -43,6 +43,8 @@ EXTRA_DIST = \
     vdsm-hook-ethtool-options.install \
     vdsm-hook-extnet.docs \
     vdsm-hook-extnet.install \
+    vdsm-hook-fakevmstats.docs \
+    vdsm-hook-fakevmstats.install \
     vdsm-hook-faqemu.docs \
     vdsm-hook-faqemu.install \
     vdsm-hook-fileinject.docs \

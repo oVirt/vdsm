@@ -199,6 +199,12 @@ Description: Force a vNIC to connect to a specific libvirt network
  VDSM hook which allows to connect a vNIC to a libvirt network that is managed
  outside of oVirt, such as an openvswitch network.
 
+Package: vdsm-hook-fakevmstats
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Generate random statistics for vms running on the host. The hook
+ intercepts statistics returned on getAllVmStats.
+
 Package: vdsm-hook-fileinject
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version}), python-libguestfs

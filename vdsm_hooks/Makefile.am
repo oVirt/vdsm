@@ -29,6 +29,7 @@ SUBDIRS += \
 	directlun \
 	extnet \
 	fileinject \
+	fakevmstats \
 	floppy \
 	hostusb \
 	hugepages \
@@ -108,6 +109,10 @@ VDSMHOOKS = \
 	after_network_setup \
 	before_set_num_of_cpus \
 	after_set_num_of_cpus \
+	before_get_vm_stats \
+	after_get_vm_stats \
+	before_get_all_vm_stats \
+	after_get_all_vm_stats \
 	$(NULL)
 
 all-local: \

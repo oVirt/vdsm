@@ -58,7 +58,9 @@ Currently-supported hooks have self-explanatory names:
     before_disk_hotunplug, after_disk_hotunplug,
     before_vdsm_start, after_vdsm_stop,
     before_network_setup, after_network_setup,
-    before_set_num_of_cpus, after_set_num_of_cpus.
+    before_set_num_of_cpus, after_set_num_of_cpus,
+    before_get_vm_stats, after_get_vm_stats,
+    before_get_all_vm_stats, after_get_all_vm_stats.
 
 Each hook executes the scripts under
 .FN /usr/libexec/vdsm/hooks/<hook-name>/
@@ -66,8 +68,9 @@ in lexicographic order.
 
 .SS Hook environment
 Each hook script (except before_vdsm_start, after_vdsm_stop, 
-before_network_setup and after_network_setup)) inherit the environment of
-the VDSM process, with an additional variable
+before_network_setup and after_network_setup, before_get_vm_stats,
+after_get_vm_stats, before_get_all_vm_stats, after_get_all_vm_stats)) inherit
+the environment of the VDSM process, with an additional variable
 .B _hook_domxml
 which holds the path of libvirt's
 .B domain xml
@@ -136,6 +139,22 @@ Are all augmented by custom properties specific to those devices,
 sent by the caller of the hook. For example if before_nic_hotplug is called
 with custom: {qos: '0.5', color: 'red'} then qos and color will be directly
 available as environment variables when before_nic_hotplug is called.
+
+before_get_vm_stats and before_get_all_vm_stats are called upon API request to
+get VM statistics, before getVmStats and getAllVmStats respectively. Those hooks
+do not receive any parameters.
+
+after_get_vm_stats and after_get_all_vm_stats are called upon getVmStats and
+getAllVmStats respectively. Both receive a parameter in _hook_json containing
+a list of dictionaries of VM stats (in case of
+after_get_vm_stats the list will have a single element):
+.nf
+[
+	{"vm_id": "...", ... },
+	{"vm_id": "...", ... },
+	...
+]
+.fi
 
 .SS Hook execution
 before_vdsm_start and after_vdsm_stop scripts are executed as user

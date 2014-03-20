@@ -1,0 +1,2 @@
+usr/libexec/vdsm/hooks/after_get_all_vm_stats/10_fakevmstats
+usr/lib/python2.7/dist-packages/vdsm/fakevmstats.py
