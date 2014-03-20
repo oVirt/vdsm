@@ -781,7 +781,7 @@ class MigrationMonitorThread(threading.Thread):
         migrationMaxTime = (maxTimePerGiB * memSize + 1023) / 1024
         lastProgressTime = time.time()
         smallest_dataRemaining = None
-        progress_timeout = config.getint('vars', 'migration_progress_timeout')
+        progress_timeout = config.getint('vars', 'migration_timeout')
 
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
