@@ -374,14 +374,6 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.snapshot(snapDrives, snapMemVolHandle)
 
-    def vmMerge(self, vmId, mergeDrives):
-        vm = API.VM(vmId)
-        return vm.merge(mergeDrives)
-
-    def vmMergeStatus(self, vmId):
-        vm = API.VM(vmId)
-        return vm.mergeStatus()
-
     def vmSetBalloonTarget(self, vmId, target):
         vm = API.VM(vmId)
         return vm.setBalloonTarget(target)
@@ -894,8 +886,6 @@ class BindingXMLRPC(object):
                 (self.vmPause, 'pause'),
                 (self.vmCont, 'cont'),
                 (self.vmSnapshot, 'snapshot'),
-                (self.vmMerge, 'merge'),
-                (self.vmMergeStatus, 'mergeStatus'),
                 (self.vmSetBalloonTarget, 'setBalloonTarget'),
                 (self.vmReset, 'reset'),
                 (self.vmShutdown, 'shutdown'),

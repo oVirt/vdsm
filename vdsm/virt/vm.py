@@ -121,17 +121,6 @@ VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
 
-class MERGESTATUS:
-    NOT_STARTED = "Not Started"
-    IN_PROGRESS = "In Progress"
-    FAILED = "Failed"
-    COMPLETED = "Completed"
-    UNKNOWN = "Unknown"
-    DRIVE_NOT_FOUND = "Drive Not Found"
-    BASE_NOT_FOUND = "Base Not Found"
-    DRIVE_NOT_SUPPORTED = "Drive Not Supported"
-
-
 class DRIVE_SHARED_TYPE:
     NONE = "none"
     EXCLUSIVE = "exclusive"
@@ -2926,8 +2915,6 @@ class Vm(object):
             self._dom = NotifyingVirDomain(
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
-            # Reinitialize the merge statuses
-            self._checkMerge()
         elif 'restoreState' in self.conf:
             fromSnapshot = self.conf.get('restoreFromSnapshot', False)
             srcDomXML = self.conf.pop('_srcDomXML')
@@ -3841,110 +3828,6 @@ class Vm(object):
         return {'status': doneCode, 'quiesce':
                 (snapFlags & libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
                     == libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)}
-
-    def _runMerge(self):
-        for mergeStatus in self.conf.get('liveMerge', []):
-            if mergeStatus['status'] != MERGESTATUS.NOT_STARTED:
-                continue
-
-            try:
-                self._dom.blockRebase(mergeStatus['path'],
-                                      mergeStatus['basePath'], 0, 0)
-            except Exception:
-                mergeStatus['status'] = MERGESTATUS.FAILED
-                self.log.error("Live merge failed for %s",
-                               mergeStatus['path'], exc_info=True)
-            else:
-                mergeStatus['status'] = MERGESTATUS.IN_PROGRESS
-
-        self.saveState()
-
-    def _checkMerge(self):
-        for mergeStatus in self.conf.get('liveMerge', []):
-            if mergeStatus['status'] != MERGESTATUS.IN_PROGRESS:
-                continue
-
-            try:
-                jobInfo = self._dom.blockJobInfo(mergeStatus['path'], 0)
-            except Exception:
-                jobInfo = None
-
-            if not jobInfo:
-                mergeStatus['status'] = MERGESTATUS.UNKNOWN
-
-        self.saveState()
-
-    def merge(self, mergeDrives):
-        """Live merge command"""
-
-        # Check if there is a merge still in progress
-        for mergeStatus in self.conf.get('liveMerge', []):
-            if mergeStatus['status'] == MERGESTATUS.IN_PROGRESS:
-                return errCode['mergeErr']
-
-        self.conf['liveMerge'] = []
-
-        # Preparing the merge statuses
-        for drive in mergeDrives:
-            try:
-                mergeDrive = self._findDriveByUUIDs(drive)
-            except LookupError:
-                mergeDrive = None
-
-            mergeStatus = drive.copy()
-            mergeStatus['status'] = MERGESTATUS.NOT_STARTED
-
-            if not mergeDrive or not hasattr(mergeDrive, 'volumeChain'):
-                mergeStatus['status'] = MERGESTATUS.DRIVE_NOT_FOUND
-            elif mergeDrive.hasVolumeLeases or mergeDrive.transientDisk:
-                mergeStatus['status'] = MERGESTATUS.DRIVE_NOT_SUPPORTED
-            else:
-                for volume in mergeDrive.volumeChain:
-                    # qemu-kvm looks up for the backing file path looking at
-                    # the value sotred in the qcow2 header, therefore here
-                    # we can't use the absolute path provided by prepareImage
-                    if volume['volumeID'] == drive['baseVolumeID']:
-                        mergeStatus['basePath'] = "../%s/%s" % (
-                            volume['imageID'], volume['volumeID'])
-                        break
-                else:
-                    mergeStatus['status'] = MERGESTATUS.BASE_NOT_FOUND
-
-                mergeStatus['path'] = mergeDrive.path
-                mergeStatus['disk'] = mergeDrive.name
-
-            self.conf['liveMerge'].append(mergeStatus)
-
-        self.saveState()
-        self._runMerge()
-
-        return {'status': doneCode}
-
-    def mergeStatus(self):
-        def _filterInternalInfo(mergeStatus):
-            return dict((k, v) for k, v in mergeStatus.iteritems()
-                        if k not in ("path", "basePath"))
-
-        mergeStatus = [_filterInternalInfo(x)
-                       for x in self.conf.get('liveMerge', [])]
-
-        return {'status': doneCode, 'mergeStatus': mergeStatus}
-
-    def _onBlockJobEvent(self, path, type, status):
-        for mergeStatus in self.conf.get('liveMerge', []):
-            if mergeStatus['path'] == path:
-                break
-        else:
-            self.log.error("Live merge completed for an unexpected "
-                           "path: %s", path)
-            return
-
-        if status == libvirt.VIR_DOMAIN_BLOCK_JOB_COMPLETED:
-            mergeStatus['status'] = MERGESTATUS.COMPLETED
-        else:
-            mergeStatus['status'] = MERGESTATUS.FAILED
-
-        self.saveState()
 
     def _setDiskReplica(self, srcDrive, dstDisk):
         """

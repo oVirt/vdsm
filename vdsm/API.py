@@ -678,18 +678,6 @@ class VM(APIBase):
                 self._getHibernationPaths(snapMemVolHandle)
         return v.snapshot(snapDrives, memoryParams)
 
-    def merge(self, mergeDrives):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.merge(mergeDrives)
-
-    def mergeStatus(self):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.mergeStatus()
-
     def setBalloonTarget(self, target):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:

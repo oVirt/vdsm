@@ -585,9 +585,6 @@ class clientIF:
                     v.onConnect(remoteAddr['node'])
                 elif phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_DISCONNECT:
                     v.onDisconnect()
-            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB:
-                path, type, status = args[:-1]
-                v._onBlockJobEvent(path, type, status)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
                 action, = args[:-1]
                 v._onWatchdogEvent(action)
