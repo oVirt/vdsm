@@ -500,6 +500,14 @@ class service:
             print "Error in scan disk alignment"
         sys.exit(0)
 
+    def merge(self, args):
+        params = [args[0]]
+        params.append(self._parseDriveSpec(args[1]))
+        params.extend(args[2:])
+        response = self.s.merge(*params)
+        print response['status']['message']
+        sys.exit(response['status']['code'])
+
 # ####### IRS methods #######
     def createStorageDomain(self, args):
         validateArgTypes(args, [int, str, str, str, int, int])
@@ -2596,6 +2604,15 @@ if __name__ == '__main__':
             serv.setNumberOfCpus, (
                 '<vmId> <numberOfCpus>',
                 'set the number of cpus for a running VM'
+            )),
+        'merge': (
+            serv.merge, (
+                '<vmId> <driveSpec> <baseVolId> <topVolId> [<bandwidth> '
+                '<jobId>',
+                'Live merge disk snapshots between a base volume and a top '
+                'volume into the base volume.  If specified, limit bandwidth',
+                'to <bandwidth> MB/s and apply <jobID> to the operation for',
+                'tracking purposes.'
             )),
     }
     if _glusterEnabled:

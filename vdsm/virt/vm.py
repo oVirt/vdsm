@@ -31,6 +31,8 @@ import tempfile
 import threading
 import time
 import xml.dom.minidom
+import json
+import uuid
 
 # 3rd party libs imports
 import libvirt
@@ -5150,6 +5152,13 @@ class Vm(object):
         hooks.before_vm_migrate_destination(srcDomXML, self.conf)
         return True
 
+    def getBlockJob(self, drive):
+        for job in self.conf['_blockJobs'].values():
+            if all([bool(drive[x] == job['disk'][x])
+                    for x in ('imageID', 'domainID', 'volumeID')]):
+                return job
+        raise LookupError("No block job found for drive '%s'", drive.name)
+
     def trackBlockJob(self, jobID, drive, base, top, strategy):
         driveSpec = dict([(k, drive[k]) for k in
                          'poolID', 'domainID', 'imageID', 'volumeID'])
@@ -5204,6 +5213,88 @@ class Vm(object):
                     self.untrackBlockJob(jobID)
                     del jobs[jobID]
         return jobs
+
+    def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
+        bandwidth = int(bandwidth)
+        if jobUUID is None:
+            jobUUID = str(uuid.uuid4())
+
+        try:
+            drive = self._findDriveByUUIDs(driveSpec)
+        except LookupError:
+            return errCode['imageErr']
+
+        base = top = None
+        for v in drive.volumeChain:
+            if v['volumeID'] == baseVolUUID:
+                base = v['path']
+            if v['volumeID'] == topVolUUID:
+                top = v['path']
+        if base is None:
+            self.log.error("merge: base volume '%s' not found", baseVolUUID)
+            return errCode['mergeErr']
+        if top is None:
+            self.log.error("merge: top volume '%s' not found", topVolUUID)
+            return errCode['mergeErr']
+
+        # If base is a shared volume then we cannot allow a merge.  Otherwise
+        # We'd corrupt the shared volume for other users.
+        res = self.cif.irs.getVolumeInfo(drive.domainID, drive.poolID,
+                                         drive.imageID, baseVolUUID)
+        if res['status']['code'] != 0:
+            self.log.error("Unable to get volume info for '%s'",  baseVolUUID)
+            return errCode['mergeErr']
+        if res['info']['voltype'] == 'SHARED':
+            self.log.error("merge: Refusing to merge into a shared volume")
+            return errCode['mergeErr']
+
+        try:
+            self.trackBlockJob(jobUUID, drive, baseVolUUID, topVolUUID,
+                               'commit')
+        except BlockJobExistsError:
+            self.log.error("Another block job is already active on this disk")
+            return errCode['mergeErr']
+        self.log.debug("Starting merge with jobUUID='%s'", jobUUID)
+
+        flags = 0
+        # Indicate that we expect libvirt to maintain the relative paths of
+        # backing files.  This is necessary to ensure that a volume chain is
+        # visible from any host even if the mountpoint is different.
+        try:
+            flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_RELATIVE
+        except AttributeError:
+            self.log.error("Libvirt missing VIR_DOMAIN_BLOCK_COMMIT_RELATIVE. "
+                           "Unable to perform live merge.")
+            return errCode['mergeErr']
+        try:
+            ret = self._dom.blockCommit(drive.path, base, top, bandwidth,
+                                        flags)
+            if ret != 0:
+                raise RuntimeError("blockCommit operation failed rc:%i", ret)
+        except (RuntimeError, libvirt.libvirtError):
+            self.log.error("Live merge failed for '%s'", drive.path,
+                           exc_info=True)
+            self.untrackBlockJob(jobUUID)
+            return errCode['mergeErr']
+
+        # TODO: Handle block volume resizing for base volume
+
+        # Trigger the collection of stats before returning so that callers
+        # of getVmStats after this returns will see the new job
+        self._vmStats.sampleVmJobs()
+
+        return {'status': doneCode}
+
+    def _onBlockJobEvent(self, path, blockJobType, status):
+        # TODO: Synchronize our state in case the volume chain changed
+        drive = self._lookupDeviceByPath(path)
+        try:
+            jobID = self.getBlockJob(drive)['jobID']
+        except LookupError:
+            self.log.debug("Ignoring event for untracked block job on path "
+                           "'%s'", path)
+            return
+        self.untrackBlockJob(jobID)
 
     def _initLegacyConf(self):
         self.conf['displayPort'] = GraphicsDevice.LIBVIRT_PORT_AUTOSELECT

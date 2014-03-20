@@ -695,6 +695,12 @@ class VM(APIBase):
             return errCode['noimpl']
         return self._cif.getDiskAlignment(drive)
 
+    def merge(self, drive, baseVolUUID, topVolUUID, bandwidth=0, jobUUID=None):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.merge(drive, baseVolUUID, topVolUUID, bandwidth, jobUUID)
+
 
 class Volume(APIBase):
     ctorArgs = ['volumeID', 'storagepoolID', 'storagedomainID', 'imageID']

@@ -6930,6 +6930,33 @@
  'data': {'vmID': 'UUID', 'driveSpecs': 'DriveSpecVolume', 'newSize': 'str'},
  'returns': 'str'}
 
+##
+# @VM.merge:
+#
+# Perform a live merge of a VM disk to remove an unwanted snapshot.  All data
+# between @baseVolUUID and @topVolUUID will be merged into @baseVolUUID and
+# any snapshots which depended on @topVolUUID will now depend on @baseVolUUID.
+#
+# @vmID:         The UUID of the VM
+#
+# @drive:        A @DriveSpecVolume structure rapresenting the disk
+#
+# @baseVolUUID:  The UUID of the base volume
+#
+# @topVolUUID:   The UUID of the top volume
+#
+# @bandwidth:    #optional Limit I/O for the merge (in MB/s)
+#
+# @jobUUID:      #optional Assign a UUID to this operation which can be used
+#                to identify it in @VmStats
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'VM', 'name': 'merge'},
+ 'data': {'vmID': 'UUID', 'drive': 'DriveSpecVolume', 'baseVolUUID': 'UUID',
+          'topVolUUID': 'UUID', '*bandwidth': 'int', '*jobUUID': 'UUID'}}
+
+
 ## Category: @Volume ###########################################################
 ##
 # @Volume:

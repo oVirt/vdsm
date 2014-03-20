@@ -424,6 +424,11 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.snapshot(snapDrives, snapMemVolHandle)
 
+    def merge(self, vmId, drive, baseVolUUID, topVolUUID, bandwidth=0,
+              jobUUID=None):
+        vm = API.VM(vmId)
+        return vm.merge(drive, baseVolUUID, topVolUUID, bandwidth, jobUUID)
+
     def vmSetBalloonTarget(self, vmId, target):
         vm = API.VM(vmId)
         return vm.setBalloonTarget(target)
@@ -979,7 +984,8 @@ class BindingXMLRPC(object):
                 (self.vmHotplugNic, 'hotplugNic'),
                 (self.vmHotunplugNic, 'hotunplugNic'),
                 (self.vmUpdateDevice, 'vmUpdateDevice'),
-                (self.vmSetNumberOfCpus, 'setNumberOfCpus'))
+                (self.vmSetNumberOfCpus, 'setNumberOfCpus'),
+                (self.merge, 'merge'))
 
     def getIrsMethods(self):
         return ((self.domainActivate, 'activateStorageDomain'),
