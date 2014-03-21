@@ -24,6 +24,7 @@ vdsm_virtdir = $(vdsmdir)/virt
 dist_vdsm_virt_PYTHON = \
 	__init__.py \
 	guestagent.py \
+	migration.py \
 	sampling.py \
 	vm.py \
 	vmchannels.py \

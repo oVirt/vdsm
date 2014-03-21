@@ -38,6 +38,7 @@ import caps
 import blkid
 import supervdsm
 
+from virt import migration
 from virt import sampling
 from virt import vm
 from virt import vmstatus
@@ -397,7 +398,7 @@ class clientIF:
             # API response.
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
                       caps.CpuTopology().cores())
-            vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
+            migration.MigrationSourceThread.setMaxOutgoingMigrations(mog)
 
             vdsmVms = self._getVDSMVms()
             # Recover

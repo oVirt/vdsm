@@ -136,6 +136,7 @@
 ./usr/share/vdsm/vdsmapi-schema.json
 ./usr/share/vdsm/virt/__init__.py
 ./usr/share/vdsm/virt/guestagent.py
+./usr/share/vdsm/virt/migration.py
 ./usr/share/vdsm/virt/sampling.py
 ./usr/share/vdsm/virt/vm.py
 ./usr/share/vdsm/virt/vmchannels.py
