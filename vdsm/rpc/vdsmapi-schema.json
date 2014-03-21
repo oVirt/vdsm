@@ -3380,6 +3380,34 @@
  'data': {'deviceType': 'VmDeviceType', 'model': 'VmRngDeviceModel',
           'specParams': 'VmRngDeviceSpecParams'}}
 
+
+##
+# @VmConsoleDeviceType:
+#
+# Type of console to be used
+#
+# @virtio:  Configures a virtio console device
+#
+# @serial:  Configures a serial port console device and adds a serial port
+#           controller device
+#
+# Since: 4.17.0
+##
+{'enum': 'VmConsoleDeviceType',
+ 'data': ['virtio', 'serial']}
+
+##
+# @VmConsoleDeviceSpecParams:
+#
+# Additional console device parameters
+#
+# @consoleType: Type of console to be configured for the VM
+#
+# Since: 4.17.0
+##
+{'type': 'VmConsoleDeviceSpecParams',
+ 'data': {'consoleType': 'VmConsoleDeviceType'}}
+
 ##
 # @VmConsoleDevice:
 #
@@ -3389,10 +3417,13 @@
 #
 # @deviceId:    A unique ID for this device
 #
+# @specParams:  #optional Additional device params (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'VmConsoleDevice',
- 'data': {'deviceType': 'VmDeviceType', 'deviceId': 'UUID'}}
+ 'data': {'deviceType': 'VmDeviceType', 'deviceId': 'UUID',
+          'specParams': 'VmConsoleDeviceSpecParams'}}
 
 
 ##

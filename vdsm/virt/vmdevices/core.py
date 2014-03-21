@@ -75,16 +75,46 @@ class Balloon(Base):
 class Console(Base):
     __slots__ = ()
 
+    def __init__(self, *args, **kwargs):
+        super(Console, self).__init__(*args, **kwargs)
+
+        if not hasattr(self, 'specParams'):
+            self.specParams = {}
+
+    @property
+    def isSerial(self):
+        return self.specParams.get('consoleType', 'virtio') == 'serial'
+
+    def getSerialDeviceXML(self):
+        """
+        Add a serial port for the console device if it exists and is a
+        'serial' type device.
+
+        <serial type='pty'>
+            <target port='0'>
+        </serial>
+        """
+        s = self.createXmlElem('serial', 'pty')
+        s.appendChildWithArgs('target', port='0')
+        return s
+
     def getXML(self):
         """
         Create domxml for a console device.
+
+        <console type='pty'>
+          <target type='serial' port='0'/>
+        </console>
+
+        or:
 
         <console type='pty'>
           <target type='virtio' port='0'/>
         </console>
         """
         m = self.createXmlElem('console', 'pty')
-        m.appendChildWithArgs('target', type='virtio', port='0')
+        consoleType = self.specParams.get('consoleType', 'virtio')
+        m.appendChildWithArgs('target', type=consoleType, port='0')
         return m
 
 

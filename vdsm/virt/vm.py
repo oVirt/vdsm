@@ -1555,6 +1555,11 @@ class Vm(object):
                 domxml._devices.appendChild(graphDev.getSpiceVmcChannelsXML())
                 break
 
+        for consoleDev in self._devices[hwclass.CONSOLE]:
+            if consoleDev.isSerial:
+                domxml._devices.appendChild(consoleDev.getSerialDeviceXML())
+                break
+
         for drive in self._devices[hwclass.DISK][:]:
             for leaseElement in drive.getLeasesXML():
                 domxml._devices.appendChild(leaseElement)

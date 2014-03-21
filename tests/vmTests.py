@@ -270,6 +270,42 @@ class TestVm(XMLTestCase):
         xml = find_xml_element(domxml.dom.toxml(), './sysinfo')
         self.assertXMLEqual(xml, sysinfoXML)
 
+    def testConsoleXMLVirtio(self):
+        consoleXML = """
+            <console type="pty">
+                <target port="0" type="virtio"/>
+            </console>"""
+        dev = {'device': 'console', 'specParams': {'consoleType': 'virtio'}}
+        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        self.assertXMLEqual(console.getXML().toxml(), consoleXML)
+
+    def testConsoleXMLSerial(self):
+        consoleXML = """
+            <console type="pty">
+                <target port="0" type="serial"/>
+            </console>"""
+        dev = {'device': 'console', 'specParams': {'consoleType': 'serial'}}
+        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        self.assertXMLEqual(console.getXML().toxml(), consoleXML)
+
+    def testConsoleXMLDefault(self):
+        consoleXML = """
+            <console type="pty">
+                <target port="0" type="virtio"/>
+            </console>"""
+        dev = {'device': 'console'}
+        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        self.assertXMLEqual(console.getXML().toxml(), consoleXML)
+
+    def testSerialDeviceXML(self):
+        serialXML = """
+            <serial type="pty">
+                <target port="0"/>
+            </serial>"""
+        dev = {'device': 'console'}
+        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        self.assertXMLEqual(console.getSerialDeviceXML().toxml(), serialXML)
+
     def testClockXML(self):
         clockXML = """
             <clock adjustment="-3600" offset="variable">
