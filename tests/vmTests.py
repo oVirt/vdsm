@@ -799,3 +799,22 @@ class TestVmExit(TestCaseBase):
             stats = fake.getStats()
             self.assertEqual(stats['exitReason'], exitReason)
             self.assertEqual(stats['exitMessage'], msg)
+
+
+class TestVmStatsThread(TestCaseBase):
+    def testGetNicStats(self):
+        GBPS = 10 ** 9 / 8
+        MAC = '52:54:00:59:F5:3F'
+        with FakeVM() as fake:
+            mock_stats_thread = vm.VmStatsThread(fake)
+            res = mock_stats_thread._getNicStats(
+                name='vnettest', model='virtio', mac=MAC,
+                start_sample=(2 ** 64 - 15 * GBPS, 1, 2, 3, 0, 4, 5, 6),
+                end_sample=(0, 7, 8, 9, 5 * GBPS, 10, 11, 12),
+                interval=15.0)
+            self.assertEqual(res, {
+                'rxErrors': '8', 'rxDropped': '9',
+                'txErrors': '11', 'txDropped': '12',
+                'macAddr': MAC, 'name': 'vnettest',
+                'speed': '1000', 'state': 'unknown',
+                'rxRate': '100.0', 'txRate': '33.3'})

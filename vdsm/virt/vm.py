@@ -591,41 +591,51 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             stats['cpuUser'] = 0.0
             stats['cpuSys'] = 0.0
 
+    @classmethod
+    def _getNicStats(cls, name, model, mac,
+                     start_sample, end_sample, interval):
+        ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
+
+        ifStats = {'macAddr': mac,
+                   'name': name,
+                   'speed': str(ifSpeed),
+                   'state': 'unknown'}
+
+        ifStats['rxErrors'] = str(end_sample[2])
+        ifStats['rxDropped'] = str(end_sample[3])
+        ifStats['txErrors'] = str(end_sample[6])
+        ifStats['txDropped'] = str(end_sample[7])
+
+        ifRxBytes = (100.0 *
+                     ((end_sample[0] - start_sample[0]) % 2 ** 32) /
+                     interval / ifSpeed / cls.MBPS_TO_BPS)
+        ifTxBytes = (100.0 *
+                     ((end_sample[4] - start_sample[4]) % 2 ** 32) /
+                     interval / ifSpeed / cls.MBPS_TO_BPS)
+
+        ifStats['rxRate'] = '%.1f' % ifRxBytes
+        ifStats['txRate'] = '%.1f' % ifTxBytes
+
+        return ifStats
+
     def _getNetworkStats(self, stats):
         stats['network'] = {}
         sInfo, eInfo, sampleInterval = self.sampleNet.getStats()
 
+        if sInfo is None:
+            return
+
         for nic in self._vm._devices[NIC_DEVICES]:
             if nic.name.startswith('hostdev'):
                 continue
-            ifSpeed = [100, 1000][nic.nicModel in ('e1000', 'virtio')]
 
-            ifStats = {'macAddr': nic.macAddr,
-                       'name': nic.name,
-                       'speed': str(ifSpeed),
-                       'state': 'unknown'}
+            # may happen if nic is a new hot-plugged one
+            if nic.name not in sInfo or nic.name not in eInfo:
+                continue
 
-            try:
-                ifStats['rxErrors'] = str(eInfo[nic.name][2])
-                ifStats['rxDropped'] = str(eInfo[nic.name][3])
-                ifStats['txErrors'] = str(eInfo[nic.name][6])
-                ifStats['txDropped'] = str(eInfo[nic.name][7])
-
-                ifRxBytes = (100.0 *
-                             ((eInfo[nic.name][0] - sInfo[nic.name][0]) %
-                              2 ** 32) /
-                             sampleInterval / ifSpeed / self.MBPS_TO_BPS)
-                ifTxBytes = (100.0 *
-                             ((eInfo[nic.name][4] - sInfo[nic.name][4]) %
-                              2 ** 32) /
-                             sampleInterval / ifSpeed / self.MBPS_TO_BPS)
-
-                ifStats['rxRate'] = '%.1f' % ifRxBytes
-                ifStats['txRate'] = '%.1f' % ifTxBytes
-            except (KeyError, TypeError, ZeroDivisionError):
-                self._log.debug("Network stats not available")
-
-            stats['network'][nic.name] = ifStats
+            stats['network'][nic.name] = self._getNicStats(
+                nic.name, nic.nicModel, nic.macAddr,
+                sInfo[nic.name], eInfo[nic.name], sampleInterval)
 
     def _getDiskStats(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleDisk.getStats()
