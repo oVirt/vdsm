@@ -29,6 +29,7 @@ from StringIO import StringIO
 import time
 import functools
 from collections import namedtuple
+from contextlib import contextmanager
 from operator import itemgetter
 
 from vdsm.config import config
@@ -711,11 +712,17 @@ class BlockStorageDomain(sd.StorageDomain):
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
 
-    def getVolumeMetadataSlot(self, vol_name, slotSize):
-        if self.getVersion() in VERS_METADATA_LV:
-            return self.getVolumeMetadataOffsetFromPvMapping(vol_name)
-        else:
-            return self.getFreeMetadataSlot(slotSize)
+    _lvTagMetaSlotLock = threading.Lock()
+
+    @contextmanager
+    def acquireVolumeMetadataSlot(self, vol_name, slotSize):
+        # TODO: Check if the lock is needed when using
+        # getVolumeMetadataOffsetFromPvMapping()
+        with self._lvTagMetaSlotLock:
+            if self.getVersion() in VERS_METADATA_LV:
+                yield self.getVolumeMetadataOffsetFromPvMapping(vol_name)
+            else:
+                yield self.getFreeMetadataSlot(slotSize)
 
     def _getOccupiedMetadataSlots(self):
         stripPrefix = lambda s, pfx: s[len(pfx):]

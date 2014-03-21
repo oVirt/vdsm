@@ -24,7 +24,7 @@ import uuid
 
 from testlib import VdsmTestCase as TestCaseBase
 
-from storage import blockSD, blockVolume, fileSD, outOfProcess
+from storage import blockSD, fileSD, outOfProcess
 
 SDBLKSZ = 512
 
@@ -92,6 +92,10 @@ class BlockDomainMetadataSlotTests(TestCaseBase):
                                             self.OCCUPIED_METADATA_SLOTS)
 
     def testMetaSlotSelection(self):
-        with blockVolume.BlockVolume._tagCreateLock:
-            mdSlot = self.blksd.getVolumeMetadataSlot(None, 1)
+        with self.blksd.acquireVolumeMetadataSlot(None, 1) as mdSlot:
             self.assertEqual(mdSlot, self.EXPECTED_METADATA_SLOT)
+
+    def testMetaSlotLock(self):
+        with self.blksd.acquireVolumeMetadataSlot(None, 1):
+            acquired = self.blksd._lvTagMetaSlotLock.acquire(False)
+            self.assertEqual(acquired, False)

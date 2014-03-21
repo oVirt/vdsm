@@ -19,7 +19,6 @@
 #
 
 import os
-import threading
 import logging
 import sanlock
 
@@ -73,7 +72,6 @@ rmanager = rm.ResourceManager.getInstance()
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
-    _tagCreateLock = threading.Lock()
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.metaoff = None
@@ -150,9 +148,8 @@ class BlockVolume(volume.Volume):
                          imgUUID, volUUID, srcImgUUID, srcVolUUID)
             volParent.clone(volPath, volFormat)
 
-        with cls._tagCreateLock:
-            mdSlot = dom.getVolumeMetadataSlot(volUUID, VOLUME_MDNUMBLKS)
-            mdTags = ["%s%s" % (TAG_PREFIX_MD, mdSlot),
+        with dom.acquireVolumeMetadataSlot(volUUID, VOLUME_MDNUMBLKS) as slot:
+            mdTags = ["%s%s" % (TAG_PREFIX_MD, slot),
                       "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID),
                       "%s%s" % (TAG_PREFIX_IMAGE, imgUUID)]
             lvm.changeLVTags(dom.sdUUID, volUUID, delTags=[TAG_VOL_UNINIT],
@@ -164,7 +161,7 @@ class BlockVolume(volume.Volume):
             cls.log.warn("Cannot deactivate new created volume %s/%s",
                          dom.sdUUID, volUUID, exc_info=True)
 
-        return (dom.sdUUID, mdSlot)
+        return (dom.sdUUID, slot)
 
     def delete(self, postZero, force):
         """ Delete volume
