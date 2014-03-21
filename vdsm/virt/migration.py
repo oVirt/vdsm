@@ -298,9 +298,8 @@ class SourceThread(threading.Thread):
 
             t = DowntimeThread(self._vm, int(self._downtime))
 
-            if MonitorThread._MIGRATION_MONITOR_INTERVAL:
-                self._monitorThread = MonitorThread(self._vm, startTime)
-                self._monitorThread.start()
+            self._monitorThread = MonitorThread(self._vm, startTime)
+            self._monitorThread.start()
 
             try:
                 if self._vm.hasSpice and self._vm.conf.get('clientIp'):
@@ -328,8 +327,7 @@ class SourceThread(threading.Thread):
 
             finally:
                 t.cancel()
-                if MonitorThread._MIGRATION_MONITOR_INTERVAL:
-                    self._monitorThread.stop()
+                self._monitorThread.stop()
 
     def stop(self):
         # if its locks we are before the migrateToURI2()
@@ -390,7 +388,18 @@ class MonitorThread(threading.Thread):
         self.daemon = True
         self.progress = 0
 
+    @property
+    def enabled(self):
+        return MonitorThread._MIGRATION_MONITOR_INTERVAL > 0
+
     def run(self):
+        if self.enabled:
+            self.monitor_migration()
+        else:
+            self._vm.log.debug('migration monitor thread disabled'
+                               ' (monitoring interval set to 0)')
+
+    def monitor_migration(self):
         def calculateProgress(remaining, total):
             if remaining == 0 and total:
                 return 100
