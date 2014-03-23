@@ -298,16 +298,16 @@ configure() {
 }
 ## end of configuration section by vdsm
 EOF
+    # We must unpersist the original logrotate.d/libvirtd before editing
+    if isOvirtNode; then
+        . /usr/libexec/ovirt-functions
+        remove_config "${llogr}"
+    fi
     # Backup (comment) original logrotate.d/libvirtd
     @SED_PATH@ -i 's/^/# VDSM backup/' "$llogr"
     @SED_PATH@ -e "/# vdsm/,/# end vdsm/d" "${llogr}" >> "${stanza}"
     local oldmod=`/usr/bin/stat --format=%a "${llogr}"`
 
-    # unpersist cmd is remove_config on ovirt-functions
-    if isOvirtNode; then
-        . /usr/libexec/ovirt-functions
-        remove_config "${llogr}"
-    fi
     @MV_PATH@ "${stanza}" "${llogr}"
 
     if [ -n "${oldmod}" ]; then
