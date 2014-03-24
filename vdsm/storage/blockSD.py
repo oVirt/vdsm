@@ -1045,6 +1045,7 @@ class BlockStorageDomain(sd.StorageDomain):
     def linkBCImage(self, imgPath, imgUUID):
         dst = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
                            imgUUID)
+        self.log.debug("Creating symlink from %s to %s", imgPath, dst)
         try:
             os.symlink(imgPath, dst)
         except OSError as e:
@@ -1074,6 +1075,7 @@ class BlockStorageDomain(sd.StorageDomain):
         for volUUID in volUUIDs:
             srcVol = os.path.join(srcImgPath, volUUID)
             dstVol = os.path.join(imgRunDir, volUUID)
+            self.log.debug("Creating symlink from %s to %s", srcVol, dstVol)
             try:
                 os.symlink(srcVol, dstVol)
             except OSError as e:
@@ -1306,6 +1308,7 @@ class BlockStorageDomain(sd.StorageDomain):
             dst = os.path.join(domMD, lvName)
             if not os.path.lexists(dst):
                 src = lvm.lvPath(self.sdUUID, lvName)
+                self.log.debug("Creating symlink from %s to %s", src, dst)
                 os.symlink(src, dst)
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):

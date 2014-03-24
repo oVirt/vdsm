@@ -109,6 +109,7 @@ class BlockVolume(volume.Volume):
                                     sdUUID, volUUID, str(e))
 
                 if os.path.lexists(volPath):
+                    cls.log.debug("Unlinking half baked volume: %s", volPath)
                     os.unlink(volPath)
 
     @classmethod
@@ -248,6 +249,7 @@ class BlockVolume(volume.Volume):
                            self.volUUID, exc_info=True)
 
         try:
+            self.log.debug("Unlinking %s", vol_path)
             os.unlink(vol_path)
             return True
         except Exception as e:
@@ -430,7 +432,9 @@ class BlockVolume(volume.Volume):
             self.validateImagePath()
         volPath = os.path.join(self.imagePath, self.volUUID)
         if not os.path.lexists(volPath):
-            os.symlink(lvm.lvPath(self.sdUUID, self.volUUID), volPath)
+            srcPath = lvm.lvPath(self.sdUUID, self.volUUID)
+            self.log.debug("Creating symlink from %s to %s", srcPath, volPath)
+            os.symlink(srcPath, volPath)
         self.volumePath = volPath
 
     def getVolumeTag(self, tagPrefix):

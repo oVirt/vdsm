@@ -380,6 +380,7 @@ class FileStorageDomain(sd.StorageDomain):
         currImgDir = self.getImagePath(imgUUID)
         dirName, baseName = os.path.split(currImgDir)
         toDelDir = os.tempnam(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
+        self.log.debug("Renaming dir %s to %s", currImgDir, toDelDir)
         try:
             self.oop.os.rename(currImgDir, toDelDir)
         except OSError as e:
@@ -388,12 +389,18 @@ class FileStorageDomain(sd.StorageDomain):
         for volUUID in volsImgs:
             volPath = os.path.join(toDelDir, volUUID)
             try:
+                self.log.debug("Removing file: %s", volPath)
                 self.oop.os.remove(volPath)
-                self.oop.os.remove(volPath + '.meta')
-                self.oop.os.remove(volPath + '.lease')
+                metaFile = volPath + '.meta'
+                self.log.debug("Removing file: %s", metaFile)
+                self.oop.os.remove(metaFile)
+                leaseFile = volPath + '.lease'
+                self.log.debug("Removing file: %s", leaseFile)
+                self.oop.os.remove(leaseFile)
             except OSError:
                 self.log.error("vol: %s can't be removed.",
                                volPath, exc_info=True)
+        self.log.debug("Removing directory: %s", toDelDir)
         try:
             self.oop.os.rmdir(toDelDir)
         except OSError as e:
@@ -473,6 +480,7 @@ class FileStorageDomain(sd.StorageDomain):
         sdRunDir = os.path.join(constants.P_VDSM_STORAGE, self.sdUUID)
         fileUtils.createdir(sdRunDir)
         imgRunDir = os.path.join(sdRunDir, imgUUID)
+        self.log.debug("Creating symlink from %s to %s", srcImgPath, imgRunDir)
         try:
             os.symlink(srcImgPath, imgRunDir)
         except OSError as e:
@@ -497,6 +505,7 @@ class FileStorageDomain(sd.StorageDomain):
                               imgUUID)
         volPaths = tuple(os.path.join(imgDir, v) for v in volUUIDs)
         for volPath in volPaths:
+            self.log.debug("Fixing permissions on %s", volPath)
             self.oop.fileUtils.copyUserModeToGroup(volPath)
 
         return self.createImageLinks(imgDir, imgUUID)
@@ -570,6 +579,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         masterdir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
         if not self.oop.fileUtils.pathExists(masterdir):
+            self.log.debug("Creating master directory: %s", masterdir)
             self.oop.os.mkdir(masterdir, 0o755)
 
     def unmountMaster(self):
@@ -636,6 +646,7 @@ class FileStorageDomain(sd.StorageDomain):
             for volFile in volFiles:
                 tLink = os.path.join(basePath, rImg, volFile)
                 tVol = os.path.join(basePath, templateImage, volFile)
+                self.log.debug("Force linking %s to %s", tVol, tLink)
                 self.oop.utils.forceLink(tVol, tLink)
 
 
