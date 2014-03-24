@@ -272,7 +272,7 @@ class TestVm(TestCaseBase):
                   'cpuPinning': {'0': '0-1', '1': '2-3'},
                   'numaTune': {'mode': 'strict', 'nodeset': '0-1'},
                   'guestNumaNodes': [{'cpus': '0-1', 'memory': '512000'},
-                  {'cpus': '2,3', 'memory': 512000}]}
+                                     {'cpus': '2,3', 'memory': 512000}]}
         vmConf.update(self.conf)
         domxml = vm._DomXML(vmConf, self.log,
                             caps.Architecture.X86_64)
