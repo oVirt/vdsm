@@ -24,7 +24,10 @@ import errno
 import logging
 
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import permutations, expandPermutations
+from testValidation import checkSudo
 from vdsm import utils
+from vdsm import constants
 import time
 
 EXT_SLEEP = "sleep"
@@ -442,3 +445,42 @@ class RollbackContextTests(TestCaseBase):
             self.fail("Wrong exception was raised")
 
         self.fail("Exception was not raised")
+
+
+@expandPermutations
+class ExecCmdTest(TestCaseBase):
+    CMD_TYPES = ((tuple,), (list,), (iter,))
+
+    @permutations(CMD_TYPES)
+    def testNormal(self, cmd):
+        rc, out, _ = utils.execCmd(cmd(('echo', 'hello world')))
+        self.assertEquals(rc, 0)
+        self.assertEquals(out[0], 'hello world')
+
+    @permutations(CMD_TYPES)
+    def testIoClass(self, cmd):
+        rc, out, _ = utils.execCmd(cmd(('ionice',)), ioclass=2,
+                                   ioclassdata=3)
+        self.assertEquals(rc, 0)
+        self.assertEquals(out[0].strip(), 'best-effort: prio 3')
+
+    @permutations(CMD_TYPES)
+    def testNice(self, cmd):
+        rc, out, _ = utils.execCmd(cmd(('cat', '/proc/self/stat')), nice=7)
+        self.assertEquals(rc, 0)
+        self.assertEquals(int(out[0].split()[18]), 7)
+
+    @permutations(CMD_TYPES)
+    def testSetSid(self, cmd):
+        cmd_args = (constants.EXT_PYTHON, '-c',
+                    'import os; print os.getsid(os.getpid())')
+        rc, out, _ = utils.execCmd(cmd(cmd_args), setsid=True)
+        self.assertNotEquals(int(out[0]), os.getsid(os.getpid()))
+
+    @permutations(CMD_TYPES)
+    def testSudo(self, cmd):
+        checkSudo(['echo'])
+        rc, out, _ = utils.execCmd(cmd(('grep', 'Uid', '/proc/self/status')),
+                                   sudo=True)
+        self.assertEquals(rc, 0)
+        self.assertEquals(int(out[0].split()[2]), 0)

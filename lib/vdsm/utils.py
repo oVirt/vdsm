@@ -656,6 +656,9 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
     a temporary thread, spawn a sync=False sub-process, and have the thread
     finish, the new subprocess would die immediately.
     """
+
+    command = list(command)
+
     if ioclass is not None:
         cmd = command
         command = [constants.EXT_IONICE, '-c', str(ioclass)]
