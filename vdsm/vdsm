@@ -26,6 +26,7 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 from vdsm import libvirtconnection
+from vdsm import profile
 
 from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
@@ -65,6 +66,8 @@ def serve_clients(log):
     signal.signal(signal.SIGUSR1, sigusr1Handler)
     zombiereaper.registerSignalHandler()
 
+    profile.start()
+
     libvirtconnection.start_event_loop()
 
     if config.getboolean('irs', 'irs_enable'):
@@ -79,6 +82,8 @@ def serve_clients(log):
     try:
         while running[0]:
             signal.pause()
+
+        profile.stop()
     finally:
         cif.prepareForShutdown()
 

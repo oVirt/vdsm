@@ -31,6 +31,7 @@ dist_vdsmpylib_PYTHON = \
 	netinfo.py \
 	netlink.py \
 	qemuImg.py \
+	profile.py \
 	SecureXMLRPCServer.py \
 	utils.py \
 	$(NULL)

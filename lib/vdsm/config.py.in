@@ -29,6 +29,12 @@ parameters = [
         ('core_dump_enable', 'true',
             'Enable core dump.'),
 
+        ('profile_enable', 'false',
+            'Enable whole process profiling (requires yappi profiler).'),
+
+        ('profile_format', 'pstat',
+            'Profile file format (pstat, callgrind, ystat)'),
+
         ('host_mem_reserve', '256',
             'Reserves memory for the host to prevent VMs from using all the '
             'physical pages. The values are in Mbytes.'),
