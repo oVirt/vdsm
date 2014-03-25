@@ -66,6 +66,7 @@ from threadLocal import vars
 from vdsm import constants
 from storageConstants import STORAGE
 import resourceManager as rm
+from resourceFactories import IMAGE_NAMESPACE
 import devicemapper
 import logUtils
 import mount
@@ -1767,6 +1768,38 @@ class HSM:
             vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
             description, dstSdUUID, volType, volFormat, preallocate,
             misc.parseBool(postZero), misc.parseBool(force))
+
+    @public
+    def imageSyncVolumeChain(self, sdUUID, imgUUID, volUUID, newChain):
+        """
+        Update storage metadata for an image chain after a live merge
+        completes.  Since this is called from the HSM where the VM is running,
+        we cannot modify the LVM tag that stores the parent UUID for block
+        volumes.  In this case we update the chain in the metadata LV only.
+        The LV tag will be fixed when the unlinked volume is deleted by an SPM.
+        """
+        sdDom = sdCache.produce(sdUUID=sdUUID)
+        repoPath = os.path.join(self.storage_repository, sdDom.getPools()[0])
+        img = image.Image(repoPath)
+
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
+                                      rm.LockType.shared):
+            curChain = img.getChain(sdUUID, imgUUID, volUUID)
+            subChain = []
+            for vol in curChain:
+                if vol.volUUID not in newChain:
+                    subChain.insert(0, vol.volUUID)
+                elif len(subChain) > 0:
+                    break
+            self.log.debug("unlinking subchain: %s" % subChain)
+            if len(subChain) == 0:
+                return
+
+            dstParent = sdDom.produceVolume(imgUUID, subChain[0]).getParent()
+            children = sdDom.produceVolume(imgUUID, subChain[-1]).getChildren()
+            for childID in children:
+                sdDom.produceVolume(imgUUID, childID).setParentMeta(dstParent)
 
     @public
     def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor,

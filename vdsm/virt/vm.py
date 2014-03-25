@@ -2988,6 +2988,13 @@ class Vm(object):
                         supervdsm.getProxy().setPortMirroring(network,
                                                               nic.name)
 
+        # Scan all drives backed by vdsm images for volume chain
+        # inconsistencies.  This can happen if a live merge completed while
+        # vdsm was not running to catch the event.
+        for drive in self._devices[DISK_DEVICES]:
+            if drive['device'] == 'disk' and isVdsmImage(drive):
+                self._syncVolumeChain(drive)
+
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
@@ -5162,17 +5169,18 @@ class Vm(object):
         driveSpec = dict([(k, drive[k]) for k in
                          'poolID', 'domainID', 'imageID', 'volumeID'])
         with self._confLock:
-            jobDir = self.conf['_blockJobs']
-            for job in jobDir.values():
-                if job['disk']['imageID'] == drive['imageID']:
-                    self.log.error("A block job with id %s already exists for "
-                                   "vm disk with image id: %s" %
-                                   (job['jobID'], drive['imageID']))
-                    raise BlockJobExistsError()
-
-            newJob = {'jobID': jobID, 'disk': driveSpec, 'baseVolume': base,
-                      'topVolume': top, 'strategy': strategy}
-            jobDir[jobID] = newJob
+            try:
+                job = self.getBlockJob(drive)
+            except LookupError:
+                newJob = {'jobID': jobID, 'disk': driveSpec,
+                          'baseVolume': base, 'topVolume': top,
+                          'strategy': strategy}
+                self.conf['_blockJobs'][jobID] = newJob
+            else:
+                self.log.error("A block job with id %s already exists for vm "
+                               "disk with image id: %s" %
+                               (job['jobID'], drive['imageID']))
+                raise BlockJobExistsError()
         self.saveState()
 
     def untrackBlockJob(self, jobID):
@@ -5222,6 +5230,12 @@ class Vm(object):
             drive = self._findDriveByUUIDs(driveSpec)
         except LookupError:
             return errCode['imageErr']
+
+        # Check that libvirt exposes full volume chain information
+        if self._driveGetActualVolumeChain(drive) is None:
+            self.log.error("merge: libvirt does not support volume chain "
+                           "monitoring.  Unable to perform live merge.")
+            return errCode['mergeErr']
 
         base = top = None
         for v in drive.volumeChain:
@@ -5284,8 +5298,103 @@ class Vm(object):
 
         return {'status': doneCode}
 
+    def _lookupDeviceXMLByAlias(self, targetAlias):
+        domXML = self._getUnderlyingVmInfo()
+        devices = _domParseStr(domXML).childNodes[0]. \
+            getElementsByTagName('devices')[0]
+
+        for deviceXML in devices.childNodes:
+            if deviceXML.nodeType != Node.ELEMENT_NODE:
+                continue
+
+            aliasElement = deviceXML.getElementsByTagName('alias')
+            if aliasElement:
+                alias = aliasElement[0].getAttribute('name')
+
+                if alias == targetAlias:
+                    return deviceXML
+        return None
+
+    def _driveGetActualVolumeChain(self, drive):
+        def pathToVolID(drive, path):
+            for vol in drive.volumeChain:
+                if os.path.realpath(vol['path']) == os.path.realpath(path):
+                    return vol['volumeID']
+            raise LookupError("Unable to find VolumeID for path '%s'", path)
+
+        def findElement(doc, name):
+            for child in doc.childNodes:
+                if child.nodeName == name:
+                    return child
+            return None
+
+        diskXML = self._lookupDeviceXMLByAlias(drive['alias'])
+        if not diskXML:
+            return None
+        volChain = []
+        while True:
+            sourceXML = findElement(diskXML, 'source')
+            if not sourceXML:
+                break
+            sourceAttr = ('file', 'dev')[drive.blockDev]
+            path = sourceXML.getAttribute(sourceAttr)
+            volChain.insert(0, pathToVolID(drive, path))
+            bsXML = findElement(diskXML, 'backingStore')
+            if not bsXML:
+                return None
+            diskXML = bsXML
+        return volChain
+
+    def _syncVolumeChain(self, drive):
+        def getVolumeInfo(device, volumeID):
+            for info in device['volumeChain']:
+                if info['volumeID'] == volumeID:
+                    return deepcopy(info)
+
+        if not isVdsmImage(drive):
+            self.log.debug("Skipping drive '%s' which is not a vdsm image",
+                           drive.name)
+            return
+
+        curVols = [x['volumeID'] for x in drive.volumeChain]
+        volumes = self._driveGetActualVolumeChain(drive)
+        if volumes is None:
+            self.log.debug("Unable to determine volume chain. Skipping volume "
+                           "chain synchronization for drive %s", drive.name)
+            return
+
+        self.log.debug("vdsm chain: %s, libvirt chain: %s", curVols, volumes)
+
+        # Ask the storage to sync metadata according to the new chain
+        self.cif.irs.imageSyncVolumeChain(drive.domainID, drive.imageID,
+                                          drive['volumeID'], volumes)
+
+        if (set(curVols) == set(volumes)):
+            return
+
+        volumeID = volumes[-1]
+        # Sync this VM's data strctures.  Ugh, we're storing the same info in
+        # two places so we need to change it twice.
+        device = self._lookupConfByPath(drive['path'])
+        if drive.volumeID != volumeID:
+            # If the active layer changed:
+            #  Update the disk path, volumeID, and volumeInfo members
+            volInfo = getVolumeInfo(device, volumeID)
+            device['path'] = drive.path = volInfo['path']
+            device['volumeID'] = drive.volumeID = volumeID
+            device['volumeInfo'] = drive.volumeInfo = volInfo
+
+        # Remove any components of the volumeChain which are no longer present
+        newChain = [x for x in device['volumeChain']
+                    if x['volumeID'] in volumes]
+        device['volumeChain'] = drive.volumeChain = newChain
+
     def _onBlockJobEvent(self, path, blockJobType, status):
-        # TODO: Synchronize our state in case the volume chain changed
+        if blockJobType != libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT:
+            self.log.warning("Ignoring unrecognized block job type: '%s'",
+                             blockJobType)
+            return
+
         drive = self._lookupDeviceByPath(path)
         try:
             jobID = self.getBlockJob(drive)['jobID']
@@ -5293,6 +5402,12 @@ class Vm(object):
             self.log.debug("Ignoring event for untracked block job on path "
                            "'%s'", path)
             return
+
+        if status == libvirt.VIR_DOMAIN_BLOCK_JOB_COMPLETED:
+            self._syncVolumeChain(drive)
+        else:
+            self.log.warning("Block job '%s' did not complete successfully "
+                             "(status:%i)", path, status)
         self.untrackBlockJob(jobID)
 
     def _initLegacyConf(self):
