@@ -41,6 +41,9 @@ METADATA_GROUP = '@METADATAGROUP@'
 QEMU_PROCESS_USER = '@QEMUUSER@'
 QEMU_PROCESS_GROUP = '@QEMUGROUP@'
 
+# Sanlock definitions
+SANLOCK_USER = '@SNLKUSER@'
+
 #
 # The username of SASL authenticating for libvirt connection
 #

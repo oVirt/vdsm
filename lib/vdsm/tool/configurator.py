@@ -24,7 +24,8 @@ import argparse
 
 from .. import utils
 from . import service, expose
-from ..constants import P_VDSM_EXEC, QEMU_PROCESS_GROUP, VDSM_GROUP
+from ..constants import P_VDSM_EXEC, QEMU_PROCESS_GROUP, \
+    SANLOCK_USER, VDSM_GROUP
 
 
 class _ModuleConfigure(object):
@@ -132,7 +133,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
                 '-a',
                 '-G',
                 ','.join(self.SANLOCK_GROUPS),
-                'sanlock'
+                SANLOCK_USER
             ),
             raw=True,
         )
