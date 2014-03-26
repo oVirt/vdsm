@@ -229,11 +229,9 @@ class clientIF:
         finally:
             self._shutdownSemaphore.release()
 
-    def serve(self):
+    def start(self):
         for binding in self.bindings.values():
             binding.start()
-        while self._enabled:
-            time.sleep(3)
 
     def _getUUIDSpecPath(self, uuid):
         try:
