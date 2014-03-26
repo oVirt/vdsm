@@ -49,11 +49,11 @@ def usage():
 def serve_clients(log):
     cif = None
     irs = None
+    running = [True]
 
     def sigtermHandler(signum, frame):
-        if cif:
-            log.debug("Received signal %s" % signum)
-            cif.prepareForShutdown()
+        log.debug("Received signal %s" % signum)
+        running[0] = False
 
     def sigusr1Handler(signum, frame):
         if irs:
@@ -75,7 +75,12 @@ def serve_clients(log):
 
     from clientIF import clientIF  # must import after config is read
     cif = clientIF.getInstance(irs, log)
-    cif.serve()
+    cif.start()
+    try:
+        while running[0]:
+            signal.pause()
+    finally:
+        cif.prepareForShutdown()
 
 
 def run(pidfile=None):
