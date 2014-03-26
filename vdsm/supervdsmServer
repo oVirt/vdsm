@@ -267,6 +267,7 @@ class _SuperVdsm(object):
         rule = 'SYMLINK=="mapper/%s", OWNER="%s", GROUP="%s"\n' % (guid,
                DISKIMAGE_USER, DISKIMAGE_GROUP)
         with open(ruleFile, "w") as rf:
+            self.log.debug("Creating rule %s: %r", ruleFile, rule)
             rf.write(rule)
 
     @logDecorator
@@ -279,6 +280,7 @@ class _SuperVdsm(object):
         fails = []
         for r in rules:
             try:
+                self.log.debug("Removing rule %s", r)
                 os.remove(r)
             except OSError:
                 fails.append(r)
