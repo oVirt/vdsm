@@ -283,11 +283,7 @@ parameters = [
         ('maximum_domains_in_pool', '100',
             'Process pool configuration.'),
 
-        ('process_pool_size', '100', None),
-
         ('process_pool_timeout', '60', None),
-
-        ('process_pool_grace_period', '2', None),
 
         ('process_pool_max_slots_per_domain', '10', None),
 
