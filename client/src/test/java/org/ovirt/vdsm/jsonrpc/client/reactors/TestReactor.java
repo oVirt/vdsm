@@ -22,10 +22,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
-import org.ovirt.vdsm.jsonrpc.client.reactors.NioReactor;
-import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
-import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
-import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.EventListener;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 // This class is heavily time dependent so there is
@@ -37,13 +34,13 @@ public class TestReactor {
     private final static int TIMEOUT_SEC = 6;
     private final static String HOSTNAME = "127.0.0.1";
     private final static String DATA = "Hello World!";
-    private NioReactor reactorForListener;
-    private NioReactor reactorForClient;
+    private Reactor reactorForListener;
+    private Reactor reactorForClient;
 
     @Before
     public void setUp() throws Exception {
-        this.reactorForListener = new NioReactor();
-        this.reactorForClient = new NioReactor();
+        this.reactorForListener = ReactorFactory.getReactor(null, ReactorType.STOMP);
+        this.reactorForClient = ReactorFactory.getReactor(null, ReactorType.STOMP);
     }
 
     @After
@@ -60,8 +57,8 @@ public class TestReactor {
         final Future<ReactorListener> futureListener = this.reactorForListener.createListener(HOSTNAME, 6669,
                 new ReactorListener.EventListener() {
                     @Override
-                    public void onAcccept(ReactorListener listener, final ReactorClient client) {
-                        client.addEventListener(new EventListener() {
+                    public void onAcccept(final ReactorClient client) {
+                        client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
                                 client.sendMessage(message);
@@ -77,7 +74,7 @@ public class TestReactor {
         ReactorClient client = this.reactorForClient.createClient(HOSTNAME, 6669);
         assertNotNull(client);
 
-        client.addEventListener(new EventListener() {
+        client.addEventListener(new MessageListener() {
             @Override
             public void onMessageReceived(byte[] message) {
                 queue.add(message);
@@ -108,7 +105,7 @@ public class TestReactor {
             public ReactorClient call() throws Exception {
                 ReactorClient client = reactorForClient.createClient(HOSTNAME, 6668);
 
-                client.addEventListener(new EventListener() {
+                client.addEventListener(new MessageListener() {
                     @Override
                     public void onMessageReceived(byte[] message) {
                         queue.add(message);
@@ -127,8 +124,8 @@ public class TestReactor {
                 final Future<ReactorListener> futureListener = reactorForListener.createListener(HOSTNAME, 6668,
                         new ReactorListener.EventListener() {
                             @Override
-                            public void onAcccept(ReactorListener listener, final ReactorClient client) {
-                                client.addEventListener(new EventListener() {
+                            public void onAcccept(final ReactorClient client) {
+                                client.addEventListener(new MessageListener() {
                                     @Override
                                     public void onMessageReceived(byte[] message) {
                                         client.sendMessage(message);
@@ -171,8 +168,8 @@ public class TestReactor {
         Future<ReactorListener> futureListener = this.reactorForListener.createListener(HOSTNAME, 6667,
                 new ReactorListener.EventListener() {
                     @Override
-                    public void onAcccept(ReactorListener listener, final ReactorClient client) {
-                        client.addEventListener(new EventListener() {
+                    public void onAcccept(final ReactorClient client) {
+                        client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
                                 client.sendMessage(message);
@@ -188,7 +185,7 @@ public class TestReactor {
         ReactorClient client = this.reactorForClient.createClient(HOSTNAME, 6667);
         assertNotNull(client);
 
-        client.addEventListener(new EventListener() {
+        client.addEventListener(new MessageListener() {
             @Override
             public void onMessageReceived(byte[] message) {
                 queue.add(message);
@@ -200,8 +197,8 @@ public class TestReactor {
         futureListener = this.reactorForListener.createListener(HOSTNAME, 6667,
                 new ReactorListener.EventListener() {
                     @Override
-                    public void onAcccept(ReactorListener listener, final ReactorClient client) {
-                        client.addEventListener(new EventListener() {
+                    public void onAcccept(final ReactorClient client) {
+                        client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
                                 client.sendMessage(message);

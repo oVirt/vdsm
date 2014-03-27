@@ -5,31 +5,35 @@ import java.security.GeneralSecurityException;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.internal.ResponseWorker;
+import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.SSLStompReactor;
+import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompReactor;
 
 /**
- * Factory class which provide single instance of <code>Reactor</code>s or
- * <code>ResponseWorker</code> within single loading scope.
+ * Factory class which provide single instance of <code>Reactor</code>s or <code>ResponseWorker</code> within single
+ * loading scope.
  *
  */
 public class ReactorFactory {
 
-    private static volatile NioReactor nioReactor;
-    private static volatile SSLReactor sslReactor;
+    private static volatile StompReactor stompReactor;
+    private static volatile SSLStompReactor sslStompReactor;
     private static volatile ResponseWorker worker;
 
     /**
-     * Provides instance of <code>Reactor</code> based on <code>ManagerProvider</code>
-     * availability.
-     * @param provider - Provides ability to get SSL context.
-     * @return <code>NioReactor</code> reactor when provider is <code>null</code> or
-     *         <code>SSLReactor</code>.
+     * Provides instance of <code>Reactor</code> based on <code>ManagerProvider</code> availability and
+     * type provided.
+     *
+     * @param provider Provides ability to get SSL context.
+     * @param type <code>ReactorType</code> which will be created.
+     * @return <code>NioReactor</code> reactor when provider is <code>null</code> or <code>SSLReactor</code>.
      * @throws ClientConnectionException
      */
-    public static Reactor getReactor(ManagerProvider provider) throws ClientConnectionException {
-        if (provider == null) {
-            return getNioReactor();
+    public static Reactor getReactor(ManagerProvider provider, ReactorType type) throws ClientConnectionException {
+        if (ReactorType.STOMP.equals(type)) {
+            return getStompReactor(provider);
+        } else {
+            return null;
         }
-        return getSslReactor(provider);
     }
 
     /**
@@ -48,37 +52,40 @@ public class ReactorFactory {
         return worker;
     }
 
-    private static Reactor getNioReactor() throws ClientConnectionException {
-        if (nioReactor != null) {
-            return nioReactor;
+    private static Reactor getStompReactor(ManagerProvider provider) throws ClientConnectionException {
+        if (provider != null) {
+            return getSslStompReactor(provider);
+        }
+        if (stompReactor != null) {
+            return stompReactor;
         }
         synchronized (ReactorFactory.class) {
-            if (nioReactor != null) {
-                return nioReactor;
+            if (stompReactor != null) {
+                return stompReactor;
             }
             try {
-                nioReactor = new NioReactor();
+                stompReactor = new StompReactor();
             } catch (IOException e) {
                 throw new ClientConnectionException(e);
             }
         }
-        return nioReactor;
+        return stompReactor;
     }
 
-    private static Reactor getSslReactor(ManagerProvider provider) throws ClientConnectionException {
-        if (sslReactor != null) {
-            return sslReactor;
+    private static Reactor getSslStompReactor(ManagerProvider provider) throws ClientConnectionException {
+        if (sslStompReactor != null) {
+            return sslStompReactor;
         }
         synchronized (ReactorFactory.class) {
-            if (sslReactor != null) {
-                return sslReactor;
+            if (sslStompReactor != null) {
+                return sslStompReactor;
             }
             try {
-                sslReactor = new SSLReactor(provider.getSSLContext());
+                sslStompReactor = new SSLStompReactor(provider.getSSLContext());
             } catch (IOException | GeneralSecurityException e) {
                 throw new ClientConnectionException(e);
             }
         }
-        return sslReactor;
+        return sslStompReactor;
     }
 }

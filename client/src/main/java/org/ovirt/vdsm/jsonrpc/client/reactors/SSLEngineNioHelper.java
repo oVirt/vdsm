@@ -10,6 +10,8 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 
+import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
+
 /**
  * Helper object responsible for low level ssl communication.
  *
@@ -22,10 +24,12 @@ public class SSLEngineNioHelper {
     private final ByteBuffer packetBuffer;
     private final ByteBuffer appPeerBuffer;
     private final ByteBuffer packatPeerBuffer;
+    private OneTimeCallback callback;
 
-    public SSLEngineNioHelper(SocketChannel channel, SSLEngine engine) {
+    public SSLEngineNioHelper(SocketChannel channel, SSLEngine engine, OneTimeCallback callback) {
         this.channel = channel;
         this.engine = engine;
+        this.callback = callback;
         SSLSession session = engine.getSession();
 
         this.appBuffer = ByteBuffer.allocate(session.getApplicationBufferSize());
@@ -38,13 +42,15 @@ public class SSLEngineNioHelper {
         this.engine.beginHandshake();
     }
 
-    public void read(ByteBuffer buff) throws IOException {
+    public int read(ByteBuffer buff) throws IOException {
+        int read = 0;
         if (this.appPeerBuffer.position() < buff.limit()) {
             this.channel.read(this.packatPeerBuffer);
 
             this.packatPeerBuffer.flip();
 
-            this.engine.unwrap(this.packatPeerBuffer, this.appPeerBuffer);
+            SSLEngineResult result = this.engine.unwrap(this.packatPeerBuffer, this.appPeerBuffer);
+            read = result.bytesProduced();
             this.packatPeerBuffer.compact();
         }
         this.appPeerBuffer.flip();
@@ -56,6 +62,7 @@ public class SSLEngineNioHelper {
         buff.put(slice);
         this.appPeerBuffer.position(this.appPeerBuffer.position() + slice.limit());
         this.appPeerBuffer.compact();
+        return read;
     }
 
     public void write(ByteBuffer buff) throws IOException {
@@ -73,8 +80,11 @@ public class SSLEngineNioHelper {
     }
 
     @SuppressWarnings("incomplete-switch")
-    private Runnable handshake() throws IOException {
+    public Runnable process() throws IOException {
         if (!handshakeInProgress()) {
+            if (this.callback != null) {
+                this.callback.checkAndExecute();
+            }
             return null;
         }
 
@@ -92,15 +102,6 @@ public class SSLEngineNioHelper {
         return null;
     }
 
-    public Runnable process() throws IOException {
-        final Runnable op = handshake();
-        if (op != null) {
-            return op;
-        }
-
-        return null;
-    }
-
     boolean handshakeInProgress() {
         final SSLEngineResult.HandshakeStatus hs = this.engine.getHandshakeStatus();
 
@@ -109,6 +110,5 @@ public class SSLEngineNioHelper {
                         SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING);
 
         return !handshakeEndStates.contains(hs);
-
     }
 }

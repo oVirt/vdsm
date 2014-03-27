@@ -24,7 +24,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.ReactorScheduler;
  *
  */
 public abstract class Reactor extends Thread {
-    private static Log log = LogFactory.getLog(Reactor.class);
+    private static final Log LOG = LogFactory.getLog(Reactor.class);
     private static final int TIMEOUT = 1000;
     private final AbstractSelector selector;
     private final ReactorScheduler scheduler;
@@ -43,7 +43,7 @@ public abstract class Reactor extends Thread {
         try {
             this.selector.select(TIMEOUT);
         } catch (IOException e) {
-            log.error("IOException occured", e);
+            LOG.error("IOException occured", e);
         }
     }
 
@@ -69,7 +69,7 @@ public abstract class Reactor extends Thread {
             }
 
             if (key.isAcceptable()) {
-                final NioListener obj = (NioListener) key.attachment();
+                final ReactorListener obj = (ReactorListener) key.attachment();
                 final ReactorClient client = obj.accept();
                 if (client == null) {
                     continue;
@@ -81,7 +81,7 @@ public abstract class Reactor extends Thread {
                 try {
                     client.process();
                 } catch (IOException | ClientConnectionException ex) {
-                    log.error("Unable to process messages", ex);
+                    LOG.error("Unable to process messages", ex);
                     client.close();
                 }
             }
@@ -103,14 +103,14 @@ public abstract class Reactor extends Thread {
 
     public Future<ReactorListener> createListener(final String hostname,
             final int port,
-            final ReactorListener.EventListener owner) {
+            final ReactorListener.EventListener owner) throws ClientConnectionException {
         final Reactor reactor = this;
         final FutureTask<ReactorListener> task = new FutureTask<>(
                 new Callable<ReactorListener>() {
                     @Override
                     public ReactorListener call() throws IOException {
                         InetAddress address = InetAddress.getByName(hostname);
-                        return new NioListener(
+                        return new ReactorListener(
                                 reactor,
                                 new InetSocketAddress(address, port),
                                 selector, owner);
@@ -124,22 +124,16 @@ public abstract class Reactor extends Thread {
         return createClient(this, this.selector, hostname, port);
     }
 
-    public ReactorClient createConnectedClient(String hostName, int port, SocketChannel channel)
-            throws ClientConnectionException {
-        return createConnectedClient(this, this.selector, hostName, port, channel);
-    }
-
     public void close() throws IOException {
         this.isRunning = false;
         wakeup();
     }
 
-    public abstract ReactorClient createClient(Reactor reactor, Selector selector, String hostname, int port)
+    protected abstract ReactorClient createClient(Reactor reactor, Selector selector, String hostname, int port)
             throws ClientConnectionException;
 
-    public abstract ReactorClient createConnectedClient(Reactor reactor, Selector selector, String hostname,
+    protected abstract ReactorClient createConnectedClient(Reactor reactor, Selector selector, String hostname,
             int port, SocketChannel channel) throws ClientConnectionException;
 
-    public abstract String getReactorName();
-
+    protected abstract String getReactorName();
 }

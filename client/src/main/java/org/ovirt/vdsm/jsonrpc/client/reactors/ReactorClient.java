@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -23,45 +21,39 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
+import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.DefaultConnectionRetryPolicy;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.Retryable;
 
 /**
- * Abstract implementation of <code>JsonRpcClient</code> which
- * handles low level networking.
+ * Abstract implementation of <code>JsonRpcClient</code> which handles low level networking.
  *
  */
 public abstract class ReactorClient {
-    public interface EventListener {
+    public interface MessageListener {
         public void onMessageReceived(byte[] message);
     }
 
     private static Log log = LogFactory.getLog(ReactorClient.class);
-    private final long maxBuffLen;
-    private final List<EventListener> eventListeners;
-    private final ByteBuffer byteBuffer;
     private final String hostname;
     private final int port;
-    private RetryPolicy policy = new DefaultConnectionRetryPolicy();
-    private ByteBuffer ibuff = null;
     private final Lock lock;
-    final Reactor reactor;
-    SelectionKey key;
-    SocketChannel channel;
-    final Deque<ByteBuffer> outbox;
+    protected RetryPolicy policy = new DefaultConnectionRetryPolicy();
+    protected final List<MessageListener> eventListeners;
+    protected final Reactor reactor;
+    protected final Deque<ByteBuffer> outbox;
+    protected SelectionKey key;
+    protected ByteBuffer ibuff = null;
+    protected SocketChannel channel;
 
     public ReactorClient(Reactor reactor, String hostname, int port) {
         this.reactor = reactor;
         this.hostname = hostname;
         this.port = port;
-        this.eventListeners = new CopyOnWriteArrayList<EventListener>();
+        this.eventListeners = new CopyOnWriteArrayList<MessageListener>();
         this.lock = new ReentrantLock();
         this.outbox = new ConcurrentLinkedDeque<>();
-        this.byteBuffer = ByteBuffer.allocate(8);
-        this.byteBuffer.order(ByteOrder.BIG_ENDIAN);
-        this.byteBuffer.rewind();
-        this.maxBuffLen = (1 << 20) * 4;
     }
 
     public String getHostname() {
@@ -80,8 +72,8 @@ public abstract class ReactorClient {
             if (isOpen()) {
                 return;
             }
-            final FutureTask<SocketChannel> task = new FutureTask<>(
-                    new Retryable<SocketChannel>(new Callable<SocketChannel>() {
+            final FutureTask<SocketChannel> task = scheduleTask(new Retryable<SocketChannel>(
+                    new Callable<SocketChannel>() {
                         @Override
                         public SocketChannel call() throws IOException {
 
@@ -96,9 +88,8 @@ public abstract class ReactorClient {
                             return socketChannel;
                         }
                     }, this.policy));
-            this.reactor.queueFuture(task);
             this.channel = task.get();
-            postConnect();
+            postConnect(null);
         } catch (InterruptedException | ExecutionException e) {
             log.error("Exception during connection", e);
             throw new ClientConnectionException(e);
@@ -112,64 +103,47 @@ public abstract class ReactorClient {
         return this.key;
     }
 
-    public void addEventListener(EventListener el) {
+    public void addEventListener(MessageListener el) {
         eventListeners.add(el);
     }
 
-    public void removeEventListener(EventListener el) {
+    public void removeEventListener(MessageListener el) {
         eventListeners.remove(el);
     }
 
-    public void sendMessage(byte[] message) {
-        ByteBuffer messageBuf = ByteBuffer.wrap(message);
-        messageBuf = messageBuf.slice();
-        log.info("Message sent: " + new String(message, Charset.forName("UTF-8")));
-        ByteBuffer buffer = ByteBuffer.allocate(8);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.putLong(messageBuf.remaining());
-        buffer.rewind();
-        outbox.addFirst(buffer);
-        outbox.addFirst(messageBuf);
-
-        final ReactorClient client = this;
-        reactor.queueFuture(new FutureTask<>(new Callable<Void>() {
-            @Override
-            public Void call() throws ClientConnectionException {
-                client.updateInterestedOps();
-                return null;
-            }
-        }));
-    }
-
-    private void emitOnMessageReceived(byte[] message) {
-        for (EventListener el : eventListeners) {
+    protected void emitOnMessageReceived(byte[] message) {
+        for (MessageListener el : eventListeners) {
             el.onMessageReceived(message);
         }
     }
 
     public Future<Void> close() {
-        final FutureTask<Void> t = new FutureTask<>(new Callable<Void>() {
+        final Callable<Void> callable = new Callable<Void>() {
             @Override
             public Void call() {
                 closeChannel();
                 return null;
             }
-        });
-        reactor.queueFuture(t);
-        return t;
+        };
+        return scheduleTask(callable);
     }
 
-    private void readBytes(ByteBuffer ibuff) throws IOException, ClientConnectionException {
-        readBuffer(ibuff);
+    protected <T> FutureTask<T> scheduleTask(Callable<T> callable) {
+        final FutureTask<T> task = new FutureTask<>(callable);
+        reactor.queueFuture(task);
+        return task;
+    }
 
-        if (ibuff.hasRemaining()) {
+    protected void readBytes(ByteBuffer ibuff) throws IOException, ClientConnectionException {
+        int read = readBuffer(ibuff);
+        if (read <= 0) {
             return;
         }
-
         ibuff.rewind();
-        emitOnMessageReceived(ibuff.array());
+        byte[] message = new byte[read];
+        ibuff.get(message);
+        emitOnMessageReceived(message);
         this.ibuff = null;
-        this.byteBuffer.clear();
     }
 
     public void process() throws IOException, ClientConnectionException {
@@ -177,28 +151,16 @@ public abstract class ReactorClient {
         processOutgoing();
     }
 
-    private void processIncoming() throws IOException, ClientConnectionException {
+    protected void processIncoming() throws IOException, ClientConnectionException {
         if (this.ibuff == null) {
-            readBuffer(byteBuffer);
-
-            if (byteBuffer.hasRemaining()) {
-                return;
-            }
-            byteBuffer.rewind();
-            long len = byteBuffer.getLong();
-            if (len < 0 || len > maxBuffLen) {
-                closeChannel();
-            } else {
-                this.ibuff = ByteBuffer.allocate((int) len);
-                this.ibuff.order(ByteOrder.BIG_ENDIAN);
-                readBytes(this.ibuff);
-            }
+            this.ibuff = ByteBuffer.allocate(16384);
+            readBytes(this.ibuff);
         } else {
             readBytes(this.ibuff);
         }
     }
 
-    private void processOutgoing() throws IOException, ClientConnectionException {
+    protected void processOutgoing() throws IOException, ClientConnectionException {
         final ByteBuffer buff = outbox.peekLast();
 
         if (buff == null) {
@@ -225,43 +187,55 @@ public abstract class ReactorClient {
         return channel != null && channel.isOpen();
     }
 
-    private void readBuffer(ByteBuffer buff) throws IOException, ClientConnectionException {
+    protected int readBuffer(ByteBuffer buff) throws IOException, ClientConnectionException {
         if (!isOpen()) {
             connect();
         }
-        read(buff);
+        return read(buff);
     }
 
-    private void writeBuffer(ByteBuffer buff) throws IOException, ClientConnectionException {
+    protected void writeBuffer(ByteBuffer buff) throws IOException, ClientConnectionException {
         if (!isOpen()) {
             connect();
         }
         write(buff);
     }
 
+    public abstract void sendMessage(byte[] message);
+
     /**
      * Reads provided buffer.
-     * @param buff provided buffer to be read.
-     * @throws IOException when networking issue occurs.
+     *
+     * @param buff
+     *            provided buffer to be read.
+     * @throws IOException
+     *             when networking issue occurs.
      */
-    abstract void read(ByteBuffer buff) throws IOException;
+    abstract int read(ByteBuffer buff) throws IOException;
 
     /**
      * Writes provided buffer.
-     * @param buff provided buffer to be written.
-     * @throws IOException when networking issue occurs.
+     *
+     * @param buff
+     *            provided buffer to be written.
+     * @throws IOException
+     *             when networking issue occurs.
      */
     abstract void write(ByteBuffer buff) throws IOException;
 
     /**
      * Transport specific post connection functionality.
-     * @throws ClientConnectionException when issues with connection.
+     *
+     * @throws ClientConnectionException
+     *             when issues with connection.
      */
-    abstract void postConnect() throws ClientConnectionException;
+    abstract void postConnect(OneTimeCallback callback) throws ClientConnectionException;
 
     /**
      * Updates selection key's operation set.
-     * @throws ClientConnectionException when issues with connection.
+     *
+     * @throws ClientConnectionException
+     *             when issues with connection.
      */
-    abstract void updateInterestedOps() throws ClientConnectionException;
+    public abstract void updateInterestedOps() throws ClientConnectionException;
 }

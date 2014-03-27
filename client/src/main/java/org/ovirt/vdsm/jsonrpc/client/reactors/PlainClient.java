@@ -8,26 +8,27 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 
 /**
  * <code>ReactorClient</code> implementation to provide not encrypted communication.
  *
  */
-public final class NioClient extends ReactorClient {
-    private final Selector selector;
+public abstract class PlainClient extends ReactorClient {
+    protected final Selector selector;
 
-    public NioClient(Reactor reactor, Selector selector, String hostname, int port) throws ClientConnectionException {
+    public PlainClient(Reactor reactor, Selector selector, String hostname, int port) throws ClientConnectionException {
         super(reactor, hostname, port);
         this.selector = selector;
     }
 
-    public NioClient(Reactor reactor, Selector selector, String hostname, int port, SocketChannel socketChannel)
+    public PlainClient(Reactor reactor, Selector selector, String hostname, int port, SocketChannel socketChannel)
             throws ClientConnectionException {
         super(reactor, hostname, port);
         this.selector = selector;
 
         channel = socketChannel;
-        postConnect();
+        postConnect(null);
     }
 
     @Override
@@ -40,8 +41,8 @@ public final class NioClient extends ReactorClient {
     }
 
     @Override
-    void read(ByteBuffer buff) throws IOException {
-        channel.read(buff);
+    int read(ByteBuffer buff) throws IOException {
+        return channel.read(buff);
     }
 
     @Override
@@ -50,7 +51,7 @@ public final class NioClient extends ReactorClient {
     }
 
     @Override
-    void postConnect() throws ClientConnectionException {
+    protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
         try {
             int interestedOps = SelectionKey.OP_READ;
             reactor.wakeup();

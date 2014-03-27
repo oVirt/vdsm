@@ -6,8 +6,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Callable;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -16,37 +15,39 @@ import javax.net.ssl.SSLException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 
 /**
  * <code>ReactorClient</code> implementation to provide encrypted communication.
  *
  */
-public class SSLClient extends ReactorClient {
+public abstract class SSLClient extends ReactorClient {
     private static Log log = LogFactory.getLog(SSLClient.class);
-    private final ExecutorService executorService;
-    private final Selector selector;
-    private SSLEngineNioHelper nioEngine;
+    protected final Selector selector;
+    protected SSLEngineNioHelper nioEngine;
     private SSLContext sslContext;
+    private boolean client;
 
     public SSLClient(Reactor reactor, Selector selector,
             String hostname, int port, SSLContext sslctx) throws ClientConnectionException {
         super(reactor, hostname, port);
-        this.executorService = Executors.newCachedThreadPool();
         this.selector = selector;
         this.sslContext = sslctx;
+        this.client = true;
     }
 
     public SSLClient(Reactor reactor, Selector selector, String hostname, int port,
             SSLContext sslctx, SocketChannel socketChannel) throws ClientConnectionException {
         super(reactor, hostname, port);
-        this.executorService = Executors.newCachedThreadPool();
         this.selector = selector;
+        this.sslContext = sslctx;
+        this.client = false;
         channel = socketChannel;
 
-        postConnect();
+        postConnect(null);
     }
 
-    private SSLEngine createSSLEngine(boolean clientMode) {
+    protected SSLEngine createSSLEngine(boolean clientMode) {
         final SSLEngine engine = this.sslContext.createSSLEngine();
         engine.setUseClientMode(clientMode);
         return engine;
@@ -54,7 +55,7 @@ public class SSLClient extends ReactorClient {
 
     @Override
     public void updateInterestedOps() throws ClientConnectionException {
-        if (outbox.isEmpty() && (nioEngine == null || !nioEngine.handshakeInProgress())) {
+        if (outbox.isEmpty() && (this.nioEngine == null || !this.nioEngine.handshakeInProgress())) {
             getSelectionKey().interestOps(SelectionKey.OP_READ);
         } else {
             getSelectionKey().interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
@@ -62,7 +63,7 @@ public class SSLClient extends ReactorClient {
     }
 
     private Runnable pendingOperations() throws IOException {
-        if (nioEngine == null) {
+        if (this.nioEngine == null) {
             return null;
         }
 
@@ -71,18 +72,18 @@ public class SSLClient extends ReactorClient {
     }
 
     @Override
-    void read(ByteBuffer buff) throws IOException {
-        if (nioEngine != null) {
-            nioEngine.read(buff);
+    int read(ByteBuffer buff) throws IOException {
+        if (this.nioEngine != null) {
+            return this.nioEngine.read(buff);
         } else {
-            channel.read(buff);
+            return channel.read(buff);
         }
     }
 
     @Override
     void write(ByteBuffer buff) throws IOException {
-        if (nioEngine != null) {
-            nioEngine.write(buff);
+        if (this.nioEngine != null) {
+            this.nioEngine.write(buff);
         } else {
             channel.write(buff);
         }
@@ -93,9 +94,9 @@ public class SSLClient extends ReactorClient {
         final Runnable op = pendingOperations();
         if (op != null) {
             key.interestOps(0);
-            this.executorService.execute(new Runnable() {
+            scheduleTask(new Callable<Void>() {
                 @Override
-                public void run() {
+                public Void call() {
                     try {
                         op.run();
                         updateInterestedOps();
@@ -103,20 +104,21 @@ public class SSLClient extends ReactorClient {
                     } catch (ClientConnectionException e) {
                         log.error("Unable to process messages", e);
                     }
+                    return null;
                 }
             });
         }
 
-        if (nioEngine != null && nioEngine.handshakeInProgress()) {
+        if (this.nioEngine != null && this.nioEngine.handshakeInProgress()) {
             return;
         }
         super.process();
     }
 
     @Override
-    void postConnect() throws ClientConnectionException {
+    protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
         try {
-            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(true));
+            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(this.client), callback);
             this.nioEngine.beginHandshake();
 
             int interestedOps = SelectionKey.OP_READ;

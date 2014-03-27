@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.internal;
 
-import java.nio.charset.Charset;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
+
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -11,7 +12,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcClient;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
-import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.EventListener;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorFactory;
 
 /**
  * <code>ResponseWorker</code> is responsible to process responses for all
@@ -36,7 +38,7 @@ public final class ResponseWorker extends Thread {
      */
     public JsonRpcClient register(ReactorClient client) {
         final JsonRpcClient jsonRpcClient = new JsonRpcClient(client);
-        client.addEventListener(new EventListener() {
+        client.addEventListener(new MessageListener() {
 
             @Override
             public void onMessageReceived(byte[] message) {
@@ -55,7 +57,7 @@ public final class ResponseWorker extends Thread {
                 if (context.getClient() == null) {
                     break;
                 }
-                log.info("Message received :" + new String(context.getMessage(), Charset.forName("UTF-8")));
+                log.info("Message received :" + new String(context.getMessage(), UTF8));
                 JsonNode rootNode = mapper.readTree(context.getMessage());
                 if (!rootNode.isArray()) {
                     processIncomingObject(context.getClient(), rootNode);

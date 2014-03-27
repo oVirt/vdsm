@@ -19,33 +19,35 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.codehaus.jackson.JsonNode;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
-import org.ovirt.vdsm.jsonrpc.client.JsonRpcClient;
-import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
-import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
-import org.ovirt.vdsm.jsonrpc.client.ResponseDecomposer;
 import org.ovirt.vdsm.jsonrpc.client.internal.ResponseWorker;
-import org.ovirt.vdsm.jsonrpc.client.reactors.NioReactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorFactory;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
-import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.EventListener;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorType;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
+// it takes too long to have it as part of build process
+@Ignore
 public class JsonRpcClientConnectivityTestCase {
 
     private final static String HOSTNAME = "127.0.0.1";
-    private final static int PORT = 6668;
+    private final static int PORT = 54321;
     private final static int CONNECTION_RETRY = 1;
     private final static int TIMEOUT = 1000;
     private final static int TIMEOUT_SEC = 3;
+    
+    private Reactor getReactor() throws ClientConnectionException {
+        return ReactorFactory.getReactor(null, ReactorType.STOMP);
+    }
 
     @Test(expected = ConnectException.class)
     public void testDelayedConnect() throws Throwable {
         // Given
-        Reactor reactor = ReactorFactory.getReactor(null);
+        Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, 3333);
         client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, IOException.class));
         ResponseWorker worker = ReactorFactory.getWorker();
@@ -72,12 +74,12 @@ public class JsonRpcClientConnectivityTestCase {
     public void testRetryMessageSend() throws IOException, InterruptedException, ExecutionException, TimeoutException,
             ClientConnectionException {
         // Given
-        Reactor reactorForListener = new NioReactor();
+        Reactor reactorForListener = getReactor();
         Future<ReactorListener> futureListener = reactorForListener.createListener(HOSTNAME, PORT,
                 new ReactorListener.EventListener() {
                     @Override
-                    public void onAcccept(ReactorListener listener, final ReactorClient client) {
-                        client.addEventListener(new EventListener() {
+                    public void onAcccept(final ReactorClient client) {
+                        client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
                                 // if timing is wrong ignore the message
@@ -88,7 +90,7 @@ public class JsonRpcClientConnectivityTestCase {
 
         ReactorListener listener = futureListener.get(TIMEOUT_SEC, TimeUnit.SECONDS);
 
-        Reactor reactor = ReactorFactory.getReactor(null);
+        Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT);
         client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, IOException.class));
         ResponseWorker worker = ReactorFactory.getWorker();
@@ -104,6 +106,7 @@ public class JsonRpcClientConnectivityTestCase {
         Future<JsonRpcResponse> future = jsonClient.call(request);
         listener.close();
         reactorForListener.close();
+        client.close();
 
         // Then
         JsonRpcResponse response = future.get();
@@ -121,12 +124,12 @@ public class JsonRpcClientConnectivityTestCase {
     public void testBulkRetryMessageSend() throws InterruptedException, ExecutionException, TimeoutException,
             IOException, ClientConnectionException {
         // Given
-        Reactor reactorForListener = new NioReactor();
-        Future<ReactorListener> futureListener = reactorForListener.createListener(HOSTNAME, PORT,
+        Reactor reactorForListener = getReactor();
+        Future<ReactorListener> futureListener = reactorForListener.createListener(HOSTNAME, PORT + 1,
                 new ReactorListener.EventListener() {
                     @Override
-                    public void onAcccept(ReactorListener listener, final ReactorClient client) {
-                        client.addEventListener(new EventListener() {
+                    public void onAcccept(final ReactorClient client) {
+                        client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
                                 // if timing is wrong ignore the message
@@ -137,8 +140,8 @@ public class JsonRpcClientConnectivityTestCase {
 
         ReactorListener listener = futureListener.get(TIMEOUT_SEC, TimeUnit.SECONDS);
 
-        Reactor reactor = ReactorFactory.getReactor(null);
-        final ReactorClient client = reactor.createClient(HOSTNAME, PORT);
+        Reactor reactor = getReactor();
+        final ReactorClient client = reactor.createClient(HOSTNAME, PORT + 1);
         client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, IOException.class));
         ResponseWorker worker = ReactorFactory.getWorker();
         JsonRpcClient jsonClient = worker.register(client);
@@ -157,6 +160,7 @@ public class JsonRpcClientConnectivityTestCase {
         Future<List<JsonRpcResponse>> future = jsonClient.batchCall(Arrays.asList(requests));
         listener.close();
         reactorForListener.close();
+        client.close();
 
         // Then
         List<JsonRpcResponse> responses = future.get();
