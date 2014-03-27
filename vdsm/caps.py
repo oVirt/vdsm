@@ -145,6 +145,12 @@ class CpuTopology(object):
         return self._topology['sockets']
 
 
+class KdumpStatus(object):
+    UNKNOWN = -1
+    DISABLED = 0
+    ENABLED = 1
+
+
 @utils.memoized
 def _getCapsXMLStr():
     return libvirtconnection.get().getCapabilities()
@@ -405,6 +411,29 @@ def _getRngSources():
             if os.path.exists(path)]
 
 
+def _getKdumpStatus():
+    try:
+        # check if kdump service is running
+        with open('/sys/kernel/kexec_crash_loaded', 'r') as f:
+            kdumpStatus = int(f.read().strip('\n'))
+
+        if kdumpStatus == KdumpStatus.ENABLED:
+            # check if fence_kdump is configured
+            kdumpStatus = KdumpStatus.DISABLED
+            with open('/etc/kdump.conf', 'r') as f:
+                for line in f:
+                    if line.startswith('fence_kdump_nodes'):
+                        kdumpStatus = KdumpStatus.ENABLED
+                        break
+    except (IOError, OSError, ValueError):
+        kdumpStatus = KdumpStatus.UNKNOWN
+        logging.debug(
+            'Error detecting fence_kdump configuration status',
+            exc_info=True,
+        )
+    return kdumpStatus
+
+
 @utils.memoized
 def getos():
     if os.path.exists('/etc/rhev-hypervisor-release'):
@@ -554,6 +583,7 @@ def get():
     liveSnapSupported = _getLiveSnapshotSupport(targetArch)
     if liveSnapSupported is not None:
         caps['liveSnapshot'] = str(liveSnapSupported).lower()
+    caps['kdumpStatus'] = _getKdumpStatus()
 
     return caps
 
