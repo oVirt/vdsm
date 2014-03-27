@@ -172,6 +172,45 @@ def _getCpuTopology(capabilities):
     return topology
 
 
+def _findLiveSnapshotSupport(guest):
+    '''
+    Returns the status of the live snapshot support
+    on the hypervisor (QEMU).
+
+    param guest:
+    the `guest' XML element of the libvirt capabilities XML
+
+    Return type: None or boolean.
+    None if libvirt does not report the live
+    snapshot support (as in version <= 1.2.2),
+    '''
+    features = guest.getElementsByTagName('features')[0]
+    for feature in features.childNodes:
+        if feature.nodeName == 'disksnapshot':
+            value = feature.getAttribute('default')
+            if value.lower() == 'on':
+                return True
+            else:
+                return False
+    # libvirt < 1.2.2 does not export this information.
+    return None
+
+
+@utils.memoized
+def _getLiveSnapshotSupport(arch, capabilities=None):
+    if capabilities is None:
+        capabilities = _getCapsXMLStr()
+    caps = minidom.parseString(capabilities)
+
+    for guestTag in caps.getElementsByTagName('guest'):
+        archTag = guestTag.getElementsByTagName('arch')[0]
+        if archTag.getAttribute('name') == arch:
+            return _findLiveSnapshotSupport(guestTag)
+
+    logging.error("missing guest arch tag in the capabilities XML")
+    return None
+
+
 @utils.memoized
 def getNumaTopology():
     capabilities = _getCapsXMLStr()
@@ -508,6 +547,10 @@ def get():
     caps['autoNumaBalancing'] = getAutoNumaBalancingInfo()
 
     caps['selinux'] = _getSELinux()
+
+    liveSnapSupported = _getLiveSnapshotSupport(targetArch)
+    if liveSnapSupported is not None:
+        caps['liveSnapshot'] = str(liveSnapSupported).lower()
 
     return caps
 

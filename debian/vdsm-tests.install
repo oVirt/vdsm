@@ -3,6 +3,8 @@ usr/share/vdsm/tests/*.py
 usr/share/vdsm/tests/caps_libvirt_amd_6274.out
 usr/share/vdsm/tests/caps_libvirt_intel_E31220.out
 usr/share/vdsm/tests/caps_libvirt_intel_E5649.out
+usr/share/vdsm/tests/caps_libvirt_intel_i73770.out
+usr/share/vdsm/tests/caps_libvirt_intel_i73770_nosnap.out
 usr/share/vdsm/tests/caps_lscpu_ppc64_1_4_4.out
 usr/share/vdsm/tests/caps_lscpu_ppc64_2_4_8.out
 usr/share/vsdm/tests/caps_numactl_4_nodes.out

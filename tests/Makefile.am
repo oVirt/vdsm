@@ -103,6 +103,8 @@ dist_vdsmtests_DATA = \
 	caps_libvirt_intel_E5649.out \
 	caps_libvirt_amd_6274.out \
 	caps_libvirt_intel_E31220.out \
+	caps_libvirt_intel_i73770.out \
+	caps_libvirt_intel_i73770_nosnap.out \
 	caps_lscpu_ppc64_1_4_4.out \
 	caps_lscpu_ppc64_2_4_8.out \
 	caps_numactl_4_nodes.out \

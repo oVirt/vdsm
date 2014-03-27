@@ -1128,6 +1128,9 @@
 #
 # @selinux:             The status and configuration of SELinux on the host.
 #
+# @liveSnapshot:        #optional Indicates if the host supports live
+#                       snapshotting (new in version 4.15.0)
+#
 # Since: 4.15.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -1151,7 +1154,7 @@
           'rngSources': ['VmRngDeviceSource'], 'numaNodes': 'NumaNodeMap',
           'numaNodeDistance': 'NumaNodeDistanceMap',
           'autoNumaBalancing': 'AutoNumaBalancingStatus',
-          'selinux': 'SELinuxStatus'}}
+          'selinux': 'SELinuxStatus', '*liveSnapshot': 'bool'}}
 
 ##
 # @Host.getCapabilities:

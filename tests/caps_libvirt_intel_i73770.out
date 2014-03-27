@@ -1,0 +1,127 @@
+<capabilities>
+
+  <host>
+    <uuid>391bfa06-18ca-a3b5-2820-08951b92b806</uuid>
+    <cpu>
+      <arch>x86_64</arch>
+      <model>SandyBridge</model>
+      <vendor>Intel</vendor>
+      <topology sockets='1' cores='4' threads='2'/>
+      <feature name='erms'/>
+      <feature name='smep'/>
+      <feature name='fsgsbase'/>
+      <feature name='rdrand'/>
+      <feature name='f16c'/>
+      <feature name='osxsave'/>
+      <feature name='pcid'/>
+      <feature name='pdcm'/>
+      <feature name='xtpr'/>
+      <feature name='tm2'/>
+      <feature name='est'/>
+      <feature name='smx'/>
+      <feature name='vmx'/>
+      <feature name='ds_cpl'/>
+      <feature name='monitor'/>
+      <feature name='dtes64'/>
+      <feature name='pbe'/>
+      <feature name='tm'/>
+      <feature name='ht'/>
+      <feature name='ss'/>
+      <feature name='acpi'/>
+      <feature name='ds'/>
+      <feature name='vme'/>
+    </cpu>
+    <power_management>
+      <suspend_mem/>
+      <suspend_disk/>
+    </power_management>
+    <migration_features>
+      <live/>
+      <uri_transports>
+        <uri_transport>tcp</uri_transport>
+      </uri_transports>
+    </migration_features>
+    <topology>
+      <cells num='1'>
+        <cell id='0'>
+          <cpus num='8'>
+            <cpu id='0' socket_id='0' core_id='0' siblings='0,4'/>
+            <cpu id='1' socket_id='0' core_id='1' siblings='1,5'/>
+            <cpu id='2' socket_id='0' core_id='2' siblings='2,6'/>
+            <cpu id='3' socket_id='0' core_id='3' siblings='3,7'/>
+            <cpu id='4' socket_id='0' core_id='0' siblings='0,4'/>
+            <cpu id='5' socket_id='0' core_id='1' siblings='1,5'/>
+            <cpu id='6' socket_id='0' core_id='2' siblings='2,6'/>
+            <cpu id='7' socket_id='0' core_id='3' siblings='3,7'/>
+          </cpus>
+        </cell>
+      </cells>
+    </topology>
+    <secmodel>
+      <model>selinux</model>
+      <doi>0</doi>
+    </secmodel>
+  </host>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='i686'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/libexec/qemu-kvm</emulator>
+      <machine>rhel6.5.0</machine>
+      <machine canonical='rhel6.5.0'>pc</machine>
+      <machine>rhel6.4.0</machine>
+      <machine>rhel6.3.0</machine>
+      <machine>rhel6.2.0</machine>
+      <machine>rhel6.1.0</machine>
+      <machine>rhel6.0.0</machine>
+      <machine>rhel5.5.0</machine>
+      <machine>rhel5.4.4</machine>
+      <machine>rhel5.4.0</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/libexec/qemu-kvm</emulator>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <acpi default='on' toggle='yes'/>
+      <apic default='on' toggle='no'/>
+      <pae/>
+      <nonpae/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='x86_64'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/libexec/qemu-kvm</emulator>
+      <machine>rhel6.5.0</machine>
+      <machine canonical='rhel6.5.0'>pc</machine>
+      <machine>rhel6.4.0</machine>
+      <machine>rhel6.3.0</machine>
+      <machine>rhel6.2.0</machine>
+      <machine>rhel6.1.0</machine>
+      <machine>rhel6.0.0</machine>
+      <machine>rhel5.5.0</machine>
+      <machine>rhel5.4.4</machine>
+      <machine>rhel5.4.0</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/libexec/qemu-kvm</emulator>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <disksnapshot default='on' toggle='no'/>
+      <acpi default='on' toggle='yes'/>
+      <apic default='on' toggle='no'/>
+    </features>
+  </guest>
+
+</capabilities>

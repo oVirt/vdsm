@@ -41,6 +41,12 @@ def _getCapsNumaDistanceTestData(testFileName):
 
 
 class TestCaps(TestCaseBase):
+    def _readCaps(self, fileName):
+        testPath = os.path.realpath(__file__)
+        dirName = os.path.split(testPath)[0]
+        path = os.path.join(dirName, fileName)
+        with open(path) as f:
+            return f.read()
 
     @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.X86_64)
     def testCpuInfo(self):
@@ -110,11 +116,9 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.sockets(), 1)
 
     def testEmulatedMachines(self):
-        testPath = os.path.realpath(__file__)
-        dirName = os.path.split(testPath)[0]
-        path = os.path.join(dirName, "caps_libvirt_amd_6274.out")
+        capsData = self._readCaps("caps_libvirt_amd_6274.out")
         machines = caps._getEmulatedMachines(caps.Architecture.X86_64,
-                                             file(path).read())
+                                             capsData)
         expectedMachines = ['pc-0.15', 'pc', 'pc-1.0', 'pc-0.14',
                             'pc-0.13', 'pc-0.12', 'pc-0.11',
                             'pc-0.10', 'isapc']
@@ -167,3 +171,22 @@ class TestCaps(TestCaseBase):
     def testAutoNumaBalancingInfo(self):
         t = caps.getAutoNumaBalancingInfo()
         self.assertEqual(t, 0)
+
+    def testLiveSnapshotNoElementX86_64(self):
+        '''old libvirt, backward compatibility'''
+        capsData = self._readCaps("caps_libvirt_amd_6274.out")
+        support = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+                                               capsData)
+        self.assertTrue(support is None)
+
+    def testLiveSnapshotX86_64(self):
+        capsData = self._readCaps("caps_libvirt_intel_i73770.out")
+        support = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+                                               capsData)
+        self.assertEqual(support, True)
+
+    def testLiveSnapshotDisabledX86_64(self):
+        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
+        support = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+                                               capsData)
+        self.assertEqual(support, False)
