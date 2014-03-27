@@ -57,6 +57,11 @@ class ConnectionMock:
         return []
 
 
+class FakeClientIF(object):
+    def __init__(self, *args, **kwargs):
+        self.channelListener = None
+
+
 class FakeDomain(object):
     def __init__(self, xml='',
                  virtError=libvirt.VIR_ERR_OK,
@@ -155,6 +160,7 @@ class TestVm(TestCaseBase):
 
     def __init__(self, *args, **kwargs):
         TestCaseBase.__init__(self, *args, **kwargs)
+        self.channelListener = None
         self.conf = {'vmName': 'testVm',
                      'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
                      'smp': '8', 'maxVCpus': '160',
@@ -1339,7 +1345,7 @@ def FakeVM(params=None, devices=None, runCpu=False,
                                (libvirtconnection, 'get', ConnectionMock)]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
-            fake = vm.Vm(None, vmParams)
+            fake = vm.Vm(FakeClientIF(), vmParams)
             fake.arch = arch
             fake.guestAgent = FakeGuestAgent()
             fake.conf['devices'] = [] if devices is None else devices

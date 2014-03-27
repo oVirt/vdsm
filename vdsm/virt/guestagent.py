@@ -113,7 +113,7 @@ class GuestAgent ():
     MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
 
     def __init__(self, socketName, channelListener, log, user='Unknown',
-                 ips='', connect=True):
+                 ips=''):
         self.effectiveApiVersion = _IMPLICIT_API_VERSION_ZERO
         self.log = log
         self._socketName = socketName
@@ -134,18 +134,15 @@ class GuestAgent ():
         self._agentTimestamp = 0
         self._channelListener = channelListener
         self._messageState = MessageState.NORMAL
-        if connect:
-            try:
-                self._prepare_socket()
-            except:
-                self.log.error("Failed to prepare vmchannel", exc_info=True)
-            else:
-                self._channelListener.register(
-                    self._create,
-                    self._connect,
-                    self._onChannelRead,
-                    self._onChannelTimeout,
-                    self)
+
+    def connect(self):
+        self._prepare_socket()
+        self._channelListener.register(
+            self._create,
+            self._connect,
+            self._onChannelRead,
+            self._onChannelTimeout,
+            self)
 
     def _handleAPIVersion(self, version):
         """ Handles the API version value from the heartbeat

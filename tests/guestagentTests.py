@@ -109,8 +109,7 @@ class TestGuestIF(TestCaseBase):
 
     def test_handleMessage(self):
         logging.TRACE = 5
-        fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
-                                               connect=False)
+        fakeGuestAgent = guestagent.GuestAgent(None, None, self.log)
         testCase = namedtuple('testCase', 'msgType, message, assertDict')
 
         for t in zip(_MSG_TYPES, _INPUTS, _OUTPUTS):
@@ -129,8 +128,7 @@ class TestGuestIFHandleData(TestCaseBase):
     # perform general setup tasks
     def setUp(self):
         logging.TRACE = 5
-        self.fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
-                                                    connect=False)
+        self.fakeGuestAgent = guestagent.GuestAgent(None, None, self.log)
         self.fakeGuestAgent.MAX_MESSAGE_SIZE = 100
         self.maxMessageSize = self.fakeGuestAgent.MAX_MESSAGE_SIZE
         self.fakeGuestAgent._clearReadBuffer()

@@ -1522,7 +1522,6 @@ class Vm(object):
         self._volPrepareLock = threading.Lock()
         self._initTimePauseCode = None
         self._initTimeRTC = long(self.conf.get('timeOffset', 0))
-        self.guestAgent = None
         self._guestEvent = vmstatus.POWERING_UP
         self._guestEventTime = 0
         self._vmStats = None
@@ -1542,6 +1541,8 @@ class Vm(object):
             self.conf['vmName'] = 'n%s' % self.id
         self._guestSocketFile = self._makeChannelPath(_VMCHANNEL_DEVICE_NAME)
         self._qemuguestSocketFile = self._makeChannelPath(_QEMU_GA_DEVICE_NAME)
+        self.guestAgent = guestagent.GuestAgent(
+            self._guestSocketFile, self.cif.channelListener, self.log)
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
         self._devXmlHash = '0'
         self._released = False
@@ -2011,8 +2012,7 @@ class Vm(object):
         with self._confLock:
             toSave = deepcopy(self.status())
         toSave['startTime'] = self._startTime
-        if self.lastStatus != vmstatus.DOWN and \
-                self._vmStats and self.guestAgent:
+        if self.lastStatus != vmstatus.DOWN and self._vmStats:
             toSave['username'] = self.guestAgent.guestInfo['username']
             toSave['guestIPs'] = self.guestAgent.guestInfo['guestIPs']
             toSave['guestFQDN'] = self.guestAgent.guestInfo['guestFQDN']
@@ -2586,16 +2586,14 @@ class Vm(object):
             'displayIp': self.conf['displayIp']}
 
     def _getGuestStats(self):
-        stats = {}
-        if self.guestAgent:
-            stats.update(self.guestAgent.getGuestInfo())
-            realMemUsage = int(stats['memUsage'])
-            if realMemUsage != 0:
-                memUsage = (100 - float(realMemUsage) /
-                            int(self.conf['memSize']) * 100)
-            else:
-                memUsage = 0
-            stats['memUsage'] = utils.convertToStr(int(memUsage))
+        stats = self.guestAgent.getGuestInfo()
+        realMemUsage = int(stats['memUsage'])
+        if realMemUsage != 0:
+            memUsage = (100 - float(realMemUsage) /
+                        int(self.conf['memSize']) * 100)
+        else:
+            memUsage = 0
+        stats['memUsage'] = utils.convertToStr(int(memUsage))
         return stats
 
     def isMigrating(self):
@@ -2853,9 +2851,11 @@ class Vm(object):
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
-        self.guestAgent = guestagent.GuestAgent(
-            self._guestSocketFile, self.cif.channelListener, self.log,
-            connect=utils.tobool(self.conf.get('vmchannel', 'true')))
+        if utils.tobool(self.conf.get('vmchannel', 'true')):
+            try:
+                self.guestAgent.connect()
+            except Exception:
+                self.log.exception("Failed to connect to guest agent channel")
 
         self._guestCpuRunning = self._isDomainRunning()
         if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
@@ -4550,8 +4550,7 @@ class Vm(object):
             self._incomingMigrationFinished.set()
             if self._vmStats:
                 self._vmStats.stop()
-            if self.guestAgent:
-                self.guestAgent.stop()
+            self.guestAgent.stop()
             if self._dom:
                 response = self._destroyVmGraceful()
                 if response['status']['code']:

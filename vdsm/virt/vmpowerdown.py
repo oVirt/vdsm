@@ -49,7 +49,7 @@ class VmPowerDown(object):
         self.event = event
 
         # first try agent
-        if vm.guestAgent and vm.guestAgent.isResponsive():
+        if vm.guestAgent.isResponsive():
             self.chain.addCallback(self.guestAgentCallback)
 
         # then acpi if enabled
