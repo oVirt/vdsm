@@ -933,7 +933,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
-%{_datadir}/%{vdsm_name}/virt/guestIF.py*
+%{_datadir}/%{vdsm_name}/virt/guestagent.py*
 %{_datadir}/%{vdsm_name}/virt/vmchannels.py*
 %{_datadir}/%{vdsm_name}/virt/vmstatus.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*

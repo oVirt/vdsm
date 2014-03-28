@@ -58,7 +58,7 @@ import kaxmlrpclib
 import supervdsm
 
 # local package imports
-from . import guestIF
+from . import guestagent
 from . import sampling
 from . import vmexitreason
 from . import vmstatus
@@ -3137,7 +3137,7 @@ class Vm(object):
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
-        self.guestAgent = guestIF.GuestAgent(
+        self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log,
             connect=utils.tobool(self.conf.get('vmchannel', 'true')))
 

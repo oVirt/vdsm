@@ -36,7 +36,7 @@ test_modules = \
 	getAllVolumesTests.py \
 	gluster_cli_tests.py \
 	glusterTestData.py \
-	guestIFTests.py \
+	guestagentTests.py \
 	hooksTests.py \
 	ipwrapperTests.py \
 	iscsiTests.py \

@@ -20,7 +20,7 @@
 #
 import logging
 from collections import namedtuple
-from virt import guestIF
+from virt import guestagent
 import json
 
 from testrunner import VdsmTestCase as TestCaseBase
@@ -85,32 +85,32 @@ _OUTPUTS = [
 class TestGuestIF(TestCaseBase):
     def testfilterXmlChars(self):
         ALL_LEGAL = u"Hello World"
-        self.assertEqual(ALL_LEGAL, guestIF._filterXmlChars(ALL_LEGAL))
+        self.assertEqual(ALL_LEGAL, guestagent._filterXmlChars(ALL_LEGAL))
         TM = u"\u2122"
-        self.assertEqual(TM, guestIF._filterXmlChars(TM))
+        self.assertEqual(TM, guestagent._filterXmlChars(TM))
         invalid = u"\u0000"
-        self.assertEqual(u'\ufffd', guestIF._filterXmlChars(invalid))
+        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid))
         invalid2 = u"\uffff"
-        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid2))
+        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid2))
         invalid3 = u"\ufffe"
-        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid3))
+        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid3))
         invalid4 = u"\ud800"
-        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid4))
+        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid4))
         invalid5 = u"\udc79"
-        self.assertEqual(u'\ufffd',  guestIF._filterXmlChars(invalid5))
+        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid5))
 
     def test_filterObject(self):
         ILLEGAL_DATA = {u"foo": u"\x00data\x00test\uffff\ufffe\ud800\udc79"}
         LEGAL_DATA = {u"foo": u"?data?test\U00010000"}
         EXPECTED_DATA = {
             u"foo": u"\ufffddata\ufffdtest\ufffd\ufffd\ufffd\ufffd"}
-        self.assertEqual(EXPECTED_DATA, guestIF._filterObject(ILLEGAL_DATA))
-        self.assertEqual(LEGAL_DATA, guestIF._filterObject(LEGAL_DATA))
+        self.assertEqual(EXPECTED_DATA, guestagent._filterObject(ILLEGAL_DATA))
+        self.assertEqual(LEGAL_DATA, guestagent._filterObject(LEGAL_DATA))
 
     def test_handleMessage(self):
         logging.TRACE = 5
-        fakeGuestAgent = guestIF.GuestAgent(None,
-                                            None, self.log, connect=False)
+        fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
+                                               connect=False)
         testCase = namedtuple('testCase', 'msgType, message, assertDict')
 
         for t in zip(_MSG_TYPES, _INPUTS, _OUTPUTS):
@@ -129,8 +129,8 @@ class TestGuestIFHandleData(TestCaseBase):
     # perform general setup tasks
     def setUp(self):
         logging.TRACE = 5
-        self.fakeGuestAgent = guestIF.GuestAgent(None, None, self.log,
-                                                 connect=False)
+        self.fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
+                                                    connect=False)
         self.fakeGuestAgent.MAX_MESSAGE_SIZE = 100
         self.maxMessageSize = self.fakeGuestAgent.MAX_MESSAGE_SIZE
         self.fakeGuestAgent._clearReadBuffer()
@@ -179,11 +179,11 @@ class TestGuestIFHandleData(TestCaseBase):
                 self.fakeGuestAgent._handleData(chunk)
                 if chunk[-1] != '\n':
                     self.assertEqual(self.fakeGuestAgent._messageState,
-                                     guestIF.MessageState.TOO_BIG)
+                                     guestagent.MessageState.TOO_BIG)
 
             # At the end the message state has to be NORMAL again
             self.assertEqual(self.fakeGuestAgent._messageState,
-                             guestIF.MessageState.NORMAL)
+                             guestagent.MessageState.NORMAL)
 
             for (k, v) in t.assertDict.iteritems():
                 if isOverLimit:
