@@ -39,7 +39,9 @@ from utils import VdsProxy, SUCCESS
 
 from virt import vmstatus
 
-_mkinitrd = CommandPath("mkinitrd", "/usr/bin/mkinitrd")
+_mkinitrd = CommandPath("mkinitrd",
+                        "/usr/bin/mkinitrd",  # Fedora
+                        "/sbin/mkinitrd")  # RHEL 6.x, Centos 6.x
 _modprobe = CommandPath("modprobe",
                         "/usr/sbin/modprobe",  # Fedora, Ubuntu
                         "/sbin/modprobe")  # RHEL6
@@ -281,13 +283,13 @@ class VirtTest(TestCaseBase):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'devices': [],
                          'vmName':
-                         ('testVmWithCdrom_{}').format(pathLocation)}
+                         'testVmWithCdrom_%s' % pathLocation}
 
         # echo -n testPayload | md5sum
         # d37e46c24c78b1aed33496107afdb44b
-        vmPayloadName = ('/var/run/vdsm/payload/{}.'
+        vmPayloadName = ('/var/run/vdsm/payload/%s.'
                          'd37e46c24c78b1aed33496107afdb44b'
-                         '.img').format(customization['vmId'])
+                         '.img' % customization['vmId'])
 
         cdrom = {'index': '2', 'iface': 'ide', 'specParams':
                  {}, 'readonly': 'true', 'path':
