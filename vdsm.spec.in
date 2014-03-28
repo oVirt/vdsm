@@ -1131,6 +1131,7 @@ exit 0
 %dir %{python_sitearch}/%{vdsm_name}
 %dir %{python_sitearch}/%{vdsm_name}/tool
 %{python_sitearch}/%{vdsm_name}/__init__.py*
+%{python_sitearch}/%{vdsm_name}/compat.py*
 %{python_sitearch}/%{vdsm_name}/config.py*
 %{python_sitearch}/%{vdsm_name}/constants.py*
 %{python_sitearch}/%{vdsm_name}/define.py*

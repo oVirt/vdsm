@@ -23,6 +23,7 @@ SUBDIRS=tool
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
+	compat.py \
 	define.py \
 	exception.py \
 	ipwrapper.py \
