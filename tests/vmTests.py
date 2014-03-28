@@ -753,7 +753,7 @@ class TestVm(TestCaseBase):
 @contextmanager
 def FakeVM(params=None):
     with namedTemporaryDir() as tmpDir:
-        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
+        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get',
                                 lambda x: ConnectionMock())]):
             vmParams = {'vmId': 'TESTING'}
