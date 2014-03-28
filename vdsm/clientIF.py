@@ -42,7 +42,7 @@ from virt import sampling
 from virt import vm
 from virt import vmstatus
 from virt.vm import Vm
-from virt.vmChannels import Listener
+from virt.vmchannels import Listener
 try:
     import gluster.api as gapi
     _glusterEnabled = True

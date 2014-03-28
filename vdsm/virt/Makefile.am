@@ -26,7 +26,7 @@ dist_vdsm_virt_PYTHON = \
 	guestIF.py \
 	sampling.py \
 	vm.py \
-	vmChannels.py \
+	vmchannels.py \
 	vmexitreason.py \
 	vmpowerdown.py \
 	vmstatus.py \
