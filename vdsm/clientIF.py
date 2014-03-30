@@ -88,7 +88,6 @@ class clientIF:
             self._hostStats = sampling.HostStatsThread(log=log)
             self._hostStats.start()
             self.lastRemoteAccess = 0
-            self._memLock = threading.Lock()
             self._enabled = True
             self._netConfigDirty = False
             self._prepareMOM()
