@@ -170,7 +170,7 @@ class BlockVolume(volume.Volume):
             volParent.clone(imgPath, volUUID, volFormat, preallocate)
 
         with cls._tagCreateLock:
-            mdSlot = dom.mapMetaOffset(volUUID, VOLUME_MDNUMBLKS)
+            mdSlot = dom.getVolumeMetadataSlot(volUUID, VOLUME_MDNUMBLKS)
             mdTags = ["%s%s" % (TAG_PREFIX_MD, mdSlot),
                       "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID),
                       "%s%s" % (TAG_PREFIX_IMAGE, imgUUID)]

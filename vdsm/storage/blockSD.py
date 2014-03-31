@@ -727,7 +727,7 @@ class BlockStorageDomain(sd.StorageDomain):
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
 
-    def mapMetaOffset(self, vol_name, slotSize):
+    def getVolumeMetadataSlot(self, vol_name, slotSize):
         if self.getVersion() in VERS_METADATA_LV:
             return self.getVolumeMetadataOffsetFromPvMapping(vol_name)
         else:

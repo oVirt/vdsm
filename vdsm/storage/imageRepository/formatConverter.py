@@ -181,19 +181,19 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             metaContent = vol.getMetadata()
 
             with vol._tagCreateLock:
-                newMetaOffset = domain.mapMetaOffset(
+                newMetaSlot = domain.getVolumeMetadataSlot(
                     vol.volUUID, blockVolume.VOLUME_MDNUMBLKS)
-                if newMetaOffset > metaMaxSlot:
+                if newMetaSlot > metaMaxSlot:
                     raise se.NoSpaceLeftOnDomain(domain.sdUUID)
 
                 log.debug("Copying metadata for volume %s to the new slot %s",
-                          vol.volUUID, newMetaOffset)
-                vol.createMetadata((domain.sdUUID, newMetaOffset), metaContent)
+                          vol.volUUID, newMetaSlot)
+                vol.createMetadata((domain.sdUUID, newMetaSlot), metaContent)
 
                 log.debug("Switching the metadata slot for volume %s to %s",
-                          vol.volUUID, newMetaOffset)
+                          vol.volUUID, newMetaSlot)
                 vol.changeVolumeTag(blockVolume.TAG_PREFIX_MD,
-                                    str(newMetaOffset))
+                                    str(newMetaSlot))
 
     try:
         if isMsd:
