@@ -121,7 +121,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
             topNetDev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
     if vlan is not None:
         topNetDev = Vlan(topNetDev, vlan, configurator, mtu=mtu)
-    if bridge:
+    if bridge is not None:
         topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
                            stp=opts.get('stp'))
     if topNetDev is None:
@@ -235,6 +235,9 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if mtu:
         mtu = int(mtu)
 
+    if network == '':
+        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
+                                 'Empty network names are not valid')
     if prefix:
         if netmask:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
