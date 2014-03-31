@@ -24,7 +24,9 @@ import uuid
 
 from testlib import VdsmTestCase as TestCaseBase
 
-from storage import outOfProcess, fileSD
+from storage import blockSD, blockVolume, fileSD, outOfProcess
+
+SDBLKSZ = 512
 
 
 class FileDomainMockObject(fileSD.FileStorageDomain):
@@ -40,7 +42,6 @@ class FileDomainMockObject(fileSD.FileStorageDomain):
 
 class FileVolumeGetVSizeTest(TestCaseBase):
     VOLSIZE = 1024
-    SDBLKSZ = 512
 
     def setUp(self):
         self.mountpoint = tempfile.mkdtemp()
@@ -54,13 +55,43 @@ class FileVolumeGetVSizeTest(TestCaseBase):
         volPath = os.path.join(imgPath, self.volUUID)
 
         os.makedirs(imgPath)
-        open(volPath, "w").truncate(self.VOLSIZE * self.SDBLKSZ)
+        open(volPath, "w").truncate(self.VOLSIZE * SDBLKSZ)
         self.sdobj = FileDomainMockObject(self.mountpoint, self.sdUUID)
 
     def tearDown(self):
         shutil.rmtree(self.mountpoint)
 
     def test(self):
-        volSize = int(self.sdobj.getVSize(self.imgUUID, self.volUUID) /
-                      self.SDBLKSZ)
+        volSize = int(
+            self.sdobj.getVSize(self.imgUUID, self.volUUID) / SDBLKSZ)
         assert volSize == self.VOLSIZE
+
+
+class FakeBlockStorageDomain(blockSD.BlockStorageDomain):
+    DOMAIN_VERSION = 3
+
+    def __init__(self, sdUUID, occupiedMetadataSlots=None):
+        self.sdUUID = sdUUID
+        self.stat = None
+        self.logBlkSize = SDBLKSZ
+        self.occupiedMetadataSlots = occupiedMetadataSlots
+
+    def getVersion(self):
+        return self.DOMAIN_VERSION
+
+    def _getOccupiedMetadataSlots(self):
+        return self.occupiedMetadataSlots
+
+
+class BlockDomainMetadataSlotTests(TestCaseBase):
+    OCCUPIED_METADATA_SLOTS = [(4, 1), (7, 1)]
+    EXPECTED_METADATA_SLOT = 5
+
+    def setUp(self):
+        self.blksd = FakeBlockStorageDomain(str(uuid.uuid4()),
+                                            self.OCCUPIED_METADATA_SLOTS)
+
+    def testMetaSlotSelection(self):
+        with blockVolume.BlockVolume._tagCreateLock:
+            mdSlot = self.blksd.getVolumeMetadataSlot(None, 1)
+            self.assertEqual(mdSlot, self.EXPECTED_METADATA_SLOT)
