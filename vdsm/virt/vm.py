@@ -2786,7 +2786,7 @@ class Vm(object):
         except Exception:
             pass
 
-        utils.rmFile(self._guestSocketFile)
+        self._guestSockCleanup(self._guestSocketFile)
 
     def setDownStatus(self, code, exitReasonCode, exitMessage=''):
         if not exitMessage:
@@ -3061,6 +3061,12 @@ class Vm(object):
         self._vmStats.start()
         self._guestEventTime = self._startTime
 
+    @staticmethod
+    def _guestSockCleanup(sock):
+        if os.path.islink(sock):
+            utils.rmFile(os.path.realpath(sock))
+        utils.rmFile(sock)
+
     def _cleanup(self):
         """
         General clean up routine
@@ -3069,7 +3075,7 @@ class Vm(object):
         self._cleanupFloppy()
         self._cleanupGuestAgent()
         utils.rmFile(self._recoveryFile)
-        utils.rmFile(self._qemuguestSocketFile)
+        self._guestSockCleanup(self._qemuguestSocketFile)
 
     def updateGuestCpuRunning(self):
         self._guestCpuRunning = (self._dom.info()[0] ==
