@@ -359,7 +359,7 @@ def main():
     output = sys.argv[2]
 
     api = vdsmapi.get_api(schema)
-    #verify_symbols(symbols)
+    # verify_symbols(symbols)
 
     # Now merge in the information from the comments
     with open(schema) as f:

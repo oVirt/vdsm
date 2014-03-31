@@ -40,7 +40,7 @@ def get_owner(devpath):
     return uid, pid
 
 
-#!TODO:
+# !TODO:
 # merge chown with before_vm_start.py
 # maybe put it in hooks.py?
 def chown(vendorid, productid):

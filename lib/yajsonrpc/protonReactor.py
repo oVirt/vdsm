@@ -144,7 +144,7 @@ class ProtonClient(object):
                                 proton.PN_CONNECTOR_WRITABLE)
 
     def close(self):
-        #TODO
+        # TODO
         pass
 
 

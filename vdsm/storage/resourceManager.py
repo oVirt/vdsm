@@ -106,7 +106,7 @@ class LockState:
             raise ValueError("invalid lock state %s" % state)
 
 
-#TODO : Integrate all factory functionality to manager
+# TODO : Integrate all factory functionality to manager
 class SimpleResourceFactory(object):
     """
     A resource factory that does nothing. Can be used when nothing is enough.

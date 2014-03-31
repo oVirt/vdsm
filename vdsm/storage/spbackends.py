@@ -192,7 +192,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
     def __init__(self, pool):
         self.pool = weakref.proxy(pool)
 
-    ### Read-Only StoragePool Object Accessors ###
+    # Read-Only StoragePool Object Accessors ###
 
     def __is_secure__(self):
         return self.pool.isSecure()
@@ -213,7 +213,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
     def masterDomain(self):
         return self.pool.masterDomain
 
-    ### StoragePool Backend Interface Implementation ###
+    # StoragePool Backend Interface Implementation ###
 
     @unsecured
     def getSpmStatus(self):
@@ -331,7 +331,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
             'spm_id': pmd[PMDK_SPM_ID],
         }
 
-    ### Backend Specific Methods ###
+    # Backend Specific Methods
 
     @unsecured
     def forceFreeSpm(self):
@@ -406,7 +406,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
         self.pool = weakref.proxy(pool)
         self.updateVersionAndDomains(masterVersion, domainsMap)
 
-    ### Read-Only StoragePool Object Accessors ###
+    # Read-Only StoragePool Object Accessors
 
     def __is_secure__(self):
         return self.pool.isSecure()
@@ -419,7 +419,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
     def masterDomain(self):
         return self.pool.masterDomain
 
-    ### StoragePool Backend Interface Implementation ###
+    # StoragePool Backend Interface Implementation
 
     @unsecured
     def getSpmStatus(self):
@@ -488,7 +488,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
             'spm_id': spmId,
         }
 
-    ### Backend Specific Methods ###
+    # Backend Specific Methods
 
     @unsecured
     def updateVersionAndDomains(self, masterVersion, domainsMap):

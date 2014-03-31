@@ -26,7 +26,7 @@ class SchemaTest(TestCaseBase):
     def testSchemaParse(self):
         self.assertTrue(isinstance(vdsmapi.get_api(), dict))
 
-    ## Supported JSON syntax
+    # Supported JSON syntax
 
     def testTokenizeEmpty(self):
         tokens = list(vdsmapi.tokenize(''))
@@ -69,7 +69,7 @@ class SchemaTest(TestCaseBase):
         tokens = list(vdsmapi.tokenize(" { 'a': \n 'b' , 'c'\n\n : 'd' } \n"))
         self.assertEqual(tokens, ['{', 'a', ':', 'b', ',', 'c', ':', 'd', '}'])
 
-    ## Unsupported JSON syntax
+    # Unsupported JSON syntax
 
     def testTokenizeRaiseOnNumber(self):
         generator = vdsmapi.tokenize("1")
@@ -87,7 +87,7 @@ class SchemaTest(TestCaseBase):
         generator = vdsmapi.tokenize("null")
         self.assertRaises(ValueError, list, generator)
 
-    ## Invalid JSON
+    # Invalid JSON
 
     def testTokenizeRaiseOnInvalidData(self):
         generator = vdsmapi.tokenize("{'a': invalid, 'b': 'c'}")

@@ -1771,7 +1771,7 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(device.type, LinkType.BOND)
                     self.assertEqual(device.mtu, BIG_MTU)
 
-            #Cleanup
+            # Cleanup
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
                 {BONDING_NAME: {'remove': True}},

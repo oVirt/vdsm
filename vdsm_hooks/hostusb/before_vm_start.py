@@ -59,7 +59,7 @@ def log_dev_owner(devpath, user, group):
     f.close()
 
 
-#!TODO:
+# !TODO:
 # merge chown with after_vm_destroy.py
 # maybe put it in hooks.py?
 def chown(vendorid, productid):

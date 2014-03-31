@@ -209,7 +209,7 @@ class MigrationSourceThread(threading.Thread):
             else:
                 lockTimeout = 0
             self._vm.guestAgent.desktopLock()
-            #wait for lock or timeout
+            # wait for lock or timeout
             while lockTimeout:
                 if self._vm.getStats()['session'] in ["Locked", "LoggedOff"]:
                     break
@@ -380,7 +380,7 @@ class MigrationSourceThread(threading.Thread):
                     self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
                 maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
-                #FIXME: there still a race here with libvirt,
+                # FIXME: there still a race here with libvirt,
                 # if we call stop() and libvirt migrateToURI2 didn't start
                 # we may return migration stop but it will start at libvirt
                 # side
@@ -550,7 +550,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
-        #{'wr_total_times': 0L, 'rd_operations': 9638L,
+        # {'wr_total_times': 0L, 'rd_operations': 9638L,
         # 'flush_total_times': 0L,'rd_total_times': 7622718001L,
         # 'rd_bytes': 85172430L, 'flush_operations': 0L,
         # 'wr_operations': 0L, 'wr_bytes': 0L}
@@ -1131,7 +1131,7 @@ class _DomXML:
                                     sockets=str(maxVCpus / cores / threads),
                                     cores=str(cores), threads=str(threads))
 
-        #CPU-pinning support
+        # CPU-pinning support
         # see http://www.ovirt.org/wiki/Features/Design/cpu-pinning
         if 'cpuPinning' in self.conf:
             cputune = XMLElement('cputune')
@@ -1141,7 +1141,7 @@ class _DomXML:
                                             cpuset=cpuPinning[cpuPin])
             self.dom.appendChild(cputune)
 
-        #Guest numa topology support
+        # Guest numa topology support
         # see http://www.ovirt.org/Features/NUMA_and_Virtual_NUMA
         if 'guestNumaNodes' in self.conf:
             numa = XMLElement('numa')
@@ -1154,7 +1154,7 @@ class _DomXML:
 
         self.dom.appendChild(cpu)
 
-    #Guest numatune support
+    # Guest numatune support
     def appendNumaTune(self):
         """
         Add guest numatune definition.
@@ -3142,7 +3142,7 @@ class Vm(object):
         self._getUnderlyingVmDevicesInfo()
         self._updateAgentChannels()
 
-        #Currently there is no protection agains mirroring a network twice,
+        # Currently there is no protection agains mirroring a network twice,
         if not self.recovering:
             for nic in self._devices[NIC_DEVICES]:
                 if hasattr(nic, 'portMirroring'):
@@ -5348,7 +5348,7 @@ def __hacked_writexml(self, writer, indent="", addindent="", newl=""):
 
     for a_name in a_names:
         writer.write(" %s=\"" % a_name)
-        #_write_data(writer, attrs[a_name].value) # replaced
+        # _write_data(writer, attrs[a_name].value) # replaced
         xml.dom.minidom._write_data(writer, attrs[a_name].value)
         writer.write("\"")
     if self.childNodes:

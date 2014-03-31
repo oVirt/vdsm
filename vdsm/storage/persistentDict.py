@@ -168,7 +168,7 @@ class PersistentDict(object):
                 backup = deepcopy(self._metadata)
                 try:
                     yield
-                    #TODO : check appropriateness
+                    # TODO : check appropriateness
                     if backup != self._metadata:
                         self.log.debug("Flushing changes")
                         self.flush(self._metadata)

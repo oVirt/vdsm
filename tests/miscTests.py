@@ -226,7 +226,7 @@ class RotateFiles(TestCaseBase):
         """
         Test that rotator does it's basic functionality.
         """
-        #Prepare
+        # Prepare
         prefix = "prefix"
         stubContent = ('"Multiple exclamation marks", '
                        'he went on, shaking his head, '
@@ -244,17 +244,17 @@ class RotateFiles(TestCaseBase):
             f.flush()
             f.close()
 
-        #Rotate
+        # Rotate
         misc.rotateFiles(dir, prefix, gen, persist=persist)
 
-        #Test result
+        # Test result
         currentDirContent = os.listdir(dir)
         expectedDirContent.sort()
         currentDirContent.sort()
         try:
             self.assertEquals(currentDirContent, expectedDirContent)
         finally:
-            #Clean
+            # Clean
             for f in os.listdir(dir):
                 os.unlink(os.path.join(dir, f))
             os.rmdir(dir)
@@ -384,11 +384,11 @@ class DdWatchCopy(TestCaseBase):
 
         with temporaryPath(perms=0o666, data=data) as srcPath:
             with temporaryPath(perms=0o666) as dstPath:
-                #Copy
+                # Copy
                 rc, out, err = misc.ddWatchCopy(srcPath, dstPath,
                                                 None, len(data))
 
-                #Get copied data
+                # Get copied data
                 readData = open(dstPath).read()
 
         # Compare
@@ -462,7 +462,7 @@ class DdWatchCopy(TestCaseBase):
         """
         Test that regular copying works.
         """
-        #Prepare source
+        # Prepare source
         data = "Everything starts somewhere, " + \
                "though many physicists disagree." + \
                "But people have always been dimly aware of the " + \
@@ -475,14 +475,14 @@ class DdWatchCopy(TestCaseBase):
 
         with temporaryPath(perms=0o666, data=data) as srcPath:
             with temporaryPath(perms=0o666) as dstPath:
-                #Copy
+                # Copy
                 rc, out, err = misc.ddWatchCopy(srcPath, dstPath,
                                                 None, len(data))
 
-                #Get copied data
+                # Get copied data
                 readData = open(dstPath).read()
 
-        #Comapre
+        # Comapre
         self.assertEquals(readData, data)
 
     def testNonExistingFile(self):
@@ -490,11 +490,11 @@ class DdWatchCopy(TestCaseBase):
         Test that trying to copy a non existing file raises the right
         exception.
         """
-        #Get a tempfilename
+        # Get a tempfilename
         srcFd, srcPath = tempfile.mkstemp()
         os.unlink(srcPath)
 
-        #Copy
+        # Copy
         self.assertRaises(misc.se.MiscBlockWriteException, misc.ddWatchCopy,
                           srcPath, "/tmp/tmp", None, 100)
 
@@ -750,7 +750,7 @@ class ReadBlock(TestCaseBase):
 
         path = self._createTempFile(offset + size, writeData)
 
-        #Figure out what outcome should be
+        # Figure out what outcome should be
         timesInSize = int(size / dataLength) + 1
         relOffset = offset % dataLength
         expectedResultData = (writeData * timesInSize)
@@ -804,13 +804,13 @@ class CleanUpDir(TestCaseBase):
         """
         Test if method can clean a dir it should be able to.
         """
-        #Populate dir
+        # Populate dir
         baseDir = tempfile.mkdtemp()
         numOfFilesToCreate = 50
         for i in range(numOfFilesToCreate):
             tempfile.mkstemp(dir=baseDir)
 
-        #clean it
+        # clean it
         fileUtils.cleanupdir(baseDir)
 
         self.assertFalse(os.path.lexists(baseDir))
@@ -838,7 +838,7 @@ class CleanUpDir(TestCaseBase):
         """
         baseDir = "/proc/misc"  # This can't be deleted
 
-        #Try and fail to clean it
+        # Try and fail to clean it
         fileUtils.cleanupdir(baseDir, ignoreErrors=True)
         self.assertTrue(os.path.lexists(baseDir))
 
@@ -852,13 +852,13 @@ class ReadFile(TestCaseBase):
         """
         Test if method works when given a valid file.
         """
-        #create
+        # create
         writeData = ("Trust me, I know what self-loathing is,"
                      "but to kill myself? That would put a damper on my "
                      "search for answers. Not at all productive.")
         # (C) Jhonen Vasquez - Johnny the Homicidal Maniac
         with temporaryPath(data=writeData) as path:
-            #read
+            # read
             readData = misc.readfile(path)
 
         self.assertEquals(writeData, readData[0])
@@ -907,9 +907,9 @@ class PidExists(TestCaseBase):
         """
         Test if when given incorrect input the method works correctly.
         """
-        #FIXME : There is no way real way know what process aren't working.
-        #I'll just try and see if there is **any** occasion where it works
-        #If anyone has any idea. You are welcome to change this
+        # FIXME : There is no way real way know what process aren't working.
+        # I'll just try and see if there is **any** occasion where it works
+        # If anyone has any idea. You are welcome to change this
 
         pid = os.getpid()
         result = True

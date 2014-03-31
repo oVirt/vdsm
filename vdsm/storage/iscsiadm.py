@@ -93,7 +93,7 @@ def _runCmd(args, hideValue=False, sync=True):
 
 
 def iface_exists(interfaceName):
-    #FIXME: can be optimized by checking /var/lib/iscsi/ifaces
+    # FIXME: can be optimized by checking /var/lib/iscsi/ifaces
     return interfaceName in iface_list()
 
 

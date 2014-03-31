@@ -148,6 +148,6 @@ doneCode = {'code': 0, 'message': 'Done'}
 Kbytes = 1024
 Mbytes = 1024 * Kbytes
 
-#exitCodes
+# exitCodes
 ERROR = 1
 NORMAL = 0

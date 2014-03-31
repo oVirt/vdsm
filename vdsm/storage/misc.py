@@ -463,7 +463,7 @@ def validateUUID(uuid, name="uuid", blank=True):
         raise se.InvalidParameterException(name, uuid)
 
 
-#FIXME: Consider using confutils validator?
+# FIXME: Consider using confutils validator?
 def validateInt(number, name):
     try:
         return int(number)
@@ -539,8 +539,8 @@ def persistFile(name):
 
 
 def parseHumanReadableSize(size):
-    #FIXME : Maybe use a regex -> ^(?P<num>\d+)(?P<sizeChar>[KkMmGgTt])$
-    #FIXME : Why not support B and be done with it?
+    # FIXME : Maybe use a regex -> ^(?P<num>\d+)(?P<sizeChar>[KkMmGgTt])$
+    # FIXME : Why not support B and be done with it?
     if size.isdigit():
         # No suffix - pass it as is
         return int(size)

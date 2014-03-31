@@ -49,7 +49,7 @@ class StaticSourceRoute(object):
         self.rules = None
 
     def _generateTableId(self):
-        #TODO: Future proof for IPv6
+        # TODO: Future proof for IPv6
         return netaddr.IPAddress(self.ipaddr).value
 
     def _buildRoutes(self):

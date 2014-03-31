@@ -901,7 +901,7 @@ class BlockStorageDomain(sd.StorageDomain):
             lvs = ()  # No LVs in this VG (domain)
 
         for lv in lvs:
-            #Fix me: Should raise and get resource lock.
+            # Fix me: Should raise and get resource lock.
             try:
                 lvm.removeLVs(sdUUID, lv.name)
             except se.CannotRemoveLogicalVolume as e:
@@ -915,7 +915,7 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         Get storage domain info
         """
-        ##self.log.info("sdUUID=%s", self.sdUUID)
+        # self.log.info("sdUUID=%s", self.sdUUID)
         # First call parent getInfo() - it fills in all the common details
         info = sd.StorageDomain.getInfo(self)
         # Now add blockSD specific data

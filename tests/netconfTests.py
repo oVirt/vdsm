@@ -109,8 +109,8 @@ class ifcfgConfigWriterTests(TestCaseBase):
             (libvirt, 'createNetwork', lambda *x: None),
             (libvirt, 'removeNetwork', lambda *x: None),
         ]):
-            #after vdsm package is installed, the 'vdsm' account will be
-            #created if no 'vdsm' account, we should skip this test
+            # after vdsm package is installed, the 'vdsm' account will be
+            # created if no 'vdsm' account, we should skip this test
             if 'vdsm' not in [val.pw_name for val in pwd.getpwall()]:
                 raise SkipTest("'vdsm' is not in user account database, "
                                "install vdsm package to create the vdsm user")

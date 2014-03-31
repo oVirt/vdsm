@@ -134,7 +134,7 @@ class SPM_Extend_Message:
                            "message, reply : %s, orig: %s", reply,
                            self.payload)
             raise RuntimeError('Incorrect reply')
-        #if self.payload[sizeOffset:sizeOffset + PACKED_UUID_SIZE] > \
+        # if self.payload[sizeOffset:sizeOffset + PACKED_UUID_SIZE] > \
         #        reply[sizeOffset:sizeOffset + PACKED_UUID_SIZE]):
         #    self.log.error("SPM_Extend_Message: New size is smaller than "
         #                   "requested size")
@@ -368,8 +368,8 @@ class HSM_MailMonitor(threading.Thread):
         return rc
 
     def _checkForMail(self):
-        #self.log.debug("HSM_MailMonitor - checking for mail")
-        #self.log.debug("Running command: " + str(self._inCmd))
+        # self.log.debug("HSM_MailMonitor - checking for mail")
+        # self.log.debug("Running command: " + str(self._inCmd))
         (rc, in_mail, err) = misc.execCmd(self._inCmd, raw=True)
         if rc:
             raise RuntimeError("_handleResponses.Could not read mailbox - rc "
@@ -377,7 +377,7 @@ class HSM_MailMonitor(threading.Thread):
         if (len(in_mail) != MAILBOX_SIZE):
             raise RuntimeError("_handleResponses.Could not read mailbox - len "
                                "%s != %s" % (len(in_mail), MAILBOX_SIZE))
-        #self.log.debug("Parsing inbox content: %s", in_mail)
+        # self.log.debug("Parsing inbox content: %s", in_mail)
         return self._handleResponses(in_mail)
 
     def _sendMail(self):
@@ -447,7 +447,7 @@ class HSM_MailMonitor(threading.Thread):
                     while not self._stop and not message and \
                             not self._activeMessages:
                         try:
-                            #self.log.debug("No requests in queue, going to "
+                            # self.log.debug("No requests in queue, going to "
                             #               "sleep until new requests arrive")
                             # Check if a new message is waiting to be sent
                             message = self._queue.get(
@@ -650,7 +650,7 @@ class SPM_MailMonitor:
                     if not self._validateMailbox(
                             newMail[mailboxStart:mailboxStart + MAILBOX_SIZE],
                             host):
-                        #Cleaning invalid mbx in newMail
+                        # Cleaning invalid mbx in newMail
                         newMail = newMail[:mailboxStart] + EMPTYMAILBOX + \
                             newMail[mailboxStart + MAILBOX_SIZE:]
                         break
@@ -724,9 +724,9 @@ class SPM_MailMonitor:
         # incomingMail are changed during checkForMail
         self._inLock.acquire()
         try:
-            #self.log.debug("SPM_MailMonitor -_checking for mail")
+            # self.log.debug("SPM_MailMonitor -_checking for mail")
             cmd = self._inCmd + ['bs=' + str(self._outMailLen)]
-            #self.log.debug("SPM_MailMonitor - reading incoming mail, "
+            # self.log.debug("SPM_MailMonitor - reading incoming mail, "
             #               "command: " + str(cmd))
             (rc, in_mail, err) = misc.execCmd(cmd, raw=True)
             if rc:
@@ -740,7 +740,7 @@ class SPM_MailMonitor:
                                self._outMailLen, repr(in_mail[:80]))
                 raise RuntimeError("_handleRequests._checkForMail - Could not "
                                    "read mailbox")
-            #self.log.debug("Parsing inbox content: %s", in_mail)
+            # self.log.debug("Parsing inbox content: %s", in_mail)
             if self._handleRequests(in_mail):
                 self._outLock.acquire()
                 try:
@@ -769,7 +769,7 @@ class SPM_MailMonitor:
                                          mailboxOffset + MAILBOX_SIZE]
             cmd = self._outCmd + ['bs=' + str(MAILBOX_SIZE),
                                   'seek=' + str(mailboxOffset / MAILBOX_SIZE)]
-            #self.log.debug("Running command: %s, for message id: %s",
+            # self.log.debug("Running command: %s, for message id: %s",
             #               str(cmd), str(msgID))
             (rc, out, err) = _mboxExecCmd(cmd, data=mailbox)
             if rc:

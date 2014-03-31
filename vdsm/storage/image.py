@@ -776,7 +776,7 @@ class Image:
 
             self.log.info("Finished copying %s:%s -> %s:%s", sdUUID,
                           srcVolUUID, dstSdUUID, dstVolUUID)
-            #TODO: handle return status
+            # TODO: handle return status
             return dstVolUUID
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)

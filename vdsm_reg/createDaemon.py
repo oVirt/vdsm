@@ -109,7 +109,7 @@ def createDaemon():
             # a session leader without a controlling terminal,
             # it's possible for
             # it to acquire one by opening a terminal in the future
-            #(System V-based systems).
+            # (System V-based systems).
             # This second fork guarantees that the child is no longer
             # a session leader, preventing the daemon from ever acquiring
             # a controlling terminal.
@@ -119,7 +119,7 @@ def createDaemon():
 
         if (pid == 0):  # The second child.
             # Since the current working directory may be a mounted filesystem,
-            #we avoid the issue of not being able to unmount the filesystem at
+            # we avoid the issue of not being able to unmount the filesystem at
             # shutdown time by changing it to the root directory.
             os.chdir(WORKDIR)
             # We probably don't want the file mode creation mask inherited from

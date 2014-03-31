@@ -113,12 +113,12 @@ class TestConfigNetwork(TestCaseBase):
         self._addNetworkWithExc('test', dict(nics=nics, ipaddr='10.10.10.10',
                                 _netinfo=fakeInfo), errors.ERR_BAD_ADDR)
 
-        #Test netmask without IP.
+        # Test netmask without IP.
         self._addNetworkWithExc('test', dict(nics=nics,
                                 netmask='255.255.255.0', _netinfo=fakeInfo),
                                 errors.ERR_BAD_ADDR)
 
-        #Test gateway without IP.
+        # Test gateway without IP.
         self._addNetworkWithExc('test', dict(nics=nics, gateway='10.10.0.1',
                                 _netinfo=fakeInfo), errors.ERR_BAD_ADDR)
 

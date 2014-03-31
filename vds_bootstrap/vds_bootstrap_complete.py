@@ -72,7 +72,7 @@ def main():
               [-g] <random_num> [reboot]"""
     try:
         vds_config_str = None
-        #FIXME: these flags are added for near future use
+        # FIXME: these flags are added for near future use
         installVirtualizationService = True
         installGlusterService = False
         opts, args = getopt.getopt(sys.argv[1:], "v:c:Vg")

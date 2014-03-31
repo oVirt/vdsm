@@ -245,7 +245,7 @@ class IPXMLRPCServer(SimpleXMLRPCServer):
                                     bind_and_activate)
 
 
-#Threaded version of SimpleXMLRPCServer
+# Threaded version of SimpleXMLRPCServer
 class SimpleThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
                                  IPXMLRPCServer):
     allow_reuse_address = True
@@ -827,12 +827,12 @@ def getHostUUID(legacy=True):
                                 if not line.startswith('#'))
 
                 if ret == 0 and 'Not' not in out:
-                    #Avoid error string - 'Not Settable' or 'Not Present'
+                    # Avoid error string - 'Not Settable' or 'Not Present'
                     __hostUUID = out.strip()
                 else:
                     logging.warning('Could not find host UUID.')
             elif arch in ('ppc', 'ppc64'):
-                #eg. output IBM,03061C14A
+                # eg. output IBM,03061C14A
                 try:
                     with open('/proc/device-tree/system-id') as f:
                         systemId = f.readline()

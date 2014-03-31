@@ -272,7 +272,7 @@ class Deploy:
         if resultKey is not None:
             message += ("' " + str(resultKey) + "='" + str(result))
 
-        #Fix xml encoding:
+        # Fix xml encoding:
         msg = deployUtil.escapeXML(str(msg))
         message += ("' message='" + msg + "'")
 
@@ -403,7 +403,7 @@ class Deploy:
         os_message = "Unsupported platform version: " + res
         verTest = deployUtil.versionCompare(res, MINIMAL_SUPPORTED_PLATFORM)
         if verTest == 99:
-            #import error
+            # import error
             os_message = "Unable to test for minimal platform version: " \
                 "missing python library"
             self.rc = False
@@ -743,7 +743,7 @@ class Deploy:
     def _addNetwork(self, vdcName, vdcPort):
         fReturn = True
 
-        #add management bridge
+        # add management bridge
         try:
             fReturn = deployUtil.makeBridge(
                 vdcName,
@@ -838,7 +838,7 @@ class Deploy:
                 self.message = "Failed to parse manager URL!"
                 self.status = "FAIL"
                 logging.error(self.message)
-                #Do not set rc to allow changes from Engine
+                # Do not set rc to allow changes from Engine
             else:
                 if not self._addNetwork(url, port):
                     self.status = "FAIL"
@@ -1144,7 +1144,7 @@ obsolete options:
         subject = args[1]
         random_num = args[2]
         # Where is REVISION defined ????
-        #if not rev_num:
+        # if not rev_num:
         #    rev_num = REVISION
     except:
         print main.__doc__

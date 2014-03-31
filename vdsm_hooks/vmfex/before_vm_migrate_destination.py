@@ -6,11 +6,11 @@ import traceback
 import fcntl
 from xml.dom import minidom
 try:
-    #3.0 compat
+    # 3.0 compat
     import libvirtconnection
     libvirtconnection
 except ImportError:
-    #3.1 compat
+    # 3.1 compat
     from vdsm import libvirtconnection
 
 '''
@@ -71,12 +71,12 @@ def getUsableNics():
 def createDirectPool(conn):
     if 'direct-pool' in conn.listNetworks():
         dpool = conn.networkLookupByName('direct-pool')
-        #destroy and undefine direct-pool
+        # destroy and undefine direct-pool
         dpool.destroy()
         dpool.undefine()
         sys.stderr.write('vmfex: removed direct-pool \n')
 
-    #create a new direct-pool
+    # create a new direct-pool
     xmlstr = '''<network>
         <name>direct-pool</name>
         <forward mode="passthrough">
@@ -129,7 +129,7 @@ def handleDirectPool(conn):
 
 if 'vmfex' in os.environ:
     try:
-        #connect to libvirtd
+        # connect to libvirtd
         conn = libvirtconnection.get()
         handleDirectPool(conn)
 

@@ -152,7 +152,7 @@ class StoragePool(object):
         self.log.debug("Preparing to upgrade domain %s", sdUUID)
 
         try:
-            #Assumed that the domain can be attached only to one pool
+            # Assumed that the domain can be attached only to one pool
             targetDomVersion = self.masterDomain.getVersion()
         except:
             self.log.error("Error while preparing domain `%s` upgrade", sdUUID,
@@ -306,7 +306,7 @@ class StoragePool(object):
                 #        active block domain in the pool or once one is
                 #        activated
 
-                #FIXME : Use a system wide grouping mechanism
+                # FIXME : Use a system wide grouping mechanism
                 if self.masterDomain.requiresMailbox and \
                         self.lvExtendPolicy == "ON":
                     self.spmMailer = storage_mailbox.SPM_MailMonitor(self,
@@ -1123,7 +1123,7 @@ class StoragePool(object):
         else:
             if current == linkName:
                 return  # Nothing to do
-        #Rebuild the link
+        # Rebuild the link
         tmp_link_name = os.path.join(self.storage_repository,
                                      str(uuid.uuid4()))
         os.symlink(src, tmp_link_name)     # make tmp_link
@@ -1164,32 +1164,32 @@ class StoragePool(object):
         # they are probably disconnected from the host
         domUUIDs = self.getDomains(activeOnly=True).keys()
 
-        #msdUUID should be present and active in getDomains result.
-        #TODO: Consider remove if clause.
+        # msdUUID should be present and active in getDomains result.
+        # TODO: Consider remove if clause.
         if msdUUID in domUUIDs:
             domUUIDs.remove(msdUUID)
 
-        #TODO: Consider to remove this whole block. UGLY!
-        #We want to avoid looking up (vgs) of unknown block domains.
-        #domUUIDs includes all the domains, file or block.
+        # TODO: Consider to remove this whole block. UGLY!
+        # We want to avoid looking up (vgs) of unknown block domains.
+        # domUUIDs includes all the domains, file or block.
         block_mountpoint = os.path.join(sd.StorageDomain.storage_repository,
                                         sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
         blockDomUUIDs = [vg.name for vg in blockSD.lvm.getVGs(domUUIDs)]
         domDirs = {}  # {domUUID: domaindir}
-        #Add the block domains
+        # Add the block domains
         for domUUID in blockDomUUIDs:
             domaindir = os.path.join(block_mountpoint, domUUID)
             domDirs[domUUID] = domaindir
             # create domain special volumes folder
             fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_META_DATA))
             fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_IMAGES))
-        #Add the file domains
+        # Add the file domains
         for domUUID, domaindir in fileSD.scanDomains():  \
                 # [(fileDomUUID, file_domaindir)]
             if domUUID in domUUIDs:
                 domDirs[domUUID] = domaindir
 
-        #Link all the domains to the pool
+        # Link all the domains to the pool
         for domUUID, domaindir in domDirs.iteritems():
             linkName = os.path.join(self.poolPath, domUUID)
             self._linkStorageDomain(domaindir, linkName)
@@ -1358,7 +1358,7 @@ class StoragePool(object):
         try:
             domain = sdCache.produce(msdUUID)
         except se.StorageDomainDoesNotExist:
-            #Manager should start reconstructMaster if SPM.
+            # Manager should start reconstructMaster if SPM.
             raise se.StoragePoolMasterNotFound(self.spUUID, msdUUID)
 
         if not domain.isMaster():

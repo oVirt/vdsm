@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-#kate: replace-tabs on; indent-width 4;
 #
 # Copyright 2012 Sandro Bonazzola <sandro.bonazzola@gmail.com>
 #
@@ -46,7 +45,7 @@ class MkimageTestCase(VdsmTestCase):
     """
     Tests for mkimage module.
     """
-    #pylint: disable=R0904
+    # pylint: disable=R0904
 
     def setUp(self):
         """
@@ -55,7 +54,7 @@ class MkimageTestCase(VdsmTestCase):
         by mkimage._commonCleanFs.
         Avoid errors creating _P_PAYLOAD_IMAGES
         """
-        #pylint: disable=W0212
+        # pylint: disable=W0212
         self.orig_mkimage = {
             "DISKIMAGE_USER": mkimage.DISKIMAGE_USER,
             "DISKIMAGE_GROUP": mkimage.DISKIMAGE_GROUP,
@@ -87,7 +86,7 @@ class MkimageTestCase(VdsmTestCase):
         rmtree(self.img_dir)
         mkimage.DISKIMAGE_USER = self.orig_mkimage["DISKIMAGE_USER"]
         mkimage.DISKIMAGE_GROUP = self.orig_mkimage["DISKIMAGE_GROUP"]
-        #pylint: disable=W0212
+        # pylint: disable=W0212
         mkimage._P_PAYLOAD_IMAGES = self.orig_mkimage["_P_PAYLOAD_IMAGES"]
 
     def _check_permissions(self, filepath, permsMask):
@@ -155,7 +154,7 @@ class MkimageTestCase(VdsmTestCase):
         """
         Tests mkimage._decodeFilesIntoDir
         """
-        #pylint: disable=W0212
+        # pylint: disable=W0212
         mkimage._decodeFilesIntoDir(self.files, self.workdir)
         self._check_content()
 

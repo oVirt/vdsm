@@ -201,7 +201,7 @@ class service:
             params['drives'] = drives
         if devices:
             params['devices'] = devices
-        ##Backward compatibility for vdsClient users
+        # Backward compatibility for vdsClient users
         if 'vt' in params:
             params['kvmEnable'] = params['vt']
 
@@ -494,7 +494,7 @@ class service:
             print "Error in scan disk alignment"
         sys.exit(0)
 
-######## IRS methods ####################
+# ####### IRS methods #######
     def createStorageDomain(self, args):
         validateArgTypes(args, [int, str, str, str, int, int])
         dom = self.s.createStorageDomain(*args)
@@ -640,7 +640,7 @@ class service:
         info = self.s.getVGInfo(vgUUID)
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
-        #print info['info']
+        # print info['info']
         for entry in info['info'].keys():
             print '============================'
             if entry != 'pvlist':
@@ -1820,13 +1820,13 @@ if __name__ == '__main__':
                     'network',
                     'o   sysprepInf=/path/to/file: Launch with the '
                     'specified file as sysprep.inf in floppy',
-                    #'o   any parmeter=<any value> : parameter that is '
-                    #'not familiar is passed as is to the VM',
-                    #'                               and displayed with '
-                    #'all other parameter. They can be used for '
-                    #'additional',
-                    #'                               information the user '
-                    #'want to reserve with the machine'
+                    # 'o   any parmeter=<any value> : parameter that is '
+                    # 'not familiar is passed as is to the VM',
+                    # '                               and displayed with '
+                    # 'all other parameter. They can be used for '
+                    # 'additional',
+                    # '                               information the user '
+                    # 'want to reserve with the machine'
                     'o   acpiEnable : If present will remove the default '
                     '-no-acpi switch',
                     'o   qgaEnable : use qemu-ga as guest agent',

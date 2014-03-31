@@ -19,16 +19,16 @@
 #
 
 ########################################################
-##
-##  Set of user defined exceptions.
-##
+#
+#  Set of user defined exceptions.
+#
 ########################################################
 
 #######################################################
-##
-## IMPORTANT NOTE: DO NOT USE CODES GREATER THAN 5000
-## AS THEY ARE ASSIGNED TO RHEVM !!!!!!!!!!!!!!!!!!!!!
-##
+#
+# IMPORTANT NOTE: DO NOT USE CODES GREATER THAN 5000
+# AS THEY ARE ASSIGNED TO RHEVM !!!!!!!!!!!!!!!!!!!!!
+#
 #######################################################
 
 from securable import SecureError
@@ -1097,7 +1097,7 @@ class iSCSISetupError(StorageServeriSCSIError):
     message = "Failed to setup iSCSI subsystem"
 
 
-#class DeviceNotFound(StorageException):
+# class DeviceNotFound(StorageException):
 #    code = 466
 #    message = "Device not found or not accessible"
 

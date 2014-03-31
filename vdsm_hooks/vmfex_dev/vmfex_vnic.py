@@ -58,12 +58,12 @@ def createDirectPool(conn):
     are available on the host."""
     if 'direct-pool' in conn.listNetworks():
         directPool = conn.networkLookupByName('direct-pool')
-        #destroy and undefine direct-pool
+        # destroy and undefine direct-pool
         directPool.destroy()
         directPool.undefine()
         sys.stderr.write('vmfex_dev: removed direct-pool \n')
 
-    #create a new direct-pool
+    # create a new direct-pool
     content = (['<network>', '<name>direct-pool</name>',
                '<forward mode="passthrough">'] +
                ['<interface dev="%s"/>' % nic for nic in getUsableNics()] +

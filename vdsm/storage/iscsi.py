@@ -77,7 +77,7 @@ def getDevIscsiInfo(dev):
     if devIsiSCSI(dev):
         return getSessionInfo(getDevIscsiSessionId(dev))
 
-    #FIXME: raise exception instead of returning an empty object
+    # FIXME: raise exception instead of returning an empty object
     return IscsiSession(0, IscsiInterface(""),
                         IscsiTarget(IscsiPortal("", 0), 0, ""), None)
 
@@ -136,7 +136,7 @@ def readSessionInfo(sessionID):
     portal = IscsiPortal(ip, port)
     target = IscsiTarget(portal, tpgt, iqn)
     cred = None
-    #FIXME: Don't just assume CHAP
+    # FIXME: Don't just assume CHAP
     if username or password:
         cred = ChapCredentials(username, password)
 
@@ -501,7 +501,7 @@ def disconnectFromUndelyingStorage(devPath):
 
 
 def disconnectiScsiSession(sessionID):
-    #FIXME : Should throw exception on error
+    # FIXME : Should throw exception on error
     sessionID = int(sessionID)
     try:
         iscsiadm.session_logout(sessionID)

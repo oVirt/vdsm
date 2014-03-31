@@ -318,7 +318,7 @@ def setVdsConf(configStr, confFile):
         logging.debug("setVdsConf: setting Key=" + str(key) + " to val=" +
                       str(val))
         _updateFileLine(confFile, key, val)
-        #_logExec([EX_SED, "-i", "s:^\s*"+key+"\s*=.*:"+key+"="+val+":",
+        # _logExec([EX_SED, "-i", "s:^\s*"+key+"\s*=.*:"+key+"="+val+":",
         #         confFile])
 
     if isOvirt():
@@ -345,7 +345,7 @@ def getMachineUUID():
             return out.replace("\n", "")
     elif arch == "ppc64":
         if os.path.exists('/proc/device-tree/system-id'):
-            #eg. output IBM,03061C14A
+            # eg. output IBM,03061C14A
             return file('/proc/device-tree/system-id').readline().\
                 rstrip('\0').replace(",", "")
 
@@ -433,7 +433,7 @@ def _getMGTIface(vdcHostName):
     try:
         if vdcHostName != "None":
             logging.debug("_getMGTIface: read host name: " + strVDCName)
-            #Now find the IP. Note that gethostbyname(IP) == IP
+            # Now find the IP. Note that gethostbyname(IP) == IP
             strVDCIP = socket.gethostbyname(strVDCName)
     except:
             strVDCIP = "None"
@@ -849,14 +849,14 @@ def _updateFileLine(fileName, key, value, insertIfMissing=False):
     )
 
     try:
-        #Preserve current file mode
+        # Preserve current file mode
         mode = os.stat(fileName)[stat.ST_MODE]
 
-        #Create temp file
+        # Create temp file
         fh, abs_path = mkstemp()
         new_file = open(abs_path, 'w')
         old_file = open(fileName)
-        #Iterate over the existing file, while replacing if needed.
+        # Iterate over the existing file, while replacing if needed.
         for line in old_file:
             # Note: the line below must not have spaces before or after the '='
             #       since it'll fail bash scripts !
@@ -875,10 +875,10 @@ def _updateFileLine(fileName, key, value, insertIfMissing=False):
         new_file.close()
         os.close(fh)
         old_file.close()
-        #Move new file
+        # Move new file
         shutil.move(abs_path, fileName)
 
-        #Restore original file mode
+        # Restore original file mode
         os.chmod(fileName, mode)
     except:
         try:
@@ -1065,7 +1065,7 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
         vlan = str(vlan)
         fReturn = (nic is not None)
 
-    #Delete existing bridge in oVirt
+    # Delete existing bridge in oVirt
     if fReturn and fIsOvirt and fIsBridgeDevice:
         try:
             out, err, ret = _logExec([os.path.join(vdsmDir, SCRIPT_NAME_DEL),
@@ -1088,7 +1088,7 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
             logging.debug("makeBridge Failed to del existing bridge. out=" +
                           out + "\nerr=" + str(err) + "\nret=" + str(ret))
 
-    #Add bridge
+    # Add bridge
     if fReturn:
         try:
             lstBridgeOptions.append('blockingdhcp=true')
@@ -1107,7 +1107,7 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
                 ) % (bridgeName, out, err, ret)
             )
 
-    #Save current config by removing the undo files:
+    # Save current config by removing the undo files:
     try:
         if fReturn and not fIsOvirt:
             setSafeVdsmNetworkConfig()

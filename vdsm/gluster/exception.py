@@ -19,15 +19,15 @@
 #
 
 ########################################################
-##
-##  Set of user defined gluster exceptions.
-##
+#
+#  Set of user defined gluster exceptions.
+#
 ########################################################
 
 ########################################################
-##
-## IMPORTANT NOTE: USE CODES BETWEEN 4100 AND 4800
-##
+#
+# IMPORTANT NOTE: USE CODES BETWEEN 4100 AND 4800
+#
 ########################################################
 
 from vdsm.exception import VdsmException

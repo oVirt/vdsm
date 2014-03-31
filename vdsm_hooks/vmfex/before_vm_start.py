@@ -8,11 +8,11 @@ import fcntl
 import ast
 from xml.dom import minidom
 try:
-    #3.0 compat
+    # 3.0 compat
     import libvirtconnection
     libvirtconnection
 except ImportError:
-    #3.1 compat
+    # 3.1 compat
     from vdsm import libvirtconnection
 
 '''
@@ -105,12 +105,12 @@ def getUsableNics():
 def createDirectPool(conn):
     if 'direct-pool' in conn.listNetworks():
         dpool = conn.networkLookupByName('direct-pool')
-        #destroy and undefine direct-pool
+        # destroy and undefine direct-pool
         dpool.destroy()
         dpool.undefine()
         sys.stderr.write('vmfex: removed direct-pool \n')
 
-    #create a new direct-pool
+    # create a new direct-pool
     xmlstr = '''<network>
         <name>direct-pool</name>
         <forward mode="passthrough">
@@ -164,17 +164,17 @@ def handleDirectPool(conn):
 if 'vmfex' in os.environ:
     try:
         sys.stderr.write('vmfex: starting to edit VM \n')
-        #connect to libvirtd and handle the direct-pool network
+        # connect to libvirtd and handle the direct-pool network
         conn = libvirtconnection.get()
         handleDirectPool(conn)
-        #Get the vmfex line
+        # Get the vmfex line
         vmfex = os.environ['vmfex']
         sys.stderr.write('vmfex: customProperty: ' + str(vmfex) + '\n')
-        #convert to dictionary
+        # convert to dictionary
         vmfexd = ast.literal_eval(vmfex)
-        #make sure the keys are lowercase
+        # make sure the keys are lowercase
         vmfexd = dict((k.lower(), v) for k, v in vmfexd.iteritems())
-        #Get the VM's xml definition
+        # Get the VM's xml definition
         domxml = hooking.read_domxml()
 
         for iface in domxml.getElementsByTagName('interface'):

@@ -400,11 +400,11 @@ class clientIF:
             vm.MigrationSourceThread.setMaxOutgoingMigrations(mog)
 
             vdsmVms = self._getVDSMVms()
-            #Recover
+            # Recover
             for v in vdsmVms:
                 vmId = v.UUIDString()
                 if not self._recoverVm(vmId):
-                    #RH qemu proc without recovery
+                    # RH qemu proc without recovery
                     self.log.info('loose qemu process with id: '
                                   '%s found, killing it.', vmId)
                     try:

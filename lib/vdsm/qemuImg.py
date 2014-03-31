@@ -120,14 +120,14 @@ def check(image, format=None):
     cmd.append(image)
     rc, out, err = utils.execCmd(cmd)
 
-    #FIXME: handle different error codes and raise errors accordingly
+    # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
         raise QImgError(rc, out, err)
     try:
         check = {
             'offset': int(__iregexSearch("offset", out[1]))
         }
-    #TODO: Add requires for qemu supporting offset and print exc_info
+    # TODO: Add requires for qemu supporting offset and print exc_info
     except:
         raise QImgError(rc, out, err, "unable to parse qemu-img check output")
 

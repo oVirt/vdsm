@@ -234,7 +234,7 @@ class TestPortMirror(TestCaseBase):
     when it is attached to an active device.
     """
 
-    #just an echo request from 192.168.0.52 to 192.168.0.3
+    # just an echo request from 192.168.0.52 to 192.168.0.3
     _ICMP = unhexlify("001cc0d044dc00215c4d4275080045000054000040004001b921c0a"
                       "80034c0a800030800dd200c1400016b52085000000000d754050000"
                       "000000101112131415161718191a1b1c1d1e1f20212223242526272"
