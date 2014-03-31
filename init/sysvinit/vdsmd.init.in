@@ -137,7 +137,7 @@ stop() {
         log_failure_msg "$prog: not running"
         RETVAL=0
     else
-        killproc -p "$PIDFILE" -d 2
+        killproc -p "$PIDFILE" -d @SERVICE_STOP_TIMEOUT@
         RETVAL=$?
         [ "$RETVAL" = 0 ] && "@RM_PATH@" -f "$LOCK_FILE" > /dev/null 2>&1
     fi

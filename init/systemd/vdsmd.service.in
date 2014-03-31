@@ -16,6 +16,7 @@ Nice=-20
 User=@VDSMUSER@
 Group=@VDSMGROUP@
 PermissionsStartOnly=true
+TimeoutStopSec=@SERVICE_STOP_TIMEOUT@
 
 [Install]
 WantedBy=multi-user.target
