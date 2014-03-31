@@ -165,7 +165,7 @@ class Bridge(NetDevice):
 
     @classmethod
     def validateName(cls, name):
-        if not (name and len(name) <= cls.MAX_NAME_LEN and
+        if not (name and 0 < len(name) <= cls.MAX_NAME_LEN and
                 len(set(name) & cls.ILLEGAL_CHARS) == 0 and
                 not name.startswith('-')):
             raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
