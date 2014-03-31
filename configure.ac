@@ -142,6 +142,9 @@ AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
 AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
 AC_SUBST([vdsmupgradedir], ['/data/updates'])
 
+# VDSM service
+AC_SUBST([SERVICE_STOP_TIMEOUT], ['10'])
+
 # Engine Name
 AC_SUBST([ENGINENAME], ['oVirt Engine'])
 
