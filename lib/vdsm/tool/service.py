@@ -263,7 +263,8 @@ try:
 except OSError:
     pass
 else:
-    _sysvEnv = {'SYSTEMCTL_SKIP_REDIRECT': '1'}
+    _sysvEnv = os.environ.copy()
+    _sysvEnv['SYSTEMCTL_SKIP_REDIRECT'] = '1'
     _execSysvEnv = functools.partial(execCmd, env=_sysvEnv)
 
     @_sysvNative
