@@ -398,7 +398,7 @@ class clientIF:
             # API response.
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
                       caps.CpuTopology().cores())
-            migration.MigrationSourceThread.setMaxOutgoingMigrations(mog)
+            migration.SourceThread.setMaxOutgoingMigrations(mog)
 
             vdsmVms = self._getVDSMVms()
             # Recover

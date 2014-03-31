@@ -34,7 +34,7 @@ from vdsm.define import NORMAL, errCode, Mbytes
 from . import vmexitreason
 
 
-class MigrationSourceThread(threading.Thread):
+class SourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
     """
@@ -228,7 +228,7 @@ class MigrationSourceThread(threading.Thread):
             self._setupVdsConnection()
             self._setupRemoteMachineParams()
             self._prepareGuest()
-            MigrationSourceThread._ongoingMigrations.acquire()
+            SourceThread._ongoingMigrations.acquire()
             try:
                 if self._migrationCanceledEvt:
                     self._raiseAbortError()
@@ -251,7 +251,7 @@ class MigrationSourceThread(threading.Thread):
             finally:
                 if '_migrationParams' in self._vm.conf:
                     del self._vm.conf['_migrationParams']
-                MigrationSourceThread._ongoingMigrations.release()
+                SourceThread._ongoingMigrations.release()
         except Exception as e:
             self._recover(str(e))
             self.log.error("Failed to migrate", exc_info=True)
@@ -294,11 +294,10 @@ class MigrationSourceThread(threading.Thread):
             self._vm.log.debug('starting migration to %s '
                                'with miguri %s', duri, muri)
 
-            t = MigrationDowntimeThread(self._vm, int(self._downtime))
+            t = DowntimeThread(self._vm, int(self._downtime))
 
-            if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
-                self._monitorThread = MigrationMonitorThread(self._vm,
-                                                             startTime)
+            if MonitorThread._MIGRATION_MONITOR_INTERVAL:
+                self._monitorThread = MonitorThread(self._vm, startTime)
                 self._monitorThread.start()
 
             try:
@@ -328,7 +327,7 @@ class MigrationSourceThread(threading.Thread):
 
             finally:
                 t.cancel()
-                if MigrationMonitorThread._MIGRATION_MONITOR_INTERVAL:
+                if MonitorThread._MIGRATION_MONITOR_INTERVAL:
                     self._monitorThread.stop()
 
     def stop(self):
@@ -342,9 +341,9 @@ class MigrationSourceThread(threading.Thread):
                     raise
 
 
-class MigrationDowntimeThread(threading.Thread):
+class DowntimeThread(threading.Thread):
     def __init__(self, vm, downtime):
-        super(MigrationDowntimeThread, self).__init__()
+        super(DowntimeThread, self).__init__()
         self.DOWNTIME_STEPS = config.getint('vars', 'migration_downtime_steps')
 
         self._vm = vm
@@ -378,12 +377,12 @@ class MigrationDowntimeThread(threading.Thread):
         self._stop.set()
 
 
-class MigrationMonitorThread(threading.Thread):
+class MonitorThread(threading.Thread):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
         'vars', 'migration_monitor_interval')  # seconds
 
     def __init__(self, vm, startTime):
-        super(MigrationMonitorThread, self).__init__()
+        super(MonitorThread, self).__init__()
         self._stop = threading.Event()
         self._vm = vm
         self._startTime = startTime

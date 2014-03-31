@@ -1586,7 +1586,7 @@ class Vm(object):
             self._lastStatus = vmstatus.RESTORING_STATE
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
-        self._migrationSourceThread = migration.MigrationSourceThread(self)
+        self._migrationSourceThread = migration.SourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._guestSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
             '.guest.socket'
@@ -2522,7 +2522,7 @@ class Vm(object):
             # taken self Down
             if self._lastStatus == vmstatus.DOWN:
                 return errCode['noVM']
-            self._migrationSourceThread = migration.MigrationSourceThread(
+            self._migrationSourceThread = migration.SourceThread(
                 self, **params)
             self._migrationSourceThread.start()
             self._migrationSourceThread.getStat()
