@@ -34,12 +34,12 @@ class FORMAT:
     VMDK = "vmdk"
 
 __iregex = {
-    'format':       re.compile("^file format: (?P<value>\w+)$"),
-    'virtualsize':  re.compile("^virtual size: "
-                               "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
-    'clustersize':  re.compile("^cluster_size: (?P<value>\d+)$"),
-    'backingfile':  re.compile("^backing file: (?P<value>.+) \(actual path"),
-    'offset':  re.compile("^Image end offset: (?P<value>\d+)$"),
+    'format': re.compile("^file format: (?P<value>\w+)$"),
+    'virtualsize': re.compile("^virtual size: "
+                              "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
+    'clustersize': re.compile("^cluster_size: (?P<value>\d+)$"),
+    'backingfile': re.compile("^backing file: (?P<value>.+) \(actual path"),
+    'offset': re.compile("^Image end offset: (?P<value>\d+)$"),
 }
 
 

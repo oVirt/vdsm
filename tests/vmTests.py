@@ -681,7 +681,7 @@ class TestVm(TestCaseBase):
     @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
     @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
     @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
-    @MonkeyPatch(utils,  'getHostUUID',
+    @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLineX86_64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_X86_64)
@@ -690,7 +690,7 @@ class TestVm(TestCaseBase):
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
-    @MonkeyPatch(utils,  'getHostUUID',
+    @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLinePPC64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)

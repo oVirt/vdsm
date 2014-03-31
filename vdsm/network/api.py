@@ -345,7 +345,7 @@ def _delBrokenNetwork(network, netAttr, configurator):
                implicitBonding=False, _netinfo=_netinfo)
 
 
-def _validateDelNetwork(network, vlan, bonding, nics, bridged,  _netinfo):
+def _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo):
     if bonding:
         if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'delNetwork: %s are '

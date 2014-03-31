@@ -3963,9 +3963,9 @@ class Vm(object):
         def _vmConfForMemorySnapshot():
             """Returns the needed vm configuration with the memory snapshot"""
 
-            return {'restoreFromSnapshot':   True,
-                    '_srcDomXML':            self._dom.XMLDesc(0),
-                    'elapsedTimeOffset':     time.time() - self._startTime}
+            return {'restoreFromSnapshot': True,
+                    '_srcDomXML': self._dom.XMLDesc(0),
+                    'elapsedTimeOffset': time.time() - self._startTime}
 
         def _padMemoryVolume(memoryVolPath, spType, sdUUId):
             if spType == sd.NFS_DOMAIN:

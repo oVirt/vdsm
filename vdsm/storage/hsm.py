@@ -2369,7 +2369,7 @@ class HSM:
                     doms = self.__prefetchDomains(domType, conObj)
                 except:
                     self.log.debug("prefetch failed: %s",
-                                   sdCache.knownSDs,  exc_info=True)
+                                   sdCache.knownSDs, exc_info=True)
                 else:
                     # Any pre-existing domains in sdCache stand the chance of
                     # being invalid, since there is no way to know what happens

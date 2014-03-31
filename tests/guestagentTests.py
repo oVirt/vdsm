@@ -91,13 +91,13 @@ class TestGuestIF(TestCaseBase):
         invalid = u"\u0000"
         self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid))
         invalid2 = u"\uffff"
-        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid2))
+        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid2))
         invalid3 = u"\ufffe"
-        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid3))
+        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid3))
         invalid4 = u"\ud800"
-        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid4))
+        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid4))
         invalid5 = u"\udc79"
-        self.assertEqual(u'\ufffd',  guestagent._filterXmlChars(invalid5))
+        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid5))
 
     def test_filterObject(self):
         ILLEGAL_DATA = {u"foo": u"\x00data\x00test\uffff\ufffe\ud800\udc79"}
