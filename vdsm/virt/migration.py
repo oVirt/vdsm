@@ -309,37 +309,36 @@ class SourceThread(threading.Thread):
                                'with miguri %s', duri, muri)
 
             t = DowntimeThread(self._vm, int(self._downtime))
-
             self._monitorThread = MonitorThread(self._vm, startTime)
-            self._monitorThread.start()
+            with utils.running(self._monitorThread):
+                try:
+                    self._perform_migration(duri, muri)
+                finally:
+                    t.cancel()
 
-            try:
-                if self._vm.hasSpice and self._vm.conf.get('clientIp'):
-                    SPICE_MIGRATION_HANDOVER_TIME = 120
-                    self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
+    def _perform_migration(self, duri, muri):
+        if self._vm.hasSpice and self._vm.conf.get('clientIp'):
+            SPICE_MIGRATION_HANDOVER_TIME = 120
+            self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
-                maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
-                # FIXME: there still a race here with libvirt,
-                # if we call stop() and libvirt migrateToURI2 didn't start
-                # we may return migration stop but it will start at libvirt
-                # side
-                self._preparingMigrationEvt = False
-                if not self._migrationCanceledEvt:
-                    self._vm._dom.migrateToURI2(
-                        duri, muri, None,
-                        libvirt.VIR_MIGRATE_LIVE |
-                        libvirt.VIR_MIGRATE_PEER2PEER |
-                        (libvirt.VIR_MIGRATE_TUNNELLED if
-                            self._tunneled else 0) |
-                        (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
-                            self._abortOnError else 0),
-                        None, maxBandwidth)
-                else:
-                    self._raiseAbortError()
-
-            finally:
-                t.cancel()
-                self._monitorThread.stop()
+        maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
+        # FIXME: there still a race here with libvirt,
+        # if we call stop() and libvirt migrateToURI2 didn't start
+        # we may return migration stop but it will start at libvirt
+        # side
+        self._preparingMigrationEvt = False
+        if not self._migrationCanceledEvt:
+            self._vm._dom.migrateToURI2(
+                duri, muri, None,
+                libvirt.VIR_MIGRATE_LIVE |
+                libvirt.VIR_MIGRATE_PEER2PEER |
+                (libvirt.VIR_MIGRATE_TUNNELLED if
+                    self._tunneled else 0) |
+                (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
+                    self._abortOnError else 0),
+                None, maxBandwidth)
+        else:
+            self._raiseAbortError()
 
     def stop(self):
         # if its locks we are before the migrateToURI2()

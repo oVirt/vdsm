@@ -27,6 +27,7 @@ plentifuly around vdsm.
     Contains a reverse dictionary pointing from error string to its error code.
 """
 from collections import namedtuple, deque
+from contextlib import contextmanager
 from fnmatch import fnmatch
 from StringIO import StringIO
 from weakref import proxy
@@ -1086,3 +1087,12 @@ class RollbackContext(object):
 
     def prependDefer(self, func, *args, **kwargs):
         self._finally.insert(0, (func, args, kwargs))
+
+
+@contextmanager
+def running(runnable):
+    runnable.start()
+    try:
+        yield runnable
+    finally:
+        runnable.stop()
