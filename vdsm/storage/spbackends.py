@@ -327,7 +327,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
         # DO NOT USE, STUPID, HERE ONLY FOR BC
         # TODO: SCSI Fence the 'lastOwner'
         self.setSpmStatus(LVER_INVALID, SPM_ID_FREE, __securityOverride=True)
-        self.spmRole = SPM_FREE
+        self.pool.spmRole = SPM_FREE
 
     @classmethod
     def _getPoolMD(cls, domain):
