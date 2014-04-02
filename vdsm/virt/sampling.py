@@ -476,7 +476,7 @@ class HostStatsThread(threading.Thread):
         for ifid, ifrate in zip(self._ifids, self._ifrates):
             # it skips hot-plugged devices if we haven't enough information
             # to count stats from it
-            if not ifid in hs0.interfaces:
+            if ifid not in hs0.interfaces:
                 continue
             ifrate = ifrate or 1000
             Mbps2Bps = (10 ** 6) / 8

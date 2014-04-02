@@ -1107,7 +1107,7 @@ class _DomXML:
 
                 # This hack is for backward compatibility as the libvirt
                 # does not allow 'qemu64' guest on intel hardware
-                if model == 'qemu64' and not '+svm' in features:
+                if model == 'qemu64' and '+svm' not in features:
                     features += ['-svm']
 
                 for feature in features[1:]:
@@ -1241,7 +1241,7 @@ class _DomXML:
 
         if self.conf.get('keyboardLayout'):
             graphicsAttrs['keymap'] = self.conf['keyboardLayout']
-        if not 'spiceDisableTicketing' in self.conf:
+        if 'spiceDisableTicketing' not in self.conf:
             graphicsAttrs['passwd'] = '*****'
             graphicsAttrs['passwdValidTo'] = '1970-01-01T00:00:01'
 
@@ -4869,8 +4869,8 @@ class Vm(object):
             for dev in self.conf['devices']:
                 if ((dev['type'] == CONTROLLER_DEVICES) and
                         (dev['device'] == device) and
-                        (not 'index' in dev or dev['index'] == index) and
-                        (not 'model' in dev or dev['model'] == model)):
+                        ('index' not in dev or dev['index'] == index) and
+                        ('model' not in dev or dev['model'] == model)):
                     dev['address'] = address
                     dev['alias'] = alias
                     knownDev = True
