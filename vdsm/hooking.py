@@ -36,6 +36,7 @@ Return codes:
 >2 - reserved
 """
 
+import json
 import os
 import sys
 from xml.dom import minidom
@@ -56,6 +57,16 @@ def read_domxml():
 def write_domxml(domxml):
     with open(os.environ['_hook_domxml'], 'w') as f:
         f.write(domxml.toxml(encoding='utf-8'))
+
+
+def read_json():
+    with open(os.environ['_hook_json']) as f:
+        return json.loads(f.read())
+
+
+def write_json(data):
+    with open(os.environ['_hook_json'], 'w') as f:
+        f.write(json.dumps(data))
 
 
 def exit_hook(message, return_code=2):
