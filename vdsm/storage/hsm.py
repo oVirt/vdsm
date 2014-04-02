@@ -3516,9 +3516,10 @@ class HSM:
             se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" %
                              (spUUID, lastOwner, lastLver)))
         pool = self.getPool(spUUID)
-        pool.invalidateMetadata()
-        vars.task.getExclusiveLock(STORAGE, spUUID)
-        pool.forceFreeSpm()
+        if isinstance(pool.getBackend(), StoragePoolDiskBackend):
+            pool.getBackend().invalidateMetadata()
+            vars.task.getExclusiveLock(STORAGE, spUUID)
+            pool.getBackend().forceFreeSpm()
         return dict(spm_st=self._getSpmStatusInfo(pool))
 
     @public
