@@ -3543,12 +3543,15 @@ class Vm(object):
                     '_srcDomXML': self._dom.XMLDesc(0),
                     'elapsedTimeOffset': time.time() - self._startTime}
 
-        def _padMemoryVolume(memoryVolPath, spType, sdUUId):
-            if spType == sd.NFS_DOMAIN:
-                oop.getProcessPool(sdUUID).fileUtils. \
-                    padToBlockSize(memoryVolPath)
-            else:
-                fileUtils.padToBlockSize(memoryVolPath)
+        def _padMemoryVolume(memoryVolPath, sdUUID):
+            sdType = sd.name2type(
+                self.cif.irs.getStorageDomainInfo(sdUUID)['info']['type'])
+            if sdType in sd.FILE_DOMAIN_TYPES:
+                if sdType == sd.NFS_DOMAIN:
+                    oop.getProcessPool(sdUUID).fileUtils. \
+                        padToBlockSize(memoryVolPath)
+                else:
+                    fileUtils.padToBlockSize(memoryVolPath)
 
         snap = xml.dom.minidom.Element('domainsnapshot')
         disks = xml.dom.minidom.Element('disks')
@@ -3682,12 +3685,7 @@ class Vm(object):
             # This code should be removed once qemu-img will handle files
             # with size that is not multiple of block size correctly.
             if memoryParams:
-                sdUUID = memoryVol['domainID']
-                spUUID = memoryVol['poolID']
-                spType = sd.name2type(
-                    self.cif.irs.getStoragePoolInfo(spUUID)['info']['type'])
-                if spType in sd.FILE_DOMAIN_TYPES:
-                    _padMemoryVolume(memoryVolPath, spType, sdUUID)
+                _padMemoryVolume(memoryVolPath, memoryVol['domainID'])
                 self.cif.teardownVolumePath(memoryVol)
 
             for drive in newDrives.values():  # Update the drive information
