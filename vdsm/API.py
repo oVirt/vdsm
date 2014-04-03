@@ -180,9 +180,9 @@ class VM(APIBase):
                 vmParams['restoreState'], paramFilespec = \
                     self._getHibernationPaths(vmParams.pop('hiberVolHandle'))
                 try:   # restore saved vm parameters
-                # NOTE: pickled params override command-line params. this
-                # might cause problems if an upgrade took place since the
-                # parmas were stored.
+                    # NOTE: pickled params override command-line params. this
+                    # might cause problems if an upgrade took place since the
+                    # parmas were stored.
                     fname = self._cif.prepareVolumePath(paramFilespec)
                     try:
                         with file(fname) as f:
@@ -218,7 +218,7 @@ class VM(APIBase):
                                                   ['status']['code'],
                                    'message': 'Must specify nonzero memSize'}}
 
-            if vmParams.get('boot') == 'c' and not 'hda' in vmParams \
+            if vmParams.get('boot') == 'c' and 'hda' not in vmParams \
                     and not vmParams.get('drives'):
                 return {'status': {'code': errCode['MissParam']
                                                   ['status']['code'],
@@ -1514,8 +1514,8 @@ class Global(APIBase):
         if not haClient:
             return errCode['unavail']
 
-        self.log.info("Setting Hosted Engine HA {0} maintenance to {1}"
-            .format(mode.lower(), enabled))
+        self.log.info("Setting Hosted Engine HA %s maintenance to %s",
+                      mode.lower(), enabled)
         if mode.lower() == 'global':
             mm = haClient.HAClient.MaintenanceMode.GLOBAL
         elif mode.lower() == 'local':
