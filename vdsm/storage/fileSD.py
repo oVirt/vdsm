@@ -46,6 +46,14 @@ FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
 
 METADATA_PERMISSIONS = 0o660
 
+# On file domains IDS and LEASES volumes don't need a fixed size (they are
+# allocated as we use them)
+FILE_SPECIAL_VOLUME_SIZES_MIB = sd.SPECIAL_VOLUME_SIZES_MIB.copy()
+FILE_SPECIAL_VOLUME_SIZES_MIB.update({
+    sd.IDS: 0,
+    sd.LEASES: 0,
+})
+
 # Specific stat(2) block size as defined in the man page
 ST_BYTES_PER_BLOCK = 512
 
@@ -176,6 +184,29 @@ class FileStorageDomain(sd.StorageDomain):
                     "Lease permission change file '%s' failed: %s"
                     % (metaFile, e))
 
+    def prepareMailbox(self):
+        for mailboxFile in (sd.INBOX, sd.OUTBOX):
+            mailboxByteSize = (FILE_SPECIAL_VOLUME_SIZES_MIB[mailboxFile] *
+                               constants.MEGAB)
+            mailboxFilePath = os.path.join(self.domaindir,
+                                           sd.DOMAIN_META_DATA, mailboxFile)
+
+            try:
+                mailboxStat = self.oop.os.stat(mailboxFilePath)
+            except OSError as e:
+                if e.errno != os.errno.ENOENT:
+                    raise
+                prevMailboxFileSize = None
+            else:
+                prevMailboxFileSize = mailboxStat.st_size
+
+            if (prevMailboxFileSize is None
+                    or prevMailboxFileSize < mailboxByteSize):
+                self.log.info('preparing storage domain %s mailbox file %s '
+                              '(%s bytes)', mailboxFile, mailboxByteSize)
+                self.oop.truncateFile(
+                    mailboxFilePath, mailboxByteSize, METADATA_PERMISSIONS)
+
     @classmethod
     def _prepareMetadata(cls, domPath, sdUUID, domainName, domClass,
                          remotePath, storageType, version):
@@ -188,10 +219,11 @@ class FileStorageDomain(sd.StorageDomain):
         procPool = oop.getProcessPool(sdUUID)
         procPool.fileUtils.createdir(metadataDir, 0o775)
 
-        for metaFile in sd.SPECIAL_VOLUME_SIZES_MIB.iterkeys():
+        for metaFile, metaSize in FILE_SPECIAL_VOLUME_SIZES_MIB.iteritems():
             try:
-                procPool.truncateFile(os.path.join(metadataDir, metaFile), 0,
-                                      METADATA_PERMISSIONS)
+                procPool.truncateFile(
+                    os.path.join(metadataDir, metaFile),
+                    metaSize * constants.MEGAB, METADATA_PERMISSIONS)
             except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
                     "create meta file '%s' failed: %s" % (metaFile, str(e)))

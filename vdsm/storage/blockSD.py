@@ -431,10 +431,6 @@ class BlockStorageDomain(sd.StorageDomain):
         self._registerResourceNamespaces()
         self._lastUncachedSelftest = 0
 
-    @property
-    def requiresMailbox(self):
-        return True
-
     def _registerResourceNamespaces(self):
         """
         Register resources namespaces and create

@@ -37,6 +37,10 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         3: (clusterlock.LocalLock, True),
     }
 
+    @property
+    def supportsMailbox(self):
+        return False
+
     @classmethod
     def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg, version):
         # Some trivial resource validation

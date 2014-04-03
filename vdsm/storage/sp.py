@@ -299,15 +299,10 @@ class StoragePool(object):
                 # commands are allowed to run to prevent a race between the
                 # mailbox and the "self._setSecure() call"
 
-                # Create mailbox if SAN pool (currently not needed on nas)
-                # FIXME: Once pool contains mixed type domains (NFS + Block)
-                #        the mailbox will have to be created if there is an
-                #        active block domain in the pool or once one is
-                #        activated
-
-                #FIXME : Use a system wide grouping mechanism
-                if self.masterDomain.requiresMailbox and \
-                        self.lvExtendPolicy == "ON":
+                # FIXME : Use a system wide grouping mechanism
+                if (self.lvExtendPolicy == "ON"
+                        and self.masterDomain.supportsMailbox):
+                    self.masterDomain.prepareMailbox()
                     self.spmMailer = storage_mailbox.SPM_MailMonitor(self,
                                                                      maxHostID)
                     self.spmMailer.registerMessageType('xtnd', partial(
@@ -454,7 +449,8 @@ class StoragePool(object):
         if self.hsmMailer:
             return
 
-        if self.masterDomain.requiresMailbox and self.lvExtendPolicy == "ON":
+        if (self.lvExtendPolicy == "ON" and
+                self.masterDomain.supportsMailbox):
             self.hsmMailer = storage_mailbox.HSM_Mailbox(self.id, self.spUUID)
             self.log.debug("HSM mailbox ready for pool %s on master "
                            "domain %s", self.spUUID, self.masterDomain.sdUUID)
@@ -785,6 +781,10 @@ class StoragePool(object):
         try:
             self.log.debug('migration to the new master %s begins',
                            newmsd.sdUUID)
+
+            # Preparing the mailbox since the new master domain may be an
+            # old domain where the mailbox wasn't allocated
+            newmsd.prepareMailbox()
 
             # Mount new master file system
             newmsd.mountMaster()
