@@ -92,15 +92,15 @@ if 'fileinject' in os.environ:
 
                     rawcount += 1
 
-                  # disk format can be raw or qcow2
-                  # http://libguestfs.org/guestfs.3.html#guestfs_add_drive_opts
+                    # disk format can be raw or qcow2
+                    # http://libguestfs.org/guestfs.3.html#guestfs_add_drive_opts  # noqa
                     path = None
                     if source.hasAttribute('file'):
                         path = source.attributes['file'].value
                     elif source.hasAttribute('dev'):
                         path = source.attributes['dev'].value
 
-                    if not path is None:
+                    if path is not None:
                         injected = inject_file(filepath, content,
                                                path, diskformat)
 

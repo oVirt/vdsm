@@ -142,15 +142,15 @@ def test():
     </interface>
     """).getElementsByTagName('interface')[0]
 
-    print ("Interface before attaching to VM-FEX: %s" %
-           interface.toprettyxml(encoding='UTF-8'))
+    print("Interface before attaching to VM-FEX: %s" %
+          interface.toprettyxml(encoding='UTF-8'))
 
     attachProfileToInterfaceXml(interface, 'Profail')
-    print ("Interface after attaching to VM-FEX port: %s" %
-           interface.toprettyxml(encoding='UTF-8'))
+    print("Interface after attaching to VM-FEX port: %s" %
+          interface.toprettyxml(encoding='UTF-8'))
 
-    print ('Available interfaces for the VM-FEX direct pool in the current '
-           'host: %s' % getUsableNics())
+    print('Available interfaces for the VM-FEX direct pool in the current '
+          'host: %s' % getUsableNics())
 
 
 def main():

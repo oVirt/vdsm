@@ -38,7 +38,7 @@ keys = ['average', 'peak', 'burst']
 def add_attributes(node, attributes):
     data = ast.literal_eval(attributes)
     for key in data.keys():
-        if not key in keys:
+        if key not in keys:
             sys.stderr.write('qos hook: bad attribute name %s\n' % key)
             sys.exit(2)
 

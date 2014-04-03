@@ -9,7 +9,7 @@ filtername = 'isolatedprivatevlan-vdsm'
 
 
 def addInterfaceFilter(domxml, interface, gateway, ip):
-    if not ip is None:
+    if ip is not None:
         filterref = domxml.createElement('filterref')
         filterref.setAttribute('filter', 'clean-traffic')
         interface.appendChild(filterref)

@@ -118,11 +118,11 @@ def addOvsHybridVnic(domxml, iface, portId):
 
         mac = iface.getElementsByTagName('mac')[0].getAttribute('address')
         executeOrExit([ovs_vsctl.cmd, '--', '--may-exist', 'add-port',
-                      INTEGRATION_BRIDGE, vethOvs,
-                      '--', 'set', 'Interface', vethOvs,
-                      'external-ids:iface-id=%s' % portId,
-                      'external-ids:iface-status=active',
-                      'external-ids:attached-mac=%s' % mac])
+                       INTEGRATION_BRIDGE, vethOvs,
+                       '--', 'set', 'Interface', vethOvs,
+                       'external-ids:iface-id=%s' % portId,
+                       'external-ids:iface-status=active',
+                       'external-ids:attached-mac=%s' % mac])
 
     defineLinuxBridge(domxml, iface, portId, brName)
 
@@ -166,8 +166,8 @@ def main():
 
 
 def mockExecuteOrExit(command):
-    print ("Mocking successful execution of: %s"
-           % subprocess.list2cmdline(command))
+    print("Mocking successful execution of: %s"
+          % subprocess.list2cmdline(command))
     return (0, '', '')
 
 

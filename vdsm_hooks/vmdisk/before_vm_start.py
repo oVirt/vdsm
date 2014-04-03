@@ -82,7 +82,7 @@ if 'vmdisk' in os.environ:
                                  '/path/disk.img:qcow2\n')
                 sys.exit(2)
 
-            if not drivertype in driver_types:
+            if drivertype not in driver_types:
                 sys.stderr.write('vmdisk: input error, driver '
                                  'type: raw or qcow2\n')
                 sys.exit(2)

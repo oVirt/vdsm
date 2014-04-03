@@ -116,14 +116,14 @@ if 'promisc' in os.environ:
                     if mode == MODE_MIRROR:
                         captureNetwork(network, ifaceName, mode)
                     else:
-                    # NOTE:
-                    # in in-line mode we don't filter a network
-                    # the network parameter here is a tap device for the
-                    # security vm, so we switch the ifaceName and network
-                    # parameter order
-                    # TODO: it may be right to use the mirror as we do with the
-                    # in-line mode now, ie not filter the network but filter
-                    # the vm interface
+                        # NOTE:
+                        # in in-line mode we don't filter a network
+                        # the network parameter here is a tap device for the
+                        # security vm, so we switch the ifaceName and network
+                        # parameter order
+                        # TODO: it may be right to use the mirror as we do
+                        # with the in-line mode now, ie not filter the network
+                        # but filter the vm interface
                         captureNetwork(ifaceName, network, mode)
 
     except:
