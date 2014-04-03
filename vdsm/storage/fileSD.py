@@ -44,6 +44,8 @@ FILE_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
 # TBD: Do we really need this key?
 FILE_SD_MD_FIELDS[REMOTE_PATH] = (str, str)
 
+METADATA_PERMISSIONS = 0o660
+
 # Specific stat(2) block size as defined in the man page
 ST_BYTES_PER_BLOCK = 512
 
@@ -168,7 +170,7 @@ class FileStorageDomain(sd.StorageDomain):
         for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
             try:
                 fpath = os.path.join(self.getMDPath(), metaFile)
-                procPool.os.chmod(fpath, 0o660)
+                procPool.os.chmod(fpath, METADATA_PERMISSIONS)
             except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
                     "Lease permission change file '%s' failed: %s"
@@ -188,8 +190,8 @@ class FileStorageDomain(sd.StorageDomain):
 
         for metaFile in sd.SPECIAL_VOLUME_SIZES_MIB.iterkeys():
             try:
-                procPool.truncateFile(
-                    os.path.join(metadataDir, metaFile), 0, 0o660)
+                procPool.truncateFile(os.path.join(metadataDir, metaFile), 0,
+                                      METADATA_PERMISSIONS)
             except Exception as e:
                 raise se.StorageDomainMetadataCreationError(
                     "create meta file '%s' failed: %s" % (metaFile, str(e)))
