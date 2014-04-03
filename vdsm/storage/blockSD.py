@@ -526,10 +526,9 @@ class BlockStorageDomain(sd.StorageDomain):
         mapping = cls.getMetaDataMapping(vgName)
 
         # Create the rest of the BlockSD internal volumes
-        lvm.createLV(vgName, sd.LEASES, sd.LEASES_SIZE)
-        lvm.createLV(vgName, sd.IDS, sd.IDS_SIZE)
-        lvm.createLV(vgName, sd.INBOX, sd.INBOX_SIZE)
-        lvm.createLV(vgName, sd.OUTBOX, sd.OUTBOX_SIZE)
+        for metaFile, metaSizeMb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
+            lvm.createLV(vgName, metaFile, metaSizeMb)
+
         lvm.createLV(vgName, MASTERLV, MASTERLV_SIZE)
 
         # Create VMS file system

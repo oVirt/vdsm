@@ -55,10 +55,12 @@ IDS = "ids"
 INBOX = "inbox"
 OUTBOX = "outbox"
 
-LEASES_SIZE = "2048"  # In MiB = 2 ** 20 = 1024 ** 2 => 2 GiB
-IDS_SIZE = "8"        # In MiB = 2 ** 20 = 1024 ** 2
-INBOX_SIZE = "16"     # In MiB = 2 ** 20 = 1024 ** 2
-OUTBOX_SIZE = "16"    # In MiB = 2 ** 20 = 1024 ** 2
+SPECIAL_VOLUME_SIZES_MIB = {
+    LEASES: 2048,
+    IDS: 8,
+    INBOX: 16,
+    OUTBOX: 16,
+}
 
 # Storage Domain Types
 UNKNOWN_DOMAIN = 0

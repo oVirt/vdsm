@@ -186,7 +186,7 @@ class FileStorageDomain(sd.StorageDomain):
         procPool = oop.getProcessPool(sdUUID)
         procPool.fileUtils.createdir(metadataDir, 0o775)
 
-        for metaFile in (sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX):
+        for metaFile in sd.SPECIAL_VOLUME_SIZES_MIB.iterkeys():
             try:
                 procPool.truncateFile(
                     os.path.join(metadataDir, metaFile), 0, 0o660)
