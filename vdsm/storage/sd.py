@@ -314,9 +314,16 @@ class StorageDomain:
         if self.stat:
             threading.Thread(target=self.stat.stop).start()
 
+    def prepareMailbox(self):
+        """
+        This method has been introduced in order to prepare the mailbox
+        on those domains where the metadata for the inbox and outbox
+        wasn't allocated on creation.
+        """
+
     @property
-    def requiresMailbox(self):
-        return False
+    def supportsMailbox(self):
+        return True
 
     @property
     def supportsSparseness(self):
