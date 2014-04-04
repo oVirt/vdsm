@@ -26,9 +26,6 @@ dist_vdsmreg_PYTHON = \
 	createDaemon.py \
 	register-to-engine.py
 
-dist_ovirtsetup_PYTHON = \
-	engine.py
-
 nodist_vdsmreg_PYTHON = \
 	config.py \
 	deployUtil.py

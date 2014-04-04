@@ -1417,7 +1417,6 @@ exit 0
 %{_datadir}/%{vdsm_reg}/deployUtil.py*
 %attr(0755, -, -) %{_datadir}/%{vdsm_reg}/register-to-engine.py*
 %{_datadir}/%{vdsm_reg}/createDaemon.py*
-%{python_sitelib}/ovirt_config_setup/engine.py*
 %{_datadir}/%{vdsm_reg}/save-config
 %{_sysconfdir}/ovirt-config-boot.d/vdsm-config
 %{_sysconfdir}/ovirt-commandline.d/vdsm-reg
