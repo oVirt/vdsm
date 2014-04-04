@@ -489,8 +489,9 @@ class clientIF:
                                    domId, e.get_error_code(), exc_info=True)
                     raise
             else:
-                vms.append(vm)
-        return [vm for vm in vms if self.isVDSMVm(vm)]
+                if self.isVDSMVm(vm):
+                    vms.append(vm)
+        return vms
 
     def _recoverVm(self, vmid):
         try:
