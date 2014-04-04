@@ -654,7 +654,7 @@ class RWLock(object):
     def release(self):
         currentThread = threading.currentThread()
 
-        if not currentThread in self._holdingThreads:
+        if currentThread not in self._holdingThreads:
             raise RuntimeError("Releasing an lock without acquiring it first")
 
         # If in nested lock don't really release

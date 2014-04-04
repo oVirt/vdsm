@@ -229,7 +229,7 @@ def pathRequiresFlagForDirectIO(path):
 
 class DirectFile(object):
     def __init__(self, path, mode):
-        if not "d" in mode:
+        if "d" not in mode:
             raise ValueError("This class only handles direct IO")
 
         if len(mode) < 2:

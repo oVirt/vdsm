@@ -2589,7 +2589,7 @@ class HSM:
         misc.validateUUID(sdUUID, 'sdUUID')
         self.validateNonDomain(sdUUID)
 
-        if not domClass in sd.DOMAIN_CLASSES.keys():
+        if domClass not in sd.DOMAIN_CLASSES.keys():
             raise se.StorageDomainClassError()
 
         sd.validateDomainVersion(domVersion)

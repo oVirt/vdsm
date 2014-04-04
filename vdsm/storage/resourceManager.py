@@ -56,7 +56,7 @@ class LockType:
     @classmethod
     def validate(cls, ltype):
         validValues = ["shared", "exclusive"]
-        if not ltype in validValues:
+        if ltype not in validValues:
             raise ValueError("invalid lock type '%s'" % ltype)
 
     @classmethod
@@ -424,7 +424,7 @@ class ResourceManager(object):
 
     def unregisterNamespace(self, namespace):
         with self._syncRoot.exclusive:
-            if not namespace in self._namespaces:
+            if namespace not in self._namespaces:
                 raise KeyError("Namespace '%s' doesn't exist" % namespace)
 
             self._log.debug("Unregistering namespace '%s'", namespace)
@@ -453,7 +453,7 @@ class ResourceManager(object):
                     raise KeyError("No such resource '%s.%s'" % (namespace,
                                                                  name))
 
-                if not name in resources:
+                if name not in resources:
                     return LockState.free
 
                 return LockState.fromType(resources[name].currentLock)
@@ -741,7 +741,7 @@ class Owner(object):
                        resource.fullName)
         self.lock.acquire()
         try:
-            if not request in self.requests:
+            if request not in self.requests:
                 self.log.warning("request %s not requested by %s", request,
                                  self)
                 resource.release()
@@ -777,7 +777,7 @@ class Owner(object):
         self.log.debug("%s: request canceled %s", self, request)
         self.lock.acquire()
         try:
-            if not request.fullName in self.requests:
+            if request.fullName not in self.requests:
                 self.log.warning("request %s not requested by %s", request,
                                  self)
                 return
@@ -899,7 +899,7 @@ class Owner(object):
         self.log.debug("%s: Trying to cancel request for '%s'", self, fullName)
         self.lock.acquire()
         try:
-            if not fullName in self.requests:
+            if fullName not in self.requests:
                 self.log.warning("%s: Tried to cancel resource '%s' but it was"
                                  " not requested or already canceled", self,
                                  fullName)
@@ -951,7 +951,7 @@ class Owner(object):
         fullName = "%s.%s" % (namespace, name)
         self.lock.acquire()
         try:
-            if not fullName in self.resources:
+            if fullName not in self.resources:
                 raise ValueError("resource %s not owned by %s" %
                                  (fullName, self))
 

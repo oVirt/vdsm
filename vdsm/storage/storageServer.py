@@ -748,7 +748,7 @@ class ConnectionMonitor(object):
             con = self._conDict[alias]
             self._delConnection(alias)
             self._log.info("Stopped managing connection alias %s", alias)
-            if not con in self._conDict.values():
+            if con not in self._conDict.values():
                 return self._asyncDisconnect(con)
 
         return AsyncCallStub(None)

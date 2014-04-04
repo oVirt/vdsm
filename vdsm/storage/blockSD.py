@@ -458,7 +458,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # extent size of 128MB. In any case we compute the right size on line.
         vg = lvm.getVG(vgroup)
         minmetasize = (SD_METADATA_SIZE / sd.METASIZE * int(vg.extent_size) +
-                      (1024 * 1024 - 1)) / (1024 * 1024)
+                       (1024 * 1024 - 1)) / (1024 * 1024)
         metaratio = int(vg.extent_size) / sd.METASIZE
         metasize = (int(vg.extent_count) * sd.METASIZE +
                     (1024 * 1024 - 1)) / (1024 * 1024)
@@ -982,9 +982,9 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         try:
             lvm.changelv(sdUUID, volUUIDs, (("-a", "y"),
-                        ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
-                        ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
-                         opTag + imgUUID)))
+                         ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
+                         ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
+                          opTag + imgUUID)))
         except se.StorageException as e:
             log.error("Can't activate or change LV tags in SD %s. "
                       "failing Image %s %s operation for vols: %s. %s",

@@ -94,7 +94,7 @@ class BlockVolume(volume.Volume):
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, sdUUID, volUUID, volPath):
         cls.log.info("sdUUID=%s volUUID=%s volPath=%s" %
-                    (sdUUID, volUUID, volPath))
+                     (sdUUID, volUUID, volPath))
         try:
             # Fix me: assert resource lock.
             tags = lvm.getLV(sdUUID, volUUID).tags
@@ -330,9 +330,9 @@ class BlockVolume(volume.Volume):
 
         if recovery:
             name = "Rename volume rollback: " + newUUID
-            vars.task.pushRecovery(task.Recovery(name, "blockVolume",
-                                   "BlockVolume", "renameVolumeRollback",
-                                   [self.sdUUID, newUUID, self.volUUID]))
+            vars.task.pushRecovery(task.Recovery(
+                name, "blockVolume", "BlockVolume", "renameVolumeRollback",
+                [self.sdUUID, newUUID, self.volUUID]))
 
         lvm.renameLV(self.sdUUID, self.volUUID, newUUID)
         self.volUUID = newUUID

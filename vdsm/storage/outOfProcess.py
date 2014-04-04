@@ -39,7 +39,7 @@ def getProcessPool(clientName):
         return _pools[clientName]
     except KeyError:
         with _poolsLock:
-            if not clientName in _pools:
+            if clientName not in _pools:
                 _pools[clientName] = OopWrapper(
                     RemoteFileHandlerPool(HELPERS_PER_DOMAIN))
 

@@ -90,9 +90,9 @@ class SPM_Extend_Message:
 
     def __init__(self, volumeData, newSize, callbackFunction=None):
 
-        if (not 'poolID' in volumeData) or \
-           (not 'domainID' in volumeData) or \
-           (not 'volumeID' in volumeData):
+        if ('poolID' not in volumeData) or \
+           ('domainID' not in volumeData) or \
+           ('volumeID' not in volumeData):
                 self.log.error('create extend msg failed for volume: %s, size:'
                                ' %d', '-'.join(volumeData.values()), newSize)
                 raise InvalidParameterException('volumeData dictionary',

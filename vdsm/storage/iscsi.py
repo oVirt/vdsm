@@ -293,7 +293,7 @@ class IscsiInterface(object):
 
         key, mode = self._fields[name]
 
-        if not "r" in mode:
+        if "r" not in mode:
             raise AttributeError(name)
 
         value = self._conf[key]
@@ -316,7 +316,7 @@ class IscsiInterface(object):
             raise AttributeError(name)
 
         key, mode = self._fields[name]
-        if not "w" in mode:
+        if "w" not in mode:
             raise AttributeError(name)
 
         self._conf[key] = value
