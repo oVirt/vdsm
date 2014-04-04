@@ -510,8 +510,9 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
 def _bridgeinfo(link, gateways, ipv6routes, ipaddrs):
     info = _devinfo(link, ipaddrs)
     info.update({'gateway': getgateway(gateways, link.name),
-                'ipv6gateway': ipv6routes.get(link.name, '::'),
-                'ports': ports(link.name), 'stp': bridge_stp_state(link.name)})
+                 'ipv6gateway': ipv6routes.get(link.name, '::'),
+                 'ports': ports(link.name),
+                 'stp': bridge_stp_state(link.name)})
     return info
 
 

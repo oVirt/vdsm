@@ -668,7 +668,7 @@ class Monitor(object):
         # since that's how iproute2 reports it and there is currently no
         # disambiguation (iproute bug https://bugzilla.redhat.com/1042799
         data['name'] = data['name'].split('@', 1)[0]
-        state = state if state or not 'state' in data else data['state']
+        state = state if state or 'state' not in data else data['state']
         return MonitorEvent(data['index'], data['name'], data['flags'], state)
 
     @classmethod

@@ -48,7 +48,7 @@ def run(networks, bridges):
 
     # Create a network for every bridge that doesn't have one
     for bridge in bridges:
-        if not bridge in networks:
+        if bridge not in networks:
             logging.debug('Creating network %s', bridge)
             configWriter.createLibvirtNetwork(network=bridge,
                                               bridged=True,
