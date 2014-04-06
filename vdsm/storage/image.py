@@ -358,11 +358,10 @@ class Image:
                     # we create the target as a sparse volume (since it will be
                     # soon filled with the data coming from the copy) and then
                     # we change its metadata back to the original value.
-                    if (volParams['prealloc'] == volume.PREALLOCATED_VOL
-                            and destDom.supportsSparseness):
+                    if destDom.supportsSparseness:
                         tmpVolPreallocation = volume.SPARSE_VOL
                     else:
-                        tmpVolPreallocation = volParams['prealloc']
+                        tmpVolPreallocation = volume.PREALLOCATED_VOL
 
                     destDom.createVolume(imgUUID=imgUUID,
                                          size=volParams['size'],
@@ -380,10 +379,12 @@ class Image:
                     # Extend volume (for LV only) size to the actual size
                     dstVol.extend((volParams['apparentsize'] + 511) / 512)
 
-                    # Change destination volume metadata back to the original
-                    # type.
-                    if tmpVolPreallocation != volParams['prealloc']:
-                        dstVol.setType(volParams['prealloc'])
+                    # Change destination volume metadata to preallocated in
+                    # case we've used a sparse volume to accelerate the
+                    # volume creation
+                    if volParams['prealloc'] == volume.PREALLOCATED_VOL \
+                            and tmpVolPreallocation != volume.PREALLOCATED_VOL:
+                        dstVol.setType(volume.PREALLOCATED_VOL)
 
                     dstChain.append(dstVol)
                 except se.StorageException:
