@@ -55,7 +55,7 @@ class StorageTable:
                 self.vmList[vmUUID] = {'Name': vmName, 'Refs': []}
                 for x in range(1, len(cont)):
                     image = cont[x].split(' ')[0].split('/')[0]
-                    if not image in images:
+                    if image not in images:
                         s = self.serverConnection
                         sd = s.getImageDomainsList(pool, image)['domainslist']
                         if len(sd) > 0:
@@ -69,7 +69,7 @@ class StorageTable:
 
     def _setSdInfo(self, sd):
 
-        if not sd in self.domainsList.keys():
+        if sd not in self.domainsList.keys():
             sd_info = self.serverConnection.getStorageDomainInfo(sd)['info']
             self.domainsList[sd] = {'Name': sd_info['name'],
                                     'Role': sd_info['role'], 'Refs': []}
@@ -98,7 +98,7 @@ class StorageTable:
             else:
                 sd, image = disk
                 imageDom = '%s:%s' % (sd, image)
-                if not imageDom in self.imagesList.keys():
+                if imageDom not in self.imagesList.keys():
                     self.imagesList[imageDom] = []
 
                 self._getVols(self.pool, sd, image)

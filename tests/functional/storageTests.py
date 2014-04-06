@@ -370,7 +370,7 @@ class LocalFSServer(BackendServer):
 class IscsiServer(BackendServer):
     def __init__(self, vdsmServer, asserts):
         # check if the system supports configuring iSCSI target
-        if not "rtslib" in globals().keys():
+        if "rtslib" not in globals().keys():
             raise SkipTest("python-rtslib is not installed.")
 
         cmd = [_modprobe.cmd, "iscsi_target_mod"]
@@ -499,7 +499,7 @@ class GlusterFSServer(BackendServer):
 
             # Check if gluster volume is created & started
             glusterVolName = spec.split(':')[1]
-            if not glusterVolName in self.glusterVolInfo['volumes']:
+            if glusterVolName not in self.glusterVolInfo['volumes']:
                 raise SkipTest("Test volume %s not found. Pls create it "
                                "and start it" % glusterVolName)
 

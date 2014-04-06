@@ -213,7 +213,7 @@ def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
                                                   hookLevel.lower(), hookName)
     hookStat = [os.path.exists(enabledFile), os.path.exists(disabledFile)]
     if update:
-        if not True in hookStat:
+        if True not in hookStat:
             raise ge.GlusterHookNotFoundException(glusterCmd, hookLevel,
                                                   hookName)
     else:

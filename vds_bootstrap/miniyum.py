@@ -477,7 +477,7 @@ class MiniYum(object):
                 if self.buildTransaction():
                     self.processTransaction()
 
-        if not 'selinux' in globals():
+        if 'selinux' not in globals():
             selinux = __import__('selinux', globals(), locals(), [], -1)
         if selinux.is_selinux_enabled() and "MINIYUM_2ND" not in os.environ:
             env = os.environ.copy()

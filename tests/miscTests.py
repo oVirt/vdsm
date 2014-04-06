@@ -1169,7 +1169,7 @@ class NoIntrPollTests(TestCaseBase):
                 try:
                     os.write(pipe, longStr)
                 except OSError as e:
-                    if not e.errno in (errno.EINTR, errno.EAGAIN):
+                    if e.errno not in (errno.EINTR, errno.EAGAIN):
                         raise
 
         myPipe, hisPipe = os.pipe()

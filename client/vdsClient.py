@@ -182,7 +182,7 @@ class service:
                 elif param == 'guestNumaNodes':
                     guestNumaNodes.append(self._parseDriveSpec(value))
                 elif param.startswith('custom_'):
-                    if not 'custom' in params:
+                    if 'custom' not in params:
                         params['custom'] = {}
                     params['custom'][param[7:]] = value
                 else:
@@ -1093,7 +1093,7 @@ class service:
             for entry in volumes['uuidlist']:
                 message = entry + ' : '
                 res = self.s.getVolumeInfo(sdUUID, spUUID, imgUUID, entry)
-                if not 'info' in res:
+                if 'info' not in res:
                     print 'ERROR:', entry, ':', res
                     continue
                 info = res['info']
@@ -1543,14 +1543,14 @@ class service:
 
         spec = spec[1:]
         while True:
-            if not spec or not '}' in spec:
+            if not spec or '}' not in spec:
                 raise Exception("nested spec not terminated "
                                 "with '}' in '%s'" % spec)
             if spec[0] == '}':
                 return d, spec[1:]
 
             # Split into first name + the rest
-            if not ':' in spec:
+            if ':' not in spec:
                 raise Exception("missing name value separator "
                                 "':' in '%s'" % spec)
             name, spec = spec.split(":", 1)
