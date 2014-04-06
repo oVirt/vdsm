@@ -1888,16 +1888,16 @@ if __name__ == '__main__':
                         'all bootable devices'
                         )),
         'hotunplugNic': (serv.hotunplugNic,
-                        ('<vmId> <nicspec>',
-                         'Hotunplug NIC from existing VM',
-                         'nicspec parameters list: r=required, o=optional',
-                         'r   device: bridge|sriov|vnlink|bridgeless.',
-                         'r   network: network name',
-                         'r   macAddr: mac address',
-                         'r   nicModel: pv|rtl8139|e1000',
-                         'o   bootOrder: <int>  - global boot order across '
-                         'all bootable devices'
-                         )),
+                         ('<vmId> <nicspec>',
+                          'Hotunplug NIC from existing VM',
+                          'nicspec parameters list: r=required, o=optional',
+                          'r   device: bridge|sriov|vnlink|bridgeless.',
+                          'r   network: network name',
+                          'r   macAddr: mac address',
+                          'r   nicModel: pv|rtl8139|e1000',
+                          'o   bootOrder: <int>  - global boot order across '
+                          'all bootable devices'
+                          )),
         'hotplugDisk': (serv.hotplugDisk,
                         ('<vmId> <drivespec>',
                          'Hotplug disk to existing VM',
@@ -1917,23 +1917,24 @@ if __name__ == '__main__':
                          'o   optional: True|False'
                          )),
         'hotunplugDisk': (serv.hotunplugDisk,
-                         ('<vmId> <drivespec >',
-                          'Hotunplug disk from existing VM',
-                          'drivespec parameters list: r=required, o=optional',
-                          'r   iface:<ide|virtio> - Unique identification of '
-                          'the existing VM.',
-                          'r   index:<int> - disk index unique per interface '
-                          'virtio|ide',
-                          'r   [pool:UUID,domain:UUID,image:UUID,volume:UUID]|'
-                          '[GUID:guid]|[UUID:uuid]',
-                          'r   format: cow|raw',
-                          'r   readonly: True|False   - default is False',
-                          'r   propagateErrors: off|on   - default is off',
-                          'o   bootOrder: <int>  - global boot order across '
-                          'all bootable devices',
-                          'o   shared: exclusive|shared|none',
-                          'o   optional: True|False'
-                          )),
+                          ('<vmId> <drivespec >',
+                           'Hotunplug disk from existing VM',
+                           'drivespec parameters list: r=required, o=optional',
+                           'r   iface:<ide|virtio> - Unique identification of '
+                           'the existing VM.',
+                           'r   index:<int> - disk index unique per interface '
+                           'virtio|ide',
+                           'r   '
+                           '[pool:UUID,domain:UUID,image:UUID,volume:UUID]|'
+                           '[GUID:guid]|[UUID:uuid]',
+                           'r   format: cow|raw',
+                           'r   readonly: True|False   - default is False',
+                           'r   propagateErrors: off|on   - default is off',
+                           'o   bootOrder: <int>  - global boot order across '
+                           'all bootable devices',
+                           'o   shared: exclusive|shared|none',
+                           'o   optional: True|False'
+                           )),
         'changeCD': (serv.do_changeCD,
                      ('<vmId> <fileName|drivespec>',
                       'Changes the iso image of the cdrom'
@@ -2020,13 +2021,13 @@ if __name__ == '__main__':
                                 'Get hardware info of the VDS'
                                 )),
         'getVdsStats': (serv.do_getVdsStats,
-                       ('',
-                        'Get Statistics info on the VDS'
-                        )),
+                        ('',
+                         'Get Statistics info on the VDS'
+                         )),
         'getVmStats': (serv.do_getVmStats,
-                      ('<vmId>',
-                       'Get Statistics info on the VM'
-                       )),
+                       ('<vmId>',
+                        'Get Statistics info on the VM'
+                        )),
         'getAllVmStats': (serv.do_getAllVmStats,
                           ('',
                            'Get Statistics info for all existing VMs'
@@ -2093,13 +2094,13 @@ if __name__ == '__main__':
           'Validate that we can connect to a storage server'
           )),
         'disconnectStorageServer': (serv.disconnectStorageServer,
-                                   ('<server type> <spUUID> <conList (id=...,'
-                                    'connection=server:/export_path,'
-                                    'portal=...,port=...,iqn=...,user=...,'
-                                    'password=...[,initiatorName=...])>',
-                                    'Disconnect from a storage low level '
-                                    'entity (server)'
-                                    )),
+                                    ('<server type> <spUUID> <conList (id=...,'
+                                     'connection=server:/export_path,'
+                                     'portal=...,port=...,iqn=...,user=...,'
+                                     'password=...[,initiatorName=...])>',
+                                     'Disconnect from a storage low level '
+                                     'entity (server)'
+                                     )),
         'spmStart': (serv.spmStart,
                      ('<spUUID> <prevID> <prevLVER> <recoveryMode> '
                       '<scsiFencing> <maxHostID> <version>',
@@ -2495,23 +2496,24 @@ if __name__ == '__main__':
                         'Remove a network (and parts thereof) from this vds.'
                         )),
         'editNetwork': (serv.do_editNetwork,
-                       ('oldBridge=<bridge> newBridge=<bridge> [vlan=<number>]'
-                        ' [bond=<bond>] nics=nic[,nic]',
-                        'Replace a network with a new one.'
-                        )),
+                        ('oldBridge=<bridge> newBridge=<bridge> '
+                         '[vlan=<number>] '
+                         '[bond=<bond>] nics=nic[,nic]',
+                         'Replace a network with a new one.'
+                         )),
         'setSafeNetworkConfig': (serv.do_setSafeNetworkConfig,
                                  ('',
                                   'declare current network configuration as '
                                   '"safe"'
                                   )),
         'fenceNode': (serv.do_fenceNode,
-                     ('<addr> <port> <agent> <user> <passwd> <action> '
-                      '[<secure> [<options>]] \n\t<action> is one of '
-                      '(status, on, off, reboot),\n\t<agent> is one of '
-                      '(rsa, ilo, ipmilan, drac5, etc)\n\t<secure> '
-                      '(true|false) may be passed to some agents',
-                      'send a fencing command to a remote node'
-                      )),
+                      ('<addr> <port> <agent> <user> <passwd> <action> '
+                       '[<secure> [<options>]] \n\t<action> is one of '
+                       '(status, on, off, reboot),\n\t<agent> is one of '
+                       '(rsa, ilo, ipmilan, drac5, etc)\n\t<secure> '
+                       '(true|false) may be passed to some agents',
+                       'send a fencing command to a remote node'
+                       )),
         'repoStats': (serv.repoStats,
                       ('',
                        'Get the health status of the monitored domains'

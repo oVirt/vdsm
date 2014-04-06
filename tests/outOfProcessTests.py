@@ -32,7 +32,7 @@ class OopWrapperTests(TestCaseBase):
         data = """Censorship always defeats it own purpose, for it creates in
                   the end the kind of society that is incapable of exercising
                   real discretion."""
-               # Henry Steele Commager
+        # Henry Steele Commager
 
         self.assertEquals(self.pool.echo(data), data)
 

@@ -141,7 +141,7 @@ class TMap(TestCaseBase):
                   woman who claims she can make flowers grow just by planting
                   seeds in soil and watering them. Until then, wait very
                   quietly in your seats please. Goodnight."""
-                   # (C) BBC - A Bit of Fry and Laury
+        # (C) BBC - A Bit of Fry and Laury
         data = data.split()
         self.assertEquals(list(misc.tmap(dummy, data)), data)
 
@@ -286,7 +286,7 @@ class AsyncProcTests(TestCaseBase):
                            Are there lords in such a small domain?
                   The Doctor: And where do you function?
                   Striker: Eternity. The endless wastes of eternity. """
-                  # (C) BBC - Doctor Who
+        # (C) BBC - Doctor Who
         p = utils.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data)
@@ -300,7 +300,7 @@ class AsyncProcTests(TestCaseBase):
                   Peri: When was that?
                   The Doctor: ...I don't remember.
                               I'm pretty sure it wasn't the future. """
-                  # (C) BBC - Doctor Who
+        # (C) BBC - Doctor Who
         halfPoint = len(data) / 2
         p = utils.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
@@ -329,7 +329,7 @@ class AsyncProcTests(TestCaseBase):
                           would end everything. Yes! I would do it! That power
                           would set me up above the gods! And through the
                           Daleks, I shall have that power! """
-                  # (C) BBC - Doctor Who
+        # (C) BBC - Doctor Who
 
         data = data * ((4096 / len(data)) * 2)
         self.assertTrue(data > 4096)
@@ -376,7 +376,7 @@ class DdWatchCopy(TestCaseBase):
 
         data = '- "What\'re quantum mechanics?"' + \
                '- "I don\'t know. People who repair quantums, I suppose."'
-               # (C) Terry Pratchet - Small Gods
+        # (C) Terry Pratchet - Small Gods
 
         # Make sure the length is appropriate
         if (len(data) % 512) == 0:
@@ -469,7 +469,8 @@ class DdWatchCopy(TestCaseBase):
                "problem with the start of things." + \
                "They wonder how the snowplough driver gets to work, or " + \
                "how the makers of dictionaries look up the spelling of words."
-               # (C) Terry Pratchet - Small Gods
+        # (C) Terry Pratchet - Small Gods
+
         # Makes sure we round up to a complete block size
         data *= 512
 

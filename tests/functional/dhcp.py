@@ -47,11 +47,12 @@ class Dnsmasq():
         # -O 6            don't reply with any DNS servers either
         # -d              do not daemonize and log to stderr
         # -p 0            disable all the dnsmasq dns functionality
-        self.proc = execCmd([_DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
-                            '-p', '0', '--dhcp-range=' + dhcpRangeFrom + ',' +
-                            dhcpRangeTo + ',2m', '--dhcp-option=3', '-O', '6',
-                            '-i', interface, '-I', 'lo', '-d',
-                            '--bind-interfaces'], sync=False)
+        self.proc = execCmd([
+            _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
+            '-p', '0', '--dhcp-range=' + dhcpRangeFrom + ',' +
+            dhcpRangeTo + ',2m', '--dhcp-option=3', '-O', '6',
+            '-i', interface, '-I', 'lo', '-d',
+            '--bind-interfaces'], sync=False)
         sleep(_START_CHECK_TIMEOUT)
         if self.proc.returncode:
             raise DhcpError('Failed to start dnsmasq DHCP server.' +

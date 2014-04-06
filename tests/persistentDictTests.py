@@ -26,7 +26,7 @@ class DummyFailWriter(object):
     def writelines(self, lines):
         raise RuntimeError("You might have a very minor case of "
                            "serious brain damage")
-                           # (C) Valve - Portal 2
+        # (C) Valve - Portal 2
 
     def readlines(self):
         data = """Edward Tattsyrup: The time has come to find him a mate!
@@ -34,7 +34,7 @@ class DummyFailWriter(object):
                   Edward Tattsyrup: [grabs an animal trap]
                                     Leave it to me, Tubbs!
                                     I...have a way with women!"""
-               # (C) BBC - The League of Gentlemen
+        # (C) BBC - The League of Gentlemen
         lines = data.splitlines()
         return dict(zip([str(i) for i in range(len(lines))], lines))
 
@@ -58,7 +58,7 @@ class PersistentDictTests(TestCaseBase):
     def testFailedWrite(self):
         data = "Scotty had a will of her own, which was always " + \
                "dangerous in a woman."
-               # (C) Philip K. Dick - The Three Stigmata of Palmer Eldritch
+        # (C) Philip K. Dick - The Three Stigmata of Palmer Eldritch
         pd = persistentDict.PersistentDict(DummyFailWriter())
         self.assertRaises(RuntimeError, pd.__setitem__, "4", data)
 
@@ -70,7 +70,7 @@ class PersistentDictTests(TestCaseBase):
                     raise SpecialError("Take the Kama Sutra. How many people "
                                        "died from the Kama Sutra, as opposed "
                                        "to the Bible? Who wins?")
-                                       # (C) Frank Zappa
+                    # (C) Frank Zappa
         except RuntimeError:
             return
 

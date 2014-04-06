@@ -49,7 +49,7 @@ class RetryTests(TestCaseBase):
             raise RuntimeError("If at first you don't succeed, try, try again."
                                "Then quit. There's no point in being a damn"
                                "fool about it.")
-                               # W. C. Fields
+            # W. C. Fields
 
         self.assertRaises(RuntimeError, utils.retry, foo, tries=(limit + 10),
                           sleep=0, stopCallback=stopCallback)
