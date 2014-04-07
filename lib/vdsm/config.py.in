@@ -323,6 +323,10 @@ parameters = [
 
         ('use_volume_leases', 'false',
             'Whether to use the volume leases or not.'),
+
+        ('oop_impl', 'ioprocess',
+            'Whether to use RFH or ioprocess implementation for oop.'
+            'Values can be either ioprocess or rfh.'),
     ]),
 
     # Section: [addresses]
