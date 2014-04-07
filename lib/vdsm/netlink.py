@@ -18,17 +18,18 @@
 #
 
 from contextlib import contextmanager
-from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
+from ctypes import (CDLL, CFUNCTYPE, byref, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, get_errno, sizeof)
+from distutils.version import StrictVersion
 from functools import partial
 from Queue import Empty, Queue
 from threading import BoundedSemaphore
 import errno
+import ethtool
 
 NETLINK_ROUTE = 0
 _POOL_SIZE = 5
 CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
-LIBNL = CDLL('libnl.so.1', use_errno=True)
 
 
 def iter_links():
@@ -92,20 +93,20 @@ _pool = NLSocketPool(_POOL_SIZE)
 
 def _open_socket():
     """Returns an open netlink socket."""
-    handle = _nl_handle_alloc()
-    if handle is None:
+    sock = _nl_socket_alloc()
+    if sock is None:
         raise IOError(get_errno(), 'Failed to allocate netlink handle')
 
-    err = _nl_connect(handle, NETLINK_ROUTE)
+    err = _nl_connect(sock, NETLINK_ROUTE)
     if err:
-        _nl_handle_destroy(handle)
+        _nl_socket_free(sock)
         raise IOError(-err, _nl_geterror())
-    return handle
+    return sock
 
 
 def _close_socket(sock):
     """Closes and frees the resources of the passed netlink socket."""
-    _nl_handle_destroy(sock)
+    _nl_socket_free(sock)
 
 
 @contextmanager
@@ -113,8 +114,6 @@ def _cache_manager(cache_allocator, sock):
     """Provides a cache using cache_allocator and frees it and its links upon
     exit."""
     cache = cache_allocator(sock)
-    if cache is None:
-        raise IOError(get_errno(), 'Failed to allocate the cache.')
     try:
         yield cache
     finally:
@@ -148,8 +147,11 @@ def _link_info(cache, link):
 
     # libnl-1 has a bug when getting type information.
     # https://github.com/tgraf/libnl-1.1-stable/issues/1
-    # TODO: Add the following line (and prototype) when the above bug is fixed.
-    # info['type'] = _rtnl_link_get_info_type(link)
+    # TODO: Add for libnl1 if the bug is fixed
+    if _ethtool_uses_libnl3():
+        link_type = _rtnl_link_get_type(link)
+        if link_type is not None:
+            info['type'] = link_type
 
     underlying_device_index = _rtnl_link_get_link(link)
     if underlying_device_index > 0:
@@ -208,6 +210,12 @@ def _addr_local(addr):
     return _nl_addr2str(_rtnl_addr_get_local(addr), address, sizeof(address))
 
 
+def _ethtool_uses_libnl3():
+    """Returns whether ethtool uses libnl3."""
+    return (StrictVersion('0.9') <=
+            StrictVersion(ethtool.version.split()[1].lstrip('v')))
+
+
 # C function prototypes
 # http://docs.python.org/2/library/ctypes.html#function-prototypes
 # This helps ctypes know the calling conventions it should use to communicate
@@ -216,49 +224,105 @@ def _addr_local(addr):
 _int_proto = CFUNCTYPE(c_int, c_void_p)
 _char_proto = CFUNCTYPE(c_char_p, c_void_p)
 _void_proto = CFUNCTYPE(c_void_p, c_void_p)
+_none_proto = CFUNCTYPE(None, c_void_p)
+
+if _ethtool_uses_libnl3():
+    LIBNL = CDLL('libnl-3.so.200',  use_errno=True)
+    LIBNL_ROUTE = CDLL('libnl-route-3.so.200',  use_errno=True)
+
+    _nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', LIBNL))
+    _nl_socket_free = _none_proto(('nl_socket_free', LIBNL))
+
+    _link_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)(
+        ('rtnl_link_alloc_cache', LIBNL_ROUTE))
+    _addr_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_void_p)(
+        ('rtnl_addr_alloc_cache', LIBNL_ROUTE))
+    _link_is_vlan = _int_proto(('rtnl_link_is_vlan', LIBNL_ROUTE))
+    _vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL_ROUTE))
+
+    def _rtnl_link_alloc_cache(sock):
+        """Wraps the new link alloc cache to expose the libnl1 signature"""
+        AF_UNSPEC = 0
+        cache = c_void_p()
+        err = _link_alloc_cache(sock, AF_UNSPEC, byref(cache))
+        if err:
+            raise IOError(-err, _nl_geterror())
+        return cache
+
+    def _rtnl_addr_alloc_cache(sock):
+        """Wraps the new addr alloc cache to expose the libnl1 signature"""
+        cache = c_void_p()
+        err = _addr_alloc_cache(sock, byref(cache))
+        if err:
+            raise IOError(-err, _nl_geterror())
+        return cache
+
+    _rtnl_link_get_type = _char_proto(('rtnl_link_get_type', LIBNL_ROUTE))
+
+    def _rtnl_link_vlan_get_id(link):
+        """Wraps the new vlan id retrieval to expose the libnl1 signature"""
+        if _link_is_vlan(link):
+            return _vlan_get_id(link)
+        else:
+            return -1
+else:  # libnl-1
+    # Change from handle to socket as it is now more accurately called in
+    # libnl-3
+    LIBNL_ROUTE = LIBNL = CDLL('libnl.so.1', use_errno=True)
+
+    _nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_handle_alloc', LIBNL))
+    _nl_socket_free = _none_proto(('nl_handle_destroy', LIBNL))
+
+    _rtnl_link_vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL))
+    _link_alloc_cache = _void_proto(('rtnl_link_alloc_cache', LIBNL))
+    _addr_alloc_cache = _void_proto(('rtnl_addr_alloc_cache', LIBNL))
+
+    def _alloc_cache(allocator, sock):
+        cache = allocator(sock)
+        if cache is None:
+            raise IOError(get_errno(), 'Failed to allocate the cache')
+        return cache
+
+    _rtnl_link_alloc_cache = partial(_alloc_cache, _link_alloc_cache)
+    _rtnl_addr_alloc_cache = partial(_alloc_cache, _addr_alloc_cache)
 
 _nl_connect = CFUNCTYPE(c_int, c_void_p, c_int)(('nl_connect', LIBNL))
-_nl_handle_alloc = CFUNCTYPE(c_void_p)(('nl_handle_alloc', LIBNL))
-_nl_handle_destroy = CFUNCTYPE(None, c_void_p)(('nl_handle_destroy', LIBNL))
-
 _nl_geterror = CFUNCTYPE(c_char_p)(('nl_geterror', LIBNL))
 
-_nl_cache_free = CFUNCTYPE(None, c_void_p)(('nl_cache_free', LIBNL))
+_nl_cache_free = _none_proto(('nl_cache_free', LIBNL))
 _nl_cache_get_first = _void_proto(('nl_cache_get_first', LIBNL))
 _nl_cache_get_next = _void_proto(('nl_cache_get_next', LIBNL))
-_rtnl_link_alloc_cache = _void_proto(('rtnl_link_alloc_cache', LIBNL))
-_rtnl_addr_alloc_cache = _void_proto(('rtnl_addr_alloc_cache', LIBNL))
 
-_rtnl_link_get_addr = _void_proto(('rtnl_link_get_addr', LIBNL))
-_rtnl_link_get_flags = _int_proto(('rtnl_link_get_flags', LIBNL))
-_rtnl_link_get_ifindex = _int_proto(('rtnl_link_get_ifindex', LIBNL))
-_rtnl_link_get_link = _int_proto(('rtnl_link_get_link', LIBNL))
-_rtnl_link_get_master = _int_proto(('rtnl_link_get_master', LIBNL))
-_rtnl_link_get_mtu = _int_proto(('rtnl_link_get_mtu', LIBNL))
-_rtnl_link_get_name = _char_proto(('rtnl_link_get_name', LIBNL))
-_rtnl_link_get_operstate = _int_proto(('rtnl_link_get_operstate', LIBNL))
-_rtnl_link_get_qdisc = _char_proto(('rtnl_link_get_qdisc', LIBNL))
-_rtnl_link_vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL))
+_rtnl_link_get_addr = _void_proto(('rtnl_link_get_addr', LIBNL_ROUTE))
+_rtnl_link_get_flags = _int_proto(('rtnl_link_get_flags', LIBNL_ROUTE))
+_rtnl_link_get_ifindex = _int_proto(('rtnl_link_get_ifindex', LIBNL_ROUTE))
+_rtnl_link_get_link = _int_proto(('rtnl_link_get_link', LIBNL_ROUTE))
+_rtnl_link_get_master = _int_proto(('rtnl_link_get_master', LIBNL_ROUTE))
+_rtnl_link_get_mtu = _int_proto(('rtnl_link_get_mtu', LIBNL_ROUTE))
+_rtnl_link_get_name = _char_proto(('rtnl_link_get_name', LIBNL_ROUTE))
+_rtnl_link_get_operstate = _int_proto(('rtnl_link_get_operstate', LIBNL_ROUTE))
+_rtnl_link_get_qdisc = _char_proto(('rtnl_link_get_qdisc', LIBNL_ROUTE))
 
-_rtnl_addr_get_label = _char_proto(('rtnl_addr_get_label', LIBNL))
-_rtnl_addr_get_ifindex = _int_proto(('rtnl_addr_get_ifindex', LIBNL))
-_rtnl_addr_get_family = _int_proto(('rtnl_addr_get_family', LIBNL))
-_rtnl_addr_get_prefixlen = _int_proto(('rtnl_addr_get_prefixlen', LIBNL))
-_rtnl_addr_get_scope = _int_proto(('rtnl_addr_get_scope', LIBNL))
-_rtnl_addr_get_flags = _int_proto(('rtnl_addr_get_flags', LIBNL))
-_rtnl_addr_get_local = _void_proto(('rtnl_addr_get_local', LIBNL))
+_rtnl_addr_get_label = _char_proto(('rtnl_addr_get_label', LIBNL_ROUTE))
+_rtnl_addr_get_ifindex = _int_proto(('rtnl_addr_get_ifindex', LIBNL_ROUTE))
+_rtnl_addr_get_family = _int_proto(('rtnl_addr_get_family', LIBNL_ROUTE))
+_rtnl_addr_get_prefixlen = _int_proto(('rtnl_addr_get_prefixlen', LIBNL_ROUTE))
+_rtnl_addr_get_scope = _int_proto(('rtnl_addr_get_scope', LIBNL_ROUTE))
+_rtnl_addr_get_flags = _int_proto(('rtnl_addr_get_flags', LIBNL_ROUTE))
+_rtnl_addr_get_local = _void_proto(('rtnl_addr_get_local', LIBNL_ROUTE))
 
-_nl_addr2str = CFUNCTYPE(c_char_p, c_void_p, c_char_p, c_int)((
+_nl_addr2str = CFUNCTYPE(c_char_p, c_void_p, c_char_p, c_size_t)((
     'nl_addr2str', LIBNL))
 _rtnl_link_get_by_name = CFUNCTYPE(c_void_p, c_void_p, c_char_p)((
-    'rtnl_link_get_by_name', LIBNL))
-_rtnl_link_i2name = CFUNCTYPE(c_char_p, c_void_p, c_int, c_char_p, c_int)((
-    'rtnl_link_i2name', LIBNL))
+    'rtnl_link_get_by_name', LIBNL_ROUTE))
+_rtnl_link_i2name = CFUNCTYPE(c_char_p, c_void_p, c_int, c_char_p, c_size_t)((
+    'rtnl_link_i2name', LIBNL_ROUTE))
 _rtnl_link_operstate2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)((
-    'rtnl_link_operstate2str', LIBNL))
-_nl_af2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_int)(('nl_af2str', LIBNL))
-_rtnl_scope2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_int)((
-    'rtnl_scope2str', LIBNL))
+    'rtnl_link_operstate2str', LIBNL_ROUTE))
+_nl_af2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)(('nl_af2str',
+                                                            LIBNL))
+_rtnl_scope2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)((
+    'rtnl_scope2str', LIBNL_ROUTE))
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 _nl_addr_cache = partial(_cache_manager, _rtnl_addr_alloc_cache)
