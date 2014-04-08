@@ -3842,7 +3842,6 @@ class Vm(object):
             # with size that is not multiple of block size correctly.
             if memoryParams:
                 _padMemoryVolume(memoryVolPath, memoryVol['domainID'])
-                self.cif.teardownVolumePath(memoryVol)
 
             for drive in newDrives.values():  # Update the drive information
                 try:
@@ -3855,6 +3854,8 @@ class Vm(object):
                                    "'%s'", drive, exc_info=True)
         finally:
             self.startDisksStatsCollection()
+            if memoryParams:
+                self.cif.teardownVolumePath(memoryVol)
 
         # Returning quiesce to notify the manager whether the guest agent
         # froze and flushed the filesystems or not.
