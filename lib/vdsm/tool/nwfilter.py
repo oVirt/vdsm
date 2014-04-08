@@ -22,14 +22,18 @@
 import logging
 
 from .. import libvirtconnection
-from . import expose
+from . import expose, ExtraArgsError
 
 
 @expose('nwfilter')
-def main():
+def main(*args):
     """
+    nwfilter
     Defines network filters on libvirt
     """
+    if len(args) > 1:
+        raise ExtraArgsError()
+
     conn = libvirtconnection.get(None, False)
     NoMacSpoofingFilter().defineNwFilter(conn)
 

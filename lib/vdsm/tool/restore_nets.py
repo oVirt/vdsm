@@ -21,15 +21,22 @@ import os
 import sys
 
 from .. import utils
-from . import expose
+from . import expose, ExtraArgsError
 from ..constants import P_VDSM
 
 
 @expose('restore-nets')
-def restore(*args, **kwargs):
+def restore_command(*args):
     """
+    restore-nets
     Restores the networks to what was previously persisted via vdsm.
     """
+    if len(args) > 1:
+        raise ExtraArgsError()
+    restore()
+
+
+def restore():
     rc, out, err = utils.execCmd([os.path.join(
         P_VDSM, 'vdsm-restore-net-config')], raw=True)
     sys.stdout.write(out)

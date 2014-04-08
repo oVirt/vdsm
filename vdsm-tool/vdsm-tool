@@ -103,12 +103,15 @@ def load_modules():
         tool_modules.append((mod_name, mod_cmds))
 
 
-def _usage_command(cmd_name, cmd_docs):
-    cmd_help = "  %-20s" % cmd_name
-    cmd_indent = " " * len(cmd_help)
+def print_command_usage(cmd, stream=sys.stdout):
+    print >> stream, 'usage:'
+    print >> stream, sys.argv[0], '[options]', cmd.__doc__.lstrip()
 
-    print textwrap.fill(cmd_docs, initial_indent=cmd_help,
-                        subsequent_indent=cmd_indent)
+
+def _usage_command(cmd_name, cmd_docs):
+    print
+    print cmd_name
+    print_command_usage(tool_command[cmd_name]["command"])
 
 
 def _usage_module(mod_name, mod_desc):
@@ -149,9 +152,13 @@ def main():
         usage_and_exit(1)
 
     try:
-        return tool_command[cmd]["command"](*args[1:])
+        return tool_command[cmd]["command"](*args)
     except vdsm.tool.UsageError as e:
         sys.stderr.write('Error: %s' % e)
+        print_command_usage(tool_command[cmd]["command"], sys.stderr)
+        return 1
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print "Interrupted"

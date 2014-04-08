@@ -141,6 +141,7 @@ def isNeeded():
 @expose(UPGRADE_NAME)
 def unified_persistence(*args):
     """
+    upgrade-unified-persistence [upgrade-options]
     Upgrade host networking persistence from ifcfg to unified if the
     persistence model is set as unified in /usr/lib64/python2.X/site-packages/
     vdsm/config.py

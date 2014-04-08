@@ -221,9 +221,11 @@ __configurers = (
 @expose("configure")
 def configure(*args):
     """
+    configure [-h|...]
     Configure external services for vdsm
+    Invoke with -h for complete usage.
     """
-    args = _parse_args("configure")
+    args = _parse_args(*args)
     configurer_to_trigger = []
 
     sys.stdout.write("\nChecking configuration status...\n\n")
@@ -264,10 +266,12 @@ def configure(*args):
 @expose("is-configured")
 def isconfigured(*args):
     """
+    is-configured [-h|...]
     Determine if module is configured
+    Invoke with -h for complete usage.
     """
     ret = True
-    args = _parse_args('is-configured')
+    args = _parse_args(*args)
 
     m = [
         c.getName() for c in __configurers
@@ -299,10 +303,12 @@ afterwards automatically to load the new configuration.)
 @expose("validate-config")
 def validate_config(*args):
     """
+    validate-config [-h|...]
     Determine if configuration is valid
+    Invoke with -h for complete usage.
     """
     ret = True
-    args = _parse_args('validate-config')
+    args = _parse_args(*args)
 
     m = [
         c.getName() for c in __configurers
@@ -319,7 +325,7 @@ def validate_config(*args):
         raise InvalidConfig("Config is not valid. Check conf files")
 
 
-def _parse_args(action):
+def _parse_args(action, *args):
     parser = argparse.ArgumentParser('vdsm-tool %s' % (action))
     allModules = [n.getName() for n in __configurers]
     parser.add_argument(
@@ -344,7 +350,7 @@ def _parse_args(action):
             action='store_true',
             help='Force configuration, trigger services restart',
         )
-    args = parser.parse_args(sys.argv[2:])
+    args = parser.parse_args(args)
     if not args.modules:
         args.modules = allModules
     return args

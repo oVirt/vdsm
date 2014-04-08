@@ -24,7 +24,7 @@ import selinux
 
 from .. import constants
 from ..config import config
-from . import expose
+from . import expose, ExtraArgsError
 from ..utils import execCmd, CommandPath
 
 
@@ -40,8 +40,12 @@ _fuser = CommandPath(
 @expose("setup-transient-repository")
 def setup_transient_repository(*args):
     """
+    setup-transient-repository
     Prepare the transient disks repository
     """
+    if len(args) > 1:
+        raise ExtraArgsError()
+
     _, _, vdsm_uid, vdsm_gid, _, _, _ = pwd.getpwnam(constants.VDSM_USER)
 
     try:
@@ -58,10 +62,14 @@ def setup_transient_repository(*args):
 @expose("cleanup-transient-repository")
 def cleanup_transient_repository(*args):
     """
+    cleanup-transient-repository
     Cleanup the unused transient disks present in the repository.
     (NOTE: it is recommended to NOT execute this command when the vdsm
     daemon is running)
     """
+    if len(args) > 1:
+        raise ExtraArgsError()
+
     transient_images = set(glob.glob(os.path.join(TRANSIENT_DISKS_REPO, "*")))
 
     if len(transient_images) == 0:

@@ -21,7 +21,7 @@ import os
 import pwd
 import shutil
 
-from . import expose
+from . import expose, ExtraArgsError
 from ..utils import execCmd
 
 try:
@@ -44,12 +44,16 @@ def is_our_cafile(cacert):
 
 
 @expose('validate-ovirt-certs')
-def validate_ovirt_certs():
+def validate_ovirt_certs(*args):
     """
+    validate-ovirt-certs
     Validate vdsmcert.pem against cacert.pem.
     If current cacert.pem is invalidate, it will find a validate certificate
     file and replace the old cacert.pem with it. And then persist it.
     """
+    if len(args) > 1:
+        raise ExtraArgsError()
+
     print "checking certs.."
     uid, gid = pwd.getpwnam('vdsm')[2:4]
     if not is_our_cafile(PATH_CACERT):

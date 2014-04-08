@@ -23,7 +23,7 @@ import os
 
 from ..netinfo import DUMMY_BRIDGE
 from .. import libvirtconnection, utils, constants
-from . import expose
+from . import expose, ExtraArgsError
 
 
 def createEphemeralBridge(bridgeName):
@@ -43,10 +43,15 @@ def addBridgeToLibvirt(bridgeName):
 
 
 @expose('dummybr')
-def main():
+def main(*args):
     """
+    dummybr
     Defines dummy bridge on libvirt network.
     """
+
+    if len(args) > 1:
+        raise ExtraArgsError()
+
     if not os.path.exists('/sys/class/net/%s' % DUMMY_BRIDGE):
         createEphemeralBridge(DUMMY_BRIDGE)
     addBridgeToLibvirt(DUMMY_BRIDGE)

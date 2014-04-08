@@ -20,14 +20,19 @@
 import errno
 import subprocess
 from .. import constants
-from . import expose
+from . import expose, ExtraArgsError
 
 
 @expose("set-saslpasswd")
-def set_saslpasswd():
+def set_saslpasswd(*args):
     """
+    set-saslpasswd
     Set vdsm password for libvirt connection
     """
+
+    if len(args) > 1:
+        raise ExtraArgsError()
+
     script = ['/usr/sbin/saslpasswd2', '-p', '-a', 'libvirt',
               constants.SASL_USERNAME]
 

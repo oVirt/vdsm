@@ -64,6 +64,7 @@ def run(networks, bridges):
 @expose(UPGRADE_NAME)
 def upgrade_networks(*args):
     """
+    upgrade-3.0.0-networks [upgrade-options]
     Since ovirt-3.0, Vdsm uses libvirt networks (with names vdsm-*) to store
     its own networks. Older Vdsms did not have those defined, and used only
     linux bridges. This command is kept as an upgrade tool for the (very few)

@@ -27,7 +27,7 @@ import re
 import sys
 from collections import defaultdict
 
-from . import expose, UsageError
+from . import expose, UsageError, ExtraArgsError
 from ..utils import CommandPath
 from ..utils import execCmd as _execCmd
 
@@ -355,26 +355,56 @@ def _runAlts(alts, srvName, *args, **kwarg):
 
 
 @expose("service-start")
+def service_start_command(cmdName, *args):
+    """
+    service-start service-name
+    Start a system service.
+
+    Parameters:
+    service-start - service to start
+    """
+    if len(args) != 1:
+        raise ExtraArgsError(1)
+    return service_start(args[0])
+
+
 def service_start(srvName):
-    """
-    Start a system service
-    """
     return _runAlts(_srvStartAlts, srvName)
 
 
 @expose("service-stop")
+def service_stop_command(cmdName, *args):
+    """
+    service-stop service-name
+    Stop a system service.
+
+    Parameters:
+    service-name - service to stop
+    """
+    if len(args) != 1:
+        raise ExtraArgsError(1)
+    return service_stop(args[0])
+
+
 def service_stop(srvName):
-    """
-    Stop a system service
-    """
     return _runAlts(_srvStopAlts, srvName)
 
 
 @expose("service-status")
+def service_status_command(cmdName, *args):
+    """
+    service-status service-name
+    Get status of a system service.
+
+    Parameters:
+    service-name - service to query
+    """
+    if len(args) != 1:
+        raise ExtraArgsError(1)
+    return service_status(args[0])
+
+
 def service_status(srvName, verbose=True):
-    """
-    Get status of a system service
-    """
     try:
         return _runAlts(_srvStatusAlts, srvName)
     except ServiceError as e:
@@ -384,34 +414,74 @@ def service_status(srvName, verbose=True):
 
 
 @expose("service-restart")
+def service_restart_command(cmdName, *args):
+    """
+    service-restart service-name
+    Restart a system service.
+
+    Parameters:
+    service-name - service to restart
+    """
+    if len(args) != 1:
+        raise ExtraArgsError(1)
+    return service_restart(args[0])
+
+
 def service_restart(srvName):
-    """
-    Restart a system service
-    """
     return _runAlts(_srvRestartAlts, srvName)
 
 
 @expose("service-reload")
+def service_reload_command(cmdName, *args):
+    """
+    service-reload service-name
+    Notify a system service to reload configurations.
+
+    Parameters:
+    service-name - service to notify
+    """
+    if len(args) != 1:
+        raise ExtraArgsError(1)
+    return service_reload(args[0])
+
+
 def service_reload(srvName):
-    """
-    Notify a system service to reload configurations
-    """
     return _runAlts(_srvReloadAlts, srvName)
 
 
 @expose("service-disable")
+def service_disable_command(cmdName, *args):
+    """
+    service-disable service-name
+    Disable a system service.
+
+    Parameters:
+    service-name - service to disable
+    """
+    if len(args) != 1:
+        raise ExtraArgsError(1)
+    return service_disable(args[0])
+
+
 def service_disable(srvName):
-    """
-    Disable a system service
-    """
     return _runAlts(_srvDisableAlts, srvName)
 
 
 @expose("service-is-managed")
+def service_is_managed_command(cmdName, *args):
+    """
+    service-is-managed service-name
+    Check the existence of a service.
+
+    Parameters:
+    service-name - service to query
+    """
+    if len(args) != 1:
+        raise ExtraArgsError(1)
+    return service_is_managed(args[0])
+
+
 def service_is_managed(srvName):
-    """
-    Check the existence of a service
-    """
     try:
         return _runAlts(_srvIsManagedAlts, srvName)
     except ServiceError as e:

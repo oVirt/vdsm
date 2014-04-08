@@ -18,15 +18,18 @@
 #
 
 from ..utils import getHostUUID
-from . import expose
+from . import expose, ExtraArgsError
 import sys
 
 
 @expose("vdsm-id")
-def getUUID():
+def getUUID(*args):
     """
+    vdsm-id
     Printing host uuid
     """
+    if len(args) > 1:
+        raise ExtraArgsError()
     hostUUID = getHostUUID(False)
     if hostUUID is None:
         raise EnvironmentError('Cannot retrieve host UUID')

@@ -21,7 +21,7 @@
 import os.path
 
 from .. import netinfo
-from . import expose
+from . import expose, ExtraArgsError
 from ..utils import execCmd
 
 
@@ -54,10 +54,14 @@ def _enable_softdog():
 
 
 @expose('load-needed-modules')
-def load_needed_modules():
+def load_needed_modules(*args):
     """
+    load-needed-modules
     Load needed modules
     """
+
+    if len(args) > 1:
+        raise ExtraArgsError()
 
     for mod in ['bridge', 'tun', 'bonding', '8021q']:
         _exec_command([EX_MODPROBE, mod])

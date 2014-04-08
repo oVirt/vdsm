@@ -34,3 +34,14 @@ class UsageError(RuntimeError):
 class NotRootError(UsageError):
     def __init__(self):
         super(NotRootError, self).__init__("Must run as root")
+
+
+class ExtraArgsError(UsageError):
+    def __init__(self, n=0):
+        if n == 0:
+            message = "Command does not take extra arguments"
+        else:
+            message = \
+                "Command takes exactly %d argument%s" % (n,
+                                                         's' if n != 1 else '')
+        super(ExtraArgsError, self).__init__(message)

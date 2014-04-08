@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from . import expose
+from . import expose, ExtraArgsError
 
 SEBOOL_ENABLED = "on"
 SEBOOL_DISABLED = "off"
@@ -54,12 +54,24 @@ def setup_booleans(status):
 
 
 @expose("sebool-config")
-def sebool_config():
-    """Enable the required selinux booleans"""
+def sebool_config(*args):
+    """
+    sebool-config
+    Enable the required selinux booleans
+    """
+
+    if len(args) > 1:
+        raise ExtraArgsError()
+
     setup_booleans(True)
 
 
 @expose("sebool-unconfig")
-def sebool_unconfig():
-    """Disable the required selinux booleans"""
+def sebool_unconfig(*args):
+    """
+    sebool-unconfig
+    Disable the required selinux booleans
+    """
+    if len(args) > 1:
+        raise ExtraArgsError()
     setup_booleans(False)
