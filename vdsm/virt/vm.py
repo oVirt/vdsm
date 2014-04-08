@@ -2502,19 +2502,6 @@ class Vm(object):
     def _getStatsInternal(self):
         # used by API.Vm.getStats
 
-        def _getGuestStatus():
-            GUEST_WAIT_TIMEOUT = 60
-            now = time.time()
-            if now - self._guestEventTime < 5 * GUEST_WAIT_TIMEOUT and \
-                    self._guestEvent == vmstatus.POWERING_DOWN:
-                return self._guestEvent
-            if self.guestAgent and self.guestAgent.isResponsive() and \
-                    self.guestAgent.getStatus():
-                return self.guestAgent.getStatus()
-            if now - self._guestEventTime < GUEST_WAIT_TIMEOUT:
-                return self._guestEvent
-            return vmstatus.UP
-
         if self.lastStatus == vmstatus.DOWN:
             return self._getExitedVmStats()
 
@@ -2532,21 +2519,8 @@ class Vm(object):
             stats['boot'] = self.conf['boot']
 
         stats.update(self._getRunningVmStats())
+        stats.update(self._getVmStatus())
 
-        statuses = (vmstatus.SAVING_STATE, vmstatus.RESTORING_STATE,
-                    vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
-                    vmstatus.PAUSED)
-        if self.lastStatus in statuses:
-            stats['status'] = self.lastStatus
-        elif self.isMigrating():
-            if self._migrationSourceThread._mode == 'file':
-                stats['status'] = vmstatus.SAVING_STATE
-            else:
-                stats['status'] = vmstatus.MIGRATION_SOURCE
-        elif self.lastStatus == vmstatus.UP:
-            stats['status'] = _getGuestStatus()
-        else:
-            stats['status'] = self.lastStatus
         stats['acpiEnable'] = self.conf.get('acpiEnable', 'true')
         try:
             stats.update(self.guestAgent.getGuestInfo())
@@ -2613,6 +2587,35 @@ class Vm(object):
 
         stats['balloonInfo'] = self._getBalloonInfo()
         return stats
+
+    def _getVmStatus(self):
+        def _getGuestStatus():
+            GUEST_WAIT_TIMEOUT = 60
+            now = time.time()
+            if now - self._guestEventTime < 5 * GUEST_WAIT_TIMEOUT and \
+                    self._guestEvent == vmstatus.POWERING_DOWN:
+                return self._guestEvent
+            if self.guestAgent and self.guestAgent.isResponsive() and \
+                    self.guestAgent.getStatus():
+                return self.guestAgent.getStatus()
+            if now - self._guestEventTime < GUEST_WAIT_TIMEOUT:
+                return self._guestEvent
+            return vmstatus.UP
+
+        statuses = (vmstatus.SAVING_STATE, vmstatus.RESTORING_STATE,
+                    vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
+                    vmstatus.PAUSED)
+        if self.lastStatus in statuses:
+            return {'status': self.lastStatus}
+        elif self.isMigrating():
+            if self._migrationSourceThread._mode == 'file':
+                return {'status': vmstatus.SAVING_STATE}
+            else:
+                return {'status': vmstatus.MIGRATION_SOURCE}
+        elif self.lastStatus == vmstatus.UP:
+            return {'status': _getGuestStatus()}
+        else:
+            return {'status': self.lastStatus}
 
     def isMigrating(self):
         return self._migrationSourceThread.isAlive()
