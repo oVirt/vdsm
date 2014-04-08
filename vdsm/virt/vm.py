@@ -2525,14 +2525,66 @@ class Vm(object):
             'displayIp': self.conf['displayIp'],
             'pid': self.conf['pid'],
             'vmType': self.conf['vmType'],
-            'kvmEnable': self._kvmEnable,
-            'network': {}, 'disks': {},
-            'monitorResponse': str(self._monitorResponse),
-            'elapsedTime': str(int(time.time() - self._startTime)), }
+            'kvmEnable': self._kvmEnable}
         if 'cdrom' in self.conf:
             stats['cdrom'] = self.conf['cdrom']
         if 'boot' in self.conf:
             stats['boot'] = self.conf['boot']
+
+        stats.update(self._getRunningVmStats())
+
+        statuses = (vmstatus.SAVING_STATE, vmstatus.RESTORING_STATE,
+                    vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
+                    vmstatus.PAUSED)
+        if self.lastStatus in statuses:
+            stats['status'] = self.lastStatus
+        elif self.isMigrating():
+            if self._migrationSourceThread._mode == 'file':
+                stats['status'] = vmstatus.SAVING_STATE
+            else:
+                stats['status'] = vmstatus.MIGRATION_SOURCE
+        elif self.lastStatus == vmstatus.UP:
+            stats['status'] = _getGuestStatus()
+        else:
+            stats['status'] = self.lastStatus
+        stats['acpiEnable'] = self.conf.get('acpiEnable', 'true')
+        try:
+            stats.update(self.guestAgent.getGuestInfo())
+        except Exception:
+            return stats
+        memUsage = 0
+        realMemUsage = int(stats['memUsage'])
+        if realMemUsage != 0:
+            memUsage = (100 - float(realMemUsage) /
+                        int(self.conf['memSize']) * 100)
+        stats['memUsage'] = utils.convertToStr(int(memUsage))
+        return stats
+
+    def _getExitedVmStats(self):
+        stats = {
+            'exitCode': self.conf['exitCode'],
+            'status': self.lastStatus,
+            'exitMessage': self.conf['exitMessage'],
+            'exitReason': self.conf['exitReason']}
+        if 'timeOffset' in self.conf:
+            stats['timeOffset'] = self.conf['timeOffset']
+        return stats
+
+    def _getRunningVmStats(self):
+        """
+        gathers all the stats which can change while a VM is running.
+        """
+        stats = {
+            'elapsedTime': str(int(time.time() - self._startTime)),
+            'monitorResponse': str(self._monitorResponse),
+            'timeOffset': self.conf.get('timeOffset', '0'),
+            'clientIp': self.conf.get('clientIp', ''),
+            'network': {},
+            'disks': {}}
+        if 'pauseCode' in self.conf:
+            stats['pauseCode'] = self.conf['pauseCode']
+        if self.isMigrating():
+            stats['migrationProgress'] = self.migrateStatus()['progress']
 
         decStats = {}
         try:
@@ -2559,48 +2611,7 @@ class Vm(object):
                     self.log.error("Error setting vm disk stats",
                                    exc_info=True)
 
-        statuses = (vmstatus.SAVING_STATE, vmstatus.RESTORING_STATE,
-                    vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
-                    vmstatus.PAUSED)
-        if self.lastStatus in statuses:
-            stats['status'] = self.lastStatus
-        elif self.isMigrating():
-            if self._migrationSourceThread._mode == 'file':
-                stats['status'] = vmstatus.SAVING_STATE
-            else:
-                stats['status'] = vmstatus.MIGRATION_SOURCE
-        elif self.lastStatus == vmstatus.UP:
-            stats['status'] = _getGuestStatus()
-        else:
-            stats['status'] = self.lastStatus
-        stats['acpiEnable'] = self.conf.get('acpiEnable', 'true')
-        stats['timeOffset'] = self.conf.get('timeOffset', '0')
-        stats['clientIp'] = self.conf.get('clientIp', '')
-        if 'pauseCode' in self.conf:
-            stats['pauseCode'] = self.conf['pauseCode']
-        try:
-            stats.update(self.guestAgent.getGuestInfo())
-        except Exception:
-            return stats
-        memUsage = 0
-        realMemUsage = int(stats['memUsage'])
-        if realMemUsage != 0:
-            memUsage = (100 - float(realMemUsage) /
-                        int(self.conf['memSize']) * 100)
-        stats['memUsage'] = utils.convertToStr(int(memUsage))
         stats['balloonInfo'] = self._getBalloonInfo()
-        if self.isMigrating():
-            stats['migrationProgress'] = self.migrateStatus()['progress']
-        return stats
-
-    def _getExitedVmStats(self):
-        stats = {
-            'exitCode': self.conf['exitCode'],
-            'status': self.lastStatus,
-            'exitMessage': self.conf['exitMessage'],
-            'exitReason': self.conf['exitReason']}
-        if 'timeOffset' in self.conf:
-            stats['timeOffset'] = self.conf['timeOffset']
         return stats
 
     def isMigrating(self):
