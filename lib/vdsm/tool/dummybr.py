@@ -29,8 +29,9 @@ from . import expose
 def createEphemeralBridge(bridgeName):
     rc, out, err = utils.execCmd([constants.EXT_BRCTL, 'addbr', bridgeName])
     if rc != 0:
-        raise Exception('Failed to create ephemeral dummy bridge. Err: %s' %
-                        err)
+        raise EnvironmentError(
+            'Failed to create ephemeral dummy bridge. Err: %s' % err
+        )
 
 
 def addBridgeToLibvirt(bridgeName):

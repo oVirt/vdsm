@@ -25,3 +25,12 @@ class expose(object):
     def __call__(self, fun):
         fun._vdsm_tool = {"name": self.name}
         return fun
+
+
+class UsageError(RuntimeError):
+    """ Raise on runtime when usage is invalid """
+
+
+class NotRootError(UsageError):
+    def __init__(self):
+        super(NotRootError, self).__init__("Must run as root")

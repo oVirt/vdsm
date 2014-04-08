@@ -150,8 +150,11 @@ def main():
 
     try:
         return tool_command[cmd]["command"](*args[1:])
-    except Exception:
-        traceback.print_exc(file=sys.stderr)
+    except vdsm.tool.UsageError as e:
+        sys.stderr.write('Error: %s' % e)
+        return 1
+    except KeyboardInterrupt:
+        print "Interrupted"
         return 1
 
 if __name__ == "__main__":

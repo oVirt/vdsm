@@ -27,7 +27,7 @@ import re
 import sys
 from collections import defaultdict
 
-from . import expose
+from . import expose, UsageError
 from ..utils import CommandPath
 from ..utils import execCmd as _execCmd
 
@@ -75,7 +75,7 @@ _srvDisableAlts = []
 _srvIsManagedAlts = []
 
 
-class ServiceError(RuntimeError):
+class ServiceError(UsageError):
     def __init__(self, message, out=None, err=None):
         self.out = out
         self.err = err

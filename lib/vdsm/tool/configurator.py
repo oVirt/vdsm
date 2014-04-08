@@ -23,9 +23,19 @@ import grp
 import argparse
 
 from .. import utils
-from . import service, expose
+from . import service, expose, NotRootError, UsageError
 from ..constants import P_VDSM_EXEC, QEMU_PROCESS_GROUP, \
     SANLOCK_USER, VDSM_GROUP
+
+
+class InvalidConfig(UsageError):
+    """ raise when invalid configuration passed """
+    pass
+
+
+class InvalidRun(UsageError):
+    """ raise when the environemnt is not valid to run the command """
+    pass
 
 
 class _ModuleConfigure(object):
@@ -70,7 +80,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         Invoke libvirt_configure.sh script
         """
         if os.getuid() != 0:
-            raise UserWarning("Must run as root")
+            raise NotRootError()
 
         env = os.environ.copy()
         for k, v in self.env_override.items():
@@ -135,7 +145,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
         Configure sanlock process groups
         """
         if os.getuid() != 0:
-            raise UserWarning("Must run as root")
+            raise NotRootError()
 
         rc, out, err = utils.execCmd(
             (
@@ -171,7 +181,9 @@ class SanlockModuleConfigure(_ModuleConfigure):
                                   strip().split(" ")]
                         break
                 else:
-                    raise RuntimeError("Unable to find sanlock service groups")
+                    raise InvalidConfig(
+                        "Unable to find sanlock service groups"
+                    )
 
             is_sanlock_groups_set = True
             for g in self.SANLOCK_GROUPS:
@@ -219,7 +231,7 @@ def configure(*args):
         if c.getName() in args.modules:
             override = args.force and c.reconfigureOnForce()
             if not override and not c.validate():
-                raise RuntimeError(
+                raise InvalidConfig(
                     "Configuration of %s is invalid" % c.getName()
                 )
             if override or not c.isconfigured():
@@ -230,7 +242,7 @@ def configure(*args):
         for s in c.getServices():
             if service.service_status(s, False) == 0:
                 if not args.force:
-                    raise RuntimeError(
+                    raise InvalidRun(
                         "\n\nCannot configure while service '%s' is "
                         "running.\n Stop the service manually or use the "
                         "--force flag.\n" % s
@@ -281,7 +293,7 @@ If all modules are not configured try to use:
 (The force flag will stop the module's service and start it
 afterwards automatically to load the new configuration.)
 """
-        raise RuntimeError(msg)
+        raise InvalidRun(msg)
 
 
 @expose("validate-config")
@@ -304,7 +316,7 @@ def validate_config(*args):
         ret = False
 
     if not ret:
-        raise RuntimeError("Config is not valid. Check conf files")
+        raise InvalidConfig("Config is not valid. Check conf files")
 
 
 def _parse_args(action):

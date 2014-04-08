@@ -29,6 +29,6 @@ def getUUID():
     """
     hostUUID = getHostUUID(False)
     if hostUUID is None:
-        raise RuntimeError('Cannot retrieve host UUID')
+        raise EnvironmentError('Cannot retrieve host UUID')
     sys.stdout.write(hostUUID)
     return 0

@@ -35,4 +35,4 @@ def restore(*args, **kwargs):
     sys.stdout.write(out)
     sys.stderr.write(err)
     if rc != 0:
-        raise Exception('Failed to restore the persisted networks')
+        raise EnvironmentError('Failed to restore the persisted networks')

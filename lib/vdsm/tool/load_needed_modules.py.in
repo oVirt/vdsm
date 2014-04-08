@@ -34,7 +34,9 @@ def _exec_command(argv):
     """
     rc, out, err = execCmd(argv, raw=True)
     if rc != 0:
-        raise Exception("Execute command %s failed: %s" % (argv, err))
+        raise RuntimeError(
+            "Execute command %s failed: %s" % (argv, err)
+        )
 
 
 def _enable_bond_dev():
