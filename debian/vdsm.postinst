@@ -35,7 +35,6 @@ case "$1" in
         #    -s /bin/false -c "sanlock service" "$SNLK_USER"
         usermod -a -G "$QEMU_GROUP","$SNLK_GROUP","$LIBVIRT_SOCK_GROUP" "$VDSM_USER"
         usermod -a -G "$QEMU_GROUP","$VDSM_GROUP" "$SNLK_USER"
-        usermod -a -G "$QEMU_GROUP","$VDSM_GROUP" "$SNLK_USER"
 
         start_conf_section="## beginning of configuration section by vdsm"
         end_conf_section="## end of configuration section by vdsm"
