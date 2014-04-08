@@ -2420,14 +2420,7 @@ class Vm(object):
             return vmstatus.UP
 
         if self.lastStatus == vmstatus.DOWN:
-            stats = {}
-            stats['exitCode'] = self.conf['exitCode']
-            stats['status'] = self.lastStatus
-            stats['exitMessage'] = self.conf['exitMessage']
-            stats['exitReason'] = self.conf['exitReason']
-            if 'timeOffset' in self.conf:
-                stats['timeOffset'] = self.conf['timeOffset']
-            return stats
+            return self._getExitedVmStats()
 
         stats = {
             'displayPort': self.conf['displayPort'],
@@ -2502,6 +2495,16 @@ class Vm(object):
         stats['balloonInfo'] = self._getBalloonInfo()
         if self.isMigrating():
             stats['migrationProgress'] = self.migrateStatus()['progress']
+        return stats
+
+    def _getExitedVmStats(self):
+        stats = {
+            'exitCode': self.conf['exitCode'],
+            'status': self.lastStatus,
+            'exitMessage': self.conf['exitMessage'],
+            'exitReason': self.conf['exitReason']}
+        if 'timeOffset' in self.conf:
+            stats['timeOffset'] = self.conf['timeOffset']
         return stats
 
     def isMigrating(self):
