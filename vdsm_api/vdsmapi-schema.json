@@ -5574,6 +5574,9 @@
 # @guestFQDN:          Fully qualified domain name of the guest OS. (Reported
 #                      by the guest agent)
 #
+# @guestCPUCount:         The number of CPU cores are visible as online on the
+#                         guest OS. This value is -1 if not supported to report
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -5592,7 +5595,8 @@
           'memoryStats': 'GuestMemoryStats', 'balloonInfo': 'BalloonInfo',
           'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo'],
-          '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str'}}
+          '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
+          , 'guestCPUCount': 'int'}}
 
 ##
 # @VmStats:
