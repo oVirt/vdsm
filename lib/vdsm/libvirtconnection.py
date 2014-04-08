@@ -72,8 +72,8 @@ def start_event_loop():
     __event_loop.start()
 
 
-def stop_event_loop():
-    __event_loop.stop()
+def stop_event_loop(wait=True):
+    __event_loop.stop(wait)
 
 
 __connections = {}

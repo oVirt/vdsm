@@ -83,27 +83,30 @@ def serve_clients(log):
 
     libvirtconnection.start_event_loop()
 
-    if config.getboolean('irs', 'irs_enable'):
-        try:
-            irs = Dispatcher(HSM())
-        except:
-            utils.panic("Error initializing IRS")
-
-    from clientIF import clientIF  # must import after config is read
-    cif = clientIF.getInstance(irs, log)
-
-    install_manhole({'irs': irs, 'cif': cif})
-
-    cif.start()
-    periodic.start(cif)
     try:
-        while running[0]:
-            sigutils.wait_for_signal()
+        if config.getboolean('irs', 'irs_enable'):
+            try:
+                irs = Dispatcher(HSM())
+            except:
+                utils.panic("Error initializing IRS")
 
-        profile.stop()
+        from clientIF import clientIF  # must import after config is read
+        cif = clientIF.getInstance(irs, log)
+
+        install_manhole({'irs': irs, 'cif': cif})
+
+        cif.start()
+        periodic.start(cif)
+        try:
+            while running[0]:
+                sigutils.wait_for_signal()
+
+            profile.stop()
+        finally:
+            periodic.stop()
+            cif.prepareForShutdown()
     finally:
-        periodic.stop()
-        cif.prepareForShutdown()
+        libvirtconnection.stop_event_loop(wait=False)
 
 
 def run(pidfile=None):
