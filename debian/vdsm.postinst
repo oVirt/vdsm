@@ -19,10 +19,12 @@ set -e
 
 VDSM_USER=vdsm
 VDSM_GROUP=kvm
+QEMU_USER=qemu
 QEMU_GROUP=kvm
 SNLK_GROUP=sanlock
 SNLK_USER=sanlock
 LIBVIRT_SOCK_GROUP=libvirtd
+CDROM_GROUP=cdrom
 
 INSTALLDIR="install -dDm 0755 -o $VDSM_USER -g $VDSM_GROUP"
 
@@ -35,6 +37,7 @@ case "$1" in
         #    -s /bin/false -c "sanlock service" "$SNLK_USER"
         usermod -a -G "$QEMU_GROUP","$SNLK_GROUP","$LIBVIRT_SOCK_GROUP" "$VDSM_USER"
         usermod -a -G "$QEMU_GROUP","$VDSM_GROUP" "$SNLK_USER"
+        usermod -a -G "$CDROM_GROUP" "$QEMU_USER"
 
         start_conf_section="## beginning of configuration section by vdsm"
         end_conf_section="## end of configuration section by vdsm"
