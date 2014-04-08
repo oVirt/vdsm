@@ -5875,6 +5875,9 @@
 #                      Migration, when there is one active.
 #                      (new in version 4.15.0)
 #
+# @guestCPUCount:         The number of CPU cores are visible as online on the
+#                         guest OS. This value is -1 if not supported to report
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -5894,7 +5897,7 @@
           'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo'],
           '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
-          '*migrationProgress': 'uint'}}
+          '*migrationProgress': 'uint', 'guestCPUCount': 'int'}}
 
 ##
 # @VmStats:

@@ -30,7 +30,7 @@ import supervdsm
 
 from . import vmstatus
 
-_MAX_SUPPORTED_API_VERSION = 0
+_MAX_SUPPORTED_API_VERSION = 1
 _IMPLICIT_API_VERSION_ZERO = 0
 
 _MESSAGE_API_VERSION_LOOKUP = {}
@@ -122,6 +122,7 @@ class GuestAgent ():
         self.guestInfo = {
             'username': user,
             'memUsage': 0,
+            'guestCPUCount': -1,
             'guestIPs': ips,
             'guestFQDN': '',
             'session': 'Unknown',
@@ -301,6 +302,8 @@ class GuestAgent ():
                 disk['used'] = str(disk['used'])
                 disks.append(disk)
             self.guestInfo['disksUsage'] = disks
+        elif message == 'number-of-cpus':
+            self.guestInfo['guestCPUCount'] = int(args['count'])
         else:
             self.log.error('Unknown message type %s', message)
 
@@ -331,6 +334,7 @@ class GuestAgent ():
                 'username': 'Unknown',
                 'session': 'Unknown',
                 'memUsage': 0,
+                'guestCPUCount': -1,
                 'appsList': self.guestInfo['appsList'],
                 'guestIPs': self.guestInfo['guestIPs'],
                 'guestFQDN': self.guestInfo['guestFQDN']}
