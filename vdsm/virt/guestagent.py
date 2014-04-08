@@ -33,7 +33,8 @@ from . import vmstatus
 _MAX_SUPPORTED_API_VERSION = 1
 _IMPLICIT_API_VERSION_ZERO = 0
 
-_MESSAGE_API_VERSION_LOOKUP = {}
+_MESSAGE_API_VERSION_LOOKUP = {
+    'set-number-of-cpus': 1}
 
 __REPLACEMENT_CHAR = u'\ufffd'
 __RESTRICTED_CHARS = set(range(8 + 1)). \
@@ -385,6 +386,10 @@ class GuestAgent ():
             self._forward(str(cmd))
         except:
             self.log.error("sendHcCmdToDesktop failed", exc_info=True)
+
+    def setNumberOfCPUs(self, count):
+        self.log.debug("setNumberOfCPUs('%d') called", count)
+        self._forward('set-number-of-cpus', {'count': count})
 
     @staticmethod
     def _onChannelTimeout(self):
