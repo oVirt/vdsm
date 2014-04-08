@@ -2516,19 +2516,10 @@ class Vm(object):
         if self.lastStatus == vmstatus.DOWN:
             return self._getExitedVmStats()
 
-        stats = {
-            'pid': self.conf['pid'],
-            'vmType': self.conf['vmType'],
-            'kvmEnable': self._kvmEnable}
-        if 'cdrom' in self.conf:
-            stats['cdrom'] = self.conf['cdrom']
-        if 'boot' in self.conf:
-            stats['boot'] = self.conf['boot']
-
+        stats = self._getConfigVmStats()
         stats.update(self._getRunningVmStats())
         stats.update(self._getVmStatus())
 
-        stats['acpiEnable'] = self.conf.get('acpiEnable', 'true')
         try:
             stats.update(self.guestAgent.getGuestInfo())
         except Exception:
@@ -2549,6 +2540,23 @@ class Vm(object):
             'exitReason': self.conf['exitReason']}
         if 'timeOffset' in self.conf:
             stats['timeOffset'] = self.conf['timeOffset']
+        return stats
+
+    def _getConfigVmStats(self):
+        """
+        provides all the stats which will not change after a VM is booted.
+        Please note that some values are provided by client (engine)
+        but can change as result as interaction with libvirt (display*)
+        """
+        stats = {
+            'pid': self.conf['pid'],
+            'vmType': self.conf['vmType'],
+            'kvmEnable': self._kvmEnable,
+            'acpiEnable': self.conf.get('acpiEnable', 'true')}
+        if 'cdrom' in self.conf:
+            stats['cdrom'] = self.conf['cdrom']
+        if 'boot' in self.conf:
+            stats['boot'] = self.conf['boot']
         return stats
 
     def _getRunningVmStats(self):
