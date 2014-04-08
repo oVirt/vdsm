@@ -2747,13 +2747,6 @@ class Vm(object):
                     if not k.startswith("_"))
 
     def getStats(self):
-        stats = self._getStatsInternal()
-        stats['hash'] = self._devXmlHash
-        if self._watchdogEvent:
-            stats["watchdogEvent"] = self._watchdogEvent
-        return stats
-
-    def _getStatsInternal(self):
         """
         used by API.Vm.getStats
 
@@ -2841,6 +2834,9 @@ class Vm(object):
                                    exc_info=True)
 
         stats.update(self._getGraphicsStats())
+        stats['hash'] = self._devXmlHash
+        if self._watchdogEvent:
+            stats['watchdogEvent'] = self._watchdogEvent
         return stats
 
     def _getVmStatus(self):
