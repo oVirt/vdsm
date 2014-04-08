@@ -2559,17 +2559,7 @@ class Vm(object):
         stats = self._getConfigVmStats()
         stats.update(self._getRunningVmStats())
         stats.update(self._getVmStatus())
-
-        try:
-            stats.update(self.guestAgent.getGuestInfo())
-        except Exception:
-            return stats
-        memUsage = 0
-        realMemUsage = int(stats['memUsage'])
-        if realMemUsage != 0:
-            memUsage = (100 - float(realMemUsage) /
-                        int(self.conf['memSize']) * 100)
-        stats['memUsage'] = utils.convertToStr(int(memUsage))
+        stats.update(self._getGuestStats())
         return stats
 
     def _getExitedVmStats(self):
@@ -2692,6 +2682,19 @@ class Vm(object):
             'displayPort': self.conf['displayPort'],
             'displaySecurePort': self.conf['displaySecurePort'],
             'displayIp': self.conf['displayIp']}
+
+    def _getGuestStats(self):
+        stats = {}
+        if self.guestAgent:
+            stats.update(self.guestAgent.getGuestInfo())
+            realMemUsage = int(stats['memUsage'])
+            if realMemUsage != 0:
+                memUsage = (100 - float(realMemUsage) /
+                            int(self.conf['memSize']) * 100)
+            else:
+                memUsage = 0
+            stats['memUsage'] = utils.convertToStr(memUsage)
+        return stats
 
     def isMigrating(self):
         return self._migrationSourceThread.isAlive()
