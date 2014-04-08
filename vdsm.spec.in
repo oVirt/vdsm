@@ -6,9 +6,11 @@
 # Required users and groups
 %global vdsm_user @VDSMUSER@
 %global vdsm_group @VDSMGROUP@
+%global qemu_user @QEMUUSER@
 %global qemu_group @QEMUGROUP@
 %global snlk_group @SNLKGROUP@
 %global snlk_user @SNLKUSER@
+%global cdrom_group @CDROMGROUP@
 
 # Fedora official build
 %global fedora_koji_build 0
@@ -690,6 +692,7 @@ export LC_ALL=C
     /usr/sbin/useradd -r -u 36 -g %{vdsm_group} -d /var/lib/vdsm \
         -s /sbin/nologin -c "Node Virtualization Manager" %{vdsm_user}
 /usr/sbin/usermod -a -G %{qemu_group},%{snlk_group} %{vdsm_user}
+/usr/sbin/usermod -a -G %{cdrom_group} %{qemu_user}
 
 %post
 %{_bindir}/vdsm-tool configure --module sanlock --force

@@ -118,6 +118,7 @@ AC_SUBST([METADATAUSER], [vdsm])
 AC_SUBST([METADATAGROUP], [kvm])
 AC_SUBST([SNLKUSER], [sanlock])
 AC_SUBST([SNLKGROUP], [sanlock])
+AC_SUBST([CDROMGROUP], [cdrom])
 
 # VDSM default paths
 AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])
