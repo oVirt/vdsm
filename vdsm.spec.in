@@ -190,46 +190,26 @@ Requires: lvm2 >= 2.02.100-5
 Requires: logrotate < 3.8.0
 %endif
 %else
-%if 0%{?fedora} >= 19
 Requires: python-pthreading >= 0.1.2
 Requires: fence-agents-all
 Requires: kernel >= 3.11.3-201
-%else
-Requires: python-pthreading
-Requires: fence-agents
-Requires: kernel >= 3.6
-%endif
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
 Requires: qemu-kvm >= 2:0.15.0-4
 Requires: qemu-img >= 2:0.15.0-4
 Requires: python-ethtool >= 0.8-1
-%if 0%{?fedora} >= 18
 Requires: initscripts >= 9.42.2-1
-%endif
 Requires: device-mapper-multipath >= 0.4.9-18
 Requires: e2fsprogs >= 1.41.14
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
-%if 0%{?fedora} >= 19
 Requires: lvm2 >= 2.02.98-15
-%else
-Requires: lvm2 >= 2.02.103
-%endif
-
-%if 0%{?fedora} >= 18
-%if 0%{?fedora} >= 19
 Requires: selinux-policy-targeted >= 3.12.1-71
-%else
-Requires: selinux-policy-targeted >= 3.11.1-103
-%endif
 # In order to avoid a policycoreutils bug (rhbz 889698) when selinux is
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-55
 Requires: systemd >= 197-1.fc18.2
-%endif
-
 %endif
 
 # GlusterFS client-side RPMs needed for Gluster SD
