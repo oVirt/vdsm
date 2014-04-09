@@ -49,11 +49,13 @@ tobool
 
 
 def read_domxml():
-    return minidom.parseString(file(os.environ['_hook_domxml']).read())
+    with open(os.environ['_hook_domxml']) as f:
+        return minidom.parseString(f.read())
 
 
 def write_domxml(domxml):
-    file(os.environ['_hook_domxml'], 'w').write(domxml.toxml(encoding='utf-8'))
+    with open(os.environ['_hook_domxml'], 'w') as f:
+        f.write(domxml.toxml(encoding='utf-8'))
 
 
 def exit_hook(message, return_code=2):
