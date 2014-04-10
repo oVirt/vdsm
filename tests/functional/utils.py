@@ -19,10 +19,12 @@
 from collections import namedtuple
 from contextlib import contextmanager
 from functools import wraps
+import socket
 import time
 import threading
 
 from vdsm.config import config
+from vdsm.utils import retry
 from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import vdscli
@@ -67,6 +69,9 @@ class VdsProxy(object):
     """
 
     def __init__(self):
+        retry(self.start, (socket.error, KeyError), tries=30)
+
+    def start(self):
         self.vdscli = vdscli.connect()
         self.netinfo = \
             netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
