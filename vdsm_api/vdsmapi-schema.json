@@ -167,6 +167,9 @@
 # @defaultRoute:  #optional boolean - Is this network's gateway the host's
 #                 default gateway?
 #
+# @custom:        #optional A dictionary of custom, free-form properties for network.
+#                 (new in version 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'SetupNetworkNetAttributes',
@@ -175,7 +178,8 @@
           '*remove': 'bool',
           '*qosInbound': 'BandwidthParams',
           '*qosOutbound': 'BandwidthParams',
-          '*defaultRoute': 'bool'}}
+          '*defaultRoute': 'bool',
+          '*custom': 'StringMap'}}
 ##
 # @SetupNetworkBondAttributes:
 #
