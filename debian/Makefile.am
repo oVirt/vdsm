@@ -39,6 +39,8 @@ EXTRA_DIST = \
     vdsm-hook-checkimages.install \
     vdsm-hook-directlun.docs \
     vdsm-hook-directlun.install \
+    vdsm-hook-ethtool-options.docs \
+    vdsm-hook-ethtool-options.install \
     vdsm-hook-extnet.docs \
     vdsm-hook-extnet.install \
     vdsm-hook-faqemu.docs \

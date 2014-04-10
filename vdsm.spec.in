@@ -366,6 +366,15 @@ Requires:       %{name}
 VDSM hook used to perform consistency check on a qcow2 format disk image
 using the QEMU disk image utility.
 
+%package hook-ethtool-options
+Summary:        Allow setting custom ethtool options for vdsm controlled nics
+BuildArch:      noarch
+Requires:       %{name} = %{version}-%{release}
+
+%description hook-ethtool-options
+VDSM hook used for applying custom network properties that define ethtool
+options for vdsm network nics
+
 %if 0%{?with_vhostmd}
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
@@ -1227,6 +1236,10 @@ exit 0
 %defattr(-, root, root, -)
 %doc COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qemucmdline
+
+%files hook-ethtool-options
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/30_ethtool_options
 
 %if 0%{?with_hooks}
 %files hook-checkimages

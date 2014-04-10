@@ -155,6 +155,12 @@ Description: Qcow2 disk image format check hook for VDSM
  VDSM hook used to perform consistency check on a qcow2 format disk image
  using the QEMU disk image utility.
 
+Package: vdsm-hook-ethtool-options
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: VDSM hook used for applying custom network properties that define
+ ethtool options for vdsm network nics
+
 Package: vdsm-hook-vhostmd
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
