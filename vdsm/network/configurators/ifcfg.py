@@ -584,7 +584,7 @@ class ConfigWriter(object):
             else:
                 cfg += 'IPV6_AUTOCONF=%s\n' % 'no'
         BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'VLAN', 'bondingOptions',
-                     'force', 'blockingdhcp',
+                     'force', 'blockingdhcp', 'custom',
                      'connectivityCheck', 'connectivityTimeout',
                      'implicitBonding', 'delay', 'onboot', 'forward_delay',
                      'DELAY', 'ONBOOT']

@@ -60,6 +60,7 @@ IP_GATEWAY = '240.0.0.254'
 IP_TABLE = '4026531841'
 DHCP_RANGE_FROM = '240.0.0.10'
 DHCP_RANGE_TO = '240.0.0.100'
+CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
 
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ff'
@@ -1643,11 +1644,14 @@ class NetworkTest(TestCaseBase):
                    "with open(hook_data, 'r') as network_config_file:\n"
                    "    network_config = json.load(network_config_file)\n"
                    "\n"
+                   "network = network_config['request']['networks']['" +
+                   NETWORK_NAME + "']\n"
+                   "assert network['custom'] == " + str(CUSTOM_PROPS) + "\n"
+                   "\n"
                    "# setup an output config file\n"
                    "cookie_file = open('%(cookiefile)s','w')\n"
                    "cookie_file.write(str(network_config) + '\\n')\n"
-                   "network_config['request']['networks']['" + NETWORK_NAME +
-                   "']['bridged'] = True\n"
+                   "network['bridged'] = True\n"
                    "\n"
                    "# output modified config back to the hook_data file\n"
                    "with open(hook_data, 'w') as network_config_file:\n"
@@ -1656,10 +1660,13 @@ class NetworkTest(TestCaseBase):
     def testBeforeNetworkSetupHook(self, hook_cookiefile):
         with dummyIf(1) as nics:
             nic, = nics
+            # Test that the custom network properties reach the hook
             networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
+                                       'custom': CUSTOM_PROPS,
                                        'bootproto': 'none'}}
             with self.vdsm_net.pinger():
-                self.vdsm_net.setupNetworks(networks, {}, {})
+                status, msg = self.vdsm_net.setupNetworks(networks, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME, bridged=True)
 
                 self.assertTrue(os.path.isfile(hook_cookiefile))
