@@ -148,5 +148,6 @@
 ./usr/share/vdsm/virt/vmexitreason.py
 ./usr/share/vdsm/virt/vmpowerdown.py
 ./usr/share/vdsm/virt/vmstatus.py
+./usr/share/vdsm/virt/vmxml.py
 ./usr/share/vdsm/virt/utils.py
 ./var/lib/polkit-1/localauthority/10-vendor.d/10-vdsm-libvirt-access.pkla

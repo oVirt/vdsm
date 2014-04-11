@@ -22,7 +22,7 @@ import itertools
 from copy import deepcopy
 import logging
 
-from .utils import XMLElement
+from . import vmxml
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def io_tune_values_to_dom(values, dom):
     for op, unit in itertools.product(ops, units):
         name = op + "_" + unit + "_sec"
         if name in values and values[name] >= 0:
-            el = XMLElement(name)
+            el = vmxml.Element(name)
             el.appendTextNode(str(values[name]))
             dom.appendChild(el)
 
@@ -102,7 +102,7 @@ def io_tune_to_dom(tune):
     :param tune: Dictionary representation of VmDiskDeviceTuneLimits
     :return: DOM XML of device node filled with values
     """
-    device = XMLElement("device")
+    device = vmxml.Element("device")
 
     if "name" in tune and tune["name"]:
         device.setAttribute("name", tune["name"])
@@ -111,12 +111,12 @@ def io_tune_to_dom(tune):
         device.setAttribute("path", tune["path"])
 
     if "maximum" in tune:
-        maximum = XMLElement("maximum")
+        maximum = vmxml.Element("maximum")
         device.appendChild(maximum)
         io_tune_values_to_dom(tune["maximum"], maximum)
 
     if "guaranteed" in tune:
-        guaranteed = XMLElement("guaranteed")
+        guaranteed = vmxml.Element("guaranteed")
         device.appendChild(guaranteed)
         io_tune_values_to_dom(tune["guaranteed"], guaranteed)
 

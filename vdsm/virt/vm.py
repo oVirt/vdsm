@@ -65,9 +65,10 @@ from . import vmexitreason
 from . import vmstatus
 from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
+from . import vmxml
 
 from .sampling import AdvancedStatsFunction, AdvancedStatsThread
-from .utils import isVdsmImage, XMLElement
+from .utils import isVdsmImage
 from vmpowerdown import VmShutdown, VmReboot
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
@@ -688,7 +689,7 @@ class _DomXML:
             domainAttrs['xmlns:qemu'] = \
                 'http://libvirt.org/schemas/domain/qemu/1.0'
 
-        self.dom = XMLElement('domain', **domainAttrs)
+        self.dom = vmxml.Element('domain', **domainAttrs)
         self.doc.appendChild(self.dom)
 
         self.dom.appendChildWithArgs('name', text=self.conf['vmName'])
@@ -703,13 +704,13 @@ class _DomXML:
             self.conf.get('memGuaranteedSize', '0')
         ))
 
-        memtune = XMLElement('memtune')
+        memtune = vmxml.Element('memtune')
         self.dom.appendChild(memtune)
 
         memtune.appendChildWithArgs('min_guarantee',
                                     text=memSizeGuaranteedKB)
 
-        self._devices = XMLElement('devices')
+        self._devices = vmxml.Element('devices')
         self.dom.appendChild(self._devices)
 
     def appendClock(self):
@@ -721,8 +722,8 @@ class _DomXML:
         </clock>
         """
 
-        m = XMLElement('clock', offset='variable',
-                       adjustment=str(self.conf.get('timeOffset', 0)))
+        m = vmxml.Element('clock', offset='variable',
+                          adjustment=str(self.conf.get('timeOffset', 0)))
         rtc = m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
         if utils.tobool(self.conf.get('hypervEnable', 'false')):
             rtc.setAttrs(track='guest')
@@ -747,7 +748,7 @@ class _DomXML:
         </os>
         """
 
-        oselem = XMLElement('os')
+        oselem = vmxml.Element('os')
         self.dom.appendChild(oselem)
 
         DEFAULT_MACHINES = {caps.Architecture.X86_64: 'pc',
@@ -796,10 +797,10 @@ class _DomXML:
         </sysinfo>
         """
 
-        sysinfoelem = XMLElement('sysinfo', type='smbios')
+        sysinfoelem = vmxml.Element('sysinfo', type='smbios')
         self.dom.appendChild(sysinfoelem)
 
-        syselem = XMLElement('system')
+        syselem = vmxml.Element('system')
         sysinfoelem.appendChild(syselem)
 
         def appendEntry(k, v):
@@ -837,7 +838,7 @@ class _DomXML:
             features.appendChildWithArgs('acpi')
 
         if utils.tobool(self.conf.get('hypervEnable', 'false')):
-            hyperv = XMLElement('hyperv')
+            hyperv = vmxml.Element('hyperv')
             features.appendChild(hyperv)
 
             hyperv.appendChildWithArgs('relaxed', state='on')
@@ -856,7 +857,7 @@ class _DomXML:
         </cpu>
         """
 
-        cpu = XMLElement('cpu')
+        cpu = vmxml.Element('cpu')
 
         if self.arch in (caps.Architecture.X86_64):
             cpu.setAttrs(match='exact')
@@ -900,7 +901,7 @@ class _DomXML:
         # CPU-pinning support
         # see http://www.ovirt.org/wiki/Features/Design/cpu-pinning
         if 'cpuPinning' in self.conf:
-            cputune = XMLElement('cputune')
+            cputune = vmxml.Element('cputune')
             cpuPinning = self.conf.get('cpuPinning')
             for cpuPin in cpuPinning.keys():
                 cputune.appendChildWithArgs('vcpupin', vcpu=cpuPin,
@@ -910,7 +911,7 @@ class _DomXML:
         # Guest numa topology support
         # see http://www.ovirt.org/Features/NUMA_and_Virtual_NUMA
         if 'guestNumaNodes' in self.conf:
-            numa = XMLElement('numa')
+            numa = vmxml.Element('numa')
             guestNumaNodes = sorted(
                 self.conf.get('guestNumaNodes'), key=itemgetter('nodeIndex'))
             for vmCell in guestNumaNodes:
@@ -936,7 +937,7 @@ class _DomXML:
             numaTune = self.conf.get('numaTune')
             if 'nodeset' in numaTune.keys():
                 mode = numaTune.get('mode', 'strict')
-                numatune = XMLElement('numatune')
+                numatune = vmxml.Element('numatune')
                 numatune.appendChildWithArgs('memory', mode=mode,
                                              nodeset=numaTune['nodeset'])
                 self.dom.appendChild(numatune)
@@ -948,7 +949,7 @@ class _DomXML:
              <source mode='bind' path='/tmp/socket'/>
           </channel>
         """
-        channel = XMLElement('channel', type='unix')
+        channel = vmxml.Element('channel', type='unix')
         channel.appendChildWithArgs('target', type='virtio', name=name)
         channel.appendChildWithArgs('source', mode='bind', path=path)
         self._devices.appendChild(channel)
@@ -980,7 +981,7 @@ class _DomXML:
                 <qemu:arg value='keyboard'/>
             </qemu:commandline>
         """
-        commandLine = XMLElement('qemu:commandline')
+        commandLine = vmxml.Element('qemu:commandline')
         commandLine.appendChildWithArgs('qemu:arg', value='-usbdevice')
         commandLine.appendChildWithArgs('qemu:arg', value='keyboard')
         self.dom.appendChild(commandLine)
@@ -988,7 +989,7 @@ class _DomXML:
     def appendEmulator(self):
         emulatorPath = '/usr/bin/qemu-system-' + self.arch
 
-        emulator = XMLElement('emulator', text=emulatorPath)
+        emulator = vmxml.Element('emulator', text=emulatorPath)
 
         self._devices.appendChild(emulator)
 
@@ -1029,7 +1030,7 @@ class VmDevice(object):
         Create domxml device element according to passed in params
         """
         elemAttrs = {}
-        element = XMLElement(elemType)
+        element = vmxml.Element(elemType)
 
         if deviceType:
             elemAttrs['type'] = deviceType
@@ -1421,7 +1422,7 @@ class Drive(VmDevice):
         # when libvirt will support shared leases this will loop over all the
         # volumes
         for volInfo in self.volumeChain[-1:]:
-            lease = XMLElement('lease')
+            lease = vmxml.Element('lease')
             lease.appendChildWithArgs('key', text=volInfo['volumeID'])
             lease.appendChildWithArgs('lockspace',
                                       text=volInfo['domainID'])
@@ -1442,7 +1443,7 @@ class Drive(VmDevice):
         """
         self.device = getattr(self, 'device', 'disk')
 
-        source = XMLElement('source')
+        source = vmxml.Element('source')
         if self.blockDev:
             deviceType = 'block'
             source.setAttrs(dev=self.path)
@@ -1511,7 +1512,7 @@ class Drive(VmDevice):
 
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
             self._validateIoTuneParams(self.specParams['ioTune'])
-            iotune = XMLElement('iotune')
+            iotune = vmxml.Element('iotune')
             for key, value in self.specParams['ioTune'].iteritems():
                 iotune.appendChildWithArgs(key, text=str(value))
             diskelem.appendChild(iotune)
@@ -1553,7 +1554,7 @@ class GraphicsDevice(VmDevice):
             self.specParams.get('displayNetwork'))
 
     def getSpiceVmcChannelsXML(self):
-        vmc = XMLElement('channel', type='spicevmc')
+        vmc = vmxml.Element('channel', type='spicevmc')
         vmc.appendChildWithArgs('target', type='virtio',
                                 name='com.redhat.spice.0')
         return vmc
@@ -1602,10 +1603,10 @@ class GraphicsDevice(VmDevice):
         if 'keyMap' in self.specParams:
             graphicsAttrs['keymap'] = self.specParams['keyMap']
 
-        graphics = XMLElement('graphics', **graphicsAttrs)
+        graphics = vmxml.Element('graphics', **graphicsAttrs)
 
         if not utils.tobool(self.specParams.get('copyPasteEnable', True)):
-            clipboard = XMLElement('clipboard', copypaste='no')
+            clipboard = vmxml.Element('clipboard', copypaste='no')
             graphics.appendChild(clipboard)
 
         if (self.device == 'spice' and
@@ -3704,7 +3705,7 @@ class Vm(object):
             if vcpuLimit:
                 qos.removeChild(vcpuLimit[0])
 
-            vcpuLimit = XMLElement("vcpuLimit")
+            vcpuLimit = vmxml.Element("vcpuLimit")
             vcpuLimit.appendTextNode(str(params["vcpuLimit"]))
             qos.appendChild(vcpuLimit)
 
@@ -3715,7 +3716,7 @@ class Vm(object):
             # Make sure the top level element exists
             ioTuneList = qos.getElementsByTagName("ioTune")
             if not ioTuneList:
-                ioTuneElement = XMLElement("ioTune")
+                ioTuneElement = vmxml.Element("ioTune")
                 ioTuneList.append(ioTuneElement)
                 qos.appendChild(ioTuneElement)
                 metadata_modified = True
@@ -3843,7 +3844,7 @@ class Vm(object):
             #       see https://bugzilla.redhat.com/show_bug.cgi?id=1114492
             if io_dom_list:
                 dom.removeChild(io_dom_list[0])
-            io_dom = XMLElement("iotune")
+            io_dom = vmxml.Element("iotune")
             io_tune_values_to_dom(io_tune, io_dom)
             dom.appendChild(io_dom)
             found_device.specParams['ioTune'] = io_tune
@@ -4176,8 +4177,8 @@ class Vm(object):
         def _diskSnapshot(vmDev, newPath, sourceType):
             """Libvirt snapshot XML"""
 
-            disk = XMLElement('disk', name=vmDev, snapshot='external',
-                              type=sourceType)
+            disk = vmxml.Element('disk', name=vmDev, snapshot='external',
+                                 type=sourceType)
             # Libvirt versions before 1.2.2 do not understand 'type' and treat
             # all snapshots as if they are type='file'.  In order to ensure
             # proper handling of block snapshots in modern libvirt versions,
@@ -4721,7 +4722,7 @@ class Vm(object):
             path = self.cif.prepareVolumePath(drivespec)
         except VolumeError:
             return errCode['imageErr']
-        diskelem = XMLElement('disk', type='file', device=vmDev)
+        diskelem = vmxml.Element('disk', type='file', device=vmDev)
         diskelem.appendChildWithArgs('source', file=path)
         diskelem.appendChildWithArgs('target', dev=blockdev)
 

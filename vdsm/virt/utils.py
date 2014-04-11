@@ -22,8 +22,6 @@
 shared utilities and common code for the virt package
 """
 
-import xml
-
 
 def isVdsmImage(drive):
     """
@@ -35,31 +33,3 @@ def isVdsmImage(drive):
     """
     required = ('domainID', 'imageID', 'poolID', 'volumeID')
     return all(k in drive for k in required)
-
-
-class XMLElement(object):
-
-    def __init__(self, tagName, text=None, **attrs):
-        self._elem = xml.dom.minidom.Document().createElement(tagName)
-        self.setAttrs(**attrs)
-        if text is not None:
-            self.appendTextNode(text)
-
-    def __getattr__(self, name):
-        return getattr(self._elem, name)
-
-    def setAttrs(self, **attrs):
-        for attrName, attrValue in attrs.iteritems():
-            self._elem.setAttribute(attrName, attrValue)
-
-    def appendTextNode(self, text):
-        textNode = xml.dom.minidom.Document().createTextNode(text)
-        self._elem.appendChild(textNode)
-
-    def appendChild(self, element):
-        self._elem.appendChild(element)
-
-    def appendChildWithArgs(self, childName, text=None, **attrs):
-        child = XMLElement(childName, text, **attrs)
-        self._elem.appendChild(child)
-        return child

@@ -32,5 +32,6 @@ dist_vdsm_virt_PYTHON = \
 	vmpowerdown.py \
 	vmstatus.py \
 	vmtune.py \
+	vmxml.py \
 	utils.py \
 	$(NULL)
