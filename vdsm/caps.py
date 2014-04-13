@@ -390,6 +390,34 @@ def getTargetArch():
         return platform.machine()
 
 
+def _getSELinuxEnforceMode():
+    """
+    Returns the SELinux mode as reported by kernel.
+
+    1 = enforcing - SELinux security policy is enforced.
+    0 = permissive - SELinux prints warnings instead of enforcing.
+    -1 = disabled - No SELinux policy is loaded.
+    """
+    selinux_mnts = ['/sys/fs/selinux', '/selinux']
+    for mnt in selinux_mnts:
+        enforce_path = os.path.join(mnt, 'enforce')
+        if not os.path.exists(enforce_path):
+            continue
+
+        with open(enforce_path) as fileStream:
+            return int(fileStream.read().strip())
+
+    # Assume disabled if cannot find
+    return -1
+
+
+def _getSELinux():
+    selinux = dict()
+    selinux['mode'] = str(_getSELinuxEnforceMode())
+
+    return selinux
+
+
 def get():
     targetArch = getTargetArch()
 
@@ -458,6 +486,8 @@ def get():
     caps['numaNodes'] = _getNumaTopology()
     caps['numaNodeDistance'] = _getNumaNodeDistance()
     caps['autoNumaBalancing'] = _getAutoNumaBalancingInfo()
+
+    caps['selinux'] = _getSELinux()
 
     return caps
 

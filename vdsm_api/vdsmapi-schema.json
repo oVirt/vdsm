@@ -1039,6 +1039,20 @@
  'data': {'cpus': 'str', 'memory': 'int'}}
 
 ##
+# @SELinuxStatus:
+#
+# Information about host SELinux.
+#
+# @mode:        The policy enforcement mode.
+#               Values are (from SELinux documentation):
+#               1 = enforcing, 0 = permissive, -1 = disabled.
+#
+# Since: 4.15.0
+##
+{'type': 'SELinuxStatus',
+ 'data': {'mode': 'int'}}
+
+##
 # @VdsmCapabilities:
 #
 # Host information and capabilities.
@@ -1112,7 +1126,9 @@
 #
 # @autoNumaBalancing:   The status of auto numa balancing function
 #
-# Since: 4.10.0
+# @selinux:             The status and configuration of SELinux on the host.
+#
+# Since: 4.15.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
 #        the current API truncates @software_version to 'x.y'.
@@ -1134,7 +1150,8 @@
           'guestOverhead': 'uint', 'netConfigDirty': 'bool',
           'rngSources': ['VmRngDeviceSource'], 'numaNodes': 'NumaNodeMap',
           'numaNodeDistance': 'NumaNodeDistanceMap',
-          'autoNumaBalancing': 'AutoNumaBalancingStatus'}}
+          'autoNumaBalancing': 'AutoNumaBalancingStatus',
+          'selinux': 'SELinuxStatus'}}
 
 ##
 # @Host.getCapabilities:
