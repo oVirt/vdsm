@@ -1172,14 +1172,7 @@ class Image:
         finally:
             domain.deactivateImage(imgUUID)
 
-    def downloadFromStream(self, methodArgs, callback, sdUUID, imgUUID,
-                           volUUID=None):
-        try:
-            self._downloadFromStream(methodArgs, sdUUID, imgUUID, volUUID)
-        finally:
-            callback()
-
-    def _downloadFromStream(self, methodArgs, sdUUID, imgUUID, volUUID=None):
+    def downloadFromStream(self, methodArgs, sdUUID, imgUUID, volUUID=None):
         domain = sdCache.produce(sdUUID)
 
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)

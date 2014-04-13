@@ -1637,9 +1637,11 @@ class StoragePool(object):
             rm.LockType.exclusive)
 
         with imgResourceLock:
-            return image.Image(self.poolPath) \
-                .downloadFromStream(methodArgs, callback, sdUUID, imgUUID,
-                                    volUUID)
+            try:
+                return image.Image(self.poolPath) \
+                    .downloadFromStream(methodArgs, sdUUID, imgUUID, volUUID)
+            finally:
+                callback()
 
     def moveMultipleImages(self, srcDomUUID, dstDomUUID, imgDict, vmUUID,
                            force):
