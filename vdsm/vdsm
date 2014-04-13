@@ -91,7 +91,12 @@ def serve_clients(log):
 
 
 def run(pidfile=None):
-    lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
+    try:
+        lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
+    except RuntimeError as e:
+        syslog.syslog('Failed to initialize logging: %s.' % e.message)
+        sys.exit(1)
+
     logging.addLevelName(5, 'TRACE')
     logging.TRACE = 5  # impolite but helpful
 

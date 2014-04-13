@@ -43,8 +43,8 @@ formatter=sysform
 args=('/dev/log', handlers.SysLogHandler.LOG_USER)
 
 [handler_logfile]
-class=logging.handlers.WatchedFileHandler
-args=('@VDSMLOGDIR@/vdsm.log',)
+class=logUtils.UserGroupEnforcingHandler
+args=('@VDSMUSER@', '@VDSMGROUP@', '@VDSMLOGDIR@/vdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG
 formatter=long

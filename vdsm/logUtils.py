@@ -18,7 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import grp
 import logging
+import logging.handlers
+import os
+import pwd
 import sys
 from functools import wraps
 from inspect import ismethod
@@ -163,3 +167,25 @@ class QueueHandler(logging.Handler):
             raise
         except:
             self.handleError(record)
+
+
+class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
+    """
+    This log handler acts like WatchedFileHandler.
+    Additionally, upon file access, handler check the credentials of running
+    process,to make sure log is not created with wrong permissions by mistake.
+    """
+
+    def __init__(self, user, group, *args, **kwargs):
+        self._uid = pwd.getpwnam(user).pw_uid
+        self._gid = grp.getgrnam(group).gr_gid
+        logging.handlers.WatchedFileHandler.__init__(self, *args, **kwargs)
+
+        # To trigger cred check:
+        self._open()
+
+    def _open(self):
+        if (os.geteuid() != self._uid) or (os.getegid() != self._gid):
+            raise RuntimeError(
+                "Attempt to open log with incorrect credentials")
+        return logging.handlers.WatchedFileHandler._open(self)
