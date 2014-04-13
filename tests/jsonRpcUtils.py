@@ -10,6 +10,7 @@ import os
 from yajsonrpc import \
     JsonRpcServer, \
     asyncoreReactor, \
+    stompReactor, \
     JsonRpcClientPool, \
     SSLContext
 
@@ -36,6 +37,14 @@ def getFreePort():
 
 
 @contextmanager
+def _stompServerConstructor():
+    port = getFreePort()
+    address = ("127.0.0.1", port)
+    reactorType = stompReactor.StompReactor
+    yield reactorType, address
+
+
+@contextmanager
 def _tcpServerConstructor():
     port = getFreePort()
     address = ("127.0.0.1", port)
@@ -56,7 +65,8 @@ def _protonServerConstructor():
 
 
 REACTOR_CONSTRUCTORS = {"tcp": _tcpServerConstructor,
-                        "amqp": _protonServerConstructor}
+                        "amqp": _protonServerConstructor,
+                        "stomp": _stompServerConstructor}
 REACTOR_TYPE_PERMUTATIONS = [[r] for r in REACTOR_CONSTRUCTORS.iterkeys()]
 CONNECTION_PERMUTATIONS = tuple(product(REACTOR_CONSTRUCTORS.iterkeys(),
                                         (True, False)))

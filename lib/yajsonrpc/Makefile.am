@@ -25,5 +25,7 @@ dist_yajsonrpc_PYTHON = \
 	asyncoreReactor.py \
 	betterAsyncore.py \
 	protonReactor.py \
+	stompReactor.py \
+	stomp.py \
 	$(NULL)
 

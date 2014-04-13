@@ -41,6 +41,9 @@ class SSLSocket(object):
         self.connection = connection
         self.__wctx = wrappedContext
 
+    def pending(self):
+        return self.connection.pending()
+
     def get_context(self):
         return self.__wctx
 

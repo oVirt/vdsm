@@ -21,6 +21,7 @@ _Size = struct.Struct("!Q")
 
 from yajsonrpc import JsonRpcServer
 from yajsonrpc.asyncoreReactor import AsyncoreReactor
+from yajsonrpc.stompReactor import StompReactor
 from yajsonrpc.betterAsyncore import SSLContext
 ProtonReactor = None
 try:
@@ -49,6 +50,9 @@ class BindingJsonRpc(object):
             if backendType not in reactors:
                 if backendType == "tcp":
                     reactors["tcp"] = self._createTcpReactor(truststore_path)
+                elif backendType == "stomp":
+                    reactors["stomp"] = \
+                        self._createStompReactor(truststore_path)
                 elif backendType == "amqp":
                     if ProtonReactor is None:
                         continue
@@ -67,6 +71,16 @@ class BindingJsonRpc(object):
         return self._reactors["tcp"].createListener((address, port),
                                                     self._onAccept)
 
+    def _createStompListener(self, cfg):
+        address = cfg.get("ip", "0.0.0.0")
+        try:
+            port = cfg["port"]
+        except KeyError:
+            raise ValueError("cfg")
+
+        return self._reactors["stomp"].createListener((address, port),
+                                                      self._onAccept)
+
     def _onAccept(self, listener, client):
         client.setMessageHandler(self.server.queueRequest)
 
@@ -83,6 +97,15 @@ class BindingJsonRpc(object):
             cert_file = truststore_path + '/certs/vdsmcert.pem'
             ca_cert = truststore_path + '/certs/cacert.pem'
             return AsyncoreReactor(SSLContext(cert_file, key_file, ca_cert))
+
+    def _createStompReactor(self, truststore_path=None):
+        if truststore_path is None:
+            return StompReactor()
+        else:
+            key_file = truststore_path + '/keys/vdsmkey.pem'
+            cert_file = truststore_path + '/certs/vdsmcert.pem'
+            ca_cert = truststore_path + '/certs/cacert.pem'
+            return StompReactor(SSLContext(cert_file, key_file, ca_cert))
 
     def _createProtonReactor(self):
         return ProtonReactor()
@@ -104,6 +127,8 @@ class BindingJsonRpc(object):
             try:
                 if backendType == "tcp":
                     self._createTcpListener(cfg)
+                if backendType == "stomp":
+                    self._createStompListener(cfg)
                 elif backendType == "amqp":
                     self._createProtonListener(cfg)
             except:

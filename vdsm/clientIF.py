@@ -168,7 +168,10 @@ class clientIF:
         truststore_path = None
         if config.getboolean('vars', 'ssl'):
             truststore_path = config.get('vars', 'trust_store_path')
-        conf = [('tcp', {"ip": ip, "port": port})]
+        # TODO: update config.py
+        conf = [('tcp', {"ip": ip, "port": port}),
+                ('amqp', {"ip": ip, "port": 5672}),
+                ('stomp', {"ip": ip, "port": 61613})]
         self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf,
                                                truststore_path)
 

@@ -1422,6 +1422,8 @@ exit 0
 %{python_sitelib}/yajsonrpc/asyncoreReactor.py*
 %{python_sitelib}/yajsonrpc/protonReactor.py*
 %{python_sitelib}/yajsonrpc/betterAsyncore.py*
+%{python_sitelib}/yajsonrpc/stomp.py*
+%{python_sitelib}/yajsonrpc/stompReactor.py*
 %else
 %exclude %{python_sitelib}/yajsonrpc
 %exclude %{_datadir}/%{vdsm_name}/Bridge.py*

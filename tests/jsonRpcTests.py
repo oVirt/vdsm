@@ -149,7 +149,10 @@ class ReactorTests(TestCaseBase):
 
 
 class _DummyBridge(object):
+    log = logging.getLogger("tests.DummyBridge")
+
     def echo(self, text):
+        self.log.info("ECHO: '%s'", text)
         return text
 
     def ping(self):
@@ -185,6 +188,7 @@ class JsonRpcServerTests(TestCaseBase):
         bridge = _DummyBridge()
         with constructServer(rt, bridge, ssl) as (server, clientFactory):
             with self._client(clientFactory) as client:
+                self.log.info("Calling 'echo'")
                 self.assertEquals(self._callTimeout(client, "echo", (data,),
                                   apiTests.id,
                                   CALL_TIMEOUT), data)
