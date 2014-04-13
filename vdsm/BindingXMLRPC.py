@@ -119,6 +119,7 @@ class BindingXMLRPC(object):
             HEADER_IMAGE = 'Image-Id'
             HEADER_VOLUME = 'Volume-Id'
             HEADER_TASK_ID = 'Task-Id'
+            HEADER_SIZE = 'Size'
             HEADER_CONTENT_LENGTH = 'content-length'
             HEADER_CONTENT_TYPE = 'content-type'
 
@@ -131,6 +132,45 @@ class BindingXMLRPC(object):
                 threadLocal.client = self.client_address[0]
                 threadLocal.server = self.request.getsockname()[0]
                 return basehandler.setup(self)
+
+            def do_GET(self):
+                try:
+                    length = self._getIntHeader(self.HEADER_SIZE,
+                                                httplib.BAD_REQUEST)
+                    img = self._createImage()
+                    startEvent = threading.Event()
+                    methodArgs = {'fileObj': self.wfile,
+                                  'length': length}
+
+                    uploadFinishedEvent, operationEndCallback = \
+                        self._createEventWithCallback()
+
+                    # Optional header
+                    volUUID = self.headers.getheader(self.HEADER_VOLUME)
+
+                    response = img.uploadToStream(methodArgs,
+                                                  operationEndCallback,
+                                                  startEvent, volUUID)
+
+                    if response['status']['code'] == 0:
+                        self.send_response(httplib.OK)
+                        self.send_header(self.HEADER_CONTENT_TYPE,
+                                         'application/octet-stream')
+                        self.send_header(self.HEADER_CONTENT_LENGTH, length)
+                        self.send_header(self.HEADER_TASK_ID, response['uuid'])
+                        self.end_headers()
+                        startEvent.set()
+                        self._waitForEvent(uploadFinishedEvent)
+                    else:
+                        self._send_error_response(response)
+
+                except self.RequestException as e:
+                    # This is an expected exception, so traceback is unneeded
+                    self.send_error(e.httpStatusCode, e.errorMessage)
+                except Exception:
+                    self.send_error(httplib.INTERNAL_SERVER_ERROR,
+                                    "error during execution",
+                                    exc_info=True)
 
             def do_PUT(self):
                 try:
@@ -160,14 +200,7 @@ class BindingXMLRPC(object):
                         self.send_header(self.HEADER_TASK_ID, response['uuid'])
                         self.end_headers()
                     else:
-                        self.send_response(httplib.INTERNAL_SERVER_ERROR)
-                        json_response = json.dumps(response)
-                        self.send_header(self.HEADER_CONTENT_TYPE,
-                                         'application/json')
-                        self.send_header(self.HEADER_CONTENT_LENGTH,
-                                         len(json_response))
-                        self.end_headers()
-                        self.wfile.write(json_response)
+                        self._send_error_response(response)
 
                 except self.RequestException as e:
                     self.send_error(e.httpStatusCode, e.errorMessage)
@@ -229,6 +262,16 @@ class BindingXMLRPC(object):
                 except Exception:
                     self.log.error("failed to return response",
                                    exc_info=True)
+
+            def _send_error_response(self, response):
+                self.send_response(httplib.INTERNAL_SERVER_ERROR)
+                json_response = json.dumps(response)
+                self.send_header(self.HEADER_CONTENT_TYPE,
+                                 'application/json')
+                self.send_header(self.HEADER_CONTENT_LENGTH,
+                                 len(json_response))
+                self.end_headers()
+                self.wfile.write(json_response)
 
             def parse_request(self):
                 r = basehandler.parse_request(self)

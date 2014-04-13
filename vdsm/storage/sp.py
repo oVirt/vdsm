@@ -1627,6 +1627,26 @@ class StoragePool(object):
             return image.Image(self.poolPath) \
                 .download(methodArgs, sdUUID, imgUUID, volUUID)
 
+    def uploadImageToStream(self, methodArgs, callback, startEvent, sdUUID,
+                            imgUUID, volUUID=None):
+        """
+        Retrieves an image from to a given file the specified method
+        and methodArgs.
+        """
+        while not startEvent.is_set():
+            startEvent.wait()
+
+        imgResourceLock = rmanager.acquireResource(
+            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            rm.LockType.shared)
+
+        with imgResourceLock:
+            try:
+                return image.Image(self.poolPath) \
+                    .copyFromImage(methodArgs, sdUUID, imgUUID, volUUID)
+            finally:
+                callback()
+
     def downloadImageFromStream(self, methodArgs, callback, sdUUID, imgUUID,
                                 volUUID=None):
         """

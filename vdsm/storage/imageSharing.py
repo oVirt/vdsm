@@ -98,6 +98,22 @@ def copyToImage(dstImgPath, methodArgs):
         raise
 
 
+def copyFromImage(dstImgPath, methodArgs):
+    fileObj = methodArgs['fileObj']
+    bytes_left = total_size = methodArgs['length']
+    cmd = [constants.EXT_DD, "if=%s" % dstImgPath, "bs=%s" % constants.MEGAB,
+           "count=%s" % (total_size / constants.MEGAB + 1)]
+
+    p = utils.execCmd(cmd, sync=False,
+                      deathSignal=signal.SIGKILL)
+    p.blocking = True
+    try:
+        _copyData(p.stdout, fileObj, bytes_left)
+    finally:
+        if p.returncode is None:
+            p.kill()
+
+
 def _copyData(inFile, outFile, totalSize):
     bytesToRead = totalSize
     while totalSize > 0:

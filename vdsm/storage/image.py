@@ -1172,6 +1172,15 @@ class Image:
         finally:
             domain.deactivateImage(imgUUID)
 
+    def copyFromImage(self, methodArgs, sdUUID, imgUUID, volUUID):
+        domain = sdCache.produce(sdUUID)
+
+        vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
+        try:
+            imageSharing.copyFromImage(vol.getVolumePath(), methodArgs)
+        finally:
+            domain.deactivateImage(imgUUID)
+
     def copyToImage(self, methodArgs, sdUUID, imgUUID, volUUID=None):
         domain = sdCache.produce(sdUUID)
 

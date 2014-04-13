@@ -1648,6 +1648,21 @@ class HSM:
                           methodArgs, sdUUID, imgUUID, volUUID)
 
     @public
+    def uploadImageToStream(self, methodArgs, callback, startEvent, spUUID,
+                            sdUUID, imgUUID, volUUID=None):
+        """
+        Uploads an image to a stream.
+
+        Warning: Internal use only.
+        """
+        sdCache.produce(sdUUID)
+        pool = self.getPool(spUUID)
+        # NOTE: this could become an hsm task
+        self._spmSchedule(spUUID, "uploadImageToStream",
+                          pool.uploadImageToStream, methodArgs, callback,
+                          startEvent, sdUUID, imgUUID, volUUID)
+
+    @public
     def downloadImageFromStream(self, methodArgs, callback, spUUID, sdUUID,
                                 imgUUID, volUUID=None):
         """
