@@ -19,7 +19,6 @@
 
 import logging
 import signal
-import socket
 
 import curlImgWrap
 from vdsm import constants
@@ -76,37 +75,14 @@ def httpUploadImage(srcImgPath, methodArgs):
 
 
 def streamDownloadImage(dstImgPath, methodArgs):
-    bytes_left = streamGetSize(methodArgs)
+    totalSize = streamGetSize(methodArgs)
     stream = methodArgs['fileObj']
 
     cmd = [constants.EXT_DD, "of=%s" % dstImgPath, "bs=%s" % constants.MEGAB]
     p = utils.execCmd(cmd, sudo=False, sync=False,
                       deathSignal=signal.SIGKILL)
     try:
-        while bytes_left > 0:
-            to_read = min(BUFFER_SIZE, bytes_left)
-
-            try:
-                data = stream.read(to_read)
-            except socket.timeout:
-                log.error("socket timeout")
-                raise se.MiscFileReadException()
-
-            if not data:
-                total_size = streamGetSize(methodArgs)
-                log.error("partial data %s from %s",
-                          total_size - bytes_left, total_size)
-                raise se.MiscFileReadException()
-
-            p.stdin.write(data)
-            # Process stdin is not a real file object but a wrapper using
-            # StringIO buffer. To ensure that we don't use more memory if we
-            # get data faster then dd read it from the pipe, we flush on every
-            # write. We can remove flush() we can limit the buffer size used
-            # by this stdin wrapper.
-            p.stdin.flush()
-            bytes_left = bytes_left - len(data)
-
+        _copyData(stream, p.stdin, totalSize)
         p.stdin.close()
         if not p.wait(WAIT_TIMEOUT):
             log.error("timeout waiting for dd process")
@@ -121,6 +97,33 @@ def streamDownloadImage(dstImgPath, methodArgs):
         if p.returncode is None:
             p.kill()
         raise
+
+
+def _copyData(inFile, outFile, totalSize):
+    bytesToRead = totalSize
+    while totalSize > 0:
+        toRead = min(BUFFER_SIZE, totalSize)
+
+        try:
+            data = inFile.read(toRead)
+        except IOError as e:
+            error = "error reading file: %s" % e
+            log.error(error)
+            raise se.MiscFileReadException(error)
+
+        if not data:
+            error = "partial data %s from %s" % \
+                    (bytesToRead - totalSize, bytesToRead)
+            log.error(error)
+            raise se.MiscFileReadException(error)
+
+        outFile.write(data)
+        # outFile may not be a real file object but a wrapper.
+        # To ensure that we don't use more memory as the input buffer size
+        # we flush on every write.
+        outFile.flush()
+
+        totalSize = totalSize - len(data)
 
 
 _METHOD_IMPLEMENTATIONS = {
