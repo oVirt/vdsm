@@ -26,7 +26,6 @@ import httplib
 import logging
 import libvirt
 import threading
-import socket
 import sys
 
 from vdsm import utils
@@ -34,8 +33,10 @@ from vdsm.define import doneCode, errCode
 from vdsm.netinfo import getDeviceByIP
 import API
 from vdsm.exception import VdsmException
+
 try:
     from gluster.api import getGlusterMethods
+
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
@@ -121,6 +122,11 @@ class BindingXMLRPC(object):
             HEADER_CONTENT_LENGTH = 'content-length'
             HEADER_CONTENT_TYPE = 'content-type'
 
+            class RequestException():
+                def __init__(self, httpStatusCode, errorMessage):
+                    self.httpStatusCode = httpStatusCode
+                    self.errorMessage = errorMessage
+
             def setup(self):
                 threadLocal.client = self.client_address[0]
                 threadLocal.server = self.request.getsockname()[0]
@@ -128,46 +134,24 @@ class BindingXMLRPC(object):
 
             def do_PUT(self):
                 try:
-                    contentLength = self.headers.getheader(
-                        self.HEADER_CONTENT_LENGTH)
-                    if not contentLength:
-                        self.send_error(httplib.LENGTH_REQUIRED,
-                                        "missing content length")
-                        return
+                    contentLength = self._getIntHeader(
+                        self.HEADER_CONTENT_LENGTH,
+                        httplib.LENGTH_REQUIRED)
 
-                    try:
-                        contentLength = int(contentLength)
-                    except ValueError:
-                        self.send_error(httplib.BAD_REQUEST,
-                                        "invalid content length %r" %
-                                        contentLength)
-                        return
-
-                    # Required headers
-                    spUUID = self.headers.getheader(self.HEADER_POOL)
-                    sdUUID = self.headers.getheader(self.HEADER_DOMAIN)
-                    imgUUID = self.headers.getheader(self.HEADER_IMAGE)
-                    if not all((spUUID, sdUUID, imgUUID)):
-                        self.send_error(httplib.BAD_REQUEST,
-                                        "missing or empty required header(s):"
-                                        " spUUID=%s sdUUID=%s imgUUID=%s"
-                                        % (spUUID, sdUUID, imgUUID))
-                        return
-
-                    # Optional headers
-                    volUUID = self.headers.getheader(self.HEADER_VOLUME)
-
-                    uploadFinishedEvent = threading.Event()
-
-                    def upload_finished():
-                        uploadFinishedEvent.set()
+                    img = self._createImage()
 
                     methodArgs = {'fileObj': self.rfile,
                                   'length': contentLength}
-                    image = API.Image(imgUUID, spUUID, sdUUID)
-                    response = image.downloadFromStream(methodArgs,
-                                                        upload_finished,
-                                                        volUUID)
+
+                    uploadFinishedEvent, operationEndCallback = \
+                        self._createEventWithCallback()
+
+                    # Optional header
+                    volUUID = self.headers.getheader(self.HEADER_VOLUME)
+
+                    response = img.downloadFromStream(methodArgs,
+                                                      operationEndCallback,
+                                                      volUUID)
 
                     if response['status']['code'] == 0:
                         while not uploadFinishedEvent.is_set():
@@ -185,13 +169,57 @@ class BindingXMLRPC(object):
                         self.end_headers()
                         self.wfile.write(json_response)
 
-                except socket.timeout:
-                    self.send_error(httplib.REQUEST_TIMEOUT,
-                                    "request timeout")
-
+                except self.RequestException as e:
+                    self.send_error(e.httpStatusCode, e.errorMessage)
                 except Exception:
                     self.send_error(httplib.INTERNAL_SERVER_ERROR,
-                                    "error during execution", exc_info=True)
+                                    "error during execution",
+                                    exc_info=True)
+
+            def _createImage(self):
+                # Required headers
+                spUUID = self.headers.getheader(self.HEADER_POOL)
+                sdUUID = self.headers.getheader(self.HEADER_DOMAIN)
+                imgUUID = self.headers.getheader(self.HEADER_IMAGE)
+                if not all((spUUID, sdUUID, imgUUID)):
+                    raise self.RequestException(
+                        httplib.BAD_REQUEST,
+                        "missing or empty required header(s):"
+                        " spUUID=%s sdUUID=%s imgUUID=%s"
+                        % (spUUID, sdUUID, imgUUID))
+
+                return API.Image(imgUUID, spUUID, sdUUID)
+
+            @staticmethod
+            def _createEventWithCallback():
+                operationFinishedEvent = threading.Event()
+
+                def setCallback():
+                    operationFinishedEvent.set()
+
+                return operationFinishedEvent, setCallback
+
+            @staticmethod
+            def _waitForEvent(event):
+                while not event.is_set():
+                    event.wait()
+
+            def _getIntHeader(self, headerName, missingError):
+                value = self.headers.getheader(
+                    headerName)
+                if not value:
+                    raise self.RequestException(
+                        missingError,
+                        "missing header %s" % headerName)
+
+                try:
+                    value = int(value)
+                except ValueError:
+                    raise self.RequestException(
+                        httplib.BAD_REQUEST,
+                        "invalid header value %r" % value)
+
+                return value
 
             def send_error(self, error, message, exc_info=False):
                 try:
