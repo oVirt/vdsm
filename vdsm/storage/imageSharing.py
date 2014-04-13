@@ -60,8 +60,8 @@ def httpGetSize(methodArgs):
     return size
 
 
-def streamGetSize(methodArgs):
-    return methodArgs['contentLength']
+def getLengthFromArgs(methodArgs):
+    return methodArgs['length']
 
 
 def httpDownloadImage(dstImgPath, methodArgs):
@@ -74,15 +74,14 @@ def httpUploadImage(srcImgPath, methodArgs):
                        methodArgs.get("headers", {}))
 
 
-def streamDownloadImage(dstImgPath, methodArgs):
-    totalSize = streamGetSize(methodArgs)
-    stream = methodArgs['fileObj']
-
+def copyToImage(dstImgPath, methodArgs):
+    totalSize = getLengthFromArgs(methodArgs)
+    fileObj = methodArgs['fileObj']
     cmd = [constants.EXT_DD, "of=%s" % dstImgPath, "bs=%s" % constants.MEGAB]
     p = utils.execCmd(cmd, sudo=False, sync=False,
                       deathSignal=signal.SIGKILL)
     try:
-        _copyData(stream, p.stdin, totalSize)
+        _copyData(fileObj, p.stdin, totalSize)
         p.stdin.close()
         if not p.wait(WAIT_TIMEOUT):
             log.error("timeout waiting for dd process")

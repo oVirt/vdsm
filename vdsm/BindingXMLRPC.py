@@ -163,7 +163,7 @@ class BindingXMLRPC(object):
                         uploadFinishedEvent.set()
 
                     methodArgs = {'fileObj': self.rfile,
-                                  'contentLength': contentLength}
+                                  'length': contentLength}
                     image = API.Image(imgUUID, spUUID, sdUUID)
                     response = image.downloadFromStream(methodArgs,
                                                         upload_finished,

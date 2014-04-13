@@ -1639,7 +1639,7 @@ class StoragePool(object):
         with imgResourceLock:
             try:
                 return image.Image(self.poolPath) \
-                    .downloadFromStream(methodArgs, sdUUID, imgUUID, volUUID)
+                    .copyToImage(methodArgs, sdUUID, imgUUID, volUUID)
             finally:
                 callback()
 
