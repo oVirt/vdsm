@@ -217,7 +217,7 @@ configure() {
             echo "${prog}: Missing certificates, ${prog} not registered" 1>&2
             return 6
         fi
-        sciptontest /usr/bin/vdsm-tool validate-ovirt-certs
+        skipontest /usr/bin/vdsm-tool validate-ovirt-certs
     fi
 
     # Remove a previous configuration (if present)
