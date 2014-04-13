@@ -55,3 +55,8 @@ CLEANFILES = \
 	$(nodist_vdsmtool_PYTHON) \
 	$(nodist_vdsmexec_SCRIPTS) \
 	$(NULL)
+
+all-local: \
+	$(nodist_vdsmtool_PYTHON) \
+	$(nodist_vdsmexec_SCRIPTS) \
+	$(NULL)
