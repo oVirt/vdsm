@@ -24,7 +24,7 @@ import json
 from hookValidation import ValidatesHook
 from testrunner import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                         expandPermutations, permutations)
-from testValidation import (RequireDummyMod, RequireVethMod,
+from testValidation import (brokentest, RequireDummyMod, RequireVethMod,
                             ValidateRunningAsRoot)
 
 import dhcp
@@ -194,12 +194,16 @@ class NetworkTest(TestCaseBase):
                 func(*args, **kwargs)
         return wrapper
 
-    def assertNetworkExists(self, networkName, bridged=None):
+    def assertNetworkExists(self, networkName, bridged=None, bridgeOpts=None):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
         self.assertIn(networkName, netinfo.networks)
         if bridged is not None:
             self.assertEqual(bridged, netinfo.networks[networkName]['bridged'])
+        if bridgeOpts is not None and netinfo.networks[networkName]['bridged']:
+            appliedOpts = netinfo.bridges[networkName]['opts']
+            for opt, value in bridgeOpts.iteritems():
+                self.assertEqual(value, appliedOpts[opt])
         if config is not None:
             self.assertIn(networkName, config.networks)
             if bridged is not None:
@@ -671,15 +675,21 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
+    @brokentest('This test is known to break until initscripts-9.03.41-1.el6 '
+                'is released to fix https://bugzilla.redhat.com/1086897')
     def testSetupNetworksAddVlan(self, bridged):
+        BRIDGE_OPTS = {'multicast_router': '0', 'multicast_snooping': '0'}
+        formattedOpts = ' '.join(
+            ['='.join(elem) for elem in BRIDGE_OPTS.items()])
         with dummyIf(1) as nics:
             nic, = nics
-            attrs = dict(vlan=VLAN_ID, nic=nic, bridged=bridged)
+            attrs = {'vlan': VLAN_ID, 'nic': nic, 'bridged': bridged,
+                     'custom': {'bridge_opts': formattedOpts}}
             status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
                                                        attrs}, {}, NOCHK)
 
             self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME)
+            self.assertNetworkExists(NETWORK_NAME, bridgeOpts=BRIDGE_OPTS)
             self.assertVlanExists('%s.%s' % (nic, VLAN_ID))
 
             status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:

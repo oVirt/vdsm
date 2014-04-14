@@ -612,6 +612,9 @@ class ConfigWriter(object):
         ipconfig = bridge.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
         ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
+
+        if 'custom' in opts and 'bridge_opts' in opts['custom']:
+            opts['bridging_opts'] = opts['custom']['bridge_opts']
         self._createConfFile(conf, bridge.name, ipconfig, bridge.mtu, **opts)
 
     def addVlan(self, vlan, **opts):
