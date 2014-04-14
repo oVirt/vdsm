@@ -19,51 +19,13 @@
 #
 
 import logging
+from functools import wraps
 from vdsm.config import config
 
 import task
 import storage_exception as se
 
 _EXPORTED_ATTRIBUTE = "__dispatcher_exported__"
-
-
-class Protect:
-    STATUS_OK = {'status': {'code': 0, 'message': "OK"}}
-    STATUS_ERROR = {'status': {'code': 100, 'message': "ERROR"}}
-    log = logging.getLogger('Storage.Dispatcher.Protect')
-
-    def __init__(self, func, name):
-        self.name = name
-        self.func = func
-
-    def run(self, *args, **kwargs):
-        try:
-            ctask = task.Task(id=None, name=self.name)
-            try:
-                response = self.STATUS_OK.copy()
-                result = ctask.prepare(self.func, *args, **kwargs)
-                if type(result) == dict:
-                    response.update(result)
-                return response
-            except se.GeneralException as e:
-                self.log.error(e.response())
-                return e.response()
-            except BaseException as e:
-                self.log.error(e, exc_info=True)
-                defaultException = ctask.defaultException
-                if defaultException and hasattr(defaultException, "response"):
-                    resp = defaultException.response()
-                    defaultExceptionInfo = (resp['status']['code'],
-                                            resp['status']['message'])
-                    return se.generateResponse(e, defaultExceptionInfo)
-
-                return se.generateResponse(e)
-        except:
-            try:
-                self.log.error("Unhandled exception in run and protect: %s, "
-                               "args: %s ", self.name, args, exc_info=True)
-            finally:
-                return self.STATUS_ERROR.copy()
 
 
 def exported(f):
@@ -73,6 +35,9 @@ def exported(f):
 
 class Dispatcher:
     log = logging.getLogger('Storage.Dispatcher')
+
+    STATUS_OK = {'status': {'code': 0, 'message': "OK"}}
+    STATUS_ERROR = {'status': {'code': 100, 'message': "ERROR"}}
 
     def __init__(self, obj):
         self._obj = obj
@@ -94,4 +59,39 @@ class Dispatcher:
                     continue
                 # Create a new entry in instance's "dict" that will mask the
                 # original method
-                setattr(self, funcName, Protect(funcObj, funcName).run)
+                setattr(self, funcName, self.protect(funcObj, funcName))
+
+    def protect(self, func, name, *args, **kwargs):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                ctask = task.Task(id=None, name=name)
+                try:
+                    response = self.STATUS_OK.copy()
+                    result = ctask.prepare(func, *args, **kwargs)
+                    if type(result) == dict:
+                        response.update(result)
+                    return response
+                except se.GeneralException as e:
+                    self.log.error(e.response())
+                    return e.response()
+                except BaseException as e:
+                    self.log.error(e, exc_info=True)
+                    defaultException = ctask.defaultException
+                    if (defaultException and
+                            hasattr(defaultException, "response")):
+                        resp = defaultException.response()
+                        defaultExceptionInfo = (resp['status']['code'],
+                                                resp['status']['message'])
+                        return se.generateResponse(e, defaultExceptionInfo)
+
+                    return se.generateResponse(e)
+            except:
+                try:
+                    self.log.error(
+                        "Unhandled exception in run and protect: %s, "
+                        "args: %s ", self.name, args, exc_info=True)
+                finally:
+                    return self.STATUS_ERROR.copy()
+
+        return wrapper
