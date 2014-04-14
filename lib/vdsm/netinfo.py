@@ -65,6 +65,7 @@ NET_PATH = '/sys/class/net'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
+BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 _BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 _BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 _IFCFG_ZERO_SUFFIXED = frozenset(
@@ -176,6 +177,24 @@ def bondOpts(bond, keys=None):
         with open(path) as optFile:
             opts[os.path.basename(path)] = [
                 el for el in optFile.read().rstrip().split(' ') if el]
+    return opts
+
+
+def bridgeOpts(bridge, keys=None):
+    """Returns a dictionary of bridge option name and value. E.g.,
+    {'max_age': '2000', 'gc_timer': '332'}"""
+    BR_KEY_BLACKLIST = ('flush',)
+    if keys is None:
+        paths = iglob(BRIDGING_OPT % (bridge, '*'))
+    else:
+        paths = (BRIDGING_OPT % (bridge, key) for key in keys)
+    opts = {}
+    for path in paths:
+        key = os.path.basename(path)
+        if key in BR_KEY_BLACKLIST:
+            continue
+        with open(path) as optFile:
+            opts[key] = optFile.read().rstrip()
     return opts
 
 
@@ -512,7 +531,8 @@ def _bridgeinfo(link, gateways, ipv6routes, ipaddrs):
     info.update({'gateway': getgateway(gateways, link.name),
                  'ipv6gateway': ipv6routes.get(link.name, '::'),
                  'ports': ports(link.name),
-                 'stp': bridge_stp_state(link.name)})
+                 'stp': bridge_stp_state(link.name),
+                 'opts': bridgeOpts(link.name)})
     return info
 
 

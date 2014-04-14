@@ -593,6 +593,9 @@
 #
 # @qosOutbound: #optional BandwidthParams for outgoing traffic.
 #
+# @opts: A map containing information about the bridge specific options.
+#               (new in version 4.15.0)
+#
 # Since: 4.10.0
 # XXX: Add types for IP Address?
 ##
@@ -601,7 +604,7 @@
           'netmask': 'str', 'gateway': 'str', 'ipv6addrs': ['str'],
           'ipv6gateway': 'str', 'mtu': 'uint', 'cfg': 'StringMap',
           'bridged': 'bool', '*qosInbound': 'BandwidthParams',
-          '*qosOutbound': 'BandwidthParams'}}
+          '*qosOutbound': 'BandwidthParams', 'opts': 'StringMap'}}
 
 ##
 # @NetInfoBridgelessNetwork:
