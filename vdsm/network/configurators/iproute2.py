@@ -36,6 +36,7 @@ from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
 from ..sourceroute import DynamicSourceRoute
 
+_BRIDGING_OPT_PATH = '/sys/class/net/%s/bridge/%s'
 _ETHTOOL_BINARY = CommandPath(
     'ethtool',
     '/usr/sbin/ethtool',  # F19+
@@ -68,6 +69,9 @@ class Iproute2(Configurator):
         DynamicSourceRoute.addInterfaceTracking(bridge)
         self.configApplier.setIfaceConfigAndUp(bridge)
         self._addSourceRoute(bridge)
+        if 'custom' in opts and 'bridge_opts' in opts['custom']:
+            self.configApplier._setBridgeOpts(bridge,
+                                              opts['custom']['bridge_opts'])
 
     def configureVlan(self, vlan, **opts):
         vlan.device.configure(**opts)
@@ -272,6 +276,11 @@ class ConfigApplier(object):
                               bridge.port.name])
         if rc != 0:
             raise ConfigNetworkError(ERR_FAILED_IFUP, err)
+
+    def _setBridgeOpts(self, bridge, options):
+        for key, value in (opt.split('=') for opt in options.split(' ')):
+            with open(_BRIDGING_OPT_PATH % (bridge.name, key), 'w') as optFile:
+                optFile.write(value)
 
     def removeBridge(self, bridge):
         rc, _, err = execCmd([EXT_BRCTL, 'delbr', bridge.name])
