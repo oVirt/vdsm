@@ -381,13 +381,6 @@ class HSM:
         def storageRefresh():
             sdCache.refreshStorage()
             lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS)
-
-            fileUtils.createdir(self.tasksDir)
-            # TBD: Should this be run in connectStoragePool? Should tasksDir
-            # exist under pool link as well (for hsm tasks)
-            self.taskMng.loadDumpedTasks(self.tasksDir)
-            self.taskMng.recoverDumpedTasks()
-
             self._ready = True
             self.log.debug("HSM is ready")
 
@@ -412,8 +405,7 @@ class HSM:
         self.domainStateChangeCallbacks.add(callbackFunc)
 
     def _hsmSchedule(self, name, func, *args):
-        self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task,
-                                 name, func, *args)
+        self.taskMng.scheduleJob("hsm", None, vars.task, name, func, *args)
 
     def __validateLvmLockingType(self):
         """

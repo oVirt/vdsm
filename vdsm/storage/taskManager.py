@@ -61,7 +61,8 @@ class TaskManager:
 
     def scheduleJob(self, type, store, task, jobName, func, *args):
         task.setTag(type)
-        task.setPersistence(store, cleanPolicy=TaskCleanType.manual)
+        if store is not None:
+            task.setPersistence(store, cleanPolicy=TaskCleanType.manual)
         task.setManager(self)
         task.setRecoveryPolicy("auto")
         task.addJob(Job(jobName, func, *args))
