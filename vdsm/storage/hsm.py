@@ -1440,15 +1440,9 @@ class HSM:
         vars.task.setDefaultException(se.CannotDeleteVolume(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
-        dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
 
         vars.task.getSharedLock(STORAGE, sdUUID)
-        # Do not validate if forced.
-        if not misc.parseBool(force):
-            for volUUID in volumes:
-                dom.produceVolume(imgUUID, volUUID).validateDelete()
-
         self._spmSchedule(spUUID, "deleteVolume", pool.deleteVolume, sdUUID,
                           imgUUID, volumes, misc.parseBool(postZero),
                           misc.parseBool(force))

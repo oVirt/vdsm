@@ -193,6 +193,33 @@ class BlockVolume(volume.Volume):
         size = self.getVolumeSize(bs=1)
         offs = self.getMetaOffset()
 
+        # On block storage domains we store a volume's parent UUID in two
+        # places: 1) in the domain's metadata LV, and 2) in a LV tag attached
+        # to the volume LV itself.  The LV tag is more efficient to access
+        # than the domain metadata but it may only be updated by the SPM.
+        #
+        # This means that after a live merge completes the domain metadata LV
+        # will be updated but the LV tag will not.  We can detect this case
+        # here and fix the LV tag since this is an SPM verb.
+        #
+        # File domains do not have this complexity because the metadata is
+        # stored in only one place and that metadata is updated by the HSM
+        # host when the live merge finishes.
+        sync = False
+        for childID in self.getChildren():
+            child = BlockVolume(self.repoPath, self.sdUUID, self.imgUUID,
+                                childID)
+            metaParent = child.getParentMeta()
+            tagParent = child.getParentTag()
+            if metaParent != tagParent:
+                self.log.debug("Updating stale PUUID LV tag from %s to %s for "
+                               "volume %s", tagParent, metaParent,
+                               child.volUUID)
+                child.setParentTag(metaParent)
+                sync = True
+        if sync:
+            self.recheckIfLeaf()
+
         if not force:
             self.validateDelete()
 
@@ -454,11 +481,17 @@ class BlockVolume(volume.Volume):
         if oldTag != newTag:
             lvm.replaceLVTag(self.sdUUID, self.volUUID, oldTag, newTag)
 
+    def getParentMeta(self):
+        return self.getMetaParam(volume.PUUID)
+
+    def getParentTag(self):
+        return self.getVolumeTag(TAG_PREFIX_PARENT)
+
     def getParent(self):
         """
         Return parent volume UUID
         """
-        return self.getVolumeTag(TAG_PREFIX_PARENT)
+        return self.getParentTag()
 
     def getImage(self):
         """
