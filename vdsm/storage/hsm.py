@@ -65,7 +65,6 @@ import storage_exception as se
 from threadLocal import vars
 from vdsm import constants
 from storageConstants import STORAGE
-from task import Job
 from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 import devicemapper
@@ -573,12 +572,8 @@ class HSM:
         # but seeing as it would break the API with Engine,
         # it's easiest to fail.
         self.validateNotSPM(spUUID)
-
-        vars.task.setTag("hsm")
-        vars.task.setManager(self.taskMng)
-        vars.task.setRecoveryPolicy("auto")
-        vars.task.addJob(Job("spmStart", pool.startSpm, prevID, prevLVER,
-                             maxHostID, domVersion))
+        self._hsmSchedule("spmStart", pool.startSpm, prevID, prevLVER,
+                          maxHostID, domVersion)
 
     @public
     def spmStop(self, spUUID, options=None):
