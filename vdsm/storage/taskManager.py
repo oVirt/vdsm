@@ -192,15 +192,6 @@ class TaskManager:
         self.log.debug("Return. Response: %s", subRes)
         return subRes
 
-    def _addTask(self, taskID, task):
-        """
-           Add task to the relevant hash.
-        """
-        self.log.info("Entry: taskID=%s, task=%s", taskID, task.dumpTask(", "))
-        Task.validateID(taskID)
-        self._tasks[taskID] = task
-        self.log.debug("Return.")
-
     def loadDumpedTasks(self, store):
         if not os.path.exists(store):
             self.log.debug("task dump path %s does not exist.", store)
