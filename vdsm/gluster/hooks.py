@@ -213,11 +213,11 @@ def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
                                                   hookLevel.lower(), hookName)
     hookStat = [os.path.exists(enabledFile), os.path.exists(disabledFile)]
     if update:
-        if True not in hookStat:
+        if not any(hookStat):
             raise ge.GlusterHookNotFoundException(glusterCmd, hookLevel,
                                                   hookName)
     else:
-        if True in hookStat:
+        if any(hookStat):
             raise ge.GlusterHookAlreadyExistException(glusterCmd, hookLevel,
                                                       hookName)
     content = base64.b64decode(hookData)
