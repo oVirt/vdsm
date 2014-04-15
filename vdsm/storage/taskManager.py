@@ -20,6 +20,7 @@
 
 import os
 import logging
+import threading
 
 from vdsm.config import config
 import storage_exception as se
@@ -38,6 +39,7 @@ class TaskManager:
         self.tp = ThreadPool(tpSize, waitTimeout, maxTasks)
         self._tasks = {}
         self._unqueuedTasks = []
+        self._insertTaskLock = threading.Lock()
 
     def queue(self, task):
         return self._queueTask(task, task.commit)
@@ -46,9 +48,15 @@ class TaskManager:
         return self._queueTask(task, task.recover)
 
     def _queueTask(self, task, method):
-        try:
+        with self._insertTaskLock:
+            if task.id in self._tasks:
+                raise se.AddTaskError(
+                    'Task id already in use: {0}'.format(task.id))
+
             self.log.debug("queuing task: %s", task.id)
             self._tasks[task.id] = task
+
+        try:
             if not self.tp.queueTask(task.id, method):
                 self.log.error("unable to queue task: %s", task.dumpTask())
                 del self._tasks[task.id]

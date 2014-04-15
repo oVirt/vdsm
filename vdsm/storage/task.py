@@ -1182,6 +1182,9 @@ class Task:
                 self.log.debug("Prepare: %s jobs exist, move to acquiring",
                                self.njobs)
                 self._updateState(State.acquiring)
+                if self.aborting():
+                    self.log.error('failed to acquire task %s', self.id)
+                    raise self.error
                 self.log.debug("returning")
                 return dict(uuid=str(self.id))
 
