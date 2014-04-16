@@ -103,7 +103,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     cmd.append(image)
 
     if size:
-        cmd.append(int(size))
+        cmd.append(str(size))
 
     rc, out, err = utils.execCmd(cmd)
 
