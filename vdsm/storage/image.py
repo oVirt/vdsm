@@ -25,7 +25,7 @@ import uuid
 from contextlib import contextmanager
 
 import volume
-from vdsm import qemuImg
+from vdsm import qemuimg
 from sdc import sdCache
 import sd
 import misc
@@ -424,7 +424,7 @@ class Image:
                         srcFmtStr = volume.fmt2str(srcFmt)
                         dstFmtStr = volume.fmt2str(dstVol.getFormat())
                         self.log.debug("start qemu convert")
-                        qemuImg.convert(srcVol.getVolumePath(),
+                        qemuimg.convert(srcVol.getVolumePath(),
                                         dstVol.getVolumePath(),
                                         vars.task.aborting,
                                         srcFmtStr, dstFmtStr)
@@ -1137,7 +1137,7 @@ class Image:
                                      volUUID=srcVolParams['volUUID'])
         try:
             newVol.shrinkToOptimalSize()
-        except qemuImg.QImgError:
+        except qemuimg.QImgError:
             self.log.warning("Auto shrink after merge failed", exc_info=True)
 
         self.log.info("Merge src=%s with dst=%s was successfully finished.",

@@ -38,7 +38,7 @@ import libvirt
 from vdsm import constants
 from vdsm import libvirtconnection
 from vdsm import netinfo
-from vdsm import qemuImg
+from vdsm import qemuimg
 from vdsm import utils
 from vdsm.compat import pickle
 from vdsm.config import config
@@ -3178,8 +3178,8 @@ class Vm(object):
         # FIXME: This should be replaced in future the support for transient
         # disk in libvirt (BZ#832194)
         driveFormat = (
-            qemuImg.FORMAT.QCOW2 if diskParams['format'] == 'cow' else
-            qemuImg.FORMAT.RAW
+            qemuimg.FORMAT.QCOW2 if diskParams['format'] == 'cow' else
+            qemuimg.FORMAT.RAW
         )
 
         transientHandle, transientPath = tempfile.mkstemp(
@@ -3187,7 +3187,7 @@ class Vm(object):
             prefix="%s-%s." % (diskParams['domainID'], diskParams['volumeID']))
 
         try:
-            qemuImg.create(transientPath, format=qemuImg.FORMAT.QCOW2,
+            qemuimg.create(transientPath, format=qemuimg.FORMAT.QCOW2,
                            backing=diskParams['path'],
                            backingFormat=driveFormat)
             os.fchmod(transientHandle, 0o660)
@@ -3997,7 +3997,7 @@ class Vm(object):
         # Patches have been submitted to avoid this behavior, the virtual
         # and apparent sizes will be returned by the qemu process and
         # through the libvirt blockInfo call.
-        currentSize = qemuImg.info(drive.path, "qcow2")['virtualsize']
+        currentSize = qemuimg.info(drive.path, "qcow2")['virtualsize']
 
         if currentSize > newSizeBytes:
             self.log.error(
@@ -4021,7 +4021,7 @@ class Vm(object):
         finally:
             # In all cases we want to try and fix the size in the metadata.
             # Same as above, this is what libvirt would do, see BZ#963881
-            sizeRoundedBytes = qemuImg.info(drive.path, "qcow2")['virtualsize']
+            sizeRoundedBytes = qemuimg.info(drive.path, "qcow2")['virtualsize']
             self.cif.irs.setVolumeSize(
                 drive.domainID, drive.poolID, drive.imageID, drive.volumeID,
                 sizeRoundedBytes)

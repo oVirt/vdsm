@@ -27,7 +27,7 @@ from contextlib import contextmanager
 import image
 from vdsm import constants
 from vdsm import utils
-from vdsm import qemuImg
+from vdsm import qemuimg
 import storage_exception as se
 import sd
 from sdc import sdCache
@@ -704,7 +704,7 @@ class Volume(object):
         # Going directly to the metadata parameter as we should skip the size
         # validation in getSize.
         if int(self.getMetaParam(SIZE)) < 1:
-            volInfo = qemuImg.info(
+            volInfo = qemuimg.info(
                 self.getVolumePath(), fmt2str(self.getFormat()))
             # qemu/qemu-img rounds down
             self.setSize(volInfo['virtualsize'] / BLOCK_SIZE)

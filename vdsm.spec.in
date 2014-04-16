@@ -1135,7 +1135,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitearch}/%{vdsm_name}/netinfo.py*
 %{python_sitearch}/%{vdsm_name}/netlink.py*
-%{python_sitearch}/%{vdsm_name}/qemuImg.py*
+%{python_sitearch}/%{vdsm_name}/qemuimg.py*
 %{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{python_sitearch}/%{vdsm_name}/netconfpersistence.py*
 %{python_sitearch}/%{vdsm_name}/utils.py*

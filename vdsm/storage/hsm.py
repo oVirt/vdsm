@@ -75,7 +75,7 @@ import dispatcher
 import supervdsm
 import storageServer
 from vdsm import utils
-from vdsm import qemuImg
+from vdsm import qemuimg
 
 GUID = "guid"
 NAME = "name"
@@ -704,7 +704,7 @@ class HSM:
 
         volToExtend.prepare()
         try:
-            imgInfo = qemuImg.info(volPath, qemuImgFormat)
+            imgInfo = qemuimg.info(volPath, qemuImgFormat)
             if imgInfo['virtualsize'] > newSizeBytes:
                 self.log.error(
                     "volume %s size %s is larger than the size requested "
@@ -713,8 +713,8 @@ class HSM:
                 raise se.VolumeResizeValueError(str(newSizeBytes))
             # Uncommit the current size
             volToExtend.setSize(0)
-            qemuImg.resize(volPath, newSizeBytes, qemuImgFormat)
-            roundedSizeBytes = qemuImg.info(volPath,
+            qemuimg.resize(volPath, newSizeBytes, qemuImgFormat)
+            roundedSizeBytes = qemuimg.info(volPath,
                                             qemuImgFormat)['virtualsize']
         finally:
             volToExtend.teardown(sdUUID, volUUID)

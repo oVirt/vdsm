@@ -23,7 +23,7 @@ import threading
 import logging
 import sanlock
 
-from vdsm import qemuImg
+from vdsm import qemuimg
 from vdsm import constants
 from vdsm.config import config
 import vdsm.utils as utils
@@ -291,8 +291,8 @@ class BlockVolume(volume.Volume):
         if volParams['volFormat'] == volume.COW_FORMAT:
             self.prepare(justme=True)
             try:
-                check = qemuImg.check(self.getVolumePath(),
-                                      qemuImg.FORMAT.QCOW2)
+                check = qemuimg.check(self.getVolumePath(),
+                                      qemuimg.FORMAT.QCOW2)
             finally:
                 self.teardown(self.sdUUID, self.volUUID, justme=True)
             volActualSize = check['offset']

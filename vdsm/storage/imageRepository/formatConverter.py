@@ -21,7 +21,7 @@
 import logging
 
 from vdsm import constants
-from vdsm import qemuImg
+from vdsm import qemuimg
 
 from storage import sd
 from storage import blockSD
@@ -134,8 +134,8 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         metaVolSize = int(vol.getMetaParam(volume.SIZE))
 
         if vol.getFormat() == volume.COW_FORMAT:
-            qemuVolInfo = qemuImg.info(vol.getVolumePath(),
-                                       qemuImg.FORMAT.QCOW2)
+            qemuVolInfo = qemuimg.info(vol.getVolumePath(),
+                                       qemuimg.FORMAT.QCOW2)
             virtVolSize = qemuVolInfo["virtualsize"] / V2META_SECTORSIZE
         else:
             virtVolSize = vol.getVolumeSize()
@@ -278,7 +278,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                     try:
                         vol = domain.produceVolume(imgUUID, volUUID)
                         v3ResetMetaVolSize(vol)  # BZ#811880
-                    except qemuImg.QImgError:
+                    except qemuimg.QImgError:
                         log.error("It is not possible to read the volume %s "
                                   "using qemu-img, the content looks damaged",
                                   volUUID, exc_info=True)
