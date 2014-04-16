@@ -188,22 +188,25 @@ class Volume(object):
             vol = sdCache.produce(sdUUID).produceVolume(srcImg, srcVol)
             vol.prepare(rw=True, chainrw=True, setrw=True)
 
-            try:
-                (rc, out, err) = qemuRebase(
-                    vol.getVolumePath(), vol.getFormat(),
-                    getBackingVolumePath(srcImg, srcParent),
-                    int(dstFormat), misc.parseBool(unsafe),
-                    vars.task.aborting)
-                if rc:
-                    raise se.MergeVolumeRollbackError(srcVol)
+            volumePath = vol.getVolumePath()
+            backingVolPath = getBackingVolumePath(srcImg, srcParent)
 
+            try:
+                qemuimg.rebase(volumePath, backingVolPath,
+                               fmt2str(vol.getFormat()),
+                               fmt2str(int(dstFormat)),
+                               misc.parseBool(unsafe), vars.task.aborting)
                 vol.setParent(srcParent)
                 vol.recheckIfLeaf()
+            except qemuimg.QImgError:
+                cls.log.exception('cannot rollback rebase for volume %s on '
+                                  '%s', volumePath, backingVolPath)
+                raise se.MergeVolumeRollbackError(srcVol)
             finally:
                 vol.teardown(sdUUID, srcVol)
 
-    def rebase(self, backingVol, backingVolPath,
-               backingFormat, unsafe, rollback):
+    def rebase(self, backingVol, backingVolPath, backingFormat, unsafe,
+               rollback):
         """
         Rebase volume on top of new backing volume
         """
@@ -222,11 +225,17 @@ class Volume(object):
                                   self.volUUID, str(pvol.getFormat()),
                                   pvol.volUUID, str(True)]))
 
-        (rc, out, err) = qemuRebase(self.getVolumePath(), self.getFormat(),
-                                    backingVolPath, backingFormat, unsafe,
-                                    vars.task.aborting)
-        if rc:
+        volumePath = self.getVolumePath()
+
+        try:
+            qemuimg.rebase(volumePath, backingVolPath,
+                           fmt2str(self.getFormat()), fmt2str(backingFormat),
+                           unsafe, vars.task.aborting)
+        except qemuimg.QImgError:
+            self.log.exception('cannot rebase volume %s on %s', volumePath,
+                               backingVolPath)
             raise se.MergeSnapshotsError(self.volUUID)
+
         self.setParent(backingVol)
         self.recheckIfLeaf()
 
@@ -955,33 +964,6 @@ class Volume(object):
         by reducing the lv to minimal size required
         """
         pass
-
-
-def qemuRebase(src, srcFormat, backingFile,
-               backingFormat, unsafe, stop):
-    """
-    Rebase the 'src' volume on top of the new 'backingFile'
-    with new 'backingFormat'
-    """
-    backingFormat = fmt2str(backingFormat)
-    srcFormat = fmt2str(srcFormat)
-    cwd = os.path.dirname(src)
-    log.debug('(qemuRebase): REBASE %s (fmt=%s) on top of %s (%s) START' %
-              (src, srcFormat, backingFile, backingFormat))
-
-    cmd = [constants.EXT_QEMUIMG, "rebase",
-           "-t", "none", "-f", srcFormat,
-           "-b", backingFile, "-F", backingFormat]
-    if unsafe:
-        cmd += ["-u"]
-    cmd += [src]
-
-    (rc, out, err) = misc.watchCmd(cmd, stop=stop, cwd=cwd,
-                                   ioclass=utils.IOCLASS.IDLE,
-                                   nice=utils.NICENESS.HIGH)
-
-    log.debug('(qemuRebase): REBASE %s DONE' % (src))
-    return (rc, out, err)
 
 
 def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):

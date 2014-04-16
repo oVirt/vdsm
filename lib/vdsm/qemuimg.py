@@ -172,3 +172,27 @@ def resize(image, newSize, format=None):
 
     if rc != 0:
         raise QImgError(rc, out, err)
+
+
+def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
+           stop=None):
+    cmd = [_qemuimg.cmd, "rebase", "-t", "none"]
+
+    if unsafe:
+        cmd.extend(("-u",))
+
+    if format:
+        cmd.extend(("-f", format))
+
+    if backingFormat:
+        cmd.extend(("-F", backingFormat))
+
+    cmd.extend(("-b", backing, image))
+
+    cwdPath = None if os.path.isabs(backing) else os.path.dirname(image)
+    rc, out, err = utils.watchCmd(
+        cmd, cwd=cwdPath, stop=stop, nice=utils.NICENESS.HIGH,
+        ioclass=utils.IOCLASS.IDLE)
+
+    if rc != 0:
+        raise QImgError(rc, out, err)
