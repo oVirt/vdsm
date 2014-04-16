@@ -323,10 +323,10 @@ class service:
                 status = conf['status']
                 if allStats[vmId].get('monitorResponse') == '-1':
                     status += '*'
-                print ("%-36s %6s  %-20s %-20s %-20s" %
-                       (vmId, conf.get('pid', 'none'),
-                        conf.get('vmName', '<< NO NAME >>'),
-                        status, allStats[vmId].get('guestIPs', '')))
+                print("%-36s %6s  %-20s %-20s %-20s" %
+                      (vmId, conf.get('pid', 'none'),
+                       conf.get('vmName', '<< NO NAME >>'),
+                       status, allStats[vmId].get('guestIPs', '')))
 
             elif view == 'ids':
                 print conf['vmId']
@@ -420,8 +420,8 @@ class service:
         vmId = args[0]
         response = self.s.migrateStatus(vmId)
         if not response['status']['code']:
-            print (response['status']['message'] +
-                   ' ' + str(response['progress']) + '%')
+            print(response['status']['message'] +
+                  ' ' + str(response['progress']) + '%')
         else:
             print response['status']['message']
         sys.exit(response['status']['code'])
@@ -1665,8 +1665,8 @@ class service:
                 status = "OK"
                 if res["imagestatus"]:
                     status = "ERROR"
-                print ("Image %s status %s: %s (%s)" %
-                       (imgUUID, status, res["message"], res["imagestatus"]))
+                print("Image %s status %s: %s (%s)" %
+                      (imgUUID, status, res["message"], res["imagestatus"]))
             if "badvols" in res:
                 for v, err in res["badvols"].iteritems():
                     print "\tVolume %s is bad: %s" % (v, err)
@@ -1676,8 +1676,8 @@ class service:
                 status = "OK"
                 if res["domainstatus"]:
                     status = "ERROR"
-                print ("Domain %s status %s: %s (%s)" %
-                       (sdUUID, status, res["message"], res["domainstatus"]))
+                print("Domain %s status %s: %s (%s)" %
+                      (sdUUID, status, res["message"], res["domainstatus"]))
             if "badimages" in res:
                 for i in res["badimages"]:
                     print "\tImage %s is bad" % (i)
@@ -1688,8 +1688,8 @@ class service:
                 status = "OK"
                 if res["poolstatus"]:
                     status = "ERROR"
-                print ("Pool %s status %s: %s (%s)" %
-                       (spUUID, status, res["message"], res["poolstatus"]))
+                print("Pool %s status %s: %s (%s)" %
+                      (spUUID, status, res["message"], res["poolstatus"]))
             if "masterdomain":
                 print "\tMaster domain is %s" % res["masterdomain"]
             if "spmhost":
