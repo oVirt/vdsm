@@ -266,8 +266,8 @@ class Volume(object):
         try:
             self.prepare(rw=False)
             dst_path = os.path.join(dst_image_dir, dst_volUUID)
-            self.log.debug("Volume.clone: %s to %s" %
-                           (self.volumePath, dst_path))
+            self.log.debug('cloning volume %s to %s', self.volumePath,
+                           dst_path)
             size = int(self.getMetaParam(SIZE))
             parent = self.getVolumePath()
             parent_format = fmt2str(self.getFormat())
@@ -278,12 +278,12 @@ class Volume(object):
                          size, volFormat, preallocate)
             self.teardown(self.sdUUID, self.volUUID)
         except Exception as e:
+            self.log.exception('cannot clone volume %s to %s',
+                               self.volumePath, dst_path)
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
             self.teardown(self.sdUUID, self.volUUID)
-            self.log.error("Volume.clone: can't clone: %s to %s" %
-                           (self.volumePath, dst_path))
             raise se.CannotCloneVolume(self.volumePath, dst_path, str(e))
 
     def _shareLease(self, dstImgPath):
