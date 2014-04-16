@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os
 import re
 import signal
 
@@ -91,11 +92,14 @@ def info(image, format=None):
 
 def create(image, size=None, format=None, backing=None, backingFormat=None):
     cmd = [_qemuimg.cmd, "create"]
+    cwdPath = None
 
     if format:
         cmd.extend(("-f", format))
 
     if backing:
+        if not os.path.isabs(backing):
+            cwdPath = os.path.dirname(image)
         cmd.extend(("-b", backing))
 
     if backingFormat:
@@ -106,7 +110,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     if size:
         cmd.append(str(size))
 
-    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = utils.execCmd(cmd, cwd=cwdPath, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise QImgError(rc, out, err)
