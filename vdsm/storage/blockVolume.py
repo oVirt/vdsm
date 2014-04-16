@@ -159,15 +159,14 @@ class BlockVolume(volume.Volume):
             cls.log.info("Request to create %s volume %s with size = %s "
                          "sectors", volume.type2name(volFormat), volPath,
                          size)
-
             if volFormat == volume.COW_FORMAT:
-                volume.createVolume(None, None, volPath, size, volFormat,
-                                    preallocate)
+                qemuimg.create(
+                    volPath, size * BLOCK_SIZE, volume.fmt2str(volFormat))
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
                          imgUUID, volUUID, srcImgUUID, srcVolUUID)
-            volParent.clone(imgPath, volUUID, volFormat, preallocate)
+            volParent.clone(imgPath, volUUID, volFormat)
 
         with cls._tagCreateLock:
             mdSlot = dom.getVolumeMetadataSlot(volUUID, VOLUME_MDNUMBLKS)

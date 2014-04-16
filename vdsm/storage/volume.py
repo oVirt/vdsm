@@ -21,7 +21,6 @@
 import os.path
 import logging
 import time
-import signal
 from contextlib import contextmanager
 
 import image
@@ -91,7 +90,10 @@ FAKE_VOL = "FAKE"
 
 log = logging.getLogger('Storage.Volume')
 
-FMT2STR = {COW_FORMAT: 'qcow2', RAW_FORMAT: 'raw'}
+FMT2STR = {
+    COW_FORMAT: qemuimg.FORMAT.QCOW2,
+    RAW_FORMAT: qemuimg.FORMAT.RAW,
+}
 
 # At the moment this is static and it has been introduced to group all the
 # previous implicit references to the block size in FileVolume. In the future
@@ -228,7 +230,7 @@ class Volume(object):
         self.setParent(backingVol)
         self.recheckIfLeaf()
 
-    def clone(self, dst_image_dir, dst_volUUID, volFormat, preallocate):
+    def clone(self, dst_image_dir, dst_volUUID, volFormat):
         """
         Clone self volume to the specified dst_image_dir/dst_volUUID
         """
@@ -247,14 +249,10 @@ class Volume(object):
             dst_path = os.path.join(dst_image_dir, dst_volUUID)
             self.log.debug('cloning volume %s to %s', self.volumePath,
                            dst_path)
-            size = int(self.getMetaParam(SIZE))
-            parent = self.getVolumePath()
-            parent_format = fmt2str(self.getFormat())
-            # We should use parent's relative path instead of full path
-            parent = os.path.join(os.path.basename(os.path.dirname(parent)),
-                                  os.path.basename(parent))
-            createVolume(parent, parent_format, dst_path,
-                         size, volFormat, preallocate)
+            parent = getBackingVolumePath(self.imgUUID, self.volUUID)
+            qemuimg.create(dst_path, backing=parent,
+                           format=fmt2str(volFormat),
+                           backingFormat=fmt2str(self.getFormat()))
             self.teardown(self.sdUUID, self.volUUID)
         except Exception as e:
             self.log.exception('cannot clone volume %s to %s',
@@ -959,63 +957,6 @@ class Volume(object):
         by reducing the lv to minimal size required
         """
         pass
-
-
-def createVolume(parent, parent_format, volume, size, format, prealloc):
-    """
-     --- Create new volume.
-        'parent' - backing volume name
-        'parent_format' - backing volume format
-        'volume' - new volume name
-        'format' - volume format [ 'COW' or 'RAW' ]
-        'size' - in sectors, always multiple of the grain size (64KB)
-        'preallocate' - flag PREALLOCATED_VOL/SPARSE_VOL,
-                        defines actual storage device type.
-                        PREALLOCATED_VOL = preallocated storage using
-                        non-sparse format (+ DD for file, use raw LV for SAN)
-
-    # SAN
-
-      Prealloc/RAW = Normal LV (if snapshot => create copy of LV)
-      Sparse/RAW = if snapshot create LVM snapshot
-                (in the future, use storage backend thin provisioning),
-                else create Normal LV <== Not supported
-      Prealloc/COW = build qcow2 image within a preallocated space -
-                     used only for COPY
-      Sparse/COW = QCOW2 over LV
-
-    # File
-
-      Prealloc/RAW = Normal file + DD (implicit pre-zero)
-      Sparse/RAW = Normal file (touch)
-      Prealloc/COW = QCOW2 + DD <== Not supported
-      Sparse/COW = QCOW2
-
-    """
-    # TODO: accept size only in bytes and convert before call to qemu-img
-    cmd = [constants.EXT_QEMUIMG, "create", "-f", fmt2str(format)]
-    cwd = None
-    if format == COW_FORMAT and parent:
-        # cmd += ["-b", parent, volume]
-        # cwd = os.path.split(os.path.split(volume)[0])[0]
-
-        # Temporary fix for qemu-img creation problem
-        cmd += ["-F", parent_format, "-b", os.path.join("..", parent), volume]
-        cwd = os.path.split(volume)[0]
-    else:
-        size = int(size)
-        if size < 1:
-            raise se.createVolumeSizeError()
-
-        # qemu-img expects size to be in kilobytes by default,
-        # can also accept size in M or G with appropriate suffix
-        # +1 is so that odd numbers will round upwards.
-        cmd += [volume, "%uK" % ((size + 1) / 2)]
-
-    (rc, out, err) = misc.execCmd(cmd, cwd=cwd, deathSignal=signal.SIGKILL)
-    if rc:
-        raise se.VolumeCreationError(out)
-    return True
 
 
 def qemuRebase(src, srcFormat, backingFile,
