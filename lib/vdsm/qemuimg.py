@@ -19,6 +19,7 @@
 #
 
 import re
+import signal
 
 from . import utils
 
@@ -66,7 +67,7 @@ def info(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -105,7 +106,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     if size:
         cmd.append(str(size))
 
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -118,7 +119,7 @@ def check(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
@@ -163,7 +164,7 @@ def resize(image, newSize, format=None):
         cmd.extend(("-f", format))
 
     cmd.extend((image, str(newSize)))
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise QImgError(rc, out, err)
