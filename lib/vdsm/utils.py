@@ -714,17 +714,14 @@ def stripNewLines(lines):
     return [l[:-1] if l.endswith('\n') else l for l in lines]
 
 
-def watchCmd(command, stop, cwd=None, data=None, recoveryCallback=None,
-             nice=None, ioclass=None, execCmdLogger=logging.root,
-             deathSignal=signal.SIGKILL):
+def watchCmd(command, stop, cwd=None, data=None, nice=None, ioclass=None,
+             execCmdLogger=logging.root, deathSignal=signal.SIGKILL):
     """
     Executes an external command, optionally via sudo with stop abilities.
     """
     proc = execCmd(command, cwd=cwd, data=data, sync=False,
                    nice=nice, ioclass=ioclass, execCmdLogger=execCmdLogger,
                    deathSignal=deathSignal)
-    if recoveryCallback:
-        recoveryCallback(proc)
 
     if not proc.wait(cond=stop):
         proc.kill()

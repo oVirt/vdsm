@@ -331,7 +331,7 @@ def randomStr(strLen):
     return "".join(random.sample(string.letters, strLen))
 
 
-def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
+def ddWatchCopy(src, dst, stop, size, offset=0):
     """
     Copy src to dst using dd command with stop abilities
     """
@@ -370,7 +370,6 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
                                      deathSignal=signal.SIGKILL)
         else:
             (rc, out, err) = watchCmd(cmd, stop=stop,
-                                      recoveryCallback=recoveryCallback,
                                       nice=utils.NICENESS.HIGH,
                                       ioclass=utils.IOCLASS.IDLE)
 

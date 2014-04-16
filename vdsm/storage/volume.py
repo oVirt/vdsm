@@ -155,26 +155,13 @@ class Volume(object):
     def __str__(self):
         return str(self.volUUID)
 
+    # Even if it's not in use anymore we cannot remove this method because
+    # we might have persisted recovery on storage calling it.
+    # TODO: remove this in the next version.
     @classmethod
     def killProcRollback(cls, taskObj, pid, ctime):
-        """
-        First part of several volume rollbacks.
-        """
-        cls.log.info("pid=%s ctime=%s", pid, ctime)
-        try:
-            pidCtime = misc.getProcCtime(pid)
-        except OSError as e:
-            cls.log.debug("pid=%s ctime=%s (%s)", pid, ctime, str(e))
-            return
-
-        try:
-            # If process exists and it's a same process kill it
-            # We identifying the process according its pid and ctime
-            if ctime == pidCtime:
-                os.kill(int(pid), signal.SIGKILL)
-        except Exception:
-            cls.log.error("pid=%s ctime=%s", pid, ctime, exc_info=True)
-            raise
+        cls.log.info('ignoring killProcRollback request for pid %s and '
+                     'ctime %s', pid, ctime)
 
     @classmethod
     def rebaseVolumeRollback(cls, taskObj, sdUUID, srcImg,
@@ -206,7 +193,7 @@ class Volume(object):
                     vol.getVolumePath(), vol.getFormat(),
                     os.path.join('..', srcImg, srcParent),
                     int(dstFormat), misc.parseBool(unsafe),
-                    vars.task.aborting, False)
+                    vars.task.aborting)
                 if rc:
                     raise se.MergeVolumeRollbackError(srcVol)
 
@@ -243,7 +230,7 @@ class Volume(object):
 
         (rc, out, err) = qemuRebase(self.getVolumePath(), self.getFormat(),
                                     backingVolPath, backingFormat, unsafe,
-                                    vars.task.aborting, rollback)
+                                    vars.task.aborting)
         if rc:
             raise se.MergeSnapshotsError(self.volUUID)
         self.setParent(backingVol)
@@ -1039,14 +1026,6 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
     return True
 
 
-def baseAsyncTasksRollback(proc):
-    name = "Kill-" + str(proc.pid)
-    vars.task.pushRecovery(
-        task.Recovery(name, "volume", "Volume", "killProcRollback",
-                      [str(proc.pid),
-                       str(misc.getProcCtime(proc.pid))]))
-
-
 def qemuRebase(src, srcFormat, backingFile,
                backingFormat, unsafe, stop, rollback):
     """
@@ -1066,11 +1045,7 @@ def qemuRebase(src, srcFormat, backingFile,
         cmd += ["-u"]
     cmd += [src]
 
-    recoveryCallback = None
-    if rollback:
-        recoveryCallback = baseAsyncTasksRollback
     (rc, out, err) = misc.watchCmd(cmd, stop=stop, cwd=cwd,
-                                   recoveryCallback=recoveryCallback,
                                    ioclass=utils.IOCLASS.IDLE,
                                    nice=utils.NICENESS.HIGH)
 
@@ -1091,14 +1066,12 @@ def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
             dstvolType == PREALLOCATED_VOL):
         (rc, out, err) = misc.ddWatchCopy(
             src=src, dst=dst,
-            stop=stop, size=size,
-            recoveryCallback=baseAsyncTasksRollback)
+            stop=stop, size=size)
     else:
         cmd = [constants.EXT_QEMUIMG, "convert",
                "-t", "none", "-f", src_fmt, src,
                "-O", dst_fmt, dst]
         (rc, out, err) = misc.watchCmd(cmd, stop=stop,
-                                       recoveryCallback=baseAsyncTasksRollback,
                                        ioclass=utils.IOCLASS.IDLE,
                                        nice=utils.NICENESS.HIGH)
 

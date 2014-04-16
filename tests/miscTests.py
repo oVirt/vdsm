@@ -51,11 +51,8 @@ SUDO_USER = "root"
 SUDO_GROUP = "root"
 
 
-def watchCmd(cmd, stop, cwd=None, data=None, recoveryCallback=None):
-    ret, out, err = utils.watchCmd(cmd, stop, cwd=cwd, data=data,
-                                   recoveryCallback=recoveryCallback)
-
-    return ret, out, err
+def watchCmd(cmd, stop, cwd=None, data=None):
+    return utils.watchCmd(cmd, stop, cwd=cwd, data=data)
 
 
 class EventTests(TestCaseBase):

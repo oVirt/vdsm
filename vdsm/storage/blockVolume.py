@@ -208,8 +208,7 @@ class BlockVolume(volume.Volume):
                          force=True)
             try:
                 misc.ddWatchCopy(
-                    "/dev/zero", vol_path, vars.task.aborting, int(size),
-                    recoveryCallback=volume.baseAsyncTasksRollback)
+                    "/dev/zero", vol_path, vars.task.aborting, int(size))
             except utils.ActionStopped:
                 raise
             except Exception:
