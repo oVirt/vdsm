@@ -24,8 +24,6 @@ import time
 from contextlib import contextmanager
 
 import image
-from vdsm import constants
-from vdsm import utils
 from vdsm import qemuimg
 import storage_exception as se
 import sd
@@ -972,29 +970,3 @@ class Volume(object):
         by reducing the lv to minimal size required
         """
         pass
-
-
-def qemuConvert(src, dst, src_fmt, dst_fmt, stop, size, dstvolType):
-    """
-    Convert the 'src' image (or chain of images) into a new single 'dst'
-    """
-    src_fmt = fmt2str(src_fmt)
-    dst_fmt = fmt2str(dst_fmt)
-    log.debug('(qemuConvert): COPY %s (%s) to %s (%s) START' %
-              (src, src_fmt, dst, dst_fmt))
-
-    if (src_fmt == "raw" and dst_fmt == "raw" and
-            dstvolType == PREALLOCATED_VOL):
-        (rc, out, err) = misc.ddWatchCopy(
-            src=src, dst=dst,
-            stop=stop, size=size)
-    else:
-        cmd = [constants.EXT_QEMUIMG, "convert",
-               "-t", "none", "-f", src_fmt, src,
-               "-O", dst_fmt, dst]
-        (rc, out, err) = misc.watchCmd(cmd, stop=stop,
-                                       ioclass=utils.IOCLASS.IDLE,
-                                       nice=utils.NICENESS.HIGH)
-
-    log.debug('(qemuConvert): COPY %s to %s DONE' % (src, dst))
-    return (rc, out, err)

@@ -744,17 +744,15 @@ class Image:
                 dstVol.prepare(rw=True, setrw=True)
 
                 try:
-                    (rc, out, err) = volume.qemuConvert(
-                        volParams['path'], dstPath, volParams['volFormat'],
-                        dstVolFormat, vars.task.aborting,
-                        size=srcVol.getVolumeSize(bs=1),
-                        dstvolType=dstVol.getType())
-                    if rc:
-                        raise se.StorageException("rc: %s, err: %s" %
-                                                  (rc, err))
+                    qemuimg.convert(volParams['path'], dstPath,
+                                    vars.task.aborting,
+                                    volume.fmt2str(volParams['volFormat']),
+                                    volume.fmt2str(dstVolFormat))
                 except ActionStopped:
                     raise
-                except se.StorageException as e:
+                except qemuimg.QImgError:
+                    self.log.exception('conversion failure for volume %s',
+                                       srcVol.volUUID)
                     raise se.CopyImageError(str(e))
 
                 # Mark volume as SHARED
@@ -961,7 +959,7 @@ class Image:
         # volume and rebase successor's children (if exists) on top of it.
         # Step 1: Create an empty volume named sucessor_MERGE similar to
         #         ancestor volume.
-        # Step 2: qemuConvert successor -> sucessor_MERGE
+        # Step 2: qemuimg.convert successor -> sucessor_MERGE
         # Step 3: Rename successor to _remove_me__successor
         # Step 4: Rename successor_MERGE to successor
         # Step 5: Unsafely rebase successor's children on top of temporary
@@ -984,17 +982,17 @@ class Image:
             newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                          volUUID=newUUID)
             with newVol.scopedPrepare(rw=True, justme=True, setrw=True):
-
                 # Step 2: Convert successor to new volume
                 #   qemu-img convert -f qcow2 successor -O raw newUUID
-                (rc, out, err) = volume.qemuConvert(
-                    srcVolParams['path'], newVol.getVolumePath(),
-                    srcVolParams['volFormat'], volParams['volFormat'],
-                    vars.task.aborting, size=volParams['apparentsize'],
-                    dstvolType=newVol.getType())
-                if rc:
-                    self.log.error("qemu-img convert failed: rc=%s, out=%s, "
-                                   "err=%s", rc, out, err)
+                try:
+                    qemuimg.convert(srcVolParams['path'],
+                                    newVol.getVolumePath(),
+                                    vars.task.aborting,
+                                    volume.fmt2str(srcVolParams['volFormat']),
+                                    volume.fmt2str(volParams['volFormat']))
+                except qemuimg.QImgError:
+                    self.log.exception('conversion failure for volume %s',
+                                       srcVol.volUUID)
                     raise se.MergeSnapshotsError(newUUID)
 
         if chList:
