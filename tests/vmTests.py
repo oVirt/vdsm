@@ -45,8 +45,14 @@ from vmTestsData import CONF_TO_DOMXML_PPC64
 
 
 class ConnectionMock:
+    def __init__(self, *args):
+        pass
+
     def domainEventRegisterAny(self, *arg):
         pass
+
+    def listAllNetworks(self, *args):
+        return []
 
 
 class FakeDomain:
@@ -60,6 +66,25 @@ class TestVm(TestCaseBase):
         'bus="0x00" domain="0x0000" function="0x0" slot="0x03" type="pci"'
     PCI_ADDR_DICT = {'slot': '0x03', 'bus': '0x00', 'domain': '0x0000',
                      'function': '0x0', 'type': 'pci'}
+
+    GRAPHICS_XMLS = [
+        """
+        <graphics autoport="yes" keymap="en-us" passwd="*****"
+                  passwdValidTo="1970-01-01T00:00:01" port="-1" type="vnc">
+            <listen network="vdsm-vmDisplay" type="network"/>
+        </graphics>""",
+
+        """
+        <graphics autoport="yes" listen="0" passwd="*****"
+                  passwdValidTo="1970-01-01T00:00:01" port="-1"
+                  tlsPort="-1" type="spice">
+            <channel mode="secure" name="main"/>
+            <channel mode="secure" name="inputs"/>
+            <channel mode="secure" name="cursor"/>
+            <channel mode="secure" name="playback"/>
+            <channel mode="secure" name="record"/>
+            <channel mode="secure" name="display"/>
+        </graphics>"""]
 
     def __init__(self, *args, **kwargs):
         TestCaseBase.__init__(self, *args, **kwargs)
@@ -387,31 +412,7 @@ class TestVm(TestCaseBase):
             domxml.appendInput()
             self.assertXML(domxml.dom, xml, 'devices/input')
 
-    def testGraphicsXML(self):
-        expectedXMLs = [
-            """
-            <graphics autoport="yes" keymap="en-us" passwd="*****"
-                      passwdValidTo="1970-01-01T00:00:01" port="-1" type="vnc">
-                <listen network="vdsm-vmDisplay" type="network"/>
-            </graphics>""",
-
-            """
-            <graphics autoport="yes" listen="0" passwd="*****"
-                      passwdValidTo="1970-01-01T00:00:01" port="-1"
-                      tlsPort="-1" type="spice">
-                <channel mode="secure" name="main"/>
-                <channel mode="secure" name="inputs"/>
-                <channel mode="secure" name="cursor"/>
-                <channel mode="secure" name="playback"/>
-                <channel mode="secure" name="record"/>
-                <channel mode="secure" name="display"/>
-            </graphics>"""]
-
-        spiceChannelXML = """
-            <channel type="spicevmc">
-                <target name="com.redhat.spice.0" type="virtio"/>
-            </channel>"""
-
+    def testLegacyGraphicsXML(self):
         vmConfs = [
             {'display': 'vnc', 'displayPort': '-1', 'displayNetwork':
              'vmDisplay', 'keyboardLayout': 'en-us'},
@@ -420,14 +421,42 @@ class TestVm(TestCaseBase):
              'spiceSecureChannels':
              "smain,sinputs,scursor,splayback,srecord,sdisplay"}]
 
-        for vmConf, xml in zip(vmConfs, expectedXMLs):
-            vmConf.update(self.conf)
-            domxml = vm._DomXML(vmConf, self.log,
-                                caps.Architecture.X86_64)
-            domxml.appendGraphics()
-            self.assertXML(domxml.dom, xml, 'devices/graphics')
-            if vmConf['display'] == 'qxl':
-                self.assertXML(domxml.dom, spiceChannelXML, 'devices/channel')
+        for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
+            self._verifyGraphicsXML(vmConf, xml, isLegacy=True)
+
+    def testGraphicsDeviceXML(self):
+        vmConfs = [
+            {'devices': [{
+                'type': 'graphics', 'device': 'vnc', 'port': '-1',
+                'specParams': {
+                    'displayNetwork': 'vmDisplay',
+                    'keyMap': 'en-us'}}]},
+
+            {'devices': [{
+                'type': 'graphics', 'device': 'spice', 'port': '-1',
+                'tlsPort': '-1', 'specParams': {
+                    'spiceSecureChannels':
+                        'smain,sinputs,scursor,splayback,srecord,sdisplay'}}]}]
+
+        for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
+            self._verifyGraphicsXML(vmConf, xml, isLegacy=False)
+
+    def _verifyGraphicsXML(self, vmConf, xml, isLegacy):
+        spiceChannelXML = """
+            <channel type="spicevmc">
+                <target name="com.redhat.spice.0" type="virtio"/>
+            </channel>"""
+
+        vmConf.update(self.conf)
+        with FakeVM(vmConf) as fake:
+            dev = (fake.getConfGraphics() if isLegacy
+                   else vmConf['devices'])[0]
+            graph = vm.GraphicsDevice(vmConf, self.log, **dev)
+            self.assertXML(graph.getXML(), xml)
+
+            if graph.device == 'spice':
+                self.assertXML(graph.getSpiceVmcChannelsXML(),
+                               spiceChannelXML)
 
     def testBalloonXML(self):
         balloonXML = '<memballoon model="virtio"/>'
@@ -744,7 +773,7 @@ class TestVm(TestCaseBase):
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
     @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
-    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(libvirtconnection, 'get', ConnectionMock)
     @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLineX86_64(self):
@@ -753,7 +782,7 @@ class TestVm(TestCaseBase):
     @MonkeyPatch(caps, 'getTargetArch', lambda: caps.Architecture.PPC64)
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
-    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(libvirtconnection, 'get', ConnectionMock)
     @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLinePPC64(self):
@@ -779,8 +808,7 @@ class FakeGuestAgent(object):
 def FakeVM(params=None, devices=None, runCpu=False):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
-                               (libvirtconnection, 'get',
-                                lambda x: ConnectionMock())]):
+                               (libvirtconnection, 'get', ConnectionMock)]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
             fake = vm.Vm(None, vmParams)
@@ -1000,3 +1028,65 @@ class TestVmStats(TestCaseBase):
             with ensureVmStats(fake):
                 self.assertVmStatsSchemaCompliancy('RunningVmStats',
                                                    fake.getStats())
+
+
+class TestVmDevices(TestCaseBase):
+    def setUp(self):
+        self.conf = {
+            'vmName': 'testVm',
+            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
+            'smp': '8', 'maxVCpus': '160',
+            'memSize': '1024', 'memGuaranteedSize': '512'}
+
+        self.confDisplay = (
+            {'display': 'vnc', 'displayNetwork': 'vmDisplay'},
+
+            {'display': 'vnc', 'displayPort': '-1', 'displayNetwork':
+             'vmDisplay', 'keyboardLayout': 'en-us'},
+
+            {'display': 'qxl', 'displayNetwork': 'vmDisplay'},
+
+            {'display': 'qxl', 'displayPort': '-1',
+             'displaySecurePort': '-1'})
+
+        self.confDeviceGraphics = (
+            ({'type': 'graphics', 'device': 'vnc'},),
+
+            ({'type': 'graphics', 'device': 'vnc', 'port': '-1',
+                'specParams': {
+                    'displayNetwork': 'vmDisplay',
+                    'keyMap': 'en-us'}},),
+
+            ({'type': 'graphics', 'device': 'spice'},),
+
+            ({'type': 'graphics', 'device': 'spice', 'port': '-1',
+                'tlsPort': '-1', 'specParams': {
+                    'spiceSecureChannels':
+                    'smain,sinputs,scursor,splayback,srecord,sdisplay'}},))
+
+    def testGraphicsDeviceLegacy(self):
+        for conf in self.confDisplay:
+            conf.update(self.conf)
+            with FakeVM(conf) as fake:
+                devs = fake.buildConfDevices()
+                self.assertTrue(devs['graphics'])
+
+    def testGraphicsDevice(self):
+        for dev in self.confDeviceGraphics:
+            with FakeVM(self.conf, dev) as fake:
+                devs = fake.buildConfDevices()
+                self.assertTrue(devs['graphics'])
+
+    def testGraphicsDeviceMixed(self):
+        """
+        if proper Graphics Devices are supplied, display* params must be
+        ignored.
+        """
+        for conf in self.confDisplay:
+            conf.update(self.conf)
+            for dev in self.confDeviceGraphics:
+                with FakeVM(self.conf, dev) as fake:
+                    devs = fake.buildConfDevices()
+                    self.assertEqual(len(devs['graphics']), 1)
+                    self.assertEqual(devs['graphics'][0]['device'],
+                                     dev[0]['device'])

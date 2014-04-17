@@ -252,17 +252,13 @@ class VM(APIBase):
                                                   'No space on /tmp?'}}
                     return errCode['createErr']
 
-            if vmParams.get('display') not in ('vnc', 'qxl', 'qxlnc'):
+            if not vm.GraphicsDevice.isSupportedDisplayType(vmParams):
                 return {'status': {'code': errCode['createErr']
                                                   ['status']['code'],
                                    'message': 'Unknown display type %s' %
                                               vmParams.get('display')}}
             if 'nicModel' not in vmParams:
                 vmParams['nicModel'] = config.get('vars', 'nic_model')
-            vmParams['displayIp'] = self._getNetworkIp(vmParams.get(
-                                                       'displayNetwork'))
-            vmParams['displayPort'] = '-1'   # selected by libvirt
-            vmParams['displaySecurePort'] = '-1'
             return self._cif.createVm(vmParams)
 
         except OSError as e:
@@ -671,18 +667,6 @@ class VM(APIBase):
             dict(domainID=domainID, poolID=poolID,
                  imageID=paramImageID, volumeID=paramVolumeID,
                  device='disk')
-
-    def _getNetworkIp(self, network):
-        try:
-            nets = netinfo.networks()
-            device = nets[network].get('iface', network)
-            ip = netinfo.getaddr(device)
-        except:
-            ip = config.get('addresses', 'guests_gateway_ip')
-            if ip == '':
-                ip = '0'
-            self.log.info('network %s: using %s', network, ip)
-        return ip
 
     def snapshot(self, snapDrives, snapMemVolHandle=None):
         v = self._cif.vmContainer.get(self._UUID)

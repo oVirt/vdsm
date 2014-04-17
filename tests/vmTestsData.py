@@ -54,10 +54,6 @@ CONF_TO_DOMXML_X86_64 = [({
        path="/var/lib/libvirt/qemu/channels/%(vmId)s.org.qemu.guest_agent.0"/>
                 </channel>
                 <input bus="ps2" type="mouse"/>
-                <graphics autoport="yes" passwd="*****"
-                passwdValidTo="1970-01-01T00:00:01" port="-1" type="vnc">
-                <listen network="vdsm-mydisp" type="network"/>
-                </graphics>
                 </devices>
                 <os>
                     <type arch="x86_64" machine="pc">hvm</type>
@@ -127,10 +123,6 @@ CONF_TO_DOMXML_PPC64 = [({
        path="/var/lib/libvirt/qemu/channels/%(vmId)s.org.qemu.guest_agent.0"/>
                 </channel>
                 <input bus="usb" type="mouse"/>
-                <graphics autoport="yes" passwd="*****"
-                passwdValidTo="1970-01-01T00:00:01" port="-1" type="vnc">
-                <listen network="vdsm-mydisp" type="network"/>
-                </graphics>
                 <emulator>/usr/bin/qemu-system-ppc64</emulator>
                 </devices>
                 <os>

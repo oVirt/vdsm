@@ -75,6 +75,7 @@ DEFAULT_BRIDGE = config.get("vars", "default_bridge")
 DISK_DEVICES = 'disk'
 NIC_DEVICES = 'interface'
 VIDEO_DEVICES = 'video'
+GRAPHICS_DEVICES = 'graphics'
 SOUND_DEVICES = 'sound'
 CONTROLLER_DEVICES = 'controller'
 GENERAL_DEVICES = 'general'
@@ -795,56 +796,6 @@ class _DomXML:
         commandLine.appendChildWithArgs('qemu:arg', value='keyboard')
         self.dom.appendChild(commandLine)
 
-    def appendGraphics(self):
-        """
-        Add graphics section to domain xml.
-
-        <graphics autoport="yes" listen="0" type="vnc"/>
-
-        or
-
-        <graphics autoport="yes" keymap="en-us" listen="0" port="5910"
-                  tlsPort="5890" type="spice" passwd="foo"
-                  passwdValidTo="2010-04-09T15:51:00"/>
-        <channel type='spicevmc'>
-           <target type='virtio' name='com.redhat.spice.0'/>
-        </channel>
-        """
-        graphicsAttrs = {'port': self.conf['displayPort'], 'autoport': 'yes'}
-        if self.conf['display'] == 'vnc':
-            graphicsAttrs['type'] = 'vnc'
-        elif 'qxl' in self.conf['display']:
-            graphicsAttrs['type'] = 'spice'
-            graphicsAttrs['tlsPort'] = self.conf['displaySecurePort']
-
-        if self.conf.get('keyboardLayout'):
-            graphicsAttrs['keymap'] = self.conf['keyboardLayout']
-        if 'spiceDisableTicketing' not in self.conf:
-            graphicsAttrs['passwd'] = '*****'
-            graphicsAttrs['passwdValidTo'] = '1970-01-01T00:00:01'
-
-        graphics = XMLElement('graphics', **graphicsAttrs)
-
-        if 'qxl' in self.conf['display']:
-            if self.conf.get('spiceSecureChannels'):
-                for channel in self.conf['spiceSecureChannels'].split(','):
-                    graphics.appendChildWithArgs('channel', name=channel[1:],
-                                                 mode='secure')
-
-            vmc = XMLElement('channel', type='spicevmc')
-            vmc.appendChildWithArgs('target', type='virtio',
-                                    name='com.redhat.spice.0')
-            self._devices.appendChild(vmc)
-
-        if self.conf.get('displayNetwork'):
-            graphics.appendChildWithArgs('listen', type='network',
-                                         network=netinfo.LIBVIRT_NET_PREFIX +
-                                         self.conf.get('displayNetwork'))
-        else:
-            graphics.setAttrs(listen='0')
-
-        self._devices.appendChild(graphics)
-
     def appendEmulator(self):
         emulatorPath = '/usr/bin/qemu-system-' + self.arch
 
@@ -1378,6 +1329,100 @@ class Drive(VmDevice):
         return diskelem
 
 
+class GraphicsDevice(VmDevice):
+    __slots__ = ('device', 'port', 'tlsPort')
+
+    LIBVIRT_PORT_AUTOSELECT = '-1'
+
+    LEGACY_MAP = {
+        'keyboardLayout': 'keyMap',
+        'spiceDisableTicketing': 'disableTicketing',
+        'displayNetwork': 'displayNetwork',
+        'spiceSecureChannels': 'spiceSecureChannels'}
+
+    SPICE_CHANNEL_NAMES = (
+        'main', 'display', 'inputs', 'cursor', 'playback',
+        'record', 'smartcard', 'usbredir')
+
+    @staticmethod
+    def isSupportedDisplayType(vmParams):
+        return vmParams.get('display') in ('vnc', 'qxl', 'qxlnc')
+
+    def __init__(self, conf, log, **kwargs):
+        super(GraphicsDevice, self).__init__(conf, log, **kwargs)
+        self.port = self.LIBVIRT_PORT_AUTOSELECT
+        self.tlsPort = self.LIBVIRT_PORT_AUTOSELECT
+        self.specParams['displayIp'] = _getNetworkIp(
+            self.specParams.get('displayNetwork'))
+
+    def getSpiceVmcChannelsXML(self):
+        vmc = XMLElement('channel', type='spicevmc')
+        vmc.appendChildWithArgs('target', type='virtio',
+                                name='com.redhat.spice.0')
+        return vmc
+
+    def _getSpiceChannels(self):
+        for name in self.specParams['spiceSecureChannels'].split(','):
+            if name in GraphicsDevice.SPICE_CHANNEL_NAMES:
+                yield name
+            elif (name[0] == 's' and name[1:] in
+                  GraphicsDevice.SPICE_CHANNEL_NAMES):
+                # legacy, deprecated channel names
+                yield name[1:]
+            else:
+                self.log.error('unsupported spice channel name "%s"', name)
+
+    def getXML(self):
+        """
+        Create domxml for a graphics framebuffer.
+
+        <graphics type='spice' port='5900' tlsPort='5901' autoport='yes'
+                  listen='0' keymap='en-us'
+                  passwdValidTo='1970-01-01T00:00:01'>
+          <listen type='address' address='0'/>
+          <clipboard copypaste='no'/>
+        </graphics>
+        OR
+        <graphics type='vnc' port='5900' autoport='yes' listen='0'
+                  keymap='en-us' passwdValidTo='1970-01-01T00:00:01'>
+          <listen type='address' address='0'/>
+        </graphics>
+
+        """
+
+        graphicsAttrs = {
+            'type': self.device,
+            'port': self.port,
+            'autoport': 'yes'}
+
+        if self.device == 'spice':
+            graphicsAttrs['tlsPort'] = self.tlsPort
+
+        if not utils.tobool(self.specParams.get('disableTicketing', False)):
+            graphicsAttrs['passwd'] = '*****'
+            graphicsAttrs['passwdValidTo'] = '1970-01-01T00:00:01'
+
+        if 'keyMap' in self.specParams:
+            graphicsAttrs['keymap'] = self.specParams['keyMap']
+
+        graphics = XMLElement('graphics', **graphicsAttrs)
+
+        if (self.device == 'spice' and
+           'spiceSecureChannels' in self.specParams):
+            for chan in self._getSpiceChannels():
+                graphics.appendChildWithArgs('channel', name=chan,
+                                             mode='secure')
+
+        if self.specParams.get('displayNetwork'):
+            graphics.appendChildWithArgs('listen', type='network',
+                                         network=netinfo.LIBVIRT_NET_PREFIX +
+                                         self.specParams.get('displayNetwork'))
+        else:
+            graphics.setAttrs(listen='0')
+
+        return graphics
+
+
 class BalloonDevice(VmDevice):
     __slots__ = ('address',)
 
@@ -1543,6 +1588,7 @@ class Vm(object):
                      (NIC_DEVICES, NetworkInterfaceDevice),
                      (SOUND_DEVICES, SoundDevice),
                      (VIDEO_DEVICES, VideoDevice),
+                     (GRAPHICS_DEVICES, GraphicsDevice),
                      (CONTROLLER_DEVICES, ControllerDevice),
                      (GENERAL_DEVICES, GeneralDevice),
                      (BALLOON_DEVICES, BalloonDevice),
@@ -1579,6 +1625,7 @@ class Vm(object):
         self.recovering = recover
         self.conf = {'pid': '0'}
         self.conf.update(params)
+        self._initLegacyConf()  # restore placeholders for BC sake
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
         self.destroyed = False
@@ -1737,6 +1784,7 @@ class Vm(object):
             devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
             devices[SOUND_DEVICES] = self.getConfSound()
             devices[VIDEO_DEVICES] = self.getConfVideo()
+            devices[GRAPHICS_DEVICES] = self.getConfGraphics()
             devices[CONTROLLER_DEVICES] = self.getConfController()
         else:
             for dev in self.conf.get('devices'):
@@ -1746,6 +1794,9 @@ class Vm(object):
                     self.log.warn("Unknown type found, device: '%s' "
                                   "found", dev)
                     devices[GENERAL_DEVICES].append(dev)
+
+            if not devices[GRAPHICS_DEVICES]:
+                devices[GRAPHICS_DEVICES] = self.getConfGraphics()
 
         self._checkDeviceLimits(devices)
 
@@ -1789,6 +1840,8 @@ class Vm(object):
             if len(devices[device]) > 1:
                 raise ValueError("only a single %s device is "
                                  "supported" % device)
+        if len(devices[GRAPHICS_DEVICES]) != 1:
+            raise ValueError("one graphics device is required")
 
     def getConfController(self):
         """
@@ -1821,6 +1874,24 @@ class Vm(object):
                            'device': devType})
 
         return vcards
+
+    def getConfGraphics(self):
+        """
+        Normalize graphics device provided by conf.
+        """
+        def makeSpecParams(conf):
+            return dict(
+                (newName, conf[oldName])
+                for oldName, newName in GraphicsDevice.LEGACY_MAP.iteritems()
+                if oldName in conf)
+
+        return [{
+            'type': GRAPHICS_DEVICES,
+            'device': (
+                'spice'
+                if self.conf['display'] in ('qxl', 'qxlnc')
+                else 'vnc'),
+            'specParams': makeSpecParams(self.conf)}]
 
     def getConfSound(self):
         """
@@ -2645,12 +2716,16 @@ class Vm(object):
                 self._qemuguestSocketFile.decode('utf-8'),
                 _QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
-        domxml.appendGraphics()
 
         if self.arch == caps.Architecture.PPC64:
             domxml.appendEmulator()
 
         self._appendDevices(domxml)
+
+        for graphDev in self._devices[GRAPHICS_DEVICES]:
+            if graphDev.device == 'spice':
+                domxml._devices.appendChild(graphDev.getSpiceVmcChannelsXML())
+                break
 
         for drive in self._devices[DISK_DEVICES][:]:
             for leaseElement in drive.getLeasesXML():
@@ -2692,9 +2767,9 @@ class Vm(object):
         """
         self._getUnderlyingNetworkInterfaceInfo()
         self._getUnderlyingDriveInfo()
-        self._getUnderlyingDisplayPort()
         self._getUnderlyingSoundDeviceInfo()
         self._getUnderlyingVideoDeviceInfo()
+        self._getUnderlyingGraphicsDeviceInfo()
         self._getUnderlyingControllerDeviceInfo()
         self._getUnderlyingBalloonDeviceInfo()
         self._getUnderlyingWatchdogDeviceInfo()
@@ -4249,7 +4324,10 @@ class Vm(object):
 
     @property
     def hasSpice(self):
-        return self.conf.get('display') == 'qxl'
+        return (self.conf.get('display') == 'qxl' or
+                any(dev['device'] == 'spice'
+                    for dev in self.conf.get('devices', [])
+                    if dev['type'] == GRAPHICS_DEVICES))
 
     def _getPid(self):
         pid = '0'
@@ -4766,18 +4844,30 @@ class Vm(object):
                 self.log.debug('Found unknown drive: %s', diskDev)
                 self.conf['devices'].append(diskDev)
 
-    def _getUnderlyingDisplayPort(self):
+    def _getUnderlyingGraphicsDeviceInfo(self):
         """
-        Obtain display port info from libvirt.
+        Obtain graphic framebuffer devices info from libvirt.
+        Libvirt only allows at most one device of each type, so mapping between
+        _devices and conf.devices is based on this fact.
+        The libvirt docs are a bit sparse on this topic, but as of libvirt
+        1.2.3 if one tries to create a domain with 2+ SPICE graphics devices,
+        virsh responds: error: unsupported configuration: only 1 graphics
+        device of each type (sdl, vnc, spice) is supported
         """
-        graphics = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('graphics')[0]
-        port = graphics.getAttribute('port')
-        if port:
-            self.conf['displayPort'] = port
-        port = graphics.getAttribute('tlsPort')
-        if port:
-            self.conf['displaySecurePort'] = port
+        graphicsXml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
+            getElementsByTagName('devices')[0].getElementsByTagName('graphics')[0]
+
+        graphicsType = graphicsXml.getAttribute('type')
+        for dev in self.conf['devices']:
+            if dev.get('device') == graphicsType:
+                port = graphicsXml.getAttribute('port')
+                if port:
+                    dev['port'] = port
+                tlsPort = graphicsXml.getAttribute('tlsPort')
+                if tlsPort:
+                    dev['tlsPort'] = tlsPort
+                self._updateLegacyConf(dev)
+                break
 
     def _getUnderlyingNetworkInterfaceInfo(self):
         """
@@ -4959,6 +5049,32 @@ class Vm(object):
 
         hooks.before_vm_migrate_destination(srcDomXML, self.conf)
         return True
+
+    def _initLegacyConf(self):
+        self.conf['displayPort'] = GraphicsDevice.LIBVIRT_PORT_AUTOSELECT
+        self.conf['displaySecurePort'] = \
+            GraphicsDevice.LIBVIRT_PORT_AUTOSELECT
+        self.conf['displayIp'] = _getNetworkIp(
+            self.conf.get('displayNetwork'))
+
+    def _updateLegacyConf(self, dev):
+        self.conf['display'] = 'qxl' if dev['device'] == 'spice' else 'vnc'
+        self.conf['displayPort'] = dev['port']
+        if 'tlsPort' in dev:
+            self.conf['displaySecurePort'] = dev['tlsPort']
+
+
+def _getNetworkIp(network):
+    try:
+        nets = netinfo.networks()
+        device = nets[network].get('iface', network)
+        ip = netinfo.getaddr(device)
+    except (libvirt.libvirtError, KeyError, IndexError):
+        ip = config.get('addresses', 'guests_gateway_ip')
+        if ip == '':
+            ip = '0'
+        logging.info('network %s: using %s', network, ip)
+    return ip
 
 
 # A little unrelated hack to make xml.dom.minidom.Document.toprettyxml()

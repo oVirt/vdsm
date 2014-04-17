@@ -129,7 +129,6 @@ class RunningVm(object):
 
         self._template = {'vmId': '11111111-abcd-2222-ffff-333333333333',
                           'vmName': 'vdsmKernelBootVM',
-                          'display': 'vnc',
                           'kvmEnable': 'true',
                           'memSize': '256',
                           'vmType': 'kvm',
@@ -219,7 +218,8 @@ class VirtTest(VirtTestBase):
     @requireKVM
     def testSimpleVm(self):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
-                         'vmName': 'testSimpleVm'}
+                         'vmName': 'testSimpleVm',
+                         'display': 'qxl'}
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
@@ -233,7 +233,8 @@ class VirtTest(VirtTestBase):
         drives = disk.generateDriveConf(conf)
         customization = {'vmId': '88888888-eeee-ffff-aaaa-111111111111',
                          'vmName': 'testVmWithStorage' + backendType,
-                         'drives': drives}
+                         'drives': drives,
+                         'display': 'vnc'}
 
         with RollbackContext() as rollback:
             disk.createVdsmStorageLayout(conf, 3, rollback)
@@ -245,7 +246,7 @@ class VirtTest(VirtTestBase):
                    ['hotplugDisk'], ['virtioRng']])
     def testVmWithDevice(self, *devices):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
-                         'vmName': 'testVm', 'devices': []}
+                         'vmName': 'testVm', 'devices': [], 'display': 'vnc'}
         storageLayout = storage.storageLayouts['localfs']
         diskSpecs = storage.StorageTest.generateDriveConf(storageLayout)
         pciSpecs = {'bus': '0x00', 'domain': '0x0000',
@@ -314,7 +315,8 @@ class VirtTest(VirtTestBase):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'devices': [],
                          'vmName':
-                         'testVmWithCdrom_%s' % pathLocation}
+                         'testVmWithCdrom_%s' % pathLocation,
+                         'display': 'vnc'}
 
         # echo -n testPayload | md5sum
         # d37e46c24c78b1aed33496107afdb44b
@@ -352,3 +354,22 @@ class VirtTest(VirtTestBase):
                         self.assertEqual(device['path'], cdrom['path'])
                         self.assertEqual(device['specParams']['path'],
                                          cdrom['specParams']['path'])
+
+    @permutations([['vnc'], ['qxl']])
+    def testVmDefinitionLegacyGraphics(self, displayType):
+        customization = {'vmId': '77777777-ffff-3333-cccc-222222222222',
+                         'vmName': 'testLegacyGraphicsVm',
+                         'display': displayType}
+
+        with RunningVm(self.vdsm, customization) as vm:
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+
+    @permutations([['vnc'], ['spice']])
+    def testVmDefinitionGraphics(self, displayType):
+        devices = [{'type': 'graphics', 'device': displayType}]
+        customization = {'vmId': '77777777-ffff-3333-cccc-222222222222',
+                         'vmName': 'testGraphicsDeviceVm',
+                         'devices': devices}
+
+        with RunningVm(self.vdsm, customization) as vm:
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)

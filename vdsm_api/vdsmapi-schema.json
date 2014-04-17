@@ -2087,11 +2087,14 @@
 #
 # @rng:         A rng device
 #
+# @graphics:    The graphics device
+#               (new in version 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'enum': 'VmDeviceType',
  'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
-          'channel', 'console', 'smartcard', 'rng']}
+          'channel', 'console', 'smartcard', 'rng', 'graphics']}
 
 ##
 # @VmDiskDeviceType:
@@ -2564,6 +2567,61 @@
  'data': {'deviceType': 'VmDeviceType', 'device': 'VmVideoDeviceType',
           'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
           'specParams': 'VmVideoDeviceSpecParams'}}
+
+##
+# @VmGraphicsDeviceType:
+#
+# An enumeration of VM graphics device types.
+#
+# @spice:   SPICE graphics device
+#
+# @vnc:     VNC graphics device
+#
+# Since: 4.15.0
+##
+{'enum': 'VmGraphicsDeviceType',
+ 'data': ['spice', 'vnc']}
+
+##
+# @VmGraphicsDeviceSpecParams:
+#
+# Additional parameters for VM graphics devices.
+#
+# @keyMap:                #optional The keyboard layout string (eg. 'en-us')
+#
+# @disableTicketing:      #optional disable security ticketing
+#
+# @displayNetwork:        #optional Address of the display network
+#
+# @spiceSecureChannels:   #optional Secure space channels, comma separated
+#
+# Since: 4.15.0
+##
+{'type': 'VmGraphicsDeviceSpecParams',
+ 'data': {'*keyMap': 'str', '*disableTicketing': 'bool',
+          '*displayNetwork': 'str', '*spiceSecureChannels': 'str'}}
+
+##
+# @VmGraphicsDevice:
+#
+# Properties of a VM graphics device.
+#
+# @deviceType:  The device type (always @graphics)
+#
+# @device:      The type of video device
+#
+# @port:        The port in use for unencrypted display data
+#
+# @tlsPort:     #optional The port in use for encrypted display data
+#
+# @specParams:  Additional device parameters
+#
+# Since: 4.15.0
+##
+{'type': 'VmGraphicsDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmGraphicsDeviceType',
+          'port': 'uint', 'tlsPort': 'uint',
+          'specParams': 'VmGraphicsDeviceSpecParams'}}
 
 ##
 # @VmSoundDeviceType:
@@ -3079,7 +3137,7 @@
  'union': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
           'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
           'VmChannelDevice', 'VmWatchdogDevice', 'VmConsoleDevice',
-          'VmSmartcardDevice']}
+          'VmSmartcardDevice', 'VmGraphicsDevice']}
 
 ##
 # @VmShortStatus:
