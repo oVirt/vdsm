@@ -301,8 +301,7 @@ class SourceThread(threading.Thread):
                 self._monitorThread.start()
 
             try:
-                if ('qxl' in self._vm.conf['display'] and
-                        self._vm.conf.get('clientIp')):
+                if self._vm.hasSpice and self._vm.conf.get('clientIp'):
                     SPICE_MIGRATION_HANDOVER_TIME = 120
                     self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 

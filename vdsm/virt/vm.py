@@ -1804,7 +1804,7 @@ class Vm(object):
         vcards = []
         if self.conf.get('display') == 'vnc':
             devType = DEFAULT_VIDEOS[self.arch]
-        elif self.conf.get('display') == 'qxl':
+        elif self.hasSpice:
             devType = 'qxl'
 
         monitors = int(self.conf.get('spiceMonitors', '1'))
@@ -4198,6 +4198,10 @@ class Vm(object):
             # we do not support and do not expect other values
             self.log.warning('unexpected action %i on device %s error %s',
                              action, blockDevAlias, err)
+
+    @property
+    def hasSpice(self):
+        return self.conf.get('display') == 'qxl'
 
     def _getPid(self):
         pid = '0'
