@@ -144,8 +144,6 @@ def readSessionInfo(sessionID):
 
 
 def addIscsiNode(iface, target, credentials=None):
-    targetName = target.iqn
-
     # There are 2 formats for an iSCSI node record. An old style format where
     # the path is /var/lib/iscsi/nodes/{target}/{portal} and a new style format
     # where the portal path is a directory containing a record file for each
@@ -155,17 +153,17 @@ def addIscsiNode(iface, target, credentials=None):
     portalStr = "%s:%d,%d" % (target.portal.hostname, target.portal.port,
                               target.tpgt)
     with _iscsiadmTransactionLock:
-        iscsiadm.node_new(iface.name, portalStr, targetName)
+        iscsiadm.node_new(iface.name, portalStr, target.iqn)
         try:
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "node.session." + key
-                    iscsiadm.node_update(iface.name, portalStr, targetName,
+                    iscsiadm.node_update(iface.name, portalStr, target.iqn,
                                          key, value, hideValue=True)
 
-            iscsiadm.node_login(iface.name, portalStr, targetName)
+            iscsiadm.node_login(iface.name, portalStr, target.iqn)
 
-            iscsiadm.node_update(iface.name, portalStr, targetName,
+            iscsiadm.node_update(iface.name, portalStr, target.iqn,
                                  "node.startup", "manual")
         except:
             removeIscsiNode(iface, target)
@@ -173,8 +171,6 @@ def addIscsiNode(iface, target, credentials=None):
 
 
 def removeIscsiNode(iface, target):
-    targetName = target.iqn
-
     # Basically this command deleting a node record (see addIscsiNode).
     # Once we create a record in the new style format by specifying a tpgt,
     # we delete it in the same way.
@@ -182,11 +178,11 @@ def removeIscsiNode(iface, target):
                               target.tpgt)
     with _iscsiadmTransactionLock:
         try:
-            iscsiadm.node_disconnect(iface.name, portalStr, targetName)
+            iscsiadm.node_disconnect(iface.name, portalStr, target.iqn)
         except iscsiadm.IscsiSessionNotFound:
             pass
 
-        iscsiadm.node_delete(iface.name, portalStr, targetName)
+        iscsiadm.node_delete(iface.name, portalStr, target.iqn)
 
 
 def addIscsiPortal(iface, portal, credentials=None):
