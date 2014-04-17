@@ -3034,12 +3034,25 @@ class Vm(object):
             if name not in _AGENT_CHANNEL_DEVICES:
                 continue
 
-            if os.path.islink(path):
-                os.unlink(path)
+            uuidPath = self._makeChannelPath(name)
+            if path != uuidPath:
+                # When this path is executed, we're having VM created on
+                # VDSM > 4.13
 
-            socketPath = self._makeChannelPath(name)
-            if path != socketPath:
-                os.symlink(path, socketPath)
+                # The to be created symlink might not have been cleaned up due
+                # to an unexpected stop of VDSM therefore We're going to clean
+                # it up now
+                if os.path.islink(uuidPath):
+                    os.path.unlink(uuidPath)
+
+                # We don't want an exception to be thrown when the path already
+                # exists
+                if not os.path.exists(uuidPath):
+                    os.symlink(path, uuidPath)
+                else:
+                    self.log.error("Failed to make a agent channel symlink "
+                                   "from %s -> %s for channel %s", path,
+                                   uuidPath, name)
 
     def _domDependentInit(self):
         if self.destroyed:
