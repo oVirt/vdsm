@@ -3231,9 +3231,24 @@ class Vm(object):
             # Update the conf with the new mirroring.
             conf['portMirroring'] = networks
 
+    def _updateGraphicsDevice(self, params):
+        graphics = self._findGraphicsDeviceXMLByType(params['graphicsType'])
+        if graphics:
+            params.pop('deviceType')
+            params.pop('graphicsType')
+            password = params.pop('password')
+            ttl = params.pop('ttl')
+            connAct = params.pop('existingConnAction')
+            return self._setTicketForGraphicDev(
+                graphics, password, ttl, connAct, params)
+        else:
+            return errCode['updateDevice']
+
     def updateDevice(self, params):
         if params.get('deviceType') == NIC_DEVICES:
             return self._updateInterfaceDevice(params)
+        elif params.get('deviceType') == GRAPHICS_DEVICES:
+            return self._updateGraphicsDevice(params)
         else:
             return errCode['noimpl']
 
@@ -4196,8 +4211,16 @@ class Vm(object):
         return {'status': doneCode, 'vmList': self.status()}
 
     def setTicket(self, otp, seconds, connAct, params):
+        """
+        setTicket defaults to the first graphic device.
+        use updateDevice to select the device.
+        """
         graphics = _domParseStr(self._dom.XMLDesc(0)).childNodes[0]. \
             getElementsByTagName('graphics')[0]
+        return self._setTicketForGraphicDev(
+            graphics, otp, seconds, connAct, params)
+
+    def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct, params):
         graphics.setAttribute('passwd', otp)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
@@ -4217,10 +4240,11 @@ class Vm(object):
         return res
 
     def _reviveTicket(self, newlife):
-        """Revive an existing ticket, if it has expired or about to expire"""
-        graphics = _domParseStr(
-            self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)). \
-            childNodes[0].getElementsByTagName('graphics')[0]
+        """
+        Revive an existing ticket, if it has expired or about to expire.
+        Needs to be called only if Vm.hasSpice == True
+        """
+        graphics = self._findGraphicsDeviceXMLByType('spice')  # cannot fail
         validto = max(time.strptime(graphics.getAttribute('passwdValidTo'),
                                     '%Y-%m-%dT%H:%M:%S'),
                       time.gmtime(time.time() + newlife))
@@ -4228,6 +4252,18 @@ class Vm(object):
             'passwdValidTo', time.strftime('%Y-%m-%dT%H:%M:%S', validto))
         graphics.setAttribute('connected', 'keep')
         self._dom.updateDeviceFlags(graphics.toxml(), 0)
+
+    def _findGraphicsDeviceXMLByType(self, deviceType):
+        """
+        libvirt (as in 1.2.3) supports only one graphic device per type
+        """
+        for graphics in _domParseStr(
+            self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)). \
+                childNodes[0].getElementsByTagName('graphics'):
+            if graphics.getAttribute('type') == deviceType:
+                return graphics
+        # no graphics device configured
+        return None
 
     def _onIOError(self, blockDevAlias, err, action):
         """

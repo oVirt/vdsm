@@ -56,8 +56,18 @@ class ConnectionMock:
 
 
 class FakeDomain:
+    def __init__(self, xml=''):
+        self._xml = xml
+        self.devXml = ''
+
     def info(self):
         raise libvirt.libvirtError(defmsg='')
+
+    def XMLDesc(self, unused):
+        return self._xml
+
+    def updateDeviceFlags(self, devXml, unused):
+        self.devXml = devXml
 
 
 class TestVm(TestCaseBase):
@@ -824,6 +834,9 @@ class TestVmOperations(TestCaseBase):
     UPDATE_OFFSETS = [-3200, 3502, -2700, 3601]
     BASE_OFFSET = 42
 
+    GRAPHIC_DEVICES = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
+                       {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
+
     @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetNotPresentByDefault(self, exitCode):
@@ -875,6 +888,43 @@ class TestVmOperations(TestCaseBase):
             fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
             self.assertEqual(fake.getStats()['timeOffset'],
                              str(self.BASE_OFFSET + self.UPDATE_OFFSETS[-1]))
+
+    def testUpdateSingleDeviceGraphics(self):
+        devXmls = (
+            '<graphics connected="disconnect" passwd="***"'
+            ' port="5900" type="spice"/>',
+            '<graphics passwd="***" port="5900" type="vnc"/>')
+        for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
+            domXml = '''
+                <devices>
+                    <graphics type="%s" port="5900" />
+                </devices>''' % device['device']
+            self._verifyDeviceUpdate(device, device, domXml, devXml)
+
+    def testUpdateMultipleDeviceGraphics(self):
+        devXmls = (
+            '<graphics connected="disconnect" passwd="***"'
+            ' port="5900" type="spice"/>',
+            '<graphics passwd="***" port="5901" type="vnc"/>')
+        domXml = '''
+            <devices>
+                <graphics type="spice" port="5900" />
+                <graphics type="vnc" port="5901" />
+            </devices>'''
+        for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
+            self._verifyDeviceUpdate(
+                device, self.GRAPHIC_DEVICES, domXml, devXml)
+
+    def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml):
+        with FakeVM(devices=allDevices) as fake:
+            fake._dom = FakeDomain(domXml)
+            fake.updateDevice({
+                'deviceType': 'graphics',
+                'graphicsType': device['device'],
+                'password': '***',
+                'ttl': 0,
+                'existingConnAction': 'disconnect'})
+            self.assertEquals(fake._dom.devXml, devXml)
 
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),

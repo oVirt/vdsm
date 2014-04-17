@@ -6199,7 +6199,7 @@
 ##
 {'type': 'vmUpdateDeviceParams',
  'data': {'deviceType': 'VmDeviceType'},
- 'union': ['vmUpdateInterfaceDeviceParams']}
+ 'union': ['vmUpdateInterfaceDeviceParams', 'vmUpdateGraphicsDeviceParams']}
 
 ##
 # @vmUpdateInterfaceDeviceParams:
@@ -6227,6 +6227,28 @@
 {'type': 'vmUpdateInterfaceDeviceParams',
  'data': {'*network': 'str', '*linkActive': 'bool',
           'alias': 'str', '*portMirroring': ['str']}}
+
+##
+# @vmUpdateGraphicsDeviceParams:
+#
+# Parameters for @VM.updateDevice
+#
+# @graphicsType:        The type of the device to update
+#
+# @password:            The desired connection password
+#
+# @ttl:                 The number of seconds before the password expires
+#
+# @existingConnAction:  Indicate what to do with any existing connections
+#
+# @params:              Arbitrary key:val pairs that will be passed to hooks
+#
+# Since: 4.15.0
+##
+{'type': 'vmUpdateGraphicsDeviceParams',
+ 'data': {'graphicsType': 'VmGraphicsDeviceType', 'password': 'str',
+          'ttl': 'int', 'existingConnAction': 'VmTicketConflictAction',
+          'params': 'StringMap'}}
 
 ##
 # @VM.updateDevice:
