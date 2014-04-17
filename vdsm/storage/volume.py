@@ -173,24 +173,18 @@ class Volume(object):
         """
         Rebase volume rollback
         """
-        cls.log.info("sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
-                     sdUUID, srcImg, srcVol, dstFormat, srcParent)
+        cls.log.info('rebase volume rollback (sdUUID=%s srcImg=%s srcVol=%s '
+                     'dstFormat=%s srcParent=%s)', sdUUID, srcImg, srcVol,
+                     dstFormat, srcParent)
 
         imageResourcesNamespace = sd.getNamespace(
             sdUUID,
             resourceFactories.IMAGE_NAMESPACE)
+
         with rmanager.acquireResource(imageResourcesNamespace,
                                       srcImg, rm.LockType.exclusive):
-            try:
-                vol = sdCache.produce(sdUUID).produceVolume(imgUUID=srcImg,
-                                                            volUUID=srcVol)
-                vol.prepare(rw=True, chainrw=True, setrw=True)
-            except Exception:
-                cls.log.error(
-                    "sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
-                    sdUUID, srcImg, srcVol, dstFormat, srcParent,
-                    exc_info=True)
-                raise
+            vol = sdCache.produce(sdUUID).produceVolume(srcImg, srcVol)
+            vol.prepare(rw=True, chainrw=True, setrw=True)
 
             try:
                 (rc, out, err) = qemuRebase(
@@ -203,12 +197,6 @@ class Volume(object):
 
                 vol.setParent(srcParent)
                 vol.recheckIfLeaf()
-            except Exception:
-                cls.log.error(
-                    "sdUUID=%s srcImg=%s srcVol=%s dstFormat=%s srcParent=%s",
-                    sdUUID, srcImg, srcVol, dstFormat, srcParent,
-                    exc_info=True)
-                raise
             finally:
                 vol.teardown(sdUUID, srcVol)
 
