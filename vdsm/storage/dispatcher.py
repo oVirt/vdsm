@@ -36,22 +36,6 @@ class Protect:
         self.name = name
         self.func = func
 
-        self.help = None
-        try:
-            if hasattr(func.im_self, "help"):
-                self.help = getattr(func.im_self, "help")
-        except:
-            pass
-
-        if not self.help:
-            try:
-                self.help = getattr(func, "__doc__")
-            except:
-                pass
-
-        if not self.help:
-            self.help = "No help available for method %s" % name
-
     def run(self, *args, **kwargs):
         try:
             ctask = task.Task(id=None, name=self.name)
@@ -111,14 +95,3 @@ class Dispatcher:
                 # Create a new entry in instance's "dict" that will mask the
                 # original method
                 setattr(self, funcName, Protect(funcObj, funcName).run)
-
-    def _methodHelp(self, method):
-        # this method must be present for system.methodHelp
-        # to work
-        help = "No help available for method %s" % method
-        try:
-            if hasattr(self, method):
-                help = getattr(self, method).im_self.help
-        except:
-            pass
-        return help
