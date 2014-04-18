@@ -117,6 +117,10 @@ def name2type(name):
     return None
 
 
+def getBackingVolumePath(imgUUID, volUUID):
+    return os.path.join('..', imgUUID, volUUID)
+
+
 class VmVolumeInfo(object):
     TYPE_PATH = "path"
     TYPE_NETWORK = "network"
@@ -191,7 +195,7 @@ class Volume(object):
             try:
                 (rc, out, err) = qemuRebase(
                     vol.getVolumePath(), vol.getFormat(),
-                    os.path.join('..', srcImg, srcParent),
+                    getBackingVolumePath(srcImg, srcParent),
                     int(dstFormat), misc.parseBool(unsafe),
                     vars.task.aborting)
                 if rc:

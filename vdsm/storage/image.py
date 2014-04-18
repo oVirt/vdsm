@@ -870,8 +870,8 @@ class Image:
 
         srcVol.prepare(rw=True, chainrw=True, setrw=True)
         try:
-            backingVolPath = os.path.join('..', srcVolParams['imgUUID'],
-                                          volParams['volUUID'])
+            backingVolPath = volume.getBackingVolumePath(
+                srcVolParams['imgUUID'], volParams['volUUID'])
             srcVol.rebase(volParams['volUUID'], backingVolPath,
                           volParams['volFormat'], unsafe=False, rollback=True)
         finally:
@@ -925,8 +925,8 @@ class Image:
             # Step 2: Rebase successor on top of tmpVol
             #   qemu-img rebase -b tmpBackingFile -F backingFormat -f srcFormat
             #   src
-            backingVolPath = os.path.join('..', srcVolParams['imgUUID'],
-                                          newUUID)
+            backingVolPath = volume.getBackingVolumePath(
+                srcVolParams['imgUUID'], newUUID)
             srcVol.rebase(newUUID, backingVolPath, volParams['volFormat'],
                           unsafe=False, rollback=True)
         finally:
@@ -1011,8 +1011,8 @@ class Image:
         #   src
         for ch in chList:
             ch.prepare(rw=True, chainrw=True, setrw=True, force=True)
-            backingVolPath = os.path.join('..', srcVolParams['imgUUID'],
-                                          srcVolParams['volUUID'])
+            backingVolPath = volume.getBackingVolumePath(
+                srcVolParams['imgUUID'], srcVolParams['volUUID'])
             try:
                 ch.rebase(srcVolParams['volUUID'], backingVolPath,
                           volParams['volFormat'], unsafe=True, rollback=True)
