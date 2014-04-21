@@ -43,7 +43,6 @@ import logging
 import sys
 import os
 import platform
-import pwd
 import select
 import shutil
 import signal
@@ -860,46 +859,6 @@ def getHostUUID(legacy=True):
 symbolerror = {}
 for code, symbol in errno.errorcode.iteritems():
     symbolerror[os.strerror(code)] = symbol
-
-
-def getUserPermissions(userName, path):
-    """
-    Return a dictionary with user specific permissions with respect to the
-    given file
-    """
-    def isRead(bits):
-        return (bits & 4) is not 0
-
-    def isWrite(bits):
-        return (bits & 2) is not 0
-
-    def isExec(bits):
-        return (bits & 1) is not 0
-
-    fileStats = os.stat(path)
-    userInfo = pwd.getpwnam(userName)
-    permissions = {}
-    otherBits = fileStats.st_mode
-    groupBits = otherBits >> 3
-    ownerBits = groupBits >> 3
-    # TODO: Don't ignore user's auxiliary groups
-    isSameGroup = userInfo.pw_gid == fileStats.st_gid
-    isSameOwner = userInfo.pw_uid == fileStats.st_uid
-
-    # 'Other' permissions are the base permissions
-    permissions['read'] = (isRead(otherBits) or
-                           isSameGroup and isRead(groupBits) or
-                           isSameOwner and isRead(ownerBits))
-
-    permissions['write'] = (isWrite(otherBits) or
-                            isSameGroup and isWrite(groupBits) or
-                            isSameOwner and isWrite(ownerBits))
-
-    permissions['exec'] = (isExec(otherBits) or
-                           isSameGroup and isExec(groupBits) or
-                           isSameOwner and isExec(ownerBits))
-
-    return permissions
 
 
 def listSplit(l, elem, maxSplits=None):

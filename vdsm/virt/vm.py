@@ -1283,6 +1283,10 @@ class Drive(VmDevice):
             diskelem.appendChildWithArgs('shareable')
         if hasattr(self, 'readonly') and utils.tobool(self.readonly):
             diskelem.appendChildWithArgs('readonly')
+        elif self.device == 'floppy' and not hasattr(self, 'readonly'):
+            # floppies are used only internally for sysprep, so
+            # they are readonly unless explicitely stated otherwise
+            diskelem.appendChildWithArgs('readonly')
         if hasattr(self, 'serial'):
             diskelem.appendChildWithArgs('serial', text=self.serial)
         if hasattr(self, 'bootOrder'):
@@ -1313,11 +1317,6 @@ class Drive(VmDevice):
             else:
                 driverAttrs['error_policy'] = 'stop'
             diskelem.appendChildWithArgs('driver', **driverAttrs)
-        elif self.device == 'floppy':
-            if (self.path and
-                not utils.getUserPermissions(constants.QEMU_PROCESS_USER,
-                                             self.path)['write']):
-                diskelem.appendChildWithArgs('readonly')
 
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
             self._validateIoTuneParams()
