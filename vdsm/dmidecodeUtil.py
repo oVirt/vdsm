@@ -54,7 +54,9 @@ def getHardwareInfoStructure():
                    ('system', 'Serial Number'),
                    ('system', 'UUID'),
                    ('system', 'Family')):
-        sysStruct[(k1 + k2).replace(' ', '')] = dmiInfo[k1][k2]
+        val = dmiInfo.get(k1, {}).get(k2, None)
+        if val not in [None, 'Not Specified']:
+            sysStruct[(k1 + k2).replace(' ', '')] = val
 
     return sysStruct
 

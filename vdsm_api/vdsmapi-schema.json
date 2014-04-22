@@ -766,25 +766,25 @@
 #
 # Host hardware fields.
 #
-# @systemManufacturer:  Host manufacturer's name
+# @systemManufacturer:  #optional Host manufacturer's name
 #
-# @systemProductName:   Host's hardware module
+# @systemProductName:   #optional Host's hardware module
 #
-# @systemSerialNumber:  Hardware serial number
+# @systemSerialNumber:  #optional Hardware serial number
 #
-# @systemFamily:        Processor type
+# @systemFamily:        #optional Processor type
 #
-# @systemUUID:          Host's hardware UUID
+# @systemUUID:          #optional Host's hardware UUID
 #
-# @systemVersion:       Host's hardware version
+# @systemVersion:       #optional Host's hardware version
 #
 # Since: 4.10.3
 ##
 {'type': 'HardwareInformation',
- 'data': {'systemManufacturer': 'str',
-          'systemProductName': 'str', 'systemVersion': 'str',
-          'systemSerialNumber': 'str', 'systemUUID': 'str',
-          'systemFamily': 'str'}}
+ 'data': {'*systemManufacturer': 'str',
+          '*systemProductName': 'str', '*systemVersion': 'str',
+          '*systemSerialNumber': 'str', '*systemUUID': 'str',
+          '*systemFamily': 'str'}}
 
 ##
 # @SoftwarePackage:
