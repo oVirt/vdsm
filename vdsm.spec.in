@@ -107,7 +107,6 @@ Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate
-Requires: rsyslog
 Requires: xz
 Requires: ntp
 Requires: iproute

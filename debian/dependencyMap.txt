@@ -62,7 +62,6 @@ python2-devel	python-dev
 qemu-img >= 2:0.15.0-4	qemu-utils
 qemu-kvm >= 2:0.15.0-4	qemu-kvm
 rpm-python	python-rpm
-rsyslog	rsyslog
 sanlock >= 2.4-2	TooOld:sanlock libsanlock-dev libsanlock-client1
 sanlock-python	self packaged:sanlock-python
 sed >= 4.2.1-10	sed

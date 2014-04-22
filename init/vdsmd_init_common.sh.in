@@ -75,8 +75,10 @@ task_prepare_transient_repository() {
 
 task_syslog_available() {
     if ! [ -S "/dev/log" ]; then
-        echo "Cannot communicate with syslog deamon for reports. " \
-             "Check rsyslog.conf"
+        echo "    Cannot communicate with syslog daemon for reports. "
+        echo "    Install syslog daemon provider, configure it properly"
+        echo "    and start the service."
+        echo "    (Alternatives: rsyslog, syslog-ng)"
         return 1
     fi
     return 0
