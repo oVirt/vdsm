@@ -349,12 +349,18 @@ class service:
         return self.ExecAndExit(response)
 
     def do_shutdown(self, args):
-        vmId, timeout, message = args[:3]
+        vmId, delay, message = args[:3]
         if len(args) > 3:
             reboot = utils.tobool(args[3])
-            response = self.s.shutdown(vmId, timeout, message, reboot)
+            if len(args) > 4:
+                timeout = args[4]
+                force = len(args) > 5 and utils.tobool(args[5])
+                response = self.s.shutdown(vmId, delay, message, reboot,
+                                           timeout, force)
+            else:
+                response = self.s.shutdown(vmId, delay, message, reboot)
         else:
-            response = self.s.shutdown(vmId, timeout, message)
+            response = self.s.shutdown(vmId, delay, message)
         print response['status']['message']
         sys.exit(response['status']['code'])
 
@@ -1949,11 +1955,16 @@ if __name__ == '__main__':
                      ' This is not a shutdown.'
                      )),
         'shutdown': (serv.do_shutdown,
-                     ('<vmId> <timeout> <message> [reboot:bool]',
+                     ('<vmId> <delay> <message> [reboot:bool] [timeout] '
+                      '[force:bool]',
                       'Stops the emulation and graceful shutdown the virtual'
                       ' machine.',
                       'o reboot: if specified, reboot instead of shutdown'
-                      ' (default False)'
+                      ' (default False)',
+                      'o timeout: number of seconds to wait before proceeding '
+                      'to next shutdown/reboot method',
+                      'o force: if specified, forcefuly reboot/shutdown'
+                      ' after all graceful methods fail (default False)'
                       )),
         'list': (serv.do_list,
                  ('[view] [vms:vmId1,vmId2]',

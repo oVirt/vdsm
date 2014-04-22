@@ -2385,21 +2385,20 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
-    def shutdown(self, delay, message, reboot):
+    def shutdown(self, delay, message, reboot, timeout, force):
         if self.lastStatus == vmstatus.DOWN:
             return errCode['noVM']
 
         delay = int(delay)
-        timeout = int(config.get('vars', 'sys_shutdown_timeout'))
 
         self._guestEventTime = time.time()
         if reboot:
             self._guestEvent = vmstatus.REBOOT_IN_PROGRESS
-            powerDown = VmReboot(self, delay, message, timeout,
+            powerDown = VmReboot(self, delay, message, timeout, force,
                                  self._powerDownEvent)
         else:
             self._guestEvent = vmstatus.POWERING_DOWN
-            powerDown = VmShutdown(self, delay, message, timeout,
+            powerDown = VmShutdown(self, delay, message, timeout, force,
                                    self._powerDownEvent)
         return powerDown.start()
 
@@ -4327,6 +4326,16 @@ class Vm(object):
 
     def destroy(self):
         self.log.debug('destroy Called')
+
+        response = self.doDestroy()
+        if response['status']['code']:
+            return response
+        # Clean VM from the system
+        self.deleteVm()
+
+        return {'status': doneCode}
+
+    def doDestroy(self):
         for dev in self._customDevices():
             hooks.before_device_destroy(dev._deviceXML, self.conf,
                                         dev.custom)
@@ -4334,13 +4343,7 @@ class Vm(object):
         hooks.before_vm_destroy(self._lastXMLDesc, self.conf)
         self.destroyed = True
 
-        response = self.releaseVm()
-        if response['status']['code']:
-            return response
-        # Clean VM from the system
-        self.deleteVm()
-
-        return {'status': doneCode}
+        return self.releaseVm()
 
     def _getBalloonInfo(self):
         for dev in self.conf['devices']:

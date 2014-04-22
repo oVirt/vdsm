@@ -6563,10 +6563,18 @@
 #
 # @reboot:   #optional True if reboot is desired, False for shutdown
 #
+# @timeout:  #optional Number of seconds to wait before trying next
+#                      shutdown/reboot method. (new in version 4.15.0)
+#
+# @force:    #optional True if shutdown/reboot desired by any means necessary
+#                      (forceful reboot/shutdown if all graceful methods fail)
+#                      Default is False (i.e. graceful only).
+#                      (new in version 4.15.0)
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'shutdown'},
- 'data': {'vmID': 'UUID', '*delay': 'int', '*message': 'str', '*reboot': 'bool'}}
+ 'data': {'vmID': 'UUID', '*delay': 'int', '*message': 'str', '*reboot': 'bool',
+          '*timeout': 'int', '*force': 'bool'}}
 
 ##
 # @SnapshotVolumeDriveInfo:

@@ -29,7 +29,7 @@ class VmPowerDown(object):
     Derived classes must provide the guestAgentCallback and acpiCallback
     methods and returnMsg property.
     """
-    def __init__(self, vm, delay, message, timeout, event):
+    def __init__(self, vm, delay, message, timeout, force, event):
         """
         :param vm:      Vm undergoing power-down action
         :param delay:   Graceful timeout for the user to close his applications
@@ -38,6 +38,7 @@ class VmPowerDown(object):
         :param timeout: Timeout for each power-down method (guestAgent, acpi)
                         until it is considered unsuccessful and the callback
                         chain should try another alternative.
+        :param force:   Use forceful power-down if all graceful methods fail?
         :param event:   Event object used to detect successful power-down.
         """
         self.vm = vm
@@ -54,6 +55,9 @@ class VmPowerDown(object):
         # then acpi if enabled
         if utils.tobool(vm.conf.get('acpiEnable', 'true')):
             self.chain.addCallback(self.acpiCallback)
+
+        if force:
+            self.chain.addCallback(self.forceCallback)
 
     def start(self):
         # are there any available methods for power-down?
@@ -87,6 +91,10 @@ class VmShutdown(VmPowerDown):
         self.vm._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
         return self.event.wait(self.timeout)
 
+    def forceCallback(self):
+        self.vm.doDestroy()
+        return self.event.wait(self.timeout)
+
 
 class VmReboot(VmPowerDown):
     returnMsg = 'Machine rebooting'
@@ -97,4 +105,8 @@ class VmReboot(VmPowerDown):
 
     def acpiCallback(self):
         self.vm._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_ACPI_POWER_BTN)
+        return self.event.wait(self.timeout)
+
+    def forceCallback(self):
+        self.vm._dom.reset(0)
         return self.event.wait(self.timeout)
