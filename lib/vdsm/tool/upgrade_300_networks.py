@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2013 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import sys
 from vdsm import netinfo
 from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 from vdsm.tool import expose
-from vdsm.tool.upgrade import upgrade
+from vdsm.tool.upgrade import apply_upgrade
 
 sys.path.append("/usr/share/vdsm")
 from network.configurators import ifcfg
@@ -42,7 +42,6 @@ def isNeeded(networks, bridges):
     return not managementNetwork() and managementBridge()
 
 
-@upgrade(UPGRADE_NAME)
 def run(networks, bridges):
     configWriter = ifcfg.ConfigWriter()
 
@@ -61,6 +60,17 @@ def run(networks, bridges):
             configWriter.removeLibvirtNetwork(network, skipBackup=True)
 
 
+class Upgrade300Networks(object):
+    name = UPGRADE_NAME
+
+    def __init__(self, networks, bridges):
+        self._networks = networks
+        self._bridges = bridges
+
+    def run(self, ns, args):
+        run(self._networks, self._bridges)
+
+
 @expose(UPGRADE_NAME)
 def upgrade_networks(*args):
     """
@@ -74,4 +84,5 @@ def upgrade_networks(*args):
     bridges = netinfo.bridges()
 
     if isNeeded(networks, bridges):
-        run(networks, bridges)
+        return apply_upgrade(Upgrade300Networks(networks, bridges), *args)
+    return 0

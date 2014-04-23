@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from ..config import config
 from ..netconfpersistence import RunningConfig
 from ..netinfo import NetInfo, getIfaceCfg, getDefaultGateway
 from . import expose
-from .upgrade import upgrade
+from .upgrade import apply_upgrade
 
 
 UPGRADE_NAME = 'upgrade-unified-persistence'
@@ -40,7 +40,6 @@ NET_ATTR_WHITELIST = {'mtu': lambda value: int(value),
 # bootproto = 'dhcp' if there's a lease on the NIC at the moment of upgrade
 
 
-@upgrade(UPGRADE_NAME)
 def run():
     networks, bondings = _getNetInfo()
     logging.debug('%s upgrade persisting networks %s and bondings %s',
@@ -150,6 +149,13 @@ def isNeeded():
     return config.get('vars', 'net_persistence') == 'unified'
 
 
+class UpgradeUnifiedPersistence(object):
+    name = UPGRADE_NAME
+
+    def run(self, ns, args):
+        run()
+
+
 @expose(UPGRADE_NAME)
 def unified_persistence(*args):
     """
@@ -159,5 +165,5 @@ def unified_persistence(*args):
     vdsm/config.py
     """
     if isNeeded():
-        return run()
+        return apply_upgrade(UpgradeUnifiedPersistence(), *args)
     return 0
