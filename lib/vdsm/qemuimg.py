@@ -44,9 +44,18 @@ __iregex = {
     'offset': re.compile("^Image end offset: (?P<value>\d+)$"),
 }
 
+INFO_OPTFIELDS_STARTIDX = 4  # qemu-img info optional fields start in this line
+
+
+class _RegexSearchError(Exception):
+    pass
+
 
 def __iregexSearch(pattern, text):
-    return __iregex[pattern].search(text).group("value")
+    m = __iregex[pattern].search(text)
+    if m is None:
+        raise _RegexSearchError()
+    return m.group("value")
 
 
 class QImgError(Exception):
@@ -78,14 +87,18 @@ def info(image, format=None):
             'format': __iregexSearch("format", out[1]),
             'virtualsize': int(__iregexSearch("virtualsize", out[2])),
         }
-
-        if len(out) > 4:
-            info['clustersize'] = int(__iregexSearch("clustersize", out[4]))
-
-        if len(out) > 5:
-            info['backingfile'] = __iregexSearch("backingfile", out[5])
-    except:
+    except _RegexSearchError:
         raise QImgError(rc, out, err, "unable to parse qemu-img info output")
+
+    # Scan for optional fields in the output
+    row = INFO_OPTFIELDS_STARTIDX
+    for field, filterFn in (('clustersize', int), ('backingfile', str)):
+        try:
+            info[field] = filterFn(__iregexSearch(field, out[row]))
+        except (_RegexSearchError, IndexError):
+            pass
+        else:
+            row = row + 1
 
     return info
 
