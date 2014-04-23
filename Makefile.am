@@ -66,7 +66,7 @@ PEP8_BLACKLIST = \
 	vdsm.py \
 	$(NULL)
 
-PEP8_WHITELIST = \
+WHITELIST = \
 	contrib/profile-stats \
 	init/daemonAdapter \
 	vdsm/get-conf-item \
@@ -77,6 +77,7 @@ PEP8_WHITELIST = \
 	vdsm/storage/curl-img-wrap \
 	vdsm-tool/vdsm-tool \
 	vds_bootstrap/setup \
+	vdsm_reg/vdsm-reg-setup.in \
 	$(NULL)
 
 
@@ -90,6 +91,7 @@ gitignore:
 	  done; \
 	fi;
 
+
 SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 	'lv' from line .*"
 
@@ -97,7 +99,8 @@ SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 pyflakes:
 	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
 	find . -path './.git' -prune -type f -o \
-		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES) | \
+		-name '*.py' -o -name '*.py.in' | \
+		echo $(WHITELIST) | xargs $(PYFLAKES) | \
 		grep -w -v $(SKIP_PYFLAKES_ERR) | \
 		while read LINE; do echo "$$LINE"; false; done
 
@@ -107,8 +110,8 @@ pep8:
 	for x in $(PEP8_BLACKLIST); do \
 	    exclude="$${exclude},$${x}" ; \
 	done ; \
-	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' .
-	$(PEP8) $(PEP8_WHITELIST)
+	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' . \
+	$(WHITELIST)
 
 # Note: dependencies ordered by time needed to run them
 check-recursive: gitignore pyflakes pep8
