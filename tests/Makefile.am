@@ -62,6 +62,7 @@ test_modules = \
 	permutationTests.py \
 	persistentDictTests.py \
 	profileTests.py \
+	qemuimgTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
 	samplingTests.py \
