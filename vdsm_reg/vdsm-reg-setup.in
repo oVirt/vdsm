@@ -9,6 +9,7 @@
 #   c. Call VDC registration.
 #   d. Set time according to rhev-m time.
 
+import errno
 import sys
 import getopt
 import os
