@@ -218,13 +218,6 @@ parameters = [
             'Local path to the transient disks repository.'),
     ]),
 
-    # Section: [ksm]
-    ('ksm', [
-
-        ('ksm_monitor_thread', 'true', None),
-
-    ]),
-
     # Section: [mom]
     ('mom', [
 

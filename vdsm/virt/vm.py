@@ -1836,12 +1836,6 @@ class Vm(object):
             self._vmCreationEvent.set()
             try:
                 self._run()
-                if self.lastStatus != vmstatus.DOWN and not self.recovering \
-                        and not self.cif.mom:
-                    # If MOM is available, we needn't tell it to adjust KSM
-                    # behaviors on VM start/destroy, because the tuning can be
-                    # done automatically according to its statistical data.
-                    self.cif.ksmMonitor.adjust()
             except MissingLibvirtDomainError:
                 # we cannot continue without a libvirt domain object,
                 # not even on recovery, to avoid state desync or worse
@@ -4545,8 +4539,6 @@ class Vm(object):
             for t in self._liveMergeCleanupThreads.values():
                 t.join()
 
-            if not self.cif.mom:
-                self.cif.ksmMonitor.adjust()
             self._cleanup()
 
             self.cif.irs.inappropriateDevices(self.id)

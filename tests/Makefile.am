@@ -44,7 +44,6 @@ test_modules = \
 	iscsiTests.py \
 	jsonRpcHelper.py \
 	jsonRpcTests.py \
-	ksmTests.py \
 	libvirtconnectionTests.py \
 	lvmTests.py \
 	main.py \

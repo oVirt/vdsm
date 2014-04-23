@@ -33,7 +33,6 @@ dist_vdsm_PYTHON = \
 	hooking.py \
 	hooks.py \
 	kaxmlrpclib.py \
-	ksm.py \
 	logUtils.py \
 	mkimage.py \
 	momIF.py \

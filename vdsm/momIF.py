@@ -35,10 +35,6 @@ class MomNotAvailableError(RuntimeError):
     pass
 
 
-def isMomAvailable():
-    return _momAvailable
-
-
 class MomThread(threading.Thread):
 
     def __init__(self, momconf):

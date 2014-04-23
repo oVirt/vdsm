@@ -71,7 +71,6 @@ from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
-import ksm
 import mkimage
 from storage.multipath import MPATH_CONF
 
@@ -308,7 +307,16 @@ class _SuperVdsm(object):
         when it's lauched by vdsm. So it needs supervdsm's assistance to tune
         KSM's parameters.
         '''
-        return ksm.tune(tuningParams)
+        KSM_PARAMS = {'run': 3, 'sleep_millisecs': 0x100000000,
+                      'pages_to_scan': 0x100000000}
+        for (k, v) in tuningParams.iteritems():
+            if k not in KSM_PARAMS.iterkeys():
+                raise Exception('Invalid key in KSM parameter: %s=%s' % (k, v))
+            if int(v) < 0 or int(v) >= KSM_PARAMS[k]:
+                raise Exception('Invalid value in KSM parameter: %s=%s' %
+                                (k, v))
+            with open('/sys/kernel/mm/ksm/%s' % k, 'w') as f:
+                f.write(str(v))
 
     @logDecorator
     def setPortMirroring(self, networkName, ifaceName):

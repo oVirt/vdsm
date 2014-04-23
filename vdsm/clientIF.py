@@ -26,8 +26,7 @@ import uuid
 
 import alignmentScan
 from vdsm.config import config
-import ksm
-from momIF import MomThread, isMomAvailable
+from momIF import MomThread
 from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode
 import libvirt
@@ -203,18 +202,7 @@ class clientIF(object):
     def _prepareMOM(self):
         momconf = config.get("mom", "conf")
 
-        if isMomAvailable():
-            try:
-                self.mom = MomThread(momconf)
-                return
-            except:
-                self.log.warn("MOM initialization failed and fall "
-                              "back to KsmMonitor", exc_info=True)
-
-        else:
-            self.log.warn("MOM is not available, fallback to KsmMonitor")
-
-        self.ksmMonitor = ksm.KsmMonitorThread(self)
+        self.mom = MomThread(momconf)
 
     def prepareForShutdown(self):
         """

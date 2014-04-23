@@ -53,7 +53,6 @@
 ./usr/share/vdsm/hooking.py
 ./usr/share/vdsm/hooks.py
 ./usr/share/vdsm/kaxmlrpclib.py
-./usr/share/vdsm/ksm.py
 ./usr/share/vdsm/logUtils.py
 ./usr/share/vdsm/mk_sysprep_floppy
 ./usr/share/vdsm/mkimage.py

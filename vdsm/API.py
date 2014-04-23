@@ -50,7 +50,6 @@ from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
-import ksm
 import hooks
 from caps import PAGE_SIZE_BYTES
 
@@ -1330,15 +1329,8 @@ class Global(APIBase):
          dummy, dummy, dummy) = time.gmtime(time.time())
         stats['dateTime'] = '%02d-%02d-%02dT%02d:%02d:%02d GMT' % (
             tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec)
-        if self._cif.mom:
-            stats['momStatus'] = self._cif.mom.getStatus()
-            stats.update(self._cif.mom.getKsmStats())
-        else:
-            stats['momStatus'] = 'disabled'
-            stats['ksmState'] = ksm.running()
-            stats['ksmPages'] = ksm.npages()
-            stats['ksmCpu'] = self._cif.ksmMonitor.cpuUsage
-            stats['memShared'] = self._memShared() / Mbytes
+        stats['momStatus'] = self._cif.mom.getStatus()
+        stats.update(self._cif.mom.getKsmStats())
 
         stats['netConfigDirty'] = str(self._cif._netConfigDirty)
         stats['generationID'] = self._cif._generationID
@@ -1653,12 +1645,6 @@ class Global(APIBase):
         meminfo = utils.readMemInfo()
         return (meminfo['MemFree'] +
                 meminfo['Cached'] + meminfo['Buffers']) * Kbytes
-
-    def _memShared(self):
-        """
-        Return an approximation of memory shared by VMs thanks to KSM.
-        """
-        return (self._cif.ksmMonitor.memsharing() * PAGE_SIZE_BYTES)
 
     def _memCommitted(self):
         """
