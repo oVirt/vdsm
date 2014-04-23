@@ -100,8 +100,8 @@ def _getNetInfo():
                     networks[network]['gateway'] = netParams['gateway']
 
             if defaultGateway is not None:
-                networks[network]['defaultRoute'] = \
-                    str(defaultGateway.device == topLevelDevice)
+                networks[network]['defaultRoute'] = (defaultGateway.device ==
+                                                     topLevelDevice)
 
             # What if the 'physical device' is actually a VLAN?
             if physicalDevice in netinfo.vlans:
