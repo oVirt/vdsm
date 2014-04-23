@@ -19,7 +19,6 @@
 ./etc/vdsm/mom.d/03-ksm.policy
 ./etc/vdsm/mom.d/04-cputune.policy
 ./etc/vdsm/svdsm.logger.conf
-./etc/vdsm/upgrade.logger.conf
 ./etc/vdsm/vdsm-tmpfiles.conf
 ./lib/udev/rules.d/61-vdsm-lvm.rules
 ./usr/lib/python2.7/dist-packages/sos/plugins/vdsm.py

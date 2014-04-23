@@ -950,7 +950,6 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
-%config(noreplace) %{_sysconfdir}/%{vdsm_name}/upgrade.logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.d/*.policy
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm

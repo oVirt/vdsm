@@ -19,6 +19,7 @@
 #
 from vdsm.tool import configurator
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
+from vdsm.tool import upgrade
 from vdsm import utils
 import monkeypatch
 from unittest import TestCase
@@ -330,3 +331,99 @@ class ConfigFileTests(TestCase):
         conff = ParserWrapper({'key2': 'val2'})
         conff.read(self.tname)
         self.assertEqual(conff.get('key2'), 'val2')
+
+
+class UpgradeTests(TestCase):
+
+    class UpgraduratorTM(object):
+        name = 'test'
+
+        def __init__(self):
+            self.invocations = 0
+
+        def extendArgParser(self, ap):
+            ap.add_argument('--foo',
+                            dest='foo',
+                            default=False,
+                            action='store_true')
+
+        def run(self, ns, args):
+            self.invocations += 1
+            self.ns = ns
+            self.args = args
+            return 0
+
+    class BadUpgraduratorTM(object):
+        name = 'bad'
+
+        def run(self, ns, args):
+            raise RuntimeError()
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.patch = monkeypatch.Patch([(upgrade, 'P_VDSM_LIB',
+                                         self.temp_dir)])
+        os.mkdir(os.path.join(self.temp_dir, 'upgrade'))
+        self.patch.apply()
+
+    def tearDown(self):
+        self.patch.revert()
+        shutil.rmtree(self.temp_dir)
+
+    def _checkSealExists(self, name):
+        return os.path.exists(os.path.join(self.temp_dir, 'upgrade', name))
+
+    def assertSealed(self, name):
+        self.assertTrue(self._checkSealExists(name))
+
+    def assertNotSealed(self, name):
+        self.assertFalse(self._checkSealExists(name))
+
+    def testRunOnce(self):
+        upgrade_obj = self.UpgraduratorTM()
+        ret = upgrade.apply_upgrade(upgrade_obj, 'test')
+        self.assertEquals(ret, 0)
+        self.assertEquals(upgrade_obj.invocations, 1)
+        self.assertSealed('test')
+
+    def testErrorInUpgrade(self):
+        bad = self.BadUpgraduratorTM()
+        ret = upgrade.apply_upgrade(bad, 'foobar')
+        self.assertEquals(ret, 1)
+        self.assertNotSealed('bad')
+
+    def testRunMany(self):
+        upgrade_obj = self.UpgraduratorTM()
+        for _ in range(5):
+            upgrade.apply_upgrade(upgrade_obj, 'test')
+        self.assertEquals(upgrade_obj.invocations, 1)
+        self.assertSealed('test')
+
+    def testRunAgain(self):
+        upgrade_obj = self.UpgraduratorTM()
+        self.assertNotSealed('test')
+        upgrade.apply_upgrade(upgrade_obj, 'test')
+        self.assertSealed('test')
+        self.assertEquals(upgrade_obj.invocations, 1)
+        upgrade.apply_upgrade(upgrade_obj, 'test')
+        self.assertEquals(upgrade_obj.invocations, 1)
+        upgrade.apply_upgrade(upgrade_obj, 'test', '--run-again')
+        self.assertEquals(upgrade_obj.invocations, 2)
+        upgrade.apply_upgrade(upgrade_obj, 'test')
+        self.assertEquals(upgrade_obj.invocations, 2)
+        self.assertSealed('test')
+
+    def testUpgradeArgs(self):
+        upgrade_obj = self.UpgraduratorTM()
+        upgrade.apply_upgrade(upgrade_obj, 'test', '1', '2', '3')
+        self.assertEquals(upgrade_obj.args, ['1', '2', '3'])
+
+    def testParams(self):
+        upgrade_obj = self.UpgraduratorTM()
+        upgrade.apply_upgrade(upgrade_obj, 'test', '--foo')
+        self.assertTrue(upgrade_obj.ns.foo)
+
+        upgrade_obj.name = 'test_again'
+        upgrade.apply_upgrade(upgrade_obj, 'test')
+        self.assertFalse(upgrade_obj.ns.foo)
+        self.assertSealed('test_again')
