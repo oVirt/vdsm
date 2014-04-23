@@ -19,6 +19,7 @@
 #
 
 VDSM_TOOL="@BINDIR@/vdsm-tool"
+UPGRADE_LOGGING_PARAMS="--vvverbose --append --logfile=@VDSMLOGDIR@/upgrade.log"
 prog=vdsm
 
 #### pre-start tasks ####
@@ -198,11 +199,11 @@ task_restore_nets(){
 }
 
 task_unified_network_persistence_upgrade(){
-    "$VDSM_TOOL" upgrade-unified-persistence
+    "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-unified-persistence
 }
 
 task_upgrade_300_nets(){
-    "$VDSM_TOOL" upgrade-3.0.0-networks
+    "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-3.0.0-networks
 }
 #### pre-start tasks end ####
 
