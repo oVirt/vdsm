@@ -599,6 +599,8 @@ class ConfigWriter(object):
     def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
         conf = 'TYPE=Bridge\nDELAY=0\n'
+        if bridge.stp is not None:
+            conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
         ipconfig = bridge.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
         ipconfig = ipconfig._replace(defaultRoute=defaultRoute)

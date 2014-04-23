@@ -61,7 +61,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                        ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
                        dhcpv6=None, defaultRoute=None, _netinfo=None,
                        configurator=None, blockingdhcp=None,
-                       implicitBonding=None, **opts):
+                       implicitBonding=None, opts=None):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -87,6 +87,8 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                             master's.
     :param defaultRoute: Should this network's gateway be set in the main
                          routing table?
+    :param opts: misc options received by the callee, e.g., {'stp': True}. this
+                 function can modify the dictionary.
 
     :returns: the top object of the hierarchy.
     """
@@ -94,6 +96,8 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
         configurator = ConfiguratorClass()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
+    if opts is None:
+        opts = {}
     if bondingOptions and not bonding:
         raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Bonding options '
                                  'specified without bonding')
@@ -116,8 +120,18 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     if vlan is not None:
         topNetDev = Vlan(topNetDev, vlan, configurator, mtu=mtu)
     if bridge is not None:
+        stp = None
+        if 'stp' in opts:
+            stp = opts.pop('stp')
+        elif 'STP' in opts:
+            stp = opts.pop('STP')
+        try:
+            stp = _stpBooleanize(stp)
+        except ValueError:
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not a valid '
+                                     'bridge STP value.' % stp)
         topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
-                           stp=opts.get('stp'))
+                           stp=stp)
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
@@ -127,6 +141,19 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                             blocking=utils.tobool(blockingdhcp),
                             ipv6autoconf=ipv6autoconf, dhcpv6=dhcpv6)
     return topNetDev
+
+
+def _stpBooleanize(value):
+    if value is None:
+        return False
+    if type(value) is bool:
+        return value
+    if value.lower() in ('true', 'on'):
+        return True
+    elif value.lower() in ('false', 'off'):
+        return False
+    else:
+        raise ValueError('Invalid value for bridge stp')
 
 
 def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
@@ -277,7 +304,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, bootproto, ipv6addr, ipv6gateway,
                                 defaultRoute=defaultRoute, _netinfo=_netinfo,
-                                configurator=configurator, **options)
+                                configurator=configurator, opts=options)
 
     netEnt.configure(**options)
     configurator.configureLibvirtNetwork(network, netEnt,
