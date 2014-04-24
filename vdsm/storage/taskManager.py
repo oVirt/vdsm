@@ -206,7 +206,6 @@ class TaskManager:
                 t.setPersistence(store,
                                  str(t.persistPolicy),
                                  str(t.cleanPolicy))
-                self._tasks[taskID] = t
                 self._unqueuedTasks.append(t)
             except Exception:
                 self.log.error("taskManager: Skipping directory: %s",
