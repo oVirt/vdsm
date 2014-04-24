@@ -85,7 +85,6 @@ BuildRequires: python-dmidecode
 BuildRequires: python-argparse
 BuildRequires: python-ordereddict
 %endif
-BuildRequires: python-ethtool
 
 # Autotools BuildRequires
 %if 0%{?enable_autotools}
