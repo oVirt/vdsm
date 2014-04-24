@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from vdsm.tool import configurator
+from vdsm.tool.configfile import ConfigFile, ParserWrapper
 from vdsm import utils
 import monkeypatch
 from unittest import TestCase
@@ -174,3 +175,107 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertFalse(libvirtConfigure.isconfigured())
         libvirtConfigure.configure()
         self.assertTrue(libvirtConfigure.isconfigured())
+
+
+class ConfigFileTests(TestCase):
+    def setUp(self):
+        fd, self.tname = tempfile.mkstemp()
+        os.close(fd)
+
+    def tearDown(self):
+        os.remove(self.tname)
+
+    # helper function
+    def writeConf(self, text):
+        with open(self.tname, 'w') as f:
+            f.write(text)
+
+    def testAddExistingConf(self):
+        self.writeConf("key1=val1\n"
+                       "    key2    =val2\n"
+                       "#key3=val4")
+        with ConfigFile(self.tname,
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf",
+                        version='3.4.4') as conf:
+            conf.addEntry("key3", "val3")
+            conf.addEntry("key2", "val3")
+        with open(self.tname, 'r') as f:
+
+            self.assertEqual(f.read(), "key1=val1\n"
+                                       "    key2    =val2\n"
+                                       "#key3=val4"
+                                       "# start conf-3.4.4\n"
+                                       "key3=val3\n"
+                                       "# end conf-3.4.4\n")
+
+    def testPrefixAndPrepend(self):
+        self.writeConf("/var/log/libvirt/libvirtd.log {\n"
+                       "        weekly\n"
+                       "}\n")
+        with ConfigFile(self.tname,
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf",
+                        version='3.4.4') as conf:
+                    conf.prefixLines("# comment ")
+                    conf.prependSection("Some text to\n"
+                                        "add at the top\n")
+        with open(self.tname, 'r') as f:
+            self.assertEqual(f.read(),
+                             "# start conf-3.4.4\n"
+                             "Some text to\n"
+                             "add at the top\n"
+                             "# end conf-3.4.4\n"
+                             "# comment /var/log/libvirt/libvirtd.log {\n"
+                             "# comment         weekly\n"
+                             "# comment }\n")
+
+    def testRemoveConfSection(self):
+        self.writeConf("key=val\n"
+                       "key=val\n"
+                       "# start conf-text-here don't matter\n"
+                       "all you sections are belong to us\n"
+                       "# end conf-text-here don't matter\n"
+                       "# comment line\n")
+        with ConfigFile(self.tname,
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf",
+                        version='3.4.4') as conf:
+                            conf.removeConf()
+        with open(self.tname, 'r') as f:
+                    self.assertEqual(f.read(), "key=val\n"
+                                               "key=val\n"
+                                               "# comment line\n")
+
+    def testOutOfContext(self):
+        conff = ConfigFile(self.tname,
+                           sectionStart="# start conf",
+                           sectionEnd="# end conf",
+                           version='3.4.4')
+        self.assertRaises(RuntimeError, conff.prefixLines, 'a')
+        self.assertRaises(RuntimeError, conff.removeConf, 'a')
+
+    def testHasConf(self):
+        self.writeConf("key=val\n"
+                       "kay=val\n"
+                       "# start conf-3.4.4\n"
+                       "all you sections are belong to us\n"
+                       "# end conf-3.4.4\n")
+        self.assertTrue(ConfigFile(self.tname,
+                                   sectionStart="# start conf",
+                                   sectionEnd="# end conf",
+                                   version='3.4.4').hasConf())
+
+    def testConfRead(self):
+        self.writeConf("key=val\n"
+                       "key1=val1\n")
+        conff = ParserWrapper(None)
+        conff.read(self.tname)
+        self.assertEqual(conff.get('key'), 'val')
+
+    def testConfDefaults(self):
+        self.writeConf("key=val\n"
+                       "key1=val1\n")
+        conff = ParserWrapper({'key2': 'val2'})
+        conff.read(self.tname)
+        self.assertEqual(conff.get('key2'), 'val2')

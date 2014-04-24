@@ -1160,6 +1160,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/tool/dummybr.py*
 %{python_sitearch}/%{vdsm_name}/tool/nwfilter.py*
 %{python_sitearch}/%{vdsm_name}/tool/configurator.py*
+%{python_sitearch}/%{vdsm_name}/tool/configfile.py*
 %{_libexecdir}/%{vdsm_name}/libvirt_configure.sh
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
 %{python_sitearch}/%{vdsm_name}/tool/restore_nets.py*

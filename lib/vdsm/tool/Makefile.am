@@ -39,6 +39,7 @@ dist_vdsmtool_PYTHON = \
 	dummybr.py \
 	nwfilter.py \
 	configurator.py \
+	configfile.py \
 	passwd.py \
 	restore_nets.py \
 	seboolsetup.py \
