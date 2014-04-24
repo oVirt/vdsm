@@ -19,6 +19,7 @@
 
 import logging
 
+from .. import utils
 from ..config import config
 from ..netconfpersistence import RunningConfig
 from ..netinfo import NetInfo, getIfaceCfg, getDefaultGateway
@@ -27,7 +28,10 @@ from .upgrade import upgrade
 
 
 UPGRADE_NAME = 'upgrade-unified-persistence'
-
+NET_ATTR_WHITELIST = {'mtu': lambda value: int(value),
+                      'qosInbound': lambda value: value,
+                      'qosOutbound': lambda value: value,
+                      'stp': lambda value: utils.tobool(value)}
 
 # TODO: Upgrade currently gets bootproto from ifcfg files,
 # as we assume we're upgrading from oVirt <= 3.4, where users still used
@@ -44,40 +48,18 @@ def run():
     _persist(networks, bondings)
 
 
-def _toIfcfgFormat(value):
-    """
-    Return 'on' -> 'yes', 'off' -> 'no'
-    :return: Altered value, unless value is unknown - In which case return
-             it unaltered
-    """
-    try:
-        return {'on': 'yes', 'off': 'no'}.get(value, value)
-    except TypeError:
-        return value
-
-
-def _fromIfcfgFormat(value):
-    return {'yes': True, 'no': False}[value]
-
-
 def _getNetInfo():
     def _processNetworks(netinfo):
         networks = {}
-        whitelist = ['mtu', 'qosInbound', 'qosOutbound', 'stp']
-        toLower = ['True', 'False', 'None']
-        toUpper = ['stp']
         defaultGateway = getDefaultGateway()
 
         for network, netParams in netinfo.networks.iteritems():
             networks[network] = {}
 
-            # Copy key/value pairs from netinfo to unified if name matches
-            for k, v in netParams.iteritems():
-                if k in whitelist and v != "":
-                    k = k.upper() if k in toUpper else k
-                    v = str(_toIfcfgFormat(v))
-                    v = v.lower() if v in toLower else v
-                    networks[network][k] = v
+            # Translate key/value pairs from netinfo to unified if key matches
+            for key, value in netParams.iteritems():
+                if key in NET_ATTR_WHITELIST and value != "":
+                    networks[network][key] = NET_ATTR_WHITELIST[key](value)
 
             networks[network]['bridged'] = netParams['bridged']
 
