@@ -32,6 +32,7 @@ from vdsm.config import config
 from vdsm.define import NORMAL, errCode, Mbytes
 
 from . import vmexitreason
+from . import vmstatus
 
 
 class SourceThread(threading.Thread):
@@ -151,7 +152,7 @@ class SourceThread(threading.Thread):
             self._vm.pause('Saving State')
         else:
             self.log.debug("Migration started")
-            self._vm.lastStatus = 'Migration Source'
+            self._vm.lastStatus = vmstatus.MIGRATION_SOURCE
 
     def _recover(self, message):
         if not self.status['status']['code']:
@@ -166,7 +167,7 @@ class SourceThread(threading.Thread):
         if self._mode == 'file' or self._method != 'online':
             self._vm.cont()
         # either way, migration has finished
-        self._vm.lastStatus = 'Up'
+        self._vm.lastStatus = vmstatus.UP
 
     def _finishSuccessfully(self):
         self.status['progress'] = 100
