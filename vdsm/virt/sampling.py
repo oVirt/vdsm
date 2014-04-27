@@ -32,11 +32,14 @@ import time
 import logging
 import errno
 import ethtool
+import re
 
 from vdsm import utils
 from vdsm import netinfo
 from vdsm.ipwrapper import getLinks
 from vdsm.constants import P_VDSM_RUN
+
+import caps
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -117,6 +120,56 @@ class TotalCpuSample:
         self.user, userNice, self.sys, self.idle = \
             map(int, file('/proc/stat').readline().split()[1:5])
         self.user += userNice
+
+
+class CpuCoreSample:
+    """
+    A sample of the CPU consumption of each core
+
+    The sample is taken at initialization time and can't be updated.
+    """
+    CPU_CORE_STATS_PATTERN = re.compile(r'cpu(\d+)\s+(.*)')
+
+    def __init__(self):
+        self.coresSample = {}
+        with open('/proc/stat') as src:
+            for line in src:
+                match = self.CPU_CORE_STATS_PATTERN.match(line)
+                if match:
+                    coreSample = {}
+                    user, userNice, sys, idle = \
+                        map(int, match.group(2).split()[0:4])
+                    coreSample['user'] = user
+                    coreSample['userNice'] = userNice
+                    coreSample['sys'] = sys
+                    coreSample['idle'] = idle
+                    self.coresSample[match.group(1)] = coreSample
+
+    def getCoreSample(self, coreId):
+        strCoreId = str(coreId)
+        if strCoreId in self.coresSample:
+            return self.coresSample[strCoreId]
+
+
+class NumaNodeMemorySample:
+    """
+    A sample of the memory stats of each numa node
+
+    The sample is taken at initialization time and can't be updated.
+    """
+    def __init__(self):
+        self.nodesMemSample = {}
+        numaTopology = caps.getNumaTopology()
+        for nodeIndex in numaTopology:
+            nodeMemSample = {}
+            if len(numaTopology) < 2:
+                memInfo = caps.getUMAHostMemoryStats()
+            else:
+                memInfo = caps.getMemoryStatsByNumaCell(int(nodeIndex))
+            nodeMemSample['memFree'] = memInfo['free']
+            nodeMemSample['memPercent'] = 100 - \
+                int(100.0 * int(memInfo['free']) / int(memInfo['total']))
+            self.nodesMemSample[nodeIndex] = nodeMemSample
 
 
 class PidCpuSample:
@@ -215,6 +268,8 @@ class HostSample(BaseSample):
                 self.thpState = s[s.index('[') + 1:s.index(']')]
         except:
             self.thpState = 'never'
+        self.cpuCores = CpuCoreSample()
+        self.numaNodeMem = NumaNodeMemorySample()
 
 
 class AdvancedStatsFunction(object):
@@ -484,7 +539,39 @@ class HostStatsThread(threading.Thread):
         if self._boot_time():
             stats['bootTime'] = self._boot_time()
 
+        stats['numaNodeMemFree'] = hs1.numaNodeMem.nodesMemSample
+        stats['cpuStatistics'] = self._getCpuCoresStats()
         return stats
+
+    def _getCpuCoresStats(self):
+        """
+        :returns: a dict that with the following formats:
+
+            {'<cpuId>': {'numaNodeIndex': int, 'cpuSys': 'str',
+             'cpuIdle': 'str', 'cpuUser': 'str'}, ...}
+        """
+        cpuCoreStats = {}
+        for nodeIndex, numaNode in caps.getNumaTopology().iteritems():
+            cpuCores = numaNode['cpus']
+            for cpuCore in cpuCores:
+                coreStat = {}
+                coreStat['nodeIndex'] = int(nodeIndex)
+                hs0, hs1 = self._samples[0], self._samples[-1]
+                interval = hs1.timestamp - hs0.timestamp
+                jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['user'] -
+                           hs0.cpuCores.getCoreSample(cpuCore)['user']) % \
+                    (2 ** 32)
+                coreStat['cpuUser'] = ("%.2f" % (jiffies / interval))
+                jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['sys'] -
+                           hs0.cpuCores.getCoreSample(cpuCore)['sys']) % \
+                    (2 ** 32)
+                coreStat['cpuSys'] = ("%.2f" % (jiffies / interval))
+                coreStat['cpuIdle'] = ("%.2f" %
+                                       max(0.0, 100.0 -
+                                           float(coreStat['cpuUser']) -
+                                           float(coreStat['cpuSys'])))
+                cpuCoreStats[str(cpuCore)] = coreStat
+        return cpuCoreStats
 
     def _getInterfacesStats(self):
         """

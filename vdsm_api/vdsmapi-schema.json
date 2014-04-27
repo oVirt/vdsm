@@ -1652,6 +1652,55 @@
 {'enum': 'THPStates', 'data': ['always', 'madvise', 'never']}
 
 ##
+# @NumaNodeMemoryStats:
+#
+# Statistics about the memory of a numa node.
+#
+# @memFree:     The amount of free memory (in MB)
+# @memPercent:  The ratio of used memory
+#
+# Since: 4.15.0
+##
+{'type': 'NumaNodeMemoryStats',
+ 'data': {'memFree': 'uint', 'memPercent': 'uint'}}
+
+##
+# @CpuCoreStats:
+#
+# Statistics about a cpu core.
+#
+# @numaNodeIndex:   Which numa node this cpu core belongs to
+# @cpuSys:          Ratio of CPU time spent in kernel
+# @cpuIdle:         Ratio of CPU time spent idle
+# @cpuUser:         Ratio of CPU time spent in userspace
+#
+# Since: 4.15.0
+##
+{'type': 'CpuCoreStats',
+ 'data': {'numaNodeIndex': 'uint', 'cpuSys': 'float',
+          'cpuIdle': 'float', 'cpuUser': 'float'}}
+
+##
+# @NumaNodeMemoryStatsMap:
+#
+# A mapping of numa node memory stats indexed by node index.
+#
+# Since: 4.15.0
+##
+{'map': 'NumaNodeMemoryStatsMap',
+ 'key': 'str', 'value': 'NumaNodeMemoryStats'}
+
+##
+# @CpuCoreStatsMap:
+#
+# A mapping of cpu core stats indexed by cpu core id.
+#
+# Since: 4.15.0
+##
+{'map': 'CpuCoreStatsMap',
+ 'key': 'str', 'value': 'CpuCoreStats'}
+
+##
 # @NetworkInterfaceStatsMap:
 #
 # A mapping of interface stats indexed by device name.
@@ -1811,6 +1860,11 @@
 #
 # @bootTime:        #optional The boot time of the system in seconds since
 #                   epoch (new in 4.15.0)
+# @numaNodeMemFree: Statistics about the memory of numa nodes
+#                   (new in version 4.15.0)
+#
+# @cpuStatistics:   Statistics about each cpu core
+#                   (new in version 4.15.0)
 #
 # Since: 4.10.0
 ##
@@ -1830,7 +1884,9 @@
            'dateTime': 'str', 'ksmState': 'bool', 'ksmPages': 'int',
            'ksmCpu': 'float', 'netConfigDirty': 'bool', 'generationID': 'UUID',
            'momStatus': 'MOMStatus', '*haScore': 'int',
-           'haStatus': 'HostedEngineStatus', '*bootTime': 'uint'}}
+           'haStatus': 'HostedEngineStatus', '*bootTime': 'uint',
+           'numaNodeMemFree': 'NumaNodeMemoryStatsMap',
+           'cpuStatistics': 'CpuCoreStatsMap'}}
 
 ##
 # @Host.getStats:
