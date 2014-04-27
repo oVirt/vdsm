@@ -55,6 +55,8 @@ from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 from md_utils import getMdDeviceUuidMap as _getMdDeviceUuidMap
 
 from lsblk import getLsBlk as _getLsBlk
+
+from storage import hba
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
@@ -250,6 +252,10 @@ class _SuperVdsm(object):
     @logDecorator
     def setSafeNetworkConfig(self):
         return configNetwork.setSafeNetworkConfig()
+
+    @logDecorator
+    def hbaRescan(self):
+        return hba.rescan()
 
     @logDecorator
     def udevTrigger(self, guid):

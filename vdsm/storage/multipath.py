@@ -102,8 +102,9 @@ def rescan():
     Should only be called from hsm._rescanDevices()
     """
 
-    # First ask iSCSI to rescan all its sessions
+    # First rescan iSCSI and FCP connections
     iscsi.rescan()
+    supervdsm.getProxy().hbaRescan()
 
     # Now let multipath daemon pick up new devices
     misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
