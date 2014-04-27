@@ -179,14 +179,18 @@ def _getNumaTopology():
     host = caps.getElementsByTagName('host')[0]
     cells = host.getElementsByTagName('cells')[0]
     cellsInfo = {}
-    for cell in cells.getElementsByTagName('cell'):
+    cellSets = cells.getElementsByTagName('cell')
+    for cell in cellSets:
         cellInfo = {}
         cpus = []
         for cpu in cell.getElementsByTagName('cpu'):
             cpus.append(int(cpu.getAttribute('id')))
         cellInfo['cpus'] = cpus
         cellIndex = cell.getAttribute('id')
-        memInfo = _getMemoryStatsByNumaCell(int(cellIndex))
+        if cellSets.length < 2:
+            memInfo = _getUMAHostMemoryStats()
+        else:
+            memInfo = _getMemoryStatsByNumaCell(int(cellIndex))
         cellInfo['totalMemory'] = memInfo['total']
         cellsInfo[cellIndex] = cellInfo
     return cellsInfo
@@ -204,6 +208,19 @@ def _getMemoryStatsByNumaCell(cell):
     cellMemInfo['total'] = str(cellMemInfo['total'] / 1024)
     cellMemInfo['free'] = str(cellMemInfo['free'] / 1024)
     return cellMemInfo
+
+
+def _getUMAHostMemoryStats():
+    """
+    Get the memory stats of a UMA host, the unit is MiB.
+
+    :return: dict like {'total': '49141', 'free': '46783'}
+    """
+    memDict = {}
+    memInfo = utils.readMemInfo()
+    memDict['total'] = str(memInfo['MemTotal'] / 1024)
+    memDict['free'] = str(memInfo['MemFree'] / 1024)
+    return memDict
 
 
 @utils.memoized

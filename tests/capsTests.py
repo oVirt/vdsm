@@ -145,6 +145,13 @@ class TestCaps(TestCaseBase):
                   'totalMemory': '49141'}}
         self.assertEqual(t, expectedNumaInfo)
 
+    @MonkeyPatch(utils, 'readMemInfo', lambda: {
+        'MemTotal': 50321208, 'MemFree': 47906488})
+    def testGetUMAMemStats(self):
+        t = caps._getUMAHostMemoryStats()
+        expectedInfo = {'total': '49141', 'free': '46783'}
+        self.assertEqual(t, expectedInfo)
+
     @MonkeyPatch(utils, 'execCmd', lambda x: _getCapsNumaDistanceTestData(
         "caps_numactl_4_nodes.out"))
     def testNumaNodeDistance(self):
