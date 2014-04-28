@@ -773,7 +773,7 @@ class FakeGuestAgent(object):
 
 
 @contextmanager
-def FakeVM(params=None, devices=None):
+def FakeVM(params=None, devices=None, runCpu=False):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get',
@@ -783,6 +783,7 @@ def FakeVM(params=None, devices=None):
             fake = vm.Vm(None, vmParams)
             fake.guestAgent = FakeGuestAgent()
             fake.conf['devices'] = [] if devices is None else devices
+            fake._guestCpuRunning = runCpu
             yield fake
 
 
@@ -919,3 +920,32 @@ class TestVmStatsThread(TestCaseBase):
             res = fake.getStats()
             self.assertIn('balloonInfo', res)
             self.assertIn('balloon_cur', res['balloonInfo'])
+
+
+class TestLibVirtCallbacks(TestCaseBase):
+    FAKE_ERROR = 'EFAKERROR'
+
+    def test_onIOErrorPause(self):
+        with FakeVM(runCpu=True) as fake:
+            self.assertTrue(fake._guestCpuRunning)
+            fake._onIOError('fakedev', self.FAKE_ERROR,
+                            libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
+            self.assertFalse(fake._guestCpuRunning)
+            self.assertEqual(fake.conf.get('pauseCode'), self.FAKE_ERROR)
+
+    def test_onIOErrorReport(self):
+        with FakeVM(runCpu=True) as fake:
+            self.assertTrue(fake._guestCpuRunning)
+            fake._onIOError('fakedev', self.FAKE_ERROR,
+                            libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
+            self.assertTrue(fake._guestCpuRunning)
+            self.assertNotEquals(fake.conf.get('pauseCode'), self.FAKE_ERROR)
+
+    def test_onIOErrorNotSupported(self):
+        """action not explicitely handled, must be skipped"""
+        with FakeVM(runCpu=True) as fake:
+            self.assertTrue(fake._guestCpuRunning)
+            fake._onIOError('fakedev', self.FAKE_ERROR,
+                            libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
+            self.assertTrue(fake._guestCpuRunning)
+            self.assertNotIn('pauseCode', fake.conf)  # no error recorded
