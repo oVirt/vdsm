@@ -302,7 +302,8 @@ class MigrationSourceThread(threading.Thread):
             try:
                 if self._migrationCanceledEvt:
                     self._raiseAbortError()
-                self.log.debug("migration semaphore acquired")
+                self.log.debug("migration semaphore acquired after %d seconds",
+                               time.time() - startTime)
                 self._vm.conf['_migrationParams'] = {
                     'dst': self._dst,
                     'mode': self._mode,
@@ -310,7 +311,7 @@ class MigrationSourceThread(threading.Thread):
                     'dstparams': self._dstparams,
                     'dstqemu': self._dstqemu}
                 self._vm.saveState()
-                self._startUnderlyingMigration(startTime)
+                self._startUnderlyingMigration(time.time())
                 self._finishSuccessfully()
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
