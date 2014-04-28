@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -509,9 +509,11 @@ def routeShowTable(table):
     return _execCmd(command)
 
 
-def routeAdd(route):
-    command = [_IP_BINARY.cmd, 'route', 'add']
+def routeAdd(route, version=4, dev=None):
+    command = [_IP_BINARY.cmd, '-%s' % version, 'route', 'add']
     command += route
+    if dev is not None:
+        command += ['dev', dev]
     _execCmd(command)
 
 
@@ -577,9 +579,9 @@ def linksShowDetailed(dev=None):
     return _execCmd(command)
 
 
-def addrAdd(dev, ipaddr, netmask):
-    command = [_IP_BINARY.cmd, 'addr', 'add', 'dev', dev, '%s/%s' %
-               (ipaddr, netmask)]
+def addrAdd(dev, ipaddr, netmask, family=4):
+    command = [_IP_BINARY.cmd, '-%s' % family, 'addr', 'add', 'dev', dev,
+               '%s/%s' % (ipaddr, netmask)]
     _execCmd(command)
 
 

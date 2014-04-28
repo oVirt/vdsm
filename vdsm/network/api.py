@@ -243,7 +243,7 @@ def _alterRunningConfig(func):
 @_alterRunningConfig
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, prefix=None, mtu=None, gateway=None,
-               ipv6addr=None, ipv6gateway=None, force=False,
+               ipv6addr=None, ipv6gateway=None, ipv6autoconf=None, force=False,
                configurator=None, bondingOptions=None, bridged=True,
                _netinfo=None, qosInbound=None, qosOutbound=None,
                defaultRoute=None, **options):
@@ -251,6 +251,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
     bridged = utils.tobool(bridged)
+    if ipv6autoconf is not None:
+        ipv6autoconf = utils.tobool(ipv6autoconf)
     vlan = _vlanToInternalRepresentation(vlan)
 
     if mtu:
@@ -300,11 +302,13 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     bootproto = options.pop('bootproto', None)
 
-    netEnt = objectivizeNetwork(network if bridged else None, vlan, bonding,
-                                bondingOptions, nics, mtu, ipaddr, netmask,
-                                gateway, bootproto, ipv6addr, ipv6gateway,
-                                defaultRoute=defaultRoute, _netinfo=_netinfo,
-                                configurator=configurator, opts=options)
+    netEnt = objectivizeNetwork(
+        bridge=network if bridged else None, vlan=vlan, bonding=bonding,
+        bondingOptions=bondingOptions, nics=nics, mtu=mtu, ipaddr=ipaddr,
+        netmask=netmask, gateway=gateway, bootproto=bootproto,
+        ipv6addr=ipv6addr, ipv6gateway=ipv6gateway, ipv6autoconf=ipv6autoconf,
+        defaultRoute=defaultRoute, _netinfo=_netinfo,
+        configurator=configurator, opts=options)
 
     netEnt.configure(**options)
     configurator.configureLibvirtNetwork(network, netEnt,

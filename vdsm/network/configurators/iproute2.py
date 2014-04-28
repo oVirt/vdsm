@@ -196,12 +196,23 @@ class ConfigApplier(object):
 
     def _setIpConfig(self, iface):
         ipConfig = iface.ipConfig
-        if ipConfig.ipaddr:
+        if ipConfig.ipaddr or ipConfig.ipv6addr:
             self.removeIpConfig(iface)
+        if ipConfig.ipaddr:
             ipwrapper.addrAdd(iface.name, ipConfig.ipaddr,
                               ipConfig.netmask)
             if ipConfig.gateway and ipConfig.defaultRoute:
                 ipwrapper.routeAdd(['default', 'via', ipConfig.gateway])
+        if ipConfig.ipv6addr:
+            ipv6addr, ipv6netmask = ipConfig.ipv6addr.split('/')
+            ipwrapper.addrAdd(iface.name, ipv6addr, ipv6netmask, family=6)
+            if ipConfig.ipv6gateway:
+                ipwrapper.routeAdd(['default', 'via', ipConfig.ipv6gateway],
+                                   dev=iface.name, family=6)
+        if ipConfig.ipv6autoconf is not None:
+            with open('/proc/sys/net/ipv6/conf/%s/autoconf' % iface.name,
+                      'w') as ipv6_autoconf:
+                ipv6_autoconf.write('1' if ipConfig.ipv6autoconf else '0')
 
     def removeIpConfig(self, iface):
         ipwrapper.addrFlush(iface.name)
