@@ -234,6 +234,10 @@ class ConfigApplier(object):
         rc, _, err = execCmd([EXT_BRCTL, 'addbr', bridge.name])
         if rc != 0:
             raise ConfigNetworkError(ERR_FAILED_IFUP, err)
+        if bridge.stp:
+            with open(netinfo.BRIDGING_OPT %
+                      (bridge.name, 'stp_state'), 'w') as bridge_stp:
+                bridge_stp.write('1')
 
     def addBridgePort(self, bridge):
         rc, _, err = execCmd([EXT_BRCTL, 'addif', bridge.name,
