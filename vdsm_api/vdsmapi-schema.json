@@ -5596,7 +5596,7 @@
           'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo'],
           '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
-          , 'guestCPUCount': 'int'}}
+          'guestCPUCount': 'int'}}
 
 ##
 # @VmStats:
