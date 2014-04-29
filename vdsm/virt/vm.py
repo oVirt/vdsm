@@ -4357,7 +4357,6 @@ class Vm(object):
                                 libvirt.VIR_ERR_OPERATION_FAILED):
                             self.log.warn("Failed to destroy VM '%s' "
                                           "gracefully", self.conf['vmId'])
-                            time.sleep(30)
                             self._dom.destroy()
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
