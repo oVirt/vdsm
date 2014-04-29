@@ -68,25 +68,6 @@ def tarCopy(src, dst, exclude=()):
         raise TarCopyFailed(tsrc.returncode, tdst.returncode, out, err)
 
 
-def isStaleHandle(path):
-    exists = os.path.exists(path)
-    st = False
-    try:
-        os.statvfs(path)
-        st = True
-        os.listdir(path)
-    except OSError as ex:
-        if ex.errno in (errno.EIO, errno.ESTALE):
-            return True
-
-        # We could get contradictory results because of
-        # soft mounts
-        if (exists or st) and ex.errno == errno.ENOENT:
-            return True
-
-    return False
-
-
 def transformPath(remotePath):
     """
     Transform remote path to new one for local mount
