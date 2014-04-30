@@ -112,20 +112,14 @@ class DynamicSourceRoute(StaticSourceRoute):
     @staticmethod
     def _getRoutes(table, device):
         routes = []
-        for entry in routeShowTable(table):
+        for entry in routeShowTable('all'):
             try:
                 route = Route.fromText(entry)
             except ValueError:
                 logging.debug("Could not parse route %s" % entry)
             else:
-                if route.device == device:
-                    """
-                    When displaying routes from a table, the table is omitted,
-                    so add it back again
-                    """
-                    route.table = table
+                if route.table == table:
                     routes.append(route)
-
         return routes
 
     @staticmethod
