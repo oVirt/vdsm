@@ -359,7 +359,7 @@ class Image:
                     # soon filled with the data coming from the copy) and then
                     # we change its metadata back to the original value.
                     if (destDom.supportsSparseness or
-                        volParams['volFormat'] != volume.RAW_FORMAT):
+                            volParams['volFormat'] != volume.RAW_FORMAT):
                         tmpVolPreallocation = volume.SPARSE_VOL
                     else:
                         tmpVolPreallocation = volume.PREALLOCATED_VOL
