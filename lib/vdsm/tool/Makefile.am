@@ -19,19 +19,20 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
+toolfilesdir=$(pkgdatadir)/tool
+
+dist_toolfiles_DATA= \
+    libvirtd.logrotate \
+    $(NULL)
+
 EXTRA_DIST = \
 	load_needed_modules.py.in \
-	libvirt_configure.sh.in \
 	validate_ovirt_certs.py.in \
 	$(NULL)
 
 nodist_vdsmtool_PYTHON = \
 	load_needed_modules.py \
 	validate_ovirt_certs.py \
-	$(NULL)
-
-nodist_vdsmexec_SCRIPTS = \
-	libvirt_configure.sh \
 	$(NULL)
 
 dist_vdsmtool_PYTHON = \

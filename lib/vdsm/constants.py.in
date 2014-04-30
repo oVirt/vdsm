@@ -42,7 +42,12 @@ QEMU_PROCESS_USER = '@QEMUUSER@'
 QEMU_PROCESS_GROUP = '@QEMUGROUP@'
 
 # Sanlock definitions
+SANLOCK_ENABLED = '@ENABLE_LIBVIRT_SANLOCK@' == 'yes'
 SANLOCK_USER = '@SNLKUSER@'
+
+# Libvirt selinux
+LIBVIRT_SELINUX = '@ENABLE_LIBVIRT_SELINUX@' == 'yes'
+
 
 #
 # The username of SASL authenticating for libvirt connection
@@ -76,12 +81,18 @@ P_VDSM_STORAGE = P_VDSM_RUN + 'storage/'
 P_VDSM_CONF = '@CONFDIR@/'
 P_VDSM_KEYS = '/etc/pki/vdsm/keys/'
 P_VDSM_LIBVIRT_PASSWD = P_VDSM_KEYS + 'libvirt_password'
+P_VDSM_CERT = '/etc/pki/vdsm/certs/vdsmcert.pem'
 
 P_VDSM_CLIENT_LOG = '@VDSMRUNDIR@/client.log'
 P_VDSM_LOG = '@VDSMLOGDIR@'
 P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
 
 P_VDSM_EXEC = '@LIBEXECDIR@'
+
+#
+# Configuration file definitions
+#
+SYSCONF_PATH = '@sysconfdir@'
 
 #
 # External programs (sorted, please keep in order).
@@ -130,6 +141,8 @@ EXT_PYTHON = '@PYTHON@'
 EXT_QEMUIMG = '@QEMUIMG_PATH@'
 
 EXT_RSYNC = '@RSYNC_PATH@'
+
+EXT_SASLPASSWD2 = '@SASLPASSWD2_PATH@'
 
 EXT_SERVICE = '@SERVICE_PATH@'
 EXT_SETSID = '@SETSID_PATH@'

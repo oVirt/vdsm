@@ -118,6 +118,14 @@ dist_vdsmtests_DATA = \
 	mem_info.out \
 	netmaskconversions \
 	tc_filter_show.out \
+	toolTests_empty.conf \
+	toolTests_lconf_ssl.conf \
+	toolTests_libvirt_logrotate.conf \
+	toolTests_libvirtd.conf \
+	toolTests_qemu_sanlock.conf \
+	toolTests_qemu_ssl.conf \
+	toolTests_vdsm_no_ssl.conf \
+	toolTests_vdsm_ssl.conf \
 	$(NULL)
 
 dist_vdsmtests_PYTHON = \

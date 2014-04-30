@@ -1,0 +1,10 @@
+/var/log/libvirt/libvirtd.log {
+    rotate 100
+    missingok
+    copytruncate
+    size 15M
+    compress
+    compresscmd /usr/bin/xz
+    uncompresscmd /usr/bin/unxz
+    compressext .xz
+}

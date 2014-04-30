@@ -19,7 +19,9 @@
 
 import errno
 import subprocess
+
 from .. import constants
+from .. import utils
 from . import expose, ExtraArgsError
 
 
@@ -33,7 +35,7 @@ def set_saslpasswd(*args):
     if len(args) > 1:
         raise ExtraArgsError()
 
-    script = ['/usr/sbin/saslpasswd2', '-p', '-a', 'libvirt',
+    script = [constants.EXT_SASLPASSWD2, '-p', '-a', 'libvirt',
               constants.SASL_USERNAME]
 
     try:
@@ -49,3 +51,20 @@ def set_saslpasswd(*args):
     output, err = p.communicate()
     if p.returncode != 0:
         raise RuntimeError("Set password failed: %s" % (err,))
+
+
+@expose("remove-saslpasswd")
+def remove_saslpasswd():
+    """
+    Remove vdsm password for libvirt connection
+    """
+    rc, out, err = utils.execCmd(
+        (
+            constants.EXT_SASLPASSWD2,
+            '-p',
+            '-a', 'libvirt',
+            '-d', constants.SASL_USERNAME,
+        ),
+    )
+    if rc != 0:
+        raise RuntimeError("Remove password failed: %s" % (err,))

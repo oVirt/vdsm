@@ -34,7 +34,6 @@ init/upstart/vdsmd.upstart
 init/vdsmd_init_common.sh
 lib/vdsm/config.py
 lib/vdsm/constants.py
-lib/vdsm/tool/libvirt_configure.sh
 lib/vdsm/tool/load_needed_modules.py
 lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdscli.py

@@ -742,21 +742,7 @@ exit 0
 
 %preun
 if [ "$1" -eq 0 ]; then
-        start_conf_section="## beginning of configuration section by vdsm"
-        end_conf_section="## end of configuration section by vdsm"
-        by_vdsm="by vdsm"
-
-        /bin/sed -i -e "/${start_conf_section}/,/${end_conf_section}/d" \
-                    -e "/${by_vdsm}/d" \
-               %{_sysconfdir}/libvirt/libvirtd.conf \
-               %{_sysconfdir}/logrotate.d/libvirtd \
-               %{_sysconfdir}/libvirt/qemu.conf \
-               %{_sysconfdir}/sysconfig/libvirtd \
-               %{_sysconfdir}/sysctl.conf \
-               %{_sysconfdir}/libvirt/qemu-sanlock.conf
-
-        # Restoring backuped logrotate.d/libvirtd
-        /bin/sed -i -e 's/# VDSM backup//' %{_sysconfdir}/logrotate.d/libvirtd
+        %{_bindir}/vdsm-tool remove-config
 fi
 
 %if ! 0%{?with_systemd}
@@ -772,7 +758,7 @@ then
 
     %{_bindir}/vdsm-tool sebool-unconfig || :
 
-    /usr/sbin/saslpasswd2 -p -a libvirt -d vdsm@ovirt
+    %{_bindir}/vdsm-tool remove-saslpasswd
 
     if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
         /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
@@ -946,6 +932,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/vmexitreason.py*
 %{_datadir}/%{vdsm_name}/virt/vmpowerdown.py*
 %{_datadir}/%{vdsm_name}/virt/sampling.py*
+%{_datadir}/%{vdsm_name}/tool
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
@@ -1174,7 +1161,6 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/tool/nwfilter.py*
 %{python_sitearch}/%{vdsm_name}/tool/configurator.py*
 %{python_sitearch}/%{vdsm_name}/tool/configfile.py*
-%{_libexecdir}/%{vdsm_name}/libvirt_configure.sh
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
 %{python_sitearch}/%{vdsm_name}/tool/restore_nets.py*
 %{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
@@ -1207,6 +1193,14 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/tc_filter_show.out
+%{_datadir}/%{vdsm_name}/tests/toolTests_empty.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_lconf_ssl.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_libvirt_logrotate.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_libvirtd.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_qemu_sanlock.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_qemu_ssl.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_vdsm_no_ssl.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_vdsm_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRebalanceStatus.xml
