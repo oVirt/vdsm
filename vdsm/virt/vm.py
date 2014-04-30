@@ -90,6 +90,14 @@ CONSOLE_DEVICES = 'console'
 SMARTCARD_DEVICES = 'smartcard'
 TPM_DEVICES = 'tpm'
 
+METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
+
+# A libvirt constant for undefined cpu quota
+_NO_CPU_QUOTA = 0
+
+# A libvirt constant for undefined cpu period
+_NO_CPU_PERIOD = 0
+
 
 def isVdsmImage(drive):
     """
@@ -172,6 +180,10 @@ class UpdatePortMirroringError(Exception):
 class VmStatsThread(sampling.AdvancedStatsThread):
     MBPS_TO_BPS = 10 ** 6 / 8
 
+    # CPU tune sampling window
+    # minimum supported value is 2
+    CPU_TUNE_SAMPLING_WINDOW = 2
+
     def __init__(self, vm):
         sampling.AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
         self._vm = vm
@@ -215,17 +227,22 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 self._sampleVmJobs,
                 config.getint('vars', 'vm_sample_jobs_interval'),
                 config.getint('vars', 'vm_sample_jobs_window')))
-
         self.sampleVcpuPinning = (
             sampling.AdvancedStatsFunction(
                 self._sampleVcpuPinning,
                 config.getint('vars', 'vm_sample_vcpu_pin_interval'),
                 config.getint('vars', 'vm_sample_vcpu_pin_window')))
+        self.sampleCpuTune = (
+            sampling.AdvancedStatsFunction(
+                self._sampleCpuTune,
+                config.getint('vars', 'vm_sample_cpu_tune_interval'),
+                self.CPU_TUNE_SAMPLING_WINDOW))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
             self.sampleDisk, self.sampleDiskLatency, self.sampleNet,
-            self.sampleBalloon, self.sampleVmJobs, self.sampleVcpuPinning)
+            self.sampleBalloon, self.sampleVmJobs, self.sampleVcpuPinning,
+            self.sampleCpuTune)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -287,6 +304,28 @@ class VmStatsThread(sampling.AdvancedStatsThread):
     def _sampleVmJobs(self):
         return self._vm.queryBlockJobs()
 
+    def _sampleCpuTune(self):
+        infos = self._vm._dom.schedulerParameters()
+        infos['vcpuCount'] = self._vm._dom.vcpusFlags(
+            libvirt.VIR_DOMAIN_VCPU_CURRENT)
+
+        metadataCpuLimit = None
+
+        try:
+            metadataCpuLimit = self._vm._dom.metadata(
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT, METADATA_VM_TUNE_URI, 0)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
+                self._log.exception("Failed to retrieve QoS metadata")
+
+        if metadataCpuLimit:
+            metadataCpuLimitXML = _domParseStr(metadataCpuLimit)
+            nodeList = \
+                metadataCpuLimitXML.getElementsByTagName('vcpulimit')
+            infos['vcpuLimit'] = nodeList[0].childNodes[0].data
+
+        return infos
+
     def _diff(self, prev, curr, val):
         return prev[val] - curr[val]
 
@@ -335,6 +374,53 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 int(self._vm.conf.get('memGuaranteedSize', '0')) * 1024),
             'balloon_cur': str(sInfo) if sInfo is not None else '0',
             'balloon_target': balloon_target}
+
+    def _getCpuTuneInfo(self, stats):
+
+        sInfo, eInfo, sampleInterval = self.sampleCpuTune.getStats()
+
+        # Handling the case when not enough samples exist
+        if eInfo is None:
+            return
+
+        # Handling the case where quota is not set, setting to 0.
+        # According to libvirt API:"A quota with value 0 means no value."
+        # The value does not have to be present in some transient cases
+        if eInfo.get('vcpu_quota', _NO_CPU_QUOTA) != _NO_CPU_QUOTA:
+            stats['vcpuQuota'] = eInfo['vcpu_quota']
+
+        # Handling the case where period is not set, setting to 0.
+        # According to libvirt API:"A period with value 0 means no value."
+        # The value does not have to be present in some transient cases
+        if eInfo.get('vcpu_period', _NO_CPU_PERIOD) != _NO_CPU_PERIOD:
+            stats['vcpuPeriod'] = eInfo['vcpu_period']
+
+    def _getCpuCount(self, stats):
+        sInfo, eInfo, sampleInterval = self.sampleCpuTune.getStats()
+
+        # Handling the case when not enough samples exist
+        if eInfo is None:
+            return
+
+        if eInfo['vcpuCount']:
+            vcpuCount = eInfo['vcpuCount']
+            if vcpuCount != -1:
+                stats['vcpuCount'] = vcpuCount
+            else:
+                self._log.error('Failed to get VM cpu count')
+
+    def _getUserCpuTuneInfo(self, stats):
+        sInfo, eInfo, sampleInterval = self.sampleCpuTune.getStats()
+
+        # Handling the case when not enough samples exist
+        if eInfo is None:
+            return
+
+        if eInfo['vcpuLimit']:
+            value = eInfo['vcpuLimit']
+            stats['vcpuUserLimit'] = value
+        else:
+            self._log.debug('Domain Metadata is not set')
 
     @classmethod
     def _getNicStats(cls, name, model, mac,
@@ -477,6 +563,10 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
         if vmNumaNodeRuntimeMap:
             stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
+
+        self._getCpuTuneInfo(stats)
+        self._getCpuCount(stats)
+        self._getUserCpuTuneInfo(stats)
 
         return stats
 

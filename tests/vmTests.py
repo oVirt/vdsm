@@ -69,6 +69,16 @@ class FakeDomain:
     def updateDeviceFlags(self, devXml, unused):
         self.devXml = devXml
 
+    def vcpusFlags(self, flags):
+        return -1
+
+    def metadata(self, type, uri, flags):
+        return None
+
+    def schedulerParameters(self):
+        return {'vcpu_quota': vm._NO_CPU_QUOTA,
+                'vcpu_period': vm._NO_CPU_PERIOD}
+
 
 class TestVm(TestCaseBase):
 

@@ -6,4 +6,5 @@
 # Define variables for configurable options here
 (defvar ksmEnabled 1)
 (defvar balloonEnabled 0)
+(defvar cpuTuneEnabled 0)
 

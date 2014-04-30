@@ -6269,6 +6269,17 @@
 #
 # @vNodeRuntimeInfo:   #optional Information about the vm numa node runtime pinning
 #                      to host numa node. (new in version 4.15.0)
+# @vcpuQuota:          #optional Setting for libvirt cpu_quota.
+#                      (new in version 4.15.0)
+#
+# @vcpuPeriod:         #optional Setting for libvirt cpu_period.
+#                      (new in version 4.15.0)
+#
+# @vcpuCount:          #optional Number of vCPUs assigned to the VM
+#                      (new in version 4.15.0)
+#
+# @vcpuUserLimit:      #optional Cpu usage hard limit in percents.
+#                      (new in version 4.15.0)
 #
 # Since: 4.10.0
 ##
@@ -6291,7 +6302,9 @@
           '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
           '*migrationProgress': 'uint', 'guestCPUCount': 'int',
           'displayInfo': ['VmDisplayInfo'], '*vmJobs': 'VmJobsMap',
-          '*vNodeRuntimeInfo': 'VmNumaNodeRuntimeInfoMap'}}
+          '*vNodeRuntimeInfo': 'VmNumaNodeRuntimeInfoMap',
+          'displayInfo': ['VmDisplayInfo'], '*vcpuQuota': 'int',
+          '*vcpuPeriod': 'int', '*vcpuCount': 'int', '*vcpuUserLimit': 'int'}}
 
 ##
 # @VmStats:

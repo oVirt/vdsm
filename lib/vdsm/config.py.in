@@ -181,6 +181,8 @@ parameters = [
 
         ('vm_sample_vcpu_pin_window', '2', None),
 
+        ('vm_sample_cpu_tune_interval', '15', None),
+
         ('trust_store_path', '@TRUSTSTORE@',
             'Where the certificates and keys are situated.'),
 

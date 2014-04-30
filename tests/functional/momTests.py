@@ -107,6 +107,29 @@ class MOMTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
         return [stats['vmId'] for stats in candidateStats]
 
+    def _setCpuTune(self, vcpuQuota, vcpuPeriod):
+        # Get vms' statistics before the operation.
+        status, msg, statsList = self.s.getAllVmStats()
+        self.assertEqual(status, SUCCESS, msg)
+
+        # Filter all vms' statistics to get balloon operation candidates.
+        candidateStats = filter(self._statsOK, statsList)
+
+        # Set the balloon target to initial value before shrink
+        # or grow operation.
+        # The initial value is max for shrink operation and
+        # 0.95*max for grow operation.
+        for stats in candidateStats:
+            status, msg = self.s.setCpuTuneQuota(
+                stats['vmId'],
+                vcpuQuota)
+            self.assertEqual(status, SUCCESS, msg)
+
+            status, msg = self.s.setCpuTunePeriod(
+                stats['vmId'],
+                vcpuPeriod)
+            self.assertEqual(status, SUCCESS, msg)
+
     def _setPolicy(self, policy):
         curpath = os.path.dirname(__file__)
         file_name = os.path.join(curpath, policy)
@@ -171,3 +194,9 @@ class MOMTest(TestCaseBase):
     def testBalloonGrow(self):
         self._basicBalloon(self.BalloonRatio(0.95, 0.9975, 1),
                            '70_test_balloon_grow.policy')
+
+    @testValidation.ValidateRunningAsRoot
+    @skipNoMOM
+    @testValidation.slowtest
+    def testCpuTune(self):
+        self._setCpuTune(2000, 10000)

@@ -1,0 +1,48 @@
+### Auto-CpuTune ###############################################################
+
+(defvar anchor 100000)
+(defvar defaultQuota -1)
+(defvar defaultPeriod 1000)
+
+(defvar calcPeriod  (/ anchor Host.cpu_count))
+
+### Helper functions
+(def check_and_set_quota (guest)
+{
+
+    (defvar calcQuota (/ (* anchor (/ guest.vcpu_user_limit 100.0)) guest.vcpu_count))
+
+    (if (!= guest.vcpu_quota calcQuota)
+        (guest.Control "vcpu_quota" calcQuota) 0)
+})
+
+(def check_and_set_period (guest)
+{
+    (if (!= guest.vcpu_period calcPeriod)
+        (guest.Control "vcpu_period" calcPeriod) 0)
+})
+
+(def reset_quota_and_period (guest)
+{
+    (guest.Control "vcpu_quota" defaultQuota)
+    (guest.Control "vcpu_period" defaultPeriod)
+})
+
+
+### Main script
+# Methodology: The goal is to set the quota and period of the vcpuTune
+# to the values the user selected, the user setting will update once
+# a policy sync is made.
+
+# If the CpuTune is disabled, reset setting
+# else set the quota and period
+
+
+
+(if (== True cpuTuneEnabled) {
+    (with Guests guest (check_and_set_quota guest))
+    (with Guests guest (check_and_set_period guest))
+} {
+    (with Guests guest (reset_quota_and_period guest))
+})
+
