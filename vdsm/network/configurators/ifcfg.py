@@ -40,7 +40,7 @@ from vdsm.netconfpersistence import RunningConfig
 from . import Configurator, getEthtoolOpts, libvirt
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, IpConfig
-from ..sourceroute import DynamicSourceRoute
+from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 import dsaversion  # TODO: Make parent package import when vdsm is a package
 
 
@@ -155,7 +155,7 @@ class Ifcfg(Configurator):
     def removeBridge(self, bridge):
         DynamicSourceRoute.addInterfaceTracking(bridge)
         ifdown(bridge.name)
-        self._removeSourceRoute(bridge)
+        self._removeSourceRoute(bridge, StaticSourceRoute)
         utils.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
         self.configApplier.removeBridge(bridge.name)
         if bridge.port:
@@ -164,7 +164,7 @@ class Ifcfg(Configurator):
     def removeVlan(self, vlan):
         DynamicSourceRoute.addInterfaceTracking(vlan)
         ifdown(vlan.name)
-        self._removeSourceRoute(vlan)
+        self._removeSourceRoute(vlan, StaticSourceRoute)
         self.configApplier.removeVlan(vlan.name)
         vlan.device.remove()
 
@@ -174,8 +174,13 @@ class Ifcfg(Configurator):
         to_be_removed = not netinfo.ifaceUsed(iface.name)
         if to_be_removed:
             ifdown(iface.name)
-        self._removeSourceRoute(iface)
+        self._removeSourceRoute(iface, StaticSourceRoute)
         return to_be_removed
+
+    def _addSourceRoute(self, netEnt):
+        """For ifcfg tracking can be done together with route/rule addition"""
+        super(Ifcfg, self)._addSourceRoute(netEnt)
+        DynamicSourceRoute.addInterfaceTracking(netEnt)
 
     def removeBond(self, bonding):
         to_be_removed = self._ifaceDownAndCleanup(bonding)

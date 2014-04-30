@@ -34,6 +34,7 @@ from . import Configurator, getEthtoolOpts, libvirt
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
+from ..sourceroute import DynamicSourceRoute
 
 _ETHTOOL_BINARY = CommandPath(
     'ethtool',
@@ -64,12 +65,16 @@ class Iproute2(Configurator):
         if bridge.port:
             bridge.port.configure(**opts)
             self.configApplier.addBridgePort(bridge)
+        DynamicSourceRoute.addInterfaceTracking(bridge)
         self.configApplier.setIfaceConfigAndUp(bridge)
+        self._addSourceRoute(bridge)
 
     def configureVlan(self, vlan, **opts):
         vlan.device.configure(**opts)
         self.configApplier.addVlan(vlan)
+        DynamicSourceRoute.addInterfaceTracking(vlan)
         self.configApplier.setIfaceConfigAndUp(vlan)
+        self._addSourceRoute(vlan)
 
     def configureBond(self, bond, **opts):
         self.configApplier.addBond(bond)
@@ -80,7 +85,9 @@ class Iproute2(Configurator):
             if slave.name not in netinfo.slaves(bond.name):
                 self.configApplier.addBondSlave(bond, slave)
                 slave.configure(**opts)
+        DynamicSourceRoute.addInterfaceTracking(bond)
         self.configApplier.setIfaceConfigAndUp(bond)
+        self._addSourceRoute(bond)
         self.runningConfig.setBonding(
             bond.name, {'options': bond.options,
                         'nics': [slave.name for slave in bond.slaves]})
@@ -119,7 +126,9 @@ class Iproute2(Configurator):
                         'nics': [slave.name for slave in bond.slaves]})
 
     def configureNic(self, nic, **opts):
+        DynamicSourceRoute.addInterfaceTracking(nic)
         self.configApplier.setIfaceConfigAndUp(nic)
+        self._addSourceRoute(nic)
 
         ethtool_opts = getEthtoolOpts(nic.name)
         if ethtool_opts:
@@ -129,13 +138,17 @@ class Iproute2(Configurator):
                 [_ETHTOOL_BINARY.cmd, '-K', nic.name] + ethtool_opts.split())
 
     def removeBridge(self, bridge):
+        DynamicSourceRoute.addInterfaceTracking(bridge)
         self.configApplier.ifdown(bridge)
+        self._removeSourceRoute(bridge, DynamicSourceRoute)
         self.configApplier.removeBridge(bridge)
         if bridge.port:
             bridge.port.remove()
 
     def removeVlan(self, vlan):
+        DynamicSourceRoute.addInterfaceTracking(vlan)
         self.configApplier.ifdown(vlan)
+        self._removeSourceRoute(vlan, DynamicSourceRoute)
         self.configApplier.removeVlan(vlan)
         vlan.device.remove()
 
@@ -151,6 +164,8 @@ class Iproute2(Configurator):
         if toBeRemoved:
             if bonding.master is None:
                 self.configApplier.removeIpConfig(bonding)
+                DynamicSourceRoute.addInterfaceTracking(bonding)
+                self._removeSourceRoute(bonding, DynamicSourceRoute)
 
             if bonding.destroyOnMasterRemoval:
                 self._destroyBond(bonding)
@@ -168,6 +183,8 @@ class Iproute2(Configurator):
         if toBeRemoved:
             if nic.master is None:
                 self.configApplier.removeIpConfig(nic)
+                DynamicSourceRoute.addInterfaceTracking(nic)
+                self._removeSourceRoute(nic, DynamicSourceRoute)
             else:
                 self.configApplier.setIfaceMtu(nic.name,
                                                netinfo.DEFAULT_MTU)

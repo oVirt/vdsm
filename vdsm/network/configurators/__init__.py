@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from vdsm.netconfpersistence import RunningConfig
 
 from . import libvirt
 from ..models import Bond, Bridge
-from ..sourceroute import DynamicSourceRoute, StaticSourceRoute
+from ..sourceroute import StaticSourceRoute
 
 
 class RollbackIncomplete(Exception):
@@ -122,12 +122,11 @@ class Configurator(object):
                           (netEnt.name, ip.ipaddr, ip.netmask, ip.gateway))
             StaticSourceRoute(netEnt.name, self).\
                 configure(ip.ipaddr, ip.netmask, ip.gateway)
-        DynamicSourceRoute.addInterfaceTracking(netEnt)
 
-    def _removeSourceRoute(self, netEnt):
+    def _removeSourceRoute(self, netEnt, sourceRouteClass):
         if netEnt.ipConfig.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s" % netEnt.name)
-            StaticSourceRoute(netEnt.name, self).remove()
+            sourceRouteClass(netEnt.name, self).remove()
 
     def _setNewMtu(self, iface, ifaceVlans):
         """
