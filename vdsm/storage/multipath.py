@@ -106,8 +106,7 @@ def rescan():
     iscsi.rescan()
 
     # Now let multipath daemon pick up new devices
-    cmd = [constants.EXT_MULTIPATH, "-r"]
-    misc.execCmd(cmd, sudo=True)
+    misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
 
 
 def isEnabled():
