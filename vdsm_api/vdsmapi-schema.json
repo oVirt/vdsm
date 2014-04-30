@@ -5793,14 +5793,14 @@
 #
 # @hw:     The MAC address
 #
-# @inet:   The IPv4 address
+# @inet:   The IPv4 addresses
 #
-# @inet6:  The IPv6 address
+# @inet6:  The IPv6 addresses
 #
 # Since: 4.10.0
 ##
 {'type': 'GuestNetworkDeviceInfo',
- 'data': {'name': 'str', 'hw': 'str', 'inet': 'str', 'inet6': 'str'}}
+ 'data': {'name': 'str', 'hw': 'str', 'inet': ['str'], 'inet6': ['str']}}
 
 ##
 # @GuestSessionState:
