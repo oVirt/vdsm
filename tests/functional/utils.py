@@ -224,3 +224,7 @@ class VdsProxy(object):
         result = self.vdscli.getVdsCapabilities()
         return result['status']['code'], result['status']['message'],\
             result['info']
+
+    def updateVmPolicy(self, vmId, vcpuLimit):
+        result = self.vdscli.updateVmPolicy([vmId, vcpuLimit])
+        return result['status']['code'], result['status']['message']

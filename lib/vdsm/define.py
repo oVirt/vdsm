@@ -141,6 +141,9 @@ errCode = {
     'cpuTuneErr': {'status': {
         'code': 62,
         'message': 'CpuTune operation is not available'}},
+    'updateVmPolicyErr': {'status': {
+        'code': 63,
+        'message': 'Failed to update VM SLA policy'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

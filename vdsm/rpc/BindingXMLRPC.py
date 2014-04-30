@@ -409,6 +409,10 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.setNumberOfCpus(vmId, numberOfCpus)
 
+    def vmUpdateVmPolicy(self, params):
+        vm = API.VM(params['vmId'])
+        return vm.updateVmPolicy(params)
+
     def vmSnapshot(self, vmId, snapDrives, snapMemVolHandle=''):
         """
         Take snapshot of VM
@@ -985,7 +989,8 @@ class BindingXMLRPC(object):
                 (self.vmHotunplugNic, 'hotunplugNic'),
                 (self.vmUpdateDevice, 'vmUpdateDevice'),
                 (self.vmSetNumberOfCpus, 'setNumberOfCpus'),
-                (self.merge, 'merge'))
+                (self.merge, 'merge'),
+                (self.vmUpdateVmPolicy, 'updateVmPolicy'))
 
     def getIrsMethods(self):
         return ((self.domainActivate, 'activateStorageDomain'),

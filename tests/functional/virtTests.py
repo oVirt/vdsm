@@ -399,3 +399,16 @@ class VirtTest(VirtTestBase):
                 self.assertEqual(dispInfo['type'], dispType)
             self.assertEqual(stats['displayType'],
                              'qxl' if primary == 'spice' else 'vnc')
+
+    def testVmWithSla(self):
+        customization = {'vmId': '99999999-aaaa-ffff-bbbb-111111111111',
+                         'vmName': 'testVmWithSla',
+                         'display': 'vnc'}
+
+        with RunningVm(self.vdsm, customization) as vm:
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            status, msg, stats = self.vdsm.getVmStats(vm)
+            self.assertEqual(status, SUCCESS, msg)
+            self.vdsm.updateVmPolicy(customization['vmId'],
+                                     '50')
+            self.assertEqual(status, SUCCESS, msg)

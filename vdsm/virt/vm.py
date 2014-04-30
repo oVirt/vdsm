@@ -3633,6 +3633,67 @@ class Vm(object):
         hooks.after_set_num_of_cpus()
         return {'status': doneCode, 'vmList': self.status()}
 
+    def updateVmPolicy(self, params):
+        """
+        Update the QoS policy settings for VMs.
+
+        The params argument contains the actual properties we are about to
+        set. It must not be empty.
+
+        Supported properties are:
+
+        vcpuLimit - the CPU usage hard limit
+
+        In the case not all properties are provided, the missing properties'
+        setting will be left intact.
+
+        If there is an error during the processing, this function
+        immediately stops and returns. Remaining properties are not
+        processed.
+
+        :param params: dictionary mapping property name to its value
+        :type params: dict[str] -> anything
+
+        :return: standard vdsm result structure
+        """
+
+        if self.isMigrating():
+            return errCode['migInProgress']
+
+        if not params:
+            self.log.error("updateVmPolicy got an empty policy.")
+            return self._reportError(key='MissParam',
+                                     msg="updateVmPolicy got an empty policy.")
+
+        #
+        # Process provided properties, remove property after it is processed
+
+        if 'vcpuLimit' in params:
+            try:
+                self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                                      '<qos><vcpulimit>' +
+                                      params['vcpuLimit'] +
+                                      '</vcpulimit></qos>', 'ovirt',
+                                      METADATA_VM_TUNE_URI, 0)
+            except libvirt.libvirtError as e:
+                self.log.exception("updateVmPolicy failed")
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    return errCode['noVM']
+                else:
+                    return self._reportError(key='updateVmPolicyErr',
+                                             msg=e.message)
+            else:
+                del params['vcpuLimit']
+
+        # Check remaining fields in params and report the list of unsupported
+        # params to the log
+
+        if params:
+            self.log.warn("updateVmPolicy got unknown parameters: %s",
+                          ", ".join(params.iterkeys()))
+
+        return {'status': doneCode}
+
     def _createTransientDisk(self, diskParams):
         if diskParams.get('shared', None) != DRIVE_SHARED_TYPE.TRANSIENT:
             return

@@ -7448,7 +7448,6 @@
  'data': {'vmID': 'UUID', 'numberOfCpus': 'int'},
  'returns': 'VmDefinition'}
 
-
 ##
 # @VM.setCpuTuneQuota:
 #
@@ -7479,3 +7478,21 @@
 {'command': {'class': 'VM', 'name': 'setCpuTunePeriod'},
  'data': {'period': 'int'},
  'returns': 'TasksStatus'}
+
+##
+# @VM.updateVmPolicy:
+#
+# Set VM SLA parameters
+#
+# @vmID:      The UUID of the VM
+#
+# @vcpuLimit: vcpu limit to set - the value is a percentage representation
+#             of the amount of cpu from the Host that the VM can consume
+#
+# Returns:
+# The VM definition, as updated
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'VM', 'name': 'updateVmPolicy'},
+ 'data': {'vmID': 'UUID', 'vcpuLimit': 'int'}}

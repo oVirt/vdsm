@@ -258,6 +258,10 @@ class service:
     def setNumberOfCpus(self, args):
         return self.ExecAndExit(self.s.setNumberOfCpus(args[0], args[1]))
 
+    def updateVmPolicy(self, args):
+        params = {'vmId': args[0], 'vcpuLimit': args[1]}
+        return self.ExecAndExit(self.s.updateVmPolicy(params))
+
     def do_changeCD(self, args):
         vmId = args[0]
         file = self._parseDriveSpec(args[1])
@@ -2613,6 +2617,11 @@ if __name__ == '__main__':
                 'volume into the base volume.  If specified, limit bandwidth',
                 'to <bandwidth> MB/s and apply <jobID> to the operation for',
                 'tracking purposes.'
+            )),
+        'updateVmPolicy': (
+            serv.updateVmPolicy, (
+                '<vmId> <vcpuLimit>',
+                'set SLA parameter for a VM'
             )),
     }
     if _glusterEnabled:

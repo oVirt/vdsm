@@ -483,6 +483,18 @@ class VM(APIBase):
 
         return curVm.setNumberOfCpus(int(numberOfCpus))
 
+    def updateVmPolicy(self, params):
+        try:
+            curVm = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            self.log.warning("vm %s doesn't exist", self._UUID)
+            return errCode['noVM']
+
+        # Remove the vmId parameter from params we do not need it anymore
+        del params["vmId"]
+
+        return curVm.updateVmPolicy(params)
+
     def migrate(self, params):
         """
         Migrate a VM to a remote host.
