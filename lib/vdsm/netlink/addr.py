@@ -21,11 +21,9 @@ from functools import partial
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import (_ethtool_uses_libnl3, LIBNL_ROUTE, _nl_addr2str, _nl_af2str,
-               _nl_geterror, _pool, _rtnl_scope2str)
+from . import _ethtool_uses_libnl3, LIBNL_ROUTE, _nl_geterror, _pool
+from . import _addr_to_str, _af_to_str, _scope_to_str, CHARBUFFSIZE
 from .link import _nl_link_cache, _link_index_to_name
-
-CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
 
 
 def iter_addrs():
@@ -47,11 +45,11 @@ def _addr_info(link_cache, addr):
         'label': (_rtnl_addr_get_label(addr) or
                   _link_index_to_name(link_cache, index)),
         'index': index,
-        'family': _addr_family(addr),
+        'family': _af_to_str(_rtnl_addr_get_family(addr)),
         'prefixlen': _rtnl_addr_get_prefixlen(addr),
-        'scope': _addr_scope(addr),
+        'scope': _scope_to_str(_rtnl_addr_get_scope(addr)),
         'flags': _addr_flags(addr),
-        'address': _addr_local(addr)}
+        'address': _addr_to_str(_rtnl_addr_get_local(addr))}
 
 
 def _addr_flags(addr):
@@ -59,24 +57,6 @@ def _addr_flags(addr):
     flags = (c_char * (CHARBUFFSIZE * 2))()
     return frozenset(_rtnl_addr_flags2str(_rtnl_addr_get_flags(addr), flags,
                      sizeof(flags)).split(','))
-
-
-def _addr_scope(addr):
-    """Returns the scope name for which the address is defined."""
-    scope = (c_char * CHARBUFFSIZE)()
-    return _rtnl_scope2str(_rtnl_addr_get_scope(addr), scope, sizeof(scope))
-
-
-def _addr_family(addr):
-    """Returns the family name of the address."""
-    family = (c_char * CHARBUFFSIZE)()
-    return _nl_af2str(_rtnl_addr_get_family(addr), family, sizeof(family))
-
-
-def _addr_local(addr):
-    """Returns the textual representation of the address."""
-    address = (c_char * CHARBUFFSIZE)()
-    return _nl_addr2str(_rtnl_addr_get_local(addr), address, sizeof(address))
 
 
 # C function prototypes

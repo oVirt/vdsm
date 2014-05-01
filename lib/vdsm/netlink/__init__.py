@@ -18,8 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from contextlib import contextmanager
-from ctypes import (CDLL, CFUNCTYPE, c_char_p, c_int, c_void_p, c_size_t,
-                    get_errno)
+from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
+                    c_size_t, get_errno, sizeof)
 from distutils.version import StrictVersion
 from Queue import Empty, Queue
 from threading import BoundedSemaphore
@@ -28,6 +28,8 @@ import ethtool
 
 _POOL_SIZE = 5
 _NETLINK_ROUTE = 0
+CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
+HWADDRSIZE = 60    # InfiniBand HW address needs 59+1 bytes
 
 
 class NLSocketPool(object):
@@ -83,6 +85,25 @@ def _cache_manager(cache_allocator, sock):
     finally:
         _nl_cache_free(cache)
 
+
+def _addr_to_str(addr):
+    """Returns the textual representation of a netlink address (be it hardware
+    or IP) or None if the address is None"""
+    if addr is not None:
+        address = (c_char * HWADDRSIZE)()
+        return _nl_addr2str(addr, address, sizeof(address))
+
+
+def _af_to_str(af_num):
+    """Returns the textual address family representation of the numerical id"""
+    family = (c_char * CHARBUFFSIZE)()
+    return _nl_af2str(af_num, family, sizeof(family))
+
+
+def _scope_to_str(scope_num):
+    """Returns the textual scope representation of the numerical id"""
+    scope = (c_char * CHARBUFFSIZE)()
+    return _rtnl_scope2str(scope_num, scope, sizeof(scope))
 
 # C function prototypes
 # http://docs.python.org/2/library/ctypes.html#function-prototypes

@@ -23,11 +23,8 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import (_ethtool_uses_libnl3, LIBNL_ROUTE, _nl_addr2str, _nl_geterror,
-               _pool)
-
-CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
-HWADDRSIZE = 60    # InfiniBand HW address needs 59+1 bytes
+from . import _ethtool_uses_libnl3, LIBNL_ROUTE, _nl_geterror, _pool
+from . import _addr_to_str, CHARBUFFSIZE
 
 
 def get_link(name):
@@ -55,7 +52,7 @@ def iter_links():
 def _link_info(cache, link):
     """Returns a dictionary with the information of the link object."""
     info = {}
-    info['address'] = _link_address(link)
+    info['address'] = _addr_to_str(_rtnl_link_get_addr(link))
     info['flags'] = _rtnl_link_get_flags(link)
     info['index'] = _rtnl_link_get_ifindex(link)
     info['mtu'] = _rtnl_link_get_mtu(link)
@@ -90,17 +87,6 @@ def _link_index_to_name(cache, link_index):
     """Returns the textual name of the link with index equal to link_index."""
     name = (c_char * CHARBUFFSIZE)()
     return _rtnl_link_i2name(cache, link_index, name, sizeof(name))
-
-
-def _link_address(link):
-    """Returns the MAC address of a link object or None if the link does not
-    have a physical address."""
-    nl_addr = _rtnl_link_get_addr(link)
-    if nl_addr:
-        address = (c_char * HWADDRSIZE)()
-        return _nl_addr2str(nl_addr, address, sizeof(address))
-    else:
-        return None
 
 
 def _link_state(link):
