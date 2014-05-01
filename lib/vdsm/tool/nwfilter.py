@@ -32,7 +32,6 @@ def main():
     """
     conn = libvirtconnection.get(None, False)
     NoMacSpoofingFilter().defineNwFilter(conn)
-    conn.close()
 
 
 class NwFilter(object):
