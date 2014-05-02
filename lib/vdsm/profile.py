@@ -31,6 +31,9 @@ from vdsm.config import config
 # Import yappi only if profile is enabled
 yappi = None
 
+_FILENAME = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
+_FORMAT = config.get('vars', 'profile_format')
+
 
 def start():
     global yappi
@@ -45,8 +48,7 @@ def stop():
         logging.debug("Stopping profiling")
         yappi.stop()
         stats = yappi.get_func_stats()
-        path = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
-        stats.save(path, config.get('vars', 'profile_format'))
+        stats.save(_FILENAME, _FORMAT)
 
 
 def is_enabled():

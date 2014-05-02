@@ -60,6 +60,7 @@ test_modules = \
 	parted_utils_tests.py \
 	permutationTests.py \
 	persistentDictTests.py \
+	profileTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
 	samplingTests.py \
