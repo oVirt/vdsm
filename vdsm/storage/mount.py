@@ -237,9 +237,15 @@ class Mount(object):
         return True
 
     def getRecord(self):
+        # We compare both specs as one of them may match, depending on the
+        # system configuration (.e.g. on gfs2 we may match on the realpath).
+        if os.path.islink(self.fs_spec):
+            fs_specs = self.fs_spec, os.path.realpath(self.fs_spec)
+        else:
+            fs_specs = self.fs_spec, None
+
         for record in _iterMountRecords():
-            if (record.fs_spec == self.fs_spec and
-                    record.fs_file == self.fs_file):
+            if self.fs_file == record.fs_file and record.fs_spec in fs_specs:
                 return record
 
         raise OSError(errno.ENOENT,
