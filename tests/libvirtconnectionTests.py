@@ -73,6 +73,9 @@ class LibvirtMock(object):
             else:
                 return ''
 
+        def close(self):
+            pass
+
     class virDomain(object):
         pass
 
