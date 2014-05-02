@@ -104,6 +104,10 @@ class StoragePool(object):
         self.domainMonitor = domainMonitor
         self._upgradeCallback = partial(StoragePool._upgradePoolDomain,
                                         proxy(self))
+        self._domainStateCallback = partial(
+            StoragePool._domainStateChange, proxy(self))
+        self.domainMonitor.onDomainStateChange.register(
+            self._domainStateCallback)
         self._backend = None
 
     def __is_secure__(self):
@@ -136,6 +140,10 @@ class StoragePool(object):
     @unsecured
     def getBackend(self):
         return self._backend
+
+    def _domainStateChange(self, sdUUID, isValid):
+        if isValid and sdUUID in self.getDomains():
+            self._refreshDomainLinks(sdCache.produce(sdUUID))
 
     def _upgradePoolDomain(self, sdUUID, isValid):
         # This method is called everytime the onDomainStateChange
