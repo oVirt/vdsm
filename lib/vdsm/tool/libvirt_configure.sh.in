@@ -292,7 +292,7 @@ EOF
 
     if isOvirtNode; then
         . /usr/libexec/ovirt-functions
-        ovirt_store_config "${lconf}" "${qconf}" "${ldconf}" "${llogr}"
+        ovirt_store_config "${lconf}" "${qconf}" "${ldconf}" "${llogr}" "${qlconf}"
     fi
 
     /usr/bin/vdsm-tool libvirt-configure-services-restart || return 1
