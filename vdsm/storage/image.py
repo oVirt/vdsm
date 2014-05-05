@@ -31,7 +31,6 @@ import sd
 import misc
 import fileUtils
 import imageSharing
-from vdsm.config import config
 from vdsm.utils import ActionStopped
 import storage_exception as se
 import task
@@ -109,7 +108,6 @@ class Image:
 
     def __init__(self, repoPath):
         self.repoPath = repoPath
-        self.storage_repository = config.get('irs', 'repository')
 
     def create(self, sdUUID, imgUUID):
         """Create placeholder for image's volumes
