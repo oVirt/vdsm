@@ -22,33 +22,37 @@
 This module provides cpu profiling.
 """
 
-import os
+from functools import wraps
 import logging
+import os
+import threading
 
 from vdsm import constants
 from vdsm.config import config
 
-# Import yappi only if profile is enabled
+# Import yappi lazily when profile is started
 yappi = None
 
 _FILENAME = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
 _FORMAT = config.get('vars', 'profile_format')
 
+_lock = threading.Lock()
+
+
+class Error(Exception):
+    """ Raised when profiler is used incorrectly """
+
 
 def start():
-    global yappi
+    """ Starts application wide profiling """
     if is_enabled():
-        logging.debug("Starting profiling")
-        import yappi
-        yappi.start()
+        _start_profiling()
 
 
 def stop():
-    if is_running():
-        logging.debug("Stopping profiling")
-        yappi.stop()
-        stats = yappi.get_func_stats()
-        stats.save(_FILENAME, _FORMAT)
+    """ Stops application wide profiling """
+    if is_enabled():
+        _stop_profiling(_FILENAME, _FORMAT)
 
 
 def is_enabled():
@@ -56,4 +60,47 @@ def is_enabled():
 
 
 def is_running():
-    return yappi and yappi.is_running()
+    with _lock:
+        return yappi and yappi.is_running()
+
+
+def profile(filename, format=_FORMAT):
+    """
+    Profile decorated function, saving profile to filename using format.
+
+    Note: you cannot use this when the application wide profile is enabled, or
+    profile multiple functions in the same code path.
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*a, **kw):
+            _start_profiling()
+            try:
+                return f(*a, **kw)
+            finally:
+                _stop_profiling(filename, format)
+        return wrapper
+    return decorator
+
+
+def _start_profiling():
+    global yappi
+    logging.debug("Starting profiling")
+    with _lock:
+        import yappi
+        # yappi start semantics are a bit too liberal, returning success if
+        # yappi is already started, happily having too different code paths
+        # that thinks they own the single process profiler.
+        if yappi.is_running():
+            raise Error('Profiler is already running')
+        yappi.start()
+
+
+def _stop_profiling(filename, format):
+    logging.debug("Stopping profiling")
+    with _lock:
+        if yappi.is_running():
+            yappi.stop()
+            stats = yappi.get_func_stats()
+            stats.save(filename, format)
+            yappi.clear_stats()

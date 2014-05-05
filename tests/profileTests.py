@@ -51,7 +51,7 @@ def requires_yappi():
         raise SkipTest('yappi is not installed')
 
 
-class ApplicationProfileTests(VdsmTestCase):
+class ProfileTests(VdsmTestCase):
 
     def tearDown(self):
         try:
@@ -59,6 +59,9 @@ class ApplicationProfileTests(VdsmTestCase):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
+
+
+class ApplicationProfileTests(ProfileTests):
 
     @MonkeyPatch(profile, 'config', make_config(enable='true'))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
@@ -106,3 +109,39 @@ class ApplicationProfileTests(VdsmTestCase):
             self.assertFalse(profile.is_running())
         finally:
             profile.stop()
+
+
+class FunctionProfileTests(ProfileTests):
+
+    # Function profile must succeed if profile is disabled in config.
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_profile_disabled(self):
+        requires_yappi()
+        self.profiled_function()
+        pstats.Stats(FILENAME)
+
+    # Function profile must fail if profile is enabled in config - we cannot
+    # use application wide profile and function profile in the same time.
+    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, '_FILENAME', FILENAME)
+    def test_fail_if_Profile_is_running(self):
+        requires_yappi()
+        profile.start()
+        try:
+            self.assertRaises(profile.Error, self.profiled_function)
+        finally:
+            profile.stop()
+
+    # It is not possible to call a profiled function from a profiled function.
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_fail_recursive_profile(self):
+        requires_yappi()
+        self.assertRaises(profile.Error, self.recursive_profile)
+
+    @profile.profile(FILENAME)
+    def profiled_function(self):
+        self.assertTrue(profile.is_running())
+
+    @profile.profile(FILENAME)
+    def recursive_profile(self):
+        self.profiled_function()
