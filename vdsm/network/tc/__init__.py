@@ -108,7 +108,7 @@ def _filter_replace(dev, parent, filt):
     for a in filt.actions:
         actions.append(['action', 'mirred', 'egress', 'mirror',
                         'dev', a.target])
-    tc_filter.replace(dev, parent=parent, protocol='ip',
+    tc_filter.replace(dev, parent=parent, protocol='all',
                       u32=['match', 'u8', '0', '0'], actions=actions, **kwargs)
 
 

@@ -247,10 +247,10 @@ class TestFilters(TestCaseBase):
 
     def test_filters(self):
         filters = (
-            {'protocol': 'ip', 'pref': 49149, 'kind': 'u32', 'u32': {}},
-            {'protocol': 'ip', 'pref': 49149, 'kind': 'u32', 'u32': {
+            {'protocol': 'all', 'pref': 49149, 'kind': 'u32', 'u32': {}},
+            {'protocol': 'all', 'pref': 49149, 'kind': 'u32', 'u32': {
                 'fh': '803:', 'ht_divisor': 1}},
-            {'protocol': 'ip', 'pref': 49149, 'kind': 'u32', 'u32': {
+            {'protocol': 'all', 'pref': 49149, 'kind': 'u32', 'u32': {
                 'fh': '803::800', 'order': 2048, 'key_ht': 0x803,
                 'key_bkt': 0x0, 'terminal': True, 'match': {
                     'value': 0x0, 'mask': 0x0, 'offset': 0x0},
@@ -259,10 +259,10 @@ class TestFilters(TestCaseBase):
                      'target': 'tap1', 'op': 'pipe', 'index': 18, 'ref': 1,
                      'bind': 1}]}},
 
-            {'protocol': 'ip', 'pref': 49150, 'kind': 'u32', 'u32': {}},
-            {'protocol': 'ip', 'pref': 49150, 'kind': 'u32', 'u32': {
+            {'protocol': 'all', 'pref': 49150, 'kind': 'u32', 'u32': {}},
+            {'protocol': 'all', 'pref': 49150, 'kind': 'u32', 'u32': {
                 'fh': '802:', 'ht_divisor': 1}},
-            {'protocol': 'ip', 'pref': 49150, 'kind': 'u32', 'u32': {
+            {'protocol': 'all', 'pref': 49150, 'kind': 'u32', 'u32': {
                 'fh': '802::800', 'order': 2048, 'key_ht': 0x802,
                 'key_bkt': 0x0, 'terminal': True, 'match': {
                     'value': 0x0, 'mask': 0x0, 'offset': 0x0},
@@ -271,10 +271,10 @@ class TestFilters(TestCaseBase):
                      'target': 'tap2', 'op': 'pipe', 'index': 17, 'ref': 1,
                      'bind': 1}]}},
 
-            {'protocol': 'ip', 'pref': 49152, 'kind': 'u32', 'u32': {}},
-            {'protocol': 'ip', 'pref': 49152, 'kind': 'u32', 'u32': {
+            {'protocol': 'all', 'pref': 49152, 'kind': 'u32', 'u32': {}},
+            {'protocol': 'all', 'pref': 49152, 'kind': 'u32', 'u32': {
                 'fh': '800:', 'ht_divisor': 1}},
-            {'protocol': 'ip', 'pref': 49152, 'kind': 'u32', 'u32': {
+            {'protocol': 'all', 'pref': 49152, 'kind': 'u32', 'u32': {
                 'fh': '800::800', 'order': 2048, 'key_ht': 0x800,
                 'key_bkt': 0x0, 'terminal': True, 'match': {
                     'value': 0x0, 'mask': 0x0, 'offset': 0x0},
