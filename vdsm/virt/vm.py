@@ -341,10 +341,12 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                     dStats['imageID'] = vmDrive.imageID
                 elif "GUID" in vmDrive:
                     dStats['lunGUID'] = vmDrive.GUID
-                dStats['readRate'] = ((eInfo[dName][1] - sInfo[dName][1]) /
-                                      sampleInterval)
-                dStats['writeRate'] = ((eInfo[dName][3] - sInfo[dName][3]) /
-                                       sampleInterval)
+                if sInfo is not None:
+                    # will be None if sampled during recovery
+                    dStats['readRate'] = (
+                        (eInfo[dName][1] - sInfo[dName][1]) / sampleInterval)
+                    dStats['writeRate'] = (
+                        (eInfo[dName][3] - sInfo[dName][3]) / sampleInterval)
             except (AttributeError, KeyError, TypeError, ZeroDivisionError):
                 self._log.debug("Disk %s stats not available", dName)
 
