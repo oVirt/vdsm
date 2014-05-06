@@ -129,20 +129,20 @@ class TestCaps(TestCaseBase):
             self.assertEqual(res, caps._parseKeyVal(lines, s))
 
     @MonkeyPatch(caps, '_getMemoryStatsByNumaCell', lambda x: {
-        'total': 50321208L, 'free': 47906488L})
+        'total': '49141', 'free': '46783'})
     @MonkeyPatch(caps, '_getCapsXMLStr', lambda: _getTestData(
         "caps_libvirt_amd_6274.out"))
     def testNumaTopology(self):
         # 2 x AMD 6272 (with Modules)
         t = caps._getNumaTopology()
         expectedNumaInfo = {
-            '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': 49141},
+            '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': '49141'},
             '1': {'cpus': [8, 9, 10, 11, 12, 13, 14, 15],
-                  'totalMemory': 49141},
+                  'totalMemory': '49141'},
             '2': {'cpus': [16, 17, 18, 19, 20, 21, 22, 23],
-                  'totalMemory': 49141},
+                  'totalMemory': '49141'},
             '3': {'cpus': [24, 25, 26, 27, 28, 29, 30, 31],
-                  'totalMemory': 49141}}
+                  'totalMemory': '49141'}}
         self.assertEqual(t, expectedNumaInfo)
 
     @MonkeyPatch(utils, 'execCmd', lambda x: _getCapsNumaDistanceTestData(

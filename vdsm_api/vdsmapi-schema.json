@@ -722,7 +722,7 @@
 #               libvirt's capabilities api. When hyper-thread is enabled,
 #               one cpu core id will correspond to two sibling cpu ids.
 #
-# @totalMemory: The total memory of this numa node
+# @totalMemory: The total memory of this numa node in MiB.
 #
 # Since: 4.15.0
 ##

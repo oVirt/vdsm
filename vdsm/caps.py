@@ -187,20 +187,23 @@ def _getNumaTopology():
         cellInfo['cpus'] = cpus
         cellIndex = cell.getAttribute('id')
         memInfo = _getMemoryStatsByNumaCell(int(cellIndex))
-        cellInfo['totalMemory'] = memInfo['total'] / 1024
+        cellInfo['totalMemory'] = memInfo['total']
         cellsInfo[cellIndex] = cellInfo
     return cellsInfo
 
 
 def _getMemoryStatsByNumaCell(cell):
     """
-    Get the memory stats of a specified numa node.
+    Get the memory stats of a specified numa node, the unit is MiB.
 
     :param cell: the index of numa node
     :type cell: int
-    :return: dict like {'total': 50321208L, 'free': 47906488L}
+    :return: dict like {'total': '49141', 'free': '46783'}
     """
-    return libvirtconnection.get().getMemoryStats(cell, 0)
+    cellMemInfo = libvirtconnection.get().getMemoryStats(cell, 0)
+    cellMemInfo['total'] = str(cellMemInfo['total'] / 1024)
+    cellMemInfo['free'] = str(cellMemInfo['free'] / 1024)
+    return cellMemInfo
 
 
 @utils.memoized
