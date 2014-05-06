@@ -274,7 +274,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 sampleInterval)
 
         except (TypeError, ZeroDivisionError) as e:
-            self._log.debug("CPU stats not available: %s", e)
+            self._log.exception("CPU stats not available: %s", e)
 
     @classmethod
     def _getNicStats(cls, name, model, mac,
@@ -342,7 +342,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                     dStats['writeRate'] = (
                         (eInfo[dName][3] - sInfo[dName][3]) / sampleInterval)
             except (AttributeError, KeyError, TypeError, ZeroDivisionError):
-                self._log.debug("Disk %s stats not available", dName)
+                self._log.exception("Disk %s stats not available", dName)
 
             stats[dName] = dStats
 
@@ -384,7 +384,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 try:
                     dLatency = _avgLatencyCalc(sInfo[dName], eInfo[dName])
                 except (KeyError, TypeError):
-                    self._log.debug("Disk %s latency not available", dName)
+                    self._log.exception("Disk %s latency not available", dName)
 
             stats[dName].update(dLatency)
 
