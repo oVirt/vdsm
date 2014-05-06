@@ -364,22 +364,25 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                                   sData['flush_total_times']) /
                                  (eData['flush_operations'] -
                                   sData['flush_operations']))
-            return str(readLatency), str(writeLatency), str(flushLatency)
+            return {
+                'readLatency': str(readLatency),
+                'writeLatency': str(writeLatency),
+                'flushLatency': str(flushLatency)}
 
         for vmDrive in self._vm._devices[DISK_DEVICES]:
             dName = vmDrive.name
             dLatency = {'readLatency': '0',
                         'writeLatency': '0',
                         'flushLatency': '0'}
-            try:
-                (dLatency['readLatency'],
-                 dLatency['writeLatency'],
-                 dLatency['flushLatency']) = _avgLatencyCalc(sInfo[dName],
-                                                             eInfo[dName])
-            except (KeyError, TypeError):
-                self._log.debug("Disk %s latency not available", dName)
-            else:
-                stats[dName].update(dLatency)
+
+            if sInfo is not None:
+                # will be None if sampled during recovery
+                try:
+                    dLatency = _avgLatencyCalc(sInfo[dName], eInfo[dName])
+                except (KeyError, TypeError):
+                    self._log.debug("Disk %s latency not available", dName)
+
+            stats[dName].update(dLatency)
 
     def get(self):
         stats = {}
