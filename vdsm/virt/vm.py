@@ -254,7 +254,13 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         return 100 * val / sampleInterval / 1000 ** 3
 
     def _getCpuStats(self, stats):
+        stats['cpuUser'] = 0.0
+        stats['cpuSys'] = 0.0
+
         sInfo, eInfo, sampleInterval = self.sampleCpu.getStats()
+
+        if sInfo is None:
+            return
 
         try:
             stats['cpuSys'] = self._usagePercentage(
@@ -269,8 +275,6 @@ class VmStatsThread(sampling.AdvancedStatsThread):
 
         except (TypeError, ZeroDivisionError) as e:
             self._log.debug("CPU stats not available: %s", e)
-            stats['cpuUser'] = 0.0
-            stats['cpuSys'] = 0.0
 
     @classmethod
     def _getNicStats(cls, name, model, mac,
