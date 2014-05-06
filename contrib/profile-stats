@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+#
+# Copyright 2014 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+"""
+Print statistics from recorded profile using pstat format.
+
+This script prints the typical statistics from a profile using a single command
+line, generating output that can be processed by other commands if needed.
+
+The defaults will give you the top 20 most expensive functions, and the list of
+functions who called them:
+
+    profile-stats vdsmd.prof
+
+Usually you also like to sort the functions by cumulative time, including the
+time spent calling other functions. For this, use the -s/--sort option:
+
+    profile-stats -scumtime vdsmd.prof
+
+You can use any of the values defined by the pstats module. To find the values,
+run "python -m pstats file.prof" and issue the "sort" command. It can be nice
+to integrate the output in the generated help. To use mutiple sort criteria,
+separate value with a comma: --sort "calls,cumtime".
+
+Sometimes you like to get more then 20 functions. To change the number of
+function to show, use the -r/--restrict option:
+
+    profile-stats -r100 vdsmd.prof
+
+When you post profiles on bugzilla comments, long lines are wrapped badly,
+making the profile unreadable. Striping the directory info from the printed
+statistics, make the output more bugzilla friendly. Use the -c/--compact option
+for that:
+
+    profile-stats -c vdsmd.prof > profile-for-bugzilla.prof
+
+"""
+
+import optparse
+import pstats
+import sys
+
+op = optparse.OptionParser(usage='%prog [options] file')
+op.add_option('-s', '--sort', dest='sort',
+              help='sort stats by given criteria (multiple values separated '
+                   'by comma allowed).')
+op.add_option('-r', '--restrict', dest='restrict', type='int',
+              help='restrict number of items reported.')
+op.add_option('-c', '--compact', dest='compact', action='store_true',
+              help='Use compact output')
+op.set_defaults(sort='time', restrict=20, compact=False)
+
+options, args = op.parse_args()
+
+if len(args) == 0:
+    op.error('file is required')
+
+s = pstats.Stats(args[0])
+
+if options.compact:
+    s.strip_dirs()
+
+if options.sort:
+    criteria = options.sort.split(',')
+    s.sort_stats(*criteria)
+
+s.print_stats(options.restrict)
+s.print_callers(options.restrict)
