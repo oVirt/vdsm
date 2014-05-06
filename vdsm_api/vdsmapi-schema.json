@@ -1031,7 +1031,7 @@
 #               http://libvirt.org/formatdomain.html#elementsCPU
 #               for the format details.
 #
-# @memory:      The total memory of this guest numa node in KB.
+# @memory:      The total memory of this guest numa node in MiB.
 #
 # Since: 4.15.0
 ##

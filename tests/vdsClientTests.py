@@ -70,8 +70,8 @@ class vdsClientTest(TestCaseBase):
                     'devices={nicModel:virtio,macAddr:5F:45:00:95:F6:3F,'
                     'network:virbr0,alias:net0,address:{slot:0x03,bus:0x00,'
                     'domain:0x0000,type:pci,function:0x0}}',
-                    'guestNumaNodes={cpus:0-1,memory:1048576}',
-                    'guestNumaNodes={cpus:2-3,memory:1048576}',
+                    'guestNumaNodes={cpus:0-1,memory:5120}',
+                    'guestNumaNodes={cpus:2-3,memory:5120}',
                     'numaTune={mode:strict,nodeset:0}',
                     'cpuPinning={0:0,1:1}']
         allArgs = plainArgs + nestArgs
@@ -108,9 +108,9 @@ class vdsClientTest(TestCaseBase):
                         'vmName': 'rhel62vdsm',
                         'vmType': 'kvm',
                         'guestNumaNodes': [{'cpus': '0-1',
-                                            'memory': '1048576'},
+                                            'memory': '5120'},
                                            {'cpus': '2-3',
-                                            'memory': '1048576'}]}
+                                            'memory': '5120'}]}
 
         # test parsing only arguments
         r1 = serv.do_create(['/dev/null'] + allArgs)

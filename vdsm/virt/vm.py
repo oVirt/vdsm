@@ -722,9 +722,10 @@ class _DomXML:
             numa = XMLElement('numa')
             guestNumaNodes = self.conf.get('guestNumaNodes')
             for vmCell in guestNumaNodes:
+                nodeMem = int(vmCell['memory']) * 1024
                 numa.appendChildWithArgs('cell',
                                          cpus=vmCell['cpus'],
-                                         memory=str(vmCell['memory']))
+                                         memory=str(nodeMem))
             cpu.appendChild(numa)
 
         self.dom.appendChild(cpu)

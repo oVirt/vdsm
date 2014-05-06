@@ -313,8 +313,8 @@ class TestVm(TestCaseBase):
               <feature name="svm" policy="disable"/>
               <topology cores="2" sockets="40" threads="2"/>
               <numa>
-                  <cell cpus="0-1" memory="512000"/>
-                  <cell cpus="2,3" memory="512000"/>
+                  <cell cpus="0-1" memory="5242880"/>
+                  <cell cpus="2,3" memory="5242880"/>
               </numa>
           </cpu> """
         cputuneXML = """
@@ -332,8 +332,8 @@ class TestVm(TestCaseBase):
                   'smpCoresPerSocket': 2, 'smpThreadsPerCore': 2,
                   'cpuPinning': {'0': '0-1', '1': '2-3'},
                   'numaTune': {'mode': 'strict', 'nodeset': '0-1'},
-                  'guestNumaNodes': [{'cpus': '0-1', 'memory': '512000'},
-                                     {'cpus': '2,3', 'memory': 512000}]}
+                  'guestNumaNodes': [{'cpus': '0-1', 'memory': '5120'},
+                                     {'cpus': '2,3', 'memory': '5120'}]}
         vmConf.update(self.conf)
         domxml = vm._DomXML(vmConf, self.log,
                             caps.Architecture.X86_64)
