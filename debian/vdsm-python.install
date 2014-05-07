@@ -11,7 +11,9 @@
 ./usr/lib/python2.7/dist-packages/vdsm/libvirtconnection.py
 ./usr/lib/python2.7/dist-packages/vdsm/netconfpersistence.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo.py
-./usr/lib/python2.7/dist-packages/vdsm/netlink.py
+./usr/lib/python2.7/dist-packages/vdsm/netlink/__init__.py
+./usr/lib/python2.7/dist-packages/vdsm/netlink/addr.py
+./usr/lib/python2.7/dist-packages/vdsm/netlink/link.py
 ./usr/lib/python2.7/dist-packages/vdsm/profile.py
 ./usr/lib/python2.7/dist-packages/vdsm/qemuimg.py
 ./usr/lib/python2.7/dist-packages/vdsm/sslutils.py

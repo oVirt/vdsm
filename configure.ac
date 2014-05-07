@@ -263,6 +263,7 @@ AC_OUTPUT([
 	init/upstart/Makefile
 	lib/Makefile
 	lib/vdsm/Makefile
+	lib/vdsm/netlink/Makefile
 	lib/vdsm/tool/Makefile
 	lib/yajsonrpc/Makefile
 	lib/zombiereaper/Makefile

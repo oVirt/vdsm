@@ -46,8 +46,9 @@ from .ipwrapper import routeGet
 from .ipwrapper import routeShowGateways, routeShowAllDefaultGateways
 from . import libvirtconnection
 from .netconfpersistence import RunningConfig
-from .netlink import iter_addrs, iter_links
 from .utils import execCmd, memoized, CommandPath
+from .netlink import link as nl_link
+from .netlink import addr as nl_addr
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -755,7 +756,7 @@ def getDhclientIfaces(leaseFilesGlobs, ipv6=False):
 
 def _getIpAddrs():
     addrs = defaultdict(list)
-    for addr in iter_addrs():
+    for addr in nl_addr.iter_addrs():
         addrs[addr['label']].append(addr)
     return addrs
 
@@ -1041,7 +1042,7 @@ def ifaceUsed(iface):
     require a NetInfo object."""
     if os.path.exists(os.path.join(NET_PATH, iface, 'brport')):  # Is it a port
         return True
-    for linkDict in iter_links():
+    for linkDict in nl_link.iter_links():
         if linkDict['name'] == iface and 'master' in linkDict:  # Is it a slave
             return True
         if linkDict.get('device') == iface:  # Does it back a vlan
@@ -1053,6 +1054,6 @@ def ifaceUsed(iface):
 
 
 def vlanDevsForIface(iface):
-    for linkDict in iter_links():
+    for linkDict in nl_link.iter_links():
         if linkDict.get('device') == iface:
             yield linkDict['name']

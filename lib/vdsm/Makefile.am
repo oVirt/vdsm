@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=tool
+SUBDIRS=netlink tool
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
@@ -30,7 +30,6 @@ dist_vdsmpylib_PYTHON = \
 	libvirtconnection.py \
 	netconfpersistence.py \
 	netinfo.py \
-	netlink.py \
 	profile.py \
 	qemuimg.py \
 	SecureXMLRPCServer.py \

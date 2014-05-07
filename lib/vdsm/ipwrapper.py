@@ -37,7 +37,7 @@ from .utils import anyFnmatch
 from .utils import CommandPath
 from .utils import execCmd
 from .utils import grouper
-from . import netlink
+from .netlink import link
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 
@@ -287,7 +287,7 @@ def _bondExists(bondName):
 def getLinks():
     """Returns a list of Link objects for each link in the system."""
     links = []
-    for data in netlink.iter_links():
+    for data in link.iter_links():
         try:
             links.append(Link.fromDict(data))
         except IOError:  # If a link goes missing we just don't report it
@@ -297,7 +297,7 @@ def getLinks():
 
 def getLink(dev):
     """Returns the Link object for the specified dev."""
-    return Link.fromDict(netlink.get_link(dev))
+    return Link.fromDict(link.get_link(dev))
 
 
 @equals

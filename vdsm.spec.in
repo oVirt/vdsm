@@ -1145,6 +1145,7 @@ exit 0
 %{_mandir}/man1/vdsm-tool.1*
 %{_bindir}/vdsm-tool
 %dir %{python_sitearch}/%{vdsm_name}
+%dir %{python_sitearch}/%{vdsm_name}/netlink
 %dir %{python_sitearch}/%{vdsm_name}/tool
 %{python_sitearch}/%{vdsm_name}/__init__.py*
 %{python_sitearch}/%{vdsm_name}/compat.py*
@@ -1155,7 +1156,9 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/ipwrapper.py*
 %{python_sitearch}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitearch}/%{vdsm_name}/netinfo.py*
-%{python_sitearch}/%{vdsm_name}/netlink.py*
+%{python_sitearch}/%{vdsm_name}/netlink/__init__.py*
+%{python_sitearch}/%{vdsm_name}/netlink/addr.py*
+%{python_sitearch}/%{vdsm_name}/netlink/link.py*
 %{python_sitearch}/%{vdsm_name}/profile.py*
 %{python_sitearch}/%{vdsm_name}/qemuimg.py*
 %{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*
