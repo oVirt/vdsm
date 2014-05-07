@@ -2801,14 +2801,7 @@ class Vm(object):
         if not self.recovering:
             self.preparePaths(devices[DISK_DEVICES])
             self._prepareTransientDisks(devices[DISK_DEVICES])
-            # Update self.conf with updated devices
-            # For old type vmParams, new 'devices' key will be
-            # created with all devices info
-            newDevices = []
-            for dev in devices.values():
-                newDevices.extend(dev)
-
-            self.conf['devices'] = newDevices
+            self._updateDevices(devices)
             # We need to save conf here before we actually run VM.
             # It's not enough to save conf only on status changes as we did
             # before, because if vdsm will restarted between VM run and conf
@@ -2878,6 +2871,18 @@ class Vm(object):
             self.setDownStatus(ERROR, vmexitreason.LIBVIRT_START_FAILED)
             return
         self._domDependentInit()
+
+    def _updateDevices(self, devices):
+        """
+        Update self.conf with updated devices
+        For old type vmParams, new 'devices' key will be
+        created with all devices info
+        """
+        newDevices = []
+        for dev in devices.values():
+            newDevices.extend(dev)
+
+        self.conf['devices'] = newDevices
 
     def _correctDiskVolumes(self, srcDomXML):
         """
