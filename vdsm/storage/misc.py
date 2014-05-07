@@ -52,7 +52,6 @@ import inspect
 from vdsm import constants
 from vdsm import utils
 import storage_exception as se
-import fileUtils
 import logUtils
 from caps import isOvirtNode
 
@@ -193,8 +192,7 @@ def getProcCtime(pid):
 def _readfile(name, buffersize=None):
     cmd = [constants.EXT_DD]
 
-    if fileUtils.pathRequiresFlagForDirectIO(name):
-        cmd.append("iflag=%s" % DIRECTFLAG)
+    cmd.append("iflag=%s" % DIRECTFLAG)
     cmd.append("if=%s" % name)
 
     if buffersize:
@@ -265,11 +263,8 @@ def readblock(name, offset, size):
     while left > 0:
         (iounit, count, iooffset) = _alignData(left, offset)
 
-        cmd = [constants.EXT_DD]
-        if fileUtils.pathRequiresFlagForDirectIO(name):
-            cmd.append("iflag=%s" % DIRECTFLAG)
-        cmd.extend(["skip=%d" % iooffset, "bs=%d" % iounit, "if=%s" % name,
-                    "count=%s" % count])
+        cmd = [constants.EXT_DD, "iflag=%s" % DIRECTFLAG, "skip=%d" % iooffset,
+               "bs=%d" % iounit, "if=%s" % name, "count=%s" % count]
 
         (rc, out, err) = execCmd(cmd, raw=True)
         if rc:
@@ -352,8 +347,7 @@ def ddWatchCopy(src, dst, stop, size, offset=0, recoveryCallback=None):
         oflag = None
         conv = "notrunc"
         if (iounit % 512) == 0:
-            if fileUtils.pathRequiresFlagForDirectIO(dst):
-                oflag = DIRECTFLAG
+            oflag = DIRECTFLAG
         else:
             conv += ",%s" % DATASYNCFLAG
 

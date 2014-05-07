@@ -46,6 +46,10 @@ from testValidation import SlowTestsPlugin, StressTestsPlugin
 import zombiereaper
 zombiereaper.registerSignalHandler()
 
+# /tmp may use tempfs filesystem, not suitable for some of the test assuming a
+# filesystem with direct io support.
+TEMPDIR = '/var/tmp'
+
 PERMUTATION_ATTR = "_permutations_"
 
 # At the moment of this writing the tests don't need a mock object for sanlock
@@ -127,8 +131,8 @@ def colorWrite(stream, text, color):
 
 
 @contextmanager
-def temporaryPath(perms=None, data=None):
-    fd, src = tempfile.mkstemp()
+def temporaryPath(perms=None, data=None, dir=TEMPDIR):
+    fd, src = tempfile.mkstemp(dir=dir)
     if data is not None:
         f = os.fdopen(fd, "wb")
         f.write(data)
@@ -145,8 +149,8 @@ def temporaryPath(perms=None, data=None):
 
 
 @contextmanager
-def namedTemporaryDir():
-    tmpDir = tempfile.mkdtemp()
+def namedTemporaryDir(dir=TEMPDIR):
+    tmpDir = tempfile.mkdtemp(dir=dir)
     try:
         yield tmpDir
     finally:
