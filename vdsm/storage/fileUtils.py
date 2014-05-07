@@ -36,7 +36,7 @@ import logging
 import errno
 
 from vdsm import constants
-import mount
+
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
 
 log = logging.getLogger('Storage.fileUtils')
@@ -201,13 +201,6 @@ def open_ex(path, mode):
         return open(path, mode)
 
 
-def pathRequiresFlagForDirectIO(path):
-    # Memory-only file systems don't support direct IO because direct IO
-    # means "skip the page cache" and they are 100% page cache.
-    vfstype = mount.findMountOfPath(path).getRecord().fs_vfstype
-    return vfstype not in ["tmpfs", "ramfs"]
-
-
 class DirectFile(object):
     def __init__(self, path, mode):
         if "d" not in mode:
@@ -217,10 +210,7 @@ class DirectFile(object):
             raise ValueError("Invalid mode parameter")
 
         self._writable = True
-        if pathRequiresFlagForDirectIO(path):
-            flags = os.O_DIRECT
-        else:
-            flags = 0
+        flags = os.O_DIRECT
 
         if "r" in mode:
             if "+" in mode:

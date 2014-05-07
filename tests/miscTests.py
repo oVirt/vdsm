@@ -28,6 +28,7 @@ import fcntl
 import errno
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import temporaryPath
+from testrunner import TEMPDIR
 import inspect
 from multiprocessing import Process
 from vdsm import utils
@@ -392,7 +393,7 @@ class DdWatchCopy(TestCaseBase):
         self.assertEquals(readData, data)
 
     def _createDataFile(self, data, repetitions):
-        fd, path = tempfile.mkstemp()
+        fd, path = tempfile.mkstemp(dir=TEMPDIR)
 
         try:
             for i in xrange(repetitions):
@@ -724,7 +725,7 @@ class ReadBlock(TestCaseBase):
         """
         dataLength = len(writeData)
 
-        fd, path = tempfile.mkstemp()
+        fd, path = tempfile.mkstemp(dir=TEMPDIR)
         f = os.fdopen(fd, "wb")
 
         written = 0
