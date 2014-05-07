@@ -148,9 +148,9 @@ def _stpBooleanize(value):
         return False
     if type(value) is bool:
         return value
-    if value.lower() in ('true', 'on'):
+    if value.lower() in ('true', 'on', 'yes'):
         return True
-    elif value.lower() in ('false', 'off'):
+    elif value.lower() in ('false', 'off', 'no'):
         return False
     else:
         raise ValueError('Invalid value for bridge stp')
