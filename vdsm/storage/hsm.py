@@ -37,6 +37,7 @@ import signal
 import types
 import math
 import stat
+from weakref import proxy
 
 from vdsm.config import config
 import sp
@@ -399,6 +400,11 @@ class HSM:
         monitorInterval = config.getint('irs', 'sd_health_check_delay')
         self.domainMonitor = domainMonitor.DomainMonitor(monitorInterval)
 
+        self._domainStateCallback = partial(
+            HSM._onDomainStateChange, proxy(self))
+        self.domainMonitor.onDomainStateChange.register(
+            self._domainStateCallback)
+
     @property
     def ready(self):
         return self._ready
@@ -410,6 +416,10 @@ class HSM:
         are done *prior* to connecting to pool.
         """
         self.domainStateChangeCallbacks.add(callbackFunc)
+
+    def _onDomainStateChange(self, sdUUID, isValid):
+        for pool in self.pools.values():
+            pool.domainStateChanged(sdUUID, isValid)
 
     def _hsmSchedule(self, name, func, *args):
         self.taskMng.scheduleJob("hsm", self.tasksDir, vars.task,
