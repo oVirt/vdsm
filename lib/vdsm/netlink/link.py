@@ -19,6 +19,7 @@
 from ctypes import (CFUNCTYPE, byref, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, sizeof)
 from functools import partial
+from socket import AF_UNSPEC
 import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
@@ -110,7 +111,6 @@ if _ethtool_uses_libnl3():
 
     def _rtnl_link_alloc_cache(sock):
         """Wraps the new link alloc cache to expose the libnl1 signature"""
-        AF_UNSPEC = 0
         cache = c_void_p()
         err = _link_alloc_cache(sock, AF_UNSPEC, byref(cache))
         if err:
