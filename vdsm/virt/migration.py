@@ -391,7 +391,7 @@ class MonitorThread(threading.Thread):
 
     def run(self):
         def calculateProgress(remaining, total):
-            if remaining == 0:
+            if remaining == 0 and total:
                 return 100
             progress = 100 - 100 * remaining / total if total else 0
             return progress if (progress < 100) else 99
