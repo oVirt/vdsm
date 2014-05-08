@@ -1031,7 +1031,7 @@ def createVolume(parent, parent_format, volume, size, format, prealloc):
 
 
 def qemuRebase(src, srcFormat, backingFile,
-               backingFormat, unsafe, stop, rollback):
+               backingFormat, unsafe, stop):
     """
     Rebase the 'src' volume on top of the new 'backingFile'
     with new 'backingFormat'
