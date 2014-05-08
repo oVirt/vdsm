@@ -31,6 +31,7 @@ from nose.plugins.skip import SkipTest
 
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import permutations, expandPermutations
+from testrunner import TEMPDIR
 try:
     import rtslib
 except ImportError:
@@ -48,8 +49,6 @@ from vdsm.utils import CommandPath, RollbackContext
 from vdsm import vdscli
 
 from virt import vmstatus
-
-_VARTMP = '/var/tmp'
 
 if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
@@ -340,7 +339,7 @@ class LocalFSServer(BackendServer):
         uid = pwd.getpwnam(VDSM_USER)[2]
         gid = grp.getgrnam(VDSM_GROUP)[2]
 
-        rootDir = tempfile.mkdtemp(prefix='localfs', dir=_VARTMP)
+        rootDir = tempfile.mkdtemp(prefix='localfs', dir=TEMPDIR)
         undo = lambda: os.rmdir(rootDir)
         rollback.prependDefer(undo)
         os.chown(rootDir, uid, gid)
@@ -426,7 +425,7 @@ class IscsiServer(BackendServer):
         connections = {}
         self.vgNames = {}
         for uuid, conn in backends.iteritems():
-            fd, imgPath = tempfile.mkstemp(dir=_VARTMP)
+            fd, imgPath = tempfile.mkstemp(dir=TEMPDIR)
             rollback.prependDefer(partial(os.unlink, imgPath))
             rollback.prependDefer(partial(os.close, fd))
             # Create a 10GB empty disk image
@@ -556,12 +555,12 @@ class NFSServer(BackendServer):
     def _createBackend(self, backends, rollback):
         prefix = 'vdsmFunctionalTestNfs'
 
-        cleanNFSLeftovers(os.path.join(_VARTMP, prefix))
+        cleanNFSLeftovers(os.path.join(TEMPDIR, prefix))
 
         uid = pwd.getpwnam(VDSM_USER)[2]
         gid = grp.getgrnam(VDSM_GROUP)[2]
 
-        rootDir = tempfile.mkdtemp(prefix=prefix, dir=_VARTMP)
+        rootDir = tempfile.mkdtemp(prefix=prefix, dir=TEMPDIR)
         undo = lambda: os.rmdir(rootDir)
         rollback.prependDefer(undo)
         os.chown(rootDir, uid, gid)
