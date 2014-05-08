@@ -72,3 +72,25 @@ class MountTests(TestCaseBase):
                     self.assertTrue(m.isMounted())
                 finally:
                     m.umount()
+
+    def testSymlinkMount(self):
+        checkSudo(["mount", "-o", "loop", "somefile", "target"])
+        checkSudo(["umount", "target"])
+        with namedTemporaryDir() as root_dir:
+            backing_image = os.path.join(root_dir, 'backing.img')
+            link_to_image = os.path.join(root_dir, 'link_to_image')
+            mountpoint = os.path.join(root_dir, 'mountpoint')
+            with open(backing_image, 'w') as f:
+                os.ftruncate(f.fileno(), 1024 ** 3)
+            rc, out, err = execCmd(['/sbin/mkfs.ext2', "-F", backing_image],
+                                   raw=True)
+            if rc != 0:
+                raise RuntimeError("Error creating filesystem: %s" % err)
+            os.symlink(backing_image, link_to_image)
+            os.mkdir(mountpoint)
+            m = mount.Mount(link_to_image, mountpoint)
+            m.mount(mntOpts="loop")
+            try:
+                self.assertTrue(m.isMounted())
+            finally:
+                m.umount()
