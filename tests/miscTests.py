@@ -28,6 +28,7 @@ import fcntl
 import errno
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import temporaryPath
+from testrunner import namedTemporaryDir
 from testrunner import TEMPDIR
 import inspect
 from multiprocessing import Process
@@ -803,26 +804,28 @@ class CleanUpDir(TestCaseBase):
         """
         Test if method can clean a dir it should be able to.
         """
-        # Populate dir
-        baseDir = tempfile.mkdtemp()
-        numOfFilesToCreate = 50
-        for i in range(numOfFilesToCreate):
-            tempfile.mkstemp(dir=baseDir)
+        with namedTemporaryDir() as baseDir:
+            # Populate dir
+            dirty = os.path.join(baseDir, 'dirty')
+            os.mkdir(dirty)
+            numOfFilesToCreate = 50
+            for i in range(numOfFilesToCreate):
+                tempfile.mkstemp(dir=dirty)
 
-        # clean it
-        fileUtils.cleanupdir(baseDir)
+            # clean it
+            fileUtils.cleanupdir(dirty)
 
-        self.assertFalse(os.path.lexists(baseDir))
+            self.assertFalse(os.path.lexists(dirty))
 
     def testEmptyDir(self):
         """
         Test if method can delete an empty dir.
         """
-        baseDir = tempfile.mkdtemp()
-
-        fileUtils.cleanupdir(baseDir)
-
-        self.assertFalse(os.path.lexists(baseDir))
+        with namedTemporaryDir() as baseDir:
+            dirty = os.path.join(baseDir, 'dirty')
+            os.mkdir(dirty)
+            fileUtils.cleanupdir(dirty)
+            self.assertFalse(os.path.lexists(dirty))
 
     def testNotExistingDir(self):
         """

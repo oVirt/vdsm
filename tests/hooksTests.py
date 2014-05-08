@@ -20,6 +20,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import contextlib
 import tempfile
 import os
 import os.path
@@ -32,53 +33,46 @@ import hooks
 
 class TestHooks(TestCaseBase):
     def test_emptyDir(self):
-        dirName = tempfile.mkdtemp()
-        DOMXML = "algo"
-        self.assertEqual(DOMXML, hooks._runHooksDir(DOMXML, dirName))
-        os.rmdir(dirName)
+        with namedTemporaryDir() as dirName:
+            DOMXML = "algo"
+            self.assertEqual(DOMXML, hooks._runHooksDir(DOMXML, dirName))
 
-    def createTempScripts(self):
-        dirName = tempfile.mkdtemp()
-        Q = 3
-        code = """#! /bin/bash
+    @contextlib.contextmanager
+    def tempScripts(self):
+        with namedTemporaryDir() as dirName:
+            Q = 3
+            code = """#! /bin/bash
 echo -n %s >> "$_hook_domxml"
-        """
-        scripts = [tempfile.NamedTemporaryFile(dir=dirName, delete=False)
-                   for n in xrange(Q)]
-        scripts.sort(key=lambda f: f.name)
-        for n, script in enumerate(scripts):
-            script.write(code % n)
-            os.chmod(os.path.join(dirName, script.name), 0o775)
-            script.close()
-        return dirName, scripts
-
-    def destroyTempScripts(self, scripts, dirName):
-        for script in scripts:
-            os.unlink(script.name)
-        os.rmdir(dirName)
+            """
+            scripts = [tempfile.NamedTemporaryFile(dir=dirName, delete=False)
+                       for n in xrange(Q)]
+            scripts.sort(key=lambda f: f.name)
+            for n, script in enumerate(scripts):
+                script.write(code % n)
+                os.chmod(os.path.join(dirName, script.name), 0o775)
+                script.close()
+            yield dirName, scripts
 
     def test_scriptsPerDir(self):
-        dirName, scripts = self.createTempScripts()
-        sNames = [script.name for script in scripts]
-        hooksNames = hooks._scriptsPerDir(dirName)
-        hooksNames.sort()
-        self.assertEqual(sNames, hooksNames)
-        self.destroyTempScripts(scripts, dirName)
+        with self.tempScripts() as (dirName, scripts):
+            sNames = [script.name for script in scripts]
+            hooksNames = hooks._scriptsPerDir(dirName)
+            hooksNames.sort()
+            self.assertEqual(sNames, hooksNames)
 
     def test_runHooksDir(self):
         # Add an unicode value to the environment variables
         # to test whether the utf-8 recoding works properly
         os.environ["FAKE_GERRIT_USERNAME"] = "Pěkný žluťoučký kůň"
 
-        dirName, scripts = self.createTempScripts()
-        Q = 3
-        DOMXML = "algo"
-        expectedResult = DOMXML
-        for n in xrange(Q):
-            expectedResult = expectedResult + str(n)
-        res = hooks._runHooksDir(DOMXML, dirName)
-        self.assertEqual(expectedResult, res)
-        self.destroyTempScripts(scripts, dirName)
+        with self.tempScripts() as (dirName, scripts):
+            Q = 3
+            DOMXML = "algo"
+            expectedResult = DOMXML
+            for n in xrange(Q):
+                expectedResult = expectedResult + str(n)
+            res = hooks._runHooksDir(DOMXML, dirName)
+            self.assertEqual(expectedResult, res)
 
     def test_getNEScriptInfo(self):
         path = '/tmp/nonExistent'

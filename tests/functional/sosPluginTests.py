@@ -19,9 +19,8 @@
 #
 
 import subprocess
-import tempfile
-import shutil
 from testrunner import VdsmTestCase as TestCaseBase
+from testrunner import namedTemporaryDir
 import testValidation
 
 ARCHIVE_NAME = "sosplugintest"
@@ -31,21 +30,18 @@ class SosPluginTest(TestCaseBase):
 
     @testValidation.ValidateRunningAsRoot
     def testSosPlugin(self):
-        tmpDir = tempfile.mkdtemp()
-        cmd = ["sosreport", "-o", "vdsm", "--batch",
-               "--name", ARCHIVE_NAME, "--tmp-dir", tmpDir]
+        with namedTemporaryDir() as tmpDir:
+            cmd = ["sosreport", "-o", "vdsm", "--batch",
+                   "--name", ARCHIVE_NAME, "--tmp-dir", tmpDir]
 
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        (stdout, stderr) = p.communicate()
-        if p.returncode:
-            self.fail("Failed with executed sosreport, return code: %d" %
-                      p.returncode)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            (stdout, stderr) = p.communicate()
+            if p.returncode:
+                self.fail("Failed with executed sosreport, return code: %d" %
+                          p.returncode)
 
-        # When sos plugin raise exception, sosreport still exit with successful
-        # and print exception to stdout. So check the keyword of exception in
-        # output.
-        index = stdout.find('Traceback (most recent call last):')
-        self.assertEquals(index, -1, "sosreport raised an exception")
-
-        # clean
-        shutil.rmtree(tmpDir)
+            # When sos plugin raise exception, sosreport still exit with
+            # successful and print exception to stdout. So check the keyword of
+            # exception in output.
+            index = stdout.find('Traceback (most recent call last):')
+            self.assertEquals(index, -1, "sosreport raised an exception")
