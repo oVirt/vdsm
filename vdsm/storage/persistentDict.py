@@ -248,6 +248,12 @@ class PersistentDict(object):
 
                 newMD[key] = value
 
+            if not newMD:
+                self.log.debug("Empty metadata")
+                self._isValid = True
+                self._metadata = newMD
+                return
+
             if declaredChecksum is None:
                 # No checksum in the metadata, let it through as is
                 # FIXME : This is ugly but necessary, What we need is a class
