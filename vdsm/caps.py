@@ -173,7 +173,7 @@ def _getCpuTopology(capabilities):
 
 
 @utils.memoized
-def _getNumaTopology():
+def getNumaTopology():
     capabilities = _getCapsXMLStr()
     caps = minidom.parseString(capabilities)
     host = caps.getElementsByTagName('host')[0]
@@ -188,15 +188,15 @@ def _getNumaTopology():
         cellInfo['cpus'] = cpus
         cellIndex = cell.getAttribute('id')
         if cellSets.length < 2:
-            memInfo = _getUMAHostMemoryStats()
+            memInfo = getUMAHostMemoryStats()
         else:
-            memInfo = _getMemoryStatsByNumaCell(int(cellIndex))
+            memInfo = getMemoryStatsByNumaCell(int(cellIndex))
         cellInfo['totalMemory'] = memInfo['total']
         cellsInfo[cellIndex] = cellInfo
     return cellsInfo
 
 
-def _getMemoryStatsByNumaCell(cell):
+def getMemoryStatsByNumaCell(cell):
     """
     Get the memory stats of a specified numa node, the unit is MiB.
 
@@ -210,7 +210,7 @@ def _getMemoryStatsByNumaCell(cell):
     return cellMemInfo
 
 
-def _getUMAHostMemoryStats():
+def getUMAHostMemoryStats():
     """
     Get the memory stats of a UMA host, the unit is MiB.
 
@@ -224,7 +224,7 @@ def _getUMAHostMemoryStats():
 
 
 @utils.memoized
-def _getNumaNodeDistance():
+def getNumaNodeDistance():
     nodeDistance = {}
     retcode, out, err = utils.execCmd(['numactl', '--hardware'])
     if retcode != 0:
@@ -240,7 +240,7 @@ def _getNumaNodeDistance():
 
 
 @utils.memoized
-def _getAutoNumaBalancingInfo():
+def getAutoNumaBalancingInfo():
     retcode, out, err = utils.execCmd(['sysctl', '-n', '-e',
                                        'kernel.numa_balancing'])
     if not out:
@@ -503,9 +503,9 @@ def get():
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
     caps['rngSources'] = _getRngSources()
-    caps['numaNodes'] = _getNumaTopology()
-    caps['numaNodeDistance'] = _getNumaNodeDistance()
-    caps['autoNumaBalancing'] = _getAutoNumaBalancingInfo()
+    caps['numaNodes'] = getNumaTopology()
+    caps['numaNodeDistance'] = getNumaNodeDistance()
+    caps['autoNumaBalancing'] = getAutoNumaBalancingInfo()
 
     caps['selinux'] = _getSELinux()
 

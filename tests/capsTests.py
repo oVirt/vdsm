@@ -128,13 +128,13 @@ class TestCaps(TestCaseBase):
         for res, s in zip(expectedRes, sign):
             self.assertEqual(res, caps._parseKeyVal(lines, s))
 
-    @MonkeyPatch(caps, '_getMemoryStatsByNumaCell', lambda x: {
+    @MonkeyPatch(caps, 'getMemoryStatsByNumaCell', lambda x: {
         'total': '49141', 'free': '46783'})
     @MonkeyPatch(caps, '_getCapsXMLStr', lambda: _getTestData(
         "caps_libvirt_amd_6274.out"))
     def testNumaTopology(self):
         # 2 x AMD 6272 (with Modules)
-        t = caps._getNumaTopology()
+        t = caps.getNumaTopology()
         expectedNumaInfo = {
             '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': '49141'},
             '1': {'cpus': [8, 9, 10, 11, 12, 13, 14, 15],
@@ -148,14 +148,14 @@ class TestCaps(TestCaseBase):
     @MonkeyPatch(utils, 'readMemInfo', lambda: {
         'MemTotal': 50321208, 'MemFree': 47906488})
     def testGetUMAMemStats(self):
-        t = caps._getUMAHostMemoryStats()
+        t = caps.getUMAHostMemoryStats()
         expectedInfo = {'total': '49141', 'free': '46783'}
         self.assertEqual(t, expectedInfo)
 
     @MonkeyPatch(utils, 'execCmd', lambda x: _getCapsNumaDistanceTestData(
         "caps_numactl_4_nodes.out"))
     def testNumaNodeDistance(self):
-        t = caps._getNumaNodeDistance()
+        t = caps.getNumaNodeDistance()
         expectedDistanceInfo = {
             '0': [10, 20, 20, 20],
             '1': [20, 10, 20, 20],
@@ -165,5 +165,5 @@ class TestCaps(TestCaseBase):
 
     @MonkeyPatch(utils, 'execCmd', lambda x: (0, ['0'], []))
     def testAutoNumaBalancingInfo(self):
-        t = caps._getAutoNumaBalancingInfo()
+        t = caps.getAutoNumaBalancingInfo()
         self.assertEqual(t, 0)
