@@ -21,8 +21,6 @@
 import os
 from datetime import datetime
 from functools import partial
-from shutil import rmtree
-import tempfile
 import time
 from xml.dom import minidom
 
@@ -212,12 +210,11 @@ class TestNetinfo(TestCaseBase):
         deviceName = "___This_could_never_be_a_device_name___"
         ifcfg = ('DEVICE=%s' % deviceName + '\n' + 'ONBOOT=yes' + '\n' +
                  'MTU=1500' + '\n' + 'HWADDR=5e:64:6d:12:16:84' + '\n')
-        tempDir = tempfile.mkdtemp()
-        ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
-        filePath = ifcfgPrefix + deviceName
+        with namedTemporaryDir() as tempDir:
+            ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
+            filePath = ifcfgPrefix + deviceName
 
-        with MonkeyPatchScope([(netinfo, 'NET_CONF_PREF', ifcfgPrefix)]):
-            try:
+            with MonkeyPatchScope([(netinfo, 'NET_CONF_PREF', ifcfgPrefix)]):
                 with open(filePath, 'w') as ifcfgFile:
                     ifcfgFile.write(ifcfg + 'BOOTPROTO=dhcp\n')
                 self.assertEqual(getBootProtocol(deviceName, 'ifcfg'), 'dhcp')
@@ -229,53 +226,48 @@ class TestNetinfo(TestCaseBase):
                 with open(filePath, 'w') as ifcfgFile:
                     ifcfgFile.write(ifcfg)
                 self.assertEqual(getBootProtocol(deviceName, 'ifcfg'), None)
-            finally:
-                rmtree(tempDir)
 
     def testGetIfaceCfg(self):
         deviceName = "___This_could_never_be_a_device_name___"
         ifcfg = ('GATEWAY0=1.1.1.1\n' 'NETMASK=255.255.0.0\n')
-        tempDir = tempfile.mkdtemp()
-        ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
-        filePath = ifcfgPrefix + deviceName
+        with namedTemporaryDir() as tempDir:
+            ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
+            filePath = ifcfgPrefix + deviceName
 
-        with MonkeyPatchScope([(netinfo, 'NET_CONF_PREF', ifcfgPrefix)]):
-            try:
+            with MonkeyPatchScope([(netinfo, 'NET_CONF_PREF', ifcfgPrefix)]):
                 with open(filePath, 'w') as ifcfgFile:
                     ifcfgFile.write(ifcfg)
                 self.assertEqual(
                     netinfo.getIfaceCfg(deviceName)['GATEWAY'], '1.1.1.1')
                 self.assertEqual(
                     netinfo.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
-            finally:
-                rmtree(tempDir)
 
     def testGetBootProtocolUnified(self):
-        tempDir = tempfile.mkdtemp()
-        netsDir = os.path.join(tempDir, 'nets')
-        os.mkdir(netsDir)
-        networks = {
-            'nonVMOverNic':
-            {"nic": "eth0", "bridged": False, "bootproto": "dhcp"},
-            'bridgeOverNic':
-            {"nic": "eth1", "bridged": True},
-            'nonVMOverBond':
-            {"bonding": "bond0", "bridged": False, "bootproto": "dhcp"},
-            'bridgeOverBond':
-            {"bonding": "bond1", "bridged": True},
-            'vlanOverNic':
-            {"nic": "eth2", "bridged": False, "vlan": 1,
-             "bootproto": "dhcp"},
-            'bridgeOverVlan':
-            {"nic": "eth3", "bridged": True, "vlan": 1},
-            'vlanOverBond':
-            {"bonding": "bond2", "bridged": False, "bootproto": "dhcp",
-             "vlan": 1},
-            'bridgeOverVlanOverBond':
-            {"bonding": "bond3", "bridged": True, "vlan": 1}}
+        with namedTemporaryDir() as tempDir:
+            netsDir = os.path.join(tempDir, 'nets')
+            os.mkdir(netsDir)
+            networks = {
+                'nonVMOverNic':
+                {"nic": "eth0", "bridged": False, "bootproto": "dhcp"},
+                'bridgeOverNic':
+                {"nic": "eth1", "bridged": True},
+                'nonVMOverBond':
+                {"bonding": "bond0", "bridged": False, "bootproto": "dhcp"},
+                'bridgeOverBond':
+                {"bonding": "bond1", "bridged": True},
+                'vlanOverNic':
+                {"nic": "eth2", "bridged": False, "vlan": 1,
+                 "bootproto": "dhcp"},
+                'bridgeOverVlan':
+                {"nic": "eth3", "bridged": True, "vlan": 1},
+                'vlanOverBond':
+                {"bonding": "bond2", "bridged": False, "bootproto": "dhcp",
+                 "vlan": 1},
+                'bridgeOverVlanOverBond':
+                {"bonding": "bond3", "bridged": True, "vlan": 1}}
 
-        with MonkeyPatchScope([(netconfpersistence, 'CONF_RUN_DIR', tempDir)]):
-            try:
+            with MonkeyPatchScope([(netconfpersistence, 'CONF_RUN_DIR',
+                                   tempDir)]):
                 runningConfig = netconfpersistence.RunningConfig()
                 for network, attributes in networks.iteritems():
                     runningConfig.setNetwork(network, attributes)
@@ -292,8 +284,6 @@ class TestNetinfo(TestCaseBase):
                     self.assertEqual(
                         getBootProtocol(topLevelDevice, 'unified'),
                         attributes.get('bootproto'))
-            finally:
-                rmtree(tempDir)
 
     def testGetDhclientIfaces(self):
         LEASES = (

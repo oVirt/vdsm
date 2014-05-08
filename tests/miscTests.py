@@ -215,11 +215,8 @@ class RotateFiles(TestCaseBase):
         Test that when given an empty dir the rotator works correctly.
         """
         prefix = "prefix"
-        dir = tempfile.mkdtemp()
-
-        misc.rotateFiles(dir, prefix, 0, persist=persist)
-
-        os.rmdir(dir)
+        with namedTemporaryDir() as dir:
+            misc.rotateFiles(dir, prefix, 0, persist=persist)
 
     def testFullDir(self, persist=False):
         """
@@ -231,32 +228,26 @@ class RotateFiles(TestCaseBase):
                        'he went on, shaking his head, '
                        '"are a sure sign of a diseased mind."')
         # (C) Terry Pratchet - Small Gods
-        dir = tempfile.mkdtemp()
-        gen = 10
+        with namedTemporaryDir() as dir:
+            gen = 10
 
-        expectedDirContent = []
-        for i in range(gen):
-            fname = "%s.txt.%d" % (prefix, i + 1)
-            expectedDirContent.append("%s.txt.%d" % (prefix, i + 1))
-            f = open(os.path.join(dir, fname), "wb")
-            f.write(stubContent)
-            f.flush()
-            f.close()
+            expectedDirContent = []
+            for i in range(gen):
+                fname = "%s.txt.%d" % (prefix, i + 1)
+                expectedDirContent.append("%s.txt.%d" % (prefix, i + 1))
+                f = open(os.path.join(dir, fname), "wb")
+                f.write(stubContent)
+                f.flush()
+                f.close()
 
-        # Rotate
-        misc.rotateFiles(dir, prefix, gen, persist=persist)
+            # Rotate
+            misc.rotateFiles(dir, prefix, gen, persist=persist)
 
-        # Test result
-        currentDirContent = os.listdir(dir)
-        expectedDirContent.sort()
-        currentDirContent.sort()
-        try:
+            # Test result
+            currentDirContent = os.listdir(dir)
+            expectedDirContent.sort()
+            currentDirContent.sort()
             self.assertEquals(currentDirContent, expectedDirContent)
-        finally:
-            # Clean
-            for f in os.listdir(dir):
-                os.unlink(os.path.join(dir, f))
-            os.rmdir(dir)
 
 
 class ParseHumanReadableSize(TestCaseBase):
