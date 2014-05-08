@@ -1237,7 +1237,8 @@ class HSM:
                 "spUUID=%s, descr=%s" % (spUUID, description)))
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
-        pool.setDescription(description)
+        if isinstance(pool.getBackend(), StoragePoolDiskBackend):
+            pool.getBackend().setDescription(description)
 
     @public
     def setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID,
