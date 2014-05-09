@@ -144,3 +144,16 @@ class TestNetmodels(TestCaseBase):
 
         nics_res = _nicSort(nics['nics_init'])
         self.assertEqual(nics['nics_expected'], tuple(nics_res))
+
+    def testBondReorderOptions(self):
+        empty = Bond._reorderOptions('')
+        self.assertEqual(empty, '')
+
+        modeless = Bond._reorderOptions('miimon=250')
+        self.assertEqual(modeless, 'miimon=250')
+
+        ordered = Bond._reorderOptions('mode=4 miimon=250')
+        self.assertEqual(ordered, 'mode=4 miimon=250')
+
+        inverted = Bond._reorderOptions('miimon=250 mode=4')
+        self.assertEqual(inverted, 'mode=4 miimon=250')

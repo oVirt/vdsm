@@ -183,7 +183,7 @@ class Bond(NetDevice):
             self.options = 'mode=802.3ad miimon=150'
         else:
             self.validateOptions(name, options)
-            self.options = options
+            self.options = self._reorderOptions(options)
         self.destroyOnMasterRemoval = destroyOnMasterRemoval
         super(Bond, self).__init__(name, configurator, ipconfig, mtu)
 
@@ -299,6 +299,21 @@ class Bond(NetDevice):
         finally:
             if bond_created:
                 open(netinfo.BONDING_MASTERS, 'w').write('-%s\n' % bonding)
+
+    @staticmethod
+    def _reorderOptions(options):
+        """Order the mode first and the rest of options alphabetically."""
+        if not options.strip():
+            return ''
+
+        opts = dict((option.split('=', 1) for option in options.split()))
+
+        mode = opts.pop('mode', None)
+        opts = sorted(opts.iteritems())
+        if mode:
+            opts.insert(0, ('mode', mode))
+
+        return ' '.join((opt + '=' + val for (opt, val) in opts))
 
 
 class IPv4(object):

@@ -407,6 +407,28 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
+    def testReorderBondingOptions(self, bridged):
+        with dummyIf(2) as nics:
+            status, msg = self.vdsm_net.addNetwork(
+                NETWORK_NAME,
+                bond=BONDING_NAME,
+                nics=nics,
+                opts={'bridged': bridged,
+                      'options': 'lacp_rate=fast mode=802.3ad'}
+            )
+            self.assertEqual(status, SUCCESS, msg)
+
+            self.assertNetworkExists(NETWORK_NAME, bridged)
+            self.assertBondExists(BONDING_NAME, nics)
+
+            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+
+    @cleanupNet
+    @permutations([[True], [False]])
+    @RequireDummyMod
+    @ValidateRunningAsRoot
     def testAddDelBondedNetwork(self, bridged):
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
