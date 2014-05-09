@@ -230,12 +230,11 @@ class Volume(object):
         self.setParent(backingVol)
         self.recheckIfLeaf()
 
-    def clone(self, dst_image_dir, dst_volUUID, volFormat):
+    def clone(self, dstPath, volFormat):
         """
         Clone self volume to the specified dst_image_dir/dst_volUUID
         """
         wasleaf = False
-        dst_path = None
         taskName = "parent volume rollback: " + self.volUUID
         vars.task.pushRecovery(
             task.Recovery(taskName, "volume", "Volume",
@@ -246,22 +245,21 @@ class Volume(object):
             self.setInternal()
         try:
             self.prepare(rw=False)
-            dst_path = os.path.join(dst_image_dir, dst_volUUID)
             self.log.debug('cloning volume %s to %s', self.volumePath,
-                           dst_path)
+                           dstPath)
             parent = getBackingVolumePath(self.imgUUID, self.volUUID)
-            qemuimg.create(dst_path, backing=parent,
+            qemuimg.create(dstPath, backing=parent,
                            format=fmt2str(volFormat),
                            backingFormat=fmt2str(self.getFormat()))
             self.teardown(self.sdUUID, self.volUUID)
         except Exception as e:
-            self.log.exception('cannot clone volume %s to %s',
-                               self.volumePath, dst_path)
+            self.log.exception('cannot clone image %s volume %s to %s',
+                               self.imgUUID, self.volUUID, dstPath)
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
             self.teardown(self.sdUUID, self.volUUID)
-            raise se.CannotCloneVolume(self.volumePath, dst_path, str(e))
+            raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
 
     def _shareLease(self, dstImgPath):
         """
@@ -437,7 +435,7 @@ class Volume(object):
             try:
                 metaId = cls._create(dom, imgUUID, volUUID, size, volFormat,
                                      preallocate, volParent, srcImgUUID,
-                                     srcVolUUID, imgPath, volPath)
+                                     srcVolUUID, volPath)
             except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume) as e:
                 cls.log.error("Failed to create volume: %s, volume already "
                               "exists", volPath)

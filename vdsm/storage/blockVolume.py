@@ -139,7 +139,7 @@ class BlockVolume(volume.Volume):
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, imgPath, volPath):
+                volParent, srcImgUUID, srcVolUUID, volPath):
         """
         Class specific implementation of volumeCreate. All the exceptions are
         properly handled and logged in volume.create()
@@ -167,7 +167,7 @@ class BlockVolume(volume.Volume):
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
                          imgUUID, volUUID, srcImgUUID, srcVolUUID)
-            volParent.clone(imgPath, volUUID, volFormat)
+            volParent.clone(volPath, volFormat)
 
         with cls._tagCreateLock:
             mdSlot = dom.getVolumeMetadataSlot(volUUID, VOLUME_MDNUMBLKS)
