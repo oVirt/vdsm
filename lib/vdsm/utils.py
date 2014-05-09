@@ -41,6 +41,7 @@ import glob
 import io
 import itertools
 import logging
+import re
 import sys
 import os
 import platform
@@ -48,7 +49,6 @@ import select
 import shutil
 import signal
 import stat
-import subprocess
 import threading
 import time
 import zombiereaper
@@ -677,6 +677,25 @@ class AsyncProc(object):
         self._poller.close()
 
 
+# This function returns truthy value if its argument contains unsafe characters
+# for including in a command passed to the shell. The safe characters were
+# stolen from pipes._safechars.
+_needs_quoting = re.compile(r'[^A-Za-z0-9_%+,\-./:=@]').search
+
+
+def _list2cmdline(args):
+    """
+    Convert argument list for exeCmd to string for logging. The purpose of this
+    log is make it easy to run vdsm commands in the shell for debugging.
+    """
+    parts = []
+    for arg in args:
+        if _needs_quoting(arg) or arg == '':
+            arg = "'" + arg.replace("'", r"'\''") + "'"
+        parts.append(arg)
+    return ' '.join(parts)
+
+
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
             printable=None, env=None, sync=True, nice=None, ioclass=None,
             ioclassdata=None, setsid=False, execCmdLogger=logging.root,
@@ -713,8 +732,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     if not printable:
         printable = command
 
-    cmdline = repr(subprocess.list2cmdline(printable))
-    execCmdLogger.debug("%s (cwd %s)", cmdline, cwd)
+    execCmdLogger.debug("%s (cwd %s)", _list2cmdline(printable), cwd)
 
     p = CPopen(command, close_fds=True, cwd=cwd, env=env,
                deathSignal=deathSignal, childUmask=childUmask)

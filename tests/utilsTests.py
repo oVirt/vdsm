@@ -596,3 +596,41 @@ class Worker(object):
                 time.sleep(self._func_delay)
         except Exception:
             self.exc_info = sys.exc_info()
+
+
+class List2CmdlineeTests(TestCaseBase):
+
+    def test_simple(self):
+        args = ['/usr/bin/dd', 'iflag=direct',
+                'if=/dev/a70a4106-24f2-4599-be3e-934fee6e4499/metadata',
+                'bs=4096', 'count=1']
+        line = ' '.join(args)
+        self.assertEquals(utils._list2cmdline(args), line)
+
+    def test_whitespace(self):
+        args = ['a b', ' c ', 'd\t', '\ne']
+        line = "'a b' ' c ' 'd\t' '\ne'"
+        self.assertEquals(utils._list2cmdline(args), line)
+
+    def test_unsafe(self):
+        args = [c for c in '><*?[]`$|;&()#$\\"']
+        line = ' '.join("'" + c + "'" for c in args)
+        self.assertEquals(utils._list2cmdline(args), line)
+
+    def test_safe(self):
+        # Stolen from pipes._safechars
+        line = ' '.join('%+,-./0123456789:=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdef'
+                        'ghijklmnopqrstuvwxyz')
+        args = line.split()
+        self.assertEquals(utils._list2cmdline(args), line)
+
+    def test_single_quote(self):
+        args = ["don't", "try 'this'", "'at home'"]
+        line = r"'don'\''t' 'try '\''this'\''' ''\''at home'\'''"
+        self.assertEquals(utils._list2cmdline(args), line)
+
+    def test_empty_arg(self):
+        self.assertEquals(utils._list2cmdline(['a', '', 'b']), "a '' b")
+
+    def test_empty(self):
+        self.assertEquals(utils._list2cmdline([]), "")
