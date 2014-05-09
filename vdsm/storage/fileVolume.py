@@ -119,14 +119,16 @@ class FileVolume(volume.Volume):
         """
 
         sizeBytes = size * BLOCK_SIZE
+        truncSize = sizeBytes if volFormat == volume.RAW_FORMAT else 0
 
         try:
-            oop.getProcessPool(dom.sdUUID).truncateFile(volPath, sizeBytes,
+            oop.getProcessPool(dom.sdUUID).truncateFile(volPath, truncSize,
                                                         creatExcl=True)
         except OSError as e:
             if e.errno == errno.EEXIST:
                 raise se.VolumeAlreadyExists(volUUID)
             raise
+
         if preallocate == volume.PREALLOCATED_VOL:
             try:
                 # ddWatchCopy expects size to be in bytes
