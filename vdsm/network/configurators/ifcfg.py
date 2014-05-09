@@ -51,15 +51,16 @@ def _hwaddr_required():
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, inRollback=False):
-        super(Ifcfg, self).__init__(ConfigWriter(), inRollback)
         self.unifiedPersistence = \
             config.get('vars', 'net_persistence') == 'unified'
+        super(Ifcfg, self).__init__(ConfigWriter(self.unifiedPersistence),
+                                    inRollback)
         if self.unifiedPersistence:
             self.runningConfig = RunningConfig()
 
     def begin(self):
         if self.configApplier is None:
-            self.configApplier = ConfigWriter()
+            self.configApplier = ConfigWriter(self.unifiedPersistence)
         if self.unifiedPersistence and self.runningConfig is None:
             self.runningConfig = RunningConfig()
 
@@ -258,9 +259,10 @@ class ConfigWriter(object):
         dsaversion.raw_version_revision
     DELETED_HEADER = '# original file did not exist'
 
-    def __init__(self):
+    def __init__(self, unifiedPersistence=False):
         self._backups = {}
         self._networksBackups = {}
+        self.unifiedPersistence = unifiedPersistence
 
     def flush(self):
         """Removes all owned ifcfg, route and rule files."""
@@ -557,7 +559,8 @@ class ConfigWriter(object):
     def _createConfFile(self, conf, name, ipconfig, mtu=None, **kwargs):
         """ Create ifcfg-* file with proper fields per device """
 
-        cfg = """DEVICE=%s\nONBOOT=yes\n""" % pipes.quote(name)
+        cfg = """DEVICE=%s\nONBOOT=%s\n""" % (
+            pipes.quote(name), 'no' if self.unifiedPersistence else 'yes')
         cfg += conf
         if ipconfig.ipaddr:
             cfg = cfg + 'IPADDR=%s\n' % pipes.quote(ipconfig.ipaddr)
