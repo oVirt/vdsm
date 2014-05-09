@@ -26,8 +26,10 @@ from functools import partial
 from itertools import chain
 import logging
 import os
+import random
 import shlex
 import socket
+import string
 import struct
 from xml.dom import minidom
 
@@ -44,6 +46,7 @@ from .ipwrapper import routeShowGateways, routeShowAllDefaultGateways
 from . import libvirtconnection
 from .netconfpersistence import RunningConfig
 from .netlink import iter_addrs, iter_links
+from .utils import execCmd, memoized, CommandPath
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -68,8 +71,13 @@ BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 _BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 _BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
+_EXCLUDED_BONDING_ENTRIES = frozenset((
+    'slaves',  'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
+    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac'
+))
 _IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
+_TEE_BINARY = CommandPath('tee', constants.EXT_TEE)
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DEFAULT_MTU = '1500'
@@ -178,6 +186,15 @@ def bondOpts(bond, keys=None):
             opts[os.path.basename(path)] = [
                 el for el in optFile.read().rstrip().split(' ') if el]
     return opts
+
+
+def _realBondOpts(bond):
+    """
+    Return a dictionary in the same format as bondOpts(). Exclude entries that
+    are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
+    """
+    return dict(((opt, val) for (opt, val) in bondOpts(bond).iteritems()
+                 if opt not in _EXCLUDED_BONDING_ENTRIES))
 
 
 def bridgeOpts(bridge, keys=None):
@@ -542,6 +559,76 @@ def _nicinfo(link, paddr, ipaddrs):
     if paddr.get(link.name):
         info['permhwaddr'] = paddr[link.name]
     return info
+
+
+def _randomIfaceName():
+    MAX_LENGTH = 15
+    CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
+
+    return ''.join(random.choice(CHARS) for _ in range(MAX_LENGTH))
+
+
+@memoized
+def _getAllDefaultBondingOptions():
+    """
+    Return default options per mode, in a dictionary of dictionaries. All keys
+    are strings.
+    """
+    teeCmd = _TEE_BINARY.cmd
+    MAX_MODE = 6
+
+    bondName = _randomIfaceName()
+    rc, _, err = execCmd([teeCmd, BONDING_MASTERS],
+                         data='+' + bondName, sudo=True)
+    if rc:
+        raise RuntimeError('Creating a reference bond failed', '\n'.join(err))
+
+    opts = {}
+    try:
+        defaultMode = bondOpts(bondName, keys=['mode'])['mode']
+
+        # read default values for all modes
+        for mode in range(0, MAX_MODE + 1):
+            mode = str(mode)
+            rc, _, err = execCmd([teeCmd, BONDING_OPT % (bondName, 'mode')],
+                                 data=mode, sudo=True)
+
+            # only read non-empty options
+            opts[mode] = dict(((opt, val) for (opt, val) in
+                               _realBondOpts(bondName).iteritems() if val))
+            opts[mode]['mode'] = defaultMode
+
+    finally:
+        execCmd([teeCmd, BONDING_MASTERS], data='-' + bondName, sudo=True)
+
+    return opts
+
+
+@memoized
+def getDefaultBondingOptions(mode=None):
+    """
+    Return default options for the given mode. If it is None, return options
+    for the default mode (usually '0').
+    """
+    defaults = _getAllDefaultBondingOptions()
+
+    if mode is None:
+        mode = defaults['0']['mode'][-1]
+
+    return defaults[mode]
+
+
+def getBondingOptions(bond):
+    """
+    Return non-empty options differing from defaults, excluding not actual or
+    not applicable options, e.g. 'ad_num_ports' or 'slaves'.
+    """
+    opts = _realBondOpts(bond)
+    mode = opts['mode'][-1] if 'mode' in opts else None
+    defaults = getDefaultBondingOptions(mode)
+
+    return dict(((opt, val) for (opt, val) in opts.iteritems()
+                 if val and val != defaults.get(opt)))
 
 
 def _bondinfo(link, ipaddrs):

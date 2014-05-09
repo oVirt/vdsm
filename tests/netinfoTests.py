@@ -29,11 +29,13 @@ import ethtool
 from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
-from vdsm.netinfo import getBootProtocol, getDhclientIfaces
+from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
+                          BONDING_OPT, _randomIfaceName, getBondingOptions)
 
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testrunner import VdsmTestCase as TestCaseBase, namedTemporaryDir
+from testValidation import ValidateRunningAsRoot
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -324,3 +326,24 @@ class TestNetinfo(TestCaseBase):
         self.assertIn('valid2', dhcp4)
         self.assertNotIn('expired', dhcp4)
         self.assertNotIn('expired2', dhcp4)
+
+    @ValidateRunningAsRoot
+    def testGetBondingOptions(self):
+        INTERVAL = '12345'
+        bondName = _randomIfaceName()
+
+        with open(BONDING_MASTERS, 'w') as bonds:
+            bonds.write('+' + bondName)
+            bonds.flush()
+
+            try:
+                self.assertEqual(getBondingOptions(bondName), {})
+
+                with open(BONDING_OPT % (bondName, 'miimon'), 'w') as opt:
+                    opt.write(INTERVAL)
+
+                self.assertEqual(getBondingOptions(bondName),
+                                 {'miimon': [INTERVAL]})
+
+            finally:
+                bonds.write('-' + bondName)
