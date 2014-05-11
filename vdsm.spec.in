@@ -151,7 +151,7 @@ Requires: iscsi-initiator-utils
 Requires: iscsi-initiator-utils >= 6.2.0.872-15
 %endif # rhel 7
 %else # fedora
-Requires: iscsi-initiator-utils >= 6.2.0.873-3
+Requires: iscsi-initiator-utils >= 6.2.0.873-21
 %endif
 
 Requires: sanlock >= 2.8, sanlock-python
