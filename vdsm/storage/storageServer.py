@@ -62,7 +62,8 @@ GlusterFsConnectionParameters = namedtuple("GlusterFsConnectionParameters",
 
 LocaFsConnectionParameters = namedtuple("LocaFsConnectionParameters", "path")
 NfsConnectionParameters = namedtuple("NfsConnectionParameters",
-                                     "export, retrans, timeout, version")
+                                     "export, retrans, timeout, version, "
+                                     "extraOptions")
 
 ConnectionInfo = namedtuple("ConnectionInfo", "type, params")
 
@@ -273,6 +274,10 @@ class NFSConnection(object):
         return self._retrans
 
     @property
+    def options(self):
+        return self._options
+
+    @property
     def version(self):
         if self._version is not None:
             return self._version
@@ -293,12 +298,14 @@ class NFSConnection(object):
         # Return -1 to signify the version has not been negotiated yet
         return -1
 
-    def __init__(self, export, timeout=600, retrans=6, version=None):
+    def __init__(self, export, timeout=600, retrans=6, version=None,
+                 extraOptions=""):
         self._remotePath = normpath(export)
         options = self.DEFAULT_OPTIONS[:]
         self._timeout = timeout
         self._version = version
         self._retrans = retrans
+        self._options = extraOptions
         options.append("timeo=%d" % timeout)
         options.append("retrans=%d" % retrans)
 
@@ -314,8 +321,8 @@ class NFSConnection(object):
             options.append("nfsvers=%d" % vers[0])
             if len(vers) > 1:
                 options.append("minorversion=%d" % vers[1])
-
-        self._mountCon = MountConnection(export, "nfs", ",".join(options))
+        optionsString = ",".join(filter(None, options + [extraOptions]))
+        self._mountCon = MountConnection(export, "nfs", optionsString)
 
     def connect(self):
         return self._mountCon.connect()

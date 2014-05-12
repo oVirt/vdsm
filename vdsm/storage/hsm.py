@@ -210,7 +210,8 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
                 conDict.get('connection', None),
                 getIntParam(conDict, 'retrans', None),
                 getIntParam(conDict, 'timeout', None),
-                version)
+                version,
+                conDict.get('mnt_options', None))
     elif typeName == 'posixfs':
         params = storageServer.PosixFsConnectionParameters(
             conDict.get('connection', None),
