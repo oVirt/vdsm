@@ -39,6 +39,7 @@ LEASE_FILEEXT = ".lease"
 LEASE_FILEOFFSET = 0
 
 BLOCK_SIZE = volume.BLOCK_SIZE
+VOLUME_PERMISSIONS = 0o660
 
 
 def getDomUuidFromVolumePath(volPath):
@@ -122,8 +123,8 @@ class FileVolume(volume.Volume):
         truncSize = sizeBytes if volFormat == volume.RAW_FORMAT else 0
 
         try:
-            oop.getProcessPool(dom.sdUUID).truncateFile(volPath, truncSize,
-                                                        creatExcl=True)
+            oop.getProcessPool(dom.sdUUID).truncateFile(
+                volPath, truncSize, mode=VOLUME_PERMISSIONS, creatExcl=True)
         except OSError as e:
             if e.errno == errno.EEXIST:
                 raise se.VolumeAlreadyExists(volUUID)
@@ -154,8 +155,9 @@ class FileVolume(volume.Volume):
                          imgUUID, volUUID, srcImgUUID, srcVolUUID)
             volParent.clone(imgPath, volUUID, volFormat, preallocate)
 
-        # By definition the volume is a leaf
-        cls.file_setrw(volPath, rw=True)
+        # Forcing the volume permissions in case one of the tools we use
+        # (dd, qemu-img, etc.) will mistakenly change the file permissiosn.
+        dom.oop.os.chmod(volPath, VOLUME_PERMISSIONS)
 
         return (volPath,)
 
