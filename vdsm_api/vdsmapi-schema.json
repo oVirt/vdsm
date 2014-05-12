@@ -5910,6 +5910,25 @@
           'balloon_target': 'str'}}
 
 ##
+# @VmDisplayInfo:
+#
+# Display and graphics device information.
+#
+# @port:        The port in use for unencrypted display data
+#
+# @tlsPort:     The port in use for encrypted display data
+#
+# @type:        The type of display in use
+#
+# @ipAddress:   The IP address to use for accessing the VM display
+#
+# Since: 4.15.0
+##
+{'type': 'VmDisplayInfo',
+ 'data': {'port': 'uint', 'tlsPort': 'uint',
+          'type': 'VmGraphicsDeviceType', 'ipAddress': 'str'}}
+
+##
 # @GuestMountInfo:
 #
 # Information about a mounted filesystem as reported by the guest agent.
@@ -6086,6 +6105,9 @@
 # @guestCPUCount:         The number of CPU cores are visible as online on the
 #                         guest OS. This value is -1 if not supported to report
 #
+# @displayInfo:        Display and graphics device informations.
+#                      (new in version 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -6105,7 +6127,8 @@
           'disksUsage': ['GuestMountInfo'],
           'netIfaces': ['GuestNetworkDeviceInfo'],
           '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
-          '*migrationProgress': 'uint', 'guestCPUCount': 'int'}}
+          '*migrationProgress': 'uint', 'guestCPUCount': 'int',
+          'displayInfo': ['VmDisplayInfo']}}
 
 ##
 # @VmStats:

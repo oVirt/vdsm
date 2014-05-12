@@ -369,7 +369,33 @@ class VirtTest(VirtTestBase):
         devices = [{'type': 'graphics', 'device': displayType}]
         customization = {'vmId': '77777777-ffff-3333-cccc-222222222222',
                          'vmName': 'testGraphicsDeviceVm',
-                         'devices': devices}
+                         'devices': devices,
+                         'display': 'qxlnc'}
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            status, msg, stats = self.vdsm.getVmStats(vm)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertEqual(stats['displayInfo'][0]['type'],
+                             displayType)
+            self.assertEqual(stats['displayType'],
+                             'qxl' if displayType == 'spice' else 'vnc')
+
+    @permutations([['vnc', 'spice'], ['spice', 'vnc']])
+    def testVmDefinitionMultipleGraphics(self, primary, secondary):
+        devices = [{'type': 'graphics', 'device': primary},
+                   {'type': 'graphics', 'device': secondary}]
+        customization = {'vmId': '77777777-ffff-3333-cccc-222222222222',
+                         'vmName': 'testMultipleGraphicsDeviceVm',
+                         'devices': devices,
+                         'display': 'qxlnc'}
+
+        with RunningVm(self.vdsm, customization) as vm:
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            status, msg, stats = self.vdsm.getVmStats(vm)
+            self.assertEqual(status, SUCCESS, msg)
+            for dispInfo, dispType in zip(stats['displayInfo'],
+                                          (primary, secondary)):
+                self.assertEqual(dispInfo['type'], dispType)
+            self.assertEqual(stats['displayType'],
+                             'qxl' if primary == 'spice' else 'vnc')

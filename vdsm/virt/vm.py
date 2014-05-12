@@ -1341,7 +1341,13 @@ class GraphicsDevice(VmDevice):
 
     @staticmethod
     def isSupportedDisplayType(vmParams):
-        return vmParams.get('display') in ('vnc', 'qxl', 'qxlnc')
+        if vmParams.get('display') not in ('vnc', 'qxl', 'qxlnc'):
+            return False
+        for dev in vmParams.get('devices', ()):
+            if dev['type'] == GRAPHICS_DEVICES:
+                if dev['device'] not in ('spice', 'vnc'):
+                    return False
+        return True
 
     def __init__(self, conf, log, **kwargs):
         super(GraphicsDevice, self).__init__(conf, log, **kwargs)
@@ -1835,8 +1841,13 @@ class Vm(object):
             if len(devices[device]) > 1:
                 raise ValueError("only a single %s device is "
                                  "supported" % device)
-        if len(devices[GRAPHICS_DEVICES]) != 1:
-            raise ValueError("one graphics device is required")
+        graphDevTypes = set()
+        for dev in devices[GRAPHICS_DEVICES]:
+            if dev.get('device') not in graphDevTypes:
+                graphDevTypes.add(dev.get('device'))
+            else:
+                raise ValueError("only a single graphic device "
+                                 "per type is supported")
 
     def getConfController(self):
         """
@@ -2501,10 +2512,6 @@ class Vm(object):
             return self._getExitedVmStats()
 
         stats = {
-            'displayPort': self.conf['displayPort'],
-            'displaySecurePort': self.conf['displaySecurePort'],
-            'displayType': self.conf['display'],
-            'displayIp': self.conf['displayIp'],
             'pid': self.conf['pid'],
             'vmType': self.conf['vmType'],
             'kvmEnable': self._kvmEnable}
@@ -2581,6 +2588,7 @@ class Vm(object):
                                    exc_info=True)
 
         stats['balloonInfo'] = self._getBalloonInfo()
+        stats.update(self._getGraphicsStats())
         return stats
 
     def _getVmStatus(self):
@@ -2611,6 +2619,25 @@ class Vm(object):
             return {'status': _getGuestStatus()}
         else:
             return {'status': self.lastStatus}
+
+    def _getGraphicsStats(self):
+        def getInfo(dev):
+            return {
+                'type': dev['device'],
+                'port': dev.get(
+                    'port', GraphicsDevice.LIBVIRT_PORT_AUTOSELECT),
+                'tlsPort': dev.get(
+                    'tlsPort', GraphicsDevice.LIBVIRT_PORT_AUTOSELECT),
+                'ipAddress': dev.get('specParams', {}).get('displayIp', 0)}
+
+        return {
+            'displayInfo': [getInfo(dev)
+                            for dev in self.conf.get('devices', [])
+                            if dev['type'] == GRAPHICS_DEVICES],
+            'displayType': self.conf['display'],
+            'displayPort': self.conf['displayPort'],
+            'displaySecurePort': self.conf['displaySecurePort'],
+            'displayIp': self.conf['displayIp']}
 
     def isMigrating(self):
         return self._migrationSourceThread.isAlive()
@@ -4762,19 +4789,22 @@ class Vm(object):
         """
         graphicsXml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
             getElementsByTagName('devices')[0]. \
-            getElementsByTagName('graphics')[0]
+            getElementsByTagName('graphics')
 
-        graphicsType = graphicsXml.getAttribute('type')
-        for dev in self.conf['devices']:
-            if dev.get('device') == graphicsType:
-                port = graphicsXml.getAttribute('port')
-                if port:
-                    dev['port'] = port
-                tlsPort = graphicsXml.getAttribute('tlsPort')
-                if tlsPort:
-                    dev['tlsPort'] = tlsPort
-                self._updateLegacyConf(dev)
-                break
+        for gxml in graphicsXml:
+            for dev in self.conf['devices']:
+                if (dev.get('type') == GRAPHICS_DEVICES and
+                   dev.get('device') == gxml.getAttribute('type')):
+                    port = gxml.getAttribute('port')
+                    if port:
+                        dev['port'] = port
+                    tlsPort = gxml.getAttribute('tlsPort')
+                    if tlsPort:
+                        dev['tlsPort'] = tlsPort
+                    break
+
+        # the first graphic device is duplicated in the legacy conf
+        self._updateLegacyConf()
 
     def _getUnderlyingNetworkInterfaceInfo(self):
         """
@@ -4964,12 +4994,22 @@ class Vm(object):
         self.conf['displayIp'] = _getNetworkIp(
             self.conf.get('displayNetwork'))
 
-    def _updateLegacyConf(self, dev):
-        self.conf['display'] = 'qxl' if dev['device'] == 'spice' else 'vnc'
+        dev = self._getFirstGraphicsDevice()
+        if dev:
+            # proper graphics device always take precedence
+            self.conf['display'] = 'qxl' if dev['device'] == 'spice' else 'vnc'
+
+    def _updateLegacyConf(self):
+        dev = self._getFirstGraphicsDevice()
         if 'port' in dev:
             self.conf['displayPort'] = dev['port']
         if 'tlsPort' in dev:
             self.conf['displaySecurePort'] = dev['tlsPort']
+
+    def _getFirstGraphicsDevice(self):
+        for dev in self.conf.get('devices', ()):
+            if dev.get('type') == GRAPHICS_DEVICES:
+                return dev
 
 
 def _getNetworkIp(network):

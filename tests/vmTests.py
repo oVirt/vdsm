@@ -952,6 +952,21 @@ class TestVmStatsThread(TestCaseBase):
             self.assertIn('balloonInfo', res)
             self.assertIn('balloon_cur', res['balloonInfo'])
 
+    def testMultipleGraphicDeviceStats(self):
+        devices = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
+                   {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
+
+        with FakeVM(self.VM_PARAMS, devices) as fake:
+            fake._updateDevices(fake.buildConfDevices())
+            res = fake.getStats()
+            self.assertIn('displayPort', res)
+            self.assertEqual(res['displayType'],
+                             'qxl' if devices[0]['device'] == 'spice' else
+                             'vnc')
+            for statsDev, confDev in zip(res['displayInfo'], devices):
+                self.assertIn(statsDev['type'], confDev['device'])
+                self.assertIn('port', statsDev)
+
 
 class TestLibVirtCallbacks(TestCaseBase):
     FAKE_ERROR = 'EFAKERROR'
@@ -1030,6 +1045,7 @@ class TestVmStats(TestCaseBase):
                                                    fake.getStats())
 
 
+@expandPermutations
 class TestVmDevices(TestCaseBase):
     def setUp(self):
         self.conf = {
@@ -1103,6 +1119,12 @@ class TestVmDevices(TestCaseBase):
             conf.update(self.conf)
             self.assertTrue(vm.GraphicsDevice.isSupportedDisplayType(conf))
 
+    def testGraphicsDeviceSanity(self):
+        for dev in self.confDeviceGraphics:
+            conf = {'display': 'qxl', 'devices': list(dev)}
+            conf.update(self.conf)
+            self.assertTrue(vm.GraphicsDevice.isSupportedDisplayType(conf))
+
     def testGraphicDeviceUnsupported(self):
         conf = {'display': 'rdp'}
         conf.update(self.conf)
@@ -1127,3 +1149,18 @@ class TestVmDevices(TestCaseBase):
         for dev in self.confDeviceGraphicsVnc:
             with FakeVM(self.conf, dev) as fake:
                 self.assertFalse(fake.hasSpice)
+
+    @permutations([['vnc', 'spice'], ['spice', 'vnc']])
+    def testGraphicsDeviceMultiple(self, primary, secondary):
+        devices = [{'type': 'graphics', 'device': primary},
+                   {'type': 'graphics', 'device': secondary}]
+        with FakeVM(self.conf, devices) as fake:
+            devs = fake.buildConfDevices()
+            self.assertTrue(len(devs['graphics']) == 2)
+
+    @permutations([['vnc'], ['spice']])
+    def testGraphicsDeviceDuplicated(self, devType):
+        devices = [{'type': 'graphics', 'device': devType},
+                   {'type': 'graphics', 'device': devType}]
+        with FakeVM(self.conf, devices) as fake:
+            self.assertRaises(ValueError, fake.buildConfDevices)
