@@ -800,11 +800,30 @@ class _DomXML:
         <features>
             <acpi/>
         <features/>
+
+        for hyperv:
+        <features>
+            <acpi/>
+            <hyperv>
+                <relaxed state='on'/>
+            </hyperv>
+        <features/>
         """
 
-        if utils.tobool(self.conf.get('acpiEnable', 'true')):
+        if (utils.tobool(self.conf.get('acpiEnable', 'true')) or
+           utils.tobool(self.conf.get('hypervEnable', 'false'))):
             features = self.dom.appendChildWithArgs('features')
+
+        if utils.tobool(self.conf.get('acpiEnable', 'true')):
             features.appendChildWithArgs('acpi')
+
+        if utils.tobool(self.conf.get('hypervEnable', 'false')):
+            hyperv = XMLElement('hyperv')
+            features.appendChild(hyperv)
+
+            hyperv.appendChildWithArgs('relaxed', state='on')
+            # turns off an internal Windows watchdog, and by doing so avoids
+            # some high load BSODs.
 
     def appendCpu(self):
         """
