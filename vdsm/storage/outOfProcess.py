@@ -161,6 +161,12 @@ class _IOProcessFileUtils(object):
                                                               oct(curMode),
                                                               oct(mode)))
 
+    def padToBlockSize(self, path):
+        size = _IOProcessOs(self._iop).stat(path).st_size
+        newSize = 512 * ((size + 511) / 512)
+        log.debug("Truncating file %s to %d bytes", path, newSize)
+        truncateFile(self._iop, path, newSize)
+
     def validateAccess(self, targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
         if not self._iop.access(targetPath, perms):
             log.warning("Permission denied for directory: %s with permissions:"
@@ -243,6 +249,11 @@ class _IOProcessOs(object):
             return self._iop.pathExists(path, False)
 
 
+def directTouch(ioproc, path, mode=0o777):
+    flags = os.O_CREAT | os.O_DIRECT
+    ioproc.touch(path, flags, mode)
+
+
 def directReadLines(ioproc, path):
     fileStr = ioproc.readfile(path, direct=True)
     return fileStr.splitlines(True)
@@ -268,6 +279,12 @@ def simpleWalk(ioproc, path):
             files.append(fullpath)
 
     return files
+
+
+def truncateFile(ioproc, path, size, mode=None, creatExcl=False):
+    ioproc.truncate(path, size, mode, creatExcl)
+    if mode is not None:
+        _IOProcessOs(ioproc).chmod(path, mode)
 
 
 class _ModuleWrapper(types.ModuleType):
@@ -322,6 +339,8 @@ class _ModuleWrapper(types.ModuleType):
             self.writeLines = partial(writeLines, ioproc)
             self.simpleWalk = partial(simpleWalk, ioproc)
             self.readLines = partial(readLines, ioproc)
+            self.directTouch = partial(directTouch, ioproc)
+            self.truncateFile = partial(truncateFile, ioproc)
 
     def __getattr__(self, name):
         # Root modules is fake, we need to remove it
