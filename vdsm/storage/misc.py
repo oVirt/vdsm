@@ -224,8 +224,13 @@ def readspeed(path, buffersize=None):
     Measures the amount of bytes transferred and the time elapsed
     reading the content of the file/device
     """
-    rc, _, err = _readfile(path, buffersize)
+    cmd = [constants.EXT_DD, "if=%s" % path, "iflag=%s" % DIRECTFLAG,
+           "of=/dev/null"]
 
+    if buffersize:
+        cmd.extend(["bs=%d" % buffersize, "count=1"])
+
+    rc, _, err = execCmd(cmd)
     if rc != 0:
         log.error("Unable to read file '%s'", path)
         raise se.MiscFileReadException(path)
