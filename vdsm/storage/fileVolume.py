@@ -118,7 +118,7 @@ class FileVolume(volume.Volume):
         properly handled and logged in volume.create()
         """
 
-        sizeBytes = int(size) * BLOCK_SIZE
+        sizeBytes = size * BLOCK_SIZE
 
         try:
             oop.getProcessPool(dom.sdUUID).truncateFile(volPath, sizeBytes,
