@@ -60,6 +60,7 @@ class Listener(threading.Thread):
         elif (event & select.EPOLLIN):
             obj = self._channels.get(fileno, None)
             if obj:
+                obj['timeout_seen'] = False
                 obj['reconnects'] = 0
                 try:
                     if obj['read_cb'](obj['opaque']):
@@ -77,6 +78,7 @@ class Listener(threading.Thread):
 
     def _prepare_reconnect(self, fileno):
             obj = self._channels.pop(fileno)
+            obj['timeout_seen'] = False
             try:
                 fileno = obj['create_cb'](obj['opaque'])
             except:
@@ -93,7 +95,9 @@ class Listener(threading.Thread):
         now = time.time()
         for (fileno, obj) in self._channels.items():
             if (now - obj['read_time']) >= self._timeout:
-                self.log.debug("Timeout on fileno %d.", fileno)
+                if not obj.get('timeout_seen', False):
+                    self.log.debug("Timeout on fileno %d.", fileno)
+                    obj['timeout_seen'] = True
                 try:
                     obj['timeout_cb'](obj['opaque'])
                     obj['read_time'] = now
