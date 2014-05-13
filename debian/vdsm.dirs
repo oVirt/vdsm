@@ -16,6 +16,7 @@ usr/libexec/vdsm/hooks/after_device_migrate_source
 usr/libexec/vdsm/hooks/after_disk_hotplug
 usr/libexec/vdsm/hooks/after_disk_hotunplug
 usr/libexec/vdsm/hooks/after_get_all_vm_stats
+usr/libexec/vdsm/hooks/after_get_caps
 usr/libexec/vdsm/hooks/after_get_vm_stats
 usr/libexec/vdsm/hooks/after_network_setup
 usr/libexec/vdsm/hooks/after_nic_hotplug
@@ -42,6 +43,7 @@ usr/libexec/vdsm/hooks/before_device_migrate_source
 usr/libexec/vdsm/hooks/before_disk_hotplug
 usr/libexec/vdsm/hooks/before_disk_hotunplug
 usr/libexec/vdsm/hooks/before_get_all_vm_stats
+usr/libexec/vdsm/hooks/before_get_caps
 usr/libexec/vdsm/hooks/before_get_vm_stats
 usr/libexec/vdsm/hooks/before_network_setup
 usr/libexec/vdsm/hooks/before_nic_hotplug

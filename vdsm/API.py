@@ -1186,9 +1186,11 @@ class Global(APIBase):
         """
         Report host capabilities.
         """
+        hooks.before_get_caps()
         _updateTimestamp()  # required for some ovirt-3.0.z Engines
         c = caps.get()
         c['netConfigDirty'] = str(self._cif._netConfigDirty)
+        c = hooks.after_get_caps(c)
 
         return {'status': doneCode, 'info': c}
 
