@@ -342,11 +342,6 @@ def directTouch(path):
     os.close(fd)
 
 
-def directWriteLines(path, lines):
-    with fileUtils.open_ex(path, "dw") as f:
-        return f.writelines(lines)
-
-
 def truncateFile(path, size, mode=None, creatExcl=False):
     # NOTE: Under no circumstance you should add the O_TRUNC
     # flag here. We rely on the fact that the file content is
@@ -425,8 +420,7 @@ if __name__ == "__main__":
         try:
             server = CrabRPCServer(myRead, myWrite)
             for func in (writeLines, readLines, truncateFile, echo, sleep,
-                         directWriteLines, directReadLines, simpleWalk,
-                         directTouch):
+                         directReadLines, simpleWalk, directTouch):
 
                 server.registerFunction(func)
 
