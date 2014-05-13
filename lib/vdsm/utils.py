@@ -684,8 +684,8 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
 
     p = CPopen(command, close_fds=True, cwd=cwd, env=env,
                deathSignal=deathSignal, childUmask=childUmask)
-    p = AsyncProc(p)
     if not sync:
+        p = AsyncProc(p)
         if data is not None:
             p.stdin.write(data)
             p.stdin.flush()
