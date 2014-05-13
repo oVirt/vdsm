@@ -3229,6 +3229,9 @@
 #
 # @emulatedMachine:       #optional The machine specification being emulated
 #
+# @hypervEnable:          #optional Enables hyperv specific optimizations for the
+#                         Guest OS (new in version 4.16.0)
+#
 # @keyboardLayout:        #optional The keyboard layout string (eg. 'en-us')
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
@@ -3281,8 +3284,9 @@
           '*cpuShares': 'str', '*cpuType': 'str', '*custom': 'StringMap',
           '*devices': ['VmDevice'], 'display': 'VmDisplayType', 'displayIp': 'str',
           'displayPort': 'int', 'displaySecurePort': 'int',
-          '*emulatedMachine': 'str', '*keyboardLayout': 'str',
-          'kvmEnable': 'bool', '*maxVCpus': 'uint', 'memSize': 'uint',
+          '*emulatedMachine': 'str', '*hypervEnable': 'bool',
+          '*keyboardLayout': 'str', 'kvmEnable': 'bool',
+          '*maxVCpus': 'uint', 'memSize': 'uint',
           'memGuaranteedSize': 'uint', 'nicModel': 'str', 'nice': 'int',
           '*pauseCode': 'str', 'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'status': 'VmStatus',
@@ -3309,6 +3313,9 @@
 # @devices:               #optional An array of VM devices requested
 #
 # @display:               The type of display
+#
+# @hypervEnable:          #optional Enables hyperv specific optimizations for the
+#                         Guest OS. (new in version 4.16.0)
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
 #
@@ -3344,7 +3351,8 @@
 {'type': 'VmParameters',
  'data': {'acpiEnable': 'bool', '*bootMenuEnable': 'bool',
           '*cpuShares': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
-          'display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
+          'display': 'VmDisplayType', '*hypervEnable': 'bool',
+          'kvmEnable': 'bool', 'memSize': 'uint',
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
           'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',

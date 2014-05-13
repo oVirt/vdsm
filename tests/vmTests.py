@@ -321,6 +321,21 @@ class TestVm(TestCaseBase):
         domxml.appendFeatures()
         self.assertXML(domxml.dom, featuresXML, 'features')
 
+    def testFeaturesHyperVXML(self):
+        featuresXML = """
+            <features>
+                  <acpi/>
+                  <hyperv>
+                         <relaxed state="on"/>
+                  </hyperv>
+            </features>"""
+        conf = {'hypervEnable': 'true'}
+        conf.update(self.conf)
+        domxml = vm._DomXML(conf, self.log,
+                            caps.Architecture.X86_64)
+        domxml.appendFeatures()
+        self.assertXML(domxml.dom, featuresXML, 'features')
+
     def testSysinfoXML(self):
         sysinfoXML = """
             <sysinfo type="smbios">
