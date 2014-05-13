@@ -1664,18 +1664,30 @@ def getChainFromSSL(host):
         return [c.as_pem() for c in sock.get_peer_cert_chain()]
 
 
-def getRhevmCert(IP, port):
+def getRhevmCert(IP, port, output=None):
     """Aquire CA certificate from SSL handshake
 
     This certificate is saved to a file and later used
     to validate HTTPS connections with the engine web
     server.
 
+    Args:
+    IP -- IP address to collect the SSL chain
+    port -- Port to connect
+    output -- Path to save the ssl chain
+
+    Returns:
+    True or False
     """
     try:
         chain = getChainFromSSL((IP, int(port)))
         ca = chain[-1]
-        _, _, engineWebCACert = certPaths('')
+
+        if output is None:
+            _, _, engineWebCACert = certPaths('')
+        else:
+            engineWebCACert = output
+
         dirName = os.path.dirname(engineWebCACert)
         if not os.path.exists(dirName):
             os.makedirs(dirName)

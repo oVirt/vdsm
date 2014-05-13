@@ -18,3 +18,5 @@ upgrade_iso_file=@VDSMUPGRADEDIR@/ovirt-node-image.iso
 upgrade_mount_point=/live
 # registration ticket
 ticket=
+# Fingerprint of oVirt Engine CA
+fingerprint=None
