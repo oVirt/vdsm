@@ -19,11 +19,16 @@ import time
 import logging
 import logging.config
 import urllib
+import shutil
 import ssl
+import tempfile
 from config import config
 import deployUtil
 import createDaemon
 from deployUtil import MGT_BRIDGE_NAME
+
+from ConfigParser import NoOptionError
+from ovirtnode import ovirtfunctions
 
 TICKET_RETRIES=3
 DEFAULT_CONFIG_FILE="/etc/vdsm-reg/vdsm-reg.conf"
@@ -40,6 +45,14 @@ class Setup:
         self.fInitOK = True
         self.vdcURL = "None"
         self.vdcName = config.get('vars', 'vdc_host_name')
+
+        try:
+            self.cfg_fprint = config.get('vars', 'fingerprint')
+        except NoOptionError:
+            self.cfg_fprint = "None"
+
+        _, _, self.engineWebCACert = deployUtil.certPaths('')
+
         if self.vdcName != "None":
             try: self.vdcURL = socket.gethostbyname(self.vdcName)
             except: self.vdcURL = "None"
@@ -177,6 +190,41 @@ class Setup:
         logging.debug("registerVDS end.")
         return fReturn
 
+    def _compare_fingerprint(self, ca_path):
+        """ Compare fingerprint provided configration against
+        provided certificate.
+
+        Args:
+        ca_path -- Path to CA certificate
+
+        Returns:
+        True -- Fingerprint matched
+        False -- Fingerprint didn't match
+        """
+        ret = False
+
+        if self.cfg_fprint == "None":
+            ret = True
+        else:
+            if not os.path.exists(ca_path):
+                logging.error(
+                    "Fingerprint requested but no certificate"
+                )
+            else:
+                engine_fprint = deployUtil.generateFingerPrint(ca_path)
+                ret = self.cfg_fprint.upper() == engine_fprint
+
+                if not ret:
+                    logging.error(
+                        "Fingerprint differs from Engine\n"
+                        "vdsm-reg.conf fingerprint [%s]\n"
+                        "Engine fingerprint [%s]",
+                        self.cfg_fprint.upper(),
+                        engine_fprint
+                    )
+
+        return ret
+
     def execute(self):
         fOK = True
         fOKNow = True
@@ -188,6 +236,65 @@ class Setup:
         else:
             fOK = self.renameBridge()
             logging.debug("execute: after renameBridge: %s", fOK)
+
+        #
+        # make sure we have correct
+        # certificate at trust store
+        # delete it if not.
+        #
+        if fOK and not self._compare_fingerprint(self.engineWebCACert) and \
+                    os.path.exists(self.engineWebCACert):
+                ovirtfunctions.ovirt_safe_delete_config(
+                    self.engineWebCACert
+                )
+                os.unlink(self.engineWebCACert)
+
+        #
+        # Attempt to download certificate if not available.
+        #
+        if fOK and not os.path.exists(self.engineWebCACert):
+            fd_tmp, file_tmp = tempfile.mkstemp()
+            os.close(fd_tmp)
+
+            try:
+                #
+                # this will only succeed if certificate
+                # available via the ssl session
+                #
+                if not deployUtil.getRhevmCert(
+                    IP=self.vdcName,
+                    port=self.vdcPORT,
+                    output=file_tmp
+                ):
+                    logging.info(
+                        "Cannot download Engine Web CA certificate file: "
+                        "%s:%s",
+                        self.vdcName,
+                        self.vdcPORT
+                    )
+                    os.unlink(file_tmp)
+
+                #
+                # if the fingerprint is incorrect, there
+                # is no reason to re-try, just exit.
+                #
+                if fOK and not self._compare_fingerprint(file_tmp):
+                    fOK = False
+                    sys.exit(1)
+
+                #
+                # if we have certificate and all ok, then
+                # we move to trust store.
+                #
+                if fOK and os.path.exists(file_tmp):
+                    shutil.move(file_tmp, self.engineWebCACert)
+                    ovirtfunctions.ovirt_store_config(
+                        self.engineWebCACert
+                    )
+
+            finally:
+                if os.path.exists(file_tmp):
+                    os.unlink(file_tmp)
 
         if fOK:
             strKey = deployUtil.getAuthKeysFile(self.vdcURL, self.vdcPORT)

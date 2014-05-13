@@ -90,22 +90,24 @@ set_addresses() {
 			sed --copy -i "s/\(^vdc_host_name=\)\(..*$\)/\1${vdc_managment_server}/" \
 				/etc/vdsm-reg/vdsm-reg.conf
 
-			res=`python "$DEPLOY_UTIL" --node-cleanup`
-			ret_val=$?
-			echo "$res" >> $LOG 2>&1
-			if [ ! $ret_val -eq 0 ];then
-				echo "Node cleanup failed" >> $LOG 2>&1
-			fi
-
 			if [ "$vdc_managment_server" != "$vdc_managment_port" ]; then
 				sed --copy -i "s/\(^vdc_host_port=\)\(..*$\)/\1${vdc_managment_port}/" \
 					/etc/vdsm-reg/vdsm-reg.conf
 			fi
 
-			res=`python "$DEPLOY_UTIL" --download-rhevm-cert --server-address="$vdc_managment_server" --server-port="$vdc_managment_port" --fingerprint="$management_server_fingerprint"`
+			if [ ! -z "$management_server_fingerprint" ]; then
+				echo "checkpoint 4::management_server_fingerprint: ${management_server_fingerprint}" >> $LOG 2>&1
+				sed --copy -i "/^fingerprint=/d" \
+					/etc/vdsm-reg/vdsm-reg.conf
+				echo "fingerprint=${management_server_fingerprint}" \
+					>> /etc/vdsm-reg/vdsm-reg.conf
+			fi
+
+			res=`python "$DEPLOY_UTIL" --node-cleanup`
 			ret_val=$?
 			echo "$res" >> $LOG 2>&1
 			if [ ! $ret_val -eq 0 ];then
+				echo "Node cleanup failed" >> $LOG 2>&1
 				mv "$tmp_vdsm_reg_conf" /etc/vdsm-reg/vdsm-reg.conf
 				echo "Rebooting ... " >> $LOG 2>&1
 				/sbin/reboot
