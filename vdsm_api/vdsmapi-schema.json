@@ -3233,7 +3233,7 @@
 # Since: 4.10.0
 ##
 {'type': 'VmDefinition',
- 'data': {'acpiEnable': 'bool', 'clientIp': 'str', 'cpuShares': 'str',
+ 'data': {'acpiEnable': 'bool', 'clientIp': 'str', '*cpuShares': 'str',
           '*cpuType': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
           'display': 'VmDisplayType', 'displayIp': 'str',
           'displayPort': 'int', 'displaySecurePort': 'int',
