@@ -510,10 +510,16 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 self._sampleNet,
                 config.getint('vars', 'vm_sample_net_interval'),
                 config.getint('vars', 'vm_sample_net_window')))
+        self.sampleBalloon = (
+            sampling.AdvancedStatsFunction(
+                self._sampleBalloon,
+                config.getint('vars', 'vm_sample_balloon_interval'),
+                config.getint('vars', 'vm_sample_balloon_window')))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
-            self.sampleDisk, self.sampleDiskLatency, self.sampleNet)
+            self.sampleDisk, self.sampleDiskLatency, self.sampleNet,
+            self.sampleBalloon)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -564,6 +570,10 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
         return netSamples
 
+    def _sampleBalloon(self):
+        infos = self._vm._dom.info()
+        return infos[2]
+
     def _diff(self, prev, curr, val):
         return prev[val] - curr[val]
 
@@ -588,6 +598,26 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             self._log.debug("CPU stats not available: %s", e)
             stats['cpuUser'] = 0.0
             stats['cpuSys'] = 0.0
+
+    def _getBalloonStats(self, stats):
+        max_mem = int(self._vm.conf.get('memSize')) * 1024
+
+        sInfo, eInfo, sampleInterval = self.sampleBalloon.getStats()
+
+        for dev in self._vm.conf['devices']:
+            if dev['type'] == BALLOON_DEVICES and \
+                    dev['specParams']['model'] != 'none':
+                balloon_target = dev.get('target', max_mem)
+                break
+        else:
+            balloon_target = 0
+
+        stats['balloonInfo'] = {
+            'balloon_max': str(max_mem),
+            'balloon_min': str(
+                int(self._vm.conf.get('memGuaranteedSize', '0')) * 1024),
+            'balloon_cur': str(sInfo) if sInfo is not None else '0',
+            'balloon_target': balloon_target}
 
     def _getNetworkStats(self, stats):
         stats['network'] = {}
@@ -699,6 +729,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         self._getNetworkStats(stats)
         self._getDiskStats(stats)
         self._getDiskLatency(stats)
+        self._getBalloonStats(stats)
 
         return stats
 
@@ -2751,7 +2782,13 @@ class Vm(object):
         return stats
 
     def _getStatsInternal(self):
-        # used by API.Vm.getStats
+        """
+        used by API.Vm.getStats
+
+        WARNING: this method should only gather statistics by copying data.
+        Especially avoid costly and dangerous ditrect calls to the _dom
+        attribute. Use the VmStatsThread instead!
+        """
 
         def _getGuestStatus():
             GUEST_WAIT_TIMEOUT = 60
@@ -2806,6 +2843,8 @@ class Vm(object):
                 stats[var] = utils.convertToStr(decStats[var])
             elif var == 'network':
                 stats['network'] = decStats[var]
+            elif var == 'balloonInfo':
+                stats['balloonInfo'] = decStats[var]
             else:
                 try:
                     stats['disks'][var] = {}
@@ -2844,7 +2883,6 @@ class Vm(object):
             memUsage = (100 - float(realMemUsage) /
                         int(self.conf['memSize']) * 100)
         stats['memUsage'] = utils.convertToStr(int(memUsage))
-        stats['balloonInfo'] = self._getBalloonInfo()
         return stats
 
     def isMigrating(self):
@@ -4663,26 +4701,6 @@ class Vm(object):
         self.deleteVm()
 
         return {'status': doneCode}
-
-    def _getBalloonInfo(self):
-        for dev in self.conf['devices']:
-            if dev['type'] == BALLOON_DEVICES and \
-                    dev['specParams']['model'] != 'none':
-                max_mem = int(self.conf.get('memSize')) * 1024
-                min_mem = int(self.conf.get('memGuaranteedSize', '0')) * 1024
-                target_mem = dev.get('target', max_mem)
-                try:
-                    cur_mem = self._dom.info()[2]
-                except (AttributeError, libvirt.libvirtError):
-                    # _dom may be None (race on shutdown)
-                    self.log.exception(
-                        'failed to retrieve the balloon stats')
-                    cur_mem = 0
-                return {'balloon_max': str(max_mem),
-                        'balloon_cur': str(cur_mem),
-                        'balloon_min': str(min_mem),
-                        'balloon_target': str(target_mem)}
-        return {}
 
     def setBalloonTarget(self, target):
 
