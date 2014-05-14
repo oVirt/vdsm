@@ -230,6 +230,41 @@ class ConfigFileTests(TestCase):
                              "# comment         weekly\n"
                              "# comment }\n")
 
+    def testPrefixIdempotencey(self):
+        original = (
+            "/var/log/libvirt/libvirtd.log {\n"
+            "        weekly\n"
+            "}\n"
+        )
+        self.writeConf(original)
+        with ConfigFile(self.tname,
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf",
+                        version='3.4.4') as conf:
+                    conf.prefixLines("# comment ")
+        with open(self.tname, 'r') as f:
+            self.assertEqual(f.read(),
+                             "# comment /var/log/libvirt/libvirtd.log {\n"
+                             "# comment         weekly\n"
+                             "# comment }\n")
+        with ConfigFile(self.tname,
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf",
+                        version='3.4.4') as conff:
+            conff.unprefixLines("# comment ")
+        with open(self.tname, 'r') as f:
+            self.assertEqual(f.read(), original)
+
+    def testRemoveEntireLinePrefix(self):
+        self.writeConf("# comment\n")
+        with ConfigFile(self.tname,
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf",
+                        version='3.4.4') as conf:
+            conf.unprefixLines("# comment")
+        with open(self.tname, 'r') as f:
+            self.assertEqual(f.read(), "\n")
+
     def testRemoveConfSection(self):
         self.writeConf("key=val\n"
                        "key=val\n"

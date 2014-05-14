@@ -73,7 +73,8 @@ class ConfigFile(object):
             raise RuntimeError("can only enter once")
         self.entries = {}
         self.context = True
-        self.prefix = None
+        self.prefixRemove = None
+        self.prefixAdd = None
         self.section = None
         self.oldmod = os.stat(self.filename).st_mode
         self.remove = None
@@ -98,8 +99,11 @@ class ConfigFile(object):
                     m = confpat.match(line.rstrip())
                     if m:
                         oldentries.add(m.group('key'))
-                    if self.prefix:
-                        line = self.prefix + line
+                    if self.prefixRemove:
+                        if line.startswith(self.prefixRemove):
+                            line = line[len(self.prefixRemove):]
+                    if self.prefixAdd:
+                        line = self.prefixAdd + line
                     oldlines.append(line)
             return oldlines, oldentries
 
@@ -166,10 +170,18 @@ class ConfigFile(object):
     @context
     def prefixLines(self, prefix):
         """
-        prefix each line originaly included in the file (not including
-         'prependedSection' lines) with 'prefix'.
+        Add 'prefix' to the beginning of each line.
+        No editing is done on new content added by this config file.
         """
-        self.prefix = prefix
+        self.prefixAdd = prefix
+
+    @context
+    def unprefixLines(self, prefix):
+        """
+        Remove 'prefix' from each line starting with it.
+        No editing is done on new content added by this config file.
+        """
+        self.prefixRemove = prefix
 
     @context
     def removeConf(self):
