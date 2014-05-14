@@ -207,7 +207,9 @@ def _getLiveSnapshotSupport(arch, capabilities=None):
         if archTag.getAttribute('name') == arch:
             return _findLiveSnapshotSupport(guestTag)
 
-    logging.error("missing guest arch tag in the capabilities XML")
+    if not config.getboolean('vars', 'fake_kvm_support'):
+        logging.error("missing guest arch tag in the capabilities XML")
+
     return None
 
 
