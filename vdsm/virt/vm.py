@@ -2402,7 +2402,7 @@ class Vm(object):
                         "Wake up from hibernation failed")
                 else:
                     self.conf['exitMessage'] = exitMessage
-                    self.conf['exitReason'] = exitReasonCode
+                self.conf['exitReason'] = exitReasonCode
             self.log.debug("Changed state to Down: %s (code=%i)",
                            exitMessage, exitReasonCode)
         except DoubleDownError:
