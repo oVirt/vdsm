@@ -1022,7 +1022,9 @@ class TestVmStatsThread(TestCaseBase):
         # bz1073478 - main case
         with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
             self.assertEqual(fake._dom, None)
-            res = fake.getStats()
+            mock_stats_thread = vm.VmStatsThread(fake)
+            res = {}
+            mock_stats_thread._getBalloonStats(res)
             self.assertIn('balloonInfo', res)
             self.assertIn('balloon_cur', res['balloonInfo'])
 
@@ -1030,7 +1032,9 @@ class TestVmStatsThread(TestCaseBase):
         # bz1073478 - extra case
         with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
             fake._dom = FakeDomain()
-            res = fake.getStats()
+            mock_stats_thread = vm.VmStatsThread(fake)
+            res = {}
+            mock_stats_thread._getBalloonStats(res)
             self.assertIn('balloonInfo', res)
             self.assertIn('balloon_cur', res['balloonInfo'])
 
@@ -1119,6 +1123,7 @@ class TestVmStats(TestCaseBase):
         vmParams = {
             'displayPort': -1, 'displaySecurePort': -1, 'display': 'qxl',
             'displayIp': '127.0.0.1', 'vmType': 'kvm', 'devices': {},
+            'memSize': 1024,
             # HACKs
             'pauseCode': 'NOERR'}
         with FakeVM(vmParams) as fake:
