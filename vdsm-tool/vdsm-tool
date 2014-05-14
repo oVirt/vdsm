@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import print_function
 
 import os
 import sys
@@ -92,10 +93,10 @@ def load_modules():
             cmd_name = cmd._vdsm_tool["name"]
 
             if cmd_name in tool_command:
-                print textwrap.fill(
-                    ERROR_SAME_COMMAND %
-                    (cmd_name, mod_name,
-                     tool_command[cmd_name]["module"].__name__))
+                print(textwrap.fill(
+                      ERROR_SAME_COMMAND %
+                      (cmd_name, mod_name,
+                       tool_command[cmd_name]["module"].__name__)))
                 continue
             tool_command[cmd_name] = {"module": module, "command": cmd}
             mod_cmds.append((cmd_name, cmd.__doc__))
@@ -104,34 +105,32 @@ def load_modules():
 
 
 def print_command_usage(cmd, stream=sys.stdout):
-    print >> stream, 'usage:'
-    print >> stream, sys.argv[0], '[options]', cmd.__doc__.lstrip()
+    print('usage:', '\n', sys.argv[0], '[options]',
+          cmd.__doc__.lstrip(), file=stream)
 
 
 def _usage_command(cmd_name, cmd_docs):
-    print
-    print cmd_name
+    print('\n', cmd_name)
     print_command_usage(tool_command[cmd_name]["command"])
 
 
 def _usage_module(mod_name, mod_desc):
-    print
-    print "Commands in module %s:" % mod_name
+    print("\n", "Commands in module %s:" % mod_name)
 
     for cmd_name, cmd_docs in mod_desc:
         _usage_command(cmd_name, cmd_docs)
 
 
 def usage_and_exit(exit_code):
-    print "Usage: %s [options] <action> [arguments]\n" % sys.argv[0]
+    print("Usage: %s [options] <action> [arguments]\n" % sys.argv[0])
 
-    print "Valid options:"
-    print "  -h, --help"
+    print("Valid options:", "\n",
+          "  -h, --help")
 
     for mod_name, mod_desc in tool_modules:
         _usage_module(mod_name, mod_desc)
 
-    print
+    print()
     sys.exit(exit_code)
 
 
@@ -154,14 +153,14 @@ def main():
     try:
         return tool_command[cmd]["command"](*args)
     except vdsm.tool.UsageError as e:
-        sys.stderr.write('Error: %s' % e)
+        print('Error: ', e, '\n', file=sys.stderr)
         print_command_usage(tool_command[cmd]["command"], sys.stderr)
         return 1
     except Exception:
         traceback.print_exc(file=sys.stderr)
         return 1
     except KeyboardInterrupt:
-        print "Interrupted"
+        print("Interrupted", file=sys.stderr)
         return 1
 
 if __name__ == "__main__":
