@@ -61,6 +61,11 @@ PEP8_BLACKLIST = \
 	vdsm.py \
 	$(NULL)
 
+PEP8_WHITELIST = \
+	vdsm-tool/vdsm-tool \
+	$(NULL)
+
+
 SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 	'lv' from line .*"
 
@@ -74,6 +79,7 @@ check-local:
 	    exclude="$${exclude},$${x}" ; \
 	done ; \
 	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' .
+	$(PEP8) $(PEP8_WHITELIST)
 	@if test -f .gitignore; then \
 	  for i in `git ls-files \*.in`; do \
 	    if ! grep -q -x $${i%%.in} .gitignore; then \

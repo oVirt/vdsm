@@ -92,9 +92,10 @@ def load_modules():
             cmd_name = cmd._vdsm_tool["name"]
 
             if cmd_name in tool_command:
-                print textwrap.fill(ERROR_SAME_COMMAND %
-                            (cmd_name, mod_name,
-                             tool_command[cmd_name]["module"].__name__))
+                print textwrap.fill(
+                    ERROR_SAME_COMMAND %
+                    (cmd_name, mod_name,
+                     tool_command[cmd_name]["module"].__name__))
                 continue
             tool_command[cmd_name] = {"module": module, "command": cmd}
             mod_cmds.append((cmd_name, cmd.__doc__))
@@ -107,7 +108,7 @@ def _usage_command(cmd_name, cmd_docs):
     cmd_indent = " " * len(cmd_help)
 
     print textwrap.fill(cmd_docs, initial_indent=cmd_help,
-                                  subsequent_indent=cmd_indent)
+                        subsequent_indent=cmd_indent)
 
 
 def _usage_module(mod_name, mod_desc):
