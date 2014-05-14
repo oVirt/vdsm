@@ -3644,4 +3644,4 @@ class HSM(object):
     def stopMonitoringDomain(self, sdUUID, options=None):
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
-            self.domainMonitor.stopMonitoring(sdUUID)
+            self.domainMonitor.stopMonitoring([sdUUID])

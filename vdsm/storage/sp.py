@@ -642,8 +642,8 @@ class StoragePool(object):
 
     @unsecured
     def stopMonitoringDomains(self):
-        for sdUUID in self.domainMonitor.poolMonitoredDomains:
-            self.domainMonitor.stopMonitoring(sdUUID)
+        poolDomains = self.domainMonitor.poolMonitoredDomains
+        self.domainMonitor.stopMonitoring(poolDomains)
         return True
 
     @unsecured
@@ -1394,20 +1394,15 @@ class StoragePool(object):
     def updateMonitoringThreads(self):
         # domain list it's list of sdUUID:status
         # sdUUID1:status1,sdUUID2:status2,...
-        activeDomains = self.getDomains(activeOnly=True)
-        monitoredDomains = self.domainMonitor.poolMonitoredDomains
+        activeDomains = frozenset(self.getDomains(activeOnly=True))
+        monitoredDomains = frozenset(self.domainMonitor.poolMonitoredDomains)
 
-        for sdUUID in monitoredDomains:
-            if sdUUID not in activeDomains:
-                self.domainMonitor.stopMonitoring(sdUUID)
-                self.log.debug("Storage Pool `%s` stopped monitoring "
-                               "domain `%s`", self.spUUID, sdUUID)
+        monitorsToStop = monitoredDomains - activeDomains
+        self.domainMonitor.stopMonitoring(monitorsToStop)
 
-        for sdUUID in activeDomains:
-            if sdUUID not in monitoredDomains:
-                self.domainMonitor.startMonitoring(sdUUID, self.id)
-                self.log.debug("Storage Pool `%s` started monitoring "
-                               "domain `%s`", self.spUUID, sdUUID)
+        monitorsToStart = activeDomains - monitoredDomains
+        for sdUUID in monitorsToStart:
+            self.domainMonitor.startMonitoring(sdUUID, self.id)
 
     @unsecured
     def getDomains(self, activeOnly=False):

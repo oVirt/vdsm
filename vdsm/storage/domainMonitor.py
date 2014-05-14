@@ -106,28 +106,43 @@ class DomainMonitor(object):
         # The domain should be added only after it succesfully started
         self._domains[sdUUID] = domainThread
 
-    def stopMonitoring(self, sdUUID):
-        # The domain monitor issues events that might become raceful if
-        # stopMonitoring doesn't stop until the thread exits.
-        # Eg: when a domain is detached the domain monitor is stopped and
-        # the host id is released. If the monitor didn't actually exit it
-        # might respawn a new acquire host id.
-        self.log.info("Stop monitoring %s", sdUUID)
-        try:
-            self._domains[sdUUID].stop()
-        except KeyError:
-            return
-
-        del self._domains[sdUUID]
+    def stopMonitoring(self, sdUUIDs):
+        sdUUIDs = frozenset(sdUUIDs)
+        monitors = [monitor for monitor in self._domains.values()
+                    if monitor.sdUUID in sdUUIDs]
+        self._stopMonitors(monitors)
 
     def getMonitoredDomainsStatus(self):
         for sdUUID, monitor in self._domains.items():
             yield sdUUID, monitor.getStatus()
 
     def close(self):
-        self.log.info("Stopping domain monitors")
-        for sdUUID in self._domains.keys():
-            self.stopMonitoring(sdUUID)
+        self.log.info("Stopping all domain monitors")
+        self._stopMonitors(self._domains.values())
+
+    def _stopMonitors(self, monitors):
+        # The domain monitor issues events that might become raceful if
+        # you don't wait until a monitor thread exit.
+        # Eg: when a domain is detached the domain monitor is stopped and
+        # the host id is released. If the monitor didn't actually exit it
+        # might respawn a new acquire host id.
+
+        # First stop monitor threads - this take no time, and make the process
+        # about 7 times faster when stopping 30 monitors.
+        for monitor in monitors:
+            self.log.info("Stop monitoring %s", monitor.sdUUID)
+            monitor.stop()
+
+        # Now wait for threads to finish - this takes about 10 seconds with 30
+        # monitors, most of the time spent waiting for sanlock.
+        for monitor in monitors:
+            self.log.debug("Waiting for monitor %s", monitor.sdUUID)
+            monitor.join()
+            try:
+                del self._domains[monitor.sdUUID]
+            except KeyError:
+                self.log.warning("Montior for %s removed while stopping",
+                                 monitor.sdUUID)
 
 
 class DomainMonitorThread(object):
@@ -155,10 +170,11 @@ class DomainMonitorThread(object):
     def start(self):
         self.thread.start()
 
-    def stop(self, wait=True):
+    def stop(self):
         self.stopEvent.set()
-        if wait:
-            self.thread.join()
+
+    def join(self):
+        self.thread.join()
 
     def getStatus(self):
         return self.status.copy()
