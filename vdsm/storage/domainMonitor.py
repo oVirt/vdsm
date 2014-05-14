@@ -185,15 +185,8 @@ class DomainMonitorThread(object):
             self._monitorLoop()
         finally:
             self.log.debug("Stopping domain monitor for %s", self.sdUUID)
-            # If this is an ISO domain we didn't acquire the host id and
-            # releasing it is superfluous.
-            if self.domain and not self.isIsoDomain:
-                try:
-                    self.domain.releaseHostId(self.hostId, unused=True)
-                except:
-                    self.log.debug("Unable to release the host id %s for "
-                                   "domain %s", self.hostId, self.sdUUID,
-                                   exc_info=True)
+            if self._shouldReleaseHostId():
+                self._releaseHostId()
 
     def _monitorLoop(self):
         while not self.stopEvent.is_set():
@@ -207,54 +200,28 @@ class DomainMonitorThread(object):
     def _monitorDomain(self):
         self.nextStatus.clear()
 
-        if time.time() - self.lastRefresh > self.refreshTime:
-            # Refreshing the domain object in order to pick up changes as,
-            # for example, the domain upgrade.
-            self.log.debug("Refreshing domain %s", self.sdUUID)
-            sdCache.manuallyRemoveDomain(self.sdUUID)
-            self.lastRefresh = time.time()
+        # Pick up changes in the domain, for example, domain upgrade.
+        if self._shouldRefreshDomain():
+            self._refreshDomain()
 
         try:
             # We should produce the domain inside the monitoring loop because
             # it might take some time and we don't want to slow down the thread
             # start (and anything else that relies on that as for example
-            # updateMonitoringThreads). It also needs to be inside the loop
-            # since it might fail and we want keep trying until we succeed or
-            # the domain is deactivated.
+            # updateMonitoringThreads). It also might fail and we want keep
+            # trying until we succeed or the domain is deactivated.
             if self.domain is None:
-                self.domain = sdCache.produce(self.sdUUID)
+                self._produceDomain()
 
+            # The isIsoDomain assignment is delayed because the isoPrefix
+            # discovery might fail (if the domain suddenly disappears) and we
+            # could risk to never try to set it again.
             if self.isIsoDomain is None:
-                # The isIsoDomain assignment is delayed because the isoPrefix
-                # discovery might fail (if the domain suddenly disappears) and
-                # we could risk to never try to set it again.
-                isIsoDomain = self.domain.isISO()
-                if isIsoDomain:
-                    self.isoPrefix = self.domain.getIsoDomainImagesDir()
-                self.isIsoDomain = isIsoDomain
+                self._setIsoDomainInfo()
 
-            self.domain.selftest()
-
-            self.nextStatus.readDelay = self.domain.getReadDelay()
-
-            stats = self.domain.getStats()
-            self.nextStatus.diskUtilization = (stats["disktotal"],
-                                               stats["diskfree"])
-
-            self.nextStatus.vgMdUtilization = (stats["mdasize"],
-                                               stats["mdafree"])
-
-            self.nextStatus.vgMdHasEnoughFreeSpace = stats["mdavalid"]
-            self.nextStatus.vgMdFreeBelowThreashold = stats["mdathreshold"]
-
-            masterStats = self.domain.validateMaster()
-            self.nextStatus.masterValid = masterStats['valid']
-            self.nextStatus.masterMounted = masterStats['mount']
-
-            self.nextStatus.hasHostId = self.domain.hasHostId(self.hostId)
-            self.nextStatus.isoPrefix = self.isoPrefix
-            self.nextStatus.version = self.domain.getVersion()
-
+            self._performDomainSelftest()
+            self._checkReadDelay()
+            self._collectStatistics()
         except Exception as e:
             self.log.error("Error while collecting domain %s monitoring "
                            "information", self.sdUUID, exc_info=True)
@@ -264,29 +231,105 @@ class DomainMonitorThread(object):
         self.nextStatus.valid = (self.nextStatus.error is None)
 
         if self._statusDidChange():
-            self.log.debug("Domain %s changed its status to %s", self.sdUUID,
-                           "Valid" if self.nextStatus.valid else "Invalid")
-
-            try:
-                self.domainMonitor.onDomainStateChange.emit(
-                    self.sdUUID, self.nextStatus.valid)
-            except:
-                self.log.warn("Could not emit domain state change event",
-                              exc_info=True)
-
+            self._notifyStatusChanges()
         self.firstChange = False
 
-        # An ISO domain can be shared by multiple pools
-        if (not self.isIsoDomain and self.nextStatus.valid
-                and self.nextStatus.hasHostId is False):
-            try:
-                self.domain.acquireHostId(self.hostId, async=True)
-            except:
-                self.log.debug("Unable to issue the acquire host id %s "
-                               "request for domain %s", self.hostId,
-                               self.sdUUID, exc_info=True)
+        if self._shouldAcquireHostId():
+            self._acquireHostId()
 
         self.status.update(self.nextStatus)
 
+    # Notifiying status changes
+
     def _statusDidChange(self):
         return self.firstChange or self.status.valid != self.nextStatus.valid
+
+    def _notifyStatusChanges(self):
+        self.log.debug("Domain %s changed its status to %s", self.sdUUID,
+                       "Valid" if self.nextStatus.valid else "Invalid")
+        try:
+            self.domainMonitor.onDomainStateChange.emit(
+                self.sdUUID, self.nextStatus.valid)
+        except:
+            self.log.warn("Could not emit domain state change event",
+                          exc_info=True)
+
+    # Refreshing domain
+
+    def _shouldRefreshDomain(self):
+        return time.time() - self.lastRefresh > self.refreshTime
+
+    def _refreshDomain(self):
+        self.log.debug("Refreshing domain %s", self.sdUUID)
+        sdCache.manuallyRemoveDomain(self.sdUUID)
+        self.lastRefresh = time.time()
+
+    # Deferred initialization
+
+    def _produceDomain(self):
+        self.domain = sdCache.produce(self.sdUUID)
+
+    def _setIsoDomainInfo(self):
+        isIsoDomain = self.domain.isISO()
+        if isIsoDomain:
+            self.isoPrefix = self.domain.getIsoDomainImagesDir()
+        self.isIsoDomain = isIsoDomain
+
+    # Collecting monitoring info
+
+    def _performDomainSelftest(self):
+        # This may trigger a refresh of lvm cache. We have seen this taking up
+        # to 90 seconds on overloaded machines.
+        self.domain.selftest()
+
+    def _checkReadDelay(self):
+        # This may block for long time if the storage server is not accessible.
+        # On overloaded machines we have seen this take up to 15 seconds.
+        self.nextStatus.readDelay = self.domain.getReadDelay()
+
+    def _collectStatistics(self):
+        stats = self.domain.getStats()
+        self.nextStatus.diskUtilization = (stats["disktotal"],
+                                           stats["diskfree"])
+
+        self.nextStatus.vgMdUtilization = (stats["mdasize"],
+                                           stats["mdafree"])
+
+        self.nextStatus.vgMdHasEnoughFreeSpace = stats["mdavalid"]
+        self.nextStatus.vgMdFreeBelowThreashold = stats["mdathreshold"]
+
+        masterStats = self.domain.validateMaster()
+        self.nextStatus.masterValid = masterStats['valid']
+        self.nextStatus.masterMounted = masterStats['mount']
+
+        self.nextStatus.hasHostId = self.domain.hasHostId(self.hostId)
+        self.nextStatus.isoPrefix = self.isoPrefix
+        self.nextStatus.version = self.domain.getVersion()
+
+    # Managing host id
+
+    def _shouldAcquireHostId(self):
+        # An ISO domain can be shared by multiple pools
+        return (not self.isIsoDomain and
+                self.nextStatus.valid and
+                self.nextStatus.hasHostId is False)
+
+    def _shouldReleaseHostId(self):
+        # If this is an ISO domain we didn't acquire the host id and releasing
+        # it is superfluous.
+        return self.domain and not self.isIsoDomain
+
+    def _acquireHostId(self):
+        try:
+            self.domain.acquireHostId(self.hostId, async=True)
+        except:
+            self.log.debug("Unable to issue the acquire host id %s "
+                           "request for domain %s", self.hostId,
+                           self.sdUUID, exc_info=True)
+
+    def _releaseHostId(self):
+        try:
+            self.domain.releaseHostId(self.hostId, unused=True)
+        except:
+            self.log.debug("Unable to release the host id %s for domain "
+                           "%s", self.hostId, self.sdUUID, exc_info=True)
