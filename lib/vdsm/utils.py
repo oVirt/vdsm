@@ -183,7 +183,7 @@ class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
                 # We read this in chunks to avoid straining
                 # socket.read(); around the 10 or 15Mb mark, some platforms
                 # begin to have problems (bug #792570).
-                max_chunk_size = 10*1024*1024
+                max_chunk_size = 10 * 1024 * 1024
                 size_remaining = int(self.headers["content-length"])
                 L = []
                 while size_remaining:
