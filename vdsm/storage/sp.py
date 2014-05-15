@@ -1396,24 +1396,15 @@ class StoragePool(object):
 
         for sdUUID in monitoredDomains:
             if sdUUID not in activeDomains:
-                try:
-                    self.domainMonitor.stopMonitoring(sdUUID)
-                    self.log.debug("Storage Pool `%s` stopped monitoring "
-                                   "domain `%s`", self.spUUID, sdUUID)
-                except se.StorageException:
-                    self.log.error("Unexpected error while trying to stop "
-                                   "monitoring domain `%s`", sdUUID,
-                                   exc_info=True)
+                self.domainMonitor.stopMonitoring(sdUUID)
+                self.log.debug("Storage Pool `%s` stopped monitoring "
+                               "domain `%s`", self.spUUID, sdUUID)
 
         for sdUUID in activeDomains:
             if sdUUID not in monitoredDomains:
-                try:
-                    self.domainMonitor.startMonitoring(sdUUID, self.id)
-                    self.log.debug("Storage Pool `%s` started monitoring "
-                                   "domain `%s`", self.spUUID, sdUUID)
-                except se.StorageException:
-                    self.log.error("Unexpected error while trying to monitor "
-                                   "domain `%s`", sdUUID, exc_info=True)
+                self.domainMonitor.startMonitoring(sdUUID, self.id)
+                self.log.debug("Storage Pool `%s` started monitoring "
+                               "domain `%s`", self.spUUID, sdUUID)
 
     @unsecured
     def getDomains(self, activeOnly=False):
