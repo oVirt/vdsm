@@ -699,9 +699,9 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False, logErr=True,
         # Prevent splitlines() from barfing later on
         out = ""
 
-    execCmdLogger.debug("%s: <err> = %s; <rc> = %d",
-                        {True: "SUCCESS", False: "FAILED"}[p.returncode == 0],
-                        repr(err), p.returncode)
+    execCmdLogger.debug("%s: <err> = %r; <rc> = %d",
+                        "SUCCESS" if p.returncode == 0 else "FAILED",
+                        err, p.returncode)
 
     if not raw:
         out = out.splitlines(False)
