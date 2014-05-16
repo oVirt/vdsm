@@ -22,10 +22,14 @@ import os.path
 import contextlib
 import errno
 import logging
+import sys
+import threading
 
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import permutations, expandPermutations
 from testValidation import checkSudo
+from testValidation import brokentest
+from testValidation import stresstest
 from vdsm import utils
 from vdsm import constants
 import time
@@ -484,3 +488,113 @@ class ExecCmdTest(TestCaseBase):
                                    sudo=True)
         self.assertEquals(rc, 0)
         self.assertEquals(int(out[0].split()[2]), 0)
+
+
+class ExecCmdStressTest(TestCaseBase):
+
+    CONCURRENCY = 50
+    FUNC_DELAY = 0.01
+    FUNC_CALLS = 40
+    BLOCK_SIZE = 4096
+    BLOCK_COUNT = 256
+
+    def setUp(self):
+        self.data = None  # Written to process stdin
+        self.workers = []
+        self.resume = threading.Event()
+
+    @stresstest
+    def test_read_stderr(self):
+        self.check(self.read_stderr)
+
+    @stresstest
+    def test_read_stdout_stderr(self):
+        self.check(self.read_stdout_stderr)
+
+    @brokentest("Always fails when using AsyncProc in sync mode")
+    @stresstest
+    def test_write_stdin_read_stderr(self):
+        self.data = 'x' * self.BLOCK_SIZE * self.BLOCK_COUNT
+        self.check(self.write_stdin_read_stderr)
+
+    def check(self, func):
+        for i in xrange(self.CONCURRENCY):
+            worker = Worker(self.resume, func, self.FUNC_CALLS,
+                            self.FUNC_DELAY)
+            self.workers.append(worker)
+            worker.start()
+        for worker in self.workers:
+            worker.wait()
+        self.resume.set()
+        for worker in self.workers:
+            worker.join()
+        for worker in self.workers:
+            if worker.exc_info:
+                t, v, tb = worker.exc_info
+                raise t, v, tb
+
+    def read_stderr(self):
+        args = ['if=/dev/zero',
+                'of=/dev/null',
+                'bs=%d' % self.BLOCK_SIZE,
+                'count=%d' % self.BLOCK_COUNT]
+        self.run_dd(args)
+
+    def read_stdout_stderr(self):
+        args = ['if=/dev/zero',
+                'bs=%d' % self.BLOCK_SIZE,
+                'count=%d' % self.BLOCK_COUNT]
+        out = self.run_dd(args)
+        size = self.BLOCK_SIZE * self.BLOCK_COUNT
+        if len(out) < size:
+            raise self.failureException("Partial read: %d/%d" % (
+                                        len(out), size))
+
+    def write_stdin_read_stderr(self):
+        args = ['of=/dev/null',
+                'bs=%d' % self.BLOCK_SIZE,
+                'count=%d' % self.BLOCK_COUNT]
+        self.run_dd(args)
+
+    def run_dd(self, args):
+        cmd = [constants.EXT_DD]
+        cmd.extend(args)
+        rc, out, err = utils.execCmd(cmd, raw=True, data=self.data)
+        if rc != 0:
+            raise self.failureException("Process failed: rc=%d err=%r" %
+                                        (rc, err))
+        if err == '':
+            raise self.failureException("No data from stderr")
+        return out
+
+
+class Worker(object):
+
+    def __init__(self, resume, func, func_calls, func_delay):
+        self.exc_info = None
+        self._resume = resume
+        self._func = func
+        self._func_calls = func_calls
+        self._func_delay = func_delay
+        self._ready = threading.Event()
+        self._thread = threading.Thread(target=self._run)
+        self._thread.daemon = True
+
+    def start(self):
+        self._thread.start()
+
+    def wait(self):
+        self._ready.wait()
+
+    def join(self):
+        self._thread.join()
+
+    def _run(self):
+        try:
+            self._ready.set()
+            self._resume.wait()
+            for n in range(self._func_calls):
+                self._func()
+                time.sleep(self._func_delay)
+        except Exception:
+            self.exc_info = sys.exc_info()
