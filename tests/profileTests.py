@@ -71,7 +71,7 @@ class ApplicationProfileTests(ProfileTests):
         profile.start()
         profile.is_running()  # Let if profile something
         profile.stop()
-        pstats.Stats(FILENAME)
+        self.assertNotRaises(pstats.Stats, FILENAME)
 
     @MonkeyPatch(profile, 'config', make_config(enable='true'))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
@@ -82,7 +82,7 @@ class ApplicationProfileTests(ProfileTests):
         profile.is_running()  # Let if profile something
         profile.stop()
         stats = yappi.YFuncStats()
-        stats.add(FILENAME)
+        self.assertNotRaises(stats.add, FILENAME)
 
     @MonkeyPatch(profile, 'config', make_config(enable='true'))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
@@ -118,7 +118,7 @@ class FunctionProfileTests(ProfileTests):
     def test_profile_disabled(self):
         requires_yappi()
         self.profiled_function()
-        pstats.Stats(FILENAME)
+        self.assertNotRaises(pstats.Stats, FILENAME)
 
     # Function profile must fail if profile is enabled in config - we cannot
     # use application wide profile and function profile in the same time.
@@ -138,6 +138,13 @@ class FunctionProfileTests(ProfileTests):
         requires_yappi()
         self.assertRaises(profile.Error, self.recursive_profile)
 
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_ystat_format(self):
+        requires_yappi()
+        self.ystat_format()
+        stats = yappi.YFuncStats()
+        self.assertNotRaises(stats.add, FILENAME)
+
     @profile.profile(FILENAME)
     def profiled_function(self):
         self.assertTrue(profile.is_running())
@@ -145,3 +152,7 @@ class FunctionProfileTests(ProfileTests):
     @profile.profile(FILENAME)
     def recursive_profile(self):
         self.profiled_function()
+
+    @profile.profile(FILENAME, format="ystat")
+    def ystat_format(self):
+        pass
