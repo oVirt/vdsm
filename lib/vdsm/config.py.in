@@ -35,6 +35,10 @@ parameters = [
         ('profile_format', 'pstat',
             'Profile file format (pstat, callgrind, ystat)'),
 
+        ('profile_builtins', 'false',
+            'Profile builtin functions used by standard Python modules. '
+            'false by default.'),
+
         ('host_mem_reserve', '256',
             'Reserves memory for the host to prevent VMs from using all the '
             'physical pages. The values are in Mbytes.'),

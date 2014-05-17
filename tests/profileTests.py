@@ -81,8 +81,31 @@ class ApplicationProfileTests(ProfileTests):
         profile.start()
         profile.is_running()  # Let if profile something
         profile.stop()
-        stats = yappi.YFuncStats()
-        self.assertNotRaises(stats.add, FILENAME)
+        self.assertNotRaises(open_ystats, FILENAME)
+
+    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, '_FILENAME', FILENAME)
+    @MonkeyPatch(profile, '_FORMAT', 'ystat')
+    @MonkeyPatch(profile, '_BUILTINS', True)
+    def test_with_builtins(self):
+        requires_yappi()
+        profile.start()
+        dict()
+        profile.stop()
+        stats = open_ystats(FILENAME)
+        self.assertTrue(find_module(stats, '__builtin__'))
+
+    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, '_FILENAME', FILENAME)
+    @MonkeyPatch(profile, '_FORMAT', 'ystat')
+    @MonkeyPatch(profile, '_BUILTINS', False)
+    def test_without_builtins(self):
+        requires_yappi()
+        profile.start()
+        dict()
+        profile.stop()
+        stats = open_ystats(FILENAME)
+        self.assertFalse(find_module(stats, '__builtin__'))
 
     @MonkeyPatch(profile, 'config', make_config(enable='true'))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
@@ -142,8 +165,21 @@ class FunctionProfileTests(ProfileTests):
     def test_ystat_format(self):
         requires_yappi()
         self.ystat_format()
-        stats = yappi.YFuncStats()
-        self.assertNotRaises(stats.add, FILENAME)
+        self.assertNotRaises(open_ystats, FILENAME)
+
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_with_builtins(self):
+        requires_yappi()
+        self.with_builtins()
+        stats = open_ystats(FILENAME)
+        self.assertTrue(find_module(stats, '__builtin__'))
+
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_without_builtins(self):
+        requires_yappi()
+        self.without_builtins()
+        stats = open_ystats(FILENAME)
+        self.assertFalse(find_module(stats, '__builtin__'))
 
     @profile.profile(FILENAME)
     def profiled_function(self):
@@ -156,3 +192,23 @@ class FunctionProfileTests(ProfileTests):
     @profile.profile(FILENAME, format="ystat")
     def ystat_format(self):
         pass
+
+    @profile.profile(FILENAME, format="ystat", builtins=False)
+    def without_builtins(self):
+        pass
+
+    @profile.profile(FILENAME, format="ystat", builtins=True)
+    def with_builtins(self):
+        pass
+
+
+# Helpers
+
+def open_ystats(filename):
+    stats = yappi.YFuncStats()
+    stats.add(filename)
+    return stats
+
+
+def find_module(ystats, name):
+    return any(func.module == name for func in ystats)
