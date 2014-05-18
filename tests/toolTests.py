@@ -195,13 +195,13 @@ class ConfigFileTests(TestCase):
                        "    key2    =val2\n"
                        "#key3=val4")
         with ConfigFile(self.tname,
+                        version='3.4.4',
                         sectionStart="# start conf",
-                        sectionEnd="# end conf",
-                        version='3.4.4') as conf:
+                        sectionEnd="# end conf") as conf:
             conf.addEntry("key3", "val3")
             conf.addEntry("key2", "val3")
-        with open(self.tname, 'r') as f:
 
+        with open(self.tname, 'r') as f:
             self.assertEqual(f.read(), "key1=val1\n"
                                        "    key2    =val2\n"
                                        "#key3=val4"
@@ -214,10 +214,11 @@ class ConfigFileTests(TestCase):
                        "        weekly\n"
                        "}\n")
         with ConfigFile(self.tname,
+                        version='3.4.4',
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
-                        version='3.4.4') as conf:
-                    conf.prefixLines("# comment ")
+                        prefix="# comment ") as conf:
+                    conf.prefixLines()
                     conf.prependSection("Some text to\n"
                                         "add at the top\n")
         with open(self.tname, 'r') as f:
@@ -238,30 +239,33 @@ class ConfigFileTests(TestCase):
         )
         self.writeConf(original)
         with ConfigFile(self.tname,
+                        version='3.4.4',
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
-                        version='3.4.4') as conf:
-                    conf.prefixLines("# comment ")
+                        prefix="# comment ") as conf:
+                    conf.prefixLines()
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(),
                              "# comment /var/log/libvirt/libvirtd.log {\n"
                              "# comment         weekly\n"
                              "# comment }\n")
         with ConfigFile(self.tname,
+                        version='3.4.4',
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
-                        version='3.4.4') as conff:
-            conff.unprefixLines("# comment ")
+                        prefix="# comment ") as conff:
+            conff.unprefixLines()
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(), original)
 
     def testRemoveEntireLinePrefix(self):
         self.writeConf("# comment\n")
         with ConfigFile(self.tname,
+                        version='3.4.4',
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
-                        version='3.4.4') as conf:
-            conf.unprefixLines("# comment")
+                        prefix="# comment") as conf:
+            conf.unprefixLines()
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(), "\n")
 
@@ -273,9 +277,10 @@ class ConfigFileTests(TestCase):
                        "# end conf-text-here don't matter\n"
                        "# comment line\n")
         with ConfigFile(self.tname,
+                        version='3.4.4',
                         sectionStart="# start conf",
                         sectionEnd="# end conf",
-                        version='3.4.4') as conf:
+                        prefix="# comment") as conf:
                             conf.removeConf()
         with open(self.tname, 'r') as f:
                     self.assertEqual(f.read(), "key=val\n"
@@ -284,11 +289,11 @@ class ConfigFileTests(TestCase):
 
     def testOutOfContext(self):
         conff = ConfigFile(self.tname,
+                           version='3.4.4',
                            sectionStart="# start conf",
-                           sectionEnd="# end conf",
-                           version='3.4.4')
-        self.assertRaises(RuntimeError, conff.prefixLines, 'a')
-        self.assertRaises(RuntimeError, conff.removeConf, 'a')
+                           sectionEnd="# end conf")
+        self.assertRaises(RuntimeError, conff.prefixLines)
+        self.assertRaises(RuntimeError, conff.removeConf)
 
     def testHasConf(self):
         self.writeConf("key=val\n"
@@ -297,9 +302,9 @@ class ConfigFileTests(TestCase):
                        "all you sections are belong to us\n"
                        "# end conf-3.4.4\n")
         self.assertTrue(ConfigFile(self.tname,
+                                   version='3.4.4',
                                    sectionStart="# start conf",
-                                   sectionEnd="# end conf",
-                                   version='3.4.4').hasConf())
+                                   sectionEnd="# end conf").hasConf())
 
     def testConfRead(self):
         self.writeConf("key=val\n"

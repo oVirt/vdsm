@@ -71,8 +71,12 @@ class ConfigFile(object):
     sections are removed.
     """
 
-    def __init__(self, filename, sectionStart, sectionEnd, version):
-
+    def __init__(self,
+                 filename,
+                 version,
+                 sectionStart='## beginning of configuration section by vdsm',
+                 sectionEnd='## end of configuration section by vdsm',
+                 prefix='# VDSM backup '):
         if not os.path.exists(filename):
             raise OSError(
                 'No such file or directory: %s' % (filename, )
@@ -82,6 +86,7 @@ class ConfigFile(object):
         self.context = False
         self.sectionStart = sectionStart
         self.sectionEnd = sectionEnd
+        self.prefix = prefix
         self.version = version
 
     def __enter__(self):
@@ -116,10 +121,10 @@ class ConfigFile(object):
                     if m:
                         oldentries.add(m.group('key'))
                     if self.prefixRemove:
-                        if line.startswith(self.prefixRemove):
-                            line = line[len(self.prefixRemove):]
+                        if line.startswith(self.prefix):
+                            line = line[len(self.prefix):]
                     if self.prefixAdd:
-                        line = self.prefixAdd + line
+                        line = self.prefix + line
                     oldlines.append(line)
             return oldlines, oldentries
 
@@ -186,20 +191,20 @@ class ConfigFile(object):
         self.section = section
 
     @context
-    def prefixLines(self, prefix):
+    def prefixLines(self):
         """
-        Add 'prefix' to the beginning of each line.
+        Add self.prefix to the beginning of each line.
         No editing is done on new content added by this config file.
         """
-        self.prefixAdd = prefix
+        self.prefixAdd = True
 
     @context
-    def unprefixLines(self, prefix):
+    def unprefixLines(self):
         """
-        Remove 'prefix' from each line starting with it.
+        Remove self.prefix from each line starting with it.
         No editing is done on new content added by this config file.
         """
-        self.prefixRemove = prefix
+        self.prefixRemove = True
 
     @context
     def removeConf(self):
