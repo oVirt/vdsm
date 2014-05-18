@@ -123,11 +123,15 @@ class ConfigFile(object):
                 if self._remove:
                     if (self._rmstate == BEFORE and
                             line.startswith(self._sectionStart)):
-                            self._rmstate = WITHIN
-                    elif self._rmstate == WITHIN and\
-                            line.startswith(self._sectionEnd):
-                            self._rmstate = AFTER
-                            continue
+
+                        self._rmstate = WITHIN
+
+                    elif (self._rmstate == WITHIN and
+                            line.startswith(self._sectionEnd)):
+
+                        self._rmstate = AFTER
+                        continue
+
                 if not self._remove or self._rmstate != WITHIN:
                     if self._prefixRemove:
                         if line.startswith(self._prefix):
