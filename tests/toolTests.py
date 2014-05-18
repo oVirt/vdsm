@@ -186,14 +186,14 @@ class ConfigFileTests(TestCase):
         os.remove(self.tname)
 
     # helper function
-    def writeConf(self, text):
+    def _writeConf(self, text):
         with open(self.tname, 'w') as f:
             f.write(text)
 
     def testAddExistingConf(self):
-        self.writeConf("key1=val1\n"
-                       "    key2    =val2\n"
-                       "#key3=val4")
+        self._writeConf("key1=val1\n"
+                        "    key2    =val2\n"
+                        "#key3=val4")
         with ConfigFile(self.tname,
                         version='3.4.4',
                         sectionStart="# start conf",
@@ -210,9 +210,9 @@ class ConfigFileTests(TestCase):
                                        "# end conf-3.4.4\n")
 
     def testPrefixAndPrepend(self):
-        self.writeConf("/var/log/libvirt/libvirtd.log {\n"
-                       "        weekly\n"
-                       "}\n")
+        self._writeConf("/var/log/libvirt/libvirtd.log {\n"
+                        "        weekly\n"
+                        "}\n")
         with ConfigFile(self.tname,
                         version='3.4.4',
                         sectionStart="# start conf",
@@ -237,7 +237,7 @@ class ConfigFileTests(TestCase):
             "        weekly\n"
             "}\n"
         )
-        self.writeConf(original)
+        self._writeConf(original)
         with ConfigFile(self.tname,
                         version='3.4.4',
                         sectionStart="# start conf",
@@ -259,7 +259,7 @@ class ConfigFileTests(TestCase):
             self.assertEqual(f.read(), original)
 
     def testRemoveEntireLinePrefix(self):
-        self.writeConf("# comment\n")
+        self._writeConf("# comment\n")
         with ConfigFile(self.tname,
                         version='3.4.4',
                         sectionStart="# start conf",
@@ -270,12 +270,12 @@ class ConfigFileTests(TestCase):
             self.assertEqual(f.read(), "\n")
 
     def testRemoveConfSection(self):
-        self.writeConf("key=val\n"
-                       "key=val\n"
-                       "# start conf-text-here don't matter\n"
-                       "all you sections are belong to us\n"
-                       "# end conf-text-here don't matter\n"
-                       "# comment line\n")
+        self._writeConf("key=val\n"
+                        "key=val\n"
+                        "# start conf-text-here don't matter\n"
+                        "all you sections are belong to us\n"
+                        "# end conf-text-here don't matter\n"
+                        "# comment line\n")
         with ConfigFile(self.tname,
                         version='3.4.4',
                         sectionStart="# start conf",
@@ -296,26 +296,26 @@ class ConfigFileTests(TestCase):
         self.assertRaises(RuntimeError, conff.removeConf)
 
     def testHasConf(self):
-        self.writeConf("key=val\n"
-                       "kay=val\n"
-                       "# start conf-3.4.4\n"
-                       "all you sections are belong to us\n"
-                       "# end conf-3.4.4\n")
+        self._writeConf("key=val\n"
+                        "kay=val\n"
+                        "# start conf-3.4.4\n"
+                        "all you sections are belong to us\n"
+                        "# end conf-3.4.4\n")
         self.assertTrue(ConfigFile(self.tname,
                                    version='3.4.4',
                                    sectionStart="# start conf",
                                    sectionEnd="# end conf").hasConf())
 
     def testConfRead(self):
-        self.writeConf("key=val\n"
-                       "key1=val1\n")
+        self._writeConf("key=val\n"
+                        "key1=val1\n")
         conff = ParserWrapper(None)
         conff.read(self.tname)
         self.assertEqual(conff.get('key'), 'val')
 
     def testConfDefaults(self):
-        self.writeConf("key=val\n"
-                       "key1=val1\n")
+        self._writeConf("key=val\n"
+                        "key1=val1\n")
         conff = ParserWrapper({'key2': 'val2'})
         conff.read(self.tname)
         self.assertEqual(conff.get('key2'), 'val2')

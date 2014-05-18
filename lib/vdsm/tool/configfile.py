@@ -36,7 +36,7 @@ import io
 def context(func):
     @functools.wraps(func)
     def inner(*args, **kwargs):
-        if not args[0].context:
+        if not args[0]._context:
             raise RuntimeError("Must be called from a managed context.")
         func(*args, **kwargs)
     return inner
@@ -82,90 +82,90 @@ class ConfigFile(object):
                 'No such file or directory: %s' % (filename, )
             )
 
-        self.filename = filename
-        self.context = False
-        self.sectionStart = sectionStart
-        self.sectionEnd = sectionEnd
-        self.prefix = prefix
-        self.version = version
+        self._filename = filename
+        self._context = False
+        self._sectionStart = sectionStart
+        self._sectionEnd = sectionEnd
+        self._prefix = prefix
+        self._version = version
 
     def __enter__(self):
-        if self.context:
+        if self._context:
             raise RuntimeError("can only enter once")
-        self.entries = {}
-        self.context = True
-        self.prefixRemove = None
-        self.prefixAdd = None
-        self.section = None
-        self.oldmod = os.stat(self.filename).st_mode
-        self.remove = None
-        self.rmstate = BEFORE
+        self._entries = {}
+        self._context = True
+        self._prefixRemove = None
+        self._prefixAdd = None
+        self._section = None
+        self._oldmod = os.stat(self._filename).st_mode
+        self._remove = None
+        self._rmstate = BEFORE
         return self
 
-    def getOldContent(self):
+    def _getOldContent(self):
         confpat = re.compile(r'^\s*(?P<key>[^=\s#]*)\s*=')
         oldlines = []
         oldentries = set()
-        with open(self.filename, 'r') as f:
+        with open(self._filename, 'r') as f:
             for line in f:
-                if self.remove:
-                    if (self.rmstate == BEFORE and
-                            line.startswith(self.sectionStart)):
-                            self.rmstate = WITHIN
-                    elif self.rmstate == WITHIN and\
-                            line.startswith(self.sectionEnd):
-                            self.rmstate = AFTER
+                if self._remove:
+                    if (self._rmstate == BEFORE and
+                            line.startswith(self._sectionStart)):
+                            self._rmstate = WITHIN
+                    elif self._rmstate == WITHIN and\
+                            line.startswith(self._sectionEnd):
+                            self._rmstate = AFTER
                             continue
-                if not self.remove or self.rmstate != WITHIN:
+                if not self._remove or self._rmstate != WITHIN:
                     m = confpat.match(line.rstrip())
                     if m:
                         oldentries.add(m.group('key'))
-                    if self.prefixRemove:
-                        if line.startswith(self.prefix):
-                            line = line[len(self.prefix):]
-                    if self.prefixAdd:
-                        line = self.prefix + line
+                    if self._prefixRemove:
+                        if line.startswith(self._prefix):
+                            line = line[len(self._prefix):]
+                    if self._prefixAdd:
+                        line = self._prefix + line
                     oldlines.append(line)
             return oldlines, oldentries
 
     def _start(self):
-        return "%s-%s\n" % (self.sectionStart, self.version)
+        return "%s-%s\n" % (self._sectionStart, self._version)
 
     def _end(self):
-        return "%s-%s\n" % (self.sectionEnd, self.version)
+        return "%s-%s\n" % (self._sectionEnd, self._version)
 
     def _writeSection(self, f):
         f.write(self._start())
-        f.write(self.section)
+        f.write(self._section)
         f.write(self._end())
 
     def _writeEntries(self, f, oldentries):
         f.write(self._start())
-        for key, val in self.entries.iteritems():
+        for key, val in self._entries.iteritems():
             if key not in oldentries:
                 f.write("{k}={v}\n".format(k=key, v=val))
         f.write(self._end())
 
     def __exit__(self, exec_ty, exec_val, tb):
 
-        self.context = False
+        self._context = False
         if exec_ty is None:
-            fd, tname = tempfile.mkstemp(dir=os.path.dirname(self.filename))
+            fd, tname = tempfile.mkstemp(dir=os.path.dirname(self._filename))
             try:
-                oldlines, oldentries = self.getOldContent()
+                oldlines, oldentries = self._getOldContent()
                 with os.fdopen(fd, 'w', ) as f:
-                    if self.section:
+                    if self._section:
                         self._writeSection(f)
                     f.writelines(oldlines)
-                    if self.entries:
+                    if self._entries:
                         self._writeEntries(f, oldentries)
-                os.rename(tname, self.filename)
-                if self.oldmod != os.stat(self.filename).st_mode:
-                    os.chmod(self.filename, self.oldmod)
+                os.rename(tname, self._filename)
+                if self._oldmod != os.stat(self._filename).st_mode:
+                    os.chmod(self._filename, self._oldmod)
 
                 if selinux.is_selinux_enabled:
                     try:
-                        selinux.restorecon(self.filename)
+                        selinux.restorecon(self._filename)
                     except OSError:
                         pass  # No default label for file
             finally:
@@ -178,7 +178,7 @@ class ConfigFile(object):
         add key=value unless key is already in the file.
         all pairs are added in a comment wrapped section.
         """
-        self.entries[key] = val
+        self._entries[key] = val
 
     @context
     def prependSection(self, section):
@@ -188,7 +188,7 @@ class ConfigFile(object):
 
         Only one section is currently supported.
         """
-        self.section = section
+        self._section = section
 
     @context
     def prefixLines(self):
@@ -196,7 +196,7 @@ class ConfigFile(object):
         Add self.prefix to the beginning of each line.
         No editing is done on new content added by this config file.
         """
-        self.prefixAdd = True
+        self._prefixAdd = True
 
     @context
     def unprefixLines(self):
@@ -204,17 +204,17 @@ class ConfigFile(object):
         Remove self.prefix from each line starting with it.
         No editing is done on new content added by this config file.
         """
-        self.prefixRemove = True
+        self._prefixRemove = True
 
     @context
     def removeConf(self):
-        self.remove = True
+        self._remove = True
 
     def hasConf(self):
         """
         Notice this method can be called out of context since it is read only
         """
-        for line in open(self.filename, 'r'):
+        for line in open(self._filename, 'r'):
             if line == self._start():
                 return True
         return False
