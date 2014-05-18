@@ -126,14 +126,14 @@ class ConfigFile(object):
                             self._rmstate = AFTER
                             continue
                 if not self._remove or self._rmstate != WITHIN:
-                    m = confpat.match(line.rstrip())
-                    if m:
-                        oldentries.add(m.group('key'))
                     if self._prefixRemove:
                         if line.startswith(self._prefix):
                             line = line[len(self._prefix):]
                     if self._prefixAdd:
                         line = self._prefix + line
+                    m = confpat.match(line.rstrip())
+                    if m:
+                        oldentries.add(m.group('key'))
                     # remove this if at 4.0. see  'Backward compatibility'
                     if not self._remove or self._lineComment not in line:
                         oldlines.append(line)
