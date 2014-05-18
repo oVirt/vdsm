@@ -22,6 +22,7 @@ import ConfigParser
 import errno
 import os
 import pstats
+import time
 
 from vdsm import profile
 from vdsm import config
@@ -109,6 +110,34 @@ class ApplicationProfileTests(ProfileTests):
 
     @MonkeyPatch(profile, 'config', make_config(enable='true'))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
+    @MonkeyPatch(profile, '_FORMAT', 'ystat')
+    @MonkeyPatch(profile, '_CLOCK', 'cpu')
+    def test_cpu_clock(self):
+        requires_yappi()
+        profile.start()
+        self.sleep(0.1)
+        profile.stop()
+        stats = open_ystats(FILENAME)
+        name = function_name(self.sleep)
+        func = find_function(stats, __file__, name)
+        self.assertTrue(func.ttot < 0.1)
+
+    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, '_FILENAME', FILENAME)
+    @MonkeyPatch(profile, '_FORMAT', 'ystat')
+    @MonkeyPatch(profile, '_CLOCK', 'wall')
+    def test_wall_clock(self):
+        requires_yappi()
+        profile.start()
+        self.sleep(0.1)
+        profile.stop()
+        stats = open_ystats(FILENAME)
+        name = function_name(self.sleep)
+        func = find_function(stats, __file__, name)
+        self.assertTrue(func.ttot > 0.1)
+
+    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, '_FILENAME', FILENAME)
     def test_is_running(self):
         requires_yappi()
         self.assertFalse(profile.is_running())
@@ -132,6 +161,9 @@ class ApplicationProfileTests(ProfileTests):
             self.assertFalse(profile.is_running())
         finally:
             profile.stop()
+
+    def sleep(self, seconds):
+        time.sleep(seconds)
 
 
 class FunctionProfileTests(ProfileTests):
@@ -181,6 +213,24 @@ class FunctionProfileTests(ProfileTests):
         stats = open_ystats(FILENAME)
         self.assertFalse(find_module(stats, '__builtin__'))
 
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_cpu_clock(self):
+        requires_yappi()
+        self.cpu_clock()
+        stats = open_ystats(FILENAME)
+        name = function_name(self.cpu_clock)
+        func = find_function(stats, __file__, name)
+        self.assertTrue(func.ttot < 0.1)
+
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_wall_clock(self):
+        requires_yappi()
+        self.wall_clock()
+        stats = open_ystats(FILENAME)
+        name = function_name(self.wall_clock)
+        func = find_function(stats, __file__, name)
+        self.assertTrue(func.ttot > 0.1)
+
     @profile.profile(FILENAME)
     def profiled_function(self):
         self.assertTrue(profile.is_running())
@@ -201,6 +251,13 @@ class FunctionProfileTests(ProfileTests):
     def with_builtins(self):
         pass
 
+    @profile.profile(FILENAME, format="ystat", clock="cpu")
+    def cpu_clock(self):
+        time.sleep(0.1)
+
+    @profile.profile(FILENAME, format="ystat", clock="wall")
+    def wall_clock(self):
+        time.sleep(0.1)
 
 # Helpers
 
@@ -212,3 +269,14 @@ def open_ystats(filename):
 
 def find_module(ystats, name):
     return any(func.module == name for func in ystats)
+
+
+def find_function(ystats, module, name):
+    for func in ystats:
+        if func.module == module and func.name == name:
+            return func
+    raise Exception('No such function: %s(%s)' % (module, name))
+
+
+def function_name(meth):
+    return meth.im_class.__name__ + '.' + meth.__name__

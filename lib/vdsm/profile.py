@@ -36,6 +36,7 @@ yappi = None
 _FILENAME = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
 _FORMAT = config.get('vars', 'profile_format')
 _BUILTINS = config.getboolean('vars', 'profile_builtins')
+_CLOCK = config.get('vars', 'profile_clock')
 
 _lock = threading.Lock()
 
@@ -47,7 +48,7 @@ class Error(Exception):
 def start():
     """ Starts application wide profiling """
     if is_enabled():
-        _start_profiling(_BUILTINS)
+        _start_profiling(_BUILTINS, _CLOCK)
 
 
 def stop():
@@ -65,7 +66,7 @@ def is_running():
         return yappi and yappi.is_running()
 
 
-def profile(filename, format=_FORMAT, builtins=_BUILTINS):
+def profile(filename, format=_FORMAT, builtins=_BUILTINS, clock=_CLOCK):
     """
     Profile decorated function, saving profile to filename using format.
 
@@ -75,7 +76,7 @@ def profile(filename, format=_FORMAT, builtins=_BUILTINS):
     def decorator(f):
         @wraps(f)
         def wrapper(*a, **kw):
-            _start_profiling(builtins)
+            _start_profiling(builtins, clock)
             try:
                 return f(*a, **kw)
             finally:
@@ -84,7 +85,7 @@ def profile(filename, format=_FORMAT, builtins=_BUILTINS):
     return decorator
 
 
-def _start_profiling(builtins):
+def _start_profiling(builtins, clock):
     global yappi
     logging.debug("Starting profiling")
     with _lock:
@@ -94,6 +95,7 @@ def _start_profiling(builtins):
         # that thinks they own the single process profiler.
         if yappi.is_running():
             raise Error('Profiler is already running')
+        yappi.set_clock_type(clock)
         yappi.start(builtins=builtins)
 
 
