@@ -43,20 +43,36 @@ def context(func):
 
 
 class ConfigFile(object):
+    """
+    During installation vdsm is responsible for editing configuration files of
+    its dependencies - libvirtd.conf, qemu.conf and others.
+
+    This class represents common operations done on configuration files.
+
+    implementation:
+    writing methods must be called inside a ConfigFile context. When
+    the context is closed (__exit__ is called) changes are written to a
+    temporary file that then replaces the original file.
+    file's mode is reapplied if needed and selinux context is restored.
+
+    configuration versioning:
+    sections added (by prependSection() or addEntry()) will wrapped between:
+    'sectionStart'-'version'\n
+    ...
+    'sectionEnd'-'version'\n.
+
+    hasConf checks if a file has up to date configuration so it also tests for
+    'sectionStart'-'version'\n
+
+    When removing old configuration we remove old as well. so all
+    'sectionStart'.*
+    ...
+    'sectionEnd'.*.
+    sections are removed.
+    """
 
     def __init__(self, filename, sectionStart, sectionEnd, version):
-        """
-        configuration versioning:
-        When adding a section or a list of entries they will be
-        prepended and appended;
-        'sectionStart'-'version'\n
-        ...
-        'sectionEnd'-'version'\n.
 
-        When removing/checking existing we search for the section between lines
-        starting with 'sectionStart' and 'sectionEnd'. so we read and remove
-        previous versions and add a new one.
-        """
         if not os.path.exists(filename):
             raise OSError(
                 'No such file or directory: %s' % (filename, )
@@ -155,6 +171,7 @@ class ConfigFile(object):
     def addEntry(self, key, val):
         """
         add key=value unless key is already in the file.
+        all pairs are added in a comment wrapped section.
         """
         self.entries[key] = val
 
@@ -162,8 +179,9 @@ class ConfigFile(object):
     def prependSection(self, section):
         """
         add 'section' in the beginning of the file.
-        section is wrapped with sectionStart and sectionEnd.
-        Only one section is currently allowed.
+        section is added in a comment wrapped section.
+
+        Only one section is currently supported.
         """
         self.section = section
 
@@ -189,7 +207,7 @@ class ConfigFile(object):
 
     def hasConf(self):
         """
-        Notice this method is called out of context since it is read only
+        Notice this method can be called out of context since it is read only
         """
         for line in open(self.filename, 'r'):
             if line == self._start():
