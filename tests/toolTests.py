@@ -271,6 +271,7 @@ class ConfigFileTests(TestCase):
 
     def testRemoveConfSection(self):
         self._writeConf("key=val\n"
+                        "remove me!(see 'Backward compatibility')# by vdsm\n"
                         "key=val\n"
                         "# start conf-text-here don't matter\n"
                         "all you sections are belong to us\n"

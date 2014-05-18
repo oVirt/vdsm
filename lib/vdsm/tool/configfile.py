@@ -69,6 +69,12 @@ class ConfigFile(object):
     ...
     'sectionEnd'.*.
     sections are removed.
+
+    Backward compatibility:
+    (remove when upgrade from 3.0 is no longer supported!)
+    prior to adding comment wrapped sections vdsm added single lines followed
+    by a 'by vdsm' comment. such lines are still removed on removeConf().
+    lineComment parameter indicates the content of comment.
     """
 
     def __init__(self,
@@ -76,7 +82,8 @@ class ConfigFile(object):
                  version,
                  sectionStart='## beginning of configuration section by vdsm',
                  sectionEnd='## end of configuration section by vdsm',
-                 prefix='# VDSM backup '):
+                 prefix='# VDSM backup ',
+                 lineComment='by vdsm'):
         if not os.path.exists(filename):
             raise OSError(
                 'No such file or directory: %s' % (filename, )
@@ -87,6 +94,8 @@ class ConfigFile(object):
         self._sectionStart = sectionStart
         self._sectionEnd = sectionEnd
         self._prefix = prefix
+        # remove 'lineComment' at 4.0. see  'Backward compatibility'
+        self._lineComment = lineComment
         self._version = version
 
     def __enter__(self):
@@ -125,7 +134,9 @@ class ConfigFile(object):
                             line = line[len(self._prefix):]
                     if self._prefixAdd:
                         line = self._prefix + line
-                    oldlines.append(line)
+                    # remove this if at 4.0. see  'Backward compatibility'
+                    if not self._remove or self._lineComment not in line:
+                        oldlines.append(line)
             return oldlines, oldentries
 
     def _start(self):
