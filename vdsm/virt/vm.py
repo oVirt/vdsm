@@ -5041,13 +5041,23 @@ class Vm(object):
             getElementsByTagName('graphics')
 
         for gxml in graphicsXml:
+            port = gxml.getAttribute('port')
+            tlsPort = gxml.getAttribute('tlsPort')
+            graphicsType = gxml.getAttribute('type')
+
+            for d in self._devices[GRAPHICS_DEVICES]:
+                if d.device == graphicsType:
+                    if port:
+                        d.port = port
+                    if tlsPort:
+                        d.tlsPort = tlsPort
+                    break
+
             for dev in self.conf['devices']:
                 if (dev.get('type') == GRAPHICS_DEVICES and
-                   dev.get('device') == gxml.getAttribute('type')):
-                    port = gxml.getAttribute('port')
+                   dev.get('device') == graphicsType):
                     if port:
                         dev['port'] = port
-                    tlsPort = gxml.getAttribute('tlsPort')
                     if tlsPort:
                         dev['tlsPort'] = tlsPort
                     break

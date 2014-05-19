@@ -1277,6 +1277,38 @@ class TestVm(TestCaseBase):
             self.assertEqual(self._xml_sanitizer(drives[0]._deviceXML),
                              self._xml_sanitizer(expected_xml))
 
+    def testGetUnderlyingGraphicsDeviceInfo(self):
+        port = '6000'
+        tlsPort = '6001'
+        graphicsXML = """<?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm"
+          xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+          <devices>
+            <graphics autoport="yes" keymap="en-us" passwd="*****"
+                  passwdValidTo="1970-01-01T00:00:01" port="%s"
+                  tlsPort="%s" type="spice">
+              <listen network="vdsm-vmDisplay" type="network"/>
+            </graphics>
+         </devices>
+        </domain>""" % (port, tlsPort)
+        with FakeVM() as fake:
+            graphConf = {
+                'type': vm.GRAPHICS_DEVICES, 'device': 'spice',
+                'port': '-1', 'tlsPort': '-1'}
+            graphDev = vm.GraphicsDevice(
+                fake.conf, fake.log, device='spice', port='-1', tlsPort='-1')
+
+            fake.conf['devices'] = [graphConf]
+            fake._devices = {vm.GRAPHICS_DEVICES: [graphDev]}
+            fake._lastXMLDesc = graphicsXML
+
+            fake._getUnderlyingGraphicsDeviceInfo()
+
+            self.assertEqual(graphDev.port, port)
+            self.assertEqual(graphDev.tlsPort, tlsPort)
+            self.assertEqual(graphDev.port, graphConf['port'])
+            self.assertEqual(graphDev.tlsPort, graphConf['tlsPort'])
+
 
 class FakeGuestAgent(object):
     def getGuestInfo(self):
