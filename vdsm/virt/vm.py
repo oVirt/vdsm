@@ -5219,9 +5219,19 @@ class Vm(object):
                                    "during migration at destination host" %
                                    devType)
 
-        for deviceXML, alias in _devicesWithAlias(xml):
-            if alias in aliasToDevice:
-                aliasToDevice[alias]._deviceXML = deviceXML.toxml()
+        for deviceXML in vmxml.all_devices(xml):
+            aliasElement = deviceXML.getElementsByTagName('alias')
+            if aliasElement:
+                alias = aliasElement[0].getAttribute('name')
+
+                if alias in aliasToDevice:
+                    aliasToDevice[alias]._deviceXML = deviceXML.toxml()
+            elif deviceXML.tagName == GRAPHICS_DEVICES:
+                # graphics device do not have aliases, must match by type
+                graphicsType = deviceXML.getAttribute('type')
+                for devObj in self._devices[GRAPHICS_DEVICES]:
+                    if devObj.device == graphicsType:
+                        devObj._deviceXML = deviceXML.toxml()
 
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""
