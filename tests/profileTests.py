@@ -23,6 +23,7 @@ import errno
 import os
 import pstats
 import time
+import threading
 
 from vdsm import profile
 from vdsm import config
@@ -259,6 +260,75 @@ class FunctionProfileTests(ProfileTests):
     def wall_clock(self):
         time.sleep(0.1)
 
+
+class ThreadsProfileTests(ProfileTests):
+
+    def setUp(self):
+        self.thread = None
+        self.ready = threading.Event()
+
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_new_threads(self):
+        # The easy case - threads started after yappi was started
+        requires_yappi()
+        self.new_threads()
+        stats = open_ystats(FILENAME)
+        name = function_name(self.worker_function)
+        func = find_function(stats, __file__, name)
+        self.assertEquals(func.ncall, 1)
+
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_running_threads(self):
+        # The harder case - threads started before yappi was started
+        requires_yappi()
+        self.start_thread()
+        self.running_threads()
+        stats = open_ystats(FILENAME)
+        name = function_name(self.worker_function)
+        func = find_function(stats, __file__, name)
+        self.assertEquals(func.ncall, 1)
+
+    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    def test_without_threads(self):
+        requires_yappi()
+        self.without_threads()
+        stats = open_ystats(FILENAME)
+        name = function_name(self.worker_function)
+        self.assertRaises(NotFound, find_function, stats, __file__, name)
+
+    @profile.profile(FILENAME, format="ystat", threads=True)
+    def new_threads(self):
+        self.start_thread()
+        self.ready.set()
+        self.join_thread()
+
+    @profile.profile(FILENAME, format="ystat", threads=True)
+    def running_threads(self):
+        self.ready.set()
+        self.join_thread()
+
+    @profile.profile(FILENAME, format="ystat", threads=False)
+    def without_threads(self):
+        self.start_thread()
+        self.ready.set()
+        self.join_thread()
+
+    def start_thread(self):
+        self.thread = threading.Thread(target=self.worker)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def join_thread(self):
+        self.thread.join()
+
+    def worker(self):
+        self.ready.wait()
+        self.worker_function()
+
+    def worker_function(self):
+        pass
+
+
 # Helpers
 
 def open_ystats(filename):
@@ -271,11 +341,15 @@ def find_module(ystats, name):
     return any(func.module == name for func in ystats)
 
 
+class NotFound(Exception):
+    pass
+
+
 def find_function(ystats, module, name):
     for func in ystats:
         if func.module == module and func.name == name:
             return func
-    raise Exception('No such function: %s(%s)' % (module, name))
+    raise NotFound('No such function: %s(%s)' % (module, name))
 
 
 def function_name(meth):
