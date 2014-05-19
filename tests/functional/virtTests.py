@@ -280,6 +280,14 @@ class VirtTest(VirtTestBase):
             self._verifyDevices(vm)
 
     @requireKVM
+    def testHeadlessVm(self):
+        customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
+                         'vmName': 'testHeadlessVm'}
+
+        with RunningVm(self.vdsm, customization) as vm:
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+
+    @requireKVM
     @permutations([['localfs'], ['iscsi'], ['nfs']])
     def testVmWithStorage(self, backendType):
         disk = storage.StorageTest()

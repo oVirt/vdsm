@@ -136,12 +136,20 @@ class Graphics(Base):
 
 
 def isSupportedDisplayType(vmParams):
-    if vmParams.get('display') not in ('vnc', 'qxl', 'qxlnc'):
-        return False
+    display = vmParams.get('display')
+    if display is not None:
+        if display not in ('vnc', 'qxl', 'qxlnc'):
+            return False
+    # else:
+    # either headless VM or modern Engine which just sends the
+    # graphics device(s). Go ahead anyway.
+
     for dev in vmParams.get('devices', ()):
         if dev['type'] == hwclass.GRAPHICS:
             if dev['device'] not in ('spice', 'vnc'):
                 return False
+
+    # either no graphics device or correct graphic device(s)
     return True
 
 
@@ -164,16 +172,18 @@ def initLegacyConf(conf):
 
 def updateLegacyConf(conf):
     dev = getFirstGraphics(conf)
-    if 'port' in dev:
-        conf['displayPort'] = dev['port']
-    if 'tlsPort' in dev:
-        conf['displaySecurePort'] = dev['tlsPort']
+    if dev:
+        if 'port' in dev:
+            conf['displayPort'] = dev['port']
+        if 'tlsPort' in dev:
+            conf['displaySecurePort'] = dev['tlsPort']
 
 
 def getFirstGraphics(conf):
     for dev in conf.get('devices', ()):
         if dev.get('type') == hwclass.GRAPHICS:
             return dev
+    return None
 
 
 def _getNetworkIp(network):

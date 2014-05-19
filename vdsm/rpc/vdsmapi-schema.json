@@ -3621,13 +3621,17 @@
 #
 # @devices:               #optional An array of VM devices present
 #
-# @display:               The type of display
+# @display:               #optional The type of display
+#                         (made optional in version 4.17.0)
 #
-# @displayIp:             The IP address to use for accessing the VM display
+# @displayIp:             #optional The IP address to use for accessing
+#                         the VM display (made optional in version 4.17.0)
 #
-# @displayPort:           The port in use for unencrypted display data
+# @displayPort:           #optional The port in use for unencrypted display
+#                         data (made optional in version 4.17.0)
 #
-# @displaySecurePort:     The port in use for encrypted display data
+# @displaySecurePort:     #optional The port in use for encrypted display data
+#                         (made optional in version 4.17.0)
 #
 # @emulatedMachine:       #optional The machine specification being emulated
 #
@@ -3699,11 +3703,12 @@
 {'type': 'VmDefinition',
  'data': {'acpiEnable': 'bool', 'clientIp': 'str', '*copyPasteEnable': 'bool',
           '*cpuShares': 'str', '*cpuType': 'str', '*custom': 'StringMap',
-          '*devices': ['VmDevice'], 'display': 'VmDisplayType',
-          'displayIp': 'str', 'displayPort': 'int', 'displaySecurePort': 'int',
-          '*emulatedMachine': 'str', '*fileTransferEnable': 'bool',
-          '*hypervEnable': 'bool', '*keyboardLayout': 'str',
-          'kvmEnable': 'bool', '*maxVCpus': 'uint', 'memSize': 'uint',
+          '*devices': ['VmDevice'], '*display': 'VmDisplayType',
+          '*displayIp': 'str', '*displayPort': 'int',
+          '*displaySecurePort': 'int', '*emulatedMachine': 'str',
+          '*fileTransferEnable': 'bool', '*hypervEnable': 'bool',
+          '*keyboardLayout': 'str', 'kvmEnable': 'bool',
+          '*maxVCpus': 'uint', 'memSize': 'uint',
           'memGuaranteedSize': 'uint', 'nicModel': 'str', 'nice': 'int',
           '*pauseCode': 'str', 'pid': 'uint', 'smp': 'uint',
           '*smpCoresPerSocket': 'uint', '*smpThreadsPerCore': 'uint',
@@ -3732,7 +3737,8 @@
 #
 # @devices:               #optional An array of VM devices requested
 #
-# @display:               The type of display
+# @display:               #optional The type of display
+#                         (made optional in version 4.17.0)
 #
 # @hypervEnable:          #optional Enables hyperv specific optimizations for
 #                         the Guest OS. (new in version 4.16.0)
@@ -3773,7 +3779,7 @@
 {'type': 'VmParameters',
  'data': {'acpiEnable': 'bool', '*bootMenuEnable': 'bool',
           '*cpuShares': 'str', '*custom': 'StringMap',
-          '*devices': ['VmDevice'], 'display': 'VmDisplayType',
+          '*devices': ['VmDevice'], '*display': 'VmDisplayType',
           '*hypervEnable': 'bool', 'kvmEnable': 'bool', 'memSize': 'uint',
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
@@ -4064,7 +4070,8 @@
 #
 # @devices:               An array of VM devices requested
 #
-# @display:               The type of display
+# @display:               #optional The type of display
+#                         (made optional in version 4.17.0)
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
 #
@@ -4089,7 +4096,8 @@
 #
 # @memGuaranteedSize:     The amount of memory guaranteed to the VM in MB
 #
-# @displaySecurePort:     The port in use for encrypted display data
+# @displaySecurePort:     #optional The port in use for encrypted display data
+#                         (made optional in version 4.17.0)
 #
 # @spiceSecureChannels:   Secure space channels comma separated
 #
@@ -4111,11 +4119,13 @@
 # @guestFQDN:             Fully qualified domain name of the guest OS.
 #                         (Reported by the guest agent)
 #
-# @displayIp:             The IP address to use for accessing the VM display
+# @displayIp:             #optional The IP address to use for accessing the
+#                         VM display (made optional in version 4.17.0)
 #
 # @keyboardLayout:        The keyboard layout string (eg. 'en-us')
 #
-# @displayPort:           The port in use for unencrypted display data
+# @displayPort:           #optional The port in use for unencrypted display
+#                         data (made optional in version 4.17.0)
 #
 # @guestIPs:              A space separated string of assigned IPv4 addresses
 #
@@ -4149,15 +4159,15 @@
 ##
 {'type': 'VMFullInfo',
  'data': {'acpiEnable': 'bool', 'custom': 'StringMap', 'devices': ['VmDevice'],
-          'display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
+          '*display': 'VmDisplayType', 'kvmEnable': 'bool', 'memSize': 'uint',
           'nice': 'int', 'smp': 'uint', 'smpCoresPerSocket': 'uint',
           'timeOffset': 'uint', 'transparentHugePages': 'bool', 'vmId': 'UUID',
           'vmName': 'str', 'vmType': 'VmType', 'memGuaranteedSize': 'uint',
-          'displaySecurePort': 'uint', 'spiceSecureChannels': 'str',
+          '*displaySecurePort': 'uint', 'spiceSecureChannels': 'str',
           'username': 'str', 'emulatedMachine': 'str', 'pid': 'uint',
           'spiceSslCipherSuite': 'str', 'cpuType': 'str', 'pauseCode': 'str',
-          'guestFQDN': 'str', 'displayIp': 'str', 'keyboardLayout': 'str',
-          'displayPort': 'uint', 'guestIPs': 'str',
+          'guestFQDN': 'str', '*displayIp': 'str', 'keyboardLayout': 'str',
+          '*displayPort': 'uint', 'guestIPs': 'str',
           'guestDiskMapping': 'GuestDisksMappingMap',
           'smartcardEnable': 'bool', 'nicModel': 'VmInterfaceDeviceModel',
           'pitReinjection': 'bool', 'status': 'str', 'statusTime': 'uint',
@@ -7146,12 +7156,16 @@
 # @vmId:               The UUID of the Vm
 #
 # @displayPort:        The port in use for unencrypted display data
+#                      (made optional in version 4.17.0)
 #
-# @displaySecurePort:  The port in use for encrypted display data
+# @displaySecurePort:  #optional The port in use for encrypted display data
+#                      (made optional in version 4.17.0)
 #
-# @displayType:        The type of display in use
+# @displayType:        #optional The type of display in use
+#                      (made optional in version 4.17.0)
 #
-# @displayIp:          The IP address to use for accessing the VM display
+# @displayIp:          #optional The IP address to use for accessing the
+#                      VM display (made optional in version 4.17.0)
 #
 # @pid:                The process ID of the underlying qemu process
 #
@@ -7250,8 +7264,9 @@
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
- 'data': {'vmId': 'UUID', 'displayPort': 'uint', 'displaySecurePort': 'uint',
-          'displayType': 'VmDisplayType', 'displayIp': 'str', 'pid': 'uint',
+ 'data': {'vmId': 'UUID',
+          '*displayPort': 'uint', '*displaySecurePort': 'uint',
+          '*displayType': 'VmDisplayType', '*displayIp': 'str', 'pid': 'uint',
           'vmType': 'VmType', 'kvmEnable': 'bool',
           'network': 'NetworkInterfaceStatsMap',
           'disks': 'VmDiskStatsMap', 'monitorResponse': 'int',

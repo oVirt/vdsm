@@ -591,13 +591,19 @@ class Vm(object):
             devType = DEFAULT_VIDEOS[self.arch]
         elif self.hasSpice:
             devType = 'qxl'
+        else:
+            devType = None
 
-        monitors = int(self.conf.get('spiceMonitors', '1'))
-        vram = '65536' if (monitors <= 2) else '32768'
-        for idx in range(monitors):
-            vcards.append({'type': hwclass.VIDEO,
-                           'specParams': {'vram': vram},
-                           'device': devType})
+        if devType:
+            # this method is called only in the ancient Engines compatibility
+            # path. But ancient Engines do not support headless VMs, as they
+            # will not stop sending display data all of sudden.
+            monitors = int(self.conf.get('spiceMonitors', '1'))
+            vram = '65536' if (monitors <= 2) else '32768'
+            for idx in range(monitors):
+                vcards.append({'type': hwclass.VIDEO,
+                               'specParams': {'vram': vram},
+                               'device': devType})
 
         return vcards
 
@@ -605,6 +611,12 @@ class Vm(object):
         """
         Normalize graphics device provided by conf.
         """
+
+        # this method needs to cope both with ancient Engines and with
+        # recent Engines unaware of graphic devices.
+        if 'display' not in self.conf:
+            return []
+
         return [{
             'type': hwclass.GRAPHICS,
             'device': (
@@ -1493,13 +1505,16 @@ class Vm(object):
                 'tlsPort': dev.tlsPort,
                 'ipAddress': dev.specParams.get('displayIp', '0')}
 
-        return {
+        stats = {
             'displayInfo': [getInfo(dev)
-                            for dev in self._devices[hwclass.GRAPHICS]],
-            'displayType': self.conf['display'],
-            'displayPort': self.conf['displayPort'],
-            'displaySecurePort': self.conf['displaySecurePort'],
-            'displayIp': self.conf['displayIp']}
+                            for dev in self._devices[hwclass.GRAPHICS]]}
+        if 'display' in self.conf:
+            stats['displayType'] = self.conf['display']
+            stats['displayPort'] = self.conf['displayPort']
+            stats['displaySecurePort'] = self.conf['displaySecurePort']
+            stats['displayIp'] = self.conf['displayIp']
+        # else headless VM
+        return stats
 
     def _getGuestStats(self):
         stats = self.guestAgent.getGuestInfo()
@@ -3527,7 +3542,11 @@ class Vm(object):
         setTicket defaults to the first graphic device.
         use updateDevice to select the device.
         """
-        graphics = self._domain.get_device_elements('graphics')[0]
+        try:
+            graphics = self._domain.get_device_elements('graphics')[0]
+        except IndexError:
+            return response.error('ticketErr',
+                                  'no graphics devices configured')
         return self._setTicketForGraphicDev(
             graphics, otp, seconds, connAct, params)
 

@@ -202,7 +202,7 @@ class VM(APIBase):
                     self.log.error("Error restoring VM parameters",
                                    exc_info=True)
 
-            requiredParams = ['vmId', 'memSize', 'display']
+            requiredParams = ['vmId', 'memSize']
             for param in requiredParams:
                 if param not in vmParams:
                     self.log.error('Missing required parameter %s' % (param))

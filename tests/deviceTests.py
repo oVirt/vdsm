@@ -134,6 +134,11 @@ class TestVmDevices(XMLTestCase):
                 devs = testvm.devSpecMapFromConf()
                 self.assertTrue(devs['graphics'])
 
+    def testGraphicDeviceHeadless(self):
+        with fake.VM(self.conf) as testvm:
+            devs = testvm.devSpecMapFromConf()
+            self.assertFalse(devs['graphics'])
+
     def testGraphicsDeviceMixed(self):
         """
         if proper Graphics Devices are supplied, display* params must be
@@ -163,6 +168,11 @@ class TestVmDevices(XMLTestCase):
         conf = {'display': 'rdp'}
         conf.update(self.conf)
         self.assertFalse(vmdevices.graphics.isSupportedDisplayType(conf))
+
+    def testGraphicDeviceHeadlessSupported(self):
+        conf = {}
+        conf.update(self.conf)
+        self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
 
     def testHasSpiceLegacy(self):
         for conf in self.confDisplaySpice:
