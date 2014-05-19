@@ -4855,7 +4855,8 @@ class Vm(object):
         device of each type (sdl, vnc, spice) is supported
         """
         graphicsXml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0].getElementsByTagName('graphics')[0]
+            getElementsByTagName('devices')[0]. \
+            getElementsByTagName('graphics')[0]
 
         graphicsType = graphicsXml.getAttribute('type')
         for dev in self.conf['devices']:
