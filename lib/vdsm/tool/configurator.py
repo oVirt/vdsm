@@ -134,8 +134,6 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         for cfile, content in self.FILES.items():
             content['configure'](self, content, vdsmConfiguration)
 
-        sys.stdout.write("Reconfiguration of libvirt is done.\n")
-
     def validate(self):
         """
         Validate conflict in configured files
@@ -713,6 +711,7 @@ def configure(*args):
     sys.stdout.write("\nRunning configure...\n")
     for c in configurer_to_trigger:
         c.configure()
+        sys.stdout.write("Reconfiguration of %s is done.\n" % (c.getName(),))
 
     for s in reversed(services):
         service.service_start(s)
