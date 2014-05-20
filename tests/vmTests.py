@@ -1038,31 +1038,38 @@ class TestVmDevices(TestCaseBase):
             'smp': '8', 'maxVCpus': '160',
             'memSize': '1024', 'memGuaranteedSize': '512'}
 
-        self.confDisplay = (
+        self.confDisplayVnc = (
             {'display': 'vnc', 'displayNetwork': 'vmDisplay'},
 
             {'display': 'vnc', 'displayPort': '-1', 'displayNetwork':
-             'vmDisplay', 'keyboardLayout': 'en-us'},
+             'vmDisplay', 'keyboardLayout': 'en-us'})
 
+        self.confDisplaySpice = (
             {'display': 'qxl', 'displayNetwork': 'vmDisplay'},
 
             {'display': 'qxl', 'displayPort': '-1',
              'displaySecurePort': '-1'})
 
-        self.confDeviceGraphics = (
+        self.confDeviceGraphicsVnc = (
             ({'type': 'graphics', 'device': 'vnc'},),
 
             ({'type': 'graphics', 'device': 'vnc', 'port': '-1',
                 'specParams': {
                     'displayNetwork': 'vmDisplay',
-                    'keyMap': 'en-us'}},),
+                    'keyMap': 'en-us'}},))
 
+        self.confDeviceGraphicsSpice = (
             ({'type': 'graphics', 'device': 'spice'},),
 
             ({'type': 'graphics', 'device': 'spice', 'port': '-1',
                 'tlsPort': '-1', 'specParams': {
                     'spiceSecureChannels':
                     'smain,sinputs,scursor,splayback,srecord,sdisplay'}},))
+
+        self.confDisplay = self.confDisplayVnc + self.confDisplaySpice
+
+        self.confDeviceGraphics = (self.confDeviceGraphicsVnc +
+                                   self.confDeviceGraphicsSpice)
 
     def testGraphicsDeviceLegacy(self):
         for conf in self.confDisplay:
@@ -1090,3 +1097,33 @@ class TestVmDevices(TestCaseBase):
                     self.assertEqual(len(devs['graphics']), 1)
                     self.assertEqual(devs['graphics'][0]['device'],
                                      dev[0]['device'])
+
+    def testGraphicsDeviceSanityLegacy(self):
+        for conf in self.confDisplay:
+            conf.update(self.conf)
+            self.assertTrue(vm.GraphicsDevice.isSupportedDisplayType(conf))
+
+    def testGraphicDeviceUnsupported(self):
+        conf = {'display': 'rdp'}
+        conf.update(self.conf)
+        self.assertFalse(vm.GraphicsDevice.isSupportedDisplayType(conf))
+
+    def testHasSpiceLegacy(self):
+        for conf in self.confDisplaySpice:
+            conf.update(self.conf)
+            with FakeVM(conf) as fake:
+                self.assertTrue(fake.hasSpice)
+
+        for conf in self.confDisplayVnc:
+            conf.update(self.conf)
+            with FakeVM(conf) as fake:
+                self.assertFalse(fake.hasSpice)
+
+    def testHasSpice(self):
+        for dev in self.confDeviceGraphicsSpice:
+            with FakeVM(self.conf, dev) as fake:
+                self.assertTrue(fake.hasSpice)
+
+        for dev in self.confDeviceGraphicsVnc:
+            with FakeVM(self.conf, dev) as fake:
+                self.assertFalse(fake.hasSpice)
