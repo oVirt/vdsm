@@ -3178,6 +3178,23 @@ class Vm(object):
         raise LookupError('Configuration of device identified by alias %s not'
                           'found' % alias)
 
+    def _lookupDeviceByPath(self, path):
+        for dev in self._devices[DISK_DEVICES][:]:
+            try:
+                if dev.path == path:
+                    return dev
+            except AttributeError:
+                continue
+        raise LookupError('Device instance for device with path {0} not found'
+                          ''.format(path))
+
+    def _lookupConfByPath(self, path):
+        for devConf in self.conf['devices'][:]:
+            if devConf.get('path') == path:
+                return devConf
+        raise LookupError('Configuration of device with path {0} not found'
+                          ''.format(path))
+
     def _updateInterfaceDevice(self, params):
         try:
             netDev = self._lookupDeviceByAlias(NIC_DEVICES, params['alias'])
