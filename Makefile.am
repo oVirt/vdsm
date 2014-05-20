@@ -63,6 +63,7 @@ PEP8_BLACKLIST = \
 
 PEP8_WHITELIST = \
 	vdsm-tool/vdsm-tool \
+	vdsm/supervdsmServer \
 	$(NULL)
 
 

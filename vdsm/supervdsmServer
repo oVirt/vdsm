@@ -265,8 +265,8 @@ class _SuperVdsm(object):
     @logDecorator
     def appropriateDevice(self, guid, thiefId):
         ruleFile = _UDEV_RULE_FILE_NAME % (guid, thiefId)
-        rule = 'SYMLINK=="mapper/%s", OWNER="%s", GROUP="%s"\n' % (guid,
-               DISKIMAGE_USER, DISKIMAGE_GROUP)
+        rule = 'SYMLINK=="mapper/%s", OWNER="%s", GROUP="%s"\n' % (
+            guid, DISKIMAGE_USER, DISKIMAGE_GROUP)
         with open(ruleFile, "w") as rf:
             self.log.debug("Creating rule %s: %r", ruleFile, rule)
             rf.write(rule)
