@@ -5060,7 +5060,8 @@ class Vm(object):
 
     def _updateLegacyConf(self, dev):
         self.conf['display'] = 'qxl' if dev['device'] == 'spice' else 'vnc'
-        self.conf['displayPort'] = dev['port']
+        if 'port' in dev:
+            self.conf['displayPort'] = dev['port']
         if 'tlsPort' in dev:
             self.conf['displaySecurePort'] = dev['tlsPort']
 
