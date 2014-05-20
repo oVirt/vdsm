@@ -416,11 +416,19 @@ class FileVolume(volume.Volume):
         """
         return self.getMetaParam(volume.IMAGE)
 
-    def setParent(self, puuid):
+    def setParentMeta(self, puuid):
         """
-        Set parent volume UUID
+        Set parent volume UUID in Volume metadata.  This operation can be done
+        by an HSM while it is using the volume and by an SPM when no one is
+        using the volume.
         """
         self.setMetaParam(volume.PUUID, puuid)
+
+    def setParentTag(self, puuid):
+        """
+        For file volumes we do not use any LV tags
+        """
+        pass
 
     def setImage(self, imgUUID):
         """

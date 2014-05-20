@@ -898,6 +898,14 @@ class Volume(object):
                                                               puuid)
         return None
 
+    def setParent(self, puuid):
+        """
+        Set the parent volume UUID.  This information can be stored in multiple
+        places depending on the underlying volume type.
+        """
+        self.setParentTag(puuid)
+        self.setParentMeta(puuid)
+
     def getVolumePath(self):
         """
         Get the path of the volume file/link

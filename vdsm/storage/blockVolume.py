@@ -470,14 +470,20 @@ class BlockVolume(volume.Volume):
         """
         return self.getVolumeTag(TAG_PREFIX_IMAGE)
 
-    def setParent(self, puuid):
+    def setParentMeta(self, puuid):
         """
-        Set parent volume UUID
+        Set parent volume UUID in Volume metadata.  This operation can be done
+        by an HSM while it is using the volume and by an SPM when no one is
+        using the volume.
+        """
+        self.setMetaParam(volume.PUUID, puuid)
+
+    def setParentTag(self, puuid):
+        """
+        Set parent volume UUID in Volume tags.  Since this operation modifies
+        LV metadata it may only be performed by an SPM.
         """
         self.changeVolumeTag(TAG_PREFIX_PARENT, puuid)
-        # FIXME In next version we should remove PUUID, as it is saved on lvm
-        # tags
-        self.setMetaParam(volume.PUUID, puuid)
 
     def setImage(self, imgUUID):
         """
