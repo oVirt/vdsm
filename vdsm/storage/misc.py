@@ -189,29 +189,6 @@ def getProcCtime(pid):
     return str(ctime)
 
 
-def _readfile(name, buffersize=None):
-    cmd = [constants.EXT_DD]
-
-    cmd.append("iflag=%s" % DIRECTFLAG)
-    cmd.append("if=%s" % name)
-
-    if buffersize:
-        cmd.extend(["bs=%d" % buffersize, "count=1"])
-    (rc, out, err) = execCmd(cmd, sudo=False)
-    if rc:
-        raise se.MiscFileReadException(name)
-
-    return rc, out, err
-
-
-def readfile(name, buffersize=None):
-    """
-    Read the content of the file using /bin/dd command
-    """
-    _, out, _ = _readfile(name, buffersize)
-    return out
-
-
 _readspeed_regex = re.compile(
     "(?P<bytes>\d+) bytes? \([\de\-.]+ [kMGT]*B\) copied, "
     "(?P<seconds>[\de\-.]+) s, "

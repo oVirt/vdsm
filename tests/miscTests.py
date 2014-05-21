@@ -36,7 +36,7 @@ from vdsm import utils
 import storage.outOfProcess as oop
 import storage.misc as misc
 import storage.fileUtils as fileUtils
-from testValidation import brokentest, checkSudo
+from testValidation import checkSudo
 
 EXT_CHMOD = "/bin/chmod"
 EXT_CHOWN = "/bin/chown"
@@ -885,33 +885,6 @@ class CleanUpDir(TestCaseBase):
         self.assertRaises(RuntimeError, fileUtils.cleanupdir,
                           baseDir, False)
         self.assertTrue(os.path.lexists(baseDir))
-
-
-class ReadFile(TestCaseBase):
-    @brokentest('newish kernel/dd fail to read unaligned block size')
-    def testValidInput(self):
-        """
-        Test if method works when given a valid file.
-        """
-        #create
-        writeData = ("Trust me, I know what self-loathing is,"
-                     "but to kill myself? That would put a damper on my "
-                     "search for answers. Not at all productive.")
-        # (C) Jhonen Vasquez - Johnny the Homicidal Maniac
-        with temporaryPath(data=writeData) as path:
-            #read
-            readData = misc.readfile(path)
-
-        self.assertEquals(writeData, readData[0])
-
-    def testInvalidInput(self):
-        """
-        Test if method works when input is a non existing file.
-        """
-        fd, path = tempfile.mkstemp()
-        os.unlink(path)
-
-        self.assertRaises(misc.se.MiscFileReadException, misc.readfile, path)
 
 
 class ReadSpeed(TestCaseBase):
