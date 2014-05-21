@@ -62,8 +62,16 @@ PEP8_BLACKLIST = \
 	$(NULL)
 
 PEP8_WHITELIST = \
-	vdsm-tool/vdsm-tool \
+	contrib/profile-stats \
+	init/daemonAdapter \
+	vdsm/get-conf-item \
+	vdsm/set-conf-item \
 	vdsm/supervdsmServer \
+	vdsm/vdsm \
+	vdsm/vdsm-restore-net-config \
+	vdsm/storage/curl-img-wrap \
+	vdsm-tool/vdsm-tool \
+	vds_bootstrap/setup \
 	$(NULL)
 
 

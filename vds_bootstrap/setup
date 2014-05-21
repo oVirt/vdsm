@@ -14,31 +14,34 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
 
-import sys, getopt
+import sys
+import getopt
 import os
 import subprocess
-import logging, logging.config
+import logging
+import logging.config
 import traceback
 import string
 import re
 import tempfile
 from time import strftime
 
-SUPPORTED_PLATFORMS = [ "RedHatEnterpriseServer", "Fedora" ]
-HYPERVISOR_PLATFORMS = [ "RedHatEnterpriseVirtualizationHypervisor", "RedHatEnterpriseHypervisor", "oVirtNodeHypervisor" ]
+SUPPORTED_PLATFORMS = ["RedHatEnterpriseServer", "Fedora"]
+HYPERVISOR_PLATFORMS = ["RedHatEnterpriseVirtualizationHypervisor",
+                        "RedHatEnterpriseHypervisor", "oVirtNodeHypervisor"]
 HYPERVISOR_RELEASE_FILE = '/etc/rhev-hypervisor-release'
 REDHAT_RELEASE_FILE = '/etc/redhat-release'
 vdsm_reg_conf_file = '/etc/vdsm-reg/vdsm-reg.conf'
 
 try:
-    LOGDIR=os.environ["OVIRT_LOGDIR"]
+    LOGDIR = os.environ["OVIRT_LOGDIR"]
 except KeyError:
-    LOGDIR=tempfile.gettempdir()
+    LOGDIR = tempfile.gettempdir()
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)-8s %(module)s '
                            '%(lineno)d %(message)s',
@@ -47,13 +50,16 @@ logging.basicConfig(level=logging.DEBUG,
                              (LOGDIR, "setup", strftime("%Y%m%d%H%M%S")),
                     filemode='w')
 
+
 def printNlog(s):
     print s
     logging.debug(s)
 
+
 def releaseFileExists():
     """ -- According to lsb_release:
-           Read first line from HYPERVISOR_RELEASE_FILE, then try REDHAT_RELEASE_FILE and then return it.
+           Read first line from HYPERVISOR_RELEASE_FILE,
+           then try REDHAT_RELEASE_FILE and then return it.
     """
     if os.path.exists(HYPERVISOR_RELEASE_FILE):
         return True, HYPERVISOR_RELEASE_FILE
@@ -62,17 +68,18 @@ def releaseFileExists():
     else:
         return False, HYPERVISOR_RELEASE_FILE + ", " + REDHAT_RELEASE_FILE
 
+
 def get_id_line():
     line = ''
     RELEASE_FILE = None
 
     try:
-        fileExists, releaseFile =  releaseFileExists()
+        fileExists, releaseFile = releaseFileExists()
         RELEASE_FILE = releaseFile
         if (fileExists):
             release = open(releaseFile, "r")
             line = release.readline()
-            line = line.replace ("\n", "")
+            line = line.replace("\n", "")
             release.close
             logging.debug("get_id_line: read line %s.", line)
         else:
@@ -85,6 +92,7 @@ def get_id_line():
         logging.error(message + "\n" + traceback.format_exc())
 
     return line
+
 
 def lsb_release():
     """ -- According to lsb_release:
@@ -102,6 +110,7 @@ def lsb_release():
 
     logging.debug("lsb_release: return: %s.", res)
     return res
+
 
 def testPlatform():
     ''' testPlatform evaluates the platform version and returns
@@ -138,12 +147,18 @@ def testPlatform():
         logging.error(message + "\n" + traceback.format_exc())
         st = "FAIL"
 
-    printNlog("<BSTRAP component='%s' status='%s' message='%s'/>" % (component,st, message))
+    printNlog("<BSTRAP component='%s' status='%s' message='%s'/>" % (
+        component, st, message))
     sys.stdout.flush()
 
     return fReturn
 
-def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_config_str, url_rpm, vds_server, random_num, script, vds_complete, firewall_rules_file, engine_ssh_key, rebootAfterInstallation, installVirtualizationService, installGlusterService, bridgeName):
+
+def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime,
+                 vds_config_str, url_rpm, vds_server, random_num, script,
+                 vds_complete, firewall_rules_file, engine_ssh_key,
+                 rebootAfterInstallation, installVirtualizationService,
+                 installGlusterService, bridgeName):
     """ -- Run VDS bootstrap scripts
     """
     try:
@@ -174,19 +189,22 @@ def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime, vds_
                 else:
                     execfn += [random_num]
                 execfn.append(str(int(rebootAfterInstallation)))
-            logging.debug("trying to run %s script cmd = '%s'",script, string.join(execfn, " "))
+            logging.debug("trying to run %s script cmd = '%s'",
+                          script, string.join(execfn, " "))
             proc = subprocess.Popen(execfn)
             proc.communicate()
             if proc.returncode == 0:
                 return True
         else:
-            logging.debug("script %s doen not exist",script)
+            logging.debug("script %s doen not exist", script)
     except:
         logging.error(traceback.format_exc())
 
     return False
 
-def process_ovirt_platform(url_bs, engine_port, random_num, systime, engine_ssh_key):
+
+def process_ovirt_platform(url_bs, engine_port, random_num,
+                           systime, engine_ssh_key):
 
     """ update vdsm-reg.conf and restart vdsm-reg service """
     import time
@@ -199,13 +217,16 @@ def process_ovirt_platform(url_bs, engine_port, random_num, systime, engine_ssh_
         time_struct = time.strptime(systime, '%Y-%m-%dT%H:%M:%S')
         ticket = calendar.timegm(time_struct)
     except ValueError as ex:
-        logging.debug("setHostTime: Failed to parse ENGINE time. message= " + str(ex))
+        logging.debug(
+            "setHostTime: Failed to parse ENGINE time. message= " + str(ex))
         return 1
 
     if ticket is not None:
-        return_value = update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket)
+        return_value = update_and_restart_vdsm_reg(url_bs, engine_port,
+                                                   engine_ssh_key, ticket)
 
     return return_value
+
 
 def update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket):
     from urlparse import urlparse
@@ -213,7 +234,8 @@ def update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket):
     try:
         import deployUtil
     except:
-        printNlog("<BSTRAP component='INIT' status='FAIL' message='Error trying to deploy library.'/>")
+        printNlog("<BSTRAP component='INIT' status='FAIL' "
+                  "message='Error trying to deploy library.'/>")
         logging.error(traceback.format_exc())
         return False
 
@@ -223,7 +245,8 @@ def update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket):
     return_value = False
     if not os.path.exists(vdsm_reg_conf_file):
         message = "Error trying to configure registration service."
-        printNlog("<BSTRAP component='UPDATE_VDSM_REG_CONF' status='FAIL' message='%s'/>" % (message) )
+        printNlog("<BSTRAP component='UPDATE_VDSM_REG_CONF' "
+                  "status='FAIL' message='%s'/>" % (message))
         logging.debug("file %s does not exist", vdsm_reg_conf_file)
     else:
         vdc_url = urlparse(url_bs)
@@ -232,20 +255,25 @@ def update_and_restart_vdsm_reg(url_bs, engine_port, engine_ssh_key, ticket):
                 engine_port = str(vdc_url.port)
 
         if engine_port is not None:
-            deployUtil._updateFileLine(vdsm_reg_conf_file, "vdc_host_port", str(engine_port), True)
+            deployUtil._updateFileLine(vdsm_reg_conf_file, "vdc_host_port",
+                                       str(engine_port), True)
 
-        deployUtil._updateFileLine(vdsm_reg_conf_file, "vdc_host_name", str(vdc_url.hostname), True)
-        deployUtil._updateFileLine(vdsm_reg_conf_file, "ticket", str(ticket), True)
+        deployUtil._updateFileLine(vdsm_reg_conf_file, "vdc_host_name",
+                                   str(vdc_url.hostname), True)
+        deployUtil._updateFileLine(vdsm_reg_conf_file, "ticket",
+                                   str(ticket), True)
         deployUtil.ovirtfunctions.ovirt_store_config(vdsm_reg_conf_file)
 
         if handle_ssh_key(vdc_url.hostname, str(engine_port), engine_ssh_key):
-            out, err, return_code = deployUtil.setService('vdsm-reg', 'restart')
+            out, err, return_code = deployUtil.setService('vdsm-reg',
+                                                          'restart')
         else:
             return_code = None
 
         if not return_code:
             return_value = True
     return return_value
+
 
 def handle_ssh_key(host, port, engine_ssh_key):
     import deployUtil
@@ -262,20 +290,30 @@ def handle_ssh_key(host, port, engine_ssh_key):
         ssh_result = deployUtil.handleSSHKey(strKey)
 
     if ssh_result:
-        printNlog("<BSTRAP component='RHEV_INSTALL' status='OK' message='RHEV-H ACCESSIBLE'/>")
+        printNlog("<BSTRAP component='RHEV_INSTALL' status='OK' "
+                  "message='RHEV-H ACCESSIBLE'/>")
     else:
-        printNlog("<BSTRAP component='RHEV_INSTALL' status='FAIL' message='Host failed to download management server public-key.'/>")
+        printNlog(
+            "<BSTRAP component='RHEV_INSTALL' status='FAIL' "
+            "message='Host failed to download management server public-key.'/>"
+        )
 
     return ssh_result
 
+
 def main():
-    """Usage: vds_installer.py  [-c vds_config_str] [-v ver] [-m remote_nfs] [-r rev_num] [-O organizationName] [-t YYYY-MM-DDTHH:mm:SS_system_time] [-S engine-ssh-key] [-p engine_port] [-B bridge_name] [-V] [-g] <url_bs> <url_rpm> <vds_server> <random_num> <vds_complete>
+    """Usage:
+    vds_installer.py  [-c vds_config_str] [-v ver] [-m remote_nfs] [-r rev_num]
+    [-O organizationName] [-t YYYY-MM-DDTHH:mm:SS_system_time]
+    [-S engine-ssh-key] [-p engine_port] [-B bridge_name] [-V] [-g]
+    <url_bs> <url_rpm> <vds_server> <random_num> <vds_complete>
                     url_bs - components url
                     url_rpm - rpm download url
                     random_num - random number for temp. file names generation
                     vds_server - vds server for CSR usage
                     vds_complete - to run first vds_bootstrap script = false
-                                   to run second vds_bootstrap_complete script = true
+                                   to run second vds_bootstrap_complete
+                                   script = true
                     -v - interface version, default=2
                     -B - bridge name, default is installation specific
                     -V - don't install virutalization components on the host
@@ -283,7 +321,7 @@ def main():
     try:
         bootstrap_interface_version = 2
         remote_nfs = None
-        rev_num = None
+        # rev_num = None
         vds_config_str = None
         orgName = None
         systime = None
@@ -295,15 +333,15 @@ def main():
         installGlusterService = False
         bridgeName = None
         opts, args = getopt.getopt(sys.argv[1:], "c:m:r:O:t:p:bf:S:gB:Vv:")
-        for o,v in opts:
+        for o, v in opts:
             if o == "-v":
                 bootstrap_interface_version = int(v)
             if o == "-c":
                 vds_config_str = v
             if o == "-m":
                 remote_nfs = v
-            if o == "-r":
-                rev_num = v
+            # if o == "-r":
+            #    rev_num = v
             if o == "-O":
                 orgName = v
             if o == "-t":
@@ -377,9 +415,11 @@ def main():
                 try:
                     os.unlink(firewall_rules_file)
                 except:
-                    logging.warn("Failed to delete firewall conf file: %s" , firewall_rules_file)
+                    logging.warn("Failed to delete firewall conf file: %s",
+                                 firewall_rules_file)
         elif res == 1:
-            ret_value = process_ovirt_platform(url_bs, engine_port, random_num, systime, engine_ssh_key)
+            ret_value = process_ovirt_platform(url_bs, engine_port, random_num,
+                                               systime, engine_ssh_key)
             if ret_value is False:
                 printNlog("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
             return ret_value
@@ -400,4 +440,4 @@ if __name__ == "__main__":
     os.chdir(os.path.dirname(sys.argv[0]))
 
     # execute
-    sys.exit(not main()) # exit=0 is success
+    sys.exit(not main())  # exit=0 is success

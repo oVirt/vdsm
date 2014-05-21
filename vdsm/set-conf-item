@@ -7,10 +7,10 @@
 
 import sys
 try:
-   from vdsm.config import config
+    from vdsm.config import config
 except:
-   import ConfigParser
-   config = ConfigParser.ConfigParser()
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
 
 (dummy, fname, section, item, value) = sys.argv
 config.read(fname)

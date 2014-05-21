@@ -5,14 +5,14 @@
 
 import sys
 try:
-   from vdsm.config import config
+    from vdsm.config import config
 except:
-   import ConfigParser
-   config = ConfigParser.ConfigParser()
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
 
 (dummy, file, section, item, default) = sys.argv
 config.read(file)
 try:
-   print config.get(section, item)
+    print config.get(section, item)
 except:
-   print default
+    print default
