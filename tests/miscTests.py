@@ -840,32 +840,6 @@ class CleanUpDir(TestCaseBase):
         self.assertTrue(os.path.lexists(baseDir))
 
 
-class ReadFile(TestCaseBase):
-    def testValidInput(self):
-        """
-        Test if method works when given a valid file.
-        """
-        # create
-        writeData = ("Trust me, I know what self-loathing is,"
-                     "but to kill myself? That would put a damper on my "
-                     "search for answers. Not at all productive.")
-        # (C) Jhonen Vasquez - Johnny the Homicidal Maniac
-        with temporaryPath(data=writeData) as path:
-            # read
-            readData = misc.readfile(path)
-
-        self.assertEquals(writeData, readData[0])
-
-    def testInvalidInput(self):
-        """
-        Test if method works when input is a non existing file.
-        """
-        fd, path = tempfile.mkstemp()
-        os.unlink(path)
-
-        self.assertRaises(misc.se.MiscFileReadException, misc.readfile, path)
-
-
 class ReadSpeed(TestCaseBase):
     STATS_TEMPLATE = "%s byte%s (%s %sB) copied, %s s, %s %sB/s"
     STATS_TESTS = (
