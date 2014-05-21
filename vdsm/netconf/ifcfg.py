@@ -601,6 +601,7 @@ class ConfigWriter(object):
     def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
         conf = 'TYPE=Bridge\nDELAY=0\n'
+        opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         ipconfig = bridge.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
         ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
@@ -609,6 +610,7 @@ class ConfigWriter(object):
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
         conf = 'VLAN=yes\n'
+        opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if vlan.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
         ipconfig = vlan.ipConfig
@@ -619,6 +621,7 @@ class ConfigWriter(object):
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
         conf = 'BONDING_OPTS=%s\n' % pipes.quote(bond.options or '')
+        opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bond.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
 
