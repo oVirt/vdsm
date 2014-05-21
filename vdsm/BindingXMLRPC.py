@@ -167,12 +167,14 @@ class BindingXMLRPC(object):
                     response = image.downloadFromStream(methodArgs,
                                                         upload_finished,
                                                         volUUID)
-
-                    while not uploadFinishedEvent.is_set():
-                        uploadFinishedEvent.wait()
+                    if response['status']['code'] == 0:
+                        while not uploadFinishedEvent.is_set():
+                            uploadFinishedEvent.wait()
+                        self.send_response(httplib.OK)
+                    else:
+                        self.send_response(httplib.INTERNAL_SERVER_ERROR)
 
                     json_response = json.dumps(response)
-                    self.send_response(httplib.OK)
                     self.send_header(self.HEADER_CONTENT_TYPE,
                                      'application/json')
                     self.send_header(self.HEADER_CONTENT_LENGTH,
