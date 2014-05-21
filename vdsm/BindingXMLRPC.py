@@ -117,6 +117,7 @@ class BindingXMLRPC(object):
             HEADER_DOMAIN = 'Storage-Domain-Id'
             HEADER_IMAGE = 'Image-Id'
             HEADER_VOLUME = 'Volume-Id'
+            HEADER_TASK_ID = 'Task-Id'
             HEADER_CONTENT_LENGTH = 'content-length'
             HEADER_CONTENT_TYPE = 'content-type'
 
@@ -167,20 +168,22 @@ class BindingXMLRPC(object):
                     response = image.downloadFromStream(methodArgs,
                                                         upload_finished,
                                                         volUUID)
+
                     if response['status']['code'] == 0:
                         while not uploadFinishedEvent.is_set():
                             uploadFinishedEvent.wait()
                         self.send_response(httplib.OK)
+                        self.send_header(self.HEADER_TASK_ID, response['uuid'])
+                        self.end_headers()
                     else:
                         self.send_response(httplib.INTERNAL_SERVER_ERROR)
-
-                    json_response = json.dumps(response)
-                    self.send_header(self.HEADER_CONTENT_TYPE,
-                                     'application/json')
-                    self.send_header(self.HEADER_CONTENT_LENGTH,
-                                     len(json_response))
-                    self.end_headers()
-                    self.wfile.write(json_response)
+                        json_response = json.dumps(response)
+                        self.send_header(self.HEADER_CONTENT_TYPE,
+                                         'application/json')
+                        self.send_header(self.HEADER_CONTENT_LENGTH,
+                                         len(json_response))
+                        self.end_headers()
+                        self.wfile.write(json_response)
 
                 except socket.timeout:
                     self.send_error(httplib.REQUEST_TIMEOUT,
