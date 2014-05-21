@@ -42,6 +42,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 # rpm from the tarball.
 EXTRA_DIST = \
 	build-aux/pkg-version \
+	contrib/profile-stats \
 	vdsm.spec \
 	vdsm.spec.in
 
