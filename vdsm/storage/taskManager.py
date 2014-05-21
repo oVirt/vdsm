@@ -54,9 +54,10 @@ class TaskManager:
                 del self._tasks[task.id]
                 raise se.AddTaskError()
             self.log.debug("task queued: %s", task.id)
-        except Exception as ex:
-            self.log.error("Could not queue task, encountered: %s", str(ex))
+        except Exception:
+            self.log.exception('could not queue task %s', task.id)
             raise
+
         return task.id
 
     def scheduleJob(self, type, store, task, jobName, func, *args):
