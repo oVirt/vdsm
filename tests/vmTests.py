@@ -384,8 +384,10 @@ class TestVm(TestCaseBase):
                   'smpCoresPerSocket': 2, 'smpThreadsPerCore': 2,
                   'cpuPinning': {'0': '0-1', '1': '2-3'},
                   'numaTune': {'mode': 'strict', 'nodeset': '0-1'},
-                  'guestNumaNodes': [{'cpus': '0-1', 'memory': '5120'},
-                                     {'cpus': '2,3', 'memory': '5120'}]}
+                  'guestNumaNodes': [{'cpus': '0-1', 'memory': '5120',
+                                      'nodeIndex': 0},
+                                     {'cpus': '2,3', 'memory': '5120',
+                                      'nodeIndex': 1}]}
         vmConf.update(self.conf)
         domxml = vm._DomXML(vmConf, self.log,
                             caps.Architecture.X86_64)

@@ -22,6 +22,7 @@
 # stdlib imports
 from contextlib import contextmanager
 from copy import deepcopy
+from operator import itemgetter
 from xml.dom import Node
 from xml.dom.minidom import parseString as _domParseStr
 import logging
@@ -719,7 +720,8 @@ class _DomXML:
         # see http://www.ovirt.org/Features/NUMA_and_Virtual_NUMA
         if 'guestNumaNodes' in self.conf:
             numa = XMLElement('numa')
-            guestNumaNodes = self.conf.get('guestNumaNodes')
+            guestNumaNodes = sorted(
+                self.conf.get('guestNumaNodes'), key=itemgetter('nodeIndex'))
             for vmCell in guestNumaNodes:
                 nodeMem = int(vmCell['memory']) * 1024
                 numa.appendChildWithArgs('cell',
