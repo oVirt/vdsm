@@ -4704,27 +4704,27 @@ class Vm(object):
 
             self.log.info('Release VM resources')
             self.lastStatus = vmstatus.POWERING_DOWN
-            try:
-                # Terminate the VM's creation thread.
-                self._incomingMigrationFinished.set()
-                if self._vmStats:
-                    self._vmStats.stop()
-                if self.guestAgent:
-                    self.guestAgent.stop()
-                if self._dom:
-                    try:
-                        self._dom.destroyFlags(
-                            libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
-                    except libvirt.libvirtError as e:
-                        self.log.warning(
-                            "Failed to destroy VM '%s' gracefully",
-                            self.conf['vmId'], exc_info=True)
-                        if (e.get_error_code() ==
-                           libvirt.VIR_ERR_OPERATION_FAILED):
+            # Terminate the VM's creation thread.
+            self._incomingMigrationFinished.set()
+            if self._vmStats:
+                self._vmStats.stop()
+            if self.guestAgent:
+                self.guestAgent.stop()
+            if self._dom:
+                try:
+                    self._dom.destroyFlags(
+                        libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
+                except libvirt.libvirtError as e:
+                    self.log.warning(
+                        "Failed to destroy VM '%s' gracefully",
+                        self.conf['vmId'], exc_info=True)
+                    if (e.get_error_code() ==
+                       libvirt.VIR_ERR_OPERATION_FAILED):
+                        try:
                             self._dom.destroy()
-            except libvirt.libvirtError as e:
-                self.log.warning("Failed to destroy VM '%s'",
-                                 self.conf['vmId'], exc_info=True)
+                        except libvirt.libvirtError as e:
+                            self.log.warning("Failed to destroy VM '%s'",
+                                             self.conf['vmId'], exc_info=True)
 
             if not self.cif.mom:
                 self.cif.ksmMonitor.adjust()
