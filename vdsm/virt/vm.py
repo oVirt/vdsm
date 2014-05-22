@@ -4716,16 +4716,15 @@ class Vm(object):
                         self._dom.destroyFlags(
                             libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
                     except libvirt.libvirtError as e:
+                        self.log.warning(
+                            "Failed to destroy VM '%s' gracefully",
+                            self.conf['vmId'], exc_info=True)
                         if (e.get_error_code() ==
-                                libvirt.VIR_ERR_OPERATION_FAILED):
-                            self.log.warn("Failed to destroy VM '%s' "
-                                          "gracefully", self.conf['vmId'])
+                           libvirt.VIR_ERR_OPERATION_FAILED):
                             self._dom.destroy()
             except libvirt.libvirtError as e:
-                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    self.log.warning("libvirt domain not found", exc_info=True)
-                else:
-                    self.log.warn("VM %s is not running", self.conf['vmId'])
+                self.log.warning("Failed to destroy VM '%s'",
+                                 self.conf['vmId'], exc_info=True)
 
             if not self.cif.mom:
                 self.cif.ksmMonitor.adjust()
