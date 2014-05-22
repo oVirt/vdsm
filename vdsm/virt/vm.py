@@ -2535,7 +2535,9 @@ class Vm(object):
     def status(self):
         # used by API.Global.getVMList
         self.conf['status'] = self.lastStatus
-        return self.conf
+        # Filter out any internal keys
+        return dict((k, v) for k, v in self.conf.iteritems()
+                    if not k.startswith("_"))
 
     def getStats(self):
         stats = self._getStatsInternal()
