@@ -289,12 +289,12 @@ class BlockVolume(volume.Volume):
         """
         volParams = self.getVolumeParams()
         if volParams['volFormat'] == volume.COW_FORMAT:
-            self.prepare(justme=True)
+            self.prepare()
             try:
                 check = qemuimg.check(self.getVolumePath(),
                                       qemuimg.FORMAT.QCOW2)
             finally:
-                self.teardown(self.sdUUID, self.volUUID, justme=True)
+                self.teardown(self.sdUUID, self.volUUID)
             volActualSize = check['offset']
             volExtendSizeMB = int(config.get(
                                   "irs", "volume_utilization_chunk_mb"))
