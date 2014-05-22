@@ -87,8 +87,8 @@ class StaticSourceRoute(object):
             self.configurator.configureSourceRoute(self.routes, self.rules,
                                                    self.device)
         except IPRoute2Error as e:
-            logging.error('ip binary failed during source route configuration',
-                          ': %s' % e.message)
+            logging.error('ip binary failed during source route configuration'
+                          ': %s', e.message)
 
     def remove(self):
         self.configurator.removeSourceRoute(None, None, self.device)
