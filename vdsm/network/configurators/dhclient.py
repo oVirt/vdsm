@@ -22,6 +22,7 @@ import os
 import signal
 import threading
 
+from vdsm import netinfo
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
 from vdsm.utils import rmFile
@@ -41,6 +42,9 @@ class DhcpClient(object):
         self.leaseFile = (self.LEASE_FILE % self.iface)
 
     def _dhclient(self):
+        # Ask dhclient to stop any dhclient running for the device
+        if os.path.exists(os.path.join(netinfo.NET_PATH, self.iface)):
+            kill_dhclient(self.iface)
         rc, out, err = execCmd([self.DHCLIENT.cmd, '-1', '-pf',
                                 self.pidFile, '-lf', self.leaseFile,
                                 self.iface])
