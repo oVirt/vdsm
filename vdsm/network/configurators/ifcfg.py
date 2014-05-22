@@ -37,7 +37,7 @@ from vdsm import netinfo
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig
 
-from . import Configurator, getEthtoolOpts, libvirt
+from . import Configurator, dhclient, getEthtoolOpts, libvirt
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, IpConfig
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
@@ -572,6 +572,10 @@ class ConfigWriter(object):
             cfg = cfg + 'BOOTPROTO=none\n'
         elif ipconfig.bootproto:
             cfg = cfg + 'BOOTPROTO=%s\n' % pipes.quote(ipconfig.bootproto)
+            if (ipconfig.bootproto == 'dhcp' and
+                    os.path.exists(os.path.join(netinfo.NET_PATH, name))):
+                # Ask dhclient to stop any dhclient running for the device
+                dhclient.kill_dhclient(name)
 
         if mtu:
             cfg = cfg + 'MTU=%d\n' % mtu

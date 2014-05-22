@@ -73,3 +73,7 @@ class DhcpClient(object):
                 else:
                     raise
             rmFile(self.pidFile)
+
+
+def kill_dhclient(device_name):
+    execCmd([DhcpClient.DHCLIENT.cmd, '-x', device_name])
