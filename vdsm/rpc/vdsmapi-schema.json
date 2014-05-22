@@ -1766,6 +1766,17 @@
  'key': 'str', 'value': 'PathStats'}
 
 ##
+# @VmNumaNodeRuntimeInfoMap:
+#
+# A mapping of vm numa node runtime pinning to host numa node information
+# indexed by node index.
+#
+# Since: 4.15.0
+##
+{'map': 'VmNumaNodeRuntimeInfoMap',
+ 'key': 'str', 'value': '[int]'}
+
+##
 # @MOMStatus:
 #
 # An enumeration of possible MOM statuses.
@@ -6256,6 +6267,9 @@
 # @vmJobs:             #optional Info about active vm jobs
 #                      (new in version 4.15.0)
 #
+# @vNodeRuntimeInfo:   #optional Information about the vm numa node runtime pinning
+#                      to host numa node. (new in version 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -6276,7 +6290,8 @@
           'netIfaces': ['GuestNetworkDeviceInfo'],
           '*watchdogEvent': 'WatchdogEvent', 'guestFQDN': 'str',
           '*migrationProgress': 'uint', 'guestCPUCount': 'int',
-          'displayInfo': ['VmDisplayInfo'], '*vmJobs': 'VmJobsMap'}}
+          'displayInfo': ['VmDisplayInfo'], '*vmJobs': 'VmJobsMap',
+          '*vNodeRuntimeInfo': 'VmNumaNodeRuntimeInfoMap'}}
 
 ##
 # @VmStats:

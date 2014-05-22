@@ -39,6 +39,7 @@ dist_vdsm_PYTHON = \
 	md_utils.py \
 	mkimage.py \
 	momIF.py \
+	numaUtils.py \
 	parted_utils.py \
 	ppc64HardwareInfo.py \
 	protocoldetector.py \

@@ -71,6 +71,7 @@
 ./usr/share/vdsm/network/configurators/ifcfg.py
 ./usr/share/vdsm/network/configurators/iproute2.py
 ./usr/share/vdsm/network/configurators/libvirt.py
+./usr/share/vdsm/numaUtils.py
 ./usr/share/vdsm/parted_utils.py
 ./usr/share/vdsm/ppc64HardwareInfo.py
 ./usr/share/vdsm/protocoldetector.py

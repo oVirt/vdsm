@@ -56,6 +56,7 @@ test_modules = \
 	netconfTests.py \
 	netinfoTests.py \
 	netmodelsTests.py \
+	numaUtilsTests.py \
 	outOfProcessTests.py \
 	parted_utils_tests.py \
 	permutationTests.py \

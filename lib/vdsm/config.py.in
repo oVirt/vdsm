@@ -175,6 +175,12 @@ parameters = [
         # TODO: Change this to 1 once AdvancedStatsFunction can support it
         ('vm_sample_jobs_window', '2', None),
 
+        ('vm_sample_vcpu_pin_interval', '15',
+            'How often should we sample each vcpu runtime pinning to '
+            'which physical cpu core.'),
+
+        ('vm_sample_vcpu_pin_window', '2', None),
+
         ('trust_store_path', '@TRUSTSTORE@',
             'Where the certificates and keys are situated.'),
 

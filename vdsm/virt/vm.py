@@ -56,6 +56,7 @@ from logUtils import SimpleLogAdapter
 import caps
 import hooks
 import supervdsm
+import numaUtils
 
 # local package imports
 from . import guestagent
@@ -215,10 +216,16 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 config.getint('vars', 'vm_sample_jobs_interval'),
                 config.getint('vars', 'vm_sample_jobs_window')))
 
+        self.sampleVcpuPinning = (
+            sampling.AdvancedStatsFunction(
+                self._sampleVcpuPinning,
+                config.getint('vars', 'vm_sample_vcpu_pin_interval'),
+                config.getint('vars', 'vm_sample_vcpu_pin_window')))
+
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
             self.sampleDisk, self.sampleDiskLatency, self.sampleNet,
-            self.sampleBalloon, self.sampleVmJobs)
+            self.sampleBalloon, self.sampleVmJobs, self.sampleVcpuPinning)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -268,6 +275,10 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         for nic in self._vm._devices[NIC_DEVICES]:
             netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
         return netSamples
+
+    def _sampleVcpuPinning(self):
+        vCpuInfos = self._vm._dom.vcpus()
+        return vCpuInfos[0]
 
     def _sampleBalloon(self):
         infos = self._vm._dom.info()
@@ -462,6 +473,10 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         self._getDiskLatency(stats)
         self._getBalloonStats(stats)
         self._getVmJobs(stats)
+
+        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
+        if vmNumaNodeRuntimeMap:
+            stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
 
         return stats
 
@@ -2722,7 +2737,8 @@ class Vm(object):
         for var in decStats:
             if type(decStats[var]) is not dict:
                 stats[var] = utils.convertToStr(decStats[var])
-            elif var in ('network', 'balloonInfo', 'vmJobs'):
+            elif var in ('network', 'balloonInfo', 'vmJobs',
+                         'vNodeRuntimeInfo'):
                 stats[var] = decStats[var]
             else:
                 try:

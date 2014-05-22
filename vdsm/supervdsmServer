@@ -31,6 +31,8 @@ import signal
 import logging
 import logging.config
 
+import numaUtils
+
 LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
 
 try:
@@ -173,6 +175,22 @@ class _SuperVdsm(object):
     def getVmPid(self, vmName):
         pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
         return open(pidFile).read()
+
+    @logDecorator
+    def getVcpuNumaMemoryMapping(self, vmName):
+        vmPid = self.getVmPid(vmName)
+        vCpuPids = numaUtils.getVcpuPid(vmName)
+        vCpuMemMaps = {}
+        for vCpuIndex, vCpuPid in vCpuPids.iteritems():
+            numaMapsFile = "/proc/%s/task/%s/numa_maps" % (vmPid, vCpuPid)
+            try:
+                with open(numaMapsFile, 'r') as f:
+                    mappingNodes = map(
+                        int, re.findall('N(\d+)=\d+', f.read()))
+                    vCpuMemMaps[vCpuIndex] = list(set(mappingNodes))
+            except IOError:
+                continue
+        return vCpuMemMaps
 
     @logDecorator
     def prepareVmChannel(self, socketFile):
