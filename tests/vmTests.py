@@ -37,6 +37,7 @@ from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations, namedTemporaryDir
 import caps
+import hooks
 from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
@@ -1394,15 +1395,25 @@ class TestVmOperations(TestCaseBase):
                 device, self.GRAPHIC_DEVICES, domXml, devXml)
 
     def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml):
-        with FakeVM(devices=allDevices) as fake:
-            fake._dom = FakeDomain(domXml)
-            fake.updateDevice({
-                'deviceType': 'graphics',
-                'graphicsType': device['device'],
-                'password': '***',
-                'ttl': 0,
-                'existingConnAction': 'disconnect'})
-            self.assertEquals(fake._dom.devXml, devXml)
+        TICKET_PARAMS = {
+            'userName': 'admin',
+            'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc'}
+
+        def _check_ticket_params(domXML, conf, params):
+            self.assertEqual(params, TICKET_PARAMS)
+
+        with MonkeyPatchScope([(hooks, 'before_vm_set_ticket',
+                                _check_ticket_params)]):
+            with FakeVM(devices=allDevices) as fake:
+                fake._dom = FakeDomain(domXml)
+                fake.updateDevice({
+                    'deviceType': 'graphics',
+                    'graphicsType': device['device'],
+                    'password': '***',
+                    'ttl': 0,
+                    'existingConnAction': 'disconnect',
+                    'params': TICKET_PARAMS})
+                self.assertEquals(fake._dom.devXml, devXml)
 
     def testDomainNotRunningWithoutDomain(self):
         with FakeVM() as fake:

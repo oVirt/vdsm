@@ -3197,13 +3197,9 @@ class Vm(object):
     def _updateGraphicsDevice(self, params):
         graphics = self._findGraphicsDeviceXMLByType(params['graphicsType'])
         if graphics:
-            params.pop('deviceType')
-            params.pop('graphicsType')
-            password = params.pop('password')
-            ttl = params.pop('ttl')
-            connAct = params.pop('existingConnAction')
             return self._setTicketForGraphicDev(
-                graphics, password, ttl, connAct, params)
+                graphics, params['password'], params['ttl'],
+                params['existingConnAction'], params['params'])
         else:
             return errCode['updateDevice']
 
