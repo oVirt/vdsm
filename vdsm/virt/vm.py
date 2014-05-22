@@ -4711,20 +4711,9 @@ class Vm(object):
             if self.guestAgent:
                 self.guestAgent.stop()
             if self._dom:
-                try:
-                    self._dom.destroyFlags(
-                        libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
-                except libvirt.libvirtError as e:
-                    self.log.warning(
-                        "Failed to destroy VM '%s' gracefully",
-                        self.conf['vmId'], exc_info=True)
-                    if (e.get_error_code() ==
-                       libvirt.VIR_ERR_OPERATION_FAILED):
-                        try:
-                            self._dom.destroy()
-                        except libvirt.libvirtError as e:
-                            self.log.warning("Failed to destroy VM '%s'",
-                                             self.conf['vmId'], exc_info=True)
+                response = self._destroyVmGraceful()
+                if response['status']['code']:
+                    return response
 
             if not self.cif.mom:
                 self.cif.ksmMonitor.adjust()
@@ -4739,6 +4728,26 @@ class Vm(object):
 
             self._released = True
 
+        return {'status': doneCode}
+
+    def _destroyVmGraceful(self):
+        try:
+            self._dom.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
+        except libvirt.libvirtError as e:
+            self.log.warning("Failed to destroy VM '%s' gracefully",
+                             self.conf['vmId'], exc_info=True)
+            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
+                return self._destroyVmForceful()
+            return errCode['destroyErr']
+        return {'status': doneCode}
+
+    def _destroyVmForceful(self):
+        try:
+            self._dom.destroy()
+        except libvirt.libvirtError:
+            self.log.warning("Failed to destroy VM '%s'",
+                             self.conf['vmId'], exc_info=True)
+            return errCode['destroyErr']
         return {'status': doneCode}
 
     def deleteVm(self):
