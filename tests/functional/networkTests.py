@@ -1912,6 +1912,52 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.setupNetworks({}, bonds, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testRedefineBondedNetworkIPs(self):
+        """Test for https://bugzilla.redhat.com/1097674"""
+        with dummyIf(2) as nics:
+            network = {NETWORK_NAME: {'bonding': BONDING_NAME,
+                                      'bridged': False, 'ipaddr': '1.1.1.1',
+                                      'prefix': '24'}}
+            bonds = {BONDING_NAME: {'nics': nics}}
+            status, msg = self.vdsm_net.setupNetworks(network, bonds, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertEqual(
+                self.vdsm_net.netinfo.bondings[BONDING_NAME]['addr'],
+                network[NETWORK_NAME]['ipaddr'])
+            self.assertEqual(len(
+                self.vdsm_net.netinfo.bondings[BONDING_NAME]['ipv4addrs']), 1)
+
+            # Redefine the ip address
+            network[NETWORK_NAME]['ipaddr'] = '1.1.1.2'
+            status, msg = self.vdsm_net.setupNetworks(network, bonds, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertEqual(
+                self.vdsm_net.netinfo.bondings[BONDING_NAME]['addr'],
+                network[NETWORK_NAME]['ipaddr'])
+            self.assertEqual(len(
+                self.vdsm_net.netinfo.bondings[BONDING_NAME]['ipv4addrs']), 1)
+
+            # Redefine the ip address
+            network[NETWORK_NAME]['ipaddr'] = '1.1.1.3'
+            status, msg = self.vdsm_net.setupNetworks(network, bonds, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertEqual(
+                self.vdsm_net.netinfo.bondings[BONDING_NAME]['addr'],
+                network[NETWORK_NAME]['ipaddr'])
+            self.assertEqual(len(
+                self.vdsm_net.netinfo.bondings[BONDING_NAME]['ipv4addrs']), 1)
+
+            # Cleanup
+            network[NETWORK_NAME] = {'remove': True}
+            bonds[BONDING_NAME] = {'remove': True}
+            status, msg = self.vdsm_net.setupNetworks(network, bonds, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+
     @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
