@@ -1959,3 +1959,29 @@ class NetworkTest(TestCaseBase):
         # reporting success before knowing if dhclient succeeded. With blocking
         # it must not report success
         self.assertNotEqual(status, SUCCESS, msg)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def testSetupNetworksOverDhcpIface(self):
+        """When asked to setupNetwork on top of an interface with a running
+        dhclient process, Vdsm is expected to stop that dhclient and start
+        owning the interface. BZ#1100264"""
+        with vethIf() as (server, client):
+            with avoidAnotherDhclient(client):
+                veth.setIP(server, IP_ADDRESS, IP_CIDR)
+                veth.setLinkUp(server)
+                with dnsmasqDhcp(server):
+                    with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
+                        # Start a non-vdsm owned dhclient for the 'client'
+                        # iface
+                        dhcp.runDhclient(client, dhdir, 'default')
+                        # Set up a network over it and wait for dhcp success
+                        status, msg = self.vdsm_net.setupNetworks(
+                            {NETWORK_NAME: {'nic': client, 'bridged': False,
+                             'bootproto': 'dhcp', 'blockingdhcp': True}}, {},
+                            NOCHK)
+                        self.assertEquals(status, SUCCESS, msg)
+                        self.assertNetworkExists(NETWORK_NAME)
+            # cleanup
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
