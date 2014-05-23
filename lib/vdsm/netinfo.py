@@ -348,14 +348,17 @@ def getgateway(gateways, dev):
 def getIpInfo(dev, ipaddrs):
     ipv4addr = ''
     ipv4netmask = ''
+    ipv4addrs = []
     ipv6addrs = []
     for addr in ipaddrs[dev]:
         if addr['family'] == 'inet':
-            ipv4addr, prefix = addr['address'].split('/')
-            ipv4netmask = prefix2netmask(addr['prefixlen'])
+            ipv4addrs.append(addr['address'])
+            if 'secondary' not in addr['flags']:
+                ipv4addr, prefix = addr['address'].split('/')
+                ipv4netmask = prefix2netmask(addr['prefixlen'])
         else:
             ipv6addrs.append(addr['address'])
-    return ipv4addr, ipv4netmask, ipv6addrs
+    return ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
 
 
 def getipv6addrs(dev):
@@ -522,11 +525,12 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
             # comment when the version is no longer supported.
             data['interface'] = iface
 
-        ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(iface, ipaddrs)
+        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
                      'bootproto4': 'dhcp' if iface in dhcp4 else 'none',
                      'gateway': getgateway(gateways, iface),
+                     'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
                      'ipv6gateway': ipv6routes.get(iface, '::'),
                      'mtu': str(getMtu(iface))})
@@ -644,9 +648,10 @@ def _vlaninfo(link, ipaddrs):
 
 
 def _devinfo(link, ipaddrs):
-    ipv4addr, ipv4netmask, ipv6addrs = getIpInfo(link.name, ipaddrs)
+    ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(link.name, ipaddrs)
     return {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
+            'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}

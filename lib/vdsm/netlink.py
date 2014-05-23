@@ -130,7 +130,7 @@ def _addr_info(link_cache, addr):
         'family': _addr_family(addr),
         'prefixlen': _rtnl_addr_get_prefixlen(addr),
         'scope': _addr_scope(addr),
-        'flags': _rtnl_addr_get_flags(addr),
+        'flags': _addr_flags(addr),
         'address': _addr_local(addr)}
 
 
@@ -192,6 +192,13 @@ def _link_state(link):
     return _rtnl_link_operstate2str(state, operstate, sizeof(operstate))
 
 
+def _addr_flags(addr):
+    """Returns the textual translation of the address flags"""
+    flags = (c_char * (CHARBUFFSIZE * 2))()
+    return frozenset(_rtnl_addr_flags2str(_rtnl_addr_get_flags(addr), flags,
+                                          sizeof(flags)).split(','))
+
+
 def _addr_scope(addr):
     """Returns the scope name for which the address is defined."""
     scope = (c_char * CHARBUFFSIZE)()
@@ -225,6 +232,7 @@ _int_proto = CFUNCTYPE(c_int, c_void_p)
 _char_proto = CFUNCTYPE(c_char_p, c_void_p)
 _void_proto = CFUNCTYPE(c_void_p, c_void_p)
 _none_proto = CFUNCTYPE(None, c_void_p)
+_int_char_proto = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)
 
 if _ethtool_uses_libnl3():
     LIBNL = CDLL('libnl-3.so.200',  use_errno=True)
@@ -310,6 +318,7 @@ _rtnl_addr_get_prefixlen = _int_proto(('rtnl_addr_get_prefixlen', LIBNL_ROUTE))
 _rtnl_addr_get_scope = _int_proto(('rtnl_addr_get_scope', LIBNL_ROUTE))
 _rtnl_addr_get_flags = _int_proto(('rtnl_addr_get_flags', LIBNL_ROUTE))
 _rtnl_addr_get_local = _void_proto(('rtnl_addr_get_local', LIBNL_ROUTE))
+_rtnl_addr_flags2str = _int_char_proto(('rtnl_addr_flags2str', LIBNL_ROUTE))
 
 _nl_addr2str = CFUNCTYPE(c_char_p, c_void_p, c_char_p, c_size_t)((
     'nl_addr2str', LIBNL))
@@ -317,12 +326,10 @@ _rtnl_link_get_by_name = CFUNCTYPE(c_void_p, c_void_p, c_char_p)((
     'rtnl_link_get_by_name', LIBNL_ROUTE))
 _rtnl_link_i2name = CFUNCTYPE(c_char_p, c_void_p, c_int, c_char_p, c_size_t)((
     'rtnl_link_i2name', LIBNL_ROUTE))
-_rtnl_link_operstate2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)((
-    'rtnl_link_operstate2str', LIBNL_ROUTE))
-_nl_af2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)(('nl_af2str',
-                                                            LIBNL))
-_rtnl_scope2str = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)((
-    'rtnl_scope2str', LIBNL_ROUTE))
+_rtnl_link_operstate2str = _int_char_proto(('rtnl_link_operstate2str',
+                                            LIBNL_ROUTE))
+_nl_af2str = _int_char_proto(('nl_af2str', LIBNL))
+_rtnl_scope2str = _int_char_proto(('rtnl_scope2str', LIBNL_ROUTE))
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 _nl_addr_cache = partial(_cache_manager, _rtnl_addr_alloc_cache)

@@ -573,11 +573,14 @@
 # @stp:         Whether Spanning Tree Protocol status for the bridge device
 #               should be turned on
 #
-# @addr:        The IP address assigned to the bridge device
+# @addr:        The primary IPv4 address assigned to the bridge device
 #
-# @netmask:     The netmask of the defined subnet
+# @netmask:     The primary IPv4 netmask of the defined subnet
 #
 # @gateway:     The IP address of the subnet's gateway
+#
+# @ipv4addrs:   A list of IPv4 addresses in the format of 'address/prefixlen'
+#               that are assigned to the vlan device (new in version 4.15.0)
 #
 # @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
 #               that are assigned to the bridge device
@@ -605,10 +608,11 @@
 ##
 {'type': 'NetInfoBridgedNetwork',
  'data': {'ports': ['str'], 'stp': 'bool', 'addr': 'str',
-          'netmask': 'str', 'gateway': 'str', 'ipv6addrs': ['str'],
-          'ipv6gateway': 'str', 'mtu': 'uint', 'cfg': 'StringMap',
-          'bridged': 'bool', '*qosInbound': 'BandwidthParams',
-          '*qosOutbound': 'BandwidthParams', 'opts': 'StringMap'}}
+          'netmask': 'str', 'gateway': 'str', 'ipv4addrs': ['str'],
+          'ipv6addrs': ['str'], 'ipv6gateway': 'str', 'mtu': 'uint',
+          'cfg': 'StringMap', 'bridged': 'bool',
+          '*qosInbound': 'BandwidthParams', '*qosOutbound': 'BandwidthParams',
+          'opts': 'StringMap'}}
 
 ##
 # @NetInfoBridgelessNetwork:
@@ -645,9 +649,12 @@
 #
 # @speed:       The reported speed of the nic
 #
-# @addr:        The IP address assigned to the nic
+# @addr:        The primary IPv4 address assigned to the nic device
 #
-# @netmask:     The netmask of the defined subnet
+# @netmask:     The primary IPv4 netmask of the defined subnet
+#
+# @ipv4addrs:   A list of IPv4 addresses in the format of 'address/prefixlen'
+#               that are assigned to the vlan device (new in version 4.15.0)
 #
 # @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
 #               that are assigned to the nic
@@ -663,8 +670,8 @@
 ##
 {'type': 'NetInfoNic',
  'data': {'speed': 'int', 'addr': 'str', 'netmask': 'str',
-          'ipv6addrs': ['str'], 'hwaddr': 'str', 'mtu': 'uint',
-          '*permhwaddr': 'str'}}
+          'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'hwaddr': 'str',
+          'mtu': 'uint', '*permhwaddr': 'str'}}
 
 ##
 # @NetInfoBond:
@@ -673,9 +680,12 @@
 #
 # @slaves:      A list of devices that are enslaved to the bond device
 #
-# @addr:        The IP address assigned to the bond
+# @addr:        The primary IPv4 address assigned to the bond device
 #
-# @netmask:     The netmask of the defined subnet
+# @netmask:     The primary IPv4 netmask of the defined subnet
+#
+# @ipv4addrs:   A list of IPv4 addresses in the format of 'address/prefixlen'
+#               that are assigned to the vlan device (new in version 4.15.0)
 #
 # @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
 #               that are assigned to the bond device
@@ -690,8 +700,8 @@
 ##
 {'type': 'NetInfoBond',
  'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str',
-          'ipv6addrs': ['str'], 'hwaddr': 'str', 'cfg': 'StringMap',
-          'mtu': 'uint'}}
+          'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'hwaddr': 'str',
+          'cfg': 'StringMap', 'mtu': 'uint'}}
 
 ##
 # @NetInfoVlan:
@@ -700,9 +710,12 @@
 #
 # @iface:       The network device associated with the vlan
 #
-# @addr:        The IP address assigned to the vlan device
+# @addr:        The primary IPv4 address assigned to the vlan device
 #
-# @netmask:     The netmask of the defined subnet
+# @netmask:     The primary IPv4 netmask of the defined subnet
+#
+# @ipv4addrs:   A list of IPv4 addresses in the format of 'address/prefixlen'
+#               that are assigned to the vlan device (new in version 4.15.0)
 #
 # @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
 #               that are assigned to the vlan device
@@ -715,7 +728,8 @@
 ##
 {'type': 'NetInfoVlan',
  'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str',
-          'ipv6addrs': ['str'], 'mtu': 'uint', 'vlanid': 'uint'}}
+          'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'mtu': 'uint',
+          'vlanid': 'uint'}}
 
 ##
 # @NumaNode:
