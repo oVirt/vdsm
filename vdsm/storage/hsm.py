@@ -1348,10 +1348,7 @@ class HSM:
         if not sdUUID or sdUUID == sd.BLANK_UUID:
             sdUUID = pool.masterDomain.sdUUID
 
-        vmUUIDs = [vmDesc['vm'] for vmDesc in vmList]
-        vmUUIDs.sort()
-        for vmUUID in vmUUIDs:
-            vars.task.getExclusiveLock(STORAGE, "%s_%s" % (vmUUID, sdUUID))
+        vars.task.getExclusiveLock(STORAGE, "vms_" + sdUUID)
         pool.updateVM(vmList=vmList, sdUUID=sdUUID)
 
     @public
@@ -1373,7 +1370,9 @@ class HSM:
         pool = self.getPool(spUUID)
         if not sdUUID or sdUUID == sd.BLANK_UUID:
             sdUUID = pool.masterDomain.sdUUID
-        vars.task.getExclusiveLock(STORAGE, "%s_%s" % (vmUUID, sdUUID))
+
+        vars.task.getSharedLock(STORAGE, "vms_" + sdUUID)
+        vars.task.getExclusiveLock(STORAGE, "vms_%s_%s" % (vmUUID, sdUUID))
         pool.removeVM(vmUUID=vmUUID, sdUUID=sdUUID)
 
     @public
