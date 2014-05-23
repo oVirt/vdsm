@@ -225,7 +225,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                ipv6addr=None, ipv6gateway=None, force=False,
                configurator=None, bondingOptions=None, bridged=True,
                _netinfo=None, qosInbound=None, qosOutbound=None,
-               defaultRoute=None, **options):
+               defaultRoute=None, blockingdhcp=False, **options):
     nics = nics or ()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
@@ -283,7 +283,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                 bondingOptions, nics, mtu, ipaddr, netmask,
                                 gateway, bootproto, ipv6addr, ipv6gateway,
                                 defaultRoute=defaultRoute, _netinfo=_netinfo,
-                                configurator=configurator, **options)
+                                configurator=configurator,
+                                blockingdhcp=blockingdhcp, **options)
 
     netEnt.configure(**options)
     configurator.configureLibvirtNetwork(network, netEnt,

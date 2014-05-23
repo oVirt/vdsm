@@ -57,6 +57,10 @@
 # @bootproto:       #optional Interface autoconfiguration protocol (typically
 #                   'dhcp' or 'static')
 #
+# @blockingdhcp:    #optional whether ifaces that have 'dhcp' as bootproto
+#                   should wait to get an address before returning creation
+#                   success. If not set, the default is False.
+#
 # @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
 #
 # @qosInbound:      #optional BandwidthParams for incoming traffic.
@@ -68,7 +72,7 @@
 {'type': 'NetworkOptions',
  'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
           '*bootproto': 'str', '*bondingOptions', 'str',
-          '*qosInbound': 'BandwidthParams',
+          '*blockingdhcp': 'bool', '*qosInbound': 'BandwidthParams',
           '*qosOutbound': 'BandwidthParams'}}
 
 ##
