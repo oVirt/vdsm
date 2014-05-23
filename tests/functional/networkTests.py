@@ -1806,7 +1806,8 @@ class NetworkTest(TestCaseBase):
             veth.setLinkUp(left)
             with dnsmasqDhcp(left):
                 network = {NETWORK_NAME: {'nic': right, 'bridged': bridged,
-                                          'bootproto': 'dhcp'}}
+                                          'bootproto': 'dhcp',
+                                          'blockingdhcp': True}}
 
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
@@ -1947,3 +1948,14 @@ class NetworkTest(TestCaseBase):
             bonds['BONDING_NAME'] = {'remove': True}
             status, msg = self.vdsm_net.setupNetworks(networks, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def testHonorBlockingDhcp(self):
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'bridged': True, 'bootproto': 'dhcp',
+                            'blockingdhcp': True}}, {}, NOCHK)
+        # Without blocking dhcp, the setupNetworks command would return
+        # reporting success before knowing if dhclient succeeded. With blocking
+        # it must not report success
+        self.assertNotEqual(status, SUCCESS, msg)
